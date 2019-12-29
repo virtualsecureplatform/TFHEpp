@@ -15,35 +15,25 @@ using namespace std;
 
 namespace TFHEpp{
 
-    template <uint32_t N = DEF_N>
-    array<uint32_t, N> TwistFFT(const array<double,N> &a, FFT_Processor_Spqlios &fftp){
-        array<uint32_t,N> res;
-        fftp.execute_direct_torus32(&res[0],&a[0]);
-        return res;
+    void TwistFFTlvl1(array<uint32_t,DEF_N> &res,const array<double,DEF_N> &a){
+        fftplvl1.execute_direct_torus32(res.data(),a.data());
     }
 
-    template <uint32_t N = DEF_N>
-    array<double, N> TwistIFFT(const array<uint32_t,N> &a, FFT_Processor_Spqlios &fftp){
-        array<double,N> res;
-        fftp.execute_reverse_torus32(&res[0],&a[0]);
-        return res;
+    void TwistIFFTlvl1(array<double,DEF_N> &res, const array<uint32_t,DEF_N> &a){
+        fftplvl1.execute_reverse_torus32(res.data(),a.data());
     }
 
-    template <typename T = uint32_t, uint32_t N = DEF_N>
-    inline array<T,N> PolyMul(const array<T,N> &a, const array<T,N> &b, FFT_Processor_Spqlios &fftp){
-        array<double,N> ffta = TwistIFFT<N>(a,fftp);
-        array<double,N> fftb = TwistIFFT<N>(b,fftp);
-        array<double,N> fftres;
-        for (int32_t i = 0;i < N/2;i++){
-            fftres[i] = ffta[i] * fftb[i] - ffta[i+N/2] * fftb[i+N/2];
-            fftres[i+N/2] = ffta[i] * fftb[i+N/2] + ffta[i+N/2] * fftb[i];
+    void PolyMullvl1(array<uint32_t,DEF_N> &res, const array<uint32_t,DEF_N> &a, const array<uint32_t,DEF_N> &b){
+        array<double,DEF_N> ffta;
+        TwistIFFTlvl1(ffta,a);
+        array<double,DEF_N> fftb;
+        TwistIFFTlvl1(fftb,b);
+        array<double,DEF_N> fftres;
+        for (int32_t i = 0;i < DEF_N/2;i++){
+            fftres[i] = ffta[i] * fftb[i] - ffta[i+DEF_N/2] * fftb[i+DEF_N/2];
+            fftres[i+DEF_N/2] = ffta[i] * fftb[i+DEF_N/2] + ffta[i+DEF_N/2] * fftb[i];
         }
-        array<T,N> res = TwistFFT<N>(fftres,fftp);
-        return res;
+        TwistFFTlvl1(res,fftres);
     }
     
-    array<uint32_t,DEF_N> PolyMullvl1(const array<uint32_t,DEF_N> &a, const array<uint32_t,DEF_N> &b){
-        array<uint32_t,DEF_N> res = PolyMul<uint32_t,DEF_N>(a,b,fftplvl1);
-        return res;
-    }
 }

@@ -15,22 +15,34 @@ int main(){
 
     cout<<"Start LVL1 test."<<endl;
     for(int i; i<num_test;i++){
-        //cout<<i<<endl;
+        array<uint32_t,DEF_N> a;
+        for(int i = 0;i<DEF_N;i++)a[i] = Torusdist(engine);
+        array<double,DEF_N> resfft;
+        TFHEpp::TwistIFFTlvl1(resfft,a);
+        array<uint32_t,DEF_N> res;
+        TFHEpp::TwistFFTlvl1(res,resfft);
+        for(int i = 0;i<DEF_N;i++)assert(abs(static_cast<int32_t>(a[i] - res[i]))<=1);
+    }
+    cout<<"FFT Passed"<<endl;
+
+    for(int i; i<num_test;i++){
         array<uint32_t,DEF_N> a;
         for(int i = 0;i<DEF_N;i++)a[i] = Bgdist(engine) - DEF_Bg/2;
         array<uint32_t,DEF_N> b;
         for(int i = 0;i<DEF_N;i++)b[i] = Torusdist(engine);
 
-        array<uint32_t,DEF_N> polymul = TFHEpp::PolyMullvl1(a,b);
+        array<uint32_t,DEF_N> polymul;
+        TFHEpp::PolyMullvl1(polymul, a,b);
         array<uint32_t,DEF_N> naieve;
-        for(int j = 0;j<DEF_N; j++) naieve[j] = a[j]*b[0];
-        for(int i = 1;i<DEF_N; i++){
-            rotate(a.begin(),a.end(),a.end());
-            a[0] *= -1;
-            for(int j = 0;j<DEF_N; j++) naieve[j] += a[j]*b[i];
+        for(int i = 0;i<DEF_N; i++){
+            uint32_t ri = 0;
+            for(int j = 0;j<=i; j++) ri += static_cast<int32_t>(a[j])*b[i-j];
+            for(int j = i+1;j<DEF_N; j++) ri -= static_cast<int32_t>(a[j])*b[DEF_N+i-j];
+            naieve[i] = ri;
         }
-    for(int i = 0;i<DEF_N; i++) assert(abs(static_cast<int>(naieve[i] - polymul[i])) < (1<<3));
+    for(int i = 0;i<DEF_N; i++) assert(abs(static_cast<int>(naieve[i] - polymul[i])) <= 1);
     }
+    cout<<"PoluMul Passed"<<endl;
 
     return 0;
 }
