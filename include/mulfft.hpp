@@ -1,13 +1,14 @@
 #include<array>
 
-#include<ipp.h>
+#include<spqlios-fft.h>
 
 #include<params.hpp>
 
 namespace TFHEpp{
+    using namespace std;
     template <uint32_t N = DEF_N>
-    std::array<double, N> TwistFFT(std::array<double,N> a, std::array<Ipp64f,N> twist);
+    array<uint32_t, N> TwistFFT(const array<double,N> &a, FFT_Processor_Spqlios &fftp);
     template <uint32_t N = DEF_N>
-    std::array<double, N> TwistIFFT(std::array<double,N> a, std::array<Ipp64f,N> twist);
-    std::array<uint32_t,DEF_N> PolyMullvl1(std::array<uint32_t,DEF_N> a, std::array<uint32_t,DEF_N> b);
+    array<double, N> TwistIFFT(const array<uint32_t,N> &a, FFT_Processor_Spqlios &fftp);
+    array<uint32_t,DEF_N> PolyMullvl1(const array<uint32_t,DEF_N> &a, const array<uint32_t,DEF_N> &b);
 }

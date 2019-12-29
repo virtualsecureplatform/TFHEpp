@@ -1,6 +1,7 @@
 #pragma once
 #include<array>
 #include<algorithm>
+#include<cmath>
 
 #include<params.hpp>
 
