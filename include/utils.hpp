@@ -1,21 +1,23 @@
 #pragma once
+
 #include<array>
 #include<algorithm>
 #include<cmath>
+#include<random>
 
 #include<params.hpp>
 
 namespace TFHEpp{
     using namespace std;
+    static random_device generator;
 
-    inline double ttod32(const uint32_t torus){
-        return static_cast<double>(static_cast<int32_t>(torus));
+    inline uint32_t dtot32(double d) {
+        return int32_t(int64_t((d - int64_t(d))*(1L<<32)));
     }
 
-    template<uint32_t N = DEF_N>
-    inline array<double,N> ttod32_array(const array<uint32_t,DEF_N> torus_array){
-        array<double,N> res;
-        transform(torus_array.cbegin(),torus_array.cend(),res.begin(),ttod32);
-        return res;
+    inline uint32_t gaussian32(uint32_t message, double α){
+        normal_distribution<double> distribution(0.,α); //TODO: can we create a global distrib of param 1 and multiply by sigma?
+        double err = distribution(generator);
+        return message + dtot32(err);
     }
 }
