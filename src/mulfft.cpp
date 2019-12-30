@@ -29,10 +29,7 @@ namespace TFHEpp{
         array<double,DEF_N> fftb;
         TwistIFFTlvl1(fftb,b);
         array<double,DEF_N> fftres;
-        for (int32_t i = 0;i < DEF_N/2;i++){
-            fftres[i] = ffta[i] * fftb[i] - ffta[i+DEF_N/2] * fftb[i+DEF_N/2];
-            fftres[i+DEF_N/2] = ffta[i] * fftb[i+DEF_N/2] + ffta[i+DEF_N/2] * fftb[i];
-        }
+        MulInFD<DEF_N>(fftres,ffta,fftb);
         TwistFFTlvl1(res,fftres);
     }
 

@@ -4,6 +4,7 @@
 #include<algorithm>
 #include<cmath>
 #include<random>
+#include<array>
 
 #include<params.hpp>
 
@@ -19,5 +20,21 @@ namespace TFHEpp{
         normal_distribution<double> distribution(0.,α); //TODO: can we create a global distrib of param 1 and multiply by sigma?
         double err = distribution(generator);
         return message + dtot32(err);
+    }
+    
+    template<uint32_t N>
+    inline void MulInFD(array<double,N> &res,const array<double,N> &a,const array<double,N> &b){
+        for(int i = 0;i < N/2; i++){
+            res[i] = a[i] * b[i] - a[i+N/2] * b[i+N/2];
+            res[i+N/2] = a[i+N/2] * b[i] + a[i] * b[i+N/2];
+        }
+    }
+
+    template<uint32_t N>
+    inline void FMAInFD(array<double,N> &res,const array<double,N> &a,const array<double,N> &b){
+        for(int i = 0;i < N/2; i++){
+            res[i] += a[i] * b[i] - a[i+N/2] * b[i+N/2];
+            res[i+N/2] += a[i+N/2] * b[i] + a[i] * b[i+N/2];
+        }
     }
 }

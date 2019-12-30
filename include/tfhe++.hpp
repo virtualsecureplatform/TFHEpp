@@ -5,3 +5,5 @@
 #include<key.hpp>
 #include<tlwe.hpp>
 #include<trlwe.hpp>
+#include<trgsw.hpp>
+#include<cloudkey.hpp>
