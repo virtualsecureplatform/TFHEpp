@@ -2,6 +2,7 @@
 #include<trgsw.hpp>
 #include<trlwe.hpp>
 #include<cloudkey.hpp>
+#include<keyswitch.hpp>
 
 namespace TFHEpp{
     using namespace std;
@@ -25,7 +26,7 @@ namespace TFHEpp{
     inline void PolynomialMulByXaiMinusOne(array<T,N> &res,array<T,N> &poly,const T a){
         if(a==0) return;
         else if(a<N){
-            for(int i = 0;i<a;i++) res[i] = -poly[i - a +N] - poly[i];
+            for(int i = 0;i<a;i++) res[i] = -poly[i - a + N] - poly[i];
             for(int i = a;i<N;i++) res[i] = poly[i - a] - poly[i];
         }else{
             const T aa = a - N;
@@ -51,7 +52,7 @@ namespace TFHEpp{
         }
     }
     
-    void GateBootstrappingTLWE2TLWEFFTlvl01(array<uint32_t,DEF_N+1> &res, const array<uint32_t,DEF_n+1> &tlwe,CloudKey ck){
+    void GateBootstrappingTLWE2TLWEFFTlvl01(array<uint32_t,DEF_N+1> &res, const array<uint32_t,DEF_n+1> &tlwe,CloudKey &ck){
         array<array<uint32_t,DEF_N>,2> acc;
         array<array<uint32_t,DEF_N>,2> temp;
         uint32_t bara = 2*DEF_N - (tlwe[DEF_n] >> (32 - (DEF_Nbit+1)));
@@ -66,5 +67,11 @@ namespace TFHEpp{
             for(int i = 0;i<DEF_N;i++) acc[1][i] += temp[1][i];
         }
         SampleExtractIndexlvl1(res,acc,0);
+    }
+
+    void GateBootstrapping(array<uint32_t,DEF_n+1> &res, const array<uint32_t,DEF_n+1> &tlwe,CloudKey &ck){
+        array<uint32_t,DEF_N+1> tlwelvl1;
+        GateBootstrappingTLWE2TLWEFFTlvl01(tlwelvl1,tlwe,ck);
+        IdentityKeySwitchlvl10(res,tlwelvl1,ck.ksk);
     }
 }
