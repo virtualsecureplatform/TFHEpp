@@ -2,6 +2,7 @@
 #include<cassert>
 #include<random>
 #include<algorithm>
+#include<iostream>
 
 using namespace std;
 using namespace TFHEpp;

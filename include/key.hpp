@@ -20,4 +20,16 @@ namespace TFHEpp{
             for(uint64_t &i:lvl2) i = binary(engine);
         }
     };
+    
+
+    struct SecretKey{
+        lweKey key;
+        lweParams params;
+        SecretKey(){
+            lweKey lwekey;
+            key = lwekey;
+            lweParams lweparams;
+            params = lweparams;
+        }
+    };
 }
