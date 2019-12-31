@@ -1,9 +1,8 @@
+#include <array>
 #include <mulfft.hpp>
 #include <params.hpp>
 #include <trlwe.hpp>
 #include <utils.hpp>
-
-#include <array>
 
 namespace TFHEpp {
 

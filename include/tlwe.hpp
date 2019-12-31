@@ -2,10 +2,9 @@
 
 #include <array>
 #include <cstdint>
-#include <vector>
-
 #include <key.hpp>
 #include <params.hpp>
+#include <vector>
 
 namespace TFHEpp {
 using namespace std;

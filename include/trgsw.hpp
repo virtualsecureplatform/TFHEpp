@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstdint>
-
 #include <params.hpp>
 
 namespace TFHEpp {
