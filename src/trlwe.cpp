@@ -13,9 +13,9 @@ array<array<uint32_t, DEF_N>, 2> trlweSymEncryptZerolvl1(const double α,
 {
     uniform_int_distribution<uint32_t> Torus32dist(0, UINT32_MAX);
     array<array<uint32_t, DEF_N>, 2> c;
-    for (uint32_t i : c[0]) i = Torus32dist(engine);
+    for (uint32_t &i : c[0]) i = Torus32dist(engine);
     PolyMullvl1(c[1], c[0], key);
-    for (uint32_t i : c[1]) i += gaussian32(0, α);
+    for (uint32_t &i : c[1]) i += gaussian32(0, α);
     return c;
 }
 
@@ -46,7 +46,7 @@ inline void SampleExtractIndex(array<T, N + 1> &tlwe,
                                const int index)
 {
     for (int i = 0; i <= index; i++) tlwe[i] = trlwe[0][index - i];
-    for (int i = index + 1; i < N; i++) tlwe[i] = trlwe[0][N + index - i];
+    for (int i = index + 1; i < N; i++) tlwe[i] = -trlwe[0][N + index - i];
     tlwe[N] = trlwe[1][index];
 }
 

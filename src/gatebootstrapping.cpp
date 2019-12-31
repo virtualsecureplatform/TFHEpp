@@ -3,6 +3,7 @@
 #include <params.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>
+#include <utils.hpp>
 
 namespace TFHEpp {
 using namespace std;
@@ -72,10 +73,10 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
 {
     TRLWElvl1 acc;
     TRLWElvl1 temp;
-    uint32_t bara = 2 * DEF_N - (tlwe[DEF_n] >> (32 - (DEF_Nbit + 1)));
+    uint32_t bara = 2 * DEF_N - modSwitchFromTorus32<2*DEF_N>(tlwe[DEF_n]);
     RotatedTestVector<uint32_t, DEF_N>(acc, bara);
     for (int i = 0; i < DEF_n; i++) {
-        bara = (tlwe[i] >> (32 - (DEF_Nbit + 1)));
+        bara =  modSwitchFromTorus32<2*DEF_N>(tlwe[i]);
         if (bara == 0) continue;
         PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1], bara);
