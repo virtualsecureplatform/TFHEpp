@@ -15,7 +15,7 @@ int main()
 
         lweKey key;
         array<bool, DEF_N> p;
-        for (bool i : p) i = binary(engine) > 0;
+        for (bool &i : p) i = binary(engine) > 0;
         array<uint32_t, DEF_N> pmu;
         for (int i = 0; i < DEF_N; i++) pmu[i] = p[i] ? DEF_MU : -DEF_MU;
         TRLWElvl1 c = trlweSymEncryptlvl1(pmu, DEF_αbk, key.lvl1);
