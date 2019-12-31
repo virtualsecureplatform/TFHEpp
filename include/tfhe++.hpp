@@ -9,3 +9,4 @@
 #include<cloudkey.hpp>
 #include<keyswitch.hpp>
 #include<gatebootstrapping.hpp>
+#include<gate.hpp>

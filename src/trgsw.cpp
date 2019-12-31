@@ -29,13 +29,12 @@ namespace TFHEpp{
     template<typename T = uint32_t, uint32_t N = DEF_N, uint32_t l = DEF_l, uint32_t Bgbit = DEF_Bgbit>
     inline void Decomposition(array<array<T,N>,2*l> &decvec, const array<array<T,N>,2> &trlwe, const T offset){
         const T mask = static_cast<T>((1<<Bgbit) - 1);
-        array<array<T,N>,2> siftedtrlwe;
-        for(int i = 0;i<N;i++) siftedtrlwe[0][i] = trlwe[0][i] + offset;
-        for(int i = 0;i<N;i++) siftedtrlwe[1][i] = trlwe[1][i] + offset;
+        for(int i = 0;i<N;i++) decvec[0][i] = trlwe[0][i] + offset;
+        for(int i = 0;i<N;i++) decvec[l][i] = trlwe[1][i] + offset;
 
-        for(int i = 0; i<l; i++){
-            for(int j = 0; j<N; j++) decvec[i][j] = ((siftedtrlwe[0][j]>>(32-(i+1)*Bgbit)) & mask) - (1U<<(Bgbit-1));
-            for(int j = 0; j<N; j++) decvec[i+l][j] = ((siftedtrlwe[1][j]>>(32-(i+1)*Bgbit)) & mask) - (1U<<(Bgbit-1));
+        for(int i = l-1; i>=0; i--){
+            for(int j = 0; j<N; j++) decvec[i][j] = ((decvec[0][j]>>(32-(i+1)*Bgbit)) & mask) - (1U<<(Bgbit-1));
+            for(int j = 0; j<N; j++) decvec[i+l][j] = ((decvec[l][j]>>(32-(i+1)*Bgbit)) & mask) - (1U<<(Bgbit-1));
         }
     }
 
