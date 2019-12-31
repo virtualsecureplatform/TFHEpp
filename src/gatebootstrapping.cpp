@@ -3,11 +3,12 @@
 #include <params.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>
+#include <utils.hpp>
 
 namespace TFHEpp {
 using namespace std;
 template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void PolynomialMulByXai(array<T, N> &res, array<T, N> &poly, const T a)
+inline void PolynomialMulByXai(array<T, N> &res, const array<T, N> &poly, const T a)
 {
     if (a == 0)
         return;
@@ -21,14 +22,14 @@ inline void PolynomialMulByXai(array<T, N> &res, array<T, N> &poly, const T a)
         for (int i = aa; i < N; i++) res[i] = -poly[i - aa];
     }
 }
-void PolynomialMulByXailvl1(Polynomiallvl1 &res, Polynomiallvl1 &poly,
+void PolynomialMulByXailvl1(Polynomiallvl1 &res,const Polynomiallvl1 &poly,
                             const uint32_t a)
 {
     PolynomialMulByXai<uint32_t, DEF_N>(res, poly, a);
 }
 
 template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void PolynomialMulByXaiMinusOne(array<T, N> &res, array<T, N> &poly,
+inline void PolynomialMulByXaiMinusOne(array<T, N> &res, const array<T, N> &poly,
                                        const T a)
 {
     if (a == 0)
@@ -45,7 +46,7 @@ inline void PolynomialMulByXaiMinusOne(array<T, N> &res, array<T, N> &poly,
 }
 
 inline void PolynomialMulByXaiMinusOnelvl1(Polynomiallvl1 &res,
-                                           Polynomiallvl1 &poly,
+                                           const Polynomiallvl1 &poly,
                                            const uint32_t a)
 {
     PolynomialMulByXaiMinusOne<uint32_t, DEF_N>(res, poly, a);
@@ -68,14 +69,19 @@ inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara)
 
 inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
                                                const TLWElvl0 &tlwe,
-                                               CloudKey &ck)
+                                               const CloudKey &ck)
 {
     TRLWElvl1 acc;
     TRLWElvl1 temp;
+<<<<<<< HEAD
     uint32_t bara = 2 * DEF_N - (tlwe[DEF_n] >> (32 - (DEF_Nbit + 1)));
     RotatedTestVector<uint32_t, DEF_N, DEF_MU>(acc, bara);
+=======
+    uint32_t bara = 2 * DEF_N - modSwitchFromTorus32<2*DEF_N>(tlwe[DEF_n]);
+    RotatedTestVector<uint32_t, DEF_N>(acc, bara);
+>>>>>>> master
     for (int i = 0; i < DEF_n; i++) {
-        bara = (tlwe[i] >> (32 - (DEF_Nbit + 1)));
+        bara =  modSwitchFromTorus32<2*DEF_N>(tlwe[i]);
         if (bara == 0) continue;
         PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1], bara);
@@ -88,7 +94,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, CloudKey &ck)
+void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const CloudKey &ck)
 {
     TLWElvl1 tlwelvl1;
     GateBootstrappingTLWE2TLWEFFTlvl01(tlwelvl1, tlwe, ck);

@@ -1,9 +1,8 @@
 #include <cassert>
+#include <iostream>
 #include <random>
 #include <tfhe++.hpp>
 #include <vector>
-
-#include <iostream>
 
 using namespace TFHEpp;
 

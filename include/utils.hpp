@@ -3,9 +3,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <random>
-
 #include <params.hpp>
+#include <random>
 
 namespace TFHEpp {
 using namespace std;
@@ -32,6 +31,15 @@ inline int64_t gaussian64(int64_t center, double stdev) {
     int64_t ival = (int64_t) val;
     //printf("ival: %ld\n", ival);
     return ival+center;    
+}
+
+template <uint32_t Msize = 2*DEF_N>
+inline uint32_t modSwitchFromTorus32(uint32_t phase){
+    uint64_t interv = ((1UL<<63)/Msize)*2; // width of each intervall
+    uint64_t half_interval = interv/2; // begin of the first intervall
+    uint64_t phase64 = (uint64_t(phase)<<32) + half_interval;
+    //floor to the nearest multiples of interv
+    return static_cast<uint32_t>(phase64/interv);
 }
 
 template <uint32_t N>

@@ -1,13 +1,12 @@
 #include <array>
 #include <cstdint>
-#include <random>
-#include <type_traits>
-#include <vector>
-
 #include <key.hpp>
 #include <limits>
 #include <params.hpp>
+#include <random>
+#include <type_traits>
 #include <utils.hpp>
+#include <vector>
 
 namespace TFHEpp {
 using namespace std;

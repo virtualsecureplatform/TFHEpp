@@ -1,9 +1,8 @@
+#include <array>
 #include <mulfft.hpp>
 #include <params.hpp>
 #include <trlwe.hpp>
 #include <utils.hpp>
-
-#include <array>
 
 namespace TFHEpp {
 
@@ -89,7 +88,7 @@ inline void DecompositionFFTlvl1(DecomposedTRLWEInFDlvl1 &decvecfft,
     for (int i = 0; i < 2 * DEF_l; i++) TwistIFFTlvl1(decvecfft[i], decvec[i]);
 }
 
-void trgswfftExternalProductlvl1(TRLWElvl1 &trlwe, const TRGSWFFTlvl1 trgswfft)
+void trgswfftExternalProductlvl1(TRLWElvl1 &trlwe, const TRGSWFFTlvl1 &trgswfft)
 {
     DecomposedTRLWEInFDlvl1 decvecfft;
     DecompositionFFTlvl1(decvecfft, trlwe);

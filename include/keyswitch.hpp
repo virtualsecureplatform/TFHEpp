@@ -7,5 +7,5 @@ namespace TFHEpp {
 using namespace std;
 
 void IdentityKeySwitchlvl10(TLWElvl0 &res, TLWElvl1 &tlwe,
-                            KeySwitchingKey &ksk);
+                            const KeySwitchingKey &ksk);
 }  // namespace TFHEpp
