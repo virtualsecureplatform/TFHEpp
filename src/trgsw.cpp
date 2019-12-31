@@ -29,12 +29,11 @@ namespace TFHEpp{
     template<typename T = uint32_t, uint32_t N = DEF_N, uint32_t l = DEF_l, uint32_t Bgbit = DEF_Bgbit>
     inline void Decomposition(array<array<T,N>,2*l> &decvec, const array<array<T,N>,2> &trlwe, const T offset){
         const T mask = static_cast<T>((1<<Bgbit) - 1);
-        for(int i = 0;i<N;i++) decvec[0][i] = trlwe[0][i] + offset;
-        for(int i = 0;i<N;i++) decvec[l][i] = trlwe[1][i] + offset;
+        for(int i = 0;i<N;i++) {decvec[0][i] = trlwe[0][i] + offset; decvec[l][i] = trlwe[1][i] + offset;}
 
+        const uint32_t halfBg = (1U<<(Bgbit-1));
         for(int i = l-1; i>=0; i--){
-            for(int j = 0; j<N; j++) decvec[i][j] = ((decvec[0][j]>>(32-(i+1)*Bgbit)) & mask) - (1U<<(Bgbit-1));
-            for(int j = 0; j<N; j++) decvec[i+l][j] = ((decvec[l][j]>>(32-(i+1)*Bgbit)) & mask) - (1U<<(Bgbit-1));
+            for(int j = 0; j<N; j++) {decvec[i][j] = ((decvec[0][j]>>(32-(i+1)*Bgbit)) & mask) - halfBg; decvec[i+l][j] = ((decvec[l][j]>>(32-(i+1)*Bgbit)) & mask) - halfBg;}
         }
     }
 
@@ -45,7 +44,7 @@ namespace TFHEpp{
     }
 
     inline void Decompositionlvl1(array<array<uint32_t,DEF_N>,2*DEF_l> &decvec, const array<array<uint32_t,DEF_N>,2> &trlwe){
-        constexpr uint32_t offset = offsetgenlvl1();
+        static constexpr uint32_t offset = offsetgenlvl1();
         Decomposition<uint32_t,DEF_N,DEF_l,DEF_Bgbit>(decvec,trlwe,offset);
     }
 
@@ -55,7 +54,7 @@ namespace TFHEpp{
         for(int i =0;i<2*DEF_l;i++) TwistIFFTlvl1(decvecfft[i],decvec[i]);
     }
 
-    void trgswfftExternalProductlvl1(array<array<uint32_t,DEF_N>,2> &restrlwe, const array<array<array<double,DEF_N>,2>,2*DEF_l> trgswfft, const array<array<uint32_t,DEF_N>,2> &trlwe){
+    void trgswfftExternalProductlvl1(array<array<uint32_t,DEF_N>,2> &trlwe, const array<array<array<double,DEF_N>,2>,2*DEF_l> trgswfft){
         array<array<double,DEF_N>,2*DEF_l> decvecfft;
         DecompositionFFTlvl1(decvecfft,trlwe);
         array<array<double,DEF_N>,2> restrlwefft;
@@ -65,7 +64,7 @@ namespace TFHEpp{
             FMAInFD<DEF_N>(restrlwefft[0],decvecfft[i],trgswfft[i][0]);
             FMAInFD<DEF_N>(restrlwefft[1],decvecfft[i],trgswfft[i][1]);
         }
-        TwistFFTlvl1(restrlwe[0],restrlwefft[0]);
-        TwistFFTlvl1(restrlwe[1],restrlwefft[1]);
+        TwistFFTlvl1(trlwe[0],restrlwefft[0]);
+        TwistFFTlvl1(trlwe[1],restrlwefft[1]);
     }
 }

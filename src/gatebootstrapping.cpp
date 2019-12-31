@@ -52,7 +52,7 @@ namespace TFHEpp{
         }
     }
     
-    void GateBootstrappingTLWE2TLWEFFTlvl01(array<uint32_t,DEF_N+1> &res, const array<uint32_t,DEF_n+1> &tlwe,CloudKey &ck){
+    inline void GateBootstrappingTLWE2TLWEFFTlvl01(array<uint32_t,DEF_N+1> &res, const array<uint32_t,DEF_n+1> &tlwe,CloudKey &ck){
         array<array<uint32_t,DEF_N>,2> acc;
         array<array<uint32_t,DEF_N>,2> temp;
         uint32_t bara = 2*DEF_N - (tlwe[DEF_n] >> (32 - (DEF_Nbit+1)));
@@ -62,9 +62,8 @@ namespace TFHEpp{
             if(bara == 0) continue;
             PolynomialMulByXaiMinusOnelvl1(temp[0],acc[0],bara);
             PolynomialMulByXaiMinusOnelvl1(temp[1],acc[1],bara);
-            trgswfftExternalProductlvl1(temp,ck.bkfftlvl01[i],temp);
-            for(int i = 0;i<DEF_N;i++) acc[0][i] += temp[0][i];
-            for(int i = 0;i<DEF_N;i++) acc[1][i] += temp[1][i];
+            trgswfftExternalProductlvl1(temp,ck.bkfftlvl01[i]);
+            for(int i = 0;i<DEF_N;i++) {acc[0][i] += temp[0][i]; acc[1][i] += temp[1][i];}
         }
         SampleExtractIndexlvl1(res,acc,0);
     }

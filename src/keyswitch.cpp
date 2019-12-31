@@ -9,7 +9,7 @@ namespace TFHEpp{
         for(int i = 0;i<DEF_n;i++){
             const uint32_t aibar = tlwe[i] + prec_offset;
             for(int j = 0;j<DEF_t;j++){
-                uint32_t aij = (aibar>>(32-(j+1)*DEF_basebit)) & mask;
+                const uint32_t aij = (aibar>>(32-(j+1)*DEF_basebit)) & mask;
                 if(aibar!=0) for(int k = 0;k<=DEF_n;k++) res[k] -= ksk[i][j][aij][k];
             }
         }

@@ -23,9 +23,8 @@ int main(){
         array<array<uint32_t,DEF_N>,2> c = trlweSymEncryptlvl1(pmu,DEF_αbk,key.lvl1);
 
         array<array<array<double,DEF_N>,2>,2*DEF_l> trgswfft = trgswfftSymEncryptlvl1(1,DEF_αbk,key.lvl1);
-        array<array<uint32_t,DEF_N>,2> res;
-        trgswfftExternalProductlvl1(res,trgswfft,c);
-        array<bool,DEF_N> p2 = trlweSymDecryptlvl1(res,key.lvl1);
+        trgswfftExternalProductlvl1(c,trgswfft);
+        array<bool,DEF_N> p2 = trlweSymDecryptlvl1(c,key.lvl1);
         for(int i = 0;i<DEF_N;i++) assert(p[i] == p2[i]);
     }
     cout<<"Passed"<<endl;
@@ -41,9 +40,8 @@ int main(){
         array<array<uint32_t,DEF_N>,2> c = trlweSymEncryptlvl1(pmu,DEF_αbk,key.lvl1);
 
         array<array<array<double,DEF_N>,2>,2*DEF_l> trgswfft = trgswfftSymEncryptlvl1(-1,DEF_αbk,key.lvl1);
-        array<array<uint32_t,DEF_N>,2> res;
-        trgswfftExternalProductlvl1(res,trgswfft,c);
-        array<bool,DEF_N> p2 = trlweSymDecryptlvl1(res,key.lvl1);
+        trgswfftExternalProductlvl1(c,trgswfft);
+        array<bool,DEF_N> p2 = trlweSymDecryptlvl1(c,key.lvl1);
         for(int i = 0;i<DEF_N;i++) assert(p[i] == !p2[i]);
     }
     cout<<"Passed"<<endl;
