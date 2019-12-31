@@ -1,7 +1,8 @@
 #include <cloudkey.hpp>
 
 namespace TFHEpp {
-void IdentityKeySwitchlvl10(TLWElvl0 &res, TLWElvl1 &tlwe, KeySwitchingKey &ksk)
+void IdentityKeySwitchlvl10(TLWElvl0 &res, TLWElvl1 &tlwe,
+                            const KeySwitchingKey &ksk)
 {
     const uint32_t prec_offset = 1 << (32 - (1 + DEF_basebit * DEF_t));
     const uint32_t mask = (1U << DEF_basebit) - 1;

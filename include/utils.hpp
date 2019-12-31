@@ -3,9 +3,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <random>
-
 #include <params.hpp>
+#include <random>
 
 namespace TFHEpp {
 using namespace std;
