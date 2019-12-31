@@ -68,7 +68,7 @@ inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara)
 
 inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
                                                const TLWElvl0 &tlwe,
-                                               CloudKey &ck)
+                                               const CloudKey &ck)
 {
     TRLWElvl1 acc;
     TRLWElvl1 temp;
@@ -88,7 +88,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, CloudKey &ck)
+void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const CloudKey &ck)
 {
     TLWElvl1 tlwelvl1;
     GateBootstrappingTLWE2TLWEFFTlvl01(tlwelvl1, tlwe, ck);
