@@ -8,7 +8,7 @@
 namespace TFHEpp {
 using namespace std;
 template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void PolynomialMulByXai(array<T, N> &res, array<T, N> &poly, const T a)
+inline void PolynomialMulByXai(array<T, N> &res, const array<T, N> &poly, const T a)
 {
     if (a == 0)
         return;
@@ -22,14 +22,14 @@ inline void PolynomialMulByXai(array<T, N> &res, array<T, N> &poly, const T a)
         for (int i = aa; i < N; i++) res[i] = -poly[i - aa];
     }
 }
-void PolynomialMulByXailvl1(Polynomiallvl1 &res, Polynomiallvl1 &poly,
+void PolynomialMulByXailvl1(Polynomiallvl1 &res,const Polynomiallvl1 &poly,
                             const uint32_t a)
 {
     PolynomialMulByXai<uint32_t, DEF_N>(res, poly, a);
 }
 
 template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void PolynomialMulByXaiMinusOne(array<T, N> &res, array<T, N> &poly,
+inline void PolynomialMulByXaiMinusOne(array<T, N> &res, const array<T, N> &poly,
                                        const T a)
 {
     if (a == 0)
@@ -46,7 +46,7 @@ inline void PolynomialMulByXaiMinusOne(array<T, N> &res, array<T, N> &poly,
 }
 
 inline void PolynomialMulByXaiMinusOnelvl1(Polynomiallvl1 &res,
-                                           Polynomiallvl1 &poly,
+                                           const Polynomiallvl1 &poly,
                                            const uint32_t a)
 {
     PolynomialMulByXaiMinusOne<uint32_t, DEF_N>(res, poly, a);
