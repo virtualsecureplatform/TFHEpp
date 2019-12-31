@@ -73,7 +73,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
     TRLWElvl1 acc;
     TRLWElvl1 temp;
     uint32_t bara = 2 * DEF_N - (tlwe[DEF_n] >> (32 - (DEF_Nbit + 1)));
-    RotatedTestVector<uint32_t, DEF_N>(acc, bara);
+    RotatedTestVector<uint32_t, DEF_N, DEF_MU>(acc, bara);
     for (int i = 0; i < DEF_n; i++) {
         bara = (tlwe[i] >> (32 - (DEF_Nbit + 1)));
         if (bara == 0) continue;

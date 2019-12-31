@@ -35,6 +35,7 @@ using Keylvl2 = array<uint64_t, DEF_nbar>;
 
 using TLWElvl0 = array<uint32_t, DEF_n + 1>;
 using TLWElvl1 = array<uint32_t, DEF_N + 1>;
+using TLWElvl2 = array<uint64_t, DEF_nbar + 1>;
 
 using Polynomiallvl1 = array<uint32_t, DEF_N>;
 using Polynomiallvl2 = array<uint64_t, DEF_nbar>;
@@ -42,15 +43,22 @@ using PolynomialInFDlvl1 = array<double, DEF_N>;
 using PolynomialInFDlvl2 = array<double, DEF_nbar>;
 
 using TRLWElvl1 = array<Polynomiallvl1, 2>;
+using TRLWElvl2 = array<Polynomiallvl2, 2>;
 using TRLWEInFDlvl1 = array<PolynomialInFDlvl1, 2>;
+using TRLWEInFDlvl2 = array<PolynomialInFDlvl2, 2>;
 using DecomposedTRLWElvl1 = array<Polynomiallvl1, 2 * DEF_l>;
+using DecomposedTRLWElvl2 = array<Polynomiallvl2, 2 * DEF_lbar>;
 using DecomposedTRLWEInFDlvl1 = array<PolynomialInFDlvl1, 2 * DEF_l>;
+using DecomposedTRLWEInFDlvl2 = array<PolynomialInFDlvl2, 2 * DEF_lbar>;
 
 using TRGSWlvl1 = array<TRLWElvl1, 2 * DEF_l>;
+using TRGSWlvl2 = array<TRLWElvl2, 2 * DEF_lbar>;
 using TRGSWFFTlvl1 = array<array<PolynomialInFDlvl1, 2>, 2 * DEF_l>;
+using TRGSWFFTlvl2 = array<array<PolynomialInFDlvl2, 2>, 2 * DEF_lbar>;
 
 using KeySwitchingKey =
     array<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>, DEF_N>;
+using PrivKeySwitchKey = array<array<array<array<TRLWElvl1,(1 << DEF_basebitlvl21) - 1>, DEF_tbar>, DEF_nbar+1>, 2>;
 
 struct lweParams {
     uint32_t n;

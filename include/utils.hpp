@@ -25,6 +25,15 @@ inline uint32_t gaussian32(uint32_t message, double α)
     return message + dtot32(err);
 }
 
+inline int64_t gaussian64(int64_t center, double stdev) {
+    static const double _2p64 = pow(2.,64);
+    normal_distribution<double> distribution(0.,1.0);
+    double val = stdev*distribution(generator)*_2p64;
+    int64_t ival = (int64_t) val;
+    //printf("ival: %ld\n", ival);
+    return ival+center;    
+}
+
 template <uint32_t N>
 inline void MulInFD(array<double, N> &res, const array<double, N> &a,
                     const array<double, N> &b)
