@@ -77,7 +77,8 @@ inline void Decompositionlvl2(DecomposedTRLWElvl2 &decvec,
                               const TRLWElvl2 &trlwe)
 {
     static constexpr uint64_t offset = offsetgenlvl2();
-    Decomposition<uint64_t, DEF_nbar, DEF_lbar, DEF_Bgbitbar>(decvec, trlwe, offset);
+    Decomposition<uint64_t, DEF_nbar, DEF_lbar, DEF_Bgbitbar>(decvec, trlwe,
+                                                              offset);
 }
 
 inline void DecompositionFFTlvl1(DecomposedTRLWEInFDlvl1 &decvecfft,

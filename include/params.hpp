@@ -58,7 +58,10 @@ using TRGSWFFTlvl2 = array<array<PolynomialInFDlvl2, 2>, 2 * DEF_lbar>;
 
 using KeySwitchingKey =
     array<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>, DEF_N>;
-using PrivKeySwitchKey = array<array<array<array<TRLWElvl1,(1 << DEF_basebitlvl21) - 1>, DEF_tbar>, DEF_nbar+1>, 2>;
+using PrivKeySwitchKey =
+    array<array<array<array<TRLWElvl1, (1 << DEF_basebitlvl21) - 1>, DEF_tbar>,
+                DEF_nbar + 1>,
+          2>;
 
 struct lweParams {
     uint32_t n;

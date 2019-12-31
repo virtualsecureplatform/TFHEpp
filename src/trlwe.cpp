@@ -8,23 +8,17 @@ namespace TFHEpp {
 using namespace std;
 static random_device engine;
 
-TRLWElvl1 trlweSymEncryptZerolvl1(const double α,
-                                                         const Keylvl1 &key)
+TRLWElvl1 trlweSymEncryptZerolvl1(const double α, const Keylvl1 &key)
 {
     uniform_int_distribution<uint32_t> Torus32dist(0, UINT32_MAX);
-<<<<<<< HEAD
     TRLWElvl1 c;
-=======
-    array<array<uint32_t, DEF_N>, 2> c;
->>>>>>> master
     for (uint32_t &i : c[0]) i = Torus32dist(engine);
     PolyMullvl1(c[1], c[0], key);
     for (uint32_t &i : c[1]) i += gaussian32(0, α);
     return c;
 }
 
-TRLWElvl2 trlweSymEncryptZerolvl2(const double α,
-                                                         const Keylvl2 &key)
+TRLWElvl2 trlweSymEncryptZerolvl2(const double α, const Keylvl2 &key)
 {
     uniform_int_distribution<uint64_t> Torus64dist(0, UINT64_MAX);
     TRLWElvl2 c;
@@ -34,8 +28,8 @@ TRLWElvl2 trlweSymEncryptZerolvl2(const double α,
     return c;
 }
 
-TRLWElvl1 trlweSymEncryptlvl1(
-    const array<uint32_t, DEF_N> &p, const double α, const Keylvl1 &key)
+TRLWElvl1 trlweSymEncryptlvl1(const array<uint32_t, DEF_N> &p, const double α,
+                              const Keylvl1 &key)
 {
     TRLWElvl1 c;
     c = trlweSymEncryptZerolvl1(α, key);
@@ -43,8 +37,8 @@ TRLWElvl1 trlweSymEncryptlvl1(
     return c;
 }
 
-TRLWElvl2 trlweSymEncryptlvl2(
-    const array<uint64_t, DEF_nbar> &p, const double α, const Keylvl2 &key)
+TRLWElvl2 trlweSymEncryptlvl2(const array<uint64_t, DEF_nbar> &p,
+                              const double α, const Keylvl2 &key)
 {
     TRLWElvl2 c;
     c = trlweSymEncryptZerolvl2(α, key);
