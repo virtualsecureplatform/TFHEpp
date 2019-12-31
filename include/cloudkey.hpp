@@ -15,7 +15,7 @@ struct CloudKey {
             for (int j = 0; j < DEF_t; j++)
                 for (uint32_t k = 0; k < (1 << DEF_basebit) - 1; k++)
                     ksk[i][j][k] = tlweSymEncryptlvl0(
-                        sk.key.lvl1[i] * (k+1) *
+                        sk.key.lvl1[i] * (k + 1) *
                             (1U << (32 - (j + 1) * DEF_basebit)),
                         DEF_αks, sk.key.lvl0);
         for (int i = 0; i < DEF_n; i++)

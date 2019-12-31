@@ -13,7 +13,8 @@ void IdentityKeySwitchlvl10(TLWElvl0 &res, TLWElvl1 &tlwe,
         for (int j = 0; j < DEF_t; j++) {
             const uint32_t aij = (aibar >> (32 - (j + 1) * DEF_basebit)) & mask;
             if (aij != 0)
-                for (int k = 0; k <= DEF_n; k++) res[k] -= ksk[i][j][aij-1][k];
+                for (int k = 0; k <= DEF_n; k++)
+                    res[k] -= ksk[i][j][aij - 1][k];
         }
     }
 }
