@@ -27,8 +27,8 @@ inline array<T, n + 1> tlweSymEncrypt(const T p, const double α,
     return res;
 }
 
-array<uint32_t, DEF_n + 1> tlweSymEncryptlvl1(const uint32_t p, const double α,
-                                              const array<uint32_t, DEF_n> &key)
+TLWElvl0 tlweSymEncryptlvl0(const uint32_t p, const double α,
+                            const Keylvl0 &key)
 {
     return tlweSymEncrypt<uint32_t, DEF_n>(p, α, key);
 }
@@ -42,27 +42,24 @@ bool tlweSymDecrypt(const array<T, n + 1> &c, const array<T, n> &key)
     return res;
 }
 
-bool tlweSymDecryptlvl1(const array<uint32_t, DEF_n + 1> &c,
-                        const array<uint32_t, DEF_n> &key)
+bool tlweSymDecryptlvl0(const TLWElvl0 &c, const Keylvl0 &key)
 {
     return tlweSymDecrypt<uint32_t, DEF_n>(c, key);
 }
 
-vector<array<uint32_t, DEF_n + 1>> bootsSymEncrypt(const vector<bool> &p,
-                                                   const SecretKey &sk)
+vector<TLWElvl0> bootsSymEncrypt(const vector<bool> &p, const SecretKey &sk)
 {
-    vector<array<uint32_t, DEF_n + 1>> c(p.size());
+    vector<TLWElvl0> c(p.size());
     for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncryptlvl1(p[i] ? DEF_MU : -DEF_MU, DEF_α, sk.key.lvl0);
+        c[i] = tlweSymEncryptlvl0(p[i] ? DEF_MU : -DEF_MU, DEF_α, sk.key.lvl0);
     return c;
 }
 
-vector<bool> bootsSymDecrypt(const vector<array<uint32_t, DEF_n + 1>> &c,
-                             const SecretKey &sk)
+vector<bool> bootsSymDecrypt(const vector<TLWElvl0> &c, const SecretKey &sk)
 {
     vector<bool> p(c.size());
     for (int i = 0; i < p.size(); i++)
-        p[i] = tlweSymDecryptlvl1(c[i], sk.key.lvl0);
+        p[i] = tlweSymDecryptlvl0(c[i], sk.key.lvl0);
     return p;
 }
 }  // namespace TFHEpp

@@ -7,14 +7,12 @@
 
 namespace TFHEpp {
 
-inline array<array<array<uint32_t, DEF_N>, 2>, 2 * DEF_l> trgswSymEncryptlvl1(
-    int32_t p, double α, array<uint32_t, DEF_N> &key)
+inline TRGSWlvl1 trgswSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
 {
     array<uint32_t, DEF_l> h;
     for (int i = 0; i < DEF_l; i++) h[i] = 1U << (32 - (i + 1) * DEF_Bgbit);
-    array<array<array<uint32_t, DEF_N>, 2>, 2 * DEF_l> trgsw;
-    for (array<array<uint32_t, DEF_N>, 2> &trlwe : trgsw)
-        trlwe = trlweSymEncryptZerolvl1(α, key);
+    TRGSWlvl1 trgsw;
+    for (TRLWElvl1 &trlwe : trgsw) trlwe = trlweSymEncryptZerolvl1(α, key);
     for (int i = 0; i < DEF_l; i++) {
         trgsw[i][0][0] += static_cast<uint32_t>(p) * h[i];
         trgsw[i + DEF_l][1][0] += static_cast<uint32_t>(p) * h[i];
@@ -22,12 +20,10 @@ inline array<array<array<uint32_t, DEF_N>, 2>, 2 * DEF_l> trgswSymEncryptlvl1(
     return trgsw;
 }
 
-array<array<array<double, DEF_N>, 2>, 2 * DEF_l> trgswfftSymEncryptlvl1(
-    int32_t p, double α, array<uint32_t, DEF_N> &key)
+TRGSWFFTlvl1 trgswfftSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
 {
-    array<array<array<uint32_t, DEF_N>, 2>, 2 *DEF_l> trgsw =
-        trgswSymEncryptlvl1(p, α, key);
-    array<array<array<double, DEF_N>, 2>, 2 * DEF_l> trgswfft;
+    TRGSWlvl1 trgsw = trgswSymEncryptlvl1(p, α, key);
+    TRGSWFFTlvl1 trgswfft;
     for (int i = 0; i < 2 * DEF_l; i++)
         for (int j = 0; j < 2; j++) TwistIFFTlvl1(trgswfft[i][j], trgsw[i][j]);
     return trgswfft;
@@ -63,29 +59,26 @@ constexpr uint32_t offsetgenlvl1()
     return offset;
 }
 
-inline void Decompositionlvl1(array<array<uint32_t, DEF_N>, 2 * DEF_l> &decvec,
-                              const array<array<uint32_t, DEF_N>, 2> &trlwe)
+inline void Decompositionlvl1(DecomposedTRLWElvl1 &decvec,
+                              const TRLWElvl1 &trlwe)
 {
     static constexpr uint32_t offset = offsetgenlvl1();
     Decomposition<uint32_t, DEF_N, DEF_l, DEF_Bgbit>(decvec, trlwe, offset);
 }
 
-inline void DecompositionFFTlvl1(
-    array<array<double, DEF_N>, 2 * DEF_l> &decvecfft,
-    const array<array<uint32_t, DEF_N>, 2> &trlwe)
+inline void DecompositionFFTlvl1(DecomposedTRLWEInFDlvl1 &decvecfft,
+                                 const TRLWElvl1 &trlwe)
 {
-    array<array<uint32_t, DEF_N>, 2 * DEF_l> decvec;
+    DecomposedTRLWElvl1 decvec;
     Decompositionlvl1(decvec, trlwe);
     for (int i = 0; i < 2 * DEF_l; i++) TwistIFFTlvl1(decvecfft[i], decvec[i]);
 }
 
-void trgswfftExternalProductlvl1(
-    array<array<uint32_t, DEF_N>, 2> &trlwe,
-    const array<array<array<double, DEF_N>, 2>, 2 * DEF_l> trgswfft)
+void trgswfftExternalProductlvl1(TRLWElvl1 &trlwe, const TRGSWFFTlvl1 trgswfft)
 {
-    array<array<double, DEF_N>, 2 * DEF_l> decvecfft;
+    DecomposedTRLWEInFDlvl1 decvecfft;
     DecompositionFFTlvl1(decvecfft, trlwe);
-    array<array<double, DEF_N>, 2> restrlwefft;
+    TRLWEInFDlvl1 restrlwefft;
     MulInFD<DEF_N>(restrlwefft[0], decvecfft[0], trgswfft[0][0]);
     MulInFD<DEF_N>(restrlwefft[1], decvecfft[0], trgswfft[0][1]);
     for (int i = 1; i < 2 * DEF_l; i++) {

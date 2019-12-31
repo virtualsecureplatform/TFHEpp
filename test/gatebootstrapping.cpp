@@ -17,11 +17,11 @@ int main()
     CloudKey ck(sk);
     for (int test = 0; test < num_test; test++) {
         bool p = binary(engine) > 0;
-        array<uint32_t, DEF_n + 1> tlwe =
-            tlweSymEncryptlvl1(p ? DEF_MU : -DEF_MU, DEF_α, sk.key.lvl0);
-        array<uint32_t, DEF_n + 1> bootedtlwe;
+        TLWElvl0 tlwe =
+            tlweSymEncryptlvl0(p ? DEF_MU : -DEF_MU, DEF_α, sk.key.lvl0);
+        TLWElvl0 bootedtlwe;
         GateBootstrapping(bootedtlwe, tlwe, ck);
-        bool p2 = tlweSymDecryptlvl1(bootedtlwe, sk.key.lvl0);
+        bool p2 = tlweSymDecryptlvl0(bootedtlwe, sk.key.lvl0);
         assert(p == p2);
     }
     cout << "Passed" << endl;

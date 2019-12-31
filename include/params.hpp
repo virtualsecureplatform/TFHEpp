@@ -1,8 +1,11 @@
 #pragma once
+#include <array>
 #include <cmath>
 #include <cstdint>
 
 namespace TFHEpp {
+using namespace std;
+
 const uint32_t DEF_n = 500;
 const double DEF_α = 2.44e-5;
 const uint32_t DEF_Nbit = 10;
@@ -25,6 +28,29 @@ const double DEF_αbklvl02 = std::pow(2.0, -44);
 const uint32_t DEF_tbar = 10;
 const uint32_t DEF_basebitlvl21 = 3;
 const double DEF_αprivks = std::pow(2, -31);
+
+using Keylvl0 = array<uint32_t, DEF_n>;
+using Keylvl1 = array<uint32_t, DEF_N>;
+using Keylvl2 = array<uint64_t, DEF_nbar>;
+
+using TLWElvl0 = array<uint32_t, DEF_n + 1>;
+using TLWElvl1 = array<uint32_t, DEF_N + 1>;
+
+using Polynomiallvl1 = array<uint32_t, DEF_N>;
+using Polynomiallvl2 = array<uint64_t, DEF_nbar>;
+using PolynomialInFDlvl1 = array<double, DEF_N>;
+using PolynomialInFDlvl2 = array<double, DEF_nbar>;
+
+using TRLWElvl1 = array<Polynomiallvl1, 2>;
+using TRLWEInFDlvl1 = array<PolynomialInFDlvl1, 2>;
+using DecomposedTRLWElvl1 = array<Polynomiallvl1, 2 * DEF_l>;
+using DecomposedTRLWEInFDlvl1 = array<PolynomialInFDlvl1, 2 * DEF_l>;
+
+using TRGSWlvl1 = array<TRLWElvl1, 2 * DEF_l>;
+using TRGSWFFTlvl1 = array<array<PolynomialInFDlvl1, 2>, 2 * DEF_l>;
+
+using KeySwitchingKey =
+    array<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>, DEF_N>;
 
 struct lweParams {
     uint32_t n;

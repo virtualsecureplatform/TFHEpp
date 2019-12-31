@@ -17,11 +17,11 @@ int main()
 
     cout << "Start LVL1 test." << endl;
     for (int test; test < num_test; test++) {
-        array<uint32_t, DEF_N> a;
+        Polynomiallvl1 a;
         for (uint32_t &i : a) i = Torus32dist(engine);
-        array<double, DEF_N> resfft;
+        PolynomialInFDlvl1 resfft;
         TFHEpp::TwistIFFTlvl1(resfft, a);
-        array<uint32_t, DEF_N> res;
+        Polynomiallvl1 res;
         TFHEpp::TwistFFTlvl1(res, resfft);
         for (int i = 0; i < DEF_N; i++)
             assert(abs(static_cast<int32_t>(a[i] - res[i])) <= 1);
@@ -35,9 +35,9 @@ int main()
         array<uint32_t, DEF_N> b;
         for (uint32_t &i : b) i = Torus32dist(engine);
 
-        array<uint32_t, DEF_N> polymul;
+        Polynomiallvl1 polymul;
         TFHEpp::PolyMullvl1(polymul, a, b);
-        array<uint32_t, DEF_N> naieve = {};
+        Polynomiallvl1 naieve = {};
         for (int i = 0; i < DEF_N; i++) {
             for (int j = 0; j <= i; j++)
                 naieve[i] += static_cast<int32_t>(a[j]) * b[i - j];
@@ -54,11 +54,11 @@ int main()
 
     cout << "Start LVL2 test." << endl;
     for (int test = 0; test < num_test; test++) {
-        array<uint64_t, DEF_nbar> a;
+        Polynomiallvl2 a;
         for (uint64_t &i : a) i = Torus64dist(engine);
-        array<double, DEF_nbar> resfft;
+        PolynomialInFDlvl2 resfft;
         TFHEpp::TwistIFFTlvl2(resfft, a);
-        array<uint64_t, DEF_nbar> res;
+        Polynomiallvl2 res;
         TFHEpp::TwistFFTlvl2(res, resfft);
         for (int i = 0; i < DEF_N; i++)
             assert(abs(static_cast<int64_t>(a[i] - res[i])) <= (1 << 14));
@@ -66,17 +66,17 @@ int main()
     cout << "FFT Passed" << endl;
 
     for (int test = 0; test < num_test; test++) {
-        array<uint64_t, DEF_nbar> a;
+        Polynomiallvl2 a;
         for (int i = 0; i < DEF_nbar; i++)
             a[i] = Bgbardist(engine) - DEF_Bgbar / 2;
         for (uint64_t &i : a) i = Bgbardist(engine) - DEF_Bgbar / 2;
-        array<uint64_t, DEF_nbar> b;
+        Polynomiallvl2 b;
         for (int i = 0; i < DEF_nbar; i++) b[i] = Torus64dist(engine);
         for (uint64_t i : b) i = Torus64dist(engine);
 
-        array<uint64_t, DEF_nbar> polymul;
+        Polynomiallvl2 polymul;
         TFHEpp::PolyMullvl2(polymul, a, b);
-        array<uint64_t, DEF_nbar> naieve = {};
+        Polynomiallvl2 naieve = {};
         for (int i = 0; i < DEF_nbar; i++) {
             for (int j = 0; j <= i; j++)
                 naieve[i] += static_cast<int64_t>(a[j]) * b[i - j];

@@ -21,8 +21,8 @@ inline void PolynomialMulByXai(array<T, N> &res, array<T, N> &poly, const T a)
         for (int i = aa; i < N; i++) res[i] = -poly[i - aa];
     }
 }
-void PolynomialMulByXailvl1(array<uint32_t, DEF_N> &res,
-                            array<uint32_t, DEF_N> &poly, const uint32_t a)
+void PolynomialMulByXailvl1(Polynomiallvl1 &res, Polynomiallvl1 &poly,
+                            const uint32_t a)
 {
     PolynomialMulByXai<uint32_t, DEF_N>(res, poly, a);
 }
@@ -44,8 +44,8 @@ inline void PolynomialMulByXaiMinusOne(array<T, N> &res, array<T, N> &poly,
     }
 }
 
-inline void PolynomialMulByXaiMinusOnelvl1(array<uint32_t, DEF_N> &res,
-                                           array<uint32_t, DEF_N> &poly,
+inline void PolynomialMulByXaiMinusOnelvl1(Polynomiallvl1 &res,
+                                           Polynomiallvl1 &poly,
                                            const uint32_t a)
 {
     PolynomialMulByXaiMinusOne<uint32_t, DEF_N>(res, poly, a);
@@ -66,12 +66,12 @@ inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara)
     }
 }
 
-inline void GateBootstrappingTLWE2TLWEFFTlvl01(
-    array<uint32_t, DEF_N + 1> &res, const array<uint32_t, DEF_n + 1> &tlwe,
-    CloudKey &ck)
+inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
+                                               const TLWElvl0 &tlwe,
+                                               CloudKey &ck)
 {
-    array<array<uint32_t, DEF_N>, 2> acc;
-    array<array<uint32_t, DEF_N>, 2> temp;
+    TRLWElvl1 acc;
+    TRLWElvl1 temp;
     uint32_t bara = 2 * DEF_N - (tlwe[DEF_n] >> (32 - (DEF_Nbit + 1)));
     RotatedTestVector<uint32_t, DEF_N>(acc, bara);
     for (int i = 0; i < DEF_n; i++) {
@@ -88,10 +88,9 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-void GateBootstrapping(array<uint32_t, DEF_n + 1> &res,
-                       const array<uint32_t, DEF_n + 1> &tlwe, CloudKey &ck)
+void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, CloudKey &ck)
 {
-    array<uint32_t, DEF_N + 1> tlwelvl1;
+    TLWElvl1 tlwelvl1;
     GateBootstrappingTLWE2TLWEFFTlvl01(tlwelvl1, tlwe, ck);
     IdentityKeySwitchlvl10(res, tlwelvl1, ck.ksk);
 }

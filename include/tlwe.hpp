@@ -10,12 +10,9 @@
 namespace TFHEpp {
 using namespace std;
 
-array<uint32_t, DEF_n + 1> tlweSymEncryptlvl1(
-    const uint32_t p, const double α, const array<uint32_t, DEF_n> &key);
-bool tlweSymDecryptlvl1(const array<uint32_t, DEF_n + 1> &c,
-                        const array<uint32_t, DEF_n> &key);
-vector<array<uint32_t, DEF_n + 1>> bootsSymEncrypt(const vector<bool> &p,
-                                                   const SecretKey &sk);
-vector<bool> bootsSymDecrypt(const vector<array<uint32_t, DEF_n + 1>> &c,
-                             const SecretKey &sk);
+TLWElvl0 tlweSymEncryptlvl0(const uint32_t p, const double α,
+                            const Keylvl0 &key);
+bool tlweSymDecryptlvl0(const TLWElvl0 &c, const Keylvl0 &key);
+vector<TLWElvl0> bootsSymEncrypt(const vector<bool> &p, const SecretKey &sk);
+vector<bool> bootsSymDecrypt(const vector<TLWElvl0> &c, const SecretKey &sk);
 }  // namespace TFHEpp

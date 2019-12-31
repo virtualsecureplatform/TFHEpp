@@ -6,6 +6,5 @@
 namespace TFHEpp {
 using namespace std;
 
-void GateBootstrapping(array<uint32_t, DEF_n + 1> &res,
-                       const array<uint32_t, DEF_n + 1> &tlwe, CloudKey &ck);
+void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, CloudKey &ck);
 }  // namespace TFHEpp

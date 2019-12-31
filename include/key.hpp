@@ -9,9 +9,9 @@
 namespace TFHEpp {
 using namespace std;
 struct lweKey {
-    array<uint32_t, DEF_n> lvl0;
-    array<uint32_t, DEF_N> lvl1;
-    array<uint64_t, DEF_N> lvl2;
+    Keylvl0 lvl0;
+    Keylvl1 lvl1;
+    Keylvl2 lvl2;
     lweKey()
     {
         random_device engine;

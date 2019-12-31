@@ -19,7 +19,7 @@ int main()
 
     vector<bool> p(num_test);
     for (bool i : p) i = binary(engine) > 0;
-    vector<array<uint32_t, DEF_n + 1>> c(num_test);
+    vector<TLWElvl0> c(num_test);
     c = bootsSymEncrypt(p, sk);
     vector<bool> p2(num_test);
     p2 = bootsSymDecrypt(c, sk);

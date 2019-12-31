@@ -4,7 +4,6 @@
 
 namespace TFHEpp {
 using namespace std;
-void HomNAND(array<uint32_t, DEF_n + 1> &res,
-             const array<uint32_t, DEF_n + 1> &ca,
-             const array<uint32_t, DEF_n + 1> &cb, CloudKey ck);
+void HomNAND(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
+             CloudKey ck);
 }  // namespace TFHEpp

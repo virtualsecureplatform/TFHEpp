@@ -9,8 +9,8 @@ namespace TFHEpp {
 using namespace std;
 static random_device engine;
 
-array<array<uint32_t, DEF_N>, 2> trlweSymEncryptZerolvl1(
-    const double α, const array<uint32_t, DEF_N> &key)
+array<array<uint32_t, DEF_N>, 2> trlweSymEncryptZerolvl1(const double α,
+                                                         const Keylvl1 &key)
 {
     uniform_int_distribution<uint32_t> Torus32dist(0, UINT32_MAX);
     array<array<uint32_t, DEF_N>, 2> c;
@@ -21,22 +21,19 @@ array<array<uint32_t, DEF_N>, 2> trlweSymEncryptZerolvl1(
 }
 
 array<array<uint32_t, DEF_N>, 2> trlweSymEncryptlvl1(
-    const array<uint32_t, DEF_N> &p, const double α,
-    const array<uint32_t, DEF_N> &key)
+    const array<uint32_t, DEF_N> &p, const double α, const Keylvl1 &key)
 {
-    array<array<uint32_t, DEF_N>, 2> c;
+    TRLWElvl1 c;
     c = trlweSymEncryptZerolvl1(α, key);
     for (int i = 0; i < DEF_N; i++) c[1][i] += p[i];
     return c;
 }
 
-array<bool, DEF_N> trlweSymDecryptlvl1(
-    const array<array<uint32_t, DEF_N>, 2> &c,
-    const array<uint32_t, DEF_N> &key)
+array<bool, DEF_N> trlweSymDecryptlvl1(const TRLWElvl1 &c, const Keylvl1 &key)
 {
-    array<uint32_t, DEF_N> mulres;
+    Polynomiallvl1 mulres;
     PolyMullvl1(mulres, c[0], key);
-    array<uint32_t, DEF_N> phase = c[1];
+    Polynomiallvl1 phase = c[1];
     for (int i = 0; i < DEF_N; i++) phase[i] -= mulres[i];
 
     array<bool, DEF_N> p;
@@ -54,8 +51,7 @@ inline void SampleExtractIndex(array<T, N + 1> &tlwe,
     tlwe[N] = trlwe[1][index];
 }
 
-void SampleExtractIndexlvl1(array<uint32_t, DEF_N + 1> &tlwe,
-                            const array<array<uint32_t, DEF_N>, 2> &trlwe,
+void SampleExtractIndexlvl1(TLWElvl1 &tlwe, const TRLWElvl1 &trlwe,
                             const int index)
 {
     SampleExtractIndex<uint32_t, DEF_N>(tlwe, trlwe, index);
