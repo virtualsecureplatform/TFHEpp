@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include<cstdint>
 extern "C"{
     void *new_fft_table(int32_t nn);
     double *fft_table_get_buffer(const void *tables);

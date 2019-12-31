@@ -1,13 +1,14 @@
-#include<tfhe++.hpp>
-#include<cassert>
-#include<vector>
-#include<random>
+#include <cassert>
+#include <random>
+#include <tfhe++.hpp>
+#include <vector>
 
 #include <iostream>
 
 using namespace TFHEpp;
 
-int main(){
+int main()
+{
     const uint32_t num_test = 1000;
 
     random_device seed_gen;
@@ -17,12 +18,12 @@ int main(){
     SecretKey sk;
 
     vector<bool> p(num_test);
-    for(bool i:p) i = binary(engine)>0;
-    vector<array<uint32_t,DEF_n+1>> c(num_test);
-    c = bootsSymEncrypt(p,sk);
+    for (bool i : p) i = binary(engine) > 0;
+    vector<array<uint32_t, DEF_n + 1>> c(num_test);
+    c = bootsSymEncrypt(p, sk);
     vector<bool> p2(num_test);
-    p2 = bootsSymDecrypt(c,sk);
-    for(int i = 0; i<num_test;i++) assert(p[i] == p2[i]);
+    p2 = bootsSymDecrypt(c, sk);
+    for (int i = 0; i < num_test; i++) assert(p[i] == p2[i]);
 
-    cout<<"Passed"<<endl;
+    cout << "Passed" << endl;
 }

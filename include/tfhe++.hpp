@@ -1,12 +1,12 @@
 #pragma once
 
-#include<params.hpp>
-#include<mulfft.hpp>
-#include<key.hpp>
-#include<tlwe.hpp>
-#include<trlwe.hpp>
-#include<trgsw.hpp>
-#include<cloudkey.hpp>
-#include<keyswitch.hpp>
-#include<gatebootstrapping.hpp>
-#include<gate.hpp>
+#include <cloudkey.hpp>
+#include <gate.hpp>
+#include <gatebootstrapping.hpp>
+#include <key.hpp>
+#include <keyswitch.hpp>
+#include <mulfft.hpp>
+#include <params.hpp>
+#include <tlwe.hpp>
+#include <trgsw.hpp>
+#include <trlwe.hpp>

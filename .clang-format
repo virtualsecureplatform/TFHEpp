@@ -1,0 +1,6 @@
+BasedOnStyle: google
+IndentWidth : 4
+BreakBeforeBraces : Stroustrup
+AllowShortCaseLabelsOnASingleLine : true
+IndentCaseLabels : false
+AccessModifierOffset : -4
