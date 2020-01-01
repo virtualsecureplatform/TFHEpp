@@ -19,7 +19,7 @@ void IdentityKeySwitchlvl10(TLWElvl0 &res, TLWElvl1 &tlwe,
     }
 }
 
-void PriKeySwitchlvl21(TRLWElvl1 &res, const TLWElvl2 &tlwe, const int u,
+void PrivKeySwitchlvl21(TRLWElvl1 &res, const TLWElvl2 &tlwe, const int u,
                        PrivKeySwitchKey privksk)
 {
     const uint32_t mask = (1 << DEF_basebitlvl21) - 1;
@@ -36,8 +36,8 @@ void PriKeySwitchlvl21(TRLWElvl1 &res, const TLWElvl2 &tlwe, const int u,
 
             if (aij != 0) {
                 for (int p = 0; p < DEF_N; p++) {
-                    res[0][p] += privksk[u][i][j][aij][0][p];
-                    res[1][p] += privksk[u][i][j][aij][1][p];
+                    res[0][p] += privksk[u][i][j][aij-1][0][p];
+                    res[1][p] += privksk[u][i][j][aij-1][1][p];
                 }
             }
         }

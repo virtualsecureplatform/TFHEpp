@@ -17,7 +17,7 @@ const double DEF_αbk = 3.73e-9;
 const uint32_t DEF_t = 8;
 const uint32_t DEF_basebit = 2;
 const double DEF_αks = 2.44e-5;
-const uint32_t DEF_MU = 1 << 29;
+const uint32_t DEF_μ = 1U << 29;
 
 const uint32_t DEF_nbarbit = 11;
 const uint32_t DEF_nbar = 1 << DEF_nbarbit;
@@ -28,6 +28,7 @@ const double DEF_αbklvl02 = std::pow(2.0, -44);
 const uint32_t DEF_tbar = 10;
 const uint32_t DEF_basebitlvl21 = 3;
 const double DEF_αprivks = std::pow(2, -31);
+const uint64_t DEF_μbar = 1UL<<61;
 
 using Keylvl0 = array<uint32_t, DEF_n>;
 using Keylvl1 = array<uint32_t, DEF_N>;
@@ -53,8 +54,11 @@ using DecomposedTRLWEInFDlvl2 = array<PolynomialInFDlvl2, 2 * DEF_lbar>;
 
 using TRGSWlvl1 = array<TRLWElvl1, 2 * DEF_l>;
 using TRGSWlvl2 = array<TRLWElvl2, 2 * DEF_lbar>;
-using TRGSWFFTlvl1 = array<array<PolynomialInFDlvl1, 2>, 2 * DEF_l>;
-using TRGSWFFTlvl2 = array<array<PolynomialInFDlvl2, 2>, 2 * DEF_lbar>;
+using TRGSWFFTlvl1 = array<TRLWEInFDlvl1, 2 * DEF_l>;
+using TRGSWFFTlvl2 = array<TRLWEInFDlvl2, 2 * DEF_lbar>;
+
+using BootStrappingKeyFFTlvl01 = array<TRGSWFFTlvl1,DEF_n>;
+using BootStrappingKeyFFTlvl02 = array<TRGSWFFTlvl2,DEF_n>;
 
 using KeySwitchingKey =
     array<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>, DEF_N>;
@@ -75,7 +79,7 @@ struct lweParams {
     uint32_t t;
     uint32_t basebit;
     double αks;
-    uint32_t MU;
+    uint32_t μ;
 
     uint32_t nbarbit;
     uint32_t nbar;
@@ -86,6 +90,7 @@ struct lweParams {
     uint32_t tbar;
     uint32_t basebitlvl21;
     double αprivks;
+    uint64_t μbar;
     lweParams()
     {
         n = DEF_n;
@@ -99,7 +104,7 @@ struct lweParams {
         t = DEF_t;
         basebit = DEF_basebit;
         αks = DEF_αks;
-        MU = DEF_MU;
+        μ = DEF_μ;
         nbarbit = DEF_nbarbit;
         nbar = DEF_nbar;
         lbar = DEF_lbar;
@@ -109,6 +114,7 @@ struct lweParams {
         tbar = DEF_tbar;
         basebitlvl21 = DEF_basebitlvl21;
         αprivks = DEF_αprivks;
+        μbar = DEF_μbar;
     }
 };
 }  // namespace TFHEpp

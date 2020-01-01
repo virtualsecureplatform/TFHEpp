@@ -19,12 +19,34 @@ inline TRGSWlvl1 trgswSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
     return trgsw;
 }
 
+inline TRGSWlvl2 trgswSymEncryptlvl2(int64_t p, double α, Keylvl2 &key)
+{
+    array<uint32_t, DEF_lbar> h;
+    for (int i = 0; i < DEF_lbar; i++) h[i] = 1UL << (64 - (i + 1) * DEF_Bgbitbar);
+    TRGSWlvl2 trgsw;
+    for (TRLWElvl2 &trlwe : trgsw) trlwe = trlweSymEncryptZerolvl2(α, key);
+    for (int i = 0; i < DEF_lbar; i++) {
+        trgsw[i][0][0] += static_cast<uint64_t>(p) * h[i];
+        trgsw[i + DEF_lbar][1][0] += static_cast<uint64_t>(p) * h[i];
+    }
+    return trgsw;
+}
+
 TRGSWFFTlvl1 trgswfftSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
 {
     TRGSWlvl1 trgsw = trgswSymEncryptlvl1(p, α, key);
     TRGSWFFTlvl1 trgswfft;
     for (int i = 0; i < 2 * DEF_l; i++)
         for (int j = 0; j < 2; j++) TwistIFFTlvl1(trgswfft[i][j], trgsw[i][j]);
+    return trgswfft;
+}
+
+TRGSWFFTlvl2 trgswfftSymEncryptlvl2(int64_t p, double α, Keylvl2 &key)
+{
+    TRGSWlvl2 trgsw = trgswSymEncryptlvl2(p, α, key);
+    TRGSWFFTlvl2 trgswfft;
+    for (int i = 0; i < 2 * DEF_l; i++)
+        for (int j = 0; j < 2; j++) TwistIFFTlvl2(trgswfft[i][j], trgsw[i][j]);
     return trgswfft;
 }
 
@@ -89,6 +111,14 @@ inline void DecompositionFFTlvl1(DecomposedTRLWEInFDlvl1 &decvecfft,
     for (int i = 0; i < 2 * DEF_l; i++) TwistIFFTlvl1(decvecfft[i], decvec[i]);
 }
 
+inline void DecompositionFFTlvl2(DecomposedTRLWEInFDlvl2 &decvecfft,
+                                 const TRLWElvl2 &trlwe)
+{
+    DecomposedTRLWElvl2 decvec;
+    Decompositionlvl2(decvec, trlwe);
+    for (int i = 0; i < 2 * DEF_l; i++) TwistIFFTlvl2(decvecfft[i], decvec[i]);
+}
+
 void trgswfftExternalProductlvl1(TRLWElvl1 &trlwe, const TRGSWFFTlvl1 &trgswfft)
 {
     DecomposedTRLWEInFDlvl1 decvecfft;
@@ -102,5 +132,20 @@ void trgswfftExternalProductlvl1(TRLWElvl1 &trlwe, const TRGSWFFTlvl1 &trgswfft)
     }
     TwistFFTlvl1(trlwe[0], restrlwefft[0]);
     TwistFFTlvl1(trlwe[1], restrlwefft[1]);
+}
+
+void trgswfftExternalProductlvl2(TRLWElvl2 &trlwe, const TRGSWFFTlvl2 &trgswfft)
+{
+    DecomposedTRLWEInFDlvl2 decvecfft;
+    DecompositionFFTlvl2(decvecfft, trlwe);
+    TRLWEInFDlvl2 restrlwefft;
+    MulInFD<DEF_nbar>(restrlwefft[0], decvecfft[0], trgswfft[0][0]);
+    MulInFD<DEF_nbar>(restrlwefft[1], decvecfft[0], trgswfft[0][1]);
+    for (int i = 1; i < 2 * DEF_lbar; i++) {
+        FMAInFD<DEF_nbar>(restrlwefft[0], decvecfft[i], trgswfft[i][0]);
+        FMAInFD<DEF_nbar>(restrlwefft[1], decvecfft[i], trgswfft[i][1]);
+    }
+    TwistFFTlvl2(trlwe[0], restrlwefft[0]);
+    TwistFFTlvl2(trlwe[1], restrlwefft[1]);
 }
 }  // namespace TFHEpp

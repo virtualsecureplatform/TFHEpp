@@ -1,12 +1,15 @@
 #include <array>
+#include <random>
+
+#include <randen.h>
+
 #include <mulfft.hpp>
 #include <params.hpp>
-#include <random>
 #include <utils.hpp>
 
 namespace TFHEpp {
 using namespace std;
-static random_device engine;
+static randen::Randen<uint64_t> engine;
 
 TRLWElvl1 trlweSymEncryptZerolvl1(const double α, const Keylvl1 &key)
 {

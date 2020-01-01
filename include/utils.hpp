@@ -3,12 +3,15 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <params.hpp>
 #include <random>
+
+#include <randen.h>
+
+#include <params.hpp>
 
 namespace TFHEpp {
 using namespace std;
-static random_device generator;
+static randen::Randen<uint64_t> generator;
 
 inline uint32_t dtot32(double d)
 {
@@ -41,6 +44,17 @@ inline uint32_t modSwitchFromTorus32(uint32_t phase)
     uint64_t phase64 = (uint64_t(phase) << 32) + half_interval;
     // floor to the nearest multiples of interv
     return static_cast<uint32_t>(phase64 / interv);
+}
+
+template <uint32_t Msize = 2 * DEF_nbar>
+inline uint64_t modSwitchFromTorus64(uint32_t phase)
+{
+    uint64_t interv = ((1UL<<63)/Msize)*2; // width of each intervall
+    uint64_t half_interval = interv/2; // begin of the first intervall
+
+    // Mod Switching (as in modSwitchFromTorus32)
+    uint64_t temp = (static_cast<uint64_t>(phase)<<32) + half_interval; // RIVEDI
+    return temp/interv;
 }
 
 template <uint32_t N>

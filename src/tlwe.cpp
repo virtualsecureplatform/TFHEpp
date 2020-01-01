@@ -1,16 +1,19 @@
 #include <array>
 #include <cstdint>
-#include <key.hpp>
+#include <vector>
 #include <limits>
-#include <params.hpp>
 #include <random>
+
+#include <randen.h>
+
+#include <key.hpp>
+#include <params.hpp>
 #include <type_traits>
 #include <utils.hpp>
-#include <vector>
 
 namespace TFHEpp {
 using namespace std;
-static random_device engine;
+static randen::Randen<uint64_t> engine;
 
 template <typename T = uint32_t, uint32_t n = DEF_n>
 inline array<T, n + 1> tlweSymEncrypt(const T p, const double α,
@@ -50,7 +53,7 @@ vector<TLWElvl0> bootsSymEncrypt(const vector<bool> &p, const SecretKey &sk)
 {
     vector<TLWElvl0> c(p.size());
     for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncryptlvl0(p[i] ? DEF_MU : -DEF_MU, DEF_α, sk.key.lvl0);
+        c[i] = tlweSymEncryptlvl0(p[i] ? DEF_μ : -DEF_μ, DEF_α, sk.key.lvl0);
     return c;
 }
 

@@ -3,6 +3,7 @@ project(tfhe++ CXX)
 set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_FLAGS "-march=native -O3 -fPIC")
 
+add_subdirectory(thirdparties/randen)
 add_subdirectory(thirdparties/spqlios)
 add_subdirectory(src)
 add_subdirectory(test)

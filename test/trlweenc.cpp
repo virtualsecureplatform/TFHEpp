@@ -17,7 +17,7 @@ int main()
         array<bool, DEF_N> p;
         for (bool &i : p) i = binary(engine) > 0;
         array<uint32_t, DEF_N> pmu;
-        for (int i = 0; i < DEF_N; i++) pmu[i] = p[i] ? DEF_MU : -DEF_MU;
+        for (int i = 0; i < DEF_N; i++) pmu[i] = p[i] ? DEF_μ : -DEF_μ;
         TRLWElvl1 c = trlweSymEncryptlvl1(pmu, DEF_αbk, key.lvl1);
         array<bool, DEF_N> p2 = trlweSymDecryptlvl1(c, key.lvl1);
         for (int i = 0; i < DEF_N; i++) assert(p[i] == p2[i]);

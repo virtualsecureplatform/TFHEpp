@@ -48,13 +48,7 @@ inline void PolyMullvl2(Polynomiallvl2 &res, const Polynomiallvl2 &a,
     TwistIFFTlvl2(ffta, a);
     array<double, DEF_nbar> fftb;
     TwistIFFTlvl2(fftb, b);
-    array<double, DEF_nbar> fftres;
-    for (int32_t i = 0; i < DEF_nbar / 2; i++) {
-        fftres[i] =
-            ffta[i] * fftb[i] - ffta[i + DEF_nbar / 2] * fftb[i + DEF_nbar / 2];
-        fftres[i + DEF_nbar / 2] =
-            ffta[i] * fftb[i + DEF_nbar / 2] + ffta[i + DEF_nbar / 2] * fftb[i];
-    }
-    TwistFFTlvl2(res, fftres);
+    MulInFD<DEF_nbar>(ffta, ffta, fftb);
+    TwistFFTlvl2(res, ffta);
 }
 }  // namespace TFHEpp
