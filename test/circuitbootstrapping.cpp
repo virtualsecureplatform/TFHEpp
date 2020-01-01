@@ -14,8 +14,8 @@ int main()
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint32_t> binary(0, 1);
 
-    SecretKey sk;
-    CloudKey ck(sk);
+    SecretKey *sk = new SecretKey;
+    CloudKey *ck = new CloudKey(*sk);
     vector<array<bool,DEF_N>> pa(num_test);
     vector<array<uint32_t,DEF_N>> pmu(num_test);
     vector<bool> pones(num_test);
@@ -27,19 +27,21 @@ int main()
     vector<TLWElvl0> cones(num_test);
     vector<TRGSWFFTlvl1> bootedTGSW(num_test);
 
-    for(int i = 0;i<num_test;i++) ca[i] = trlweSymEncryptlvl1(pmu[i], DEF_αbk,sk.key.lvl1);
-    cones = bootsSymEncrypt(pones, sk);
+    for(int i = 0;i<num_test;i++) ca[i] = trlweSymEncryptlvl1(pmu[i], DEF_αbk,sk->key.lvl1);
+    cones = bootsSymEncrypt(pones, *sk);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFT(bootedTGSW[test],cones[test],ck);
+        cout<<test<<endl;
+        CircuitBootstrappingFFT(bootedTGSW[test],cones[test],*ck);
     }
     end = chrono::system_clock::now();
+    cout<<"Here"<<endl;
     
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProductlvl1(ca[test], bootedTGSW[test]);
-        pres = trlweSymDecryptlvl1(ca[test],sk.key.lvl1);
+        pres = trlweSymDecryptlvl1(ca[test],sk->key.lvl1);
         for (int i = 0; i < num_test; i++) assert(pres[i] == pa[test][i]);
     }
     cout << "Passed" << endl;

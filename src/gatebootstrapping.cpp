@@ -6,6 +6,8 @@
 #include <utils.hpp>
 #include <mulfft.hpp>
 
+#include <iostream>
+
 namespace TFHEpp {
 using namespace std;
 template <typename T = uint32_t, uint32_t N = DEF_N>
@@ -105,7 +107,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
+void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
                                                const TLWElvl0 &tlwe,
                                                const CloudKey &ck,
                                                const uint64_t μs2)
@@ -139,7 +141,7 @@ void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const CloudKey &ck)
 void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe, const CloudKey &ck){
     TLWElvl2 tlwelvl2;
     for(int i = 0;i<DEF_l;i++) {
-        GateBootstrappingTLWE2TLWEFFTlvl02(tlwelvl2, tlwe, ck, DEF_μbar>>((i+1)*DEF_Bgbit + 1));
+        GateBootstrappingTLWE2TLWEFFTlvl02(tlwelvl2, tlwe, ck, 1UL<<(64 - (i+1)*DEF_Bgbit - 1));
         PrivKeySwitchlvl21(trgsw[i],tlwelvl2,0,ck.privksk);
         PrivKeySwitchlvl21(trgsw[i+DEF_l],tlwelvl2,1,ck.privksk);
     }

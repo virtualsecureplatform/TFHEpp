@@ -16,10 +16,6 @@ struct CloudKey {
     lweParams params;
     CloudKey(SecretKey sk)
     {
-        ksk.resize(DEF_N);
-        bkfftlvl01.resize(DEF_n);
-        privksk.resize(2);
-        bkfftlvl02.resize(DEF_n);
         for (int i = 0; i < DEF_N; i++)
             for (int j = 0; j < DEF_t; j++)
                 for (uint32_t k = 0; k < (1 << DEF_basebit) - 1; k++)

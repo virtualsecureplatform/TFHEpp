@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <vector>
 #include <cmath>
 #include <cstdint>
 
@@ -58,15 +57,15 @@ using TRGSWlvl2 = array<TRLWElvl2, 2 * DEF_lbar>;
 using TRGSWFFTlvl1 = array<TRLWEInFDlvl1, 2 * DEF_l>;
 using TRGSWFFTlvl2 = array<TRLWEInFDlvl2, 2 * DEF_lbar>;
 
-using BootStrappingKeyFFTlvl01 = vector<TRGSWFFTlvl1>;
-using BootStrappingKeyFFTlvl02 = vector<TRGSWFFTlvl2>;
+using BootStrappingKeyFFTlvl01 = array<TRGSWFFTlvl1,DEF_n>;
+using BootStrappingKeyFFTlvl02 = array<TRGSWFFTlvl2,DEF_n>;
 
 using KeySwitchingKey =
-    vector<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>>;
+    array<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>, DEF_N>;
 using PrivKeySwitchKey =
-    vector<array<array<array<TRLWElvl1, (1 << DEF_basebitlvl21) - 1>, DEF_tbar>,
-                DEF_nbar + 1>
-          >;
+    array<array<array<array<TRLWElvl1, (1 << DEF_basebitlvl21) - 1>, DEF_tbar>,
+                DEF_nbar + 1>,
+          2>;
 
 struct lweParams {
     uint32_t n;
