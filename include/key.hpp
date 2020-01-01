@@ -4,6 +4,7 @@
 #include <array>
 #include <params.hpp>
 #include <random>
+#include <randen.h>
 
 namespace TFHEpp {
 using namespace std;
@@ -13,7 +14,7 @@ struct lweKey {
     Keylvl2 lvl2;
     lweKey()
     {
-        random_device engine;
+        randen::Randen<uint64_t> engine;
         uniform_int_distribution<uint32_t> binary(0, 1);
         for (uint32_t &i : lvl0) i = binary(engine);
         for (uint32_t &i : lvl1) i = binary(engine);

@@ -8,5 +8,6 @@ add_library(tfhe++
 target_include_directories(tfhe++
   PUBLIC ${PROJECT_SOURCE_DIR}/include 
   ${PROJECT_SOURCE_DIR}/thirdparties/spqlios
+  ${PROJECT_SOURCE_DIR}/thirdparties/randen
   )
-target_link_libraries(tfhe++ INTERFACE spqlios)
+target_link_libraries(tfhe++ INTERFACE spqlios randen)
