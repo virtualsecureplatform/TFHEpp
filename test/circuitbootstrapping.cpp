@@ -33,11 +33,9 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        cout<<test<<endl;
         CircuitBootstrappingFFT(bootedTGSW[test],cones[test],*ck);
     }
     end = chrono::system_clock::now();
-    cout<<"Here"<<endl;
     
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProductlvl1(ca[test], bootedTGSW[test]);

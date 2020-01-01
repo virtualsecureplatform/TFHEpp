@@ -26,7 +26,7 @@ TRLWElvl2 trlweSymEncryptZerolvl2(const double α, const Keylvl2 &key)
     uniform_int_distribution<uint64_t> Torus64dist(0, UINT64_MAX);
     TRLWElvl2 c;
     for (uint64_t &i : c[0]) i = Torus64dist(engine);
-    PolyMullvl2(c[1], c[0], key);
+    PolyMulNaievelvl2(c[1], c[0], key);
     for (uint64_t &i : c[1]) i += gaussian64(0, α);
     return c;
 }
@@ -58,6 +58,18 @@ array<bool, DEF_N> trlweSymDecryptlvl1(const TRLWElvl1 &c, const Keylvl1 &key)
 
     array<bool, DEF_N> p;
     for (int i = 0; i < DEF_N; i++) p[i] = static_cast<int32_t>(phase[i]) > 0;
+    return p;
+}
+
+array<bool, DEF_nbar> trlweSymDecryptlvl2(const TRLWElvl2 &c, const Keylvl2 &key)
+{
+    Polynomiallvl2 mulres;
+    PolyMulNaievelvl2(mulres, c[0], key);
+    Polynomiallvl2 phase = c[1];
+    for (int i = 0; i < DEF_nbar; i++) phase[i] -= mulres[i];
+
+    array<bool, DEF_nbar> p;
+    for (int i = 0; i < DEF_nbar; i++) p[i] = static_cast<int64_t>(phase[i]) > 0;
     return p;
 }
 

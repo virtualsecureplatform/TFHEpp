@@ -65,29 +65,5 @@ int main()
     }
     cout << "FFT Passed" << endl;
 
-    for (int test = 0; test < num_test; test++) {
-        Polynomiallvl2 a;
-        for (int i = 0; i < DEF_nbar; i++)
-            a[i] = Bgbardist(engine) - DEF_Bgbar / 2;
-        for (uint64_t &i : a) i = Bgbardist(engine) - DEF_Bgbar / 2;
-        Polynomiallvl2 b;
-        for (int i = 0; i < DEF_nbar; i++) b[i] = Torus64dist(engine);
-        for (uint64_t i : b) i = Torus64dist(engine);
-
-        Polynomiallvl2 polymul;
-        TFHEpp::PolyMullvl2(polymul, a, b);
-        Polynomiallvl2 naieve = {};
-        for (int i = 0; i < DEF_nbar; i++) {
-            for (int j = 0; j <= i; j++)
-                naieve[i] += static_cast<int64_t>(a[j]) * b[i - j];
-            for (int j = i + 1; j < DEF_nbar; j++)
-                naieve[i] -= static_cast<int64_t>(a[j]) * b[DEF_nbar + i - j];
-        }
-        for (int i = 0; i < DEF_nbar; i++)
-            assert(abs(static_cast<int64_t>(naieve[i] - polymul[i])) <=
-                   (1 << 27));
-    }
-    cout << "PolyMul Passed" << endl;
-
     return 0;
 }
