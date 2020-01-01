@@ -30,8 +30,7 @@ inline void PolyMullvl1(Polynomiallvl1 &res, const Polynomiallvl1 &a,
     TwistFFTlvl1(res, ffta);
 }
 
-inline void TwistFFTlvl2(Polynomiallvl2 &res,
-                         const PolynomialInFDlvl2 &a)
+inline void TwistFFTlvl2(Polynomiallvl2 &res, const PolynomialInFDlvl2 &a)
 {
     fftplvl2.execute_direct_torus64(res.data(), a.data());
 }
@@ -42,14 +41,15 @@ inline void TwistIFFTlvl2(PolynomialInFDlvl2 &res, const Polynomiallvl2 &a)
 }
 
 inline void PolyMulNaievelvl2(Polynomiallvl2 &res, const Polynomiallvl2 &a,
-                        const Polynomiallvl2 &b){
+                              const Polynomiallvl2 &b)
+{
     for (int i = 0; i < DEF_nbar; i++) {
-            uint64_t ri = 0;
-            for (int j = 0; j <= i; j++)
-                ri += static_cast<int64_t>(a[j]) * b[i - j];
-            for (int j = i + 1; j < DEF_nbar; j++)
-                ri -= static_cast<int64_t>(a[j]) * b[DEF_nbar + i - j];
-            res[i] = ri;
-        }
+        uint64_t ri = 0;
+        for (int j = 0; j <= i; j++)
+            ri += static_cast<int64_t>(a[j]) * b[i - j];
+        for (int j = i + 1; j < DEF_nbar; j++)
+            ri -= static_cast<int64_t>(a[j]) * b[DEF_nbar + i - j];
+        res[i] = ri;
+    }
 }
 }  // namespace TFHEpp

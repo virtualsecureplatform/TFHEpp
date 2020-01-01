@@ -61,7 +61,8 @@ array<bool, DEF_N> trlweSymDecryptlvl1(const TRLWElvl1 &c, const Keylvl1 &key)
     return p;
 }
 
-array<bool, DEF_nbar> trlweSymDecryptlvl2(const TRLWElvl2 &c, const Keylvl2 &key)
+array<bool, DEF_nbar> trlweSymDecryptlvl2(const TRLWElvl2 &c,
+                                          const Keylvl2 &key)
 {
     Polynomiallvl2 mulres;
     PolyMulNaievelvl2(mulres, c[0], key);
@@ -69,7 +70,8 @@ array<bool, DEF_nbar> trlweSymDecryptlvl2(const TRLWElvl2 &c, const Keylvl2 &key
     for (int i = 0; i < DEF_nbar; i++) phase[i] -= mulres[i];
 
     array<bool, DEF_nbar> p;
-    for (int i = 0; i < DEF_nbar; i++) p[i] = static_cast<int64_t>(phase[i]) > 0;
+    for (int i = 0; i < DEF_nbar; i++)
+        p[i] = static_cast<int64_t>(phase[i]) > 0;
     return p;
 }
 

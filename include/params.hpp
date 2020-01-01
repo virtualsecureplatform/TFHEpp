@@ -28,7 +28,7 @@ const double DEF_αbklvl02 = std::pow(2.0, -44);
 const uint32_t DEF_tbar = 10;
 const uint32_t DEF_basebitlvl21 = 3;
 const double DEF_αprivks = std::pow(2, -31);
-const uint64_t DEF_μbar = 1UL<<61;
+const uint64_t DEF_μbar = 1UL << 61;
 
 using Keylvl0 = array<uint32_t, DEF_n>;
 using Keylvl1 = array<uint32_t, DEF_N>;
@@ -57,8 +57,8 @@ using TRGSWlvl2 = array<TRLWElvl2, 2 * DEF_lbar>;
 using TRGSWFFTlvl1 = array<TRLWEInFDlvl1, 2 * DEF_l>;
 using TRGSWFFTlvl2 = array<TRLWEInFDlvl2, 2 * DEF_lbar>;
 
-using BootStrappingKeyFFTlvl01 = array<TRGSWFFTlvl1,DEF_n>;
-using BootStrappingKeyFFTlvl02 = array<TRGSWFFTlvl2,DEF_n>;
+using BootStrappingKeyFFTlvl01 = array<TRGSWFFTlvl1, DEF_n>;
+using BootStrappingKeyFFTlvl02 = array<TRGSWFFTlvl2, DEF_n>;
 
 using KeySwitchingKey =
     array<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>, DEF_N>;

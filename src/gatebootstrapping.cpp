@@ -1,10 +1,10 @@
 #include <cloudkey.hpp>
 #include <keyswitch.hpp>
+#include <mulfft.hpp>
 #include <params.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>
 #include <utils.hpp>
-#include <mulfft.hpp>
 
 #include <iostream>
 
@@ -71,7 +71,8 @@ inline void PolynomialMulByXaiMinusOnelvl2(Polynomiallvl2 &res,
 }
 
 template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara, const T μ)
+inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara,
+                              const T μ)
 {
     testvector[0] = {};
     if (bara < N) {
@@ -107,14 +108,13 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
-                                               const TLWElvl0 &tlwe,
-                                               const CloudKey &ck,
-                                               const uint64_t μs2)
+void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res, const TLWElvl0 &tlwe,
+                                        const CloudKey &ck, const uint64_t μs2)
 {
     TRLWElvl2 acc;
     TRLWElvl2 temp;
-    uint32_t bara = 2 * DEF_nbar - modSwitchFromTorus64<2 * DEF_nbar>(tlwe[DEF_n]);
+    uint32_t bara =
+        2 * DEF_nbar - modSwitchFromTorus64<2 * DEF_nbar>(tlwe[DEF_n]);
     RotatedTestVector<uint64_t, DEF_nbar>(acc, bara, μs2);
     for (int i = 0; i < DEF_n; i++) {
         bara = modSwitchFromTorus64<2 * DEF_nbar>(tlwe[i]);
@@ -138,18 +138,23 @@ void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const CloudKey &ck)
     IdentityKeySwitchlvl10(res, tlwelvl1, ck.ksk);
 }
 
-void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe, const CloudKey &ck){
+void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe,
+                          const CloudKey &ck)
+{
     TLWElvl2 tlwelvl2;
-    for(int i = 0;i<DEF_l;i++) {
-        GateBootstrappingTLWE2TLWEFFTlvl02(tlwelvl2, tlwe, ck, 1UL<<(64 - (i+1)*DEF_Bgbit - 1));
-        PrivKeySwitchlvl21(trgsw[i],tlwelvl2,0,ck.privksk);
-        PrivKeySwitchlvl21(trgsw[i+DEF_l],tlwelvl2,1,ck.privksk);
+    for (int i = 0; i < DEF_l; i++) {
+        GateBootstrappingTLWE2TLWEFFTlvl02(
+            tlwelvl2, tlwe, ck, 1UL << (64 - (i + 1) * DEF_Bgbit - 1));
+        PrivKeySwitchlvl21(trgsw[i], tlwelvl2, 0, ck.privksk);
+        PrivKeySwitchlvl21(trgsw[i + DEF_l], tlwelvl2, 1, ck.privksk);
     }
 }
 
-void CircuitBootstrappingFFT(TRGSWFFTlvl1 &trgswfft, const TLWElvl0 &tlwe, const CloudKey &ck){
+void CircuitBootstrappingFFT(TRGSWFFTlvl1 &trgswfft, const TLWElvl0 &tlwe,
+                             const CloudKey &ck)
+{
     TRGSWlvl1 trgsw;
-    CircuitBootstrapping(trgsw,tlwe,ck);
+    CircuitBootstrapping(trgsw, tlwe, ck);
     for (int i = 0; i < 2 * DEF_l; i++)
         for (int j = 0; j < 2; j++) TwistIFFTlvl1(trgswfft[i][j], trgsw[i][j]);
 }

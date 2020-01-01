@@ -24,7 +24,8 @@ inline TRGSWlvl1 trgswSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
 inline TRGSWlvl2 trgswSymEncryptlvl2(int64_t p, double α, Keylvl2 &key)
 {
     array<uint64_t, DEF_lbar> h;
-    for (int i = 0; i < DEF_lbar; i++) h[i] = 1UL << (64 - (i + 1) * DEF_Bgbitbar);
+    for (int i = 0; i < DEF_lbar; i++)
+        h[i] = 1UL << (64 - (i + 1) * DEF_Bgbitbar);
     TRGSWlvl2 trgsw;
     for (TRLWElvl2 &trlwe : trgsw) trlwe = trlweSymEncryptZerolvl2(α, key);
     for (int i = 0; i < DEF_lbar; i++) {
@@ -66,10 +67,14 @@ inline void Decomposition(array<array<T, N>, 2 * l> &decvec,
     const T halfBg = (1UL << (Bgbit - 1));
     for (int i = l - 1; i >= 0; i--) {
         for (int j = 0; j < N; j++) {
-            decvec[i][j] =
-                ((decvec[0][j] >> (numeric_limits<T>::digits - (i + 1) * Bgbit)) & mask) - halfBg;
-            decvec[i + l][j] =
-                ((decvec[l][j] >> (numeric_limits<T>::digits - (i + 1) * Bgbit)) & mask) - halfBg;
+            decvec[i][j] = ((decvec[0][j] >>
+                             (numeric_limits<T>::digits - (i + 1) * Bgbit)) &
+                            mask) -
+                           halfBg;
+            decvec[i + l][j] = ((decvec[l][j] >> (numeric_limits<T>::digits -
+                                                  (i + 1) * Bgbit)) &
+                                mask) -
+                               halfBg;
         }
     }
 }
@@ -118,7 +123,8 @@ inline void DecompositionFFTlvl2(DecomposedTRLWEInFDlvl2 &decvecfft,
 {
     DecomposedTRLWElvl2 decvec;
     Decompositionlvl2(decvec, trlwe);
-    for (int i = 0; i < 2 * DEF_lbar; i++) TwistIFFTlvl2(decvecfft[i], decvec[i]);
+    for (int i = 0; i < 2 * DEF_lbar; i++)
+        TwistIFFTlvl2(decvecfft[i], decvec[i]);
 }
 
 void trgswfftExternalProductlvl1(TRLWElvl1 &trlwe, const TRGSWFFTlvl1 &trgswfft)
