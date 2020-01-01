@@ -105,7 +105,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
+inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
                                                const TLWElvl0 &tlwe,
                                                const CloudKey &ck,
                                                const uint64_t μs2)
@@ -129,14 +129,14 @@ void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
     res[DEF_nbar] += μs2;
 }
 
-void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const CloudKey &ck)
+inline void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const CloudKey &ck)
 {
     TLWElvl1 tlwelvl1;
     GateBootstrappingTLWE2TLWEFFTlvl01(tlwelvl1, tlwe, ck);
     IdentityKeySwitchlvl10(res, tlwelvl1, ck.ksk);
 }
 
-void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe, const CloudKey &ck){
+inline void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe, const CloudKey &ck){
     TLWElvl2 tlwelvl2;
     for(int i = 0;i<DEF_l;i++) {
         GateBootstrappingTLWE2TLWEFFTlvl02(tlwelvl2, tlwe, ck, 1UL<<(64 - (i+1)*DEF_Bgbit - 1));
