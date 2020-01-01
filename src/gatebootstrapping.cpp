@@ -6,8 +6,6 @@
 #include <trlwe.hpp>
 #include <utils.hpp>
 
-#include <iostream>
-
 namespace TFHEpp {
 using namespace std;
 template <typename T = uint32_t, uint32_t N = DEF_N>
@@ -108,8 +106,10 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res, const TLWElvl0 &tlwe,
-                                        const CloudKey &ck, const uint64_t μs2)
+inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
+                                               const TLWElvl0 &tlwe,
+                                               const CloudKey &ck,
+                                               const uint64_t μs2)
 {
     TRLWElvl2 acc;
     TRLWElvl2 temp;
@@ -138,8 +138,8 @@ void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const CloudKey &ck)
     IdentityKeySwitchlvl10(res, tlwelvl1, ck.ksk);
 }
 
-void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe,
-                          const CloudKey &ck)
+inline void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe,
+                                 const CloudKey &ck)
 {
     TLWElvl2 tlwelvl2;
     for (int i = 0; i < DEF_l; i++) {

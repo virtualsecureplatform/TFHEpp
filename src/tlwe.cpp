@@ -49,7 +49,7 @@ bool tlweSymDecryptlvl0(const TLWElvl0 &c, const Keylvl0 &key)
     return tlweSymDecrypt<uint32_t, DEF_n>(c, key);
 }
 
-vector<TLWElvl0> bootsSymEncrypt(const vector<bool> &p, const SecretKey &sk)
+vector<TLWElvl0> bootsSymEncrypt(const vector<uint8_t> &p, const SecretKey &sk)
 {
     vector<TLWElvl0> c(p.size());
     for (int i = 0; i < p.size(); i++)
@@ -57,9 +57,9 @@ vector<TLWElvl0> bootsSymEncrypt(const vector<bool> &p, const SecretKey &sk)
     return c;
 }
 
-vector<bool> bootsSymDecrypt(const vector<TLWElvl0> &c, const SecretKey &sk)
+vector<uint8_t> bootsSymDecrypt(const vector<TLWElvl0> &c, const SecretKey &sk)
 {
-    vector<bool> p(c.size());
+    vector<uint8_t> p(c.size());
     for (int i = 0; i < p.size(); i++)
         p[i] = tlweSymDecryptlvl0(c[i], sk.key.lvl0);
     return p;
