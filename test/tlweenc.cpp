@@ -17,7 +17,7 @@ int main()
     SecretKey sk;
 
     vector<uint8_t> p(num_test);
-    for (uint8_t i : p) i = binary(engine);
+    for (uint8_t &i : p) i = binary(engine);
     vector<TLWElvl0> c(num_test);
     c = bootsSymEncrypt(p, sk);
     vector<uint8_t> p2(num_test);

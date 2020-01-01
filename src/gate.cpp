@@ -55,6 +55,20 @@ void HomNOT(TLWElvl0 &res, const TLWElvl0 &ca)
     for (int i = 0; i <= DEF_n; i++) res[i] = -ca[i];
 }
 
+void HomCOPY(TLWElvl0 &res, const TLWElvl0 &ca){
+    for(int i = 0;i<=DEF_n;i++) res[i] = ca[i];
+}
+
+void HomCONSTANTONE(TLWElvl0 &res){
+    res={};
+    res[DEF_n] = DEF_μ;
+}
+
+void HomCONSTANTZERO(TLWElvl0 &res){
+    res={};
+    res[DEF_n] = -DEF_μ;
+}
+
 void HomANDNY(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
               const CloudKey &ck)
 {
@@ -94,13 +108,13 @@ void HomMUX(TLWElvl0 &res, const TLWElvl0 &cs, const TLWElvl0 &c1,
     for (int i = 0; i <= DEF_n; i++) temp[i] = cs[i] + c1[i];
     for (int i = 0; i <= DEF_n; i++) res[i] = -cs[i] + c0[i];
     temp[DEF_n] -= 1U << 29;
-    res[DEF_n] += 1U << 29;
+    res[DEF_n] -= 1U << 29;
     TLWElvl1 and1;
     TLWElvl1 and0;
     GateBootstrappingTLWE2TLWEFFTlvl01(and1, temp, ck);
     GateBootstrappingTLWE2TLWEFFTlvl01(and0, res, ck);
 
-    for (int i = 0; i <= DEF_n; i++) and1[i] += and0[i];
+    for (int i = 0; i <= DEF_N; i++) and1[i] += and0[i];
     and1[DEF_N] += 1U << 29;
     IdentityKeySwitchlvl10(res, and1, ck.ksk);
 }
