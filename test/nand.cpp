@@ -16,9 +16,9 @@ int main()
 
     SecretKey* sk = new SecretKey();
     CloudKey* ck = new CloudKey(*sk);
-    vector<bool> pa(num_test);
-    vector<bool> pb(num_test);
-    vector<bool> pres(num_test);
+    vector<uint8_t> pa(num_test);
+    vector<uint8_t> pb(num_test);
+    vector<uint8_t> pres(num_test);
     for (int i = 0; i < num_test; i++) pa[i] = binary(engine) > 0;
     for (int i = 0; i < num_test; i++) pb[i] = binary(engine) > 0;
     vector<TLWElvl0> ca(num_test);

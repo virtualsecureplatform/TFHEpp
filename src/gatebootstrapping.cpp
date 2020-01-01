@@ -6,8 +6,6 @@
 #include <utils.hpp>
 #include <mulfft.hpp>
 
-#include <iostream>
-
 namespace TFHEpp {
 using namespace std;
 template <typename T = uint32_t, uint32_t N = DEF_N>

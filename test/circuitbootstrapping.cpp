@@ -18,7 +18,7 @@ int main()
     CloudKey *ck = new CloudKey(*sk);
     vector<array<bool,DEF_N>> pa(num_test);
     vector<array<uint32_t,DEF_N>> pmu(num_test);
-    vector<bool> pones(num_test);
+    vector<uint8_t> pones(num_test);
     array<bool,DEF_N> pres;
     for (array<bool,DEF_N> &i : pa) for(bool &p:i) p = binary(engine) > 0;
     for (int i = 0;i<num_test;i++) for(int j = 0;j<DEF_N;j++) pmu[i][j] = pa[i][j]?DEF_μ:-DEF_μ;
