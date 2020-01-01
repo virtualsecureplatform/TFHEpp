@@ -2,7 +2,6 @@ file(GLOB tfhe++_sources "*.cpp")
 
 
 add_library(tfhe++
-  SHARED
   ${tfhe++_sources}
   )
 target_include_directories(tfhe++
