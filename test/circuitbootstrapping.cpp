@@ -16,12 +16,12 @@ int main()
 
     SecretKey *sk = new SecretKey;
     CircuitKey *ck = new CircuitKey(*sk);
-    vector<array<bool, DEF_N>> pa(num_test);
+    vector<array<uint8_t, DEF_N>> pa(num_test);
     vector<array<uint32_t, DEF_N>> pmu(num_test);
     vector<uint8_t> pones(num_test);
     array<bool, DEF_N> pres;
-    for (array<bool, DEF_N> &i : pa)
-        for (bool &p : i) p = binary(engine) > 0;
+    for (array<uint8_t, DEF_N> &i : pa)
+        for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < DEF_N; j++) pmu[i][j] = pa[i][j] ? DEF_μ : -DEF_μ;
     for (int i = 0; i < num_test; i++) pones[i] = true;
@@ -43,7 +43,7 @@ int main()
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProductlvl1(ca[test], bootedTGSW[test]);
         pres = trlweSymDecryptlvl1(ca[test], sk->key.lvl1);
-        for (int i = 0; i < num_test; i++) assert(pres[i] == pa[test][i]);
+        for (int i = 0; i < DEF_N; i++) assert(pres[i] == pa[test][i]);
     }
     cout << "Passed" << endl;
     double elapsed =
