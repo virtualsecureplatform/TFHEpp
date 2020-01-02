@@ -29,8 +29,6 @@ struct SecretKey {
     {
         lweKey lwekey;
         key = lwekey;
-        lweParams lweparams;
-        params = lweparams;
     }
 };
 }  // namespace TFHEpp
