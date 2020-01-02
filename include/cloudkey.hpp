@@ -27,11 +27,12 @@ struct GateKey {
     }
 };
 
-struct CircuitKey{
+struct CircuitKey {
     PrivKeySwitchKey privksk;
     BootStrappingKeyFFTlvl02 bkfftlvl02;
     lweParams params;
-    CircuitKey(SecretKey sk){
+    CircuitKey(SecretKey sk)
+    {
         array<uint32_t, DEF_nbar + 1> key;
         for (int i = 0; i < DEF_nbar; i++) key[i] = sk.key.lvl2[i];
         key[DEF_nbar] = -1;

@@ -55,17 +55,20 @@ void HomNOT(TLWElvl0 &res, const TLWElvl0 &ca)
     for (int i = 0; i <= DEF_n; i++) res[i] = -ca[i];
 }
 
-void HomCOPY(TLWElvl0 &res, const TLWElvl0 &ca){
-    for(int i = 0;i<=DEF_n;i++) res[i] = ca[i];
+void HomCOPY(TLWElvl0 &res, const TLWElvl0 &ca)
+{
+    for (int i = 0; i <= DEF_n; i++) res[i] = ca[i];
 }
 
-void HomCONSTANTONE(TLWElvl0 &res){
-    res={};
+void HomCONSTANTONE(TLWElvl0 &res)
+{
+    res = {};
     res[DEF_n] = DEF_μ;
 }
 
-void HomCONSTANTZERO(TLWElvl0 &res){
-    res={};
+void HomCONSTANTZERO(TLWElvl0 &res)
+{
+    res = {};
     res[DEF_n] = -DEF_μ;
 }
 
