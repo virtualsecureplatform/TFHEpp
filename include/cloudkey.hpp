@@ -8,13 +8,11 @@
 #include <iostream>
 
 namespace TFHEpp {
-struct CloudKey {
+struct GateKey {
     KeySwitchingKey ksk;
     BootStrappingKeyFFTlvl01 bkfftlvl01;
-    PrivKeySwitchKey privksk;
-    BootStrappingKeyFFTlvl02 bkfftlvl02;
     lweParams params;
-    CloudKey(SecretKey sk)
+    GateKey(SecretKey sk)
     {
         for (int i = 0; i < DEF_N; i++)
             for (int j = 0; j < DEF_t; j++)
@@ -26,7 +24,14 @@ struct CloudKey {
         for (int i = 0; i < DEF_n; i++)
             bkfftlvl01[i] = trgswfftSymEncryptlvl1(
                 static_cast<int32_t>(sk.key.lvl0[i]), DEF_αbk, sk.key.lvl1);
+    }
+};
 
+struct CircuitKey{
+    PrivKeySwitchKey privksk;
+    BootStrappingKeyFFTlvl02 bkfftlvl02;
+    lweParams params;
+    CircuitKey(SecretKey sk){
         array<uint32_t, DEF_nbar + 1> key;
         for (int i = 0; i < DEF_nbar; i++) key[i] = sk.key.lvl2[i];
         key[DEF_nbar] = -1;

@@ -86,7 +86,7 @@ inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara,
 
 inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
                                                const TLWElvl0 &tlwe,
-                                               const CloudKey &ck)
+                                               const GateKey &gk)
 {
     TRLWElvl1 acc;
     TRLWElvl1 temp;
@@ -97,7 +97,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
         if (bara == 0) continue;
         PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1], bara);
-        trgswfftExternalProductlvl1(temp, ck.bkfftlvl01[i]);
+        trgswfftExternalProductlvl1(temp, gk.bkfftlvl01[i]);
         for (int i = 0; i < DEF_N; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
@@ -108,7 +108,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
 
 inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
                                                const TLWElvl0 &tlwe,
-                                               const CloudKey &ck,
+                                               const CircuitKey &ck,
                                                const uint64_t μs2)
 {
     TRLWElvl2 acc;
@@ -131,15 +131,15 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
     res[DEF_nbar] += μs2;
 }
 
-void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const CloudKey &ck)
+void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const GateKey &gk)
 {
     TLWElvl1 tlwelvl1;
-    GateBootstrappingTLWE2TLWEFFTlvl01(tlwelvl1, tlwe, ck);
-    IdentityKeySwitchlvl10(res, tlwelvl1, ck.ksk);
+    GateBootstrappingTLWE2TLWEFFTlvl01(tlwelvl1, tlwe, gk);
+    IdentityKeySwitchlvl10(res, tlwelvl1, gk.ksk);
 }
 
 inline void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe,
-                                 const CloudKey &ck)
+                                 const CircuitKey &ck)
 {
     TLWElvl2 tlwelvl2;
     for (int i = 0; i < DEF_l; i++) {
@@ -151,7 +151,7 @@ inline void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe,
 }
 
 void CircuitBootstrappingFFT(TRGSWFFTlvl1 &trgswfft, const TLWElvl0 &tlwe,
-                             const CloudKey &ck)
+                             const CircuitKey &ck)
 {
     TRGSWlvl1 trgsw;
     CircuitBootstrapping(trgsw, tlwe, ck);

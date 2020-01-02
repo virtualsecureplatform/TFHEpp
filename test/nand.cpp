@@ -15,7 +15,7 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey* sk = new SecretKey();
-    CloudKey* ck = new CloudKey(*sk);
+    GateKey* gk = new GateKey(*sk);
     vector<uint8_t> pa(num_test);
     vector<uint8_t> pb(num_test);
     vector<uint8_t> pres(num_test);
@@ -31,7 +31,7 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        HomNAND(cres[test], ca[test], cb[test], *ck);
+        HomNAND(cres[test], ca[test], cb[test], *gk);
     }
     end = chrono::system_clock::now();
     pres = bootsSymDecrypt(cres, *sk);

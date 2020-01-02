@@ -15,7 +15,7 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CloudKey *ck = new CloudKey(*sk);
+    CircuitKey *ck = new CircuitKey(*sk);
     vector<array<bool, DEF_N>> pa(num_test);
     vector<array<uint32_t, DEF_N>> pmu(num_test);
     vector<uint8_t> pones(num_test);

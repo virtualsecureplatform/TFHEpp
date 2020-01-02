@@ -14,13 +14,13 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey sk;
-    CloudKey ck(sk);
+    GateKey* gk = new GateKey(sk);
     for (int test = 0; test < num_test; test++) {
         bool p = binary(engine) > 0;
         TLWElvl0 tlwe =
             tlweSymEncryptlvl0(p ? DEF_μ : -DEF_μ, DEF_α, sk.key.lvl0);
         TLWElvl0 bootedtlwe;
-        GateBootstrapping(bootedtlwe, tlwe, ck);
+        GateBootstrapping(bootedtlwe, tlwe, *gk);
         bool p2 = tlweSymDecryptlvl0(bootedtlwe, sk.key.lvl0);
         assert(p == p2);
     }

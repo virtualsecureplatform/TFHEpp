@@ -2,75 +2,76 @@
 using namespace TFHEpp;
 
 #include <iostream>
+#include <chrono>
 using namespace std;
 
-uint8_t ConstantZeroCheck(){
+uint8_t ConstantZeroChegk(){
   return 0;
 }
 
-uint8_t ConstantOneCheck(){
+uint8_t ConstantOneChegk(){
   return 1;
 }
 
-uint8_t NotCheck(const uint8_t in) {
+uint8_t NotChegk(const uint8_t in) {
   return (~in)&0x1;
 }
 
-uint8_t CopyCheck(const uint8_t in) {
+uint8_t CopyChegk(const uint8_t in) {
   return in;
 }
 
-uint8_t NandCheck(const uint8_t in0, uint8_t in1) {
+uint8_t NandChegk(const uint8_t in0, uint8_t in1) {
   return 1 - in0 * in1;
 }
 
-uint8_t OrCheck(const uint8_t in0, const uint8_t in1) {
+uint8_t OrChegk(const uint8_t in0, const uint8_t in1) {
   return (in0 + in1) > 0;
 }
 
-uint8_t OrYNCheck(const uint8_t in0, const uint8_t in1) {
+uint8_t OrYNChegk(const uint8_t in0, const uint8_t in1) {
   return (in0 + (1-in1)) > 0;
 }
 
-uint8_t OrNYCheck(const uint8_t in0, const uint8_t in1) {
+uint8_t OrNYChegk(const uint8_t in0, const uint8_t in1) {
   return ((1-in0) + in1) > 0;
 }
 
-uint8_t AndCheck(const uint8_t in0, const uint8_t in1) {
+uint8_t AndChegk(const uint8_t in0, const uint8_t in1) {
   return in0 * in1;
 }
 
-uint8_t AndYNCheck(const uint8_t in0, const uint8_t in1) {
+uint8_t AndYNChegk(const uint8_t in0, const uint8_t in1) {
   return in0 * (1-in1);
 }
 
-uint8_t AndNYCheck(const uint8_t in0, const uint8_t in1) {
+uint8_t AndNYChegk(const uint8_t in0, const uint8_t in1) {
   return (1-in0) * in1;
 }
 
-uint8_t XorCheck(const uint8_t in0, const uint8_t in1) {
+uint8_t XorChegk(const uint8_t in0, const uint8_t in1) {
   return (in0 + in1) & 0x1;
 }
 
-uint8_t XnorCheck(const uint8_t in0, const uint8_t in1) {
+uint8_t XnorChegk(const uint8_t in0, const uint8_t in1) {
   return (~(in0 ^ in1)) & 0x1;
 }
 
-uint8_t MuxCheck(const uint8_t inc, const uint8_t in1, const uint8_t in0){
+uint8_t MuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0){
   return (inc>0)?in1:in0;
 }
 
-template <class Func, class Check>
+template <class Func, class Chegk>
 void Test(
         string type, 
         Func func,
-        Check check,
+        Chegk chegk,
         vector<uint8_t> p, 
         vector<TLWElvl0> cres, 
         vector<TLWElvl0> c, 
         const int kNumTests, 
         SecretKey& sk,
-        CloudKey& ck)
+        GateKey& gk)
 {
   random_device seed_gen;
   default_random_engine engine(seed_gen());
@@ -84,30 +85,37 @@ void Test(
   c = bootsSymEncrypt(p,sk);
 
 
+  chrono::system_clock::time_point start, end;
+  start = chrono::system_clock::now();
   for (int i = 0; i < kNumTests; i ++){
     if constexpr (std::is_invocable_v<Func, TLWElvl0&>){
         func(cres[i]);
-        p[i] = check();
+        p[i] = chegk();
     }else if constexpr (std::is_invocable_v<Func, TLWElvl0&, const TLWElvl0&>){
         func(cres[i], c[i]);
-        p[i] = check(p[i]);
-    }else if constexpr(std::is_invocable_v<Func, TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const CloudKey&>){
-        func(cres[i], c[i], c[i + kNumTests], ck);
-        p[i] = check(p[i], p[i + kNumTests]);
-    }else if constexpr(std::is_invocable_v<Func, TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const CloudKey&>){
-        func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests*2], ck);
-        p[i] = check(p[i], p[i + kNumTests], p[i + kNumTests*2]);
-    }else if constexpr(std::is_invocable_v<Func, TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const CloudKey&>){
-        func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests*2], c[i + kNumTests*3], ck);
-        p[i] = check(p[i], p[i + kNumTests], p[i + kNumTests*2], p[i + kNumTests*3]);
+        p[i] = chegk(p[i]);
+    }else if constexpr(std::is_invocable_v<Func, TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const GateKey&>){
+        func(cres[i], c[i], c[i + kNumTests], gk);
+        p[i] = chegk(p[i], p[i + kNumTests]);
+    }else if constexpr(std::is_invocable_v<Func, TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const GateKey&>){
+        func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests*2], gk);
+        p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests*2]);
+    }else if constexpr(std::is_invocable_v<Func, TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const TLWElvl0&, const GateKey&>){
+        func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests*2], c[i + kNumTests*3], gk);
+        p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests*2], p[i + kNumTests*3]);
     }else{
         std::cout << "Invalid Function" << std::endl;
     }
   }
+  end = chrono::system_clock::now();
   vector<uint8_t> p2(cres.size());
   p2 = bootsSymDecrypt(cres, sk);
   for(int i = 0;i<kNumTests;i++) assert(p[i] == p2[i]);
   std::cout<<"Passed"<<std::endl;
+  double elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+          .count();
+  cout << elapsed / kNumTests << "ms" << endl;
 }
 
 int main() {
@@ -115,7 +123,7 @@ int main() {
 
     cout<< "------ Key Generation ------" <<endl;
     SecretKey* sk = new SecretKey();
-    CloudKey* ck = new CloudKey(*sk);
+    GateKey* gk = new GateKey(*sk);
     //MUX Need 3 input
     vector<uint8_t> p(3 * kNumTests);
     vector<TLWElvl0> cres(kNumTests);
@@ -124,20 +132,20 @@ int main() {
 
     correct = true;
 
-    Test("NOT", HomNOT, NotCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("COPY", HomCOPY, CopyCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("NAND", HomNAND, NandCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("OR", HomOR, OrCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("ORYN", HomORYN, OrYNCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("ORNY", HomORNY, OrNYCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("AND", HomAND, AndCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("ANDYN", HomANDYN, AndYNCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("ANDNY", HomANDNY, AndNYCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("XOR", HomXOR, XorCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("XNOR", HomXNOR, XnorCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("MUX", HomMUX, MuxCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("ConstantZero", HomCONSTANTZERO, ConstantZeroCheck, p, cres, c, kNumTests, *sk, *ck);
-    Test("ConstantOne", HomCONSTANTONE, ConstantOneCheck, p, cres, c, kNumTests, *sk, *ck);
+    Test("NOT", HomNOT, NotChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("COPY", HomCOPY, CopyChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("NAND", HomNAND, NandChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("OR", HomOR, OrChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("ORYN", HomORYN, OrYNChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("ORNY", HomORNY, OrNYChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("AND", HomAND, AndChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("ANDYN", HomANDYN, AndYNChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("ANDNY", HomANDNY, AndNYChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("XOR", HomXOR, XorChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("XNOR", HomXNOR, XnorChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("MUX", HomMUX, MuxChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("ConstantZero", HomCONSTANTZERO, ConstantZeroChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("ConstantOne", HomCONSTANTONE, ConstantOneChegk, p, cres, c, kNumTests, *sk, *gk);
 
     return 0;
 }
