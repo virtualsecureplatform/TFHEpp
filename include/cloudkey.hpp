@@ -1,7 +1,5 @@
 #pragma once
 
-#include <omp.h>
-
 #include <params.hpp>
 #include <tlwe.hpp>
 #include <trgsw.hpp>
@@ -13,7 +11,6 @@ namespace TFHEpp {
 struct GateKey {
     KeySwitchingKey ksk;
     BootStrappingKeyFFTlvl01 bkfftlvl01;
-    lweParams params;
     GateKey(SecretKey sk)
     {
         for (int i = 0; i < DEF_N; i++)
@@ -32,14 +29,13 @@ struct GateKey {
 struct CircuitKey {
     PrivKeySwitchKey privksk;
     BootStrappingKeyFFTlvl02 bkfftlvl02;
-    lweParams params;
     CircuitKey(SecretKey sk)
     {
         array<uint32_t, DEF_nbar + 1> key;
         for (int i = 0; i < DEF_nbar; i++) key[i] = sk.key.lvl2[i];
         key[DEF_nbar] = -1;
+        #pragma omp parallel for collapse(4)
         for (int z = 0; z < 2; z++)
-            #pragma omp parallel for
             for (int i = 0; i <= DEF_nbar; i++)
                 for (int j = 0; j < DEF_tbar; j++)
                     for (int u = 0; u < (1 << DEF_basebitlvl21) - 1; u++) {
@@ -55,5 +51,12 @@ struct CircuitKey {
                 trgswfftSymEncryptlvl2(static_cast<int32_t>(sk.key.lvl0[i]),
                                        DEF_αbklvl02, sk.key.lvl2);
     }
+};
+
+struct CloudKey{
+    GateKey gk;
+    CircuitKey ck;
+    lweParams params;
+    CloudKey(SecretKey sk) : gk(sk),ck(sk){}
 };
 }  // namespace TFHEpp

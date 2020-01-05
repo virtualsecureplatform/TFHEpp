@@ -54,7 +54,7 @@ inline void PolynomialMulByXaiMinusOne(array<T, N> &res,
     }
 }
 
-inline void PolynomialMulByXaiMinusOnelvl1(Polynomiallvl1 &res,
+void PolynomialMulByXaiMinusOnelvl1(Polynomiallvl1 &res,
                                            const Polynomiallvl1 &poly,
                                            const uint32_t a)
 {
