@@ -127,7 +127,7 @@ inline void DecompositionFFTlvl2(DecomposedTRLWEInFDlvl2 &decvecfft,
         TwistIFFTlvl2(decvecfft[i], decvec[i]);
 }
 
-void trgswfftExternalProductlvl1(TRLWElvl1 &trlwe, const TRGSWFFTlvl1 &trgswfft)
+void trgswfftExternalProductlvl1(TRLWElvl1 &res, const TRLWElvl1 &trlwe, const TRGSWFFTlvl1 &trgswfft)
 {
     DecomposedTRLWEInFDlvl1 decvecfft;
     DecompositionFFTlvl1(decvecfft, trlwe);
@@ -138,11 +138,11 @@ void trgswfftExternalProductlvl1(TRLWElvl1 &trlwe, const TRGSWFFTlvl1 &trgswfft)
         FMAInFD<DEF_N>(restrlwefft[0], decvecfft[i], trgswfft[i][0]);
         FMAInFD<DEF_N>(restrlwefft[1], decvecfft[i], trgswfft[i][1]);
     }
-    TwistFFTlvl1(trlwe[0], restrlwefft[0]);
-    TwistFFTlvl1(trlwe[1], restrlwefft[1]);
+    TwistFFTlvl1(res[0], restrlwefft[0]);
+    TwistFFTlvl1(res[1], restrlwefft[1]);
 }
 
-void trgswfftExternalProductlvl2(TRLWElvl2 &trlwe, const TRGSWFFTlvl2 &trgswfft)
+void trgswfftExternalProductlvl2(TRLWElvl2 &res, const TRLWElvl2 &trlwe, const TRGSWFFTlvl2 &trgswfft)
 {
     DecomposedTRLWEInFDlvl2 decvecfft;
     DecompositionFFTlvl2(decvecfft, trlwe);
@@ -153,7 +153,7 @@ void trgswfftExternalProductlvl2(TRLWElvl2 &trlwe, const TRGSWFFTlvl2 &trgswfft)
         FMAInFD<DEF_nbar>(restrlwefft[0], decvecfft[i], trgswfft[i][0]);
         FMAInFD<DEF_nbar>(restrlwefft[1], decvecfft[i], trgswfft[i][1]);
     }
-    TwistFFTlvl2(trlwe[0], restrlwefft[0]);
-    TwistFFTlvl2(trlwe[1], restrlwefft[1]);
+    TwistFFTlvl2(res[0], restrlwefft[0]);
+    TwistFFTlvl2(res[1], restrlwefft[1]);
 }
 }  // namespace TFHEpp

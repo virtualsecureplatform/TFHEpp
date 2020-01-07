@@ -6,7 +6,7 @@
 namespace TFHEpp {
 using namespace std;
 
-void IdentityKeySwitchlvl10(TLWElvl0 &res, TLWElvl1 &tlwe,
+void IdentityKeySwitchlvl10(TLWElvl0 &res, const TLWElvl1 &tlwe,
                             const KeySwitchingKey &ksk);
 void PrivKeySwitchlvl21(TRLWElvl1 &res, const TLWElvl2 &tlwe, const int u,
                         const PrivKeySwitchKey &privksk);

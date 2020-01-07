@@ -84,11 +84,10 @@ inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara,
     }
 }
 
-inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
+void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc,
                                                const TLWElvl0 &tlwe,
                                                const GateKey &gk)
 {
-    TRLWElvl1 acc;
     TRLWElvl1 temp;
     uint32_t bara = 2 * DEF_N - modSwitchFromTorus32<2 * DEF_N>(tlwe[DEF_n]);
     RotatedTestVector<uint32_t, DEF_N>(acc, bara, DEF_μ);
@@ -97,12 +96,19 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
         if (bara == 0) continue;
         PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1], bara);
-        trgswfftExternalProductlvl1(temp, gk.bkfftlvl01[i]);
+        trgswfftExternalProductlvl1(temp, temp, gk.bkfftlvl01[i]);
         for (int i = 0; i < DEF_N; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
         }
     }
+}
+
+void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res,
+                                               const TLWElvl0 &tlwe,
+                                               const GateKey &gk){
+    TRLWElvl1 acc;
+    GateBootstrappingTLWE2TRLWEFFTlvl01(acc,tlwe,gk);
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
@@ -121,7 +127,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
         if (bara == 0) continue;
         PolynomialMulByXaiMinusOnelvl2(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOnelvl2(temp[1], acc[1], bara);
-        trgswfftExternalProductlvl2(temp, ck.bkfftlvl02[i]);
+        trgswfftExternalProductlvl2(temp, temp, ck.bkfftlvl02[i]);
         for (int i = 0; i < DEF_nbar; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];

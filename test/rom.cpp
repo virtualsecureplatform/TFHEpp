@@ -33,13 +33,13 @@ void LROMUX(vector<TLWElvl0> &res, const array<TRGSWFFTlvl1,address_bit> &addres
     TRLWElvl1 temp,acc;
     PolynomialMulByXaiMinusOnelvl1(temp[0],data[0],2*DEF_N - (DEF_N>>1));
     PolynomialMulByXaiMinusOnelvl1(temp[1],data[1],2*DEF_N - (DEF_N>>1));
-    trgswfftExternalProductlvl1(temp,address[width_bit - 1]);
+    trgswfftExternalProductlvl1(temp, temp,address[width_bit - 1]);
     for(int i = 0;i<DEF_N;i++) {acc[0][i] = temp[0][i]+data[0][i]; acc[1][i] = temp[1][i]+data[1][i];}
     
     for(uint32_t bit = 2;bit<=width_bit;bit++){
         PolynomialMulByXaiMinusOnelvl1(temp[0],acc[0],2*DEF_N - (DEF_N>>bit));
         PolynomialMulByXaiMinusOnelvl1(temp[1],acc[1],2*DEF_N - (DEF_N>>bit));
-        trgswfftExternalProductlvl1(temp,address[width_bit - bit]);
+        trgswfftExternalProductlvl1(temp, temp, address[width_bit - bit]);
         for(int i = 0;i<DEF_N;i++) {acc[0][i] += temp[0][i];acc[1][i] += temp[1][i];}
     } 
 

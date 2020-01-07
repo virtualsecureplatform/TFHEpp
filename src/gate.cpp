@@ -122,4 +122,28 @@ void HomMUX(TLWElvl0 &res, const TLWElvl0 &cs, const TLWElvl0 &c1,
     IdentityKeySwitchlvl10(res, and1, gk.ksk);
 }
 
+void ExtractSwitchAndHomMUX(TRLWElvl1 &res, const TRLWElvl1 &csr, const TRLWElvl1 &c1r,
+            const TRLWElvl1 &c0r, const GateKey &gk)
+{
+    TLWElvl1 templvl1;
+    TLWElvl0 cs,c1,c0;
+    SampleExtractIndexlvl1(templvl1,csr,0);
+    IdentityKeySwitchlvl10(cs,templvl1,gk.ksk);
+    SampleExtractIndexlvl1(templvl1,c1r,0);
+    IdentityKeySwitchlvl10(c1,templvl1,gk.ksk);
+    SampleExtractIndexlvl1(templvl1,c0r,0);
+    IdentityKeySwitchlvl10(c0,templvl1,gk.ksk);
+
+    for (int i = 0; i <= DEF_n; i++) c1[i] += cs[i];
+    for (int i = 0; i <= DEF_n; i++) c0[i] -= cs[i];
+    c1[DEF_n] -= 1U << 29;
+    c0[DEF_n] -= 1U << 29;
+    TRLWElvl1 and0;
+    GateBootstrappingTLWE2TRLWEFFTlvl01(res, c1, gk);
+    GateBootstrappingTLWE2TRLWEFFTlvl01(and0, c0, gk);
+
+    for (int i = 0; i < DEF_N; i++) {res[0][i] += and0[0][i];res[1][i] += and0[1][i];};
+    res[1][0] += 1U << 29;
+}
+
 }  // namespace TFHEpp

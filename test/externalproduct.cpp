@@ -26,7 +26,7 @@ int main()
         TRLWElvl1 c = trlweSymEncryptlvl1(pmu, DEF_αbk, key.lvl1);
 
         TRGSWFFTlvl1 trgswfft = trgswfftSymEncryptlvl1(1, DEF_αbk, key.lvl1);
-        trgswfftExternalProductlvl1(c, trgswfft);
+        trgswfftExternalProductlvl1(c, c, trgswfft);
         array<bool, DEF_N> p2 = trlweSymDecryptlvl1(c, key.lvl1);
         for (int i = 0; i < DEF_N; i++) assert(p[i] == p2[i]);
     }
@@ -44,7 +44,7 @@ int main()
 
         TRGSWFFTlvl2 trgswfft =
             trgswfftSymEncryptlvl2(1, DEF_αbklvl02, key.lvl2);
-        trgswfftExternalProductlvl2(c, trgswfft);
+        trgswfftExternalProductlvl2(c, c, trgswfft);
         array<bool, DEF_nbar> p2 = trlweSymDecryptlvl2(c, key.lvl2);
         for (int i = 0; i < DEF_nbar; i++) assert(p[i] == p2[i]);
     }
@@ -63,7 +63,7 @@ int main()
         TRLWElvl1 c = trlweSymEncryptlvl1(pmu, DEF_αbk, key.lvl1);
 
         TRGSWFFTlvl1 trgswfft = trgswfftSymEncryptlvl1(-1, DEF_αbk, key.lvl1);
-        trgswfftExternalProductlvl1(c, trgswfft);
+        trgswfftExternalProductlvl1(c, c, trgswfft);
         array<bool, DEF_N> p2 = trlweSymDecryptlvl1(c, key.lvl1);
         for (int i = 0; i < DEF_N; i++) assert(p[i] == !p2[i]);
     }
@@ -81,7 +81,7 @@ int main()
 
         TRGSWFFTlvl2 trgswfft =
             trgswfftSymEncryptlvl2(-1, DEF_αbklvl02, key.lvl2);
-        trgswfftExternalProductlvl2(c, trgswfft);
+        trgswfftExternalProductlvl2(c, c, trgswfft);
         array<bool, DEF_nbar> p2 = trlweSymDecryptlvl2(c, key.lvl2);
         for (int i = 0; i < DEF_nbar; i++) assert(p[i] == !p2[i]);
     }
