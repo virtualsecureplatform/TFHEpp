@@ -67,12 +67,14 @@ int main()
     GateBootstrappingTLWE2TRLWEFFTlvl01(msbaddress,encaddress[address_bit-1],(*ck).gk);
 
     trlweaddress[memsize>>1] = msbaddress;
+    trlweaddress[memsize>>1][1][0] += DEF_μ;
     for(int i = 0;i<DEF_N;i++){trlweaddress[0][0][i] = -msbaddress[0][i];trlweaddress[0][1][i] = -msbaddress[1][i];}
+    trlweaddress[0][1][0] += DEF_μ;
 
     writeMUX<address_bit,(memsize>>1),address_bit-2>(trlweaddress,*bootedTGSW);
     writeMUX<address_bit,0,address_bit-2>(trlweaddress,*bootedTGSW);
 
-    for(int i = 0;i<memsize;i++) ExtractSwitchAndHomMUX(encmemory[i],trlweaddress[i],datum,encmemory[i],(*ck).gk);
+    for(int i = 0;i<memsize;i++) {trlweaddress[i][1][0] -= DEF_μ;ExtractSwitchAndHomMUX(encmemory[i],trlweaddress[i],datum,encmemory[i],(*ck).gk);}
 
     end = chrono::system_clock::now();
     uint32_t intaddress = 0;
