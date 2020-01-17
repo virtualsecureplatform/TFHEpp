@@ -1,4 +1,12 @@
-file(GLOB tfhe++_sources "*.cpp")
+SET(tfhe++_sources
+    detwfa.cpp
+    gate.cpp
+    gatebootstrapping.cpp
+    keyswitch.cpp
+    tlwe.cpp
+    trgsw.cpp
+    trlwe.cpp)
+
 
 
 add_library(tfhe++
