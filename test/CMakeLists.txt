@@ -1,4 +1,4 @@
-file(GLOB test_sources RELATIVE "${CMAKE_SOURCE_DIR}/test" "*.cpp")
+file(GLOB test_sources RELATIVE "." "*.cpp")
 
 foreach(test_source ${test_sources})
     string( REPLACE ".cpp" "" test_name ${test_source} )
