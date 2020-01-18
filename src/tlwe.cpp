@@ -10,6 +10,10 @@
 #include <utils.hpp>
 #include <vector>
 
+/*
+This code is resposible for TLWE Encryption and Decryption.
+*/
+
 namespace TFHEpp {
 using namespace std;
 static randen::Randen<uint64_t> engine;
