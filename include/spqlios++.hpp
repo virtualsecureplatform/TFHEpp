@@ -48,7 +48,7 @@ namespace SPQLIOSpp{
         }
     }
 
-    template <uint32_t Nbit = DEF_Nbit, uint32_t step, uint32_t size, uint32_t stride>
+    template <uint32_t Nbit = DEF_Nbit, uint32_t step, uint32_t size, uint32_t stride, bool isinvert =true>
     inline void TwiddleMul(double* const a, const array<double,1<<Nbit> &table){
         constexpr uint32_t N = 1<<Nbit;
 
@@ -56,7 +56,7 @@ namespace SPQLIOSpp{
         double* const aim = a+N;
         for(int i = 1; i<size; i++){
             const double bre = table[stride*(1<<step)*i];
-            const double bim = table[stride*(1<<step)*i + N/2];
+            const double bim = isinvert?table[stride*(1<<step)*i + N/2]:-table[stride*(1<<step)*i + N/2];
 
             const double aimbim = aim[i] * bim;
             const double arebim = are[i] * bim;
@@ -74,10 +74,9 @@ namespace SPQLIOSpp{
             ButterflyAdd<size,N>(res);
         }
         else{
-            
             ButterflyAdd<size,N>(res);
-            
-            TwiddleMul<Nbit,step,size/2,1>(res+size/2,table);
+
+            TwiddleMul<Nbit,step,size/2,1,true>(res+size/2,table);
 
             IFFT<Nbit,step+1>(res, table);
             IFFT<Nbit,step+1>(res+size/2, table);
@@ -86,10 +85,12 @@ namespace SPQLIOSpp{
 
     void TwistIFFTlvl1(array<double ,DEF_N> &res, const array<uint32_t,DEF_N> &a){
         for (int i = 0; i < DEF_N / 2; i++) {
-            const double aimbim = a[i + DEF_N / 2] * twistlvl1[i + DEF_N / 2];
-            const double arebim = a[i] * twistlvl1[i + DEF_N / 2];
-            res[i] = a[i] * twistlvl1[i] - aimbim;
-            res[i + DEF_N / 2] = a[i + DEF_N / 2] * twistlvl1[i] + arebim;
+            const double are = static_cast<double>(static_cast<int32_t>(a[i]));
+            const double aim = static_cast<double>(static_cast<int32_t>(a[i+DEF_N/2]));
+            const double aimbim = aim * twistlvl1[i + DEF_N / 2];
+            const double arebim = are * twistlvl1[i + DEF_N / 2];
+            res[i] = are * twistlvl1[i] - aimbim;
+            res[i + DEF_N / 2] = aim * twistlvl1[i] + arebim;
         }
         IFFT<DEF_Nbit-1,0>(res.data(),tablelvl1);
     }
@@ -106,7 +107,7 @@ namespace SPQLIOSpp{
             FFT<Nbit,step+1>(res, table);
             FFT<Nbit,step+1>(res+size/2, table);
 
-            TwiddleMul<Nbit,step,size/2,1>(res+size/2,table);
+            TwiddleMul<Nbit,step,size/2,1,false>(res+size/2,table);
             ButterflyAdd<size,N>(res);
         }
     }
@@ -116,8 +117,8 @@ namespace SPQLIOSpp{
         for (int i = 0; i < DEF_N / 2; i++) {
             const double aimbim = a[i + DEF_N / 2] * -twistlvl1[i + DEF_N / 2];
             const double arebim = a[i] * -twistlvl1[i + DEF_N / 2];
-            res[i] = a[i] * twistlvl1[i] - aimbim;
-            res[i + DEF_N / 2] = a[i + DEF_N / 2] * twistlvl1[i] + arebim;
+            res[i] = static_cast<int64_t>((a[i] * twistlvl1[i] - aimbim)*(2.0/DEF_N));
+            res[i + DEF_N / 2] = static_cast<int64_t>((a[i + DEF_N / 2] * twistlvl1[i] + arebim)*(2.0/DEF_N));
         }
     }
 

@@ -23,6 +23,8 @@ int main()
         SPQLIOSpp::TwistIFFTlvl1(resfft, a);
         Polynomiallvl1 res;
         SPQLIOSpp::TwistFFTlvl1(res, resfft);
+        // for (int i = 0; i < DEF_N; i++)
+            // cout<<res[i]<<":"<<resfft[i]<<endl;
         for (int i = 0; i < DEF_N; i++)
             assert(abs(static_cast<int32_t>(a[i] - res[i])) <= 1);
     }
