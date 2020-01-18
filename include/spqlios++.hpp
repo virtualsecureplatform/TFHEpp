@@ -1,5 +1,7 @@
 #pragma once
 
+#include<utility>
+
 #include "params.hpp"   
 #include "utils.hpp"
 
@@ -18,17 +20,17 @@ namespace SPQLIOSpp{
     }
 
     template<uint32_t N>
-    array<double,N> TableGen(){
-        array<double,N> table;
-        for(uint32_t i = 0;i<N/2;i++){
+    array<double,2*N> TableGen(){
+        array<double,2*N> table;
+        for(uint32_t i = 0;i<N;i++){
             table[i] = cos(2*i*M_PI/N);
-            table[i+N/2] = sin(2*i*M_PI/N);
+            table[i+N] = sin(2*i*M_PI/N);
         }
         return table;
     }
 
     static const array<double,DEF_N> twistlvl1 = TwistGen<DEF_N>();
-    static const array<double,DEF_N/2> tablelvl1 = TableGen<DEF_N/2>();
+    static const array<double,DEF_N> tablelvl1 = TableGen<DEF_N/2>();
 
     template<uint32_t size, uint32_t N>
     inline void ButterflyAdd(double* const a){
@@ -49,14 +51,14 @@ namespace SPQLIOSpp{
     }
 
     template <uint32_t Nbit = DEF_Nbit, uint32_t step, uint32_t size, uint32_t stride, bool isinvert =true>
-    inline void TwiddleMul(double* const a, const array<double,1<<Nbit> &table){
+    inline void TwiddleMul(double* const a, const array<double,1<<(Nbit+1)> &table){
         constexpr uint32_t N = 1<<Nbit;
 
         double* const are = a;
         double* const aim = a+N;
         for(int i = 1; i<size; i++){
             const double bre = table[stride*(1<<step)*i];
-            const double bim = isinvert?table[stride*(1<<step)*i + N/2]:-table[stride*(1<<step)*i + N/2];
+            const double bim = isinvert?table[stride*(1<<step)*i + N]:-table[stride*(1<<step)*i + N];
 
             const double aimbim = aim[i] * bim;
             const double arebim = are[i] * bim;
@@ -64,22 +66,50 @@ namespace SPQLIOSpp{
             aim[i] = aim[i] * bre + arebim;
         }
     }
+    template <uint32_t Nbit = DEF_Nbit-1, uint32_t size, bool isinvert =true>
+    inline void Radix4TwiddleMul(double* const a){
+        constexpr uint32_t N = 1<<Nbit;
+
+        double* const are = a;
+        double* const aim = a+N;
+        for(int i = 0;i<size;i++){
+            swap(are[i],aim[i]);
+            if constexpr(isinvert){
+                are[i]*=-1;
+            }
+            else{
+                aim[i]*=-1;
+            }
+        }
+    }
 
     template<uint32_t Nbit = DEF_Nbit-1, int step = 0>
-    void IFFT(double* const res, const array<double,1<<Nbit> &table){
+    void IFFT(double* const res, const array<double,1<<(Nbit+1)> &table){
         constexpr uint32_t N = 1<<Nbit;
         constexpr uint32_t size = 1<<(Nbit-step);
         
         if constexpr(size == 2){
             ButterflyAdd<size,N>(res);
         }
+        else if constexpr(size==4){
+            ButterflyAdd<size,N>(res);
+            Radix4TwiddleMul<Nbit,size/4,true>(res+size*3/4);
+            ButterflyAdd<size/2,N>(res);
+            ButterflyAdd<size/2,N>(res+size/2);
+        }
         else{
             ButterflyAdd<size,N>(res);
 
-            TwiddleMul<Nbit,step,size/2,1,true>(res+size/2,table);
+            Radix4TwiddleMul<Nbit,size/4,true>(res+size*3/4);
+
+            ButterflyAdd<size/2,N>(res+size/2);
+
+            TwiddleMul<Nbit,step,size/4,1,true>(res+size/2,table);
+            TwiddleMul<Nbit,step,size/4,3,true>(res+size*3/4,table);
 
             IFFT<Nbit,step+1>(res, table);
-            IFFT<Nbit,step+1>(res+size/2, table);
+            IFFT<Nbit,step+2>(res+size/2, table);
+            IFFT<Nbit,step+2>(res+size*3/4, table);
         }
     }
 
@@ -96,18 +126,29 @@ namespace SPQLIOSpp{
     }
 
     template<uint32_t Nbit = DEF_Nbit-1, int step = 0>
-    void FFT(double* const res, const array<double,1<<Nbit> &table){
+    void FFT(double* const res, const array<double,1<<(Nbit+1)> &table){
         constexpr uint32_t N = 1<<Nbit;
         constexpr uint32_t size = 1<<(Nbit-step);
 
         if constexpr(size == 2){
             ButterflyAdd<size,N>(res);
         }
+        else if constexpr(size == 4){
+            ButterflyAdd<size/2,N>(res);
+
+            ButterflyAdd<size/2,N>(res+size/2);
+            Radix4TwiddleMul<Nbit,size/4,false>(res+size*3/4);
+            ButterflyAdd<size,N>(res);
+        }
         else{
             FFT<Nbit,step+1>(res, table);
-            FFT<Nbit,step+1>(res+size/2, table);
+            FFT<Nbit,step+2>(res+size/2, table);
+            FFT<Nbit,step+2>(res+size*3/4, table);
 
-            TwiddleMul<Nbit,step,size/2,1,false>(res+size/2,table);
+            TwiddleMul<Nbit,step,size/4,1,false>(res+size/2,table);
+            TwiddleMul<Nbit,step,size/4,3,false>(res+size*3/4,table);
+            ButterflyAdd<size/2,N>(res+size/2);
+            Radix4TwiddleMul<Nbit,size/4,false>(res+size*3/4);
             ButterflyAdd<size,N>(res);
         }
     }
