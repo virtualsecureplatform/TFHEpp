@@ -11,10 +11,15 @@
 #include <type_traits>
 #include <utils.hpp>
 
+/*
+This code is resposible for TLWE Encryption and Decryption.
+*/
+
 namespace TFHEpp {
 using namespace std;
 static randen::Randen<uint64_t> engine;
 
+// Template funciton of 1 bit TLWE Encryption.
 template <typename T = uint32_t, uint32_t n = DEF_n>
 inline array<T, n + 1> tlweSymEncrypt(const T p, const double α,
                                       const array<uint32_t, n> &key)
@@ -35,6 +40,7 @@ TLWElvl0 tlweSymEncryptlvl0(const uint32_t p, const double α,
     return tlweSymEncrypt<uint32_t, DEF_n>(p, α, key);
 }
 
+// Template funciton of 1 bit TLWE Decryption.
 template <typename T = uint32_t, uint32_t n = DEF_n>
 bool tlweSymDecrypt(const array<T, n + 1> &c, const array<T, n> &key)
 {
@@ -49,6 +55,7 @@ bool tlweSymDecryptlvl0(const TLWElvl0 &c, const Keylvl0 &key)
     return tlweSymDecrypt<uint32_t, DEF_n>(c, key);
 }
 
+//The funciton of array of bits TLWE Encryption.
 vector<TLWElvl0> bootsSymEncrypt(const vector<uint8_t> &p, const SecretKey &sk)
 {
     vector<TLWElvl0> c(p.size());
@@ -57,6 +64,7 @@ vector<TLWElvl0> bootsSymEncrypt(const vector<uint8_t> &p, const SecretKey &sk)
     return c;
 }
 
+//The funciton of array of bits TLWE Decryption.
 vector<uint8_t> bootsSymDecrypt(const vector<TLWElvl0> &c, const SecretKey &sk)
 {
     vector<uint8_t> p(c.size());

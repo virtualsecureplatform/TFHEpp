@@ -63,8 +63,8 @@ inline void MulInFD(array<double, N> &res, const array<double, N> &a,
                     const array<double, N> &b)
 {
     for (int i = 0; i < N / 2; i++) {
-        double aimbim = a[i + N / 2] * b[i + N / 2];
-        double arebim = a[i] * b[i + N / 2];
+        const double aimbim = a[i + N / 2] * b[i + N / 2];
+        const double arebim = a[i] * b[i + N / 2];
         res[i] = a[i] * b[i] - aimbim;
         res[i + N / 2] = a[i + N / 2] * b[i] + arebim;
     }

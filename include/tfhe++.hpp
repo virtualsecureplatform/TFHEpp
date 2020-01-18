@@ -5,6 +5,7 @@
 #include <gatebootstrapping.hpp>
 #include <key.hpp>
 #include <keyswitch.hpp>
+#include <spqlios++.hpp>
 #include <mulfft.hpp>
 #include <params.hpp>
 #include <tlwe.hpp>
