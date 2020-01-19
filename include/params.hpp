@@ -68,28 +68,28 @@ using PrivKeySwitchKey =
           2>;
 
 struct lweParams {
-    const uint32_t n = DEF_N;
-    const double α = DEF_α;
-    const uint32_t Nbit = DEF_Nbit;
-    const uint32_t N = DEF_N;
-    const uint32_t l = DEF_l;
-    const uint32_t Bgbit = DEF_Bgbit;
-    const uint32_t Bg = DEF_Bg;
-    const double αbk = DEF_αbk;
-    const uint32_t t = DEF_t;
-    const uint32_t basebit = DEF_basebit;
-    const double αks = DEF_α;
-    const uint32_t μ = DEF_μ;
+    uint32_t n = DEF_N;
+    double α = DEF_α;
+    uint32_t Nbit = DEF_Nbit;
+    uint32_t N = DEF_N;
+    uint32_t l = DEF_l;
+    uint32_t Bgbit = DEF_Bgbit;
+    uint32_t Bg = DEF_Bg;
+    double αbk = DEF_αbk;
+    uint32_t t = DEF_t;
+    uint32_t basebit = DEF_basebit;
+    double αks = DEF_α;
+    uint32_t μ = DEF_μ;
 
-    const uint32_t nbarbit = DEF_nbarbit;
-    const uint32_t nbar = DEF_nbar;
-    const uint32_t lbar = DEF_lbar;
-    const uint32_t Bgbitbar = DEF_Bgbitbar;
-    const uint32_t Bgbar = DEF_Bgbar;
-    const double αbklvl02 = DEF_αbklvl02;
-    const uint32_t tbar = DEF_tbar;
-    const uint32_t basebitlvl21 = DEF_basebitlvl21;
-    const double αprivks = DEF_αprivks;
-    const uint64_t μbar = DEF_μbar;
+    uint32_t nbarbit = DEF_nbarbit;
+    uint32_t nbar = DEF_nbar;
+    uint32_t lbar = DEF_lbar;
+    uint32_t Bgbitbar = DEF_Bgbitbar;
+    uint32_t Bgbar = DEF_Bgbar;
+    double αbklvl02 = DEF_αbklvl02;
+    uint32_t tbar = DEF_tbar;
+    uint32_t basebitlvl21 = DEF_basebitlvl21;
+    double αprivks = DEF_αprivks;
+    uint64_t μbar = DEF_μbar;
 };
 }  // namespace TFHEpp
