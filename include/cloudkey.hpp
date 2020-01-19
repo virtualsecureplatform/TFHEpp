@@ -24,6 +24,7 @@ struct GateKey {
             bkfftlvl01[i] = trgswfftSymEncryptlvl1(
                 static_cast<int32_t>(sk.key.lvl0[i]), DEF_αbk, sk.key.lvl1);
     }
+    GateKey() {}
 };
 
 struct CircuitKey {
