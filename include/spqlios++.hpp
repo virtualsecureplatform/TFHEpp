@@ -89,86 +89,75 @@ namespace SPQLIOSpp{
         }
     }
 
-    template<uint32_t size, uint32_t N>
-    inline void ButterflyAdd(double* const a){
-        double* const b = a+size/2;
+    template<uint32_t N>
+    inline void ButterflyAdd(double* const a, double* const b, int i){
         double* const are = a;
         double* const aim = a+N;
         double* const bre = b;
         double* const bim = b+N;
         
-        for (int i = 0;i<size/2;i++){
-            const double tempre = are[i];
-            are[i] += bre[i];
-            bre[i] = tempre - bre[i];
-            const double tempim = aim[i];
-            aim[i] += bim[i];
-            bim[i] = tempim - bim[i];
-        }
+        const double tempre = are[i];
+        are[i] += bre[i];
+        bre[i] = tempre - bre[i];
+        const double tempim = aim[i];
+        aim[i] += bim[i];
+        bim[i] = tempim - bim[i];
     }
 
-    template <uint32_t Nbit = DEF_Nbit, uint32_t step, uint32_t size, uint32_t stride, bool isinvert =true>
-    inline void TwiddleMul(double* const a, const array<double,1<<(Nbit+1)> &table){
+    template <uint32_t Nbit = DEF_Nbit, uint32_t step, uint32_t stride, bool isinvert =true>
+    inline void TwiddleMul(double* const a, const array<double,1<<(Nbit+1)> &table,int i){
         constexpr uint32_t N = 1<<Nbit;
 
         double* const are = a;
         double* const aim = a+N;
-        for(int i = 1; i<size; i++){
-            const double bre = table[stride*(1<<step)*i];
-            const double bim = isinvert?table[stride*(1<<step)*i + N]:-table[stride*(1<<step)*i + N];
+        const double bre = table[stride*(1<<step)*i];
+        const double bim = isinvert?table[stride*(1<<step)*i + N]:-table[stride*(1<<step)*i + N];
 
-            const double aimbim = aim[i] * bim;
-            const double arebim = are[i] * bim;
-            are[i] = are[i] * bre - aimbim;
-            aim[i] = aim[i] * bre + arebim;
-        }
+        const double aimbim = aim[i] * bim;
+        const double arebim = are[i] * bim;
+        are[i] = are[i] * bre - aimbim;
+        aim[i] = aim[i] * bre + arebim;
     }
 
-    template <uint32_t Nbit = DEF_Nbit-1, uint32_t size, bool isinvert =true>
-    inline void Radix4TwiddleMul(double* const a){
+    template <uint32_t Nbit = DEF_Nbit-1, bool isinvert =true>
+    inline void Radix4TwiddleMul(double* const a, int i){
         constexpr uint32_t N = 1<<Nbit;
 
         double* const are = a;
         double* const aim = a+N;
-        for(int i = 0;i<size;i++){
-            swap(are[i],aim[i]);
-            if constexpr(isinvert){
-                are[i]*=-1;
-            }
-            else{
-                aim[i]*=-1;
-            }
+        swap(are[i],aim[i]);
+        if constexpr(isinvert){
+            are[i]*=-1;
+        }
+        else{
+            aim[i]*=-1;
         }
     }
 
-    template <uint32_t Nbit = DEF_Nbit-1, uint32_t size, bool isinvert =true>
-    inline void Radix8TwiddleMulStrideOne(double* const a){
+    template <uint32_t Nbit = DEF_Nbit-1, bool isinvert =true>
+    inline void Radix8TwiddleMulStrideOne(double* const a,int i){
         constexpr uint32_t N = 1<<Nbit;
 
         double* const are = a;
         double* const aim = a+N;
         const double _1sroot2 = 1/sqrt(2);
-        for(int i = 0;i<size;i++){
-            const double aimbim = isinvert?aim[i]:-aim[i];
-            const double arebim = isinvert?are[i]:-are[i];
-            are[i] = _1sroot2*(are[i] - aimbim);
-            aim[i] = _1sroot2*(aim[i] + arebim);
-        }
+        const double aimbim = isinvert?aim[i]:-aim[i];
+        const double arebim = isinvert?are[i]:-are[i];
+        are[i] = _1sroot2*(are[i] - aimbim);
+        aim[i] = _1sroot2*(aim[i] + arebim);
     }
 
-    template <uint32_t Nbit = DEF_Nbit-1, uint32_t size, bool isinvert =true>
-    inline void Radix8TwiddleMulStrideThree(double* const a){
+    template <uint32_t Nbit = DEF_Nbit-1, bool isinvert =true>
+    inline void Radix8TwiddleMulStrideThree(double* const a, int i){
         constexpr uint32_t N = 1<<Nbit;
 
         double* const are = a;
         double* const aim = a+N;
         const double _1sroot2 = 1/sqrt(2);
-        for(int i = 0;i<size;i++){
-            const double aimbim = isinvert?aim[i]:-aim[i];
-            const double arebim = isinvert?are[i]:-are[i];
-            are[i] = _1sroot2*(-are[i] - aimbim);
-            aim[i] = _1sroot2*(-aim[i] + arebim);
-        }
+        const double aimbim = isinvert?aim[i]:-aim[i];
+        const double arebim = isinvert?are[i]:-are[i];
+        are[i] = _1sroot2*(-are[i] - aimbim);
+        aim[i] = _1sroot2*(-aim[i] + arebim);
     }
 
     template<uint32_t Nbit = DEF_Nbit-1, int step = 0>
@@ -177,56 +166,104 @@ namespace SPQLIOSpp{
         constexpr uint32_t size = 1<<(Nbit-step);
         
         if constexpr(size == 2){
-            ButterflyAdd<size,N>(res);
+            double* const res0 = &res[0];
+            double* const res1 = &res[size/2];
+            ButterflyAdd<N>(res0,res1,0);
         }
         else if constexpr(size==4){
-            ButterflyAdd<size,N>(res);
-            Radix4TwiddleMul<Nbit,size/4,true>(res+size*3/4);
-            ButterflyAdd<size/2,N>(res);
-            ButterflyAdd<size/2,N>(res+size/2);
+            double* const res0 = &res[0];
+            double* const res1 = &res[size/4];
+            double* const res2 = &res[size*2/4];
+            double* const res3 = &res[size*3/4];
+            ButterflyAdd<N>(res0,res2,0);
+            ButterflyAdd<N>(res1,res3,0);
+            Radix4TwiddleMul<Nbit,true>(res3,0);
+            ButterflyAdd<N>(res0,res1,0);
+            ButterflyAdd<N>(res2,res3,0);
         }
         else if constexpr(size == 8){
-            ButterflyAdd<size,N>(res);
+            double* const res0 = &res[0];
+            double* const res1 = &res[size/8];
+            double* const res2 = &res[size*2/8];
+            double* const res3 = &res[size*3/8];
+            double* const res4 = &res[size*4/8];
+            double* const res5 = &res[size*5/8];
+            double* const res6 = &res[size*6/8];
+            double* const res7 = &res[size*7/8];
 
-            IFFT<Nbit,step+1>(res, table);
+            ButterflyAdd<N>(res0,res4,0);
+            ButterflyAdd<N>(res1,res5,0);
+            ButterflyAdd<N>(res2,res6,0);
+            ButterflyAdd<N>(res3,res7,0);
 
-            Radix8TwiddleMulStrideOne<Nbit,size/8,true>(res+size*5/8);
-            Radix4TwiddleMul<Nbit,size/8,true>(res+size*3/4);
-            Radix8TwiddleMulStrideThree<Nbit,size/8,true>(res+size*7/8);
+            Radix8TwiddleMulStrideOne<Nbit,true>(res5,0);
+            Radix4TwiddleMul<Nbit,true>(res6,0);
+            Radix8TwiddleMulStrideThree<Nbit,true>(res7,0);
 
-            ButterflyAdd<size/2,N>(res+size/2);
+            ButterflyAdd<N>(res0,res2,0);
+            ButterflyAdd<N>(res1,res3,0);
+            ButterflyAdd<N>(res4,res6,0);
+            ButterflyAdd<N>(res5,res7,0);
             
-            Radix4TwiddleMul<Nbit,size/8,true>(res+size*7/8);
+            Radix4TwiddleMul<Nbit,true>(res3,0);
+            Radix4TwiddleMul<Nbit,true>(res7,0);
 
-            ButterflyAdd<size/4,N>(res+size/2);
-            ButterflyAdd<size/4,N>(res+size*3/4);
+            ButterflyAdd<N>(res0,res1,0);
+            ButterflyAdd<N>(res2,res3,0);
+            ButterflyAdd<N>(res4,res5,0);
+            ButterflyAdd<N>(res6,res7,0);
 
         }
         else{
-            ButterflyAdd<size,N>(res);
+            double* const res0 = &res[0];
+            double* const res1 = &res[size/8];
+            double* const res2 = &res[size*2/8];
+            double* const res3 = &res[size*3/8];
+            double* const res4 = &res[size*4/8];
+            double* const res5 = &res[size*5/8];
+            double* const res6 = &res[size*6/8];
+            double* const res7 = &res[size*7/8];
+            for(int i = 0;i<size/8;i++){
 
-            IFFT<Nbit,step+1>(res, table);
+                ButterflyAdd<N>(res0,res4,i);
+                ButterflyAdd<N>(res1,res5,i);
+                ButterflyAdd<N>(res2,res6,i);
+                ButterflyAdd<N>(res3,res7,i);
 
-            Radix8TwiddleMulStrideOne<Nbit,size/8,true>(res+size*5/8);
-            Radix4TwiddleMul<Nbit,size/8,true>(res+size*3/4);
-            Radix8TwiddleMulStrideThree<Nbit,size/8,true>(res+size*7/8);
+                Radix8TwiddleMulStrideOne<Nbit,true>(res5,i);
+                Radix4TwiddleMul<Nbit,true>(res6,i);
+                Radix8TwiddleMulStrideThree<Nbit,true>(res7,i);
 
-            ButterflyAdd<size/2,N>(res+size/2);
+                ButterflyAdd<N>(res0,res2,i);
+                ButterflyAdd<N>(res1,res3,i);
+                ButterflyAdd<N>(res4,res6,i);
+                ButterflyAdd<N>(res5,res7,i);
+                
+                Radix4TwiddleMul<Nbit,true>(res3,i);
+                Radix4TwiddleMul<Nbit,true>(res7,i);
 
-            Radix4TwiddleMul<Nbit,size/8,true>(res+size*7/8);
+                ButterflyAdd<N>(res0,res1,i);
+                ButterflyAdd<N>(res2,res3,i);
+                ButterflyAdd<N>(res4,res5,i);
+                ButterflyAdd<N>(res6,res7,i);
 
-            ButterflyAdd<size/4,N>(res+size/2);
-            ButterflyAdd<size/4,N>(res+size*3/4);
+                TwiddleMul<Nbit,step,4,true>(res1,table,i);
+                TwiddleMul<Nbit,step,2,true>(res2,table,i);
+                TwiddleMul<Nbit,step,6,true>(res3,table,i);
+                TwiddleMul<Nbit,step,1,true>(res4,table,i);
+                TwiddleMul<Nbit,step,5,true>(res5,table,i);
+                TwiddleMul<Nbit,step,3,true>(res6,table,i);
+                TwiddleMul<Nbit,step,7,true>(res7,table,i);
+            }
 
-            TwiddleMul<Nbit,step,size/8,1,true>(res+size/2,table);
-            TwiddleMul<Nbit,step,size/8,5,true>(res+size*5/8,table);
-            TwiddleMul<Nbit,step,size/8,3,true>(res+size*3/4,table);
-            TwiddleMul<Nbit,step,size/8,7,true>(res+size*7/8,table);
-
-            IFFT<Nbit,step+3>(res+size/2, table);
-            IFFT<Nbit,step+3>(res+size*5/8, table);
-            IFFT<Nbit,step+3>(res+size*3/4, table);
-            IFFT<Nbit,step+3>(res+size*7/8, table);
+            IFFT<Nbit,step+3>(res0, table);
+            IFFT<Nbit,step+3>(res1, table);
+            IFFT<Nbit,step+3>(res2, table);
+            IFFT<Nbit,step+3>(res3, table);
+            IFFT<Nbit,step+3>(res4, table);
+            IFFT<Nbit,step+3>(res5, table);
+            IFFT<Nbit,step+3>(res6, table);
+            IFFT<Nbit,step+3>(res7, table);
         }
     }
 
@@ -246,30 +283,52 @@ namespace SPQLIOSpp{
         constexpr uint32_t size = 1<<(Nbit-step);
 
         if constexpr(size == 2){
-            ButterflyAdd<size,N>(res);
+            double* const res0 = &res[0];
+            double* const res1 = &res[size/2];
+            ButterflyAdd<N>(res0,res1,0);
         }
         else if constexpr(size == 4){
-            ButterflyAdd<size/2,N>(res);
+            double* const res0 = &res[0];
+            double* const res1 = &res[size/4];
+            double* const res2 = &res[size*2/4];
+            double* const res3 = &res[size*3/4];
 
-            ButterflyAdd<size/2,N>(res+size/2);
-            Radix4TwiddleMul<Nbit,size/4,false>(res+size*3/4);
-            ButterflyAdd<size,N>(res);
+            ButterflyAdd<N>(res0,res1,0);
+
+            ButterflyAdd<N>(res2,res3,0);
+
+            Radix4TwiddleMul<Nbit,false>(res3,0);
+            ButterflyAdd<N>(res0,res2,0);
+            ButterflyAdd<N>(res1,res3,0);
         }
         else if constexpr(size==8){
+            double* const res0 = &res[0];
+            double* const res1 = &res[size/8];
+            double* const res2 = &res[size*2/8];
+            double* const res3 = &res[size*3/8];
+            double* const res4 = &res[size*4/8];
+            double* const res5 = &res[size*5/8];
+            double* const res6 = &res[size*6/8];
+            double* const res7 = &res[size*7/8];
+
             FFT<Nbit,step+1>(res, table);
 
-            ButterflyAdd<size/4,N>(res+size/2);
-            ButterflyAdd<size/4,N>(res+size*3/4);
+            ButterflyAdd<N>(res4,res5,0);
+            ButterflyAdd<N>(res6,res7,0);
 
-            Radix4TwiddleMul<Nbit,size/8,false>(res+size*7/8);
+            Radix4TwiddleMul<Nbit,false>(res7,0);
 
-            ButterflyAdd<size/2,N>(res+size/2);
+            ButterflyAdd<N>(res4,res6,0);
+            ButterflyAdd<N>(res5,res7,0);
 
-            Radix8TwiddleMulStrideOne<Nbit,size/8,false>(res+size*5/8);
-            Radix4TwiddleMul<Nbit,size/8,false>(res+size*3/4);
-            Radix8TwiddleMulStrideThree<Nbit,size/8,false>(res+size*7/8);
+            Radix8TwiddleMulStrideOne<Nbit,false>(res5,0);
+            Radix4TwiddleMul<Nbit,false>(res6,0);
+            Radix8TwiddleMulStrideThree<Nbit,false>(res7,0);
 
-            ButterflyAdd<size,N>(res);
+            ButterflyAdd<N>(res0,res4,0);
+            ButterflyAdd<N>(res1,res5,0);
+            ButterflyAdd<N>(res2,res6,0);
+            ButterflyAdd<N>(res3,res7,0);
         }
         else{
             FFT<Nbit,step+1>(res, table);
@@ -278,23 +337,39 @@ namespace SPQLIOSpp{
             FFT<Nbit,step+3>(res+size*3/4, table);
             FFT<Nbit,step+3>(res+size*7/8, table);
             
-            TwiddleMul<Nbit,step,size/8,1,false>(res+size/2,table);
-            TwiddleMul<Nbit,step,size/8,5,false>(res+size*5/8,table);
-            TwiddleMul<Nbit,step,size/8,3,false>(res+size*3/4,table);
-            TwiddleMul<Nbit,step,size/8,7,false>(res+size*7/8,table);
+            double* const res0 = &res[0];
+            double* const res1 = &res[size/8];
+            double* const res2 = &res[size*2/8];
+            double* const res3 = &res[size*3/8];
+            double* const res4 = &res[size*4/8];
+            double* const res5 = &res[size*5/8];
+            double* const res6 = &res[size*6/8];
+            double* const res7 = &res[size*7/8];
 
-            ButterflyAdd<size/4,N>(res+size/2);
-            ButterflyAdd<size/4,N>(res+size*3/4);
+            for(int i = 0;i<size/8;i++){
+            
+                TwiddleMul<Nbit,step,1,false>(res4,table,i);
+                TwiddleMul<Nbit,step,5,false>(res5,table,i);
+                TwiddleMul<Nbit,step,3,false>(res6,table,i);
+                TwiddleMul<Nbit,step,7,false>(res7,table,i);
 
-            Radix4TwiddleMul<Nbit,size/8,false>(res+size*7/8);
+                ButterflyAdd<N>(res4,res5,i);
+                ButterflyAdd<N>(res6,res7,i);
 
-            ButterflyAdd<size/2,N>(res+size/2);
+                Radix4TwiddleMul<Nbit,false>(res7,i);
 
-            Radix8TwiddleMulStrideOne<Nbit,size/8,false>(res+size*5/8);
-            Radix4TwiddleMul<Nbit,size/8,false>(res+size*3/4);
-            Radix8TwiddleMulStrideThree<Nbit,size/8,false>(res+size*7/8);
+                ButterflyAdd<N>(res4,res6,i);
+                ButterflyAdd<N>(res5,res7,i);
 
-            ButterflyAdd<size,N>(res);
+                Radix8TwiddleMulStrideOne<Nbit,false>(res5,i);
+                Radix4TwiddleMul<Nbit,false>(res6,i);
+                Radix8TwiddleMulStrideThree<Nbit,false>(res7,i);
+
+                ButterflyAdd<N>(res0,res4,i);
+                ButterflyAdd<N>(res1,res5,i);
+                ButterflyAdd<N>(res2,res6,i);
+                ButterflyAdd<N>(res3,res7,i);
+            }
         }
     }
 
