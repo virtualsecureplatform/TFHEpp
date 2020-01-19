@@ -247,13 +247,15 @@ namespace SPQLIOSpp{
                 ButterflyAdd<N>(res4,res5,i);
                 ButterflyAdd<N>(res6,res7,i);
 
-                TwiddleMul<Nbit,step,4,true>(res1,table,i);
-                TwiddleMul<Nbit,step,2,true>(res2,table,i);
-                TwiddleMul<Nbit,step,6,true>(res3,table,i);
-                TwiddleMul<Nbit,step,1,true>(res4,table,i);
-                TwiddleMul<Nbit,step,5,true>(res5,table,i);
-                TwiddleMul<Nbit,step,3,true>(res6,table,i);
-                TwiddleMul<Nbit,step,7,true>(res7,table,i);
+                if(i!=0){
+                    TwiddleMul<Nbit,step,4,true>(res1,table,i);
+                    TwiddleMul<Nbit,step,2,true>(res2,table,i);
+                    TwiddleMul<Nbit,step,6,true>(res3,table,i);
+                    TwiddleMul<Nbit,step,1,true>(res4,table,i);
+                    TwiddleMul<Nbit,step,5,true>(res5,table,i);
+                    TwiddleMul<Nbit,step,3,true>(res6,table,i);
+                    TwiddleMul<Nbit,step,7,true>(res7,table,i);
+                }
             }
 
             IFFT<Nbit,step+3>(res0, table);
@@ -311,13 +313,16 @@ namespace SPQLIOSpp{
             double* const res6 = &res[size*6/8];
             double* const res7 = &res[size*7/8];
 
-            FFT<Nbit,step+1>(res, table);
-
+            ButterflyAdd<N>(res0,res1,0);
+            ButterflyAdd<N>(res2,res3,0);
             ButterflyAdd<N>(res4,res5,0);
             ButterflyAdd<N>(res6,res7,0);
 
+            Radix4TwiddleMul<Nbit,false>(res3,0);
             Radix4TwiddleMul<Nbit,false>(res7,0);
 
+            ButterflyAdd<N>(res0,res2,0);
+            ButterflyAdd<N>(res1,res3,0);
             ButterflyAdd<N>(res4,res6,0);
             ButterflyAdd<N>(res5,res7,0);
 
@@ -331,11 +336,6 @@ namespace SPQLIOSpp{
             ButterflyAdd<N>(res3,res7,0);
         }
         else{
-            FFT<Nbit,step+1>(res, table);
-            FFT<Nbit,step+3>(res+size/2, table);
-            FFT<Nbit,step+3>(res+size*5/8, table);
-            FFT<Nbit,step+3>(res+size*3/4, table);
-            FFT<Nbit,step+3>(res+size*7/8, table);
             
             double* const res0 = &res[0];
             double* const res1 = &res[size/8];
@@ -346,18 +346,37 @@ namespace SPQLIOSpp{
             double* const res6 = &res[size*6/8];
             double* const res7 = &res[size*7/8];
 
+            FFT<Nbit,step+3>(res0, table);
+            FFT<Nbit,step+3>(res1, table);
+            FFT<Nbit,step+3>(res2, table);
+            FFT<Nbit,step+3>(res3, table);
+            FFT<Nbit,step+3>(res4, table);
+            FFT<Nbit,step+3>(res5, table);
+            FFT<Nbit,step+3>(res6, table);
+            FFT<Nbit,step+3>(res7, table);
+
             for(int i = 0;i<size/8;i++){
             
-                TwiddleMul<Nbit,step,1,false>(res4,table,i);
-                TwiddleMul<Nbit,step,5,false>(res5,table,i);
-                TwiddleMul<Nbit,step,3,false>(res6,table,i);
-                TwiddleMul<Nbit,step,7,false>(res7,table,i);
+                if(i!=0){
+                    TwiddleMul<Nbit,step,4,false>(res1,table,i);
+                    TwiddleMul<Nbit,step,2,false>(res2,table,i);
+                    TwiddleMul<Nbit,step,6,false>(res3,table,i);
+                    TwiddleMul<Nbit,step,1,false>(res4,table,i);
+                    TwiddleMul<Nbit,step,5,false>(res5,table,i);
+                    TwiddleMul<Nbit,step,3,false>(res6,table,i);
+                    TwiddleMul<Nbit,step,7,false>(res7,table,i);
+                }
 
+                ButterflyAdd<N>(res0,res1,i);
+                ButterflyAdd<N>(res2,res3,i);
                 ButterflyAdd<N>(res4,res5,i);
                 ButterflyAdd<N>(res6,res7,i);
 
+                Radix4TwiddleMul<Nbit,false>(res3,i);
                 Radix4TwiddleMul<Nbit,false>(res7,i);
 
+                ButterflyAdd<N>(res0,res2,i);
+                ButterflyAdd<N>(res1,res3,i);
                 ButterflyAdd<N>(res4,res6,i);
                 ButterflyAdd<N>(res5,res7,i);
 
