@@ -1,7 +1,7 @@
 #include <cloudkey.hpp>
 #include <gatebootstrapping.hpp>
 #include <keyswitch.hpp>
-#include <mulfft.hpp>
+#include <spqlios++.hpp>
 #include <params.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>

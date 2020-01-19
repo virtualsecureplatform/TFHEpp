@@ -7,6 +7,7 @@
 #include <utils.hpp>
 
 namespace TFHEpp {
+using namespace SPQLIOSpp;
 
 inline TRGSW<lvl1param> trgswSymEncryptlvl1(
     const make_signed<lvl1param::T>::type p, const double α,
