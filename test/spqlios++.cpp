@@ -44,7 +44,6 @@ int main()
             for (int j = i + 1; j < DEF_N; j++)
                 naieve[i] -= static_cast<int32_t>(a[j]) * b[DEF_N + i - j];
         }
-        cout<<test<<endl;
     }
     cout << "PolyMul Passed" << endl;
 
@@ -52,14 +51,14 @@ int main()
     uniform_int_distribution<uint64_t> Torus64dist(0, UINT64_MAX);
 
     cout << "Start LVL2 test." << endl;
-    for (int test = 0; test < num_test; test++) {
+    for (volatile int test = 0; test < num_test; test++) {
         Polynomiallvl2 a;
         for (uint64_t &i : a) i = Torus64dist(engine);
         PolynomialInFDlvl2 resfft;
-        TFHEpp::TwistIFFTlvl2(resfft, a);
+        SPQLIOSpp::TwistIFFTlvl2(resfft, a);
         Polynomiallvl2 res;
-        TFHEpp::TwistFFTlvl2(res, resfft);
-        for (int i = 0; i < DEF_N; i++)
+        SPQLIOSpp::TwistFFTlvl2(res, resfft);
+        for (int i = 0; i < DEF_nbar; i++)
             assert(abs(static_cast<int64_t>(a[i] - res[i])) <= (1 << 14));
     }
     cout << "FFT Passed" << endl;

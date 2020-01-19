@@ -1,6 +1,6 @@
 #include <cloudkey.hpp>
 #include <keyswitch.hpp>
-#include <mulfft.hpp>
+#include <spqlios++.hpp>
 #include <params.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>
@@ -8,6 +8,7 @@
 
 namespace TFHEpp {
 using namespace std;
+using namespace SPQLIOSpp;
 template <typename T = uint32_t, uint32_t N = DEF_N>
 inline void PolynomialMulByXai(array<T, N> &res, const array<T, N> &poly,
                                const T a)

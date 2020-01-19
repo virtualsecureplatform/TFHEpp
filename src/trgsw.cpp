@@ -1,12 +1,13 @@
 #include <array>
 #include <limits>
 
-#include <mulfft.hpp>
+#include <spqlios++.hpp>
 #include <params.hpp>
 #include <trlwe.hpp>
 #include <utils.hpp>
 
 namespace TFHEpp {
+using namespace SPQLIOSpp;
 
 inline TRGSWlvl1 trgswSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
 {

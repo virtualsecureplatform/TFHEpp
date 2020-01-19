@@ -3,12 +3,13 @@
 
 #include <randen.h>
 
-#include <mulfft.hpp>
+#include <spqlios++.hpp>
 #include <params.hpp>
 #include <utils.hpp>
 
 namespace TFHEpp {
 using namespace std;
+using namespace SPQLIOSpp;
 static randen::Randen<uint64_t> engine;
 
 TRLWElvl1 trlweSymEncryptZerolvl1(const double α, const Keylvl1 &key)
