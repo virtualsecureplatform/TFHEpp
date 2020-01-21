@@ -1,11 +1,10 @@
 #pragma once
 
+#include <iostream>
 #include <params.hpp>
 #include <tlwe.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>
-
-#include <iostream>
 
 namespace TFHEpp {
 struct GateKey {
@@ -35,7 +34,7 @@ struct CircuitKey {
         array<uint32_t, DEF_nbar + 1> key;
         for (int i = 0; i < DEF_nbar; i++) key[i] = sk.key.lvl2[i];
         key[DEF_nbar] = -1;
-        #pragma omp parallel for collapse(4)
+#pragma omp parallel for collapse(4)
         for (int z = 0; z < 2; z++)
             for (int i = 0; i <= DEF_nbar; i++)
                 for (int j = 0; j < DEF_tbar; j++)
@@ -54,10 +53,10 @@ struct CircuitKey {
     }
 };
 
-struct CloudKey{
+struct CloudKey {
     GateKey gk;
     CircuitKey ck;
     lweParams params;
-    CloudKey(SecretKey sk) : gk(sk),ck(sk){}
+    CloudKey(SecretKey sk) : gk(sk), ck(sk) {}
 };
 }  // namespace TFHEpp

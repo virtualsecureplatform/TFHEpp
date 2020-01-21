@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cloudkey.hpp>
+#include <detwfa.hpp>
 #include <gate.hpp>
 #include <gatebootstrapping.hpp>
 #include <key.hpp>
@@ -10,4 +11,3 @@
 #include <tlwe.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>
-#include <detwfa.hpp>

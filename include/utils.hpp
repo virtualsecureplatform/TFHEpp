@@ -1,13 +1,12 @@
 #pragma once
 
+#include <randen.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <random>
-
-#include <randen.h>
-
 #include <params.hpp>
+#include <random>
 
 namespace TFHEpp {
 using namespace std;

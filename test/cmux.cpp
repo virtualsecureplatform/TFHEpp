@@ -18,7 +18,7 @@ int main()
     vector<int32_t> ps(num_test);
     vector<array<uint8_t, DEF_N>> p1(num_test);
     vector<array<uint8_t, DEF_N>> p0(num_test);
-    
+
     vector<array<uint32_t, DEF_N>> pmu1(num_test);
     vector<array<uint32_t, DEF_N>> pmu0(num_test);
     array<bool, DEF_N> pres;
@@ -30,9 +30,11 @@ int main()
         for (uint8_t &p : i) p = binary(engine);
 
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < DEF_N; j++) pmu1[i][j] = (p1[i][j]>0) ? DEF_μ : -DEF_μ;
+        for (int j = 0; j < DEF_N; j++)
+            pmu1[i][j] = (p1[i][j] > 0) ? DEF_μ : -DEF_μ;
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < DEF_N; j++) pmu0[i][j] = (p0[i][j]>0) ? DEF_μ : -DEF_μ;
+        for (int j = 0; j < DEF_N; j++)
+            pmu0[i][j] = (p0[i][j] > 0) ? DEF_μ : -DEF_μ;
     vector<TRGSWFFTlvl1> cs(num_test);
     vector<TRLWElvl1> c1(num_test);
     vector<TRLWElvl1> c0(num_test);
@@ -48,13 +50,14 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CMUXFFTlvl1(cres[test],cs[test], c1[test], c0[test]);
+        CMUXFFTlvl1(cres[test], cs[test], c1[test], c0[test]);
     }
     end = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
         pres = trlweSymDecryptlvl1(cres[test], sk->key.lvl1);
-        for (int i = 0; i < DEF_N; i++) assert(pres[i] == ((ps[test]>0)?p1[test][i]:p0[test][i]) > 0);
+        for (int i = 0; i < DEF_N; i++)
+            assert(pres[i] == ((ps[test] > 0) ? p1[test][i] : p0[test][i]) > 0);
     }
     cout << "Passed" << endl;
     double elapsed =
