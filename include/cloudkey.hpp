@@ -49,6 +49,7 @@ struct CircuitKey {
                 trgswfftSymEncryptlvl2(static_cast<int32_t>(sk.key.lvl0[i]),
                                        DEF_αbklvl02, sk.key.lvl2);
     }
+    CircuitKey() {}
 };
 
 struct CloudKey {
