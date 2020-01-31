@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <params.hpp>
 #include <tlwe.hpp>
 #include <trgsw.hpp>
@@ -39,7 +38,6 @@ struct CircuitKey {
             for (int i = 0; i <= DEF_nbar; i++)
                 for (int j = 0; j < DEF_tbar; j++)
                     for (int u = 0; u < (1 << DEF_basebitlvl21) - 1; u++) {
-                        cout << z << ":" << i << ":" << j << ":" << u << endl;
                         TRLWElvl1 c =
                             trlweSymEncryptZerolvl1(DEF_αprivks, sk.key.lvl1);
                         c[z][0] += (u + 1) * key[i]
