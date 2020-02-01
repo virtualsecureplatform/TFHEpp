@@ -94,13 +94,13 @@ int main()
     }
 
     end = chrono::system_clock::now();
+    double elapsed =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count();
+    cout << elapsed << "ms" << endl;
     uint32_t intaddress = 0;
     for (int i = 0; i < address_bit; i++) intaddress += address[i] << i;
     assert(pres ==
            trlweSymDecryptlvl1(encmemory[intaddress], (*sk).key.lvl1)[0]);
     cout << "Passed" << endl;
-    double elapsed =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-            .count();
-    cout << elapsed << "ms" << endl;
 }

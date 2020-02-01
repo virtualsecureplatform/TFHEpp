@@ -9,12 +9,12 @@ using namespace TFHEpp;
 
 template <uint32_t address_bit, uint32_t width_bit>
 void UROMUX(TRLWElvl1 &res, const array<TRGSWFFTlvl1, address_bit> &address,
-            array<TRLWElvl1, 1 << (address_bit - width_bit)> &data)
+            const array<TRLWElvl1, 1 << (address_bit - width_bit)> &data)
 {
     const uint32_t num_trlwe = 1 << (address_bit - width_bit);
     array<TRLWElvl1, num_trlwe / 2> temp;
 
-    for (uint32_t index = 0; index < num_trlwe; index++) {
+    for (uint32_t index = 0; index < num_trlwe/2; index++) {
         CMUXFFTlvl1(temp[index], address[width_bit], data[2 * index + 1],
                     data[2 * index]);
     }

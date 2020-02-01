@@ -122,6 +122,26 @@ void HomMUX(TLWElvl0 &res, const TLWElvl0 &cs, const TLWElvl0 &c1,
     IdentityKeySwitchlvl10(res, and1, gk.ksk);
 }
 
+void HomMUXwoSE(TRLWElvl1 &res, const TLWElvl0 &cs, const TLWElvl0  &c1,
+            const TLWElvl0 &c0, const GateKey &gk)
+{
+    TLWElvl0 temp1;
+    TLWElvl0 temp0;
+    for (int i = 0; i <= DEF_n; i++) temp1[i] = cs[i] + c1[i];
+    for (int i = 0; i <= DEF_n; i++) temp0[i] = -cs[i] + c0[i];
+    temp1[DEF_n] -= 1U << 29;
+    temp0[DEF_n] -= 1U << 29;
+    TRLWElvl1 and0;
+    GateBootstrappingTLWE2TRLWEFFTlvl01(res, temp1, gk);
+    GateBootstrappingTLWE2TRLWEFFTlvl01(and0, temp0, gk);
+
+    for (int i = 0; i < DEF_N; i++) {
+        res[0][i] += and0[0][i];
+        res[1][i] += and0[1][i];
+    };
+    res[1][0] += 1U << 29;
+}
+
 void ExtractSwitchAndHomMUX(TRLWElvl1 &res, const TRLWElvl1 &csr,
                             const TRLWElvl1 &c1r, const TRLWElvl1 &c0r,
                             const GateKey &gk)
