@@ -122,8 +122,8 @@ void HomMUX(TLWElvl0 &res, const TLWElvl0 &cs, const TLWElvl0 &c1,
     IdentityKeySwitchlvl10(res, and1, gk.ksk);
 }
 
-void HomMUXwoSE(TRLWElvl1 &res, const TLWElvl0 &cs, const TLWElvl0  &c1,
-            const TLWElvl0 &c0, const GateKey &gk)
+void HomMUXwoSE(TRLWElvl1 &res, const TLWElvl0 &cs, const TLWElvl0 &c1,
+                const TLWElvl0 &c0, const GateKey &gk)
 {
     TLWElvl0 temp1;
     TLWElvl0 temp0;

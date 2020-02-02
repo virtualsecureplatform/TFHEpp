@@ -37,7 +37,8 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFTwithInv(bootedTGSW[test], invbootedTGSW[test],czeros[test], *ck);
+        CircuitBootstrappingFFTwithInv(bootedTGSW[test], invbootedTGSW[test],
+                                       czeros[test], *ck);
     }
     end = chrono::system_clock::now();
 
