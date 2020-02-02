@@ -76,7 +76,7 @@ int main()
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
-        encmemory[i] = trlweSymEncryptlvl1(pmu[i], DEF_αbk, (*sk).key.lvl1);
+        encmemory[i] = trlweSymEncryptlvl1(pmu[i], DEF_α, (*sk).key.lvl1);
     cs = tlweSymEncryptlvl0(wrflag ? DEF_μ : -DEF_μ, DEF_α, (*sk).key.lvl0);
     c1 = tlweSymEncryptlvl0(writep ? DEF_μ : -DEF_μ, DEF_α, (*sk).key.lvl0);
 
