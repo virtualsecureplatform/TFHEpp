@@ -19,16 +19,18 @@ void UROMUX(TRLWElvl1 &res, const array<TRGSWFFTlvl1, address_bit> &address,
                     data[2 * index]);
     }
 
-    for (uint32_t bit = 0; bit < (address_bit - width_bit - 2); bit++) {
-        const uint32_t stride = 1 << bit;
-        const uint32_t offset = (1 << bit) - 1;
-        for (uint32_t index = 0; index < (num_trlwe >> (bit + 1)); index++) {
-            CMUXFFTlvl1(temp[(2 * index + 1) * stride + offset],
-                        address[width_bit + bit + 1],
-                        temp[(2 * index + 1) * stride + offset],
-                        temp[(2 * index) * stride + offset]);
-        }
-    }
+    // If you need more than 512 Byte, you should see RAM.
+    //This is not working.
+    // for (uint32_t bit = 0; bit < (address_bit - width_bit - 2); bit++) {
+    //     const uint32_t stride = 1 << bit;
+    //     const uint32_t offset = (1 << bit) - 1;
+    //     for (uint32_t index = 0; index < (num_trlwe >> (bit + 1)); index++) {
+    //         CMUXFFTlvl1(temp[(2 * index + 1) * stride + offset],
+    //                     address[width_bit + bit + 1],
+    //                     temp[(2 * index + 1) * stride + offset],
+    //                     temp[(2 * index) * stride + offset]);
+    //     }
+    // }
     const uint32_t stride = 1 << (address_bit - width_bit - 2);
     const uint32_t offset = (1 << (address_bit - width_bit - 2)) - 1;
     CMUXFFTlvl1(res, address[address_bit - 1], temp[stride + offset],
@@ -70,11 +72,12 @@ void LROMUX(vector<TLWElvl0> &res,
 
 int main()
 {
-    const uint32_t address_bit = 7;  // Address by words.
-    const uint32_t words_bit = 5;
-    const uint32_t width_bit =
+    constexpr uint32_t address_bit = 7;  // Address by words.
+    constexpr uint32_t words_bit = 5;
+    constexpr uint32_t width_bit =
         DEF_Nbit -
         words_bit;  // log_2 of how many words are in one TRLWElvl1 message.
+    stetic_assert(address_bit-words_bit==2);// If you need more than 512 Byte, you should see RAM.
     assert(address_bit >= width_bit);
     const uint32_t width = 1 << width_bit;
     const uint32_t num_trlwe = 1 << (address_bit - width_bit);
