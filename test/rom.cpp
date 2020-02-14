@@ -89,46 +89,52 @@ int main()
     vector<uint8_t> address(address_bit);
     vector<uint8_t> pres(width);
 
-    for (array<uint8_t, DEF_N> &i : pmemory)
-        for (uint8_t &p : i) p = binary(engine);
-    for (int i = 0; i < num_trlwe; i++)
-        for (int j = 0; j < DEF_N; j++)
-            pmu[i][j] = pmemory[i][j] ? DEF_μ : -DEF_μ;
-    for (uint8_t &p : address) p = binary(engine);
-
-    array<TRGSWFFTlvl1, address_bit> bootedTGSW;
-    vector<TLWElvl0> encaddress(address_bit);
-    array<TRLWElvl1, num_trlwe> encmemory;
-    vector<TLWElvl0> encres(width);
-
-    encaddress = bootsSymEncrypt(address, *sk);
-    for (int i = 0; i < num_trlwe; i++)
-        encmemory[i] = trlweSymEncryptlvl1(pmu[i], DEF_αbk, (*sk).key.lvl1);
-
     chrono::system_clock::time_point start, end;
-    start = chrono::system_clock::now();
-    for (int i = 0; i < address_bit; i++)
-        CircuitBootstrappingFFT(bootedTGSW[i], encaddress[i], (*ck).ck);
-    TRLWElvl1 encumemory;
 
-    UROMUX<address_bit, width_bit>(encumemory, bootedTGSW, encmemory);
-    LROMUX<address_bit, width_bit>(encres, bootedTGSW, encumemory,
-                                   (*ck).gk.ksk);
-    end = chrono::system_clock::now();
+    constexpr uint32_t testnum = 1000;
 
-    pres = bootsSymDecrypt(encres, *sk);
-    uint32_t uaddress = 0;
-    uint32_t laddress = 0;
-    for (int i = 0; i < (address_bit - width_bit); i++)
-        uaddress += address[i + width_bit] << i;
-    array<bool, DEF_N> umemory;
-    umemory = trlweSymDecryptlvl1(encumemory, (*sk).key.lvl1);
+    for(int test = 0;test<testnum;test++){
+        for (array<uint8_t, DEF_N> &i : pmemory)
+            for (uint8_t &p : i) p = binary(engine);
+        for (int i = 0; i < num_trlwe; i++)
+            for (int j = 0; j < DEF_N; j++)
+                pmu[i][j] = pmemory[i][j] ? DEF_μ : -DEF_μ;
 
-    for (int i = 0; i < width_bit; i++)
-        laddress += static_cast<uint32_t>(address[i]) << (i + words_bit);
-    for (uint32_t i = 0; i < (1 << words_bit); i++)
-        assert(static_cast<int>(pres[i]) ==
-               static_cast<int>(pmemory[uaddress][laddress + i]));
+        for (uint8_t &p : address) p = binary(engine);
+
+        array<TRGSWFFTlvl1, address_bit> bootedTGSW;
+        vector<TLWElvl0> encaddress(address_bit);
+        array<TRLWElvl1, num_trlwe> encmemory;
+        vector<TLWElvl0> encres(width);
+
+        encaddress = bootsSymEncrypt(address, *sk);
+        for (int i = 0; i < num_trlwe; i++)
+            encmemory[i] = trlweSymEncryptlvl1(pmu[i], DEF_αbk, (*sk).key.lvl1);
+
+        start = chrono::system_clock::now();
+        for (int i = 0; i < address_bit; i++)
+            CircuitBootstrappingFFT(bootedTGSW[i], encaddress[i], (*ck).ck);
+        TRLWElvl1 encumemory;
+
+        UROMUX<address_bit, width_bit>(encumemory, bootedTGSW, encmemory);
+        LROMUX<address_bit, width_bit>(encres, bootedTGSW, encumemory,
+                                    (*ck).gk.ksk);
+        end = chrono::system_clock::now();
+
+        pres = bootsSymDecrypt(encres, *sk);
+        uint32_t uaddress = 0;
+        uint32_t laddress = 0;
+        for (int i = 0; i < (address_bit - width_bit); i++)
+            uaddress += address[i + width_bit] << i;
+        array<bool, DEF_N> umemory;
+        umemory = trlweSymDecryptlvl1(encumemory, (*sk).key.lvl1);
+
+        for (int i = 0; i < width_bit; i++)
+            laddress += static_cast<uint32_t>(address[i]) << (i + words_bit);
+        for (uint32_t i = 0; i < (1 << words_bit); i++)
+            assert(static_cast<int>(pres[i]) ==
+                static_cast<int>(pmemory[uaddress][laddress + i]));
+    }
     cout << "Passed" << endl;
     double elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)

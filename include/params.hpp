@@ -11,10 +11,10 @@ constexpr double DEF_α = 2.44e-5;
 constexpr uint32_t DEF_Nbit = 10;
 constexpr uint32_t DEF_N = 1 << DEF_Nbit;
 constexpr uint32_t DEF_l = 2;
-constexpr uint32_t DEF_Bgbit = 10;
+constexpr uint32_t DEF_Bgbit = 9;
 constexpr uint32_t DEF_Bg = 1 << DEF_Bgbit;
 constexpr double DEF_αbk = 3.73e-9;
-constexpr uint32_t DEF_t = 8;
+constexpr uint32_t DEF_t = 7;
 constexpr uint32_t DEF_basebit = 2;
 constexpr double DEF_αks = 2.44e-5;
 constexpr uint32_t DEF_μ = 1U << 29;
@@ -29,6 +29,13 @@ constexpr uint32_t DEF_tbar = 10;
 constexpr uint32_t DEF_basebitlvl21 = 3;
 const double DEF_αprivks = std::pow(2, -31);
 constexpr uint64_t DEF_μbar = 1UL << 61;
+
+constexpr uint32_t DEF_Addendsbit = 1;
+constexpr uint32_t DEF_Addends = 1<<DEF_Addendsbit;
+
+
+static_assert((DEF_n&(DEF_Addends-1))==0);
+static_assert((DEF_nbar&(DEF_Addends-1))==0);
 
 using Keylvl0 = array<uint32_t, DEF_n>;
 using Keylvl1 = array<uint32_t, DEF_N>;
@@ -57,8 +64,8 @@ using TRGSWlvl2 = array<TRLWElvl2, 2 * DEF_lbar>;
 using TRGSWFFTlvl1 = array<TRLWEInFDlvl1, 2 * DEF_l>;
 using TRGSWFFTlvl2 = array<TRLWEInFDlvl2, 2 * DEF_lbar>;
 
-using BootStrappingKeyFFTlvl01 = array<TRGSWFFTlvl1, DEF_n>;
-using BootStrappingKeyFFTlvl02 = array<TRGSWFFTlvl2, DEF_n>;
+using BootStrappingKeylvl01 = array<array<TRGSWlvl1,2*DEF_Addends>, DEF_n/DEF_Addends>;
+using BootStrappingKeylvl02 = array<array<TRGSWlvl2,2*DEF_Addends>, DEF_n/DEF_Addends>;
 
 using KeySwitchingKey =
     array<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>, DEF_N>;

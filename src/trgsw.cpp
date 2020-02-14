@@ -7,7 +7,7 @@
 
 namespace TFHEpp {
 
-inline TRGSWlvl1 trgswSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
+TRGSWlvl1 trgswSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
 {
     array<uint32_t, DEF_l> h;
     for (int i = 0; i < DEF_l; i++) h[i] = 1U << (32 - (i + 1) * DEF_Bgbit);
@@ -20,7 +20,7 @@ inline TRGSWlvl1 trgswSymEncryptlvl1(int32_t p, double α, Keylvl1 &key)
     return trgsw;
 }
 
-inline TRGSWlvl2 trgswSymEncryptlvl2(int64_t p, double α, Keylvl2 &key)
+TRGSWlvl2 trgswSymEncryptlvl2(int64_t p, double α, Keylvl2 &key)
 {
     array<uint64_t, DEF_lbar> h;
     for (int i = 0; i < DEF_lbar; i++)
