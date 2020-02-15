@@ -21,6 +21,7 @@ git clone https://github.com/tfhe/tfhe.git --recursive
 cd tfhe
 mkdir build
 cd build
+sed -i '79c\    inline void add4(double * res, const double * a, const double * b) {' ../src/libtfhe/fft_processors/spqlios/spqlios-fft-impl.cpp && sed -i '83c\    inline void sub4(double * res, const double * a, const double * b) {' ../src/libtfhe/fft_processors/spqlios/spqlios-fft-impl.cpp
 cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=off -DENABLE_SPQLIOS_AVX=off -DENABLE_SPQLIOS_FMA=on -DCMAKE_BUILD_TYPE=optim
 make
 ./test/test-gate-bootstrapping-spqlios-fma
