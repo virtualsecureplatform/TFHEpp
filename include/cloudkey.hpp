@@ -8,14 +8,14 @@
 namespace TFHEpp {
 struct GateKey {
     KeySwitchingKey ksk;
-    BootStrappingKeylvl01 bklvl01;
+    BootStrappingKeyFFTlvl01 bkfftlvl01;
     GateKey(SecretKey sk);
     GateKey() {}
 };
 
 struct CircuitKey {
     PrivKeySwitchKey privksk;
-    BootStrappingKeylvl02 bklvl02;
+    BootStrappingKeyFFTlvl02 bkfftlvl02;
     CircuitKey(SecretKey sk);
     CircuitKey() {}
 };

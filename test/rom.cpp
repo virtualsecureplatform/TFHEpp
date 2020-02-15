@@ -77,7 +77,7 @@ int main()
     constexpr uint32_t width_bit =
         DEF_Nbit -
         words_bit;  // log_2 of how many words are in one TRLWElvl1 message.
-    stetic_assert(address_bit-words_bit==2);// If you need more than 512 Byte, you should see RAM.
+    static_assert(address_bit-words_bit==2);// If you need more than 512 Byte, you should see RAM.
     assert(address_bit >= width_bit);
     const uint32_t width = 1 << width_bit;
     const uint32_t num_trlwe = 1 << (address_bit - width_bit);

@@ -13,13 +13,13 @@ namespace TFHEpp{
                             (1U << (32 - (j + 1) * DEF_basebit)),
                         DEF_αks, sk.key.lvl0);
         for (int i = 0; i < DEF_n/DEF_Addends; i++){
-            bklvl01[i][0] = trgswSymEncryptlvl1(
+            bkfftlvl01[i][0] = trgswfftSymEncryptlvl1(
                 static_cast<int32_t>(sk.key.lvl0[2*i]*sk.key.lvl0[2*i+1]), DEF_αbk, sk.key.lvl1);
-            bklvl01[i][1] = trgswSymEncryptlvl1(
+            bkfftlvl01[i][1] = trgswfftSymEncryptlvl1(
                 static_cast<int32_t>(sk.key.lvl0[2*i]*(sk.key.lvl0[2*i+1]-1)), DEF_αbk, sk.key.lvl1);
-            bklvl01[i][2] = trgswSymEncryptlvl1(
+            bkfftlvl01[i][2] = trgswfftSymEncryptlvl1(
                 static_cast<int32_t>((sk.key.lvl0[2*i]-1)*sk.key.lvl0[2*i+1]), DEF_αbk, sk.key.lvl1);
-            bklvl01[i][3] = trgswSymEncryptlvl1(
+            bkfftlvl01[i][3] = trgswfftSymEncryptlvl1(
                 static_cast<int32_t>((sk.key.lvl0[2*i]-1)*(sk.key.lvl0[2*i+1]-1)), DEF_αbk, sk.key.lvl1);
         }
     }
@@ -40,13 +40,13 @@ namespace TFHEpp{
                         privksk[z][i][j][u] = c;
                     }
         for (int i = 0; i < DEF_n/DEF_Addends; i++){
-            bklvl02[i][0] = trgswSymEncryptlvl2(
+            bkfftlvl02[i][0] = trgswfftSymEncryptlvl2(
                 static_cast<int32_t>(sk.key.lvl0[2*i]*sk.key.lvl0[2*i+1]), DEF_αbklvl02, sk.key.lvl2);
-            bklvl02[i][1] = trgswSymEncryptlvl2(
+            bkfftlvl02[i][1] = trgswfftSymEncryptlvl2(
                 static_cast<int32_t>(sk.key.lvl0[2*i]*(sk.key.lvl0[2*i+1]-1)), DEF_αbklvl02, sk.key.lvl2);
-            bklvl02[i][2] = trgswSymEncryptlvl2(
+            bkfftlvl02[i][2] = trgswfftSymEncryptlvl2(
                 static_cast<int32_t>((sk.key.lvl0[2*i]-1)*sk.key.lvl0[2*i+1]), DEF_αbklvl02, sk.key.lvl2);
-            bklvl02[i][3] = trgswSymEncryptlvl2(
+            bkfftlvl02[i][3] = trgswfftSymEncryptlvl2(
                 static_cast<int32_t>((sk.key.lvl0[2*i]-1)*(sk.key.lvl0[2*i+1]-1)), DEF_αbklvl02, sk.key.lvl2);
         }
     }

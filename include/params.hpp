@@ -66,6 +66,8 @@ using TRGSWFFTlvl2 = array<TRLWEInFDlvl2, 2 * DEF_lbar>;
 
 using BootStrappingKeylvl01 = array<array<TRGSWlvl1,2*DEF_Addends>, DEF_n/DEF_Addends>;
 using BootStrappingKeylvl02 = array<array<TRGSWlvl2,2*DEF_Addends>, DEF_n/DEF_Addends>;
+using BootStrappingKeyFFTlvl01 = array<array<TRGSWFFTlvl1,2*DEF_Addends>, DEF_n/DEF_Addends>;
+using BootStrappingKeyFFTlvl02 = array<array<TRGSWFFTlvl2,2*DEF_Addends>, DEF_n/DEF_Addends>;
 
 using KeySwitchingKey =
     array<array<array<TLWElvl0, (1 << DEF_basebit) - 1>, DEF_t>, DEF_N>;

@@ -8,6 +8,23 @@
 
 namespace TFHEpp {
 using namespace std;
+
+template <typename T = uint32_t, uint32_t N = DEF_N>
+array<array<double,N>,2*N> XaittGen(){
+    array<array<double,N>, 2*N> xaitt;
+    for(int i = 0;i<2*N;i++){
+        array<T,N> xai = {};
+        if(i<N) xai[i] = 1;
+        else xai[i-N] = -1;
+        if constexpr (N==DEF_N) TwistIFFTlvl1(xaitt[i],xai);
+        else TwistIFFTlvl2(xaitt[i],xai);
+    }
+    return xaitt;
+}
+
+static const array<PolynomialInFDlvl1,2*DEF_N> xaittlvl1 = XaittGen<uint32_t,DEF_N>();
+static const array<PolynomialInFDlvl2,2*DEF_nbar> xaittlvl2 = XaittGen<uint64_t,DEF_nbar>();
+
 template <typename T = uint32_t, uint32_t N = DEF_N>
 inline void PolynomialMulByXai(array<T, N> &res, const array<T, N> &poly,
                                const T a)
@@ -82,6 +99,18 @@ static void PolynomialMulByXaiSub(array<T, N> &res,
     }
 }
 
+void PolynomialMulByXaiSubFFTlvl1(array<double, DEF_N> &res,
+                                       const array<double, DEF_N> &polyfft, const array<double, DEF_N> &mpolyfft, const uint32_t a){
+    constexpr uint32_t indexmask = 2*DEF_N-1;
+    FMS4InFD<DEF_N>(res,polyfft,xaittlvl1[a&indexmask],mpolyfft);
+}
+
+void PolynomialMulByXaiSubFFTlvl2(array<double, DEF_nbar> &res,
+                                       const array<double, DEF_nbar> &polyfft, const array<double, DEF_nbar> &mpolyfft, const uint64_t a){
+    constexpr uint64_t indexmask = 2*DEF_nbar-1;
+    FMS4InFD<DEF_nbar>(res,polyfft,xaittlvl2[a&indexmask],mpolyfft);
+}
+
 template <typename T = uint32_t, uint32_t N = DEF_N>
 inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara,
                               const T μ)
@@ -115,6 +144,24 @@ void KeyBundle(array<array<array<double, N>, 2>, 2 * l>& kbfft, const array<arra
     }
 }
 
+template <typename T = uint32_t, uint32_t N = DEF_N, uint32_t l = DEF_l>
+void KeyBundleFFT(array<array<array<double, N>, 2>, 2 * l>& kbfft, const array<array<array<array<double, N>, 2>, 2 * l>,2*DEF_Addends>&bkfft, const array<T,DEF_Addends> &bara){
+    array<double,N> temp,mtemp;
+    for(int i = 0;i<2*l;i++){
+       for(int j = 0;j<2;j++){
+           if constexpr (N==DEF_N){
+                PolynomialMulByXaiSubFFTlvl1(temp,bkfft[0][i][j],bkfft[1][i][j],bara[1]);
+                PolynomialMulByXaiSubFFTlvl1(mtemp,bkfft[2][i][j],bkfft[3][i][j],bara[1]);
+                PolynomialMulByXaiSubFFTlvl1(kbfft[i][j],temp,mtemp,bara[0]);
+           }else if constexpr(N==DEF_nbar){
+                PolynomialMulByXaiSubFFTlvl2(temp,bkfft[0][i][j],bkfft[1][i][j],bara[1]);
+                PolynomialMulByXaiSubFFTlvl2(mtemp,bkfft[2][i][j],bkfft[3][i][j],bara[1]);
+                PolynomialMulByXaiSubFFTlvl2(kbfft[i][j],temp,mtemp,bara[0]);
+           }
+       } 
+    }
+}
+
 void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
                                          const GateKey &gk)
 {
@@ -123,7 +170,7 @@ void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
     RotatedTestVector<uint32_t, DEF_N>(acc, bara, DEF_μ);
     for (int i = 0; i < DEF_n/DEF_Addends; i++) {
         array<uint32_t,DEF_Addends> bara = {modSwitchFromTorus32<2 * DEF_N>(tlwe[2*i]),modSwitchFromTorus32<2 * DEF_N>(tlwe[2*i+1])};
-        KeyBundle<uint32_t,DEF_N,DEF_l>(kbfft, gk.bklvl01[i], bara);
+        KeyBundleFFT<uint32_t,DEF_N,DEF_l>(kbfft, gk.bkfftlvl01[i], bara);
         trgswfftExternalProductlvl1(acc, acc, kbfft);
     }
 }
@@ -148,7 +195,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
     RotatedTestVector<uint64_t, DEF_nbar>(acc, bara, μs2);
     for (int i = 0; i < DEF_n; i++) {
         array<uint64_t,DEF_Addends> bara = {modSwitchFromTorus64<2 * DEF_nbar>(tlwe[2*i]),modSwitchFromTorus64<2 * DEF_nbar>(tlwe[2*i+1])};
-        KeyBundle<uint64_t,DEF_nbar,DEF_lbar>(kbfft, ck.bklvl02[i], bara);
+        KeyBundleFFT<uint64_t,DEF_nbar,DEF_lbar>(kbfft, ck.bkfftlvl02[i], bara);
         trgswfftExternalProductlvl2(acc, acc, kbfft);
     }
     SampleExtractIndexlvl2(res, acc, 0);
