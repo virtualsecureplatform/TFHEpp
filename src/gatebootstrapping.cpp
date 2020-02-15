@@ -193,7 +193,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
     uint32_t bara =
         2 * DEF_nbar - modSwitchFromTorus64<2 * DEF_nbar>(tlwe[DEF_n]);
     RotatedTestVector<uint64_t, DEF_nbar>(acc, bara, μs2);
-    for (int i = 0; i < DEF_n; i++) {
+    for (int i = 0; i < DEF_n/DEF_Addends; i++) {
         array<uint64_t,DEF_Addends> bara = {modSwitchFromTorus64<2 * DEF_nbar>(tlwe[2*i]),modSwitchFromTorus64<2 * DEF_nbar>(tlwe[2*i+1])};
         KeyBundleFFT<uint64_t,DEF_nbar,DEF_lbar>(kbfft, ck.bkfftlvl02[i], bara);
         trgswfftExternalProductlvl2(acc, acc, kbfft);
