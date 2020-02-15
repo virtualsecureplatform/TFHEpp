@@ -25,3 +25,14 @@ cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=
 make
 ./test/test-gate-bootstrapping-spqlios-fma
 ```
+
+This is for TFHE-10ms.
+```
+git clone https://github.com/virtualsecureplatform/tfhe-10ms.git --recursive
+cd tfhe-10ms
+mkdir build
+cd build
+cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=off -DENABLE_SPQLIOS_AVX=off -DENABLE_SPQLIOS_FMA=on -DCMAKE_BUILD_TYPE=optim
+make
+./test/test-bootstrapping-fft-spqlios-fma 
+```
