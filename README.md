@@ -37,3 +37,11 @@ cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=
 make
 ./test/test-bootstrapping-fft-spqlios-fma 
 ```
+
+If you have Docker on your system, this will do above on docker.
+
+```
+git clone https://github.com/virtualsecureplatform/TFHEpp
+cd TFHEpp
+docker build -t tfheppbench .
+```
