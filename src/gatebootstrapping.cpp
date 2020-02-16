@@ -99,18 +99,6 @@ static void PolynomialMulByXaiSub(array<T, N> &res,
     }
 }
 
-void PolynomialMulByXaiSubFFTlvl1(array<double, DEF_N> &res,
-                                       const array<double, DEF_N> &polyfft, const array<double, DEF_N> &mpolyfft, const uint32_t a){
-    constexpr uint32_t indexmask = 2*DEF_N-1;
-    FMS4InFD<DEF_N>(res,polyfft,xaittlvl1[a&indexmask],mpolyfft);
-}
-
-void PolynomialMulByXaiSubFFTlvl2(array<double, DEF_nbar> &res,
-                                       const array<double, DEF_nbar> &polyfft, const array<double, DEF_nbar> &mpolyfft, const uint64_t a){
-    constexpr uint64_t indexmask = 2*DEF_nbar-1;
-    FMS4InFD<DEF_nbar>(res,polyfft,xaittlvl2[a&indexmask],mpolyfft);
-}
-
 template <typename T = uint32_t, uint32_t N = DEF_N>
 inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara,
                               const T μ)
@@ -146,17 +134,18 @@ void KeyBundle(array<array<array<double, N>, 2>, 2 * l>& kbfft, const array<arra
 
 template <typename T = uint32_t, uint32_t N = DEF_N, uint32_t l = DEF_l>
 void KeyBundleFFT(array<array<array<double, N>, 2>, 2 * l>& kbfft, const array<array<array<array<double, N>, 2>, 2 * l>,2*DEF_Addends>&bkfft, const array<T,DEF_Addends> &bara){
-    array<double,N> temp,mtemp;
     for(int i = 0;i<2*l;i++){
        for(int j = 0;j<2;j++){
-           if constexpr (N==DEF_N){
-                PolynomialMulByXaiSubFFTlvl1(temp,bkfft[0][i][j],bkfft[1][i][j],bara[1]);
-                PolynomialMulByXaiSubFFTlvl1(mtemp,bkfft[2][i][j],bkfft[3][i][j],bara[1]);
-                PolynomialMulByXaiSubFFTlvl1(kbfft[i][j],temp,mtemp,bara[0]);
+           constexpr uint32_t indexmask = 2*N-1;
+           kbfft[i][j] = bkfft[3][i][j];
+            if constexpr (N==DEF_N){
+                FMAInFD<N>(kbfft[i][j],bkfft[2][i][j],xaittlvl1[bara[1] & indexmask]);
+                FMAInFD<N>(kbfft[i][j],bkfft[1][i][j],xaittlvl1[bara[0] & indexmask]);
+                FMAInFD<N>(kbfft[i][j],bkfft[0][i][j],xaittlvl1[(bara[0]+bara[1]) & indexmask]);
            }else if constexpr(N==DEF_nbar){
-                PolynomialMulByXaiSubFFTlvl2(temp,bkfft[0][i][j],bkfft[1][i][j],bara[1]);
-                PolynomialMulByXaiSubFFTlvl2(mtemp,bkfft[2][i][j],bkfft[3][i][j],bara[1]);
-                PolynomialMulByXaiSubFFTlvl2(kbfft[i][j],temp,mtemp,bara[0]);
+                FMAInFD<N>(kbfft[i][j],bkfft[2][i][j],xaittlvl2[bara[1] & indexmask]);
+                FMAInFD<N>(kbfft[i][j],bkfft[1][i][j],xaittlvl2[bara[0] & indexmask]);
+                FMAInFD<N>(kbfft[i][j],bkfft[0][i][j],xaittlvl2[(bara[0]+bara[1]) & indexmask]);
            }
        } 
     }

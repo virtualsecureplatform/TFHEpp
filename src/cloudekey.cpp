@@ -16,11 +16,11 @@ namespace TFHEpp{
             bkfftlvl01[i][0] = trgswfftSymEncryptlvl1(
                 static_cast<int32_t>(sk.key.lvl0[2*i]*sk.key.lvl0[2*i+1]), DEF_αbk, sk.key.lvl1);
             bkfftlvl01[i][1] = trgswfftSymEncryptlvl1(
-                static_cast<int32_t>(sk.key.lvl0[2*i]*(sk.key.lvl0[2*i+1]-1)), DEF_αbk, sk.key.lvl1);
+                static_cast<int32_t>(sk.key.lvl0[2*i]*(1-sk.key.lvl0[2*i+1])), DEF_αbk, sk.key.lvl1);
             bkfftlvl01[i][2] = trgswfftSymEncryptlvl1(
-                static_cast<int32_t>((sk.key.lvl0[2*i]-1)*sk.key.lvl0[2*i+1]), DEF_αbk, sk.key.lvl1);
+                static_cast<int32_t>((1-sk.key.lvl0[2*i])*sk.key.lvl0[2*i+1]), DEF_αbk, sk.key.lvl1);
             bkfftlvl01[i][3] = trgswfftSymEncryptlvl1(
-                static_cast<int32_t>((sk.key.lvl0[2*i]-1)*(sk.key.lvl0[2*i+1]-1)), DEF_αbk, sk.key.lvl1);
+                static_cast<int32_t>((1-sk.key.lvl0[2*i])*(1-sk.key.lvl0[2*i+1])), DEF_αbk, sk.key.lvl1);
         }
     }
 

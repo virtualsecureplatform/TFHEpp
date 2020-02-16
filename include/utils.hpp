@@ -80,14 +80,4 @@ inline void FMAInFD(array<double, N> &res, const array<double, N> &a,
         res[i + N / 2] += a[i + N / 2] * b[i];
     }
 }
-template <uint32_t N>
-inline void FMS4InFD(array<double, N> &res, const array<double, N> &a,
-                    const array<double, N> &b, const array<double, N> &c){
-    for (int i = 0; i < N / 2; i++) {
-        double aimbim = a[i + N / 2] * b[i + N / 2];
-        double arebim = a[i] * b[i + N / 2];
-        res[i] = a[i] * b[i] - aimbim - c[i];
-        res[i + N / 2] = a[i + N / 2] * b[i] + arebim - c[i+N/2];
-    }
-}
 }  // namespace TFHEpp
