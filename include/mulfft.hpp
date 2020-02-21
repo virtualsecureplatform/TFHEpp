@@ -22,9 +22,9 @@ inline void TwistIFFTlvl1(array<double, DEF_N> &res,
 inline void PolyMullvl1(Polynomiallvl1 &res, const Polynomiallvl1 &a,
                         const Polynomiallvl1 &b)
 {
-    PolynomialInFDlvl1 ffta;
+    alignas(32) PolynomialInFDlvl1 ffta;
     TwistIFFTlvl1(ffta, a);
-    PolynomialInFDlvl1 fftb;
+    alignas(32) PolynomialInFDlvl1 fftb;
     TwistIFFTlvl1(fftb, b);
     MulInFD<DEF_N>(ffta, ffta, fftb);
     TwistFFTlvl1(res, ffta);

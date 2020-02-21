@@ -8,7 +8,7 @@
 namespace TFHEpp {
 struct GateKey {
     KeySwitchingKey ksk;
-    BootStrappingKeyFFTlvl01 bkfftlvl01;
+    alignas(32) BootStrappingKeyFFTlvl01 bkfftlvl01;
     GateKey(SecretKey sk)
     {
         for (int i = 0; i < DEF_N; i++)
@@ -27,7 +27,7 @@ struct GateKey {
 
 struct CircuitKey {
     PrivKeySwitchKey privksk;
-    BootStrappingKeyFFTlvl02 bkfftlvl02;
+    alignas(32) BootStrappingKeyFFTlvl02 bkfftlvl02;
     CircuitKey(SecretKey sk)
     {
         array<uint32_t, DEF_nbar + 1> key;

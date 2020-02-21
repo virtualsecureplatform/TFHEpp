@@ -106,7 +106,7 @@ void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
 void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res, const TLWElvl0 &tlwe,
                                         const GateKey &gk)
 {
-    TRLWElvl1 acc;
+    alignas(32) TRLWElvl1 acc;
     GateBootstrappingTLWE2TRLWEFFTlvl01(acc, tlwe, gk);
     SampleExtractIndexlvl1(res, acc, 0);
 }
