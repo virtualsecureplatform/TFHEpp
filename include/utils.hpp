@@ -88,8 +88,10 @@ inline void FMAInFD(array<double, N> &res, const array<double, N> &a,
         bim = _mm256_load_pd(b.data()+i+N/2);
         resre = _mm256_load_pd(res.data()+i);
         resim = _mm256_load_pd(res.data()+i+N/2);
-        resre = _mm256_add_pd(_mm256_fmsub_pd(are,bre,_mm256_mul_pd(aim,bim)),resre);
-        resim = _mm256_add_pd(_mm256_fmadd_pd(aim,bre,_mm256_mul_pd(are,bim)),resim);
+        resre = _mm256_fmsub_pd(aim,bim,resre);
+        resre = _mm256_fmsub_pd(are,bre,resre);
+        resim = _mm256_fmadd_pd(are,bim,resim);
+        resim = _mm256_fmadd_pd(aim,bre,resim);
 
         _mm256_store_pd(res.data()+i,resre);
         _mm256_store_pd(res.data()+i+N/2,resim);
