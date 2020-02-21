@@ -22,8 +22,8 @@ array<array<double,N>,2*N> XaittGen(){
     return xaitt;
 }
 
-static const array<PolynomialInFDlvl1,2*DEF_N> xaittlvl1 = XaittGen<uint32_t,DEF_N>();
-static const array<PolynomialInFDlvl2,2*DEF_nbar> xaittlvl2 = XaittGen<uint64_t,DEF_nbar>();
+alignas(32) static const array<PolynomialInFDlvl1,2*DEF_N> xaittlvl1 = XaittGen<uint32_t,DEF_N>();
+alignas(32) static const array<PolynomialInFDlvl2,2*DEF_nbar> xaittlvl2 = XaittGen<uint64_t,DEF_nbar>();
 
 template <typename T = uint32_t, uint32_t N = DEF_N>
 inline void PolynomialMulByXai(array<T, N> &res, const array<T, N> &poly,
@@ -154,7 +154,7 @@ void KeyBundleFFT(array<array<array<double, N>, 2>, 2 * l>& kbfft, const array<a
 void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
                                          const GateKey &gk)
 {
-    TRGSWFFTlvl1 kbfft;
+    alignas(32) TRGSWFFTlvl1 kbfft;
     const uint32_t bara = 2 * DEF_N - modSwitchFromTorus32<2 * DEF_N>(tlwe[DEF_n]);
     RotatedTestVector<uint32_t, DEF_N>(acc, bara, DEF_μ);
     for (int i = 0; i < DEF_n/DEF_Addends; i++) {
@@ -167,7 +167,7 @@ void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
 void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res, const TLWElvl0 &tlwe,
                                         const GateKey &gk)
 {
-    TRLWElvl1 acc;
+    alignas(32) TRLWElvl1 acc;
     GateBootstrappingTLWE2TRLWEFFTlvl01(acc, tlwe, gk);
     SampleExtractIndexlvl1(res, acc, 0);
 }
@@ -177,7 +177,7 @@ inline void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
                                                const CircuitKey &ck,
                                                const uint64_t μs2)
 {
-    TRGSWFFTlvl2 kbfft;
+    alignas(32) TRGSWFFTlvl2 kbfft;
     TRLWElvl2 acc;
     uint32_t bara =
         2 * DEF_nbar - modSwitchFromTorus64<2 * DEF_nbar>(tlwe[DEF_n]);

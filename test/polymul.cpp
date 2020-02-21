@@ -16,7 +16,7 @@ int main()
     uniform_int_distribution<uint32_t> Torus32dist(0, UINT32_MAX);
 
     cout << "Start LVL1 test." << endl;
-    for (int test; test < num_test; test++) {
+    for (volatile int test; test < num_test; test++) {
         Polynomiallvl1 a;
         for (uint32_t &i : a) i = Torus32dist(engine);
         PolynomialInFDlvl1 resfft;
@@ -28,7 +28,7 @@ int main()
     }
     cout << "FFT Passed" << endl;
 
-    for (int test; test < num_test; test++) {
+    for (volatile int test; test < num_test; test++) {
         array<uint32_t, DEF_N> a;
         for (int i = 0; i < DEF_N; i++) a[i] = Bgdist(engine) - DEF_Bg / 2;
         for (uint32_t &i : a) i = Bgdist(engine) - DEF_Bg / 2;

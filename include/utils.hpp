@@ -7,6 +7,7 @@
 #include <cmath>
 #include <params.hpp>
 #include <random>
+#include <immintrin.h>
 
 namespace TFHEpp {
 using namespace std;
@@ -61,11 +62,17 @@ template <uint32_t N>
 inline void MulInFD(array<double, N> &res, const array<double, N> &a,
                     const array<double, N> &b)
 {
-    for (int i = 0; i < N / 2; i++) {
-        double aimbim = a[i + N / 2] * b[i + N / 2];
-        double arebim = a[i] * b[i + N / 2];
-        res[i] = a[i] * b[i] - aimbim;
-        res[i + N / 2] = a[i + N / 2] * b[i] + arebim;
+    for (int i = 0; i < N / 2; i+=4) {
+        __m256d are,aim,bre,bim,resre,resim;
+        are = _mm256_load_pd(a.data()+i);
+        aim = _mm256_load_pd(a.data()+i+N/2);
+        bre = _mm256_load_pd(b.data()+i);
+        bim = _mm256_load_pd(b.data()+i+N/2);
+        resre = _mm256_fmsub_pd(are,bre,_mm256_mul_pd(aim,bim));
+        resim = _mm256_fmadd_pd(aim,bre,_mm256_mul_pd(are,bim));
+
+        _mm256_store_pd(res.data()+i,resre);
+        _mm256_store_pd(res.data()+i+N/2,resim);
     }
 }
 
@@ -73,11 +80,19 @@ template <uint32_t N>
 inline void FMAInFD(array<double, N> &res, const array<double, N> &a,
                     const array<double, N> &b)
 {
-    for (int i = 0; i < N / 2; i++) {
-        res[i] = a[i + N / 2] * b[i + N / 2] - res[i];
-        res[i] = a[i] * b[i] - res[i];
-        res[i + N / 2] += a[i] * b[i + N / 2];
-        res[i + N / 2] += a[i + N / 2] * b[i];
+    for (int i = 0; i < N / 2; i+=4) {
+        __m256d are,aim,bre,bim,resre,resim;
+        are = _mm256_load_pd(a.data()+i);
+        aim = _mm256_load_pd(a.data()+i+N/2);
+        bre = _mm256_load_pd(b.data()+i);
+        bim = _mm256_load_pd(b.data()+i+N/2);
+        resre = _mm256_load_pd(res.data()+i);
+        resim = _mm256_load_pd(res.data()+i+N/2);
+        resre = _mm256_add_pd(_mm256_fmsub_pd(are,bre,_mm256_mul_pd(aim,bim)),resre);
+        resim = _mm256_add_pd(_mm256_fmadd_pd(aim,bre,_mm256_mul_pd(are,bim)),resim);
+
+        _mm256_store_pd(res.data()+i,resre);
+        _mm256_store_pd(res.data()+i+N/2,resim);
     }
 }
 }  // namespace TFHEpp

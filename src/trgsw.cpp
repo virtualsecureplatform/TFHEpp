@@ -129,9 +129,9 @@ inline void DecompositionFFTlvl2(DecomposedTRLWEInFDlvl2 &decvecfft,
 void trgswfftExternalProductlvl1(TRLWElvl1 &res, const TRLWElvl1 &trlwe,
                                  const TRGSWFFTlvl1 &trgswfft)
 {
-    DecomposedTRLWEInFDlvl1 decvecfft;
+    alignas(32) DecomposedTRLWEInFDlvl1 decvecfft;
     DecompositionFFTlvl1(decvecfft, trlwe);
-    TRLWEInFDlvl1 restrlwefft;
+    alignas(32) TRLWEInFDlvl1 restrlwefft;
     MulInFD<DEF_N>(restrlwefft[0], decvecfft[0], trgswfft[0][0]);
     MulInFD<DEF_N>(restrlwefft[1], decvecfft[0], trgswfft[0][1]);
     for (int i = 1; i < 2 * DEF_l; i++) {
