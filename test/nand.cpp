@@ -11,7 +11,7 @@ using namespace TFHEpp;
 
 int main()
 {
-    const uint32_t num_test = 10;
+    const uint32_t num_test = 1000;
     random_device seed_gen;
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint32_t> binary(0, 1);
@@ -33,11 +33,11 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
 
-    ProfilerStart("nand.prof");
+    // ProfilerStart("nand.prof");
     for (int test = 0; test < num_test; test++) {
         HomNAND(cres[test], ca[test], cb[test], *gk);
     }
-    ProfilerStop();
+    // ProfilerStop();
 
     end = chrono::system_clock::now();
     pres = bootsSymDecrypt(cres, *sk);
