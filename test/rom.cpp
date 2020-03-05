@@ -8,33 +8,30 @@ using namespace std;
 using namespace TFHEpp;
 
 template <uint32_t address_bit, uint32_t width_bit>
-void UROMUX(TRLWElvl1 &res, const array<TRGSWFFTlvl1, address_bit> &address,
+void UROMUX(TRLWElvl1 &res, const array<TRGSWFFTlvl1, address_bit> &invaddress,
             const array<TRLWElvl1, 1 << (address_bit - width_bit)> &data)
 {
-    const uint32_t num_trlwe = 1 << (address_bit - width_bit);
+    constexpr uint32_t Ubit = address_bit - width_bit;
+    constexpr uint32_t num_trlwe = 1 << (Ubit);
     array<TRLWElvl1, num_trlwe / 2> temp;
 
     for (uint32_t index = 0; index < num_trlwe / 2; index++) {
-        CMUXFFTlvl1(temp[index], address[width_bit], data[2 * index + 1],
-                    data[2 * index]);
+        CMUXFFTlvl1(temp[index], invaddress[width_bit], data[2 * index],
+                    data[2 * index + 1]);
     }
 
-    // If you need more than 512 Byte, you should see RAM.
-    //This is not working.
-    // for (uint32_t bit = 0; bit < (address_bit - width_bit - 2); bit++) {
-    //     const uint32_t stride = 1 << bit;
-    //     const uint32_t offset = (1 << bit) - 1;
-    //     for (uint32_t index = 0; index < (num_trlwe >> (bit + 1)); index++) {
-    //         CMUXFFTlvl1(temp[(2 * index + 1) * stride + offset],
-    //                     address[width_bit + bit + 1],
-    //                     temp[(2 * index + 1) * stride + offset],
-    //                     temp[(2 * index) * stride + offset]);
-    //     }
-    // }
-    const uint32_t stride = 1 << (address_bit - width_bit - 2);
-    const uint32_t offset = (1 << (address_bit - width_bit - 2)) - 1;
-    CMUXFFTlvl1(res, address[address_bit - 1], temp[stride + offset],
-                temp[offset]);
+    for (uint32_t bit = 0; bit < (Ubit - 2); bit++) {
+        const uint32_t stride = 1 << bit;
+        for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
+            CMUXFFTlvl1(temp[(2 * index) * stride], invaddress[width_bit + bit + 1],
+                        temp[(2 * index) * stride],
+                        temp[(2 * index + 1) * stride]);
+        }
+    }
+
+    constexpr uint32_t stride = 1 << (Ubit - 2);
+    CMUXFFTlvl1(res, invaddress[address_bit - 1], temp[0],
+                temp[stride]);
 }
 
 template <uint32_t address_bit, uint32_t width_bit>
@@ -72,13 +69,12 @@ void LROMUX(vector<TLWElvl0> &res,
 
 int main()
 {
-    constexpr uint32_t address_bit = 7;  // Address by words.
+    constexpr uint32_t address_bit = 8;  // Address by words.
     constexpr uint32_t words_bit = 5;
     constexpr uint32_t width_bit =
         DEF_Nbit -
         words_bit;  // log_2 of how many words are in one TRLWElvl1 message.
-    static_assert(address_bit-words_bit==2);// If you need more than 512 Byte, you should see RAM.
-    assert(address_bit >= width_bit);
+    static_assert(address_bit >= width_bit);
     const uint32_t width = 1 << width_bit;
     const uint32_t num_trlwe = 1 << (address_bit - width_bit);
     random_device seeder;
@@ -110,8 +106,10 @@ int main()
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
-    for (int i = 0; i < address_bit; i++)
+    for (int i = 0; i < words_bit; i++)
         CircuitBootstrappingFFT(bootedTGSW[i], encaddress[i], (*ck).ck);
+    for (int i = words_bit; i < address_bit; i++)
+        CircuitBootstrappingFFTInv(bootedTGSW[i], encaddress[i], (*ck).ck);
     TRLWElvl1 encumemory;
 
     UROMUX<address_bit, width_bit>(encumemory, bootedTGSW, encmemory);
