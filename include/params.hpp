@@ -6,6 +6,10 @@
 namespace TFHEpp {
 using namespace std;
 
+//Use old 80bit security parameters. It is faster, but not recommended.
+#define USE_80BIT_SECURITY
+
+#ifdef USE_80BIT_SECURITY
 constexpr uint32_t DEF_n = 500;
 constexpr double DEF_α = 2.44e-5;
 constexpr uint32_t DEF_Nbit = 10;
@@ -29,6 +33,31 @@ constexpr uint32_t DEF_tbar = 10;
 constexpr uint32_t DEF_basebitlvl21 = 3;
 const double DEF_αprivks = std::pow(2, -31);
 constexpr uint64_t DEF_μbar = 1UL << 61;
+#else
+constexpr uint32_t DEF_n = 630;
+const double DEF_α = std::pow(2.0, -15);
+constexpr uint32_t DEF_Nbit = 10;
+constexpr uint32_t DEF_N = 1 << DEF_Nbit;
+constexpr uint32_t DEF_l = 3;
+constexpr uint32_t DEF_Bgbit = 6;
+constexpr uint32_t DEF_Bg = 1 << DEF_Bgbit;
+const double DEF_αbk = std::pow(2.0, -25);
+constexpr uint32_t DEF_t = 8;
+constexpr uint32_t DEF_basebit = 2;
+const double DEF_αks = DEF_α;
+constexpr uint32_t DEF_μ = 1U << 29;
+
+constexpr uint32_t DEF_nbarbit = 11;
+constexpr uint32_t DEF_nbar = 1 << DEF_nbarbit;
+constexpr uint32_t DEF_lbar = 4;
+constexpr uint32_t DEF_Bgbitbar = 9;
+constexpr uint32_t DEF_Bgbar = 1 << DEF_Bgbitbar;
+const double DEF_αbklvl02 = std::pow(2.0, -44);
+constexpr uint32_t DEF_tbar = 10;
+constexpr uint32_t DEF_basebitlvl21 = 3;
+const double DEF_αprivks = std::pow(2, -31);
+constexpr uint64_t DEF_μbar = 1UL << 61;
+#endif
 
 using Keylvl0 = array<uint32_t, DEF_n>;
 using Keylvl1 = array<uint32_t, DEF_N>;

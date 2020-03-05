@@ -1,5 +1,8 @@
 file(GLOB tfhe++_sources "*.cpp")
 
+if(USE_80BIT_SECURITY)
+    add_definitions(-DENABLE_80BIT_SECURITY)
+endif()
 
 add_library(tfhe++
   ${tfhe++_sources}
