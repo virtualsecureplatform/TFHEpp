@@ -165,15 +165,16 @@ void CircuitBootstrappingFFT(TRGSWFFTlvl1 &trgswfft, const TLWElvl0 &tlwe,
 }
 
 void CircuitBootstrappingFFTInv(TRGSWFFTlvl1 &invtrgswfft, const TLWElvl0 &tlwe,
-                             const CircuitKey &ck)
-{   
+                                const CircuitKey &ck)
+{
     TLWElvl0 invtlwe;
-    //HomNot
+    // HomNot
     for (int i = 0; i <= DEF_n; i++) invtlwe[i] = -tlwe[i];
     TRGSWlvl1 trgsw;
     CircuitBootstrapping(trgsw, invtlwe, ck);
     for (int i = 0; i < 2 * DEF_l; i++)
-        for (int j = 0; j < 2; j++) TwistIFFTlvl1(invtrgswfft[i][j], trgsw[i][j]);
+        for (int j = 0; j < 2; j++)
+            TwistIFFTlvl1(invtrgswfft[i][j], trgsw[i][j]);
 }
 
 void CircuitBootstrappingFFTwithInv(TRGSWFFTlvl1 &trgswfft,

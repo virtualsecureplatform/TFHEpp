@@ -17,7 +17,7 @@ void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const GateKey &gk);
 void CircuitBootstrappingFFT(TRGSWFFTlvl1 &trgswfft, const TLWElvl0 &tlwe,
                              const CircuitKey &ck);
 void CircuitBootstrappingFFTInv(TRGSWFFTlvl1 &invtrgswfft, const TLWElvl0 &tlwe,
-                             const CircuitKey &ck);
+                                const CircuitKey &ck);
 void CircuitBootstrappingFFTwithInv(TRGSWFFTlvl1 &trgswfft,
                                     TRGSWFFTlvl1 &invtrgswfft,
                                     const TLWElvl0 &tlwe, const CircuitKey &ck);

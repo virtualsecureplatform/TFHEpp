@@ -1,10 +1,10 @@
+#include <gperftools/profiler.h>
+
 #include <cassert>
 #include <chrono>
 #include <iostream>
 #include <random>
 #include <tfhe++.hpp>
-
-#include <gperftools/profiler.h>
 
 using namespace std;
 using namespace TFHEpp;
