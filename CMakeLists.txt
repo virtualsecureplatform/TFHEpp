@@ -3,10 +3,11 @@ project(tfhe++ CXX)
 set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_FLAGS "-march=native -O3 -g -std=c++17 -lprofiler -ltcmalloc")
 
+# For OpenMP
 find_package(OpenMP REQUIRED)
-link_libraries(OpenMP::OpenMP_CXX)
-
-set(USE_80BIT_SECURITY OFF BOOL "Use old 80bit security parameters. It is faster, but not recommended.")
+if(OpenMP_FOUND)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
 
 add_subdirectory(thirdparties/randen)
 add_subdirectory(thirdparties/spqlios)
