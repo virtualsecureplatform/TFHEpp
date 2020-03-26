@@ -6,6 +6,7 @@
 #include <array>
 #include <params.hpp>
 #include <random>
+#include <unicodeparams.hpp>
 
 namespace TFHEpp {
 using namespace std;

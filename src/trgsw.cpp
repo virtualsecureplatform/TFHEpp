@@ -3,6 +3,7 @@
 #include <mulfft.hpp>
 #include <params.hpp>
 #include <trlwe.hpp>
+#include <unicodeparams.hpp>
 #include <utils.hpp>
 
 namespace TFHEpp {
@@ -105,8 +106,8 @@ inline void Decompositionlvl2(DecomposedTRLWElvl2 &decvec,
                               const TRLWElvl2 &trlwe)
 {
     static constexpr uint64_t offset = offsetgenlvl2();
-    Decomposition<uint64_t, DEF_nbar, DEF_lbar, DEF_Bgbitbar,offset>(decvec, trlwe
-                                                              );
+    Decomposition<uint64_t, DEF_nbar, DEF_lbar, DEF_Bgbitbar, offset>(decvec,
+                                                                      trlwe);
 }
 
 inline void DecompositionFFTlvl1(DecomposedTRLWEInFDlvl1 &decvecfft,

@@ -7,6 +7,7 @@
 #include <params.hpp>
 #include <random>
 #include <type_traits>
+#include <unicodeparams.hpp>
 #include <utils.hpp>
 #include <vector>
 
