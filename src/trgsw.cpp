@@ -53,17 +53,17 @@ TRGSWFFTlvl2 trgswfftSymEncryptlvl2(int64_t p, double α, Keylvl2 &key)
 }
 
 template <typename T = uint32_t, uint32_t N = DEF_N, uint32_t l = DEF_l,
-          uint32_t Bgbit = DEF_Bgbit>
+          uint32_t Bgbit = DEF_Bgbit, T offset>
 inline void Decomposition(array<array<T, N>, 2 * l> &decvec,
-                          const array<array<T, N>, 2> &trlwe, const T offset)
+                          const array<array<T, N>, 2> &trlwe)
 {
-    const T mask = static_cast<T>((1UL << Bgbit) - 1);
+    constexpr T mask = static_cast<T>((1UL << Bgbit) - 1);
     for (int i = 0; i < N; i++) {
         decvec[0][i] = trlwe[0][i] + offset;
         decvec[l][i] = trlwe[1][i] + offset;
     }
 
-    const T halfBg = (1UL << (Bgbit - 1));
+    constexpr T halfBg = (1UL << (Bgbit - 1));
     for (int i = l - 1; i >= 0; i--) {
         for (int j = 0; j < N; j++) {
             decvec[i][j] = ((decvec[0][j] >>
@@ -98,15 +98,15 @@ inline void Decompositionlvl1(DecomposedTRLWElvl1 &decvec,
                               const TRLWElvl1 &trlwe)
 {
     static constexpr uint32_t offset = offsetgenlvl1();
-    Decomposition<uint32_t, DEF_N, DEF_l, DEF_Bgbit>(decvec, trlwe, offset);
+    Decomposition<uint32_t, DEF_N, DEF_l, DEF_Bgbit, offset>(decvec, trlwe);
 }
 
 inline void Decompositionlvl2(DecomposedTRLWElvl2 &decvec,
                               const TRLWElvl2 &trlwe)
 {
     static constexpr uint64_t offset = offsetgenlvl2();
-    Decomposition<uint64_t, DEF_nbar, DEF_lbar, DEF_Bgbitbar>(decvec, trlwe,
-                                                              offset);
+    Decomposition<uint64_t, DEF_nbar, DEF_lbar, DEF_Bgbitbar,offset>(decvec, trlwe
+                                                              );
 }
 
 inline void DecompositionFFTlvl1(DecomposedTRLWEInFDlvl1 &decvecfft,
