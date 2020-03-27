@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.9)
 project(tfhe++ CXX)
 set(CMAKE_CXX_COMPILER clang++)
-set(CMAKE_CXX_FLAGS "-march=native -O3 -g -std=c++17 -lprofiler -ltcmalloc")
+set(CMAKE_CXX_FLAGS "-march=native -O3 -std=c++17")
 
 # For OpenMP
 find_package(OpenMP)

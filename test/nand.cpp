@@ -1,5 +1,3 @@
-#include <gperftools/profiler.h>
-
 #include <cassert>
 #include <chrono>
 #include <iostream>
@@ -33,11 +31,9 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
 
-    ProfilerStart("nand.prof");
     for (int test = 0; test < num_test; test++) {
         HomNAND(cres[test], ca[test], cb[test], *gk);
     }
-    ProfilerStop();
 
     end = chrono::system_clock::now();
     pres = bootsSymDecrypt(cres, *sk);
