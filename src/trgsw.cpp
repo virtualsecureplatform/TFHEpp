@@ -59,23 +59,21 @@ inline void Decomposition(array<array<T, N>, 2 * l> &decvec,
                           const array<array<T, N>, 2> &trlwe)
 {
     constexpr T mask = static_cast<T>((1UL << Bgbit) - 1);
-    for (int i = 0; i < N; i++) {
-        decvec[0][i] = trlwe[0][i] + offset;
-        decvec[l][i] = trlwe[1][i] + offset;
-    }
-
     constexpr T halfBg = (1UL << (Bgbit - 1));
-    for (int i = l - 1; i >= 0; i--) {
-        for (int j = 0; j < N; j++) {
-            decvec[i][j] = ((decvec[0][j] >>
+
+    for (int j = 0; j < N; j++) {
+        T temp0 = trlwe[0][j] + offset;
+        T temp1 = trlwe[1][j] + offset;
+        for (int i = 0; i < l; i++)
+            decvec[i][j] = ((temp0 >>
                              (numeric_limits<T>::digits - (i + 1) * Bgbit)) &
                             mask) -
                            halfBg;
-            decvec[i + l][j] = ((decvec[l][j] >> (numeric_limits<T>::digits -
+        for (int i = 0; i < l; i++)
+            decvec[i + l][j] = ((temp1 >> (numeric_limits<T>::digits -
                                                   (i + 1) * Bgbit)) &
                                 mask) -
                                halfBg;
-        }
     }
 }
 
