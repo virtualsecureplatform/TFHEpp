@@ -35,14 +35,10 @@ inline uint64_t gaussian64(uint64_t center, double stdev)
     return ival + center;
 }
 
-template <uint32_t Msize = 2 * DEF_N>
+template <uint32_t Mbit = DEF_Nbit+1>
 inline uint32_t modSwitchFromTorus32(uint32_t phase)
 {
-    uint64_t interv = ((1UL << 63) / Msize) * 2;  // width of each intervall
-    uint64_t half_interval = interv / 2;  // begin of the first intervall
-    uint64_t phase64 = (uint64_t(phase) << 32) + half_interval;
-    // floor to the nearest multiples of interv
-    return static_cast<uint32_t>(phase64 / interv);
+    return (phase+(1U<<(31-Mbit)))>>(32-Mbit);
 }
 
 template <uint32_t Msize = 2 * DEF_nbar>
