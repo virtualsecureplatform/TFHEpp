@@ -65,15 +65,15 @@ inline void Decomposition(array<array<T, N>, 2 * l> &decvec,
         T temp0 = trlwe[0][j] + offset;
         T temp1 = trlwe[1][j] + offset;
         for (int i = 0; i < l; i++)
-            decvec[i][j] = ((temp0 >>
-                             (numeric_limits<T>::digits - (i + 1) * Bgbit)) &
-                            mask) -
-                           halfBg;
+            decvec[i][j] =
+                ((temp0 >> (numeric_limits<T>::digits - (i + 1) * Bgbit)) &
+                 mask) -
+                halfBg;
         for (int i = 0; i < l; i++)
-            decvec[i + l][j] = ((temp1 >> (numeric_limits<T>::digits -
-                                                  (i + 1) * Bgbit)) &
-                                mask) -
-                               halfBg;
+            decvec[i + l][j] =
+                ((temp1 >> (numeric_limits<T>::digits - (i + 1) * Bgbit)) &
+                 mask) -
+                halfBg;
     }
 }
 

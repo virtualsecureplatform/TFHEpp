@@ -88,10 +88,10 @@ void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
                                          const GateKey &gk)
 {
     TRLWElvl1 temp;
-    uint32_t bara = 2 * DEF_N - modSwitchFromTorus32<DEF_Nbit+1>(tlwe[DEF_n]);
+    uint32_t bara = 2 * DEF_N - modSwitchFromTorus32<DEF_Nbit + 1>(tlwe[DEF_n]);
     RotatedTestVector<uint32_t, DEF_N>(acc, bara, DEF_μ);
     for (int i = 0; i < DEF_n; i++) {
-        bara = modSwitchFromTorus32<DEF_Nbit+1>(tlwe[i]);
+        bara = modSwitchFromTorus32<DEF_Nbit + 1>(tlwe[i]);
         if (bara == 0) continue;
         PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1], bara);

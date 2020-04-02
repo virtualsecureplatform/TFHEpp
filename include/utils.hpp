@@ -35,10 +35,10 @@ inline uint64_t gaussian64(uint64_t center, double stdev)
     return ival + center;
 }
 
-template <uint32_t Mbit = DEF_Nbit+1>
+template <uint32_t Mbit = DEF_Nbit + 1>
 inline uint32_t modSwitchFromTorus32(uint32_t phase)
 {
-    return (phase+(1U<<(31-Mbit)))>>(32-Mbit);
+    return (phase + (1U << (31 - Mbit))) >> (32 - Mbit);
 }
 
 template <uint32_t Msize = 2 * DEF_nbar>
