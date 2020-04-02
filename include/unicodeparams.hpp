@@ -2,24 +2,23 @@
 #include "params.hpp"
 
 namespace TFHEpp {
+constexpr uint32_t DEF_μ = 1U << 29;
+constexpr uint64_t DEF_μbar = 1UL << 61;
+
 #ifdef USE_80BIT_SECURITY
 constexpr double DEF_α = 2.44e-5;
 constexpr double DEF_αbk = 3.73e-9;
 constexpr double DEF_αks = 2.44e-5;
-constexpr uint32_t DEF_μ = 1U << 29;
 
 const double DEF_αbklvl02 = std::pow(2.0, -44);
 const double DEF_αprivks = std::pow(2, -31);
-constexpr uint64_t DEF_μbar = 1UL << 61;
 #else
 const double DEF_α = std::pow(2.0, -15);
 const double DEF_αbk = std::pow(2.0, -25);
 const double DEF_αks = DEF_α;
-constexpr uint32_t DEF_μ = 1U << 29;
 
 const double DEF_αbklvl02 = std::pow(2.0, -44);
 const double DEF_αprivks = std::pow(2, -31);
-constexpr uint64_t DEF_μbar = 1UL << 61;
 #endif
 
 struct lweParams {
