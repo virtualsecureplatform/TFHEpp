@@ -26,5 +26,6 @@ struct CloudKey {
     CircuitKey ck;
     lweParams params;
     CloudKey(SecretKey sk) : gk(sk), ck(sk) {}
+    CloudKey() {}
 };
 }  // namespace TFHEpp
