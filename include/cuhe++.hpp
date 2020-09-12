@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <array>
-#include <iostream>
 
 namespace cuHEpp{
     using namespace std;
@@ -39,42 +38,87 @@ namespace cuHEpp{
             }
 
             INTorus operator << (uint32_t l){
+                if(l==0){
+                    return *this;
+                }
                 //t[0] = templ,t[1] = tempul, t[2] = tempuu
-                if(l<32){
+                else if(l<32){
                     uint64_t templ,tempu,res;
                     templ = this->value<<l;
                     tempu = this->value>>(64-l);
                     res = templ+(tempu<<32)-tempu;
-                    cout<<"temps"<<res<<":"<<templ<<":"<<tempu<<endl;
                     res += static_cast<uint32_t>(-(res<templ));// tempuu is always 0.
+                    return INTorus(res);
+                }
+                else if(l==32){
+                    uint64_t templ,tempul,tempuu,res;
+                    templ = this->value<<l;
+                    tempul = static_cast<uint32_t>(this->value>>(64-l));
+                    tempuu = 0;
+                    res = templ+(tempul<<32)-tempuu-tempul;
+                    res -= static_cast<uint32_t>(-((res>templ)&&(tempul==0)));
+                    res += static_cast<uint32_t>(-((res<templ)&&(tempul!=0)));
                     return INTorus(res);
                 }
                 else if(l<64){
                     uint64_t templ,tempul,tempuu,res;
-                    templ = this->value<<l;
+                    templ = static_cast<uint32_t>(this->value<<(l-32));
                     tempul = static_cast<uint32_t>(this->value>>(64-l));
                     tempuu = this->value>>(96-l);
-                    res = templ+(tempul<<32)-tempuu-tempul;
-                    res -= static_cast<uint32_t>(-((res>templ)&&(tempuu==0)));
-                    res += static_cast<uint32_t>(-((res<templ)&&(tempuu!=0)));
+                    res = ((templ+tempul)<<32)-tempuu-tempul;
+                    res -= static_cast<uint32_t>(-((res>(templ<<32))&&(tempul==0)));
+                    res += static_cast<uint32_t>(-((res<(templ<<32))&&(tempul!=0)));
                     return INTorus(res);
                 }
-                // Above 2 are almsot equivalent
+                // Above are almsot equivalent
+                //cuFHE seems to be wrong in Lsh96 and Lsh128. Sign is wrong.
+                //mod P is not needed
+                else if(l==64){
+                    uint64_t templ,tempu,res;
+                    templ = static_cast<uint32_t>(this->value);
+                    templ = (templ<<32) - templ;
+                    // templ += static_cast<uint32_t>(-(templ >= P));//mod P
+                    tempu = this->value>>(96-l);
+                    res = templ-tempu;
+                    res -= static_cast<uint32_t>(-(res > (templ)));
+                    return INTorus(res);
+                }
                 else if(l<96){
-                    uint64_t templ,tempul,tempuu,res;
+                    uint64_t templ,tempu,res;
                     templ = static_cast<uint32_t>(this->value<<(l-64));
-                    tempul = static_cast<uint32_t>(this->value>>(96-l));
-                    tempuu = this->value>>(128-l);
-                    res = templ+tempul+((tempuu-tempul)<<32);
-                    res -= static_cast<uint32_t>(-(res > tempuu));
+                    templ = (templ<<32) - templ;
+                    // templ += static_cast<uint32_t>(-(templ >= P)); //mod P
+                    tempu = this->value>>(96-l);
+                    res = templ-tempu;
+                    res -= static_cast<uint32_t>(-(res > (templ)));
+                    return INTorus(res);
+                }
+                else if(l==96){
+                    uint64_t templ,tempu,res;
+                    templ = P-(this->value);
+                    tempu = 0;
+                    res = tempu + templ;
+                    res += static_cast<uint32_t>(-(res < tempu));
                     return INTorus(res);
                 }
                 else if(l<128){
                     uint64_t templ,tempu,res;
-                    templ = this->value<<(l-96);
+                    templ = P-(this->value<<(l-96));
                     tempu = this->value>>(160-l);
-                    res = templ-tempu+(tempu<<32);
-                    res -= static_cast<uint32_t>(-(res > templ));
+                    tempu = P-(tempu<<32)+tempu;
+                    // tempu += static_cast<uint32_t>(-(tempu >= P)); //mod P
+                    res = templ+tempu;
+                    res += static_cast<uint32_t>(-(res < tempu));
+                    return INTorus(res);
+                }
+                else if(l==128){
+                    uint64_t templ,tempul,tempuu,res;
+                    templ = static_cast<uint32_t>(this->value);
+                    tempul = static_cast<uint32_t>(this->value>>(160-l));
+                    tempuu = 0;
+                    res = ((templ+tempul)<<32)-tempul-tempuu;
+                    res -= static_cast<uint32_t>(-(res > (templ << 32) && tempul == 0));
+                    res += static_cast<uint32_t>(-(res < (templ << 32) && tempul != 0));
                     return INTorus(res);
                 }
                 else if(l<160){

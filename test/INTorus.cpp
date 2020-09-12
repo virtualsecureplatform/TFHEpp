@@ -9,7 +9,7 @@ using namespace cuHEpp;
 namespace mp = boost::multiprecision;
 
 int main(){
-    constexpr int numTest = 1000;
+    constexpr int numTest = 10000;
     random_device seed_gen;
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint64_t> dist(0, P);
@@ -44,14 +44,24 @@ int main(){
     //Lsh Test
     for(int upper = 1;upper<=6;upper++){
         for(int l = 32*(upper-1); l<32*upper; l++){
+            cout<<l<<endl;
             for(int i = 0; i<numTest;i++){
-                __int128_t a = dist(engine);
-                INTorus A(a);
-                // mp::cpp_int a = temp;
-                cout<<static_cast<uint64_t>(a)<<":";
-                cout<<(A<<l).value<<":"<<static_cast<uint64_t>((a<<l)%P)<<endl;
+                __int128_t temp = dist(engine);
+                INTorus A(temp);
+                mp::cpp_int a = temp;
+                // cout<<static_cast<uint64_t>(a)<<":";
+                if((A<<l).value!=(static_cast<uint64_t>((a<<l)%P))){
+                    cout<<(A<<l).value<<":"<<static_cast<uint64_t>((a<<l)%P)<<endl;
+                }
                 assert((A<<l).value==(static_cast<uint64_t>((a<<l)%P)));
             }
+            __int128_t temp = ((1UL<<32)-1)<<32;
+            INTorus A(temp);
+            mp::cpp_int a = temp;
+            if((A<<l).value!=(static_cast<uint64_t>((a<<l)%P))){
+                cout<<(A<<l).value<<":"<<static_cast<uint64_t>((a<<l)%P)<<endl;
+             }
+            assert((A<<l).value==(static_cast<uint64_t>((a<<l)%P)));
         }
         cout<<"Lsh"<<upper*32<<"PASS"<<endl;
     }
