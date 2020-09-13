@@ -18,7 +18,7 @@ const double DEF_αbk = std::pow(2.0, -25);
 const double DEF_αks = DEF_α;
 
 const double DEF_αbklvl02 = std::pow(2.0, -44);
-const double DEF_αprivks = std::pow(2, -31);
+const double DEF_αprivks = std::pow(2, -29);
 #endif
 
 struct lweParams {

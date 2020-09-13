@@ -7,7 +7,6 @@ namespace TFHEpp {
 using namespace std;
 
 // Use old 80bit security parameters. It is faster, but not recommended.
-#define USE_80BIT_SECURITY
 
 #ifdef USE_80BIT_SECURITY
 constexpr uint32_t DEF_n = 500;

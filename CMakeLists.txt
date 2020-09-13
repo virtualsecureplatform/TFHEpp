@@ -3,6 +3,11 @@ project(tfhe++ CXX)
 set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_FLAGS "-march=native -O3 -std=c++17")
 
+OPTION(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" ON)
+if(USE_80BIT_SECURITY)
+    add_compile_definitions(USE_80BIT_SECURITY)
+endif()
+
 # For OpenMP
 find_package(OpenMP)
 if(OpenMP_FOUND)
