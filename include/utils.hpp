@@ -12,11 +12,13 @@ namespace TFHEpp {
 using namespace std;
 static randen::Randen<uint64_t> generator;
 
+// Double to Torus(32bit fixed-point number)
 inline uint32_t dtot32(double d)
 {
     return int32_t(int64_t((d - int64_t(d)) * (1L << 32)));
 }
 
+// Modular Gaussian Distribution over Torus(32bit fixed-point number)
 inline uint32_t gaussian32(uint32_t message, double α)
 {
     normal_distribution<double> distribution(
@@ -26,6 +28,7 @@ inline uint32_t gaussian32(uint32_t message, double α)
     return message + dtot32(err);
 }
 
+// Modular Gaussian Distribution over Torus(64bit fixed-point number)
 inline uint64_t gaussian64(uint64_t center, double stdev)
 {
     static const double _2p64 = pow(2., 64);
