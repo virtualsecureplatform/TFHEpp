@@ -6,7 +6,8 @@
 #include <array>
 #include <params.hpp>
 #include <random>
-#include <unicodeparams.hpp>
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/types/array.hpp>
 
 namespace TFHEpp {
 using namespace std;
@@ -31,6 +32,13 @@ struct SecretKey {
     {
         lweKey lwekey;
         key = lwekey;
+    }
+    template<class Archive>
+    void serialize(Archive & archive)
+    {
+        archive(key.lvl0,key.lvl1,key.lvl2, 
+        params.n,params.α,params.Nbit,params.N,params.l,params.Bgbit,params.Bg,params.αbk,params.t,params.basebit,params.αks,params.μ,
+        params.nbarbit,params.nbar,params.lbar,params.Bgbitbar,params.Bgbit,params.αbklvl02,params.tbar,params.basebitlvl21,params.αprivks,params.μbar);
     }
 };
 }  // namespace TFHEpp

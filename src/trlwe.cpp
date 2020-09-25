@@ -4,7 +4,6 @@
 #include <mulfft.hpp>
 #include <params.hpp>
 #include <random>
-#include <unicodeparams.hpp>
 #include <utils.hpp>
 
 namespace TFHEpp {

@@ -4,7 +4,6 @@
 #include <tlwe.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>
-#include <unicodeparams.hpp>
 
 namespace TFHEpp {
 struct GateKey {
