@@ -18,3 +18,5 @@ add_subdirectory(thirdparties/randen)
 add_subdirectory(thirdparties/spqlios)
 add_subdirectory(src)
 add_subdirectory(test)
+
+install(TARGETS tfhe++ LIBRARY DESTINATION lib)

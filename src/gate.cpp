@@ -104,6 +104,7 @@ void HomORYN(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
     GateBootstrapping(res, res, gk);
 }
 
+//cs?c1:c0
 void HomMUX(TLWElvl0 &res, const TLWElvl0 &cs, const TLWElvl0 &c1,
             const TLWElvl0 &c0, const GateKey &gk)
 {
