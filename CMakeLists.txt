@@ -4,6 +4,7 @@ set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_FLAGS "-march=native -O3 -std=c++17")
 
 OPTION(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" ON)
+OPTION(ENABLE_TEST "Build tests" OFF)
 if(USE_80BIT_SECURITY)
     add_compile_definitions(USE_80BIT_SECURITY)
 endif()
@@ -17,6 +18,9 @@ endif()
 add_subdirectory(thirdparties/randen)
 add_subdirectory(thirdparties/spqlios)
 add_subdirectory(src)
-add_subdirectory(test)
+
+if(ENABLE_TEST)
+    add_subdirectory(test)
+endif()
 
 install(TARGETS tfhe++ LIBRARY DESTINATION lib)
