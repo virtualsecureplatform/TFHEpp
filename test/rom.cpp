@@ -91,7 +91,10 @@ int main()
         for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_trlwe; i++)
         for (int j = 0; j < DEF_N; j++)
-            pmu[i][j] = pmemory[i][j] ? 2*DEF_μ : -2*DEF_μ; // This will increase noise torellance.
+            pmu[i][j] =
+                pmemory[i][j]
+                    ? 2 * DEF_μ
+                    : -2 * DEF_μ;  // This will increase noise torellance.
     for (uint8_t &p : address) p = binary(engine);
 
     array<TRGSWFFTlvl1, address_bit> bootedTGSW;
