@@ -3,7 +3,7 @@ TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) fa
 TFHEpp depends on AVX2 becauise we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
 
 # Parameter
-The default parameter is 28 bit security for Homomorphic Gates, 111bit security for Circuit Bootstrapping. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
+The default parameter is 128 bit security for Homomorphic Gates, 111bit security for Circuit Bootstrapping. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
 
 # Speed Test
 
