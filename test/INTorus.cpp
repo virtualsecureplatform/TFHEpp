@@ -52,6 +52,7 @@ int main(){
                 // cout<<static_cast<uint64_t>(a)<<":";
                 if((A<<l).value!=(static_cast<uint64_t>((a<<l)%P))){
                     cout<<(A<<l).value<<":"<<static_cast<uint64_t>((a<<l)%P)<<endl;
+                    cout<<(A<<l).value - static_cast<uint64_t>((a<<l)%P)<<endl;
                 }
                 assert((A<<l).value==(static_cast<uint64_t>((a<<l)%P)));
             }

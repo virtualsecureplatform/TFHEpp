@@ -116,18 +116,18 @@ namespace cuHEpp{
                     templ = static_cast<uint32_t>(this->value);
                     tempul = static_cast<uint32_t>(this->value>>(160-l));
                     tempuu = 0;
-                    res = ((templ+tempul)<<32)-tempul-tempuu;
-                    res -= static_cast<uint32_t>(-(res > (templ << 32) && tempul == 0));
-                    res += static_cast<uint32_t>(-(res < (templ << 32) && tempul != 0));
+                    res = -((templ+tempul)<<32)+tempul-tempuu;
+                    // res -= static_cast<uint32_t>(-(res > (templ << 32) && tempul == 0));
+                    // res += static_cast<uint32_t>(-(res < ((templ << 32) + tempul) && tempul != 0));
                     return INTorus(res);
                 }
                 else if(l<160){
 
-                    uint64_t templ,tempul,tempuu,res;
+                    uint64_t templul,templ,tempul,tempuu,res;
                     templ = static_cast<uint32_t>(this->value<<(l-128));
                     tempul = static_cast<uint32_t>(this->value>>(160-l));
                     tempuu = this->value>>(192-l);
-                    res = ((templ+tempul)<<32)-tempul-tempuu;
+                    res = -((templ+tempul)<<32)+tempul-tempuu;
                     res -= static_cast<uint32_t>(-(res > (templ << 32) && tempul == 0));
                     res += static_cast<uint32_t>(-(res < (templ << 32) && tempul != 0));
                     return INTorus(res);
@@ -137,7 +137,7 @@ namespace cuHEpp{
                     templ = this->value>>(192-l);
                     tempu = this->value<<(l-160);
                     res = templ + tempu - (tempu<<32);
-                    res += static_cast<uint32_t>(-(res > templ));
+                    res = static_cast<uint32_t>(-(res > templ));
                     return INTorus(res);
                 }
             }
