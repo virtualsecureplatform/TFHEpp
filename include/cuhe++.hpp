@@ -131,13 +131,21 @@ namespace cuHEpp{
                     res = INTorus(tempul+tempuu,false)-INTorus(templ<<32,false)-INTorus((tempul<<32),false);
                     return res;
                 }
+                else if(l==160){
+                    uint64_t templ,tempu;
+                    INTorus res;
+                    templ = static_cast<uint32_t>(this->value);
+                    tempu = this->value>>(192-l);
+                    res = INTorus(templ+tempu,false)-INTorus(templ<<32,false);
+                    return res;
+                }
                 else{
-                    uint64_t templ,tempu,res;
-                    templ = this->value>>(192-l);
-                    tempu = this->value<<(l-160);
-                    res = templ + tempu - (tempu<<32);
-                    res = static_cast<uint32_t>(-(res > templ));
-                    return INTorus(res);
+                    uint64_t templ,tempu;
+                    INTorus res;
+                    templ = static_cast<uint32_t>(this->value)<<(l-160);
+                    tempu = this->value>>(192-l);
+                    res = INTorus(templ+tempu,false)-INTorus(templ<<32,false);
+                    return res;
                 }
             }
     };

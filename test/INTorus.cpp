@@ -40,14 +40,14 @@ int main(){
         __uint128_t b = dist(engine);
         INTorus A(a);
         INTorus B(b);
-        cout<<(A*B).value<<":"<<static_cast<uint64_t>((a*b)%P)<<endl;
+        // cout<<(A*B).value<<":"<<static_cast<uint64_t>((a*b)%P)<<endl;
         assert((A*B).value==((a*b)%P));
     }
     cout<<"Mul PASS"<<endl;
     //Lsh Test
     for(int upper = 1;upper<=6;upper++){
         for(int l = 32*(upper-1); l<32*upper; l++){
-            cout<<l<<endl;
+            // cout<<l<<endl;
             for(int i = 0; i<numTest;i++){
                 uint64_t temp = dist(engine);
                 INTorus A(temp);
@@ -72,6 +72,6 @@ int main(){
              }
             assert((A<<l).value==(static_cast<uint64_t>((a<<l)%P)));
         }
-        cout<<"Lsh"<<upper*32<<"PASS"<<endl;
+        cout<<"Lsh"<<upper*32<<" PASS"<<endl;
     }
 }
