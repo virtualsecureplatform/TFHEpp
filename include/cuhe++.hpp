@@ -149,4 +149,11 @@ namespace cuHEpp{
                 }
             }
     };
+
+    template<uint32_t N>
+    inline void ButterflyAdd(const typename array<INTorus,N>::iterator a, const typename array<INTorus,N>::iterator b, int i){
+        const INTorus temp(*(a+i),false);
+        *(a+i) += *(b+i);
+        *(b+i) -= temp;
+    }
 }
