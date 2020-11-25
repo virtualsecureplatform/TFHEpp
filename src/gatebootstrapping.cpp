@@ -41,9 +41,7 @@ template <typename T = uint32_t, uint32_t N = DEF_N>
 inline void PolynomialMulByXaiMinusOne(array<T, N> &res,
                                        const array<T, N> &poly, const T a)
 {
-    if (a == 0)
-        return;
-    else if (a < N) {
+    if (a < N) {
         for (int i = 0; i < a; i++) res[i] = -poly[i - a + N] - poly[i];
         for (int i = a; i < N; i++) res[i] = poly[i - a] - poly[i];
     }
