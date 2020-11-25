@@ -91,6 +91,7 @@ void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
     for (int i = 0; i < DEF_n; i++) {
         bara = modSwitchFromTorus32<DEF_Nbit + 1>(tlwe[i]);
         if (bara == 0) continue;
+        // Do not use CMUX to avoid unnecessary copy.
         PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1], bara);
         trgswfftExternalProductlvl1(temp, temp, gk.bkfftlvl01[i]);
