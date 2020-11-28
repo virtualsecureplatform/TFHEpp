@@ -1,0 +1,6 @@
+add_executable(client client.cpp)
+add_executable(cloud cloud.cpp)
+add_executable(verify verify.cpp)
+target_link_libraries(client tfhe++)
+target_link_libraries(cloud tfhe++)
+target_link_libraries(verify tfhe++)
