@@ -26,14 +26,14 @@ int main()
         gk->serialize(ar);
     };
 
-    //get client input
+    // get client input
     uint16_t client_input;
-    std::cout<< "Type client input (16bit unsigned interger)"<<std::endl;
+    std::cout << "Type client input (16bit unsigned interger)" << std::endl;
     std::cin >> client_input;
 
     // encrypt the input
     std::vector<uint8_t> p(16);
-    for (int i; i<16; i++) p[i] = (client_input>>i)&1;
+    for (int i; i < 16; i++) p[i] = (client_input >> i) & 1;
     std::vector<TFHEpp::TLWElvl0> ciphertext = TFHEpp::bootsSymEncrypt(p, *sk);
 
     // export the ciphertexts to a file

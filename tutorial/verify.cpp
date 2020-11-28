@@ -23,9 +23,12 @@ int main()
 
     // decrypt and print plaintext answer
     std::vector<uint8_t> p = bootsSymDecrypt(result, sk);
-    if(p[0]) std::cout << "Equall!" << std::endl;
-    else{
-        if(p[1]) std::cout << "Client is the millionare!" << std::endl;
-        else std::cout << "Cloud is the millionare!" << std::endl;
+    if (p[0])
+        std::cout << "Equall!" << std::endl;
+    else {
+        if (p[1])
+            std::cout << "Client is the millionare!" << std::endl;
+        else
+            std::cout << "Cloud is the millionare!" << std::endl;
     }
 }
