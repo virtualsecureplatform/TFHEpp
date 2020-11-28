@@ -62,13 +62,13 @@ int main()
             TFHEpp::HomCONSTANTZERO(cloudcipher[i]);
     }
 
-    TFHEpp::TLWElvl0 flagequiv, flagcloud;
+    TFHEpp::TLWElvl0 flagequiv, flagclient;
     TFHEpp::HomCONSTANTONE(flagequiv);
-    TFHEpp::HomCONSTANTONE(flagcloud);
+    TFHEpp::HomCONSTANTONE(flagclient);
     for (int i; i < 16; i++) {
         TFHEpp::TLWElvl0 tmpsum;
         cloudcipher[i][TFHEpp::DEF_n] *= -1;  // NOT
-        FullAdder(tmpsum, flagcloud, clientcipher[i], cloudcipher[i], flagcloud,
+        FullAdder(tmpsum, flagclient, clientcipher[i], cloudcipher[i], flagclient,
                   *gk);
         TFHEpp::HomANDYN(flagequiv, flagequiv, tmpsum, *gk);
     }
@@ -76,7 +76,7 @@ int main()
     // export the result ciphertexts to a file
     std::vector<TFHEpp::TLWElvl0> rescipher(2);
     rescipher[0] = flagequiv;
-    rescipher[1] = flagcloud;
+    rescipher[1] = flagclient;
     {
         std::ofstream ofs{"result.data", std::ios::binary};
         cereal::PortableBinaryOutputArchive ar(ofs);
