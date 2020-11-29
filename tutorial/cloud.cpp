@@ -31,7 +31,7 @@ void FullAdder(TFHEpp::TLWElvl0& sum, TFHEpp::TLWElvl0& carry,
 int main()
 {
     // To avoid stack limitation, GateKey should be allocated like this
-    std::unique_ptr<TFHEpp::GateKey> gk(new TFHEpp::GateKey());
+    std::unique_ptr<TFHEpp::GateKey> gk = std::make_unique<TFHEpp::GateKey>();
 
     // reads the cloud key from file
     {

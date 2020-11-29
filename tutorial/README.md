@@ -1,9 +1,9 @@
 # Tutorial
 
-This directory contains the tutorial codes which demostrate how to use TFHEpp to resolve 2-party [Yao's Millionaires' problem](https://en.wikipedia.org/wiki/Yao%27s_Millionaires%27_problem). This is one of the simplest and famous Secure Function Evaluation problem.
+This directory contains the tutorial codes which demostrate how to use TFHEpp to resolve 2-party [Yao's Millionaires' problem](https://en.wikipedia.org/wiki/Yao%27s_Millionaires%27_problem). This is one of the simplest and most famous Secure Function Evaluation problem.
 
 # How to build
-When building TFHEpp, add -DENABLE_TUTORIAL=ON option to cmake.
+When building TFHEpp, give `-DENABLE_TUTORIAL=ON` option to cmake.
 
 # How to run
 1. Run "client" and type the integer which represents client's wealth. "client" will produce encrypted input, the secret key and the gate key.
