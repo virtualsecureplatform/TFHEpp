@@ -27,8 +27,8 @@ int main()
         std::cout << "Equall!" << std::endl;
     else {
         if (p[1])
-            std::cout << "Client is the millionare!" << std::endl;
+            std::cout << "Client is the millionaire!" << std::endl;
         else
-            std::cout << "Cloud is the millionare!" << std::endl;
+            std::cout << "Cloud is the millionaire!" << std::endl;
     }
 }
