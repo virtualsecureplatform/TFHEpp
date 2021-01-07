@@ -150,6 +150,18 @@ namespace cuHEpp{
             }
     };
 
+    constexpr uint64_t W = 
+
+    template<uint32_t N>
+    inline array<double,N> TwistGen(){
+        array<double,N> twist;
+        for(uint32_t i = 0;i<N/2;i++){
+            twist[i] = cos(i*M_PI/N);
+            twist[i+N/2] = sin(i*M_PI/N);
+        }
+        return twist;
+    }
+
     template<uint32_t N>
     inline void ButterflyAdd(const typename array<INTorus,N>::iterator a, const typename array<INTorus,N>::iterator b, int i){
         const INTorus temp(*(a+i),false);
