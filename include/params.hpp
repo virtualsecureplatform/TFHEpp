@@ -7,7 +7,7 @@ namespace TFHEpp {
 using namespace std;
 
 constexpr uint32_t DEF_μ = 1U << 29;
-constexpr uint64_t DEF_μbar = 1UL << 61;
+constexpr uint64_t DEF_μbar = 1ULL << 61;
 
 // Use old 80bit security parameters. It is faster, but not recommended.
 

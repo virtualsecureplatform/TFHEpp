@@ -24,7 +24,7 @@ inline TRGSWlvl2 trgswSymEncryptlvl2(int64_t p, double α, Keylvl2 &key)
 {
     array<uint64_t, DEF_lbar> h;
     for (int i = 0; i < DEF_lbar; i++)
-        h[i] = 1UL << (64 - (i + 1) * DEF_Bgbitbar);
+        h[i] = 1ULL << (64 - (i + 1) * DEF_Bgbitbar);
     TRGSWlvl2 trgsw;
     for (TRLWElvl2 &trlwe : trgsw) trlwe = trlweSymEncryptZerolvl2(α, key);
     for (int i = 0; i < DEF_lbar; i++) {
@@ -57,8 +57,8 @@ template <typename T = uint32_t, uint32_t N = DEF_N, uint32_t l = DEF_l,
 inline void Decomposition(array<array<T, N>, 2 * l> &decvec,
                           const array<array<T, N>, 2> &trlwe)
 {
-    constexpr T mask = static_cast<T>((1UL << Bgbit) - 1);
-    constexpr T halfBg = (1UL << (Bgbit - 1));
+    constexpr T mask = static_cast<T>((1ULL << Bgbit) - 1);
+    constexpr T halfBg = (1ULL << (Bgbit - 1));
 
     for (int j = 0; j < N; j++) {
         T temp0 = trlwe[0][j] + offset;
@@ -88,7 +88,7 @@ constexpr uint64_t offsetgenlvl2()
 {
     uint64_t offset = 0;
     for (int i = 1; i <= DEF_lbar; i++)
-        offset += DEF_Bgbar / 2 * (1UL << (64 - i * DEF_Bgbitbar));
+        offset += DEF_Bgbar / 2 * (1ULL << (64 - i * DEF_Bgbitbar));
     return offset;
 }
 

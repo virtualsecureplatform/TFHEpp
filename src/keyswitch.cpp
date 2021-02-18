@@ -23,7 +23,7 @@ void PrivKeySwitchlvl21(TRLWElvl1 &res, const TLWElvl2 &tlwe, const int u,
                         const PrivKeySwitchKey &privksk)
 {
     const uint32_t mask = (1 << DEF_basebitlvl21) - 1;
-    const uint64_t prec_offset = 1UL
+    const uint64_t prec_offset = 1ULL
                                  << (64 - (1 + DEF_basebitlvl21 * DEF_tbar));
 
     res = {};
