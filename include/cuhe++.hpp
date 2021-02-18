@@ -2,12 +2,14 @@
 
 #include <cstdint>
 #include <array>
+#include <cassert>
 
 namespace cuHEpp{
     using namespace std;
 
     constexpr uint64_t P = (((1UL<<32)-1)<<32)+ 1;
 
+    // this class defines operations over integaer torus.
     class INTorus{
         public:
             uint64_t value;
@@ -150,22 +152,50 @@ namespace cuHEpp{
             }
     };
 
-    constexpr uint64_t W = 
+    // NTT implementation
+    // https://nufhe.readthedocs.io/en/latest/implementation_details.html
+    constexpr uint64_t W = 12037493425763644479ULL;
 
-    template<uint32_t N>
-    inline array<double,N> TwistGen(){
-        array<double,N> twist;
-        for(uint32_t i = 0;i<N/2;i++){
-            twist[i] = cos(i*M_PI/N);
-            twist[i+N/2] = sin(i*M_PI/N);
-        }
+    template<uint32_t Nbit>
+    inline array<array<INTorus,1U<<Nbit>,2> TwistGen(){
+        array<array<INTorus,1U<<Nbit>,2> twist;
+        constexpr INTorus w = INTorus(W)<<(32-Nbit-1);
+        twist[0][0] = twist[1][0] = INTorus(1,false);
+        for(uint32_t i = 1;i < N;i++) twist[1][i] = twist[1][i-1]*w;
+        twist[0][N-1] = twist[1][N-1]*w
+        for(uint32_t i = 2;i < N;i++) twist[0][N-i] = twist[0][N-i+1]*w;
+        assert((twist[0][1]*w).value == 1);
         return twist;
     }
 
     template<uint32_t N>
+    inline array<array<INTorus,N>,2> TableGen(){
+        array<array<INTorus,N>,2>table;
+        constexpr INTorus w = INTorus(W)<<(32-Nbit);
+        table[0] = table[1] = INTorus(1,false);
+        for(uint32_t i = 1;i<N;i++) table[0][N-i] = table[1][i] = table[1][i-1]*w;
+        assert((table[1][N-1]*w).value == 1);
+        return table;
+    }
+
+    template<typename T = uint32_t,uint32_t N>
+    inline void TwistMulInvert(array<INTorus,N> &res, const array<T,N> &a, const array<INTorus,N> &twist){
+       for (int i = 0; i < N; i++) res[i] = INTorus(a[i],T == uint64_t) * twist[i];
+    }
+
+    template<uint32_t N>
     inline void ButterflyAdd(const typename array<INTorus,N>::iterator a, const typename array<INTorus,N>::iterator b, int i){
-        const INTorus temp(*(a+i),false);
+        const INTorus temp = *(a+i);
         *(a+i) += *(b+i);
         *(b+i) -= temp;
     }
+
+    template <uint32_t Nbit, uint32_t step, uint32_t size, uint32_t stride, bool isinvert =true>
+    inline void TwiddleMul(const typename array<INTorus,1<<Nbit>::iterator a, const array<INTorus,1<<Nbit> &table){
+        constexpr uint32_t N = 1<<Nbit;
+        if constexpr(isinvert) for(int i = 1; i<size; i++)*(a+i)=(*(a+i))*table[stride*(1<<step)*i];
+        else for(int i = 1; i<size; i++)*(a+i)=(*(a+i))*table[N-stride*(1<<step)*i];
+    }
+
+
 }
