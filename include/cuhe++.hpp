@@ -180,10 +180,15 @@ namespace cuHEpp{
 
     template<typename T = uint32_t,uint32_t N>
     inline void TwistMulInvert(array<INTorus,N> &res, const array<T,N> &a, const array<INTorus,N> &twist){
-       for (int i = 0; i < N; i++) res[i] = INTorus(a[i],T == uint64_t) * twist[i];
+        for (int i = 0; i < N; i++) res[i] = INTorus(a[i],T == uint64_t) * twist[i];
     }
 
-    template<uint32_t N>
+    template<typename T = uint32_t,uint32_t N>
+    inline void TwistMulDirect(array<T,N> &res, const array<INTorus,N> &a, const array<INTorus,N> &twist){
+        for (int i = 0; i < N; i++) res[i] = static_cast<T>((a[i] * twist[i]).value);
+    }
+
+    template<uint32_t N, int size>
     inline void ButterflyAdd(const typename array<INTorus,N>::iterator a, const typename array<INTorus,N>::iterator b, int i){
         const INTorus temp = *(a+i);
         *(a+i) += *(b+i);
@@ -191,11 +196,33 @@ namespace cuHEpp{
     }
 
     template <uint32_t Nbit, uint32_t step, uint32_t size, uint32_t stride, bool isinvert =true>
-    inline void TwiddleMul(const typename array<INTorus,1<<Nbit>::iterator a, const array<INTorus,1<<Nbit> &table){
+    inline void TwiddleMul(const typename array<INTorus,1<<Nbit >::iterator a, const array<INTorus,1<<Nbit> &table){
         constexpr uint32_t N = 1<<Nbit;
         if constexpr(isinvert) for(int i = 1; i<size; i++)*(a+i)=(*(a+i))*table[stride*(1<<step)*i];
         else for(int i = 1; i<size; i++)*(a+i)=(*(a+i))*table[N-stride*(1<<step)*i];
     }
 
+    template<uint32_t Nbit, int step>
+    inline void IFFT(const typename array<INTorus,1<<Nbit >::iterator res, const array<INTorus,1<<(Nbit+1)> &table){
+        constexpr uint32_t N = 1<<Nbit;
+        constexpr uint32_t size = 1<<(Nbit-step);
+
+        if constexpr(size == 2){
+            const typename array<INTorus,1<<Nbit >::iterator res0 = a;
+            const typename array<INTorus,1<<Nbit >::iterator res1 = a+size/2;
+            ButterflyAdd<size,N>(res0,res1,0);
+        }
+        else{
+            const typename array<INTorus,1<<Nbit >::iterator res0 = a;
+            const typename array<INTorus,1<<Nbit >::iterator res1 = a+size/2;
+            for(int i = 0;i<size/2;i++){
+                ButterflyAdd<size,N>(res0,res1,i);
+
+                if(i!=0) TwiddleMul<Nbit,step,size/2,1,true>(res+size/2,table);
+            }
+            IFFT<Nbit,step+1>(res, table);
+            IFFT<Nbit,step+1>(res+size/2, table);
+        }
+    }
 
 }
