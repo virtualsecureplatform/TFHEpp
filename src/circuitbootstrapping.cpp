@@ -1,6 +1,6 @@
 #include <gatebootstrapping.hpp>
-#include <mulfft.hpp>
 #include <keyswitch.hpp>
+#include <mulfft.hpp>
 
 namespace TFHEpp {
 using namespace std;

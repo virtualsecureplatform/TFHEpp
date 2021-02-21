@@ -110,10 +110,9 @@ void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res, const TLWElvl0 &tlwe,
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
-                                               const TLWElvl0 &tlwe,
-                                               const CircuitKey &ck,
-                                               const uint64_t μs2)
+void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res, const TLWElvl0 &tlwe,
+                                        const CircuitKey &ck,
+                                        const uint64_t μs2)
 {
     TRLWElvl2 acc;
     TRLWElvl2 temp;

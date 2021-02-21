@@ -68,8 +68,8 @@ int main()
     for (int i; i < 16; i++) {
         TFHEpp::TLWElvl0 tmpsum;
         cloudcipher[i][TFHEpp::DEF_n] *= -1;  // NOT
-        FullAdder(tmpsum, flagclient, clientcipher[i], cloudcipher[i], flagclient,
-                  *gk);
+        FullAdder(tmpsum, flagclient, clientcipher[i], cloudcipher[i],
+                  flagclient, *gk);
         TFHEpp::HomANDYN(flagequiv, flagequiv, tmpsum, *gk);
     }
 

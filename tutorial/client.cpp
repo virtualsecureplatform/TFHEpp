@@ -9,8 +9,10 @@
 int main()
 {
     // generate a random key
-    std::unique_ptr<TFHEpp::SecretKey> sk = std::make_unique<TFHEpp::SecretKey>();
-    std::unique_ptr<TFHEpp::GateKey> gk = std::make_unique<TFHEpp::GateKey>(*sk);
+    std::unique_ptr<TFHEpp::SecretKey> sk =
+        std::make_unique<TFHEpp::SecretKey>();
+    std::unique_ptr<TFHEpp::GateKey> gk =
+        std::make_unique<TFHEpp::GateKey>(*sk);
 
     // export the secret key to file for later use
     {
