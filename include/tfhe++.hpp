@@ -4,6 +4,7 @@
 #include <detwfa.hpp>
 #include <gate.hpp>
 #include <gatebootstrapping.hpp>
+#include <circuitbootstrapping.hpp>
 #include <key.hpp>
 #include <keyswitch.hpp>
 #include <mulfft.hpp>

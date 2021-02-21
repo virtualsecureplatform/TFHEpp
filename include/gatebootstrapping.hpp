@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cloudkey.hpp>
 
 namespace TFHEpp {
@@ -13,12 +12,9 @@ void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
                                          const GateKey &gk);
 void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res, const TLWElvl0 &tlwe,
                                         const GateKey &gk);
+void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res,
+                                               const TLWElvl0 &tlwe,
+                                               const CircuitKey &ck,
+                                               const uint64_t μs2);
 void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const GateKey &gk);
-void CircuitBootstrappingFFT(TRGSWFFTlvl1 &trgswfft, const TLWElvl0 &tlwe,
-                             const CircuitKey &ck);
-void CircuitBootstrappingFFTInv(TRGSWFFTlvl1 &invtrgswfft, const TLWElvl0 &tlwe,
-                                const CircuitKey &ck);
-void CircuitBootstrappingFFTwithInv(TRGSWFFTlvl1 &trgswfft,
-                                    TRGSWFFTlvl1 &invtrgswfft,
-                                    const TLWElvl0 &tlwe, const CircuitKey &ck);
 }  // namespace TFHEpp
