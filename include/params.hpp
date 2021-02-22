@@ -12,11 +12,11 @@ constexpr uint64_t DEF_μbar = 1ULL << 61;
 // Use old 80bit security parameters. It is faster, but not recommended.
 
 #ifdef USE_80BIT_SECURITY
-    #include <params/CGGI16.hpp>
+#include <params/CGGI16.hpp>
 #elif defined(USE_CGGI19)
-    #include <params/CGGI19.hpp >
+#include <params/CGGI19.hpp >
 #else
-    #include <params/128bit.hpp>
+#include <params/128bit.hpp>
 #endif
 
 using Keylvl0 = array<uint32_t, DEF_n>;
@@ -55,10 +55,10 @@ using PrivKeySwitchKey =
     array<array<array<array<TRLWElvl1, (1 << DEF_basebitlvl21) - 1>, DEF_tbar>,
                 DEF_nbar + 1>,
           2>;
-using PrivKeySwitchlvl22Key =
-    array<array<array<array<TRLWElvl2, (1 << DEF_basebitlvl22) - 1>, DEF_tlvl22>,
-                DEF_nbar + 1>,
-          2>;
+using PrivKeySwitchlvl22Key = array<
+    array<array<array<TRLWElvl2, (1 << DEF_basebitlvl22) - 1>, DEF_tlvl22>,
+          DEF_nbar + 1>,
+    2>;
 
 struct lweParams {
     uint32_t n = DEF_n;

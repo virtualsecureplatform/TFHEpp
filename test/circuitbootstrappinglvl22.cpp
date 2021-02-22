@@ -23,7 +23,8 @@ int main()
     for (array<uint8_t, TFHEpp::DEF_nbar> &i : pa)
         for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < TFHEpp::DEF_nbar; j++) pmu[i][j] = pa[i][j] ? DEF_μbar : -DEF_μbar;
+        for (int j = 0; j < TFHEpp::DEF_nbar; j++)
+            pmu[i][j] = pa[i][j] ? DEF_μbar : -DEF_μbar;
     for (int i = 0; i < num_test; i++) pones[i] = true;
     vector<TRLWElvl2> ca(num_test);
     vector<TLWElvl0> cones(num_test);
@@ -43,7 +44,8 @@ int main()
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProductlvl2(ca[test], ca[test], bootedTGSW[test]);
         pres = trlweSymDecryptlvl2(ca[test], sk->key.lvl2);
-        for (int i = 0; i < TFHEpp::DEF_nbar; i++) assert(pres[i] == pa[test][i]);
+        for (int i = 0; i < TFHEpp::DEF_nbar; i++)
+            assert(pres[i] == pa[test][i]);
     }
     cout << "Passed" << endl;
     double elapsed =

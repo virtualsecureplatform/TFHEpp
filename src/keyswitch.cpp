@@ -23,8 +23,8 @@ void PrivKeySwitchlvl21(TRLWElvl1 &res, const TLWElvl2 &tlwe, const int u,
                         const PrivKeySwitchKey &privksk)
 {
     constexpr uint32_t mask = (1 << DEF_basebitlvl21) - 1;
-    constexpr uint64_t prec_offset = 1ULL
-                                 << (64 - (1 + DEF_basebitlvl21 * DEF_tbar));
+    constexpr uint64_t prec_offset =
+        1ULL << (64 - (1 + DEF_basebitlvl21 * DEF_tbar));
 
     res = {};
     for (int i = 0; i <= DEF_nbar; i++) {
@@ -48,8 +48,8 @@ void PrivKeySwitchlvl22(TRLWElvl2 &res, const TLWElvl2 &tlwe, const int u,
                         const PrivKeySwitchlvl22Key &privksk)
 {
     constexpr uint32_t mask = (1 << DEF_basebitlvl22) - 1;
-    constexpr uint64_t prec_offset = 1ULL
-                                 << (64 - (1 + DEF_basebitlvl22 * DEF_tlvl22));
+    constexpr uint64_t prec_offset =
+        1ULL << (64 - (1 + DEF_basebitlvl22 * DEF_tlvl22));
 
     res = {};
     for (int i = 0; i <= DEF_nbar; i++) {

@@ -11,19 +11,21 @@ inline void CircuitBootstrapping(TRGSWlvl1 &trgsw, const TLWElvl0 &tlwe,
     TLWElvl2 tlwelvl2;
     for (int i = 0; i < DEF_l; i++) {
         GateBootstrappingTLWE2TLWEFFTlvl02(
-            tlwelvl2, tlwe, ck.bkfftlvl02, 1ULL << (64 - (i + 1) * DEF_Bgbit - 1));
+            tlwelvl2, tlwe, ck.bkfftlvl02,
+            1ULL << (64 - (i + 1) * DEF_Bgbit - 1));
         PrivKeySwitchlvl21(trgsw[i], tlwelvl2, 0, ck.privksk);
         PrivKeySwitchlvl21(trgsw[i + DEF_l], tlwelvl2, 1, ck.privksk);
     }
 }
 
 inline void CircuitBootstrappinglvl22(TRGSWlvl2 &trgsw, const TLWElvl0 &tlwe,
-                                 const CircuitKeylvl22 &ck)
+                                      const CircuitKeylvl22 &ck)
 {
     TLWElvl2 tlwelvl2;
     for (int i = 0; i < DEF_lbar; i++) {
         GateBootstrappingTLWE2TLWEFFTlvl02(
-            tlwelvl2, tlwe, ck.bkfftlvl02, 1ULL << (64 - (i + 1) * DEF_Bgbitbar - 1));
+            tlwelvl2, tlwe, ck.bkfftlvl02,
+            1ULL << (64 - (i + 1) * DEF_Bgbitbar - 1));
         PrivKeySwitchlvl22(trgsw[i], tlwelvl2, 0, ck.privksk);
         PrivKeySwitchlvl22(trgsw[i + DEF_lbar], tlwelvl2, 1, ck.privksk);
     }
@@ -39,7 +41,7 @@ void CircuitBootstrappingFFT(TRGSWFFTlvl1 &trgswfft, const TLWElvl0 &tlwe,
 }
 
 void CircuitBootstrappingFFTlvl22(TRGSWFFTlvl2 &trgswfft, const TLWElvl0 &tlwe,
-                             const CircuitKeylvl22 &ck)
+                                  const CircuitKeylvl22 &ck)
 {
     TRGSWlvl2 trgsw;
     CircuitBootstrappinglvl22(trgsw, tlwe, ck);
