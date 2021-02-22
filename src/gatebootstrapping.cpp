@@ -111,7 +111,7 @@ void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res, const TLWElvl0 &tlwe,
 }
 
 void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res, const TLWElvl0 &tlwe,
-                                        const CircuitKey &ck,
+                                        const BootStrappingKeyFFTlvl02 &bkfftlvl02,
                                         const uint64_t μs2)
 {
     TRLWElvl2 acc;
@@ -124,7 +124,7 @@ void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res, const TLWElvl0 &tlwe,
         if (bara == 0) continue;
         PolynomialMulByXaiMinusOnelvl2(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOnelvl2(temp[1], acc[1], bara);
-        trgswfftExternalProductlvl2(temp, temp, ck.bkfftlvl02[i]);
+        trgswfftExternalProductlvl2(temp, temp, bkfftlvl02[i]);
         for (int i = 0; i < DEF_nbar; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];

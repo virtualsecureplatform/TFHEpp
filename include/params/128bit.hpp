@@ -24,3 +24,6 @@ constexpr uint32_t DEF_tbar = 10;
 constexpr uint32_t DEF_basebitlvl21 = 3;
 const double DEF_αbklvl02 = std::pow(2.0, -44);
 const double DEF_αprivks = std::pow(2, -25);
+
+constexpr uint32_t DEF_tlvl22 = 10;
+constexpr uint32_t DEF_basebitlvl22 = 3;

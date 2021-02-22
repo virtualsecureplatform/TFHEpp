@@ -32,6 +32,18 @@ struct CircuitKey {
     }
 };
 
+struct CircuitKeylvl22 {
+    PrivKeySwitchlvl22Key privksk;
+    BootStrappingKeyFFTlvl02 bkfftlvl02;
+    CircuitKeylvl22(SecretKey sk);
+    CircuitKeylvl22() {}
+    template <class Archive>
+    void serialize(Archive& archive)
+    {
+        archive(privksk, bkfftlvl02);
+    }
+};
+
 struct CloudKey {
     GateKey gk;
     CircuitKey ck;

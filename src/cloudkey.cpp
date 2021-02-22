@@ -37,4 +37,25 @@ CircuitKey::CircuitKey(SecretKey sk)
             static_cast<int32_t>(sk.key.lvl0[i]), DEF_αbklvl02, sk.key.lvl2);
 }
 
+CircuitKeylvl22::CircuitKeylvl22(SecretKey sk)
+{
+    array<uint32_t, DEF_nbar + 1> key;
+    for (int i = 0; i < DEF_nbar; i++) key[i] = sk.key.lvl2[i];
+    key[DEF_nbar] = -1;
+#pragma omp parallel for collapse(4)
+    for (int z = 0; z < 2; z++)
+        for (int i = 0; i <= DEF_nbar; i++)
+            for (int j = 0; j < DEF_tlvl22; j++)
+                for (int u = 0; u < (1 << DEF_basebitlvl22) - 1; u++) {
+                    TRLWElvl2 c =
+                        trlweSymEncryptZerolvl2(DEF_αbklvl02, sk.key.lvl2);
+                    c[z][0] += static_cast<uint64_t>((u + 1) * key[i])
+                               << (64 - (j + 1) * DEF_basebitlvl22);
+                    privksk[z][i][j][u] = c;
+                }
+    for (int i = 0; i < DEF_n; i++)
+        bkfftlvl02[i] = trgswfftSymEncryptlvl2(
+            static_cast<int32_t>(sk.key.lvl0[i]), DEF_αbklvl02, sk.key.lvl2);
+}
+
 }  // namespace TFHEpp

@@ -13,7 +13,7 @@ void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
 void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res, const TLWElvl0 &tlwe,
                                         const GateKey &gk);
 void GateBootstrappingTLWE2TLWEFFTlvl02(TLWElvl2 &res, const TLWElvl0 &tlwe,
-                                        const CircuitKey &ck,
+                                        const BootStrappingKeyFFTlvl02 &bkfftlvl02,
                                         const uint64_t μs2);
 void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const GateKey &gk);
 }  // namespace TFHEpp
