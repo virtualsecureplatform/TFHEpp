@@ -3,27 +3,52 @@
 #include <cstdint>
 #include <cmath>
 
-constexpr uint32_t DEF_n = 634;
-constexpr uint32_t DEF_Nbit = 10;
-constexpr uint32_t DEF_N = 1 << DEF_Nbit;
-constexpr uint32_t DEF_l = 3;
-constexpr uint32_t DEF_Bgbit = 6;
-constexpr uint32_t DEF_Bg = 1 << DEF_Bgbit;
-constexpr uint32_t DEF_t = 8;
-constexpr uint32_t DEF_basebit = 2;
-const double DEF_α = std::pow(2.0, -15);
-const double DEF_αbk = std::pow(2.0, -25);
-const double DEF_αks = DEF_α;
+struct lvl0param {
+    static constexpr std::uint32_t n = 634;
+    static const inline double α = std::pow(2.0, -15);
+    using T = uint32_t;
+    static constexpr T μ = 1U << 29;
+};
 
-constexpr uint32_t DEF_nbarbit = 11;
-constexpr uint32_t DEF_nbar = 1 << DEF_nbarbit;
-constexpr uint32_t DEF_lbar = 4;
-constexpr uint32_t DEF_Bgbitbar = 9;
-constexpr uint32_t DEF_Bgbar = 1 << DEF_Bgbitbar;
-constexpr uint32_t DEF_tbar = 10;
-constexpr uint32_t DEF_basebitlvl21 = 3;
-const double DEF_αbklvl02 = std::pow(2.0, -44);
-const double DEF_αprivks = std::pow(2, -25);
+struct lvl1param {
+    static constexpr std::uint32_t nbit = 10;
+    static constexpr std::uint32_t n = 1<<nbit;
+    static constexpr std::uint32_t l = 3;
+    static constexpr std::uint32_t Bgbit = 6;
+    static constexpr std::uint32_t Bg = 1<<Bgbit;
+    static const inline double α = std::pow(2.0, -25);
+    using T = uint32_t;
+    static constexpr T μ = 1U << 29;
+};
 
-constexpr uint32_t DEF_tlvl22 = 10;
-constexpr uint32_t DEF_basebitlvl22 = 3;
+struct lvl2param {
+    static const std::uint32_t nbit = 11;
+    static constexpr std::uint32_t n = 1<<nbit;
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgbit = 9;
+    static constexpr std::uint32_t Bg = 1<<Bgbit;
+    static const inline double α = std::pow(2.0, -44);
+    using T = uint64_t;
+    static constexpr T μ = 1ULL << 61;
+};
+
+struct lvl10param {
+    static constexpr std::uint32_t t = 8;
+    static constexpr std::uint32_t basebit = 2;
+    using domainP = lvl1param;
+    using targetP = lvl0param;
+};
+
+struct lvl21param{
+    static constexpr std::uint32_t t = 10;
+    static constexpr std::uint32_t basebit = 3;
+    using domainP = lvl2param;
+    using targetP = lvl1param;
+};
+
+struct lvl22param{
+    static constexpr std::uint32_t t = 10;
+    static constexpr std::uint32_t basebit = 3;
+    using domainP = lvl2param;
+    using targetP = lvl2param;
+};

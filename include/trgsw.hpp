@@ -7,11 +7,11 @@
 namespace TFHEpp {
 using namespace std;
 
-TRGSWFFTlvl1 trgswfftSymEncryptlvl1(int32_t p, double α, Keylvl1 &key);
-void trgswfftExternalProductlvl1(TRLWElvl1 &res, const TRLWElvl1 &trlwe,
-                                 const TRGSWFFTlvl1 &trgswfft);
+TRGSWFFT<lvl1param> trgswfftSymEncryptlvl1(make_signed<lvl1param::T> p, double α, Key<lvl1param> &key);
+void trgswfftExternalProductlvl1(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &trlwe,
+                                 const TRGSWFFT<lvl1param> &trgswfft);
 
-TRGSWFFTlvl2 trgswfftSymEncryptlvl2(int64_t p, double α, Keylvl2 &key);
-void trgswfftExternalProductlvl2(TRLWElvl2 &res, const TRLWElvl2 &trlwe,
-                                 const TRGSWFFTlvl2 &trgswfft);
+TRGSWFFT<lvl2param> trgswfftSymEncryptlvl2(make_signed<lvl2param::T> p, double α, Key<lvl2param> &key);
+void trgswfftExternalProductlvl2(TRLWE<lvl2param> &res, const TRLWE<lvl2param> &trlwe,
+                                 const TRGSWFFT<lvl2param> &trgswfft);
 }  // namespace TFHEpp

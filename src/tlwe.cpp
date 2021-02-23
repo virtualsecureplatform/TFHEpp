@@ -14,7 +14,7 @@ namespace TFHEpp {
 using namespace std;
 static randen::Randen<uint64_t> engine;
 
-template <typename T = uint32_t, uint32_t n = DEF_n>
+template <typename T, uint32_t n>
 inline array<T, n + 1> tlweSymEncrypt(const T p, const double α,
                                       const array<uint32_t, n> &key)
 {
@@ -28,13 +28,13 @@ inline array<T, n + 1> tlweSymEncrypt(const T p, const double α,
     return res;
 }
 
-TLWElvl0 tlweSymEncryptlvl0(const uint32_t p, const double α,
-                            const Keylvl0 &key)
+TLWE<lvl0param> tlweSymEncryptlvl0(const lvl0param::T p, const double α,
+                            const Key<lvl0param> &key)
 {
-    return tlweSymEncrypt<uint32_t, DEF_n>(p, α, key);
+    return tlweSymEncrypt<lvl0param::T, lvl0param::n>(p, α, key);
 }
 
-template <typename T = uint32_t, uint32_t n = DEF_n>
+template <typename T, uint32_t n>
 bool tlweSymDecrypt(const array<T, n + 1> &c, const array<T, n> &key)
 {
     T phase = c[n];
@@ -43,20 +43,20 @@ bool tlweSymDecrypt(const array<T, n + 1> &c, const array<T, n> &key)
     return res;
 }
 
-bool tlweSymDecryptlvl0(const TLWElvl0 &c, const Keylvl0 &key)
+bool tlweSymDecryptlvl0(const TLWE<lvl0param> &c, const Key<lvl0param> &key)
 {
-    return tlweSymDecrypt<uint32_t, DEF_n>(c, key);
+    return tlweSymDecrypt<lvl0param::T, lvl0param::n>(c, key);
 }
 
-vector<TLWElvl0> bootsSymEncrypt(const vector<uint8_t> &p, const SecretKey &sk)
+vector<TLWE<lvl0param>> bootsSymEncrypt(const vector<uint8_t> &p, const SecretKey &sk)
 {
-    vector<TLWElvl0> c(p.size());
+    vector<TLWE<lvl0param>> c(p.size());
     for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncryptlvl0(p[i] ? DEF_μ : -DEF_μ, DEF_α, sk.key.lvl0);
+        c[i] = tlweSymEncryptlvl0(p[i] ? lvl0param::μ : -lvl0param::μ, lvl0param::α, sk.key.lvl0);
     return c;
 }
 
-vector<uint8_t> bootsSymDecrypt(const vector<TLWElvl0> &c, const SecretKey &sk)
+vector<uint8_t> bootsSymDecrypt(const vector<TLWE<lvl0param>> &c, const SecretKey &sk)
 {
     vector<uint8_t> p(c.size());
     for (int i = 0; i < p.size(); i++)

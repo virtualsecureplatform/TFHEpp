@@ -4,17 +4,17 @@
 
 namespace TFHEpp {
 using namespace std;
-TRLWElvl1 trlweSymEncryptZerolvl1(const double α, const Keylvl1 &key);
-TRLWElvl1 trlweSymEncryptlvl1(const Polynomiallvl1 &p, const double α,
-                              const Keylvl1 &key);
-TRLWElvl2 trlweSymEncryptZerolvl2(const double α, const Keylvl2 &key);
-TRLWElvl2 trlweSymEncryptlvl2(const Polynomiallvl2 &p, const double α,
-                              const Keylvl2 &key);
-array<bool, DEF_N> trlweSymDecryptlvl1(const TRLWElvl1 &c, const Keylvl1 &key);
-array<bool, DEF_nbar> trlweSymDecryptlvl2(const TRLWElvl2 &c,
-                                          const Keylvl2 &key);
-void SampleExtractIndexlvl1(TLWElvl1 &tlwe, const TRLWElvl1 &trlwe,
+TRLWE<lvl1param> trlweSymEncryptZerolvl1(const double α, const Key<lvl1param> &key);
+TRLWE<lvl1param> trlweSymEncryptlvl1(const Polynomial<lvl1param> &p, const double α,
+                              const Key<lvl1param> &key);
+TRLWE<lvl2param> trlweSymEncryptZerolvl2(const double α, const Key<lvl2param> &key);
+TRLWE<lvl2param> trlweSymEncryptlvl2(const Polynomial<lvl2param> &p, const double α,
+                              const Key<lvl2param> &key);
+array<bool, lvl1param::n> trlweSymDecryptlvl1(const TRLWE<lvl1param> &c, const Key<lvl1param> &key);
+array<bool, lvl2param::n> trlweSymDecryptlvl2(const TRLWE<lvl2param> &c,
+                                          const Key<lvl2param> &key);
+void SampleExtractIndexlvl1(TLWE<lvl1param> &tlwe, const TRLWE<lvl1param> &trlwe,
                             const int index);
-void SampleExtractIndexlvl2(TLWElvl2 &tlwe, const TRLWElvl2 &trlwe,
+void SampleExtractIndexlvl2(TLWE<lvl2param> &tlwe, const TRLWE<lvl2param> &trlwe,
                             const int index);
 }  // namespace TFHEpp
