@@ -168,5 +168,5 @@ FFT_Processor_Spqlios::~FFT_Processor_Spqlios() {
     delete[] cosomegaxminus1;
 }
 
-thread_local FFT_Processor_Spqlios fftplvl1(TFHEpp::DEF_N);
-thread_local FFT_Processor_Spqlios fftplvl2(TFHEpp::DEF_nbar);
+thread_local FFT_Processor_Spqlios fftplvl1(TFHEpp::lvl1param::n);
+thread_local FFT_Processor_Spqlios fftplvl2(TFHEpp::lvl2param::n);

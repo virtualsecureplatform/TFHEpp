@@ -8,113 +8,144 @@
 
 namespace TFHEpp {
 using namespace std;
-template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void PolynomialMulByXai(array<T, N> &res, const array<T, N> &poly,
-                               const T a)
+template <class P>
+inline void PolynomialMulByXai(array<typename P::T, P::n> &res, const array<typename P::T, P::n> &poly,
+                               const typename P::T a)
 {
     if (a == 0)
         return;
-    else if (a < N) {
+    else if (a < P::n) {
         for (int i = 0; i < a; i++) res[i] = -poly[i - a + N];
-        for (int i = a; i < N; i++) res[i] = poly[i - a];
+        for (int i = a; i < P::n; i++) res[i] = poly[i - a];
     }
     else {
-        const T aa = a - N;
-        for (int i = 0; i < aa; i++) res[i] = poly[i - aa + N];
-        for (int i = aa; i < N; i++) res[i] = -poly[i - aa];
+        const P::T aa = a - P::n;
+        for (int i = 0; i < aa; i++) res[i] = poly[i - aa + P::n];
+        for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa];
     }
 }
 
-void PolynomialMulByXailvl1(Polynomiallvl1 &res, const Polynomiallvl1 &poly,
-                            const uint32_t a)
+void PolynomialMulByXailvl1(Polynomial<lvl1param> &res, const Polynomial<lvl1param> &poly,
+                            const lvl1param::T a)
 {
-    PolynomialMulByXai<uint32_t, DEF_N>(res, poly, a);
+    PolynomialMulByXai<lvl1param>(res, poly, a);
 }
 
-void PolynomialMulByXailvl2(Polynomiallvl2 &res, const Polynomiallvl2 &poly,
-                            const uint64_t a)
+void PolynomialMulByXailvl2(Polynomial<lvl2param> &res, const Polynomial<lvl2param> &poly,
+                            const lvl2param::T a)
 {
-    PolynomialMulByXai<uint64_t, DEF_nbar>(res, poly, a);
+    PolynomialMulByXai<lvl2param>(res, poly, a);
 }
 
-template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void PolynomialMulByXaiMinusOne(array<T, N> &res,
-                                       const array<T, N> &poly, const T a)
+template <class P>
+inline void PolynomialMulByXaiMinusOne(array<typename P::T, P::n> &res,
+                                       const array<typename P::T, P::n> &poly, const typename P::T a)
 {
-    if (a < N) {
-        for (int i = 0; i < a; i++) res[i] = -poly[i - a + N] - poly[i];
-        for (int i = a; i < N; i++) res[i] = poly[i - a] - poly[i];
+    if (a < P::n) {
+        for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n] - poly[i];
+        for (int i = a; i < P::n; i++) res[i] = poly[i - a] - poly[i];
     }
     else {
-        const T aa = a - N;
-        for (int i = 0; i < aa; i++) res[i] = poly[i - aa + N] - poly[i];
-        for (int i = aa; i < N; i++) res[i] = -poly[i - aa] - poly[i];
+        const P::T aa = a - P::n;
+        for (int i = 0; i < aa; i++) res[i] = poly[i - aa + P::n] - poly[i];
+        for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa] - poly[i];
     }
 }
 
-void PolynomialMulByXaiMinusOnelvl1(Polynomiallvl1 &res,
-                                    const Polynomiallvl1 &poly,
-                                    const uint32_t a)
+void PolynomialMulByXaiMinusOnelvl1(Polynomial<lvl1param> &res,
+                                    const Polynomial<lvl1param> &poly,
+                                    const lvl1param::T a)
 {
-    PolynomialMulByXaiMinusOne<uint32_t, DEF_N>(res, poly, a);
+    PolynomialMulByXaiMinusOne<lvl1param>(res, poly, a);
 }
 
-inline void PolynomialMulByXaiMinusOnelvl2(Polynomiallvl2 &res,
-                                           const Polynomiallvl2 &poly,
-                                           const uint64_t a)
+inline void PolynomialMulByXaiMinusOnelvl2(Polynomial<lvl2param> &res,
+                                           const Polynomial<lvl2param> &poly,
+                                           const lvl2param::T a)
 {
-    PolynomialMulByXaiMinusOne<uint64_t, DEF_nbar>(res, poly, a);
+    PolynomialMulByXaiMinusOne<lvl2param>(res, poly, a);
 }
 
-template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void RotatedTestVector(array<array<T, N>, 2> &testvector, uint32_t bara,
-                              const T μ)
+template <class P>
+inline void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector, uint32_t bara,
+                              const typename P::T μ)
 {
     testvector[0] = {};
-    if (bara < N) {
+    if (bara < P::n) {
         for (int i = 0; i < bara; i++) testvector[1][i] = -μ;
-        for (int i = bara; i < N; i++) testvector[1][i] = μ;
+        for (int i = bara; i < P::n; i++) testvector[1][i] = μ;
     }
     else {
-        const T baraa = bara - N;
+        const P::T baraa = bara - P::n;
         for (int i = 0; i < baraa; i++) testvector[1][i] = μ;
-        for (int i = baraa; i < N; i++) testvector[1][i] = -μ;
+        for (int i = baraa; i < P::n; i++) testvector[1][i] = -μ;
     }
 }
 
-void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWElvl1 &acc, const TLWElvl0 &tlwe,
-                                         const GateKey &gk)
+template<class P>
+inline void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc, const TLWE<typename P::domainP> &tlwe,
+                                         const BootStrappingKeyFFT<P> &bkfft)
 {
-    TRLWElvl1 temp;
-    uint32_t bara = 2 * DEF_N - modSwitchFromTorus32<DEF_Nbit + 1>(tlwe[DEF_n]);
-    RotatedTestVector<uint32_t, DEF_N>(acc, bara, DEF_μ);
-    for (int i = 0; i < DEF_n; i++) {
-        bara = modSwitchFromTorus32<DEF_Nbit + 1>(tlwe[i]);
+    TRLWE<typename P::targetP> temp;
+    uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<P::targetP>(tlwe[P::domainP::n]);
+    RotatedTestVector<P::targetP>(acc, bara, P::targetP::μ);
+    for (int i = 0; i < P::domainP::n; i++) {
+        bara = modSwitchFromTorus<P::targetP>(tlwe[i]);
         if (bara == 0) continue;
         // Do not use CMUX to avoid unnecessary copy.
-        PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0], bara);
-        PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1], bara);
-        trgswfftExternalProductlvl1(temp, temp, gk.bkfftlvl01[i]);
-        for (int i = 0; i < DEF_N; i++) {
+        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[0], acc[0], bara);
+        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[1], acc[1], bara);
+        trgswfftExternalProduct<typename P::targetP>(temp, temp, bkfft[i]);
+        for (int i = 0; i < P::targetP::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
         }
     }
 }
 
-void GateBootstrappingTLWE2TLWEFFTlvl01(TLWElvl1 &res, const TLWElvl0 &tlwe,
-                                        const GateKey &gk)
+void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWE<lvl1param> &acc, const TLWE<lvl0param> &tlwe,
+                                         const BootStrappingKeyFFT<lvl01param> &bkfft)
 {
-    TRLWElvl1 acc;
-    GateBootstrappingTLWE2TRLWEFFTlvl01(acc, tlwe, gk);
+    GateBootstrappingTLWE2TRLWEFFT<lvl01param>(acc,tlwe,bkfft);
+}
+
+void GateBootstrappingTLWE2TLWEFFTlvl01(TLWE<lvl1param> &res, const TLWE<lvl0param> &tlwe,
+                                        const BootStrappingKeyFFT<lvl01param> &bkfft)
+{
+    TRLWE<lvl1param> acc;
+    GateBootstrappingTLWE2TRLWEFFTlvl01(acc, tlwe, bkfft);
     SampleExtractIndexlvl1(res, acc, 0);
 }
 
-void GateBootstrappingTLWE2TLWEFFTlvl02(
-    TLWElvl2 &res, const TLWElvl0 &tlwe,
-    const BootStrappingKeyFFTlvl02 &bkfftlvl02, const uint64_t μs2)
+template<class P>
+void GateBootstrappingTLWE2TLWEFFTvaribaleMu(
+    TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
+    const BootStrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
 {
-    TRLWElvl2 acc;
+    TRLWE<typename P::targetP> acc,temp;
+    uint32_t bara =
+        2 * P::targetP::nbar - modSwitchFromTorus<typename P::targetP>(tlwe[P::domainP::n]);
+    RotatedTestVector<P::targetP::T, P::targetP::n>(acc, bara, μs2);
+    for (int i = 0; i < P::domainP::n; i++) {
+        bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
+        if (bara == 0) continue;
+        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[0], acc[0], bara);
+        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[1], acc[1], bara);
+        trgswfftExternalProduct<typename P::targetP>(temp, temp, bkfftlvl02[i]);
+        for (int i = 0; i < DEF_nbar; i++) {
+            acc[0][i] += temp[0][i];
+            acc[1][i] += temp[1][i];
+        }
+    }
+    SampleExtractIndexlvl2(res, acc, 0);
+    res[DEF_nbar] += μs2;
+}
+
+void GateBootstrappingTLWE2TLWEFFTlvl02(
+    TLWE<lvl2param> &res, const TLWE<lvl0param> &tlwe,
+    const BootStrappingKeyFFT<lvl02param> &bkfftlvl02, const lvl2param::T μs2)
+{
+    TRLWE<lvl2param> acc;
     TRLWElvl2 temp;
     uint32_t bara =
         2 * DEF_nbar - modSwitchFromTorus64<2 * DEF_nbar>(tlwe[DEF_n]);
