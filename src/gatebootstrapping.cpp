@@ -103,6 +103,15 @@ inline void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc, cons
     }
 }
 
+template<class P>
+inline void GateBootstrappingTLWE2TLWEFFT(TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
+                                        const BootStrappingKeyFFT<P> &bkfft)
+{
+    TRLWE<typename P::targetP> acc;
+    GateBootstrappingTLWE2TRLWEFFT<P>(acc, tlwe, bkfft);
+    SampleExtractIndex<typename P::targetP>(res, acc, 0);
+}
+
 void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWE<lvl1param> &acc, const TLWE<lvl0param> &tlwe,
                                          const BootStrappingKeyFFT<lvl01param> &bkfft)
 {
@@ -112,63 +121,44 @@ void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWE<lvl1param> &acc, const TLWE<lvl0p
 void GateBootstrappingTLWE2TLWEFFTlvl01(TLWE<lvl1param> &res, const TLWE<lvl0param> &tlwe,
                                         const BootStrappingKeyFFT<lvl01param> &bkfft)
 {
-    TRLWE<lvl1param> acc;
-    GateBootstrappingTLWE2TRLWEFFTlvl01(acc, tlwe, bkfft);
-    SampleExtractIndexlvl1(res, acc, 0);
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(res,tlwe,bkfft);
 }
 
 template<class P>
-void GateBootstrappingTLWE2TLWEFFTvaribaleMu(
+inline void GateBootstrappingTLWE2TLWEFFTvaribaleMu(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
     const BootStrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
 {
     TRLWE<typename P::targetP> acc,temp;
     uint32_t bara =
-        2 * P::targetP::nbar - modSwitchFromTorus<typename P::targetP>(tlwe[P::domainP::n]);
+        2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(tlwe[P::domainP::n]);
     RotatedTestVector<P::targetP::T, P::targetP::n>(acc, bara, μs2);
     for (int i = 0; i < P::domainP::n; i++) {
         bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
         if (bara == 0) continue;
         PolynomialMulByXaiMinusOne<typename P::targetP>(temp[0], acc[0], bara);
         PolynomialMulByXaiMinusOne<typename P::targetP>(temp[1], acc[1], bara);
-        trgswfftExternalProduct<typename P::targetP>(temp, temp, bkfftlvl02[i]);
-        for (int i = 0; i < DEF_nbar; i++) {
+        trgswfftExternalProduct<typename P::targetP>(temp, temp, bkfft[i]);
+        for (int i = 0; i < P::targetP::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
         }
     }
-    SampleExtractIndexlvl2(res, acc, 0);
-    res[DEF_nbar] += μs2;
+    SampleExtractIndex<typename P::targetP>(res, acc, 0);
+    res[P::targetP::n] += μs2;
 }
 
-void GateBootstrappingTLWE2TLWEFFTlvl02(
+void GateBootstrappingTLWE2TLWEFFTvaribaleMulvl02(
     TLWE<lvl2param> &res, const TLWE<lvl0param> &tlwe,
     const BootStrappingKeyFFT<lvl02param> &bkfftlvl02, const lvl2param::T μs2)
 {
-    TRLWE<lvl2param> acc;
-    TRLWElvl2 temp;
-    uint32_t bara =
-        2 * DEF_nbar - modSwitchFromTorus64<2 * DEF_nbar>(tlwe[DEF_n]);
-    RotatedTestVector<uint64_t, DEF_nbar>(acc, bara, μs2);
-    for (int i = 0; i < DEF_n; i++) {
-        bara = modSwitchFromTorus64<2 * DEF_nbar>(tlwe[i]);
-        if (bara == 0) continue;
-        PolynomialMulByXaiMinusOnelvl2(temp[0], acc[0], bara);
-        PolynomialMulByXaiMinusOnelvl2(temp[1], acc[1], bara);
-        trgswfftExternalProductlvl2(temp, temp, bkfftlvl02[i]);
-        for (int i = 0; i < DEF_nbar; i++) {
-            acc[0][i] += temp[0][i];
-            acc[1][i] += temp[1][i];
-        }
-    }
-    SampleExtractIndexlvl2(res, acc, 0);
-    res[DEF_nbar] += μs2;
+    GateBootstrappingTLWE2TLWEFFTvaribaleMu<lvl02param>(res,tlwe,bkfftlvl02,μs2);
 }
 
-void GateBootstrapping(TLWElvl0 &res, const TLWElvl0 &tlwe, const GateKey &gk)
+void GateBootstrapping(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe, const GateKey &gk)
 {
-    TLWElvl1 tlwelvl1;
-    GateBootstrappingTLWE2TLWEFFTlvl01(tlwelvl1, tlwe, gk);
-    IdentityKeySwitchlvl10(res, tlwelvl1, gk.ksk);
+    TLWE<lvl1param> tlwelvl1;
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(tlwelvl1, tlwe, gk.bkfftlvl01);
+    IdentityKeySwitch<lvl10param>(res, tlwelvl1, gk.ksk);
 }
 }  // namespace TFHEpp
