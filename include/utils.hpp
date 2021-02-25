@@ -31,24 +31,24 @@ inline typename P::T ModularGaussian(typename P::T center, double stdev){
                  // by sigma?
         double err = distribution(generator);
         return center + dtot32(err);
-    }else if constexpr(typename P::T==uint64_t){
+    }else if constexpr(std::is_same_v<P::T,uint64_t>){
         // 64bit fixed-point number version
-        static const double _2p64 = std::ow(2., 64);
+        static const double _2p64 = std::pow(2., 64);
         std::normal_distribution<double> distribution(0., 1.0);
         const double val = stdev * distribution(generator) * _2p64;
-        const uint64_t ival = static_cast<P::T>(val);
+        const uint64_t ival = static_cast<typename P::T>(val);
         return ival + center;
     }
-    else static_assert(false_v<T>, "Undefined Modular Gaussian!");
+    else static_assert(false_v<typename P::T>, "Undefined Modular Gaussian!");
 }
 
 template <class P>
 inline typename P::T modSwitchFromTorus(uint32_t phase)
 {
-    constexpr uint32_t Mbit = P::nbit + 1
+    constexpr uint32_t Mbit = P::nbit + 1;
     constexpr uint32_t Msize = 1U<<Mbit;
-    if constexpr (std::is_same_v<P::T == uint32_t>) return (phase + (1U << (31 - Mbit))) >> (32 - Mbit);
-    else if constexpr(typename P::T == uint64_t){
+    if constexpr (std::is_same_v<typename P::T,uint32_t>) return (phase + (1U << (31 - Mbit))) >> (32 - Mbit);
+    else if constexpr(std::is_same_v<typename P::T,uint64_t>){
         typename P::T interv = ((1ULL << 63) / Msize) * 2;  // width of each intervall
         typename P::T half_interval = interv / 2;  // begin of the first intervall
 
@@ -56,7 +56,7 @@ inline typename P::T modSwitchFromTorus(uint32_t phase)
         typename P::T temp =
             (static_cast<typename P::T>(phase) << 32) + half_interval;  // RIVEDI
         return temp / interv;
-    }else static_assert(false_v<T>, "Undefined modSwitchFromTorus!");
+    }else static_assert(false_v<typename P::T>, "Undefined modSwitchFromTorus!");
 }
 
 template <uint32_t N>

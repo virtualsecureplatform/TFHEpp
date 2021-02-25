@@ -1,9 +1,22 @@
 #pragma once
 
 #include <array>
+#include <utils.hpp>
 
 namespace TFHEpp {
 using namespace std;
+
+template<class P>
+TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
+{
+    uniform_int_distribution<typename P::T> Torusdist(0, std::numeric_limits<typename P::T>::max());
+    TRLWE<P> c;
+    for (typename P::T &i : c[0]) i = Torusdist(generator);
+    PolyMul<P>(c[1], c[0], key);
+    for (typename P::T &i : c[1]) i += ModularGaussian<P>(0, α);
+    return c;
+}
+
 TRLWE<lvl1param> trlweSymEncryptZerolvl1(const double α, const Key<lvl1param> &key);
 TRLWE<lvl1param> trlweSymEncryptlvl1(const Polynomial<lvl1param> &p, const double α,
                               const Key<lvl1param> &key);

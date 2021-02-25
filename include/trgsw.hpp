@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <params.hpp>
 #include <mulfft.hpp>
+#include <trlwe.hpp>
 
 namespace TFHEpp {
 using namespace std;
@@ -64,6 +65,31 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     }
     TwistFFT<P>(res[0], restrlwefft[0]);
     TwistFFT<P>(res[1], restrlwefft[1]);
+}
+
+template<class P>
+inline TRGSW<P> trgswSymEncrypt(make_signed<typename P::T> p, double α, Key<P> &key)
+{
+    array<typename P::T, P::l> h;
+    for (int i = 0; i < P::l; i++) h[i] = 1ULL << (numeric_limits<typename P::T>::digits - (i + 1) * P::Bgbit);
+
+    TRGSW<P> trgsw;
+    for (TRLWE<P> &trlwe : trgsw) trlwe = trlweSymEncryptZero<P>(α, key);
+    for (int i = 0; i < P::l; i++) {
+        trgsw[i][0][0] += static_cast<typename P::T>(p) * h[i];
+        trgsw[i + P::l][1][0] += static_cast<typename P::T>(p) * h[i];
+    }
+    return trgsw;
+}
+
+template<class P>
+TRGSWFFT<P> trgswfftSymEncrypt(make_signed<typename P::T> p, double α, Key<P> &key)
+{
+    TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
+    TRGSWFFT<P> trgswfft;
+    for (int i = 0; i < 2 * P::l; i++)
+        for (int j = 0; j < 2; j++) TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
+    return trgswfft;
 }
 
 TRGSWFFT<lvl1param> trgswfftSymEncryptlvl1(make_signed<lvl1param::T> p, double α, Key<lvl1param> &key);

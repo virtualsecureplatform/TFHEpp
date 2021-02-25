@@ -9,18 +9,6 @@
 
 namespace TFHEpp {
 using namespace std;
-static randen::Randen<uint64_t> engine;
-
-template<class P>
-TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
-{
-    uniform_int_distribution<P::T> Torusdist(0, std::numeric_limits<P::T>::max());
-    TRLWE<P> c;
-    for (P::T &i : c[0]) i = Torusdist(engine);
-    PolyMul<P>(c[1], c[0], key);
-    for (P::T &i : c[1]) i += ModularGaussian<P>(0, α);
-    return c;
-}
 
 TRLWE<lvl1param> trlweSymEncryptZerolvl1(const double α, const Key<lvl1param> &key)
 {
