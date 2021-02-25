@@ -9,24 +9,24 @@ template<class bkP,class privksP>
 inline void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw, const TLWE<typename bkP::domainP>  &tlwe,
                                  const CircuitKey<bkP,privksP> &ck)
 {
-    TLWE<typename bkP::targetP> tlwe;
+    TLWE<typename bkP::targetP> tlwemiddle;
     for (int i = 0; i < privksP::targetP::l; i++) {
-        GateBootstrappingTLWE2TLWEFFT<bkP>(
-            tlwe, tlwe, ck.bkfft,
+        GateBootstrappingTLWE2TLWEFFTvariableMu<bkP>(
+            tlwemiddle, tlwe, ck.bkfft,
             1ULL << (numeric_limits<typename privksP::domainP::T>::digits - (i + 1) * privksP::targetP::Bgbit - 1));
-        PrivKeySwitchlvl21(trgsw[i], tlwe, 0, ck.privksk);
-        PrivKeySwitchlvl21(trgsw[i + privksP::targetP::l], tlwe, 1, ck.privksk);
+        PrivKeySwitch<privksP>(trgsw[i], tlwemiddle, 0, ck.privksk);
+        PrivKeySwitch<privksP>(trgsw[i + privksP::targetP::l], tlwemiddle, 1, ck.privksk);
     }
 }
 
 template<class bkP,class privksP>
 inline void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft, const TLWE<typename bkP::domainP> &tlwe,
-                             const CircuitKey<bkP,privksP> &ck))
+                             const CircuitKey<bkP,privksP> &ck)
 {
     TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<bkP,privksP>(trgsw, tlwe, ck);
     for (int i = 0; i < 2 * privksP::targetP::l; i++)
-        for (int j = 0; j < 2; j++) TwistIFFT<privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
+        for (int j = 0; j < 2; j++) TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
 }
 
 void CircuitBootstrappingFFTlvl01(TRGSWFFT<lvl1param> &trgswfft, const TLWE<lvl0param> &tlwe,
@@ -41,41 +41,48 @@ void CircuitBootstrappingFFTlvl02(TRGSWFFT<lvl2param> &trgswfft, const TLWE<lvl0
     CircuitBootstrappingFFT<lvl02param,lvl22param>(trgswfft,tlwe,ck);
 }
 
-void CircuitBootstrappingFFTInv(TRGSWFFTlvl1 &invtrgswfft, const TLWElvl0 &tlwe,
-                                const CircuitKey &ck)
+template<class bkP,class privksP>
+inline void CircuitBootstrappingFFTInv(TRGSWFFT<typename privksP::targetP> &invtrgswfft, const TLWE<typename bkP::domainP> &tlwe,
+                                const CircuitKey<bkP,privksP> &ck)
 {
-    TLWElvl0 invtlwe;
+    TLWE<typename bkP::domainP> invtlwe;
     // HomNot
-    for (int i = 0; i <= DEF_n; i++) invtlwe[i] = -tlwe[i];
-    TRGSWlvl1 trgsw;
-    CircuitBootstrapping(trgsw, invtlwe, ck);
-    for (int i = 0; i < 2 * DEF_l; i++)
+    for (int i = 0; i <= bkP::doaminP::n; i++) invtlwe[i] = -tlwe[i];
+    TRGSW<typename privksP::targetP> trgsw;
+    CircuitBootstrapping<bkP,privksP>(trgsw, invtlwe, ck);
+    for (int i = 0; i < 2 * privksP::targetP::l; i++)
         for (int j = 0; j < 2; j++)
             TwistIFFTlvl1(invtrgswfft[i][j], trgsw[i][j]);
 }
 
-void CircuitBootstrappingFFTwithInv(TRGSWFFTlvl1 &trgswfft,
-                                    TRGSWFFTlvl1 &invtrgswfft,
-                                    const TLWElvl0 &tlwe, const CircuitKey &ck)
+template<class P>
+constexpr array<typename P::T,P::l> hgen(){
+    array<typename P::T,P::l> h;
+    for (int i = 0; i < P::l; i++) h[i] = 1ULL << (numeric_limits<typename P::T>::digits - (i + 1) * P::Bgbit);
+}
+
+template<class bkP,class privksP>
+inline void CircuitBootstrappingFFTwithInv(TRGSWFFT<typename privksP::targetP> &trgswfft,
+                                    TRGSWFFT<typename privksP::targetP> &invtrgswfft,
+                                    const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP,privksP> &ck)
 {
-    TRGSWlvl1 trgsw;
-    array<uint32_t, DEF_l> h;
-    for (int i = 0; i < DEF_l; i++) h[i] = 1U << (32 - (i + 1) * DEF_Bgbit);
-    CircuitBootstrapping(trgsw, tlwe, ck);
-    for (int i = 0; i < 2 * DEF_l; i++)
-        for (int j = 0; j < 2; j++) TwistIFFTlvl1(trgswfft[i][j], trgsw[i][j]);
-    for (int i = 0; i < DEF_l; i++) {
-        for (int j = 0; j < DEF_N; j++) {
+    TRGSW<typename privksP::targetP> trgsw;
+    constexpr array<typename privksP::targetP::T, privksP::targetP::l> h = hgen<typename privksP::targetP>();
+    CircuitBootstrapping<bkP,privksP>(trgsw, tlwe, ck);
+    for (int i = 0; i < 2 *  privksP::targetP::l; i++)
+        for (int j = 0; j < 2; j++) TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
+    for (int i = 0; i < privksP::targetP::l; i++) {
+        for (int j = 0; j < privksP::targetP::n; j++) {
             trgsw[i][0][j] *= -1;
             trgsw[i][1][j] *= -1;
-            trgsw[i + DEF_l][0][j] *= -1;
-            trgsw[i + DEF_l][1][j] *= -1;
+            trgsw[i + privksP::targetP::l][0][j] *= -1;
+            trgsw[i + privksP::targetP::l][1][j] *= -1;
         }
         trgsw[i][0][0] += h[i];
-        trgsw[i + DEF_l][1][0] += h[i];
+        trgsw[i + privksP::targetP::l][1][0] += h[i];
     }
-    for (int i = 0; i < 2 * DEF_l; i++)
+    for (int i = 0; i < 2 * privksP::targetP::l; i++)
         for (int j = 0; j < 2; j++)
-            TwistIFFTlvl1(invtrgswfft[i][j], trgsw[i][j]);
+            TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j], trgsw[i][j]);
 }
 }  // namespace TFHEpp

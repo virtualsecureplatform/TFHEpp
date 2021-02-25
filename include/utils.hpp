@@ -24,14 +24,14 @@ inline uint32_t dtot32(double d)
 // Modular Gaussian Distribution over Torus
 template<class P>
 inline typename P::T ModularGaussian(typename P::T center, double stdev){
-    if constexpr(std::is_same_v<P::T,uint32_t>){
+    if constexpr(std::is_same_v<typename P::T,uint32_t>){
         // 32bit fixed-point number version
         std::normal_distribution<double> distribution(
         0., stdev);  // TODO: can we create a global distrib of param 1 and multiply
                  // by sigma?
         double err = distribution(generator);
         return center + dtot32(err);
-    }else if constexpr(std::is_same_v<P::T,uint64_t>){
+    }else if constexpr(std::is_same_v<typename P::T,uint64_t>){
         // 64bit fixed-point number version
         static const double _2p64 = std::pow(2., 64);
         std::normal_distribution<double> distribution(0., 1.0);

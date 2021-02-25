@@ -68,7 +68,7 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 }
 
 template<class P>
-inline TRGSW<P> trgswSymEncrypt(make_signed<typename P::T> p, double α, Key<P> &key)
+inline TRGSW<P> trgswSymEncrypt(const typename make_signed<typename P::T>::type p, const double α, const Key<P> &key)
 {
     array<typename P::T, P::l> h;
     for (int i = 0; i < P::l; i++) h[i] = 1ULL << (numeric_limits<typename P::T>::digits - (i + 1) * P::Bgbit);
@@ -83,7 +83,7 @@ inline TRGSW<P> trgswSymEncrypt(make_signed<typename P::T> p, double α, Key<P> 
 }
 
 template<class P>
-TRGSWFFT<P> trgswfftSymEncrypt(make_signed<typename P::T> p, double α, Key<P> &key)
+TRGSWFFT<P> trgswfftSymEncrypt(const typename make_signed<typename P::T>::type p, const double α, const Key<P> &key)
 {
     TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
     TRGSWFFT<P> trgswfft;
@@ -92,11 +92,11 @@ TRGSWFFT<P> trgswfftSymEncrypt(make_signed<typename P::T> p, double α, Key<P> &
     return trgswfft;
 }
 
-TRGSWFFT<lvl1param> trgswfftSymEncryptlvl1(make_signed<lvl1param::T> p, double α, Key<lvl1param> &key);
+TRGSWFFT<lvl1param> trgswfftSymEncryptlvl1(const typename make_signed<lvl1param::T>::type p, const double α, const Key<lvl1param> &key);
 void trgswfftExternalProductlvl1(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &trlwe,
                                  const TRGSWFFT<lvl1param> &trgswfft);
 
-TRGSWFFT<lvl2param> trgswfftSymEncryptlvl2(make_signed<lvl2param::T> p, double α, Key<lvl2param> &key);
+TRGSWFFT<lvl2param> trgswfftSymEncryptlvl2(const typename make_signed<lvl2param::T>::type p, const double α, const Key<lvl2param> &key);
 void trgswfftExternalProductlvl2(TRLWE<lvl2param> &res, const TRLWE<lvl2param> &trlwe,
                                  const TRGSWFFT<lvl2param> &trgswfft);
 }  // namespace TFHEpp

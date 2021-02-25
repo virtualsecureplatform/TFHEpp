@@ -8,10 +8,32 @@
 #include <trlwe.hpp>
 
 namespace TFHEpp {
+
+template<class P>
+inline BootStrappingKeyFFT<P> bkfftgen(SecretKey &sk){
+    BootStrappingKeyFFT<P> bkfft;
+    for (int i = 0; i < P::domainP::n; i++)
+            bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
+                static_cast<typename make_signed<typename P::targetP::T>::type>(sk.key.get<typename P::domainP>()[i]), P::targetP::α, sk.key.get<typename P::targetP>());
+    return bkfft;
+}
+
 struct GateKey {
     BootStrappingKeyFFT<lvl01param> bkfftlvl01;
     KeySwitchingKey<lvl10param> ksk;
-    GateKey(SecretKey sk);
+    GateKey(SecretKey sk){
+        //Generete bkfft
+        bkfftlvl01 = bkfftgen<lvl01param>(sk);
+        
+        //Generete ksk
+        for (int i = 0; i < lvl1param::n; i++)
+            for (int j = 0; j < lvl10param::t; j++)
+                for (uint32_t k = 0; k < (1 << lvl10param::basebit) - 1; k++)
+                    ksk[i][j][k] =
+                        tlweSymEncryptlvl0(sk.key.get<lvl1param>()[i] * (k + 1) *
+                                            (1ULL << (numeric_limits<typename lvl0param::T>::digits - (j + 1) * lvl10param::basebit)),
+                                        lvl0param::α, sk.key.get<lvl0param>());
+    }
     GateKey() {}
     template <class Archive>
     void serialize(Archive& archive)
@@ -26,9 +48,7 @@ struct CircuitKey {
     PrivKeySwitchKey<privksP> privksk;
     CircuitKey(SecretKey sk){
         //Generete bkfft
-        for (int i = 0; i < bsP::domainP::n; i++)
-            bkfft[i] = trgswfftSymEncrypt<bsP::targetP>(
-                static_cast<make_signed<typename bsP::targetP::T>>(sk.key.get<typename bsP::domainP>()[i]), bsP::targetP::α, sk.key.get<typename bsP::targetP>());
+        bkfft = bkfftgen<bsP>(sk);
 
         //Generate privksk
         array<typename privksP::domainP::T, privksP::domainP::n + 1> key;
