@@ -71,8 +71,9 @@ inline void MulInFD(array<double, N> &res, const array<double, N> &a,
     }
 }
 
+//removing inline seems to be faster in my environment.
 template <uint32_t N>
-inline void FMAInFD(array<double, N> &res, const array<double, N> &a,
+void FMAInFD(array<double, N> &res, const array<double, N> &a,
                     const array<double, N> &b)
 {
     for (int i = 0; i < N / 2; i++) {
