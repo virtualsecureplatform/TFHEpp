@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 #include <tfhe++.hpp>
+#include <gperftools/profiler.h>
 
 using namespace std;
 using namespace TFHEpp;
@@ -34,12 +35,13 @@ int main()
     cones = bootsSymEncrypt(pones, *sk);
 
     chrono::system_clock::time_point start, end;
+    ProfilerStart("cb.prof");
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         CircuitBootstrappingFFT(bootedTGSW[test], cones[test], *ck);
     }
     end = chrono::system_clock::now();
-
+    ProfilerStop();
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProductlvl1(ca[test], ca[test], bootedTGSW[test]);
         pres = trlweSymDecryptlvl1(ca[test], sk->key.lvl1);
