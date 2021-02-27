@@ -15,7 +15,8 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CircuitKey<lvl02param,lvl21param> *ck = new CircuitKey<lvl02param,lvl21param>(*sk);
+    CircuitKey<lvl02param, lvl21param> *ck =
+        new CircuitKey<lvl02param, lvl21param>(*sk);
     vector<array<uint8_t, lvl1param::n>> pa(num_test);
     vector<array<uint32_t, lvl1param::n>> pmu(num_test);
     vector<uint8_t> pzeros(num_test);
@@ -23,7 +24,8 @@ int main()
     for (array<uint8_t, lvl1param::n> &i : pa)
         for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < lvl1param::n; j++) pmu[i][j] = pa[i][j] ? lvl1param::μ : -lvl1param::μ;
+        for (int j = 0; j < lvl1param::n; j++)
+            pmu[i][j] = pa[i][j] ? lvl1param::μ : -lvl1param::μ;
     for (int i = 0; i < num_test; i++) pzeros[i] = false;
     vector<TRLWE<lvl1param>> ca(num_test);
     vector<TLWE<lvl0param>> czeros(num_test);
@@ -37,8 +39,8 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFTwithInvlvl01(bootedTGSW[test], invbootedTGSW[test],
-                                       czeros[test], *ck);
+        CircuitBootstrappingFFTwithInvlvl01(
+            bootedTGSW[test], invbootedTGSW[test], czeros[test], *ck);
     }
     end = chrono::system_clock::now();
 

@@ -30,7 +30,8 @@ int main()
 
     for (int test; test < num_test; test++) {
         array<uint32_t, lvl1param::n> a;
-        for (int i = 0; i < lvl1param::n; i++) a[i] = Bgdist(engine) - lvl1param::Bg / 2;
+        for (int i = 0; i < lvl1param::n; i++)
+            a[i] = Bgdist(engine) - lvl1param::Bg / 2;
         for (uint32_t &i : a) i = Bgdist(engine) - lvl1param::Bg / 2;
         array<uint32_t, lvl1param::n> b;
         for (uint32_t &i : b) i = Torus32dist(engine);
@@ -42,7 +43,8 @@ int main()
             for (int j = 0; j <= i; j++)
                 naieve[i] += static_cast<int32_t>(a[j]) * b[i - j];
             for (int j = i + 1; j < lvl1param::n; j++)
-                naieve[i] -= static_cast<int32_t>(a[j]) * b[lvl1param::n + i - j];
+                naieve[i] -=
+                    static_cast<int32_t>(a[j]) * b[lvl1param::n + i - j];
         }
         for (int i = 0; i < lvl1param::n; i++)
             assert(abs(static_cast<int32_t>(naieve[i] - polymul[i])) <= 1);

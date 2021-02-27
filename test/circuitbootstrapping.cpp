@@ -1,9 +1,10 @@
+#include <gperftools/profiler.h>
+
 #include <cassert>
 #include <chrono>
 #include <iostream>
 #include <random>
 #include <tfhe++.hpp>
-#include <gperftools/profiler.h>
 
 using namespace std;
 using namespace TFHEpp;
@@ -16,7 +17,8 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CircuitKey<lvl02param,lvl21param> *ck = new CircuitKey<lvl02param,lvl21param>(*sk);
+    CircuitKey<lvl02param, lvl21param> *ck =
+        new CircuitKey<lvl02param, lvl21param>(*sk);
     vector<array<uint8_t, lvl1param::n>> pa(num_test);
     vector<array<lvl1param::T, lvl1param::n>> pmu(num_test);
     vector<uint8_t> pones(num_test);
@@ -24,7 +26,8 @@ int main()
     for (array<uint8_t, lvl1param::n> &i : pa)
         for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < lvl1param::n; j++) pmu[i][j] = pa[i][j] ? lvl1param::μ : -lvl1param::μ;
+        for (int j = 0; j < lvl1param::n; j++)
+            pmu[i][j] = pa[i][j] ? lvl1param::μ : -lvl1param::μ;
     for (int i = 0; i < num_test; i++) pones[i] = true;
     vector<TRLWE<lvl1param>> ca(num_test);
     vector<TLWE<lvl0param>> cones(num_test);

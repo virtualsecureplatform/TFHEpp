@@ -9,29 +9,36 @@
 
 namespace TFHEpp {
 
-template<class P>
-inline BootStrappingKeyFFT<P> bkfftgen(BootStrappingKeyFFT<P> &bkfft, SecretKey &sk){
+template <class P>
+inline BootStrappingKeyFFT<P> bkfftgen(BootStrappingKeyFFT<P>& bkfft,
+                                       SecretKey& sk)
+{
     for (int i = 0; i < P::domainP::n; i++)
-            bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
-                static_cast<typename make_signed<typename P::targetP::T>::type>(sk.key.get<typename P::domainP>()[i]), P::targetP::α, sk.key.get<typename P::targetP>());
+        bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
+            static_cast<typename make_signed<typename P::targetP::T>::type>(
+                sk.key.get<typename P::domainP>()[i]),
+            P::targetP::α, sk.key.get<typename P::targetP>());
     return bkfft;
 }
 
 struct GateKey {
     BootStrappingKeyFFT<lvl01param> bkfftlvl01;
     KeySwitchingKey<lvl10param> ksk;
-    GateKey(SecretKey sk){
-        //Generete bkfft
-        bkfftgen<lvl01param>(bkfftlvl01,sk);
-        
-        //Generete ksk
+    GateKey(SecretKey sk)
+    {
+        // Generete bkfft
+        bkfftgen<lvl01param>(bkfftlvl01, sk);
+
+        // Generete ksk
         for (int i = 0; i < lvl1param::n; i++)
             for (int j = 0; j < lvl10param::t; j++)
                 for (uint32_t k = 0; k < (1 << lvl10param::basebit) - 1; k++)
-                    ksk[i][j][k] =
-                        tlweSymEncryptlvl0(sk.key.get<lvl1param>()[i] * (k + 1) *
-                                            (1ULL << (numeric_limits<typename lvl0param::T>::digits - (j + 1) * lvl10param::basebit)),
-                                        lvl10param::α, sk.key.get<lvl0param>());
+                    ksk[i][j][k] = tlweSymEncryptlvl0(
+                        sk.key.get<lvl1param>()[i] * (k + 1) *
+                            (1ULL
+                             << (numeric_limits<typename lvl0param::T>::digits -
+                                 (j + 1) * lvl10param::basebit)),
+                        lvl10param::α, sk.key.get<lvl0param>());
     };
     GateKey() {}
     template <class Archive>
@@ -41,27 +48,34 @@ struct GateKey {
     }
 };
 
-template<class bsP,class privksP>
+template <class bsP, class privksP>
 struct CircuitKey {
     BootStrappingKeyFFT<bsP> bkfft;
     PrivKeySwitchKey<privksP> privksk;
-    CircuitKey(SecretKey sk){
-        //Generete bkfft
-        bkfftgen<bsP>(bkfft,sk);
+    CircuitKey(SecretKey sk)
+    {
+        // Generete bkfft
+        bkfftgen<bsP>(bkfft, sk);
 
-        //Generate privksk
+        // Generate privksk
         array<typename privksP::domainP::T, privksP::domainP::n + 1> key;
         for (int i = 0; i < privksP::domainP::n; i++) key[i] = sk.key.lvl2[i];
         key[privksP::domainP::n] = -1;
-        #pragma omp parallel for collapse(4)
+#pragma omp parallel for collapse(4)
         for (int z = 0; z < 2; z++)
             for (int i = 0; i <= privksP::domainP::n; i++)
                 for (int j = 0; j < privksP::t; j++)
-                    for (typename privksP::targetP::T u = 0; u < (1 << privksP::basebit) - 1; u++) {
+                    for (typename privksP::targetP::T u = 0;
+                         u < (1 << privksP::basebit) - 1; u++) {
                         TRLWE<typename privksP::targetP> c =
-                            trlweSymEncryptZero<typename privksP::targetP>(privksP::α, sk.key.get<typename privksP::targetP>());
-                        c[z][0] += (u + 1) * key[i]
-                                << (numeric_limits<typename privksP::targetP::T>::digits - (j + 1) * privksP::basebit);
+                            trlweSymEncryptZero<typename privksP::targetP>(
+                                privksP::α,
+                                sk.key.get<typename privksP::targetP>());
+                        c[z][0] +=
+                            (u + 1) * key[i]
+                            << (numeric_limits<
+                                    typename privksP::targetP::T>::digits -
+                                (j + 1) * privksP::basebit);
                         privksk[z][i][j][u] = c;
                     }
     };
@@ -73,8 +87,8 @@ struct CircuitKey {
     }
 };
 
-using CircuitKeylvl01 = CircuitKey<lvl02param,lvl21param>;
-using CircuitKeylvl02 = CircuitKey<lvl02param,lvl22param>;
+using CircuitKeylvl01 = CircuitKey<lvl02param, lvl21param>;
+using CircuitKeylvl02 = CircuitKey<lvl02param, lvl22param>;
 
 struct CloudKey {
     GateKey gk;

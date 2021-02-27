@@ -26,7 +26,7 @@ struct lvl02param {
 };
 
 template <class P>
-using Key = array<typename P::T,P::n>;
+using Key = array<typename P::T, P::n>;
 
 template <class P>
 using TLWE = array<typename P::T, P::n + 1>;
@@ -55,12 +55,13 @@ using BootStrappingKeyFFT = array<TRGSWFFT<typename P::targetP>, P::domainP::n>;
 
 template <class P>
 using KeySwitchingKey =
-    array<array<array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>, P::domainP::n>;
+    array<array<array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
+          P::domainP::n>;
 template <class P>
-using PrivKeySwitchKey =
-    array<array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
-                P::domainP::n + 1>,
-          2>;
+using PrivKeySwitchKey = array<
+    array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
+          P::domainP::n + 1>,
+    2>;
 
 struct lweParams {
     static constexpr lvl0param lvl0();

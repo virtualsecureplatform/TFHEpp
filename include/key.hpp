@@ -24,12 +24,17 @@ struct lweKey {
         for (typename lvl1param::T &i : lvl1) i = binary(engine);
         for (typename lvl2param::T &i : lvl2) i = binary(engine);
     }
-    template<class P>
-    inline Key<P> get(){
-        if constexpr(std::is_same_v<P,lvl0param>) return lvl0;
-        else if constexpr(std::is_same_v<P,lvl1param>) return lvl1;
-        else if constexpr(std::is_same_v<P,lvl2param>) return lvl2;
-        else static_assert(false_v<P>, "Undefined Secret Key!");
+    template <class P>
+    inline Key<P> get()
+    {
+        if constexpr (std::is_same_v<P, lvl0param>)
+            return lvl0;
+        else if constexpr (std::is_same_v<P, lvl1param>)
+            return lvl1;
+        else if constexpr (std::is_same_v<P, lvl2param>)
+            return lvl2;
+        else
+            static_assert(false_v<P>, "Undefined Secret Key!");
     }
 };
 

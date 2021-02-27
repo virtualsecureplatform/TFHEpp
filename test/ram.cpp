@@ -9,7 +9,8 @@ using namespace std;
 using namespace TFHEpp;
 
 template <uint32_t address_bit>
-void RAMUX(TRLWE<lvl1param> &res, const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
+void RAMUX(TRLWE<lvl1param> &res,
+           const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
            const array<TRLWE<lvl1param>, 1 << address_bit> &data)
 {
     constexpr uint32_t num_trlwe = 1 << address_bit;
@@ -76,16 +77,19 @@ int main()
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
-        encmemory[i] = trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
-    cs = tlweSymEncryptlvl0(wrflag ? lvl0param::μ : -lvl0param::μ, lvl0param::α, (*sk).key.lvl0);
-    c1 = tlweSymEncryptlvl0(writep ? lvl0param::μ : -lvl0param::μ, lvl0param::α, (*sk).key.lvl0);
+        encmemory[i] =
+            trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
+    cs = tlweSymEncryptlvl0(wrflag ? lvl0param::μ : -lvl0param::μ, lvl0param::α,
+                            (*sk).key.lvl0);
+    c1 = tlweSymEncryptlvl0(writep ? lvl0param::μ : -lvl0param::μ, lvl0param::α,
+                            (*sk).key.lvl0);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     // Addres CB
     for (int i = 0; i < address_bit; i++) {
-        CircuitBootstrappingFFTwithInvlvl01((*bootedTGSW)[1][i], (*bootedTGSW)[0][i],
-                                       encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFTwithInvlvl01(
+            (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck);
     }
 
     // Read
@@ -105,7 +109,8 @@ int main()
         SampleExtractIndexlvl1(temp2, temp, 0);
         TLWE<lvl0param> temp3;
         IdentityKeySwitchlvl10(temp3, temp2, (*ck).gk.ksk);
-        GateBootstrappingTLWE2TRLWEFFTlvl01(encmemory[i], temp3, (*ck).gk.bkfftlvl01);
+        GateBootstrappingTLWE2TRLWEFFTlvl01(encmemory[i], temp3,
+                                            (*ck).gk.bkfftlvl01);
     }
 
     end = chrono::system_clock::now();

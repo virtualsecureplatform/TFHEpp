@@ -5,10 +5,10 @@
 namespace TFHEpp {
 using namespace std;
 
-
 template <class P>
 inline void PolynomialMulByXaiMinusOne(array<typename P::T, P::n> &res,
-                                       const array<typename P::T, P::n> &poly, const typename P::T a)
+                                       const array<typename P::T, P::n> &poly,
+                                       const typename P::T a)
 {
     if (a < P::n) {
         for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n] - poly[i];
@@ -26,8 +26,8 @@ void PolynomialMulByXaiMinusOnelvl1(Polynomial<lvl1param> &res,
                                     const lvl1param::T a);
 
 template <class P>
-inline void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector, uint32_t bara,
-                              const typename P::T μ)
+inline void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector,
+                              uint32_t bara, const typename P::T μ)
 {
     testvector[0] = {};
     if (bara < P::n) {
@@ -41,19 +41,21 @@ inline void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector, 
     }
 }
 
-void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWE<lvl1param> &acc, const TLWE<lvl0param> &tlwe,
-                                         const BootStrappingKeyFFT<lvl01param> &bkfft);
-void GateBootstrappingTLWE2TLWEFFTlvl01(TLWE<lvl1param> &res, const TLWE<lvl0param> &tlwe,
-                                        const BootStrappingKeyFFT<lvl01param> &bkfft);
+void GateBootstrappingTLWE2TRLWEFFTlvl01(
+    TRLWE<lvl1param> &acc, const TLWE<lvl0param> &tlwe,
+    const BootStrappingKeyFFT<lvl01param> &bkfft);
+void GateBootstrappingTLWE2TLWEFFTlvl01(
+    TLWE<lvl1param> &res, const TLWE<lvl0param> &tlwe,
+    const BootStrappingKeyFFT<lvl01param> &bkfft);
 
-template<class P>
+template <class P>
 inline void GateBootstrappingTLWE2TLWEFFTvariableMu(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
     const BootStrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
 {
-    TRLWE<typename P::targetP> acc,temp;
-    uint32_t bara =
-        2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(tlwe[P::domainP::n]);
+    TRLWE<typename P::targetP> acc, temp;
+    uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(
+                                            tlwe[P::domainP::n]);
     RotatedTestVector<typename P::targetP>(acc, bara, μs2);
     for (int i = 0; i < P::domainP::n; i++) {
         bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
@@ -72,5 +74,6 @@ inline void GateBootstrappingTLWE2TLWEFFTvariableMu(
 void GateBootstrappingTLWE2TLWEFFTvariableMulvl02(
     TLWE<lvl2param> &res, const TLWE<lvl0param> &tlwe,
     const BootStrappingKeyFFT<lvl02param> &bkfftlvl02, const lvl2param::T μs2);
-void GateBootstrapping(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe, const GateKey &gk);
+void GateBootstrapping(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe,
+                       const GateKey &gk);
 }  // namespace TFHEpp

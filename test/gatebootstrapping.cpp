@@ -17,8 +17,8 @@ int main()
     GateKey* gk = new GateKey(sk);
     for (int test = 0; test < num_test; test++) {
         bool p = binary(engine) > 0;
-        TLWE<lvl0param> tlwe =
-            tlweSymEncryptlvl0(p ? lvl0param::μ : -lvl0param::μ, lvl0param::α, sk.key.lvl0);
+        TLWE<lvl0param> tlwe = tlweSymEncryptlvl0(
+            p ? lvl0param::μ : -lvl0param::μ, lvl0param::α, sk.key.lvl0);
         TLWE<lvl0param> bootedtlwe;
         GateBootstrapping(bootedtlwe, tlwe, *gk);
         bool p2 = tlweSymDecryptlvl0(bootedtlwe, sk.key.lvl0);

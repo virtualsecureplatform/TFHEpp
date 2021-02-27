@@ -59,8 +59,8 @@ uint8_t MuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
 
 template <class Func, class Chegk>
 void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
-          vector<TLWE<lvl0param>> cres, vector<TLWE<lvl0param>> c, const int kNumTests,
-          SecretKey& sk, GateKey& gk)
+          vector<TLWE<lvl0param>> cres, vector<TLWE<lvl0param>> c,
+          const int kNumTests, SecretKey& sk, GateKey& gk)
 {
     random_device seed_gen;
     default_random_engine engine(seed_gen());
@@ -85,22 +85,23 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
             func(cres[i], c[i]);
             p[i] = chegk(p[i]);
         }
-        else if constexpr (std::is_invocable_v<Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                                               const TLWE<lvl0param>&,
-                                               const GateKey&>) {
+        else if constexpr (std::is_invocable_v<
+                               Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
+                               const TLWE<lvl0param>&, const GateKey&>) {
             func(cres[i], c[i], c[i + kNumTests], gk);
             p[i] = chegk(p[i], p[i + kNumTests]);
         }
-        else if constexpr (std::is_invocable_v<Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                                               const TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                                               const GateKey&>) {
+        else if constexpr (std::is_invocable_v<
+                               Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
+                               const TLWE<lvl0param>&, const TLWE<lvl0param>&,
+                               const GateKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2], gk);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2]);
         }
-        else if constexpr (std::is_invocable_v<Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                                               const TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                                               const TLWE<lvl0param>&,
-                                               const GateKey&>) {
+        else if constexpr (std::is_invocable_v<
+                               Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
+                               const TLWE<lvl0param>&, const TLWE<lvl0param>&,
+                               const TLWE<lvl0param>&, const GateKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2],
                  c[i + kNumTests * 3], gk);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2],

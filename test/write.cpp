@@ -8,8 +8,9 @@ using namespace std;
 using namespace TFHEpp;
 
 template <uint32_t address_bit, uint32_t block, uint32_t bitpos>
-void writeMUX(array<TRLWE<lvl1param>, (1 << address_bit)> &res,
-              const array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> &address)
+void writeMUX(
+    array<TRLWE<lvl1param>, (1 << address_bit)> &res,
+    const array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> &address)
 {
     trgswfftExternalProductlvl1(res[block + (1 << bitpos)], res[block],
                                 address[0][bitpos]);
@@ -36,7 +37,8 @@ int main()
     uint8_t pres;
 
     for (uint8_t &i : pmemory) i = binary(engine);
-    for (int i = 0; i < memsize; i++) pmu[i][0] = pmemory[i] ? lvl0param::μ : -lvl0param::μ;
+    for (int i = 0; i < memsize; i++)
+        pmu[i][0] = pmemory[i] ? lvl0param::μ : -lvl0param::μ;
     for (uint8_t &p : address) p = binary(engine);
 
     array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> *bootedTGSW =
@@ -51,13 +53,15 @@ int main()
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
-        encmemory[i] = trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
+        encmemory[i] =
+            trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
     datum = trlweSymEncryptlvl1(respoly, lvl1param::α, (*sk).key.lvl1);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < address_bit - 1; i++) {
-        CircuitBootstrappingFFTlvl01((*bootedTGSW)[0][i], encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFTlvl01((*bootedTGSW)[0][i], encaddress[i],
+                                     (*ck).ck);
         for (int j = 0; j < 2 * lvl1param::l; j++)
             for (int k = 0; k < lvl1param::n; k++) {
                 (*bootedTGSW)[1][i][j][0][k] = -(*bootedTGSW)[0][i][j][0][k];
@@ -65,8 +69,8 @@ int main()
             }
         for (int j = 0; j < lvl1param::l; j++)
             for (int k = 0; k < lvl1param::n / 2; k++) {
-                const double doubleh =
-                    static_cast<double>(1U << (32 - (j + 1) * lvl1param::Bgbit));
+                const double doubleh = static_cast<double>(
+                    1U << (32 - (j + 1) * lvl1param::Bgbit));
                 (*bootedTGSW)[1][i][j][0][k] += doubleh;
                 (*bootedTGSW)[1][i][j + lvl1param::l][1][k] += doubleh;
             }
@@ -77,7 +81,7 @@ int main()
 
     trlweaddress[memsize >> 1] = msbaddress;
     trlweaddress[memsize >> 1][1][0] += lvl1param::μ;
-    for (int i = 0; i <lvl1param::n; i++) {
+    for (int i = 0; i < lvl1param::n; i++) {
         trlweaddress[0][0][i] = -msbaddress[0][i];
         trlweaddress[0][1][i] = -msbaddress[1][i];
     }

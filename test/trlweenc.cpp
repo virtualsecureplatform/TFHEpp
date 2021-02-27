@@ -18,8 +18,10 @@ int main()
         array<bool, lvl1param::n> p;
         for (bool &i : p) i = binary(engine) > 0;
         array<typename lvl1param::T, lvl1param::n> pmu;
-        for (int i = 0; i < lvl1param::n; i++) pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
-        TRLWE<TFHEpp::lvl1param> c = trlweSymEncryptlvl1(pmu, lvl1param::α, key.lvl1);
+        for (int i = 0; i < lvl1param::n; i++)
+            pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
+        TRLWE<TFHEpp::lvl1param> c =
+            trlweSymEncryptlvl1(pmu, lvl1param::α, key.lvl1);
         array<bool, lvl1param::n> p2 = trlweSymDecryptlvl1(c, key.lvl1);
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == p2[i]);
     }
@@ -35,7 +37,8 @@ int main()
         array<bool, lvl2param::n> p;
         for (bool &i : p) i = binary(engine) > 0;
         array<typename lvl2param::T, lvl2param::n> pmu;
-        for (int i = 0; i < lvl2param::n; i++) pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
+        for (int i = 0; i < lvl2param::n; i++)
+            pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
         TRLWE<lvl2param> c = trlweSymEncryptlvl2(pmu, lvl2param::α, key.lvl2);
         array<bool, lvl2param::n> p2 = trlweSymDecryptlvl2(c, key.lvl2);
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == p2[i]);

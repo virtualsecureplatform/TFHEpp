@@ -8,7 +8,8 @@ using namespace std;
 using namespace TFHEpp;
 
 template <uint32_t address_bit, uint32_t width_bit>
-void UROMUX(TRLWE<lvl1param> &res, const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
+void UROMUX(TRLWE<lvl1param> &res,
+            const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
             const array<TRLWE<lvl1param>, 1 << (address_bit - width_bit)> &data)
 {
     constexpr uint32_t Ubit = address_bit - width_bit;
@@ -36,11 +37,14 @@ void UROMUX(TRLWE<lvl1param> &res, const array<TRGSWFFT<lvl1param>, address_bit>
 template <uint32_t address_bit, uint32_t width_bit>
 void LROMUX(vector<TLWE<lvl0param>> &res,
             const array<TRGSWFFT<lvl1param>, address_bit> &address,
-            const TRLWE<lvl1param> &data, const KeySwitchingKey<lvl10param> &ksk)
+            const TRLWE<lvl1param> &data,
+            const KeySwitchingKey<lvl10param> &ksk)
 {
     TRLWE<lvl1param> temp, acc;
-    PolynomialMulByXaiMinusOnelvl1(temp[0], data[0], 2 * lvl1param::n - (lvl1param::n >> 1));
-    PolynomialMulByXaiMinusOnelvl1(temp[1], data[1], 2 * lvl1param::n - (lvl1param::n >> 1));
+    PolynomialMulByXaiMinusOnelvl1(temp[0], data[0],
+                                   2 * lvl1param::n - (lvl1param::n >> 1));
+    PolynomialMulByXaiMinusOnelvl1(temp[1], data[1],
+                                   2 * lvl1param::n - (lvl1param::n >> 1));
     trgswfftExternalProductlvl1(temp, temp, address[width_bit - 1]);
     for (int i = 0; i < lvl1param::n; i++) {
         acc[0][i] = temp[0][i] + data[0][i];
@@ -48,10 +52,10 @@ void LROMUX(vector<TLWE<lvl0param>> &res,
     }
 
     for (uint32_t bit = 2; bit <= width_bit; bit++) {
-        PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0],
-                                       2 * lvl1param::n - (lvl1param::n >> bit));
-        PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1],
-                                       2 * lvl1param::n - (lvl1param::n >> bit));
+        PolynomialMulByXaiMinusOnelvl1(
+            temp[0], acc[0], 2 * lvl1param::n - (lvl1param::n >> bit));
+        PolynomialMulByXaiMinusOnelvl1(
+            temp[1], acc[1], 2 * lvl1param::n - (lvl1param::n >> bit));
         trgswfftExternalProductlvl1(temp, temp, address[width_bit - bit]);
         for (int i = 0; i < lvl1param::n; i++) {
             acc[0][i] += temp[0][i];
@@ -94,7 +98,8 @@ int main()
             pmu[i][j] =
                 pmemory[i][j]
                     ? 2 * lvl1param::μ
-                    : -2 * lvl1param::μ;  // This will increase noise torellance.
+                    : -2 *
+                          lvl1param::μ;  // This will increase noise torellance.
     for (uint8_t &p : address) p = binary(engine);
 
     array<TRGSWFFT<TFHEpp::lvl1param>, address_bit> bootedTGSW;
@@ -104,7 +109,8 @@ int main()
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < num_trlwe; i++)
-        encmemory[i] = trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
+        encmemory[i] =
+            trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();

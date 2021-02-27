@@ -15,7 +15,8 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CircuitKey<lvl02param,lvl22param> *ck = new CircuitKey<lvl02param,lvl22param>(*sk);
+    CircuitKey<lvl02param, lvl22param> *ck =
+        new CircuitKey<lvl02param, lvl22param>(*sk);
     vector<array<uint8_t, TFHEpp::lvl2param::n>> pa(num_test);
     vector<array<typename lvl2param::T, TFHEpp::lvl2param::n>> pmu(num_test);
     vector<uint8_t> pones(num_test);

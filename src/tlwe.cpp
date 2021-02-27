@@ -15,10 +15,12 @@ using namespace std;
 static randen::Randen<uint64_t> engine;
 
 template <class P>
-inline array<typename P::T, P::n + 1> tlweSymEncrypt(const typename P::T p, const double α,
-                                      const array<typename P::T, P::n> &key)
+inline array<typename P::T, P::n + 1> tlweSymEncrypt(
+    const typename P::T p, const double α,
+    const array<typename P::T, P::n> &key)
 {
-    uniform_int_distribution<typename P::T> Torusdist(0, numeric_limits<typename P::T>::max());
+    uniform_int_distribution<typename P::T> Torusdist(
+        0, numeric_limits<typename P::T>::max());
     array<typename P::T, P::n + 1> res = {};
     res[P::n] = ModularGaussian<P>(p, α);
     for (int i = 0; i < P::n; i++) {
@@ -29,7 +31,7 @@ inline array<typename P::T, P::n + 1> tlweSymEncrypt(const typename P::T p, cons
 }
 
 TLWE<lvl0param> tlweSymEncryptlvl0(const lvl0param::T p, const double α,
-                            const Key<lvl0param> &key)
+                                   const Key<lvl0param> &key)
 {
     return tlweSymEncrypt<lvl0param>(p, α, key);
 }
@@ -48,15 +50,18 @@ bool tlweSymDecryptlvl0(const TLWE<lvl0param> &c, const Key<lvl0param> &key)
     return tlweSymDecrypt<lvl0param::T, lvl0param::n>(c, key);
 }
 
-vector<TLWE<lvl0param>> bootsSymEncrypt(const vector<uint8_t> &p, const SecretKey &sk)
+vector<TLWE<lvl0param>> bootsSymEncrypt(const vector<uint8_t> &p,
+                                        const SecretKey &sk)
 {
     vector<TLWE<lvl0param>> c(p.size());
     for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncryptlvl0(p[i] ? lvl0param::μ : -lvl0param::μ, lvl0param::α, sk.key.lvl0);
+        c[i] = tlweSymEncryptlvl0(p[i] ? lvl0param::μ : -lvl0param::μ,
+                                  lvl0param::α, sk.key.lvl0);
     return c;
 }
 
-vector<uint8_t> bootsSymDecrypt(const vector<TLWE<lvl0param>> &c, const SecretKey &sk)
+vector<uint8_t> bootsSymDecrypt(const vector<TLWE<lvl0param>> &c,
+                                const SecretKey &sk)
 {
     vector<uint8_t> p(c.size());
     for (int i = 0; i < p.size(); i++)
