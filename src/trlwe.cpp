@@ -51,7 +51,7 @@ array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
     for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
 
     array<bool, P::n> p;
-    for (int i = 0; i < P::n; i++) p[i] = static_cast<make_signed<P::T>>(phase[i]) > 0;
+    for (int i = 0; i < P::n; i++) p[i] = static_cast<typename make_signed<typename P::T>::type>(phase[i]) > 0;
     return p;
 }
 

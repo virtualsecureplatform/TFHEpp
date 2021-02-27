@@ -10,8 +10,7 @@
 namespace TFHEpp {
 
 template<class P>
-inline BootStrappingKeyFFT<P> bkfftgen(SecretKey &sk){
-    BootStrappingKeyFFT<P> bkfft;
+inline BootStrappingKeyFFT<P> bkfftgen(BootStrappingKeyFFT<P> &bkfft, SecretKey &sk){
     for (int i = 0; i < P::domainP::n; i++)
             bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
                 static_cast<typename make_signed<typename P::targetP::T>::type>(sk.key.get<typename P::domainP>()[i]), P::targetP::α, sk.key.get<typename P::targetP>());
@@ -23,7 +22,7 @@ struct GateKey {
     KeySwitchingKey<lvl10param> ksk;
     GateKey(SecretKey sk){
         //Generete bkfft
-        bkfftlvl01 = bkfftgen<lvl01param>(sk);
+        bkfftgen<lvl01param>(bkfftlvl01,sk);
         
         //Generete ksk
         for (int i = 0; i < lvl1param::n; i++)
@@ -32,8 +31,8 @@ struct GateKey {
                     ksk[i][j][k] =
                         tlweSymEncryptlvl0(sk.key.get<lvl1param>()[i] * (k + 1) *
                                             (1ULL << (numeric_limits<typename lvl0param::T>::digits - (j + 1) * lvl10param::basebit)),
-                                        lvl0param::α, sk.key.get<lvl0param>());
-    }
+                                        lvl10param::α, sk.key.get<lvl0param>());
+    };
     GateKey() {}
     template <class Archive>
     void serialize(Archive& archive)
@@ -48,7 +47,7 @@ struct CircuitKey {
     PrivKeySwitchKey<privksP> privksk;
     CircuitKey(SecretKey sk){
         //Generete bkfft
-        bkfft = bkfftgen<bsP>(sk);
+        bkfftgen<bsP>(bkfft,sk);
 
         //Generate privksk
         array<typename privksP::domainP::T, privksP::domainP::n + 1> key;
@@ -60,7 +59,7 @@ struct CircuitKey {
                 for (int j = 0; j < privksP::t; j++)
                     for (typename privksP::targetP::T u = 0; u < (1 << privksP::basebit) - 1; u++) {
                         TRLWE<typename privksP::targetP> c =
-                            trlweSymEncryptZero<typename privksP::targetP>(privksP::targetP::α, sk.key.get<typename privksP::targetP>());
+                            trlweSymEncryptZero<typename privksP::targetP>(privksP::α, sk.key.get<typename privksP::targetP>());
                         c[z][0] += (u + 1) * key[i]
                                 << (numeric_limits<typename privksP::targetP::T>::digits - (j + 1) * privksP::basebit);
                         privksk[z][i][j][u] = c;

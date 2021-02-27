@@ -15,36 +15,36 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CircuitKeylvl22 *ck = new CircuitKeylvl22(*sk);
-    vector<array<uint8_t, TFHEpp::DEF_nbar>> pa(num_test);
-    vector<array<uint64_t, TFHEpp::DEF_nbar>> pmu(num_test);
+    CircuitKey<lvl02param,lvl22param> *ck = new CircuitKey<lvl02param,lvl22param>(*sk);
+    vector<array<uint8_t, TFHEpp::lvl2param::n>> pa(num_test);
+    vector<array<typename lvl2param::T, TFHEpp::lvl2param::n>> pmu(num_test);
     vector<uint8_t> pones(num_test);
-    array<bool, TFHEpp::DEF_nbar> pres;
-    for (array<uint8_t, TFHEpp::DEF_nbar> &i : pa)
+    array<bool, TFHEpp::lvl2param::n> pres;
+    for (array<uint8_t, TFHEpp::lvl2param::n> &i : pa)
         for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < TFHEpp::DEF_nbar; j++)
-            pmu[i][j] = pa[i][j] ? DEF_μbar : -DEF_μbar;
+        for (int j = 0; j < TFHEpp::lvl2param::n; j++)
+            pmu[i][j] = pa[i][j] ? lvl2param::μ : -lvl2param::μ;
     for (int i = 0; i < num_test; i++) pones[i] = true;
-    vector<TRLWElvl2> ca(num_test);
-    vector<TLWElvl0> cones(num_test);
-    vector<TRGSWFFTlvl2> bootedTGSW(num_test);
+    vector<TRLWE<lvl2param>> ca(num_test);
+    vector<TLWE<lvl0param>> cones(num_test);
+    vector<TRGSWFFT<lvl2param>> bootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = trlweSymEncryptlvl2(pmu[i], TFHEpp::DEF_αbklvl02, sk->key.lvl2);
+        ca[i] = trlweSymEncryptlvl2(pmu[i], TFHEpp::lvl2param::α, sk->key.lvl2);
     cones = bootsSymEncrypt(pones, *sk);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFTlvl22(bootedTGSW[test], cones[test], *ck);
+        CircuitBootstrappingFFTlvl02(bootedTGSW[test], cones[test], *ck);
     }
     end = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProductlvl2(ca[test], ca[test], bootedTGSW[test]);
         pres = trlweSymDecryptlvl2(ca[test], sk->key.lvl2);
-        for (int i = 0; i < TFHEpp::DEF_nbar; i++)
+        for (int i = 0; i < TFHEpp::lvl2param::n; i++)
             assert(pres[i] == pa[test][i]);
     }
     cout << "Passed" << endl;

@@ -14,16 +14,16 @@ namespace TFHEpp {
 using namespace std;
 static randen::Randen<uint64_t> engine;
 
-template <typename T, uint32_t n>
-inline array<T, n + 1> tlweSymEncrypt(const T p, const double α,
-                                      const array<uint32_t, n> &key)
+template <class P>
+inline array<typename P::T, P::n + 1> tlweSymEncrypt(const typename P::T p, const double α,
+                                      const array<typename P::T, P::n> &key)
 {
-    uniform_int_distribution<T> Torusdist(0, numeric_limits<T>::max());
-    array<uint32_t, n + 1> res = {};
-    res[n] = gaussian32(p, α);
-    for (int i = 0; i < n; i++) {
+    uniform_int_distribution<typename P::T> Torusdist(0, numeric_limits<typename P::T>::max());
+    array<typename P::T, P::n + 1> res = {};
+    res[P::n] = ModularGaussian<P>(p, α);
+    for (int i = 0; i < P::n; i++) {
         res[i] = Torusdist(engine);
-        res[n] += res[i] * key[i];
+        res[P::n] += res[i] * key[i];
     }
     return res;
 }
@@ -31,7 +31,7 @@ inline array<T, n + 1> tlweSymEncrypt(const T p, const double α,
 TLWE<lvl0param> tlweSymEncryptlvl0(const lvl0param::T p, const double α,
                             const Key<lvl0param> &key)
 {
-    return tlweSymEncrypt<lvl0param::T, lvl0param::n>(p, α, key);
+    return tlweSymEncrypt<lvl0param>(p, α, key);
 }
 
 template <typename T, uint32_t n>

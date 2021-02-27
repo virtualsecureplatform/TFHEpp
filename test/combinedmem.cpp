@@ -10,15 +10,15 @@ using namespace TFHEpp;
 
 template <uint32_t address_bit, uint32_t words_bit>
 void combUROMUX(
-    TRLWElvl1 &res, const array<TRGSWFFTlvl1, address_bit> &invaddress,
-    const array<TRLWElvl1, 1 << (address_bit + words_bit - DEF_Nbit)> &data)
+    TRLWE<lvl1param> &res, const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
+    const array<TRLWE<lvl1param>, 1 << (address_bit + words_bit - lvl1param::nbit)> &data)
 {
     constexpr uint32_t width_bit =
-        DEF_Nbit -
+        lvl1param::nbit -
         words_bit;  // log_2 of how many words are in one TRLWElvl1 message.
     constexpr uint32_t Ubit = address_bit - width_bit;
     constexpr uint32_t num_trlwe = 1 << (Ubit);
-    array<TRLWElvl1, num_trlwe / 2> temp;
+    array<TRLWE<lvl1param>, num_trlwe / 2> temp;
 
     for (uint32_t index = 0; index < num_trlwe / 2; index++) {
         CMUXFFTlvl1(temp[index], invaddress[width_bit], data[2 * index],
@@ -39,36 +39,36 @@ void combUROMUX(
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
-void combLROMUX(array<TLWElvl0, 1U << words_bit> &res,
-                const array<TRGSWFFTlvl1, address_bit> &address,
-                const TRLWElvl1 &data, const KeySwitchingKey &ksk)
+void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
+                const array<TRGSWFFT<lvl1param>, address_bit> &address,
+                const TRLWE<lvl1param> &data, const KeySwitchingKey<lvl10param> &ksk)
 {
     constexpr uint32_t width_bit =
-        DEF_Nbit -
+        lvl1param::nbit -
         words_bit;  // log_2 of how many words are in one TRLWElvl1 message.
-    TRLWElvl1 temp, acc;
-    PolynomialMulByXaiMinusOnelvl1(temp[0], data[0], 2 * DEF_N - (DEF_N >> 1));
-    PolynomialMulByXaiMinusOnelvl1(temp[1], data[1], 2 * DEF_N - (DEF_N >> 1));
+    TRLWE<lvl1param> temp, acc;
+    PolynomialMulByXaiMinusOnelvl1(temp[0], data[0], 2 * lvl1param::n - (lvl1param::n >> 1));
+    PolynomialMulByXaiMinusOnelvl1(temp[1], data[1], 2 * lvl1param::n - (lvl1param::n >> 1));
     trgswfftExternalProductlvl1(temp, temp, address[width_bit - 1]);
-    for (int i = 0; i < DEF_N; i++) {
+    for (int i = 0; i < lvl1param::n; i++) {
         acc[0][i] = temp[0][i] + data[0][i];
         acc[1][i] = temp[1][i] + data[1][i];
     }
 
     for (uint32_t bit = 2; bit <= width_bit; bit++) {
         PolynomialMulByXaiMinusOnelvl1(temp[0], acc[0],
-                                       2 * DEF_N - (DEF_N >> bit));
+                                       2 * lvl1param::n - (lvl1param::n >> bit));
         PolynomialMulByXaiMinusOnelvl1(temp[1], acc[1],
-                                       2 * DEF_N - (DEF_N >> bit));
+                                       2 * lvl1param::n - (lvl1param::n >> bit));
         trgswfftExternalProductlvl1(temp, temp, address[width_bit - bit]);
-        for (int i = 0; i < DEF_N; i++) {
+        for (int i = 0; i < lvl1param::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
         }
     }
 
     const uint32_t width = 1 << width_bit;
-    array<TLWElvl1, width> reslvl1;
+    array<TLWE<lvl1param>, width> reslvl1;
     for (int i = 0; i < width; i++) SampleExtractIndexlvl1(reslvl1[i], acc, i);
     for (int i = 0; i < width; i++)
         IdentityKeySwitchlvl10(res[i], reslvl1[i], ksk);
@@ -76,14 +76,14 @@ void combLROMUX(array<TLWElvl0, 1U << words_bit> &res,
 
 template <uint32_t address_bit, uint32_t words_bit>
 void combRAMUX(
-    array<TRLWElvl1, 1U << words_bit> &res,
-    const array<TRGSWFFTlvl1, address_bit> &invaddress,
-    const array<array<TRLWElvl1, 1 << address_bit>, 1U << words_bit> &data)
+    array<TRLWE<lvl1param>, 1U << words_bit> &res,
+    const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
+    const array<array<TRLWE<lvl1param>, 1 << address_bit>, 1U << words_bit> &data)
 {
     constexpr uint32_t words = 1U << words_bit;
     constexpr uint32_t num_trlwe = 1 << address_bit;
     for (int i = 0; i < words; i++) {
-        array<TRLWElvl1, num_trlwe / 2> temp;
+        array<TRLWE<lvl1param>, num_trlwe / 2> temp;
 
         for (uint32_t index = 0; index < num_trlwe / 2; index++) {
             CMUXFFTlvl1(temp[index], invaddress[0], data[i][2 * index],
@@ -106,9 +106,9 @@ void combRAMUX(
 
 template <uint32_t address_bit, uint32_t words_bit>
 void combWRAM(
-    array<array<TRLWElvl1, 1U << address_bit>, 1U << words_bit> &encram,
-    const array<array<TRGSWFFTlvl1, address_bit>, 2> &address,
-    const array<TRLWElvl1, 1U << words_bit> &encwritep, const GateKey &gk)
+    array<array<TRLWE<lvl1param>, 1U << address_bit>, 1U << words_bit> &encram,
+    const array<array<TRGSWFFT<lvl1param>, address_bit>, 2> &address,
+    const array<TRLWE<lvl1param>, 1U << words_bit> &encwritep, const GateKey &gk)
 {
     constexpr uint32_t memsize = 1U << address_bit;
     constexpr uint32_t words = 1U << words_bit;
@@ -117,15 +117,15 @@ void combWRAM(
     for (int i = 0; i < memsize; i++) {
         const bitset<address_bit> addressbitset(i);
         for (int j = 0; j < words; j++) {
-            TRLWElvl1 temp = encwritep[j];
+            TRLWE<lvl1param> temp = encwritep[j];
             for (int k = 0; k < address_bit; k++)
                 CMUXFFTlvl1(temp, address[addressbitset[k]][k], temp,
                             encram[j][i]);
-            TLWElvl1 temp2;
+            TLWE<lvl1param> temp2;
             SampleExtractIndexlvl1(temp2, temp, 0);
-            TLWElvl0 temp3;
+            TLWE<lvl0param> temp3;
             IdentityKeySwitchlvl10(temp3, temp2, gk.ksk);
-            GateBootstrappingTLWE2TRLWEFFTlvl01(encram[j][i], temp3, gk);
+            GateBootstrappingTLWE2TRLWEFFTlvl01(encram[j][i], temp3, gk.bkfftlvl01);
         }
     }
 }
@@ -137,7 +137,7 @@ int main()
     constexpr uint32_t words = 1U << words_bit;
     constexpr uint32_t memsize = 1 << address_bit;
     constexpr uint32_t numromtrlwe =
-        1U << (address_bit - 1 + words_bit - DEF_Nbit);
+        1U << (address_bit - 1 + words_bit - lvl1param::nbit);
     constexpr uint32_t numramtrlwe = 1U << (address_bit - 1);
     random_device seeder;
     default_random_engine engine(seeder());
@@ -147,8 +147,8 @@ int main()
     CloudKey *ck = new CloudKey(*sk);
     vector<uint8_t> ramp(memsize / 2 * words);  // unit of memsize is byte(8bit)
     vector<uint8_t> romp(memsize / 2 * words);
-    vector<array<array<uint32_t, DEF_N>, numramtrlwe>> ramu(words);
-    vector<array<uint32_t, DEF_N>> romu(numromtrlwe);
+    vector<array<array<uint32_t, lvl1param::n>, numramtrlwe>> ramu(words);
+    vector<array<uint32_t, lvl1param::n>> romu(numromtrlwe);
     vector<uint8_t> address(address_bit);
     array<uint8_t, words> pres;
     array<uint8_t, words> writep;
@@ -163,12 +163,12 @@ int main()
             for (int i = 0; i < words; i++) {
                 for (int j = 0; j < numramtrlwe; j++) {
                     ramu[i][j] = {};
-                    ramu[i][j][0] = ramp[j * words + i] ? DEF_μ : -DEF_μ;
+                    ramu[i][j][0] = ramp[j * words + i] ? lvl1param::μ : -lvl1param::μ;
                 }
             }
             for (int i = 0; i < numromtrlwe; i++) {
-                for (int j = 0; j < DEF_N; j++) {
-                    romu[i][j] = romp[i * DEF_N + j] ? DEF_μ : -DEF_μ;
+                for (int j = 0; j < lvl1param::n; j++) {
+                    romu[i][j] = romp[i * lvl1param::n + j] ? lvl1param::μ : -lvl1param::μ;
                 }
             }
 
@@ -179,47 +179,47 @@ int main()
             for (int i = 0; i < words; i++)
                 writep[i] = ramp[addressint * words + i] > 0 ? 0 : 1;
 
-            array<array<TRGSWFFTlvl1, address_bit - 1>, 2> *bootedTGSW =
-                new array<array<TRGSWFFTlvl1, address_bit - 1>,
+            array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> *bootedTGSW =
+                new array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
                           2>;  // MSB of address is evaluated by HomMUX, not
                                // CMUX.
-            vector<TLWElvl0> encaddress(address_bit);
-            array<TRLWElvl1, numromtrlwe> encrom;
-            array<array<TRLWElvl1, numramtrlwe>, words> encram;
+            vector<TLWE<lvl0param>> encaddress(address_bit);
+            array<TRLWE<lvl1param>, numromtrlwe> encrom;
+            array<array<TRLWE<lvl1param>, numramtrlwe>, words> encram;
 
-            array<TRLWElvl1, words> encramread;
-            array<TLWElvl1, words> encramreadlvl1;
-            array<TLWElvl0, words> encramreadres;
+            array<TRLWE<lvl1param>, words> encramread;
+            array<TLWE<lvl1param>, words> encramreadlvl1;
+            array<TLWE<lvl0param>, words> encramreadres;
 
-            TRLWElvl1 encumemory;
-            array<TLWElvl0, words> encromreadres;
+            TRLWE<lvl1param> encumemory;
+            array<TLWE<lvl0param>, words> encromreadres;
 
-            array<TLWElvl0, words> encreadres;
+            array<TLWE<lvl0param>, words> encreadres;
 
-            TLWElvl0 encwrflag;
-            array<TLWElvl0, words> encwritep;
-            array<TRLWElvl1, words> writed;
+            TLWE<lvl0param> encwrflag;
+            array<TLWE<lvl0param>, words> encwritep;
+            array<TRLWE<lvl1param>, words> writed;
 
             encaddress = bootsSymEncrypt(address, *sk);
             for (int i = 0; i < numromtrlwe; i++)
                 encrom[i] =
-                    trlweSymEncryptlvl1(romu[i], DEF_αbk, (*sk).key.lvl1);
+                    trlweSymEncryptlvl1(romu[i], lvl1param::α, (*sk).key.lvl1);
             for (int i = 0; i < words; i++)
                 for (int j = 0; j < numramtrlwe; j++)
                     encram[i][j] =
-                        trlweSymEncryptlvl1(ramu[i][j], DEF_α, (*sk).key.lvl1);
+                        trlweSymEncryptlvl1(ramu[i][j], lvl1param::α, (*sk).key.lvl1);
 
-            encwrflag = tlweSymEncryptlvl0((wrflag > 0) ? DEF_μ : -DEF_μ, DEF_α,
+            encwrflag = tlweSymEncryptlvl0((wrflag > 0) ? lvl0param::μ : -lvl0param::μ, lvl0param::α,
                                            (*sk).key.lvl0);
             for (int i = 0; i < words; i++)
-                encwritep[i] = tlweSymEncryptlvl0(writep[i] ? DEF_μ : -DEF_μ,
-                                                  DEF_α, (*sk).key.lvl0);
+                encwritep[i] = tlweSymEncryptlvl0(writep[i] ? lvl0param::μ : -lvl0param::μ,
+                                                  lvl0param::α, (*sk).key.lvl0);
 
             chrono::system_clock::time_point start, end;
             start = chrono::system_clock::now();
             // Addres CB
             for (int i = 0; i < address_bit - 1; i++) {
-                CircuitBootstrappingFFTwithInv((*bootedTGSW)[1][i],
+                CircuitBootstrappingFFTwithInvlvl01((*bootedTGSW)[1][i],
                                                (*bootedTGSW)[0][i],
                                                encaddress[i], (*ck).ck);
             }
@@ -243,7 +243,7 @@ int main()
                        encramreadres[i], encromreadres[i], (*ck).gk);
 
             // Controll
-            TLWElvl0 cs;
+            TLWE<lvl0param> cs;
             HomAND(cs, encwrflag, encaddress[address_bit - 1], (*ck).gk);
             for (int i = 0; i < words; i++)
                 HomMUXwoSE(writed[i], cs, encwritep[i], encramreadres[i],
@@ -279,7 +279,7 @@ int main()
                                             ? ramp[addressint * words + i]
                                             : romp[addressint * words + i]));
 
-            array<array<bool, DEF_N>, words> pwriteres;
+            array<array<bool, lvl1param::n>, words> pwriteres;
             for (int i = 0; i < words; i++)
                 pwriteres[i] =
                     trlweSymDecryptlvl1(encram[i][addressint], (*sk).key.lvl1);
@@ -298,7 +298,7 @@ int main()
                  << endl;
             assert(static_cast<int>(tlweSymDecryptlvl0(cs, (*sk).key.lvl0)) ==
                    static_cast<int>(csp));
-            array<array<bool, DEF_N>, words> writedp;
+            array<array<bool, lvl1param::n>, words> writedp;
             for (int i = 0; i < words; i++)
                 writedp[i] = trlweSymDecryptlvl1(writed[i], (*sk).key.lvl1);
 

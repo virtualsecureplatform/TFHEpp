@@ -16,7 +16,7 @@ inline void PolynomialMulByXai(array<typename P::T, P::n> &res, const array<type
     if (a == 0)
         return;
     else if (a < P::n) {
-        for (int i = 0; i < a; i++) res[i] = -poly[i - a + N];
+        for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n];
         for (int i = a; i < P::n; i++) res[i] = poly[i - a];
     }
     else {
@@ -57,10 +57,10 @@ inline void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc, cons
                                          const BootStrappingKeyFFT<P> &bkfft)
 {
     TRLWE<typename P::targetP> temp;
-    uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<P::targetP>(tlwe[P::domainP::n]);
-    RotatedTestVector<P::targetP>(acc, bara, P::targetP::μ);
+    uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(tlwe[P::domainP::n]);
+    RotatedTestVector<typename P::targetP>(acc, bara, P::targetP::μ);
     for (int i = 0; i < P::domainP::n; i++) {
-        bara = modSwitchFromTorus<P::targetP>(tlwe[i]);
+        bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
         if (bara == 0) continue;
         // Do not use CMUX to avoid unnecessary copy.
         PolynomialMulByXaiMinusOne<typename P::targetP>(temp[0], acc[0], bara);

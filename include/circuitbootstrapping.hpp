@@ -5,13 +5,13 @@
 namespace TFHEpp {
 using namespace std;
 
-void CircuitBootstrappingFFT(TRGSWFFTlvl1 &trgswfft, const TLWElvl0 &tlwe,
-                             const CircuitKey &ck);
-void CircuitBootstrappingFFTlvl22(TRGSWFFTlvl2 &trgswfft, const TLWElvl0 &tlwe,
-                                  const CircuitKeylvl22 &ck);
-void CircuitBootstrappingFFTInv(TRGSWFFTlvl1 &invtrgswfft, const TLWElvl0 &tlwe,
-                                const CircuitKey &ck);
-void CircuitBootstrappingFFTwithInv(TRGSWFFTlvl1 &trgswfft,
-                                    TRGSWFFTlvl1 &invtrgswfft,
-                                    const TLWElvl0 &tlwe, const CircuitKey &ck);
+void CircuitBootstrappingFFTlvl01(TRGSWFFT<lvl1param> &trgswfft, const TLWE<lvl0param> &tlwe,
+                             const CircuitKey<lvl02param,lvl21param> &ck);
+void CircuitBootstrappingFFTlvl02(TRGSWFFT<lvl2param> &trgswfft, const TLWE<lvl0param> &tlwe,
+                                  const CircuitKey<lvl02param,lvl22param> &ck);
+void CircuitBootstrappingFFTInvlvl01(TRGSWFFT<lvl1param> &invtrgswfft, const TLWE<lvl0param> &tlwe,
+                                const CircuitKey<lvl02param,lvl21param> &ck);
+void CircuitBootstrappingFFTwithInvlvl01(TRGSWFFT<lvl1param> &trgswfft,
+                                    TRGSWFFT<lvl1param> &invtrgswfft,
+                                    const TLWE<lvl0param> &tlwe, const CircuitKey<lvl02param,lvl21param> &ck);
 }  // namespace TFHEpp

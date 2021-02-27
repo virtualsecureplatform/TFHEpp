@@ -42,9 +42,9 @@ inline void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector, 
 }
 
 void GateBootstrappingTLWE2TRLWEFFTlvl01(TRLWE<lvl1param> &acc, const TLWE<lvl0param> &tlwe,
-                                         const GateKey &gk);
+                                         const BootStrappingKeyFFT<lvl01param> &bkfft);
 void GateBootstrappingTLWE2TLWEFFTlvl01(TLWE<lvl1param> &res, const TLWE<lvl0param> &tlwe,
-                                        const GateKey &gk);
+                                        const BootStrappingKeyFFT<lvl01param> &bkfft);
 
 template<class P>
 inline void GateBootstrappingTLWE2TLWEFFTvariableMu(

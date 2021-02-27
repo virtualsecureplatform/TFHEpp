@@ -4,35 +4,35 @@
 
 namespace TFHEpp {
 using namespace std;
-void HomNAND(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
+void HomCONSTANTONE(TLWE<lvl0param> &res);
+void HomCONSTANTZERO(TLWE<lvl0param> &res);
+void HomNOT(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca);
+void HomCOPY(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca);
+void HomNAND(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
              const GateKey &gk);
-void HomNOR(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
-            const GateKey &gk);
-void HomXNOR(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
+void HomNOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
              const GateKey &gk);
-void HomAND(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
-            const GateKey &gk);
-void HomOR(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
-           const GateKey &gk);
-void HomXOR(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
-            const GateKey &gk);
-void HomNOT(TLWElvl0 &res, const TLWElvl0 &ca);
-void HomCOPY(TLWElvl0 &res, const TLWElvl0 &ca);
-void HomCONSTANTONE(TLWElvl0 &res);
-void HomCONSTANTZERO(TLWElvl0 &res);
-void HomANDNY(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
-              const GateKey &gk);
-void HomANDYN(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
-              const GateKey &gk);
-void HomORNY(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
+void HomXNOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
              const GateKey &gk);
-void HomORYN(TLWElvl0 &res, const TLWElvl0 &ca, const TLWElvl0 &cb,
+void HomAND(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
              const GateKey &gk);
-void HomMUX(TLWElvl0 &res, const TLWElvl0 &cs, const TLWElvl0 &c1,
-            const TLWElvl0 &c0, const GateKey &gk);
-void HomMUXwoSE(TRLWElvl1 &res, const TLWElvl0 &cs, const TLWElvl0 &c1,
-                const TLWElvl0 &c0, const GateKey &gk);
-void ExtractSwitchAndHomMUX(TRLWElvl1 &res, const TRLWElvl1 &csr,
-                            const TRLWElvl1 &c1r, const TRLWElvl1 &c0r,
+void HomOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
+             const GateKey &gk);
+void HomXOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
+             const GateKey &gk);
+void HomANDNY(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
+             const GateKey &gk);
+void HomANDYN(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
+             const GateKey &gk);
+void HomORNY(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
+             const GateKey &gk);
+void HomORYN(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca, const TLWE<lvl0param> &cb,
+             const GateKey &gk);
+void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs, const TLWE<lvl0param> &c1,
+            const TLWE<lvl0param> &c0, const GateKey &gk);
+void HomMUXwoSE(TRLWE<lvl1param> &res, const TLWE<lvl0param> &cs, const TLWE<lvl0param> &c1,
+                const TLWE<lvl0param> &c0, const GateKey &gk);
+void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
+                            const TRLWE<lvl1param> &c1r, const TRLWE<lvl1param> &c0r,
                             const GateKey &gk);
 }  // namespace TFHEpp

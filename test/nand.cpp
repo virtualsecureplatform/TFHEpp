@@ -21,9 +21,9 @@ int main()
     vector<uint8_t> pres(num_test);
     for (int i = 0; i < num_test; i++) pa[i] = binary(engine) > 0;
     for (int i = 0; i < num_test; i++) pb[i] = binary(engine) > 0;
-    vector<TLWElvl0> ca(num_test);
-    vector<TLWElvl0> cb(num_test);
-    vector<TLWElvl0> cres(num_test);
+    vector<TLWE<TFHEpp::lvl0param>> ca(num_test);
+    vector<TLWE<TFHEpp::lvl0param>> cb(num_test);
+    vector<TLWE<TFHEpp::lvl0param>> cres(num_test);
 
     ca = bootsSymEncrypt(pa, *sk);
     cb = bootsSymEncrypt(pb, *sk);

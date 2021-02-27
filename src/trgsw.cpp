@@ -8,22 +8,22 @@
 
 namespace TFHEpp {
 
-inline TRGSW<lvl1param> trgswSymEncryptlvl1(make_signed<lvl1param::T> p, double α, Key<lvl1param> &key)
+inline TRGSW<lvl1param> trgswSymEncryptlvl1(const make_signed<lvl1param::T>::type p, const double α, const Key<lvl1param> &key)
 {
     return trgswSymEncrypt<lvl1param>(p,α,key);
 }
 
-inline TRGSW<lvl2param> trgswSymEncryptlvl2(make_signed<lvl2param::T> p, double α, Key<lvl2param> &key)
+inline TRGSW<lvl2param> trgswSymEncryptlvl2(const make_signed<lvl2param::T>::type p, const double α, const Key<lvl2param> &key)
 {
     return trgswSymEncrypt<lvl2param>(p,α,key);
 }
 
-TRGSWFFT<lvl1param> trgswfftSymEncryptlvl1(make_signed<lvl1param::T> p, double α, Key<lvl1param> &key)
+TRGSWFFT<lvl1param> trgswfftSymEncryptlvl1(const make_signed<lvl1param::T>::type p, const double α, const Key<lvl1param> &key)
 {
     return trgswfftSymEncrypt<lvl1param>(p,α,key);
 }
 
-TRGSWFFT<lvl2param> trgswfftSymEncryptlvl2(make_signed<lvl2param::T> p, double α, Key<lvl2param> &key)
+TRGSWFFT<lvl2param> trgswfftSymEncryptlvl2(const make_signed<lvl2param::T>::type p, const double α, const Key<lvl2param> &key)
 {
     return trgswfftSymEncrypt<lvl2param>(p,α,key);
 }

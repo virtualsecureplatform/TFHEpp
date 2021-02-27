@@ -19,16 +19,16 @@ int main()
     for (int test = 0; test < num_test; test++) {
         lweKey key;
 
-        array<bool, DEF_N> p;
+        array<bool, lvl1param::n> p;
         for (bool &i : p) i = (binary(engine) > 0);
-        Polynomiallvl1 pmu;
-        for (int i = 0; i < DEF_N; i++) pmu[i] = p[i] ? DEF_μ : -DEF_μ;
-        TRLWElvl1 c = trlweSymEncryptlvl1(pmu, DEF_αbk, key.lvl1);
+        Polynomial<lvl1param> pmu;
+        for (int i = 0; i < lvl1param::n; i++) pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
+        TRLWE<lvl1param> c = trlweSymEncryptlvl1(pmu, lvl1param::α, key.lvl1);
 
-        TRGSWFFTlvl1 trgswfft = trgswfftSymEncryptlvl1(1, DEF_αbk, key.lvl1);
+        TRGSWFFT<lvl1param> trgswfft = trgswfftSymEncryptlvl1(1, lvl1param::α, key.lvl1);
         trgswfftExternalProductlvl1(c, c, trgswfft);
-        array<bool, DEF_N> p2 = trlweSymDecryptlvl1(c, key.lvl1);
-        for (int i = 0; i < DEF_N; i++) assert(p[i] == p2[i]);
+        array<bool, lvl1param::n> p2 = trlweSymDecryptlvl1(c, key.lvl1);
+        for (int i = 0; i < lvl1param::n; i++) assert(p[i] == p2[i]);
     }
     cout << "Passed" << endl;
 
@@ -36,17 +36,17 @@ int main()
     for (int test = 0; test < num_test; test++) {
         lweKey key;
 
-        array<bool, DEF_nbar> p;
+        array<bool, lvl2param::n> p;
         for (bool &i : p) i = (binary(engine) > 0);
-        Polynomiallvl2 pmu;
-        for (int i = 0; i < DEF_nbar; i++) pmu[i] = p[i] ? DEF_μbar : -DEF_μbar;
-        TRLWElvl2 c = trlweSymEncryptlvl2(pmu, DEF_αbklvl02, key.lvl2);
+        Polynomial<lvl2param> pmu;
+        for (int i = 0; i < lvl2param::n; i++) pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
+        TRLWE<lvl2param> c = trlweSymEncryptlvl2(pmu, lvl2param::α, key.lvl2);
 
-        TRGSWFFTlvl2 trgswfft =
-            trgswfftSymEncryptlvl2(1, DEF_αbklvl02, key.lvl2);
+        TRGSWFFT<lvl2param> trgswfft =
+            trgswfftSymEncryptlvl2(1, lvl2param::α, key.lvl2);
         trgswfftExternalProductlvl2(c, c, trgswfft);
-        array<bool, DEF_nbar> p2 = trlweSymDecryptlvl2(c, key.lvl2);
-        for (int i = 0; i < DEF_nbar; i++) assert(p[i] == p2[i]);
+        array<bool, lvl2param::n> p2 = trlweSymDecryptlvl2(c, key.lvl2);
+        for (int i = 0; i < lvl2param::n; i++) assert(p[i] == p2[i]);
     }
     cout << "Passed" << endl;
 
@@ -56,16 +56,16 @@ int main()
     for (int test = 0; test < num_test; test++) {
         lweKey key;
 
-        array<bool, DEF_N> p;
+        array<bool, lvl1param::n> p;
         for (bool &i : p) i = binary(engine) > 0;
-        array<uint32_t, DEF_N> pmu;
-        for (int i = 0; i < DEF_N; i++) pmu[i] = p[i] ? DEF_μ : -DEF_μ;
-        TRLWElvl1 c = trlweSymEncryptlvl1(pmu, DEF_αbk, key.lvl1);
+        array<uint32_t, lvl1param::n> pmu;
+        for (int i = 0; i < lvl1param::n; i++) pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
+        TRLWE<lvl1param> c = trlweSymEncryptlvl1(pmu, lvl1param::α, key.lvl1);
 
-        TRGSWFFTlvl1 trgswfft = trgswfftSymEncryptlvl1(-1, DEF_αbk, key.lvl1);
+        TRGSWFFT<lvl1param> trgswfft = trgswfftSymEncryptlvl1(-1, lvl1param::α, key.lvl1);
         trgswfftExternalProductlvl1(c, c, trgswfft);
-        array<bool, DEF_N> p2 = trlweSymDecryptlvl1(c, key.lvl1);
-        for (int i = 0; i < DEF_N; i++) assert(p[i] == !p2[i]);
+        array<bool, lvl1param::n> p2 = trlweSymDecryptlvl1(c, key.lvl1);
+        for (int i = 0; i < lvl1param::n; i++) assert(p[i] == !p2[i]);
     }
     cout << "Passed" << endl;
 
@@ -73,17 +73,17 @@ int main()
     for (int test = 0; test < num_test; test++) {
         lweKey key;
 
-        array<bool, DEF_nbar> p;
+        array<bool, lvl2param::n> p;
         for (bool &i : p) i = binary(engine) > 0;
-        Polynomiallvl2 pmu;
-        for (int i = 0; i < DEF_nbar; i++) pmu[i] = p[i] ? DEF_μbar : -DEF_μbar;
-        TRLWElvl2 c = trlweSymEncryptlvl2(pmu, DEF_αbklvl02, key.lvl2);
+        Polynomial<lvl2param> pmu;
+        for (int i = 0; i < lvl2param::n; i++) pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
+        TRLWE<lvl2param> c = trlweSymEncryptlvl2(pmu, lvl2param::α, key.lvl2);
 
-        TRGSWFFTlvl2 trgswfft =
-            trgswfftSymEncryptlvl2(-1, DEF_αbklvl02, key.lvl2);
+        TRGSWFFT<lvl2param> trgswfft =
+            trgswfftSymEncryptlvl2(-1, lvl2param::α, key.lvl2);
         trgswfftExternalProductlvl2(c, c, trgswfft);
-        array<bool, DEF_nbar> p2 = trlweSymDecryptlvl2(c, key.lvl2);
-        for (int i = 0; i < DEF_nbar; i++) assert(p[i] == !p2[i]);
+        array<bool, lvl2param::n> p2 = trlweSymDecryptlvl2(c, key.lvl2);
+        for (int i = 0; i < lvl2param::n; i++) assert(p[i] == !p2[i]);
     }
     cout << "Passed" << endl;
 }
