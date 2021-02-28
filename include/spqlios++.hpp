@@ -30,12 +30,12 @@ namespace SPQLIOSpp{
         return table;
     }
 
-    static const array<double,DEF_N> twistlvl1 = TwistGen<DEF_N>();
-    static const array<double,DEF_N> tablelvl1 = TableGen<DEF_N/2>();
-    static const array<double,DEF_nbar> twistlvl2 = TwistGen<DEF_nbar>();
-    static const array<double,DEF_nbar> tablelvl2 = TableGen<DEF_nbar/2>();
+    static const array<double,lvl1param::n> twistlvl1 = TwistGen<lvl1param::n>();
+    static const array<double,lvl1param::n> tablelvl1 = TableGen<lvl1param::n/2>();
+    static const array<double,lvl2param::n> twistlvl2 = TwistGen<lvl2param::n>();
+    static const array<double,lvl2param::n> tablelvl2 = TableGen<lvl2param::n/2>();
 
-    template<typename T = uint32_t,uint32_t N = DEF_N>
+    template<typename T = uint32_t,uint32_t N>
     inline void TwistMulInvert(array<double,N> &res, const array<T,N> &a, const array<double,N> &twist){
         for (int i = 0; i < N / 2; i++) {
             const double are = static_cast<double>(static_cast<typename make_signed<T>::type>(a[i]));
@@ -47,7 +47,7 @@ namespace SPQLIOSpp{
         }
     }
 
-    template<uint32_t N = DEF_N>
+    template<uint32_t N>
     inline void TwistMulDirectlvl1(array<uint32_t,N> &res, const array<double,N> &a, const array<double,N> &twist){
         for (int i = 0; i < N / 2; i++) {
             const double aimbim = a[i + N / 2] * -twist[i + N / 2];
@@ -57,7 +57,7 @@ namespace SPQLIOSpp{
         }
     }
 
-    template<uint32_t N = DEF_nbar>
+    template<uint32_t N>
     inline void TwistMulDirectlvl2(array<uint64_t,N> &res, const array<double,N> &a, const array<double,N> &twist){
         constexpr uint64_t valmask0 = 0x000FFFFFFFFFFFFFul;
         constexpr uint64_t valmask1 = 0x0010000000000000ul;
@@ -104,7 +104,7 @@ namespace SPQLIOSpp{
         bim[i] = tempim - bim[i];
     }
 
-    template <uint32_t Nbit = DEF_Nbit, uint32_t step, uint32_t stride, bool isinvert =true>
+    template <uint32_t Nbit, uint32_t step, uint32_t stride, bool isinvert =true>
     inline void TwiddleMul(double* const a, const array<double,1<<(Nbit+1)> &table,int i){
         constexpr uint32_t N = 1<<Nbit;
 
@@ -119,7 +119,7 @@ namespace SPQLIOSpp{
         aim[i] = aim[i] * bre + arebim;
     }
 
-    template <uint32_t Nbit = DEF_Nbit-1, bool isinvert =true>
+    template <uint32_t Nbit, bool isinvert =true>
     inline void Radix4TwiddleMul(double* const a, int i){
         constexpr uint32_t N = 1<<Nbit;
 
@@ -134,7 +134,7 @@ namespace SPQLIOSpp{
         }
     }
 
-    template <uint32_t Nbit = DEF_Nbit-1, bool isinvert =true>
+    template <uint32_t Nbit, bool isinvert =true>
     inline void Radix8TwiddleMulStrideOne(double* const a,int i){
         constexpr uint32_t N = 1<<Nbit;
 
@@ -147,7 +147,7 @@ namespace SPQLIOSpp{
         aim[i] = _1sroot2*(aim[i] + arebim);
     }
 
-    template <uint32_t Nbit = DEF_Nbit-1, bool isinvert =true>
+    template <uint32_t Nbit, bool isinvert =true>
     inline void Radix8TwiddleMulStrideThree(double* const a, int i){
         constexpr uint32_t N = 1<<Nbit;
 
@@ -160,7 +160,7 @@ namespace SPQLIOSpp{
         aim[i] = _1sroot2*(-aim[i] + arebim);
     }
 
-    template<uint32_t Nbit = DEF_Nbit-1, int step = 0>
+    template<uint32_t Nbit, int step = 0>
     inline void IFFT(double* const res, const array<double,1<<(Nbit+1)> &table){
         constexpr uint32_t N = 1<<Nbit;
         constexpr uint32_t size = 1<<(Nbit-step);
@@ -269,17 +269,17 @@ namespace SPQLIOSpp{
         }
     }
 
-    inline void TwistIFFTlvl1(array<double ,DEF_N> &res, const array<uint32_t,DEF_N> &a){
-        TwistMulInvert<uint32_t,DEF_N>(res,a,twistlvl1);
-        IFFT<DEF_Nbit-1,0>(res.data(),tablelvl1);
+    inline void TwistIFFTlvl1(array<double ,lvl1param::n> &res, const array<uint32_t,lvl1param::n> &a){
+        TwistMulInvert<uint32_t,lvl1param::n>(res,a,twistlvl1);
+        IFFT<lvl1param::nbit-1,0>(res.data(),tablelvl1);
     }
 
-    inline void TwistIFFTlvl2(array<double ,DEF_nbar> &res, const array<uint64_t,DEF_nbar> &a){
-        TwistMulInvert<uint64_t,DEF_nbar>(res,a,twistlvl2);
-        IFFT<DEF_nbarbit-1,0>(res.data(),tablelvl2);
+    inline void TwistIFFTlvl2(array<double ,lvl2param::n> &res, const array<uint64_t,lvl2param::n> &a){
+        TwistMulInvert<uint64_t,lvl2param::n>(res,a,twistlvl2);
+        IFFT<lvl2param::nbit-1,0>(res.data(),tablelvl2);
     }
 
-    template<uint32_t Nbit = DEF_Nbit-1, int step = 0>
+    template<uint32_t Nbit, int step = 0>
     inline void FFT(double* const res, const array<double,1<<(Nbit+1)> &table){
         constexpr uint32_t N = 1<<Nbit;
         constexpr uint32_t size = 1<<(Nbit-step);
@@ -392,37 +392,24 @@ namespace SPQLIOSpp{
         }
     }
 
-    inline void TwistFFTlvl1(array<uint32_t,DEF_N> &res, array<double,DEF_N> &a){
-        FFT<DEF_Nbit-1,0>(a.data(),tablelvl1);
-        TwistMulDirectlvl1<DEF_N>(res,a,twistlvl1);
+    inline void TwistFFTlvl1(array<uint32_t,lvl1param::n> &res, array<double,lvl1param::n> &a){
+        FFT<lvl1param::nbit-1,0>(a.data(),tablelvl1);
+        TwistMulDirectlvl1<lvl1param::n>(res,a,twistlvl1);
     }
 
-    inline void TwistFFTlvl2(array<uint64_t,DEF_nbar> &res, array<double,DEF_nbar> &a){
-        FFT<DEF_nbarbit-1,0>(a.data(),tablelvl2);
-        TwistMulDirectlvl2<DEF_nbar>(res,a,twistlvl2);
+    inline void TwistFFTlvl2(array<uint64_t,lvl2param::n> &res, array<double,lvl2param::n> &a){
+        FFT<lvl2param::nbit-1,0>(a.data(),tablelvl2);
+        TwistMulDirectlvl2<lvl2param::n>(res,a,twistlvl2);
     }
 
-    inline void PolyMullvl1(Polynomiallvl1 &res, const Polynomiallvl1 &a,
-                        const Polynomiallvl1 &b)
+    inline void PolyMullvl1(Polynomial<lvl1param> &res, const Polynomial<lvl1param> &a,
+                        const Polynomial<lvl1param> &b)
     {
-        PolynomialInFDlvl1 ffta;
+        PolynomialInFD<lvl1param> ffta;
         TwistIFFTlvl1(ffta, a);
-        PolynomialInFDlvl1 fftb;
+        PolynomialInFD<lvl1param> fftb;
         TwistIFFTlvl1(fftb, b);
-        MulInFD<DEF_N>(ffta, ffta, fftb);
+        MulInFD<lvl1param::n>(ffta, ffta, fftb);
         TwistFFTlvl1(res, ffta);
-    }
-
-    inline void PolyMulNaievelvl2(Polynomiallvl2 &res, const Polynomiallvl2 &a,
-                              const Polynomiallvl2 &b)
-    {
-        for (int i = 0; i < DEF_nbar; i++) {
-            uint64_t ri = 0;
-            for (int j = 0; j <= i; j++)
-                ri += static_cast<int64_t>(a[j]) * b[i - j];
-            for (int j = i + 1; j < DEF_nbar; j++)
-                ri -= static_cast<int64_t>(a[j]) * b[DEF_nbar + i - j];
-            res[i] = ri;
-        }
     }
 }
