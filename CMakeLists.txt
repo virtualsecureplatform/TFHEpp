@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.9)
 project(tfhe++ CXX)
-<<<<<<< HEAD
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_FLAGS "-march=native -O3 -std=c++17 -g")
 
@@ -19,10 +18,6 @@ find_package(OpenMP)
 if(OpenMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
-=======
-set(CMAKE_CXX_COMPILER clang++)
-set(CMAKE_CXX_FLAGS "-march=native -O3 -std=c++17 -g -fopenmp -funroll-loops")
->>>>>>> 90a23f172c634d4d90618398830faec40d8f391b
 
 add_subdirectory(thirdparties/randen)
 add_subdirectory(thirdparties/spqlios)
