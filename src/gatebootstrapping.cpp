@@ -1,8 +1,8 @@
 #include <cloudkey.hpp>
 #include <gatebootstrapping.hpp>
 #include <keyswitch.hpp>
-#include <spqlios++.hpp>
 #include <params.hpp>
+#include <spqlios++.hpp>
 #include <trgsw.hpp>
 #include <trlwe.hpp>
 #include <utils.hpp>

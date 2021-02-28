@@ -6,8 +6,10 @@
 #include <tfhe++.hpp>
 #include <vector>
 
-void HalfAdder(TFHEpp::TLWE<TFHEpp::lvl0param>& sum, TFHEpp::TLWE<TFHEpp::lvl0param>& carry,
-               const TFHEpp::TLWE<TFHEpp::lvl0param>& ca, const TFHEpp::TLWE<TFHEpp::lvl0param>& cb,
+void HalfAdder(TFHEpp::TLWE<TFHEpp::lvl0param>& sum,
+               TFHEpp::TLWE<TFHEpp::lvl0param>& carry,
+               const TFHEpp::TLWE<TFHEpp::lvl0param>& ca,
+               const TFHEpp::TLWE<TFHEpp::lvl0param>& cb,
                const TFHEpp::GateKey& gk)
 {
     HomXOR(sum, ca, cb, gk);
@@ -18,9 +20,12 @@ void HalfAdder(TFHEpp::TLWE<TFHEpp::lvl0param>& sum, TFHEpp::TLWE<TFHEpp::lvl0pa
 //   input: cai and cbi the i-th bit of a and b
 //          cc: carry of lower bit
 //   algo: sum and carry
-void FullAdder(TFHEpp::TLWE<TFHEpp::lvl0param>& sum, TFHEpp::TLWE<TFHEpp::lvl0param>& carry,
-               const TFHEpp::TLWE<TFHEpp::lvl0param>& cai, const TFHEpp::TLWE<TFHEpp::lvl0param>& cbi,
-               const TFHEpp::TLWE<TFHEpp::lvl0param>& cci, const TFHEpp::GateKey& gk)
+void FullAdder(TFHEpp::TLWE<TFHEpp::lvl0param>& sum,
+               TFHEpp::TLWE<TFHEpp::lvl0param>& carry,
+               const TFHEpp::TLWE<TFHEpp::lvl0param>& cai,
+               const TFHEpp::TLWE<TFHEpp::lvl0param>& cbi,
+               const TFHEpp::TLWE<TFHEpp::lvl0param>& cci,
+               const TFHEpp::GateKey& gk)
 {
     TFHEpp::TLWE<TFHEpp::lvl0param> hsum, hcarryab, hcarryabc;
     HalfAdder(hsum, hcarryab, cai, cbi, gk);
