@@ -8,7 +8,7 @@ using namespace TFHEpp;
 int main()
 {
     cout << "lvl1" << endl;
-    const uint32_t num_test = 1000;
+    constexpr uint32_t num_test = 1000;
     for (int test = 0; test < num_test; test++) {
         random_device seed_gen;
         default_random_engine engine(seed_gen());
