@@ -8,7 +8,7 @@ using namespace TFHEpp;
 
 int main()
 {
-    const uint32_t num_test = 1000;
+    constexpr uint32_t num_test = 1000;
     random_device seed_gen;
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint32_t> binary(0, 1);

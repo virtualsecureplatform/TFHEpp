@@ -23,8 +23,8 @@ void writeMUX(
 
 int main()
 {
-    const uint32_t address_bit = 9;  // Address by words.
-    const uint32_t memsize = 1 << address_bit;
+    constexpr uint32_t address_bit = 9;  // Address by words.
+    constexpr uint32_t memsize = 1 << address_bit;
     random_device seeder;
     default_random_engine engine(seeder());
     uniform_int_distribution<uint8_t> binary(0, 1);

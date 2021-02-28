@@ -78,8 +78,8 @@ int main()
         lvl1param::nbit -
         words_bit;  // log_2 of how many words are in one TRLWElvl1 message.
     static_assert(address_bit >= width_bit);
-    const uint32_t width = 1 << width_bit;
-    const uint32_t num_trlwe = 1 << (address_bit - width_bit);
+    constexpr uint32_t width = 1 << width_bit;
+    constexpr uint32_t num_trlwe = 1 << (address_bit - width_bit);
     random_device seeder;
     default_random_engine engine(seeder());
     uniform_int_distribution<uint8_t> binary(0, 1);
