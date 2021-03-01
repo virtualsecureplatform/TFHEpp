@@ -49,8 +49,8 @@ struct lvl21param{
 };
 
 struct lvl22param{
-    static constexpr std::uint32_t t = 10;
-    static constexpr std::uint32_t basebit = 3;
+    static constexpr std::uint32_t t = 8;
+    static constexpr std::uint32_t basebit = 4;
     static const inline double α = lvl2param::α;
     using domainP = lvl2param;
     using targetP = lvl2param;
