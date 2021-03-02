@@ -1,4 +1,5 @@
 #include <trgsw.hpp>
+#include <detwfa.hpp>
 
 namespace TFHEpp {
 template <class P>
@@ -19,5 +20,9 @@ void CMUXFFTlvl1(TRLWE<lvl1param> &res, const TRGSWFFT<lvl1param> &cs,
                  const TRLWE<lvl1param> &c1, const TRLWE<lvl1param> &c0)
 {
     CMUXFFT<lvl1param>(res, cs, c1, c0);
+}
+
+void CMUXFFTwithPolynomialMulByXaiMinusOnelvl1(TRLWE<lvl1param> &acc, const TRGSWFFT<lvl1param> &cs, const typename lvl1param::T a){
+    CMUXFFTwithPolynomialMulByXaiMinusOne<lvl1param>(acc,cs,a);
 }
 }  // namespace TFHEpp

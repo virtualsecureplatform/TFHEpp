@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <key.hpp>
+#include <tlwe.hpp>
 #include <limits>
 #include <params.hpp>
 #include <random>
@@ -36,18 +37,9 @@ TLWE<lvl0param> tlweSymEncryptlvl0(const lvl0param::T p, const double α,
     return tlweSymEncrypt<lvl0param>(p, α, key);
 }
 
-template <typename T, uint32_t n>
-bool tlweSymDecrypt(const array<T, n + 1> &c, const array<T, n> &key)
-{
-    T phase = c[n];
-    for (int i = 0; i < n; i++) phase -= c[i] * key[i];
-    bool res = static_cast<typename make_signed<T>::type>(phase) > 0;
-    return res;
-}
-
 bool tlweSymDecryptlvl0(const TLWE<lvl0param> &c, const Key<lvl0param> &key)
 {
-    return tlweSymDecrypt<lvl0param::T, lvl0param::n>(c, key);
+    return tlweSymDecrypt<lvl0param>(c, key);
 }
 
 vector<TLWE<lvl0param>> bootsSymEncrypt(const vector<uint8_t> &p,

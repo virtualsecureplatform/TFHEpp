@@ -20,4 +20,6 @@ inline void CMUXFFTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWFFT<
     }
 }
 
+void CMUXFFTwithPolynomialMulByXaiMinusOnelvl1(TRLWE<lvl1param> &acc, const TRGSWFFT<lvl1param> &cs, const typename lvl1param::T a);
+
 }
