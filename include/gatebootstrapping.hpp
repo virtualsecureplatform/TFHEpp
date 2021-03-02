@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cloudkey.hpp>
+#include<detwfa.hpp>
 #include <utils.hpp>
 
 namespace TFHEpp {
@@ -41,13 +42,8 @@ inline void GateBootstrappingTLWE2TLWEFFTvariableMu(
     for (int i = 0; i < P::domainP::n; i++) {
         bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
         if (bara == 0) continue;
-        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[0], acc[0], bara);
-        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[1], acc[1], bara);
-        trgswfftExternalProduct<typename P::targetP>(temp, temp, bkfft[i]);
-        for (int i = 0; i < P::targetP::n; i++) {
-            acc[0][i] += temp[0][i];
-            acc[1][i] += temp[1][i];
-        }
+        // Do not use CMUXFFT to avoid unnecessary copy.
+        CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(acc,bkfft[i],bara);
     }
     SampleExtractIndex<typename P::targetP>(res, acc, 0);
     res[P::targetP::n] += μs2;

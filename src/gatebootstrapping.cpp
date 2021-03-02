@@ -23,7 +23,7 @@ inline void GateBootstrappingTLWE2TRLWEFFT(
     for (int i = 0; i < P::domainP::n; i++) {
         bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
         if (bara == 0) continue;
-        // Do not use CMUX to avoid unnecessary copy.
+        // Do not use CMUXFFT to avoid unnecessary copy.
         CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(acc,bkfft[i],bara);
     }
 }

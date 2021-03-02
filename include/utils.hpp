@@ -10,7 +10,7 @@
 #include <functional>
 
 namespace TFHEpp {
-static randen::Randen<uint64_t> generator;
+static thread_local randen::Randen<uint64_t> generator;
 
 // https://qiita.com/saka1_p/items/e8c4dfdbfa88449190c5
 template <typename T>

@@ -34,7 +34,7 @@ void IdentityKeySwitchlvl10(TLWE<lvl0param> &res, const TLWE<lvl1param> &tlwe,
                             const KeySwitchingKey<lvl10param> &ksk);
 
 template <class P>
-inline void PrivKeySwitch(TRLWE<typename P::targetP> &res,
+void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                           const TLWE<typename P::domainP> &tlwe, const int u,
                           const PrivKeySwitchKey<P> &privksk)
 {
