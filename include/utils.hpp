@@ -7,6 +7,7 @@
 #include <cmath>
 #include <params.hpp>
 #include <random>
+#include <functional>
 
 namespace TFHEpp {
 static randen::Randen<uint64_t> generator;
@@ -91,4 +92,44 @@ void FMAInFD(array<double, N> &res, const array<double, N> &a,
         res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
     }
 }
+
+template <class P>
+inline void PolynomialMulByXai(Polynomial<P> &res,
+                               const Polynomial<P> &poly,
+                               const typename P::T a)
+{
+    if (a == 0)
+        return;
+    else if (a < P::n) {
+        for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n];
+        for (int i = a; i < P::n; i++) res[i] = poly[i - a];
+    }
+    else {
+        const typename P::T aa = a - P::n;
+        for (int i = 0; i < aa; i++) res[i] = poly[i - aa + P::n];
+        for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa];
+    }
+}
+
+template <class P>
+inline void PolynomialMulByXaiMinusOne(Polynomial<P> &res,
+                                       const Polynomial<P> &poly,
+                                       const typename P::T a)
+{
+    if (a < P::n) {
+        for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n] - poly[i];
+        for (int i = a; i < P::n; i++) res[i] = poly[i - a] - poly[i];
+    }
+    else {
+        const typename P::T aa = a - P::n;
+        for (int i = 0; i < aa; i++) res[i] = poly[i - aa + P::n] - poly[i];
+        for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa] - poly[i];
+    }
+}
+
+static void PolynomialMulByXaiMinusOnelvl1(Polynomial<lvl1param> &res,
+                                       const Polynomial<lvl1param> &poly,
+                                       const typename lvl1param::T a){
+                                           PolynomialMulByXaiMinusOne<lvl1param>(res,poly,a);
+                                       }
 }  // namespace TFHEpp

@@ -1,29 +1,10 @@
 #pragma once
 
 #include <cloudkey.hpp>
+#include <utils.hpp>
 
 namespace TFHEpp {
 using namespace std;
-
-template <class P>
-inline void PolynomialMulByXaiMinusOne(array<typename P::T, P::n> &res,
-                                       const array<typename P::T, P::n> &poly,
-                                       const typename P::T a)
-{
-    if (a < P::n) {
-        for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n] - poly[i];
-        for (int i = a; i < P::n; i++) res[i] = poly[i - a] - poly[i];
-    }
-    else {
-        const typename P::T aa = a - P::n;
-        for (int i = 0; i < aa; i++) res[i] = poly[i - aa + P::n] - poly[i];
-        for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa] - poly[i];
-    }
-}
-
-void PolynomialMulByXaiMinusOnelvl1(Polynomial<lvl1param> &res,
-                                    const Polynomial<lvl1param> &poly,
-                                    const lvl1param::T a);
 
 template <class P>
 inline void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector,

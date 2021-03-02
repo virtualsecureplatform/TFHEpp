@@ -6,54 +6,10 @@
 #include <trgsw.hpp>
 #include <trlwe.hpp>
 #include <utils.hpp>
+#include <detwfa.hpp>
 
 namespace TFHEpp {
 using namespace std;
-template <class P>
-inline void PolynomialMulByXai(array<typename P::T, P::n> &res,
-                               const array<typename P::T, P::n> &poly,
-                               const typename P::T a)
-{
-    if (a == 0)
-        return;
-    else if (a < P::n) {
-        for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n];
-        for (int i = a; i < P::n; i++) res[i] = poly[i - a];
-    }
-    else {
-        const typename P::T aa = a - P::n;
-        for (int i = 0; i < aa; i++) res[i] = poly[i - aa + P::n];
-        for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa];
-    }
-}
-
-void PolynomialMulByXailvl1(Polynomial<lvl1param> &res,
-                            const Polynomial<lvl1param> &poly,
-                            const lvl1param::T a)
-{
-    PolynomialMulByXai<lvl1param>(res, poly, a);
-}
-
-void PolynomialMulByXailvl2(Polynomial<lvl2param> &res,
-                            const Polynomial<lvl2param> &poly,
-                            const lvl2param::T a)
-{
-    PolynomialMulByXai<lvl2param>(res, poly, a);
-}
-
-void PolynomialMulByXaiMinusOnelvl1(Polynomial<lvl1param> &res,
-                                    const Polynomial<lvl1param> &poly,
-                                    const lvl1param::T a)
-{
-    PolynomialMulByXaiMinusOne<lvl1param>(res, poly, a);
-}
-
-inline void PolynomialMulByXaiMinusOnelvl2(Polynomial<lvl2param> &res,
-                                           const Polynomial<lvl2param> &poly,
-                                           const lvl2param::T a)
-{
-    PolynomialMulByXaiMinusOne<lvl2param>(res, poly, a);
-}
 
 template <class P>
 inline void GateBootstrappingTLWE2TRLWEFFT(
@@ -68,13 +24,7 @@ inline void GateBootstrappingTLWE2TRLWEFFT(
         bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
         if (bara == 0) continue;
         // Do not use CMUX to avoid unnecessary copy.
-        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[0], acc[0], bara);
-        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[1], acc[1], bara);
-        trgswfftExternalProduct<typename P::targetP>(temp, temp, bkfft[i]);
-        for (int i = 0; i < P::targetP::n; i++) {
-            acc[0][i] += temp[0][i];
-            acc[1][i] += temp[1][i];
-        }
+        CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(acc,bkfft[i],bara);
     }
 }
 
