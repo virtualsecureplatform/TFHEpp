@@ -10,8 +10,8 @@
 #include <functional>
 
 namespace TFHEpp {
-static thread_local randen::Randen<uint64_t> generator;
-// static thread_local std::random_device generator;
+static thread_local std::random_device trng;
+static thread_local randen::Randen<uint64_t> generator(trng());
 
 // https://qiita.com/saka1_p/items/e8c4dfdbfa88449190c5
 template <typename T>
