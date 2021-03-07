@@ -79,10 +79,10 @@ int main()
     for (int i = 0; i < memsize; i++)
         encmemory[i] =
             trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
-    cs = tlweSymEncrypt<lvl0param>(wrflag ? lvl0param::μ : -lvl0param::μ, lvl0param::α,
-                            (*sk).key.lvl0);
-    c1 = tlweSymEncrypt<lvl0param>(writep ? lvl0param::μ : -lvl0param::μ, lvl0param::α,
-                            (*sk).key.lvl0);
+    cs = tlweSymEncrypt<lvl0param>(wrflag ? lvl0param::μ : -lvl0param::μ,
+                                   lvl0param::α, (*sk).key.lvl0);
+    c1 = tlweSymEncrypt<lvl0param>(writep ? lvl0param::μ : -lvl0param::μ,
+                                   lvl0param::α, (*sk).key.lvl0);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();

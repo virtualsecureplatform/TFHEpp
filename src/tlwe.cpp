@@ -20,7 +20,7 @@ vector<TLWE<lvl0param>> bootsSymEncrypt(const vector<uint8_t> &p,
     vector<TLWE<lvl0param>> c(p.size());
     for (int i = 0; i < p.size(); i++)
         c[i] = tlweSymEncrypt<lvl0param>(p[i] ? lvl0param::μ : -lvl0param::μ,
-                                  lvl0param::α, sk.key.lvl0);
+                                         lvl0param::α, sk.key.lvl0);
     return c;
 }
 
