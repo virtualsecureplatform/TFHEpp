@@ -4,13 +4,27 @@
 #include <cstdint>
 #include <key.hpp>
 #include <params.hpp>
+#include <utils.hpp>
 #include <vector>
 
 namespace TFHEpp {
 using namespace std;
 
-TLWE<lvl0param> tlweSymEncryptlvl0(const lvl0param::T p, const double α,
-                                   const Key<lvl0param> &key);
+template <class P>
+inline array<typename P::T, P::n + 1> tlweSymEncrypt(
+    const typename P::T p, const double α,
+    const array<typename P::T, P::n> &key)
+{
+    uniform_int_distribution<typename P::T> Torusdist(
+        0, numeric_limits<typename P::T>::max());
+    array<typename P::T, P::n + 1> res = {};
+    res[P::n] = ModularGaussian<P>(p, α);
+    for (int i = 0; i < P::n; i++) {
+        res[i] = Torusdist(generator);
+        res[P::n] += res[i] * key[i];
+    }
+    return res;
+}
 
 template <class P>
 bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
@@ -22,7 +36,6 @@ bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
     return res;
 }
 
-bool tlweSymDecryptlvl0(const TLWE<lvl0param> &c, const Key<lvl0param> &key);
 vector<TLWE<lvl0param>> bootsSymEncrypt(const vector<uint8_t> &p,
                                         const SecretKey &sk);
 vector<uint8_t> bootsSymDecrypt(const vector<TLWE<lvl0param>> &c,

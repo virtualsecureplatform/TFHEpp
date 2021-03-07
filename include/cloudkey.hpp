@@ -33,7 +33,7 @@ struct GateKey {
         for (int i = 0; i < lvl1param::n; i++)
             for (int j = 0; j < lvl10param::t; j++)
                 for (uint32_t k = 0; k < (1 << lvl10param::basebit) - 1; k++)
-                    ksk[i][j][k] = tlweSymEncryptlvl0(
+                    ksk[i][j][k] = tlweSymEncrypt<lvl0param>(
                         sk.key.get<lvl1param>()[i] * (k + 1) *
                             (1ULL
                              << (numeric_limits<typename lvl0param::T>::digits -
