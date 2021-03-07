@@ -1,4 +1,5 @@
 #include <cloudkey.hpp>
+#include <detwfa.hpp>
 #include <gatebootstrapping.hpp>
 #include <keyswitch.hpp>
 #include <mulfft.hpp>
@@ -6,7 +7,6 @@
 #include <trgsw.hpp>
 #include <trlwe.hpp>
 #include <utils.hpp>
-#include <detwfa.hpp>
 
 namespace TFHEpp {
 using namespace std;
@@ -24,7 +24,8 @@ inline void GateBootstrappingTLWE2TRLWEFFT(
         bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
         if (bara == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(acc,bkfft[i],bara);
+        CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(
+            acc, bkfft[i], bara);
     }
 }
 

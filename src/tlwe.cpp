@@ -3,10 +3,10 @@
 #include <array>
 #include <cstdint>
 #include <key.hpp>
-#include <tlwe.hpp>
 #include <limits>
 #include <params.hpp>
 #include <random>
+#include <tlwe.hpp>
 #include <type_traits>
 #include <utils.hpp>
 #include <vector>

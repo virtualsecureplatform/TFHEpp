@@ -35,8 +35,8 @@ void IdentityKeySwitchlvl10(TLWE<lvl0param> &res, const TLWE<lvl1param> &tlwe,
 
 template <class P>
 void PrivKeySwitch(TRLWE<typename P::targetP> &res,
-                          const TLWE<typename P::domainP> &tlwe, const int u,
-                          const PrivKeySwitchKey<P> &privksk)
+                   const TLWE<typename P::domainP> &tlwe, const int u,
+                   const PrivKeySwitchKey<P> &privksk)
 {
     constexpr uint32_t mask = (1 << P::basebit) - 1;
     constexpr uint64_t prec_offset =

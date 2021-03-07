@@ -5,9 +5,9 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <functional>
 #include <params.hpp>
 #include <random>
-#include <functional>
 
 namespace TFHEpp {
 static thread_local std::random_device trng;
@@ -95,8 +95,7 @@ void FMAInFD(array<double, N> &res, const array<double, N> &a,
 }
 
 template <class P>
-inline void PolynomialMulByXai(Polynomial<P> &res,
-                               const Polynomial<P> &poly,
+inline void PolynomialMulByXai(Polynomial<P> &res, const Polynomial<P> &poly,
                                const typename P::T a)
 {
     if (a == 0)
@@ -129,8 +128,9 @@ inline void PolynomialMulByXaiMinusOne(Polynomial<P> &res,
 }
 
 static void PolynomialMulByXaiMinusOnelvl1(Polynomial<lvl1param> &res,
-                                       const Polynomial<lvl1param> &poly,
-                                       const typename lvl1param::T a){
-                                           PolynomialMulByXaiMinusOne<lvl1param>(res,poly,a);
-                                       }
+                                           const Polynomial<lvl1param> &poly,
+                                           const typename lvl1param::T a)
+{
+    PolynomialMulByXaiMinusOne<lvl1param>(res, poly, a);
+}
 }  // namespace TFHEpp
