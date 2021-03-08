@@ -4,95 +4,82 @@
 #include <mulfft.hpp>
 #include <params.hpp>
 #include <random>
+#include <trlwe.hpp>
 #include <utils.hpp>
 
 namespace TFHEpp {
 using namespace std;
-static randen::Randen<uint64_t> engine;
 
-TRLWElvl1 trlweSymEncryptZerolvl1(const double α, const Keylvl1 &key)
+TRLWE<lvl1param> trlweSymEncryptZerolvl1(const double α,
+                                         const Key<lvl1param> &key)
 {
-    uniform_int_distribution<uint32_t> Torus32dist(0, UINT32_MAX);
-    TRLWElvl1 c;
-    for (uint32_t &i : c[0]) i = Torus32dist(engine);
-    PolyMullvl1(c[1], c[0], key);
-    for (uint32_t &i : c[1]) i += gaussian32(0, α);
+    return trlweSymEncryptZero<lvl1param>(α, key);
+}
+
+TRLWE<lvl2param> trlweSymEncryptZerolvl2(const double α,
+                                         const Key<lvl2param> &key)
+{
+    return trlweSymEncryptZero<lvl2param>(α, key);
+}
+
+template <class P>
+TRLWE<P> trlweSymEncrypt(const array<typename P::T, P::n> &p, const double α,
+                         const Key<P> &key)
+{
+    TRLWE<P> c;
+    c = trlweSymEncryptZero<P>(α, key);
+    for (int i = 0; i < P::n; i++) c[1][i] += p[i];
     return c;
 }
 
-TRLWElvl2 trlweSymEncryptZerolvl2(const double α, const Keylvl2 &key)
+TRLWE<lvl1param> trlweSymEncryptlvl1(const array<lvl1param::T, lvl1param::n> &p,
+                                     const double α, const Key<lvl1param> &key)
 {
-    uniform_int_distribution<uint64_t> Torus64dist(0, UINT64_MAX);
-    TRLWElvl2 c;
-    for (uint64_t &i : c[0]) i = Torus64dist(engine);
-    PolyMulNaievelvl2(c[1], c[0], key);
-    for (uint64_t &i : c[1]) i += gaussian64(0, α);
-    return c;
+    return trlweSymEncrypt<lvl1param>(p, α, key);
 }
 
-TRLWElvl1 trlweSymEncryptlvl1(const array<uint32_t, DEF_N> &p, const double α,
-                              const Keylvl1 &key)
+TRLWE<lvl2param> trlweSymEncryptlvl2(const array<lvl2param::T, lvl2param::n> &p,
+                                     const double α, const Key<lvl2param> &key)
 {
-    TRLWElvl1 c;
-    c = trlweSymEncryptZerolvl1(α, key);
-    for (int i = 0; i < DEF_N; i++) c[1][i] += p[i];
-    return c;
+    return trlweSymEncrypt<lvl2param>(p, α, key);
 }
 
-TRLWElvl2 trlweSymEncryptlvl2(const array<uint64_t, DEF_nbar> &p,
-                              const double α, const Keylvl2 &key)
+template <class P>
+array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
-    TRLWElvl2 c;
-    c = trlweSymEncryptZerolvl2(α, key);
-    for (int i = 0; i < DEF_nbar; i++) c[1][i] += p[i];
-    return c;
-}
+    Polynomial<P> mulres;
+    PolyMul<P>(mulres, c[0], key);
+    Polynomial<P> phase = c[1];
+    for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
 
-array<bool, DEF_N> trlweSymDecryptlvl1(const TRLWElvl1 &c, const Keylvl1 &key)
-{
-    Polynomiallvl1 mulres;
-    PolyMullvl1(mulres, c[0], key);
-    Polynomiallvl1 phase = c[1];
-    for (int i = 0; i < DEF_N; i++) phase[i] -= mulres[i];
-
-    array<bool, DEF_N> p;
-    for (int i = 0; i < DEF_N; i++) p[i] = static_cast<int32_t>(phase[i]) > 0;
+    array<bool, P::n> p;
+    for (int i = 0; i < P::n; i++)
+        p[i] = static_cast<typename make_signed<typename P::T>::type>(
+                   phase[i]) > 0;
     return p;
 }
 
-array<bool, DEF_nbar> trlweSymDecryptlvl2(const TRLWElvl2 &c,
-                                          const Keylvl2 &key)
+array<bool, lvl1param::n> trlweSymDecryptlvl1(const TRLWE<lvl1param> &c,
+                                              const Key<lvl1param> &key)
 {
-    Polynomiallvl2 mulres;
-    PolyMulNaievelvl2(mulres, c[0], key);
-    Polynomiallvl2 phase = c[1];
-    for (int i = 0; i < DEF_nbar; i++) phase[i] -= mulres[i];
-
-    array<bool, DEF_nbar> p;
-    for (int i = 0; i < DEF_nbar; i++)
-        p[i] = static_cast<int64_t>(phase[i]) > 0;
-    return p;
+    return trlweSymDecrypt<lvl1param>(c, key);
 }
 
-template <typename T = uint32_t, uint32_t N = DEF_N>
-inline void SampleExtractIndex(array<T, N + 1> &tlwe,
-                               const array<array<T, N>, 2> &trlwe,
-                               const int index)
+array<bool, lvl2param::n> trlweSymDecryptlvl2(const TRLWE<lvl2param> &c,
+                                              const Key<lvl2param> &key)
 {
-    for (int i = 0; i <= index; i++) tlwe[i] = trlwe[0][index - i];
-    for (int i = index + 1; i < N; i++) tlwe[i] = -trlwe[0][N + index - i];
-    tlwe[N] = trlwe[1][index];
+    return trlweSymDecrypt<lvl2param>(c, key);
 }
 
-void SampleExtractIndexlvl1(TLWElvl1 &tlwe, const TRLWElvl1 &trlwe,
-                            const int index)
+void SampleExtractIndexlvl1(TLWE<lvl1param> &tlwe,
+                            const TRLWE<lvl1param> &trlwe, const int index)
 {
-    SampleExtractIndex<uint32_t, DEF_N>(tlwe, trlwe, index);
+    SampleExtractIndex<lvl1param>(tlwe, trlwe, index);
 }
 
-void SampleExtractIndexlvl2(TLWElvl2 &tlwe, const TRLWElvl2 &trlwe,
-                            const int index)
+void SampleExtractIndexlvl2(TLWE<lvl2param> &tlwe,
+                            const TRLWE<lvl2param> &trlwe, const int index)
 {
-    SampleExtractIndex<uint64_t, DEF_nbar>(tlwe, trlwe, index);
+    SampleExtractIndex<lvl2param>(tlwe, trlwe, index);
 }
 }  // namespace TFHEpp

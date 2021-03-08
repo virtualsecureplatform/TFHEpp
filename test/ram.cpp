@@ -9,11 +9,12 @@ using namespace std;
 using namespace TFHEpp;
 
 template <uint32_t address_bit>
-void RAMUX(TRLWElvl1 &res, const array<TRGSWFFTlvl1, address_bit> &invaddress,
-           const array<TRLWElvl1, 1 << address_bit> &data)
+void RAMUX(TRLWE<lvl1param> &res,
+           const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
+           const array<TRLWE<lvl1param>, 1 << address_bit> &data)
 {
     constexpr uint32_t num_trlwe = 1 << address_bit;
-    array<TRLWElvl1, num_trlwe / 2> temp;
+    array<TRLWE<lvl1param>, num_trlwe / 2> temp;
 
     for (uint32_t index = 0; index < num_trlwe / 2; index++) {
         CMUXFFTlvl1(temp[index], invaddress[0], data[2 * index],
@@ -43,7 +44,7 @@ int main()
     SecretKey *sk = new SecretKey;
     CloudKey *ck = new CloudKey(*sk);
     vector<uint8_t> pmemory(memsize);
-    vector<array<uint32_t, DEF_N>> pmu(memsize);
+    vector<array<uint32_t, lvl1param::n>> pmu(memsize);
     vector<uint8_t> address(address_bit);
     uint8_t pres;
     uint8_t wrflag;
@@ -53,7 +54,7 @@ int main()
 
     for (int i = 0; i < memsize; i++) {
         pmu[i] = {};
-        pmu[i][0] = pmemory[i] ? DEF_μ : -DEF_μ;
+        pmu[i][0] = pmemory[i] ? lvl1param::μ : -lvl1param::μ;
     }
     for (uint8_t &p : address) p = binary(engine);
     uint32_t addressint = 0;
@@ -63,29 +64,32 @@ int main()
     wrflag = binary(engine);
     writep = pmemory[addressint] > 0 ? 0 : 1;
 
-    array<array<TRGSWFFTlvl1, address_bit>, 2> *bootedTGSW =
-        new array<array<TRGSWFFTlvl1, address_bit>, 2>;
-    vector<TLWElvl0> encaddress(address_bit);
-    array<TRLWElvl1, memsize> encmemory;
-    TLWElvl1 encreadreslvl1;
-    TLWElvl0 encreadres;
-    TRLWElvl1 encumemory;
-    TLWElvl0 cs;
-    TLWElvl0 c1;
-    TRLWElvl1 writed;
+    array<array<TRGSWFFT<lvl1param>, address_bit>, 2> *bootedTGSW =
+        new array<array<TRGSWFFT<lvl1param>, address_bit>, 2>;
+    vector<TLWE<lvl0param>> encaddress(address_bit);
+    array<TRLWE<lvl1param>, memsize> encmemory;
+    TLWE<lvl1param> encreadreslvl1;
+    TLWE<lvl0param> encreadres;
+    TRLWE<lvl1param> encumemory;
+    TLWE<lvl0param> cs;
+    TLWE<lvl0param> c1;
+    TRLWE<lvl1param> writed;
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
-        encmemory[i] = trlweSymEncryptlvl1(pmu[i], DEF_α, (*sk).key.lvl1);
-    cs = tlweSymEncryptlvl0(wrflag ? DEF_μ : -DEF_μ, DEF_α, (*sk).key.lvl0);
-    c1 = tlweSymEncryptlvl0(writep ? DEF_μ : -DEF_μ, DEF_α, (*sk).key.lvl0);
+        encmemory[i] =
+            trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
+    cs = tlweSymEncrypt<lvl0param>(wrflag ? lvl0param::μ : -lvl0param::μ,
+                                   lvl0param::α, (*sk).key.lvl0);
+    c1 = tlweSymEncrypt<lvl0param>(writep ? lvl0param::μ : -lvl0param::μ,
+                                   lvl0param::α, (*sk).key.lvl0);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     // Addres CB
     for (int i = 0; i < address_bit; i++) {
-        CircuitBootstrappingFFTwithInv((*bootedTGSW)[1][i], (*bootedTGSW)[0][i],
-                                       encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFTwithInvlvl01(
+            (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck);
     }
 
     // Read
@@ -97,15 +101,16 @@ int main()
     HomMUXwoSE(writed, cs, c1, encreadres, (*ck).gk);
     for (int i = 0; i < memsize; i++) {
         const bitset<address_bit> addressbitset(i);
-        TRLWElvl1 temp = writed;
+        TRLWE<lvl1param> temp = writed;
         for (int j = 0; j < address_bit; j++)
             CMUXFFTlvl1(temp, (*bootedTGSW)[addressbitset[j]][j], temp,
                         encmemory[i]);
-        TLWElvl1 temp2;
+        TLWE<lvl1param> temp2;
         SampleExtractIndexlvl1(temp2, temp, 0);
-        TLWElvl0 temp3;
+        TLWE<lvl0param> temp3;
         IdentityKeySwitchlvl10(temp3, temp2, (*ck).gk.ksk);
-        GateBootstrappingTLWE2TRLWEFFTlvl01(encmemory[i], temp3, (*ck).gk);
+        GateBootstrappingTLWE2TRLWEFFTlvl01(encmemory[i], temp3,
+                                            (*ck).gk.bkfftlvl01);
     }
 
     end = chrono::system_clock::now();
@@ -113,11 +118,11 @@ int main()
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
     cout << elapsed << "ms" << endl;
-    pres = tlweSymDecryptlvl0(encreadres, (*sk).key.lvl0);
+    pres = tlweSymDecrypt<lvl0param>(encreadres, (*sk).key.lvl0);
 
     assert(static_cast<int>(pres) == static_cast<int>(pmemory[addressint]));
 
-    array<bool, DEF_N> pwriteres =
+    array<bool, lvl1param::n> pwriteres =
         trlweSymDecryptlvl1(encmemory[addressint], (*sk).key.lvl1);
     assert(static_cast<int>(pwriteres[0]) ==
            static_cast<int>((wrflag > 0) ? writep : pmemory[addressint]));

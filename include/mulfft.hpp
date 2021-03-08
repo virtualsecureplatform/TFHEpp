@@ -8,48 +8,55 @@
 namespace TFHEpp {
 using namespace std;
 
-inline void TwistFFTlvl1(Polynomiallvl1 &res, const PolynomialInFDlvl1 &a)
+template <class P>
+inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
 {
-    fftplvl1.execute_direct_torus32(res.data(), a.data());
+    if constexpr (std::is_same_v<typename P::T, uint32_t>)
+        fftplvl1.execute_direct_torus32(res.data(), a.data());
+    else if constexpr (std::is_same_v<typename P::T, uint64_t>)
+        fftplvl2.execute_direct_torus64(res.data(), a.data());
+    else
+        static_assert(false_v<typename P::T>, "Undefined TwistFFT!");
 }
 
-inline void TwistIFFTlvl1(array<double, DEF_N> &res,
-                          const array<uint32_t, DEF_N> &a)
+template <class P>
+inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
 {
-    fftplvl1.execute_reverse_torus32(res.data(), a.data());
+    if constexpr (std::is_same_v<typename P::T, uint32_t>)
+        fftplvl1.execute_reverse_torus32(res.data(), a.data());
+    else if constexpr (std::is_same_v<typename P::T, uint64_t>)
+        fftplvl2.execute_reverse_torus64(res.data(), a.data());
+    else
+        static_assert(false_v<typename P::T>, "Undefined TwistIFFT!");
 }
 
-inline void PolyMullvl1(Polynomiallvl1 &res, const Polynomiallvl1 &a,
-                        const Polynomiallvl1 &b)
+template <class P>
+inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
+                    const Polynomial<P> &b)
 {
-    PolynomialInFDlvl1 ffta;
-    TwistIFFTlvl1(ffta, a);
-    PolynomialInFDlvl1 fftb;
-    TwistIFFTlvl1(fftb, b);
-    MulInFD<DEF_N>(ffta, ffta, fftb);
-    TwistFFTlvl1(res, ffta);
-}
-
-inline void TwistFFTlvl2(Polynomiallvl2 &res, const PolynomialInFDlvl2 &a)
-{
-    fftplvl2.execute_direct_torus64(res.data(), a.data());
-}
-
-inline void TwistIFFTlvl2(PolynomialInFDlvl2 &res, const Polynomiallvl2 &a)
-{
-    fftplvl2.execute_reverse_torus64(res.data(), a.data());
-}
-
-inline void PolyMulNaievelvl2(Polynomiallvl2 &res, const Polynomiallvl2 &a,
-                              const Polynomiallvl2 &b)
-{
-    for (int i = 0; i < DEF_nbar; i++) {
-        uint64_t ri = 0;
-        for (int j = 0; j <= i; j++)
-            ri += static_cast<int64_t>(a[j]) * b[i - j];
-        for (int j = i + 1; j < DEF_nbar; j++)
-            ri -= static_cast<int64_t>(a[j]) * b[DEF_nbar + i - j];
-        res[i] = ri;
+    if constexpr (std::is_same_v<typename P::T, uint32_t>) {
+        PolynomialInFD<P> ffta;
+        TwistIFFT<P>(ffta, a);
+        PolynomialInFD<P> fftb;
+        TwistIFFT<P>(fftb, b);
+        MulInFD<P::n>(ffta, ffta, fftb);
+        TwistFFT<P>(res, ffta);
     }
+    else if constexpr (std::is_same_v<typename P::T, uint64_t>) {
+        for (int i = 0; i < P::n; i++) {
+            typename P::T ri = 0;
+            for (int j = 0; j <= i; j++)
+                ri += static_cast<typename make_signed<typename P::T>::type>(
+                          a[j]) *
+                      b[i - j];
+            for (int j = i + 1; j < P::n; j++)
+                ri -= static_cast<typename make_signed<typename P::T>::type>(
+                          a[j]) *
+                      b[P::n + i - j];
+            res[i] = ri;
+        }
+    }
+    else
+        static_assert(false_v<typename P::T>, "Undefined PolyMul!");
 }
 }  // namespace TFHEpp

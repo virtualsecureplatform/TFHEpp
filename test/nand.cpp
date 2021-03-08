@@ -9,7 +9,7 @@ using namespace TFHEpp;
 
 int main()
 {
-    const uint32_t num_test = 1000;
+    constexpr uint32_t num_test = 1000;
     random_device seed_gen;
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint32_t> binary(0, 1);
@@ -21,9 +21,9 @@ int main()
     vector<uint8_t> pres(num_test);
     for (int i = 0; i < num_test; i++) pa[i] = binary(engine) > 0;
     for (int i = 0; i < num_test; i++) pb[i] = binary(engine) > 0;
-    vector<TLWElvl0> ca(num_test);
-    vector<TLWElvl0> cb(num_test);
-    vector<TLWElvl0> cres(num_test);
+    vector<TLWE<TFHEpp::lvl0param>> ca(num_test);
+    vector<TLWE<TFHEpp::lvl0param>> cb(num_test);
+    vector<TLWE<TFHEpp::lvl0param>> cres(num_test);
 
     ca = bootsSymEncrypt(pa, *sk);
     cb = bootsSymEncrypt(pb, *sk);

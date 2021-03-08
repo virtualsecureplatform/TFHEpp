@@ -8,7 +8,7 @@ using namespace TFHEpp;
 
 int main()
 {
-    const uint32_t num_test = 1000;
+    constexpr uint32_t num_test = 1000;
 
     random_device seed_gen;
     default_random_engine engine(seed_gen());
@@ -18,7 +18,7 @@ int main()
 
     vector<uint8_t> p(num_test);
     for (uint8_t &i : p) i = binary(engine);
-    vector<TLWElvl0> c(num_test);
+    vector<TLWE<lvl0param>> c(num_test);
     c = bootsSymEncrypt(p, sk);
     vector<uint8_t> p2(num_test);
     p2 = bootsSymDecrypt(c, sk);

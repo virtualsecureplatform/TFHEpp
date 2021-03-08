@@ -1,5 +1,6 @@
 #pragma once
 
+#include <circuitbootstrapping.hpp>
 #include <cloudkey.hpp>
 #include <detwfa.hpp>
 #include <gate.hpp>

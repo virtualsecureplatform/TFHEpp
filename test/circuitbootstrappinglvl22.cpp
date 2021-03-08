@@ -1,5 +1,3 @@
-#include <gperftools/profiler.h>
-
 #include <cassert>
 #include <chrono>
 #include <iostream>
@@ -17,38 +15,38 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CircuitKey<lvl02param, lvl21param> *ck =
-        new CircuitKey<lvl02param, lvl21param>(*sk);
-    vector<array<uint8_t, lvl1param::n>> pa(num_test);
-    vector<array<lvl1param::T, lvl1param::n>> pmu(num_test);
+    CircuitKey<lvl02param, lvl22param> *ck =
+        new CircuitKey<lvl02param, lvl22param>(*sk);
+    vector<array<uint8_t, TFHEpp::lvl2param::n>> pa(num_test);
+    vector<array<typename lvl2param::T, TFHEpp::lvl2param::n>> pmu(num_test);
     vector<uint8_t> pones(num_test);
-    array<bool, lvl1param::n> pres;
-    for (array<uint8_t, lvl1param::n> &i : pa)
+    array<bool, TFHEpp::lvl2param::n> pres;
+    for (array<uint8_t, TFHEpp::lvl2param::n> &i : pa)
         for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < lvl1param::n; j++)
-            pmu[i][j] = pa[i][j] ? lvl1param::μ : -lvl1param::μ;
+        for (int j = 0; j < TFHEpp::lvl2param::n; j++)
+            pmu[i][j] = pa[i][j] ? lvl2param::μ : -lvl2param::μ;
     for (int i = 0; i < num_test; i++) pones[i] = true;
-    vector<TRLWE<lvl1param>> ca(num_test);
+    vector<TRLWE<lvl2param>> ca(num_test);
     vector<TLWE<lvl0param>> cones(num_test);
-    vector<TRGSWFFT<lvl1param>> bootedTGSW(num_test);
+    vector<TRGSWFFT<lvl2param>> bootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = trlweSymEncryptlvl1(pmu[i], lvl1param::α, sk->key.lvl1);
+        ca[i] = trlweSymEncryptlvl2(pmu[i], TFHEpp::lvl2param::α, sk->key.lvl2);
     cones = bootsSymEncrypt(pones, *sk);
 
     chrono::system_clock::time_point start, end;
-    ProfilerStart("cb.prof");
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFTlvl01(bootedTGSW[test], cones[test], *ck);
+        CircuitBootstrappingFFTlvl02(bootedTGSW[test], cones[test], *ck);
     }
     end = chrono::system_clock::now();
-    ProfilerStop();
+
     for (int test = 0; test < num_test; test++) {
-        trgswfftExternalProductlvl1(ca[test], ca[test], bootedTGSW[test]);
-        pres = trlweSymDecryptlvl1(ca[test], sk->key.lvl1);
-        for (int i = 0; i < lvl1param::n; i++) assert(pres[i] == pa[test][i]);
+        trgswfftExternalProductlvl2(ca[test], ca[test], bootedTGSW[test]);
+        pres = trlweSymDecryptlvl2(ca[test], sk->key.lvl2);
+        for (int i = 0; i < TFHEpp::lvl2param::n; i++)
+            assert(pres[i] == pa[test][i]);
     }
     cout << "Passed" << endl;
     double elapsed =
