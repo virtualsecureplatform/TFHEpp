@@ -54,6 +54,7 @@ int main(){
         INTorus A(a);
         INTorus B(b);
         A-=B;
+        // cout<<A.value<<":"<<static_cast<uint64_t>((a+(P-b))%P)<<endl;
         assert(A.value==((a+(P-b))%P));
     }
     cout<<"Sub and assignment PASS"<<endl;
@@ -76,7 +77,7 @@ int main(){
         INTorus A(a);
         INTorus B(b);
         A*=B;
-        // cout<<(A*B).value<<":"<<static_cast<uint64_t>((a*b)%P)<<endl;
+        // cout<<A.value<<":"<<static_cast<uint64_t>((a*b)%P)<<endl;
         assert(A.value==((a*b)%P));
     }
     cout<<"Mul and assignment PASS"<<endl;

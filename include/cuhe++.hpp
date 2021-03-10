@@ -19,8 +19,10 @@ namespace cuHEpp{
                 else value = data;
             }
 
+            INTorus& operator=(const INTorus &a) { this->value = a.value; return *this; }
+
             // return this + b mod P.
-            INTorus operator + (const INTorus &b) const{
+            INTorus operator +(const INTorus &b) const{
                 uint64_t tmp = this->value + b.value;
                 return INTorus(tmp + static_cast<uint32_t>(-(tmp < b.value || tmp >= P)),false);
             }
@@ -32,7 +34,7 @@ namespace cuHEpp{
             }
             
             // return this - b mod P.
-            INTorus operator - (const INTorus &b){
+            INTorus operator -(const INTorus &b) const{
                 uint64_t tmp = this->value - b.value;
                 return INTorus(tmp - static_cast<uint32_t>(-(tmp>(this->value))),false);
             }
@@ -202,7 +204,6 @@ namespace cuHEpp{
         twist[0][N-1] = twist[1][N-1]*w*w;
         for(uint32_t i = 2;i < N;i++) twist[0][N-i] = twist[0][N-i+1]*w;
         assert((twist[0][1]*w).value == 1);
-        assert((twist[0][10]*twist[1][10]).value == 1);
         return twist;
     }
 
@@ -232,73 +233,55 @@ namespace cuHEpp{
         for (int i = 0; i < N; i++) res[i] = static_cast<T>((a[i] * twist[i] * invN).value);
     }
 
-    template<uint32_t N>
-    inline void ButterflyAdd(const typename array<INTorus,N>::iterator a, const typename array<INTorus,N>::iterator b, int i){
-        const INTorus temp = *(a+i);
-        *(a+i) += *(b+i);
-        *(b+i) -= temp;
-    }
-
-    template <uint32_t Nbit, uint32_t step, uint32_t stride>
-    inline void TwiddleMul(const typename array<INTorus,1<<Nbit >::iterator a, const array<INTorus,1<<(Nbit-1)> &table,int i){
-        if constexpr (step!=0)*(a+i)*=table[stride*(1<<step)*i];
-        else *(a+i)*=table[stride*i];
-    }
-
-    template<uint32_t Nbit, int step>
-    inline void INTT(const typename array<INTorus,1<<Nbit >::iterator res, const array<INTorus,1<<(Nbit-1)> &table){
-        constexpr uint32_t N = 1<<Nbit;
-        constexpr uint32_t size = 1<<(Nbit-step);
-
-        if constexpr(size == 2){
-            const typename array<INTorus,1<<Nbit >::iterator res0 = res;
-            const typename array<INTorus,1<<Nbit >::iterator res1 = res+size/2;
-            ButterflyAdd<N>(res0,res1,0);
-        }
-        else{
-            const typename array<INTorus,1<<Nbit >::iterator res0 = res;
-            const typename array<INTorus,1<<Nbit >::iterator res1 = res+size/2;
-            for(int i = 0;i<size/2;i++){
-                ButterflyAdd<N>(res0,res1,i);
-
-                if(i!=0) TwiddleMul<Nbit,step,1>(res1,table,i);
+    template<uint32_t Nbit>
+    inline void INTT(array<INTorus,1<<Nbit > &res, const array<INTorus,1<<(Nbit-1)> &table){
+        constexpr uint8_t radixbit = 1;
+        constexpr uint32_t radix = 1U<<radixbit;
+        for(uint8_t sizebit = Nbit;sizebit>=radixbit;sizebit -= radixbit){
+            const uint32_t size = 1U<<sizebit;
+            uint32_t num_block;
+            if(sizebit!=Nbit)num_block  = 1U<<(Nbit-sizebit);
+            else num_block = 1;
+            for(uint32_t block = 0;block<num_block;block++){
+                for(uint32_t index = 0;index<size/2;index++){
+                    const INTorus temp = res[size*block+index];
+                    res[size*block+index] += res[size*block+index+size/2];
+                    res[size*block+index+size/2] = temp - res[size*block+index+size/2];
+                    res[size*block+index+size/2] *= table[num_block*index];
+                }
             }
-            INTT<Nbit,step+1>(res0, table);
-            INTT<Nbit,step+1>(res1, table);
         }
     }
 
     template<typename T, uint32_t Nbit>
     void TwistINTTlvl1(array<INTorus ,1<<Nbit> &res, const array<T,1<<Nbit> &a, const array<INTorus,1<<(Nbit-1)> &table, const array<INTorus,1<<Nbit> &twist){
         TwistMulInvert<T,Nbit>(res,a,twist);
-        INTT<Nbit,0>(res.data(),table);
+        INTT<Nbit>(res,table);
     }
 
-    template<uint32_t Nbit, int step>
-    void NTT(const typename array<INTorus,1<<Nbit >::iterator res, const array<INTorus,1<<(Nbit-1)> &table){
-        constexpr uint32_t N = 1<<Nbit;
-        constexpr uint32_t size = 1<<(Nbit-step);
-
-        if constexpr(size == 2){
-            const typename array<INTorus,1<<Nbit >::iterator res0 = res;
-            const typename array<INTorus,1<<Nbit >::iterator res1 = res+size/2;
-            ButterflyAdd<N>(res0,res1,0);
-        }
-        else{
-            const typename array<INTorus,1<<Nbit >::iterator res0 = res;
-            const typename array<INTorus,1<<Nbit >::iterator res1 = res+size/2;
-            NTT<Nbit,step+1>(res, table); 
-            NTT<Nbit,step+1>(res+size/2, table);
-            for(int i = 0;i<size/2;i++){
-                if(i!=0) TwiddleMul<Nbit,step,1>(res1,table,i);
-                ButterflyAdd<N>(res0,res1,i);
+    template<uint32_t Nbit>
+    void NTT(array<INTorus,1<<Nbit > &res, const array<INTorus,1<<(Nbit-1)> &table){
+        constexpr uint8_t radixbit = 1;
+        constexpr uint32_t radix = 1U<<radixbit;
+        for(uint8_t sizebit = radixbit;sizebit<=Nbit;sizebit += radixbit){
+            const uint32_t size = 1U<<sizebit;
+            uint32_t num_block;
+            if(sizebit!=Nbit)num_block  = 1U<<(Nbit-sizebit);
+            else num_block = 1;
+            for(uint32_t block = 0;block<num_block;block++){
+                for(uint32_t index = 0;index<size/2;index++){
+                    res[size*block+index+size/2] *= table[num_block*index];
+                    const INTorus temp = res[size*block+index];
+                    res[size*block+index] += res[size*block+index+size/2];
+                    res[size*block+index+size/2] = temp - res[size*block+index+size/2];
+                }
             }
         }
     }
 
     template<typename T, uint32_t Nbit>
     void TwistNTTlvl1(array<T,1<<Nbit> &res, array<INTorus,1<<Nbit> &a, const array<INTorus,1<<(Nbit-1)> &table, const array<INTorus,1<<Nbit> &twist){
-        NTT<Nbit,0>(a.data(),table);
+        NTT<Nbit>(a,table);
         TwistMulDirect<T,Nbit>(res,a,twist);
     }
 }
