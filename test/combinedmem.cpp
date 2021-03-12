@@ -73,7 +73,8 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
 
     const uint32_t width = 1 << width_bit;
     array<TLWE<lvl1param>, width> reslvl1;
-    for (int i = 0; i < width; i++) SampleExtractIndex<lvl1param>(reslvl1[i], acc, i);
+    for (int i = 0; i < width; i++)
+        SampleExtractIndex<lvl1param>(reslvl1[i], acc, i);
     for (int i = 0; i < width; i++)
         IdentityKeySwitch<lvl10param>(res[i], reslvl1[i], ksk);
 }
@@ -238,9 +239,10 @@ int main()
             combRAMUX<address_bit - 1, words_bit>(encramread, (*bootedTGSW)[0],
                                                   encram);
             for (int i = 0; i < words; i++) {
-                SampleExtractIndex<lvl1param>(encramreadlvl1[i], encramread[i], 0);
-                IdentityKeySwitch<lvl10param>(encramreadres[i], encramreadlvl1[i],
-                                       (*ck).gk.ksk);
+                SampleExtractIndex<lvl1param>(encramreadlvl1[i], encramread[i],
+                                              0);
+                IdentityKeySwitch<lvl10param>(encramreadres[i],
+                                              encramreadlvl1[i], (*ck).gk.ksk);
             }
 
             combUROMUX<address_bit - 1, words_bit>(encumemory, (*bootedTGSW)[0],

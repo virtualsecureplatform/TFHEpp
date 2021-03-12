@@ -58,8 +58,8 @@ using KeySwitchingKey =
     array<array<array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n>;
 template <class P>
-using PrivKeySwitchKey = array<
-    array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
+using PrivKeySwitchKey =
+    array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n + 1>;
 
 struct lweParams {
