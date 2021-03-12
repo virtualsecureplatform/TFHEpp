@@ -39,8 +39,4 @@ inline void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe,
         tlwe[i] = -trlwe[0][P::n + index - i];
     tlwe[P::n] = trlwe[1][index];
 }
-void SampleExtractIndexlvl1(TLWE<lvl1param> &tlwe,
-                            const TRLWE<lvl1param> &trlwe, const int index);
-void SampleExtractIndexlvl2(TLWE<lvl2param> &tlwe,
-                            const TRLWE<lvl2param> &trlwe, const int index);
 }  // namespace TFHEpp

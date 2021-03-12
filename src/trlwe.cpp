@@ -70,16 +70,4 @@ array<bool, lvl2param::n> trlweSymDecryptlvl2(const TRLWE<lvl2param> &c,
 {
     return trlweSymDecrypt<lvl2param>(c, key);
 }
-
-void SampleExtractIndexlvl1(TLWE<lvl1param> &tlwe,
-                            const TRLWE<lvl1param> &trlwe, const int index)
-{
-    SampleExtractIndex<lvl1param>(tlwe, trlwe, index);
-}
-
-void SampleExtractIndexlvl2(TLWE<lvl2param> &tlwe,
-                            const TRLWE<lvl2param> &trlwe, const int index)
-{
-    SampleExtractIndex<lvl2param>(tlwe, trlwe, index);
-}
 }  // namespace TFHEpp
