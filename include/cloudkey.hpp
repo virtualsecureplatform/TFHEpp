@@ -51,7 +51,7 @@ struct GateKey {
 template <class bsP, class privksP>
 struct CircuitKey {
     BootStrappingKeyFFT<bsP> bkfft;
-    PrivKeySwitchKey<privksP> privksk;
+    std::array<PrivKeySwitchKey<privksP>,2> privksk;
     CircuitKey(SecretKey sk)
     {
         // Generete bkfft

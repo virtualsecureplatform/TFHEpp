@@ -35,7 +35,7 @@ void IdentityKeySwitchlvl10(TLWE<lvl0param> &res, const TLWE<lvl1param> &tlwe,
 
 template <class P>
 void PrivKeySwitch(TRLWE<typename P::targetP> &res,
-                   const TLWE<typename P::domainP> &tlwe, const int u,
+                   const TLWE<typename P::domainP> &tlwe,
                    const PrivKeySwitchKey<P> &privksk)
 {
     constexpr uint32_t mask = (1 << P::basebit) - 1;
@@ -55,18 +55,12 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
 
             if (aij != 0) {
                 for (int p = 0; p < P::targetP::n; p++) {
-                    res[0][p] -= privksk[u][i][j][aij - 1][0][p];
-                    res[1][p] -= privksk[u][i][j][aij - 1][1][p];
+                    res[0][p] -= privksk[i][j][aij - 1][0][p];
+                    res[1][p] -= privksk[i][j][aij - 1][1][p];
                 }
             }
         }
     }
 }
 
-void PrivKeySwitchlvl21(TRLWE<lvl1param> &res, const TLWE<lvl2param> &tlwe,
-                        const int u,
-                        const PrivKeySwitchKey<lvl21param> &privksk);
-void PrivKeySwitchlvl22(TRLWE<lvl2param> &res, const TLWE<lvl2param> &tlwe,
-                        const int u,
-                        const PrivKeySwitchKey<lvl22param> &privksk);
 }  // namespace TFHEpp
