@@ -115,7 +115,7 @@ void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
 
     for (int i = 0; i <= lvl1param::n; i++) and1[i] += and0[i];
     and1[lvl1param::n] += lvl1param::μ;
-    IdentityKeySwitchlvl10(res, and1, gk.ksk);
+    IdentityKeySwitch<lvl10param>(res, and1, gk.ksk);
 }
 
 void HomMUXwoSE(TRLWE<lvl1param> &res, const TLWE<lvl0param> &cs,
@@ -146,11 +146,11 @@ void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
     TLWE<lvl1param> templvl1;
     TLWE<lvl0param> cs, c1, c0;
     SampleExtractIndexlvl1(templvl1, csr, 0);
-    IdentityKeySwitchlvl10(cs, templvl1, gk.ksk);
+    IdentityKeySwitch<lvl10param>(cs, templvl1, gk.ksk);
     SampleExtractIndexlvl1(templvl1, c1r, 0);
-    IdentityKeySwitchlvl10(c1, templvl1, gk.ksk);
+    IdentityKeySwitch<lvl10param>(c1, templvl1, gk.ksk);
     SampleExtractIndexlvl1(templvl1, c0r, 0);
-    IdentityKeySwitchlvl10(c0, templvl1, gk.ksk);
+    IdentityKeySwitch<lvl10param>(c0, templvl1, gk.ksk);
 
     for (int i = 0; i <= lvl0param::n; i++) c1[i] += cs[i];
     for (int i = 0; i <= lvl0param::n; i++) c0[i] -= cs[i];
