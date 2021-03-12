@@ -73,9 +73,10 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
 
     const uint32_t width = 1 << width_bit;
     array<TLWE<lvl1param>, width> reslvl1;
-    for (int i = 0; i < width; i++) SampleExtractIndexlvl1(reslvl1[i], acc, i);
     for (int i = 0; i < width; i++)
-        IdentityKeySwitchlvl10(res[i], reslvl1[i], ksk);
+        SampleExtractIndex<lvl1param>(reslvl1[i], acc, i);
+    for (int i = 0; i < width; i++)
+        IdentityKeySwitch<lvl10param>(res[i], reslvl1[i], ksk);
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
@@ -127,9 +128,9 @@ void combWRAM(
                 CMUXFFTlvl1(temp, address[addressbitset[k]][k], temp,
                             encram[j][i]);
             TLWE<lvl1param> temp2;
-            SampleExtractIndexlvl1(temp2, temp, 0);
+            SampleExtractIndex<lvl1param>(temp2, temp, 0);
             TLWE<lvl0param> temp3;
-            IdentityKeySwitchlvl10(temp3, temp2, gk.ksk);
+            IdentityKeySwitch<lvl10param>(temp3, temp2, gk.ksk);
             GateBootstrappingTLWE2TRLWEFFTlvl01(encram[j][i], temp3,
                                                 gk.bkfftlvl01);
         }
@@ -238,9 +239,10 @@ int main()
             combRAMUX<address_bit - 1, words_bit>(encramread, (*bootedTGSW)[0],
                                                   encram);
             for (int i = 0; i < words; i++) {
-                SampleExtractIndexlvl1(encramreadlvl1[i], encramread[i], 0);
-                IdentityKeySwitchlvl10(encramreadres[i], encramreadlvl1[i],
-                                       (*ck).gk.ksk);
+                SampleExtractIndex<lvl1param>(encramreadlvl1[i], encramread[i],
+                                              0);
+                IdentityKeySwitch<lvl10param>(encramreadres[i],
+                                              encramreadlvl1[i], (*ck).gk.ksk);
             }
 
             combUROMUX<address_bit - 1, words_bit>(encumemory, (*bootedTGSW)[0],

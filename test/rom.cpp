@@ -65,9 +65,10 @@ void LROMUX(vector<TLWE<lvl0param>> &res,
 
     const uint32_t width = 1 << width_bit;
     array<TLWE<lvl1param>, width> reslvl1;
-    for (int i = 0; i < width; i++) SampleExtractIndexlvl1(reslvl1[i], acc, i);
     for (int i = 0; i < width; i++)
-        IdentityKeySwitchlvl10(res[i], reslvl1[i], ksk);
+        SampleExtractIndex<lvl1param>(reslvl1[i], acc, i);
+    for (int i = 0; i < width; i++)
+        IdentityKeySwitch<lvl10param>(res[i], reslvl1[i], ksk);
 }
 
 int main()

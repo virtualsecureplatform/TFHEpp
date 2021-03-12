@@ -16,9 +16,9 @@ inline void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
             tlwemiddle, tlwe, ck.bkfft,
             1ULL << (numeric_limits<typename privksP::domainP::T>::digits -
                      (i + 1) * privksP::targetP::Bgbit - 1));
-        PrivKeySwitch<privksP>(trgsw[i], tlwemiddle, 0, ck.privksk);
-        PrivKeySwitch<privksP>(trgsw[i + privksP::targetP::l], tlwemiddle, 1,
-                               ck.privksk);
+        PrivKeySwitch<privksP>(trgsw[i], tlwemiddle, ck.privksk[0]);
+        PrivKeySwitch<privksP>(trgsw[i + privksP::targetP::l], tlwemiddle,
+                               ck.privksk[1]);
     }
 }
 

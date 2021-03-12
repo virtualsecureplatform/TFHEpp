@@ -94,8 +94,8 @@ int main()
 
     // Read
     RAMUX<address_bit>(encumemory, (*bootedTGSW)[0], encmemory);
-    SampleExtractIndexlvl1(encreadreslvl1, encumemory, 0);
-    IdentityKeySwitchlvl10(encreadres, encreadreslvl1, (*ck).gk.ksk);
+    SampleExtractIndex<lvl1param>(encreadreslvl1, encumemory, 0);
+    IdentityKeySwitch<lvl10param>(encreadres, encreadreslvl1, (*ck).gk.ksk);
 
     // Write
     HomMUXwoSE(writed, cs, c1, encreadres, (*ck).gk);
@@ -106,9 +106,9 @@ int main()
             CMUXFFTlvl1(temp, (*bootedTGSW)[addressbitset[j]][j], temp,
                         encmemory[i]);
         TLWE<lvl1param> temp2;
-        SampleExtractIndexlvl1(temp2, temp, 0);
+        SampleExtractIndex<lvl1param>(temp2, temp, 0);
         TLWE<lvl0param> temp3;
-        IdentityKeySwitchlvl10(temp3, temp2, (*ck).gk.ksk);
+        IdentityKeySwitch<lvl10param>(temp3, temp2, (*ck).gk.ksk);
         GateBootstrappingTLWE2TRLWEFFTlvl01(encmemory[i], temp3,
                                             (*ck).gk.bkfftlvl01);
     }
