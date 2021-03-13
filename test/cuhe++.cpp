@@ -64,26 +64,26 @@ int main()
     }
     std::cout << "NTT Passed" << std::endl;
 
-    // for (int test; test < num_test; test++) {
-    //     array<uint32_t, DEF_N> a;
-    //     for (int i = 0; i < DEF_N; i++) a[i] = Bgdist(engine) - DEF_Bg / 2;
-    //     for (uint32_t &i : a) i = Bgdist(engine) - DEF_Bg / 2;
-    //     array<uint32_t, DEF_N> b;
-    //     for (uint32_t &i : b) i = Torus32dist(engine);
+    for (int test; test < num_test; test++) {
+        TFHEpp::Polynomial<TFHEpp::lvl1param> a,b,polymul;
+        // for (uint32_t &i : a) i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
+        for (uint32_t &i : a) i = Bgdist(engine);
+        for (uint32_t &i : b) i = Torus32dist(engine);
 
-    //     Polynomiallvl1 polymul;
-    //     SPQLIOSpp::PolyMullvl1(polymul, a, b);
-    //     Polynomiallvl1 naieve = {};
-    //     for (int i = 0; i < DEF_N; i++) {
-    //         for (int j = 0; j <= i; j++)
-    //             naieve[i] += static_cast<int32_t>(a[j]) * b[i - j];
-    //         for (int j = i + 1; j < DEF_N; j++)
-    //             naieve[i] -= static_cast<int32_t>(a[j]) * b[DEF_N + i - j];
-    //     }
-    //     for (int i = 0; i < DEF_N; i++)
-    //         assert(abs(static_cast<int32_t>(naieve[i] - polymul[i])) <= 1);
-    // }
-    // cout << "PolyMul Passed" << endl;
+        cuHEpp::PolyMullvl1<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::nbit>(polymul, a, b,tablelvl1,twistlvl1);
+
+        TFHEpp::Polynomial<TFHEpp::lvl1param> naieve = {};
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
+            for (int j = 0; j <= i; j++)
+                naieve[i] += static_cast<int32_t>(a[j]) * b[i - j];
+            for (int j = i + 1; j < TFHEpp::lvl1param::n; j++)
+                naieve[i] -= static_cast<int32_t>(a[j]) * b[TFHEpp::lvl1param::n + i - j];
+        }
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++){
+            assert(std::abs(static_cast<int>(naieve[i] - polymul[i]))<=1);
+        }
+    }
+    std::cout << "PolyMul Passed" << std::endl;
 
     // uniform_int_distribution<uint64_t> Bgbardist(0, DEF_Bgbar);
     // uniform_int_distribution<uint64_t> Torus64dist(0, UINT64_MAX);
