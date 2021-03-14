@@ -106,8 +106,8 @@ void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
     TLWE<lvl0param> temp;
     for (int i = 0; i <= lvl0param::n; i++) temp[i] = cs[i] + c1[i];
     for (int i = 0; i <= lvl0param::n; i++) res[i] = -cs[i] + c0[i];
-    temp[lvl0param::n] -= 1U << 29;
-    res[lvl0param::n] -= 1U << 29;
+    temp[lvl0param::n] -= lvl0param::μ;
+    res[lvl0param::n] -= lvl0param::μ;
     TLWE<lvl1param> and1;
     TLWE<lvl1param> and0;
     GateBootstrappingTLWE2TLWEFFTlvl01(and1, temp, gk.bkfftlvl01);
