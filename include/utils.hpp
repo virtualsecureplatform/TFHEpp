@@ -29,8 +29,7 @@ inline typename P::T ModularGaussian(typename P::T center, double stdev)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>) {
         // 32bit fixed-point number version
-        std::normal_distribution<double> distribution(
-            0., stdev);
+        std::normal_distribution<double> distribution(0., stdev);
         double err = distribution(generator);
         return center + dtot32(err);
     }
