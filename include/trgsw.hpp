@@ -72,14 +72,21 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 }
 
 template <class P>
+inline constexpr array<typename P::T, P::l> hgen()
+{
+    array<typename P::T, P::l> h{};
+    for (int i = 0; i < P::l; i++)
+        h[i] = 1ULL << (numeric_limits<typename P::T>::digits -
+                        (i + 1) * P::Bgbit);
+    return h;
+}
+
+template <class P>
 inline TRGSW<P> trgswSymEncrypt(
     const typename make_signed<typename P::T>::type p, const double α,
     const Key<P> &key)
 {
-    array<typename P::T, P::l> h;
-    for (int i = 0; i < P::l; i++)
-        h[i] = 1ULL << (numeric_limits<typename P::T>::digits -
-                        (i + 1) * P::Bgbit);
+    constexpr array<typename P::T, P::l> h = hgen<P>();
 
     TRGSW<P> trgsw;
     for (TRLWE<P> &trlwe : trgsw) trlwe = trlweSymEncryptZero<P>(α, key);

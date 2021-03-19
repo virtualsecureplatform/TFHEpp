@@ -71,16 +71,6 @@ void CircuitBootstrappingFFTInvlvl01(
     CircuitBootstrappingFFTInv<lvl02param, lvl21param>(invtrgswfft, tlwe, ck);
 }
 
-template <class P>
-constexpr array<typename P::T, P::l> hgen()
-{
-    array<typename P::T, P::l> h;
-    for (int i = 0; i < P::l; i++)
-        h[i] = 1ULL << (numeric_limits<typename P::T>::digits -
-                        (i + 1) * P::Bgbit);
-    return h;
-}
-
 template <class bkP, class privksP>
 inline void CircuitBootstrappingFFTwithInv(
     TRGSWFFT<typename privksP::targetP> &trgswfft,
@@ -88,7 +78,7 @@ inline void CircuitBootstrappingFFTwithInv(
     const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP, privksP> &ck)
 {
     TRGSW<typename privksP::targetP> trgsw;
-    array<typename privksP::targetP::T, privksP::targetP::l> h =
+    constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
         hgen<typename privksP::targetP>();
     CircuitBootstrapping<bkP, privksP>(trgsw, tlwe, ck);
     for (int i = 0; i < 2 * privksP::targetP::l; i++)
