@@ -1,9 +1,23 @@
 # TFHEpp
 TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original TFHE and supports Circuit Bootstrapping.
-TFHEpp depends on AVX2 becauise we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
+TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
 
 # Parameter
 The default parameter is 128 bit security for Homomorphic Gates, 111bit security for Circuit Bootstrapping. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
+
+# Third party libraries
+Codes under thirdparties directory contain third-party libraries, Randen, Cereal, and SPQLIOS. See the corresponding directory to check the licenses.
+
+## Randen
+TFHEpp uses this as a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG). Original repository is [here](https://github.com/google/randen).
+I just removed some unnecessary codes, no modification.
+
+## Cereal
+cereal is a header-only C++11 serialization library. TFHEpp uses this to export ciphertexts and keys. Cereal is treated by git submodule.
+
+## SPQLIOS
+SPQLIOS is the FFT library that is dedicated to the ring R\[X\]/(X^N+1) for N a power of 2. These codes come from [experimental-tfhe](https://github.com/tfhe/experimental-tfhe/tree/master/circuit-bootstrapping/src/spqlios). We just renamed instances to adapt with our codes.
+
 
 # Speed Test
 
