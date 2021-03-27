@@ -27,7 +27,7 @@ git clone https://github.com/virtualsecureplatform/TFHEpp
 cd TFHEpp
 mkdir build
 cd build
-cmake ..
+cmake .. -DENABLE_TEST=ON
 make
 ./test/nand 
 ```
