@@ -45,7 +45,7 @@ int main()
     end = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        trgswfftExternalProductlvl1(ca[test], ca[test], invbootedTGSW[test]);
+        trgswfftExternalProduct<lvl1param>(ca[test], ca[test], invbootedTGSW[test]);
         pres = trlweSymDecryptlvl1(ca[test], sk->key.lvl1);
         for (int i = 0; i < lvl1param::n; i++) assert(pres[i] == pa[test][i]);
     }

@@ -53,7 +53,7 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
                                    2 * lvl1param::n - (lvl1param::n >> 1));
     PolynomialMulByXaiMinusOnelvl1(temp[1], data[1],
                                    2 * lvl1param::n - (lvl1param::n >> 1));
-    trgswfftExternalProductlvl1(temp, temp, address[width_bit - 1]);
+    trgswfftExternalProduct<lvl1param>(temp, temp, address[width_bit - 1]);
     for (int i = 0; i < lvl1param::n; i++) {
         acc[0][i] = temp[0][i] + data[0][i];
         acc[1][i] = temp[1][i] + data[1][i];
@@ -64,7 +64,7 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
             temp[0], acc[0], 2 * lvl1param::n - (lvl1param::n >> bit));
         PolynomialMulByXaiMinusOnelvl1(
             temp[1], acc[1], 2 * lvl1param::n - (lvl1param::n >> bit));
-        trgswfftExternalProductlvl1(temp, temp, address[width_bit - bit]);
+        trgswfftExternalProduct<lvl1param>(temp, temp, address[width_bit - bit]);
         for (int i = 0; i < lvl1param::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];

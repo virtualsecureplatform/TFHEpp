@@ -12,9 +12,9 @@ void writeMUX(
     array<TRLWE<lvl1param>, (1 << address_bit)> &res,
     const array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> &address)
 {
-    trgswfftExternalProductlvl1(res[block + (1 << bitpos)], res[block],
+    trgswfftExternalProduct<lvl1param>(res[block + (1 << bitpos)], res[block],
                                 address[0][bitpos]);
-    trgswfftExternalProductlvl1(res[block], res[block], address[1][bitpos]);
+    trgswfftExternalProduct<lvl1param>(res[block], res[block], address[1][bitpos]);
     if constexpr (bitpos > 0) {
         writeMUX<address_bit, block + (1 << bitpos), bitpos - 1>(res, address);
         writeMUX<address_bit, block, bitpos - 1>(res, address);

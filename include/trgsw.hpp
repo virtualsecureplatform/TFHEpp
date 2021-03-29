@@ -108,18 +108,4 @@ TRGSWFFT<P> trgswfftSymEncrypt(
         for (int j = 0; j < 2; j++) TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
     return trgswfft;
 }
-
-TRGSWFFT<lvl1param> trgswfftSymEncryptlvl1(
-    const typename make_signed<lvl1param::T>::type p, const double α,
-    const Key<lvl1param> &key);
-void trgswfftExternalProductlvl1(TRLWE<lvl1param> &res,
-                                 const TRLWE<lvl1param> &trlwe,
-                                 const TRGSWFFT<lvl1param> &trgswfft);
-
-TRGSWFFT<lvl2param> trgswfftSymEncryptlvl2(
-    const typename make_signed<lvl2param::T>::type p, const double α,
-    const Key<lvl2param> &key);
-void trgswfftExternalProductlvl2(TRLWE<lvl2param> &res,
-                                 const TRLWE<lvl2param> &trlwe,
-                                 const TRGSWFFT<lvl2param> &trgswfft);
 }  // namespace TFHEpp

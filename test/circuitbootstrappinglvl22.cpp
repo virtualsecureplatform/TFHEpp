@@ -43,7 +43,7 @@ int main()
     end = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        trgswfftExternalProductlvl2(ca[test], ca[test], bootedTGSW[test]);
+        trgswfftExternalProduct<lvl2param>(ca[test], ca[test], bootedTGSW[test]);
         pres = trlweSymDecryptlvl2(ca[test], sk->key.lvl2);
         for (int i = 0; i < TFHEpp::lvl2param::n; i++)
             assert(pres[i] == pa[test][i]);

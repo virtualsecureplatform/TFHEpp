@@ -27,8 +27,8 @@ int main()
         TRLWE<lvl1param> c = trlweSymEncryptlvl1(pmu, lvl1param::α, key.lvl1);
 
         TRGSWFFT<lvl1param> trgswfft =
-            trgswfftSymEncryptlvl1(1, lvl1param::α, key.lvl1);
-        trgswfftExternalProductlvl1(c, c, trgswfft);
+            trgswfftSymEncrypt<lvl1param>(1, lvl1param::α, key.lvl1);
+        trgswfftExternalProduct<lvl1param>(c, c, trgswfft);
         array<bool, lvl1param::n> p2 = trlweSymDecryptlvl1(c, key.lvl1);
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == p2[i]);
     }
@@ -46,8 +46,8 @@ int main()
         TRLWE<lvl2param> c = trlweSymEncryptlvl2(pmu, lvl2param::α, key.lvl2);
 
         TRGSWFFT<lvl2param> trgswfft =
-            trgswfftSymEncryptlvl2(1, lvl2param::α, key.lvl2);
-        trgswfftExternalProductlvl2(c, c, trgswfft);
+            trgswfftSymEncrypt<lvl2param>(1, lvl2param::α, key.lvl2);
+        trgswfftExternalProduct<lvl2param>(c, c, trgswfft);
         array<bool, lvl2param::n> p2 = trlweSymDecryptlvl2(c, key.lvl2);
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == p2[i]);
     }
@@ -67,8 +67,8 @@ int main()
         TRLWE<lvl1param> c = trlweSymEncryptlvl1(pmu, lvl1param::α, key.lvl1);
 
         TRGSWFFT<lvl1param> trgswfft =
-            trgswfftSymEncryptlvl1(-1, lvl1param::α, key.lvl1);
-        trgswfftExternalProductlvl1(c, c, trgswfft);
+            trgswfftSymEncrypt<lvl1param>(-1, lvl1param::α, key.lvl1);
+        trgswfftExternalProduct<lvl1param>(c, c, trgswfft);
         array<bool, lvl1param::n> p2 = trlweSymDecryptlvl1(c, key.lvl1);
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == !p2[i]);
     }
@@ -86,8 +86,8 @@ int main()
         TRLWE<lvl2param> c = trlweSymEncryptlvl2(pmu, lvl2param::α, key.lvl2);
 
         TRGSWFFT<lvl2param> trgswfft =
-            trgswfftSymEncryptlvl2(-1, lvl2param::α, key.lvl2);
-        trgswfftExternalProductlvl2(c, c, trgswfft);
+            trgswfftSymEncrypt<lvl2param>(-1, lvl2param::α, key.lvl2);
+        trgswfftExternalProduct<lvl2param>(c, c, trgswfft);
         array<bool, lvl2param::n> p2 = trlweSymDecryptlvl2(c, key.lvl2);
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == !p2[i]);
     }
