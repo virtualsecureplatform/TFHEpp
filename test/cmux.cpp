@@ -50,7 +50,7 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CMUXFFTlvl1(cres[test], cs[test], c1[test], c0[test]);
+        CMUXFFT<lvl1param>(cres[test], cs[test], c1[test], c0[test]);
     }
     end = chrono::system_clock::now();
 

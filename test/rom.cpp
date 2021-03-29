@@ -17,21 +17,21 @@ void UROMUX(TRLWE<lvl1param> &res,
     array<TRLWE<lvl1param>, num_trlwe / 2> temp;
 
     for (uint32_t index = 0; index < num_trlwe / 2; index++) {
-        CMUXFFTlvl1(temp[index], invaddress[width_bit], data[2 * index],
+        CMUXFFT<lvl1param>(temp[index], invaddress[width_bit], data[2 * index],
                     data[2 * index + 1]);
     }
 
     for (uint32_t bit = 0; bit < (Ubit - 2); bit++) {
         const uint32_t stride = 1 << bit;
         for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
-            CMUXFFTlvl1(
+            CMUXFFT<lvl1param>(
                 temp[(2 * index) * stride], invaddress[width_bit + bit + 1],
                 temp[(2 * index) * stride], temp[(2 * index + 1) * stride]);
         }
     }
 
     constexpr uint32_t stride = 1 << (Ubit - 2);
-    CMUXFFTlvl1(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+    CMUXFFT<lvl1param>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
 }
 
 template <uint32_t address_bit, uint32_t width_bit>
