@@ -131,7 +131,7 @@ void combWRAM(
             SampleExtractIndex<lvl1param>(temp2, temp, 0);
             TLWE<lvl0param> temp3;
             IdentityKeySwitch<lvl10param>(temp3, temp2, gk.ksk);
-            GateBootstrappingTLWE2TRLWEFFTlvl01(encram[j][i], temp3,
+            GateBootstrappingTLWE2TRLWEFFT<lvl01param>(encram[j][i], temp3,
                                                 gk.bkfftlvl01);
         }
     }

@@ -76,7 +76,7 @@ int main()
             }
     }
     TRLWE<lvl1param> msbaddress;
-    GateBootstrappingTLWE2TRLWEFFTlvl01(msbaddress, encaddress[address_bit - 1],
+    GateBootstrappingTLWE2TRLWEFFT<lvl01param>(msbaddress, encaddress[address_bit - 1],
                                         (*ck).gk.bkfftlvl01);
 
     trlweaddress[memsize >> 1] = msbaddress;

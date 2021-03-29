@@ -109,7 +109,7 @@ int main()
         SampleExtractIndex<lvl1param>(temp2, temp, 0);
         TLWE<lvl0param> temp3;
         IdentityKeySwitch<lvl10param>(temp3, temp2, (*ck).gk.ksk);
-        GateBootstrappingTLWE2TRLWEFFTlvl01(encmemory[i], temp3,
+        GateBootstrappingTLWE2TRLWEFFT<lvl01param>(encmemory[i], temp3,
                                             (*ck).gk.bkfftlvl01);
     }
 
