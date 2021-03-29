@@ -18,7 +18,7 @@ void UROMUX(TRLWE<lvl1param> &res,
 
     for (uint32_t index = 0; index < num_trlwe / 2; index++) {
         CMUXFFT<lvl1param>(temp[index], invaddress[width_bit], data[2 * index],
-                    data[2 * index + 1]);
+                           data[2 * index + 1]);
     }
 
     for (uint32_t bit = 0; bit < (Ubit - 2); bit++) {
@@ -56,7 +56,8 @@ void LROMUX(vector<TLWE<lvl0param>> &res,
             temp[0], acc[0], 2 * lvl1param::n - (lvl1param::n >> bit));
         PolynomialMulByXaiMinusOnelvl1(
             temp[1], acc[1], 2 * lvl1param::n - (lvl1param::n >> bit));
-        trgswfftExternalProduct<lvl1param>(temp, temp, address[width_bit - bit]);
+        trgswfftExternalProduct<lvl1param>(temp, temp,
+                                           address[width_bit - bit]);
         for (int i = 0; i < lvl1param::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
@@ -116,9 +117,11 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < words_bit; i++)
-        CircuitBootstrappingFFT<lvl02param,lvl21param>(bootedTGSW[i], encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFT<lvl02param, lvl21param>(
+            bootedTGSW[i], encaddress[i], (*ck).ck);
     for (int i = words_bit; i < address_bit; i++)
-        CircuitBootstrappingFFTInv<lvl02param,lvl21param>(bootedTGSW[i], encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFTInv<lvl02param, lvl21param>(
+            bootedTGSW[i], encaddress[i], (*ck).ck);
     TRLWE<lvl1param> encumemory;
 
     UROMUX<address_bit, width_bit>(encumemory, bootedTGSW, encmemory);

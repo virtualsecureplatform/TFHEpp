@@ -24,7 +24,8 @@ int main()
         Polynomial<lvl1param> pmu;
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
-        TRLWE<lvl1param> c = trlweSymEncrypt<lvl1param>(pmu, lvl1param::α, key.lvl1);
+        TRLWE<lvl1param> c =
+            trlweSymEncrypt<lvl1param>(pmu, lvl1param::α, key.lvl1);
 
         TRGSWFFT<lvl1param> trgswfft =
             trgswfftSymEncrypt<lvl1param>(1, lvl1param::α, key.lvl1);
@@ -43,7 +44,8 @@ int main()
         Polynomial<lvl2param> pmu;
         for (int i = 0; i < lvl2param::n; i++)
             pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
-        TRLWE<lvl2param> c = trlweSymEncrypt<lvl2param>(pmu, lvl2param::α, key.lvl2);
+        TRLWE<lvl2param> c =
+            trlweSymEncrypt<lvl2param>(pmu, lvl2param::α, key.lvl2);
 
         TRGSWFFT<lvl2param> trgswfft =
             trgswfftSymEncrypt<lvl2param>(1, lvl2param::α, key.lvl2);
@@ -64,7 +66,8 @@ int main()
         array<uint32_t, lvl1param::n> pmu;
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
-        TRLWE<lvl1param> c = trlweSymEncrypt<lvl1param>(pmu, lvl1param::α, key.lvl1);
+        TRLWE<lvl1param> c =
+            trlweSymEncrypt<lvl1param>(pmu, lvl1param::α, key.lvl1);
 
         TRGSWFFT<lvl1param> trgswfft =
             trgswfftSymEncrypt<lvl1param>(-1, lvl1param::α, key.lvl1);
@@ -83,7 +86,8 @@ int main()
         Polynomial<lvl2param> pmu;
         for (int i = 0; i < lvl2param::n; i++)
             pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
-        TRLWE<lvl2param> c = trlweSymEncrypt<lvl2param>(pmu, lvl2param::α, key.lvl2);
+        TRLWE<lvl2param> c =
+            trlweSymEncrypt<lvl2param>(pmu, lvl2param::α, key.lvl2);
 
         TRGSWFFT<lvl2param> trgswfft =
             trgswfftSymEncrypt<lvl2param>(-1, lvl2param::α, key.lvl2);

@@ -39,13 +39,14 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFTwithInv<lvl02param,lvl21param>(
+        CircuitBootstrappingFFTwithInv<lvl02param, lvl21param>(
             bootedTGSW[test], invbootedTGSW[test], czeros[test], *ck);
     }
     end = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        trgswfftExternalProduct<lvl1param>(ca[test], ca[test], invbootedTGSW[test]);
+        trgswfftExternalProduct<lvl1param>(ca[test], ca[test],
+                                           invbootedTGSW[test]);
         pres = trlweSymDecrypt<lvl1param>(ca[test], sk->key.lvl1);
         for (int i = 0; i < lvl1param::n; i++) assert(pres[i] == pa[test][i]);
     }

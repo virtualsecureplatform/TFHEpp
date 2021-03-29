@@ -25,7 +25,7 @@ struct lweKey {
         for (typename lvl2param::T &i : lvl2) i = binary(engine);
     }
     template <class P>
-    inline Key<P> get () const
+    inline Key<P> get() const
     {
         if constexpr (std::is_same_v<P, lvl0param>)
             return lvl0;

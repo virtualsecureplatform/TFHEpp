@@ -13,8 +13,9 @@ void writeMUX(
     const array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> &address)
 {
     trgswfftExternalProduct<lvl1param>(res[block + (1 << bitpos)], res[block],
-                                address[0][bitpos]);
-    trgswfftExternalProduct<lvl1param>(res[block], res[block], address[1][bitpos]);
+                                       address[0][bitpos]);
+    trgswfftExternalProduct<lvl1param>(res[block], res[block],
+                                       address[1][bitpos]);
     if constexpr (bitpos > 0) {
         writeMUX<address_bit, block + (1 << bitpos), bitpos - 1>(res, address);
         writeMUX<address_bit, block, bitpos - 1>(res, address);
@@ -60,8 +61,8 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < address_bit - 1; i++) {
-        CircuitBootstrappingFFT<lvl02param,lvl21param>((*bootedTGSW)[0][i], encaddress[i],
-                                     (*ck).ck);
+        CircuitBootstrappingFFT<lvl02param, lvl21param>(
+            (*bootedTGSW)[0][i], encaddress[i], (*ck).ck);
         for (int j = 0; j < 2 * lvl1param::l; j++)
             for (int k = 0; k < lvl1param::n; k++) {
                 (*bootedTGSW)[1][i][j][0][k] = -(*bootedTGSW)[0][i][j][0][k];
@@ -76,8 +77,8 @@ int main()
             }
     }
     TRLWE<lvl1param> msbaddress;
-    GateBootstrappingTLWE2TRLWEFFT<lvl01param>(msbaddress, encaddress[address_bit - 1],
-                                        (*ck).gk.bkfftlvl01);
+    GateBootstrappingTLWE2TRLWEFFT<lvl01param>(
+        msbaddress, encaddress[address_bit - 1], (*ck).gk.bkfftlvl01);
 
     trlweaddress[memsize >> 1] = msbaddress;
     trlweaddress[memsize >> 1][1][0] += lvl1param::μ;
@@ -104,7 +105,7 @@ int main()
     cout << elapsed << "ms" << endl;
     uint32_t intaddress = 0;
     for (int i = 0; i < address_bit; i++) intaddress += address[i] << i;
-    assert(pres ==
-           trlweSymDecrypt<lvl1param>(encmemory[intaddress], (*sk).key.lvl1)[0]);
+    assert(pres == trlweSymDecrypt<lvl1param>(encmemory[intaddress],
+                                              (*sk).key.lvl1)[0]);
     cout << "Passed" << endl;
 }

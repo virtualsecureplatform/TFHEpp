@@ -10,7 +10,7 @@
 namespace TFHEpp {
 
 template <class P>
-inline void bkfftgen(BootStrappingKeyFFT<P> &bkfft, const SecretKey& sk)
+inline void bkfftgen(BootStrappingKeyFFT<P> &bkfft, const SecretKey &sk)
 {
     for (int i = 0; i < P::domainP::n; i++)
         bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
@@ -19,17 +19,18 @@ inline void bkfftgen(BootStrappingKeyFFT<P> &bkfft, const SecretKey& sk)
             P::targetP::α, sk.key.get<typename P::targetP>());
 }
 
-template<class P>
-inline void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk){
+template <class P>
+inline void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk)
+{
     for (int i = 0; i < P::domainP::n; i++)
-            for (int j = 0; j < P::t; j++)
-                for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
-                    ksk[i][j][k] = tlweSymEncrypt<typename P::targetP>(
-                        sk.key.get<typename P::domainP>()[i] * (k + 1) *
-                            (1ULL
-                             << (numeric_limits<typename P::targetP::T>::digits -
-                                 (j + 1) * P::basebit)),
-                        P::α, sk.key.get<typename P::targetP>());
+        for (int j = 0; j < P::t; j++)
+            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
+                ksk[i][j][k] = tlweSymEncrypt<typename P::targetP>(
+                    sk.key.get<typename P::domainP>()[i] * (k + 1) *
+                        (1ULL
+                         << (numeric_limits<typename P::targetP::T>::digits -
+                             (j + 1) * P::basebit)),
+                    P::α, sk.key.get<typename P::targetP>());
 }
 
 struct GateKey {
@@ -38,14 +39,14 @@ struct GateKey {
     GateKey(const SecretKey &sk)
     {
         // Generete bkfft
-        bkfftgen<lvl01param>(bkfftlvl01,sk);
+        bkfftgen<lvl01param>(bkfftlvl01, sk);
 
         // Generete ksk
-        ikskgen<lvl10param>(ksk,sk);
+        ikskgen<lvl10param>(ksk, sk);
     };
     GateKey() {}
     template <class Archive>
-    void serialize(Archive& archive)
+    void serialize(Archive &archive)
     {
         archive(ksk, bkfftlvl01);
     }
@@ -58,7 +59,7 @@ struct CircuitKey {
     CircuitKey(const SecretKey &sk)
     {
         // Generete bkfft
-        bkfftgen<bsP>(bkfft,sk);
+        bkfftgen<bsP>(bkfft, sk);
 
         // Generate privksk
         array<typename privksP::domainP::T, privksP::domainP::n + 1> key;
@@ -84,7 +85,7 @@ struct CircuitKey {
     };
     CircuitKey() {}
     template <class Archive>
-    void serialize(Archive& archive)
+    void serialize(Archive &archive)
     {
         archive(privksk, bkfft);
     }
@@ -100,7 +101,7 @@ struct CloudKey {
     CloudKey(SecretKey sk) : gk(sk), ck(sk) {}
     CloudKey() {}
     template <class Archive>
-    void serialize(Archive& archive)
+    void serialize(Archive &archive)
     {
         archive(gk.ksk, gk.bkfftlvl01, ck.privksk, ck.bkfft, params);
     }

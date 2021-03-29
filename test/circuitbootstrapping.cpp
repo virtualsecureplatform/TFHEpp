@@ -41,12 +41,14 @@ int main()
     ProfilerStart("cb.prof");
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFT<lvl02param,lvl21param>(bootedTGSW[test], cones[test], *ck);
+        CircuitBootstrappingFFT<lvl02param, lvl21param>(bootedTGSW[test],
+                                                        cones[test], *ck);
     }
     end = chrono::system_clock::now();
     ProfilerStop();
     for (int test = 0; test < num_test; test++) {
-        trgswfftExternalProduct<lvl1param>(ca[test], ca[test], bootedTGSW[test]);
+        trgswfftExternalProduct<lvl1param>(ca[test], ca[test],
+                                           bootedTGSW[test]);
         pres = trlweSymDecrypt<lvl1param>(ca[test], sk->key.lvl1);
         for (int i = 0; i < lvl1param::n; i++) assert(pres[i] == pa[test][i]);
     }
