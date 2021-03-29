@@ -22,21 +22,21 @@ void combUROMUX(TRLWE<lvl1param> &res,
     array<TRLWE<lvl1param>, num_trlwe / 2> temp;
 
     for (uint32_t index = 0; index < num_trlwe / 2; index++) {
-        CMUXFFTlvl1(temp[index], invaddress[width_bit], data[2 * index],
-                    data[2 * index + 1]);
+        CMUXFFT<lvl1param>(temp[index], invaddress[width_bit], data[2 * index],
+                           data[2 * index + 1]);
     }
 
     for (uint32_t bit = 0; bit < (Ubit - 2); bit++) {
         const uint32_t stride = 1 << bit;
         for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
-            CMUXFFTlvl1(
+            CMUXFFT<lvl1param>(
                 temp[(2 * index) * stride], invaddress[width_bit + bit + 1],
                 temp[(2 * index) * stride], temp[(2 * index + 1) * stride]);
         }
     }
 
     constexpr uint32_t stride = 1 << (Ubit - 2);
-    CMUXFFTlvl1(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+    CMUXFFT<lvl1param>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
@@ -53,7 +53,7 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
                                    2 * lvl1param::n - (lvl1param::n >> 1));
     PolynomialMulByXaiMinusOnelvl1(temp[1], data[1],
                                    2 * lvl1param::n - (lvl1param::n >> 1));
-    trgswfftExternalProductlvl1(temp, temp, address[width_bit - 1]);
+    trgswfftExternalProduct<lvl1param>(temp, temp, address[width_bit - 1]);
     for (int i = 0; i < lvl1param::n; i++) {
         acc[0][i] = temp[0][i] + data[0][i];
         acc[1][i] = temp[1][i] + data[1][i];
@@ -64,7 +64,8 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
             temp[0], acc[0], 2 * lvl1param::n - (lvl1param::n >> bit));
         PolynomialMulByXaiMinusOnelvl1(
             temp[1], acc[1], 2 * lvl1param::n - (lvl1param::n >> bit));
-        trgswfftExternalProductlvl1(temp, temp, address[width_bit - bit]);
+        trgswfftExternalProduct<lvl1param>(temp, temp,
+                                           address[width_bit - bit]);
         for (int i = 0; i < lvl1param::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
@@ -91,21 +92,22 @@ void combRAMUX(array<TRLWE<lvl1param>, 1U << words_bit> &res,
         array<TRLWE<lvl1param>, num_trlwe / 2> temp;
 
         for (uint32_t index = 0; index < num_trlwe / 2; index++) {
-            CMUXFFTlvl1(temp[index], invaddress[0], data[i][2 * index],
-                        data[i][2 * index + 1]);
+            CMUXFFT<lvl1param>(temp[index], invaddress[0], data[i][2 * index],
+                               data[i][2 * index + 1]);
         }
 
         for (uint32_t bit = 0; bit < (address_bit - 2); bit++) {
             const uint32_t stride = 1 << bit;
             for (uint32_t index = 0; index < (num_trlwe >> (bit + 2));
                  index++) {
-                CMUXFFTlvl1(temp[(2 * index) * stride], invaddress[bit + 1],
-                            temp[(2 * index) * stride],
-                            temp[(2 * index + 1) * stride]);
+                CMUXFFT<lvl1param>(
+                    temp[(2 * index) * stride], invaddress[bit + 1],
+                    temp[(2 * index) * stride], temp[(2 * index + 1) * stride]);
             }
         }
         constexpr uint32_t stride = 1 << (address_bit - 2);
-        CMUXFFTlvl1(res[i], invaddress[address_bit - 1], temp[0], temp[stride]);
+        CMUXFFT<lvl1param>(res[i], invaddress[address_bit - 1], temp[0],
+                           temp[stride]);
     }
 }
 
@@ -125,14 +127,14 @@ void combWRAM(
         for (int j = 0; j < words; j++) {
             TRLWE<lvl1param> temp = encwritep[j];
             for (int k = 0; k < address_bit; k++)
-                CMUXFFTlvl1(temp, address[addressbitset[k]][k], temp,
-                            encram[j][i]);
+                CMUXFFT<lvl1param>(temp, address[addressbitset[k]][k], temp,
+                                   encram[j][i]);
             TLWE<lvl1param> temp2;
             SampleExtractIndex<lvl1param>(temp2, temp, 0);
             TLWE<lvl0param> temp3;
             IdentityKeySwitch<lvl10param>(temp3, temp2, gk.ksk);
-            GateBootstrappingTLWE2TRLWEFFTlvl01(encram[j][i], temp3,
-                                                gk.bkfftlvl01);
+            GateBootstrappingTLWE2TRLWEFFT<lvl01param>(encram[j][i], temp3,
+                                                       gk.bkfftlvl01);
         }
     }
 }
@@ -211,12 +213,12 @@ int main()
 
             encaddress = bootsSymEncrypt(address, *sk);
             for (int i = 0; i < numromtrlwe; i++)
-                encrom[i] =
-                    trlweSymEncryptlvl1(romu[i], lvl1param::α, (*sk).key.lvl1);
+                encrom[i] = trlweSymEncrypt<lvl1param>(romu[i], lvl1param::α,
+                                                       (*sk).key.lvl1);
             for (int i = 0; i < words; i++)
                 for (int j = 0; j < numramtrlwe; j++)
-                    encram[i][j] = trlweSymEncryptlvl1(ramu[i][j], lvl1param::α,
-                                                       (*sk).key.lvl1);
+                    encram[i][j] = trlweSymEncrypt<lvl1param>(
+                        ramu[i][j], lvl1param::α, (*sk).key.lvl1);
 
             encwrflag = tlweSymEncrypt<lvl0param>(
                 (wrflag > 0) ? lvl0param::μ : -lvl0param::μ, lvl0param::α,
@@ -230,9 +232,9 @@ int main()
             start = chrono::system_clock::now();
             // Addres CB
             for (int i = 0; i < address_bit - 1; i++) {
-                CircuitBootstrappingFFTwithInvlvl01((*bootedTGSW)[1][i],
-                                                    (*bootedTGSW)[0][i],
-                                                    encaddress[i], (*ck).ck);
+                CircuitBootstrappingFFTwithInv<lvl02param, lvl21param>(
+                    (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i],
+                    (*ck).ck);
             }
 
             // Read
@@ -294,8 +296,8 @@ int main()
 
             array<array<bool, lvl1param::n>, words> pwriteres;
             for (int i = 0; i < words; i++)
-                pwriteres[i] =
-                    trlweSymDecryptlvl1(encram[i][addressint], (*sk).key.lvl1);
+                pwriteres[i] = trlweSymDecrypt<lvl1param>(encram[i][addressint],
+                                                          (*sk).key.lvl1);
 
             cout << static_cast<int>(wrflag > 0) << ":"
                  << static_cast<int>(
@@ -314,7 +316,8 @@ int main()
                        cs, (*sk).key.lvl0)) == static_cast<int>(csp));
             array<array<bool, lvl1param::n>, words> writedp;
             for (int i = 0; i < words; i++)
-                writedp[i] = trlweSymDecryptlvl1(writed[i], (*sk).key.lvl1);
+                writedp[i] =
+                    trlweSymDecrypt<lvl1param>(writed[i], (*sk).key.lvl1);
 
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(writep[i]) ==

@@ -68,11 +68,13 @@ int main()
         std::array<TFHEpp::TRGSWFFT<TFHEpp::lvl2param>, int_width> trgswa,
             trgswb;
         for (int i = 0; i < int_width; i++)
-            TFHEpp::CircuitBootstrappingFFTlvl02(trgswa[i], tlwea[test][i],
-                                                 *ck);
+            TFHEpp::CircuitBootstrappingFFT<TFHEpp::lvl02param,
+                                            TFHEpp::lvl22param>(
+                trgswa[i], tlwea[test][i], *ck);
         for (int i = 0; i < int_width; i++)
-            TFHEpp::CircuitBootstrappingFFTlvl02(trgswb[i], tlweb[test][i],
-                                                 *ck);
+            TFHEpp::CircuitBootstrappingFFT<TFHEpp::lvl02param,
+                                            TFHEpp::lvl22param>(
+                trgswb[i], tlweb[test][i], *ck);
         AddByTBSR<TFHEpp::lvl2param, int_width>(res[test], trgswa, trgswb);
     }
     end = std::chrono::system_clock::now();

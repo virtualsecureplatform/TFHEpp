@@ -4,7 +4,7 @@
 #include <cmath>
 
 struct lvl0param {
-    static constexpr std::uint32_t n = 634; //dimension
+    static constexpr std::uint32_t n = 635; //dimension
     static const inline double α = std::pow(2.0, -15); //fresh noise
     using T = uint32_t; //Torus representation
     static constexpr T μ = 1U << 29;

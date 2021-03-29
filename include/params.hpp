@@ -25,6 +25,17 @@ struct lvl02param {
     using targetP = lvl2param;
 };
 
+struct lweParams {
+    static constexpr lvl0param lvl0();
+    static constexpr lvl1param lvl1();
+    static constexpr lvl2param lvl2();
+    static constexpr lvl01param lvl01();
+    static constexpr lvl02param lvl02();
+    static constexpr lvl10param lvl10();
+    static constexpr lvl21param lvl21();
+    static constexpr lvl22param lvl22();
+};
+
 template <class P>
 using Key = array<typename P::T, P::n>;
 
@@ -35,15 +46,15 @@ template <class P>
 using Polynomial = array<typename P::T, P::n>;
 template <class P>
 using PolynomialInFD = array<double, P::n>;
+template <class P>
+using DecomposedPolynomial = Polynomial<P>;
+template <class P>
+using DecomposedPolynomialInFD = PolynomialInFD<P>;
 
 template <class P>
 using TRLWE = array<Polynomial<P>, 2>;
 template <class P>
 using TRLWEInFD = array<PolynomialInFD<P>, 2>;
-template <class P>
-using DecomposedTRLWE = array<Polynomial<P>, 2 * P::l>;
-template <class P>
-using DecomposedTRLWEInFD = array<PolynomialInFD<P>, 2 * P::l>;
 
 template <class P>
 using TRGSW = array<TRLWE<P>, 2 * P::l>;
@@ -61,16 +72,5 @@ template <class P>
 using PrivKeySwitchKey =
     array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n + 1>;
-
-struct lweParams {
-    static constexpr lvl0param lvl0();
-    static constexpr lvl1param lvl1();
-    static constexpr lvl2param lvl2();
-    static constexpr lvl01param lvl01();
-    static constexpr lvl02param lvl02();
-    static constexpr lvl10param lvl10();
-    static constexpr lvl21param lvl21();
-    static constexpr lvl22param lvl22();
-};
 
 }  // namespace TFHEpp

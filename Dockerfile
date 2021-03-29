@@ -1,12 +1,12 @@
 FROM ubuntu:20.04
 
-LABEL maintainer="nindanaoto <dirty.knife603@gmail.com>"
+LABEL maintainer="nindanaoto <matsuoka.kotaro@gmail.com>"
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y build-essential clang libomp-dev cmake git && git clone --recursive --depth 1 https://github.com/virtualsecureplatform/TFHEpp && git clone --recursive --depth 1 https://github.com/tfhe/tfhe.git && git clone --recursive --depth 1 https://github.com/virtualsecureplatform/tfhe-10ms.git && mkdir TFHEpp/build && mkdir tfhe/build && mkdir tfhe-10ms/build
 
 WORKDIR TFHEpp/build
 
-RUN cmake ..&& make
+RUN cmake .. -DENABLE_TEST=ON && make
 
 WORKDIR /tfhe/build
 

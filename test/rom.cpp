@@ -17,21 +17,21 @@ void UROMUX(TRLWE<lvl1param> &res,
     array<TRLWE<lvl1param>, num_trlwe / 2> temp;
 
     for (uint32_t index = 0; index < num_trlwe / 2; index++) {
-        CMUXFFTlvl1(temp[index], invaddress[width_bit], data[2 * index],
-                    data[2 * index + 1]);
+        CMUXFFT<lvl1param>(temp[index], invaddress[width_bit], data[2 * index],
+                           data[2 * index + 1]);
     }
 
     for (uint32_t bit = 0; bit < (Ubit - 2); bit++) {
         const uint32_t stride = 1 << bit;
         for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
-            CMUXFFTlvl1(
+            CMUXFFT<lvl1param>(
                 temp[(2 * index) * stride], invaddress[width_bit + bit + 1],
                 temp[(2 * index) * stride], temp[(2 * index + 1) * stride]);
         }
     }
 
     constexpr uint32_t stride = 1 << (Ubit - 2);
-    CMUXFFTlvl1(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+    CMUXFFT<lvl1param>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
 }
 
 template <uint32_t address_bit, uint32_t width_bit>
@@ -45,7 +45,7 @@ void LROMUX(vector<TLWE<lvl0param>> &res,
                                    2 * lvl1param::n - (lvl1param::n >> 1));
     PolynomialMulByXaiMinusOnelvl1(temp[1], data[1],
                                    2 * lvl1param::n - (lvl1param::n >> 1));
-    trgswfftExternalProductlvl1(temp, temp, address[width_bit - 1]);
+    trgswfftExternalProduct<lvl1param>(temp, temp, address[width_bit - 1]);
     for (int i = 0; i < lvl1param::n; i++) {
         acc[0][i] = temp[0][i] + data[0][i];
         acc[1][i] = temp[1][i] + data[1][i];
@@ -56,7 +56,8 @@ void LROMUX(vector<TLWE<lvl0param>> &res,
             temp[0], acc[0], 2 * lvl1param::n - (lvl1param::n >> bit));
         PolynomialMulByXaiMinusOnelvl1(
             temp[1], acc[1], 2 * lvl1param::n - (lvl1param::n >> bit));
-        trgswfftExternalProductlvl1(temp, temp, address[width_bit - bit]);
+        trgswfftExternalProduct<lvl1param>(temp, temp,
+                                           address[width_bit - bit]);
         for (int i = 0; i < lvl1param::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
@@ -111,14 +112,16 @@ int main()
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < num_trlwe; i++)
         encmemory[i] =
-            trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
+            trlweSymEncrypt<lvl1param>(pmu[i], lvl1param::α, (*sk).key.lvl1);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < words_bit; i++)
-        CircuitBootstrappingFFTlvl01(bootedTGSW[i], encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFT<lvl02param, lvl21param>(
+            bootedTGSW[i], encaddress[i], (*ck).ck);
     for (int i = words_bit; i < address_bit; i++)
-        CircuitBootstrappingFFTInvlvl01(bootedTGSW[i], encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFTInv<lvl02param, lvl21param>(
+            bootedTGSW[i], encaddress[i], (*ck).ck);
     TRLWE<lvl1param> encumemory;
 
     UROMUX<address_bit, width_bit>(encumemory, bootedTGSW, encmemory);
@@ -132,7 +135,7 @@ int main()
     for (int i = 0; i < (address_bit - width_bit); i++)
         uaddress += address[i + width_bit] << i;
     array<bool, lvl1param::n> umemory;
-    umemory = trlweSymDecryptlvl1(encumemory, (*sk).key.lvl1);
+    umemory = trlweSymDecrypt<lvl1param>(encumemory, (*sk).key.lvl1);
 
     for (int i = 0; i < width_bit; i++)
         laddress += static_cast<uint32_t>(address[i]) << (i + words_bit);
