@@ -20,9 +20,9 @@ constexpr typename P::T offsetgen()
     return offset;
 }
 
-
 template <class P>
-inline void DecompositionPolynomial(DecomposedPolynomial<P> &decpoly, const Polynomial<P> &poly, const int digit)
+inline void DecompositionPolynomial(DecomposedPolynomial<P> &decpoly,
+                                    const Polynomial<P> &poly, const int digit)
 {
     constexpr typename P::T offset = offsetgen<P>();
     constexpr typename P::T mask =
@@ -30,16 +30,18 @@ inline void DecompositionPolynomial(DecomposedPolynomial<P> &decpoly, const Poly
     constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
 
     for (int i = 0; i < P::n; i++) {
-        decpoly[i] = (((poly[i] + offset) >> (numeric_limits<typename P::T>::digits -
-                                    (digit + 1) * P::Bgbit)) &
-                        mask) -
-                        halfBg;
+        decpoly[i] =
+            (((poly[i] + offset) >> (numeric_limits<typename P::T>::digits -
+                                     (digit + 1) * P::Bgbit)) &
+             mask) -
+            halfBg;
     }
 }
 
 template <class P>
 inline void DecompositionPolynomialFFT(DecomposedPolynomialInFD<P> &decpolyfft,
-                             const Polynomial<P> &poly, const int digit)
+                                       const Polynomial<P> &poly,
+                                       const int digit)
 {
     DecomposedPolynomial<P> decpoly;
     DecompositionPolynomial<P>(decpoly, poly, digit);
@@ -51,19 +53,19 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft)
 {
     DecomposedPolynomialInFD<P> decpolyfft;
-    DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0],0);
+    DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0], 0);
     TRLWEInFD<P> restrlwefft;
     MulInFD<P::n>(restrlwefft[0], decpolyfft, trgswfft[0][0]);
     MulInFD<P::n>(restrlwefft[1], decpolyfft, trgswfft[0][1]);
     for (int i = 1; i < P::l; i++) {
-        DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0],i);
+        DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0], i);
         FMAInFD<P::n>(restrlwefft[0], decpolyfft, trgswfft[i][0]);
         FMAInFD<P::n>(restrlwefft[1], decpolyfft, trgswfft[i][1]);
     }
     for (int i = 0; i < P::l; i++) {
-        DecompositionPolynomialFFT<P>(decpolyfft, trlwe[1],i);
-        FMAInFD<P::n>(restrlwefft[0], decpolyfft, trgswfft[i+P::l][0]);
-        FMAInFD<P::n>(restrlwefft[1], decpolyfft, trgswfft[i+P::l][1]);
+        DecompositionPolynomialFFT<P>(decpolyfft, trlwe[1], i);
+        FMAInFD<P::n>(restrlwefft[0], decpolyfft, trgswfft[i + P::l][0]);
+        FMAInFD<P::n>(restrlwefft[1], decpolyfft, trgswfft[i + P::l][1]);
     }
     TwistFFT<P>(res[0], restrlwefft[0]);
     TwistFFT<P>(res[1], restrlwefft[1]);
