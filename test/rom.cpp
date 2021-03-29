@@ -111,7 +111,7 @@ int main()
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < num_trlwe; i++)
         encmemory[i] =
-            trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
+            trlweSymEncrypt<lvl1param>(pmu[i], lvl1param::α, (*sk).key.lvl1);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
@@ -132,7 +132,7 @@ int main()
     for (int i = 0; i < (address_bit - width_bit); i++)
         uaddress += address[i + width_bit] << i;
     array<bool, lvl1param::n> umemory;
-    umemory = trlweSymDecryptlvl1(encumemory, (*sk).key.lvl1);
+    umemory = trlweSymDecrypt<lvl1param>(encumemory, (*sk).key.lvl1);
 
     for (int i = 0; i < width_bit; i++)
         laddress += static_cast<uint32_t>(address[i]) << (i + words_bit);

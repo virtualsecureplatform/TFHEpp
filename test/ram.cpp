@@ -78,7 +78,7 @@ int main()
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
         encmemory[i] =
-            trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
+            trlweSymEncrypt<lvl1param>(pmu[i], lvl1param::α, (*sk).key.lvl1);
     cs = tlweSymEncrypt<lvl0param>(wrflag ? lvl0param::μ : -lvl0param::μ,
                                    lvl0param::α, (*sk).key.lvl0);
     c1 = tlweSymEncrypt<lvl0param>(writep ? lvl0param::μ : -lvl0param::μ,
@@ -123,7 +123,7 @@ int main()
     assert(static_cast<int>(pres) == static_cast<int>(pmemory[addressint]));
 
     array<bool, lvl1param::n> pwriteres =
-        trlweSymDecryptlvl1(encmemory[addressint], (*sk).key.lvl1);
+        trlweSymDecrypt<lvl1param>(encmemory[addressint], (*sk).key.lvl1);
     assert(static_cast<int>(pwriteres[0]) ==
            static_cast<int>((wrflag > 0) ? writep : pmemory[addressint]));
 

@@ -33,7 +33,7 @@ int main()
     vector<TRGSWFFT<lvl1param>> invbootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = trlweSymEncryptlvl1(pmu[i], lvl1param::α, sk->key.lvl1);
+        ca[i] = trlweSymEncrypt<lvl1param>(pmu[i], lvl1param::α, sk->key.lvl1);
     czeros = bootsSymEncrypt(pzeros, *sk);
 
     chrono::system_clock::time_point start, end;
@@ -46,7 +46,7 @@ int main()
 
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProduct<lvl1param>(ca[test], ca[test], invbootedTGSW[test]);
-        pres = trlweSymDecryptlvl1(ca[test], sk->key.lvl1);
+        pres = trlweSymDecrypt<lvl1param>(ca[test], sk->key.lvl1);
         for (int i = 0; i < lvl1param::n; i++) assert(pres[i] == pa[test][i]);
     }
     cout << "Passed" << endl;

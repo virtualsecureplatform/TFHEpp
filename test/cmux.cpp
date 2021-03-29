@@ -43,9 +43,9 @@ int main()
     for (int i = 0; i < num_test; i++)
         cs[i] = trgswfftSymEncrypt<lvl1param>(ps[i], lvl1param::α, sk->key.lvl1);
     for (int i = 0; i < num_test; i++)
-        c1[i] = trlweSymEncryptlvl1(pmu1[i], lvl1param::α, sk->key.lvl1);
+        c1[i] = trlweSymEncrypt<lvl1param>(pmu1[i], lvl1param::α, sk->key.lvl1);
     for (int i = 0; i < num_test; i++)
-        c0[i] = trlweSymEncryptlvl1(pmu0[i], lvl1param::α, sk->key.lvl1);
+        c0[i] = trlweSymEncrypt<lvl1param>(pmu0[i], lvl1param::α, sk->key.lvl1);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
@@ -55,7 +55,7 @@ int main()
     end = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        pres = trlweSymDecryptlvl1(cres[test], sk->key.lvl1);
+        pres = trlweSymDecrypt<lvl1param>(cres[test], sk->key.lvl1);
         for (int i = 0; i < lvl1param::n; i++)
             assert(pres[i] == ((ps[test] > 0) ? p1[test][i] : p0[test][i]) > 0);
     }

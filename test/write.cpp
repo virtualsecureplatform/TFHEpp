@@ -54,8 +54,8 @@ int main()
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
         encmemory[i] =
-            trlweSymEncryptlvl1(pmu[i], lvl1param::α, (*sk).key.lvl1);
-    datum = trlweSymEncryptlvl1(respoly, lvl1param::α, (*sk).key.lvl1);
+            trlweSymEncrypt<lvl1param>(pmu[i], lvl1param::α, (*sk).key.lvl1);
+    datum = trlweSymEncrypt<lvl1param>(respoly, lvl1param::α, (*sk).key.lvl1);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
@@ -105,6 +105,6 @@ int main()
     uint32_t intaddress = 0;
     for (int i = 0; i < address_bit; i++) intaddress += address[i] << i;
     assert(pres ==
-           trlweSymDecryptlvl1(encmemory[intaddress], (*sk).key.lvl1)[0]);
+           trlweSymDecrypt<lvl1param>(encmemory[intaddress], (*sk).key.lvl1)[0]);
     cout << "Passed" << endl;
 }

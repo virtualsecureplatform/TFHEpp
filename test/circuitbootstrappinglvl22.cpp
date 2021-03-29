@@ -32,7 +32,7 @@ int main()
     vector<TRGSWFFT<lvl2param>> bootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = trlweSymEncryptlvl2(pmu[i], TFHEpp::lvl2param::α, sk->key.lvl2);
+        ca[i] = trlweSymEncrypt<lvl2param>(pmu[i], TFHEpp::lvl2param::α, sk->key.lvl2);
     cones = bootsSymEncrypt(pones, *sk);
 
     chrono::system_clock::time_point start, end;
@@ -44,7 +44,7 @@ int main()
 
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProduct<lvl2param>(ca[test], ca[test], bootedTGSW[test]);
-        pres = trlweSymDecryptlvl2(ca[test], sk->key.lvl2);
+        pres = trlweSymDecrypt<lvl2param>(ca[test], sk->key.lvl2);
         for (int i = 0; i < TFHEpp::lvl2param::n; i++)
             assert(pres[i] == pa[test][i]);
     }

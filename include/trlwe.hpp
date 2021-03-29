@@ -18,18 +18,31 @@ TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
     return c;
 }
 
-TRLWE<lvl1param> trlweSymEncryptZerolvl1(const double α,
-                                         const Key<lvl1param> &key);
-TRLWE<lvl1param> trlweSymEncryptlvl1(const Polynomial<lvl1param> &p,
-                                     const double α, const Key<lvl1param> &key);
-TRLWE<lvl2param> trlweSymEncryptZerolvl2(const double α,
-                                         const Key<lvl2param> &key);
-TRLWE<lvl2param> trlweSymEncryptlvl2(const Polynomial<lvl2param> &p,
-                                     const double α, const Key<lvl2param> &key);
-array<bool, lvl1param::n> trlweSymDecryptlvl1(const TRLWE<lvl1param> &c,
-                                              const Key<lvl1param> &key);
-array<bool, lvl2param::n> trlweSymDecryptlvl2(const TRLWE<lvl2param> &c,
-                                              const Key<lvl2param> &key);
+template <class P>
+TRLWE<P> trlweSymEncrypt(const array<typename P::T, P::n> &p, const double α,
+                         const Key<P> &key)
+{
+    TRLWE<P> c;
+    c = trlweSymEncryptZero<P>(α, key);
+    for (int i = 0; i < P::n; i++) c[1][i] += p[i];
+    return c;
+}
+
+template <class P>
+array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
+{
+    Polynomial<P> mulres;
+    PolyMul<P>(mulres, c[0], key);
+    Polynomial<P> phase = c[1];
+    for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+
+    array<bool, P::n> p;
+    for (int i = 0; i < P::n; i++)
+        p[i] = static_cast<typename make_signed<typename P::T>::type>(
+                   phase[i]) > 0;
+    return p;
+}
+
 template <class P>
 inline void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe,
                                const int index)
