@@ -37,15 +37,13 @@ template <class P>
 using PolynomialInFD = array<double, P::n>;
 template <class P>
 using DecomposedPolynomial = array<Polynomial<P>, P::l>;
+template <class P>
+using DecomposedPolynomialInFD = array<PolynomialInFD<P>, P::l>;
 
 template <class P>
 using TRLWE = array<Polynomial<P>, 2>;
 template <class P>
 using TRLWEInFD = array<PolynomialInFD<P>, 2>;
-template <class P>
-using DecomposedTRLWE = array<Polynomial<P>, 2 * P::l>;
-template <class P>
-using DecomposedTRLWEInFD = array<PolynomialInFD<P>, 2 * P::l>;
 
 template <class P>
 using TRGSW = array<TRLWE<P>, 2 * P::l>;

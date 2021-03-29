@@ -40,28 +40,31 @@ inline void DecompositionPolynomial(DecomposedPolynomial<P> &decpoly, const Poly
 }
 
 template <class P>
-inline void DecompositionFFT(DecomposedTRLWEInFD<P> &decvecfft,
-                             const TRLWE<P> &trlwe)
+inline void DecompositionPolynomialFFT(DecomposedPolynomialInFD<P> &decpolyfft,
+                             const Polynomial<P> &poly)
 {
     DecomposedPolynomial<P> decpoly;
-    DecompositionPolynomial<P>(decpoly, trlwe[0]);
-    for (int i = 0; i < P::l; i++) TwistIFFT<P>(decvecfft[i], decpoly[i]);
-    DecompositionPolynomial<P>(decpoly, trlwe[1]);
-    for (int i = 0; i < P::l; i++) TwistIFFT<P>(decvecfft[i+P::l], decpoly[i]);
+    DecompositionPolynomial<P>(decpoly, poly);
+    for (int i = 0; i < P::l; i++) TwistIFFT<P>(decpolyfft[i], decpoly[i]);
 }
 
 template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft)
 {
-    DecomposedTRLWEInFD<P> decvecfft;
-    DecompositionFFT<P>(decvecfft, trlwe);
+    DecomposedPolynomialInFD<P> decpolyfft;
+    DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0]);
     TRLWEInFD<P> restrlwefft;
-    MulInFD<P::n>(restrlwefft[0], decvecfft[0], trgswfft[0][0]);
-    MulInFD<P::n>(restrlwefft[1], decvecfft[0], trgswfft[0][1]);
-    for (int i = 1; i < 2 * P::l; i++) {
-        FMAInFD<P::n>(restrlwefft[0], decvecfft[i], trgswfft[i][0]);
-        FMAInFD<P::n>(restrlwefft[1], decvecfft[i], trgswfft[i][1]);
+    MulInFD<P::n>(restrlwefft[0], decpolyfft[0], trgswfft[0][0]);
+    MulInFD<P::n>(restrlwefft[1], decpolyfft[0], trgswfft[0][1]);
+    for (int i = 1; i < P::l; i++) {
+        FMAInFD<P::n>(restrlwefft[0], decpolyfft[i], trgswfft[i][0]);
+        FMAInFD<P::n>(restrlwefft[1], decpolyfft[i], trgswfft[i][1]);
+    }
+    DecompositionPolynomialFFT<P>(decpolyfft, trlwe[1]);
+    for (int i = 0; i < P::l; i++) {
+        FMAInFD<P::n>(restrlwefft[0], decpolyfft[i], trgswfft[i+P::l][0]);
+        FMAInFD<P::n>(restrlwefft[1], decpolyfft[i], trgswfft[i+P::l][1]);
     }
     TwistFFT<P>(res[0], restrlwefft[0]);
     TwistFFT<P>(res[1], restrlwefft[1]);
