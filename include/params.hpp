@@ -35,6 +35,8 @@ template <class P>
 using Polynomial = array<typename P::T, P::n>;
 template <class P>
 using PolynomialInFD = array<double, P::n>;
+template <class P>
+using DecomposedPolynomial = array<Polynomial<P>, P::l>;
 
 template <class P>
 using TRLWE = array<Polynomial<P>, 2>;

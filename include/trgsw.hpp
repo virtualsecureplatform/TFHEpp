@@ -20,8 +20,9 @@ constexpr typename P::T offsetgen()
     return offset;
 }
 
+
 template <class P>
-inline void Decomposition(DecomposedTRLWE<P> &decvec, const TRLWE<P> &trlwe)
+inline void DecompositionPolynomial(DecomposedPolynomial<P> &decpoly, const Polynomial<P> &poly)
 {
     constexpr typename P::T offset = offsetgen<P>();
     constexpr typename P::T mask =
@@ -29,19 +30,12 @@ inline void Decomposition(DecomposedTRLWE<P> &decvec, const TRLWE<P> &trlwe)
     constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
 
     for (int j = 0; j < P::n; j++) {
-        typename P::T temp0 = trlwe[0][j] + offset;
-        typename P::T temp1 = trlwe[1][j] + offset;
+        typename P::T temp = poly[j] + offset;
         for (int i = 0; i < P::l; i++)
-            decvec[i][j] = ((temp0 >> (numeric_limits<typename P::T>::digits -
+            decpoly[i][j] = ((temp >> (numeric_limits<typename P::T>::digits -
                                        (i + 1) * P::Bgbit)) &
                             mask) -
                            halfBg;
-        for (int i = 0; i < P::l; i++)
-            decvec[i + P::l][j] =
-                ((temp1 >> (numeric_limits<typename P::T>::digits -
-                            (i + 1) * P::Bgbit)) &
-                 mask) -
-                halfBg;
     }
 }
 
@@ -49,9 +43,11 @@ template <class P>
 inline void DecompositionFFT(DecomposedTRLWEInFD<P> &decvecfft,
                              const TRLWE<P> &trlwe)
 {
-    DecomposedTRLWE<P> decvec;
-    Decomposition<P>(decvec, trlwe);
-    for (int i = 0; i < 2 * P::l; i++) TwistIFFT<P>(decvecfft[i], decvec[i]);
+    DecomposedPolynomial<P> decpoly;
+    DecompositionPolynomial<P>(decpoly, trlwe[0]);
+    for (int i = 0; i < P::l; i++) TwistIFFT<P>(decvecfft[i], decpoly[i]);
+    DecompositionPolynomial<P>(decpoly, trlwe[1]);
+    for (int i = 0; i < P::l; i++) TwistIFFT<P>(decvecfft[i+P::l], decpoly[i]);
 }
 
 template <class P>
