@@ -60,7 +60,7 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < address_bit - 1; i++) {
-        CircuitBootstrappingFFTlvl01((*bootedTGSW)[0][i], encaddress[i],
+        CircuitBootstrappingFFT<lvl02param,lvl21param>((*bootedTGSW)[0][i], encaddress[i],
                                      (*ck).ck);
         for (int j = 0; j < 2 * lvl1param::l; j++)
             for (int k = 0; k < lvl1param::n; k++) {

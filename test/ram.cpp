@@ -88,7 +88,7 @@ int main()
     start = chrono::system_clock::now();
     // Addres CB
     for (int i = 0; i < address_bit; i++) {
-        CircuitBootstrappingFFTwithInvlvl01(
+        CircuitBootstrappingFFTwithInv<lvl02param,lvl21param>(
             (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck);
     }
 

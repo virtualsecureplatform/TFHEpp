@@ -41,7 +41,7 @@ int main()
     ProfilerStart("cb.prof");
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFTlvl01(bootedTGSW[test], cones[test], *ck);
+        CircuitBootstrappingFFT<lvl02param,lvl21param>(bootedTGSW[test], cones[test], *ck);
     }
     end = chrono::system_clock::now();
     ProfilerStop();

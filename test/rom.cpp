@@ -116,9 +116,9 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < words_bit; i++)
-        CircuitBootstrappingFFTlvl01(bootedTGSW[i], encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFT<lvl02param,lvl21param>(bootedTGSW[i], encaddress[i], (*ck).ck);
     for (int i = words_bit; i < address_bit; i++)
-        CircuitBootstrappingFFTInvlvl01(bootedTGSW[i], encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFTInv<lvl02param,lvl21param>(bootedTGSW[i], encaddress[i], (*ck).ck);
     TRLWE<lvl1param> encumemory;
 
     UROMUX<address_bit, width_bit>(encumemory, bootedTGSW, encmemory);
