@@ -62,6 +62,8 @@ template <class P>
 using TRGSWFFT = array<TRLWEInFD<P>, 2 * P::l>;
 
 template <class P>
+using BootStrappingKey = array<TRGSW<typename P::targetP>, P::domainP::n>;
+template <class P>
 using BootStrappingKeyFFT = array<TRGSWFFT<typename P::targetP>, P::domainP::n>;
 
 template <class P>
