@@ -62,32 +62,44 @@ inline void CircuitBootstrappingFFTInv(
 }
 
 template <class bkP, class privksP>
+inline void CircuitBootstrappingFFTwithInvPartial(TRLWEInFD<typename privksP::targetP> &trgswfftupper,
+                                 TRLWEInFD<typename privksP::targetP> &trgswfftlower,
+                                 TRLWEInFD<typename privksP::targetP> &invtrgswfftupper,
+                                 TRLWEInFD<typename privksP::targetP> &invtrgswfftlower,
+                                 const TLWE<typename bkP::domainP> &tlwe,
+                                 const CircuitKey<bkP, privksP> &ck,
+                                 const uint32_t digit)
+{
+    constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
+        hgen<typename privksP::targetP>();
+    TRLWE<typename privksP::targetP> trgswupper, trgswlower;
+    CircuitBootstrappingPartial(trgswupper,trgswlower,tlwe,ck,digit);
+    for (int j = 0; j < 2; j++){
+        TwistIFFT<typename privksP::targetP>(trgswfftupper[j], trgswupper[j]);
+        TwistIFFT<typename privksP::targetP>(trgswfftlower[j], trgswlower[j]);
+    }
+    for (int j = 0; j < privksP::targetP::n; j++) {
+        trgswupper[0][j] *= -1;
+        trgswupper[1][j] *= -1;
+        trgswlower[0][j] *= -1;
+        trgswlower[1][j] *= -1;
+    }
+    trgswupper[0][0] += h[digit];
+    trgswlower[1][0] += h[digit];
+    for (int j = 0; j < 2; j++){
+        TwistIFFT<typename privksP::targetP>(invtrgswfftupper[j], trgswupper[j]);
+        TwistIFFT<typename privksP::targetP>(invtrgswfftlower[j], trgswlower[j]);
+    }
+}
+
+template <class bkP, class privksP>
 inline void CircuitBootstrappingFFTwithInv(
     TRGSWFFT<typename privksP::targetP> &trgswfft,
     TRGSWFFT<typename privksP::targetP> &invtrgswfft,
     const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP, privksP> &ck)
 {
-    constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
-        hgen<typename privksP::targetP>();
     for (int i = 0; i < privksP::targetP::l; i++){
-        TRLWE<typename privksP::targetP> trgswupper, trgswlower;
-        CircuitBootstrappingPartial(trgswupper,trgswlower,tlwe,ck,i);
-        for (int j = 0; j < 2; j++){
-            TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgswupper[j]);
-            TwistIFFT<typename privksP::targetP>(trgswfft[i+privksP::targetP::l][j], trgswlower[j]);
-        }
-        for (int j = 0; j < privksP::targetP::n; j++) {
-            trgswupper[0][j] *= -1;
-            trgswupper[1][j] *= -1;
-            trgswlower[0][j] *= -1;
-            trgswlower[1][j] *= -1;
-        }
-        trgswupper[0][0] += h[i];
-        trgswlower[1][0] += h[i];
-        for (int j = 0; j < 2; j++){
-            TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j], trgswupper[j]);
-            TwistIFFT<typename privksP::targetP>(invtrgswfft[i+privksP::targetP::l][j], trgswlower[j]);
-        }
+        CircuitBootstrappingFFTwithInvPartial(trgswfft[i],trgswfft[i+privksP::targetP::l],invtrgswfft[i],invtrgswfft[i+privksP::targetP::l],tlwe,ck,i);
     }
 }
 
