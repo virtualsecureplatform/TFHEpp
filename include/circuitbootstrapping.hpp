@@ -9,7 +9,7 @@ namespace TFHEpp {
 using namespace std;
 
 template <class bkP, class privksP>
-inline void CircuitBootstrappingHalf(TRLWE<typename privksP::targetP> &trgswupper,
+inline void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
                                  TRLWE<typename privksP::targetP> &trgswlower,
                                  const TLWE<typename bkP::domainP> &tlwe,
                                  const CircuitKey<bkP, privksP> &ck,
@@ -31,7 +31,7 @@ inline void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
                                  const CircuitKey<bkP, privksP> &ck)
 {
     for (int i = 0; i < privksP::targetP::l; i++) {
-        CircuitBootstrappingHalf(trgsw[i],trgsw[i+privksP::targetP::l],tlwe,ck,i);
+        CircuitBootstrappingPartial(trgsw[i],trgsw[i+privksP::targetP::l],tlwe,ck,i);
     }
 }
 
@@ -42,7 +42,7 @@ inline void CircuitBootstrappingFFT(
 {
     for (int i = 0; i < privksP::targetP::l; i++){
         TRLWE<typename privksP::targetP> trgswupper, trgswlower;
-        CircuitBootstrappingHalf<bkP, privksP>(trgswupper, trgswlower, tlwe, ck,i);
+        CircuitBootstrappingPartial<bkP, privksP>(trgswupper, trgswlower, tlwe, ck,i);
         for (int j = 0; j < 2; j++){
             TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgswupper[j]);
             TwistIFFT<typename privksP::targetP>(trgswfft[i+privksP::targetP::l][j], trgswlower[j]);
@@ -58,12 +58,7 @@ inline void CircuitBootstrappingFFTInv(
     TLWE<typename bkP::domainP> invtlwe;
     // HomNot
     for (int i = 0; i <= bkP::domainP::n; i++) invtlwe[i] = -tlwe[i];
-    TRGSW<typename privksP::targetP> trgsw;
-    CircuitBootstrapping<bkP, privksP>(trgsw, invtlwe, ck);
-    for (int i = 0; i < 2 * privksP::targetP::l; i++)
-        for (int j = 0; j < 2; j++)
-            TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j],
-                                                 trgsw[i][j]);
+    CircuitBootstrappingFFT(invtrgswfft, tlwe, ck);
 }
 
 template <class bkP, class privksP>
@@ -72,27 +67,28 @@ inline void CircuitBootstrappingFFTwithInv(
     TRGSWFFT<typename privksP::targetP> &invtrgswfft,
     const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP, privksP> &ck)
 {
-    TRGSW<typename privksP::targetP> trgsw;
     constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
         hgen<typename privksP::targetP>();
-    CircuitBootstrapping<bkP, privksP>(trgsw, tlwe, ck);
-    for (int i = 0; i < 2 * privksP::targetP::l; i++)
-        for (int j = 0; j < 2; j++)
-            TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
-    for (int i = 0; i < privksP::targetP::l; i++) {
-        for (int j = 0; j < privksP::targetP::n; j++) {
-            trgsw[i][0][j] *= -1;
-            trgsw[i][1][j] *= -1;
-            trgsw[i + privksP::targetP::l][0][j] *= -1;
-            trgsw[i + privksP::targetP::l][1][j] *= -1;
+    for (int i = 0; i < privksP::targetP::l; i++){
+        TRLWE<typename privksP::targetP> trgswupper, trgswlower;
+        CircuitBootstrappingPartial(trgswupper,trgswlower,tlwe,ck,i);
+        for (int j = 0; j < 2; j++){
+            TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgswupper[j]);
+            TwistIFFT<typename privksP::targetP>(trgswfft[i+privksP::targetP::l][j], trgswlower[j]);
         }
-        trgsw[i][0][0] += h[i];
-        trgsw[i + privksP::targetP::l][1][0] += h[i];
+        for (int j = 0; j < privksP::targetP::n; j++) {
+            trgswupper[0][j] *= -1;
+            trgswupper[1][j] *= -1;
+            trgswlower[0][j] *= -1;
+            trgswlower[1][j] *= -1;
+        }
+        trgswupper[0][0] += h[i];
+        trgswlower[1][0] += h[i];
+        for (int j = 0; j < 2; j++){
+            TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j], trgswupper[j]);
+            TwistIFFT<typename privksP::targetP>(invtrgswfft[i+privksP::targetP::l][j], trgswlower[j]);
+        }
     }
-    for (int i = 0; i < 2 * privksP::targetP::l; i++)
-        for (int j = 0; j < 2; j++)
-            TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j],
-                                                 trgsw[i][j]);
 }
 
 }  // namespace TFHEpp
