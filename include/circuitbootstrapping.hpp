@@ -58,7 +58,7 @@ inline void CircuitBootstrappingFFTInv(
     TLWE<typename bkP::domainP> invtlwe;
     // HomNot
     for (int i = 0; i <= bkP::domainP::n; i++) invtlwe[i] = -tlwe[i];
-    CircuitBootstrappingFFT(invtrgswfft, tlwe, ck);
+    CircuitBootstrappingFFT(invtrgswfft, invtlwe, ck);
 }
 
 template <class bkP, class privksP>
