@@ -26,7 +26,7 @@ struct lweParams {
     template <class Archive>
     void serialize(Archive &archive)
     {
-        archive(lvl0,lvl1,lvl2,lvl01,lvl02,lvl10,lvl21,lvl22);
+        archive(lvl0, lvl1, lvl2, lvl01, lvl02, lvl10, lvl21, lvl22);
     }
 };
 
