@@ -25,17 +25,6 @@ struct lvl02param {
     using targetP = lvl2param;
 };
 
-struct lweParams {
-    static constexpr lvl0param lvl0();
-    static constexpr lvl1param lvl1();
-    static constexpr lvl2param lvl2();
-    static constexpr lvl01param lvl01();
-    static constexpr lvl02param lvl02();
-    static constexpr lvl10param lvl10();
-    static constexpr lvl21param lvl21();
-    static constexpr lvl22param lvl22();
-};
-
 template <class P>
 using Key = array<typename P::T, P::n>;
 
