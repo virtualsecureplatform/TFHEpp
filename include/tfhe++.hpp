@@ -7,7 +7,6 @@
 #include <gatebootstrapping.hpp>
 #include <key.hpp>
 #include <keyswitch.hpp>
-#include <mulfft.hpp>
 #include <params.hpp>
 #include <tlwe.hpp>
 #include <trgsw.hpp>

@@ -75,4 +75,21 @@ using PrivKeySwitchKey =
     array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n + 1>;
 
+#define TFHEPP_EXPLICIT_INST_WRT_LVL0_1_2(fun) \
+    fun(lvl0param);                            \
+    fun(lvl1param);                            \
+    fun(lvl2param);
+#define TFHEPP_EXPLICIT_INST_WRT_LVL1_2(fun) \
+    fun(lvl1param);                          \
+    fun(lvl2param);
+#define TFHEPP_EXPLICIT_INST_WRT_LVL01_02(fun) \
+    fun(lvl01param);                           \
+    fun(lvl02param);
+#define TFHEPP_EXPLICIT_INST_WRT_LVL10_21_22(fun) \
+    fun(lvl10param);                              \
+    fun(lvl21param);                              \
+    fun(lvl22param);
+#define TFHEPP_EXPLICIT_INST_WRT_LVL0221_0222(fun) \
+    fun(lvl02param, lvl21param);                   \
+    fun(lvl02param, lvl22param);
 }  // namespace TFHEpp
