@@ -28,6 +28,9 @@ struct lweParams {
     {
         archive(lvl0, lvl1, lvl2, lvl01, lvl02, lvl10, lvl21, lvl22);
     }
+
+// https://cpprefjp.github.io/lang/cpp20/consistent_comparison.html
+    auto operator<=>(const lweParams&) const = default;
 };
 
 struct lweKey {

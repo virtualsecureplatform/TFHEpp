@@ -8,6 +8,8 @@ struct lvl0param {
     static const inline double α = std::pow(2.0, -15); //fresh noise
     using T = uint32_t; //Torus representation
     static constexpr T μ = 1U << 29;
+
+    auto operator<=>(const lvl0param&) const = default;
 };
 
 struct lvl1param {
@@ -19,6 +21,8 @@ struct lvl1param {
     static const inline double α = std::pow(2.0, -25); //fresh noise
     using T = uint32_t; //Torus representation
     static constexpr T μ = 1U << 29;
+
+    auto operator<=>(const lvl1param&) const = default;
 };
 
 struct lvl2param {
@@ -30,6 +34,8 @@ struct lvl2param {
     static const inline double α = std::pow(2.0, -44); //fresh noise
     using T = uint64_t; //Torus representation
     static constexpr T μ = 1ULL << 61;
+
+    auto operator<=>(const lvl2param&) const = default;
 };
 
 //Key Switching parameters
@@ -39,6 +45,8 @@ struct lvl10param {
     static const inline double α = lvl0param::α; //key noise
     using domainP = lvl1param;
     using targetP = lvl0param;
+
+    auto operator<=>(const lvl10param&) const = default;
 };
 
 struct lvl21param{
@@ -47,6 +55,8 @@ struct lvl21param{
     static const inline double α = lvl1param::α; //key noise
     using domainP = lvl2param;
     using targetP = lvl1param;
+
+    auto operator<=>(const lvl21param&) const = default;
 };
 
 struct lvl22param{
@@ -55,4 +65,6 @@ struct lvl22param{
     static const inline double α = lvl2param::α; //key noise
     using domainP = lvl2param;
     using targetP = lvl2param;
+
+    auto operator<=>(const lvl22param&) const = default;
 };

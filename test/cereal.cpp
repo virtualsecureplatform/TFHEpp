@@ -1,5 +1,6 @@
 #include <cassert>
 #include <fstream>
+#include <iostream>
 #include <tfhe++.hpp>
 
 using namespace TFHEpp;
@@ -24,4 +25,6 @@ int main()
         assert(sk.key.lvl1[i] == ski.key.lvl1[i]);
     for (int i = 0; i < lvl2param::n; i++)
         assert(sk.key.lvl2[i] == ski.key.lvl2[i]);
+    std::cout<<"n"<<":"<<ski.params.lvl0.n<<std::endl;
+    assert(sk.params==ski.params);
 }
