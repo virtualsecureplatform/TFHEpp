@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <params.hpp>
 #include <random>
 
@@ -49,22 +50,8 @@ template <class P>
 inline typename P::T modSwitchFromTorus(uint32_t phase)
 {
     constexpr uint32_t Mbit = P::nbit + 1;
-    constexpr uint32_t Msize = 1U << Mbit;
-    if constexpr (std::is_same_v<typename P::T, uint32_t>)
-        return (phase + (1U << (31 - Mbit))) >> (32 - Mbit);
-    else if constexpr (std::is_same_v<typename P::T, uint64_t>) {
-        typename P::T interv =
-            ((1ULL << 63) / Msize) * 2;  // width of each intervall
-        typename P::T half_interval =
-            interv / 2;  // begin of the first intervall
-
-        // Mod Switching (as in modSwitchFromTorus32)
-        typename P::T temp = (static_cast<typename P::T>(phase) << 32) +
-                             half_interval;  // RIVEDI
-        return temp / interv;
-    }
-    else
-        static_assert(false_v<typename P::T>, "Undefined modSwitchFromTorus!");
+    static_assert(32>=Mbit, "Undefined modSwitchFromTorus!");
+    return (phase + (1U << (31 - Mbit))) >> (32 - Mbit);
 }
 
 template <uint32_t N>
