@@ -13,7 +13,7 @@ using namespace std;
 
 template <class P>
 void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector,
-                       uint32_t bara, const typename P::T μ)
+                       const uint32_t bara, const typename P::T μ)
 {
     testvector[0] = {};
     if (bara < P::n) {

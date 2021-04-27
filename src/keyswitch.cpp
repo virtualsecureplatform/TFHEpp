@@ -1,4 +1,6 @@
 #include "keyswitch.hpp"
+#include <cstdint>
+#include <limits>
 
 #include "utils.hpp"
 
@@ -10,12 +12,16 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
                        const TLWE<typename P::domainP> &tlwe,
                        const KeySwitchingKey<P> &ksk)
 {
-    const typename P::domainP::T prec_offset =
+    constexpr typename P::domainP::T prec_offset =
         1ULL << (numeric_limits<typename P::domainP::T>::digits -
                  (1 + P::basebit * P::t));
-    const uint32_t mask = (1U << P::basebit) - 1;
+    constexpr uint32_t mask = (1U << P::basebit) - 1;
     res = {};
-    res[P::targetP::n] = tlwe[P::domainP::n];
+    constexpr uint32_t domain_digit = std::numeric_limits<typename P::domainP::T>::digits;
+    constexpr uint32_t target_digit = std::numeric_limits<typename P::targetP::T>::digits;
+    if constexpr(domain_digit==target_digit) res[P::targetP::n] = tlwe[P::domainP::n];
+    else if constexpr(domain_digit>target_digit) res[P::targetP::n] = (tlwe[P::domainP::n]+(1ULL<<(domain_digit-target_digit-1)))>>(domain_digit-target_digit);
+    else if constexpr(domain_digit<target_digit) res[P::targetP::n] = tlwe[P::domainP::n]<<(target_digit-domain_digit);
     for (int i = 0; i < P::domainP::n; i++) {
         const uint32_t aibar = tlwe[i] + prec_offset;
         for (int j = 0; j < P::t; j++) {
@@ -48,7 +54,7 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
 
     res = {};
     for (int i = 0; i <= P::domainP::n; i++) {
-        typename P::domainP::T aibar = tlwe[i] + prec_offset;
+        const typename P::domainP::T aibar = tlwe[i] + prec_offset;
 
         for (int j = 0; j < P::t; j++) {
             const typename P::domainP::T aij =
