@@ -35,7 +35,7 @@ void DecompositionPolynomial(DecomposedPolynomial<P> &decpoly,
     template void DecompositionPolynomial<P>(                         \
         DecomposedPolynomial<P> & decpoly, const Polynomial<P> &poly, \
         const int digit)
-TFHEPP_EXPLICIT_INST_WRT_LVL1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
 #undef INST
 
 template <class P>
@@ -50,7 +50,7 @@ void DecompositionPolynomialFFT(DecomposedPolynomialInFD<P> &decpolyfft,
     template void DecompositionPolynomialFFT<P>(                             \
         DecomposedPolynomialInFD<P> & decpolyfft, const Polynomial<P> &poly, \
         const int digit)
-TFHEPP_EXPLICIT_INST_WRT_LVL1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
 #undef INST
 
 template <class P>
@@ -78,7 +78,7 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 #define INST(P)                               \
     template void trgswfftExternalProduct<P>( \
         TRLWE<P> & res, const TRLWE<P> &trlwe, const TRGSWFFT<P> &trgswfft)
-TFHEPP_EXPLICIT_INST_WRT_LVL1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
 #undef INST
 
 template <class P>
@@ -90,7 +90,7 @@ TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
     return trgswfft;
 }
 #define INST(P) template TRGSWFFT<P> ApplyFFT2trgsw<P>(const TRGSW<P> &trgsw)
-TFHEPP_EXPLICIT_INST_WRT_LVL1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
 #undef INST
 
 template <class P>
@@ -111,7 +111,7 @@ TRGSW<P> trgswSymEncrypt(const typename make_signed<typename P::T>::type p,
     template TRGSW<P> trgswSymEncrypt<P>(                                  \
         const typename make_signed<typename P::T>::type p, const double α, \
         const Key<P> &key)
-TFHEPP_EXPLICIT_INST_WRT_LVL1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
 #undef INST
 
 template <class P>
@@ -126,6 +126,6 @@ TRGSWFFT<P> trgswfftSymEncrypt(
     template TRGSWFFT<P> trgswfftSymEncrypt<P>(                            \
         const typename make_signed<typename P::T>::type p, const double α, \
         const Key<P> &key)
-TFHEPP_EXPLICIT_INST_WRT_LVL1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
 #undef INST
 }  // namespace TFHEpp

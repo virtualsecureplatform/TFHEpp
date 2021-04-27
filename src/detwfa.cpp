@@ -18,7 +18,7 @@ void CMUXFFT(TRLWE<P> &res, const TRGSWFFT<P> &cs, const TRLWE<P> &c1,
 #define INST(P)                                                     \
     template void CMUXFFT<P>(TRLWE<P> & res, const TRGSWFFT<P> &cs, \
                              const TRLWE<P> &c1, const TRLWE<P> &c0)
-TFHEPP_EXPLICIT_INST_WRT_LVL1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
 #undef INST
 
 template <class P>
@@ -37,7 +37,7 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWFFT<P> &cs,
 #define INST(P)                                             \
     template void CMUXFFTwithPolynomialMulByXaiMinusOne<P>( \
         TRLWE<P> & acc, const TRGSWFFT<P> &cs, const typename P::T a)
-TFHEPP_EXPLICIT_INST_WRT_LVL1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
 #undef INST
 
 }  // namespace TFHEpp

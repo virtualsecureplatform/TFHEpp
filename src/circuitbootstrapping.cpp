@@ -24,7 +24,7 @@ void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
         TRLWE<typename privksP::targetP> & trgswlower,       \
         const TLWE<typename bkP::domainP> &tlwe,             \
         const CircuitKey<bkP, privksP> &ck, const uint32_t digit)
-TFHEPP_EXPLICIT_INST_WRT_LVL0221_0222(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(INST)
 #undef INST
 
 template <class bkP, class privksP>
@@ -42,7 +42,7 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
         TRGSW<typename privksP::targetP> & trgsw,     \
         const TLWE<typename bkP::domainP> &tlwe,      \
         const CircuitKey<bkP, privksP> &ck)
-TFHEPP_EXPLICIT_INST_WRT_LVL0221_0222(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(INST)
 #undef INST
 
 template <class bkP, class privksP>
@@ -66,7 +66,7 @@ void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
         TRGSWFFT<typename privksP::targetP> & trgswfft,  \
         const TLWE<typename bkP::domainP> &tlwe,         \
         const CircuitKey<bkP, privksP> &ck)
-TFHEPP_EXPLICIT_INST_WRT_LVL0221_0222(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(INST)
 #undef INST
 
 template <class bkP, class privksP>
@@ -84,7 +84,7 @@ void CircuitBootstrappingFFTInv(
         TRGSWFFT<typename privksP::targetP> & invtrgswfft,  \
         const TLWE<typename bkP::domainP> &tlwe,            \
         const CircuitKey<bkP, privksP> &ck)
-TFHEPP_EXPLICIT_INST_WRT_LVL0221_0222(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(INST)
 #undef INST
 
 template <class bkP, class privksP>
@@ -127,7 +127,7 @@ void CircuitBootstrappingFFTwithInvPartial(
         TRLWEInFD<typename privksP::targetP> & invtrgswfftlower,       \
         const TLWE<typename bkP::domainP> &tlwe,                       \
         const CircuitKey<bkP, privksP> &ck, const uint32_t digit)
-TFHEPP_EXPLICIT_INST_WRT_LVL0221_0222(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(INST)
 #undef INST
 
 template <class bkP, class privksP>
@@ -148,7 +148,7 @@ void CircuitBootstrappingFFTwithInv(
         TRGSWFFT<typename privksP::targetP> & invtrgswfft,      \
         const TLWE<typename bkP::domainP> &tlwe,                \
         const CircuitKey<bkP, privksP> &ck)
-TFHEPP_EXPLICIT_INST_WRT_LVL0221_0222(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(INST)
 #undef INST
 
 }  // namespace TFHEpp

@@ -89,7 +89,7 @@ CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)
 }
 #define INST(bsP, privksP) \
     template CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)
-TFHEPP_EXPLICIT_INST_WRT_LVL0221_0222(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(INST)
 #undef INST
 
 }  // namespace TFHEpp

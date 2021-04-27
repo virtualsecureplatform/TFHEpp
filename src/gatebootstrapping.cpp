@@ -30,7 +30,7 @@ void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector,
     template void RotatedTestVector<P>(                                   \
         array<array<typename P::T, P::n>, 2> & testvector, uint32_t bara, \
         const typename P::T μ)
-TFHEPP_EXPLICIT_INST_WRT_LVL0_1_2(INST);
+TFHEPP_EXPLICIT_INSTANTIATION_LVL0_1_2(INST);
 #undef INST
 
 template <class P>
@@ -55,7 +55,7 @@ void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc,
         TRLWE<typename P::targetP> & acc,            \
         const TLWE<typename P::domainP> &tlwe,       \
         const BootStrappingKeyFFT<P> &bkfft)
-TFHEPP_EXPLICIT_INST_WRT_LVL01_02(INST);
+TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(INST);
 #undef INST
 
 template <class P>
@@ -72,7 +72,7 @@ void GateBootstrappingTLWE2TLWEFFT(TLWE<typename P::targetP> &res,
         TLWE<typename P::targetP> & res,            \
         const TLWE<typename P::domainP> &tlwe,      \
         const BootStrappingKeyFFT<P> &bkfft)
-TFHEPP_EXPLICIT_INST_WRT_LVL01_02(INST);
+TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(INST);
 #undef INST
 
 template <class P>
@@ -99,7 +99,7 @@ void GateBootstrappingTLWE2TLWEFFTvariableMu(
         TLWE<typename P::targetP> & res,                      \
         const TLWE<typename P::domainP> &tlwe,                \
         const BootStrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
-TFHEPP_EXPLICIT_INST_WRT_LVL01_02(INST);
+TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(INST);
 #undef INST
 
 void GateBootstrapping(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe,
