@@ -35,6 +35,10 @@ void RAMUX(TRLWE<P> &res,
 
 int main()
 {
+    using CBbsP = lvl02param;
+    using CBprivksP = lvl22param;
+    using ksP = lvl20param;
+
     constexpr uint32_t address_bit = 9;  // Address by bytes.
     constexpr uint32_t memsize = 1 << address_bit;
     random_device seeder;
@@ -42,9 +46,9 @@ int main()
     uniform_int_distribution<uint8_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CloudKey *ck = new CloudKey(*sk);
+    CloudKey<CBbsP,CBprivksP,ksP> *ck = new CloudKey<CBbsP,CBprivksP,ksP>(*sk);
     vector<uint8_t> pmemory(memsize);
-    vector<array<uint32_t, lvl1param::n>> pmu(memsize);
+    vector<array<ksP::domainP::T, ksP::domainP::n>> pmu(memsize);
     vector<uint8_t> address(address_bit);
     uint8_t pres;
     uint8_t wrflag;
@@ -54,7 +58,7 @@ int main()
 
     for (int i = 0; i < memsize; i++) {
         pmu[i] = {};
-        pmu[i][0] = pmemory[i] ? lvl1param::μ : -lvl1param::μ;
+        pmu[i][0] = pmemory[i] ? ksP::domainP::μ : -ksP::domainP::μ;
     }
     for (uint8_t &p : address) p = binary(engine);
     uint32_t addressint = 0;
@@ -64,53 +68,53 @@ int main()
     wrflag = binary(engine);
     writep = pmemory[addressint] > 0 ? 0 : 1;
 
-    array<array<TRGSWFFT<lvl1param>, address_bit>, 2> *bootedTGSW =
-        new array<array<TRGSWFFT<lvl1param>, address_bit>, 2>;
-    vector<TLWE<lvl0param>> encaddress(address_bit);
-    array<TRLWE<lvl1param>, memsize> encmemory;
-    TLWE<lvl1param> encreadreslvl1;
-    TLWE<lvl0param> encreadres;
-    TRLWE<lvl1param> encumemory;
-    TLWE<lvl0param> cs;
-    TLWE<lvl0param> c1;
-    TRLWE<lvl1param> writed;
+    array<array<TRGSWFFT<typename ksP::domainP>, address_bit>, 2> *bootedTGSW =
+        new array<array<TRGSWFFT<typename ksP::domainP>, address_bit>, 2>;
+    vector<TLWE<typename ksP::targetP>> encaddress(address_bit);
+    array<TRLWE<typename ksP::domainP>, memsize> encmemory;
+    TLWE<typename ksP::domainP> encreadreshigh;
+    TLWE<typename ksP::targetP> encreadres;
+    TRLWE<typename ksP::domainP> encumemory;
+    TLWE<typename ksP::targetP> cs;
+    TLWE<typename ksP::targetP> c1;
+    TRLWE<typename ksP::domainP> writed;
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
         encmemory[i] =
-            trlweSymEncrypt<lvl1param>(pmu[i], lvl1param::α, (*sk).key.lvl1);
-    cs = tlweSymEncrypt<lvl0param>(wrflag ? lvl0param::μ : -lvl0param::μ,
-                                   lvl0param::α, (*sk).key.lvl0);
-    c1 = tlweSymEncrypt<lvl0param>(writep ? lvl0param::μ : -lvl0param::μ,
-                                   lvl0param::α, (*sk).key.lvl0);
+            trlweSymEncrypt<typename ksP::domainP>(pmu[i], ksP::domainP::α, (*sk).key.get<typename ksP::domainP>());
+    cs = tlweSymEncrypt<typename ksP::targetP>(wrflag ? ksP::targetP::μ : -ksP::targetP::μ,
+                                   ksP::targetP::α, (*sk).key.get<typename ksP::targetP>());
+    c1 = tlweSymEncrypt<typename ksP::targetP>(writep ? ksP::targetP::μ : -ksP::targetP::μ,
+                                   ksP::targetP::α, (*sk).key.get<typename ksP::targetP>());
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     // Addres CB
     for (int i = 0; i < address_bit; i++) {
-        CircuitBootstrappingFFTwithInv<lvl02param, lvl21param>(
+        CircuitBootstrappingFFTwithInv<CBbsP, CBprivksP>(
             (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck);
     }
 
     // Read
-    RAMUX<lvl1param,address_bit>(encumemory, (*bootedTGSW)[0], encmemory);
-    SampleExtractIndex<lvl1param>(encreadreslvl1, encumemory, 0);
-    IdentityKeySwitch<lvl10param>(encreadres, encreadreslvl1, (*ck).gk.ksk);
+    RAMUX<typename ksP::domainP,address_bit>(encumemory, (*bootedTGSW)[0], encmemory);
+    SampleExtractIndex<typename ksP::domainP>(encreadreshigh, encumemory, 0);
+    IdentityKeySwitch<ksP>(encreadres, encreadreshigh, (*ck).ksk);
 
     // Write
-    HomMUXwoSE(writed, cs, c1, encreadres, (*ck).gk);
+    HomMUXwoSE<CBbsP>(writed, cs, c1, encreadres, (*ck).ck.bkfft);
     for (int i = 0; i < memsize; i++) {
         const bitset<address_bit> addressbitset(i);
-        TRLWE<lvl1param> temp = writed;
+        TRLWE<typename ksP::domainP> temp = writed;
         for (int j = 0; j < address_bit; j++)
-            CMUXFFT<lvl1param>(temp, (*bootedTGSW)[addressbitset[j]][j], temp,
+            CMUXFFT<typename ksP::domainP>(temp, (*bootedTGSW)[addressbitset[j]][j], temp,
                                encmemory[i]);
-        TLWE<lvl1param> temp2;
-        SampleExtractIndex<lvl1param>(temp2, temp, 0);
-        TLWE<lvl0param> temp3;
-        IdentityKeySwitch<lvl10param>(temp3, temp2, (*ck).gk.ksk);
-        GateBootstrappingTLWE2TRLWEFFT<lvl01param>(encmemory[i], temp3,
-                                                   (*ck).gk.bkfftlvl01);
+        TLWE<typename ksP::domainP> temp2;
+        SampleExtractIndex<typename ksP::domainP>(temp2, temp, 0);
+        TLWE<typename ksP::targetP> temp3;
+        IdentityKeySwitch<ksP>(temp3, temp2, (*ck).ksk);
+        GateBootstrappingTLWE2TRLWEFFT<CBbsP>(encmemory[i], temp3,
+                                                   (*ck).ck.bkfft);
     }
 
     end = chrono::system_clock::now();
@@ -118,12 +122,12 @@ int main()
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
     cout << elapsed << "ms" << endl;
-    pres = tlweSymDecrypt<lvl0param>(encreadres, (*sk).key.lvl0);
+    pres = tlweSymDecrypt<typename ksP::targetP>(encreadres, (*sk).key.get<typename ksP::targetP>());
 
     assert(static_cast<int>(pres) == static_cast<int>(pmemory[addressint]));
 
-    array<bool, lvl1param::n> pwriteres =
-        trlweSymDecrypt<lvl1param>(encmemory[addressint], (*sk).key.lvl1);
+    array<bool, ksP::domainP::n> pwriteres =
+        trlweSymDecrypt<typename ksP::domainP>(encmemory[addressint], (*sk).key.get<typename ksP::domainP>());
     assert(static_cast<int>(pwriteres[0]) ==
            static_cast<int>((wrflag > 0) ? writep : pmemory[addressint]));
 

@@ -78,8 +78,9 @@ using PrivKeySwitchKey =
 #define TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(fun) \
     fun(lvl01param);                           \
     fun(lvl02param);
-#define TFHEPP_EXPLICIT_INSTANTIATION_LVL10_21_22(fun) \
+#define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(fun) \
     fun(lvl10param);                              \
+    fun(lvl20param);                              \
     fun(lvl21param);                              \
     fun(lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(fun) \

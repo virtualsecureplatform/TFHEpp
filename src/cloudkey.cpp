@@ -1,39 +1,6 @@
 #include "cloudkey.hpp"
 
 namespace TFHEpp {
-template <class P>
-void bkgen(BootStrappingKey<P> &bkfft, const SecretKey &sk)
-{
-    for (int i = 0; i < P::domainP::n; i++)
-        bkfft[i] = trgswSymEncrypt<typename P::targetP>(
-            static_cast<typename make_signed<typename P::targetP::T>::type>(
-                sk.key.get<typename P::domainP>()[i]),
-            P::targetP::α, sk.key.get<typename P::targetP>());
-}
-
-template <class P>
-inline void bkfftgen(BootStrappingKeyFFT<P> &bkfft, const SecretKey &sk)
-{
-    for (int i = 0; i < P::domainP::n; i++)
-        bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
-            static_cast<typename make_signed<typename P::targetP::T>::type>(
-                sk.key.get<typename P::domainP>()[i]),
-            P::targetP::α, sk.key.get<typename P::targetP>());
-}
-
-template <class P>
-inline void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk)
-{
-    for (int i = 0; i < P::domainP::n; i++)
-        for (int j = 0; j < P::t; j++)
-            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
-                ksk[i][j][k] = tlweSymEncrypt<typename P::targetP>(
-                    sk.key.get<typename P::domainP>()[i] * (k + 1) *
-                        (1ULL
-                         << (numeric_limits<typename P::targetP::T>::digits -
-                             (j + 1) * P::basebit)),
-                    P::α, sk.key.get<typename P::targetP>());
-}
 
 GateKeywoFFT::GateKeywoFFT(const SecretKey &sk)
 {

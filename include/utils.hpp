@@ -111,11 +111,4 @@ inline void PolynomialMulByXaiMinusOne(Polynomial<P> &res,
         for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa] - poly[i];
     }
 }
-
-static void PolynomialMulByXaiMinusOnelvl1(Polynomial<lvl1param> &res,
-                                           const Polynomial<lvl1param> &poly,
-                                           const typename lvl1param::T a)
-{
-    PolynomialMulByXaiMinusOne<lvl1param>(res, poly, a);
-}
 }  // namespace TFHEpp

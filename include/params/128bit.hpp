@@ -49,6 +49,16 @@ struct lvl10param {
     auto operator<=>(const lvl10param&) const = default;
 };
 
+struct lvl20param{
+    static constexpr std::uint32_t t = 7; //number of addition in keyswitching
+    static constexpr std::uint32_t basebit = 2; //how many bit should be encrypted in keyswitching key
+    static const inline double α = lvl0param::α; //key noise
+    using domainP = lvl2param;
+    using targetP = lvl0param;
+
+    auto operator<=>(const lvl20param&) const = default;
+};
+
 struct lvl21param{
     static constexpr std::uint32_t t = 10; //number of addition in keyswitching
     static constexpr std::uint32_t basebit = 3; //how many bit should be encrypted in keyswitching key
