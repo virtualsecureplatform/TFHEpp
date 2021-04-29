@@ -23,7 +23,7 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
     else if constexpr(domain_digit>target_digit) res[P::targetP::n] = (tlwe[P::domainP::n]+(1ULL<<(domain_digit-target_digit-1)))>>(domain_digit-target_digit);
     else if constexpr(domain_digit<target_digit) res[P::targetP::n] = tlwe[P::domainP::n]<<(target_digit-domain_digit);
     for (int i = 0; i < P::domainP::n; i++) {
-        const uint32_t aibar = tlwe[i] + prec_offset;
+        const typename P::domainP::T aibar = tlwe[i] + prec_offset;
         for (int j = 0; j < P::t; j++) {
             const uint32_t aij =
                 (aibar >> (numeric_limits<typename P::domainP::T>::digits -

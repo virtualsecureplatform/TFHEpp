@@ -39,7 +39,7 @@ int main()
     using CBprivksP = lvl22param;
     using ksP = lvl20param;
 
-    constexpr uint32_t address_bit = 9;  // Address by bytes.
+    constexpr uint32_t address_bit = 8;  // Address by bytes.
     constexpr uint32_t memsize = 1 << address_bit;
     random_device seeder;
     default_random_engine engine(seeder());
