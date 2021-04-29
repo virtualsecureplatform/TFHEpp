@@ -8,29 +8,29 @@
 using namespace std;
 using namespace TFHEpp;
 
-template <uint32_t address_bit>
-void RAMUX(TRLWE<lvl1param> &res,
-           const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
-           const array<TRLWE<lvl1param>, 1 << address_bit> &data)
+template <class P,uint32_t address_bit>
+void RAMUX(TRLWE<P> &res,
+           const array<TRGSWFFT<P>, address_bit> &invaddress,
+           const array<TRLWE<P>, 1 << address_bit> &data)
 {
     constexpr uint32_t num_trlwe = 1 << address_bit;
-    array<TRLWE<lvl1param>, num_trlwe / 2> temp;
+    array<TRLWE<P>, num_trlwe / 2> temp;
 
     for (uint32_t index = 0; index < num_trlwe / 2; index++) {
-        CMUXFFT<lvl1param>(temp[index], invaddress[0], data[2 * index],
+        CMUXFFT<P>(temp[index], invaddress[0], data[2 * index],
                            data[2 * index + 1]);
     }
 
     for (uint32_t bit = 0; bit < (address_bit - 2); bit++) {
         const uint32_t stride = 1 << bit;
         for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
-            CMUXFFT<lvl1param>(temp[(2 * index) * stride], invaddress[bit + 1],
+            CMUXFFT<P>(temp[(2 * index) * stride], invaddress[bit + 1],
                                temp[(2 * index) * stride],
                                temp[(2 * index + 1) * stride]);
         }
     }
     constexpr uint32_t stride = 1 << (address_bit - 2);
-    CMUXFFT<lvl1param>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+    CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
 }
 
 int main()
@@ -93,7 +93,7 @@ int main()
     }
 
     // Read
-    RAMUX<address_bit>(encumemory, (*bootedTGSW)[0], encmemory);
+    RAMUX<lvl1param,address_bit>(encumemory, (*bootedTGSW)[0], encmemory);
     SampleExtractIndex<lvl1param>(encreadreslvl1, encumemory, 0);
     IdentityKeySwitch<lvl10param>(encreadres, encreadreslvl1, (*ck).gk.ksk);
 
