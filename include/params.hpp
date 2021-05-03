@@ -19,14 +19,10 @@ using namespace std;
 struct lvl01param {
     using domainP = lvl0param;
     using targetP = lvl1param;
-
-    auto operator<=>(const lvl01param&) const = default;
 };
 struct lvl02param {
     using domainP = lvl0param;
     using targetP = lvl2param;
-
-    auto operator<=>(const lvl02param&) const = default;
 };
 
 template <class P>

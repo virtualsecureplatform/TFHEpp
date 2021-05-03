@@ -60,7 +60,9 @@ struct lvl20param{
     using domainP = lvl2param;
     using targetP = lvl0param;
 
-    auto operator<=>(const lvl20param&) const = default;
+    bool operator==(const lvl20param& in) const{
+        return (t==in.t)&(basebit==in.basebit)
+        };
 };
 
 //Dummy

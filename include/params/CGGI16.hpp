@@ -55,8 +55,6 @@ struct lvl20param{
     static const inline double α = lvl0param::α; //key noise
     using domainP = lvl2param;
     using targetP = lvl0param;
-
-    auto operator<=>(const lvl20param&) const = default;
 };
 
 //Dummy
