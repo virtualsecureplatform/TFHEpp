@@ -19,7 +19,9 @@ namespace TFHEpp{
         archive(n, α, approx_bit);
     }
 
-    auto operator<=>(const portablelvl0param&) const = default;
+    bool operator==(const portablelvl0param& in) const{
+        return (n==in.n)&&(α==in.α)&&(approx_bit==in.approx_bit);
+    };
 };
 
 struct portablelvl1param {
@@ -40,7 +42,9 @@ struct portablelvl1param {
         archive(nbit, n, l, Bgbit, Bg, α, approx_bit);
     }
 
-    auto operator<=>(const portablelvl1param&) const = default;
+    bool operator==(const portablelvl1param& in) const{
+        return (nbit==in.nbit)&&(n==in.n)&&(l==in.l)&&(Bgbit==in.Bgbit)&&(Bg==in.Bg)&&(α==in.α)&&(approx_bit==in.approx_bit);
+    };
 };
 
 struct portablelvl2param {
@@ -61,7 +65,9 @@ struct portablelvl2param {
         archive(nbit, n, l, Bgbit, Bg, α, approx_bit);
     }
 
-    auto operator<=>(const portablelvl2param&) const = default;
+    bool operator==(const portablelvl2param& in) const{
+        return (nbit==in.nbit)&&(n==in.n)&&(l==in.l)&&(Bgbit==in.Bgbit)&&(Bg==in.Bg)&&(α==in.α)&&(approx_bit==in.approx_bit);
+    };
 };
 
 //Key Switching parameters
@@ -79,7 +85,28 @@ struct portablelvl10param {
         archive(t, basebit, α);
     }
 
-    auto operator<=>(const portablelvl10param&) const = default;
+    bool operator==(const portablelvl10param& in) const{
+        return (t==in.t)&&(basebit==in.basebit)&&(α==in.α);
+    };
+};
+
+struct portablelvl20param{
+    std::uint32_t t; //number of addition in keyswitching
+    std::uint32_t basebit; //how many bit should be encrypted in keyswitching key
+    double α; //key noise
+
+    portablelvl20param(): t(lvl20param::t),basebit(lvl20param::basebit),α(lvl20param::α){}
+    portablelvl20param(const portablelvl20param& P): t(P.t),basebit(P.basebit),α(P.α){}
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(t, basebit, α);
+    }
+
+    bool operator==(const portablelvl20param& in) const{
+        return (t==in.t)&&(basebit==in.basebit)&&(α==in.α);
+    }
 };
 
 struct portablelvl21param{
@@ -96,7 +123,9 @@ struct portablelvl21param{
         archive(t, basebit, α);
     }
 
-    auto operator<=>(const portablelvl21param&) const = default;
+    bool operator==(const portablelvl21param& in) const{
+        return (t==in.t)&&(basebit==in.basebit)&&(α==in.α);
+    }
 };
 
 struct portablelvl22param{
@@ -108,7 +137,9 @@ struct portablelvl22param{
     portablelvl22param(const portablelvl22param& P): t(P.t),basebit(P.basebit),α(P.α){}
 
 
-    auto operator<=>(const portablelvl22param&) const = default;
+    bool operator==(const portablelvl22param& in) const{
+        return (t==in.t)&&(basebit==in.basebit)&&(α==in.α);
+    }
 };
 
     struct lweParams {
@@ -116,10 +147,11 @@ struct portablelvl22param{
         portablelvl1param lvl1;
         portablelvl2param lvl2;
         portablelvl10param lvl10;
+        portablelvl20param lvl20;
         portablelvl21param lvl21;
         portablelvl22param lvl22;
 
-    lweParams():lvl0(),lvl1(),lvl2(),lvl10(),lvl21(),lvl22(){}
+    lweParams():lvl0(),lvl1(),lvl2(),lvl10(),lvl20(),lvl21(),lvl22(){}
 
     template <class Archive>
     void serialize(Archive &archive)
@@ -128,11 +160,14 @@ struct portablelvl22param{
         lvl1.nbit, lvl1.n, lvl1.l, lvl1.Bgbit, lvl1.α, lvl1.approx_bit,
         lvl2.nbit, lvl2.n, lvl2.l, lvl2.Bgbit, lvl2.α, lvl2.approx_bit,
         lvl10.t,lvl10.basebit,lvl10.α,
+        lvl20.t,lvl20.basebit,lvl20.α,
         lvl21.t,lvl21.basebit,lvl21.α,
         lvl22.t,lvl22.basebit,lvl22.α);
     }
 
 // https://cpprefjp.github.io/lang/cpp20/consistent_comparison.html
-    auto operator<=>(const lweParams&) const = default;
+    bool operator==(const lweParams& in) const{
+        return (lvl0==in.lvl0)&&(lvl1==in.lvl1)&&(lvl2==in.lvl2)&&(lvl10==in.lvl10)&&(lvl20==in.lvl20)&&(lvl21==in.lvl21)&&(lvl22==in.lvl22);
+    }
 };
 }
