@@ -1,7 +1,8 @@
 #pragma once
 
 #include <array>
-#include <params.hpp>
+
+#include "./params.hpp"
 
 namespace TFHEpp {
 using namespace std;

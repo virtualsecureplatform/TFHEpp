@@ -118,9 +118,11 @@ void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
     IdentityKeySwitch<lvl10param>(res, and1, gk.ksk);
 }
 
-template<class P>
-void HomMUXwoSE(TRLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &cs,
-                const TLWE<typename P::domainP> &c1, const TLWE<typename P::domainP> &c0,
+template <class P>
+void HomMUXwoSE(TRLWE<typename P::targetP> &res,
+                const TLWE<typename P::domainP> &cs,
+                const TLWE<typename P::domainP> &c1,
+                const TLWE<typename P::domainP> &c0,
                 const BootstrappingKeyFFT<P> &bkfft)
 {
     TLWE<typename P::domainP> temp1;
@@ -139,10 +141,12 @@ void HomMUXwoSE(TRLWE<typename P::targetP> &res, const TLWE<typename P::domainP>
     };
     res[1][0] += P::targetP::μ;
 }
-#define INST(P)                                     \
-    template void HomMUXwoSE<P>(TRLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &cs, \
-                const TLWE<typename P::domainP> &c1, const TLWE<typename P::domainP> &c0, \
-                const BootstrappingKeyFFT<P> &bkfft)
+#define INST(P)                                                      \
+    template void HomMUXwoSE<P>(TRLWE<typename P::targetP> & res,    \
+                                const TLWE<typename P::domainP> &cs, \
+                                const TLWE<typename P::domainP> &c1, \
+                                const TLWE<typename P::domainP> &c0, \
+                                const BootstrappingKeyFFT<P> &bkfft)
 TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(INST);
 #undef INST
 

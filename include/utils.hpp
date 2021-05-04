@@ -1,14 +1,14 @@
 #pragma once
 
-#include <randen.h>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <functional>
 #include <limits>
-#include <params.hpp>
 #include <random>
+
+#include "../thirdparties/randen/randen.h"
+#include "./params.hpp"
 
 namespace TFHEpp {
 static thread_local std::random_device trng;
@@ -50,7 +50,7 @@ template <class P>
 inline typename P::T modSwitchFromTorus(uint32_t phase)
 {
     constexpr uint32_t Mbit = P::nbit + 1;
-    static_assert(32>=Mbit, "Undefined modSwitchFromTorus!");
+    static_assert(32 >= Mbit, "Undefined modSwitchFromTorus!");
     return (phase + (1U << (31 - Mbit))) >> (32 - Mbit);
 }
 

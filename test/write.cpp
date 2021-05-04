@@ -31,7 +31,8 @@ int main()
     uniform_int_distribution<uint8_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CloudKey<lvl02param,lvl21param,lvl20param> *ck = new CloudKey<lvl02param,lvl21param,lvl20param>(*sk);
+    CloudKey<lvl02param, lvl21param, lvl20param> *ck =
+        new CloudKey<lvl02param, lvl21param, lvl20param>(*sk);
     array<uint8_t, memsize> pmemory;
     array<array<typename lvl1param::T, lvl1param::n>, memsize> pmu = {};
     vector<uint8_t> address(address_bit);

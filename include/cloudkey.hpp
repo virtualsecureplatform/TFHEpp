@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/types/array.hpp>
-#include <params.hpp>
-#include <tlwe.hpp>
-#include <trgsw.hpp>
-#include <trlwe.hpp>
+#include "../thirdparties/cereal/include/cereal/archives/portable_binary.hpp"
+#include "../thirdparties/cereal/include/cereal/types/array.hpp"
+#include "params.hpp"
+#include "tlwe.hpp"
+#include "trgsw.hpp"
+#include "trlwe.hpp"
 
 namespace TFHEpp {
 
@@ -81,13 +81,13 @@ struct CircuitKey {
     }
 };
 
-template<class CBbsP, class CBprivksP, class CMksP>
+template <class CBbsP, class CBprivksP, class CMksP>
 struct CloudKey {
     GateKey gk;
-    CircuitKey<CBbsP,CBprivksP> ck;
+    CircuitKey<CBbsP, CBprivksP> ck;
     KeySwitchingKey<CMksP> ksk;
     lweParams params;
-    CloudKey(SecretKey sk) : gk(sk), ck(sk) {ikskgen<CMksP>(ksk, sk);}
+    CloudKey(SecretKey sk) : gk(sk), ck(sk) { ikskgen<CMksP>(ksk, sk); }
     CloudKey() {}
     template <class Archive>
     void serialize(Archive &archive)

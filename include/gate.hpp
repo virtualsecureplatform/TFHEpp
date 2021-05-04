@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cloudkey.hpp>
+#include "./cloudkey.hpp"
 
 namespace TFHEpp {
 using namespace std;
@@ -31,9 +31,11 @@ void HomORYN(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
 void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
             const TLWE<lvl0param> &c1, const TLWE<lvl0param> &c0,
             const GateKey &gk);
-template<class P>
-void HomMUXwoSE(TRLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &cs,
-                const TLWE<typename P::domainP> &c1, const TLWE<typename P::domainP> &c0,
+template <class P>
+void HomMUXwoSE(TRLWE<typename P::targetP> &res,
+                const TLWE<typename P::domainP> &cs,
+                const TLWE<typename P::domainP> &c1,
+                const TLWE<typename P::domainP> &c0,
                 const BootstrappingKeyFFT<P> &bkfft);
 void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
                             const TRLWE<lvl1param> &c1r,

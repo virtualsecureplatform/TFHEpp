@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cloudkey.hpp>
-#include <detwfa.hpp>
-#include <utils.hpp>
+#include "./cloudkey.hpp"
+#include "./detwfa.hpp"
+#include "./utils.hpp"
 
 namespace TFHEpp {
 using namespace std;

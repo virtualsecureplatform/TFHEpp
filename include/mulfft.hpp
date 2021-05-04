@@ -1,9 +1,8 @@
 #pragma once
 
-#include <spqlios-fft.h>
-
-#include <params.hpp>
-#include <utils.hpp>
+#include "../thirdparties/spqlios/spqlios-fft.h"
+#include "./params.hpp"
+#include "./utils.hpp"
 
 namespace TFHEpp {
 using namespace std;

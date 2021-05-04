@@ -65,21 +65,21 @@ using PrivKeySwitchKey =
           P::domainP::n + 1>;
 
 #define TFHEPP_EXPLICIT_INSTANTIATION_LVL0_1_2(fun) \
-    fun(lvl0param);                            \
-    fun(lvl1param);                            \
+    fun(lvl0param);                                 \
+    fun(lvl1param);                                 \
     fun(lvl2param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(fun) \
-    fun(lvl1param);                          \
+    fun(lvl1param);                               \
     fun(lvl2param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(fun) \
-    fun(lvl01param);                           \
+    fun(lvl01param);                                \
     fun(lvl02param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(fun) \
-    fun(lvl10param);                              \
-    fun(lvl20param);                              \
-    fun(lvl21param);                              \
+    fun(lvl10param);                                  \
+    fun(lvl20param);                                  \
+    fun(lvl21param);                                  \
     fun(lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(fun) \
-    fun(lvl02param, lvl21param);                   \
+    fun(lvl02param, lvl21param);                        \
     fun(lvl02param, lvl22param);
 }  // namespace TFHEpp
