@@ -36,7 +36,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_LVL0_1_2(INST);
 template <class P>
 void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc,
                                     const TLWE<typename P::domainP> &tlwe,
-                                    const BootStrappingKeyFFT<P> &bkfft)
+                                    const BootstrappingKeyFFT<P> &bkfft)
 {
     TRLWE<typename P::targetP> temp;
     uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(
@@ -54,14 +54,14 @@ void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc,
     template void GateBootstrappingTLWE2TRLWEFFT<P>( \
         TRLWE<typename P::targetP> & acc,            \
         const TLWE<typename P::domainP> &tlwe,       \
-        const BootStrappingKeyFFT<P> &bkfft)
+        const BootstrappingKeyFFT<P> &bkfft)
 TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(INST);
 #undef INST
 
 template <class P>
 void GateBootstrappingTLWE2TLWEFFT(TLWE<typename P::targetP> &res,
                                    const TLWE<typename P::domainP> &tlwe,
-                                   const BootStrappingKeyFFT<P> &bkfft)
+                                   const BootstrappingKeyFFT<P> &bkfft)
 {
     TRLWE<typename P::targetP> acc;
     GateBootstrappingTLWE2TRLWEFFT<P>(acc, tlwe, bkfft);
@@ -71,14 +71,14 @@ void GateBootstrappingTLWE2TLWEFFT(TLWE<typename P::targetP> &res,
     template void GateBootstrappingTLWE2TLWEFFT<P>( \
         TLWE<typename P::targetP> & res,            \
         const TLWE<typename P::domainP> &tlwe,      \
-        const BootStrappingKeyFFT<P> &bkfft)
+        const BootstrappingKeyFFT<P> &bkfft)
 TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(INST);
 #undef INST
 
 template <class P>
 void GateBootstrappingTLWE2TLWEFFTvariableMu(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
-    const BootStrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
+    const BootstrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
 {
     TRLWE<typename P::targetP> acc, temp;
     uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(
@@ -98,7 +98,7 @@ void GateBootstrappingTLWE2TLWEFFTvariableMu(
     template void GateBootstrappingTLWE2TLWEFFTvariableMu<P>( \
         TLWE<typename P::targetP> & res,                      \
         const TLWE<typename P::domainP> &tlwe,                \
-        const BootStrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
+        const BootstrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
 TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(INST);
 #undef INST
 

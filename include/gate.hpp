@@ -34,7 +34,7 @@ void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
 template<class P>
 void HomMUXwoSE(TRLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &cs,
                 const TLWE<typename P::domainP> &c1, const TLWE<typename P::domainP> &c0,
-                const BootStrappingKeyFFT<P> &bkfft);
+                const BootstrappingKeyFFT<P> &bkfft);
 void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
                             const TRLWE<lvl1param> &c1r,
                             const TRLWE<lvl1param> &c0r, const GateKey &gk);

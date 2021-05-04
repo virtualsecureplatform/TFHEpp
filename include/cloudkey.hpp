@@ -10,7 +10,7 @@
 namespace TFHEpp {
 
 template <class P>
-void bkgen(BootStrappingKey<P> &bkfft, const SecretKey &sk)
+void bkgen(BootstrappingKey<P> &bkfft, const SecretKey &sk)
 {
     for (int i = 0; i < P::domainP::n; i++)
         bkfft[i] = trgswSymEncrypt<typename P::targetP>(
@@ -20,7 +20,7 @@ void bkgen(BootStrappingKey<P> &bkfft, const SecretKey &sk)
 }
 
 template <class P>
-inline void bkfftgen(BootStrappingKeyFFT<P> &bkfft, const SecretKey &sk)
+inline void bkfftgen(BootstrappingKeyFFT<P> &bkfft, const SecretKey &sk)
 {
     for (int i = 0; i < P::domainP::n; i++)
         bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
@@ -44,7 +44,7 @@ inline void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk)
 }
 
 struct GateKeywoFFT {
-    BootStrappingKey<lvl01param> bklvl01;
+    BootstrappingKey<lvl01param> bklvl01;
     KeySwitchingKey<lvl10param> ksk;
     GateKeywoFFT(const SecretKey &sk);
     GateKeywoFFT() {}
@@ -56,7 +56,7 @@ struct GateKeywoFFT {
 };
 
 struct GateKey {
-    BootStrappingKeyFFT<lvl01param> bkfftlvl01;
+    BootstrappingKeyFFT<lvl01param> bkfftlvl01;
     KeySwitchingKey<lvl10param> ksk;
     GateKey(const SecretKey &sk);
     GateKey(const GateKeywoFFT &gkwofft);
@@ -70,7 +70,7 @@ struct GateKey {
 
 template <class bsP, class privksP>
 struct CircuitKey {
-    BootStrappingKeyFFT<bsP> bkfft;
+    BootstrappingKeyFFT<bsP> bkfft;
     std::array<PrivKeySwitchKey<privksP>, 2> privksk;
     CircuitKey(const SecretKey &sk);
     CircuitKey() {}
