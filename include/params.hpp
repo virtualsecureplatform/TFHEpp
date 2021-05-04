@@ -9,11 +9,11 @@ using namespace std;
 // Use old 80bit security parameters. It is faster, but not recommended.
 
 #ifdef USE_80BIT_SECURITY
-#include <params/CGGI16.hpp>
+#include "./params/CGGI16.hpp"
 #elif defined(USE_CGGI19)
-#include <params/CGGI19.hpp >
+#include "./params/CGGI19.hpp"
 #else
-#include <params/128bit.hpp>
+#include "./params/128bit.hpp"
 #endif
 
 struct lvl01param {
