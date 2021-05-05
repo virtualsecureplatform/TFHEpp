@@ -18,7 +18,7 @@ struct lvl1param {
     static constexpr std::uint32_t nbit = 10;
     static constexpr std::uint32_t n = 1<<nbit;
     static constexpr std::uint32_t l = 3;
-    static constexpr std::uint32_t Bgbit = 6;
+    static constexpr std::uint32_t Bgbit = 7;
     static constexpr std::uint32_t Bg = 1<<Bgbit;
     static const inline double α = std::pow(2.0, -25);
     using T = uint32_t;
