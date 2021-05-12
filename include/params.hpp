@@ -36,24 +36,34 @@ using Polynomial = array<typename P::T, P::n>;
 template <class P>
 using PolynomialInFD = array<double, P::n>;
 template <class P>
+using PolynomialNTT = array<uint64_t, P::n>;
+template <class P>
 using DecomposedPolynomial = Polynomial<P>;
 template <class P>
 using DecomposedPolynomialInFD = PolynomialInFD<P>;
+template <class P>
+using DecomposedPolynomialNTT = PolynomialNTT<P>;
 
 template <class P>
 using TRLWE = array<Polynomial<P>, 2>;
 template <class P>
 using TRLWEInFD = array<PolynomialInFD<P>, 2>;
+template <class P>
+using TRLWENTT = array<PolynomialNTT<P>, 2>;
 
 template <class P>
 using TRGSW = array<TRLWE<P>, 2 * P::l>;
 template <class P>
 using TRGSWFFT = array<TRLWEInFD<P>, 2 * P::l>;
+template <class P>
+using TRGSWNTT = array<TRLWENTT<P>, 2 * P::l>;
 
 template <class P>
 using BootstrappingKey = array<TRGSW<typename P::targetP>, P::domainP::n>;
 template <class P>
 using BootstrappingKeyFFT = array<TRGSWFFT<typename P::targetP>, P::domainP::n>;
+template <class P>
+using BootstrappingKeyNTT = array<TRGSWNTT<typename P::targetP>, P::domainP::n>;
 
 template <class P>
 using KeySwitchingKey =
