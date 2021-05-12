@@ -37,7 +37,7 @@ struct portablelvl0param {
 struct portablelvl1param {
     std::uint32_t nbit;  // dimension must be a power of 2 for ease of
                          // polynomial multiplication.
-    std::uint32_t n;  // dimension
+    std::uint32_t n;     // dimension
     std::uint32_t l;
     std::uint32_t Bgbit;
     std::uint32_t Bg;
@@ -82,7 +82,7 @@ struct portablelvl1param {
 struct portablelvl2param {
     std::uint32_t nbit;  // dimension must be a power of 2 for ease of
                          // polynomial multiplication.
-    std::uint32_t n;  // dimension
+    std::uint32_t n;     // dimension
     std::uint32_t l;
     std::uint32_t Bgbit;
     std::uint32_t Bg;
