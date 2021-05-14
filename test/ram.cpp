@@ -8,30 +8,6 @@
 using namespace std;
 using namespace TFHEpp;
 
-template <class P, uint32_t address_bit>
-void RAMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
-           const array<TRLWE<P>, 1 << address_bit> &data)
-{
-    constexpr uint32_t num_trlwe = 1 << address_bit;
-    array<TRLWE<P>, num_trlwe / 2> temp;
-
-    for (uint32_t index = 0; index < num_trlwe / 2; index++) {
-        CMUXFFT<P>(temp[index], invaddress[0], data[2 * index],
-                   data[2 * index + 1]);
-    }
-
-    for (uint32_t bit = 0; bit < (address_bit - 2); bit++) {
-        const uint32_t stride = 1 << bit;
-        for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
-            CMUXFFT<P>(temp[(2 * index) * stride], invaddress[bit + 1],
-                       temp[(2 * index) * stride],
-                       temp[(2 * index + 1) * stride]);
-        }
-    }
-    constexpr uint32_t stride = 1 << (address_bit - 2);
-    CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
-}
-
 int main()
 {
     using CBbsP = lvl02param;
@@ -71,7 +47,7 @@ int main()
     array<array<TRGSWFFT<typename ksP::domainP>, address_bit>, 2> *bootedTGSW =
         new array<array<TRGSWFFT<typename ksP::domainP>, address_bit>, 2>;
     vector<TLWE<typename ksP::targetP>> encaddress(address_bit);
-    array<TRLWE<typename ksP::domainP>, memsize> encmemory;
+    array<TRLWE<typename ksP::domainP>, memsize> *encmemory = new array<TRLWE<typename ksP::domainP>, memsize>;
     TLWE<typename ksP::domainP> encreadreshigh;
     TLWE<typename ksP::targetP> encreadres;
     TRLWE<typename ksP::domainP> encumemory;
@@ -81,7 +57,7 @@ int main()
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
-        encmemory[i] = trlweSymEncrypt<typename ksP::domainP>(
+        (*encmemory)[i] = trlweSymEncrypt<typename ksP::domainP>(
             pmu[i], ksP::domainP::α, (*sk).key.get<typename ksP::domainP>());
     cs = tlweSymEncrypt<typename ksP::targetP>(
         wrflag ? ksP::targetP::μ : -ksP::targetP::μ, ksP::targetP::α,
@@ -100,7 +76,7 @@ int main()
 
     // Read
     RAMUX<typename ksP::domainP, address_bit>(encumemory, (*bootedTGSW)[0],
-                                              encmemory);
+                                              *encmemory);
     SampleExtractIndex<typename ksP::domainP>(encreadreshigh, encumemory, 0);
     IdentityKeySwitch<ksP>(encreadres, encreadreshigh, (*ck).ksk);
 
@@ -111,12 +87,12 @@ int main()
         TRLWE<typename ksP::domainP> temp = writed;
         for (int j = 0; j < address_bit; j++)
             CMUXFFT<typename ksP::domainP>(
-                temp, (*bootedTGSW)[addressbitset[j]][j], temp, encmemory[i]);
+                temp, (*bootedTGSW)[addressbitset[j]][j], temp, (*encmemory)[i]);
         TLWE<typename ksP::domainP> temp2;
         SampleExtractIndex<typename ksP::domainP>(temp2, temp, 0);
         TLWE<typename ksP::targetP> temp3;
         IdentityKeySwitch<ksP>(temp3, temp2, (*ck).ksk);
-        GateBootstrappingTLWE2TRLWEFFT<CBbsP>(encmemory[i], temp3,
+        GateBootstrappingTLWE2TRLWEFFT<CBbsP>((*encmemory)[i], temp3,
                                               (*ck).ck.bkfft);
     }
 
@@ -132,7 +108,7 @@ int main()
 
     array<bool, ksP::domainP::n> pwriteres =
         trlweSymDecrypt<typename ksP::domainP>(
-            encmemory[addressint], (*sk).key.get<typename ksP::domainP>());
+            (*encmemory)[addressint], (*sk).key.get<typename ksP::domainP>());
     assert(static_cast<int>(pwriteres[0]) ==
            static_cast<int>((wrflag > 0) ? writep : pmemory[addressint]));
 
