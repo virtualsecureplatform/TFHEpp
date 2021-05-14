@@ -47,7 +47,8 @@ int main()
     array<array<TRGSWFFT<typename ksP::domainP>, address_bit>, 2> *bootedTGSW =
         new array<array<TRGSWFFT<typename ksP::domainP>, address_bit>, 2>;
     vector<TLWE<typename ksP::targetP>> encaddress(address_bit);
-    array<TRLWE<typename ksP::domainP>, memsize> *encmemory = new array<TRLWE<typename ksP::domainP>, memsize>;
+    array<TRLWE<typename ksP::domainP>, memsize> *encmemory =
+        new array<TRLWE<typename ksP::domainP>, memsize>;
     TLWE<typename ksP::domainP> encreadreshigh;
     TLWE<typename ksP::targetP> encreadres;
     TRLWE<typename ksP::domainP> encumemory;
@@ -86,8 +87,9 @@ int main()
         const bitset<address_bit> addressbitset(i);
         TRLWE<typename ksP::domainP> temp = writed;
         for (int j = 0; j < address_bit; j++)
-            CMUXFFT<typename ksP::domainP>(
-                temp, (*bootedTGSW)[addressbitset[j]][j], temp, (*encmemory)[i]);
+            CMUXFFT<typename ksP::domainP>(temp,
+                                           (*bootedTGSW)[addressbitset[j]][j],
+                                           temp, (*encmemory)[i]);
         TLWE<typename ksP::domainP> temp2;
         SampleExtractIndex<typename ksP::domainP>(temp2, temp, 0);
         TLWE<typename ksP::targetP> temp3;

@@ -2,6 +2,7 @@
 
 #include "./circuitbootstrapping.hpp"
 #include "./cloudkey.hpp"
+#include "./cmuxmem.hpp"
 #include "./detwfa.hpp"
 #include "./gate.hpp"
 #include "./gatebootstrapping.hpp"
@@ -11,4 +12,3 @@
 #include "./tlwe.hpp"
 #include "./trgsw.hpp"
 #include "./trlwe.hpp"
-#include "./cmuxmem.hpp"

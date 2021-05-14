@@ -2,30 +2,30 @@
 
 #include "./detwfa.hpp"
 
-namespace TFHEpp{
-    template <class P, uint32_t address_bit>
-    void RAMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
-            const array<TRLWE<P>, 1 << address_bit> &data)
-    {
-        constexpr uint32_t num_trlwe = 1 << address_bit;
-        array<TRLWE<P>, num_trlwe / 2> temp;
+namespace TFHEpp {
+template <class P, uint32_t address_bit>
+void RAMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
+           const array<TRLWE<P>, 1 << address_bit> &data)
+{
+    constexpr uint32_t num_trlwe = 1 << address_bit;
+    array<TRLWE<P>, num_trlwe / 2> temp;
 
-        for (uint32_t index = 0; index < num_trlwe / 2; index++) {
-            CMUXFFT<P>(temp[index], invaddress[0], data[2 * index],
-                    data[2 * index + 1]);
-        }
-
-        for (uint32_t bit = 0; bit < (address_bit - 2); bit++) {
-            const uint32_t stride = 1 << bit;
-            for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
-                CMUXFFT<P>(temp[(2 * index) * stride], invaddress[bit + 1],
-                        temp[(2 * index) * stride],
-                        temp[(2 * index + 1) * stride]);
-            }
-        }
-        constexpr uint32_t stride = 1 << (address_bit - 2);
-        CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+    for (uint32_t index = 0; index < num_trlwe / 2; index++) {
+        CMUXFFT<P>(temp[index], invaddress[0], data[2 * index],
+                   data[2 * index + 1]);
     }
+
+    for (uint32_t bit = 0; bit < (address_bit - 2); bit++) {
+        const uint32_t stride = 1 << bit;
+        for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
+            CMUXFFT<P>(temp[(2 * index) * stride], invaddress[bit + 1],
+                       temp[(2 * index) * stride],
+                       temp[(2 * index + 1) * stride]);
+        }
+    }
+    constexpr uint32_t stride = 1 << (address_bit - 2);
+    CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+}
 
 template <class P, uint32_t address_bit, uint32_t width_bit>
 void UROMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
@@ -92,4 +92,4 @@ void LROMUX(vector<TLWE<typename ksP::targetP>> &res,
     for (int i = 0; i < word; i++)
         IdentityKeySwitch<ksP>(res[i], reslvl1[i], ksk);
 }
-}
+}  // namespace TFHEpp
