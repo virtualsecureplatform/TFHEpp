@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.16)
 project(tfhe++ CXX)
-set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-march=native -O3 -g -funroll-loops")
 
@@ -10,8 +9,8 @@ OPTION(ENABLE_TUTORIAL "Build tutorial" OFF)
 
 if(USE_80BIT_SECURITY)
     add_compile_definitions(USE_80BIT_SECURITY)
-elseif(USE_CGGI16)
-    add_compile_definitions(USE_CGGI16)
+elseif(USE_CGGI19)
+    add_compile_definitions(USE_CGGI19)
 endif()
 
 # For OpenMP

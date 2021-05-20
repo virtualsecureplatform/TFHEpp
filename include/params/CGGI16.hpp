@@ -49,6 +49,15 @@ struct lvl21param{
 };
 
 //Dummy
+struct lvl20param{
+    static constexpr std::uint32_t t = 0; //number of addition in keyswitching
+    static constexpr std::uint32_t basebit = 0; //how many bit should be encrypted in keyswitching key
+    static const inline double α = lvl0param::α; //key noise
+    using domainP = lvl2param;
+    using targetP = lvl0param;
+};
+
+//Dummy
 struct lvl22param{
     static constexpr std::uint32_t t = 0;
     static constexpr std::uint32_t basebit = 0;

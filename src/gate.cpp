@@ -118,26 +118,37 @@ void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
     IdentityKeySwitch<lvl10param>(res, and1, gk.ksk);
 }
 
-void HomMUXwoSE(TRLWE<lvl1param> &res, const TLWE<lvl0param> &cs,
-                const TLWE<lvl0param> &c1, const TLWE<lvl0param> &c0,
-                const GateKey &gk)
+template <class P>
+void HomMUXwoSE(TRLWE<typename P::targetP> &res,
+                const TLWE<typename P::domainP> &cs,
+                const TLWE<typename P::domainP> &c1,
+                const TLWE<typename P::domainP> &c0,
+                const BootstrappingKeyFFT<P> &bkfft)
 {
-    TLWE<lvl0param> temp1;
-    TLWE<lvl0param> temp0;
-    for (int i = 0; i <= lvl0param::n; i++) temp1[i] = cs[i] + c1[i];
-    for (int i = 0; i <= lvl0param::n; i++) temp0[i] = -cs[i] + c0[i];
-    temp1[lvl0param::n] -= lvl0param::μ;
-    temp0[lvl0param::n] -= lvl0param::μ;
-    TRLWE<lvl1param> and0;
-    GateBootstrappingTLWE2TRLWEFFT<lvl01param>(res, temp1, gk.bkfftlvl01);
-    GateBootstrappingTLWE2TRLWEFFT<lvl01param>(and0, temp0, gk.bkfftlvl01);
+    TLWE<typename P::domainP> temp1;
+    TLWE<typename P::domainP> temp0;
+    for (int i = 0; i <= P::domainP::n; i++) temp1[i] = cs[i] + c1[i];
+    for (int i = 0; i <= P::domainP::n; i++) temp0[i] = -cs[i] + c0[i];
+    temp1[lvl0param::n] -= P::domainP::μ;
+    temp0[lvl0param::n] -= P::domainP::μ;
+    TRLWE<typename P::targetP> and0;
+    GateBootstrappingTLWE2TRLWEFFT<P>(res, temp1, bkfft);
+    GateBootstrappingTLWE2TRLWEFFT<P>(and0, temp0, bkfft);
 
-    for (int i = 0; i < lvl1param::n; i++) {
+    for (int i = 0; i < P::targetP::n; i++) {
         res[0][i] += and0[0][i];
         res[1][i] += and0[1][i];
     };
-    res[1][0] += lvl1param::μ;
+    res[1][0] += P::targetP::μ;
 }
+#define INST(P)                                                      \
+    template void HomMUXwoSE<P>(TRLWE<typename P::targetP> & res,    \
+                                const TLWE<typename P::domainP> &cs, \
+                                const TLWE<typename P::domainP> &c1, \
+                                const TLWE<typename P::domainP> &c0, \
+                                const BootstrappingKeyFFT<P> &bkfft)
+TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(INST);
+#undef INST
 
 void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
                             const TRLWE<lvl1param> &c1r,

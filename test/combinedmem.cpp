@@ -49,10 +49,10 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
         lvl1param::nbit -
         words_bit;  // log_2 of how many words are in one TRLWElvl1 message.
     TRLWE<lvl1param> temp, acc;
-    PolynomialMulByXaiMinusOnelvl1(temp[0], data[0],
-                                   2 * lvl1param::n - (lvl1param::n >> 1));
-    PolynomialMulByXaiMinusOnelvl1(temp[1], data[1],
-                                   2 * lvl1param::n - (lvl1param::n >> 1));
+    PolynomialMulByXaiMinusOne<lvl1param>(
+        temp[0], data[0], 2 * lvl1param::n - (lvl1param::n >> 1));
+    PolynomialMulByXaiMinusOne<lvl1param>(
+        temp[1], data[1], 2 * lvl1param::n - (lvl1param::n >> 1));
     trgswfftExternalProduct<lvl1param>(temp, temp, address[width_bit - 1]);
     for (int i = 0; i < lvl1param::n; i++) {
         acc[0][i] = temp[0][i] + data[0][i];
@@ -60,9 +60,9 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
     }
 
     for (uint32_t bit = 2; bit <= width_bit; bit++) {
-        PolynomialMulByXaiMinusOnelvl1(
+        PolynomialMulByXaiMinusOne<lvl1param>(
             temp[0], acc[0], 2 * lvl1param::n - (lvl1param::n >> bit));
-        PolynomialMulByXaiMinusOnelvl1(
+        PolynomialMulByXaiMinusOne<lvl1param>(
             temp[1], acc[1], 2 * lvl1param::n - (lvl1param::n >> bit));
         trgswfftExternalProduct<lvl1param>(temp, temp,
                                            address[width_bit - bit]);
@@ -153,7 +153,8 @@ int main()
     uniform_int_distribution<uint8_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CloudKey *ck = new CloudKey(*sk);
+    CloudKey<lvl02param, lvl21param, lvl20param> *ck =
+        new CloudKey<lvl02param, lvl21param, lvl20param>(*sk);
     vector<uint8_t> ramp(memsize / 2 * words);  // unit of memsize is byte(8bit)
     vector<uint8_t> romp(memsize / 2 * words);
     vector<array<array<uint32_t, lvl1param::n>, numramtrlwe>> ramu(words);
@@ -260,8 +261,8 @@ int main()
             TLWE<lvl0param> cs;
             HomAND(cs, encwrflag, encaddress[address_bit - 1], (*ck).gk);
             for (int i = 0; i < words; i++)
-                HomMUXwoSE(writed[i], cs, encwritep[i], encramreadres[i],
-                           (*ck).gk);
+                HomMUXwoSE<lvl01param>(writed[i], cs, encwritep[i],
+                                       encramreadres[i], (*ck).gk.bkfftlvl01);
 
             // Write
             combWRAM<address_bit - 1, words_bit>(encram, *bootedTGSW, writed,
