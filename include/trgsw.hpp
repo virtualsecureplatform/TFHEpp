@@ -32,14 +32,6 @@ constexpr array<typename P::T, P::l> hgen()
     return h;
 }
 
-template<class P>
-inline TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw){
-    TRGSWFFT<P> trgswfft;
-    for (int i = 0; i < 2 * P::l; i++)
-        for (int j = 0; j < 2; j++) TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
-    return trgswfft;
-}
-
 template <class P>
 TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw);
 

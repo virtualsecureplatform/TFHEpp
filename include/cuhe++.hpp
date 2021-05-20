@@ -1,12 +1,11 @@
 #pragma once
 
+#include <bits/stdint-uintn.h>
 #include <cstdint>
 #include <array>
 #include <cassert>
 
 namespace cuHEpp{
-    using namespace std;
-
     constexpr uint64_t P = (((1ULL<<32)-1)<<32)+ 1;
 
     // this class defines operations over integaer torus.
@@ -193,10 +192,10 @@ namespace cuHEpp{
     constexpr uint64_t W = 12037493425763644479ULL;
 
     template<uint32_t Nbit>
-    inline array<array<INTorus,1U<<Nbit>,2> TwistGen(){
+    inline std::array<std::array<INTorus,1U<<Nbit>,2> TwistGen(){
         constexpr uint32_t N = 1U<<Nbit;
 
-        array<array<INTorus,1U<<Nbit>,2> twist;
+        std::array<std::array<INTorus,1U<<Nbit>,2> twist;
         const INTorus w = INTorus(W).Pow(1U<<(32-Nbit-1));
         twist[0][0] = twist[1][0] = INTorus(1,false);
         for(uint32_t i = 1;i < N;i++) twist[1][i] = twist[1][i-1]*w;
@@ -208,10 +207,10 @@ namespace cuHEpp{
     }
 
     template<uint32_t Nbit>
-    inline array<array<INTorus,1U<<(Nbit-1)>,2> TableGen(){
+    inline std::array<std::array<INTorus,1U<<(Nbit-1)>,2> TableGen(){
         constexpr uint32_t N = 1U<<Nbit;
 
-        array<array<INTorus,N/2>,2>table;
+        std::array<std::array<INTorus,N/2>,2>table;
         const INTorus w = INTorus(W).Pow(1U<<(32-Nbit));
         table[0][0] = table[1][0] = INTorus(1,false);
         for(uint32_t i = 1;i<N/2;i++) table[1][i] = table[1][i-1]*w;
@@ -221,34 +220,34 @@ namespace cuHEpp{
     }
 
     template<typename T = uint32_t,uint32_t Nbit>
-    inline void TwistMulInvert(array<INTorus,1<<Nbit> &res, const array<T,1<<Nbit> &a, const array<INTorus,1<<Nbit> &twist){
+    inline void TwistMulInvert(std::array<INTorus,1<<Nbit> &res, const std::array<T,1<<Nbit> &a, const std::array<INTorus,1<<Nbit> &twist){
         constexpr uint32_t N = 1<<Nbit;
-        for (int i = 0; i < N; i++) res[i] = INTorus(a[i],is_same_v<T,uint64_t>) * twist[i];
+        for (int i = 0; i < N; i++) res[i] = INTorus(a[i],std::is_same_v<T,uint64_t>) * twist[i];
     }
 
     template<typename T = uint32_t,uint32_t Nbit>
-    inline void TwistMulDirect(array<T,1<<Nbit> &res, const array<INTorus,1<<Nbit> &a, const array<INTorus,1<<Nbit> &twist){
+    inline void TwistMulDirect(std::array<T,1<<Nbit> &res, const std::array<INTorus,1<<Nbit> &a, const std::array<INTorus,1<<Nbit> &twist){
         const INTorus invN = InvPow2(Nbit);
         constexpr uint32_t N = 1<<Nbit;
         for (int i = 0; i < N; i++) res[i] = static_cast<T>((a[i] * twist[i] * invN).value);
     }
     
     template<uint32_t Nbit>
-    inline void ButterflyAdd(array<INTorus,1<<Nbit > &res, const uint32_t size, const uint32_t block){
+    inline void ButterflyAdd(INTorus* const res, const uint32_t size){
         for(uint32_t index = 0; index < size/2;index++){
-            const INTorus temp = res[size*block+index];
-            res[size*block+index] += res[size*block+index+size/2];
-            res[size*block+index+size/2] = temp - res[size*block+index+size/2];
+            const INTorus temp = res[index];
+            res[index] += res[index+size/2];
+            res[index+size/2] = temp - res[index+size/2];
         }
     }
 
     template<uint32_t Nbit>
-    inline void TwiddleMul(array<INTorus,1<<Nbit > &res, const uint32_t size, const uint32_t block, const uint32_t num_block, const array<INTorus,1<<(Nbit-1)> &table){
-        for(uint32_t index = 1; index < size/2;index++) res[size*block+index+size/2] *= table[num_block*index];
+    inline void TwiddleMul(INTorus* const res, const uint32_t size, const uint32_t num_block, const std::array<INTorus,1<<(Nbit-1)> &table){
+        for(uint32_t index = 1; index < size/2;index++) res[index+size/2] *= table[num_block*index];
     }
 
     template<uint32_t Nbit>
-    inline void INTT(array<INTorus,1<<Nbit > &res, const array<INTorus,1<<(Nbit-1)> &table){
+    inline void INTT(std::array<INTorus,1<<Nbit > &res, const std::array<INTorus,1<<(Nbit-1)> &table){
         constexpr uint8_t radixbit = 1;
         constexpr uint32_t radix = 1U<<radixbit;
         uint8_t sizebit;
@@ -258,25 +257,25 @@ namespace cuHEpp{
             if(sizebit!=Nbit)num_block  = 1U<<(Nbit-sizebit);
             else num_block = 1;
             for(uint32_t block = 0;block<num_block;block++){
-                ButterflyAdd<Nbit>(res,size,block);
-                TwiddleMul<Nbit>(res,size,block,num_block,table);
+                ButterflyAdd<Nbit>(&res[size*block],size);
+                TwiddleMul<Nbit>(&res[size*block],size,num_block,table);
             }
         }
         const uint32_t size = 1U<<sizebit;
         uint32_t num_block = 1U<<(Nbit-sizebit);
         for(uint32_t block = 0;block<num_block;block++){
-            ButterflyAdd<Nbit>(res,size,block);
+            ButterflyAdd<Nbit>(&res[size*block],size);
         }
     }
 
     template<typename T, uint32_t Nbit>
-    void TwistINTTlvl1(array<INTorus ,1<<Nbit> &res, const array<T,1<<Nbit> &a, const array<INTorus,1<<(Nbit-1)> &table, const array<INTorus,1<<Nbit> &twist){
+    void TwistINTTlvl1(std::array<INTorus ,1<<Nbit> &res, const std::array<T,1<<Nbit> &a, const std::array<INTorus,1<<(Nbit-1)> &table, const std::array<INTorus,1<<Nbit> &twist){
         TwistMulInvert<T,Nbit>(res,a,twist);
         INTT<Nbit>(res,table);
     }
 
     template<uint32_t Nbit>
-    void NTT(array<INTorus,1<<Nbit > &res, const array<INTorus,1<<(Nbit-1)> &table){
+    void NTT(std::array<INTorus,1<<Nbit > &res, const std::array<INTorus,1<<(Nbit-1)> &table){
         constexpr uint8_t radixbit = 1;
         constexpr uint32_t radix = 1U<<radixbit;
         for(uint8_t sizebit = radixbit;sizebit<=Nbit;sizebit += radixbit){
@@ -285,21 +284,21 @@ namespace cuHEpp{
             if(sizebit!=Nbit)num_block  = 1U<<(Nbit-sizebit);
             else num_block = 1;
             for(uint32_t block = 0;block<num_block;block++){
-                TwiddleMul<Nbit>(res,size,block,num_block,table);
-                ButterflyAdd<Nbit>(res,size,block);
+                TwiddleMul<Nbit>(&res[size*block],size,num_block,table);
+                ButterflyAdd<Nbit>(&res[size*block],size);
             }
         }
     }
 
     template<typename T, uint32_t Nbit>
-    void TwistNTTlvl1(array<T,1<<Nbit> &res, array<INTorus,1<<Nbit> &a, const array<INTorus,1<<(Nbit-1)> &table, const array<INTorus,1<<Nbit> &twist){
+    void TwistNTTlvl1(std::array<T,1<<Nbit> &res, std::array<INTorus,1<<Nbit> &a, const std::array<INTorus,1<<(Nbit-1)> &table, const std::array<INTorus,1<<Nbit> &twist){
         NTT<Nbit>(a,table);
         TwistMulDirect<T,Nbit>(res,a,twist);
     }
 
     template<typename T, uint32_t Nbit>
-    void PolyMullvl1(array<T,1<<Nbit> &res, array<T,1<<Nbit> &a, array<T,1<<Nbit> &b, const array<array<INTorus,1<<(Nbit-1)>,2> &table, const array<array<INTorus,1<<Nbit>,2> &twist){
-        array<INTorus,1<<Nbit> ntta,nttb;
+    void PolyMullvl1(std::array<T,1<<Nbit> &res, std::array<T,1<<Nbit> &a, std::array<T,1<<Nbit> &b, const std::array<std::array<INTorus,1<<(Nbit-1)>,2> &table, const std::array<std::array<INTorus,1<<Nbit>,2> &twist){
+        std::array<INTorus,1<<Nbit> ntta,nttb;
         TwistINTTlvl1<T,Nbit>(ntta,a,table[1],twist[1]);
         TwistINTTlvl1<T,Nbit>(nttb,b,table[1],twist[1]);
         for(int i = 0;i<(1U<<Nbit);i++) ntta[i]*=nttb[i];
