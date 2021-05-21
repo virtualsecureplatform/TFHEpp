@@ -232,7 +232,6 @@ namespace cuHEpp{
         for (int i = 0; i < N; i++) res[i] = static_cast<T>((a[i] * twist[i] * invN).value);
     }
     
-    template<uint32_t Nbit>
     inline void ButterflyAdd(INTorus* const res, const uint32_t size){
         for(uint32_t index = 0; index < size/2;index++){
             const INTorus temp = res[index];
@@ -241,9 +240,28 @@ namespace cuHEpp{
         }
     }
 
+    template<uint8_t radixbit>
+    inline void INTTradixButterfly(INTorus* const res,const uint32_t size){
+        static_assert(radixbit<=6, "radix 64 is the maximum!");
+        if constexpr (radixbit != 0){
+            const uint32_t block = size>>radixbit;
+            ButterflyAdd(res, size);
+            if constexpr (radixbit != 6) for(int i = 1; i<(1<<(radixbit - 1));i++) for(int j = 0;j<block;j++)  res[i*block+j+size/2]<<(3*i<<(6-radixbit));
+            else for(int i =  1; i<(1<<(radixbit - 1));i++) for(int j = 0;j<block;j++)  res[i*block+j+size/2]<<(3*i);
+            INTTradixButterfly<radixbit-1>(&res[0], size/2);
+            INTTradixButterfly<radixbit-1>(&res[size/2], size/2);
+        }
+    }
+
     template<uint32_t Nbit>
     inline void TwiddleMul(INTorus* const res, const uint32_t size, const uint32_t num_block, const std::array<INTorus,1<<(Nbit-1)> &table){
         for(uint32_t index = 1; index < size/2;index++) res[index+size/2] *= table[num_block*index];
+    }
+
+    template<uint32_t Nbit, uint8_t radixbit>
+    inline void INTTradix(INTorus* const res, const uint32_t size, const uint32_t num_block, const std::array<INTorus,1<<(Nbit-1)> &table){
+        INTTradixButterfly<radixbit>(&res,size);
+
     }
 
     template<uint32_t Nbit>
@@ -257,14 +275,14 @@ namespace cuHEpp{
             if(sizebit!=Nbit)num_block  = 1U<<(Nbit-sizebit);
             else num_block = 1;
             for(uint32_t block = 0;block<num_block;block++){
-                ButterflyAdd<Nbit>(&res[size*block],size);
+                ButterflyAdd(&res[size*block],size);
                 TwiddleMul<Nbit>(&res[size*block],size,num_block,table);
             }
         }
         const uint32_t size = 1U<<sizebit;
         uint32_t num_block = 1U<<(Nbit-sizebit);
         for(uint32_t block = 0;block<num_block;block++){
-            ButterflyAdd<Nbit>(&res[size*block],size);
+            ButterflyAdd(&res[size*block],size);
         }
     }
 
@@ -285,7 +303,7 @@ namespace cuHEpp{
             else num_block = 1;
             for(uint32_t block = 0;block<num_block;block++){
                 TwiddleMul<Nbit>(&res[size*block],size,num_block,table);
-                ButterflyAdd<Nbit>(&res[size*block],size);
+                ButterflyAdd(&res[size*block],size);
             }
         }
     }
