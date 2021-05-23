@@ -24,6 +24,9 @@ int main()
     for(int i = 1;i<TFHEpp::lvl1param::n/2;i++) assert(tablelvl1[0][i].value!=1);
     assert((tablelvl1[1][TFHEpp::lvl1param::n/2-1]*tablelvl1[1][1]).value == cuHEpp::P-1);
 
+    // std::cout<<"Bit Reverse"<<std::endl;
+    // for(int i = 0; i<4; i++) std::cout<<i<<":"<<cuHEpp::BitReverse<4>(i)<<std::endl;
+
     std::cout << "Start NTT radix match test." << std::endl;
     for (int test = 0; test < num_test; test++) {
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
@@ -33,8 +36,8 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) res1[i] = res2[i] = cuHEpp::INTorus(a[i]);
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             assert(a[i] == res1[i].value);
-        cuHEpp::INTT<TFHEpp::lvl1param::nbit,1>(res1, tablelvl1[1]);
-        cuHEpp::INTT<TFHEpp::lvl1param::nbit,2>(res2, tablelvl1[1]);
+        cuHEpp::INTT<TFHEpp::lvl1param::nbit,5>(res1, tablelvl1[1]);
+        cuHEpp::INTT<TFHEpp::lvl1param::nbit,6>(res2, tablelvl1[1]);
         // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             // std::cout<<res1[i].value<<":"<<res2[i].value<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++){

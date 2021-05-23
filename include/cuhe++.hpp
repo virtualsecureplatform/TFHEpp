@@ -190,6 +190,16 @@ namespace cuHEpp{
         return INTorus((static_cast<uint64_t>(high)<<32)+low);
     }
 
+    template<uint8_t bit>
+    uint32_t BitReverse(uint32_t in){
+        if constexpr(bit>1){
+            const uint32_t center = in&((bit&1)<<(bit/2));
+            return (BitReverse<bit/2>(in&((1U<<(bit/2))-1))<<(bit+1)/2)|center|BitReverse<bit/2>(in>>((bit+1)/2));
+        }else{
+            return in;
+        }
+    }
+
     // NTT implementation
     // https://nufhe.readthedocs.io/en/latest/implementation_details.html
     constexpr uint64_t W = 12037493425763644479ULL;
@@ -267,19 +277,17 @@ namespace cuHEpp{
     inline void INTTradix(INTorus* const res, const uint32_t size, const uint32_t num_block, const std::array<INTorus,1<<Nbit> &table){
         INTTradixButterfly<radixbit>(res,size);
         if constexpr (radixbit == 1) TwiddleMul<Nbit>(&res[size>>radixbit], size>>radixbit, num_block, table);
-        else if constexpr (radixbit == 2){
-            TwiddleMul<Nbit>(&res[size>>radixbit], size>>radixbit, 2*num_block, table);
-            TwiddleMul<Nbit>(&res[2*(size>>radixbit)], size>>radixbit, num_block, table);
-            TwiddleMul<Nbit>(&res[3*(size>>radixbit)], size>>radixbit, 3*num_block, table);
+        else{
+            for (uint32_t i = 1;i<(1<<radixbit);i++){
+                TwiddleMul<Nbit>(&res[i*(size>>radixbit)], size>>radixbit, BitReverse<radixbit>(i)*num_block, table);
+            }
         }
-        else static_assert(false_v<Nbit>(),"radix error");
     }
 
     template<uint32_t Nbit,uint8_t radixbit>
     inline void INTT(std::array<INTorus,1<<Nbit > &res, const std::array<INTorus,1<<Nbit> &table){
         constexpr uint32_t radix = 1U<<radixbit;
-        uint8_t sizebit;
-        for(sizebit = Nbit;sizebit>radixbit;sizebit -= radixbit){
+        for(uint8_t sizebit = Nbit;sizebit>radixbit;sizebit -= radixbit){
             const uint32_t size = 1U<<sizebit;
             const uint32_t num_block  = 1U<<(Nbit-sizebit);
             for(uint32_t block = 0;block<num_block;block++){
@@ -287,8 +295,8 @@ namespace cuHEpp{
             }
         }
         constexpr uint8_t remainder = ((Nbit-1)%radixbit)+1;
-        const uint32_t size = 1U<<remainder;
-        const uint32_t num_block = 1U<<(Nbit-remainder);
+        constexpr uint32_t size = 1U<<remainder;
+        constexpr uint32_t num_block = 1U<<(Nbit-remainder);
         for(uint32_t block = 0;block<num_block;block++){
             INTTradixButterfly<remainder>(&res[size*block],size);
         }
@@ -297,7 +305,7 @@ namespace cuHEpp{
     template<typename T, uint32_t Nbit>
     void TwistINTTlvl1(std::array<INTorus ,1<<Nbit> &res, const std::array<T,1<<Nbit> &a, const std::array<INTorus,1<<Nbit> &table, const std::array<INTorus,1<<Nbit> &twist){
         TwistMulInvert<T,Nbit>(res,a,twist);
-        INTT<Nbit,2>(res,table);
+        INTT<Nbit,6>(res,table);
     }
 
     template<uint32_t Nbit>
