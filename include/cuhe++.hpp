@@ -6,6 +6,9 @@
 #include <cassert>
 
 namespace cuHEpp{
+    template <typename T>
+    constexpr bool false_v = false;
+
     constexpr uint64_t P = (((1ULL<<32)-1)<<32)+ 1;
 
     // this class defines operations over integaer torus.
@@ -207,15 +210,14 @@ namespace cuHEpp{
     }
 
     template<uint32_t Nbit>
-    inline std::array<std::array<INTorus,1U<<(Nbit-1)>,2> TableGen(){
+    inline std::array<std::array<INTorus,1U<<Nbit>,2> TableGen(){
         constexpr uint32_t N = 1U<<Nbit;
 
-        std::array<std::array<INTorus,N/2>,2>table;
+        std::array<std::array<INTorus,N>,2>table;
         const INTorus w = INTorus(W).Pow(1U<<(32-Nbit));
         table[0][0] = table[1][0] = INTorus(1,false);
-        for(uint32_t i = 1;i<N/2;i++) table[1][i] = table[1][i-1]*w;
-        table[0][N/2-1] = table[1][N/2-1]*w*w;
-        for(uint32_t i = 2;i<N/2;i++) table[0][N/2-i] = table[0][N/2-i+1]*w;
+        for(uint32_t i = 1;i<N;i++) table[1][i] = table[1][i-1]*w;
+        for(uint32_t i = 1;i<N;i++) table[0][i] = table[1][N-i];
         return table;
     }
 
@@ -246,54 +248,60 @@ namespace cuHEpp{
         if constexpr (radixbit != 0){
             const uint32_t block = size>>radixbit;
             ButterflyAdd(res, size);
-            if constexpr (radixbit != 6) for(int i = 1; i<(1<<(radixbit - 1));i++) for(int j = 0;j<block;j++)  res[i*block+j+size/2]<<(3*i<<(6-radixbit));
-            else for(int i =  1; i<(1<<(radixbit - 1));i++) for(int j = 0;j<block;j++)  res[i*block+j+size/2]<<(3*i);
+            if constexpr (radixbit != 6) for(int i = 1; i<(1<<(radixbit - 1));i++){
+                // for(int j = 0;j<block;j++)  res[i*block+j+size/2] = res[i*block+j+size/2]<<(3*(64-(i<<(6-radixbit))));
+                for(int j = 0;j<block;j++)  res[i*block+j+size/2] = res[i*block+j+size/2]<<(3*(i<<(6-radixbit)));
+            }
+            else for(int i =  1; i<(1<<(radixbit - 1));i++) for(int j = 0;j<block;j++)  res[i*block+j+size/2] = res[i*block+j+size/2]<<(3*i);
             INTTradixButterfly<radixbit-1>(&res[0], size/2);
             INTTradixButterfly<radixbit-1>(&res[size/2], size/2);
         }
     }
 
     template<uint32_t Nbit>
-    inline void TwiddleMul(INTorus* const res, const uint32_t size, const uint32_t num_block, const std::array<INTorus,1<<(Nbit-1)> &table){
-        for(uint32_t index = 1; index < size/2;index++) res[index+size/2] *= table[num_block*index];
+    inline void TwiddleMul(INTorus* const res, const uint32_t size, const uint32_t stride, const std::array<INTorus,1<<Nbit> &table){
+        for(uint32_t index = 1; index < size;index++) res[index] *= table[stride*index];
     }
 
     template<uint32_t Nbit, uint8_t radixbit>
-    inline void INTTradix(INTorus* const res, const uint32_t size, const uint32_t num_block, const std::array<INTorus,1<<(Nbit-1)> &table){
-        INTTradixButterfly<radixbit>(&res,size);
-
+    inline void INTTradix(INTorus* const res, const uint32_t size, const uint32_t num_block, const std::array<INTorus,1<<Nbit> &table){
+        INTTradixButterfly<radixbit>(res,size);
+        if constexpr (radixbit == 1) TwiddleMul<Nbit>(&res[size>>radixbit], size>>radixbit, num_block, table);
+        else if constexpr (radixbit == 2){
+            TwiddleMul<Nbit>(&res[size>>radixbit], size>>radixbit, 2*num_block, table);
+            TwiddleMul<Nbit>(&res[2*(size>>radixbit)], size>>radixbit, num_block, table);
+            TwiddleMul<Nbit>(&res[3*(size>>radixbit)], size>>radixbit, 3*num_block, table);
+        }
+        else static_assert(false_v<Nbit>(),"radix error");
     }
 
-    template<uint32_t Nbit>
-    inline void INTT(std::array<INTorus,1<<Nbit > &res, const std::array<INTorus,1<<(Nbit-1)> &table){
-        constexpr uint8_t radixbit = 1;
+    template<uint32_t Nbit,uint8_t radixbit>
+    inline void INTT(std::array<INTorus,1<<Nbit > &res, const std::array<INTorus,1<<Nbit> &table){
         constexpr uint32_t radix = 1U<<radixbit;
         uint8_t sizebit;
         for(sizebit = Nbit;sizebit>radixbit;sizebit -= radixbit){
             const uint32_t size = 1U<<sizebit;
-            uint32_t num_block;
-            if(sizebit!=Nbit)num_block  = 1U<<(Nbit-sizebit);
-            else num_block = 1;
+            const uint32_t num_block  = 1U<<(Nbit-sizebit);
             for(uint32_t block = 0;block<num_block;block++){
-                ButterflyAdd(&res[size*block],size);
-                TwiddleMul<Nbit>(&res[size*block],size,num_block,table);
+                INTTradix<Nbit,radixbit>(&res[size*block],size,num_block,table);
             }
         }
-        const uint32_t size = 1U<<sizebit;
-        uint32_t num_block = 1U<<(Nbit-sizebit);
+        constexpr uint8_t remainder = ((Nbit-1)%radixbit)+1;
+        const uint32_t size = 1U<<remainder;
+        const uint32_t num_block = 1U<<(Nbit-remainder);
         for(uint32_t block = 0;block<num_block;block++){
-            ButterflyAdd(&res[size*block],size);
+            INTTradixButterfly<remainder>(&res[size*block],size);
         }
     }
 
     template<typename T, uint32_t Nbit>
-    void TwistINTTlvl1(std::array<INTorus ,1<<Nbit> &res, const std::array<T,1<<Nbit> &a, const std::array<INTorus,1<<(Nbit-1)> &table, const std::array<INTorus,1<<Nbit> &twist){
+    void TwistINTTlvl1(std::array<INTorus ,1<<Nbit> &res, const std::array<T,1<<Nbit> &a, const std::array<INTorus,1<<Nbit> &table, const std::array<INTorus,1<<Nbit> &twist){
         TwistMulInvert<T,Nbit>(res,a,twist);
-        INTT<Nbit>(res,table);
+        INTT<Nbit,2>(res,table);
     }
 
     template<uint32_t Nbit>
-    void NTT(std::array<INTorus,1<<Nbit > &res, const std::array<INTorus,1<<(Nbit-1)> &table){
+    void NTT(std::array<INTorus,1<<Nbit > &res, const std::array<INTorus,1<<Nbit> &table){
         constexpr uint8_t radixbit = 1;
         constexpr uint32_t radix = 1U<<radixbit;
         for(uint8_t sizebit = radixbit;sizebit<=Nbit;sizebit += radixbit){
@@ -302,20 +310,20 @@ namespace cuHEpp{
             if(sizebit!=Nbit)num_block  = 1U<<(Nbit-sizebit);
             else num_block = 1;
             for(uint32_t block = 0;block<num_block;block++){
-                TwiddleMul<Nbit>(&res[size*block],size,num_block,table);
+                TwiddleMul<Nbit>(&res[size*block+size/2],size/2,num_block,table);
                 ButterflyAdd(&res[size*block],size);
             }
         }
     }
 
     template<typename T, uint32_t Nbit>
-    void TwistNTTlvl1(std::array<T,1<<Nbit> &res, std::array<INTorus,1<<Nbit> &a, const std::array<INTorus,1<<(Nbit-1)> &table, const std::array<INTorus,1<<Nbit> &twist){
+    void TwistNTTlvl1(std::array<T,1<<Nbit> &res, std::array<INTorus,1<<Nbit> &a, const std::array<INTorus,1<<Nbit> &table, const std::array<INTorus,1<<Nbit> &twist){
         NTT<Nbit>(a,table);
         TwistMulDirect<T,Nbit>(res,a,twist);
     }
 
     template<typename T, uint32_t Nbit>
-    void PolyMullvl1(std::array<T,1<<Nbit> &res, std::array<T,1<<Nbit> &a, std::array<T,1<<Nbit> &b, const std::array<std::array<INTorus,1<<(Nbit-1)>,2> &table, const std::array<std::array<INTorus,1<<Nbit>,2> &twist){
+    void PolyMullvl1(std::array<T,1<<Nbit> &res, std::array<T,1<<Nbit> &a, std::array<T,1<<Nbit> &b, const std::array<std::array<INTorus,1<<Nbit>,2> &table, const std::array<std::array<INTorus,1<<Nbit>,2> &twist){
         std::array<INTorus,1<<Nbit> ntta,nttb;
         TwistINTTlvl1<T,Nbit>(ntta,a,table[1],twist[1]);
         TwistINTTlvl1<T,Nbit>(nttb,b,table[1],twist[1]);

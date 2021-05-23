@@ -14,7 +14,7 @@ int main()
     std::uniform_int_distribution<uint32_t> Torus32dist(0, std::numeric_limits<typename TFHEpp::lvl1param::T>::max());
 
     std::array<std::array<cuHEpp::INTorus,TFHEpp::lvl1param::n>,2> twistlvl1;
-    std::array<std::array<cuHEpp::INTorus,TFHEpp::lvl1param::n/2>,2> tablelvl1;
+    std::array<std::array<cuHEpp::INTorus,TFHEpp::lvl1param::n>,2> tablelvl1;
     twistlvl1 = cuHEpp::TwistGen<TFHEpp::lvl1param::nbit>();
     tablelvl1 = cuHEpp::TableGen<TFHEpp::lvl1param::nbit>();
 
@@ -23,6 +23,26 @@ int main()
     for(int i = 0;i<TFHEpp::lvl1param::n/2;i++) assert((tablelvl1[0][i]*tablelvl1[1][i]).value==1);
     for(int i = 1;i<TFHEpp::lvl1param::n/2;i++) assert(tablelvl1[0][i].value!=1);
     assert((tablelvl1[1][TFHEpp::lvl1param::n/2-1]*tablelvl1[1][1]).value == cuHEpp::P-1);
+
+    std::cout << "Start NTT radix match test." << std::endl;
+    for (int test = 0; test < num_test; test++) {
+        // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
+        std::array<cuHEpp::INTorus,TFHEpp::lvl1param::n> res1,res2;
+        TFHEpp::Polynomial<TFHEpp::lvl1param> a;
+        for (uint32_t &i : a) i = Bgdist(engine);
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++) res1[i] = res2[i] = cuHEpp::INTorus(a[i]);
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            assert(a[i] == res1[i].value);
+        cuHEpp::INTT<TFHEpp::lvl1param::nbit,1>(res1, tablelvl1[1]);
+        cuHEpp::INTT<TFHEpp::lvl1param::nbit,2>(res2, tablelvl1[1]);
+        // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            // std::cout<<res1[i].value<<":"<<res2[i].value<<std::endl;
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++){
+            // std::cout<<i<<std::endl;
+            assert(res1[i].value==res2[i].value);
+        }
+    }
+    std::cout << "NTT radix match PASS" << std::endl;
 
     std::cout << "Start NTT only test." << std::endl;
     for (int test = 0; test < num_test; test++) {
@@ -33,7 +53,7 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) res[i] = cuHEpp::INTorus(a[i]);
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             assert(a[i] == res[i].value);
-        cuHEpp::INTT<TFHEpp::lvl1param::nbit>(res, tablelvl1[1]);
+        cuHEpp::INTT<TFHEpp::lvl1param::nbit,1>(res, tablelvl1[1]);
         // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             // std::cout<<res[i].value<<":"<<a[i]<<std::endl;
         cuHEpp::NTT<TFHEpp::lvl1param::nbit>(res, tablelvl1[0]);
@@ -47,7 +67,7 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             assert(a[i] == res[i].value);
     }
-    std::cout << "Start NTT only test PASS" << std::endl;
+    std::cout << "NTT only test PASS" << std::endl;
 
     std::cout << "Start LVL1 test." << std::endl;
     for (int test; test < num_test; test++) {
