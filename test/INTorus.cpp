@@ -3,6 +3,7 @@
 #include <random>
 #include <cassert>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <bits/stdint-uintn.h>
 #include <gmp.h>
 #include <gmpxx.h>
 
@@ -11,7 +12,7 @@ using namespace cuHEpp;
 namespace mp = boost::multiprecision;
 
 int main(){
-    constexpr int numTest = 10000;
+    constexpr int numTest = 100000;
     random_device seed_gen;
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint64_t> dist(0, P);
@@ -96,6 +97,7 @@ int main(){
                 if((A<<l).value!=(a<<l)%P){
                     mpz_class res = (a<<l)%P;
                     cout<<(A<<l).value<<":"<<res.get_str()<<endl;
+                    std::cout<<l<<std::endl;
                     // cout<<(A<<l).value - static_cast<uint64_t>((a<<l)%P)<<endl;
                 }
                 // assert((A<<l).value==(static_cast<uint64_t>((a<<l)%P)));
