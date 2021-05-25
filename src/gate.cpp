@@ -70,7 +70,7 @@ void HomOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
 void HomXOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
             const TLWE<lvl0param> &cb, const GateKey &gk)
 {
-    HomGate<2, 2, lvl0param::μ>(res, ca, cb, gk);
+    HomGate<2, 2, 2*lvl0param::μ>(res, ca, cb, gk);
 }
 
 void HomANDNY(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
