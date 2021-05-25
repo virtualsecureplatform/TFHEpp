@@ -10,7 +10,7 @@
 namespace TFHEpp {
 
 template <class P>
-void bkgen(BootstrappingKey<P> &bkfft, const SecretKey &sk)
+inline void bkgen(BootstrappingKey<P> &bkfft, const SecretKey &sk)
 {
     for (int i = 0; i < P::domainP::n; i++)
         bkfft[i] = trgswSymEncrypt<typename P::targetP>(

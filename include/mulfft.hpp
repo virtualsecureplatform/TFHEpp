@@ -5,7 +5,6 @@
 #include "./utils.hpp"
 
 namespace TFHEpp {
-using namespace std;
 
 template <class P>
 inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
