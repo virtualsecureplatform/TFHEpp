@@ -180,7 +180,7 @@ namespace cuHEpp{
     };
 
     //defined on [1,31]
-    INTorus InvPow2(uint8_t nbit){
+    inline INTorus InvPow2(uint8_t nbit){
         uint32_t low,high;
         low = (1 << (32 - nbit)) + 1;
         high = -low;
