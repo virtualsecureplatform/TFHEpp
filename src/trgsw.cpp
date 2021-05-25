@@ -1,4 +1,5 @@
 #include "trgsw.hpp"
+
 #include <limits>
 #include <type_traits>
 
@@ -21,17 +22,19 @@ void DecompositionPolynomial(DecomposedPolynomial<P> &decpoly,
                              const Polynomial<P> &poly, const int digit)
 {
     constexpr typename P::T offset = offsetgen<P>();
-    constexpr typename P::T roundoffset = 1ULL<<(std::numeric_limits<typename P::T>::digits-P::l*P::Bgbit-1);
+    constexpr typename P::T roundoffset =
+        1ULL << (std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit -
+                 1);
     constexpr typename P::T mask =
         static_cast<typename P::T>((1ULL << P::Bgbit) - 1);
     constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
 
     for (int i = 0; i < P::n; i++) {
-        decpoly[i] =
-            (((poly[i] + offset + roundoffset) >> (numeric_limits<typename P::T>::digits -
-                                     (digit + 1) * P::Bgbit)) &
-             mask) -
-            halfBg;
+        decpoly[i] = (((poly[i] + offset + roundoffset) >>
+                       (numeric_limits<typename P::T>::digits -
+                        (digit + 1) * P::Bgbit)) &
+                      mask) -
+                     halfBg;
     }
 }
 #define INST(P)                                                       \
