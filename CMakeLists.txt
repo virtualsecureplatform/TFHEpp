@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "-march=native -O3 -g -funroll-loops")
 
 OPTION(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 OPTION(ENABLE_TEST "Build tests" OFF)
+OPTION(ENABLE_BENCHMARK "Build benchmarks" OFF)
 OPTION(ENABLE_TUTORIAL "Build tutorial" OFF)
 
 if(USE_80BIT_SECURITY)
@@ -25,6 +26,9 @@ add_subdirectory(src)
 
 if(ENABLE_TEST)
     add_subdirectory(test)
+endif()
+if(ENABLE_BENCHMARK)
+    add_subdirectory(benchmark)
 endif()
 if(ENABLE_TUTORIAL)
     add_subdirectory(tutorial)
