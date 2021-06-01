@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package TFHEpp;
+
+import "lweParams.proto";
+
+message Key{
+    repeated uint32 key = 1;
+}
+
+message Keylvl2{
+    repeated uint64 key = 1;
+}
+
+message SecretKey{
+    repeated Key key = 1;
+    repeated Keylvl2 Keylvl2 = 2;
+    lweParams params = 3;
+}
