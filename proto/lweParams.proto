@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package TFHEpp;
+
+message tlweParams{
+    uint32 n = 1;
+    double alpha = 2;
+    uint32 approx_bit = 3;
+}
+
+message trlweParams{
+    uint32 n = 1;
+    uint32 nbit = 2;
+    uint32 l = 3;
+    uint32 Bgbit = 4;
+    uint32 Bg = 5;
+    double alpha = 6;
+    uint32 approx_bit = 7;
+}
+
+message keyswitchingParams{
+    uint32 t = 1;
+    uint32 basebit = 2;
+    uint32 domainlvl = 3;
+    uint32 targetlvl = 4;
+}
+
+message lweParams {
+    repeated tlweParams tlweparams = 1;
+    repeated trlweParams trlweparams = 2;
+    repeated keyswitchingParams keyswitchingparams = 3;
+}

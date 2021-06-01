@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package TFHEpp;
+
+import "types.proto";
+
+message GateKeywoFFT{
+    
+}

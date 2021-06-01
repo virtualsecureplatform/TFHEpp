@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package TFHEpp;
+
+message TLWE{
+    repeated uint32 a = 1;
+    uint32 b = 2;
+}
+
+message TRLWE{
+    repeated uint32 a = 1;
+    repeated uint32 b = 2;
+}
+
+message TRGSW{
+    repeated TRLWE trlwe = 1;
+}
+
+message TLWElvl2{
+    repeated uint64 a = 1;
+    uint64 b = 2;
+}
+
+message TRLWElvl2{
+    repeated uint64 a = 1;
+    repeated uint64 b = 2;
+}
+
+message BootstrappingKey{
+    repeated TRGSW trgsw = 1;
+}
+
+message KeySwitchingKey{
+    repeated TLWE tlwe = 1;
+}
