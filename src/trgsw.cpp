@@ -118,10 +118,11 @@ TRGSWNTT<P> TRGSW2NTT(const TRGSW<P> &trgsw)
     TRGSWNTT<P> trgswntt;
     for (int i = 0; i < 2 * P::l; i++)
         for (int j = 0; j < 2; j++) {
-                PolynomialNTT<P> temp;
-                TwistINTT<P>(temp, trgsw[i][j]);
-                for(uint32_t k = 0; k<P::n;k++) trgswntt[i][j][k] = temp[cuHEpp::BitReverse<P::nbit>(k)];
-            }
+            PolynomialNTT<P> temp;
+            TwistINTT<P>(temp, trgsw[i][j]);
+            for (uint32_t k = 0; k < P::n; k++)
+                trgswntt[i][j][k] = temp[cuHEpp::BitReverse<P::nbit>(k)];
+        }
     return trgswntt;
 }
 #define INST(P) template TRGSWNTT<P> TRGSW2NTT<P>(const TRGSW<P> &trgsw)

@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+
 #include "cuhe++.hpp"
 
 namespace TFHEpp {

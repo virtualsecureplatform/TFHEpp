@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../thirdparties/spqlios/spqlios-fft.h"
+#include "./cuhe++.hpp"
 #include "./params.hpp"
 #include "./utils.hpp"
-#include "./cuhe++.hpp"
 
 namespace TFHEpp {
 
@@ -40,7 +40,7 @@ template <class P>
 inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
-                cuHEpp::TwistINTTlvl1<typename TFHEpp::lvl1param::T,
+        cuHEpp::TwistINTTlvl1<typename TFHEpp::lvl1param::T,
                               TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[1],
                                                        ntttwistlvl1[1]);
     // else if constexpr (std::is_same_v<typename P::T, uint64_t>)
