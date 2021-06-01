@@ -96,7 +96,21 @@ TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
     return trgswfft;
 }
 #define INST(P) template TRGSWFFT<P> ApplyFFT2trgsw<P>(const TRGSW<P> &trgsw)
-TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
+// TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
+INST(lvl1param);
+#undef INST
+
+template <class P>
+TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
+{
+    TRGSWNTT<P> trgswntt;
+    for (int i = 0; i < 2 * P::l; i++)
+        for (int j = 0; j < 2; j++) TwistINTT<P>(trgswntt[i][j], trgsw[i][j]);
+    return trgswntt;
+}
+#define INST(P) template TRGSWNTT<P> ApplyNTT2trgsw<P>(const TRGSW<P> &trgsw)
+// TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(INST)
+INST(lvl1param);
 #undef INST
 
 template <class P>

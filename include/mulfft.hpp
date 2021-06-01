@@ -3,8 +3,27 @@
 #include "../thirdparties/spqlios/spqlios-fft.h"
 #include "./params.hpp"
 #include "./utils.hpp"
+#include "./cuhe++.hpp"
 
 namespace TFHEpp {
+
+inline const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n>, 2>
+    ntttwistlvl1 = cuHEpp::TwistGen<TFHEpp::lvl1param::nbit>();
+inline const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n>, 2>
+    ntttablelvl1 = cuHEpp::TableGen<TFHEpp::lvl1param::nbit>();
+
+template <class P>
+inline void TwistNTT(Polynomial<P> &res, const PolynomialNTT<P> &a)
+{
+    if constexpr (std::is_same_v<typename P::T, uint32_t>)
+        cuHEpp::TwistNTTlvl1<typename TFHEpp::lvl1param::T,
+                             TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[0],
+                                                      ntttwistlvl1[0]);
+    // else if constexpr (std::is_same_v<typename P::T, uint64_t>)
+    //     fftplvl2.execute_direct_torus64(res.data(), a.data());
+    else
+        static_assert(false_v<typename P::T>, "Undefined TwistNTT!");
+}
 
 template <class P>
 inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
@@ -15,6 +34,19 @@ inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
         fftplvl2.execute_direct_torus64(res.data(), a.data());
     else
         static_assert(false_v<typename P::T>, "Undefined TwistFFT!");
+}
+
+template <class P>
+inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
+{
+    if constexpr (std::is_same_v<typename P::T, uint32_t>)
+                cuHEpp::TwistINTTlvl1<typename TFHEpp::lvl1param::T,
+                              TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[1],
+                                                       ntttwistlvl1[1]);
+    // else if constexpr (std::is_same_v<typename P::T, uint64_t>)
+    //     fftplvl2.execute_reverse_torus64(res.data(), a.data());
+    else
+        static_assert(false_v<typename P::T>, "Undefined TwistINTT!");
 }
 
 template <class P>

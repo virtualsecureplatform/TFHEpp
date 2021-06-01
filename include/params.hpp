@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include "cuhe++.hpp"
 
 namespace TFHEpp {
 using namespace std;
@@ -36,7 +37,7 @@ using Polynomial = array<typename P::T, P::n>;
 template <class P>
 using PolynomialInFD = array<double, P::n>;
 template <class P>
-using PolynomialNTT = array<uint64_t, P::n>;
+using PolynomialNTT = array<cuHEpp::INTorus, P::n>;
 template <class P>
 using DecomposedPolynomial = Polynomial<P>;
 template <class P>

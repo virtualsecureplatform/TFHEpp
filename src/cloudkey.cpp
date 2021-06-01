@@ -27,6 +27,13 @@ GateKey::GateKey(const GateKeywoFFT &gkwofft)
     ksk = gkwofft.ksk;
 }
 
+GateKeyNTT::GateKeyNTT(const GateKeywoFFT &gkwofft)
+{
+    for (int i = 0; i < lvl01param::domainP::n; i++)
+        bknttlvl01[i] = ApplyNTT2trgsw<lvl1param>(gkwofft.bklvl01[i]);
+    ksk = gkwofft.ksk;
+}
+
 template <class bsP, class privksP>
 CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)
 {

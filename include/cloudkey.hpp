@@ -68,6 +68,19 @@ struct GateKey {
     }
 };
 
+struct GateKeyNTT {
+    BootstrappingKeyNTT<lvl01param> bknttlvl01;
+    KeySwitchingKey<lvl10param> ksk;
+    // GateKey(const SecretKey &sk);
+    GateKeyNTT(const GateKeywoFFT &gkwofft);
+    GateKeyNTT() {}
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(ksk, bknttlvl01);
+    }
+};
+
 template <class bsP, class privksP>
 struct CircuitKey {
     BootstrappingKeyFFT<bsP> bkfft;
