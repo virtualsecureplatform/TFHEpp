@@ -39,6 +39,9 @@ template <class P>
 TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw);
 
 template <class P>
+TRGSWNTT<P> TRGSW2NTT(const TRGSW<P> &trgsw);
+
+template <class P>
 TRGSW<P> trgswSymEncrypt(const typename make_signed<typename P::T>::type p,
                          const double α, const Key<P> &key);
 
