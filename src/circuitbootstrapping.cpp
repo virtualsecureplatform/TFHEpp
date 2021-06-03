@@ -1,4 +1,5 @@
 #include "circuitbootstrapping.hpp"
+#include <bits/stdint-uintn.h>
 
 namespace TFHEpp {
 using namespace std;
@@ -27,14 +28,25 @@ void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
 TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(INST)
 #undef INST
 
+template<class P>
+constexpr Polynomial<typename P::domainP> CBtestvector(){
+    Polynomial<typename P::domainP> poly;
+    constexpr uint32_t bitwidth = bits_needed<P::targetP::l-1>();
+    for(int i = 0; i < (P::domainP::n>>bitwidth);i++) for(int j = 0; j < (1<<bitwidth);j++) poly[(i<<bitwidth)+j] = 1ULL << (numeric_limits<typename P::domainP::T>::digits - (j + 1) * P::targetP::Bgbit - 1);
+    return poly;
+}
+
 template <class bkP, class privksP>
 void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
                           const TLWE<typename bkP::domainP> &tlwe,
                           const CircuitKey<bkP, privksP> &ck)
 {
-    for (int i = 0; i < privksP::targetP::l; i++) {
-        CircuitBootstrappingPartial(trgsw[i], trgsw[i + privksP::targetP::l],
-                                    tlwe, ck, i);
+    std::array<TLWE<typename bkP::targetP>,privksP::targetP::l> temp;
+    GateBootstrappingManyLUT<bkP, privksP::targetP::l>(temp, tlwe, ck.bkfft, CBtestvector<privksP>());
+    for(int i = 0; i<privksP::targetP::l; i++){
+        temp[i][privksP::domainP::n] += 1ULL << (numeric_limits<typename privksP::domainP::T>::digits - (i + 1) * privksP::targetP::Bgbit - 1);
+        PrivKeySwitch<privksP>(trgsw[i], temp[i], ck.privksk[0]);
+        PrivKeySwitch<privksP>(trgsw[i+privksP::targetP::l], temp[i], ck.privksk[1]);
     }
 }
 #define INST(bkP, privksP)                            \
@@ -50,16 +62,9 @@ void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
                              const TLWE<typename bkP::domainP> &tlwe,
                              const CircuitKey<bkP, privksP> &ck)
 {
-    for (int i = 0; i < privksP::targetP::l; i++) {
-        TRLWE<typename privksP::targetP> trgswupper, trgswlower;
-        CircuitBootstrappingPartial<bkP, privksP>(trgswupper, trgswlower, tlwe,
-                                                  ck, i);
-        for (int j = 0; j < 2; j++) {
-            TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgswupper[j]);
-            TwistIFFT<typename privksP::targetP>(
-                trgswfft[i + privksP::targetP::l][j], trgswlower[j]);
-        }
-    }
+    TRGSW<typename privksP::targetP> trgsw;
+    CircuitBootstrapping<bkP,privksP>(trgsw, tlwe, ck);
+    for (int i = 0; i < 2*privksP::targetP::l; i++) for (int j = 0; j < 2; j++) TwistIFFT<typename privksP::targetP>(trgswfft[i][j],trgsw[i][j]);
 }
 #define INST(bkP, privksP)                               \
     template void CircuitBootstrappingFFT<bkP, privksP>( \
@@ -136,11 +141,20 @@ void CircuitBootstrappingFFTwithInv(
     TRGSWFFT<typename privksP::targetP> &invtrgswfft,
     const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP, privksP> &ck)
 {
-    for (int i = 0; i < privksP::targetP::l; i++) {
-        CircuitBootstrappingFFTwithInvPartial(
-            trgswfft[i], trgswfft[i + privksP::targetP::l], invtrgswfft[i],
-            invtrgswfft[i + privksP::targetP::l], tlwe, ck, i);
+    constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
+        hgen<typename privksP::targetP>();
+
+    TRGSW<typename privksP::targetP> trgsw;
+    CircuitBootstrapping<bkP,privksP>(trgsw, tlwe, ck);
+    for (int i = 0; i < 2* privksP::targetP::l; i++) for (int j = 0; j < 2; j++){
+        TwistIFFT<typename privksP::targetP>(trgswfft[i][j],trgsw[i][j]);
+        for (int k = 0; k<privksP::targetP::n;k++) trgsw[i][j][k] *= -1;
     }
+    for (int i = 0; i < privksP::targetP::l; i++){
+        trgsw[i][0][0] += h[i];
+        trgsw[i + privksP::targetP::l][1][0] += h[i];
+    }
+    for (int i = 0; i < 2*privksP::targetP::l; i++) for (int j = 0; j < 2; j++) TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j],trgsw[i][j]);
 }
 #define INST(bkP, privksP)                                      \
     template void CircuitBootstrappingFFTwithInv<bkP, privksP>( \
