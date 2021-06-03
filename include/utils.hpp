@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bits/stdint-uintn.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -56,15 +57,13 @@ inline typename P::T modSwitchFromTorus(uint32_t phase)
 }
 
 // https://stackoverflow.com/questions/21191307/minimum-number-of-bits-to-represent-a-given-int
-template<uint32_t data>
+template <uint32_t data>
 constexpr int bits_needed()
 {
     uint32_t value = data;
     int bits = 0;
-    for (int bit_test = 16; bit_test > 0; bit_test >>= 1)
-    {
-        if (value >> bit_test != 0)
-        {
+    for (int bit_test = 16; bit_test > 0; bit_test >>= 1) {
+        if (value >> bit_test != 0) {
             bits += bit_test;
             value >>= bit_test;
         }
