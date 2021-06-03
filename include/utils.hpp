@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bits/stdint-uintn.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -46,12 +48,27 @@ inline typename P::T ModularGaussian(typename P::T center, double stdev)
         static_assert(false_v<typename P::T>, "Undefined Modular Gaussian!");
 }
 
-template <class P>
+template <class P, uint32_t bitwidth = 0>
 inline typename P::T modSwitchFromTorus(uint32_t phase)
 {
-    constexpr uint32_t Mbit = P::nbit + 1;
+    constexpr uint32_t Mbit = P::nbit + 1 - bitwidth;
     static_assert(32 >= Mbit, "Undefined modSwitchFromTorus!");
-    return (phase + (1U << (31 - Mbit))) >> (32 - Mbit);
+    return ((phase + (1U << (31 - Mbit))) >> (32 - Mbit)) << bitwidth;
+}
+
+// https://stackoverflow.com/questions/21191307/minimum-number-of-bits-to-represent-a-given-int
+template <uint32_t data>
+constexpr int bits_needed()
+{
+    uint32_t value = data;
+    int bits = 0;
+    for (int bit_test = 16; bit_test > 0; bit_test >>= 1) {
+        if (value >> bit_test != 0) {
+            bits += bit_test;
+            value >>= bit_test;
+        }
+    }
+    return bits + value;
 }
 
 template <uint32_t N>

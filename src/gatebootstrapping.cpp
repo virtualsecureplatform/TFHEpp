@@ -12,8 +12,8 @@ namespace TFHEpp {
 using namespace std;
 
 template <class P>
-void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector,
-                       const uint32_t bara, const typename P::T μ)
+inline void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector,
+                              const uint32_t bara, const typename P::T μ)
 {
     testvector[0] = {};
     if (bara < P::n) {
@@ -26,19 +26,12 @@ void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector,
         for (int i = baraa; i < P::n; i++) testvector[1][i] = -μ;
     }
 }
-#define INST(P)                                                           \
-    template void RotatedTestVector<P>(                                   \
-        array<array<typename P::T, P::n>, 2> & testvector, uint32_t bara, \
-        const typename P::T μ)
-TFHEPP_EXPLICIT_INSTANTIATION_LVL0_1_2(INST);
-#undef INST
 
 template <class P>
 void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc,
                                     const TLWE<typename P::domainP> &tlwe,
                                     const BootstrappingKeyFFT<P> &bkfft)
 {
-    TRLWE<typename P::targetP> temp;
     uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(
                                             tlwe[P::domainP::n]);
     RotatedTestVector<typename P::targetP>(acc, bara, P::targetP::μ);
