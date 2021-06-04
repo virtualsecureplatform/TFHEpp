@@ -204,6 +204,12 @@ public:
         for (uint64_t i = 0; i < e; i++) res *= *this;
         return res;
     }
+
+    template <class Archive>
+    void serialize(Archive &ar)
+    {
+        ar(value);
+    }
 };
 
 // defined on [1,31]
