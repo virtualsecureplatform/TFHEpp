@@ -57,6 +57,11 @@ uint8_t MuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
     return (inc > 0) ? in1 : in0;
 }
 
+uint8_t NMuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
+{
+    return (~((inc > 0) ? in1 : in0))& 0x1;
+}
+
 template <class Func, class Chegk>
 void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
           vector<TLWE<lvl0param>> cres, vector<TLWE<lvl0param>> c,
@@ -149,6 +154,7 @@ int main()
     Test("XOR", HomXOR, XorChegk, p, cres, c, kNumTests, *sk, *gk);
     Test("XNOR", HomXNOR, XnorChegk, p, cres, c, kNumTests, *sk, *gk);
     Test("MUX", HomMUX, MuxChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("NMUX", HomNMUX, NMuxChegk, p, cres, c, kNumTests, *sk, *gk);
     Test("ConstantZero", HomCONSTANTZERO, ConstantZeroChegk, p, cres, c,
          kNumTests, *sk, *gk);
     Test("ConstantOne", HomCONSTANTONE, ConstantOneChegk, p, cres, c, kNumTests,

@@ -118,6 +118,25 @@ void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
     IdentityKeySwitch<lvl10param>(res, and1, gk.ksk);
 }
 
+void HomNMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
+            const TLWE<lvl0param> &c1, const TLWE<lvl0param> &c0,
+            const GateKey &gk)
+{
+    TLWE<lvl0param> temp;
+    for (int i = 0; i <= lvl0param::n; i++) temp[i] = cs[i] + c1[i];
+    for (int i = 0; i <= lvl0param::n; i++) res[i] = -cs[i] + c0[i];
+    temp[lvl0param::n] -= lvl0param::μ;
+    res[lvl0param::n] -= lvl0param::μ;
+    TLWE<lvl1param> and1;
+    TLWE<lvl1param> and0;
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and1, temp, gk.bkfftlvl01);
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and0, res, gk.bkfftlvl01);
+
+    for (int i = 0; i <= lvl1param::n; i++) and1[i] = -and1[i]-and0[i];
+    and1[lvl1param::n] -= lvl1param::μ;
+    IdentityKeySwitch<lvl10param>(res, and1, gk.ksk);
+}
+
 template <class P>
 void HomMUXwoSE(TRLWE<typename P::targetP> &res,
                 const TLWE<typename P::domainP> &cs,
