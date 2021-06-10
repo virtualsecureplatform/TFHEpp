@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./detwfa.hpp"
+#include <bitset>
 
 namespace TFHEpp {
 template <class P, uint32_t address_bit>
@@ -25,6 +26,14 @@ void RAMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
     }
     constexpr uint32_t stride = 1 << (address_bit - 2);
     CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+}
+
+template <class P,uint32_t address_bit>
+void RAMwriteBar(TRLWE<P> &res, const TRLWE<P> &writed, const TRLWE<P> &encmem, const int index,const std::array<std::array<TRGSWFFT<P>, address_bit>, 2> &bootedTRGSW){
+    const std::bitset<address_bit> addressbitset(index);
+        res = writed;
+        for (int i = 0; i < address_bit; i++)
+            CMUXFFT<P>(res, bootedTRGSW[addressbitset[i]][i], res, encmem);
 }
 
 template <class P, uint32_t address_bit, uint32_t width_bit>
