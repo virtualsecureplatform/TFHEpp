@@ -75,7 +75,7 @@ For the people who want to cite this library directly (may be in addition to [VS
 @misc{TFHEpp,
 	author = {Kotaro Matsuoka},
 	title = {{TFHEpp: pure C++ implementation of TFHE cryptosystem}},
-  year = {2020},
+  	year = {2020},
 	howpublished = {\url{https://github.com/virtualsecureplatform/TFHEpp}}
 }
 ```
