@@ -1,5 +1,5 @@
 # TFHEpp
-TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original TFHE and supports Circuit Bootstrapping.
+TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original [TFHE implementation](https://github.com/tfhe/tfhe). In addition to that, THFEpp supports Circuit Bootstrapping and [Private Boootstrapping many LUT](https://eprint.iacr.org/2021/729).
 TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
 
 # Parameter
@@ -62,7 +62,20 @@ make
 ./test/test-bootstrapping-fft-spqlios-fma 
 ```
 
-## Theory
+# Theory
 
 Here is the slides (in japanese).
 https://nindanaoto.github.io/
+
+# Citation
+
+For the people who want to cite this library directly (may be in addition to [VSP paper](https://www.usenix.org/conference/usenixsecurity21/presentation/matsuoka)), I give a below example of bibtex citation.
+
+```
+@misc{TFHEpp,
+	author = {Kotaro Matsuoka},
+	title = {{TFHEpp: pure C++ implementation of TFHE cryptosystem}},
+  	year = {2020},
+	howpublished = {\url{https://github.com/virtualsecureplatform/TFHEpp}}
+}
+```
