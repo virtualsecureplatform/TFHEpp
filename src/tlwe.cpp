@@ -33,7 +33,7 @@ array<typename P::T, P::n + 1> tlweSymEncrypt(
     template array<typename P::T, P::n + 1> tlweSymEncrypt<P>( \
         const typename P::T p, const double α,                 \
         const array<typename P::T, P::n> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_LVL0_1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
 template <class P>
@@ -47,7 +47,7 @@ bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
 }
 #define INST(P) \
     template bool tlweSymDecrypt<P>(const TLWE<P> &c, const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_LVL0_1_2(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
 vector<TLWE<lvl0param>> bootsSymEncrypt(const vector<uint8_t> &p,

@@ -76,14 +76,14 @@ using PrivKeySwitchKey =
     array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n + 1>;
 
-#define TFHEPP_EXPLICIT_INSTANTIATION_LVL0_1_2(fun) \
+#define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \
     fun(lvl0param);                                 \
     fun(lvl1param);                                 \
     fun(lvl2param);
-#define TFHEPP_EXPLICIT_INSTANTIATION_LVL1_2(fun) \
+#define TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(fun) \
     fun(lvl1param);                               \
     fun(lvl2param);
-#define TFHEPP_EXPLICIT_INSTANTIATION_LVL01_02(fun) \
+#define TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(fun) \
     fun(lvl01param);                                \
     fun(lvl02param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(fun) \
@@ -91,7 +91,7 @@ using PrivKeySwitchKey =
     fun(lvl20param);                                  \
     fun(lvl21param);                                  \
     fun(lvl22param);
-#define TFHEPP_EXPLICIT_INSTANTIATION_LVL0221_0222(fun) \
+#define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(fun) \
     fun(lvl02param, lvl21param);                        \
     fun(lvl02param, lvl22param);
 }  // namespace TFHEpp
