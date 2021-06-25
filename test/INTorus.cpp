@@ -85,6 +85,7 @@ int main()
     }
     cout << "Mul and assignment PASS" << endl;
 
+    #ifdef ENABLE_LSHTEST
     // Lsh Test
     for (int upper = 1; upper <= 6; upper++) {
         for (int l = 32 * (upper - 1); l < 32 * upper; l++) {
@@ -118,6 +119,7 @@ int main()
         }
         cout << "Lsh" << upper * 32 << " PASS" << endl;
     }
+    #endif
 
     // InvPow2 Test
     for (int i = 1; i <= 31; i++) {
