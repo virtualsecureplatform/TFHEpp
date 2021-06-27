@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace THFEpp {
+namespace TFHEpp {
 	struct IOpacket{
 		std::map<std::string,std::vector<TFHEpp::TLWE<TFHEpp::lvl0param>>> tlwelvl0ports;
 		std::map<std::string,std::vector<TFHEpp::TRLWE<TFHEpp::lvl2param>>> trlwelvl2ports;
