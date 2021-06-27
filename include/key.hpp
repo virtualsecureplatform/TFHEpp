@@ -3,13 +3,13 @@
 #include <algorithm>
 #include <array>
 
-#include "../thirdparties/cereal/include/cereal/archives/portable_binary.hpp"
-#include "../thirdparties/cereal/include/cereal/types/array.hpp"
-#include "../thirdparties/randen/randen.h"
-#include "./lweParams.hpp"
-#include "./params.hpp"
-#include "./random"
-#include "./utils.hpp"
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/types/array.hpp>
+#include <randen.h>
+#include "lweParams.hpp"
+#include "params.hpp"
+#include "random"
+#include "utils.hpp"
 
 namespace TFHEpp {
 using namespace std;

@@ -9,8 +9,8 @@
 #include <limits>
 #include <random>
 
-#include "../thirdparties/randen/randen.h"
-#include "./params.hpp"
+#include <randen.h>
+#include "params.hpp"
 
 namespace TFHEpp {
 static thread_local std::random_device trng;

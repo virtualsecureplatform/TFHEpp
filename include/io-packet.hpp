@@ -1,12 +1,10 @@
 #pragma once
 
-#include "../thirdparties/cereal/include/cereal/archives/portable_binary.hpp"
-#include "../thirdparties/cereal/include/cereal/cereal.hpp"
-#include "../thirdparties/cereal/include/cereal/types/unordered_map.hpp"
-#include "../thirdparties/cereal/include/cereal/types/string.hpp"
-#include "../thirdparties/cereal/include/cereal/types/vector.hpp"
-#include "../thirdparties/cereal/include/cereal/types/array.hpp"
-#include "../thirdparties/cereal/include/cereal/types/optional.hpp"
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/array.hpp>
 
 #include "params.hpp"
 #include <unordered_map>

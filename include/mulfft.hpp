@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../thirdparties/spqlios/spqlios-fft.h"
-#include "./cuhe++.hpp"
-#include "./params.hpp"
-#include "./utils.hpp"
+#include <spqlios-fft.h>
+#include "cuhe++.hpp"
+#include "params.hpp"
+#include "utils.hpp"
 
 namespace TFHEpp {
 

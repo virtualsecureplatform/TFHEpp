@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <limits>
 
-#include "./params.hpp"
+#include "params.hpp"
 
 namespace TFHEpp {
 struct portablelvl0param {

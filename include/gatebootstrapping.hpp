@@ -4,9 +4,9 @@
 #include <cmath>
 #include <limits>
 
-#include "./cloudkey.hpp"
-#include "./detwfa.hpp"
-#include "./utils.hpp"
+#include "cloudkey.hpp"
+#include "detwfa.hpp"
+#include "utils.hpp"
 #include "trlwe.hpp"
 
 namespace TFHEpp {

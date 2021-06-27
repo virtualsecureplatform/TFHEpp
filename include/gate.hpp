@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./cloudkey.hpp"
+#include "cloudkey.hpp"
 
 namespace TFHEpp {
 using namespace std;

@@ -3,9 +3,9 @@
 #include <array>
 #include <cstdint>
 
-#include "./mulfft.hpp"
-#include "./params.hpp"
-#include "./trlwe.hpp"
+#include "mulfft.hpp"
+#include "params.hpp"
+#include "trlwe.hpp"
 
 namespace TFHEpp {
 using namespace std;

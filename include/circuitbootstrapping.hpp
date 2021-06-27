@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include "./cloudkey.hpp"
-#include "./gatebootstrapping.hpp"
-#include "./keyswitch.hpp"
+#include "cloudkey.hpp"
+#include "gatebootstrapping.hpp"
+#include "keyswitch.hpp"
 
 namespace TFHEpp {
 using namespace std;

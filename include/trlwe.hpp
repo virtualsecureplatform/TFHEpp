@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "./utils.hpp"
+#include "utils.hpp"
 
 namespace TFHEpp {
 using namespace std;

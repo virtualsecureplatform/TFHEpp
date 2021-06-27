@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./detwfa.hpp"
+#include "detwfa.hpp"
 #include <bitset>
 
 namespace TFHEpp {
