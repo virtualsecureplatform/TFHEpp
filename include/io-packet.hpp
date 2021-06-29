@@ -18,6 +18,8 @@ namespace TFHEpp {
 		std::unordered_map<std::string,std::vector<TFHEpp::TRLWE<TFHEpp::lvl2param>>> trlwelvl2ports;
 		std::unordered_map<std::string,std::vector<TFHEpp::TRGSW<TFHEpp::lvl2param>>> trgswlvl2ports;
 		
+		uint numCycles = 1;
+		
 		template <class Archive>
 		void serialize(Archive &archive)
 		{
