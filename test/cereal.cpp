@@ -3,7 +3,6 @@
 #include <iostream>
 #include <tfhe++.hpp>
 
-
 int main()
 {
     TFHEpp::SecretKey sk;
@@ -26,14 +25,16 @@ int main()
         for (int i = 0; i < TFHEpp::lvl2param::n; i++)
             assert(sk.key.lvl2[i] == ski.key.lvl2[i]);
         std::cout << "n"
-                << ":" << ski.params.lvl0.n << std::endl;
+                  << ":" << ski.params.lvl0.n << std::endl;
         assert(sk.params == ski.params);
     }
 
     {
         TFHEpp::IOpacket iopacket;
         iopacket.tlwelvl0ports["test"].resize(1);
-        iopacket.tlwelvl0ports["test"][0] = TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(TFHEpp::lvl0param::μ,TFHEpp::lvl0param::α,sk.key.lvl0);
+        iopacket.tlwelvl0ports["test"][0] =
+            TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
+                TFHEpp::lvl0param::μ, TFHEpp::lvl0param::α, sk.key.lvl0);
         {
             std::ofstream ofs{"./iopacket.data", std::ios::binary};
             cereal::PortableBinaryOutputArchive ar(ofs);

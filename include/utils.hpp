@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bits/stdint-uintn.h>
+#include <randen.h>
 
 #include <algorithm>
 #include <array>
@@ -9,7 +10,6 @@
 #include <limits>
 #include <random>
 
-#include <randen.h>
 #include "params.hpp"
 
 namespace TFHEpp {

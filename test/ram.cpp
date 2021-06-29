@@ -84,7 +84,8 @@ int main()
     HomMUXwoSE<CBbsP>(writed, cs, c1, encreadres, (*ck).ck.bkfft);
     for (int i = 0; i < memsize; i++) {
         TRLWE<typename ksP::domainP> temp;
-        TFHEpp::RAMwriteBar<typename ksP::domainP,address_bit>(temp, writed, (*encmemory)[i], i, *bootedTGSW);
+        TFHEpp::RAMwriteBar<typename ksP::domainP, address_bit>(
+            temp, writed, (*encmemory)[i], i, *bootedTGSW);
         TLWE<typename ksP::domainP> temp2;
         SampleExtractIndex<typename ksP::domainP>(temp2, temp, 0);
         TLWE<typename ksP::targetP> temp3;

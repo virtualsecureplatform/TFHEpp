@@ -59,7 +59,7 @@ uint8_t MuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
 
 uint8_t NMuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
 {
-    return (~((inc > 0) ? in1 : in0))& 0x1;
+    return (~((inc > 0) ? in1 : in0)) & 0x1;
 }
 
 template <class Func, class Chegk>

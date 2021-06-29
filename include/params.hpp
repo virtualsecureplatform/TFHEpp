@@ -77,14 +77,14 @@ using PrivKeySwitchKey =
           P::domainP::n + 1>;
 
 #define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \
-    fun(lvl0param);                                 \
-    fun(lvl1param);                                 \
+    fun(lvl0param);                             \
+    fun(lvl1param);                             \
     fun(lvl2param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(fun) \
-    fun(lvl1param);                               \
+    fun(lvl1param);                              \
     fun(lvl2param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(fun) \
-    fun(lvl01param);                                \
+    fun(lvl01param);                                    \
     fun(lvl02param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(fun) \
     fun(lvl10param);                                  \
@@ -92,6 +92,6 @@ using PrivKeySwitchKey =
     fun(lvl21param);                                  \
     fun(lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(fun) \
-    fun(lvl02param, lvl21param);                        \
+    fun(lvl02param, lvl21param);                                 \
     fun(lvl02param, lvl22param);
 }  // namespace TFHEpp

@@ -1,13 +1,14 @@
 #pragma once
 
 #include <bits/stdint-uintn.h>
+
 #include <cmath>
 #include <limits>
 
 #include "cloudkey.hpp"
 #include "detwfa.hpp"
-#include "utils.hpp"
 #include "trlwe.hpp"
+#include "utils.hpp"
 
 namespace TFHEpp {
 
@@ -39,10 +40,12 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                  const TRLWE<typename P::targetP> &testvector)
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
-    constexpr typename P::domainP::T flooroffset = 1ULL<<(std::numeric_limits<typename P::domainP::T>::digit-2*P::targetP::T); // 1/4N
+    constexpr typename P::domainP::T flooroffset =
+        1ULL << (std::numeric_limits<typename P::domainP::T>::digit -
+                 2 * P::targetP::T);  // 1/4N
     uint32_t bara =
-        2 * P::targetP::n -
-        modSwitchFromTorus<typename P::targetP, bitwidth>(tlwe[P::domainP::n]-flooroffset);
+        2 * P::targetP::n - modSwitchFromTorus<typename P::targetP, bitwidth>(
+                                tlwe[P::domainP::n] - flooroffset);
     PolynomialMulByXai<typename P::targetP>(res[0], testvector[0], bara);
     PolynomialMulByXai<typename P::targetP>(res[1], testvector[1], bara);
     for (int i = 0; i < P::domainP::n; i++) {

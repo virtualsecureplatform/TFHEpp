@@ -1,11 +1,12 @@
 #pragma once
 
+#include <randen.h>
+
 #include <algorithm>
 #include <array>
-
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/array.hpp>
-#include <randen.h>
+
 #include "lweParams.hpp"
 #include "params.hpp"
 #include "random"

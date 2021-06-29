@@ -2,6 +2,7 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/array.hpp>
+
 #include "params.hpp"
 #include "tlwe.hpp"
 #include "trgsw.hpp"
