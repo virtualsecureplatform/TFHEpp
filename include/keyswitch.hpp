@@ -13,6 +13,11 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
                        const KeySwitchingKey<P> &ksk);
 
 template <class P>
+void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
+                       const TLWE<typename P::domainP> &tlwe,
+                       const TLWE2TRLWEIKSKey<P> &iksk);
+
+template <class P>
 void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                    const TLWE<typename P::domainP> &tlwe,
                    const PrivKeySwitchKey<P> &privksk);

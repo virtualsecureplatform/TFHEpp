@@ -31,6 +31,23 @@ inline void bkfftgen(BootstrappingKeyFFT<P> &bkfft, const SecretKey &sk)
 }
 
 template <class P>
+inline void tlwe2trlweikskkgen(TLWE2TRLWEIKSKey<P> &iksk, const SecretKey &sk)
+{
+    for (int i = 0; i < P::domainP::n; i++)
+        for (int j = 0; j < P::t; j++)
+            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++){
+                Polynomial<typename P::targetP> p = {};
+                p[0] = sk.key.get<typename P::domainP>()[i] * (k + 1) *
+                        (1ULL
+                         << (numeric_limits<typename P::targetP::T>::digits -
+                             (j + 1) * P::basebit));
+                iksk[i][j][k] = trlweSymEncrypt<typename P::targetP>(
+                    p,
+                    P::α, sk.key.get<typename P::targetP>());
+            }
+}
+
+template <class P>
 inline void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk)
 {
     for (int i = 0; i < P::domainP::n; i++)

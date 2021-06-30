@@ -51,6 +51,51 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 
+
+template <class P>
+void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
+                       const TLWE<typename P::domainP> &tlwe,
+                       const TLWE2TRLWEIKSKey<P> &iksk){
+    constexpr typename P::domainP::T prec_offset =
+    1ULL << (numeric_limits<typename P::domainP::T>::digits -
+                (1 + P::basebit * P::t));
+    constexpr uint32_t mask = (1U << P::basebit) - 1;
+    res = {};
+    constexpr uint32_t domain_digit =
+        std::numeric_limits<typename P::domainP::T>::digits;
+    constexpr uint32_t target_digit =
+        std::numeric_limits<typename P::targetP::T>::digits;
+    if constexpr (domain_digit == target_digit)
+        res[1][0] = tlwe[P::domainP::n];
+    else if constexpr (domain_digit > target_digit)
+        res[1][0] = (tlwe[P::domainP::n] +
+                              (1ULL << (domain_digit - target_digit - 1))) >>
+                             (domain_digit - target_digit);
+    else if constexpr (domain_digit < target_digit)
+        res[1][0] = tlwe[P::domainP::n]
+                             << (target_digit - domain_digit);
+    for (int i = 0; i < P::domainP::n; i++) {
+        const typename P::domainP::T aibar = tlwe[i] + prec_offset;
+        for (int j = 0; j < P::t; j++) {
+            const uint32_t aij =
+                (aibar >> (numeric_limits<typename P::domainP::T>::digits -
+                           (j + 1) * P::basebit)) &
+                mask;
+            if (aij != 0)
+                for (int k = 0; k < P::targetP::n; k++){
+                    res[0][k] -= iksk[i][j][aij - 1][0][k];
+                    res[1][k] -= iksk[i][j][aij - 1][1][k];
+                }
+        }
+    }
+}
+#define INST(P)                                                               \
+    template void TLWE2TRLWEIKS<P>(TRLWE<typename P::targetP> &res, \
+                       const TLWE<typename P::domainP> &tlwe, \
+                       const TLWE2TRLWEIKSKey<P> &iksk)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+#undef INST
+
 template <class P>
 void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                    const TLWE<typename P::domainP> &tlwe,

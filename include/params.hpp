@@ -72,6 +72,10 @@ using KeySwitchingKey =
     array<array<array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n>;
 template <class P>
+using TLWE2TRLWEIKSKey =
+    array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
+          P::domainP::n>;
+template <class P>
 using PrivKeySwitchKey =
     array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n + 1>;
@@ -88,6 +92,7 @@ using PrivKeySwitchKey =
     fun(lvl02param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(fun) \
     fun(lvl10param);                                  \
+    fun(lvl11param);                                  \
     fun(lvl20param);                                  \
     fun(lvl21param);                                  \
     fun(lvl22param);

@@ -7,6 +7,7 @@
 #include "./key.hpp"
 #include "./params.hpp"
 #include "./utils.hpp"
+#include "params/128bit.hpp"
 
 namespace TFHEpp {
 using namespace std;
@@ -19,8 +20,10 @@ array<typename P::T, P::n + 1> tlweSymEncrypt(
 template <class P>
 bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key);
 
-vector<TLWE<lvl0param>> bootsSymEncrypt(const vector<uint8_t> &p,
+template <class P = lvl0param>
+vector<TLWE<P>> bootsSymEncrypt(const vector<uint8_t> &p,
                                         const SecretKey &sk);
-vector<uint8_t> bootsSymDecrypt(const vector<TLWE<lvl0param>> &c,
+template <class P = lvl0param>
+vector<uint8_t> bootsSymDecrypt(const vector<TLWE<P>> &c,
                                 const SecretKey &sk);
 }  // namespace TFHEpp
