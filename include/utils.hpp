@@ -101,7 +101,7 @@ inline void PolynomialMulByXai(Polynomial<P> &res, const Polynomial<P> &poly,
                                const typename P::T a)
 {
     if (a == 0)
-        return;
+        res = poly;
     else if (a < P::n) {
         for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n];
         for (int i = a; i < P::n; i++) res[i] = poly[i - a];
