@@ -29,7 +29,7 @@ struct IOpacket {
     template <class Archive>
     void serialize(Archive &archive)
     {
-        archive(tlwelvl0ports, trlwelvl2ports, trgswlvl2ports);
+        archive(tlwelvl0ports, trlwelvl2ports, trgswlvl2ports, numCycles);
     }
 };
 }  // namespace TFHEpp
