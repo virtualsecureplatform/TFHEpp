@@ -49,7 +49,7 @@ bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
-template <class P = lvl0param>
+template <class P>
 std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
                                         const SecretKey &sk)
 {
@@ -65,7 +65,7 @@ std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
-template <class P = lvl0param>
+template <class P>
 std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
                                 const SecretKey &sk)
 {
