@@ -7,7 +7,6 @@
 #include "./key.hpp"
 #include "./params.hpp"
 #include "./utils.hpp"
-#include "params/128bit.hpp"
 
 namespace TFHEpp {
 using namespace std;
