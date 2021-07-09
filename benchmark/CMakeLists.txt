@@ -2,8 +2,8 @@ OPTION(BENCHMARK_ENABLE_GTEST_TESTS "" OFF)
 OPTION(CMAKE_BUILD_TYPE "" Release)
 
 add_subdirectory(google-benchmark)
-add_executable(bench_nand bench_nand.cpp)
-target_include_directories(bench_nand
+add_executable(bench bench.cpp)
+target_include_directories(bench
   PUBLIC ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include
   )
-target_link_libraries(bench_nand benchmark::benchmark tfhe++)
+target_link_libraries(bench benchmark::benchmark tfhe++)
