@@ -77,11 +77,11 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         for (int i = 0; i < P::n; i++) {
             typename P::T ri = 0;
             for (int j = 0; j <= i; j++)
-                ri += static_cast<typename make_signed<typename P::T>::type>(
+                ri += static_cast<typename std::make_signed<typename P::T>::type>(
                           a[j]) *
                       b[i - j];
             for (int j = i + 1; j < P::n; j++)
-                ri -= static_cast<typename make_signed<typename P::T>::type>(
+                ri -= static_cast<typename std::make_signed<typename P::T>::type>(
                           a[j]) *
                       b[P::n + i - j];
             res[i] = ri;

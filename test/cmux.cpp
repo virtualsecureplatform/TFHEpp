@@ -40,9 +40,12 @@ int main()
     vector<TRLWE<lvl1param>> c0(num_test);
     vector<TRLWE<lvl1param>> cres(num_test);
 
-    for (int i = 0; i < num_test; i++)
+    for (int i = 0; i < num_test; i++){
+        Polynomial<TFHEpp::lvl1param> plainpoly = {};
+        plainpoly[0] = ps[i];
         cs[i] =
-            trgswfftSymEncrypt<lvl1param>(ps[i], lvl1param::α, sk->key.lvl1);
+            trgswfftSymEncrypt<lvl1param>(plainpoly, lvl1param::α, sk->key.lvl1);
+    }
     for (int i = 0; i < num_test; i++)
         c1[i] = trlweSymEncrypt<lvl1param>(pmu1[i], lvl1param::α, sk->key.lvl1);
     for (int i = 0; i < num_test; i++)

@@ -6,7 +6,6 @@
 #include "cuhe++.hpp"
 
 namespace TFHEpp {
-using namespace std;
 
 // Use old 80bit security parameters. It is faster, but not recommended.
 
@@ -28,17 +27,17 @@ struct lvl02param {
 };
 
 template <class P>
-using Key = array<typename P::T, P::n>;
+using Key = std::array<typename P::T, P::n>;
 
 template <class P>
-using TLWE = array<typename P::T, P::n + 1>;
+using TLWE = std::array<typename P::T, P::n + 1>;
 
 template <class P>
-using Polynomial = array<typename P::T, P::n>;
+using Polynomial = std::array<typename P::T, P::n>;
 template <class P>
-using PolynomialInFD = array<double, P::n>;
+using PolynomialInFD = std::array<double, P::n>;
 template <class P>
-using PolynomialNTT = array<cuHEpp::INTorus, P::n>;
+using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
 template <class P>
 using DecomposedPolynomial = Polynomial<P>;
 template <class P>
@@ -47,37 +46,39 @@ template <class P>
 using DecomposedPolynomialNTT = PolynomialNTT<P>;
 
 template <class P>
-using TRLWE = array<Polynomial<P>, 2>;
+using TRLWE = std::array<Polynomial<P>, 2>;
 template <class P>
-using TRLWEInFD = array<PolynomialInFD<P>, 2>;
+using TRLWEInFD = std::array<PolynomialInFD<P>, 2>;
 template <class P>
-using TRLWENTT = array<PolynomialNTT<P>, 2>;
+using TRLWENTT = std::array<PolynomialNTT<P>, 2>;
 
 template <class P>
-using TRGSW = array<TRLWE<P>, 2 * P::l>;
+using TRGSW = std::array<TRLWE<P>, 2 * P::l>;
 template <class P>
-using TRGSWFFT = array<TRLWEInFD<P>, 2 * P::l>;
+using TRGSWFFT = std::array<TRLWEInFD<P>, 2 * P::l>;
 template <class P>
-using TRGSWNTT = array<TRLWENTT<P>, 2 * P::l>;
+using TRGSWNTT = std::array<TRLWENTT<P>, 2 * P::l>;
 
 template <class P>
-using BootstrappingKey = array<TRGSW<typename P::targetP>, P::domainP::n>;
+using BootstrappingKey = std::array<TRGSW<typename P::targetP>, P::domainP::n>;
 template <class P>
-using BootstrappingKeyFFT = array<TRGSWFFT<typename P::targetP>, P::domainP::n>;
+using BootstrappingKeyFFT = std::array<TRGSWFFT<typename P::targetP>, P::domainP::n>;
 template <class P>
-using BootstrappingKeyNTT = array<TRGSWNTT<typename P::targetP>, P::domainP::n>;
+using BootstrappingKeyNTT = std::array<TRGSWNTT<typename P::targetP>, P::domainP::n>;
 
 template <class P>
 using KeySwitchingKey =
-    array<array<array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
+    std::array<std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n>;
 template <class P>
 using TLWE2TRLWEIKSKey =
-    array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
+    std::array<std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n>;
+template<class P>
+using AnnihilateKey = std::array<TRGSWFFT<P>,P::nbit>;
 template <class P>
 using PrivKeySwitchKey =
-    array<array<array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
+    std::array<std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
           P::domainP::n + 1>;
 
 #define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \

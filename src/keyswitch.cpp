@@ -1,4 +1,5 @@
-#include "keyswitch.hpp"
+#include <keyswitch.hpp>
+#include <trgsw.hpp>
 
 #include <cstdint>
 #include <limits>
@@ -94,6 +95,35 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
                        const TLWE<typename P::domainP> &tlwe, \
                        const TLWE2TRLWEIKSKey<P> &iksk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+#undef INST
+
+template<class P>
+inline void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d, const TRGSWFFT<P> &autokey){
+    Polynomial<P> polyb;
+    Automorphism<P>(polyb, trlwe[1], d);
+    TRLWE<P> ca = {};
+    Automorphism<P>(ca[1], trlwe[0], d);
+    trgswfftExternalProduct<P>(ca, ca, autokey);
+    for(int i = 0; i < P::n; i++){
+        res[0][i] = -ca[1][i];
+        res[1][i] = polyb[i] - ca[1][i];
+    }
+}
+
+template <class P>
+void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe, const AnnihilateKey<P> &ahk){
+    res = trlwe;
+    for(int i = 0; i < P::nbit; i++){
+        TRLWE<P> evaledauto;
+        EvalAuto<P>(evaledauto, res, 1<<(P::nbit-i)+1, ahk[i]);
+        for(int j = 0; j<2*P::n; j++) res[0][j] += evaledauto[0][j];
+    }
+}
+#define INST(P)                                                               \
+    template void AnnihilateKeySwitching<P>(TRLWE<P> &res, \
+                    const TRLWE<P> &trlwe, \
+                    const AnnihilateKey<P> &ahk)
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 template <class P>
