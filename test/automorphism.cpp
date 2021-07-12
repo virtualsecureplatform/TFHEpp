@@ -37,6 +37,4 @@ int main()
             assert(abs(static_cast<int32_t>(mulafterauto[i] - autoaftermul[i])) <= 1);
     }
     std::cout<<"PASS"<<std::endl;
-
-    return 0;
 }

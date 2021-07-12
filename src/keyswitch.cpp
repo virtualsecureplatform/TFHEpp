@@ -98,17 +98,24 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 
 template<class P>
-inline void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d, const TRGSWFFT<P> &autokey){
+void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d, const TRGSWFFT<P> &autokey){
     Polynomial<P> polyb;
     Automorphism<P>(polyb, trlwe[1], d);
     TRLWE<P> ca = {};
     Automorphism<P>(ca[1], trlwe[0], d);
     trgswfftExternalProduct<P>(ca, ca, autokey);
     for(int i = 0; i < P::n; i++){
-        res[0][i] = -ca[1][i];
+        res[0][i] = -ca[0][i];
         res[1][i] = polyb[i] - ca[1][i];
     }
 }
+#define INST(P)                                                               \
+    template void EvalAuto<P>(TRLWE<P> &res, \
+                            const TRLWE<P> &trlwe, \
+                            const int d, \
+                            const TRGSWFFT<P> &autokey)
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
+#undef INST
 
 template <class P>
 void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe, const AnnihilateKey<P> &ahk){
