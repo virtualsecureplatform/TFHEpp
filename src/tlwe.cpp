@@ -14,9 +14,8 @@
 namespace TFHEpp {
 
 template <class P>
-TLWE<P> tlweSymEncrypt(
-    const typename P::T p, const double α,
-    const std::array<typename P::T, P::n> &key)
+TLWE<P> tlweSymEncrypt(const typename P::T p, const double α,
+                       const std::array<typename P::T, P::n> &key)
 {
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, std::numeric_limits<typename P::T>::max());
@@ -28,9 +27,9 @@ TLWE<P> tlweSymEncrypt(
     }
     return res;
 }
-#define INST(P)                                                \
-    template TLWE<P> tlweSymEncrypt<P>( \
-        const typename P::T p, const double α,                 \
+#define INST(P)                                \
+    template TLWE<P> tlweSymEncrypt<P>(        \
+        const typename P::T p, const double α, \
         const std::array<typename P::T, P::n> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
@@ -51,32 +50,32 @@ TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 
 template <class P>
 std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
-                                        const SecretKey &sk)
+                                     const SecretKey &sk)
 {
     vector<TLWE<P>> c(p.size());
     for (int i = 0; i < p.size(); i++)
         c[i] = tlweSymEncrypt<P>(p[i] ? lvl0param::μ : -lvl0param::μ,
-                                         lvl0param::α, sk.key.get<P>());
+                                 lvl0param::α, sk.key.get<P>());
     return c;
 }
-#define INST(P) \
-    template std::vector<TLWE<P>> bootsSymEncrypt<P>(const std::vector<uint8_t> &p, \
-                                        const SecretKey &sk)
+#define INST(P)                                       \
+    template std::vector<TLWE<P>> bootsSymEncrypt<P>( \
+        const std::vector<uint8_t> &p, const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
 template <class P>
 std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
-                                const SecretKey &sk)
+                                     const SecretKey &sk)
 {
     vector<uint8_t> p(c.size());
     for (int i = 0; i < c.size(); i++)
         p[i] = tlweSymDecrypt<P>(c[i], sk.key.get<P>());
     return p;
 }
-#define INST(P) \
-    template std::vector<uint8_t> bootsSymDecrypt<P>(const std::vector<TLWE<P>> &c, \
-                                const SecretKey &sk)
+#define INST(P)                                       \
+    template std::vector<uint8_t> bootsSymDecrypt<P>( \
+        const std::vector<TLWE<P>> &c, const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 }  // namespace TFHEpp

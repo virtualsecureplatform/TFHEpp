@@ -1,8 +1,7 @@
-#include <keyswitch.hpp>
-#include <trgsw.hpp>
-
 #include <cstdint>
+#include <keyswitch.hpp>
 #include <limits>
+#include <trgsw.hpp>
 
 #include "utils.hpp"
 
@@ -52,14 +51,14 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 
-
 template <class P>
 void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
-                       const TLWE<typename P::domainP> &tlwe,
-                       const TLWE2TRLWEIKSKey<P> &iksk){
+                   const TLWE<typename P::domainP> &tlwe,
+                   const TLWE2TRLWEIKSKey<P> &iksk)
+{
     constexpr typename P::domainP::T prec_offset =
-    1ULL << (numeric_limits<typename P::domainP::T>::digits -
-                (1 + P::basebit * P::t));
+        1ULL << (numeric_limits<typename P::domainP::T>::digits -
+                 (1 + P::basebit * P::t));
     constexpr uint32_t mask = (1U << P::basebit) - 1;
     res = {};
     constexpr uint32_t domain_digit =
@@ -70,11 +69,10 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
         res[1][0] = tlwe[P::domainP::n];
     else if constexpr (domain_digit > target_digit)
         res[1][0] = (tlwe[P::domainP::n] +
-                              (1ULL << (domain_digit - target_digit - 1))) >>
-                             (domain_digit - target_digit);
+                     (1ULL << (domain_digit - target_digit - 1))) >>
+                    (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
-        res[1][0] = tlwe[P::domainP::n]
-                             << (target_digit - domain_digit);
+        res[1][0] = tlwe[P::domainP::n] << (target_digit - domain_digit);
     for (int i = 0; i < P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + prec_offset;
         for (int j = 0; j < P::t; j++) {
@@ -83,53 +81,54 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
                            (j + 1) * P::basebit)) &
                 mask;
             if (aij != 0)
-                for (int k = 0; k < P::targetP::n; k++){
+                for (int k = 0; k < P::targetP::n; k++) {
                     res[0][k] -= iksk[i][j][aij - 1][0][k];
                     res[1][k] -= iksk[i][j][aij - 1][1][k];
                 }
         }
     }
 }
-#define INST(P)                                                               \
-    template void TLWE2TRLWEIKS<P>(TRLWE<typename P::targetP> &res, \
-                       const TLWE<typename P::domainP> &tlwe, \
-                       const TLWE2TRLWEIKSKey<P> &iksk)
+#define INST(P)                                                           \
+    template void TLWE2TRLWEIKS<P>(TRLWE<typename P::targetP> & res,      \
+                                   const TLWE<typename P::domainP> &tlwe, \
+                                   const TLWE2TRLWEIKSKey<P> &iksk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 
-template<class P>
-void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d, const TRGSWFFT<P> &autokey){
+template <class P>
+void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
+              const TRGSWFFT<P> &autokey)
+{
     Polynomial<P> polyb;
     Automorphism<P>(polyb, trlwe[1], d);
     res = {};
     Automorphism<P>(res[1], trlwe[0], d);
     trgswfftExternalProduct<P>(res, res, autokey);
-    for(int i = 0; i < P::n; i++){
+    for (int i = 0; i < P::n; i++) {
         res[0][i] = -res[0][i];
         res[1][i] = polyb[i] - res[1][i];
     }
 }
-#define INST(P)                                                               \
-    template void EvalAuto<P>(TRLWE<P> &res, \
-                            const TRLWE<P> &trlwe, \
-                            const int d, \
-                            const TRGSWFFT<P> &autokey)
+#define INST(P)                                                      \
+    template void EvalAuto<P>(TRLWE<P> & res, const TRLWE<P> &trlwe, \
+                              const int d, const TRGSWFFT<P> &autokey)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 template <class P>
-void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe, const AnnihilateKey<P> &ahk){
+void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
+                            const AnnihilateKey<P> &ahk)
+{
     res = trlwe;
-    for(int i = 0; i < P::nbit; i++){
+    for (int i = 0; i < P::nbit; i++) {
         TRLWE<P> evaledauto;
-        EvalAuto<P>(evaledauto, res, (1<<(P::nbit-i))+1, ahk[i]);
-        for(int j = 0; j<2*P::n; j++) res[0][j] += evaledauto[0][j];
+        EvalAuto<P>(evaledauto, res, (1 << (P::nbit - i)) + 1, ahk[i]);
+        for (int j = 0; j < 2 * P::n; j++) res[0][j] += evaledauto[0][j];
     }
 }
-#define INST(P)                                                               \
-    template void AnnihilateKeySwitching<P>(TRLWE<P> &res, \
-                    const TRLWE<P> &trlwe, \
-                    const AnnihilateKey<P> &ahk)
+#define INST(P)                              \
+    template void AnnihilateKeySwitching<P>( \
+        TRLWE<P> & res, const TRLWE<P> &trlwe, const AnnihilateKey<P> &ahk)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

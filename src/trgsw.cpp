@@ -131,40 +131,37 @@ INST(lvl1param);
 #undef INST
 
 template <class P>
-TRGSW<P> trgswSymEncrypt(const Polynomial<P>& p,
-                         const double α, const Key<P> &key)
+TRGSW<P> trgswSymEncrypt(const Polynomial<P> &p, const double α,
+                         const Key<P> &key)
 {
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
 
     TRGSW<P> trgsw;
     for (TRLWE<P> &trlwe : trgsw) trlwe = trlweSymEncryptZero<P>(α, key);
     for (int i = 0; i < P::l; i++) {
-        for(int j = 0; j < P::n; j++){
+        for (int j = 0; j < P::n; j++) {
             trgsw[i][0][j] += static_cast<typename P::T>(p[j]) * h[i];
             trgsw[i + P::l][1][j] += static_cast<typename P::T>(p[j]) * h[i];
         }
     }
     return trgsw;
 }
-#define INST(P)                                                            \
-    template TRGSW<P> trgswSymEncrypt<P>(                                  \
-        const Polynomial<P>& p, const double α, \
-        const Key<P> &key)
+#define INST(P)                                                  \
+    template TRGSW<P> trgswSymEncrypt<P>(const Polynomial<P> &p, \
+                                         const double α, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 template <class P>
-TRGSWFFT<P> trgswfftSymEncrypt(
-    const Polynomial<P>& p, const double α,
-    const Key<P> &key)
+TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const double α,
+                               const Key<P> &key)
 {
     TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
     return ApplyFFT2trgsw<P>(trgsw);
 }
-#define INST(P)                                                            \
-    template TRGSWFFT<P> trgswfftSymEncrypt<P>(                            \
-        const Polynomial<P>& p, const double α, \
-        const Key<P> &key)
+#define INST(P)                                 \
+    template TRGSWFFT<P> trgswfftSymEncrypt<P>( \
+        const Polynomial<P> &p, const double α, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 }  // namespace TFHEpp

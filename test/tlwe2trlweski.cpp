@@ -4,7 +4,6 @@
 #include <random>
 #include <tfhe++.hpp>
 
-
 int main()
 {
     constexpr uint32_t num_test = 1000;
@@ -21,7 +20,8 @@ int main()
 
     std::vector<TFHEpp::TRLWE<TFHEpp::lvl1param>> cres(num_test);
 
-    TFHEpp::TLWE2TRLWEIKSKey<TFHEpp::lvl11param>* iksk = new TFHEpp::TLWE2TRLWEIKSKey<TFHEpp::lvl11param>();
+    TFHEpp::TLWE2TRLWEIKSKey<TFHEpp::lvl11param>* iksk =
+        new TFHEpp::TLWE2TRLWEIKSKey<TFHEpp::lvl11param>();
     TFHEpp::tlwe2trlweikskkgen<TFHEpp::lvl11param>(*iksk, *sk);
 
     std::chrono::system_clock::time_point start, end;
@@ -33,8 +33,10 @@ int main()
 
     end = std::chrono::system_clock::now();
     std::vector<std::array<bool, TFHEpp::lvl1param::n>> pres(num_test);
-    for(int i = 0; i< num_test; i++) pres[i] = TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(cres[i],sk->key.lvl1);
-    for (int i = 0; i < num_test; i++) assert(pres[i][0] == (pa[i]>0));
+    for (int i = 0; i < num_test; i++)
+        pres[i] =
+            TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(cres[i], sk->key.lvl1);
+    for (int i = 0; i < num_test; i++) assert(pres[i][0] == (pa[i] > 0));
     std::cout << "Passed" << std::endl;
     double elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)

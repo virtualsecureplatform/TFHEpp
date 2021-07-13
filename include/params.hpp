@@ -62,24 +62,29 @@ using TRGSWNTT = std::array<TRLWENTT<P>, 2 * P::l>;
 template <class P>
 using BootstrappingKey = std::array<TRGSW<typename P::targetP>, P::domainP::n>;
 template <class P>
-using BootstrappingKeyFFT = std::array<TRGSWFFT<typename P::targetP>, P::domainP::n>;
+using BootstrappingKeyFFT =
+    std::array<TRGSWFFT<typename P::targetP>, P::domainP::n>;
 template <class P>
-using BootstrappingKeyNTT = std::array<TRGSWNTT<typename P::targetP>, P::domainP::n>;
+using BootstrappingKeyNTT =
+    std::array<TRGSWNTT<typename P::targetP>, P::domainP::n>;
 
 template <class P>
-using KeySwitchingKey =
-    std::array<std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
-          P::domainP::n>;
+using KeySwitchingKey = std::array<
+    std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>,
+               P::t>,
+    P::domainP::n>;
 template <class P>
-using TLWE2TRLWEIKSKey =
-    std::array<std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
-          P::domainP::n>;
-template<class P>
-using AnnihilateKey = std::array<TRGSWFFT<P>,P::nbit>;
+using TLWE2TRLWEIKSKey = std::array<
+    std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
+               P::t>,
+    P::domainP::n>;
 template <class P>
-using PrivKeySwitchKey =
-    std::array<std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>, P::t>,
-          P::domainP::n + 1>;
+using AnnihilateKey = std::array<TRGSWFFT<P>, P::nbit>;
+template <class P>
+using PrivKeySwitchKey = std::array<
+    std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
+               P::t>,
+    P::domainP::n + 1>;
 
 #define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \
     fun(lvl0param);                             \

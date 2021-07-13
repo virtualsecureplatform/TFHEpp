@@ -131,14 +131,18 @@ inline void PolynomialMulByXaiMinusOne(Polynomial<P> &res,
 
 // calcurate τ_d
 template <class P>
-inline void Automorphism(Polynomial<P> &res, const Polynomial<P> &poly, const uint d){
+inline void Automorphism(Polynomial<P> &res, const Polynomial<P> &poly,
+                         const uint d)
+{
     res = {};
-    constexpr uint Nmask = (1ULL<<(P::nbit))-1;
-    constexpr uint signmask = 1ULL<<(P::nbit);
-    for(uint i = 0; i<P::n; i++){
-        const uint index = i*d;
-        if(index&signmask) res[index&Nmask] -= poly[i];
-        else res[index&Nmask] += poly[i];
+    constexpr uint Nmask = (1ULL << (P::nbit)) - 1;
+    constexpr uint signmask = 1ULL << (P::nbit);
+    for (uint i = 0; i < P::n; i++) {
+        const uint index = i * d;
+        if (index & signmask)
+            res[index & Nmask] -= poly[i];
+        else
+            res[index & Nmask] += poly[i];
     }
 }
 }  // namespace TFHEpp
