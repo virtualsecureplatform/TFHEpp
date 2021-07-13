@@ -4,9 +4,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "./key.hpp"
-#include "./params.hpp"
-#include "./utils.hpp"
+#include "key.hpp"
+#include "params.hpp"
 
 namespace TFHEpp {
 using namespace std;
