@@ -101,12 +101,12 @@ template<class P>
 void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d, const TRGSWFFT<P> &autokey){
     Polynomial<P> polyb;
     Automorphism<P>(polyb, trlwe[1], d);
-    TRLWE<P> ca = {};
-    Automorphism<P>(ca[1], trlwe[0], d);
-    trgswfftExternalProduct<P>(ca, ca, autokey);
+    res = {};
+    Automorphism<P>(res[1], trlwe[0], d);
+    trgswfftExternalProduct<P>(res, res, autokey);
     for(int i = 0; i < P::n; i++){
-        res[0][i] = -ca[0][i];
-        res[1][i] = polyb[i] - ca[1][i];
+        res[0][i] = -res[0][i];
+        res[1][i] = polyb[i] - res[1][i];
     }
 }
 #define INST(P)                                                               \
