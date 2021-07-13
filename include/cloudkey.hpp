@@ -11,23 +11,25 @@
 namespace TFHEpp {
 
 template <class P>
-inline void bkgen(BootstrappingKey<P> &bkfft, const SecretKey &sk)
+inline void bkgen(BootstrappingKey<P> &bk, const SecretKey &sk)
 {
-    for (int i = 0; i < P::domainP::n; i++)
-        bkfft[i] = trgswSymEncrypt<typename P::targetP>(
-            static_cast<typename make_signed<typename P::targetP::T>::type>(
-                sk.key.get<typename P::domainP>()[i]),
-            P::targetP::α, sk.key.get<typename P::targetP>());
+    for (int i = 0; i < P::domainP::n; i++) {
+        Polynomial<typename P::targetP> plainpoly = {};
+        plainpoly[0] = sk.key.get<typename P::domainP>()[i];
+        bk[i] = trgswSymEncrypt<typename P::targetP>(
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+    }
 }
 
 template <class P>
 inline void bkfftgen(BootstrappingKeyFFT<P> &bkfft, const SecretKey &sk)
 {
-    for (int i = 0; i < P::domainP::n; i++)
+    for (int i = 0; i < P::domainP::n; i++) {
+        Polynomial<typename P::targetP> plainpoly = {};
+        plainpoly[0] = sk.key.get<typename P::domainP>()[i];
         bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
-            static_cast<typename make_signed<typename P::targetP::T>::type>(
-                sk.key.get<typename P::domainP>()[i]),
-            P::targetP::α, sk.key.get<typename P::targetP>());
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+    }
 }
 
 template <class P>
@@ -35,16 +37,25 @@ inline void tlwe2trlweikskkgen(TLWE2TRLWEIKSKey<P> &iksk, const SecretKey &sk)
 {
     for (int i = 0; i < P::domainP::n; i++)
         for (int j = 0; j < P::t; j++)
-            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++){
+            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++) {
                 Polynomial<typename P::targetP> p = {};
-                p[0] = sk.key.get<typename P::domainP>()[i] * (k + 1) *
-                        (1ULL
-                         << (numeric_limits<typename P::targetP::T>::digits -
-                             (j + 1) * P::basebit));
+                p[0] =
+                    sk.key.get<typename P::domainP>()[i] * (k + 1) *
+                    (1ULL << (numeric_limits<typename P::targetP::T>::digits -
+                              (j + 1) * P::basebit));
                 iksk[i][j][k] = trlweSymEncrypt<typename P::targetP>(
-                    p,
-                    P::α, sk.key.get<typename P::targetP>());
+                    p, P::α, sk.key.get<typename P::targetP>());
             }
+}
+
+template <class P>
+inline void annihilatekeyegen(AnnihilateKey<P> &ahk, const SecretKey &sk)
+{
+    for (int i = 0; i < P::nbit; i++) {
+        Polynomial<P> autokey;
+        Automorphism<P>(autokey, sk.key.get<P>(), (1 << (P::nbit - i)) + 1);
+        ahk[i] = trgswfftSymEncrypt<P>(autokey, P::α, sk.key.get<P>());
+    }
 }
 
 template <class P>

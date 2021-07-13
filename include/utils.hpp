@@ -72,8 +72,8 @@ constexpr int bits_needed()
 }
 
 template <uint32_t N>
-inline void MulInFD(array<double, N> &res, const array<double, N> &a,
-                    const array<double, N> &b)
+inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
+                    const std::array<double, N> &b)
 {
     for (int i = 0; i < N / 2; i++) {
         double aimbim = a[i + N / 2] * b[i + N / 2];
@@ -85,8 +85,8 @@ inline void MulInFD(array<double, N> &res, const array<double, N> &a,
 
 // removing inline seems to be faster in my environment.
 template <uint32_t N>
-void FMAInFD(array<double, N> &res, const array<double, N> &a,
-             const array<double, N> &b)
+void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
+             const std::array<double, N> &b)
 {
     for (int i = 0; i < N / 2; i++) {
         res[i] = std::fma(a[i + N / 2], b[i + N / 2], -res[i]);
@@ -126,6 +126,23 @@ inline void PolynomialMulByXaiMinusOne(Polynomial<P> &res,
         const typename P::T aa = a - P::n;
         for (int i = 0; i < aa; i++) res[i] = poly[i - aa + P::n] - poly[i];
         for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa] - poly[i];
+    }
+}
+
+// calcurate τ_d
+template <class P>
+inline void Automorphism(Polynomial<P> &res, const Polynomial<P> &poly,
+                         const uint d)
+{
+    res = {};
+    constexpr uint Nmask = (1ULL << (P::nbit)) - 1;
+    constexpr uint signmask = 1ULL << (P::nbit);
+    for (uint i = 0; i < P::n; i++) {
+        const uint index = i * d;
+        if (index & signmask)
+            res[index & Nmask] -= poly[i];
+        else
+            res[index & Nmask] += poly[i];
     }
 }
 }  // namespace TFHEpp

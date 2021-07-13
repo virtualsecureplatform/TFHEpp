@@ -10,7 +10,6 @@
 #include "lweParams.hpp"
 #include "params.hpp"
 #include "random"
-#include "utils.hpp"
 
 namespace TFHEpp {
 using namespace std;
