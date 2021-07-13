@@ -122,7 +122,7 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe, const Annihila
     res = trlwe;
     for(int i = 0; i < P::nbit; i++){
         TRLWE<P> evaledauto;
-        EvalAuto<P>(evaledauto, res, 1<<(P::nbit-i)+1, ahk[i]);
+        EvalAuto<P>(evaledauto, res, (1<<(P::nbit-i))+1, ahk[i]);
         for(int j = 0; j<2*P::n; j++) res[0][j] += evaledauto[0][j];
     }
 }
