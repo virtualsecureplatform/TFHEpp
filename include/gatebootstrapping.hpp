@@ -19,9 +19,12 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                  const Polynomial<typename P::targetP> &testvector)
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
+    constexpr typename P::domainP::T flooroffset =
+        1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+                 2 - P::targetP::nbit);  // 1/4N
     uint32_t bara =
         2 * P::targetP::n -
-        modSwitchFromTorus<typename P::targetP, bitwidth>(tlwe[P::domainP::n]);
+        modSwitchFromTorus<typename P::targetP, bitwidth>(tlwe[P::domainP::n] - flooroffset);
     res[0] = {};
     PolynomialMulByXai<typename P::targetP>(res[1], testvector, bara);
     for (int i = 0; i < P::domainP::n; i++) {
@@ -41,8 +44,8 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
     constexpr typename P::domainP::T flooroffset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digit -
-                 2 * P::targetP::T);  // 1/4N
+        1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+                 2 - P::targetP::nbit);  // 1/4N
     uint32_t bara =
         2 * P::targetP::n - modSwitchFromTorus<typename P::targetP, bitwidth>(
                                 tlwe[P::domainP::n] - flooroffset);

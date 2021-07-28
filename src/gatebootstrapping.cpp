@@ -32,8 +32,11 @@ void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc,
                                     const TLWE<typename P::domainP> &tlwe,
                                     const BootstrappingKeyFFT<P> &bkfft)
 {
+    constexpr typename P::domainP::T flooroffset =
+        1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+                 2 - P::targetP::nbit);  // 1/4N
     uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(
-                                            tlwe[P::domainP::n]);
+                                            tlwe[P::domainP::n] - flooroffset);
     RotatedTestVector<typename P::targetP>(acc, bara, P::targetP::μ);
     for (int i = 0; i < P::domainP::n; i++) {
         bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
@@ -73,9 +76,12 @@ void GateBootstrappingTLWE2TLWEFFTvariableMu(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
     const BootstrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2)
 {
+    constexpr typename P::domainP::T flooroffset =
+        1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+                 2 - P::targetP::nbit);  // 1/4N
     TRLWE<typename P::targetP> acc, temp;
     uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(
-                                            tlwe[P::domainP::n]);
+                                            tlwe[P::domainP::n] - flooroffset);
     RotatedTestVector<typename P::targetP>(acc, bara, μs2);
     for (int i = 0; i < P::domainP::n; i++) {
         bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
