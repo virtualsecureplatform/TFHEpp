@@ -76,7 +76,8 @@ void BM_CMUX(benchmark::State& state){
         pmu0[j] = binary(engine) ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
     TFHEpp::TRLWE<TFHEpp::lvl1param> c0 = TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(pmu0,TFHEpp::lvl1param::α,sk->key.lvl1);
     TFHEpp::TRLWE<TFHEpp::lvl1param> c1 = TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(pmu1,TFHEpp::lvl1param::α,sk->key.lvl1);
-    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs = TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(binary(engine), TFHEpp::lvl1param::α, sk->key.lvl1);
+    const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {binary(engine)};
+    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs = TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(plainpoly, TFHEpp::lvl1param::α, sk->key.lvl1);
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state) TFHEpp::CMUXFFT<TFHEpp::lvl1param>(res, cs, c1, c0);
 }
@@ -90,7 +91,8 @@ void BM_ExternalProduct(benchmark::State& state){
     for (int j = 0; j < TFHEpp::lvl1param::n; j++)
         pmu1[j] = binary(engine) ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
     TFHEpp::TRLWE<TFHEpp::lvl1param> c0 = TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(pmu0,TFHEpp::lvl1param::α,sk->key.lvl1);
-    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs = TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(binary(engine), TFHEpp::lvl1param::α, sk->key.lvl1);
+    const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {binary(engine)};
+    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs = TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(plainpoly, TFHEpp::lvl1param::α, sk->key.lvl1);
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state) TFHEpp::trgswfftExternalProduct<TFHEpp::lvl1param>(res, c0, cs);
 }

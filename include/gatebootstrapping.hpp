@@ -7,8 +7,11 @@
 
 #include "cloudkey.hpp"
 #include "detwfa.hpp"
+#include "params.hpp"
+#include "params/128bit.hpp"
 #include "trlwe.hpp"
 #include "utils.hpp"
+#include "keyswitch.hpp"
 
 namespace TFHEpp {
 
@@ -68,7 +71,8 @@ void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc,
 template <class P>
 void GateBootstrappingTLWE2TLWEFFT(TLWE<typename P::targetP> &res,
                                    const TLWE<typename P::domainP> &tlwe,
-                                   const BootstrappingKeyFFT<P> &bkfft);
+                                   const BootstrappingKeyFFT<P> &bkfft,
+                                   const Polynomial<typename P::targetP> &testvector);
 
 template <class P, uint32_t num_out>
 void GateBootstrappingManyLUT(
@@ -87,6 +91,20 @@ void GateBootstrappingTLWE2TLWEFFTvariableMu(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
     const BootstrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2);
 
+template<class P, typename P::T μ>
+constexpr Polynomial<P> μpolygen(){
+    Polynomial<P> poly;
+    for(typename P::T& p : poly) p = μ;
+    return poly;
+}
+
+
+template<typename lvl1param::T μ = lvl1param::μ>
 void GateBootstrapping(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe,
-                       const GateKey &gk);
+                       const GateKey &gk)
+{
+    TLWE<lvl1param> tlwelvl1;
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(tlwelvl1, tlwe, gk.bkfftlvl01, μpolygen<lvl1param, μ>());
+    IdentityKeySwitch<lvl10param>(res, tlwelvl1, gk.ksk);
+}
 }  // namespace TFHEpp

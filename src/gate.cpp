@@ -110,8 +110,8 @@ void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
     res[lvl0param::n] -= lvl0param::μ;
     TLWE<lvl1param> and1;
     TLWE<lvl1param> and0;
-    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and1, temp, gk.bkfftlvl01);
-    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and0, res, gk.bkfftlvl01);
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and1, temp, gk.bkfftlvl01,μpolygen<lvl1param, lvl1param::μ>());
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and0, res, gk.bkfftlvl01,μpolygen<lvl1param, lvl1param::μ>());
 
     for (int i = 0; i <= lvl1param::n; i++) and1[i] += and0[i];
     and1[lvl1param::n] += lvl1param::μ;
@@ -129,8 +129,8 @@ void HomNMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
     res[lvl0param::n] -= lvl0param::μ;
     TLWE<lvl1param> and1;
     TLWE<lvl1param> and0;
-    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and1, temp, gk.bkfftlvl01);
-    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and0, res, gk.bkfftlvl01);
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and1, temp, gk.bkfftlvl01,μpolygen<lvl1param, lvl1param::μ>());
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(and0, res, gk.bkfftlvl01,μpolygen<lvl1param, lvl1param::μ>());
 
     for (int i = 0; i <= lvl1param::n; i++) and1[i] = -and1[i] - and0[i];
     and1[lvl1param::n] -= lvl1param::μ;

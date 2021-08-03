@@ -57,17 +57,19 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST);
 template <class P>
 void GateBootstrappingTLWE2TLWEFFT(TLWE<typename P::targetP> &res,
                                    const TLWE<typename P::domainP> &tlwe,
-                                   const BootstrappingKeyFFT<P> &bkfft)
+                                   const BootstrappingKeyFFT<P> &bkfft,
+                                   const Polynomial<typename P::targetP> &testvector)
 {
     TRLWE<typename P::targetP> acc;
-    GateBootstrappingTLWE2TRLWEFFT<P>(acc, tlwe, bkfft);
+    BlindRotate<P>(acc, tlwe, bkfft, testvector);
     SampleExtractIndex<typename P::targetP>(res, acc, 0);
 }
 #define INST(P)                                     \
     template void GateBootstrappingTLWE2TLWEFFT<P>( \
         TLWE<typename P::targetP> & res,            \
         const TLWE<typename P::domainP> &tlwe,      \
-        const BootstrappingKeyFFT<P> &bkfft)
+        const BootstrappingKeyFFT<P> &bkfft,        \
+        const Polynomial<typename P::targetP> &testvector)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST);
 #undef INST
 
@@ -101,11 +103,4 @@ void GateBootstrappingTLWE2TLWEFFTvariableMu(
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST);
 #undef INST
 
-void GateBootstrapping(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe,
-                       const GateKey &gk)
-{
-    TLWE<lvl1param> tlwelvl1;
-    GateBootstrappingTLWE2TLWEFFT<lvl01param>(tlwelvl1, tlwe, gk.bkfftlvl01);
-    IdentityKeySwitch<lvl10param>(res, tlwelvl1, gk.ksk);
-}
 }  // namespace TFHEpp
