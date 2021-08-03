@@ -104,12 +104,12 @@ inline void PolynomialMulByXai(Polynomial<P> &res, const Polynomial<P> &poly,
         res = poly;
     else if (a < P::n) {
         for (int i = 0; i < a; i++) res[i] = -poly[i - a + P::n];
-        for (int i = 0; i < P::n - a; i++) res[i + a] = poly[i];
+        for (int i = a; i < P::n; i++) res[i] = poly[i - a];
     }
     else {
         const typename P::T aa = a - P::n;
         for (int i = 0; i < aa; i++) res[i] = poly[i - aa + P::n];
-        for (int i = 0; i < P::n - aa; i++) res[i + aa] = -poly[i];
+        for (int i = aa; i < P::n; i++) res[i] = -poly[i - aa];
     }
 }
 
