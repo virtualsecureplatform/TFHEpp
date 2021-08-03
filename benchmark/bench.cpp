@@ -108,7 +108,7 @@ void BM_CB(benchmark::State& state){
     for (auto _ : state) TFHEpp::CircuitBootstrappingFFT(res,  ca, *ck);
 }
 
-BENCHMARK(BM_HomGate)->Iterations(1)->Repetitions(10)->DisplayAggregatesOnly(true);
+BENCHMARK(BM_HomGate)->Iterations(1)->Repetitions(100)->DisplayAggregatesOnly(true);
 BENCHMARK(BM_HomMUX)->Iterations(1)->Repetitions(10)->DisplayAggregatesOnly(true);
 BENCHMARK(BM_TLWE2TRLWE)->Iterations(1)->Repetitions(10)->DisplayAggregatesOnly(true);
 BENCHMARK(BM_IKS)->Iterations(1)->Repetitions(10)->DisplayAggregatesOnly(true);
