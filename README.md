@@ -2,8 +2,12 @@
 TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original [TFHE implementation](https://github.com/tfhe/tfhe). In addition to that, THFEpp supports Circuit Bootstrapping and [Private Boootstrapping many LUT](https://eprint.iacr.org/2021/729).
 TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
 
+# Supported Compiler
+
+This code includes utf-8 identifiers like α. Therefore, Clang and GCC10 or later are primarily supported compilers. GCC9 is not supported.
+
 # Parameter
-The default parameter is 128 bit security for Homomorphic Gates, 111bit security for Circuit Bootstrapping. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
+The default parameter is 128 bit security. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
 
 # Third party libraries
 Codes under thirdparties directory contain third-party libraries, Randen, Cereal, and SPQLIOS. See the corresponding directory to check the licenses.
