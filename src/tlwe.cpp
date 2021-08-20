@@ -54,8 +54,8 @@ std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
 {
     vector<TLWE<P>> c(p.size());
     for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncrypt<P>(p[i] ? lvl0param::μ : -lvl0param::μ,
-                                 lvl0param::α, sk.key.get<P>());
+        c[i] = tlweSymEncrypt<P>(p[i] ? P::μ : -P::μ,
+                                 P::α, sk.key.get<P>());
     return c;
 }
 #define INST(P)                                       \
