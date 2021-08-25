@@ -25,12 +25,6 @@ public:
             value = data;
     }
 
-    INTorus &operator=(const INTorus &a)
-    {
-        this->value = a.value;
-        return *this;
-    }
-
     // return this + b mod P.
     INTorus operator+(const INTorus &b) const
     {
