@@ -10,12 +10,12 @@ using namespace TFHEpp;
 
 int main()
 {
-    using CBbsP = lvl02param;
-    using CBprivksP = lvl22param;
-    using ksP = lvl20param;
     // using CBbsP = lvl02param;
-    // using CBprivksP = lvl21param;
-    // using ksP = lvl10param;
+    // using CBprivksP = lvl22param;
+    // using ksP = lvl20param;
+    using CBbsP = lvl02param;
+    using CBprivksP = lvl21param;
+    using ksP = lvl10param;
 
     constexpr uint32_t address_bit = 8;  // Address by words.
     constexpr uint32_t words_bit = 5;

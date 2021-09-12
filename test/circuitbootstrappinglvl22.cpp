@@ -1,3 +1,5 @@
+#include <gperftools/profiler.h>
+
 #include <cassert>
 #include <chrono>
 #include <iostream>
@@ -37,12 +39,14 @@ int main()
     cones = bootsSymEncrypt(pones, *sk);
 
     chrono::system_clock::time_point start, end;
+    ProfilerStart("cb.prof");
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         CircuitBootstrappingFFT<lvl02param, lvl22param>(bootedTGSW[test],
                                                         cones[test], *ck);
     }
     end = chrono::system_clock::now();
+    ProfilerStop();
 
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProduct<lvl2param>(ca[test], ca[test],
