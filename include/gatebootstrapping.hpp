@@ -8,7 +8,6 @@
 #include "cloudkey.hpp"
 #include "detwfa.hpp"
 #include "params.hpp"
-#include "params/128bit.hpp"
 #include "trlwe.hpp"
 #include "utils.hpp"
 #include "keyswitch.hpp"

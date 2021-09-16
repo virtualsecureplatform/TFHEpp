@@ -1,9 +1,3 @@
-if(USE_80BIT_SECURITY)
-    add_compile_definitions(USE_80BIT_SECURITY)
-elseif(USE_CGGI19)
-    add_compile_definitions(USE_CGGI19)
-endif()
-
 file(GLOB test_sources RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "*.cpp")
 
 foreach(test_source ${test_sources})
