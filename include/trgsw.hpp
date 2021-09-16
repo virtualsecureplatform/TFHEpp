@@ -19,8 +19,16 @@ void DecompositionPolynomialFFT(DecomposedPolynomialInFD<P> &decpolyfft,
                                 const Polynomial<P> &poly, const int digit);
 
 template <class P>
+void DecompositionPolynomialNTT(DecomposedPolynomialNTT<P> &decpolyntt,
+                                const Polynomial<P> &poly, const int digit);
+
+template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft);
+
+template <class P>
+void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
+                             const TRGSWNTT<P> &trgswntt);
 
 template <class P>
 constexpr array<typename P::T, P::l> hgen()
@@ -47,5 +55,9 @@ TRGSW<P> trgswSymEncrypt(const Polynomial<P> &p, const double α,
 
 template <class P>
 TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const double α,
+                               const Key<P> &key);
+
+template <class P>
+TRGSWNTT<P> trgswnttSymEncrypt(const Polynomial<P> &p, const double α,
                                const Key<P> &key);
 }  // namespace TFHEpp

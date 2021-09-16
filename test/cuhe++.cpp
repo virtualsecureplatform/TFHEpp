@@ -225,10 +225,10 @@ int main()
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, res;
         for (uint32_t &i : a) i = Torus32dist(engine);
         std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n> resntt;
-        cuHEpp::TwistINTTlvl1<typename TFHEpp::lvl1param::T,
+        cuHEpp::TwistINTT<typename TFHEpp::lvl1param::T,
                               TFHEpp::lvl1param::nbit>(resntt, a, tablelvl1[1],
                                                        twistlvl1[1]);
-        cuHEpp::TwistNTTlvl1<typename TFHEpp::lvl1param::T,
+        cuHEpp::TwistNTT<typename TFHEpp::lvl1param::T,
                              TFHEpp::lvl1param::nbit>(res, resntt, tablelvl1[0],
                                                       twistlvl1[0]);
         // for (int i = 0; i < TFHEpp::lvl1param::n; i++)

@@ -60,6 +60,21 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 template <class P>
+void DecompositionPolynomialNTT(DecomposedPolynomialNTT<P> &decpolyntt,
+                                const Polynomial<P> &poly, const int digit)
+{
+    DecomposedPolynomial<P> decpoly;
+    DecompositionPolynomial<P>(decpoly, poly, digit);
+    TwistINTT<P>(decpolyntt, decpoly);
+}
+#define INST(P)                                                              \
+    template void DecompositionPolynomialNTT<P>(                             \
+        DecomposedPolynomialNTT<P> & decpolyntt, const Polynomial<P> &poly, \
+        const int digit)
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
+#undef INST
+
+template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft)
 {
@@ -84,6 +99,34 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 #define INST(P)                               \
     template void trgswfftExternalProduct<P>( \
         TRLWE<P> & res, const TRLWE<P> &trlwe, const TRGSWFFT<P> &trgswfft)
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
+#undef INST
+
+template <class P>
+void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
+                             const TRGSWNTT<P> &trgswntt)
+{
+    DecomposedPolynomialNTT<P> decpolyntt;
+    DecompositionPolynomialNTT<P>(decpolyntt, trlwe[0], 0);
+    TRLWENTT<P> restrlwentt;
+    for(int i = 0; i < P::n; i++) restrlwentt[0][i] = decpolyntt[i] * trgswntt[0][0][i];
+    for(int i = 0; i < P::n; i++) restrlwentt[1][i] = decpolyntt[i] * trgswntt[0][1][i];
+    for (int i = 1; i < P::l; i++) {
+        DecompositionPolynomialNTT<P>(decpolyntt, trlwe[0], i);
+        for(int j = 0; j < P::n; j++) restrlwentt[0][j] += decpolyntt[j] * trgswntt[i][0][j];
+        for(int j = 0; j < P::n; j++) restrlwentt[1][j] += decpolyntt[j] * trgswntt[i][1][j];
+    }
+    for (int i = 0; i < P::l; i++) {
+        DecompositionPolynomialNTT<P>(decpolyntt, trlwe[1], i);
+        for(int j = 0; j < P::n; j++) restrlwentt[0][j] += decpolyntt[j] * trgswntt[i + P::l][0][j];
+        for(int j = 0; j < P::n; j++) restrlwentt[1][j] += decpolyntt[j] * trgswntt[i + P::l][1][j];
+    }
+    TwistNTT<P>(res[0], restrlwentt[0]);
+    TwistNTT<P>(res[1], restrlwentt[1]);
+}
+#define INST(P)                               \
+    template void trgswnttExternalProduct<P>( \
+        TRLWE<P> & res, const TRLWE<P> &trlwe, const TRGSWNTT<P> &trgswntt)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
@@ -161,6 +204,19 @@ TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const double α,
 }
 #define INST(P)                                 \
     template TRGSWFFT<P> trgswfftSymEncrypt<P>( \
+        const Polynomial<P> &p, const double α, const Key<P> &key)
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
+#undef INST
+
+template <class P>
+TRGSWNTT<P> trgswnttSymEncrypt(const Polynomial<P> &p, const double α,
+                               const Key<P> &key)
+{
+    TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
+    return ApplyNTT2trgsw<P>(trgsw);
+}
+#define INST(P)                                 \
+    template TRGSWNTT<P> trgswnttSymEncrypt<P>( \
         const Polynomial<P> &p, const double α, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST

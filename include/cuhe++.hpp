@@ -6,214 +6,9 @@
 #include <cassert>
 #include <cstdint>
 
+#include "INTorus.hpp"
+
 namespace cuHEpp {
-template <typename T>
-constexpr bool false_v = false;
-
-constexpr uint64_t P = (((1ULL << 32) - 1) << 32) + 1;
-
-// this class defines operations over integaer torus.
-class INTorus {
-public:
-    uint64_t value;
-    INTorus() { value = 0; }
-    INTorus(uint64_t data, bool modulo = true)
-    {
-        if (modulo)
-            value = data + static_cast<uint32_t>(-(data >= P));
-        else
-            value = data;
-    }
-
-    // return this + b mod P.
-    INTorus operator+(const INTorus &b) const
-    {
-        uint64_t tmp = this->value + b.value;
-        return INTorus(
-            tmp + static_cast<uint32_t>(-(tmp < b.value || tmp >= P)), false);
-    }
-
-    INTorus &operator+=(const INTorus &b)
-    {
-        this->value += b.value;
-        *this = INTorus(
-            this->value + static_cast<uint32_t>(
-                              -(this->value < b.value || this->value >= P)),
-            false);
-        return *this;
-    }
-
-    // return this - b mod P.
-    INTorus operator-(const INTorus &b) const
-    {
-        uint64_t tmp = this->value - b.value;
-        return INTorus(tmp - static_cast<uint32_t>(-(tmp > (this->value))),
-                       false);
-    }
-
-    INTorus operator-=(const INTorus &b)
-    {
-        INTorus tmp = *this - b;
-        *this = tmp;
-        return *this;
-    }
-
-    INTorus operator*(const INTorus &b) const
-    {
-        __uint128_t tmp = static_cast<__uint128_t>(this->value) * b.value;
-        uint32_t *tmpa = reinterpret_cast<uint32_t *>(&tmp);
-        uint64_t res = ((static_cast<uint64_t>(tmpa[1]) + tmpa[2]) << 32) +
-                       tmpa[0] - tmpa[3] - tmpa[2];
-        uint64_t lo = static_cast<uint64_t>(tmp);
-        res -= static_cast<uint32_t>(-((res > lo) && (tmpa[2] == 0)));
-        res += static_cast<uint32_t>(-((res < lo) && (tmpa[2] != 0)));
-        return INTorus(res);
-    }
-
-    INTorus operator*=(const INTorus &b)
-    {
-        const INTorus tmp = *this * b;
-        *this = tmp;
-        return *this;
-    }
-
-    INTorus operator<<(uint32_t l) const
-    {
-        if (l == 0) {
-            return *this;
-        }
-        // t[0] = templ,t[1] = tempul, t[2] = tempuu
-        else if (l < 32) {
-            uint64_t templ, tempu, res;
-            templ = this->value << l;
-            tempu = this->value >> (64 - l);
-            res = templ + (tempu << 32) - tempu;
-            res +=
-                static_cast<uint32_t>(-(res < templ));  // tempuu is always 0.
-            return INTorus(res);
-        }
-        else if (l == 32) {
-            uint64_t templ, tempul, tempuu, res;
-            templ = this->value << l;
-            tempul = static_cast<uint32_t>(this->value >> (64 - l));
-            tempuu = 0;
-            res = templ + (tempul << 32) - tempuu - tempul;
-            res -= static_cast<uint32_t>(-((res > templ) && (tempul == 0)));
-            res += static_cast<uint32_t>(-((res < templ) && (tempul != 0)));
-            return INTorus(res);
-        }
-        else if (l < 64) {
-            uint64_t templ, tempul, tempuu, res;
-            templ = static_cast<uint32_t>(this->value << (l - 32));
-            tempul = static_cast<uint32_t>(this->value >> (64 - l));
-            tempuu = this->value >> (96 - l);
-            res = ((templ + tempul) << 32) - tempuu - tempul;
-            res -= static_cast<uint32_t>(
-                -((res > (templ << 32)) && (tempul == 0)));
-            res += static_cast<uint32_t>(
-                -((res < (templ << 32)) && (tempul != 0)));
-            return INTorus(res);
-        }
-        else if (l == 64) {
-            uint64_t templ, tempu, res;
-            templ = static_cast<uint32_t>(this->value);
-            templ = (templ << 32) - templ;
-            // templ += static_cast<uint32_t>(-(templ >= P));//mod P
-            tempu = this->value >> (96 - l);
-            res = templ - tempu;
-            res -= static_cast<uint32_t>(-(res > (templ)));
-            return INTorus(res);
-        }
-        else if (l < 96) {
-            // different from cuFHE
-            uint64_t templ, tempu, res;
-            templ = static_cast<uint32_t>(this->value << (l - 64));
-            templ = (templ << 32) - templ;
-            // templ += static_cast<uint32_t>(-(templ >= P)); //mod P
-            tempu = this->value >> (96 - l);
-            res = templ - tempu;
-            res -= static_cast<uint32_t>(-(res > (templ)));
-            return INTorus(res);
-        }
-        else if (l == 96) {
-            uint64_t templ, tempu, res;
-            templ = P - (this->value);
-            tempu = 0;
-            res = tempu + templ;
-            res += static_cast<uint32_t>(-(res < tempu));
-            return INTorus(res);
-        }
-        else if (l < 128) {
-            // Same as cuFHE
-            uint64_t templ, tempu, res;
-            templ = this->value << (l - 96);
-            tempu = this->value >> (160 - l);
-            res = templ + (tempu << 32) - tempu;
-            res += static_cast<uint32_t>(-(res < templ));
-            return INTorus(P - INTorus(res).value);
-        }
-        else if (l == 128) {
-            uint64_t templ, tempul, tempuu;
-            INTorus res;
-            templ = static_cast<uint32_t>(this->value);
-            tempul = static_cast<uint32_t>(this->value >> (160 - l));
-            tempuu = 0;
-            // res = -((templ+tempul)<<32)+tempul-tempuu;
-            res = INTorus(tempul, false) - INTorus(templ << 32, false) -
-                  INTorus(tempul << 32, false);  //-INTorus(tempuu,false);
-            return res;
-        }
-        else if (l < 160) {
-            uint64_t templul, templ, tempul, tempuu;
-            INTorus res;
-            templ = static_cast<uint32_t>(this->value << (l - 128));
-            tempul = static_cast<uint32_t>(this->value >> (160 - l));
-            tempuu = this->value >> (192 - l);
-            // res = -((templ+tempul)<<32)+tempul-tempuu;
-            res = INTorus(tempul + tempuu, false) -
-                  INTorus(templ << 32, false) - INTorus((tempul << 32), false);
-            return res;
-        }
-        else if (l == 160) {
-            uint64_t templ, tempu;
-            INTorus res;
-            templ = static_cast<uint32_t>(this->value);
-            tempu = this->value >> (192 - l);
-            res = INTorus(templ + tempu, false) - INTorus(templ << 32, false);
-            return res;
-        }
-        else {
-            uint64_t templ, tempu, res;
-            templ = static_cast<uint32_t>(this->value) << (l - 160);
-            tempu = this->value >> (192 - l);
-            res = templ + tempu - (templ << 32);
-            res -= static_cast<uint32_t>(-(res > tempu));
-            return INTorus(res);
-        }
-    }
-
-    INTorus Pow(uint64_t e) const
-    {
-        INTorus res(1, false);
-        for (uint64_t i = 0; i < e; i++) res *= *this;
-        return res;
-    }
-
-    template <class Archive>
-    void serialize(Archive &ar)
-    {
-        ar(value);
-    }
-};
-
-// defined on [1,31]
-inline INTorus InvPow2(uint8_t nbit)
-{
-    uint32_t low, high;
-    low = (1 << (32 - nbit)) + 1;
-    high = -low;
-    return INTorus((static_cast<uint64_t>(high) << 32) + low);
-}
 
 template <uint8_t bit>
 uint32_t BitReverse(uint32_t in)
@@ -260,27 +55,6 @@ inline std::array<std::array<INTorus, 1U << Nbit>, 2> TableGen()
     for (uint32_t i = 1; i < N; i++) table[1][i] = table[1][i - 1] * w;
     for (uint32_t i = 1; i < N; i++) table[0][i] = table[1][N - i];
     return table;
-}
-
-template <typename T = uint32_t, uint32_t Nbit>
-inline void TwistMulInvert(std::array<INTorus, 1 << Nbit> &res,
-                           const std::array<T, 1 << Nbit> &a,
-                           const std::array<INTorus, 1 << Nbit> &twist)
-{
-    constexpr uint32_t N = 1 << Nbit;
-    for (int i = 0; i < N; i++)
-        res[i] = INTorus(a[i], std::is_same_v<T, uint64_t>) * twist[i];
-}
-
-template <typename T = uint32_t, uint32_t Nbit>
-inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
-                           const std::array<INTorus, 1 << Nbit> &a,
-                           const std::array<INTorus, 1 << Nbit> &twist)
-{
-    const INTorus invN = InvPow2(Nbit);
-    constexpr uint32_t N = 1 << Nbit;
-    for (int i = 0; i < N; i++)
-        res[i] = static_cast<T>((a[i] * twist[i] * invN).value);
 }
 
 inline void ButterflyAdd(INTorus *const res, const uint32_t size)
@@ -346,8 +120,23 @@ inline void INTT(std::array<INTorus, 1 << Nbit> &res,
         INTTradixButterfly<remainder>(&res[size * block], size);
 }
 
+template <typename T = uint32_t, uint32_t Nbit>
+inline void TwistMulInvert(std::array<INTorus, 1 << Nbit> &res,
+                           const std::array<T, 1 << Nbit> &a,
+                           const std::array<INTorus, 1 << Nbit> &twist)
+{
+    constexpr uint32_t N = 1 << Nbit;
+    if constexpr (std::is_same_v<T, uint64_t>){
+        for (int i = 0; i < N; i++)
+        res[i] = INTorus(static_cast<uint64_t>((static_cast<__uint128_t>(a[i])*P)>>64), true) * twist[i];
+    }else{
+        for (int i = 0; i < N; i++)
+        res[i] = INTorus(a[i], false) * twist[i];
+    }
+}
+
 template <typename T, uint32_t Nbit>
-void TwistINTTlvl1(std::array<INTorus, 1 << Nbit> &res,
+void TwistINTT(std::array<INTorus, 1 << Nbit> &res,
                    const std::array<T, 1 << Nbit> &a,
                    const std::array<INTorus, 1 << Nbit> &table,
                    const std::array<INTorus, 1 << Nbit> &twist)
@@ -404,8 +193,24 @@ void NTT(std::array<INTorus, 1 << Nbit> &res,
     }
 }
 
+template <typename T = uint32_t, uint32_t Nbit>
+inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
+                           const std::array<INTorus, 1 << Nbit> &a,
+                           const std::array<INTorus, 1 << Nbit> &twist)
+{
+    const INTorus invN = InvPow2(Nbit);
+    constexpr uint32_t N = 1 << Nbit;
+    if constexpr (std::is_same_v<T, uint64_t>){
+        for (int i = 0; i < N; i++)
+        res[i] = static_cast<T>((static_cast<__uint128_t>((a[i] * twist[i] * invN).value)<<64)/P);
+    }else{
+        for (int i = 0; i < N; i++)
+        res[i] = static_cast<T>((a[i] * twist[i] * invN).value);
+    }
+}
+
 template <typename T, uint32_t Nbit>
-void TwistNTTlvl1(std::array<T, 1 << Nbit> &res,
+void TwistNTT(std::array<T, 1 << Nbit> &res,
                   std::array<INTorus, 1 << Nbit> &a,
                   const std::array<INTorus, 1 << Nbit> &table,
                   const std::array<INTorus, 1 << Nbit> &twist)
@@ -421,9 +226,9 @@ void PolyMullvl1(std::array<T, 1 << Nbit> &res, std::array<T, 1 << Nbit> &a,
                  const std::array<std::array<INTorus, 1 << Nbit>, 2> &twist)
 {
     std::array<INTorus, 1 << Nbit> ntta, nttb;
-    TwistINTTlvl1<T, Nbit>(ntta, a, table[1], twist[1]);
-    TwistINTTlvl1<T, Nbit>(nttb, b, table[1], twist[1]);
+    TwistINTT<T, Nbit>(ntta, a, table[1], twist[1]);
+    TwistINTT<T, Nbit>(nttb, b, table[1], twist[1]);
     for (int i = 0; i < (1U << Nbit); i++) ntta[i] *= nttb[i];
-    TwistNTTlvl1<T, Nbit>(res, ntta, table[0], twist[0]);
+    TwistNTT<T, Nbit>(res, ntta, table[0], twist[0]);
 }
 }  // namespace cuHEpp
