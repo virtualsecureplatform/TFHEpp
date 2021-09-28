@@ -33,7 +33,7 @@ namespace {
 
     void require(bool condition, const string& message="[condition]") {
 	if (!condition) {
-	    cerr << "unmet condition: " << condition << endl;
+	    cerr << message << " unmet condition: " << condition << endl;
 	    abort();
 	}
     }

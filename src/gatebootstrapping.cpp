@@ -81,7 +81,7 @@ void GateBootstrappingTLWE2TLWEFFTvariableMu(
     constexpr typename P::domainP::T flooroffset =
         1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
                  P::targetP::nbit);  // 1/4N
-    TRLWE<typename P::targetP> acc, temp;
+    TRLWE<typename P::targetP> acc;
     uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(
                                             tlwe[P::domainP::n] - flooroffset);
     RotatedTestVector<typename P::targetP>(acc, bara, μs2);

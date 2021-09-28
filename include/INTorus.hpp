@@ -151,18 +151,17 @@ public:
             return INTorus(P - INTorus(res).value);
         }
         else if (l == 128) {
-            uint64_t templ, tempul, tempuu;
+            uint64_t templ, tempul /*,tmempuu*/;
             INTorus res;
             templ = static_cast<uint32_t>(this->value);
             tempul = static_cast<uint32_t>(this->value >> (160 - l));
-            tempuu = 0;
             // res = -((templ+tempul)<<32)+tempul-tempuu;
             res = INTorus(tempul, false) - INTorus(templ << 32, false) -
                   INTorus(tempul << 32, false);  //-INTorus(tempuu,false);
             return res;
         }
         else if (l < 160) {
-            uint64_t templul, templ, tempul, tempuu;
+            uint64_t /*templul,*/ templ, tempul, tempuu;
             INTorus res;
             templ = static_cast<uint32_t>(this->value << (l - 128));
             tempul = static_cast<uint32_t>(this->value >> (160 - l));
