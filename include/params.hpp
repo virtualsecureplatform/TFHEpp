@@ -35,6 +35,8 @@ using TLWE = std::array<typename P::T, P::n + 1>;
 template <class P>
 using Polynomial = std::array<typename P::T, P::n>;
 template <class P>
+using UnsignedPolynomial = Polynomial<P>;
+template <class P>
 using PolynomialInFD = std::array<double, P::n>;
 template <class P>
 using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
@@ -47,6 +49,10 @@ using DecomposedPolynomialNTT = PolynomialNTT<P>;
 
 template <class P>
 using TRLWE = std::array<Polynomial<P>, 2>;
+template <class P>
+using UnsignedTRLWE = std::array<Polynomial<P>, 2>;
+template <class P>
+using TRLWEMult = std::array<Polynomial<P>, 3>;
 template <class P>
 using TRLWEInFD = std::array<PolynomialInFD<P>, 2>;
 template <class P>
@@ -85,6 +91,10 @@ using PrivKeySwitchKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
     P::domainP::n + 1>;
+template <class P>
+using relinKey = std::array<TRLWE<P>, P::l>;
+template <class P>
+using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
 
 #define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \
     fun(lvl0param);                             \
