@@ -47,7 +47,7 @@ template <class P>
 inline void TwistFFTrescale(Polynomial<P> &res, const PolynomialInFD<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
-        fftplvl1.execute_direct_torus32_rescale(res.data(), a.data());
+        fftplvl1.execute_direct_torus32_rescale(res.data(), a.data(),P::Δ);
     // else if constexpr (std::is_same_v<typename P::T, uint64_t>)
     //     fftplvl2.execute_direct_torus64_rescale(res.data(), a.data());
     else
@@ -126,5 +126,23 @@ inline void PolyMulRescaleUnsigned(Polynomial<P> &res,
     }
     else
         static_assert(false_v<typename P::T>, "Undefined PolyMul!");
+}
+
+template <class P>
+inline void PolyMulNaieve(Polynomial<P> &res, const Polynomial<P> &a,
+                          const Polynomial<P> &b)
+{
+    for (int i = 0; i < P::n; i++) {
+        typename P::T ri = 0;
+        for (int j = 0; j <= i; j++)
+            ri += static_cast<typename std::make_signed<typename P::T>::type>(
+                      a[j]) *
+                  b[i - j];
+        for (int j = i + 1; j < P::n; j++)
+            ri -= static_cast<typename std::make_signed<typename P::T>::type>(
+                      a[j]) *
+                  b[P::n + i - j];
+        res[i] = ri;
+    }
 }
 }  // namespace TFHEpp

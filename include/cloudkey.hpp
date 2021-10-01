@@ -81,7 +81,7 @@ inline relinKey<P> relinKeygen(const Key<P> &key)
     Polynomial<P> keysquare;
     PolyMulNaieve<P>(keysquare, key, key);
     relinKey<P> relinkey;
-    for (TRLWE<P> &ctxt : relinkey) ctxt = encryptzero<P>(P::α, key);
+    for (TRLWE<P> &ctxt : relinkey) ctxt = trlweSymEncryptZero<P>(P::α, key);
     for (int i = 0; i < P::l; i++)
         for (int j = 0; j < P::n; j++)
             relinkey[i][1][j] +=

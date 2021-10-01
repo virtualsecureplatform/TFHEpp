@@ -32,6 +32,8 @@ struct lvl2param {
     static const inline double α = std::pow(2.0, -44); //fresh noise
     using T = uint64_t; //Torus representation
     static constexpr T μ = 1ULL << 61;
+    static constexpr uint32_t plain_modulus = 8;
+    static constexpr double Δ = μ;
 };
 
 //Key Switching parameters

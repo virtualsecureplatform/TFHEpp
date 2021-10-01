@@ -19,6 +19,8 @@ struct lvl1param {
     static const inline double α = 3.73e-9;
     using T = uint32_t;
     static constexpr T μ = 1U << 29;
+    static constexpr uint32_t plain_modulus = 2;
+    static constexpr double Δ = static_cast<double>(1ULL << std::numeric_limits<T>::digits) / plain_modulus;
 };
 
 struct lvl2param {
@@ -30,6 +32,8 @@ struct lvl2param {
     static const inline double α = std::pow(2.0, -44);
     using T = uint64_t;
     static constexpr T μ = 1ULL << 61;
+    static constexpr uint32_t plain_modulus = 8;
+    static constexpr double Δ = μ;
 };
 
 struct lvl10param {

@@ -29,23 +29,24 @@ int main()
     std::default_random_engine engine(seed_gen());
     using P = TFHEpp::lvl1param;
 
+    TFHEpp::SecretKey* sk = new TFHEpp::SecretKey();
+
     std::cout << "Add Test" << std::endl;
     for (int test = 0; test < num_test; test++) {
         std::uniform_int_distribution<typename P::T> message(
             0, P::plain_modulus - 1);
 
-        TFHEpp::SecretKey* sk = new TFHEpp::SecretKey();
         TFHEpp::Polynomial<P> p0, p1, pres;
         for (typename P::T &i : p0) i = message(engine);
         for (typename P::T &i : p1) i = message(engine);
 
         TFHEpp::TRLWE<P> c0 =
-            TFHEpp::trlweSymEncrypt<P>(p0, P::α, sk->key.get<P>());
+            TFHEpp::trlweSymIntEncrypt<P>(p0, P::α, sk->key.get<P>());
         TFHEpp::TRLWE<P> c1 =
-            TFHEpp::trlweSymEncrypt<P>(p1, P::α, sk->key.get<P>());
+            TFHEpp::trlweSymIntEncrypt<P>(p1, P::α, sk->key.get<P>());
         TFHEpp::TRLWE<P> cres;
-        for(int i = 0; i < 2*P::n;i++) cres[0][i]=c0[0][i]+c1[0][i];
-        pres = TFHEpp::trlweSymDecrypt<P>(cres, sk->key.get<P>());
+        for(int i = 0; i < 2 * P::n;i++) cres[0][i] = c0[0][i] + c1[0][i];
+        pres = TFHEpp::trlweSymIntDecrypt<P>(cres, sk->key.get<P>());
         // for (int i = 0; i < P::n; i++)
         // std::cout<<p0[i]<<":"<<p1[i]<<std::endl;
         for (int i = 0; i < P::n; i++)
@@ -59,20 +60,18 @@ int main()
         std::uniform_int_distribution<typename P::T> message(
             0, P::plain_modulus - 1);
 
-        TFHEpp::lweKey<P> key =
-            TFHEpp::lweKeygen<P>();
         TFHEpp::Polynomial<P> p0, p1, pres, ptrue;
         for (typename P::T &i : p0) i = message(engine);
         for (typename P::T &i : p1) i = message(engine);
 
         TFHEpp::TRLWE<P> c0 =
-            TFHEpp::encrypt<P>(p0, P::α, key);
+            TFHEpp::trlweSymIntEncrypt<P>(p0, P::α, sk->key.get<P>());
         TFHEpp::TRLWE<P> c1 =
-            TFHEpp::encrypt<P>(p1, P::α, key);
+            TFHEpp::trlweSymIntEncrypt<P>(p1, P::α, sk->key.get<P>());
         TFHEpp::TRLWEMult<P> cres;
-        TFHEpp::MultiplicationWithoutRelinerization<P>(cres, c0,
+        TFHEpp::LWEMultWithoutRelinerization<P>(cres, c0,
                                                                      c1);
-        pres = TFHEpp::decryptTRLWEMult<P>(cres, key);
+        pres = TFHEpp::decryptTRLWEMult<P>(cres, sk->key.get<P>());
 
         TFHEpp::PolyMulNaieve<P>(ptrue, p0, p1);
         for (int i = 0; i < P::n; i++)
@@ -85,9 +84,8 @@ int main()
     }
     std::cout << "Passed" << std::endl;
 
-    TFHEpp::lweKey<P> key = TFHEpp::lweKeygen<P>();
     TFHEpp::relinKeyFFT<P> relinkeyfft =
-        TFHEpp::relinKeyFFTgen<P>(key);
+        TFHEpp::relinKeyFFTgen<P>(sk->key.get<P>());
 
     std::cout << "Mul Test" << std::endl;
     for (int test = 0; test < num_test; test++) {
@@ -99,12 +97,12 @@ int main()
         for (typename P::T &i : p1) i = message(engine);
 
         TFHEpp::TRLWE<P> c0 =
-            TFHEpp::encrypt<P>(p0, P::α, key);
+            TFHEpp::trlweSymIntEncrypt<P>(p0, P::α, sk->key.get<P>());
         TFHEpp::TRLWE<P> c1 =
-            TFHEpp::encrypt<P>(p1, P::α, key);
+            TFHEpp::trlweSymIntEncrypt<P>(p1, P::α, sk->key.get<P>());
         TFHEpp::TRLWE<P> cres;
-        TFHEpp::Multiplication<P>(cres, c0, c1, relinkeyfft);
-        pres = TFHEpp::decrypt<P>(cres, key);
+        TFHEpp::LWEMult<P>(cres, c0, c1, relinkeyfft);
+        pres = TFHEpp::trlweSymIntDecrypt<P>(cres, sk->key.get<P>());
 
         TFHEpp::PolyMulNaieve<P>(ptrue, p0, p1);
         for (int i = 0; i < P::n; i++)
