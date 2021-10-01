@@ -211,4 +211,4 @@ inline INTorus InvPow2(uint8_t nbit)
     high = -low;
     return INTorus((static_cast<uint64_t>(high) << 32) + low);
 }
-}
+}  // namespace cuHEpp

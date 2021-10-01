@@ -72,7 +72,6 @@ inline void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk)
                     P::α, sk.key.get<typename P::targetP>());
 }
 
-
 template <class P>
 inline relinKey<P> relinKeygen(const Key<P> &key)
 {

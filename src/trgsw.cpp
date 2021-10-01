@@ -67,8 +67,8 @@ void DecompositionPolynomialNTT(DecomposedPolynomialNTT<P> &decpolyntt,
     DecompositionPolynomial<P>(decpoly, poly, digit);
     TwistINTT<P>(decpolyntt, decpoly);
 }
-#define INST(P)                                                              \
-    template void DecompositionPolynomialNTT<P>(                             \
+#define INST(P)                                                             \
+    template void DecompositionPolynomialNTT<P>(                            \
         DecomposedPolynomialNTT<P> & decpolyntt, const Polynomial<P> &poly, \
         const int digit)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
@@ -109,17 +109,23 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     DecomposedPolynomialNTT<P> decpolyntt;
     DecompositionPolynomialNTT<P>(decpolyntt, trlwe[0], 0);
     TRLWENTT<P> restrlwentt;
-    for(int i = 0; i < P::n; i++) restrlwentt[0][i] = decpolyntt[i] * trgswntt[0][0][i];
-    for(int i = 0; i < P::n; i++) restrlwentt[1][i] = decpolyntt[i] * trgswntt[0][1][i];
+    for (int i = 0; i < P::n; i++)
+        restrlwentt[0][i] = decpolyntt[i] * trgswntt[0][0][i];
+    for (int i = 0; i < P::n; i++)
+        restrlwentt[1][i] = decpolyntt[i] * trgswntt[0][1][i];
     for (int i = 1; i < P::l; i++) {
         DecompositionPolynomialNTT<P>(decpolyntt, trlwe[0], i);
-        for(int j = 0; j < P::n; j++) restrlwentt[0][j] += decpolyntt[j] * trgswntt[i][0][j];
-        for(int j = 0; j < P::n; j++) restrlwentt[1][j] += decpolyntt[j] * trgswntt[i][1][j];
+        for (int j = 0; j < P::n; j++)
+            restrlwentt[0][j] += decpolyntt[j] * trgswntt[i][0][j];
+        for (int j = 0; j < P::n; j++)
+            restrlwentt[1][j] += decpolyntt[j] * trgswntt[i][1][j];
     }
     for (int i = 0; i < P::l; i++) {
         DecompositionPolynomialNTT<P>(decpolyntt, trlwe[1], i);
-        for(int j = 0; j < P::n; j++) restrlwentt[0][j] += decpolyntt[j] * trgswntt[i + P::l][0][j];
-        for(int j = 0; j < P::n; j++) restrlwentt[1][j] += decpolyntt[j] * trgswntt[i + P::l][1][j];
+        for (int j = 0; j < P::n; j++)
+            restrlwentt[0][j] += decpolyntt[j] * trgswntt[i + P::l][0][j];
+        for (int j = 0; j < P::n; j++)
+            restrlwentt[1][j] += decpolyntt[j] * trgswntt[i + P::l][1][j];
     }
     TwistNTT<P>(res[0], restrlwentt[0]);
     TwistNTT<P>(res[1], restrlwentt[1]);

@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include <tfhe++.hpp>
 
 namespace TFHEpp {
@@ -29,7 +28,7 @@ int main()
     std::default_random_engine engine(seed_gen());
     using P = TFHEpp::lvl1param;
 
-    TFHEpp::SecretKey* sk = new TFHEpp::SecretKey();
+    TFHEpp::SecretKey *sk = new TFHEpp::SecretKey();
 
     std::cout << "Add Test" << std::endl;
     for (int test = 0; test < num_test; test++) {
@@ -45,13 +44,12 @@ int main()
         TFHEpp::TRLWE<P> c1 =
             TFHEpp::trlweSymIntEncrypt<P>(p1, P::α, sk->key.get<P>());
         TFHEpp::TRLWE<P> cres;
-        for(int i = 0; i < 2 * P::n;i++) cres[0][i] = c0[0][i] + c1[0][i];
+        for (int i = 0; i < 2 * P::n; i++) cres[0][i] = c0[0][i] + c1[0][i];
         pres = TFHEpp::trlweSymIntDecrypt<P>(cres, sk->key.get<P>());
         // for (int i = 0; i < P::n; i++)
         // std::cout<<p0[i]<<":"<<p1[i]<<std::endl;
         for (int i = 0; i < P::n; i++)
-            assert(pres[i] ==
-                   (p0[i] + p1[i]) % P::plain_modulus);
+            assert(pres[i] == (p0[i] + p1[i]) % P::plain_modulus);
     }
     std::cout << "Passed" << std::endl;
 
@@ -69,18 +67,15 @@ int main()
         TFHEpp::TRLWE<P> c1 =
             TFHEpp::trlweSymIntEncrypt<P>(p1, P::α, sk->key.get<P>());
         TFHEpp::TRLWEMult<P> cres;
-        TFHEpp::LWEMultWithoutRelinerization<P>(cres, c0,
-                                                                     c1);
+        TFHEpp::LWEMultWithoutRelinerization<P>(cres, c0, c1);
         pres = TFHEpp::decryptTRLWEMult<P>(cres, sk->key.get<P>());
 
         TFHEpp::PolyMulNaieve<P>(ptrue, p0, p1);
-        for (int i = 0; i < P::n; i++)
-            ptrue[i] %= P::plain_modulus;
+        for (int i = 0; i < P::n; i++) ptrue[i] %= P::plain_modulus;
 
         // for (int i = 0; i < P::n; i++)
         //     std::cout<<pres[i]<<":"<<ptrue[i]<<std::endl;
-        for (int i = 0; i < P::n; i++)
-            assert(pres[i] == ptrue[i]);
+        for (int i = 0; i < P::n; i++) assert(pres[i] == ptrue[i]);
     }
     std::cout << "Passed" << std::endl;
 
@@ -105,13 +100,11 @@ int main()
         pres = TFHEpp::trlweSymIntDecrypt<P>(cres, sk->key.get<P>());
 
         TFHEpp::PolyMulNaieve<P>(ptrue, p0, p1);
-        for (int i = 0; i < P::n; i++)
-            ptrue[i] %= P::plain_modulus;
+        for (int i = 0; i < P::n; i++) ptrue[i] %= P::plain_modulus;
 
         // for (int i = 0; i < P::n; i++)
         //     std::cout<<pres[i]<<":"<<ptrue[i]<<std::endl;
-        for (int i = 0; i < P::n; i++)
-            assert(pres[i] == ptrue[i]);
+        for (int i = 0; i < P::n; i++) assert(pres[i] == ptrue[i]);
     }
     std::cout << "Passed" << std::endl;
 }

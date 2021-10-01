@@ -37,15 +37,17 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 
 template <class P>
 TRLWE<P> trlweSymIntEncrypt(const array<typename P::T, P::n> &p, const double α,
-                         const Key<P> &key)
+                            const Key<P> &key)
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(α, key);
-    for (int i = 0; i < P::n; i++) c[1][i] += static_cast<typename P::T>(P::Δ*p[i]);
+    for (int i = 0; i < P::n; i++)
+        c[1][i] += static_cast<typename P::T>(P::Δ * p[i]);
     return c;
 }
-#define INST(P)                                                               \
-    template TRLWE<P> trlweSymIntEncrypt<P>(const array<typename P::T, P::n> &p, \
-                                         const double α, const Key<P> &key)
+#define INST(P)                                              \
+    template TRLWE<P> trlweSymIntEncrypt<P>(                 \
+        const array<typename P::T, P::n> &p, const double α, \
+        const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
@@ -83,9 +85,9 @@ Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
                P::plain_modulus;
     return p;
 }
-#define INST(P)                                                      \
+#define INST(P)                                                     \
     template Polynomial<P> trlweSymIntDecrypt<P>(const TRLWE<P> &c, \
-                                                  const Key<P> &key)
+                                                 const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

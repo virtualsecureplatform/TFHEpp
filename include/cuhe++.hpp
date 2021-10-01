@@ -126,20 +126,23 @@ inline void TwistMulInvert(std::array<INTorus, 1 << Nbit> &res,
                            const std::array<INTorus, 1 << Nbit> &twist)
 {
     constexpr uint32_t N = 1 << Nbit;
-    if constexpr (std::is_same_v<T, uint64_t>){
+    if constexpr (std::is_same_v<T, uint64_t>) {
         for (int i = 0; i < N; i++)
-        res[i] = INTorus(static_cast<uint64_t>((static_cast<__uint128_t>(a[i])*P)>>64), true) * twist[i];
-    }else{
-        for (int i = 0; i < N; i++)
-        res[i] = INTorus(a[i], false) * twist[i];
+            res[i] = INTorus(static_cast<uint64_t>(
+                                 (static_cast<__uint128_t>(a[i]) * P) >> 64),
+                             true) *
+                     twist[i];
+    }
+    else {
+        for (int i = 0; i < N; i++) res[i] = INTorus(a[i], false) * twist[i];
     }
 }
 
 template <typename T, uint32_t Nbit>
 void TwistINTT(std::array<INTorus, 1 << Nbit> &res,
-                   const std::array<T, 1 << Nbit> &a,
-                   const std::array<INTorus, 1 << Nbit> &table,
-                   const std::array<INTorus, 1 << Nbit> &twist)
+               const std::array<T, 1 << Nbit> &a,
+               const std::array<INTorus, 1 << Nbit> &table,
+               const std::array<INTorus, 1 << Nbit> &twist)
 {
     TwistMulInvert<T, Nbit>(res, a, twist);
     INTT<Nbit, 6>(res, table);
@@ -200,20 +203,23 @@ inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
 {
     const INTorus invN = InvPow2(Nbit);
     constexpr uint32_t N = 1 << Nbit;
-    if constexpr (std::is_same_v<T, uint64_t>){
+    if constexpr (std::is_same_v<T, uint64_t>) {
         for (int i = 0; i < N; i++)
-        res[i] = static_cast<T>((static_cast<__uint128_t>((a[i] * twist[i] * invN).value)<<64)/P);
-    }else{
+            res[i] = static_cast<T>(
+                (static_cast<__uint128_t>((a[i] * twist[i] * invN).value)
+                 << 64) /
+                P);
+    }
+    else {
         for (int i = 0; i < N; i++)
-        res[i] = static_cast<T>((a[i] * twist[i] * invN).value);
+            res[i] = static_cast<T>((a[i] * twist[i] * invN).value);
     }
 }
 
 template <typename T, uint32_t Nbit>
-void TwistNTT(std::array<T, 1 << Nbit> &res,
-                  std::array<INTorus, 1 << Nbit> &a,
-                  const std::array<INTorus, 1 << Nbit> &table,
-                  const std::array<INTorus, 1 << Nbit> &twist)
+void TwistNTT(std::array<T, 1 << Nbit> &res, std::array<INTorus, 1 << Nbit> &a,
+              const std::array<INTorus, 1 << Nbit> &table,
+              const std::array<INTorus, 1 << Nbit> &twist)
 {
     NTT<Nbit, 6>(a, table);
     TwistMulDirect<T, Nbit>(res, a, twist);

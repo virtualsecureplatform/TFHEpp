@@ -22,12 +22,12 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
         cuHEpp::TwistNTT<typename TFHEpp::lvl1param::T,
-                             TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[0],
-                                                      ntttwistlvl1[0]);
+                         TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[0],
+                                                  ntttwistlvl1[0]);
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistNTT<typename TFHEpp::lvl2param::T,
-                             TFHEpp::lvl2param::nbit>(res, a, ntttablelvl2[0],
-                                                      ntttwistlvl2[0]);
+                         TFHEpp::lvl2param::nbit>(res, a, ntttablelvl2[0],
+                                                  ntttwistlvl2[0]);
     else
         static_assert(false_v<typename P::T>, "Undefined TwistNTT!");
 }
@@ -47,7 +47,7 @@ template <class P>
 inline void TwistFFTrescale(Polynomial<P> &res, const PolynomialInFD<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
-        fftplvl1.execute_direct_torus32_rescale(res.data(), a.data(),P::Δ);
+        fftplvl1.execute_direct_torus32_rescale(res.data(), a.data(), P::Δ);
     // else if constexpr (std::is_same_v<typename P::T, uint64_t>)
     //     fftplvl2.execute_direct_torus64_rescale(res.data(), a.data());
     else
@@ -59,12 +59,12 @@ inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
         cuHEpp::TwistINTT<typename TFHEpp::lvl1param::T,
-                              TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[1],
-                                                       ntttwistlvl1[1]);
+                          TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[1],
+                                                   ntttwistlvl1[1]);
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistINTT<typename TFHEpp::lvl2param::T,
-                              TFHEpp::lvl2param::nbit>(res, a, ntttablelvl2[1],
-                                                       ntttwistlvl2[1]);
+                          TFHEpp::lvl2param::nbit>(res, a, ntttablelvl2[1],
+                                                   ntttwistlvl2[1]);
     else
         static_assert(false_v<typename P::T>, "Undefined TwistINTT!");
 }

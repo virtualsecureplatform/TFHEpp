@@ -226,11 +226,11 @@ int main()
         for (uint32_t &i : a) i = Torus32dist(engine);
         std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n> resntt;
         cuHEpp::TwistINTT<typename TFHEpp::lvl1param::T,
-                              TFHEpp::lvl1param::nbit>(resntt, a, tablelvl1[1],
-                                                       twistlvl1[1]);
+                          TFHEpp::lvl1param::nbit>(resntt, a, tablelvl1[1],
+                                                   twistlvl1[1]);
         cuHEpp::TwistNTT<typename TFHEpp::lvl1param::T,
-                             TFHEpp::lvl1param::nbit>(res, resntt, tablelvl1[0],
-                                                      twistlvl1[0]);
+                         TFHEpp::lvl1param::nbit>(res, resntt, tablelvl1[0],
+                                                  twistlvl1[0]);
         // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
         // std::cout<<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) assert(a[i] == res[i]);

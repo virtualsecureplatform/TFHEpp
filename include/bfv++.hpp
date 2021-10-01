@@ -2,7 +2,7 @@
 #include "mulfft.hpp"
 #include "trgsw.hpp"
 
-namespace TFHEpp{
+namespace TFHEpp {
 template <class P>
 inline void RemoveSign(UnsignedPolynomial<P> &res, const Polynomial<P> &a)
 {
@@ -10,7 +10,7 @@ inline void RemoveSign(UnsignedPolynomial<P> &res, const Polynomial<P> &a)
 }
 template <class P>
 void LWEMultWithoutRelinerization(TRLWEMult<P> &res, const TRLWE<P> &a,
-                                         const TRLWE<P> &b)
+                                  const TRLWE<P> &b)
 {
     UnsignedTRLWE<P> aa, bb;
     RemoveSign<P>(aa[0], a[0]);
@@ -37,12 +37,12 @@ inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
                            const relinKeyFFT<P> &relinkeyfft)
 {
     DecomposedPolynomialInFD<P> decvecfft;
-    DecompositionPolynomialFFT<P>(decvecfft, poly,0);
+    DecompositionPolynomialFFT<P>(decvecfft, poly, 0);
     TRLWEInFD<P> resfft;
     MulInFD<P::n>(resfft[0], decvecfft, relinkeyfft[0][0]);
     MulInFD<P::n>(resfft[1], decvecfft, relinkeyfft[0][1]);
     for (int i = 1; i < P::l; i++) {
-        DecompositionPolynomialFFT<P>(decvecfft, poly,i);
+        DecompositionPolynomialFFT<P>(decvecfft, poly, i);
         FMAInFD<P::n>(resfft[0], decvecfft, relinkeyfft[i][0]);
         FMAInFD<P::n>(resfft[1], decvecfft, relinkeyfft[i][1]);
     }
@@ -62,10 +62,10 @@ inline void Relinearization(TRLWE<P> &res, const TRLWEMult<P> &mult,
 
 template <class P>
 inline void LWEMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
-                           const relinKeyFFT<P> &relinkeyfft)
+                    const relinKeyFFT<P> &relinkeyfft)
 {
     TRLWEMult<P> resmult;
     LWEMultWithoutRelinerization<P>(resmult, a, b);
     Relinearization<P>(res, resmult, relinkeyfft);
 }
-}
+}  // namespace TFHEpp

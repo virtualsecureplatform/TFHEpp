@@ -27,7 +27,8 @@ int main()
         TRLWE<lvl1param> c =
             trlweSymEncrypt<lvl1param>(pmu, lvl1param::α, key.lvl1);
 
-        const Polynomial<TFHEpp::lvl1param> plainpoly = {static_cast<typename lvl1param::T>(1)};
+        const Polynomial<TFHEpp::lvl1param> plainpoly = {
+            static_cast<typename lvl1param::T>(1)};
 
         TRGSWFFT<lvl1param> trgswfft =
             trgswfftSymEncrypt<lvl1param>(plainpoly, lvl1param::α, key.lvl1);
@@ -49,7 +50,8 @@ int main()
         TRLWE<lvl2param> c =
             trlweSymEncrypt<lvl2param>(pmu, lvl2param::α, key.lvl2);
 
-        const Polynomial<TFHEpp::lvl2param> plainpoly = {static_cast<typename lvl2param::T>(1)};
+        const Polynomial<TFHEpp::lvl2param> plainpoly = {
+            static_cast<typename lvl2param::T>(1)};
 
         TRGSWFFT<lvl2param> trgswfft =
             trgswfftSymEncrypt<lvl2param>(plainpoly, lvl2param::α, key.lvl2);
@@ -73,7 +75,8 @@ int main()
         TRLWE<lvl1param> c =
             trlweSymEncrypt<lvl1param>(pmu, lvl1param::α, key.lvl1);
 
-        const Polynomial<TFHEpp::lvl1param> plainpoly = {static_cast<typename lvl1param::T>(-1)};
+        const Polynomial<TFHEpp::lvl1param> plainpoly = {
+            static_cast<typename lvl1param::T>(-1)};
 
         TRGSWFFT<lvl1param> trgswfft =
             trgswfftSymEncrypt<lvl1param>(plainpoly, lvl1param::α, key.lvl1);
@@ -95,7 +98,8 @@ int main()
         TRLWE<lvl2param> c =
             trlweSymEncrypt<lvl2param>(pmu, lvl2param::α, key.lvl2);
 
-        const Polynomial<TFHEpp::lvl2param> plainpoly = {static_cast<typename lvl2param::T>(-1)};
+        const Polynomial<TFHEpp::lvl2param> plainpoly = {
+            static_cast<typename lvl2param::T>(-1)};
 
         TRGSWFFT<lvl2param> trgswfft =
             trgswfftSymEncrypt<lvl2param>(plainpoly, lvl2param::α, key.lvl2);

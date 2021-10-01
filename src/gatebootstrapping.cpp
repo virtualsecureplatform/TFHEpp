@@ -55,10 +55,10 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
 template <class P>
-void GateBootstrappingTLWE2TLWEFFT(TLWE<typename P::targetP> &res,
-                                   const TLWE<typename P::domainP> &tlwe,
-                                   const BootstrappingKeyFFT<P> &bkfft,
-                                   const Polynomial<typename P::targetP> &testvector)
+void GateBootstrappingTLWE2TLWEFFT(
+    TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
+    const BootstrappingKeyFFT<P> &bkfft,
+    const Polynomial<typename P::targetP> &testvector)
 {
     TRLWE<typename P::targetP> acc;
     BlindRotate<P>(acc, tlwe, bkfft, testvector);

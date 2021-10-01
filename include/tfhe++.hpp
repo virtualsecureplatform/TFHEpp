@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bfv++.hpp"
 #include "circuitbootstrapping.hpp"
 #include "cloudkey.hpp"
 #include "cmuxmem.hpp"
@@ -13,4 +14,3 @@
 #include "tlwe.hpp"
 #include "trgsw.hpp"
 #include "trlwe.hpp"
-#include "bfv++.hpp"
