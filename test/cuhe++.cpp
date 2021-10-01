@@ -220,7 +220,7 @@ int main()
     std::cout << "NTT only test PASS" << std::endl;
 
     std::cout << "Start LVL1 test." << std::endl;
-    for (int test; test < num_test; test++) {
+    for (int test = 0; test < num_test; test++) {
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, res;
         for (uint32_t &i : a) i = Torus32dist(engine);
@@ -237,7 +237,7 @@ int main()
     }
     std::cout << "NTT Passed" << std::endl;
 
-    for (int test; test < num_test; test++) {
+    for (int test = 0; test < num_test; test++) {
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, b, polymul;
         // for (uint32_t &i : a) i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
         for (uint32_t &i : a) i = Bgdist(engine);

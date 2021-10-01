@@ -166,7 +166,7 @@ void HomMUXwoSE(TRLWE<typename P::targetP> &res,
                                 const TLWE<typename P::domainP> &c1, \
                                 const TLWE<typename P::domainP> &c0, \
                                 const BootstrappingKeyFFT<P> &bkfft)
-TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST);
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
 void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,

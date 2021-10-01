@@ -14,7 +14,7 @@ int main()
     std::uniform_int_distribution<uint> ldist(1, TFHEpp::lvl1param::nbit + 1);
 
     std::cout << "Automorphism test" << std::endl;
-    for (int test; test < num_test; test++) {
+    for (int test = 0; test < num_test; test++) {
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, b;
         for (uint32_t &i : a) i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
         for (uint32_t &i : b) i = Torus32dist(engine);

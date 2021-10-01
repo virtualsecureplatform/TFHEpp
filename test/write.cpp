@@ -36,7 +36,7 @@ int main()
     array<uint8_t, memsize> pmemory;
     array<array<typename lvl1param::T, lvl1param::n>, memsize> pmu = {};
     vector<uint8_t> address(address_bit);
-    uint8_t pres;
+    uint8_t pres = binary(engine);
 
     for (uint8_t &i : pmemory) i = binary(engine);
     for (int i = 0; i < memsize; i++)
@@ -47,7 +47,6 @@ int main()
         new array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2>;
     vector<TLWE<lvl0param>> encaddress(address_bit);
     array<TRLWE<lvl1param>, memsize> encmemory;
-    TLWE<lvl0param> encres;
     TRLWE<lvl1param> datum;
     Polynomial<lvl1param> respoly = {};
     respoly[0] = pres ? lvl1param::μ : -lvl1param::μ;

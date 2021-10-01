@@ -61,7 +61,7 @@ int main()
     for (int test = 0; test < num_test; test++) {
         pres = trlweSymDecrypt<lvl1param>(cres[test], sk->key.lvl1);
         for (int i = 0; i < lvl1param::n; i++)
-            assert(pres[i] == ((ps[test] > 0) ? p1[test][i] : p0[test][i]) > 0);
+            assert(pres[i] == (((ps[test] > 0) ? p1[test][i] : p0[test][i]) > 0));
     }
     cout << "Passed" << endl;
     double elapsed =

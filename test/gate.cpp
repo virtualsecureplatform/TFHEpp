@@ -72,8 +72,6 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
     uniform_int_distribution<uint32_t> binary(0, 1);
     cout << "------ Test " << type << " Gate ------" << endl;
     cout << "Number of tests:\t" << kNumTests << endl;
-    bool correct = true;
-    int cnt_failures = 0;
 
     for (uint8_t& i : p) i = binary(engine);
     c = bootsSymEncrypt(p, sk);
@@ -138,9 +136,6 @@ int main()
     vector<uint8_t> p(3 * kNumTests);
     vector<TLWE<lvl0param>> cres(kNumTests);
     vector<TLWE<lvl0param>> c(3 * kNumTests);
-    bool correct;
-
-    correct = true;
 
     Test("NOT", HomNOT, NotChegk, p, cres, c, kNumTests, *sk, *gk);
     Test("COPY", HomCOPY, CopyChegk, p, cres, c, kNumTests, *sk, *gk);

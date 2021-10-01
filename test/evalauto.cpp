@@ -13,7 +13,7 @@ int main()
     std::uniform_int_distribution<uint> ldist(1, TFHEpp::lvl1param::nbit + 1);
 
     std::cout << "EvalAuto test" << std::endl;
-    for (int test; test < num_test; test++) {
+    for (int test = 0; test < num_test; test++) {
         TFHEpp::SecretKey sk;
         TFHEpp::Polynomial<TFHEpp::lvl1param> pa, pmu, autokey;
         for (uint32_t &i : pa) i = binary(engine) ? 1 : -1;

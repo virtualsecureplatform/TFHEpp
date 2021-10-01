@@ -25,7 +25,7 @@ int main()
         words_bit;  // log_2 of how many words are in one TRLWE message.
     static_assert(address_bit >= width_bit);
     // static_assert(address_bit > width_bit+2);
-    constexpr uint32_t width = 1 << width_bit;
+    // constexpr uint32_t width = 1 << width_bit;
     static_assert(address_bit > width_bit);
     constexpr uint32_t num_trlwe = 1 << (address_bit - width_bit);
     random_device seeder;
