@@ -33,6 +33,17 @@ inline void bkfftgen(BootstrappingKeyFFT<P> &bkfft, const SecretKey &sk)
 }
 
 template <class P>
+inline void bknttgen(BootstrappingKeyNTT<P> &bkntt, const SecretKey &sk)
+{
+    for (int i = 0; i < P::domainP::n; i++) {
+        Polynomial<typename P::targetP> plainpoly = {};
+        plainpoly[0] = sk.key.get<typename P::domainP>()[i];
+        bkntt[i] = trgswnttSymEncrypt<typename P::targetP>(
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+    }
+}
+
+template <class P>
 inline void tlwe2trlweikskkgen(TLWE2TRLWEIKSKey<P> &iksk, const SecretKey &sk)
 {
     for (int i = 0; i < P::domainP::n; i++)
