@@ -62,6 +62,30 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
     }
 }
 
+template <class P, uint32_t num_out = 1>
+void BlindRotate(TRLWE<typename P::targetP> &res,
+                 const TLWE<typename P::domainP> &tlwe,
+                 const BootstrappingKeyNTT<P> &bkntt,
+                 const Polynomial<typename P::targetP> &testvector)
+{
+    constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
+    constexpr typename P::domainP::T flooroffset =
+        1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
+                 P::targetP::nbit);  // 1/4N
+    uint32_t bara =
+        2 * P::targetP::n - modSwitchFromTorus<typename P::targetP, bitwidth>(
+                                tlwe[P::domainP::n] - flooroffset);
+    res[0] = {};
+    PolynomialMulByXai<typename P::targetP>(res[1], testvector, bara);
+    for (int i = 0; i < P::domainP::n; i++) {
+        bara = modSwitchFromTorus<typename P::targetP, bitwidth>(tlwe[i]);
+        if (bara == 0) continue;
+        // Do not use CMUXNTT to avoid unnecessary copy.
+        CMUXNTTwithPolynomialMulByXaiMinusOne<typename P::targetP>(
+            res, bkntt[i], bara);
+    }
+}
+
 template <class P>
 void GateBootstrappingTLWE2TLWEFFT(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
