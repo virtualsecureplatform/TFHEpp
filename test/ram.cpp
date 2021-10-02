@@ -90,8 +90,8 @@ int main()
         SampleExtractIndex<typename ksP::domainP>(temp2, temp, 0);
         TLWE<typename ksP::targetP> temp3;
         IdentityKeySwitch<ksP>(temp3, temp2, (*ck).ksk);
-        GateBootstrappingTLWE2TRLWEFFT<CBbsP>((*encmemory)[i], temp3,
-                                              (*ck).ck.bkfft);
+        BlindRotate<CBbsP>((*encmemory)[i], temp3,
+                                              (*ck).ck.bkfft,μpolygen<typename CBbsP::targetP, CBbsP::targetP::μ>());
     }
 
     end = chrono::system_clock::now();

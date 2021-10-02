@@ -63,11 +63,6 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
 }
 
 template <class P>
-void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc,
-                                    const TLWE<typename P::domainP> &tlwe,
-                                    const BootstrappingKeyFFT<P> &bkfft);
-
-template <class P>
 void GateBootstrappingTLWE2TLWEFFT(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
     const BootstrappingKeyFFT<P> &bkfft,

@@ -28,33 +28,6 @@ inline void RotatedTestVector(array<array<typename P::T, P::n>, 2> &testvector,
 }
 
 template <class P>
-void GateBootstrappingTLWE2TRLWEFFT(TRLWE<typename P::targetP> &acc,
-                                    const TLWE<typename P::domainP> &tlwe,
-                                    const BootstrappingKeyFFT<P> &bkfft)
-{
-    constexpr typename P::domainP::T flooroffset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
-                 P::targetP::nbit);  // 1/4N
-    uint32_t bara = 2 * P::targetP::n - modSwitchFromTorus<typename P::targetP>(
-                                            tlwe[P::domainP::n] - flooroffset);
-    RotatedTestVector<typename P::targetP>(acc, bara, P::targetP::μ);
-    for (int i = 0; i < P::domainP::n; i++) {
-        bara = modSwitchFromTorus<typename P::targetP>(tlwe[i]);
-        if (bara == 0) continue;
-        // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(
-            acc, bkfft[i], bara);
-    }
-}
-#define INST(P)                                      \
-    template void GateBootstrappingTLWE2TRLWEFFT<P>( \
-        TRLWE<typename P::targetP> & acc,            \
-        const TLWE<typename P::domainP> &tlwe,       \
-        const BootstrappingKeyFFT<P> &bkfft)
-TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
-#undef INST
-
-template <class P>
 void GateBootstrappingTLWE2TLWEFFT(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
     const BootstrappingKeyFFT<P> &bkfft,
