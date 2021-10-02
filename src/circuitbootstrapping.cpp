@@ -3,7 +3,6 @@
 #include <bits/stdint-uintn.h>
 
 namespace TFHEpp {
-using namespace std;
 
 template <class bkP, class privksP>
 void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
@@ -12,11 +11,15 @@ void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
                                  const CircuitKey<bkP, privksP> &ck,
                                  const uint32_t digit)
 {
-    TLWE<typename bkP::targetP> tlwemiddle;
-    GateBootstrappingTLWE2TLWEFFTvariableMu<bkP>(
+    const typename bkP::targetP::T μs2 = 1ULL << (std::numeric_limits<typename privksP::domainP::T>::digits -
+                 (digit + 1) * privksP::targetP::Bgbit - 1);
+    Polynomial<typename bkP::targetP> testvec;
+    for(int i = 0; i<bkP::targetP::n;i++) testvec[i] = μs2;
+    TLWE<typename bkP::targetP> tlwemiddle; 
+    GateBootstrappingTLWE2TLWEFFT<bkP>(
         tlwemiddle, tlwe, ck.bkfft,
-        1ULL << (numeric_limits<typename privksP::domainP::T>::digits -
-                 (digit + 1) * privksP::targetP::Bgbit - 1));
+        testvec);
+    tlwemiddle[bkP::targetP::n] += μs2;
     PrivKeySwitch<privksP>(trgswupper, tlwemiddle, ck.privksk[0]);
     PrivKeySwitch<privksP>(trgswlower, tlwemiddle, ck.privksk[1]);
 }
@@ -37,7 +40,7 @@ constexpr Polynomial<typename P::domainP> CBtestvector()
     for (int i = 0; i < (P::domainP::n >> bitwidth); i++)
         for (int j = 0; j < (1 << bitwidth); j++)
             poly[(i << bitwidth) + j] =
-                1ULL << (numeric_limits<typename P::domainP::T>::digits -
+                1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
                          (j + 1) * P::targetP::Bgbit - 1);
     return poly;
 }
@@ -113,7 +116,7 @@ void CircuitBootstrappingFFTwithInvPartial(
     const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP, privksP> &ck,
     const uint32_t digit)
 {
-    constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
+    constexpr std::array<typename privksP::targetP::T, privksP::targetP::l> h =
         hgen<typename privksP::targetP>();
     TRLWE<typename privksP::targetP> trgswupper, trgswlower;
     CircuitBootstrappingPartial(trgswupper, trgswlower, tlwe, ck, digit);

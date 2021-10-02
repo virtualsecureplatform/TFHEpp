@@ -80,11 +80,6 @@ void GateBootstrappingManyLUT(
         SampleExtractIndex<typename P::targetP>(res[i], acc, i);
 }
 
-template <class P>
-void GateBootstrappingTLWE2TLWEFFTvariableMu(
-    TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
-    const BootstrappingKeyFFT<P> &bkfft, const typename P::targetP::T μs2);
-
 template <class P, typename P::T μ>
 constexpr Polynomial<P> μpolygen()
 {

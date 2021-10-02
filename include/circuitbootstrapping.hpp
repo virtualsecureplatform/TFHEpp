@@ -7,7 +7,6 @@
 #include "keyswitch.hpp"
 
 namespace TFHEpp {
-using namespace std;
 
 template <class bkP, class privksP>
 void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
