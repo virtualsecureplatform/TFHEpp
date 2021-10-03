@@ -63,7 +63,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                  const Polynomial<typename P::targetP> &testvector)
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
-    constexpr uint32_t b̄ =
+    const uint32_t b̄ =
         2 * P::targetP::n - (tlwe[P::domainP::n] >>(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth) );
     res[0] = {};
     PolynomialMulByXai<typename P::targetP>(res[1], testvector, b̄);
