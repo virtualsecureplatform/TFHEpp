@@ -21,20 +21,17 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                  const Polynomial<typename P::targetP> &testvector)
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
-    constexpr typename P::domainP::T flooroffset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
-                 P::targetP::nbit);  // 1/4N
-    uint32_t bara =
-        2 * P::targetP::n - modSwitchFromTorus<typename P::targetP, bitwidth>(
-                                tlwe[P::domainP::n] - flooroffset);
+    const uint32_t b̄ =
+        2 * P::targetP::n - (tlwe[P::domainP::n] >>(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth) );
     res[0] = {};
-    PolynomialMulByXai<typename P::targetP>(res[1], testvector, bara);
+    PolynomialMulByXai<typename P::targetP>(res[1], testvector, b̄);
     for (int i = 0; i < P::domainP::n; i++) {
-        bara = modSwitchFromTorus<typename P::targetP, bitwidth>(tlwe[i]);
-        if (bara == 0) continue;
+        constexpr typename P::domainP::T roundoffset = 1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 - P::targetP::nbit + bitwidth);
+        const uint32_t ā = (tlwe[i]+roundoffset)>>(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth);
+        if (ā == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
         CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(
-            res, bkfft[i], bara);
+            res, bkfft[i], ā);
     }
 }
 
@@ -45,20 +42,17 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                  const TRLWE<typename P::targetP> &testvector)
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
-    constexpr typename P::domainP::T flooroffset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
-                 P::targetP::nbit);  // 1/4N
-    uint32_t bara =
-        2 * P::targetP::n - modSwitchFromTorus<typename P::targetP, bitwidth>(
-                                tlwe[P::domainP::n] - flooroffset);
-    PolynomialMulByXai<typename P::targetP>(res[0], testvector[0], bara);
-    PolynomialMulByXai<typename P::targetP>(res[1], testvector[1], bara);
+    const uint32_t b̄ =
+        2 * P::targetP::n - (tlwe[P::domainP::n] >>(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth) );
+    PolynomialMulByXai<typename P::targetP>(res[0], testvector[0], b̄);
+    PolynomialMulByXai<typename P::targetP>(res[1], testvector[1], b̄);
     for (int i = 0; i < P::domainP::n; i++) {
-        bara = modSwitchFromTorus<typename P::targetP, bitwidth>(tlwe[i]);
-        if (bara == 0) continue;
+        constexpr typename P::domainP::T roundoffset = 1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 - P::targetP::nbit + bitwidth);
+        const uint32_t ā = (tlwe[i]+roundoffset)>>(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth);
+        if (ā == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
         CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(
-            res, bkfft[i], bara);
+            res, bkfft[i], ā);
     }
 }
 
@@ -69,20 +63,17 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                  const Polynomial<typename P::targetP> &testvector)
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
-    constexpr typename P::domainP::T flooroffset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
-                 P::targetP::nbit);  // 1/4N
-    uint32_t bara =
-        2 * P::targetP::n - modSwitchFromTorus<typename P::targetP, bitwidth>(
-                                tlwe[P::domainP::n] - flooroffset);
+    constexpr uint32_t b̄ =
+        2 * P::targetP::n - (tlwe[P::domainP::n] >>(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth) );
     res[0] = {};
-    PolynomialMulByXai<typename P::targetP>(res[1], testvector, bara);
+    PolynomialMulByXai<typename P::targetP>(res[1], testvector, b̄);
     for (int i = 0; i < P::domainP::n; i++) {
-        bara = modSwitchFromTorus<typename P::targetP, bitwidth>(tlwe[i]);
-        if (bara == 0) continue;
+        constexpr typename P::domainP::T roundoffset = 1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 - P::targetP::nbit + bitwidth);
+        const uint32_t ā = (tlwe[i]+roundoffset)>>(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth);
+        if (ā == 0) continue;
         // Do not use CMUXNTT to avoid unnecessary copy.
         CMUXNTTwithPolynomialMulByXaiMinusOne<typename P::targetP>(
-            res, bkntt[i], bara);
+            res, bkntt[i], ā);
     }
 }
 
