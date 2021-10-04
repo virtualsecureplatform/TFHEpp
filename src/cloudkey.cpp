@@ -2,6 +2,69 @@
 
 namespace TFHEpp {
 
+template <class P>
+void bkgen(BootstrappingKey<P> &bk, const SecretKey &sk)
+{
+    for (int i = 0; i < P::domainP::n; i++) {
+        Polynomial<typename P::targetP> plainpoly = {};
+        plainpoly[0] = sk.key.get<typename P::domainP>()[i];
+        bk[i] = trgswSymEncrypt<typename P::targetP>(
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+    }
+}
+#define INST(P)                                     \
+    template void bkgen<P>(BootstrappingKey<P> &bk, const SecretKey &sk)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template <class P>
+void bkfftgen(BootstrappingKeyFFT<P> &bkfft, const SecretKey &sk)
+{
+    for (int i = 0; i < P::domainP::n; i++) {
+        Polynomial<typename P::targetP> plainpoly = {};
+        plainpoly[0] = sk.key.get<typename P::domainP>()[i];
+        bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+    }
+}
+#define INST(P)                                     \
+    template void bkfftgen<P>(BootstrappingKeyFFT<P> &bkfft, const SecretKey &sk)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template <class P>
+void bknttgen(BootstrappingKeyNTT<P> &bkntt, const SecretKey &sk)
+{
+    for (int i = 0; i < P::domainP::n; i++) {
+        Polynomial<typename P::targetP> plainpoly = {};
+        plainpoly[0] = sk.key.get<typename P::domainP>()[i];
+        bkntt[i] = trgswnttSymEncrypt<typename P::targetP>(
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+    }
+}
+#define INST(P)                                     \
+    template void bknttgen<P>(BootstrappingKeyNTT<P> &bkntt, const SecretKey &sk)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template <class P>
+void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk)
+{
+    for (int i = 0; i < P::domainP::n; i++)
+        for (int j = 0; j < P::t; j++)
+            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
+                ksk[i][j][k] = tlweSymEncrypt<typename P::targetP>(
+                    sk.key.get<typename P::domainP>()[i] * (k + 1) *
+                        (1ULL
+                         << (numeric_limits<typename P::targetP::T>::digits -
+                             (j + 1) * P::basebit)),
+                    P::α, sk.key.get<typename P::targetP>());
+}
+#define INST(P)                                                               \
+    template void ikskgen<P>(KeySwitchingKey<P> &ksk, const SecretKey &sk)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+#undef INST
+
 GateKeywoFFT::GateKeywoFFT(const SecretKey &sk)
 {
     // Generete bkfft
