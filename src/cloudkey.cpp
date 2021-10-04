@@ -12,8 +12,8 @@ void bkgen(BootstrappingKey<P> &bk, const SecretKey &sk)
             plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
     }
 }
-#define INST(P)                                     \
-    template void bkgen<P>(BootstrappingKey<P> &bk, const SecretKey &sk)
+#define INST(P) \
+    template void bkgen<P>(BootstrappingKey<P> & bk, const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
@@ -27,8 +27,9 @@ void bkfftgen(BootstrappingKeyFFT<P> &bkfft, const SecretKey &sk)
             plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
     }
 }
-#define INST(P)                                     \
-    template void bkfftgen<P>(BootstrappingKeyFFT<P> &bkfft, const SecretKey &sk)
+#define INST(P)                                               \
+    template void bkfftgen<P>(BootstrappingKeyFFT<P> & bkfft, \
+                              const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
@@ -42,8 +43,9 @@ void bknttgen(BootstrappingKeyNTT<P> &bkntt, const SecretKey &sk)
             plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
     }
 }
-#define INST(P)                                     \
-    template void bknttgen<P>(BootstrappingKeyNTT<P> &bkntt, const SecretKey &sk)
+#define INST(P)                                               \
+    template void bknttgen<P>(BootstrappingKeyNTT<P> & bkntt, \
+                              const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
@@ -60,8 +62,8 @@ void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk)
                              (j + 1) * P::basebit)),
                     P::α, sk.key.get<typename P::targetP>());
 }
-#define INST(P)                                                               \
-    template void ikskgen<P>(KeySwitchingKey<P> &ksk, const SecretKey &sk)
+#define INST(P) \
+    template void ikskgen<P>(KeySwitchingKey<P> & ksk, const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 
@@ -106,7 +108,8 @@ CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)
     // Generate privksk
     TFHEpp::Polynomial<typename privksP::targetP> poly = {1};
     privkskgen<privksP>(privksk[1], poly, sk);
-    for(int i = 0; i<privksP::targetP::n; i++) poly[i] = -sk.key.get<typename privksP::targetP>()[i];
+    for (int i = 0; i < privksP::targetP::n; i++)
+        poly[i] = -sk.key.get<typename privksP::targetP>()[i];
     privkskgen<privksP>(privksk[0], poly, sk);
 }
 #define INST(bsP, privksP) \

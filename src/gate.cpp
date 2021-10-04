@@ -155,8 +155,10 @@ void HomMUXwoSE(TRLWE<typename P::targetP> &res,
     temp1[lvl0param::n] -= P::domainP::μ;
     temp0[lvl0param::n] -= P::domainP::μ;
     TRLWE<typename P::targetP> and0;
-    BlindRotate<P>(res, temp1, bkfft, μpolygen<typename P::targetP,P::targetP::μ>());
-    BlindRotate<P>(and0, temp0, bkfft, μpolygen<typename P::targetP,P::targetP::μ>());
+    BlindRotate<P>(res, temp1, bkfft,
+                   μpolygen<typename P::targetP, P::targetP::μ>());
+    BlindRotate<P>(and0, temp0, bkfft,
+                   μpolygen<typename P::targetP, P::targetP::μ>());
 
     for (int i = 0; i < P::targetP::n; i++) {
         res[0][i] += and0[0][i];
@@ -191,8 +193,10 @@ void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
     c1[lvl0param::n] -= lvl0param::μ;
     c0[lvl0param::n] -= lvl0param::μ;
     TRLWE<lvl1param> and0;
-    BlindRotate<lvl01param>(res, c1, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
-    BlindRotate<lvl01param>(and0, c0, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+    BlindRotate<lvl01param>(res, c1, gk.bkfftlvl01,
+                            μpolygen<lvl1param, lvl1param::μ>());
+    BlindRotate<lvl01param>(and0, c0, gk.bkfftlvl01,
+                            μpolygen<lvl1param, lvl1param::μ>());
 
     for (int i = 0; i < lvl1param::n; i++) {
         res[0][i] += and0[0][i];

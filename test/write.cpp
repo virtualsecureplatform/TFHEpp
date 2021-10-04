@@ -77,8 +77,9 @@ int main()
             }
     }
     TRLWE<lvl1param> msbaddress;
-    BlindRotate<lvl01param>(
-        msbaddress, encaddress[address_bit - 1], (*ck).gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+    BlindRotate<lvl01param>(msbaddress, encaddress[address_bit - 1],
+                            (*ck).gk.bkfftlvl01,
+                            μpolygen<lvl1param, lvl1param::μ>());
 
     trlweaddress[memsize >> 1] = msbaddress;
     trlweaddress[memsize >> 1][1][0] += lvl1param::μ;

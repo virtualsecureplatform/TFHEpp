@@ -49,7 +49,9 @@ template <class P>
 void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk);
 
 template <class P>
-inline void privkskgen(PrivateKeySwitchingKey<P> &privksk, Polynomial<typename P::targetP> func,const SecretKey &sk)
+inline void privkskgen(PrivateKeySwitchingKey<P> &privksk,
+                       Polynomial<typename P::targetP> func,
+                       const SecretKey &sk)
 {
     std::array<typename P::domainP::T, P::domainP::n + 1> key;
     for (int i = 0; i < P::domainP::n; i++) key[i] = sk.key.lvl2[i];
@@ -57,17 +59,15 @@ inline void privkskgen(PrivateKeySwitchingKey<P> &privksk, Polynomial<typename P
 #pragma omp parallel for collapse(3)
     for (int i = 0; i <= P::domainP::n; i++)
         for (int j = 0; j < P::t; j++)
-            for (typename P::targetP::T u = 0;
-                    u < (1 << P::basebit) - 1; u++) {
+            for (typename P::targetP::T u = 0; u < (1 << P::basebit) - 1; u++) {
                 TRLWE<typename P::targetP> c =
                     trlweSymEncryptZero<typename P::targetP>(
-                        P::α,
-                        sk.key.get<typename P::targetP>());
-                for(int k = 0; k<P::targetP::n;k++)
-                c[1][k] += (u + 1) * func[k]*key[i]
-                            << (numeric_limits<
-                                    typename P::targetP::T>::digits -
-                                (j + 1) * P::basebit);
+                        P::α, sk.key.get<typename P::targetP>());
+                for (int k = 0; k < P::targetP::n; k++)
+                    c[1][k] +=
+                        (u + 1) * func[k] * key[i]
+                        << (numeric_limits<typename P::targetP::T>::digits -
+                            (j + 1) * P::basebit);
                 privksk[i][j][u] = c;
             }
 }

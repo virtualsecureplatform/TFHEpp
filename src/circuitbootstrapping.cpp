@@ -11,14 +11,13 @@ void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
                                  const CircuitKey<bkP, privksP> &ck,
                                  const uint32_t digit)
 {
-    const typename bkP::targetP::T μs2 = 1ULL << (std::numeric_limits<typename privksP::domainP::T>::digits -
+    const typename bkP::targetP::T μs2 =
+        1ULL << (std::numeric_limits<typename privksP::domainP::T>::digits -
                  (digit + 1) * privksP::targetP::Bgbit - 1);
     Polynomial<typename bkP::targetP> testvec;
-    for(int i = 0; i<bkP::targetP::n;i++) testvec[i] = μs2;
-    TLWE<typename bkP::targetP> tlwemiddle; 
-    GateBootstrappingTLWE2TLWEFFT<bkP>(
-        tlwemiddle, tlwe, ck.bkfft,
-        testvec);
+    for (int i = 0; i < bkP::targetP::n; i++) testvec[i] = μs2;
+    TLWE<typename bkP::targetP> tlwemiddle;
+    GateBootstrappingTLWE2TLWEFFT<bkP>(tlwemiddle, tlwe, ck.bkfft, testvec);
     tlwemiddle[bkP::targetP::n] += μs2;
     PrivKeySwitch<privksP>(trgswupper, tlwemiddle, ck.privksk[0]);
     PrivKeySwitch<privksP>(trgswlower, tlwemiddle, ck.privksk[1]);
