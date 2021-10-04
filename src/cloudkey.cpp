@@ -41,25 +41,10 @@ CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)
     bkfftgen<bsP>(bkfft, sk);
 
     // Generate privksk
-    array<typename privksP::domainP::T, privksP::domainP::n + 1> key;
-    for (int i = 0; i < privksP::domainP::n; i++) key[i] = sk.key.lvl2[i];
-    key[privksP::domainP::n] = -1;
-#pragma omp parallel for collapse(4)
-    for (int z = 0; z < 2; z++)
-        for (int i = 0; i <= privksP::domainP::n; i++)
-            for (int j = 0; j < privksP::t; j++)
-                for (typename privksP::targetP::T u = 0;
-                     u < (1 << privksP::basebit) - 1; u++) {
-                    TRLWE<typename privksP::targetP> c =
-                        trlweSymEncryptZero<typename privksP::targetP>(
-                            privksP::α,
-                            sk.key.get<typename privksP::targetP>());
-                    c[z][0] += (u + 1) * key[i]
-                               << (numeric_limits<
-                                       typename privksP::targetP::T>::digits -
-                                   (j + 1) * privksP::basebit);
-                    privksk[z][i][j][u] = c;
-                }
+    TFHEpp::Polynomial<typename privksP::targetP> poly = {1};
+    privkskgen<privksP>(privksk[1], poly, sk);
+    for(int i = 0; i<privksP::targetP::n; i++) poly[i] = -sk.key.get<typename privksP::targetP>()[i];
+    privkskgen<privksP>(privksk[0], poly, sk);
 }
 #define INST(bsP, privksP) \
     template CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)

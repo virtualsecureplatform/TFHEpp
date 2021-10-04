@@ -82,6 +82,29 @@ inline void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk)
                              (j + 1) * P::basebit)),
                     P::α, sk.key.get<typename P::targetP>());
 }
+template <class P>
+inline void privkskgen(PrivateKeySwitchingKey<P> &privksk, Polynomial<typename P::targetP> func,const SecretKey &sk)
+{
+    std::array<typename P::domainP::T, P::domainP::n + 1> key;
+    for (int i = 0; i < P::domainP::n; i++) key[i] = sk.key.lvl2[i];
+    key[P::domainP::n] = -1;
+#pragma omp parallel for collapse(3)
+    for (int i = 0; i <= P::domainP::n; i++)
+        for (int j = 0; j < P::t; j++)
+            for (typename P::targetP::T u = 0;
+                    u < (1 << P::basebit) - 1; u++) {
+                TRLWE<typename P::targetP> c =
+                    trlweSymEncryptZero<typename P::targetP>(
+                        P::α,
+                        sk.key.get<typename P::targetP>());
+                for(int k = 0; k<P::targetP::n;k++)
+                c[1][k] += (u + 1) * func[k]*key[i]
+                            << (numeric_limits<
+                                    typename P::targetP::T>::digits -
+                                (j + 1) * P::basebit);
+                privksk[i][j][u] = c;
+            }
+}
 
 template <class P>
 inline relinKey<P> relinKeygen(const Key<P> &key)
@@ -151,7 +174,7 @@ struct GateKeyNTT {
 template <class bsP, class privksP>
 struct CircuitKey {
     BootstrappingKeyFFT<bsP> bkfft;
-    std::array<PrivKeySwitchKey<privksP>, 2> privksk;
+    std::array<PrivateKeySwitchingKey<privksP>, 2> privksk;
     CircuitKey(const SecretKey &sk);
     CircuitKey() {}
     template <class Archive>

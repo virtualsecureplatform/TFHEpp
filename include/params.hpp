@@ -87,7 +87,7 @@ using TLWE2TRLWEIKSKey = std::array<
 template <class P>
 using AnnihilateKey = std::array<TRGSWFFT<P>, P::nbit>;
 template <class P>
-using PrivKeySwitchKey = std::array<
+using PrivateKeySwitchingKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
     P::domainP::n + 1>;

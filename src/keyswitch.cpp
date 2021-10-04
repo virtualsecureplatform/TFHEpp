@@ -135,7 +135,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 template <class P>
 void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                    const TLWE<typename P::domainP> &tlwe,
-                   const PrivKeySwitchKey<P> &privksk)
+                   const PrivateKeySwitchingKey<P> &privksk)
 {
     constexpr uint32_t mask = (1 << P::basebit) - 1;
     constexpr uint64_t prec_offset =
@@ -164,7 +164,7 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
 #define INST(P)                                                           \
     template void PrivKeySwitch<P>(TRLWE<typename P::targetP> & res,      \
                                    const TLWE<typename P::domainP> &tlwe, \
-                                   const PrivKeySwitchKey<P> &privksk)
+                                   const PrivateKeySwitchingKey<P> &privksk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 

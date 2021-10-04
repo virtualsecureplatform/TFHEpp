@@ -45,5 +45,5 @@ void AnnihilatePrivateKeySwitching(std::array<TRLWE<P>,num_func> &res, const TRL
 template <class P>
 void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                    const TLWE<typename P::domainP> &tlwe,
-                   const PrivKeySwitchKey<P> &privksk);
+                   const PrivateKeySwitchingKey<P> &privksk);
 }  // namespace TFHEpp
