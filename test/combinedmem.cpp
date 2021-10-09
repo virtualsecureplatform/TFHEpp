@@ -40,43 +40,6 @@ void combUROMUX(TRLWE<lvl1param> &res,
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
-void combLROMUX(array<TLWE<lvl1param>, 1U << words_bit> &res,
-                const array<TRGSWFFT<lvl1param>, address_bit> &address,
-                const TRLWE<lvl1param> &data)
-{
-    constexpr uint32_t width_bit =
-        lvl1param::nbit -
-        words_bit;  // log_2 of how many words are in one TRLWElvl1 message.
-    TRLWE<lvl1param> temp, acc;
-    PolynomialMulByXaiMinusOne<lvl1param>(
-        temp[0], data[0], 2 * lvl1param::n - (lvl1param::n >> 1));
-    PolynomialMulByXaiMinusOne<lvl1param>(
-        temp[1], data[1], 2 * lvl1param::n - (lvl1param::n >> 1));
-    trgswfftExternalProduct<lvl1param>(temp, temp, address[width_bit - 1]);
-    for (int i = 0; i < lvl1param::n; i++) {
-        acc[0][i] = temp[0][i] + data[0][i];
-        acc[1][i] = temp[1][i] + data[1][i];
-    }
-
-    for (uint32_t bit = 2; bit <= width_bit; bit++) {
-        PolynomialMulByXaiMinusOne<lvl1param>(
-            temp[0], acc[0], 2 * lvl1param::n - (lvl1param::n >> bit));
-        PolynomialMulByXaiMinusOne<lvl1param>(
-            temp[1], acc[1], 2 * lvl1param::n - (lvl1param::n >> bit));
-        trgswfftExternalProduct<lvl1param>(temp, temp,
-                                           address[width_bit - bit]);
-        for (int i = 0; i < lvl1param::n; i++) {
-            acc[0][i] += temp[0][i];
-            acc[1][i] += temp[1][i];
-        }
-    }
-
-    const uint32_t width = 1 << width_bit;
-    for (int i = 0; i < width; i++)
-        SampleExtractIndex<lvl1param>(res[i], acc, i);
-}
-
-template <uint32_t address_bit, uint32_t words_bit>
 void combRAMUX(array<TRLWE<lvl1param>, 1U << words_bit> &res,
                const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
                const array<array<TRLWE<lvl1param>, 1 << address_bit>,
@@ -144,6 +107,9 @@ int main()
     constexpr uint32_t numromtrlwe =
         1U << (address_bit - 1 + words_bit - lvl1param::nbit);
     constexpr uint32_t numramtrlwe = 1U << (address_bit - 1);
+    constexpr uint32_t width_bit =
+        TFHEpp::lvl1param::nbit -
+        words_bit;  // log_2 of how many words are in one TRLWE message.
     random_device seeder;
     default_random_engine engine(seeder());
     uniform_int_distribution<uint8_t> binary(0, 1);
@@ -199,7 +165,7 @@ int main()
             array<TLWE<lvl1param>, words> encramreadres;
 
             TRLWE<lvl1param> encumemory;
-            array<TLWE<lvl1param>, words> encromreadres;
+            std::vector<TLWE<lvl1param>> encromreadres(words);
 
             array<TLWE<lvl1param>, words> encreadres;
 
@@ -219,6 +185,7 @@ int main()
             encwrflag = tlweSymEncrypt<lvl1param>(
                 (wrflag > 0) ? lvl1param::μ : -lvl1param::μ, lvl1param::α,
                 (*sk).key.lvl1);
+
             for (int i = 0; i < words; i++)
                 encwritep[i] = tlweSymEncrypt<lvl1param>(
                     writep[i] ? lvl1param::μ : -lvl1param::μ, lvl1param::α,
@@ -243,13 +210,14 @@ int main()
 
             combUROMUX<address_bit - 1, words_bit>(encumemory, (*bootedTGSW)[0],
                                                    encrom);
-            combLROMUX<address_bit - 1, words_bit>(
+
+            LROMUX<TFHEpp::lvl1param,address_bit - 1, width_bit>(
                 encromreadres, (*bootedTGSW)[1], encumemory);
 
             for (int i = 0; i < words; i++)
                 HomMUX(encreadres[i], encaddress[address_bit - 1],
                        encramreadres[i], encromreadres[i], (*ck).gk);
-
+            
             // Controll
             TLWE<lvl1param> cs;
             HomAND(cs, encwrflag, encaddress[address_bit - 1], (*ck).gk);
