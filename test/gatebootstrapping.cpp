@@ -17,11 +17,11 @@ int main()
     GateKey* gk = new GateKey(sk);
     for (int test = 0; test < num_test; test++) {
         bool p = binary(engine) > 0;
-        TLWE<lvl0param> tlwe = tlweSymEncrypt<lvl0param>(
-            p ? lvl0param::μ : -lvl0param::μ, lvl0param::α, sk.key.lvl0);
-        TLWE<lvl0param> bootedtlwe;
+        TLWE<lvl1param> tlwe = tlweSymEncrypt<lvl1param>(
+            p ? lvl1param::μ : -lvl1param::μ, lvl1param::α, sk.key.lvl1);
+        TLWE<lvl1param> bootedtlwe;
         GateBootstrapping(bootedtlwe, tlwe, *gk);
-        bool p2 = tlweSymDecrypt<lvl0param>(bootedtlwe, sk.key.lvl0);
+        bool p2 = tlweSymDecrypt<lvl1param>(bootedtlwe, sk.key.lvl1);
         assert(p == p2);
     }
     cout << "Passed" << endl;

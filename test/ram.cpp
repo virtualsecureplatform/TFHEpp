@@ -9,9 +9,11 @@ using namespace TFHEpp;
 
 int main()
 {
-    using CBbsP = lvl02param;
-    using CBprivksP = lvl22param;
-    using ksP = lvl20param;
+    using CBbsP = TFHEpp::lvl02param;
+    using CBprivksP = TFHEpp::lvl21param;
+    using ksP = TFHEpp::lvl10param;
+    using brP = TFHEpp::lvl01param;
+    using CBiksP = TFHEpp::lvl10param;
 
     constexpr uint32_t address_bit = 8;  // Address by bytes.
     constexpr uint32_t memsize = 1 << address_bit;
@@ -22,6 +24,9 @@ int main()
     SecretKey *sk = new SecretKey;
     CloudKey<CBbsP, CBprivksP, ksP> *ck =
         new CloudKey<CBbsP, CBprivksP, ksP>(*sk);
+    TFHEpp::KeySwitchingKey<CBiksP> *iksk =
+        new TFHEpp::KeySwitchingKey<CBiksP>();
+    TFHEpp::ikskgen<CBiksP>(*iksk, *sk);
     vector<uint8_t> pmemory(memsize);
     vector<array<ksP::domainP::T, ksP::domainP::n>> pmu(memsize);
     vector<uint8_t> address(address_bit);
@@ -43,56 +48,56 @@ int main()
     wrflag = binary(engine);
     writep = pmemory[addressint] > 0 ? 0 : 1;
 
-    array<array<TRGSWFFT<typename ksP::domainP>, address_bit>, 2> *bootedTGSW =
-        new array<array<TRGSWFFT<typename ksP::domainP>, address_bit>, 2>;
-    vector<TLWE<typename ksP::targetP>> encaddress(address_bit);
-    array<TRLWE<typename ksP::domainP>, memsize> *encmemory =
-        new array<TRLWE<typename ksP::domainP>, memsize>;
-    TLWE<typename ksP::domainP> encreadreshigh;
-    TLWE<typename ksP::targetP> encreadres;
-    TRLWE<typename ksP::domainP> encumemory;
-    TLWE<typename ksP::targetP> cs;
-    TLWE<typename ksP::targetP> c1;
-    TRLWE<typename ksP::domainP> writed;
+    array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>,
+          2> *bootedTGSW =
+        new array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>, 2>;
+    vector<TLWE<typename CBprivksP::targetP>> encaddress(address_bit);
+    array<TRLWE<typename CBprivksP::targetP>, memsize> *encmemory =
+        new array<TRLWE<typename CBprivksP::targetP>, memsize>;
+    TLWE<typename CBprivksP::targetP> encreadres;
+    TRLWE<typename CBiksP::domainP> encumemory;
+    TLWE<typename ksP::domainP> cs;
+    TLWE<typename ksP::domainP> c1;
+    TRLWE<typename CBiksP::domainP> writed;
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
         (*encmemory)[i] = trlweSymEncrypt<typename ksP::domainP>(
             pmu[i], ksP::domainP::α, (*sk).key.get<typename ksP::domainP>());
-    cs = tlweSymEncrypt<typename ksP::targetP>(
-        wrflag ? ksP::targetP::μ : -ksP::targetP::μ, ksP::targetP::α,
-        (*sk).key.get<typename ksP::targetP>());
-    c1 = tlweSymEncrypt<typename ksP::targetP>(
-        writep ? ksP::targetP::μ : -ksP::targetP::μ, ksP::targetP::α,
-        (*sk).key.get<typename ksP::targetP>());
+    cs = tlweSymEncrypt<typename ksP::domainP>(
+        wrflag ? ksP::domainP::μ : -ksP::domainP::μ, ksP::domainP::α,
+        (*sk).key.get<typename ksP::domainP>());
+    c1 = tlweSymEncrypt<typename ksP::domainP>(
+        writep ? ksP::domainP::μ : -ksP::domainP::μ, ksP::domainP::α,
+        (*sk).key.get<typename ksP::domainP>());
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     // Addres CB
     for (int i = 0; i < address_bit; i++) {
-        CircuitBootstrappingFFTwithInv<CBbsP, CBprivksP>(
-            (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFTwithInv<ksP, CBbsP, CBprivksP>(
+            (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck,
+            (*ck).gk.ksk);
     }
 
     // Read
-    RAMUX<typename ksP::domainP, address_bit>(encumemory, (*bootedTGSW)[0],
-                                              *encmemory);
-    SampleExtractIndex<typename ksP::domainP>(encreadreshigh, encumemory, 0);
-    IdentityKeySwitch<ksP>(encreadres, encreadreshigh, (*ck).ksk);
+    RAMUX<typename CBprivksP::targetP, address_bit>(
+        encumemory, (*bootedTGSW)[0], *encmemory);
+    SampleExtractIndex<typename CBprivksP::targetP>(encreadres, encumemory, 0);
 
     // Write
-    HomMUXwoSE<CBbsP>(writed, cs, c1, encreadres, (*ck).ck.bkfft);
+    HomMUXwoSE<CBiksP, brP>(writed, cs, c1, encreadres, *iksk,
+                            (*ck).gk.bkfftlvl01);
     for (int i = 0; i < memsize; i++) {
-        TRLWE<typename ksP::domainP> temp;
-        TFHEpp::RAMwriteBar<typename ksP::domainP, address_bit>(
+        TRLWE<typename CBiksP::domainP> temp;
+        TFHEpp::RAMwriteBar<typename CBiksP::domainP, address_bit>(
             temp, writed, (*encmemory)[i], i, *bootedTGSW);
-        TLWE<typename ksP::domainP> temp2;
-        SampleExtractIndex<typename ksP::domainP>(temp2, temp, 0);
-        TLWE<typename ksP::targetP> temp3;
-        IdentityKeySwitch<ksP>(temp3, temp2, (*ck).ksk);
-        BlindRotate<CBbsP>(
-            (*encmemory)[i], temp3, (*ck).ck.bkfft,
-            μpolygen<typename CBbsP::targetP, CBbsP::targetP::μ>());
+        TLWE<typename CBiksP::domainP> temp2;
+        SampleExtractIndex<typename CBiksP::domainP>(temp2, temp, 0);
+        TLWE<typename CBiksP::targetP> temp3;
+        IdentityKeySwitch<CBiksP>(temp3, temp2, *iksk);
+        BlindRotate<brP>((*encmemory)[i], temp3, (*ck).gk.bkfftlvl01,
+                         μpolygen<typename brP::targetP, brP::targetP::μ>());
     }
 
     end = chrono::system_clock::now();
@@ -100,14 +105,15 @@ int main()
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
     cout << elapsed << "ms" << endl;
-    pres = tlweSymDecrypt<typename ksP::targetP>(
-        encreadres, (*sk).key.get<typename ksP::targetP>());
+    pres = tlweSymDecrypt<typename CBiksP::domainP>(
+        encreadres, (*sk).key.get<typename CBiksP::domainP>());
 
     assert(static_cast<int>(pres) == static_cast<int>(pmemory[addressint]));
 
-    array<bool, ksP::domainP::n> pwriteres =
-        trlweSymDecrypt<typename ksP::domainP>(
-            (*encmemory)[addressint], (*sk).key.get<typename ksP::domainP>());
+    array<bool, CBprivksP::targetP::n> pwriteres =
+        trlweSymDecrypt<typename CBprivksP::targetP>(
+            (*encmemory)[addressint],
+            (*sk).key.get<typename CBprivksP::targetP>());
     assert(static_cast<int>(pwriteres[0]) ==
            static_cast<int>((wrflag > 0) ? writep : pmemory[addressint]));
 

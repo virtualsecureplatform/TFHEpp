@@ -41,6 +41,7 @@ void RAMwriteBar(
         CMUXFFT<P>(res, bootedTRGSW[addressbitset[i]][i], res, encmem);
 }
 
+// MUX tree for vertical packing
 template <class P, uint32_t address_bit, uint32_t width_bit>
 void UROMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
             const array<TRLWE<P>, 1 << (address_bit - width_bit)> &data)
@@ -67,43 +68,35 @@ void UROMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
     CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
 }
 
-template <class ksP, uint32_t address_bit, uint32_t width_bit>
-void LROMUX(vector<TLWE<typename ksP::targetP>> &res,
-            const array<TRGSWFFT<typename ksP::domainP>, address_bit> &address,
-            const TRLWE<typename ksP::domainP> &data,
-            const KeySwitchingKey<ksP> &ksk)
+// MUX tree for horizontal packing
+template <class P, uint32_t address_bit, uint32_t width_bit>
+void LROMUX(vector<TLWE<P>> &res,
+            const array<TRGSWFFT<P>, address_bit> &address,
+            const TRLWE<P> &data)
 {
-    TRLWE<typename ksP::domainP> temp, acc;
-    PolynomialMulByXaiMinusOne<typename ksP::domainP>(
-        temp[0], data[0], 2 * ksP::domainP::n - (ksP::domainP::n >> 1));
-    PolynomialMulByXaiMinusOne<typename ksP::domainP>(
-        temp[1], data[1], 2 * ksP::domainP::n - (ksP::domainP::n >> 1));
-    trgswfftExternalProduct<typename ksP::domainP>(temp, temp,
-                                                   address[width_bit - 1]);
-    for (int i = 0; i < ksP::domainP::n; i++) {
+    TRLWE<P> temp, acc;
+    PolynomialMulByXaiMinusOne<P>(temp[0], data[0], 2 * P::n - (P::n >> 1));
+    PolynomialMulByXaiMinusOne<P>(temp[1], data[1], 2 * P::n - (P::n >> 1));
+    trgswfftExternalProduct<P>(temp, temp, address[width_bit - 1]);
+    for (int i = 0; i < P::n; i++) {
         // initialize acc
         acc[0][i] = temp[0][i] + data[0][i];
         acc[1][i] = temp[1][i] + data[1][i];
     }
 
     for (uint32_t bit = 2; bit <= width_bit; bit++) {
-        PolynomialMulByXaiMinusOne<typename ksP::domainP>(
-            temp[0], acc[0], 2 * ksP::domainP::n - (ksP::domainP::n >> bit));
-        PolynomialMulByXaiMinusOne<typename ksP::domainP>(
-            temp[1], acc[1], 2 * ksP::domainP::n - (ksP::domainP::n >> bit));
-        trgswfftExternalProduct<typename ksP::domainP>(
-            temp, temp, address[width_bit - bit]);
-        for (int i = 0; i < ksP::domainP::n; i++) {
+        PolynomialMulByXaiMinusOne<P>(temp[0], acc[0],
+                                      2 * P::n - (P::n >> bit));
+        PolynomialMulByXaiMinusOne<P>(temp[1], acc[1],
+                                      2 * P::n - (P::n >> bit));
+        trgswfftExternalProduct<P>(temp, temp, address[width_bit - bit]);
+        for (int i = 0; i < P::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
         }
     }
 
-    constexpr uint32_t word = 1 << (ksP::domainP::nbit - width_bit);
-    array<TLWE<typename ksP::domainP>, word> reslvl1;
-    for (int i = 0; i < word; i++)
-        SampleExtractIndex<typename ksP::domainP>(reslvl1[i], acc, i);
-    for (int i = 0; i < word; i++)
-        IdentityKeySwitch<ksP>(res[i], reslvl1[i], ksk);
+    constexpr uint32_t word = 1 << (P::nbit - width_bit);
+    for (int i = 0; i < word; i++) SampleExtractIndex<P>(res[i], acc, i);
 }
 }  // namespace TFHEpp

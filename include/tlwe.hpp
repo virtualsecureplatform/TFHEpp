@@ -18,8 +18,8 @@ array<typename P::T, P::n + 1> tlweSymEncrypt(
 template <class P>
 bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key);
 
-template <class P = lvl0param>
+template <class P = lvl1param>
 vector<TLWE<P>> bootsSymEncrypt(const vector<uint8_t> &p, const SecretKey &sk);
-template <class P = lvl0param>
+template <class P = lvl1param>
 vector<uint8_t> bootsSymDecrypt(const vector<TLWE<P>> &c, const SecretKey &sk);
 }  // namespace TFHEpp

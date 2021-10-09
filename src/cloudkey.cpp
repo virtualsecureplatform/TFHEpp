@@ -114,7 +114,7 @@ CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)
 }
 #define INST(bsP, privksP) \
     template CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)
-TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_KEY(INST)
 #undef INST
 
 }  // namespace TFHEpp

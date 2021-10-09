@@ -4,30 +4,34 @@
 
 namespace TFHEpp {
 
-template <class bkP, class privksP>
+template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
                                  TRLWE<typename privksP::targetP> &trgswlower,
-                                 const TLWE<typename bkP::domainP> &tlwe,
+                                 const TLWE<typename iksP::domainP> &tlwe,
                                  const CircuitKey<bkP, privksP> &ck,
+                                 const KeySwitchingKey<iksP> &iksk,
                                  const uint32_t digit)
 {
+    TLWE<typename bkP::domainP> tlwelvl0;
+    IdentityKeySwitch<iksP>(tlwelvl0, tlwe, iksk);
     const typename bkP::targetP::T μs2 =
         1ULL << (std::numeric_limits<typename privksP::domainP::T>::digits -
                  (digit + 1) * privksP::targetP::Bgbit - 1);
     Polynomial<typename bkP::targetP> testvec;
     for (int i = 0; i < bkP::targetP::n; i++) testvec[i] = μs2;
     TLWE<typename bkP::targetP> tlwemiddle;
-    GateBootstrappingTLWE2TLWEFFT<bkP>(tlwemiddle, tlwe, ck.bkfft, testvec);
+    GateBootstrappingTLWE2TLWEFFT<bkP>(tlwemiddle, tlwelvl0, ck.bkfft, testvec);
     tlwemiddle[bkP::targetP::n] += μs2;
     PrivKeySwitch<privksP>(trgswupper, tlwemiddle, ck.privksk[0]);
     PrivKeySwitch<privksP>(trgswlower, tlwemiddle, ck.privksk[1]);
 }
-#define INST(bkP, privksP)                                   \
-    template void CircuitBootstrappingPartial<bkP, privksP>( \
-        TRLWE<typename privksP::targetP> & trgswupper,       \
-        TRLWE<typename privksP::targetP> & trgswlower,       \
-        const TLWE<typename bkP::domainP> &tlwe,             \
-        const CircuitKey<bkP, privksP> &ck, const uint32_t digit)
+#define INST(iksP, bkP, privksP)                                               \
+    template void CircuitBootstrappingPartial<iksP, bkP, privksP>(             \
+        TRLWE<typename privksP::targetP> & trgswupper,                         \
+        TRLWE<typename privksP::targetP> & trgswlower,                         \
+        const TLWE<typename iksP::domainP> &tlwe,                              \
+        const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk, \
+        const uint32_t digit)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
@@ -44,13 +48,16 @@ constexpr Polynomial<typename P::domainP> CBtestvector()
     return poly;
 }
 
-template <class bkP, class privksP>
+template <class iksP, class bkP, class privksP>
 void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
-                          const TLWE<typename bkP::domainP> &tlwe,
-                          const CircuitKey<bkP, privksP> &ck)
+                          const TLWE<typename iksP::domainP> &tlwe,
+                          const CircuitKey<bkP, privksP> &ck,
+                          const KeySwitchingKey<iksP> &iksk)
 {
+    TLWE<typename bkP::domainP> tlwelvl0;
+    IdentityKeySwitch<iksP>(tlwelvl0, tlwe, iksk);
     std::array<TLWE<typename bkP::targetP>, privksP::targetP::l> temp;
-    GateBootstrappingManyLUT<bkP, privksP::targetP::l>(temp, tlwe, ck.bkfft,
+    GateBootstrappingManyLUT<bkP, privksP::targetP::l>(temp, tlwelvl0, ck.bkfft,
                                                        CBtestvector<privksP>());
     for (int i = 0; i < privksP::targetP::l; i++) {
         temp[i][privksP::domainP::n] +=
@@ -61,64 +68,68 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
                                ck.privksk[1]);
     }
 }
-#define INST(bkP, privksP)                            \
-    template void CircuitBootstrapping<bkP, privksP>( \
-        TRGSW<typename privksP::targetP> & trgsw,     \
-        const TLWE<typename bkP::domainP> &tlwe,      \
-        const CircuitKey<bkP, privksP> &ck)
+#define INST(iksP, bkP, privksP)                            \
+    template void CircuitBootstrapping<iksP, bkP, privksP>( \
+        TRGSW<typename privksP::targetP> & trgsw,           \
+        const TLWE<typename iksP::domainP> &tlwe,           \
+        const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
-template <class bkP, class privksP>
+template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
-                             const TLWE<typename bkP::domainP> &tlwe,
-                             const CircuitKey<bkP, privksP> &ck)
+                             const TLWE<typename iksP::domainP> &tlwe,
+                             const CircuitKey<bkP, privksP> &ck,
+                             const KeySwitchingKey<iksP> &iksk)
 {
     TRGSW<typename privksP::targetP> trgsw;
-    CircuitBootstrapping<bkP, privksP>(trgsw, tlwe, ck);
+    CircuitBootstrapping<iksP, bkP, privksP>(trgsw, tlwe, ck, iksk);
     for (int i = 0; i < 2 * privksP::targetP::l; i++)
         for (int j = 0; j < 2; j++)
             TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
 }
-#define INST(bkP, privksP)                               \
-    template void CircuitBootstrappingFFT<bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & trgswfft,  \
-        const TLWE<typename bkP::domainP> &tlwe,         \
-        const CircuitKey<bkP, privksP> &ck)
+#define INST(iksP, bkP, privksP)                               \
+    template void CircuitBootstrappingFFT<iksP, bkP, privksP>( \
+        TRGSWFFT<typename privksP::targetP> & trgswfft,        \
+        const TLWE<typename iksP::domainP> &tlwe,              \
+        const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
-template <class bkP, class privksP>
+template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFTInv(
     TRGSWFFT<typename privksP::targetP> &invtrgswfft,
-    const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP, privksP> &ck)
+    const TLWE<typename iksP::domainP> &tlwe,
+    const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk)
 {
-    TLWE<typename bkP::domainP> invtlwe;
+    TLWE<typename iksP::domainP> invtlwe;
     // HomNot
-    for (int i = 0; i <= bkP::domainP::n; i++) invtlwe[i] = -tlwe[i];
-    CircuitBootstrappingFFT(invtrgswfft, invtlwe, ck);
+    for (int i = 0; i <= iksP::domainP::n; i++) invtlwe[i] = -tlwe[i];
+    CircuitBootstrappingFFT<iksP, bkP, privksP>(invtrgswfft, invtlwe, ck, iksk);
 }
-#define INST(bkP, privksP)                                  \
-    template void CircuitBootstrappingFFTInv<bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & invtrgswfft,  \
-        const TLWE<typename bkP::domainP> &tlwe,            \
-        const CircuitKey<bkP, privksP> &ck)
+#define INST(iksP, bkP, privksP)                                  \
+    template void CircuitBootstrappingFFTInv<iksP, bkP, privksP>( \
+        TRGSWFFT<typename privksP::targetP> & invtrgswfft,        \
+        const TLWE<typename iksP::domainP> &tlwe,                 \
+        const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
-template <class bkP, class privksP>
+template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFTwithInvPartial(
     TRLWEInFD<typename privksP::targetP> &trgswfftupper,
     TRLWEInFD<typename privksP::targetP> &trgswfftlower,
     TRLWEInFD<typename privksP::targetP> &invtrgswfftupper,
     TRLWEInFD<typename privksP::targetP> &invtrgswfftlower,
-    const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP, privksP> &ck,
+    const TLWE<typename iksP::domainP> &tlwe,
+    const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk,
     const uint32_t digit)
 {
     constexpr std::array<typename privksP::targetP::T, privksP::targetP::l> h =
         hgen<typename privksP::targetP>();
     TRLWE<typename privksP::targetP> trgswupper, trgswlower;
-    CircuitBootstrappingPartial(trgswupper, trgswlower, tlwe, ck, digit);
+    CircuitBootstrappingPartial<iksP, bkP, privksP>(trgswupper, trgswlower,
+                                                    tlwe, ck, iksk, digit);
     for (int j = 0; j < 2; j++) {
         TwistIFFT<typename privksP::targetP>(trgswfftupper[j], trgswupper[j]);
         TwistIFFT<typename privksP::targetP>(trgswfftlower[j], trgswlower[j]);
@@ -138,28 +149,30 @@ void CircuitBootstrappingFFTwithInvPartial(
                                              trgswlower[j]);
     }
 }
-#define INST(bkP, privksP)                                             \
-    template void CircuitBootstrappingFFTwithInvPartial<bkP, privksP>( \
-        TRLWEInFD<typename privksP::targetP> & trgswfftupper,          \
-        TRLWEInFD<typename privksP::targetP> & trgswfftlower,          \
-        TRLWEInFD<typename privksP::targetP> & invtrgswfftupper,       \
-        TRLWEInFD<typename privksP::targetP> & invtrgswfftlower,       \
-        const TLWE<typename bkP::domainP> &tlwe,                       \
-        const CircuitKey<bkP, privksP> &ck, const uint32_t digit)
+#define INST(iksP, bkP, privksP)                                               \
+    template void CircuitBootstrappingFFTwithInvPartial<iksP, bkP, privksP>(   \
+        TRLWEInFD<typename privksP::targetP> & trgswfftupper,                  \
+        TRLWEInFD<typename privksP::targetP> & trgswfftlower,                  \
+        TRLWEInFD<typename privksP::targetP> & invtrgswfftupper,               \
+        TRLWEInFD<typename privksP::targetP> & invtrgswfftlower,               \
+        const TLWE<typename iksP::domainP> &tlwe,                              \
+        const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk, \
+        const uint32_t digit)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
-template <class bkP, class privksP>
+template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFTwithInv(
     TRGSWFFT<typename privksP::targetP> &trgswfft,
     TRGSWFFT<typename privksP::targetP> &invtrgswfft,
-    const TLWE<typename bkP::domainP> &tlwe, const CircuitKey<bkP, privksP> &ck)
+    const TLWE<typename iksP::domainP> &tlwe,
+    const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk)
 {
     constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
         hgen<typename privksP::targetP>();
 
     TRGSW<typename privksP::targetP> trgsw;
-    CircuitBootstrapping<bkP, privksP>(trgsw, tlwe, ck);
+    CircuitBootstrapping<iksP, bkP, privksP>(trgsw, tlwe, ck, iksk);
     for (int i = 0; i < 2 * privksP::targetP::l; i++)
         for (int j = 0; j < 2; j++) {
             TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
@@ -174,12 +187,12 @@ void CircuitBootstrappingFFTwithInv(
             TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j],
                                                  trgsw[i][j]);
 }
-#define INST(bkP, privksP)                                      \
-    template void CircuitBootstrappingFFTwithInv<bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & trgswfft,         \
-        TRGSWFFT<typename privksP::targetP> & invtrgswfft,      \
-        const TLWE<typename bkP::domainP> &tlwe,                \
-        const CircuitKey<bkP, privksP> &ck)
+#define INST(iksP, bkP, privksP)                                      \
+    template void CircuitBootstrappingFFTwithInv<iksP, bkP, privksP>( \
+        TRGSWFFT<typename privksP::targetP> & trgswfft,               \
+        TRGSWFFT<typename privksP::targetP> & invtrgswfft,            \
+        const TLWE<typename iksP::domainP> &tlwe,                     \
+        const CircuitKey<bkP, privksP> &ck, const KeySwitchingKey<iksP> &iksk)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 

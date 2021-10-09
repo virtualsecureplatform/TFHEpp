@@ -51,9 +51,9 @@ int main()
     for (uint8_t &p : address) p = binary(engine);
 
     array<TRGSWFFT<typename ksP::domainP>, address_bit> bootedTGSW;
-    vector<TLWE<typename ksP::targetP>> encaddress(address_bit);
+    vector<TLWE<typename ksP::domainP>> encaddress(address_bit);
     array<TRLWE<typename ksP::domainP>, num_trlwe> encmemory;
-    vector<TLWE<typename ksP::targetP>> encres(word);
+    vector<TLWE<typename ksP::domainP>> encres(word);
 
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < num_trlwe; i++)
@@ -63,17 +63,17 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < width_bit; i++)
-        CircuitBootstrappingFFT<CBbsP, CBprivksP>(bootedTGSW[i], encaddress[i],
-                                                  (*ck).ck);
+        CircuitBootstrappingFFT<ksP, CBbsP, CBprivksP>(
+            bootedTGSW[i], encaddress[i], (*ck).ck, (*ck).gk.ksk);
     for (int i = width_bit; i < address_bit; i++)
-        CircuitBootstrappingFFTInv<CBbsP, CBprivksP>(bootedTGSW[i],
-                                                     encaddress[i], (*ck).ck);
+        CircuitBootstrappingFFTInv<ksP, CBbsP, CBprivksP>(
+            bootedTGSW[i], encaddress[i], (*ck).ck, (*ck).gk.ksk);
     TRLWE<typename ksP::domainP> encumemory;
 
     UROMUX<typename ksP::domainP, address_bit, width_bit>(
         encumemory, bootedTGSW, encmemory);
-    LROMUX<ksP, address_bit, width_bit>(encres, bootedTGSW, encumemory,
-                                        (*ck).ksk);
+    LROMUX<typename ksP::domainP, address_bit, width_bit>(encres, bootedTGSW,
+                                                          encumemory);
     end = chrono::system_clock::now();
 
     pres = bootsSymDecrypt(encres, *sk);

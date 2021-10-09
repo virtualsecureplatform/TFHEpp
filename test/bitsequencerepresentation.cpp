@@ -34,6 +34,8 @@ void AddByTBSR(TBSR<P, int_width + 1> &res,
 
 int main()
 {
+    using iksP = TFHEpp::lvl10param;
+
     constexpr uint32_t int_width = 8;
     static_assert(TFHEpp::lvl1param::nbit >= int_width);
 
@@ -45,6 +47,8 @@ int main()
     TFHEpp::SecretKey *sk = new TFHEpp::SecretKey;
     TFHEpp::CircuitKey<TFHEpp::lvl02param, TFHEpp::lvl22param> *ck =
         new TFHEpp::CircuitKey<TFHEpp::lvl02param, TFHEpp::lvl22param>(*sk);
+    TFHEpp::KeySwitchingKey<iksP> *iksk = new TFHEpp::KeySwitchingKey<iksP>();
+    TFHEpp::ikskgen<iksP>(*iksk, *sk);
 
     std::array<uint32_t, num_test> a, b;
     std::array<TBSR<TFHEpp::lvl2param, int_width + 1>, num_test> res;
@@ -57,7 +61,7 @@ int main()
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < int_width; j++) mub[i].push_back(b[i] & (1 << j));
 
-    std::array<std::vector<TFHEpp::TLWE<TFHEpp::lvl0param>>, num_test> tlwea,
+    std::array<std::vector<TFHEpp::TLWE<TFHEpp::lvl1param>>, num_test> tlwea,
         tlweb;
     for (int i = 0; i < num_test; i++) tlwea[i] = bootsSymEncrypt(mua[i], *sk);
     for (int i = 0; i < num_test; i++) tlweb[i] = bootsSymEncrypt(mub[i], *sk);
@@ -68,13 +72,13 @@ int main()
         std::array<TFHEpp::TRGSWFFT<TFHEpp::lvl2param>, int_width> trgswa,
             trgswb;
         for (int i = 0; i < int_width; i++)
-            TFHEpp::CircuitBootstrappingFFT<TFHEpp::lvl02param,
+            TFHEpp::CircuitBootstrappingFFT<iksP, TFHEpp::lvl02param,
                                             TFHEpp::lvl22param>(
-                trgswa[i], tlwea[test][i], *ck);
+                trgswa[i], tlwea[test][i], *ck, *iksk);
         for (int i = 0; i < int_width; i++)
-            TFHEpp::CircuitBootstrappingFFT<TFHEpp::lvl02param,
+            TFHEpp::CircuitBootstrappingFFT<iksP, TFHEpp::lvl02param,
                                             TFHEpp::lvl22param>(
-                trgswb[i], tlweb[test][i], *ck);
+                trgswb[i], tlweb[test][i], *ck, *iksk);
         AddByTBSR<TFHEpp::lvl2param, int_width>(res[test], trgswa, trgswb);
     }
     end = std::chrono::system_clock::now();

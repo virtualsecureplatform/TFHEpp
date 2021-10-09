@@ -64,7 +64,7 @@ uint8_t NMuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
 
 template <class Func, class Chegk>
 void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
-          vector<TLWE<lvl0param>> cres, vector<TLWE<lvl0param>> c,
+          vector<TLWE<lvl1param>> cres, vector<TLWE<lvl1param>> c,
           const int kNumTests, SecretKey& sk, GateKey& gk)
 {
     random_device seed_gen;
@@ -79,32 +79,32 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < kNumTests; i++) {
-        if constexpr (std::is_invocable_v<Func, TLWE<lvl0param>&>) {
+        if constexpr (std::is_invocable_v<Func, TLWE<lvl1param>&>) {
             func(cres[i]);
             p[i] = chegk();
         }
-        else if constexpr (std::is_invocable_v<Func, TLWE<lvl0param>&,
-                                               const TLWE<lvl0param>&>) {
+        else if constexpr (std::is_invocable_v<Func, TLWE<lvl1param>&,
+                                               const TLWE<lvl1param>&>) {
             func(cres[i], c[i]);
             p[i] = chegk(p[i]);
         }
         else if constexpr (std::is_invocable_v<
-                               Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                               const TLWE<lvl0param>&, const GateKey&>) {
+                               Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
+                               const TLWE<lvl1param>&, const GateKey&>) {
             func(cres[i], c[i], c[i + kNumTests], gk);
             p[i] = chegk(p[i], p[i + kNumTests]);
         }
         else if constexpr (std::is_invocable_v<
-                               Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                               const TLWE<lvl0param>&, const TLWE<lvl0param>&,
+                               Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
+                               const TLWE<lvl1param>&, const TLWE<lvl1param>&,
                                const GateKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2], gk);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2]);
         }
         else if constexpr (std::is_invocable_v<
-                               Func, TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                               const TLWE<lvl0param>&, const TLWE<lvl0param>&,
-                               const TLWE<lvl0param>&, const GateKey&>) {
+                               Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
+                               const TLWE<lvl1param>&, const TLWE<lvl1param>&,
+                               const TLWE<lvl1param>&, const GateKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2],
                  c[i + kNumTests * 3], gk);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2],
@@ -134,8 +134,8 @@ int main()
     GateKey* gk = new GateKey(*sk);
     // MUX Need 3 input
     vector<uint8_t> p(3 * kNumTests);
-    vector<TLWE<lvl0param>> cres(kNumTests);
-    vector<TLWE<lvl0param>> c(3 * kNumTests);
+    vector<TLWE<lvl1param>> cres(kNumTests);
+    vector<TLWE<lvl1param>> c(3 * kNumTests);
 
     Test("NOT", HomNOT, NotChegk, p, cres, c, kNumTests, *sk, *gk);
     Test("COPY", HomCOPY, CopyChegk, p, cres, c, kNumTests, *sk, *gk);
