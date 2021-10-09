@@ -4,175 +4,180 @@
 namespace TFHEpp {
 
 // No input
-void HomCONSTANTONE(TLWE<lvl0param> &res)
+void HomCONSTANTONE(TLWE<lvl1param> &res)
 {
     res = {};
-    res[lvl0param::n] = lvl0param::μ;
+    res[lvl1param::n] = lvl1param::μ;
 }
 
-void HomCONSTANTZERO(TLWE<lvl0param> &res)
+void HomCONSTANTZERO(TLWE<lvl1param> &res)
 {
     res = {};
-    res[lvl0param::n] = -lvl0param::μ;
+    res[lvl1param::n] = -lvl1param::μ;
 }
 
 // 1 input
-void HomNOT(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca)
+void HomNOT(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca)
 {
-    for (int i = 0; i <= lvl0param::n; i++) res[i] = -ca[i];
+    for (int i = 0; i <= lvl1param::n; i++) res[i] = -ca[i];
 }
 
-void HomCOPY(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca)
+void HomCOPY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca)
 {
-    for (int i = 0; i <= lvl0param::n; i++) res[i] = ca[i];
+    for (int i = 0; i <= lvl1param::n; i++) res[i] = ca[i];
 }
 
-template <int casign, int cbsign, typename lvl0param::T offset>
-inline void HomGate(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-                    const TLWE<lvl0param> &cb, const GateKey &gk)
+template <int casign, int cbsign, typename lvl1param::T offset>
+inline void HomGate(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+                    const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    for (int i = 0; i <= lvl0param::n; i++)
+    for (int i = 0; i <= lvl1param::n; i++)
         res[i] = casign * ca[i] + cbsign * cb[i];
-    res[lvl0param::n] += offset;
+    res[lvl1param::n] += offset;
     GateBootstrapping(res, res, gk);
 }
 
-void HomNAND(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-             const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomNAND(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+             const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<-1, -1, lvl0param::μ>(res, ca, cb, gk);
+    HomGate<-1, -1, lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomNOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-            const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomNOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+            const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<-1, -1, -lvl0param::μ>(res, ca, cb, gk);
+    HomGate<-1, -1, -lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomXNOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-             const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomXNOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+             const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<-2, -2, -2 * lvl0param::μ>(res, ca, cb, gk);
+    HomGate<-2, -2, -2 * lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomAND(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-            const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomAND(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+            const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<1, 1, -lvl0param::μ>(res, ca, cb, gk);
+    HomGate<1, 1, -lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-           const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+           const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<1, 1, lvl0param::μ>(res, ca, cb, gk);
+    HomGate<1, 1, lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomXOR(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-            const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomXOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+            const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<2, 2, 2 * lvl0param::μ>(res, ca, cb, gk);
+    HomGate<2, 2, 2 * lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomANDNY(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-              const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomANDNY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+              const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<-1, 1, -lvl0param::μ>(res, ca, cb, gk);
+    HomGate<-1, 1, -lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomANDYN(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-              const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomANDYN(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+              const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<1, -1, -lvl0param::μ>(res, ca, cb, gk);
+    HomGate<1, -1, -lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomORNY(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-             const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomORNY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+             const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<-1, 1, lvl0param::μ>(res, ca, cb, gk);
+    HomGate<-1, 1, lvl1param::μ>(res, ca, cb, gk);
 }
 
-void HomORYN(TLWE<lvl0param> &res, const TLWE<lvl0param> &ca,
-             const TLWE<lvl0param> &cb, const GateKey &gk)
+void HomORYN(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
+             const TLWE<lvl1param> &cb, const GateKey &gk)
 {
-    HomGate<1, -1, lvl0param::μ>(res, ca, cb, gk);
+    HomGate<1, -1, lvl1param::μ>(res, ca, cb, gk);
 }
 
 // 3input
 // cs?c1:c0
-void HomMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
-            const TLWE<lvl0param> &c1, const TLWE<lvl0param> &c0,
+void HomMUX(TLWE<lvl1param> &res, const TLWE<lvl1param> &cs,
+            const TLWE<lvl1param> &c1, const TLWE<lvl1param> &c0,
             const GateKey &gk)
 {
-    TLWE<lvl0param> temp;
-    for (int i = 0; i <= lvl0param::n; i++) temp[i] = cs[i] + c1[i];
-    for (int i = 0; i <= lvl0param::n; i++) res[i] = -cs[i] + c0[i];
-    temp[lvl0param::n] -= lvl0param::μ;
-    res[lvl0param::n] -= lvl0param::μ;
-    TLWE<lvl1param> and1;
-    TLWE<lvl1param> and0;
+    TLWE<lvl1param> temp;
+    for (int i = 0; i <= lvl1param::n; i++) temp[i] = cs[i] + c1[i];
+    for (int i = 0; i <= lvl1param::n; i++) res[i] = -cs[i] + c0[i];
+    temp[lvl1param::n] -= lvl1param::μ;
+    res[lvl1param::n] -= lvl1param::μ;
+    TLWE<lvl0param> and1,and0;
+    IdentityKeySwitch<lvl10param>(and1, temp, gk.ksk);
+    IdentityKeySwitch<lvl10param>(and0, res, gk.ksk);
     GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-        and1, temp, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+        temp, and1, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
     GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-        and0, res, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+        res, and0, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
 
-    for (int i = 0; i <= lvl1param::n; i++) and1[i] += and0[i];
-    and1[lvl1param::n] += lvl1param::μ;
-    IdentityKeySwitch<lvl10param>(res, and1, gk.ksk);
+    for (int i = 0; i <= lvl1param::n; i++) res[i] += temp[i];
+    res[lvl1param::n] += lvl1param::μ;
 }
 
-void HomNMUX(TLWE<lvl0param> &res, const TLWE<lvl0param> &cs,
-             const TLWE<lvl0param> &c1, const TLWE<lvl0param> &c0,
+void HomNMUX(TLWE<lvl1param> &res, const TLWE<lvl1param> &cs,
+             const TLWE<lvl1param> &c1, const TLWE<lvl1param> &c0,
              const GateKey &gk)
 {
-    TLWE<lvl0param> temp;
-    for (int i = 0; i <= lvl0param::n; i++) temp[i] = cs[i] + c1[i];
-    for (int i = 0; i <= lvl0param::n; i++) res[i] = -cs[i] + c0[i];
-    temp[lvl0param::n] -= lvl0param::μ;
-    res[lvl0param::n] -= lvl0param::μ;
-    TLWE<lvl1param> and1;
-    TLWE<lvl1param> and0;
+    TLWE<lvl1param> temp;
+    for (int i = 0; i <= lvl1param::n; i++) temp[i] = cs[i] + c1[i];
+    for (int i = 0; i <= lvl1param::n; i++) res[i] = -cs[i] + c0[i];
+    temp[lvl1param::n] -= lvl1param::μ;
+    res[lvl1param::n] -= lvl1param::μ;
+    TLWE<lvl0param> and1,and0;
+    IdentityKeySwitch<lvl10param>(and1, temp, gk.ksk);
+    IdentityKeySwitch<lvl10param>(and0, res, gk.ksk);
     GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-        and1, temp, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+        temp, and1, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
     GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-        and0, res, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+        res, and0, gk.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
 
-    for (int i = 0; i <= lvl1param::n; i++) and1[i] = -and1[i] - and0[i];
-    and1[lvl1param::n] -= lvl1param::μ;
-    IdentityKeySwitch<lvl10param>(res, and1, gk.ksk);
+    for (int i = 0; i <= lvl1param::n; i++) res[i] = -res[i] - temp[i];
+    res[lvl1param::n] -= lvl1param::μ;
 }
 
-template <class P>
-void HomMUXwoSE(TRLWE<typename P::targetP> &res,
-                const TLWE<typename P::domainP> &cs,
-                const TLWE<typename P::domainP> &c1,
-                const TLWE<typename P::domainP> &c0,
-                const BootstrappingKeyFFT<P> &bkfft)
+template <class iksP, class bkP>
+void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
+                const TLWE<typename iksP::domainP> &cs,
+                const TLWE<typename iksP::domainP> &c1,
+                const TLWE<typename iksP::domainP> &c0,
+                const KeySwitchingKey<iksP> &iksk,
+                const BootstrappingKeyFFT<bkP> &bkfft)
 {
-    TLWE<typename P::domainP> temp1;
-    TLWE<typename P::domainP> temp0;
-    for (int i = 0; i <= P::domainP::n; i++) temp1[i] = cs[i] + c1[i];
-    for (int i = 0; i <= P::domainP::n; i++) temp0[i] = -cs[i] + c0[i];
-    temp1[lvl0param::n] -= P::domainP::μ;
-    temp0[lvl0param::n] -= P::domainP::μ;
-    TRLWE<typename P::targetP> and0;
-    BlindRotate<P>(res, temp1, bkfft,
-                   μpolygen<typename P::targetP, P::targetP::μ>());
-    BlindRotate<P>(and0, temp0, bkfft,
-                   μpolygen<typename P::targetP, P::targetP::μ>());
+    TLWE<typename iksP::domainP> temp1;
+    TLWE<typename iksP::domainP> temp0;
+    for (int i = 0; i <= iksP::domainP::n; i++) temp1[i] = cs[i] + c1[i];
+    for (int i = 0; i <= iksP::domainP::n; i++) temp0[i] = -cs[i] + c0[i];
+    temp1[iksP::domainP::n] -= iksP::domainP::μ;
+    temp0[iksP::domainP::n] -= iksP::domainP::μ;
+    TLWE<lvl0param> and1,and0;
+    IdentityKeySwitch<iksP>(and1, temp1, iksk);
+    IdentityKeySwitch<iksP>(and0, temp0, iksk);
+    TRLWE<typename bkP::targetP> and0trlwe;
+    BlindRotate<bkP>(res, and1, bkfft,
+                   μpolygen<typename bkP::targetP, bkP::targetP::μ>());
+    BlindRotate<bkP>(and0trlwe, and0, bkfft,
+                   μpolygen<typename bkP::targetP, bkP::targetP::μ>());
 
-    for (int i = 0; i < P::targetP::n; i++) {
-        res[0][i] += and0[0][i];
-        res[1][i] += and0[1][i];
+    for (int i = 0; i < bkP::targetP::n; i++) {
+        res[0][i] += and0trlwe[0][i];
+        res[1][i] += and0trlwe[1][i];
     };
-    res[1][0] += P::targetP::μ;
+    res[1][0] += bkP::targetP::μ;
 }
-#define INST(P)                                                      \
-    template void HomMUXwoSE<P>(TRLWE<typename P::targetP> & res,    \
-                                const TLWE<typename P::domainP> &cs, \
-                                const TLWE<typename P::domainP> &c1, \
-                                const TLWE<typename P::domainP> &c0, \
-                                const BootstrappingKeyFFT<P> &bkfft)
-TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#define INST(iksP,bkP)                                                      \
+    template void HomMUXwoSE<iksP,bkP>(TRLWE<typename bkP::targetP> & res,    \
+                                const TLWE<typename iksP::domainP> &cs, \
+                                const TLWE<typename iksP::domainP> &c1, \
+                                const TLWE<typename iksP::domainP> &c0, \
+                                const KeySwitchingKey<iksP> &iksk,      \
+                                const BootstrappingKeyFFT<bkP> &bkfft)
+TFHEPP_EXPLICIT_INSTANTIATION_GATE(INST)
 #undef INST
 
 void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,

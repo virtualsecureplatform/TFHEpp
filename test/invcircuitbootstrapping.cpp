@@ -17,6 +17,8 @@ int main()
     SecretKey *sk = new SecretKey;
     CircuitKey<lvl02param, lvl21param> *ck =
         new CircuitKey<lvl02param, lvl21param>(*sk);
+    TFHEpp::KeySwitchingKey<TFHEpp::lvl10param> *iksk = new TFHEpp::KeySwitchingKey<TFHEpp::lvl10param>();
+    TFHEpp::ikskgen<TFHEpp::lvl10param>(*iksk, *sk);
     vector<array<uint8_t, lvl1param::n>> pa(num_test);
     vector<array<uint32_t, lvl1param::n>> pmu(num_test);
     vector<uint8_t> pzeros(num_test);
@@ -28,7 +30,7 @@ int main()
             pmu[i][j] = pa[i][j] ? lvl1param::μ : -lvl1param::μ;
     for (int i = 0; i < num_test; i++) pzeros[i] = false;
     vector<TRLWE<lvl1param>> ca(num_test);
-    vector<TLWE<lvl0param>> czeros(num_test);
+    vector<TLWE<lvl1param>> czeros(num_test);
     vector<TRGSWFFT<lvl1param>> bootedTGSW(num_test);
     vector<TRGSWFFT<lvl1param>> invbootedTGSW(num_test);
 
@@ -39,8 +41,8 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFTwithInv<lvl02param, lvl21param>(
-            bootedTGSW[test], invbootedTGSW[test], czeros[test], *ck);
+        CircuitBootstrappingFFTwithInv<lvl10param, lvl02param, lvl21param>(
+            bootedTGSW[test], invbootedTGSW[test], czeros[test], *ck, *iksk);
     }
     end = chrono::system_clock::now();
 

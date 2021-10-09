@@ -40,10 +40,9 @@ void combUROMUX(TRLWE<lvl1param> &res,
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
-void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
+void combLROMUX(array<TLWE<lvl1param>, 1U << words_bit> &res,
                 const array<TRGSWFFT<lvl1param>, address_bit> &address,
-                const TRLWE<lvl1param> &data,
-                const KeySwitchingKey<lvl10param> &ksk)
+                const TRLWE<lvl1param> &data)
 {
     constexpr uint32_t width_bit =
         lvl1param::nbit -
@@ -73,11 +72,8 @@ void combLROMUX(array<TLWE<lvl0param>, 1U << words_bit> &res,
     }
 
     const uint32_t width = 1 << width_bit;
-    array<TLWE<lvl1param>, width> reslvl1;
     for (int i = 0; i < width; i++)
-        SampleExtractIndex<lvl1param>(reslvl1[i], acc, i);
-    for (int i = 0; i < width; i++)
-        IdentityKeySwitch<lvl10param>(res[i], reslvl1[i], ksk);
+        SampleExtractIndex<lvl1param>(res[i], acc, i);
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
@@ -195,21 +191,20 @@ int main()
                 new array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
                           2>;  // MSB of address is evaluated by HomMUX, not
                                // CMUX.
-            vector<TLWE<lvl0param>> encaddress(address_bit);
+            vector<TLWE<lvl1param>> encaddress(address_bit);
             array<TRLWE<lvl1param>, numromtrlwe> encrom;
             array<array<TRLWE<lvl1param>, numramtrlwe>, words> encram;
 
             array<TRLWE<lvl1param>, words> encramread;
-            array<TLWE<lvl1param>, words> encramreadlvl1;
-            array<TLWE<lvl0param>, words> encramreadres;
+            array<TLWE<lvl1param>, words> encramreadres;
 
             TRLWE<lvl1param> encumemory;
-            array<TLWE<lvl0param>, words> encromreadres;
+            array<TLWE<lvl1param>, words> encromreadres;
 
-            array<TLWE<lvl0param>, words> encreadres;
+            array<TLWE<lvl1param>, words> encreadres;
 
-            TLWE<lvl0param> encwrflag;
-            array<TLWE<lvl0param>, words> encwritep;
+            TLWE<lvl1param> encwrflag;
+            array<TLWE<lvl1param>, words> encwritep;
             array<TRLWE<lvl1param>, words> writed;
 
             encaddress = bootsSymEncrypt(address, *sk);
@@ -221,48 +216,46 @@ int main()
                     encram[i][j] = trlweSymEncrypt<lvl1param>(
                         ramu[i][j], lvl1param::α, (*sk).key.lvl1);
 
-            encwrflag = tlweSymEncrypt<lvl0param>(
-                (wrflag > 0) ? lvl0param::μ : -lvl0param::μ, lvl0param::α,
-                (*sk).key.lvl0);
+            encwrflag = tlweSymEncrypt<lvl1param>(
+                (wrflag > 0) ? lvl1param::μ : -lvl1param::μ, lvl1param::α,
+                (*sk).key.lvl1);
             for (int i = 0; i < words; i++)
-                encwritep[i] = tlweSymEncrypt<lvl0param>(
-                    writep[i] ? lvl0param::μ : -lvl0param::μ, lvl0param::α,
-                    (*sk).key.lvl0);
+                encwritep[i] = tlweSymEncrypt<lvl1param>(
+                    writep[i] ? lvl1param::μ : -lvl1param::μ, lvl1param::α,
+                    (*sk).key.lvl1);
 
             chrono::system_clock::time_point start, end;
             start = chrono::system_clock::now();
             // Addres CB
             for (int i = 0; i < address_bit - 1; i++) {
-                CircuitBootstrappingFFTwithInv<lvl02param, lvl21param>(
+                CircuitBootstrappingFFTwithInv<lvl10param, lvl02param, lvl21param>(
                     (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i],
-                    (*ck).ck);
+                    (*ck).ck,(*ck).gk.ksk);
             }
 
             // Read
             combRAMUX<address_bit - 1, words_bit>(encramread, (*bootedTGSW)[0],
                                                   encram);
             for (int i = 0; i < words; i++) {
-                SampleExtractIndex<lvl1param>(encramreadlvl1[i], encramread[i],
+                SampleExtractIndex<lvl1param>(encramreadres[i], encramread[i],
                                               0);
-                IdentityKeySwitch<lvl10param>(encramreadres[i],
-                                              encramreadlvl1[i], (*ck).gk.ksk);
             }
 
             combUROMUX<address_bit - 1, words_bit>(encumemory, (*bootedTGSW)[0],
                                                    encrom);
             combLROMUX<address_bit - 1, words_bit>(
-                encromreadres, (*bootedTGSW)[1], encumemory, (*ck).gk.ksk);
+                encromreadres, (*bootedTGSW)[1], encumemory);
 
             for (int i = 0; i < words; i++)
                 HomMUX(encreadres[i], encaddress[address_bit - 1],
                        encramreadres[i], encromreadres[i], (*ck).gk);
 
             // Controll
-            TLWE<lvl0param> cs;
+            TLWE<lvl1param> cs;
             HomAND(cs, encwrflag, encaddress[address_bit - 1], (*ck).gk);
             for (int i = 0; i < words; i++)
-                HomMUXwoSE<lvl01param>(writed[i], cs, encwritep[i],
-                                       encramreadres[i], (*ck).gk.bkfftlvl01);
+                HomMUXwoSE<lvl10param,lvl01param>(writed[i], cs, encwritep[i],
+                                       encramreadres[i], (*ck).gk.ksk,(*ck).gk.bkfftlvl01);
 
             // Write
             combWRAM<address_bit - 1, words_bit>(encram, *bootedTGSW, writed,
@@ -278,16 +271,16 @@ int main()
             // test
             for (int i = 0; i < words; i++)
                 pres[i] =
-                    tlweSymDecrypt<lvl0param>(encreadres[i], (*sk).key.lvl0);
+                    tlweSymDecrypt<lvl1param>(encreadres[i], (*sk).key.lvl1);
 
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(ramp[addressint * words + i]) ==
-                       static_cast<int>(tlweSymDecrypt<lvl0param>(
-                           encramreadres[i], (*sk).key.lvl0)));
+                       static_cast<int>(tlweSymDecrypt<lvl1param>(
+                           encramreadres[i], (*sk).key.lvl1)));
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(romp[addressint * words + i]) ==
-                       static_cast<int>(tlweSymDecrypt<lvl0param>(
-                           encromreadres[i], (*sk).key.lvl0)));
+                       static_cast<int>(tlweSymDecrypt<lvl1param>(
+                           encromreadres[i], (*sk).key.lvl1)));
 
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(pres[i]) ==
@@ -302,19 +295,19 @@ int main()
 
             cout << static_cast<int>(wrflag > 0) << ":"
                  << static_cast<int>(
-                        tlweSymDecrypt<lvl0param>(encwrflag, (*sk).key.lvl0))
+                        tlweSymDecrypt<lvl1param>(encwrflag, (*sk).key.lvl1))
                  << endl;
             cout << static_cast<int>(address[address_bit - 1] > 0) << ":"
-                 << static_cast<int>(tlweSymDecrypt<lvl0param>(
-                        encaddress[address_bit - 1], (*sk).key.lvl0))
+                 << static_cast<int>(tlweSymDecrypt<lvl1param>(
+                        encaddress[address_bit - 1], (*sk).key.lvl1))
                  << endl;
             bool csp = ((wrflag > 0) & (address[address_bit - 1] > 0));
             cout << static_cast<int>(csp) << ":"
                  << static_cast<int>(
-                        tlweSymDecrypt<lvl0param>(cs, (*sk).key.lvl0))
+                        tlweSymDecrypt<lvl1param>(cs, (*sk).key.lvl1))
                  << endl;
-            assert(static_cast<int>(tlweSymDecrypt<lvl0param>(
-                       cs, (*sk).key.lvl0)) == static_cast<int>(csp));
+            assert(static_cast<int>(tlweSymDecrypt<lvl1param>(
+                       cs, (*sk).key.lvl1)) == static_cast<int>(csp));
             array<array<bool, lvl1param::n>, words> writedp;
             for (int i = 0; i < words; i++)
                 writedp[i] =
@@ -322,8 +315,8 @@ int main()
 
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(writep[i]) ==
-                       static_cast<int>(tlweSymDecrypt<lvl0param>(
-                           encwritep[i], (*sk).key.lvl0)));
+                       static_cast<int>(tlweSymDecrypt<lvl1param>(
+                           encwritep[i], (*sk).key.lvl1)));
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(writedp[i][0]) ==
                        static_cast<int>(csp ? writep[i]
