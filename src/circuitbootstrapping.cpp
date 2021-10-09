@@ -106,7 +106,7 @@ void CircuitBootstrappingFFTInv(
 {
     TLWE<typename iksP::domainP> invtlwe;
     // HomNot
-    for (int i = 0; i <= bkP::domainP::n; i++) invtlwe[i] = -tlwe[i];
+    for (int i = 0; i <= iksP::domainP::n; i++) invtlwe[i] = -tlwe[i];
     CircuitBootstrappingFFT<iksP,bkP,privksP>(invtrgswfft, invtlwe, ck,iksk);
 }
 #define INST(iksP, bkP, privksP)                                  \

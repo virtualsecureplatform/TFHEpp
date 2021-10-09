@@ -55,7 +55,7 @@ int main()
     array<TRLWE<typename ksP::domainP>, num_trlwe> encmemory;
     vector<TLWE<typename ksP::domainP>> encres(word);
 
-    encaddress = bootsSymEncrypt<typename ksP::domainP>(address, *sk);
+    encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < num_trlwe; i++)
         encmemory[i] = trlweSymEncrypt<typename ksP::domainP>(
             pmu[i], ksP::domainP::α, (*sk).key.get<typename ksP::domainP>());
