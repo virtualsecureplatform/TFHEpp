@@ -195,9 +195,10 @@ int main()
             start = chrono::system_clock::now();
             // Addres CB
             for (int i = 0; i < address_bit - 1; i++) {
-                CircuitBootstrappingFFTwithInv<lvl10param, lvl02param, lvl21param>(
+                CircuitBootstrappingFFTwithInv<lvl10param, lvl02param,
+                                               lvl21param>(
                     (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i],
-                    (*ck).ck,(*ck).gk.ksk);
+                    (*ck).ck, (*ck).gk.ksk);
             }
 
             // Read
@@ -211,19 +212,20 @@ int main()
             combUROMUX<address_bit - 1, words_bit>(encumemory, (*bootedTGSW)[0],
                                                    encrom);
 
-            LROMUX<TFHEpp::lvl1param,address_bit - 1, width_bit>(
+            LROMUX<TFHEpp::lvl1param, address_bit - 1, width_bit>(
                 encromreadres, (*bootedTGSW)[1], encumemory);
 
             for (int i = 0; i < words; i++)
                 HomMUX(encreadres[i], encaddress[address_bit - 1],
                        encramreadres[i], encromreadres[i], (*ck).gk);
-            
+
             // Controll
             TLWE<lvl1param> cs;
             HomAND(cs, encwrflag, encaddress[address_bit - 1], (*ck).gk);
             for (int i = 0; i < words; i++)
-                HomMUXwoSE<lvl10param,lvl01param>(writed[i], cs, encwritep[i],
-                                       encramreadres[i], (*ck).gk.ksk,(*ck).gk.bkfftlvl01);
+                HomMUXwoSE<lvl10param, lvl01param>(
+                    writed[i], cs, encwritep[i], encramreadres[i], (*ck).gk.ksk,
+                    (*ck).gk.bkfftlvl01);
 
             // Write
             combWRAM<address_bit - 1, words_bit>(encram, *bootedTGSW, writed,

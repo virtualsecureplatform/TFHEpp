@@ -19,7 +19,8 @@ int main()
     SecretKey *sk = new SecretKey;
     CircuitKey<lvl02param, lvl21param> *ck =
         new CircuitKey<lvl02param, lvl21param>(*sk);
-    TFHEpp::KeySwitchingKey<TFHEpp::lvl10param> *iksk = new TFHEpp::KeySwitchingKey<TFHEpp::lvl10param>();
+    TFHEpp::KeySwitchingKey<TFHEpp::lvl10param> *iksk =
+        new TFHEpp::KeySwitchingKey<TFHEpp::lvl10param>();
     TFHEpp::ikskgen<TFHEpp::lvl10param>(*iksk, *sk);
 
     vector<array<uint8_t, lvl1param::n>> pa(num_test);
@@ -44,8 +45,8 @@ int main()
     ProfilerStart("cb.prof");
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFT<lvl10param, lvl02param, lvl21param>(bootedTGSW[test],
-                                                        cones[test], *ck, *iksk);
+        CircuitBootstrappingFFT<lvl10param, lvl02param, lvl21param>(
+            bootedTGSW[test], cones[test], *ck, *iksk);
     }
     end = chrono::system_clock::now();
     ProfilerStop();

@@ -63,16 +63,17 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < width_bit; i++)
-        CircuitBootstrappingFFT<ksP,CBbsP, CBprivksP>(bootedTGSW[i], encaddress[i],
-                                                  (*ck).ck,(*ck).gk.ksk);
+        CircuitBootstrappingFFT<ksP, CBbsP, CBprivksP>(
+            bootedTGSW[i], encaddress[i], (*ck).ck, (*ck).gk.ksk);
     for (int i = width_bit; i < address_bit; i++)
-        CircuitBootstrappingFFTInv<ksP,CBbsP, CBprivksP>(bootedTGSW[i],
-                                                     encaddress[i], (*ck).ck,(*ck).gk.ksk);
+        CircuitBootstrappingFFTInv<ksP, CBbsP, CBprivksP>(
+            bootedTGSW[i], encaddress[i], (*ck).ck, (*ck).gk.ksk);
     TRLWE<typename ksP::domainP> encumemory;
 
     UROMUX<typename ksP::domainP, address_bit, width_bit>(
         encumemory, bootedTGSW, encmemory);
-    LROMUX<typename ksP::domainP, address_bit, width_bit>(encres, bootedTGSW, encumemory);
+    LROMUX<typename ksP::domainP, address_bit, width_bit>(encres, bootedTGSW,
+                                                          encumemory);
     end = chrono::system_clock::now();
 
     pres = bootsSymDecrypt(encres, *sk);

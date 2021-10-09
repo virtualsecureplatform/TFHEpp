@@ -108,7 +108,7 @@ void HomMUX(TLWE<lvl1param> &res, const TLWE<lvl1param> &cs,
     for (int i = 0; i <= lvl1param::n; i++) res[i] = -cs[i] + c0[i];
     temp[lvl1param::n] -= lvl1param::μ;
     res[lvl1param::n] -= lvl1param::μ;
-    TLWE<lvl0param> and1,and0;
+    TLWE<lvl0param> and1, and0;
     IdentityKeySwitch<lvl10param>(and1, temp, gk.ksk);
     IdentityKeySwitch<lvl10param>(and0, res, gk.ksk);
     GateBootstrappingTLWE2TLWEFFT<lvl01param>(
@@ -129,7 +129,7 @@ void HomNMUX(TLWE<lvl1param> &res, const TLWE<lvl1param> &cs,
     for (int i = 0; i <= lvl1param::n; i++) res[i] = -cs[i] + c0[i];
     temp[lvl1param::n] -= lvl1param::μ;
     res[lvl1param::n] -= lvl1param::μ;
-    TLWE<lvl0param> and1,and0;
+    TLWE<lvl0param> and1, and0;
     IdentityKeySwitch<lvl10param>(and1, temp, gk.ksk);
     IdentityKeySwitch<lvl10param>(and0, res, gk.ksk);
     GateBootstrappingTLWE2TLWEFFT<lvl01param>(
@@ -155,14 +155,14 @@ void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
     for (int i = 0; i <= iksP::domainP::n; i++) temp0[i] = -cs[i] + c0[i];
     temp1[iksP::domainP::n] -= iksP::domainP::μ;
     temp0[iksP::domainP::n] -= iksP::domainP::μ;
-    TLWE<lvl0param> and1,and0;
+    TLWE<lvl0param> and1, and0;
     IdentityKeySwitch<iksP>(and1, temp1, iksk);
     IdentityKeySwitch<iksP>(and0, temp0, iksk);
     TRLWE<typename bkP::targetP> and0trlwe;
     BlindRotate<bkP>(res, and1, bkfft,
-                   μpolygen<typename bkP::targetP, bkP::targetP::μ>());
+                     μpolygen<typename bkP::targetP, bkP::targetP::μ>());
     BlindRotate<bkP>(and0trlwe, and0, bkfft,
-                   μpolygen<typename bkP::targetP, bkP::targetP::μ>());
+                     μpolygen<typename bkP::targetP, bkP::targetP::μ>());
 
     for (int i = 0; i < bkP::targetP::n; i++) {
         res[0][i] += and0trlwe[0][i];
@@ -170,13 +170,14 @@ void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
     };
     res[1][0] += bkP::targetP::μ;
 }
-#define INST(iksP,bkP)                                                      \
-    template void HomMUXwoSE<iksP,bkP>(TRLWE<typename bkP::targetP> & res,    \
-                                const TLWE<typename iksP::domainP> &cs, \
-                                const TLWE<typename iksP::domainP> &c1, \
-                                const TLWE<typename iksP::domainP> &c0, \
-                                const KeySwitchingKey<iksP> &iksk,      \
-                                const BootstrappingKeyFFT<bkP> &bkfft)
+#define INST(iksP, bkP)                         \
+    template void HomMUXwoSE<iksP, bkP>(        \
+        TRLWE<typename bkP::targetP> & res,     \
+        const TLWE<typename iksP::domainP> &cs, \
+        const TLWE<typename iksP::domainP> &c1, \
+        const TLWE<typename iksP::domainP> &c0, \
+        const KeySwitchingKey<iksP> &iksk,      \
+        const BootstrappingKeyFFT<bkP> &bkfft)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE(INST)
 #undef INST
 

@@ -24,7 +24,8 @@ int main()
     SecretKey *sk = new SecretKey;
     CloudKey<CBbsP, CBprivksP, ksP> *ck =
         new CloudKey<CBbsP, CBprivksP, ksP>(*sk);
-    TFHEpp::KeySwitchingKey<CBiksP> *iksk = new TFHEpp::KeySwitchingKey<CBiksP>();
+    TFHEpp::KeySwitchingKey<CBiksP> *iksk =
+        new TFHEpp::KeySwitchingKey<CBiksP>();
     TFHEpp::ikskgen<CBiksP>(*iksk, *sk);
     vector<uint8_t> pmemory(memsize);
     vector<array<ksP::domainP::T, ksP::domainP::n>> pmu(memsize);
@@ -47,7 +48,8 @@ int main()
     wrflag = binary(engine);
     writep = pmemory[addressint] > 0 ? 0 : 1;
 
-    array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>, 2> *bootedTGSW =
+    array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>,
+          2> *bootedTGSW =
         new array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>, 2>;
     vector<TLWE<typename CBprivksP::targetP>> encaddress(address_bit);
     array<TRLWE<typename CBprivksP::targetP>, memsize> *encmemory =
@@ -73,17 +75,19 @@ int main()
     start = chrono::system_clock::now();
     // Addres CB
     for (int i = 0; i < address_bit; i++) {
-        CircuitBootstrappingFFTwithInv<ksP,CBbsP, CBprivksP>(
-            (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck,(*ck).gk.ksk);
+        CircuitBootstrappingFFTwithInv<ksP, CBbsP, CBprivksP>(
+            (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck,
+            (*ck).gk.ksk);
     }
 
     // Read
-    RAMUX<typename CBprivksP::targetP, address_bit>(encumemory, (*bootedTGSW)[0],
-                                              *encmemory);
+    RAMUX<typename CBprivksP::targetP, address_bit>(
+        encumemory, (*bootedTGSW)[0], *encmemory);
     SampleExtractIndex<typename CBprivksP::targetP>(encreadres, encumemory, 0);
 
     // Write
-    HomMUXwoSE<CBiksP,brP>(writed, cs, c1, encreadres, *iksk, (*ck).gk.bkfftlvl01);
+    HomMUXwoSE<CBiksP, brP>(writed, cs, c1, encreadres, *iksk,
+                            (*ck).gk.bkfftlvl01);
     for (int i = 0; i < memsize; i++) {
         TRLWE<typename CBiksP::domainP> temp;
         TFHEpp::RAMwriteBar<typename CBiksP::domainP, address_bit>(
@@ -92,9 +96,8 @@ int main()
         SampleExtractIndex<typename CBiksP::domainP>(temp2, temp, 0);
         TLWE<typename CBiksP::targetP> temp3;
         IdentityKeySwitch<CBiksP>(temp3, temp2, *iksk);
-        BlindRotate<brP>(
-            (*encmemory)[i], temp3, (*ck).gk.bkfftlvl01,
-            μpolygen<typename brP::targetP, brP::targetP::μ>());
+        BlindRotate<brP>((*encmemory)[i], temp3, (*ck).gk.bkfftlvl01,
+                         μpolygen<typename brP::targetP, brP::targetP::μ>());
     }
 
     end = chrono::system_clock::now();
@@ -109,7 +112,8 @@ int main()
 
     array<bool, CBprivksP::targetP::n> pwriteres =
         trlweSymDecrypt<typename CBprivksP::targetP>(
-            (*encmemory)[addressint], (*sk).key.get<typename CBprivksP::targetP>());
+            (*encmemory)[addressint],
+            (*sk).key.get<typename CBprivksP::targetP>());
     assert(static_cast<int>(pwriteres[0]) ==
            static_cast<int>((wrflag > 0) ? writep : pmemory[addressint]));
 

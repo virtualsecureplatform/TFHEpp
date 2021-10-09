@@ -17,7 +17,8 @@ int main()
     SecretKey *sk = new SecretKey;
     CircuitKey<lvl02param, lvl21param> *ck =
         new CircuitKey<lvl02param, lvl21param>(*sk);
-    TFHEpp::KeySwitchingKey<TFHEpp::lvl10param> *iksk = new TFHEpp::KeySwitchingKey<TFHEpp::lvl10param>();
+    TFHEpp::KeySwitchingKey<TFHEpp::lvl10param> *iksk =
+        new TFHEpp::KeySwitchingKey<TFHEpp::lvl10param>();
     TFHEpp::ikskgen<TFHEpp::lvl10param>(*iksk, *sk);
     vector<array<uint8_t, lvl1param::n>> pa(num_test);
     vector<array<uint32_t, lvl1param::n>> pmu(num_test);

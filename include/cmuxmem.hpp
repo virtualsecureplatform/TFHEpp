@@ -41,7 +41,7 @@ void RAMwriteBar(
         CMUXFFT<P>(res, bootedTRGSW[addressbitset[i]][i], res, encmem);
 }
 
-//MUX tree for vertical packing
+// MUX tree for vertical packing
 template <class P, uint32_t address_bit, uint32_t width_bit>
 void UROMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
             const array<TRLWE<P>, 1 << (address_bit - width_bit)> &data)
@@ -68,19 +68,16 @@ void UROMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
     CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
 }
 
-//MUX tree for horizontal packing
+// MUX tree for horizontal packing
 template <class P, uint32_t address_bit, uint32_t width_bit>
 void LROMUX(vector<TLWE<P>> &res,
             const array<TRGSWFFT<P>, address_bit> &address,
             const TRLWE<P> &data)
 {
     TRLWE<P> temp, acc;
-    PolynomialMulByXaiMinusOne<P>(
-        temp[0], data[0], 2 * P::n - (P::n >> 1));
-    PolynomialMulByXaiMinusOne<P>(
-        temp[1], data[1], 2 * P::n - (P::n >> 1));
-    trgswfftExternalProduct<P>(temp, temp,
-                                                   address[width_bit - 1]);
+    PolynomialMulByXaiMinusOne<P>(temp[0], data[0], 2 * P::n - (P::n >> 1));
+    PolynomialMulByXaiMinusOne<P>(temp[1], data[1], 2 * P::n - (P::n >> 1));
+    trgswfftExternalProduct<P>(temp, temp, address[width_bit - 1]);
     for (int i = 0; i < P::n; i++) {
         // initialize acc
         acc[0][i] = temp[0][i] + data[0][i];
@@ -88,12 +85,11 @@ void LROMUX(vector<TLWE<P>> &res,
     }
 
     for (uint32_t bit = 2; bit <= width_bit; bit++) {
-        PolynomialMulByXaiMinusOne<P>(
-            temp[0], acc[0], 2 * P::n - (P::n >> bit));
-        PolynomialMulByXaiMinusOne<P>(
-            temp[1], acc[1], 2 * P::n - (P::n >> bit));
-        trgswfftExternalProduct<P>(
-            temp, temp, address[width_bit - bit]);
+        PolynomialMulByXaiMinusOne<P>(temp[0], acc[0],
+                                      2 * P::n - (P::n >> bit));
+        PolynomialMulByXaiMinusOne<P>(temp[1], acc[1],
+                                      2 * P::n - (P::n >> bit));
+        trgswfftExternalProduct<P>(temp, temp, address[width_bit - bit]);
         for (int i = 0; i < P::n; i++) {
             acc[0][i] += temp[0][i];
             acc[1][i] += temp[1][i];
@@ -101,7 +97,6 @@ void LROMUX(vector<TLWE<P>> &res,
     }
 
     constexpr uint32_t word = 1 << (P::nbit - width_bit);
-    for (int i = 0; i < word; i++)
-        SampleExtractIndex<P>(res[i], acc, i);
+    for (int i = 0; i < word; i++) SampleExtractIndex<P>(res[i], acc, i);
 }
 }  // namespace TFHEpp

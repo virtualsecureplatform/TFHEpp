@@ -116,9 +116,9 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
     fun(lvl10param, lvl01param);                \
     fun(lvl10param, lvl02param);                \
     fun(lvl20param, lvl01param);                \
-    fun(lvl20param, lvl02param);                
+    fun(lvl20param, lvl02param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_KEY(fun) \
-    fun(lvl02param, lvl21param);                     \
+    fun(lvl02param, lvl21param);                       \
     fun(lvl02param, lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(fun) \
     fun(lvl10param, lvl02param, lvl21param);                     \

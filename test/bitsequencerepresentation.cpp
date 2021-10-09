@@ -72,11 +72,11 @@ int main()
         std::array<TFHEpp::TRGSWFFT<TFHEpp::lvl2param>, int_width> trgswa,
             trgswb;
         for (int i = 0; i < int_width; i++)
-            TFHEpp::CircuitBootstrappingFFT<iksP,TFHEpp::lvl02param,
+            TFHEpp::CircuitBootstrappingFFT<iksP, TFHEpp::lvl02param,
                                             TFHEpp::lvl22param>(
                 trgswa[i], tlwea[test][i], *ck, *iksk);
         for (int i = 0; i < int_width; i++)
-            TFHEpp::CircuitBootstrappingFFT<iksP,TFHEpp::lvl02param,
+            TFHEpp::CircuitBootstrappingFFT<iksP, TFHEpp::lvl02param,
                                             TFHEpp::lvl22param>(
                 trgswb[i], tlweb[test][i], *ck, *iksk);
         AddByTBSR<TFHEpp::lvl2param, int_width>(res[test], trgswa, trgswb);
