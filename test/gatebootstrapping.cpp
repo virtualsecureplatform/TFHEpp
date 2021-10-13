@@ -3,26 +3,25 @@
 #include <random>
 #include <tfhe++.hpp>
 
-using namespace std;
-using namespace TFHEpp;
-
 int main()
 {
     constexpr uint32_t num_test = 1000;
-    random_device seed_gen;
-    default_random_engine engine(seed_gen());
-    uniform_int_distribution<uint32_t> binary(0, 1);
+    std::random_device seed_gen;
+    std::default_random_engine engine(seed_gen());
+    std::uniform_int_distribution<uint32_t> binary(0, 1);
 
-    SecretKey sk;
-    GateKey* gk = new GateKey(sk);
+    TFHEpp::SecretKey sk;
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<TFHEpp::lvl01param>(sk);
+    ek.emplaceiksk<TFHEpp::lvl10param>(sk);
     for (int test = 0; test < num_test; test++) {
         bool p = binary(engine) > 0;
-        TLWE<lvl1param> tlwe = tlweSymEncrypt<lvl1param>(
-            p ? lvl1param::μ : -lvl1param::μ, lvl1param::α, sk.key.lvl1);
-        TLWE<lvl1param> bootedtlwe;
-        GateBootstrapping(bootedtlwe, tlwe, *gk);
-        bool p2 = tlweSymDecrypt<lvl1param>(bootedtlwe, sk.key.lvl1);
+        TFHEpp::TLWE<TFHEpp::lvl1param> tlwe = TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
+            p ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ, TFHEpp::lvl1param::α, sk.key.lvl1);
+        TFHEpp::TLWE<TFHEpp::lvl1param> bootedtlwe;
+        TFHEpp::GateBootstrapping(bootedtlwe, tlwe, ek);
+        bool p2 = TFHEpp::tlweSymDecrypt<TFHEpp::lvl1param>(bootedtlwe, sk.key.lvl1);
         assert(p == p2);
     }
-    cout << "Passed" << endl;
+    std::cout << "Passed" << std::endl;
 }

@@ -41,4 +41,15 @@ int main()
             iopacket.serialize(ar);
         }
     }
+
+    {
+        TFHEpp::EvalKey ek;
+        ek.emplacebkfft<TFHEpp::lvl01param>(sk);
+        ek.emplaceiksk<TFHEpp::lvl10param>(sk);
+        {
+            std::ofstream ofs{"./gatekey.key", std::ios::binary};
+            cereal::PortableBinaryOutputArchive ar(ofs);
+            ek.serialize(ar);
+        }
+    }
 }

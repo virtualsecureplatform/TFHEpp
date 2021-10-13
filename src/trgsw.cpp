@@ -157,8 +157,7 @@ TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
     return trgswntt;
 }
 #define INST(P) template TRGSWNTT<P> ApplyNTT2trgsw<P>(const TRGSW<P> &trgsw)
-// TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-INST(lvl1param);
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 template <class P>

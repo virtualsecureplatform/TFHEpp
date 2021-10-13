@@ -14,12 +14,16 @@ int main()
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint32_t> binary(0, 1);
 
-    SecretKey *sk = new SecretKey;
-    CircuitKey<lvl02param, lvl21param> *ck =
-        new CircuitKey<lvl02param, lvl21param>(*sk);
-    TFHEpp::KeySwitchingKey<TFHEpp::lvl10param> *iksk =
-        new TFHEpp::KeySwitchingKey<TFHEpp::lvl10param>();
-    TFHEpp::ikskgen<TFHEpp::lvl10param>(*iksk, *sk);
+    using iksP = TFHEpp::lvl10param;
+    using bkP = TFHEpp::lvl02param;
+    using privksP = TFHEpp::lvl21param;
+
+    TFHEpp::SecretKey *sk = new TFHEpp::SecretKey;
+    TFHEpp::EvalKey ek;
+    ek.emplaceiksk<iksP>(*sk);
+    ek.emplacebkfft<bkP>(*sk);
+    ek.emplaceprivksk<privksP,1>(*sk);
+    ek.emplaceprivksk<privksP,0>(*sk);
     vector<array<uint8_t, lvl1param::n>> pa(num_test);
     vector<array<uint32_t, lvl1param::n>> pmu(num_test);
     vector<uint8_t> pzeros(num_test);
@@ -43,7 +47,7 @@ int main()
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         CircuitBootstrappingFFTwithInv<lvl10param, lvl02param, lvl21param>(
-            bootedTGSW[test], invbootedTGSW[test], czeros[test], *ck, *iksk);
+            bootedTGSW[test], invbootedTGSW[test], czeros[test], ek);
     }
     end = chrono::system_clock::now();
 

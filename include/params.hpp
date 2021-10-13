@@ -106,10 +106,14 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
 #define TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(fun) \
     fun(lvl01param);                                    \
     fun(lvl02param);
-#define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(fun) \
+#define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(fun) \
     fun(lvl10param);                                  \
     fun(lvl11param);                                  \
     fun(lvl20param);                                  \
+    fun(lvl21param);                                  \
+    fun(lvl22param);
+#define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(fun) \
+    fun(lvl11param);                                  \
     fun(lvl21param);                                  \
     fun(lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_GATE(fun) \

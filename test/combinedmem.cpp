@@ -75,7 +75,7 @@ void combWRAM(
     array<array<TRLWE<lvl1param>, 1U << address_bit>, 1U << words_bit> &encram,
     const array<array<TRGSWFFT<lvl1param>, address_bit>, 2> &address,
     const array<TRLWE<lvl1param>, 1U << words_bit> &encwritep,
-    const GateKey &gk)
+    const EvalKey &ek)
 {
     constexpr uint32_t memsize = 1U << address_bit;
     constexpr uint32_t words = 1U << words_bit;
@@ -91,8 +91,8 @@ void combWRAM(
             TLWE<lvl1param> temp2;
             SampleExtractIndex<lvl1param>(temp2, temp, 0);
             TLWE<lvl0param> temp3;
-            IdentityKeySwitch<lvl10param>(temp3, temp2, gk.ksk);
-            BlindRotate<lvl01param>(encram[j][i], temp3, gk.bkfftlvl01,
+            IdentityKeySwitch<lvl10param>(temp3, temp2, *ek.iksklvl10);
+            BlindRotate<lvl01param>(encram[j][i], temp3, *ek.bkfftlvl01,
                                     μpolygen<lvl1param, lvl1param::μ>());
         }
     }
@@ -115,8 +115,13 @@ int main()
     uniform_int_distribution<uint8_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CloudKey<lvl02param, lvl21param, lvl20param> *ck =
-        new CloudKey<lvl02param, lvl21param, lvl20param>(*sk);
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
+    ek.emplacebkfft<TFHEpp::lvl02param>(*sk);
+    ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
+    ek.emplaceiksk<TFHEpp::lvl20param>(*sk);
+    ek.emplaceprivksk<TFHEpp::lvl21param,1>(*sk);
+    ek.emplaceprivksk<TFHEpp::lvl21param,0>(*sk);
     vector<uint8_t> ramp(memsize / 2 * words);  // unit of memsize is byte(8bit)
     vector<uint8_t> romp(memsize / 2 * words);
     vector<array<array<uint32_t, lvl1param::n>, numramtrlwe>> ramu(words);
@@ -198,7 +203,7 @@ int main()
                 CircuitBootstrappingFFTwithInv<lvl10param, lvl02param,
                                                lvl21param>(
                     (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i],
-                    (*ck).ck, (*ck).gk.ksk);
+                    ek);
             }
 
             // Read
@@ -217,19 +222,19 @@ int main()
 
             for (int i = 0; i < words; i++)
                 HomMUX(encreadres[i], encaddress[address_bit - 1],
-                       encramreadres[i], encromreadres[i], (*ck).gk);
+                       encramreadres[i], encromreadres[i], ek);
 
             // Controll
             TLWE<lvl1param> cs;
-            HomAND(cs, encwrflag, encaddress[address_bit - 1], (*ck).gk);
+            HomAND(cs, encwrflag, encaddress[address_bit - 1], ek);
             for (int i = 0; i < words; i++)
                 HomMUXwoSE<lvl10param, lvl01param>(
-                    writed[i], cs, encwritep[i], encramreadres[i], (*ck).gk.ksk,
-                    (*ck).gk.bkfftlvl01);
+                    writed[i], cs, encwritep[i], encramreadres[i], *ek.iksklvl10,
+                    *ek.bkfftlvl01);
 
             // Write
             combWRAM<address_bit - 1, words_bit>(encram, *bootedTGSW, writed,
-                                                 (*ck).gk);
+                                                 ek);
 
             end = chrono::system_clock::now();
             double elapsed =

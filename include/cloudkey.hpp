@@ -2,11 +2,16 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/array.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/unordered_map.hpp>
 
+#include "key.hpp"
 #include "params.hpp"
 #include "tlwe.hpp"
 #include "trgsw.hpp"
 #include "trlwe.hpp"
+#include "utils.hpp"
 
 namespace TFHEpp {
 
@@ -49,28 +54,9 @@ template <class P>
 void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk);
 
 template <class P>
-inline void privkskgen(PrivateKeySwitchingKey<P> &privksk,
-                       Polynomial<typename P::targetP> func,
-                       const SecretKey &sk)
-{
-    std::array<typename P::domainP::T, P::domainP::n + 1> key;
-    for (int i = 0; i < P::domainP::n; i++) key[i] = sk.key.lvl2[i];
-    key[P::domainP::n] = -1;
-#pragma omp parallel for collapse(3)
-    for (int i = 0; i <= P::domainP::n; i++)
-        for (int j = 0; j < P::t; j++)
-            for (typename P::targetP::T u = 0; u < (1 << P::basebit) - 1; u++) {
-                TRLWE<typename P::targetP> c =
-                    trlweSymEncryptZero<typename P::targetP>(
-                        P::α, sk.key.get<typename P::targetP>());
-                for (int k = 0; k < P::targetP::n; k++)
-                    c[1][k] +=
-                        (u + 1) * func[k] * key[i]
-                        << (numeric_limits<typename P::targetP::T>::digits -
-                            (j + 1) * P::basebit);
-                privksk[i][j][u] = c;
-            }
-}
+void privkskgen(PrivateKeySwitchingKey<P> &privksk,
+                       const Polynomial<typename P::targetP>& func,
+                       const SecretKey &sk);
 
 template <class P>
 inline relinKey<P> relinKeygen(const Key<P> &key)
@@ -99,69 +85,56 @@ inline relinKeyFFT<P> relinKeyFFTgen(const Key<P> &key)
     return relinkeyfft;
 }
 
-struct GateKeywoFFT {
-    BootstrappingKey<lvl01param> bklvl01;
-    KeySwitchingKey<lvl10param> ksk;
-    GateKeywoFFT(const SecretKey &sk);
-    GateKeywoFFT() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(ksk, bklvl01);
-    }
-};
-
-struct GateKey {
-    BootstrappingKeyFFT<lvl01param> bkfftlvl01;
-    KeySwitchingKey<lvl10param> ksk;
-    GateKey(const SecretKey &sk);
-    GateKey(const GateKeywoFFT &gkwofft);
-    GateKey() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(ksk, bkfftlvl01);
-    }
-};
-
-struct GateKeyNTT {
-    BootstrappingKeyNTT<lvl01param> bknttlvl01;
-    KeySwitchingKey<lvl10param> ksk;
-    // GateKey(const SecretKey &sk);
-    GateKeyNTT(const GateKeywoFFT &gkwofft);
-    GateKeyNTT() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(ksk, bknttlvl01);
-    }
-};
-
-template <class bsP, class privksP>
-struct CircuitKey {
-    BootstrappingKeyFFT<bsP> bkfft;
-    std::array<PrivateKeySwitchingKey<privksP>, 2> privksk;
-    CircuitKey(const SecretKey &sk);
-    CircuitKey() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(privksk, bkfft);
-    }
-};
-
-template <class CBbsP, class CBprivksP, class CMksP>
-struct CloudKey {
-    GateKey gk;
-    CircuitKey<CBbsP, CBprivksP> ck;
-    KeySwitchingKey<CMksP> ksk;
+struct EvalKey {
     lweParams params;
-    CloudKey(SecretKey sk) : gk(sk), ck(sk) { ikskgen<CMksP>(ksk, sk); }
-    CloudKey() {}
+    std::unique_ptr<BootstrappingKey<lvl01param>> bklvl01;
+    std::unique_ptr<BootstrappingKey<lvl02param>> bklvl02;
+    std::unique_ptr<BootstrappingKeyFFT<lvl01param>> bkfftlvl01;
+    std::unique_ptr<BootstrappingKeyFFT<lvl02param>> bkfftlvl02;
+    std::unique_ptr<BootstrappingKeyNTT<lvl01param>> bknttlvl01;
+    std::unique_ptr<BootstrappingKeyNTT<lvl02param>> bknttlvl02;
+    std::unique_ptr<KeySwitchingKey<lvl10param>> iksklvl10;
+    std::unique_ptr<KeySwitchingKey<lvl11param>> iksklvl11;
+    std::unique_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
+    std::unique_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
+    std::unique_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
+    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>> privksklvl11;
+    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl21param>>> privksklvl21;
+    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>> privksklvl22;
+
+    EvalKey(SecretKey sk) {params = sk.params;}
+    EvalKey() {}
+
+    template<class P> void emplacebk(const SecretKey &sk);
+    template<class P> void emplacebkfft(const SecretKey &sk);
+    template<class P> void emplacebkntt(const SecretKey &sk);
+    template<class P> void emplacebk2bkfft();
+    template<class P> void emplacebk2bkntt();
+    template<class P> void emplaceiksk(const SecretKey &sk);
+    template<class P> void emplaceprivksk(const std::string &key, const Polynomial<typename P::targetP>& func, const SecretKey &sk);
+    template<class P, uint index> void emplaceprivksk(const SecretKey &sk){
+        if constexpr(index == 0){
+            emplaceprivksk<P>("identity",{1},sk);
+        }else if constexpr(index == 1){
+            TFHEpp::Polynomial<typename P::targetP> poly;
+            for (int i = 0; i < P::targetP::n; i++)
+                poly[i] = -sk.key.get<typename P::targetP>()[i];
+            emplaceprivksk<P>("secret key",poly,sk);
+        }else{
+            static_assert(false_v<P>, "Not a predefined function for Private Key Switching!");
+        }
+    }
+
+    template<class P> BootstrappingKey<P>& getbk() const;
+    template<class P> BootstrappingKeyFFT<P>& getbkfft() const;
+    template<class P> BootstrappingKeyNTT<P>& getbkntt() const;
+    template<class P> KeySwitchingKey<P>& getiksk() const;
+    template<class P> PrivateKeySwitchingKey<P>& getprivksk(const std::string &key) const;
+
     template <class Archive>
     void serialize(Archive &archive)
     {
-        archive(gk.ksk, gk.bkfftlvl01, ck.privksk, ck.bkfft, params);
+        archive(params,bklvl01,bklvl02,bkfftlvl01,bkfftlvl02,bknttlvl01,bknttlvl02,iksklvl10,iksklvl11,iksklvl20,iksklvl21,iksklvl22,privksklvl11,privksklvl21,privksklvl22);
     }
 };
 }  // namespace TFHEpp
