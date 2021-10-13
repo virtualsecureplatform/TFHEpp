@@ -65,7 +65,7 @@ uint8_t NMuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
 template <class Func, class Chegk>
 void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
           vector<TLWE<lvl1param>> cres, vector<TLWE<lvl1param>> c,
-          const int kNumTests, SecretKey& sk, GateKey& gk)
+          const int kNumTests, const SecretKey& sk, const EvalKey& ek)
 {
     random_device seed_gen;
     default_random_engine engine(seed_gen());
@@ -90,23 +90,23 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
         }
         else if constexpr (std::is_invocable_v<
                                Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
-                               const TLWE<lvl1param>&, const GateKey&>) {
-            func(cres[i], c[i], c[i + kNumTests], gk);
+                               const TLWE<lvl1param>&, const EvalKey&>) {
+            func(cres[i], c[i], c[i + kNumTests], ek);
             p[i] = chegk(p[i], p[i + kNumTests]);
         }
         else if constexpr (std::is_invocable_v<
                                Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
                                const TLWE<lvl1param>&, const TLWE<lvl1param>&,
-                               const GateKey&>) {
-            func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2], gk);
+                               const EvalKey&>) {
+            func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2], ek);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2]);
         }
         else if constexpr (std::is_invocable_v<
                                Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
                                const TLWE<lvl1param>&, const TLWE<lvl1param>&,
-                               const TLWE<lvl1param>&, const GateKey&>) {
+                               const TLWE<lvl1param>&, const EvalKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2],
-                 c[i + kNumTests * 3], gk);
+                 c[i + kNumTests * 3], ek);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2],
                          p[i + kNumTests * 3]);
         }
@@ -131,29 +131,31 @@ int main()
 
     cout << "------ Key Generation ------" << endl;
     SecretKey* sk = new SecretKey();
-    GateKey* gk = new GateKey(*sk);
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
+    ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     // MUX Need 3 input
     vector<uint8_t> p(3 * kNumTests);
     vector<TLWE<lvl1param>> cres(kNumTests);
     vector<TLWE<lvl1param>> c(3 * kNumTests);
 
-    Test("NOT", HomNOT, NotChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("COPY", HomCOPY, CopyChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("NAND", HomNAND, NandChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("OR", HomOR, OrChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("ORYN", HomORYN, OrYNChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("ORNY", HomORNY, OrNYChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("AND", HomAND, AndChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("ANDYN", HomANDYN, AndYNChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("ANDNY", HomANDNY, AndNYChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("XOR", HomXOR, XorChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("XNOR", HomXNOR, XnorChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("MUX", HomMUX, MuxChegk, p, cres, c, kNumTests, *sk, *gk);
-    Test("NMUX", HomNMUX, NMuxChegk, p, cres, c, kNumTests, *sk, *gk);
+    Test("NOT", HomNOT, NotChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("COPY", HomCOPY, CopyChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("NAND", HomNAND, NandChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("OR", HomOR, OrChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("ORYN", HomORYN, OrYNChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("ORNY", HomORNY, OrNYChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("AND", HomAND, AndChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("ANDYN", HomANDYN, AndYNChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("ANDNY", HomANDNY, AndNYChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("XOR", HomXOR, XorChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("XNOR", HomXNOR, XnorChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("MUX", HomMUX, MuxChegk, p, cres, c, kNumTests, *sk, ek);
+    Test("NMUX", HomNMUX, NMuxChegk, p, cres, c, kNumTests, *sk, ek);
     Test("ConstantZero", HomCONSTANTZERO, ConstantZeroChegk, p, cres, c,
-         kNumTests, *sk, *gk);
+         kNumTests, *sk, ek);
     Test("ConstantOne", HomCONSTANTONE, ConstantOneChegk, p, cres, c, kNumTests,
-         *sk, *gk);
+         *sk, ek);
 
     return 0;
 }

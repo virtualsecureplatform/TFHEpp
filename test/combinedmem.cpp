@@ -117,6 +117,9 @@ int main()
     SecretKey *sk = new SecretKey;
     CloudKey<lvl02param, lvl21param, lvl20param> *ck =
         new CloudKey<lvl02param, lvl21param, lvl20param>(*sk);
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
+    ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     vector<uint8_t> ramp(memsize / 2 * words);  // unit of memsize is byte(8bit)
     vector<uint8_t> romp(memsize / 2 * words);
     vector<array<array<uint32_t, lvl1param::n>, numramtrlwe>> ramu(words);
@@ -217,15 +220,15 @@ int main()
 
             for (int i = 0; i < words; i++)
                 HomMUX(encreadres[i], encaddress[address_bit - 1],
-                       encramreadres[i], encromreadres[i], (*ck).gk);
+                       encramreadres[i], encromreadres[i], ek);
 
             // Controll
             TLWE<lvl1param> cs;
-            HomAND(cs, encwrflag, encaddress[address_bit - 1], (*ck).gk);
+            HomAND(cs, encwrflag, encaddress[address_bit - 1], ek);
             for (int i = 0; i < words; i++)
                 HomMUXwoSE<lvl10param, lvl01param>(
-                    writed[i], cs, encwritep[i], encramreadres[i], (*ck).gk.ksk,
-                    (*ck).gk.bkfftlvl01);
+                    writed[i], cs, encwritep[i], encramreadres[i], *ek.iksklvl10,
+                    *ek.bkfftlvl01);
 
             // Write
             combWRAM<address_bit - 1, words_bit>(encram, *bootedTGSW, writed,

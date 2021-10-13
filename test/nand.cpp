@@ -15,7 +15,9 @@ int main()
     uniform_int_distribution<uint32_t> binary(0, 1);
 
     SecretKey* sk = new SecretKey();
-    GateKey* gk = new GateKey(*sk);
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
+    ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     vector<uint8_t> pa(num_test);
     vector<uint8_t> pb(num_test);
     vector<uint8_t> pres(num_test);
@@ -32,7 +34,7 @@ int main()
     start = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        HomNAND(cres[test], ca[test], cb[test], *gk);
+        HomNAND(cres[test], ca[test], cb[test], ek);
     }
 
     end = chrono::system_clock::now();

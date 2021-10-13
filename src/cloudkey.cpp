@@ -117,4 +117,116 @@ CircuitKey<bsP, privksP>::CircuitKey(const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_KEY(INST)
 #undef INST
 
+template<class P>
+void EvalKey::emplacebkfft(const SecretKey& sk){
+    if constexpr (std::is_same_v<P, lvl01param>){
+        bkfftlvl01 = std::make_unique<BootstrappingKeyFFT<lvl01param>>();
+        bkfftgen<lvl01param>(*bkfftlvl01, sk);
+    }
+    else if constexpr (std::is_same_v<P, lvl02param>){
+        bkfftlvl02 = std::make_unique<BootstrappingKeyFFT<lvl02param>>();
+        bkfftgen<lvl02param>(*bkfftlvl02, sk);
+    }
+}
+#define INST(P)                                     \
+    template void EvalKey::emplacebkfft<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template<class P>
+void EvalKey::emplaceiksk(const SecretKey& sk){
+    if constexpr (std::is_same_v<P, lvl10param>){
+        iksklvl10 = std::make_unique<KeySwitchingKey<lvl10param>>();
+        ikskgen<lvl10param>(*iksklvl10, sk);
+    }
+    else if constexpr (std::is_same_v<P, lvl20param>){
+        iksklvl20 = std::make_unique<KeySwitchingKey<lvl20param>>();
+        ikskgen<lvl20param>(*iksklvl20, sk);
+    }
+    else if constexpr (std::is_same_v<P, lvl21param>){
+        iksklvl21 = std::make_unique<KeySwitchingKey<lvl21param>>();
+        ikskgen<lvl21param>(*iksklvl21, sk);
+    }
+}
+#define INST(P)                                     \
+    template void EvalKey::emplaceiksk<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+#undef INST
+
+template<class P>
+void EvalKey::emplaceprivksk(const Polynomial<typename P::targetP>& func, const SecretKey& sk){
+    if constexpr (std::is_same_v<P, lvl21param>){
+        privksklvl21 = std::make_unique<PrivateKeySwitchingKey<lvl21param>>();
+        privkskgen<lvl21param>(*privksklvl21, func, sk);
+    }
+    else if constexpr (std::is_same_v<P, lvl22param>){
+        privksklvl22 = std::make_unique<PrivateKeySwitchingKey<lvl22param>>();
+        privkskgen<lvl22param>(*privksklvl22, func, sk);
+    }
+}
+#define INST(P)                                     \
+    template void EvalKey::emplaceprivksk<P>(const Polynomial<typename P::targetP>& func, const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+#undef INST
+
+template<class P>
+BootstrappingKeyFFT<P>& EvalKey::getbkfft(){
+    if constexpr (std::is_same_v<P, lvl01param>){
+        return *bkfftlvl01;
+    }
+    else if constexpr (std::is_same_v<P, lvl02param>){
+        return *bkfftlvl02;
+    }
+}
+#define INST(P)                                     \
+    template BootstrappingKeyFFT<P>& EvalKey::getbkfft<P>()
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template<class P>
+KeySwitchingKey<P>& EvalKey::getiksk(){
+    if constexpr (std::is_same_v<P, lvl10param>){
+        return *iksklvl10;
+    }
+    else if constexpr (std::is_same_v<P, lvl11param>){
+        return *iksklvl11;
+    }
+    else if constexpr (std::is_same_v<P, lvl20param>){
+        return *iksklvl20;
+    }
+    else if constexpr (std::is_same_v<P, lvl21param>){
+        return *iksklvl21;
+    }
+    else if constexpr (std::is_same_v<P, lvl22param>){
+        return *iksklvl22;
+    }
+}
+#define INST(P)                                     \
+    template KeySwitchingKey<P>& EvalKey::getiksk<P>()
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+#undef INST
+
+template<class P>
+PrivateKeySwitchingKey<P>& EvalKey::getprivksk(){
+    if constexpr (std::is_same_v<P, lvl10param>){
+        return *privksklvl10;
+    }
+    if constexpr (std::is_same_v<P, lvl11param>){
+        return *privksklvl11;
+    }
+    else if constexpr (std::is_same_v<P, lvl20param>){
+        return *privksklvl20;
+    }
+    else if constexpr (std::is_same_v<P, lvl21param>){
+        return *privksklvl21;
+    }
+    else if constexpr (std::is_same_v<P, lvl22param>){
+        return *privksklvl22;
+    }
+}
+#define INST(P)                                     \
+    template PrivateKeySwitchingKey<P>& EvalKey::getprivksk<P>()
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+#undef INST
+
 }  // namespace TFHEpp

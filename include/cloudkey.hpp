@@ -3,6 +3,7 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/array.hpp>
 
+#include "key.hpp"
 #include "params.hpp"
 #include "tlwe.hpp"
 #include "trgsw.hpp"
@@ -50,7 +51,7 @@ void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk);
 
 template <class P>
 inline void privkskgen(PrivateKeySwitchingKey<P> &privksk,
-                       Polynomial<typename P::targetP> func,
+                       const Polynomial<typename P::targetP>& func,
                        const SecretKey &sk)
 {
     std::array<typename P::domainP::T, P::domainP::n + 1> key;
@@ -156,12 +157,45 @@ struct CloudKey {
     CircuitKey<CBbsP, CBprivksP> ck;
     KeySwitchingKey<CMksP> ksk;
     lweParams params;
-    CloudKey(SecretKey sk) : gk(sk), ck(sk) { ikskgen<CMksP>(ksk, sk); }
+    CloudKey(SecretKey sk) : gk(sk), ck(sk) { ikskgen<CMksP>(ksk, sk); params = sk.params;}
     CloudKey() {}
     template <class Archive>
     void serialize(Archive &archive)
     {
         archive(gk.ksk, gk.bkfftlvl01, ck.privksk, ck.bkfft, params);
+    }
+};
+
+struct EvalKey {
+    lweParams params;
+    std::unique_ptr<BootstrappingKeyFFT<lvl01param>> bkfftlvl01;
+    std::unique_ptr<BootstrappingKeyFFT<lvl02param>> bkfftlvl02;
+    std::unique_ptr<KeySwitchingKey<lvl10param>> iksklvl10;
+    std::unique_ptr<KeySwitchingKey<lvl11param>> iksklvl11;
+    std::unique_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
+    std::unique_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
+    std::unique_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
+    std::unique_ptr<PrivateKeySwitchingKey<lvl10param>> privksklvl10;
+    std::unique_ptr<PrivateKeySwitchingKey<lvl11param>> privksklvl11;
+    std::unique_ptr<PrivateKeySwitchingKey<lvl20param>> privksklvl20;
+    std::unique_ptr<PrivateKeySwitchingKey<lvl21param>> privksklvl21;
+    std::unique_ptr<PrivateKeySwitchingKey<lvl22param>> privksklvl22;
+
+    EvalKey(SecretKey sk) {params = sk.params;}
+    EvalKey() {}
+
+    template<class P> void emplacebkfft(const SecretKey &sk);
+    template<class P> void emplaceiksk(const SecretKey &sk);
+    template<class P> void emplaceprivksk(const Polynomial<typename P::targetP>& func, const SecretKey &sk);
+
+    template<class P> BootstrappingKeyFFT<P>& getbkfft();
+    template<class P> KeySwitchingKey<P>& getiksk();
+    template<class P> PrivateKeySwitchingKey<P>& getprivksk();
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(params,bkfftlvl01,bkfftlvl02,iksklvl10,iksklvl20,iksklvl21,privksklvl21,privksklvl22);
     }
 };
 }  // namespace TFHEpp
