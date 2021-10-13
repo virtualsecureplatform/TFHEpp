@@ -2,6 +2,9 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/array.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/unordered_map.hpp>
 
 #include "key.hpp"
 #include "params.hpp"
@@ -82,48 +85,14 @@ inline relinKeyFFT<P> relinKeyFFTgen(const Key<P> &key)
     return relinkeyfft;
 }
 
-struct GateKeywoFFT {
-    BootstrappingKey<lvl01param> bklvl01;
-    KeySwitchingKey<lvl10param> ksk;
-    GateKeywoFFT(const SecretKey &sk);
-    GateKeywoFFT() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(ksk, bklvl01);
-    }
-};
-
-struct GateKey {
-    BootstrappingKeyFFT<lvl01param> bkfftlvl01;
-    KeySwitchingKey<lvl10param> ksk;
-    GateKey(const SecretKey &sk);
-    GateKey(const GateKeywoFFT &gkwofft);
-    GateKey() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(ksk, bkfftlvl01);
-    }
-};
-
-struct GateKeyNTT {
-    BootstrappingKeyNTT<lvl01param> bknttlvl01;
-    KeySwitchingKey<lvl10param> ksk;
-    // GateKey(const SecretKey &sk);
-    GateKeyNTT(const GateKeywoFFT &gkwofft);
-    GateKeyNTT() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(ksk, bknttlvl01);
-    }
-};
-
 struct EvalKey {
     lweParams params;
+    std::unique_ptr<BootstrappingKey<lvl01param>> bklvl01;
+    std::unique_ptr<BootstrappingKey<lvl02param>> bklvl02;
     std::unique_ptr<BootstrappingKeyFFT<lvl01param>> bkfftlvl01;
     std::unique_ptr<BootstrappingKeyFFT<lvl02param>> bkfftlvl02;
+    std::unique_ptr<BootstrappingKeyNTT<lvl01param>> bknttlvl01;
+    std::unique_ptr<BootstrappingKeyNTT<lvl02param>> bknttlvl02;
     std::unique_ptr<KeySwitchingKey<lvl10param>> iksklvl10;
     std::unique_ptr<KeySwitchingKey<lvl11param>> iksklvl11;
     std::unique_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
@@ -136,7 +105,11 @@ struct EvalKey {
     EvalKey(SecretKey sk) {params = sk.params;}
     EvalKey() {}
 
+    template<class P> void emplacebk(const SecretKey &sk);
     template<class P> void emplacebkfft(const SecretKey &sk);
+    template<class P> void emplacebkntt(const SecretKey &sk);
+    template<class P> void emplacebk2bkfft();
+    template<class P> void emplacebk2bkntt();
     template<class P> void emplaceiksk(const SecretKey &sk);
     template<class P> void emplaceprivksk(const std::string &key, const Polynomial<typename P::targetP>& func, const SecretKey &sk);
     template<class P, uint index> void emplaceprivksk(const SecretKey &sk){
@@ -152,14 +125,16 @@ struct EvalKey {
         }
     }
 
+    template<class P> BootstrappingKey<P>& getbk() const;
     template<class P> BootstrappingKeyFFT<P>& getbkfft() const;
+    template<class P> BootstrappingKeyNTT<P>& getbkntt() const;
     template<class P> KeySwitchingKey<P>& getiksk() const;
     template<class P> PrivateKeySwitchingKey<P>& getprivksk(const std::string &key) const;
 
     template <class Archive>
     void serialize(Archive &archive)
     {
-        archive(params,bkfftlvl01,bkfftlvl02,iksklvl10,iksklvl20,iksklvl21,privksklvl21,privksklvl22);
+        archive(params,bklvl01,bklvl02,bkfftlvl01,bkfftlvl02,bknttlvl01,bknttlvl02,iksklvl10,iksklvl11,iksklvl20,iksklvl21,iksklvl22,privksklvl11,privksklvl21,privksklvl22);
     }
 };
 }  // namespace TFHEpp

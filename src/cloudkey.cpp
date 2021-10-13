@@ -97,37 +97,21 @@ void privkskgen(PrivateKeySwitchingKey<P> &privksk,
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
-GateKeywoFFT::GateKeywoFFT(const SecretKey &sk)
-{
-    // Generete bkfft
-    bkgen<lvl01param>(bklvl01, sk);
-
-    // Generete ksk
-    ikskgen<lvl10param>(ksk, sk);
+template<class P>
+void EvalKey::emplacebk(const SecretKey& sk){
+    if constexpr (std::is_same_v<P, lvl01param>){
+        bklvl01 = std::make_unique<BootstrappingKey<lvl01param>>();
+        bkgen<lvl01param>(*bklvl01, sk);
+    }
+    else if constexpr (std::is_same_v<P, lvl02param>){
+        bklvl02 = std::make_unique<BootstrappingKey<lvl02param>>();
+        bkgen<lvl02param>(*bklvl02, sk);
+    }
 }
-
-GateKey::GateKey(const SecretKey &sk)
-{
-    // Generete bkfft
-    bkfftgen<lvl01param>(bkfftlvl01, sk);
-
-    // Generete ksk
-    ikskgen<lvl10param>(ksk, sk);
-}
-
-GateKey::GateKey(const GateKeywoFFT &gkwofft)
-{
-    for (int i = 0; i < lvl01param::domainP::n; i++)
-        bkfftlvl01[i] = ApplyFFT2trgsw<lvl1param>(gkwofft.bklvl01[i]);
-    ksk = gkwofft.ksk;
-}
-
-GateKeyNTT::GateKeyNTT(const GateKeywoFFT &gkwofft)
-{
-    for (int i = 0; i < lvl01param::domainP::n; i++)
-        bknttlvl01[i] = ApplyNTT2trgsw<lvl1param>(gkwofft.bklvl01[i]);
-    ksk = gkwofft.ksk;
-}
+#define INST(P)                                     \
+    template void EvalKey::emplacebk<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
 
 template<class P>
 void EvalKey::emplacebkfft(const SecretKey& sk){
@@ -142,6 +126,58 @@ void EvalKey::emplacebkfft(const SecretKey& sk){
 }
 #define INST(P)                                     \
     template void EvalKey::emplacebkfft<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template<class P>
+void EvalKey::emplacebk2bkfft(){
+    if constexpr (std::is_same_v<P, lvl01param>){
+        bkfftlvl01 = std::make_unique<BootstrappingKeyFFT<lvl01param>>();
+        for (int i = 0; i < lvl01param::domainP::n; i++)
+            (*bkfftlvl01)[i] = ApplyFFT2trgsw<lvl1param>((*bklvl01)[i]);
+    }
+    else if constexpr (std::is_same_v<P, lvl02param>){
+        bkfftlvl02 = std::make_unique<BootstrappingKeyFFT<lvl02param>>();
+        for (int i = 0; i < lvl02param::domainP::n; i++)
+            (*bkfftlvl02)[i] = ApplyFFT2trgsw<lvl2param>((*bklvl02)[i]);
+    }
+}
+#define INST(P)                                     \
+    template void EvalKey::emplacebk2bkfft<P>()
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template<class P>
+void EvalKey::emplacebk2bkntt(){
+    if constexpr (std::is_same_v<P, lvl01param>){
+        bknttlvl01 = std::make_unique<BootstrappingKeyNTT<lvl01param>>();
+        for (int i = 0; i < lvl01param::domainP::n; i++)
+            (*bknttlvl01)[i] = ApplyNTT2trgsw<lvl1param>((*bklvl01)[i]);
+    }
+    else if constexpr (std::is_same_v<P, lvl02param>){
+        bknttlvl02 = std::make_unique<BootstrappingKeyNTT<lvl02param>>();
+        for (int i = 0; i < lvl02param::domainP::n; i++)
+            (*bknttlvl02)[i] = ApplyNTT2trgsw<lvl2param>((*bklvl02)[i]);
+    }
+}
+#define INST(P)                                     \
+    template void EvalKey::emplacebk2bkntt<P>()
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template<class P>
+void EvalKey::emplacebkntt(const SecretKey& sk){
+    if constexpr (std::is_same_v<P, lvl01param>){
+        bknttlvl01 = std::make_unique<BootstrappingKeyNTT<lvl01param>>();
+        bknttgen<lvl01param>(*bknttlvl01, sk);
+    }
+    else if constexpr (std::is_same_v<P, lvl02param>){
+        bknttlvl02 = std::make_unique<BootstrappingKeyNTT<lvl02param>>();
+        bknttgen<lvl02param>(*bknttlvl02, sk);
+    }
+}
+#define INST(P)                                     \
+    template void EvalKey::emplacebkntt<P>(const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
@@ -182,6 +218,20 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
 template<class P>
+BootstrappingKey<P>& EvalKey::getbk() const{
+    if constexpr (std::is_same_v<P, lvl01param>){
+        return *bklvl01;
+    }
+    else if constexpr (std::is_same_v<P, lvl02param>){
+        return *bklvl02;
+    }
+}
+#define INST(P)                                     \
+    template BootstrappingKey<P>& EvalKey::getbk<P>() const
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template<class P>
 BootstrappingKeyFFT<P>& EvalKey::getbkfft() const{
     if constexpr (std::is_same_v<P, lvl01param>){
         return *bkfftlvl01;
@@ -192,6 +242,20 @@ BootstrappingKeyFFT<P>& EvalKey::getbkfft() const{
 }
 #define INST(P)                                     \
     template BootstrappingKeyFFT<P>& EvalKey::getbkfft<P>() const
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
+template<class P>
+BootstrappingKeyNTT<P>& EvalKey::getbkntt() const{
+    if constexpr (std::is_same_v<P, lvl01param>){
+        return *bknttlvl01;
+    }
+    else if constexpr (std::is_same_v<P, lvl02param>){
+        return *bknttlvl02;
+    }
+}
+#define INST(P)                                     \
+    template BootstrappingKeyNTT<P>& EvalKey::getbkntt<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
