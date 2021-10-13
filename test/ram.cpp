@@ -89,8 +89,7 @@ int main()
     SampleExtractIndex<typename CBprivksP::targetP>(encreadres, encumemory, 0);
 
     // Write
-    HomMUXwoSE<CBiksP, brP>(writed, cs, c1, encreadres, ek.getiksk<ksP>(),
-                            ek.getbkfft<brP>());
+    HomMUXwoSE<CBiksP, brP>(writed, cs, c1, encreadres, ek);
     for (int i = 0; i < memsize; i++) {
         TRLWE<typename CBiksP::domainP> temp;
         TFHEpp::RAMwriteBar<typename CBiksP::domainP, address_bit>(

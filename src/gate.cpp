@@ -146,8 +146,7 @@ void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
                 const TLWE<typename iksP::domainP> &cs,
                 const TLWE<typename iksP::domainP> &c1,
                 const TLWE<typename iksP::domainP> &c0,
-                const KeySwitchingKey<iksP> &iksk,
-                const BootstrappingKeyFFT<bkP> &bkfft)
+                const EvalKey &ek)
 {
     TLWE<typename iksP::domainP> temp1;
     TLWE<typename iksP::domainP> temp0;
@@ -156,12 +155,12 @@ void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
     temp1[iksP::domainP::n] -= iksP::domainP::μ;
     temp0[iksP::domainP::n] -= iksP::domainP::μ;
     TLWE<lvl0param> and1, and0;
-    IdentityKeySwitch<iksP>(and1, temp1, iksk);
-    IdentityKeySwitch<iksP>(and0, temp0, iksk);
+    IdentityKeySwitch<iksP>(and1, temp1, ek.getiksk<iksP>());
+    IdentityKeySwitch<iksP>(and0, temp0, ek.getiksk<iksP>());
     TRLWE<typename bkP::targetP> and0trlwe;
-    BlindRotate<bkP>(res, and1, bkfft,
+    BlindRotate<bkP>(res, and1, ek.getbkfft<bkP>(),
                      μpolygen<typename bkP::targetP, bkP::targetP::μ>());
-    BlindRotate<bkP>(and0trlwe, and0, bkfft,
+    BlindRotate<bkP>(and0trlwe, and0, ek.getbkfft<bkP>(),
                      μpolygen<typename bkP::targetP, bkP::targetP::μ>());
 
     for (int i = 0; i < bkP::targetP::n; i++) {
@@ -176,8 +175,7 @@ void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
         const TLWE<typename iksP::domainP> &cs, \
         const TLWE<typename iksP::domainP> &c1, \
         const TLWE<typename iksP::domainP> &c0, \
-        const KeySwitchingKey<iksP> &iksk,      \
-        const BootstrappingKeyFFT<bkP> &bkfft)
+        const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE(INST)
 #undef INST
 

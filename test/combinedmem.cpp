@@ -229,8 +229,7 @@ int main()
             HomAND(cs, encwrflag, encaddress[address_bit - 1], ek);
             for (int i = 0; i < words; i++)
                 HomMUXwoSE<lvl10param, lvl01param>(
-                    writed[i], cs, encwritep[i], encramreadres[i], *ek.iksklvl10,
-                    *ek.bkfftlvl01);
+                    writed[i], cs, encwritep[i], encramreadres[i], ek);
 
             // Write
             combWRAM<address_bit - 1, words_bit>(encram, *bootedTGSW, writed,
