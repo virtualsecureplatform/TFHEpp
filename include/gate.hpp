@@ -39,8 +39,7 @@ void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
                 const TLWE<typename iksP::domainP> &cs,
                 const TLWE<typename iksP::domainP> &c1,
                 const TLWE<typename iksP::domainP> &c0,
-                const KeySwitchingKey<iksP> &iksk,
-                const BootstrappingKeyFFT<bkP> &bkfft);
+                const EvalKey &ek);
 void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
                             const TRLWE<lvl1param> &c1r,
                             const TRLWE<lvl1param> &c0r, const EvalKey &ek);
