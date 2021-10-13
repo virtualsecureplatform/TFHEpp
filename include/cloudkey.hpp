@@ -51,28 +51,9 @@ template <class P>
 void ikskgen(KeySwitchingKey<P> &ksk, const SecretKey &sk);
 
 template <class P>
-inline void privkskgen(PrivateKeySwitchingKey<P> &privksk,
+void privkskgen(PrivateKeySwitchingKey<P> &privksk,
                        const Polynomial<typename P::targetP>& func,
-                       const SecretKey &sk)
-{
-    std::array<typename P::domainP::T, P::domainP::n + 1> key;
-    for (int i = 0; i < P::domainP::n; i++) key[i] = sk.key.lvl2[i];
-    key[P::domainP::n] = -1;
-#pragma omp parallel for collapse(3)
-    for (int i = 0; i <= P::domainP::n; i++)
-        for (int j = 0; j < P::t; j++)
-            for (typename P::targetP::T u = 0; u < (1 << P::basebit) - 1; u++) {
-                TRLWE<typename P::targetP> c =
-                    trlweSymEncryptZero<typename P::targetP>(
-                        P::α, sk.key.get<typename P::targetP>());
-                for (int k = 0; k < P::targetP::n; k++)
-                    c[1][k] +=
-                        (u + 1) * func[k] * key[i]
-                        << (numeric_limits<typename P::targetP::T>::digits -
-                            (j + 1) * P::basebit);
-                privksk[i][j][u] = c;
-            }
-}
+                       const SecretKey &sk);
 
 template <class P>
 inline relinKey<P> relinKeygen(const Key<P> &key)
@@ -139,34 +120,6 @@ struct GateKeyNTT {
     }
 };
 
-template <class bsP, class privksP>
-struct CircuitKey {
-    BootstrappingKeyFFT<bsP> bkfft;
-    std::array<PrivateKeySwitchingKey<privksP>, 2> privksk;
-    CircuitKey(const SecretKey &sk);
-    CircuitKey() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(privksk, bkfft);
-    }
-};
-
-template <class CBbsP, class CBprivksP, class CMksP>
-struct CloudKey {
-    GateKey gk;
-    CircuitKey<CBbsP, CBprivksP> ck;
-    KeySwitchingKey<CMksP> ksk;
-    lweParams params;
-    CloudKey(SecretKey sk) : gk(sk), ck(sk) { ikskgen<CMksP>(ksk, sk); params = sk.params;}
-    CloudKey() {}
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-        archive(gk.ksk, gk.bkfftlvl01, ck.privksk, ck.bkfft, params);
-    }
-};
-
 struct EvalKey {
     lweParams params;
     std::unique_ptr<BootstrappingKeyFFT<lvl01param>> bkfftlvl01;
@@ -176,9 +129,7 @@ struct EvalKey {
     std::unique_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
     std::unique_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
     std::unique_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
-    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl10param>>> privksklvl10;
     std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>> privksklvl11;
-    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl20param>>> privksklvl20;
     std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl21param>>> privksklvl21;
     std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>> privksklvl22;
 

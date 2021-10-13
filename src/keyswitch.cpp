@@ -48,7 +48,7 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
     template void IdentityKeySwitch<P>(TLWE<typename P::targetP> & res,       \
                                        const TLWE<typename P::domainP> &tlwe, \
                                        const KeySwitchingKey<P> &ksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
 template <class P>
@@ -92,7 +92,7 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
     template void TLWE2TRLWEIKS<P>(TRLWE<typename P::targetP> & res,      \
                                    const TLWE<typename P::domainP> &tlwe, \
                                    const TLWE2TRLWEIKSKey<P> &iksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
 template <class P>
@@ -165,7 +165,7 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
     template void PrivKeySwitch<P>(TRLWE<typename P::targetP> & res,      \
                                    const TLWE<typename P::domainP> &tlwe, \
                                    const PrivateKeySwitchingKey<P> &privksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
 }  // namespace TFHEpp
