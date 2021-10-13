@@ -154,23 +154,23 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 
 template<class P>
-void EvalKey::emplaceprivksk(const Polynomial<typename P::targetP>& func, const SecretKey& sk){
+void EvalKey::emplaceprivksk(const std::string &key, const Polynomial<typename P::targetP>& func, const SecretKey& sk){
     if constexpr (std::is_same_v<P, lvl21param>){
-        privksklvl21 = std::make_unique<PrivateKeySwitchingKey<lvl21param>>();
-        privkskgen<lvl21param>(*privksklvl21, func, sk);
+        privksklvl21[key] = std::make_unique<PrivateKeySwitchingKey<lvl21param>>();
+        privkskgen<lvl21param>(*privksklvl21[key], func, sk);
     }
     else if constexpr (std::is_same_v<P, lvl22param>){
-        privksklvl22 = std::make_unique<PrivateKeySwitchingKey<lvl22param>>();
-        privkskgen<lvl22param>(*privksklvl22, func, sk);
+        privksklvl22[key] = std::make_unique<PrivateKeySwitchingKey<lvl22param>>();
+        privkskgen<lvl22param>(*privksklvl22[key], func, sk);
     }
 }
 #define INST(P)                                     \
-    template void EvalKey::emplaceprivksk<P>(const Polynomial<typename P::targetP>& func, const SecretKey& sk)
+    template void EvalKey::emplaceprivksk<P>(const std::string &key, const Polynomial<typename P::targetP>& func, const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 
 template<class P>
-BootstrappingKeyFFT<P>& EvalKey::getbkfft(){
+BootstrappingKeyFFT<P>& EvalKey::getbkfft() const{
     if constexpr (std::is_same_v<P, lvl01param>){
         return *bkfftlvl01;
     }
@@ -179,12 +179,12 @@ BootstrappingKeyFFT<P>& EvalKey::getbkfft(){
     }
 }
 #define INST(P)                                     \
-    template BootstrappingKeyFFT<P>& EvalKey::getbkfft<P>()
+    template BootstrappingKeyFFT<P>& EvalKey::getbkfft<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
 template<class P>
-KeySwitchingKey<P>& EvalKey::getiksk(){
+KeySwitchingKey<P>& EvalKey::getiksk() const{
     if constexpr (std::is_same_v<P, lvl10param>){
         return *iksklvl10;
     }
@@ -202,30 +202,30 @@ KeySwitchingKey<P>& EvalKey::getiksk(){
     }
 }
 #define INST(P)                                     \
-    template KeySwitchingKey<P>& EvalKey::getiksk<P>()
+    template KeySwitchingKey<P>& EvalKey::getiksk<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 
 template<class P>
-PrivateKeySwitchingKey<P>& EvalKey::getprivksk(){
+PrivateKeySwitchingKey<P>& EvalKey::getprivksk(const std::string &key) const{
     if constexpr (std::is_same_v<P, lvl10param>){
-        return *privksklvl10;
+        return *(privksklvl10.at(key));
     }
     if constexpr (std::is_same_v<P, lvl11param>){
-        return *privksklvl11;
+        return *(privksklvl11.at(key));
     }
     else if constexpr (std::is_same_v<P, lvl20param>){
-        return *privksklvl20;
+        return *(privksklvl20.at(key));
     }
     else if constexpr (std::is_same_v<P, lvl21param>){
-        return *privksklvl21;
+        return *(privksklvl21.at(key));
     }
     else if constexpr (std::is_same_v<P, lvl22param>){
-        return *privksklvl22;
+        return *(privksklvl22.at(key));
     }
 }
 #define INST(P)                                     \
-    template PrivateKeySwitchingKey<P>& EvalKey::getprivksk<P>()
+    template PrivateKeySwitchingKey<P>& EvalKey::getprivksk<P>(const std::string &key) const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH(INST)
 #undef INST
 

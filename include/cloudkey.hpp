@@ -8,6 +8,7 @@
 #include "tlwe.hpp"
 #include "trgsw.hpp"
 #include "trlwe.hpp"
+#include "utils.hpp"
 
 namespace TFHEpp {
 
@@ -175,22 +176,34 @@ struct EvalKey {
     std::unique_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
     std::unique_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
     std::unique_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
-    std::unique_ptr<PrivateKeySwitchingKey<lvl10param>> privksklvl10;
-    std::unique_ptr<PrivateKeySwitchingKey<lvl11param>> privksklvl11;
-    std::unique_ptr<PrivateKeySwitchingKey<lvl20param>> privksklvl20;
-    std::unique_ptr<PrivateKeySwitchingKey<lvl21param>> privksklvl21;
-    std::unique_ptr<PrivateKeySwitchingKey<lvl22param>> privksklvl22;
+    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl10param>>> privksklvl10;
+    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>> privksklvl11;
+    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl20param>>> privksklvl20;
+    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl21param>>> privksklvl21;
+    std::unordered_map<std::string,std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>> privksklvl22;
 
     EvalKey(SecretKey sk) {params = sk.params;}
     EvalKey() {}
 
     template<class P> void emplacebkfft(const SecretKey &sk);
     template<class P> void emplaceiksk(const SecretKey &sk);
-    template<class P> void emplaceprivksk(const Polynomial<typename P::targetP>& func, const SecretKey &sk);
+    template<class P> void emplaceprivksk(const std::string &key, const Polynomial<typename P::targetP>& func, const SecretKey &sk);
+    template<class P, uint index> void emplaceprivksk(const SecretKey &sk){
+        if constexpr(index == 0){
+            emplaceprivksk<P>("identity",{1},sk);
+        }else if constexpr(index == 1){
+            TFHEpp::Polynomial<typename P::targetP> poly;
+            for (int i = 0; i < P::targetP::n; i++)
+                poly[i] = -sk.key.get<typename P::targetP>()[i];
+            emplaceprivksk<P>("secret key",poly,sk);
+        }else{
+            static_assert(false_v<P>, "Not a predefined function for Private Key Switching!");
+        }
+    }
 
-    template<class P> BootstrappingKeyFFT<P>& getbkfft();
-    template<class P> KeySwitchingKey<P>& getiksk();
-    template<class P> PrivateKeySwitchingKey<P>& getprivksk();
+    template<class P> BootstrappingKeyFFT<P>& getbkfft() const;
+    template<class P> KeySwitchingKey<P>& getiksk() const;
+    template<class P> PrivateKeySwitchingKey<P>& getprivksk(const std::string &key) const;
 
     template <class Archive>
     void serialize(Archive &archive)

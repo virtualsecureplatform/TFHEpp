@@ -6,59 +6,61 @@
 #include <random>
 #include <tfhe++.hpp>
 
-using namespace std;
-using namespace TFHEpp;
 
 int main()
 {
     constexpr uint32_t num_test = 10;
-    random_device seed_gen;
-    default_random_engine engine(seed_gen());
-    uniform_int_distribution<uint32_t> binary(0, 1);
+    std::random_device seed_gen;
+    std::default_random_engine engine(seed_gen());
+    std::uniform_int_distribution<uint32_t> binary(0, 1);
+    
+    using iksP = TFHEpp::lvl10param;
+    using bkP = TFHEpp::lvl02param;
+    using privksP = TFHEpp::lvl21param;
 
-    SecretKey *sk = new SecretKey;
-    CircuitKey<lvl02param, lvl21param> *ck =
-        new CircuitKey<lvl02param, lvl21param>(*sk);
-    TFHEpp::KeySwitchingKey<TFHEpp::lvl10param> *iksk =
-        new TFHEpp::KeySwitchingKey<TFHEpp::lvl10param>();
-    TFHEpp::ikskgen<TFHEpp::lvl10param>(*iksk, *sk);
+    TFHEpp::SecretKey *sk = new TFHEpp::SecretKey;
+    TFHEpp::EvalKey ek;
+    ek.emplaceiksk<iksP>(*sk);
+    ek.emplacebkfft<bkP>(*sk);
+    ek.emplaceprivksk<privksP,1>(*sk);
+    ek.emplaceprivksk<privksP,0>(*sk);
 
-    vector<array<uint8_t, lvl1param::n>> pa(num_test);
-    vector<array<lvl1param::T, lvl1param::n>> pmu(num_test);
-    vector<uint8_t> pones(num_test);
-    array<bool, lvl1param::n> pres;
-    for (array<uint8_t, lvl1param::n> &i : pa)
+    std::vector<std::array<uint8_t, privksP::targetP::n>> pa(num_test);
+    std::vector<std::array<typename privksP::targetP::T, privksP::targetP::n>> pmu(num_test);
+    std::vector<uint8_t> pones(num_test);
+    std::array<bool, privksP::targetP::n> pres;
+    for (std::array<uint8_t, privksP::targetP::n> &i : pa)
         for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < lvl1param::n; j++)
-            pmu[i][j] = pa[i][j] ? lvl1param::μ : -lvl1param::μ;
+        for (int j = 0; j < privksP::targetP::n; j++)
+            pmu[i][j] = pa[i][j] ? privksP::targetP::μ : -privksP::targetP::μ;
     for (int i = 0; i < num_test; i++) pones[i] = true;
-    vector<TRLWE<lvl1param>> ca(num_test);
-    vector<TLWE<lvl1param>> cones(num_test);
-    vector<TRGSWFFT<lvl1param>> bootedTGSW(num_test);
+    std::vector<TFHEpp::TRLWE<typename privksP::targetP>> ca(num_test);
+    std::vector<TFHEpp::TLWE<typename iksP::domainP>> cones(num_test);
+    std::vector<TFHEpp::TRGSWFFT<typename privksP::targetP>> bootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = trlweSymEncrypt<lvl1param>(pmu[i], lvl1param::α, sk->key.lvl1);
-    cones = bootsSymEncrypt(pones, *sk);
+        ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(pmu[i], privksP::targetP::α, sk->key.get<typename privksP::targetP>());
+    cones = TFHEpp::bootsSymEncrypt(pones, *sk);
 
-    chrono::system_clock::time_point start, end;
+    std::chrono::system_clock::time_point start, end;
     ProfilerStart("cb.prof");
-    start = chrono::system_clock::now();
+    start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CircuitBootstrappingFFT<lvl10param, lvl02param, lvl21param>(
-            bootedTGSW[test], cones[test], *ck, *iksk);
+        TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(
+            bootedTGSW[test], cones[test], ek);
     }
-    end = chrono::system_clock::now();
+    end = std::chrono::system_clock::now();
     ProfilerStop();
     for (int test = 0; test < num_test; test++) {
-        trgswfftExternalProduct<lvl1param>(ca[test], ca[test],
+        TFHEpp::trgswfftExternalProduct<typename privksP::targetP>(ca[test], ca[test],
                                            bootedTGSW[test]);
-        pres = trlweSymDecrypt<lvl1param>(ca[test], sk->key.lvl1);
-        for (int i = 0; i < lvl1param::n; i++) assert(pres[i] == pa[test][i]);
+        pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(ca[test], sk->key.lvl1);
+        for (int i = 0; i < privksP::targetP::n; i++) assert(pres[i] == pa[test][i]);
     }
-    cout << "Passed" << endl;
+    std::cout << "Passed" << std::endl;
     double elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
             .count();
-    cout << elapsed / num_test << "ms" << endl;
+    std::cout << elapsed / num_test << "ms" << std::endl;
 }

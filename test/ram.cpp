@@ -22,11 +22,15 @@ int main()
     uniform_int_distribution<uint8_t> binary(0, 1);
 
     SecretKey *sk = new SecretKey;
-    CloudKey<CBbsP, CBprivksP, ksP> *ck =
-        new CloudKey<CBbsP, CBprivksP, ksP>(*sk);
     TFHEpp::KeySwitchingKey<CBiksP> *iksk =
         new TFHEpp::KeySwitchingKey<CBiksP>();
     TFHEpp::ikskgen<CBiksP>(*iksk, *sk);
+    TFHEpp::EvalKey ek;
+    ek.emplaceiksk<ksP>(*sk);
+    ek.emplacebkfft<CBbsP>(*sk);
+    ek.emplacebkfft<brP>(*sk);
+    ek.emplaceprivksk<CBprivksP,1>(*sk);
+    ek.emplaceprivksk<CBprivksP,0>(*sk);
     vector<uint8_t> pmemory(memsize);
     vector<array<ksP::domainP::T, ksP::domainP::n>> pmu(memsize);
     vector<uint8_t> address(address_bit);
@@ -76,8 +80,7 @@ int main()
     // Addres CB
     for (int i = 0; i < address_bit; i++) {
         CircuitBootstrappingFFTwithInv<ksP, CBbsP, CBprivksP>(
-            (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], (*ck).ck,
-            (*ck).gk.ksk);
+            (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], ek);
     }
 
     // Read
@@ -86,8 +89,8 @@ int main()
     SampleExtractIndex<typename CBprivksP::targetP>(encreadres, encumemory, 0);
 
     // Write
-    HomMUXwoSE<CBiksP, brP>(writed, cs, c1, encreadres, *iksk,
-                            (*ck).gk.bkfftlvl01);
+    HomMUXwoSE<CBiksP, brP>(writed, cs, c1, encreadres, ek.getiksk<ksP>(),
+                            ek.getbkfft<brP>());
     for (int i = 0; i < memsize; i++) {
         TRLWE<typename CBiksP::domainP> temp;
         TFHEpp::RAMwriteBar<typename CBiksP::domainP, address_bit>(
@@ -96,7 +99,7 @@ int main()
         SampleExtractIndex<typename CBiksP::domainP>(temp2, temp, 0);
         TLWE<typename CBiksP::targetP> temp3;
         IdentityKeySwitch<CBiksP>(temp3, temp2, *iksk);
-        BlindRotate<brP>((*encmemory)[i], temp3, (*ck).gk.bkfftlvl01,
+        BlindRotate<brP>((*encmemory)[i], temp3, ek.getbkfft<brP>(),
                          μpolygen<typename brP::targetP, brP::targetP::μ>());
     }
 
