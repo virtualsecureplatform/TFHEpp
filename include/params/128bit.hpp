@@ -2,12 +2,13 @@
 
 #include <cmath>
 #include <cstdint>
+#include <limits>
 
 struct lvl0param {
     static constexpr std::uint32_t n = 635;             // dimension
     static const inline double α = std::pow(2.0, -15);  // fresh noise
     using T = uint32_t;                                 // Torus representation
-    static constexpr T μ = 1U << 29;
+    static constexpr T μ = 1U << (std::numeric_limits<T>::digits-3);
 };
 
 struct lvl1param {
@@ -43,7 +44,7 @@ struct lvl2param {
 
 // Key Switching parameters
 struct lvl10param {
-    static constexpr std::uint32_t t = 8;  // number of addition in keyswitching
+    static constexpr std::uint32_t t = 7;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
         2;  // how many bit should be encrypted in keyswitching key
     static const inline double α = lvl0param::α;  // key noise
