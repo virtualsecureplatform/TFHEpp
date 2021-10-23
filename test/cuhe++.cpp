@@ -1,5 +1,3 @@
-#include <bits/stdint-uintn.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cuhe++.hpp>

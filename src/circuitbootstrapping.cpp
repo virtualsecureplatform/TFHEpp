@@ -1,7 +1,5 @@
 #include "circuitbootstrapping.hpp"
 
-#include <bits/stdint-uintn.h>
-
 namespace TFHEpp {
 
 template <class iksP, class bkP, class privksP>

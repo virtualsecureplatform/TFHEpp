@@ -1,4 +1,3 @@
-#include <bits/stdint-uintn.h>
 #include <gmp.h>
 #include <gmpxx.h>
 
