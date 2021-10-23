@@ -1,7 +1,5 @@
 #pragma once
 
-#include <bits/stdint-uintn.h>
-
 #include <array>
 #include <cassert>
 #include <cstdint>
