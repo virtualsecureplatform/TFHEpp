@@ -1,4 +1,4 @@
-#include <bits/stdint-uintn.h>
+#pragma once
 
 #include <array>
 #include <cassert>
