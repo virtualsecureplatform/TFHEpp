@@ -9,7 +9,7 @@ inline void RemoveSign(UnsignedPolynomial<P> &res, const Polynomial<P> &a)
     for (int i = 0; i < P::n; i++) res[i] = (a[i] + 1) / 2;
 }
 template <class P>
-void LWEMultWithoutRelinerization(TRLWEMult<P> &res, const TRLWE<P> &a,
+void TRLWEMultWithoutRelinerization(TRLWE3<P> &res, const TRLWE<P> &a,
                                   const TRLWE<P> &b)
 {
     UnsignedTRLWE<P> aa, bb;
@@ -51,7 +51,7 @@ inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
 }
 
 template <class P>
-inline void Relinearization(TRLWE<P> &res, const TRLWEMult<P> &mult,
+inline void Relinearization(TRLWE<P> &res, const TRLWE3<P> &mult,
                             const relinKeyFFT<P> &relinkeyfft)
 {
     TRLWE<P> squareterm;
@@ -61,11 +61,11 @@ inline void Relinearization(TRLWE<P> &res, const TRLWEMult<P> &mult,
 }
 
 template <class P>
-inline void LWEMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
+inline void TRLWEMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
                     const relinKeyFFT<P> &relinkeyfft)
 {
-    TRLWEMult<P> resmult;
-    LWEMultWithoutRelinerization<P>(resmult, a, b);
+    TRLWE3<P> resmult;
+    TRLWEMultWithoutRelinerization<P>(resmult, a, b);
     Relinearization<P>(res, resmult, relinkeyfft);
 }
 }  // namespace TFHEpp
