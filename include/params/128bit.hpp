@@ -9,6 +9,10 @@ struct lvl0param {
     static const inline double α = std::pow(2.0, -15);  // fresh noise
     using T = uint32_t;                                 // Torus representation
     static constexpr T μ = 1U << (std::numeric_limits<T>::digits-3);
+    static constexpr uint32_t plain_modulus = 2;
+    static constexpr double Δ =
+        static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
+        plain_modulus;
 };
 
 struct lvl1param {
@@ -19,7 +23,8 @@ struct lvl1param {
     static constexpr std::uint32_t l = 3;
     static constexpr std::uint32_t Bgbit = 6;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
-    static const inline double α = std::pow(2.0, -25);  // fresh noise
+    // static const inline double α = std::pow(2.0, -25);  // fresh noise
+    static const inline double α = 0;  // fresh noise
     using T = uint32_t;                                 // Torus representation
     static constexpr T μ = 1U << 29;
     static constexpr uint32_t plain_modulus = 2;
@@ -38,8 +43,8 @@ struct lvl2param {
     static const inline double α = std::pow(2.0, -44);  // fresh noise
     using T = uint64_t;                                 // Torus representation
     static constexpr T μ = 1ULL << 61;
-    static constexpr uint32_t plain_modulus = 8;
-    static constexpr double Δ = μ;
+    static constexpr uint32_t plain_modulus = 2;
+    static constexpr double Δ = std::pow(2., std::numeric_limits<T>::digits)/plain_modulus;
 };
 
 // Key Switching parameters
@@ -53,9 +58,9 @@ struct lvl10param {
 };
 
 struct lvl11param {
-    static constexpr std::uint32_t t = 8;  // number of addition in keyswitching
+    static constexpr std::uint32_t t = 6;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
-        2;  // how many bit should be encrypted in keyswitching key
+        4;  // how many bit should be encrypted in keyswitching key
     static const inline double α = lvl1param::α;  // key noise
     using domainP = lvl1param;
     using targetP = lvl1param;

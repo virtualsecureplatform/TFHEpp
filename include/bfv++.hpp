@@ -1,6 +1,8 @@
 #pragma once
 #include "mulfft.hpp"
 #include "trgsw.hpp"
+#include "trlwe.hpp"
+#include "keyswitch.hpp"
 
 namespace TFHEpp {
 template <class P>
@@ -67,5 +69,16 @@ inline void TRLWEMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
     TRLWE3<P> resmult;
     TRLWEMultWithoutRelinerization<P>(resmult, a, b);
     Relinearization<P>(res, resmult, relinkeyfft);
+}
+
+template <class P>
+inline void TLWEMult(TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &a, const TLWE<typename P::domainP> &b,
+                    const relinKeyFFT<typename P::targetP> &relinkeyfft, const PrivateKeySwitchingKey<P> &privksk)
+{
+    TRLWE<typename P::targetP> trlweres,trlwea,trlweb;
+    PrivKeySwitch<P>(trlwea, a, privksk);
+    PrivKeySwitch<P>(trlweb, b, privksk);
+    TRLWEMult<typename P::targetP>(trlweres,trlwea,trlweb,relinkeyfft);
+    SampleExtractIndex<typename P::targetP>(res, trlweres, 0);
 }
 }  // namespace TFHEpp
