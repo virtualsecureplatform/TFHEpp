@@ -35,13 +35,13 @@ struct BlindRotateParam<lvlMparam> {
     using P = lvl0Mparam;
 };
 
-//swap two inputs by the selestor input
+// swap two inputs by the selestor input
 void HomSWAP(TLWE<lvl1param> &resa, TLWE<lvl1param> &resb,
              const TLWE<lvl1param> &cs, const TLWE<lvl1param> &ca,
              const TLWE<lvl1param> &cb, const EvalKey &ek);
 
 // process AND, NOR, XOR of same 2 input at once
-template<class P>
+template <class P>
 void HomHalfAdder(TLWE<lvl1param> &carry, TLWE<lvl1param> &sum,
                   const TLWE<lvl1param> &c1, const TLWE<lvl1param> &c0,
                   const EvalKey &ek);
@@ -97,6 +97,6 @@ void HomAO3(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
 // ((ca&cb)|cc)
 template <class P = lvlMparam>
 void HomOA3(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-             const TLWE<lvl1param> &cb, const TLWE<lvl1param> &cc,
-             const EvalKey &ek);
+            const TLWE<lvl1param> &cb, const TLWE<lvl1param> &cc,
+            const EvalKey &ek);
 }  // namespace TFHEpp

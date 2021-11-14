@@ -46,8 +46,7 @@ void HomHalfAdder(TLWE<lvl1param> &carry, TLWE<lvl1param> &sum,
         sum[i] = c0[i] + c1[i];  // use sum as buffer
     TLWE<lvl0param> cadd;
     IdentityKeySwitch<lvl10param>(cadd, sum, *ek.iksklvl10);
-    BlindRotate<lvl01param>(trlwe, cadd, *ek.bkfftlvl01,
-                            μpolygen<P, P::μ>());
+    BlindRotate<lvl01param>(trlwe, cadd, *ek.bkfftlvl01, μpolygen<P, P::μ>());
     TLWE<P> cor;
     constexpr typename lvl01param::domainP::T roundoffset =
         1ULL << (std::numeric_limits<typename lvl01param::domainP::T>::digits -
@@ -70,10 +69,11 @@ void HomHalfAdder(TLWE<lvl1param> &carry, TLWE<lvl1param> &sum,
     }
     sum[P::n] -= P::μ;
 }
-#define INST(P)                                                \
-    template void HomHalfAdder<P>(TLWE<lvl1param> &carry, TLWE<lvl1param> &sum, \
-                  const TLWE<lvl1param> &c1, const TLWE<lvl1param> &c0,         \
-                  const EvalKey &ek)                                            
+#define INST(P)                                               \
+    template void HomHalfAdder<P>(                            \
+        TLWE<lvl1param> & carry, TLWE<lvl1param> & sum,       \
+        const TLWE<lvl1param> &c1, const TLWE<lvl1param> &c0, \
+        const EvalKey &ek)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
@@ -317,8 +317,7 @@ void HomOA3(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
     TLWE<lvl0param> temp;
     IdentityKeySwitch<lvl10param>(temp, res, *ek.iksklvl10);
     TRLWE<lvl1param> rtemp;
-    BlindRotate<lvl01param>(rtemp, temp, *ek.bkfftlvl01,
-                            aoi3testvecgen<P>());
+    BlindRotate<lvl01param>(rtemp, temp, *ek.bkfftlvl01, aoi3testvecgen<P>());
     SampleExtractIndex<lvl1param>(res, rtemp, lvl1param::n - lvl1param::n / 3);
 }
 #define INST(P)                                                   \
@@ -337,10 +336,10 @@ void HomOAI3(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
     HomOA3<P>(res, ca, cb, cc, ek);
     for (int i = 0; i <= lvl1param::n; i++) res[i] = -res[i];
 }
-#define INST(P)                                                   \
+#define INST(P)                                                    \
     template void HomOAI3<P>(TLWE<P> & res, const TLWE<P> &ca,     \
-                            const TLWE<P> &cb, const TLWE<P> &cc, \
-                            const EvalKey &ek);
+                             const TLWE<P> &cb, const TLWE<P> &cc, \
+                             const EvalKey &ek);
 INST(lvl1param)
 INST(lvlMparam)
 #undef INST

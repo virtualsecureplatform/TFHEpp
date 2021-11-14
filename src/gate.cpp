@@ -12,8 +12,7 @@ void HomCONSTANTONE(TLWE<lvl1param> &res)
     res = {};
     res[lvl1param::n] = P::μ;
 }
-#define INST(P)                                               \
-    template void HomCONSTANTONE<P>(TLWE<P> & res)
+#define INST(P) template void HomCONSTANTONE<P>(TLWE<P> & res)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
@@ -24,8 +23,7 @@ void HomCONSTANTZERO(TLWE<lvl1param> &res)
     res = {};
     res[lvl1param::n] = -lvl1param::μ;
 }
-#define INST(P)                                               \
-    template void HomCONSTANTZERO<P>(TLWE<P> & res)
+#define INST(P) template void HomCONSTANTZERO<P>(TLWE<P> & res)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
@@ -70,9 +68,9 @@ void HomNOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
 {
     HomGate<P, -1, -1, -P::μ>(res, ca, cb, ek);
 }
-#define INST(P)                                                \
+#define INST(P)                                               \
     template void HomNOR<P>(TLWE<P> & res, const TLWE<P> &ca, \
-                             const TLWE<P> &cb, const EvalKey &ek)
+                            const TLWE<P> &cb, const EvalKey &ek)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
@@ -82,10 +80,10 @@ void HomXNOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
              const TLWE<lvl1param> &cb, const EvalKey &ek)
 {
     if constexpr (std::is_same_v<P, lvl1param>) {
-        HomGate<P,-2, -2, -2 * lvl1param::μ>(res, ca, cb, ek);
+        HomGate<P, -2, -2, -2 * lvl1param::μ>(res, ca, cb, ek);
     }
     else if constexpr (std::is_same_v<P, lvlMparam>) {
-        HomGate<P,-3, -3, -3 * lvlMparam::μ>(res, ca, cb, ek);
+        HomGate<P, -3, -3, -3 * lvlMparam::μ>(res, ca, cb, ek);
     }
 }
 #define INST(P)                                                \
@@ -101,9 +99,9 @@ void HomAND(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
 {
     HomGate<P, 1, 1, -P::μ>(res, ca, cb, ek);
 }
-#define INST(P)                                                \
+#define INST(P)                                               \
     template void HomAND<P>(TLWE<P> & res, const TLWE<P> &ca, \
-                             const TLWE<P> &cb, const EvalKey &ek)
+                            const TLWE<P> &cb, const EvalKey &ek)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
@@ -112,11 +110,11 @@ template <class P>
 void HomOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
            const TLWE<lvl1param> &cb, const EvalKey &ek)
 {
-    HomGate<P,1, 1, P::μ>(res, ca, cb, ek);
+    HomGate<P, 1, 1, P::μ>(res, ca, cb, ek);
 }
-#define INST(P)                                                \
+#define INST(P)                                              \
     template void HomOR<P>(TLWE<P> & res, const TLWE<P> &ca, \
-                             const TLWE<P> &cb, const EvalKey &ek)
+                           const TLWE<P> &cb, const EvalKey &ek)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
@@ -145,9 +143,9 @@ void HomANDNY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
 {
     HomGate<P, -1, 1, -P::μ>(res, ca, cb, ek);
 }
-#define INST(P)                                               \
+#define INST(P)                                                 \
     template void HomANDNY<P>(TLWE<P> & res, const TLWE<P> &ca, \
-                            const TLWE<P> &cb, const EvalKey &ek)
+                              const TLWE<P> &cb, const EvalKey &ek)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
@@ -158,13 +156,12 @@ void HomANDYN(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
 {
     HomGate<P, 1, -1, -P::μ>(res, ca, cb, ek);
 }
-#define INST(P)                                               \
+#define INST(P)                                                 \
     template void HomANDYN<P>(TLWE<P> & res, const TLWE<P> &ca, \
-                            const TLWE<P> &cb, const EvalKey &ek)
+                              const TLWE<P> &cb, const EvalKey &ek)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
-
 
 template <class P>
 void HomORNY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
@@ -172,13 +169,12 @@ void HomORNY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
 {
     HomGate<P, -1, 1, P::μ>(res, ca, cb, ek);
 }
-#define INST(P)                                               \
+#define INST(P)                                                \
     template void HomORNY<P>(TLWE<P> & res, const TLWE<P> &ca, \
-                            const TLWE<P> &cb, const EvalKey &ek)
+                             const TLWE<P> &cb, const EvalKey &ek)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
-
 
 template <class P>
 void HomORYN(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
@@ -186,13 +182,12 @@ void HomORYN(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
 {
     HomGate<P, 1, -1, P::μ>(res, ca, cb, ek);
 }
-#define INST(P)                                               \
+#define INST(P)                                                \
     template void HomORYN<P>(TLWE<P> & res, const TLWE<P> &ca, \
-                            const TLWE<P> &cb, const EvalKey &ek)
+                             const TLWE<P> &cb, const EvalKey &ek)
 INST(lvl1param);
 INST(lvlMparam);
 #undef INST
-
 
 // 3input
 // cs?c1:c0
@@ -210,10 +205,10 @@ void HomMUX(TLWE<lvl1param> &res, const TLWE<lvl1param> &cs,
         TLWE<lvl0param> and1, and0;
         IdentityKeySwitch<lvl10param>(and1, temp, *ek.iksklvl10);
         IdentityKeySwitch<lvl10param>(and0, res, *ek.iksklvl10);
-        GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            temp, and1, *ek.bkfftlvl01, μpolygen<lvl1param, P::μ>());
-        GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            res, and0, *ek.bkfftlvl01, μpolygen<lvl1param, P::μ>());
+        GateBootstrappingTLWE2TLWEFFT<lvl01param>(temp, and1, *ek.bkfftlvl01,
+                                                  μpolygen<lvl1param, P::μ>());
+        GateBootstrappingTLWE2TLWEFFT<lvl01param>(res, and0, *ek.bkfftlvl01,
+                                                  μpolygen<lvl1param, P::μ>());
 
         for (int i = 0; i <= lvl1param::n; i++) res[i] += temp[i];
         res[lvl1param::n] += P::μ;

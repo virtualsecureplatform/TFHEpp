@@ -2,9 +2,9 @@
 
 #include <array>
 #include <cloudkey.hpp>
-#include <gate.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <gate.hpp>
 #include <limits>
 #include <memory>
 #include <type_traits>
