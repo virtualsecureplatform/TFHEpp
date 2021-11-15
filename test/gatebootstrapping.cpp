@@ -16,11 +16,14 @@ int main()
     ek.emplaceiksk<TFHEpp::lvl10param>(sk);
     for (int test = 0; test < num_test; test++) {
         bool p = binary(engine) > 0;
-        TFHEpp::TLWE<TFHEpp::lvl1param> tlwe = TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
-            p ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ, TFHEpp::lvl1param::α, sk.key.lvl1);
+        TFHEpp::TLWE<TFHEpp::lvl1param> tlwe =
+            TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
+                p ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ,
+                TFHEpp::lvl1param::α, sk.key.lvl1);
         TFHEpp::TLWE<TFHEpp::lvl1param> bootedtlwe;
         TFHEpp::GateBootstrapping(bootedtlwe, tlwe, ek);
-        bool p2 = TFHEpp::tlweSymDecrypt<TFHEpp::lvl1param>(bootedtlwe, sk.key.lvl1);
+        bool p2 =
+            TFHEpp::tlweSymDecrypt<TFHEpp::lvl1param>(bootedtlwe, sk.key.lvl1);
         assert(p == p2);
     }
     std::cout << "Passed" << std::endl;

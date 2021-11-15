@@ -3,7 +3,7 @@
 
 namespace TFHEpp {
 template <class P>
-inline Polynomial<P> decryptTRLWE3(const TRLWE3<P> &c, const Key<P> &key)
+inline Polynomial<P> decryptTRLWEMult(const TRLWEMult<P> &c, const Key<P> &key)
 {
     Polynomial<P> mulres, p, keysquare;
     PolyMul<P>(mulres, c[0], key);
@@ -66,9 +66,9 @@ int main()
             TFHEpp::trlweSymIntEncrypt<P>(p0, P::α, sk->key.get<P>());
         TFHEpp::TRLWE<P> c1 =
             TFHEpp::trlweSymIntEncrypt<P>(p1, P::α, sk->key.get<P>());
-        TFHEpp::TRLWE3<P> cres;
-        TFHEpp::TRLWEMultWithoutRelinerization<P>(cres, c0, c1);
-        pres = TFHEpp::decryptTRLWE3<P>(cres, sk->key.get<P>());
+        TFHEpp::TRLWEMult<P> cres;
+        TFHEpp::LWEMultWithoutRelinerization<P>(cres, c0, c1);
+        pres = TFHEpp::decryptTRLWEMult<P>(cres, sk->key.get<P>());
 
         TFHEpp::PolyMulNaieve<P>(ptrue, p0, p1);
         for (int i = 0; i < P::n; i++) ptrue[i] %= P::plain_modulus;
@@ -96,7 +96,7 @@ int main()
         TFHEpp::TRLWE<P> c1 =
             TFHEpp::trlweSymIntEncrypt<P>(p1, P::α, sk->key.get<P>());
         TFHEpp::TRLWE<P> cres;
-        TFHEpp::TRLWEMult<P>(cres, c0, c1, relinkeyfft);
+        TFHEpp::LWEMult<P>(cres, c0, c1, relinkeyfft);
         pres = TFHEpp::trlweSymIntDecrypt<P>(cres, sk->key.get<P>());
 
         TFHEpp::PolyMulNaieve<P>(ptrue, p0, p1);

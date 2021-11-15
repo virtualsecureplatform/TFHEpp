@@ -50,8 +50,8 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(*sk);
     ek.emplacebkfft<bkP>(*sk);
-    ek.emplaceprivksk<privksP,1>(*sk);
-    ek.emplaceprivksk<privksP,0>(*sk);
+    ek.emplaceprivksk<privksP, 1>(*sk);
+    ek.emplaceprivksk<privksP, 0>(*sk);
     TFHEpp::KeySwitchingKey<iksP> *iksk = new TFHEpp::KeySwitchingKey<iksP>();
     TFHEpp::ikskgen<iksP>(*iksk, *sk);
 
@@ -68,8 +68,10 @@ int main()
 
     std::array<std::vector<TFHEpp::TLWE<TFHEpp::lvl1param>>, num_test> tlwea,
         tlweb;
-    for (int i = 0; i < num_test; i++) tlwea[i] = TFHEpp::bootsSymEncrypt(mua[i], *sk);
-    for (int i = 0; i < num_test; i++) tlweb[i] = TFHEpp::bootsSymEncrypt(mub[i], *sk);
+    for (int i = 0; i < num_test; i++)
+        tlwea[i] = TFHEpp::bootsSymEncrypt(mua[i], *sk);
+    for (int i = 0; i < num_test; i++)
+        tlweb[i] = TFHEpp::bootsSymEncrypt(mub[i], *sk);
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
@@ -77,12 +79,10 @@ int main()
         std::array<TFHEpp::TRGSWFFT<TFHEpp::lvl2param>, int_width> trgswa,
             trgswb;
         for (int i = 0; i < int_width; i++)
-            TFHEpp::CircuitBootstrappingFFT<iksP, bkP,
-                                            privksP>(
+            TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(
                 trgswa[i], tlwea[test][i], ek);
         for (int i = 0; i < int_width; i++)
-            TFHEpp::CircuitBootstrappingFFT<iksP, bkP,
-                                            privksP>(
+            TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(
                 trgswb[i], tlweb[test][i], ek);
         AddByTBSR<TFHEpp::lvl2param, int_width>(res[test], trgswa, trgswb);
     }

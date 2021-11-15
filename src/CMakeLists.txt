@@ -1,4 +1,4 @@
-file(GLOB tfhe++_sources "*.cpp")
+file(GLOB_RECURSE tfhe++_sources "*.cpp")
 
 add_library(tfhe++
   ${tfhe++_sources}

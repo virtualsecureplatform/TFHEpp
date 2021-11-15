@@ -36,8 +36,8 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<ksP>(*sk);
     ek.emplacebkfft<CBbsP>(*sk);
-    ek.emplaceprivksk<CBprivksP,1>(*sk);
-    ek.emplaceprivksk<CBprivksP,0>(*sk);
+    ek.emplaceprivksk<CBprivksP, 1>(*sk);
+    ek.emplaceprivksk<CBprivksP, 0>(*sk);
     vector<array<uint8_t, ksP::domainP::n>> pmemory(num_trlwe);
     vector<array<typename ksP::domainP::T, ksP::domainP::n>> pmu(num_trlwe);
     vector<uint8_t> address(address_bit);
@@ -66,11 +66,11 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < width_bit; i++)
-        CircuitBootstrappingFFT<ksP, CBbsP, CBprivksP>(
-            bootedTGSW[i], encaddress[i], ek);
+        CircuitBootstrappingFFT<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
+                                                       encaddress[i], ek);
     for (int i = width_bit; i < address_bit; i++)
-        CircuitBootstrappingFFTInv<ksP, CBbsP, CBprivksP>(
-            bootedTGSW[i], encaddress[i], ek);
+        CircuitBootstrappingFFTInv<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
+                                                          encaddress[i], ek);
     TRLWE<typename ksP::domainP> encumemory;
 
     UROMUX<typename ksP::domainP, address_bit, width_bit>(

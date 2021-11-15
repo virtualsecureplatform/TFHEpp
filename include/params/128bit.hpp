@@ -2,17 +2,12 @@
 
 #include <cmath>
 #include <cstdint>
-#include <limits>
 
 struct lvl0param {
     static constexpr std::uint32_t n = 635;             // dimension
     static const inline double α = std::pow(2.0, -15);  // fresh noise
     using T = uint32_t;                                 // Torus representation
-    static constexpr T μ = 1U << (std::numeric_limits<T>::digits-3);
-    static constexpr uint32_t plain_modulus = 2;
-    static constexpr double Δ =
-        static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
-        plain_modulus;
+    static constexpr T μ = 1U << 29;
 };
 
 struct lvl1param {
@@ -42,8 +37,8 @@ struct lvl2param {
     static const inline double α = std::pow(2.0, -44);  // fresh noise
     using T = uint64_t;                                 // Torus representation
     static constexpr T μ = 1ULL << 61;
-    static constexpr uint32_t plain_modulus = 2;
-    static constexpr double Δ = std::pow(2., std::numeric_limits<T>::digits)/plain_modulus;
+    static constexpr uint32_t plain_modulus = 8;
+    static constexpr double Δ = μ;
 };
 
 // Key Switching parameters
@@ -57,9 +52,9 @@ struct lvl10param {
 };
 
 struct lvl11param {
-    static constexpr std::uint32_t t = 6;  // number of addition in keyswitching
+    static constexpr std::uint32_t t = 8;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
-        4;  // how many bit should be encrypted in keyswitching key
+        2;  // how many bit should be encrypted in keyswitching key
     static const inline double α = lvl1param::α;  // key noise
     using domainP = lvl1param;
     using targetP = lvl1param;

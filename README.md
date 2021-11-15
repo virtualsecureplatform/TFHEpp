@@ -1,3 +1,16 @@
+# oveus-tfhe
+This repository contains the TFHE library for oveus based on [TFHEpp](https://github.com/virtualsecureplatform/TFHEpp).
+Some performance and UX improvements are applied.
+The files in this repository are licensed under AGPLv3. For third parties' programs, see corresponding directories under /thirdparties.
+If you need the commercial license for our AGPLv3 parts, please contact to oveus@axell.co.jp
+
+**CAUTION:** TRADEMARKS INCLUDING THE NAME "oveus" ARE NOT LICENSED.
+
+## Patents
+This repository contains some codes implementing the contents of AXELL CORPORATION's patents.
+
+Below is the README for TFHEpp.
+
 # TFHEpp
 TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original [TFHE implementation](https://github.com/tfhe/tfhe). In addition to that, THFEpp supports Circuit Bootstrapping and [Private Boootstrapping many LUT](https://eprint.iacr.org/2021/729).
 TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
