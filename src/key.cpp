@@ -22,6 +22,10 @@ Key<P> lweKey::get() const
         return lvl1;
     else if constexpr (std::is_same_v<P, lvl2param>)
         return lvl2;
+    else if constexpr (std::is_same_v<P, lvlMparam>)
+        return lvl1;
+    else
+        static_assert(false_v<P>, "Undefined Secret Key!");
 }
 #define INST(P) template Key<P> lweKey::get<P>() const;
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)

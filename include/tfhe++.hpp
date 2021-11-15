@@ -1,5 +1,6 @@
 #pragma once
 
+#include "axell/integer.hpp"
 #include "bfv++.hpp"
 #include "circuitbootstrapping.hpp"
 #include "cloudkey.hpp"

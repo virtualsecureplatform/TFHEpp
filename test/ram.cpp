@@ -29,8 +29,8 @@ int main()
     ek.emplaceiksk<ksP>(*sk);
     ek.emplacebkfft<CBbsP>(*sk);
     ek.emplacebkfft<brP>(*sk);
-    ek.emplaceprivksk<CBprivksP,1>(*sk);
-    ek.emplaceprivksk<CBprivksP,0>(*sk);
+    ek.emplaceprivksk<CBprivksP, 1>(*sk);
+    ek.emplaceprivksk<CBprivksP, 0>(*sk);
     vector<uint8_t> pmemory(memsize);
     vector<array<ksP::domainP::T, ksP::domainP::n>> pmu(memsize);
     vector<uint8_t> address(address_bit);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bits/stdint-uintn.h>
+
 #include <cmath>
 #include <limits>
 
@@ -119,6 +121,12 @@ void GateBootstrappingManyLUT(
     for (int i = 0; i < num_out; i++)
         SampleExtractIndex<typename P::targetP>(res[i], acc, i);
 }
+
+template <class P>
+void GateBootstrappingTLWE2TLWEFFTfunc(
+    TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
+    const BootstrappingKeyFFT<P> &bkfft,
+    const TRLWE<typename P::targetP> &testvector);
 
 template <class P, typename P::T μ>
 constexpr Polynomial<P> μpolygen()

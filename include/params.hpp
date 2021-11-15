@@ -17,6 +17,8 @@ namespace TFHEpp {
 #include "params/128bit.hpp"
 #endif
 
+#include "./axell/mpparam.hpp"
+
 struct lvl01param {
     using domainP = lvl0param;
     using targetP = lvl1param;
@@ -99,22 +101,26 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
 #define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \
     fun(lvl0param);                             \
     fun(lvl1param);                             \
-    fun(lvl2param);
+    fun(lvl2param);                             \
+    fun(lvlMparam);
 #define TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(fun) \
     fun(lvl1param);                              \
-    fun(lvl2param);
+    fun(lvl2param);                              \
+    fun(lvlMparam);
 #define TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(fun) \
     fun(lvl01param);                                    \
-    fun(lvl02param);
+    fun(lvl02param);                                    \
+    fun(lvl0Mparam);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(fun) \
-    fun(lvl10param);                                  \
-    fun(lvl11param);                                  \
-    fun(lvl20param);                                  \
-    fun(lvl21param);                                  \
-    fun(lvl22param);
+    fun(lvl10param);                                          \
+    fun(lvl11param);                                          \
+    fun(lvl20param);                                          \
+    fun(lvl21param);                                          \
+    fun(lvl22param);                                          \
+    fun(lvlM0param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(fun) \
-    fun(lvl11param);                                  \
-    fun(lvl21param);                                  \
+    fun(lvl11param);                                           \
+    fun(lvl21param);                                           \
     fun(lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_GATE(fun) \
     fun(lvl10param, lvl01param);                \

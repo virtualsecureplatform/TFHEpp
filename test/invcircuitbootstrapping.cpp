@@ -22,8 +22,8 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(*sk);
     ek.emplacebkfft<bkP>(*sk);
-    ek.emplaceprivksk<privksP,1>(*sk);
-    ek.emplaceprivksk<privksP,0>(*sk);
+    ek.emplaceprivksk<privksP, 1>(*sk);
+    ek.emplaceprivksk<privksP, 0>(*sk);
     vector<array<uint8_t, lvl1param::n>> pa(num_test);
     vector<array<uint32_t, lvl1param::n>> pmu(num_test);
     vector<uint8_t> pzeros(num_test);

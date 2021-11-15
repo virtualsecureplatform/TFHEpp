@@ -6,14 +6,13 @@
 #include <random>
 #include <tfhe++.hpp>
 
-
 int main()
 {
     constexpr uint32_t num_test = 10;
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
-    
+
     using iksP = TFHEpp::lvl10param;
     using bkP = TFHEpp::lvl02param;
     using privksP = TFHEpp::lvl21param;
@@ -22,11 +21,12 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(*sk);
     ek.emplacebkfft<bkP>(*sk);
-    ek.emplaceprivksk<privksP,1>(*sk);
-    ek.emplaceprivksk<privksP,0>(*sk);
+    ek.emplaceprivksk<privksP, 1>(*sk);
+    ek.emplaceprivksk<privksP, 0>(*sk);
 
     std::vector<std::array<uint8_t, privksP::targetP::n>> pa(num_test);
-    std::vector<std::array<typename privksP::targetP::T, privksP::targetP::n>> pmu(num_test);
+    std::vector<std::array<typename privksP::targetP::T, privksP::targetP::n>>
+        pmu(num_test);
     std::vector<uint8_t> pones(num_test);
     std::array<bool, privksP::targetP::n> pres;
     for (std::array<uint8_t, privksP::targetP::n> &i : pa)
@@ -37,26 +37,31 @@ int main()
     for (int i = 0; i < num_test; i++) pones[i] = true;
     std::vector<TFHEpp::TRLWE<typename privksP::targetP>> ca(num_test);
     std::vector<TFHEpp::TLWE<typename iksP::domainP>> cones(num_test);
-    std::vector<TFHEpp::TRGSWFFT<typename privksP::targetP>> bootedTGSW(num_test);
+    std::vector<TFHEpp::TRGSWFFT<typename privksP::targetP>> bootedTGSW(
+        num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(pmu[i], privksP::targetP::α, sk->key.get<typename privksP::targetP>());
+        ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
+            pmu[i], privksP::targetP::α,
+            sk->key.get<typename privksP::targetP>());
     cones = TFHEpp::bootsSymEncrypt(pones, *sk);
 
     std::chrono::system_clock::time_point start, end;
     ProfilerStart("cb.prof");
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(
-            bootedTGSW[test], cones[test], ek);
+        TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(bootedTGSW[test],
+                                                            cones[test], ek);
     }
     end = std::chrono::system_clock::now();
     ProfilerStop();
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::trgswfftExternalProduct<typename privksP::targetP>(ca[test], ca[test],
-                                           bootedTGSW[test]);
-        pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(ca[test], sk->key.lvl1);
-        for (int i = 0; i < privksP::targetP::n; i++) assert(pres[i] == pa[test][i]);
+        TFHEpp::trgswfftExternalProduct<typename privksP::targetP>(
+            ca[test], ca[test], bootedTGSW[test]);
+        pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(ca[test],
+                                                                  sk->key.lvl1);
+        for (int i = 0; i < privksP::targetP::n; i++)
+            assert(pres[i] == pa[test][i]);
     }
     std::cout << "Passed" << std::endl;
     double elapsed =

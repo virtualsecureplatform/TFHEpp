@@ -62,10 +62,11 @@ uint8_t NMuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
     return (~((inc > 0) ? in1 : in0)) & 0x1;
 }
 
-template <class Func, class Chegk>
-void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
-          vector<TLWE<lvl1param>> cres, vector<TLWE<lvl1param>> c,
-          const int kNumTests, const SecretKey& sk, const EvalKey& ek)
+template <class TLWEParam, class Func, class Chegk>
+void Test(string type, Func func, Chegk chegk, vector<uint8_t> pres,
+          vector<uint8_t> p, vector<TLWE<TLWEParam>> cres,
+          vector<TLWE<TLWEParam>> c, const int kNumTests, const SecretKey& sk,
+          const EvalKey& ek)
 {
     random_device seed_gen;
     default_random_engine engine(seed_gen());
@@ -74,41 +75,41 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
     cout << "Number of tests:\t" << kNumTests << endl;
 
     for (uint8_t& i : p) i = binary(engine);
-    c = bootsSymEncrypt(p, sk);
+    c = bootsSymEncrypt<TLWEParam>(p, sk);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < kNumTests; i++) {
-        if constexpr (std::is_invocable_v<Func, TLWE<lvl1param>&>) {
+        if constexpr (std::is_invocable_v<Func, TLWE<TLWEParam>&>) {
             func(cres[i]);
-            p[i] = chegk();
+            pres[i] = chegk();
         }
-        else if constexpr (std::is_invocable_v<Func, TLWE<lvl1param>&,
-                                               const TLWE<lvl1param>&>) {
+        else if constexpr (std::is_invocable_v<Func, TLWE<TLWEParam>&,
+                                               const TLWE<TLWEParam>&>) {
             func(cres[i], c[i]);
-            p[i] = chegk(p[i]);
+            pres[i] = chegk(p[i]);
         }
         else if constexpr (std::is_invocable_v<
-                               Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
-                               const TLWE<lvl1param>&, const EvalKey&>) {
+                               Func, TLWE<TLWEParam>&, const TLWE<TLWEParam>&,
+                               const TLWE<TLWEParam>&, const EvalKey&>) {
             func(cres[i], c[i], c[i + kNumTests], ek);
-            p[i] = chegk(p[i], p[i + kNumTests]);
+            pres[i] = chegk(p[i], p[i + kNumTests]);
         }
         else if constexpr (std::is_invocable_v<
-                               Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
-                               const TLWE<lvl1param>&, const TLWE<lvl1param>&,
+                               Func, TLWE<TLWEParam>&, const TLWE<TLWEParam>&,
+                               const TLWE<TLWEParam>&, const TLWE<TLWEParam>&,
                                const EvalKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2], ek);
-            p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2]);
+            pres[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2]);
         }
         else if constexpr (std::is_invocable_v<
-                               Func, TLWE<lvl1param>&, const TLWE<lvl1param>&,
-                               const TLWE<lvl1param>&, const TLWE<lvl1param>&,
-                               const TLWE<lvl1param>&, const EvalKey&>) {
+                               Func, TLWE<TLWEParam>&, const TLWE<TLWEParam>&,
+                               const TLWE<TLWEParam>&, const TLWE<TLWEParam>&,
+                               const TLWE<TLWEParam>&, const EvalKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2],
                  c[i + kNumTests * 3], ek);
-            p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2],
-                         p[i + kNumTests * 3]);
+            pres[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2],
+                            p[i + kNumTests * 3]);
         }
         else {
             std::cout << "Invalid Function" << std::endl;
@@ -116,8 +117,8 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
     }
     end = chrono::system_clock::now();
     vector<uint8_t> p2(cres.size());
-    p2 = bootsSymDecrypt(cres, sk);
-    for (int i = 0; i < kNumTests; i++) assert(p[i] == p2[i]);
+    p2 = bootsSymDecrypt<TLWEParam>(cres, sk);
+    for (int i = 0; i < kNumTests; i++) assert(pres[i] == p2[i]);
     std::cout << "Passed" << std::endl;
     double elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
@@ -125,9 +126,23 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
     cout << elapsed / kNumTests << "ms" << endl;
 }
 
-int main()
+template <class T>
+void RunTest()
 {
+    // using F_T1 = void (*)(TLWE<T>&);
+    // using F_T2 = void (*)(TLWE<T>&, const TLWE<T>&);
+    // using F_T3 =
+    //     void (*)(TLWE<T>&, const TLWE<T>&, const TLWE<T>&, const EvalKey&
+    //     ek);
+    // using F_T4 = void (*)(TLWE<T>&, const TLWE<T>&, const TLWE<T>&,
+    //                       const TLWE<T>&, const EvalKey& ek);
+
     const uint32_t kNumTests = 10;
+
+    if constexpr (std::is_same_v<T, lvl0param>)
+        cout << "------ Test of lvl0param ------" << endl;
+    else if constexpr (std::is_same_v<T, lvlMparam>)
+        cout << "------ Test of lvlMparam ------" << endl;
 
     cout << "------ Key Generation ------" << endl;
     SecretKey* sk = new SecretKey();
@@ -135,27 +150,39 @@ int main()
     ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
     ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     // MUX Need 3 input
+    vector<uint8_t> pres(kNumTests);
     vector<uint8_t> p(3 * kNumTests);
-    vector<TLWE<lvl1param>> cres(kNumTests);
-    vector<TLWE<lvl1param>> c(3 * kNumTests);
+    vector<TLWE<T>> cres(kNumTests);
+    vector<TLWE<T>> c(3 * kNumTests);
 
-    Test("NOT", HomNOT, NotChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("COPY", HomCOPY, CopyChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("NAND", HomNAND, NandChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("OR", HomOR, OrChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("ORYN", HomORYN, OrYNChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("ORNY", HomORNY, OrNYChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("AND", HomAND, AndChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("ANDYN", HomANDYN, AndYNChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("ANDNY", HomANDNY, AndNYChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("XOR", HomXOR, XorChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("XNOR", HomXNOR, XnorChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("MUX", HomMUX, MuxChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("NMUX", HomNMUX, NMuxChegk, p, cres, c, kNumTests, *sk, ek);
-    Test("ConstantZero", HomCONSTANTZERO, ConstantZeroChegk, p, cres, c,
-         kNumTests, *sk, ek);
-    Test("ConstantOne", HomCONSTANTONE, ConstantOneChegk, p, cres, c, kNumTests,
-         *sk, ek);
+    Test<T>("NOT", HomNOT, NotChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("COPY", HomCOPY, CopyChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("NAND", HomNAND, NandChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("OR", HomOR, OrChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("ORYN", HomORYN, OrYNChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("ORNY", HomORNY, OrNYChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("AND", HomAND, AndChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("ANDYN", HomANDYN, AndYNChegk, pres, p, cres, c, kNumTests, *sk,
+            ek);
+    Test<T>("ANDNY", HomANDNY, AndNYChegk, pres, p, cres, c, kNumTests, *sk,
+            ek);
+    Test<T>("XOR", HomXOR<T>, XorChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("XNOR", HomXNOR<T>, XnorChegk, pres, p, cres, c, kNumTests, *sk,
+            ek);
+    Test<T>("MUX", HomMUX<T>, MuxChegk, pres, p, cres, c, kNumTests, *sk, ek);
+    Test<T>("NMUX", HomNMUX<T>, NMuxChegk, pres, p, cres, c, kNumTests, *sk,
+            ek);
+    Test<T>("ConstantZero", HomCONSTANTZERO, ConstantZeroChegk, pres, p, cres,
+            c, kNumTests, *sk, ek);
+    Test<T>("ConstantOne", HomCONSTANTONE, ConstantOneChegk, pres, p, cres, c,
+            kNumTests, *sk, ek);
+}
 
+int main()
+{
+    RunTest<lvl1param>();
+#ifdef ENABLE_AXELL
+    RunTest<lvlMparam>();
+#endif  // ENABLE_AXELL
     return 0;
 }

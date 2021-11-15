@@ -25,4 +25,10 @@ int main()
     for (int i = 0; i < num_test; i++) assert(p[i] == p2[i]);
 
     cout << "Passed" << endl;
+
+    c = bootsSymEncryptHalf(p, sk);
+    p2 = bootsSymDecrypt(c, sk);
+    for (int i = 0; i < num_test; i++) assert(p[i] == p2[i]);
+
+    cout << "Passed Half" << endl;
 }

@@ -8,11 +8,16 @@ OPTION(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
 OPTION(ENABLE_TEST "Build tests" OFF)
 OPTION(ENABLE_BENCHMARK "Build benchmarks" OFF)
 OPTION(ENABLE_TUTORIAL "Build tutorial" OFF)
+OPTION(ENABLE_AXELL "Use codes developed in Axell" ON) 
 
 if(USE_80BIT_SECURITY)
     add_compile_definitions(USE_80BIT_SECURITY)
 elseif(USE_CGGI19)
     add_compile_definitions(USE_CGGI19)
+endif()
+
+if(ENABLE_AXELL)
+	add_compile_definitions(ENABLE_AXELL)
 endif()
 
 # For OpenMP
