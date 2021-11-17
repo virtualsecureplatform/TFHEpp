@@ -51,6 +51,12 @@ void HomNMUX(TLWE<P> &res, const TLWE<P> &cs,
              const TLWE<P> &c1, const TLWE<P> &c0,
              const EvalKey &ek);
 template <class iksP, class bkP>
+void HomMUXwoIKSandSE(TRLWE<typename bkP::targetP> &res,
+                const TLWE<typename bkP::domainP> &cs,
+                const TLWE<typename bkP::domainP> &c1,
+                const TLWE<typename bkP::domainP> &c0,
+                const EvalKey &ek);
+template <class iksP, class bkP>
 void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
                 const TLWE<typename iksP::domainP> &cs,
                 const TLWE<typename iksP::domainP> &c1,

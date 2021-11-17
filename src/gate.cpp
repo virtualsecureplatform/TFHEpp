@@ -244,6 +244,41 @@ INST(lvl1param);
 INST(lvl0param);
 #undef INST
 
+template <class bkP>
+void HomMUXwoIKSandSE(TRLWE<typename bkP::targetP> &res,
+                const TLWE<typename bkP::domainP> &cs,
+                const TLWE<typename bkP::domainP> &c1,
+                const TLWE<typename bkP::domainP> &c0,
+                const EvalKey &ek)
+{
+    TLWE<typename bkP::domainP> temp1;
+    TLWE<typename bkP::domainP> temp0;
+    for (int i = 0; i <= bkP::domainP::n; i++) temp1[i] = cs[i] + c1[i];
+    for (int i = 0; i <= bkP::domainP::n; i++) temp0[i] = -cs[i] + c0[i];
+    temp1[lvl0param::n] -= bkP::domainP::μ;
+    temp0[lvl0param::n] -= bkP::domainP::μ;
+    TRLWE<typename bkP::targetP> and0;
+    BlindRotate<bkP>(res, temp1, ek.getbkfft<bkP>(),
+                   μpolygen<typename bkP::targetP, bkP::targetP::μ>());
+    BlindRotate<bkP>(and0, temp0, ek.getbkfft<bkP>(),
+                   μpolygen<typename bkP::targetP, bkP::targetP::μ>());
+
+    for (int i = 0; i < bkP::targetP::n; i++) {
+        res[0][i] += and0[0][i];
+        res[1][i] += and0[1][i];
+    };
+    res[1][0] += bkP::targetP::μ;
+}
+#define INST(bkP)                              \
+    template void HomMUXwoIKSandSE<bkP>(       \
+        TRLWE<typename bkP::targetP> & res,    \
+        const TLWE<typename bkP::domainP> &cs, \
+        const TLWE<typename bkP::domainP> &c1, \
+        const TLWE<typename bkP::domainP> &c0, \
+        const EvalKey &ek)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+
 template <class iksP, class bkP>
 void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
                 const TLWE<typename iksP::domainP> &cs,
