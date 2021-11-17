@@ -7,8 +7,8 @@ int main()
     constexpr uint32_t num_test = 1000;
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
-    using P = TFHEpp::lvl2param;
-    using privksP = TFHEpp::lvl22param;
+    using P = TFHEpp::lvl1param;
+    using privksP = TFHEpp::lvl11param;
 
     TFHEpp::SecretKey *sk = new TFHEpp::SecretKey();
 

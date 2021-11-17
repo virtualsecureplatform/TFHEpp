@@ -4,35 +4,51 @@
 
 namespace TFHEpp {
 using namespace std;
-void HomCONSTANTONE(TLWE<lvl1param> &res);
-void HomCONSTANTZERO(TLWE<lvl1param> &res);
-void HomNOT(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca);
-void HomCOPY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca);
-void HomNAND(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-             const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomNOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-            const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomXNOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-             const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomAND(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-            const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-           const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomXOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-            const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomANDNY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-              const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomANDYN(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-              const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomORNY(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-             const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomORYN(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
-             const TLWE<lvl1param> &cb, const EvalKey &ek);
-void HomMUX(TLWE<lvl1param> &res, const TLWE<lvl1param> &cs,
-            const TLWE<lvl1param> &c1, const TLWE<lvl1param> &c0,
+template <class P = lvl1param>
+void HomCONSTANTONE(TLWE<P> &res);
+template <class P = lvl1param>
+void HomCONSTANTZERO(TLWE<P> &res);
+template <class P = lvl1param>
+void HomNOT(TLWE<P> &res, const TLWE<P> &ca);
+template <class P = lvl1param>
+void HomCOPY(TLWE<P> &res, const TLWE<P> &ca);
+template <class P = lvl1param>
+void HomNAND(TLWE<P> &res, const TLWE<P> &ca,
+             const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomNOR(TLWE<P> &res, const TLWE<P> &ca,
+            const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomXNOR(TLWE<P> &res, const TLWE<P> &ca,
+             const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomAND(TLWE<P> &res, const TLWE<P> &ca,
+            const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomOR(TLWE<P> &res, const TLWE<P> &ca,
+           const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomXOR(TLWE<P> &res, const TLWE<P> &ca,
+            const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomANDNY(TLWE<P> &res, const TLWE<P> &ca,
+              const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomANDYN(TLWE<P> &res, const TLWE<P> &ca,
+              const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomORNY(TLWE<P> &res, const TLWE<P> &ca,
+             const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomORYN(TLWE<P> &res, const TLWE<P> &ca,
+             const TLWE<P> &cb, const EvalKey &ek);
+template <class P = lvl1param>
+void HomMUX(TLWE<P> &res, const TLWE<P> &cs,
+            const TLWE<P> &c1, const TLWE<P> &c0,
             const EvalKey &ek);
-void HomNMUX(TLWE<lvl1param> &res, const TLWE<lvl1param> &cs,
-             const TLWE<lvl1param> &c1, const TLWE<lvl1param> &c0,
+template <class P = lvl1param>
+void HomNMUX(TLWE<P> &res, const TLWE<P> &cs,
+             const TLWE<P> &c1, const TLWE<P> &c0,
              const EvalKey &ek);
 template <class iksP, class bkP>
 void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
