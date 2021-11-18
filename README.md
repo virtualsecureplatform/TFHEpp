@@ -1,6 +1,6 @@
 # oveus-tfhe
 This repository contains the TFHE library for oveus based on [TFHEpp](https://github.com/virtualsecureplatform/TFHEpp).
-Some performance and UX improvements are applied.
+Some performance improvements described in [this paper](https://doi.org/10.1145/3474366.3486927) and some UX improvements are applied.
 The files in this repository are licensed under AGPLv3. For third parties' programs, see corresponding directories under /thirdparties.
 If you need the commercial license for our AGPLv3 parts, please contact to oveus@axell.co.jp
 
