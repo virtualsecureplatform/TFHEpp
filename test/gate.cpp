@@ -64,8 +64,8 @@ uint8_t NMuxChegk(const uint8_t inc, const uint8_t in1, const uint8_t in0)
 
 template <class P, class Func, class Chegk>
 void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
-          vector<TLWE<P>> cres, vector<TLWE<P>> c,
-          const int kNumTests, const SecretKey& sk, const EvalKey& ek)
+          vector<TLWE<P>> cres, vector<TLWE<P>> c, const int kNumTests,
+          const SecretKey& sk, const EvalKey& ek)
 {
     random_device seed_gen;
     default_random_engine engine(seed_gen());
@@ -88,23 +88,22 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
             func(cres[i], c[i]);
             p[i] = chegk(p[i]);
         }
-        else if constexpr (std::is_invocable_v<
-                               Func, TLWE<P>&, const TLWE<P>&,
-                               const TLWE<P>&, const EvalKey&>) {
+        else if constexpr (std::is_invocable_v<Func, TLWE<P>&, const TLWE<P>&,
+                                               const TLWE<P>&,
+                                               const EvalKey&>) {
             func(cres[i], c[i], c[i + kNumTests], ek);
             p[i] = chegk(p[i], p[i + kNumTests]);
         }
-        else if constexpr (std::is_invocable_v<
-                               Func, TLWE<P>&, const TLWE<P>&,
-                               const TLWE<P>&, const TLWE<P>&,
-                               const EvalKey&>) {
+        else if constexpr (std::is_invocable_v<Func, TLWE<P>&, const TLWE<P>&,
+                                               const TLWE<P>&, const TLWE<P>&,
+                                               const EvalKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2], ek);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2]);
         }
-        else if constexpr (std::is_invocable_v<
-                               Func, TLWE<P>&, const TLWE<P>&,
-                               const TLWE<P>&, const TLWE<P>&,
-                               const TLWE<P>&, const EvalKey&>) {
+        else if constexpr (std::is_invocable_v<Func, TLWE<P>&, const TLWE<P>&,
+                                               const TLWE<P>&, const TLWE<P>&,
+                                               const TLWE<P>&,
+                                               const EvalKey&>) {
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2],
                  c[i + kNumTests * 3], ek);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2],
@@ -124,7 +123,6 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
             .count();
     cout << elapsed / kNumTests << "ms" << endl;
 }
-
 
 template <class P>
 void RunTest()
@@ -147,22 +145,30 @@ void RunTest()
     vector<TLWE<P>> c(3 * kNumTests);
 
     Test<P>("NOT", TFHEpp::HomNOT<P>, NotChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("COPY", TFHEpp::HomCOPY<P>, CopyChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("NAND", TFHEpp::HomNAND<P>, NandChegk, p, cres, c, kNumTests, *sk, ek);
+    Test<P>("COPY", TFHEpp::HomCOPY<P>, CopyChegk, p, cres, c, kNumTests, *sk,
+            ek);
+    Test<P>("NAND", TFHEpp::HomNAND<P>, NandChegk, p, cres, c, kNumTests, *sk,
+            ek);
     Test<P>("OR", TFHEpp::HomOR<P>, OrChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("ORYN", TFHEpp::HomORYN<P>, OrYNChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("ORNY", TFHEpp::HomORNY<P>, OrNYChegk, p, cres, c, kNumTests, *sk, ek);
+    Test<P>("ORYN", TFHEpp::HomORYN<P>, OrYNChegk, p, cres, c, kNumTests, *sk,
+            ek);
+    Test<P>("ORNY", TFHEpp::HomORNY<P>, OrNYChegk, p, cres, c, kNumTests, *sk,
+            ek);
     Test<P>("AND", TFHEpp::HomAND<P>, AndChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("ANDYN", TFHEpp::HomANDYN<P>, AndYNChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("ANDNY", TFHEpp::HomANDNY<P>, AndNYChegk, p, cres, c, kNumTests, *sk, ek);
+    Test<P>("ANDYN", TFHEpp::HomANDYN<P>, AndYNChegk, p, cres, c, kNumTests,
+            *sk, ek);
+    Test<P>("ANDNY", TFHEpp::HomANDNY<P>, AndNYChegk, p, cres, c, kNumTests,
+            *sk, ek);
     Test<P>("XOR", TFHEpp::HomXOR<P>, XorChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("XNOR", TFHEpp::HomXNOR<P>, XnorChegk, p, cres, c, kNumTests, *sk, ek);
+    Test<P>("XNOR", TFHEpp::HomXNOR<P>, XnorChegk, p, cres, c, kNumTests, *sk,
+            ek);
     Test<P>("MUX", TFHEpp::HomMUX<P>, MuxChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("NMUX", TFHEpp::HomNMUX<P>, NMuxChegk, p, cres, c, kNumTests, *sk, ek);
-    Test<P>("ConstantZero", TFHEpp::HomCONSTANTZERO<P>, ConstantZeroChegk, p, cres, c,
-         kNumTests, *sk, ek);
-    Test<P>("ConstantOne", TFHEpp::HomCONSTANTONE<P>, ConstantOneChegk, p, cres, c, kNumTests,
-         *sk, ek);
+    Test<P>("NMUX", TFHEpp::HomNMUX<P>, NMuxChegk, p, cres, c, kNumTests, *sk,
+            ek);
+    Test<P>("ConstantZero", TFHEpp::HomCONSTANTZERO<P>, ConstantZeroChegk, p,
+            cres, c, kNumTests, *sk, ek);
+    Test<P>("ConstantOne", TFHEpp::HomCONSTANTONE<P>, ConstantOneChegk, p, cres,
+            c, kNumTests, *sk, ek);
 }
 
 int main()

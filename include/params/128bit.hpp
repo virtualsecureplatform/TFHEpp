@@ -8,7 +8,7 @@ struct lvl0param {
     static constexpr std::uint32_t n = 635;             // dimension
     static const inline double α = std::pow(2.0, -15);  // fresh noise
     using T = uint32_t;                                 // Torus representation
-    static constexpr T μ = 1U << (std::numeric_limits<T>::digits-3);
+    static constexpr T μ = 1U << (std::numeric_limits<T>::digits - 3);
     static constexpr uint32_t plain_modulus = 2;
     static constexpr double Δ =
         static_cast<double>(1ULL << std::numeric_limits<T>::digits) /

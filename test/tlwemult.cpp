@@ -1,4 +1,5 @@
 #include <bits/stdint-uintn.h>
+
 #include <iostream>
 #include <tfhe++.hpp>
 
@@ -24,7 +25,7 @@ int main()
         typename P::T p0, p1, pres, ptrue;
         p0 = message(engine);
         p1 = message(engine);
-        ptrue = (p0*p1)%P::plain_modulus;
+        ptrue = (p0 * p1) % P::plain_modulus;
 
         TFHEpp::TLWE<P> c0 =
             TFHEpp::tlweSymIntEncrypt<P>(p0, P::α, sk->key.get<P>());
@@ -34,7 +35,8 @@ int main()
         TFHEpp::TLWEMult<privksP>(cres, c0, c1, relinkeyfft, privksk);
         pres = TFHEpp::tlweSymIntDecrypt<P>(cres, sk->key.get<P>());
 
-        std::cout<<p0<<":"<<p1<<":"<<pres<<":"<<ptrue<<std::endl;
+        std::cout << p0 << ":" << p1 << ":" << pres << ":" << ptrue
+                  << std::endl;
         assert(pres == ptrue);
     }
     std::cout << "Passed" << std::endl;

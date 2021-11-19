@@ -36,12 +36,12 @@ TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 
 template <class P>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
-                       const std::array<typename P::T, P::n> &key)
+                          const std::array<typename P::T, P::n> &key)
 {
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, std::numeric_limits<typename P::T>::max());
     TLWE<P> res = {};
-    res[P::n] = ModularGaussian<P>(static_cast<typename P::T>(p*P::Δ), α);
+    res[P::n] = ModularGaussian<P>(static_cast<typename P::T>(p * P::Δ), α);
     for (int i = 0; i < P::n; i++) {
         res[i] = Torusdist(generator);
         res[P::n] += res[i] * key[i];
@@ -49,7 +49,7 @@ TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
     return res;
 }
 #define INST(P)                                \
-    template TLWE<P> tlweSymIntEncrypt<P>(        \
+    template TLWE<P> tlweSymIntEncrypt<P>(     \
         const typename P::T p, const double α, \
         const std::array<typename P::T, P::n> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
@@ -75,12 +75,12 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
     typename P::T phase = c[P::n];
     for (int i = 0; i < P::n; i++) phase -= c[i] * key[i];
     typename P::T res =
-        static_cast<typename P::T>(std::round(phase / P::Δ)) % 
-               P::plain_modulus;
+        static_cast<typename P::T>(std::round(phase / P::Δ)) % P::plain_modulus;
     return res;
 }
-#define INST(P) \
-    template typename P::T tlweSymIntDecrypt<P>(const TLWE<P> &c, const Key<P> &key)
+#define INST(P)                                                   \
+    template typename P::T tlweSymIntDecrypt<P>(const TLWE<P> &c, \
+                                                const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 

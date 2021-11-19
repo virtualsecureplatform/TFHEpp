@@ -1,8 +1,8 @@
 #pragma once
+#include "keyswitch.hpp"
 #include "mulfft.hpp"
 #include "trgsw.hpp"
 #include "trlwe.hpp"
-#include "keyswitch.hpp"
 
 namespace TFHEpp {
 template <class P>
@@ -12,7 +12,7 @@ inline void RemoveSign(UnsignedPolynomial<P> &res, const Polynomial<P> &a)
 }
 template <class P>
 void TRLWEMultWithoutRelinerization(TRLWE3<P> &res, const TRLWE<P> &a,
-                                  const TRLWE<P> &b)
+                                    const TRLWE<P> &b)
 {
     UnsignedTRLWE<P> aa, bb;
     RemoveSign<P>(aa[0], a[0]);
@@ -64,7 +64,7 @@ inline void Relinearization(TRLWE<P> &res, const TRLWE3<P> &mult,
 
 template <class P>
 inline void TRLWEMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
-                    const relinKeyFFT<P> &relinkeyfft)
+                      const relinKeyFFT<P> &relinkeyfft)
 {
     TRLWE3<P> resmult;
     TRLWEMultWithoutRelinerization<P>(resmult, a, b);
@@ -72,13 +72,16 @@ inline void TRLWEMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
 }
 
 template <class P>
-inline void TLWEMult(TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &a, const TLWE<typename P::domainP> &b,
-                    const relinKeyFFT<typename P::targetP> &relinkeyfft, const PrivateKeySwitchingKey<P> &privksk)
+inline void TLWEMult(TLWE<typename P::targetP> &res,
+                     const TLWE<typename P::domainP> &a,
+                     const TLWE<typename P::domainP> &b,
+                     const relinKeyFFT<typename P::targetP> &relinkeyfft,
+                     const PrivateKeySwitchingKey<P> &privksk)
 {
-    TRLWE<typename P::targetP> trlweres,trlwea,trlweb;
+    TRLWE<typename P::targetP> trlweres, trlwea, trlweb;
     PrivKeySwitch<P>(trlwea, a, privksk);
     PrivKeySwitch<P>(trlweb, b, privksk);
-    TRLWEMult<typename P::targetP>(trlweres,trlwea,trlweb,relinkeyfft);
+    TRLWEMult<typename P::targetP>(trlweres, trlwea, trlweb, relinkeyfft);
     SampleExtractIndex<typename P::targetP>(res, trlweres, 0);
 }
 }  // namespace TFHEpp
