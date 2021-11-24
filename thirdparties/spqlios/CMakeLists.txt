@@ -9,7 +9,7 @@ set(SRCS_FMA
     )
 
 set(SPQLIOS_HEADERS
-    spqlios-fft.h
+    fft_processor_spqlios.h
     )
 
 add_library(spqlios STATIC ${SRCS_FMA} ${SPQLIOS_HEADERS})

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <spqlios-fft.h>
+#include <fft_processor_spqlios.h>
 
 #include "cuhe++.hpp"
 #include "params.hpp"
