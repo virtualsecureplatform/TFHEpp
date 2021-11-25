@@ -30,7 +30,7 @@ template <class P>
 using Key = std::array<typename P::T, P::n>;
 
 template <class P>
-using TLWE = std::array<typename P::T, P::n + 1>;
+using TLWE = std::array<typename P::T, P::k*P::n + 1>;
 
 template <class P>
 using Polynomial = std::array<typename P::T, P::n>;
@@ -48,22 +48,22 @@ template <class P>
 using DecomposedPolynomialNTT = PolynomialNTT<P>;
 
 template <class P>
-using TRLWE = std::array<Polynomial<P>, 2>;
+using TRLWE = std::array<Polynomial<P>, P::k+1>;
 template <class P>
-using UnsignedTRLWE = std::array<Polynomial<P>, 2>;
+using UnsignedTRLWE = std::array<Polynomial<P>, P::k+1>;
 template <class P>
 using TRLWE3 = std::array<Polynomial<P>, 3>;
 template <class P>
-using TRLWEInFD = std::array<PolynomialInFD<P>, 2>;
+using TRLWEInFD = std::array<PolynomialInFD<P>, P::k+1>;
 template <class P>
-using TRLWENTT = std::array<PolynomialNTT<P>, 2>;
+using TRLWENTT = std::array<PolynomialNTT<P>, P::k+1>;
 
 template <class P>
-using TRGSW = std::array<TRLWE<P>, 2 * P::l>;
+using TRGSW = std::array<TRLWE<P>, (P::k+1) * P::l>;
 template <class P>
-using TRGSWFFT = std::array<TRLWEInFD<P>, 2 * P::l>;
+using TRGSWFFT = std::array<TRLWEInFD<P>, (P::k+1) * P::l>;
 template <class P>
-using TRGSWNTT = std::array<TRLWENTT<P>, 2 * P::l>;
+using TRGSWNTT = std::array<TRLWENTT<P>, (P::k+1) * P::l>;
 
 template <class P>
 using BootstrappingKey = std::array<TRGSW<typename P::targetP>, P::domainP::n>;

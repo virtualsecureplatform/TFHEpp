@@ -1,3 +1,5 @@
+ShiftRegister(ntt.io.fin,conf.radix
+
 #include <cassert>
 #include <chrono>
 #include <iostream>
