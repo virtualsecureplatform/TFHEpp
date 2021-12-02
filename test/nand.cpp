@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ShiftRegister(ntt.io.fin,conf.radix
+=======
+#include <gperftools/profiler.h>
+>>>>>>> master
 
 #include <cassert>
 #include <chrono>
@@ -33,6 +37,7 @@ int main()
     cb = bootsSymEncrypt(pb, *sk);
 
     chrono::system_clock::time_point start, end;
+    ProfilerStart("nand.prof");
     start = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
@@ -40,6 +45,7 @@ int main()
     }
 
     end = chrono::system_clock::now();
+    ProfilerStop();
     pres = bootsSymDecrypt(cres, *sk);
     for (int i = 0; i < num_test; i++) assert(pres[i] == !(pa[i] & pb[i]));
     cout << "Passed" << endl;
