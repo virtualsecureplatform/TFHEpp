@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic
 
 OPTION(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 OPTION(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
+OPTION(USE_CONCRETE "Use the parameter set proposed in CONCRETE" OFF)
 OPTION(ENABLE_TEST "Build tests" OFF)
 OPTION(ENABLE_BENCHMARK "Build benchmarks" OFF)
 OPTION(ENABLE_TUTORIAL "Build tutorial" OFF)
@@ -13,6 +14,8 @@ if(USE_80BIT_SECURITY)
     add_compile_definitions(USE_80BIT_SECURITY)
 elseif(USE_CGGI19)
     add_compile_definitions(USE_CGGI19)
+elseif(USE_CONCRETE)
+    add_compile_definitions(USE_CONCRETE)
 endif()
 
 # For OpenMP

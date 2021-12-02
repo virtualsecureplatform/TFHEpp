@@ -13,6 +13,8 @@ namespace TFHEpp {
 #include "params/CGGI16.hpp"
 #elif defined(USE_CGGI19)
 #include "params/CGGI19.hpp"
+#elif defined (USE_CONCRETE)
+#include "params/concrete.hpp"
 #else
 #include "params/128bit.hpp"
 #endif
