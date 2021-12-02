@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-ShiftRegister(ntt.io.fin,conf.radix
-=======
 #include <gperftools/profiler.h>
->>>>>>> master
 
 #include <cassert>
 #include <chrono>
