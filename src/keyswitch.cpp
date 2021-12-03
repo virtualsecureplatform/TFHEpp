@@ -23,15 +23,15 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
     constexpr uint32_t target_digit =
         std::numeric_limits<typename P::targetP::T>::digits;
     if constexpr (domain_digit == target_digit)
-        res[P::targetP::n] = tlwe[P::domainP::n];
+        res[P::targetP::k*P::targetP::n] = tlwe[P::domainP::k*P::domainP::n];
     else if constexpr (domain_digit > target_digit)
-        res[P::targetP::n] = (tlwe[P::domainP::n] +
+        res[P::targetP::k*P::targetP::n] = (tlwe[P::domainP::k*P::domainP::n] +
                               (1ULL << (domain_digit - target_digit - 1))) >>
                              (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
-        res[P::targetP::n] = tlwe[P::domainP::n]
+        res[P::targetP::k*P::targetP::n] = tlwe[P::domainP::k*P::domainP::n]
                              << (target_digit - domain_digit);
-    for (int i = 0; i < P::domainP::n; i++) {
+    for (int i = 0; i < P::domainP::k*P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + prec_offset;
         for (int j = 0; j < P::t; j++) {
             const uint32_t aij =
@@ -39,7 +39,7 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
                            (j + 1) * P::basebit)) &
                 mask;
             if (aij != 0)
-                for (int k = 0; k <= P::targetP::n; k++)
+                for (int k = 0; k <= P::targetP::k*P::targetP::n; k++)
                     res[k] -= ksk[i][j][aij - 1][k];
         }
     }

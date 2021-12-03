@@ -20,11 +20,12 @@ TLWE<P> tlweSymEncrypt(const typename P::T p, const double α,
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, std::numeric_limits<typename P::T>::max());
     TLWE<P> res = {};
-    res[P::n] = ModularGaussian<P>(p, α);
-    for (int i = 0; i < P::n; i++) {
-        res[i] = Torusdist(generator);
-        res[P::n] += res[i] * key[i];
-    }
+    res[P::k*P::n] = ModularGaussian<P>(p, α);
+    for (int k = 0; k < P::k; k++)
+        for (int i = 0; i < P::n; i++) {
+            res[k*P::n+i] = Torusdist(generator);
+            res[P::k*P::n] += res[k*P::n+i] * key[i];
+        }
     return res;
 }
 #define INST(P)                                \
@@ -41,11 +42,12 @@ TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, std::numeric_limits<typename P::T>::max());
     TLWE<P> res = {};
-    res[P::n] = ModularGaussian<P>(static_cast<typename P::T>(p * P::Δ), α);
-    for (int i = 0; i < P::n; i++) {
-        res[i] = Torusdist(generator);
-        res[P::n] += res[i] * key[i];
-    }
+    res[P::k*P::n] = ModularGaussian<P>(static_cast<typename P::T>(p * P::Δ), α);
+    for (int k = 0; k < P::k; k++)
+        for (int i = 0; i < P::n; i++) {
+            res[k*P::n+i] = Torusdist(generator);
+            res[P::k*P::n] += res[k*P::n+i] * key[i];
+        }
     return res;
 }
 #define INST(P)                                \
@@ -58,8 +60,8 @@ TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 template <class P>
 bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
 {
-    typename P::T phase = c[P::n];
-    for (int i = 0; i < P::n; i++) phase -= c[i] * key[i];
+    typename P::T phase = c[P::k*P::n];
+    for (int k = 0; k < P::k; k++) for (int i = 0; i < P::n; i++) phase -= c[k*P::n+i] * key[i];
     bool res =
         static_cast<typename std::make_signed<typename P::T>::type>(phase) > 0;
     return res;
@@ -72,8 +74,8 @@ TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 template <class P>
 typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
 {
-    typename P::T phase = c[P::n];
-    for (int i = 0; i < P::n; i++) phase -= c[i] * key[i];
+    typename P::T phase = c[P::k*P::n];
+    for (int k = 0; k < P::k; k++) for (int i = 0; i < P::n; i++) phase -= c[k*P::n+i] * key[i];
     typename P::T res =
         static_cast<typename P::T>(std::round(phase / P::Δ)) % P::plain_modulus;
     return res;

@@ -105,9 +105,9 @@ void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
     for (int k = 0; k < P::k; k++){
         for (int i = 0; i <= index; i++) tlwe[i] = trlwe[k][index - i];
         for (int i = index + 1; i < P::n; i++)
-            tlwe[i] = -trlwe[k][P::n + index - i];
+            tlwe[k*P::n+i] = -trlwe[k][P::n + index - i];
     }
-    tlwe[P::n] = trlwe[P::k][index];
+    tlwe[P::k*P::n] = trlwe[P::k][index];
 }
 #define INST(P)                                                                \
     template void SampleExtractIndex<P>(TLWE<P> & tlwe, const TRLWE<P> &trlwe, \
