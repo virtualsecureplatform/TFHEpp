@@ -14,8 +14,10 @@ TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
     for (typename P::T &i : c[P::k]) i = ModularGaussian<P>(0, α);
     for (int k = 0; k < P::k; k++){
         for (typename P::T &i : c[k]) i = Torusdist(generator);
+        std::array<typename P::T, P::n> partkey;
+        for(int i = 0; i<P::n; i++) partkey[i] = key[k*P::n+i];
         Polynomial<P> temp;
-        PolyMul<P>(temp, c[k], key);
+        PolyMul<P>(temp, c[k], partkey);
         for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
     }
     return c;
@@ -61,7 +63,9 @@ array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
     Polynomial<P> phase = c[P::k];
     for (int k = 0; k < P::k; k++){
         Polynomial<P> mulres;
-        PolyMul<P>(mulres, c[k], key);
+        std::array<typename P::T, P::n> partkey;
+        for(int i = 0; i<P::n; i++) partkey[i] = key[k*P::n+i];
+        PolyMul<P>(mulres, c[k], partkey);
         for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
     }
 
@@ -83,7 +87,9 @@ Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
     Polynomial<P> phase = c[P::k+1];
     for (int k = 0; k < P::k; k++){
         Polynomial<P> mulres;
-        PolyMul<P>(mulres, c[k], key);
+        std::array<typename P::T, P::n> partkey;
+        for(int i = 0; i<P::n; i++) partkey[i] = key[k*P::n+i];
+        PolyMul<P>(mulres, c[k], partkey);
         for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
     }
 

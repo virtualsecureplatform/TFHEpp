@@ -26,7 +26,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                         << bitwidth);
     res = {};
     PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, b̄);
-    for (int i = 0; i < P::domainP::n; i++) {
+    for (int i = 0; i < P::domainP::k*P::domainP::n; i++) {
         constexpr typename P::domainP::T roundoffset =
             1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
                      P::targetP::nbit + bitwidth);
@@ -56,7 +56,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                         << bitwidth);
     for(int k = 0; k < P::targetP::k+1; k++)
         PolynomialMulByXai<typename P::targetP>(res[k], testvector[k], b̄);
-    for (int i = 0; i < P::domainP::n; i++) {
+    for (int i = 0; i < P::domainP::k*P::domainP::n; i++) {
         constexpr typename P::domainP::T roundoffset =
             1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
                      P::targetP::nbit + bitwidth);
@@ -86,7 +86,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                         << bitwidth);
     res = {};
     PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, b̄);
-    for (int i = 0; i < P::domainP::n; i++) {
+    for (int i = 0; i < P::domainP::k*P::domainP::n; i++) {
         constexpr typename P::domainP::T roundoffset =
             1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
                      P::targetP::nbit + bitwidth);
