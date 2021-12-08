@@ -5,7 +5,7 @@ target_include_directories(
   tfhe++
   PUBLIC ${PROJECT_SOURCE_DIR}/include
          ${PROJECT_SOURCE_DIR}/thirdparties/spqlios
-         ${PROJECT_SOURCE_DIR}/fft_processors/fftw
+         ${PROJECT_SOURCE_DIR}/thirdparties/fftw
          ${PROJECT_SOURCE_DIR}/thirdparties/randen
          ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include)
 

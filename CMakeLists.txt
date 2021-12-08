@@ -32,7 +32,7 @@ add_subdirectory(thirdparties/randen)
 add_subdirectory(src)
 
 if(USE_FFTW3)
-  add_subdirectory(fft_processors/fftw)
+  add_subdirectory(thirdparties/fftw)
 else()
   add_subdirectory(thirdparties/spqlios)
 endif()
