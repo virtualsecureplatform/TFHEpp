@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <complex>
 
-#include "fft_processor_spqlios.h"
+#include "spqlios-fft.h"
 
 using namespace std;
 
