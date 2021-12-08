@@ -11,7 +11,7 @@
 #include <complex>
 #endif
 
-#include "fft_processor_spqlios.h"
+#include "spqlios-fft.h"
 
 using namespace std;
 

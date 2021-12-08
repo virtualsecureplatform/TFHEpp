@@ -9,10 +9,6 @@ This code includes utf-8 identifiers like α. Therefore, Clang and GCC10 or late
 # Parameter
 The default parameter is 128 bit security. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
 
-# FFTW3 Support
-Some environments which does not support AVX2 cannot use spqlios. Instead of spqlios, TFHEpp can use fftw3.
-To use fftw3,  install `libfftw3-dev` and add `-DUSE_FFTW3=ON` to the compile option.
-
 # Third party libraries
 Codes under thirdparties directory contain third-party libraries, Randen, Cereal, and SPQLIOS. See the corresponding directory to check the licenses.
 
