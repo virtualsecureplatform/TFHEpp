@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic
 
 OPTION(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 OPTION(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
+OPTION(USE_FFTW3 "Use fftw3" OFF)
 OPTION(ENABLE_TEST "Build tests" OFF)
 OPTION(ENABLE_BENCHMARK "Build benchmarks" OFF)
 OPTION(ENABLE_TUTORIAL "Build tutorial" OFF)
@@ -15,6 +16,10 @@ elseif(USE_CGGI19)
     add_compile_definitions(USE_CGGI19)
 endif()
 
+if(USE_FFTW3)
+    add_compile_definitions(USE_FFTW3)
+endif()
+
 # For OpenMP
 find_package(OpenMP)
 if(OpenMP_FOUND)
@@ -22,8 +27,13 @@ if(OpenMP_FOUND)
 endif()
 
 add_subdirectory(thirdparties/randen)
-add_subdirectory(thirdparties/spqlios)
 add_subdirectory(src)
+
+if(USE_FFTW3)
+  add_subdirectory(thirdparties/fftw)
+else()
+    add_subdirectory(thirdparties/spqlios)
+endif()
 
 if(ENABLE_TEST)
     add_subdirectory(test)

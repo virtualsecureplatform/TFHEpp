@@ -1,6 +1,8 @@
 #!/bin/bash
 
 clang-format -style=file -i ./src/*.cpp
+clang-format -style=file -i ./thirdparties/fftw/*.h
+clang-format -style=file -i ./thirdparties/fftw/*.cpp
 clang-format -style=file -i ./include/*.hpp
 clang-format -style=file -i ./include/params/*.hpp
 clang-format -style=file -i ./test/*.cpp
