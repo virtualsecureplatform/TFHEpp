@@ -26,6 +26,10 @@ cereal is a header-only C++11 serialization library. TFHEpp uses this to export 
 ## SPQLIOS
 SPQLIOS is the FFT library that is dedicated to the ring R\[X\]/(X^N+1) for N a power of 2. These codes come from [experimental-tfhe](https://github.com/tfhe/experimental-tfhe/tree/master/circuit-bootstrapping/src/spqlios). We just renamed instances to adapt with our codes.
 
+## FFTW3
+[FFTW](https://www.fftw.org/) is one of the most famous FFT libraries. 
+*CAUTON* REDISTRIBUTING BINARY WHICH DEPENDS ON FFTW3 MEANS YOU AGREED WITH GPLv3 OR LATER.
+
 
 # Speed Test
 
