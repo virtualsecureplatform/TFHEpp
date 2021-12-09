@@ -12,8 +12,12 @@
 #include "params.hpp"
 
 namespace TFHEpp {
+#ifdef USE_RANDEN
 static thread_local std::random_device trng;
 static thread_local randen::Randen<uint64_t> generator(trng());
+#else
+static thread_local std::random_device generator;
+#endif
 
 // https://qiita.com/saka1_p/items/e8c4dfdbfa88449190c5
 template <typename T>

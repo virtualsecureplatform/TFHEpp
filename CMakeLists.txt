@@ -5,12 +5,17 @@ set(CMAKE_CXX_FLAGS
     "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
 )
 
+option(USE_RANDEN "Use randen as CSPRNG" ON)
 option(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 option(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
 option(USE_FFTW3 "Use fftw3" OFF)
 option(ENABLE_TEST "Build tests" OFF)
 option(ENABLE_BENCHMARK "Build benchmarks" OFF)
 option(ENABLE_TUTORIAL "Build tutorial" OFF)
+
+if(USE_RANDEN)
+  add_compile_definitions(USE_RANDEN)
+endif()
 
 if(USE_80BIT_SECURITY)
   add_compile_definitions(USE_80BIT_SECURITY)
