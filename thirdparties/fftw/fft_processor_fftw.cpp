@@ -10,6 +10,8 @@
 #include <params.hpp>
 #include <vector>
 
+#define CAST_DOUBLE_TO_UINT32(d) ((uint32_t)((int64_t)(d)))
+
 FFT_Processor_FFTW::FFT_Processor_FFTW(const int32_t N)
     : _2N(2 * N), N(N), Ns2(N / 2)
 {
@@ -86,8 +88,8 @@ void FFT_Processor_FFTW::execute_direct_torus32(uint32_t *res, const double *a)
     for (int i = 0; i < Ns2; i++) {
         auto res_tmp =
             std::complex<double>(out[i][0], out[i][1]) * std::conj(twist[i]);
-        res[i] = res_tmp.real();
-        res[i + Ns2] = res_tmp.imag();
+        res[i] = CAST_DOUBLE_TO_UINT32(res_tmp.real());
+        res[i + Ns2] = CAST_DOUBLE_TO_UINT32(res_tmp.imag());
     }
 
     fftw_free(in);
@@ -109,8 +111,8 @@ void FFT_Processor_FFTW::execute_direct_torus32_rescale(uint32_t *res,
     for (int i = 0; i < Ns2; i++) {
         auto res_tmp =
             std::complex<double>(out[i][0], out[i][1]) * std::conj(twist[i]);
-        res[i] = res_tmp.real() / (Δ / 4);
-        res[i + Ns2] = res_tmp.imag() / (Δ / 4);
+        res[i] = CAST_DOUBLE_TO_UINT32(res_tmp.real() / (Δ / 4));
+        res[i + Ns2] = CAST_DOUBLE_TO_UINT32(res_tmp.imag() / (Δ / 4));
     }
 
     fftw_free(in);
