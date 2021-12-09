@@ -9,6 +9,7 @@ option(USE_RANDEN "Use randen as CSPRNG" ON)
 option(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 option(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
 option(USE_FFTW3 "Use fftw3" OFF)
+option(USE_SPQLIOX_AARCH64 "Use spqliox_aarch64" OFF)
 option(ENABLE_TEST "Build tests" OFF)
 option(ENABLE_BENCHMARK "Build benchmarks" OFF)
 option(ENABLE_TUTORIAL "Build tutorial" OFF)
@@ -25,6 +26,12 @@ endif()
 
 if(USE_FFTW3)
   add_compile_definitions(USE_FFTW3)
+  add_subdirectory(thirdparties/fftw)
+elseif(USE_SPQLIOX_AARCH64)
+  add_compile_definitions(USE_SPQLIOX_AARCH64)
+  add_subdirectory(thirdparties/spqliox_aarch64)
+else()
+  add_subdirectory(thirdparties/spqlios)
 endif()
 
 # For OpenMP
@@ -35,12 +42,6 @@ endif()
 
 add_subdirectory(thirdparties/randen)
 add_subdirectory(src)
-
-if(USE_FFTW3)
-  add_subdirectory(thirdparties/fftw)
-else()
-  add_subdirectory(thirdparties/spqlios)
-endif()
 
 if(ENABLE_TEST)
   add_subdirectory(test)
