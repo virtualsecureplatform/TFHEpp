@@ -34,7 +34,7 @@ SPQLIOS is the FFT library that is dedicated to the ring R\[X\]/(X^N+1) for N a 
 ## spqliox_aarch64
 spqliox_aarch64 is the FFT library for aarch64 forked from SPQLIOS.
 This is slightly faster than FFTW3(average 1ms).
-This library requires [xbyak_aarch64](https://github.com/fujitsu/xbyak_aarch64) and,
+This library requires [xbyak_aarch64](https://github.com/fujitsu/xbyak_aarch64), and
 to use this library, add `-DUSE_SPQLIOX_AARCH64=on` to the compile option.
 
 <center>
