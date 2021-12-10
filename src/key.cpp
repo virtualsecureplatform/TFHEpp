@@ -6,7 +6,11 @@ using namespace std;
 
 lweKey::lweKey()
 {
+#ifdef USE_RANDEN
     randen::Randen<uint64_t> engine;
+#else
+    std::random_device engine;
+#endif
     uniform_int_distribution<uint32_t> binary(0, 1);
     for (typename lvl0param::T &i : lvl0) i = binary(engine);
     for (typename lvl1param::T &i : lvl1) i = binary(engine);
