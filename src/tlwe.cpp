@@ -1,4 +1,6 @@
+#ifdef USE_RANDEN
 #include <randen.h>
+#endif
 
 #include <array>
 #include <cstdint>
