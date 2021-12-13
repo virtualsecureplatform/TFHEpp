@@ -214,7 +214,7 @@ void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
             and1, temp, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
         GateBootstrappingTLWE2TLWEFFT<lvl01param>(
             and0, res, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
-        for (int i = 0; i <= P::k*lvl1param::n; i++) and0[i] += and1[i];
+        for (int i = 0; i <= lvl1param::k*lvl1param::n; i++) and0[i] += and1[i];
         IdentityKeySwitch<lvl10param>(res, and0, *ek.iksklvl10);
         res[P::k*P::n] += P::μ;
     }
