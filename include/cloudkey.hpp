@@ -45,7 +45,9 @@ inline void annihilatekeyegen(AnnihilateKey<P> &ahk, const SecretKey &sk)
 {
     for (int i = 0; i < P::nbit; i++) {
         Polynomial<P> autokey;
-        Automorphism<P>(autokey, sk.key.get<P>(), (1 << (P::nbit - i)) + 1);
+        std::array<typename P::T, P::n> partkey;
+        for(int i = 0; i<P::n; i++) partkey[i] = sk.key.get<P>()[0*P::n+i];
+        Automorphism<P>(autokey, partkey, (1 << (P::nbit - i)) + 1);
         ahk[i] = trgswfftSymEncrypt<P>(autokey, P::α, sk.key.get<P>());
     }
 }
@@ -64,7 +66,9 @@ inline relinKey<P> relinKeygen(const Key<P> &key)
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
 
     Polynomial<P> keysquare;
-    PolyMulNaieve<P>(keysquare, key, key);
+    std::array<typename P::T, P::n> partkey;
+    for(int i = 0; i<P::n; i++) partkey[i] = key[0*P::n+i];
+    PolyMulNaieve<P>(keysquare, partkey, partkey);
     relinKey<P> relinkey;
     for (TRLWE<P> &ctxt : relinkey) ctxt = trlweSymEncryptZero<P>(P::α, key);
     for (int i = 0; i < P::l; i++)

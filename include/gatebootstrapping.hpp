@@ -20,7 +20,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
     const uint32_t b̄ = 2 * P::targetP::n -
-                       ((tlwe[P::domainP::n] >>
+                       ((tlwe[P::domainP::k*P::domainP::n] >>
                          (std::numeric_limits<typename P::domainP::T>::digits -
                           1 - P::targetP::nbit + bitwidth))
                         << bitwidth);
