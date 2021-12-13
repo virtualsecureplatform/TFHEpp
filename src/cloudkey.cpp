@@ -57,7 +57,7 @@ void ikskgen(KeySwitchingKey<P>& ksk, const SecretKey& sk)
             for (int j = 0; j < P::t; j++)
                 for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
                     ksk[l*P::domainP::n+i][j][k] = tlweSymEncrypt<typename P::targetP>(
-                        sk.key.get<typename P::domainP>()[i] * (k + 1) *
+                        sk.key.get<typename P::domainP>()[l*P::domainP::n+i] * (k + 1) *
                             (1ULL
                             << (numeric_limits<typename P::targetP::T>::digits -
                                 (j + 1) * P::basebit)),
