@@ -33,7 +33,9 @@ SPQLIOS is the FFT library that is dedicated to the ring R\[X\]/(X^N+1) for N a 
 
 ## MKL
 Intel MKL is the library provided by Intel and including FFTW compatible interface for FFT.
-We assume to introduce 
+We assume to install MKL by [this procedure](https://www.intel.com/content/www/us/en/developer/articles/guide/installing-free-libraries-and-python-apt-repo.html) and already ran `source /opt/intel/mkl/bin/mklvars.sh`.
+
+Add `-DUSE_MKL` to the compile option to use MKL
 
 ## spqliox_aarch64
 spqliox_aarch64 is the FFT library for aarch64 forked from SPQLIOS.
