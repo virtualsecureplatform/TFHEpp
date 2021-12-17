@@ -31,6 +31,10 @@ SPQLIOS is the FFT library that is dedicated to the ring R\[X\]/(X^N+1) for N a 
 
 **CAUTION**: REDISTRIBUTING BINARY WHICH DEPENDS ON FFTW3 MEANS YOU AGREED WITH GPLv3 OR LATER.
 
+## MKL
+Intel MKL is the library provided by Intel and including FFTW compatible interface for FFT.
+We assume to introduce 
+
 ## spqliox_aarch64
 spqliox_aarch64 is the FFT library for aarch64 forked from SPQLIOS.
 This is slightly faster than FFTW3(average 1ms).
