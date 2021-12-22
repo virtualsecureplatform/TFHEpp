@@ -21,8 +21,7 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(*sk);
     ek.emplacebkfft<bkP>(*sk);
-    ek.emplaceprivksk<privksP, 1>(*sk);
-    ek.emplaceprivksk<privksP, 0>(*sk);
+    ek.emplaceprivksk4cb<privksP>(*sk);
 
     std::vector<std::array<uint8_t, privksP::targetP::n>> pa(num_test);
     std::vector<std::array<typename privksP::targetP::T, privksP::targetP::n>>

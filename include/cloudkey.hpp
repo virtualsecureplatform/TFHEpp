@@ -131,24 +131,8 @@ struct EvalKey {
     void emplaceprivksk(const std::string &key,
                         const Polynomial<typename P::targetP> &func,
                         const SecretKey &sk);
-    template <class P, uint index>
-    void emplaceprivksk(const SecretKey &sk)
-    {
-        if constexpr (index == 0) {
-            emplaceprivksk<P>("identity", {1}, sk);
-        }
-        else if constexpr (index == 1) {
-            TFHEpp::Polynomial<typename P::targetP> poly;
-            for (int i = 0; i < P::targetP::n; i++)
-                poly[i] = -sk.key.get<typename P::targetP>()[i];
-            emplaceprivksk<P>("secret key", poly, sk);
-        }
-        else {
-            static_assert(
-                false_v<P>,
-                "Not a predefined function for Private Key Switching!");
-        }
-    }
+    template <class P>
+    void emplaceprivksk4cb(const SecretKey &sk);
 
     template <class P>
     BootstrappingKey<P> &getbk() const;
