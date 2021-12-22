@@ -19,13 +19,21 @@ endif()
 if(USE_FFTW3)
   target_link_libraries(tfhe++ INTERFACE fftwproc)
   if(USE_MKL)
-    target_include_directories(
+    target_include_directories(tfhe++ PUBLIC ${MKLROOT}/include/fftw)
+    target_link_libraries(
       tfhe++
-      PUBLIC
-        ${MKLROOT}/include/fftw)
-    target_link_libraries(tfhe++ INTERFACE "-Wl,--start-group" $ENV{MKLROOT}/interfaces/fftw3xc/libfftw3xc_gnu.a $ENV{MKLROOT}/lib/intel64/libmkl_cdft_core.a $ENV{MKLROOT}/lib/intel64/libmkl_intel_lp64.a $ENV{MKLROOT}/lib/intel64/libmkl_sequential.a $ENV{MKLROOT}/lib/intel64/libmkl_core.a $ENV{MKLROOT}/lib/intel64/libmkl_blacs_intelmpi_lp64.a "-Wl,--end-group" ${CMAKE_DL_LIBS} pthread)
+      INTERFACE "-Wl,--start-group"
+                $ENV{MKLROOT}/interfaces/fftw3xc/libfftw3xc_gnu.a
+                $ENV{MKLROOT}/lib/intel64/libmkl_cdft_core.a
+                $ENV{MKLROOT}/lib/intel64/libmkl_intel_lp64.a
+                $ENV{MKLROOT}/lib/intel64/libmkl_sequential.a
+                $ENV{MKLROOT}/lib/intel64/libmkl_core.a
+                $ENV{MKLROOT}/lib/intel64/libmkl_blacs_intelmpi_lp64.a
+                "-Wl,--end-group"
+                ${CMAKE_DL_LIBS}
+                pthread)
   else()
-    target_link_libraries(tfhe++ INTERFACE fftw3) 
+    target_link_libraries(tfhe++ INTERFACE fftw3)
   endif()
 elseif(USE_SPQLIOX_AARCH64)
   target_link_libraries(tfhe++ INTERFACE spqliox_aarch64 xbyak_aarch64)
