@@ -12,11 +12,11 @@ using namespace std;
 
 template <class P>
 TLWE<P> tlweSymEncrypt(const typename P::T p, const double α,
-                       const array<typename P::T, P::n> &key);
+                       const Key<P> &key);
 
 template <class P>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
-                          const array<typename P::T, P::n> &key);
+                          const Key<P> &key);
 
 template <class P>
 bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key);

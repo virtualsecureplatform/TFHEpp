@@ -36,8 +36,7 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<ksP>(*sk);
     ek.emplacebkfft<CBbsP>(*sk);
-    ek.emplaceprivksk<CBprivksP, 1>(*sk);
-    ek.emplaceprivksk<CBprivksP, 0>(*sk);
+    ek.emplaceprivksk4cb<CBprivksP>(*sk);
     vector<array<uint8_t, ksP::domainP::n>> pmemory(num_trlwe);
     vector<array<typename ksP::domainP::T, ksP::domainP::n>> pmu(num_trlwe);
     vector<uint8_t> address(address_bit);

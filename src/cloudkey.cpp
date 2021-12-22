@@ -1,11 +1,13 @@
 #include "cloudkey.hpp"
 
+#include <string>
+
 namespace TFHEpp {
 
 template <class P>
 void bkgen(BootstrappingKey<P>& bk, const SecretKey& sk)
 {
-    for (int i = 0; i < P::domainP::n; i++) {
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
         plainpoly[0] = sk.key.get<typename P::domainP>()[i];
         bk[i] = trgswSymEncrypt<typename P::targetP>(
@@ -20,7 +22,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 template <class P>
 void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
 {
-    for (int i = 0; i < P::domainP::n; i++) {
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
         plainpoly[0] = sk.key.get<typename P::domainP>()[i];
         bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
@@ -36,7 +38,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 template <class P>
 void bknttgen(BootstrappingKeyNTT<P>& bkntt, const SecretKey& sk)
 {
-    for (int i = 0; i < P::domainP::n; i++) {
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
         plainpoly[0] = sk.key.get<typename P::domainP>()[i];
         bkntt[i] = trgswnttSymEncrypt<typename P::targetP>(
@@ -52,15 +54,19 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 template <class P>
 void ikskgen(KeySwitchingKey<P>& ksk, const SecretKey& sk)
 {
-    for (int i = 0; i < P::domainP::n; i++)
-        for (int j = 0; j < P::t; j++)
-            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
-                ksk[i][j][k] = tlweSymEncrypt<typename P::targetP>(
-                    sk.key.get<typename P::domainP>()[i] * (k + 1) *
-                        (1ULL
-                         << (numeric_limits<typename P::targetP::T>::digits -
-                             (j + 1) * P::basebit)),
-                    P::α, sk.key.get<typename P::targetP>());
+    for (int l = 0; l < P::domainP::k; l++)
+        for (int i = 0; i < P::domainP::n; i++)
+            for (int j = 0; j < P::t; j++)
+                for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
+                    ksk[l * P::domainP::n + i][j][k] =
+                        tlweSymEncrypt<typename P::targetP>(
+                            sk.key.get<
+                                typename P::domainP>()[l * P::domainP::n + i] *
+                                (k + 1) *
+                                (1ULL << (numeric_limits<
+                                              typename P::targetP::T>::digits -
+                                          (j + 1) * P::basebit)),
+                            P::α, sk.key.get<typename P::targetP>());
 }
 #define INST(P) \
     template void ikskgen<P>(KeySwitchingKey<P> & ksk, const SecretKey& sk)
@@ -73,17 +79,18 @@ void privkskgen(PrivateKeySwitchingKey<P>& privksk,
                 const SecretKey& sk)
 {
     std::array<typename P::domainP::T, P::domainP::n + 1> key;
-    for (int i = 0; i < P::domainP::n; i++) key[i] = sk.key.lvl2[i];
-    key[P::domainP::n] = -1;
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++)
+        key[i] = sk.key.get<typename P::domainP>()[i];
+    key[P::domainP::k * P::domainP::n] = -1;
 #pragma omp parallel for collapse(3)
-    for (int i = 0; i <= P::domainP::n; i++)
+    for (int i = 0; i <= P::domainP::k * P::domainP::n; i++)
         for (int j = 0; j < P::t; j++)
             for (typename P::targetP::T u = 0; u < (1 << P::basebit) - 1; u++) {
                 TRLWE<typename P::targetP> c =
                     trlweSymEncryptZero<typename P::targetP>(
                         P::α, sk.key.get<typename P::targetP>());
                 for (int k = 0; k < P::targetP::n; k++)
-                    c[1][k] +=
+                    c[P::targetP::k][k] +=
                         (u + 1) * func[k] * key[i]
                         << (numeric_limits<typename P::targetP::T>::digits -
                             (j + 1) * P::basebit);
@@ -221,6 +228,22 @@ void EvalKey::emplaceprivksk(const std::string& key,
     template void EvalKey::emplaceprivksk<P>(                                \
         const std::string& key, const Polynomial<typename P::targetP>& func, \
         const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
+#undef INST
+
+template <class P>
+void EvalKey::emplaceprivksk4cb(const SecretKey& sk)
+{
+    for (int k = 0; k < P::targetP::k; k++) {
+        Polynomial<typename P::targetP> partkey;
+        for (int i = 0; i < P::targetP::n; i++)
+            partkey[i] =
+                -sk.key.get<typename P::targetP>()[k * P::targetP::n + i];
+        emplaceprivksk<P>("privksk4cb_" + std::to_string(k), partkey, sk);
+    }
+    emplaceprivksk<P>("privksk4cb_" + std::to_string(P::targetP::k), {1}, sk);
+}
+#define INST(P) template void EvalKey::emplaceprivksk4cb<P>(const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 

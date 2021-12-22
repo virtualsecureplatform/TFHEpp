@@ -32,7 +32,11 @@ TRLWELvl1 trivial_TRLWELvl1(const PolyLvl1 &src)
 PolyLvl1 phase_of_TRLWELvl1(const TRLWELvl1 &src, const SecretKey &skey)
 {
     PolyLvl1 as;
-    TFHEpp::PolyMul<Lvl1>(as, src[0], skey.key.lvl1);
+
+    TFHEpp::Polynomial<TFHEpp::lvl1param> partkey;
+    for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+        partkey[i] = skey.key.lvl1[0 * TFHEpp::lvl1param::n + i];
+    TFHEpp::PolyMul<Lvl1>(as, src[0], partkey);
     PolyLvl1 phase = src[1];
     for (size_t i = 0; i < Lvl1::n; i++) phase[i] -= as[i];
     return phase;

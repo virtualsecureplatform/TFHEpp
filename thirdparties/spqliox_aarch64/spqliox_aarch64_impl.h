@@ -75,7 +75,8 @@ struct fft_code : Xbyak_aarch64::CodeGenerator {
         //	    tmp1[3]=-d0[3];
         //	    add4(d0,tmp0,tmp1); // d0[0:1] = v0.d2 + v1.d2 * v24.d2,
         // d[2:3] = v2.d2 + v3.d2 * v25.d2 	    tmp0[0]=d1[0]; // d1[0] =
-        // v4.d2 	    tmp0[1]=d1[0]; 	    tmp0[2]=d1[2]; // d1[2] = v6.d2 	    tmp0[3]=d1[2];
+        // v4.d2 	    tmp0[1]=d1[0]; 	    tmp0[2]=d1[2]; // d1[2] =
+        // v6.d2 	    tmp0[3]=d1[2];
         //	    tmp1[0]=d1[1]; // d1[1] = v5.d2
         //	    tmp1[1]=-d1[1];
         //	    tmp1[2]=d1[3]; // d1[3] = v7.d2
@@ -201,8 +202,10 @@ struct fft_code : Xbyak_aarch64::CodeGenerator {
         //		    double* re0 = pre + block + off; // x14 (re0
         //+= 0x20) 		    double* im0 = pim + block + off; // x15 (im0
         //+=
-        // 0x20) 		    double* re1 = pre + block + halfnn + off; // x16
-        // (re1 += 0x20) 		    double* im1 = pim + block + halfnn + off; // x17 (im1
+        // 0x20) 		    double* re1 = pre + block + halfnn + off; //
+        // x16
+        // (re1 += 0x20) 		    double* im1 = pim + block + halfnn + off;
+        // // x17 (im1
         //+= 0x20) 		    const double* tcs = cur_tt+2*off;  // x18
         //(tcs += 0x40) 		    const double* tsn = tcs+4; // (tcs +
         // 0x20) 		    dotp4(tmp0,re1,tcs); // re*cos

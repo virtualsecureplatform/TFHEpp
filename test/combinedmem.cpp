@@ -120,8 +120,7 @@ int main()
     ek.emplacebkfft<TFHEpp::lvl02param>(*sk);
     ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     ek.emplaceiksk<TFHEpp::lvl20param>(*sk);
-    ek.emplaceprivksk<TFHEpp::lvl21param, 1>(*sk);
-    ek.emplaceprivksk<TFHEpp::lvl21param, 0>(*sk);
+    ek.emplaceprivksk4cb<TFHEpp::lvl21param>(*sk);
     vector<uint8_t> ramp(memsize / 2 * words);  // unit of memsize is byte(8bit)
     vector<uint8_t> romp(memsize / 2 * words);
     vector<array<array<uint32_t, lvl1param::n>, numramtrlwe>> ramu(words);
