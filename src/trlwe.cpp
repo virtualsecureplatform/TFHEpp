@@ -84,7 +84,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 template <class P>
 Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
-    Polynomial<P> phase = c[P::k+1];
+    Polynomial<P> phase = c[P::k];
     for (int k = 0; k < P::k; k++){
         Polynomial<P> mulres;
         std::array<typename P::T, P::n> partkey;
