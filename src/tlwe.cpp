@@ -14,24 +14,22 @@
 namespace TFHEpp {
 
 template <class P>
-TLWE<P> tlweSymEncrypt(const typename P::T p, const double α,
-                       const Key<P> &key)
+TLWE<P> tlweSymEncrypt(const typename P::T p, const double α, const Key<P> &key)
 {
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, std::numeric_limits<typename P::T>::max());
     TLWE<P> res = {};
-    res[P::k*P::n] = ModularGaussian<P>(p, α);
+    res[P::k * P::n] = ModularGaussian<P>(p, α);
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++) {
-            res[k*P::n+i] = Torusdist(generator);
-            res[P::k*P::n] += res[k*P::n+i] * key[k*P::n+i];
+            res[k * P::n + i] = Torusdist(generator);
+            res[P::k * P::n] += res[k * P::n + i] * key[k * P::n + i];
         }
     return res;
 }
-#define INST(P)                                \
-    template TLWE<P> tlweSymEncrypt<P>(        \
-        const typename P::T p, const double α, \
-        const Key<P> &key)
+#define INST(P)                                                               \
+    template TLWE<P> tlweSymEncrypt<P>(const typename P::T p, const double α, \
+                                       const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
@@ -42,26 +40,28 @@ TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, std::numeric_limits<typename P::T>::max());
     TLWE<P> res = {};
-    res[P::k*P::n] = ModularGaussian<P>(static_cast<typename P::T>(p * P::Δ), α);
+    res[P::k * P::n] =
+        ModularGaussian<P>(static_cast<typename P::T>(p * P::Δ), α);
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++) {
-            res[k*P::n+i] = Torusdist(generator);
-            res[P::k*P::n] += res[k*P::n+i] * key[k*P::n+i];
+            res[k * P::n + i] = Torusdist(generator);
+            res[P::k * P::n] += res[k * P::n + i] * key[k * P::n + i];
         }
     return res;
 }
-#define INST(P)                                \
-    template TLWE<P> tlweSymIntEncrypt<P>(     \
-        const typename P::T p, const double α, \
-        const Key<P> &key)
+#define INST(P)                                                  \
+    template TLWE<P> tlweSymIntEncrypt<P>(const typename P::T p, \
+                                          const double α, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
 template <class P>
 bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
 {
-    typename P::T phase = c[P::k*P::n];
-    for (int k = 0; k < P::k; k++) for (int i = 0; i < P::n; i++) phase -= c[k*P::n+i] * key[k*P::n+i];
+    typename P::T phase = c[P::k * P::n];
+    for (int k = 0; k < P::k; k++)
+        for (int i = 0; i < P::n; i++)
+            phase -= c[k * P::n + i] * key[k * P::n + i];
     bool res =
         static_cast<typename std::make_signed<typename P::T>::type>(phase) > 0;
     return res;
@@ -74,8 +74,10 @@ TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 template <class P>
 typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
 {
-    typename P::T phase = c[P::k*P::n];
-    for (int k = 0; k < P::k; k++) for (int i = 0; i < P::n; i++) phase -= c[k*P::n+i] * key[k*P::n+i];
+    typename P::T phase = c[P::k * P::n];
+    for (int k = 0; k < P::k; k++)
+        for (int i = 0; i < P::n; i++)
+            phase -= c[k * P::n + i] * key[k * P::n + i];
     typename P::T res =
         static_cast<typename P::T>(std::round(phase / P::Δ)) % P::plain_modulus;
     return res;

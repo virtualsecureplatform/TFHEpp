@@ -5,7 +5,7 @@
 #include <limits>
 
 struct lvl0param {
-    static constexpr std::uint32_t n = 635;             // dimension
+    static constexpr std::uint32_t n = 635;  // dimension
     static constexpr std::uint32_t k = 1;
     static const inline double α = std::pow(2.0, -15);  // fresh noise
     using T = uint32_t;                                 // Torus representation

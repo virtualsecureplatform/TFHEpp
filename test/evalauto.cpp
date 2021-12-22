@@ -28,7 +28,8 @@ int main()
                 pmu, TFHEpp::lvl1param::α, sk.key.lvl1);
 
         TFHEpp::Polynomial<TFHEpp::lvl1param> partkey;
-        for(int i = 0; i<TFHEpp::lvl1param::n; i++) partkey[i] = sk.key.lvl1[0*TFHEpp::lvl1param::n+i];
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            partkey[i] = sk.key.lvl1[0 * TFHEpp::lvl1param::n + i];
         TFHEpp::Automorphism<TFHEpp::lvl1param>(autokey, partkey, d);
         TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs =
             TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(

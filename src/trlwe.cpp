@@ -12,10 +12,10 @@ TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
         0, std::numeric_limits<typename P::T>::max());
     TRLWE<P> c;
     for (typename P::T &i : c[P::k]) i = ModularGaussian<P>(0, α);
-    for (int k = 0; k < P::k; k++){
+    for (int k = 0; k < P::k; k++) {
         for (typename P::T &i : c[k]) i = Torusdist(generator);
         std::array<typename P::T, P::n> partkey;
-        for(int i = 0; i<P::n; i++) partkey[i] = key[k*P::n+i];
+        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
         Polynomial<P> temp;
         PolyMul<P>(temp, c[k], partkey);
         for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
@@ -61,10 +61,10 @@ template <class P>
 array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
     Polynomial<P> phase = c[P::k];
-    for (int k = 0; k < P::k; k++){
+    for (int k = 0; k < P::k; k++) {
         Polynomial<P> mulres;
         std::array<typename P::T, P::n> partkey;
-        for(int i = 0; i<P::n; i++) partkey[i] = key[k*P::n+i];
+        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
         PolyMul<P>(mulres, c[k], partkey);
         for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
     }
@@ -85,10 +85,10 @@ template <class P>
 Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
     Polynomial<P> phase = c[P::k];
-    for (int k = 0; k < P::k; k++){
+    for (int k = 0; k < P::k; k++) {
         Polynomial<P> mulres;
         std::array<typename P::T, P::n> partkey;
-        for(int i = 0; i<P::n; i++) partkey[i] = key[k*P::n+i];
+        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
         PolyMul<P>(mulres, c[k], partkey);
         for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
     }
@@ -108,12 +108,13 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 template <class P>
 void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
 {
-    for (int k = 0; k < P::k; k++){
-        for (int i = 0; i <= index; i++) tlwe[k*P::n+i] = trlwe[k][index - i];
+    for (int k = 0; k < P::k; k++) {
+        for (int i = 0; i <= index; i++)
+            tlwe[k * P::n + i] = trlwe[k][index - i];
         for (int i = index + 1; i < P::n; i++)
-            tlwe[k*P::n+i] = -trlwe[k][P::n + index - i];
+            tlwe[k * P::n + i] = -trlwe[k][P::n + index - i];
     }
-    tlwe[P::k*P::n] = trlwe[P::k][index];
+    tlwe[P::k * P::n] = trlwe[P::k][index];
 }
 #define INST(P)                                                                \
     template void SampleExtractIndex<P>(TLWE<P> & tlwe, const TRLWE<P> &trlwe, \

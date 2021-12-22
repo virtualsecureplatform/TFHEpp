@@ -6,7 +6,7 @@ template <class P>
 inline Polynomial<P> decryptTRLWE3(const TRLWE3<P> &c, const Key<P> &key)
 {
     std::array<typename P::T, P::n> partkey;
-    for(int i = 0; i<P::n; i++) partkey[i] = key[0*P::n+i];
+    for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
     Polynomial<P> mulres, p, keysquare;
     PolyMul<P>(mulres, c[0], partkey);
     Polynomial<P> phase = c[1];

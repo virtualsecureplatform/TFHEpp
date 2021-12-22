@@ -13,7 +13,7 @@ namespace TFHEpp {
 #include "params/CGGI16.hpp"
 #elif defined(USE_CGGI19)
 #include "params/CGGI19.hpp"
-#elif defined (USE_CONCRETE)
+#elif defined(USE_CONCRETE)
 #include "params/concrete.hpp"
 #else
 #include "params/128bit.hpp"
@@ -29,10 +29,10 @@ struct lvl02param {
 };
 
 template <class P>
-using Key = std::array<typename P::T, P::k*P::n>;
+using Key = std::array<typename P::T, P::k * P::n>;
 
 template <class P>
-using TLWE = std::array<typename P::T, P::k*P::n + 1>;
+using TLWE = std::array<typename P::T, P::k * P::n + 1>;
 
 template <class P>
 using Polynomial = std::array<typename P::T, P::n>;
@@ -50,22 +50,22 @@ template <class P>
 using DecomposedPolynomialNTT = PolynomialNTT<P>;
 
 template <class P>
-using TRLWE = std::array<Polynomial<P>, P::k+1>;
+using TRLWE = std::array<Polynomial<P>, P::k + 1>;
 template <class P>
-using UnsignedTRLWE = std::array<Polynomial<P>, P::k+1>;
+using UnsignedTRLWE = std::array<Polynomial<P>, P::k + 1>;
 template <class P>
 using TRLWE3 = std::array<Polynomial<P>, 3>;
 template <class P>
-using TRLWEInFD = std::array<PolynomialInFD<P>, P::k+1>;
+using TRLWEInFD = std::array<PolynomialInFD<P>, P::k + 1>;
 template <class P>
-using TRLWENTT = std::array<PolynomialNTT<P>, P::k+1>;
+using TRLWENTT = std::array<PolynomialNTT<P>, P::k + 1>;
 
 template <class P>
-using TRGSW = std::array<TRLWE<P>, (P::k+1) * P::l>;
+using TRGSW = std::array<TRLWE<P>, (P::k + 1) * P::l>;
 template <class P>
-using TRGSWFFT = std::array<TRLWEInFD<P>, (P::k+1) * P::l>;
+using TRGSWFFT = std::array<TRLWEInFD<P>, (P::k + 1) * P::l>;
 template <class P>
-using TRGSWNTT = std::array<TRLWENTT<P>, (P::k+1) * P::l>;
+using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
 
 template <class P>
 using BootstrappingKey = std::array<TRGSW<typename P::targetP>, P::domainP::n>;
@@ -80,7 +80,7 @@ template <class P>
 using KeySwitchingKey = std::array<
     std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
-    P::domainP::k*P::domainP::n>;
+    P::domainP::k * P::domainP::n>;
 template <class P>
 using TLWE2TRLWEIKSKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,

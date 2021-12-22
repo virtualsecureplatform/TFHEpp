@@ -57,12 +57,13 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
     GateBootstrappingManyLUT<bkP, privksP::targetP::l>(
         temp, tlwelvl0, ek.getbkfft<bkP>(), CBtestvector<privksP>());
     for (int i = 0; i < privksP::targetP::l; i++) {
-        temp[i][privksP::domainP::k*privksP::domainP::n] +=
+        temp[i][privksP::domainP::k * privksP::domainP::n] +=
             1ULL << (numeric_limits<typename privksP::domainP::T>::digits -
                      (i + 1) * privksP::targetP::Bgbit - 1);
-        for (int k = 0; k < privksP::targetP::k+1; k++)
-            PrivKeySwitch<privksP>(trgsw[i+k*privksP::targetP::l], temp[i],
-                                ek.getprivksk<privksP>("privksk4cb_" + std::to_string(k)));
+        for (int k = 0; k < privksP::targetP::k + 1; k++)
+            PrivKeySwitch<privksP>(
+                trgsw[i + k * privksP::targetP::l], temp[i],
+                ek.getprivksk<privksP>("privksk4cb_" + std::to_string(k)));
     }
 }
 #define INST(iksP, bkP, privksP)                            \
@@ -79,8 +80,8 @@ void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
 {
     TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<iksP, bkP, privksP>(trgsw, tlwe, ek);
-    for (int i = 0; i < (privksP::targetP::k+1) * privksP::targetP::l; i++)
-        for (int j = 0; j < privksP::targetP::k+1; j++)
+    for (int i = 0; i < (privksP::targetP::k + 1) * privksP::targetP::l; i++)
+        for (int j = 0; j < privksP::targetP::k + 1; j++)
             TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
 }
 #define INST(iksP, bkP, privksP)                               \

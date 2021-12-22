@@ -21,8 +21,7 @@ int main()
                 TFHEpp::lvl1param::α, sk.key.lvl1);
         TFHEpp::TLWE<TFHEpp::lvl0param> res;
         TFHEpp::IdentityKeySwitch<TFHEpp::lvl10param>(res, tlwe, *ek.iksklvl10);
-        bool p2 =
-            TFHEpp::tlweSymDecrypt<TFHEpp::lvl0param>(res, sk.key.lvl0);
+        bool p2 = TFHEpp::tlweSymDecrypt<TFHEpp::lvl0param>(res, sk.key.lvl0);
         assert(p == p2);
     }
     std::cout << "Passed" << std::endl;
