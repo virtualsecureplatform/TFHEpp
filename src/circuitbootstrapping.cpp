@@ -20,9 +20,9 @@ void CircuitBootstrappingPartial(TRLWE<typename privksP::targetP> &trgswupper,
                                        testvec);
     tlwemiddle[bkP::targetP::n] += μs2;
     PrivKeySwitch<privksP>(trgswupper, tlwemiddle,
-                           ek.getprivksk<privksP>("secret key"));
+                           ek.getprivksk<privksP>("privksk4cb_0"));
     PrivKeySwitch<privksP>(trgswlower, tlwemiddle,
-                           ek.getprivksk<privksP>("identity"));
+                           ek.getprivksk<privksP>("privksk4cb_1"));
 }
 #define INST(iksP, bkP, privksP)                                     \
     template void CircuitBootstrappingPartial<iksP, bkP, privksP>(   \

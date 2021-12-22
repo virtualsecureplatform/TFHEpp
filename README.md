@@ -10,7 +10,7 @@ This code includes utf-8 identifiers like α. Therefore, Clang and GCC10 or late
 The default parameter is 128 bit security. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
 
 # FFTW3 Support
-Some environments which does not support AVX2 cannot use spqlios. Instead of spqlios, TFHEpp can use fftw3.
+Some environments which do not support AVX2 cannot use spqlios. Instead of spqlios, TFHEpp can use fftw3.
 To use fftw3,  install `libfftw3-dev` and add `-DUSE_FFTW3=ON` to the compile option.
 
 # Third party libraries
@@ -30,6 +30,26 @@ SPQLIOS is the FFT library that is dedicated to the ring R\[X\]/(X^N+1) for N a 
 [FFTW](https://www.fftw.org/) is one of the most famous FFT libraries. 
 
 **CAUTION**: REDISTRIBUTING BINARY WHICH DEPENDS ON FFTW3 MEANS YOU AGREED WITH GPLv3 OR LATER.
+
+## MKL
+Intel MKL is the library provided by Intel and including FFTW compatible interface for FFT.
+We assume to install MKL by [this procedure](https://www.intel.com/content/www/us/en/developer/articles/guide/installing-free-libraries-and-python-apt-repo.html) and already ran `source /opt/intel/mkl/bin/mklvars.sh`.
+
+Add `-DUSE_MKL` to the compile option to use MKL
+
+## spqliox_aarch64
+spqliox_aarch64 is the FFT library for aarch64 forked from SPQLIOS.
+This is slightly faster than FFTW3(average 1ms).
+This library requires [xbyak_aarch64](https://github.com/fujitsu/xbyak_aarch64), and
+to use this library, add `-DUSE_SPQLIOX_AARCH64=on` to the compile option.
+
+<center>
+
+| FFTW3    | spqliox_aarch64 |
+| :------: | :-------------: |
+| 15.801ms | 14.368ms        |
+
+</center>
 
 # Speed Test
 
