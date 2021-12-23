@@ -137,6 +137,16 @@ constexpr Polynomial<P> μpolygen()
 }
 
 template <typename lvl1param::T μ = lvl1param::μ>
+void GateBootstrapping(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe,
+                       const EvalKey &ek)
+{
+    TLWE<lvl1param> tlwelvl1;
+    GateBootstrappingTLWE2TLWEFFT<lvl01param>(tlwelvl1, tlwe, *ek.bkfftlvl01,
+                                              μpolygen<lvl1param, μ>());
+    IdentityKeySwitch<lvl10param>(res, tlwelvl1, *ek.iksklvl10);
+}
+
+template <typename lvl1param::T μ = lvl1param::μ>
 void GateBootstrapping(TLWE<lvl1param> &res, const TLWE<lvl1param> &tlwe,
                        const EvalKey &ek)
 {

@@ -22,6 +22,10 @@ This code includes utf-8 identifiers like α. Therefore, Clang and GCC10 or late
 # Parameter
 The default parameter is 128 bit security. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
 
+# FFTW3 Support
+Some environments which does not support AVX2 cannot use spqlios. Instead of spqlios, TFHEpp can use fftw3.
+To use fftw3,  install `libfftw3-dev` and add `-DUSE_FFTW3=ON` to the compile option.
+
 # Third party libraries
 Codes under thirdparties directory contain third-party libraries, Randen, Cereal, and SPQLIOS. See the corresponding directory to check the licenses.
 
@@ -35,6 +39,24 @@ cereal is a header-only C++11 serialization library. TFHEpp uses this to export 
 ## SPQLIOS
 SPQLIOS is the FFT library that is dedicated to the ring R\[X\]/(X^N+1) for N a power of 2. These codes come from [experimental-tfhe](https://github.com/tfhe/experimental-tfhe/tree/master/circuit-bootstrapping/src/spqlios). We just renamed instances to adapt with our codes.
 
+## FFTW3
+[FFTW](https://www.fftw.org/) is one of the most famous FFT libraries. 
+
+**CAUTION**: REDISTRIBUTING BINARY WHICH DEPENDS ON FFTW3 MEANS YOU AGREED WITH GPLv3 OR LATER.
+
+## spqliox_aarch64
+spqliox_aarch64 is the FFT library for aarch64 forked from SPQLIOS.
+This is slightly faster than FFTW3(average 1ms).
+This library requires [xbyak_aarch64](https://github.com/fujitsu/xbyak_aarch64), and
+to use this library, add `-DUSE_SPQLIOX_AARCH64=on` to the compile option.
+
+<center>
+
+| FFTW3    | spqliox_aarch64 |
+| :------: | :-------------: |
+| 15.801ms | 14.368ms        |
+
+</center>
 
 # Speed Test
 
