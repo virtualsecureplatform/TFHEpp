@@ -13,7 +13,7 @@ option(USE_SPQLIOX_AARCH64 "Use spqliox_aarch64" OFF)
 option(ENABLE_TEST "Build tests" OFF)
 option(ENABLE_BENCHMARK "Build benchmarks" OFF)
 option(ENABLE_TUTORIAL "Build tutorial" OFF)
-OPTION(ENABLE_AXELL "Use codes developed in Axell" ON) 
+option(ENABLE_AXELL "Use codes developed in Axell" ON)
 
 if(USE_RANDEN)
   add_compile_definitions(USE_RANDEN)
@@ -36,7 +36,7 @@ else()
 endif()
 
 if(ENABLE_AXELL)
-	add_compile_definitions(ENABLE_AXELL)
+  add_compile_definitions(ENABLE_AXELL)
 endif()
 
 # For OpenMP

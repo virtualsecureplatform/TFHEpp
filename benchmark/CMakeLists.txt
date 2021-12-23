@@ -4,13 +4,11 @@ option(CMAKE_BUILD_TYPE "" Release)
 add_subdirectory(google-benchmark)
 
 add_executable(bench bench.cpp)
-target_include_directories(bench
-  PUBLIC ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include
-  )
+target_include_directories(
+  bench PUBLIC ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include)
 target_link_libraries(bench benchmark::benchmark tfhe++)
 
 add_executable(bench_stdcell bench_stdcell.cpp)
-target_include_directories(bench_stdcell
-  PUBLIC ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include
-  )
+target_include_directories(
+  bench_stdcell PUBLIC ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include)
 target_link_libraries(bench_stdcell benchmark::benchmark tfhe++)

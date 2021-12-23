@@ -76,8 +76,8 @@ INST(lvl0param);
 #undef INST
 
 template <class P>
-void HomNOR(TLWE<P> &res, const TLWE<P> &ca,
-            const TLWE<P> &cb, const EvalKey &ek)
+void HomNOR(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
+            const EvalKey &ek)
 {
     HomGate<P, -1, -1, -P::μ>(res, ca, cb, ek);
 }
@@ -90,10 +90,11 @@ INST(lvl0param);
 #undef INST
 
 template <class P>
-void HomXNOR(TLWE<P> &res, const TLWE<P> &ca,
-             const TLWE<P> &cb, const EvalKey &ek)
+void HomXNOR(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
+             const EvalKey &ek)
 {
-    if constexpr (std::is_same_v<P, lvl1param> || std::is_same_v<P, lvl0param>) {
+    if constexpr (std::is_same_v<P, lvl1param> ||
+                  std::is_same_v<P, lvl0param>) {
         HomGate<P, -2, -2, -2 * lvl1param::μ>(res, ca, cb, ek);
     }
     else if constexpr (std::is_same_v<P, lvlMparam>) {
@@ -109,8 +110,8 @@ INST(lvl0param);
 #undef INST
 
 template <class P>
-void HomAND(TLWE<P> &res, const TLWE<P> &ca,
-            const TLWE<P> &cb, const EvalKey &ek)
+void HomAND(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
+            const EvalKey &ek)
 {
     HomGate<P, 1, 1, -P::μ>(res, ca, cb, ek);
 }
@@ -137,10 +138,11 @@ INST(lvl0param);
 #undef INST
 
 template <class P>
-void HomXOR(TLWE<P> &res, const TLWE<P> &ca,
-            const TLWE<P> &cb, const EvalKey &ek)
+void HomXOR(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
+            const EvalKey &ek)
 {
-    if constexpr (std::is_same_v<P, lvl1param> || std::is_same_v<P, lvl0param>) {
+    if constexpr (std::is_same_v<P, lvl1param> ||
+                  std::is_same_v<P, lvl0param>) {
         HomGate<P, 2, 2, 2 * lvl1param::μ>(res, ca, cb, ek);
     }
     else if constexpr (std::is_same_v<P, lvlMparam>) {

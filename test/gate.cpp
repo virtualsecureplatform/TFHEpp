@@ -107,7 +107,7 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
             func(cres[i], c[i], c[i + kNumTests], c[i + kNumTests * 2],
                  c[i + kNumTests * 3], ek);
             p[i] = chegk(p[i], p[i + kNumTests], p[i + kNumTests * 2],
-                            p[i + kNumTests * 3]);
+                         p[i + kNumTests * 3]);
         }
         else {
             std::cout << "Invalid Function" << std::endl;
@@ -186,8 +186,8 @@ int main()
 {
     RunTest<lvl1param>();
     RunTest<lvl0param>();
-    #ifdef ENABLE_AXELL
+#ifdef ENABLE_AXELL
     RunTest<lvlMparam>();
-    #endif  // ENABLE_AXELL
+#endif  // ENABLE_AXELL
     return 0;
 }
