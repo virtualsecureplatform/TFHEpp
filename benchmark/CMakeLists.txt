@@ -1,5 +1,5 @@
-OPTION(BENCHMARK_ENABLE_GTEST_TESTS "" OFF)
-OPTION(CMAKE_BUILD_TYPE "" Release)
+option(BENCHMARK_ENABLE_GTEST_TESTS "" OFF)
+option(CMAKE_BUILD_TYPE "" Release)
 
 add_subdirectory(google-benchmark)
 

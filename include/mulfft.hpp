@@ -1,6 +1,12 @@
 #pragma once
 
-#include <spqlios-fft.h>
+#ifdef USE_FFTW3
+#include <fft_processor_fftw.h>
+#elif USE_SPQLIOX_AARCH64
+#include <fft_processor_spqliox_aarch64.h>
+#else
+#include <fft_processor_spqlios.h>
+#endif
 
 #include "cuhe++.hpp"
 #include "params.hpp"
