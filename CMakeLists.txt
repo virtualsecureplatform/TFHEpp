@@ -12,6 +12,7 @@ option(USE_CONCRETE "Use the parameter set proposed in CONCRETE" OFF)
 option(USE_MKL "Use Intel MKL" OFF)
 option(USE_FFTW3 "Use FFTW3" OFF)
 option(USE_SPQLIOX_AARCH64 "Use spqliox_aarch64" OFF)
+option(USE_HEXL "Use Intel HEXL" OFF)
 option(ENABLE_TEST "Build tests" OFF)
 option(ENABLE_BENCHMARK "Build benchmarks" OFF)
 option(ENABLE_TUTORIAL "Build tutorial" OFF)
@@ -40,6 +41,14 @@ elseif(USE_SPQLIOX_AARCH64)
   add_subdirectory(thirdparties/spqliox_aarch64)
 else()
   add_subdirectory(thirdparties/spqlios)
+endif()
+
+if(USE_HEXL)
+  add_compile_definitions(USE_HEXL)
+  add_subdirectory(thirdparties/hexl)
+# set(CMAKE_CXX_FLAGS
+#     "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare -mprefer-vector-width=512"
+# )
 endif()
 
 # For OpenMP
