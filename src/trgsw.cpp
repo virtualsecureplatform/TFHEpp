@@ -136,7 +136,6 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
         for (int i = 0; i < P::l; i++) {
             DecompositionPolynomialNTT<P>(decpolyntt, trlwe[k], i);
             for (int m = 0; m < P::k + 1; m++)
-                for (int j = 0; j < P::n; j++)
                 #ifdef USE_HEXL
                 {
                     std::array<uint64_t,TFHEpp::lvl1param::n> temp;
