@@ -26,8 +26,8 @@ inline const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl2param::n>, 2>
 inline const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl2param::n>, 2>
     ntttablelvl2 = cuHEpp::TableGen<TFHEpp::lvl2param::nbit>();
 #ifdef USE_HEXL
-// https://www.wolframalpha.com/input/?i=a+prime+number+below+2%5E30&lang=ja
-constexpr uint64_t lvl1P = 1073741789;
+// Biggest prime number less than 2^30 and staisfies 1 mod 2N.
+constexpr uint64_t lvl1P = 1073707009;
 #endif
 
 template <class P>
