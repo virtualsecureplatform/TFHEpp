@@ -2,7 +2,6 @@
 
 #include "axell/gate.hpp"
 #include "cloudkey.hpp"
-#include "params/128bit.hpp"
 
 namespace TFHEpp {
 using namespace std;
