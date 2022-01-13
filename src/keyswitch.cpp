@@ -23,15 +23,17 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
     constexpr uint32_t target_digit =
         std::numeric_limits<typename P::targetP::T>::digits;
     if constexpr (domain_digit == target_digit)
-        res[P::targetP::n] = tlwe[P::domainP::n];
+        res[P::targetP::k * P::targetP::n] =
+            tlwe[P::domainP::k * P::domainP::n];
     else if constexpr (domain_digit > target_digit)
-        res[P::targetP::n] = (tlwe[P::domainP::n] +
-                              (1ULL << (domain_digit - target_digit - 1))) >>
-                             (domain_digit - target_digit);
+        res[P::targetP::k * P::targetP::n] =
+            (tlwe[P::domainP::k * P::domainP::n] +
+             (1ULL << (domain_digit - target_digit - 1))) >>
+            (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
-        res[P::targetP::n] = tlwe[P::domainP::n]
-                             << (target_digit - domain_digit);
-    for (int i = 0; i < P::domainP::n; i++) {
+        res[P::targetP::k * P::targetP::n] = tlwe[P::domainP::k * P::domainP::n]
+                                             << (target_digit - domain_digit);
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + prec_offset;
         for (int j = 0; j < P::t; j++) {
             const uint32_t aij =
@@ -39,7 +41,7 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
                            (j + 1) * P::basebit)) &
                 mask;
             if (aij != 0)
-                for (int k = 0; k <= P::targetP::n; k++)
+                for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
                     res[k] -= ksk[i][j][aij - 1][k];
         }
     }
@@ -143,7 +145,7 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                  (1 + P::basebit * P::t));
 
     res = {};
-    for (int i = 0; i <= P::domainP::n; i++) {
+    for (int i = 0; i <= P::domainP::k * P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + prec_offset;
 
         for (int j = 0; j < P::t; j++) {
@@ -153,10 +155,9 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                 mask;
 
             if (aij != 0) {
-                for (int p = 0; p < P::targetP::n; p++) {
-                    res[0][p] -= privksk[i][j][aij - 1][0][p];
-                    res[1][p] -= privksk[i][j][aij - 1][1][p];
-                }
+                for (int k = 0; k < P::targetP::k + 1; k++)
+                    for (int p = 0; p < P::targetP::n; p++)
+                        res[k][p] -= privksk[i][j][aij - 1][k][p];
             }
         }
     }

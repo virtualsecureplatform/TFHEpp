@@ -11,6 +11,7 @@ using namespace TFHEpp;
 
 int main()
 {
+    std::cout << lvl1param::k << std::endl;
     constexpr uint32_t num_test = 1000;
     random_device seed_gen;
     default_random_engine engine(seed_gen());

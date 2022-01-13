@@ -45,7 +45,10 @@ inline void annihilatekeyegen(AnnihilateKey<P> &ahk, const SecretKey &sk)
 {
     for (int i = 0; i < P::nbit; i++) {
         Polynomial<P> autokey;
-        Automorphism<P>(autokey, sk.key.get<P>(), (1 << (P::nbit - i)) + 1);
+        std::array<typename P::T, P::n> partkey;
+        for (int i = 0; i < P::n; i++)
+            partkey[i] = sk.key.get<P>()[0 * P::n + i];
+        Automorphism<P>(autokey, partkey, (1 << (P::nbit - i)) + 1);
         ahk[i] = trgswfftSymEncrypt<P>(autokey, P::α, sk.key.get<P>());
     }
 }
@@ -64,7 +67,9 @@ inline relinKey<P> relinKeygen(const Key<P> &key)
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
 
     Polynomial<P> keysquare;
-    PolyMulNaieve<P>(keysquare, key, key);
+    std::array<typename P::T, P::n> partkey;
+    for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
+    PolyMulNaieve<P>(keysquare, partkey, partkey);
     relinKey<P> relinkey;
     for (TRLWE<P> &ctxt : relinkey) ctxt = trlweSymEncryptZero<P>(P::α, key);
     for (int i = 0; i < P::l; i++)
@@ -127,24 +132,8 @@ struct EvalKey {
     void emplaceprivksk(const std::string &key,
                         const Polynomial<typename P::targetP> &func,
                         const SecretKey &sk);
-    template <class P, uint index>
-    void emplaceprivksk(const SecretKey &sk)
-    {
-        if constexpr (index == 0) {
-            emplaceprivksk<P>("identity", {1}, sk);
-        }
-        else if constexpr (index == 1) {
-            TFHEpp::Polynomial<typename P::targetP> poly;
-            for (int i = 0; i < P::targetP::n; i++)
-                poly[i] = -sk.key.get<typename P::targetP>()[i];
-            emplaceprivksk<P>("secret key", poly, sk);
-        }
-        else {
-            static_assert(
-                false_v<P>,
-                "Not a predefined function for Private Key Switching!");
-        }
-    }
+    template <class P>
+    void emplaceprivksk4cb(const SecretKey &sk);
 
     template <class P>
     BootstrappingKey<P> &getbk() const;

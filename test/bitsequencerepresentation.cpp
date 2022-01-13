@@ -50,8 +50,7 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(*sk);
     ek.emplacebkfft<bkP>(*sk);
-    ek.emplaceprivksk<privksP, 1>(*sk);
-    ek.emplaceprivksk<privksP, 0>(*sk);
+    ek.emplaceprivksk4cb<privksP>(*sk);
     TFHEpp::KeySwitchingKey<iksP> *iksk = new TFHEpp::KeySwitchingKey<iksP>();
     TFHEpp::ikskgen<iksP>(*iksk, *sk);
 

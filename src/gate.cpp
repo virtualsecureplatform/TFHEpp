@@ -9,55 +9,56 @@ template <class P>
 void HomCONSTANTONE(TLWE<P> &res)
 {
     res = {};
-    res[P::n] = P::μ;
+    res[P::k * P::n] = P::μ;
 }
 #define INST(P) template void HomCONSTANTONE<P>(TLWE<P> & res)
 INST(lvl1param);
-INST(lvlMparam);
 INST(lvl0param);
+INST(lvlMparam);
 #undef INST
 
 template <class P>
 void HomCONSTANTZERO(TLWE<P> &res)
 {
     res = {};
-    res[P::n] = -P::μ;
+    res[P::k * P::n] = -P::μ;
 }
 #define INST(P) template void HomCONSTANTZERO<P>(TLWE<P> & res)
 INST(lvl1param);
-INST(lvlMparam);
 INST(lvl0param);
+INST(lvlMparam);
 #undef INST
 
 // 1 input
 template <class P>
 void HomNOT(TLWE<P> &res, const TLWE<P> &ca)
 {
-    for (int i = 0; i <= P::n; i++) res[i] = -ca[i];
+    for (int i = 0; i <= P::k * P::n; i++) res[i] = -ca[i];
 }
 #define INST(P) template void HomNOT<P>(TLWE<P> & res, const TLWE<P> &ca)
 INST(lvl1param);
-INST(lvlMparam);
 INST(lvl0param);
+INST(lvlMparam);
 #undef INST
 
 template <class P>
 void HomCOPY(TLWE<P> &res, const TLWE<P> &ca)
 {
-    for (int i = 0; i <= P::n; i++) res[i] = ca[i];
+    for (int i = 0; i <= P::k * P::n; i++) res[i] = ca[i];
 }
 #define INST(P) template void HomCOPY<P>(TLWE<P> & res, const TLWE<P> &ca)
 INST(lvl1param);
-INST(lvlMparam);
 INST(lvl0param);
+INST(lvlMparam);
 #undef INST
 
 template <class P, int casign, int cbsign, typename P::T offset>
 inline void HomGate(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
                     const EvalKey &ek)
 {
-    for (int i = 0; i <= P::n; i++) res[i] = casign * ca[i] + cbsign * cb[i];
-    res[P::n] += offset;
+    for (int i = 0; i <= P::k * P::n; i++)
+        res[i] = casign * ca[i] + cbsign * cb[i];
+    res[P::k * P::n] += offset;
     GateBootstrapping<P::μ>(res, res, ek);
 }
 
@@ -219,41 +220,36 @@ template <class P>
 void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
             const TLWE<P> &c0, const EvalKey &ek)
 {
-    if constexpr (std::is_same_v<P, lvl1param>) {
-        TLWE<P> temp;
-        for (int i = 0; i <= P::n; i++) temp[i] = cs[i] + c1[i];
-        for (int i = 0; i <= P::n; i++) res[i] = -cs[i] + c0[i];
-        temp[P::n] -= P::μ;
-        res[P::n] -= P::μ;
-        TLWE<lvl0param> and1, and0;
-        IdentityKeySwitch<lvl10param>(and1, temp, *ek.iksklvl10);
-        IdentityKeySwitch<lvl10param>(and0, res, *ek.iksklvl10);
-        GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            temp, and1, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
-        GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            res, and0, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
-        for (int i = 0; i <= lvl1param::n; i++) res[i] += temp[i];
-        res[P::n] += P::μ;
-    }
-    else if constexpr (std::is_same_v<P, lvl0param>) {
-        TLWE<P> temp;
-        for (int i = 0; i <= P::n; i++) temp[i] = cs[i] + c1[i];
-        for (int i = 0; i <= P::n; i++) res[i] = -cs[i] + c0[i];
-        temp[P::n] -= P::μ;
-        res[P::n] -= P::μ;
-        TLWE<lvl1param> and1, and0;
-        GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            and1, temp, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
-        GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            and0, res, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
-        for (int i = 0; i <= lvl1param::n; i++) and0[i] += and1[i];
-        IdentityKeySwitch<lvl10param>(res, and0, *ek.iksklvl10);
-        res[P::n] += P::μ;
-    }
-    else if constexpr (std::is_same_v<P, lvlMparam>) {
-        TLWE<lvlMparam> temp;
+    TLWE<P> temp;
+    if constexpr (std::is_same_v<P, lvlMparam>) {
         HomANDNY<lvlMparam>(temp, cs, c0, ek);
         HomAO3<lvlMparam>(res, c1, cs, temp, ek);
+    }else{
+        for (int i = 0; i <= P::k * P::n; i++) temp[i] = cs[i] + c1[i];
+        for (int i = 0; i <= P::k * P::n; i++) res[i] = -cs[i] + c0[i];
+        temp[P::k * P::n] -= P::μ;
+        res[P::k * P::n] -= P::μ;
+        if constexpr (std::is_same_v<P, lvl1param>) {
+            TLWE<lvl0param> and1, and0;
+            IdentityKeySwitch<lvl10param>(and1, temp, *ek.iksklvl10);
+            IdentityKeySwitch<lvl10param>(and0, res, *ek.iksklvl10);
+            GateBootstrappingTLWE2TLWEFFT<lvl01param>(
+                temp, and1, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+            GateBootstrappingTLWE2TLWEFFT<lvl01param>(
+                res, and0, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+            for (int i = 0; i <= P::k * lvl1param::n; i++) res[i] += temp[i];
+            res[P::k * P::n] += P::μ;
+        }
+        else if constexpr (std::is_same_v<P, lvl0param>) {
+            TLWE<lvl1param> and1, and0;
+            GateBootstrappingTLWE2TLWEFFT<lvl01param>(
+                and1, temp, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+            GateBootstrappingTLWE2TLWEFFT<lvl01param>(
+                and0, res, *ek.bkfftlvl01, μpolygen<lvl1param, lvl1param::μ>());
+            for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) and0[i] += and1[i];
+            IdentityKeySwitch<lvl10param>(res, and0, *ek.iksklvl10);
+            res[P::k * P::n] += P::μ;
+        }
     }
 }
 #define INST(P)                                                   \
@@ -270,7 +266,7 @@ void HomNMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
              const TLWE<P> &c0, const EvalKey &ek)
 {
     HomMUX<P>(res, cs, c1, c0, ek);
-    for (int i = 0; i <= P::n; i++) res[i] = -res[i];
+    for (int i = 0; i <= P::k * P::n; i++) res[i] = -res[i];
 }
 #define INST(P)                                                    \
     template void HomNMUX<P>(TLWE<P> & res, const TLWE<P> &cs,     \

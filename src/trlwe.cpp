@@ -11,9 +11,15 @@ TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
     uniform_int_distribution<typename P::T> Torusdist(
         0, std::numeric_limits<typename P::T>::max());
     TRLWE<P> c;
-    for (typename P::T &i : c[0]) i = Torusdist(generator);
-    PolyMul<P>(c[1], c[0], key);
-    for (typename P::T &i : c[1]) i += ModularGaussian<P>(0, α);
+    for (typename P::T &i : c[P::k]) i = ModularGaussian<P>(0, α);
+    for (int k = 0; k < P::k; k++) {
+        for (typename P::T &i : c[k]) i = Torusdist(generator);
+        std::array<typename P::T, P::n> partkey;
+        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+        Polynomial<P> temp;
+        PolyMul<P>(temp, c[k], partkey);
+        for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
+    }
     return c;
 }
 #define INST(P) \
@@ -26,7 +32,7 @@ TRLWE<P> trlweSymEncrypt(const array<typename P::T, P::n> &p, const double α,
                          const Key<P> &key)
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(α, key);
-    for (int i = 0; i < P::n; i++) c[1][i] += p[i];
+    for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
     return c;
 }
 #define INST(P)                                                               \
@@ -41,7 +47,7 @@ TRLWE<P> trlweSymIntEncrypt(const array<typename P::T, P::n> &p, const double α
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(α, key);
     for (int i = 0; i < P::n; i++)
-        c[1][i] += static_cast<typename P::T>(P::Δ * p[i]);
+        c[P::k][i] += static_cast<typename P::T>(P::Δ * p[i]);
     return c;
 }
 #define INST(P)                                              \
@@ -54,10 +60,14 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 template <class P>
 array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
-    Polynomial<P> mulres;
-    PolyMul<P>(mulres, c[0], key);
-    Polynomial<P> phase = c[1];
-    for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+    Polynomial<P> phase = c[P::k];
+    for (int k = 0; k < P::k; k++) {
+        Polynomial<P> mulres;
+        std::array<typename P::T, P::n> partkey;
+        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+        PolyMul<P>(mulres, c[k], partkey);
+        for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+    }
 
     array<bool, P::n> p;
     for (int i = 0; i < P::n; i++)
@@ -74,10 +84,14 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 template <class P>
 Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
-    Polynomial<P> mulres;
-    PolyMul<P>(mulres, c[0], key);
-    Polynomial<P> phase = c[1];
-    for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+    Polynomial<P> phase = c[P::k];
+    for (int k = 0; k < P::k; k++) {
+        Polynomial<P> mulres;
+        std::array<typename P::T, P::n> partkey;
+        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+        PolyMul<P>(mulres, c[k], partkey);
+        for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+    }
 
     Polynomial<P> p;
     for (int i = 0; i < P::n; i++)
@@ -94,10 +108,13 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 template <class P>
 void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
 {
-    for (int i = 0; i <= index; i++) tlwe[i] = trlwe[0][index - i];
-    for (int i = index + 1; i < P::n; i++)
-        tlwe[i] = -trlwe[0][P::n + index - i];
-    tlwe[P::n] = trlwe[1][index];
+    for (int k = 0; k < P::k; k++) {
+        for (int i = 0; i <= index; i++)
+            tlwe[k * P::n + i] = trlwe[k][index - i];
+        for (int i = index + 1; i < P::n; i++)
+            tlwe[k * P::n + i] = -trlwe[k][P::n + index - i];
+    }
+    tlwe[P::k * P::n] = trlwe[P::k][index];
 }
 #define INST(P)                                                                \
     template void SampleExtractIndex<P>(TLWE<P> & tlwe, const TRLWE<P> &trlwe, \

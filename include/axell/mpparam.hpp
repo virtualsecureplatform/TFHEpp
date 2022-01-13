@@ -9,6 +9,7 @@
 struct lvlMparam {
     static constexpr std::uint32_t nbit = 10;
     static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t l = 2;
     static constexpr std::uint32_t Bgbit = 10;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
@@ -23,6 +24,7 @@ struct lvlMparam {
 struct lvlMparam {
     static constexpr std::uint32_t nbit = 10;
     static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t l = 3;
     static constexpr std::uint32_t Bgbit = 7;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
@@ -42,6 +44,7 @@ struct lvlMparam {
 struct lvlMparam {
     static constexpr std::uint32_t nbit = 10;
     static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t l = 3;
     static constexpr std::uint32_t Bgbit = 6;
     static constexpr std::uint32_t Bg = 1 << Bgbit;

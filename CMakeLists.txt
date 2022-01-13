@@ -8,8 +8,11 @@ set(CMAKE_CXX_FLAGS
 option(USE_RANDEN "Use randen as CSPRNG" ON)
 option(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 option(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
-option(USE_FFTW3 "Use fftw3" OFF)
+option(USE_CONCRETE "Use the parameter set proposed in CONCRETE" OFF)
+option(USE_MKL "Use Intel MKL" OFF)
+option(USE_FFTW3 "Use FFTW3" OFF)
 option(USE_SPQLIOX_AARCH64 "Use spqliox_aarch64" OFF)
+option(USE_HEXL "Use Intel HEXL" OFF)
 option(ENABLE_TEST "Build tests" OFF)
 option(ENABLE_BENCHMARK "Build benchmarks" OFF)
 option(ENABLE_TUTORIAL "Build tutorial" OFF)
@@ -23,6 +26,12 @@ if(USE_80BIT_SECURITY)
   add_compile_definitions(USE_80BIT_SECURITY)
 elseif(USE_CGGI19)
   add_compile_definitions(USE_CGGI19)
+elseif(USE_CONCRETE)
+  add_compile_definitions(USE_CONCRETE)
+endif()
+
+if(USE_MKL)
+  set(USE_FFTW3 ON)
 endif()
 
 if(USE_FFTW3)
@@ -37,6 +46,14 @@ endif()
 
 if(ENABLE_AXELL)
   add_compile_definitions(ENABLE_AXELL)
+endif()
+
+if(USE_HEXL)
+  add_compile_definitions(USE_HEXL)
+  add_subdirectory(thirdparties/hexl)
+# set(CMAKE_CXX_FLAGS
+#     "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare -mprefer-vector-width=512"
+# )
 endif()
 
 # For OpenMP
