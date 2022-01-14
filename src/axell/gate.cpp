@@ -110,35 +110,25 @@ template <class P>
 void fulladdertestvectorspecialize(TRLWE<P> &rcarry, TRLWE<P> &rsum,
                                    TRLWE<P> &trlwe)
 {
-    for (int i = 0; i < P::n / 3; i++) {
-        rcarry[0][i] = trlwe[0][i] - trlwe[0][i + 1 + 2 * P::n / 3] -
-                       trlwe[0][i + 1 + 1 * P::n / 3];
-        rcarry[1][i] = trlwe[1][i] - trlwe[1][i + 1 + 2 * P::n / 3] -
-                       trlwe[1][i + 1 + 1 * P::n / 3];
-        rsum[0][i] = -trlwe[0][i] - trlwe[0][i + 1 + 2 * P::n / 3] +
-                     trlwe[0][i + 1 + 1 * P::n / 3];
-        rsum[1][i] = -trlwe[1][i] - trlwe[1][i + 1 + 2 * P::n / 3] +
-                     trlwe[1][i + 1 + 1 * P::n / 3];
-    }
-    for (int i = 0; i < P::n / 3; i++) {
-        rcarry[0][i + 1 * P::n / 3] = trlwe[0][i + 1 * P::n / 3] + trlwe[0][i] -
-                                      trlwe[0][i + 1 + 2 * P::n / 3];
-        rcarry[1][i + 1 * P::n / 3] = trlwe[1][i + 1 * P::n / 3] + trlwe[1][i] -
-                                      trlwe[1][i + 1 + 2 * P::n / 3];
-        rsum[0][i + 1 * P::n / 3] = -trlwe[0][i + 1 * P::n / 3] + trlwe[0][i] +
-                                    trlwe[0][i + 1 + 2 * P::n / 3];
-        rsum[1][i + 1 * P::n / 3] = -trlwe[1][i + 1 * P::n / 3] + trlwe[1][i] +
-                                    trlwe[1][i + 1 + 2 * P::n / 3];
-    }
-    for (int i = 0; i < P::n / 3 + 1; i++) {
-        rcarry[0][i + 2 * P::n / 3] = trlwe[0][i + 2 * P::n / 3] +
-                                      trlwe[0][i + 1 * P::n / 3] + trlwe[0][i];
-        rcarry[1][i + 2 * P::n / 3] = trlwe[1][i + 2 * P::n / 3] +
-                                      trlwe[1][i + 1 * P::n / 3] + trlwe[1][i];
-        rsum[0][i + 2 * P::n / 3] = -trlwe[0][i + 2 * P::n / 3] +
-                                    trlwe[0][i + 1 * P::n / 3] - trlwe[0][i];
-        rsum[1][i + 2 * P::n / 3] = -trlwe[1][i + 2 * P::n / 3] +
-                                    trlwe[1][i + 1 * P::n / 3] - trlwe[1][i];
+    for(int k = 0; k < P::k+1; k++){
+        for (int i = 0; i < P::n / 3; i++) {
+            rcarry[k][i] = trlwe[k][i] - trlwe[k][i + 1 + 2 * P::n / 3] -
+                        trlwe[k][i + 1 + 1 * P::n / 3];
+            rsum[k][i] = -trlwe[k][i] - trlwe[k][i + 1 + 2 * P::n / 3] +
+                        trlwe[k][i + 1 + 1 * P::n / 3];
+        }
+        for (int i = 0; i < P::n / 3; i++) {
+            rcarry[k][i + 1 * P::n / 3] = trlwe[k][i + 1 * P::n / 3] + trlwe[k][i] -
+                                        trlwe[k][i + 1 + 2 * P::n / 3];
+            rsum[k][i + 1 * P::n / 3] = -trlwe[k][i + 1 * P::n / 3] + trlwe[k][i] +
+                                        trlwe[k][i + 1 + 2 * P::n / 3];
+        }
+        for (int i = 0; i < P::n / 3 + 1; i++) {
+            rcarry[k][i + 2 * P::n / 3] = trlwe[k][i + 2 * P::n / 3] +
+                                        trlwe[k][i + 1 * P::n / 3] + trlwe[k][i];
+            rsum[k][i + 2 * P::n / 3] = -trlwe[k][i + 2 * P::n / 3] +
+                                        trlwe[k][i + 1 * P::n / 3] - trlwe[k][i];
+        }
     }
 }
 
