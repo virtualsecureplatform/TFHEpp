@@ -4,4 +4,8 @@ set(FFTWPROC_HEADERS fft_processor_fftw.h)
 
 add_library(fftwproc STATIC ${SRCS_FFTWPROC} ${FFTWPROC_HEADERS})
 
-target_include_directories(fftwproc PUBLIC ${PROJECT_SOURCE_DIR}/include)
+if(USE_MKL)
+  target_include_directories(fftwproc PUBLIC ${PROJECT_SOURCE_DIR}/include)
+else()
+  target_include_directories(fftwproc PUBLIC ${PROJECT_SOURCE_DIR}/include)
+endif()

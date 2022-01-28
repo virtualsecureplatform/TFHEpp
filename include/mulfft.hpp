@@ -7,6 +7,9 @@
 #else
 #include <fft_processor_spqlios.h>
 #endif
+#ifdef USE_HEXL
+#include "hexl/hexl.hpp"
+#endif
 
 #include "cuhe++.hpp"
 #include "params.hpp"
@@ -22,14 +25,27 @@ inline const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl2param::n>, 2>
     ntttwistlvl2 = cuHEpp::TwistGen<TFHEpp::lvl2param::nbit>();
 inline const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl2param::n>, 2>
     ntttablelvl2 = cuHEpp::TableGen<TFHEpp::lvl2param::nbit>();
+#ifdef USE_HEXL
+// Biggest prime number less than 2^30 and staisfies 1 mod 2N.
+constexpr uint64_t lvl1P = 1073707009;
+#endif
 
 template <class P>
 inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
+        #ifdef USE_HEXL
+        {
+            std::array<uint64_t,TFHEpp::lvl1param::n> temp;
+            static intel::hexl::NTT nttlvl1(TFHEpp::lvl1param::n, lvl1P);
+            nttlvl1.ComputeInverse(temp.data(),&(a[0].value),1,1);
+            for(int i = 0; i < TFHEpp::lvl1param::n; i++) res[i] = (temp[i]<<32)/lvl1P;
+        }
+        #else
         cuHEpp::TwistNTT<typename TFHEpp::lvl1param::T,
                          TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[0],
                                                   ntttwistlvl1[0]);
+        #endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistNTT<typename TFHEpp::lvl2param::T,
                          TFHEpp::lvl2param::nbit>(res, a, ntttablelvl2[0],
@@ -64,9 +80,18 @@ template <class P>
 inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
+        #ifdef USE_HEXL
+        {
+            std::array<uint64_t,TFHEpp::lvl1param::n> temp;
+            for(int i = 0; i < TFHEpp::lvl1param::n; i++) temp[i] = (lvl1P*static_cast<uint64_t>(a[i]))>>32;
+            static intel::hexl::NTT nttlvl1(TFHEpp::lvl1param::n, lvl1P);
+            nttlvl1.ComputeForward(&(res[0].value),temp.data(),1,1);
+        }
+        #else
         cuHEpp::TwistINTT<typename TFHEpp::lvl1param::T,
                           TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[1],
                                                    ntttwistlvl1[1]);
+        #endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistINTT<typename TFHEpp::lvl2param::T,
                           TFHEpp::lvl2param::nbit>(res, a, ntttablelvl2[1],

@@ -5,6 +5,7 @@
 
 struct lvl0param {
     static constexpr std::uint32_t n = 500;
+    static constexpr std::uint32_t k = 1;
     static const inline double α = 2.44e-5;
     using T = uint32_t;
     static constexpr T μ = 1U << 29;
@@ -13,6 +14,7 @@ struct lvl0param {
 struct lvl1param {
     static constexpr std::uint32_t nbit = 10;
     static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t l = 2;
     static constexpr std::uint32_t Bgbit = 10;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
@@ -28,6 +30,7 @@ struct lvl1param {
 struct lvl2param {
     static const std::uint32_t nbit = 11;
     static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t l = 4;
     static constexpr std::uint32_t Bgbit = 9;
     static constexpr std::uint32_t Bg = 1 << Bgbit;

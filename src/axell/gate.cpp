@@ -18,15 +18,15 @@ void HomSWAP(TLWE<lvl1param> &resa, TLWE<lvl1param> &resb,
              const TLWE<lvl1param> &cb, const EvalKey &ek)
 {
     TLWE<lvl1param> intemp;
-    for (int i = 0; i <= lvl1param::n; i++)
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++)
         intemp[i] = 2 * ca[i] + cb[i] + 2 * cs[i];
-    intemp[lvl1param::n] += 2 * lvl1param::μ;
+    intemp[lvl1param::k * lvl1param::n] += 2 * lvl1param::μ;
     TLWE<lvl0param> intemplvl0;
     IdentityKeySwitch<lvl10param>(intemplvl0, intemp, *ek.iksklvl10);
     GateBootstrappingTLWE2TLWEFFT<lvl01param>(
         intemp, intemplvl0, *ek.bkfftlvl01, swaptestvecgen<lvl1param>());
-    for (int i = 0; i <= lvl1param::n; i++) intemp[i] += cs[i];
-    intemp[lvl1param::n] += lvl1param::μ;
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) intemp[i] += cs[i];
+    intemp[lvl1param::k * lvl1param::n] += lvl1param::μ;
     IdentityKeySwitch<lvl10param>(intemplvl0, intemp, *ek.iksklvl10);
     TRLWE<lvl1param> trlwe;
     BlindRotate<lvl01param>(trlwe, intemplvl0, *ek.bkfftlvl01,
@@ -42,7 +42,7 @@ void HomHalfAdder(TLWE<lvl1param> &carry, TLWE<lvl1param> &sum,
                   const EvalKey &ek)
 {
     TRLWE<P> trlwe;
-    for (int i = 0; i <= P::n; i++)
+    for (int i = 0; i <= P::k * P::n; i++)
         sum[i] = c0[i] + c1[i];  // use sum as buffer
     TLWE<lvl0param> cadd;
     IdentityKeySwitch<lvl10param>(cadd, sum, *ek.iksklvl10);
@@ -63,11 +63,11 @@ void HomHalfAdder(TLWE<lvl1param> &carry, TLWE<lvl1param> &sum,
          (std::numeric_limits<typename lvl01param::domainP::T>::digits - 1 -
           lvl01param::targetP::nbit)) &
             (P::n - 1));
-    for (int i = 0; i <= P::n; i++) {
+    for (int i = 0; i <= P::k * P::n; i++) {
         carry[i] = -carry[i];
         sum[i] = cor[i] - carry[i];
     }
-    sum[P::n] -= P::μ;
+    sum[P::k * P::n] -= P::μ;
 }
 #define INST(P)                                               \
     template void HomHalfAdder<P>(                            \
@@ -83,7 +83,7 @@ void Hom2BRFullAdder(TLWE<lvl1param> &carry, TLWE<lvl1param> &sum,
                      const TLWE<lvl1param> &cc, const EvalKey &ek)
 {
     TLWE<lvl1param> intemp;
-    for (int i = 0; i <= lvl1param::n; i++) intemp[i] = ca[i] + cb[i] + cc[i];
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) intemp[i] = ca[i] + cb[i] + cc[i];
     TLWE<lvl0param> intemplvl0;
     IdentityKeySwitch<lvl10param>(intemplvl0, intemp, *ek.iksklvl10);
     // These are parallel
@@ -110,35 +110,25 @@ template <class P>
 void fulladdertestvectorspecialize(TRLWE<P> &rcarry, TRLWE<P> &rsum,
                                    TRLWE<P> &trlwe)
 {
-    for (int i = 0; i < P::n / 3; i++) {
-        rcarry[0][i] = trlwe[0][i] - trlwe[0][i + 1 + 2 * P::n / 3] -
-                       trlwe[0][i + 1 + 1 * P::n / 3];
-        rcarry[1][i] = trlwe[1][i] - trlwe[1][i + 1 + 2 * P::n / 3] -
-                       trlwe[1][i + 1 + 1 * P::n / 3];
-        rsum[0][i] = -trlwe[0][i] - trlwe[0][i + 1 + 2 * P::n / 3] +
-                     trlwe[0][i + 1 + 1 * P::n / 3];
-        rsum[1][i] = -trlwe[1][i] - trlwe[1][i + 1 + 2 * P::n / 3] +
-                     trlwe[1][i + 1 + 1 * P::n / 3];
-    }
-    for (int i = 0; i < P::n / 3; i++) {
-        rcarry[0][i + 1 * P::n / 3] = trlwe[0][i + 1 * P::n / 3] + trlwe[0][i] -
-                                      trlwe[0][i + 1 + 2 * P::n / 3];
-        rcarry[1][i + 1 * P::n / 3] = trlwe[1][i + 1 * P::n / 3] + trlwe[1][i] -
-                                      trlwe[1][i + 1 + 2 * P::n / 3];
-        rsum[0][i + 1 * P::n / 3] = -trlwe[0][i + 1 * P::n / 3] + trlwe[0][i] +
-                                    trlwe[0][i + 1 + 2 * P::n / 3];
-        rsum[1][i + 1 * P::n / 3] = -trlwe[1][i + 1 * P::n / 3] + trlwe[1][i] +
-                                    trlwe[1][i + 1 + 2 * P::n / 3];
-    }
-    for (int i = 0; i < P::n / 3 + 1; i++) {
-        rcarry[0][i + 2 * P::n / 3] = trlwe[0][i + 2 * P::n / 3] +
-                                      trlwe[0][i + 1 * P::n / 3] + trlwe[0][i];
-        rcarry[1][i + 2 * P::n / 3] = trlwe[1][i + 2 * P::n / 3] +
-                                      trlwe[1][i + 1 * P::n / 3] + trlwe[1][i];
-        rsum[0][i + 2 * P::n / 3] = -trlwe[0][i + 2 * P::n / 3] +
-                                    trlwe[0][i + 1 * P::n / 3] - trlwe[0][i];
-        rsum[1][i + 2 * P::n / 3] = -trlwe[1][i + 2 * P::n / 3] +
-                                    trlwe[1][i + 1 * P::n / 3] - trlwe[1][i];
+    for(int k = 0; k < P::k+1; k++){
+        for (int i = 0; i < P::n / 3; i++) {
+            rcarry[k][i] = trlwe[k][i] - trlwe[k][i + 1 + 2 * P::n / 3] -
+                        trlwe[k][i + 1 + 1 * P::n / 3];
+            rsum[k][i] = -trlwe[k][i] - trlwe[k][i + 1 + 2 * P::n / 3] +
+                        trlwe[k][i + 1 + 1 * P::n / 3];
+        }
+        for (int i = 0; i < P::n / 3; i++) {
+            rcarry[k][i + 1 * P::n / 3] = trlwe[k][i + 1 * P::n / 3] + trlwe[k][i] -
+                                        trlwe[k][i + 1 + 2 * P::n / 3];
+            rsum[k][i + 1 * P::n / 3] = -trlwe[k][i + 1 * P::n / 3] + trlwe[k][i] +
+                                        trlwe[k][i + 1 + 2 * P::n / 3];
+        }
+        for (int i = 0; i < P::n / 3 + 1; i++) {
+            rcarry[k][i + 2 * P::n / 3] = trlwe[k][i + 2 * P::n / 3] +
+                                        trlwe[k][i + 1 * P::n / 3] + trlwe[k][i];
+            rsum[k][i + 2 * P::n / 3] = -trlwe[k][i + 2 * P::n / 3] +
+                                        trlwe[k][i + 1 * P::n / 3] - trlwe[k][i];
+        }
     }
 }
 
@@ -147,7 +137,7 @@ void HomFullAdder(TLWE<lvlMparam> &carry, TLWE<lvlMparam> &sum,
                   const TLWE<lvlMparam> &ca, const TLWE<lvlMparam> &cb,
                   const TLWE<lvlMparam> &cc, const EvalKey &ek)
 {
-    for (int i = 0; i <= lvlMparam::n; i++) sum[i] = ca[i] + cb[i] + cc[i];
+    for (int i = 0; i <= lvlMparam::k * lvlMparam::n; i++) sum[i] = ca[i] + cb[i] + cc[i];
     TRLWE<lvlMparam> rtemp;
     TLWE<lvl0param> temp;
     IdentityKeySwitch<lvlM0param>(temp, sum, *ek.iksklvl10);
@@ -165,7 +155,7 @@ void HomXORNANDNOR(TLWE<lvl1param> &cxor, TLWE<lvl1param> &cnand,
                    const TLWE<lvl1param> &cb, const EvalKey &ek)
 {
     TLWE<lvl1param> cadd;
-    for (int i = 0; i <= lvl1param::n; i++) cadd[i] = ca[i] + cb[i];
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) cadd[i] = ca[i] + cb[i];
     TLWE<lvl0param> temp;
     IdentityKeySwitch<lvl10param>(temp, cadd, *ek.iksklvl10);
     TRLWE<lvl1param> trlwe;
@@ -186,7 +176,7 @@ void HomXORNANDNOR(TLWE<lvl1param> &cxor, TLWE<lvl1param> &cnand,
          (std::numeric_limits<typename lvl01param::domainP::T>::digits - 1 -
           lvl01param::targetP::nbit)) &
             (lvl1param::n - 1));
-    for (int i = 0; i <= lvl1param::n; i++) {
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) {
         cnor[i] = -cnor[i];
         cxor[i] = -cnor[i] + cnand[i];
     }
@@ -197,9 +187,9 @@ void Hom4inputOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
                  const TLWE<lvl1param> &cb, const TLWE<lvl1param> &cc,
                  const TLWE<lvl1param> &cd, const EvalKey &ek)
 {
-    for (int i = 0; i <= lvl1param::n; i++)
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++)
         res[i] = ca[i] + cb[i] + cc[i] + cd[i];
-    res[lvl1param::n] += (1U << 30) - (1U << 28);
+    res[lvl1param::k * lvl1param::n] += (1U << 30) - (1U << 28);
     TLWE<lvl0param> temp;
     IdentityKeySwitch<lvl10param>(temp, res, *ek.iksklvl10);
     TRLWE<lvl1param> rtemp;
@@ -212,9 +202,9 @@ void Hom4inputAND(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
                   const TLWE<lvl1param> &cb, const TLWE<lvl1param> &cc,
                   const TLWE<lvl1param> &cd, const EvalKey &ek)
 {
-    for (int i = 0; i <= lvl1param::n; i++)
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++)
         res[i] = ca[i] + cb[i] + cc[i] + cd[i];
-    res[lvl1param::n] -= (1U << 30) - (1U << 28);
+    res[lvl1param::k * lvl1param::n] -= (1U << 30) - (1U << 28);
     TLWE<lvl0param> temp;
     IdentityKeySwitch<lvl10param>(temp, res, *ek.iksklvl10);
     TRLWE<lvl1param> rtemp;
@@ -240,8 +230,8 @@ void Hom3inputXOR(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
                   const TLWE<lvl1param> &cb, const TLWE<lvl1param> &cc,
                   const EvalKey &ek)
 {
-    for (int i = 0; i <= lvl1param::n; i++) res[i] = ca[i] + cb[i] + cc[i];
-    res[lvl1param::n] += 2 * lvl1param::μ;
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) res[i] = ca[i] + cb[i] + cc[i];
+    res[lvl1param::k * lvl1param::n] += 2 * lvl1param::μ;
     TLWE<lvl0param> temp;
     IdentityKeySwitch<lvl10param>(temp, res, *ek.iksklvl10);
     TRLWE<lvl1param> rtemp;
@@ -254,8 +244,8 @@ void Hom3inputThreashold(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
                          const TLWE<lvl1param> &cb, const TLWE<lvl1param> &cc,
                          const EvalKey &ek)
 {
-    res[lvl1param::n] += lvl1param::μ / 2;
-    for (int i = 0; i <= lvl1param::n; i++) res[i] = ca[i] + cb[i] + cc[i];
+    res[lvl1param::k * lvl1param::n] += lvl1param::μ / 2;
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) res[i] = ca[i] + cb[i] + cc[i];
     TLWE<lvl0param> temp;
     IdentityKeySwitch<lvl10param>(temp, res, *ek.iksklvl10);
     GateBootstrappingTLWE2TLWEFFT<lvl01param>(
@@ -274,8 +264,8 @@ template <class P>
 void HomAOI3(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
              const TLWE<P> &cc, const EvalKey &ek)
 {
-    for (int i = 0; i <= P::n; i++) res[i] = ca[i] + cb[i] + 2 * cc[i];
-    res[P::n] += (1ULL << std::numeric_limits<typename P::T>::digits) / 12;
+    for (int i = 0; i <= P::k * P::n; i++) res[i] = ca[i] + cb[i] + 2 * cc[i];
+    res[P::k * P::n] += (1ULL << std::numeric_limits<typename P::T>::digits) / 12;
     TLWE<lvl0param> temp;
     IdentityKeySwitch<typename KeySwitchParam<P>::P>(temp, res, *ek.iksklvl10);
     TRLWE<P> rtemp;
@@ -296,7 +286,7 @@ void HomAO3(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
             const TLWE<P> &cc, const EvalKey &ek)
 {
     HomAOI3<P>(res, ca, cb, cc, ek);
-    for (int i = 0; i <= P::n; i++) res[i] = -res[i];
+    for (int i = 0; i <= P::k * P::n; i++) res[i] = -res[i];
 }
 #define INST(P)                                                   \
     template void HomAO3<P>(TLWE<P> & res, const TLWE<P> &ca,     \
@@ -311,8 +301,8 @@ void HomOA3(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
             const TLWE<lvl1param> &cb, const TLWE<lvl1param> &cc,
             const EvalKey &ek)
 {
-    for (int i = 0; i <= lvl1param::n; i++) res[i] = ca[i] + cb[i] + 2 * cc[i];
-    res[lvl1param::n] +=
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) res[i] = ca[i] + cb[i] + 2 * cc[i];
+    res[lvl1param::k * lvl1param::n] +=
         (1ULL << std::numeric_limits<typename lvl1param::T>::digits) / 12;
     TLWE<lvl0param> temp;
     IdentityKeySwitch<lvl10param>(temp, res, *ek.iksklvl10);
@@ -334,7 +324,7 @@ void HomOAI3(TLWE<lvl1param> &res, const TLWE<lvl1param> &ca,
              const EvalKey &ek)
 {
     HomOA3<P>(res, ca, cb, cc, ek);
-    for (int i = 0; i <= lvl1param::n; i++) res[i] = -res[i];
+    for (int i = 0; i <= lvl1param::k * lvl1param::n; i++) res[i] = -res[i];
 }
 #define INST(P)                                                    \
     template void HomOAI3<P>(TLWE<P> & res, const TLWE<P> &ca,     \
