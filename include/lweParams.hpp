@@ -17,10 +17,6 @@ struct portablelvl0param {
           approx_bit(std::numeric_limits<typename lvl0param::T>::digits)
     {
     }
-    portablelvl0param(const portablelvl0param& P)
-        : n(P.n), α(P.α), approx_bit(P.approx_bit)
-    {
-    }
 
     template <class Archive>
     void serialize(Archive& archive)
@@ -52,16 +48,6 @@ struct portablelvl1param {
           Bg(lvl1param::Bg),
           α(lvl1param::α),
           approx_bit(std::numeric_limits<typename lvl1param::T>::digits)
-    {
-    }
-    portablelvl1param(const portablelvl1param& P)
-        : nbit(P.nbit),
-          n(P.n),
-          l(P.l),
-          Bgbit(P.Bgbit),
-          Bg(P.Bg),
-          α(P.α),
-          approx_bit(P.approx_bit)
     {
     }
 
@@ -99,16 +85,6 @@ struct portablelvl2param {
           approx_bit(std::numeric_limits<typename lvl2param::T>::digits)
     {
     }
-    portablelvl2param(const portablelvl1param& P)
-        : nbit(P.nbit),
-          n(P.n),
-          l(P.l),
-          Bgbit(P.Bgbit),
-          Bg(P.Bg),
-          α(P.α),
-          approx_bit(P.approx_bit)
-    {
-    }
 
     template <class Archive>
     void serialize(Archive& archive)
@@ -135,10 +111,6 @@ struct portablelvl10param {
         : t(lvl10param::t), basebit(lvl10param::basebit), α(lvl10param::α)
     {
     }
-    portablelvl10param(const portablelvl10param& P)
-        : t(P.t), basebit(P.basebit), α(P.α)
-    {
-    }
 
     template <class Archive>
     void serialize(Archive& archive)
@@ -160,10 +132,6 @@ struct portablelvl20param {
 
     portablelvl20param()
         : t(lvl20param::t), basebit(lvl20param::basebit), α(lvl20param::α)
-    {
-    }
-    portablelvl20param(const portablelvl20param& P)
-        : t(P.t), basebit(P.basebit), α(P.α)
     {
     }
 
@@ -189,10 +157,6 @@ struct portablelvl21param {
         : t(lvl21param::t), basebit(lvl21param::basebit), α(lvl21param::α)
     {
     }
-    portablelvl21param(const portablelvl21param& P)
-        : t(P.t), basebit(P.basebit), α(P.α)
-    {
-    }
 
     template <class Archive>
     void serialize(Archive& archive)
@@ -214,10 +178,6 @@ struct portablelvl22param {
 
     portablelvl22param()
         : t(lvl22param::t), basebit(lvl22param::basebit), α(lvl22param::α)
-    {
-    }
-    portablelvl22param(const portablelvl22param& P)
-        : t(P.t), basebit(P.basebit), α(P.α)
     {
     }
 
