@@ -79,17 +79,20 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft)
 {
     DecomposedPolynomialInFD<P> decpolyfft;
+    __builtin_prefetch(trgswfft[0].data());
     DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0], 0);
     TRLWEInFD<P> restrlwefft;
     for (int m = 0; m < P::k + 1; m++)
         MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
     for (int i = 1; i < P::l; i++) {
+        __builtin_prefetch(trgswfft[i].data());
         DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0], i);
         for (int m = 0; m < P::k + 1; m++)
             FMAInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[i][m]);
     }
     for (int k = 1; k < P::k + 1; k++) {
         for (int i = 0; i < P::l; i++) {
+            __builtin_prefetch(trgswfft[i+ k * P::l].data());
             DecompositionPolynomialFFT<P>(decpolyfft, trlwe[k], i);
             for (int m = 0; m < P::k + 1; m++)
                 FMAInFD<P::n>(restrlwefft[m], decpolyfft,

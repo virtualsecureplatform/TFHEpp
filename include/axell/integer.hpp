@@ -41,7 +41,7 @@ private:
 #else
         return (n == 0) ? std::numeric_limits<T>::digits
                         : (!(n & static_cast<T>(1)
-                                     << std::numeric_limits<T>::digits - 1)
+                                     << (std::numeric_limits<T>::digits - 1))
                                ? (1 + clz(static_cast<T>(n << 1)))
                                : 0);
 #endif
@@ -138,7 +138,7 @@ public:
                 carry.data[0], res_2.data[i], this->data[i],
                 (i < M) ? x.data[i] : zero, carry.data[0], *ek);
         }
-
+ 
 #pragma omp parallel for
         for (size_t i = 0; i < N; ++i) {
             res.data[i] = res_2.data[i];
@@ -153,7 +153,7 @@ public:
         TLWETYPE zero, one;
         HomCONSTANTZERO<TLWEPARAM>(carry.data[0]);
         HomCONSTANTZERO<TLWEPARAM>(zero);
-        HomCONSTANTONE(one);
+        HomCONSTANTONE<TLWEPARAM>(one);
 
         bool skip = true;
         for (size_t i = 0; i < N; ++i) {
@@ -176,7 +176,7 @@ public:
     {
         res.ek = borrow.ek = this->ek;
 
-        HomCONSTANTONE(borrow.data[0]);
+        HomCONSTANTONE<TLWEPARAM>(borrow.data[0]);
         TLWETYPE not_x;
         for (size_t i = 0; i < N; ++i) {
             HomNOT(not_x, x.data[i]);
@@ -194,9 +194,9 @@ public:
         res.ek = borrow.ek = this->ek;
 
         TLWETYPE zero, one;
-        HomCONSTANTONE(borrow.data[0]);
+        HomCONSTANTONE<TLWEPARAM>(borrow.data[0]);
         HomCONSTANTZERO<TLWEPARAM>(zero);
-        HomCONSTANTONE(one);
+        HomCONSTANTONE<TLWEPARAM>(one);
 
         bool skip = true;
         for (size_t i = 0; i < N; ++i) {
@@ -276,7 +276,7 @@ public:
             if (i < N) HomCONSTANTZERO<TLWEPARAM>(carries.data[i]);
         }
         HomCONSTANTZERO<TLWEPARAM>(zero);
-        HomCONSTANTONE(one);
+        HomCONSTANTONE<TLWEPARAM>(one);
 
         constexpr size_t j_max = N <= M ? N : M;
         for (size_t j = 0; j < j_max; ++j) {
@@ -346,7 +346,7 @@ public:
 
             tfhe_uintN_t<N, TLWEPARAM> tmp(ek);
             TLWETYPE ib;
-            HomCONSTANTONE(ib);
+            HomCONSTANTONE<TLWEPARAM>(ib);
             for (size_t i = 0; i < N; ++i) {
                 detail::integer::full_adder<TLWEPARAM>(
                     ib, tmp.data[i], r_2.data[i], subtrahend.data[i], ib, *ek);
@@ -374,7 +374,7 @@ public:
 #pragma omp parallel for
         for (size_t i = 0; i < N; ++i) {
             if (64 <= N || !(x & (1ull << i)))
-                HomCONSTANTONE(subtrahend.data[i]);
+                HomCONSTANTONE<TLWEPARAM>(subtrahend.data[i]);
             else
                 HomCONSTANTZERO<TLWEPARAM>(subtrahend.data[i]);
             HomCONSTANTZERO<TLWEPARAM>(r_2.data[i]);
@@ -388,7 +388,7 @@ public:
 
             tfhe_uintN_t<N, TLWEPARAM> tmp(ek);
             TLWETYPE ib;
-            HomCONSTANTONE(ib);
+            HomCONSTANTONE<TLWEPARAM>(ib);
             for (size_t i = 0; i < N; ++i) {
                 detail::integer::full_adder<TLWEPARAM>(
                     ib, tmp.data[i], r_2.data[i], subtrahend.data[i], ib, *ek);
@@ -559,7 +559,7 @@ public:
         for (size_t i = 0; i < N; i++) {
             const bool is_one = (i < 64) && (x & (1ull << i));
             if (is_one)
-                HomCONSTANTONE(res.data[i]);
+                HomCONSTANTONE<TLWEPARAM>(res.data[i]);
             else
                 HomCOPY(res.data[i], this->data[i]);
         }
@@ -720,7 +720,7 @@ public:
         tfhe_uintN_t<N, TLWEPARAM> xnor;
         TLWETYPE zero, one;
         HomCONSTANTZERO<TLWEPARAM>(zero);
-        HomCONSTANTONE(one);
+        HomCONSTANTONE<TLWEPARAM>(one);
 
 #pragma omp parallel for
         for (size_t i = 0; i < N; ++i) {
@@ -763,7 +763,7 @@ public:
         if (N < 64) {
             const uint64_t mask = 0xffff'ffff'ffff'ffff - ((1ull << N) - 1);
             if (x & mask) {
-                HomCONSTANTONE(res.data[0]);
+                HomCONSTANTONE<TLWEPARAM>(res.data[0]);
                 return res;
             }
         }
