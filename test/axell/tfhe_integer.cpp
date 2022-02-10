@@ -26,6 +26,9 @@ T mask_bits(const T x, const size_t n)
 }
 
 template <typename T>
+#ifdef __clang__
+__attribute__((optnone))
+#endif
 T make_mask(const size_t n)
 {
     T ret = 0;
@@ -121,10 +124,11 @@ void test(const size_t num_test, F func, Fc func_tfhe,
         x[i] = static_cast<T>(rnd(seed_gen)) & l_mask;
         y[i] = static_cast<T>(y_orig[i]) & r_mask;
 
-        uint8_t tmp;
+        uint8_t tmp = 0;
         func(x[i], y[i], z[i], tmp);
         z_cb[i] = (tmp != 0);
 
+        tmp = 0;
         T x_shift = shift_test ? mask_bits(x[i], right_bits) : x[i];
         func(x_shift, x_shift, w[i], tmp);
         w_cb[i] = (tmp != 0);
@@ -591,21 +595,21 @@ void test_comparison(const size_t num_test, F func)
 }
 
 template <typename T, typename U, typename V>
-void add_func(const T& x, const U& y, T& z, V& _)
+void add_func(const T& x, const U& y, T& z, [[maybe_unused]] V& _)
 {
     z = x + y;
 }
 auto add = [](auto&&... args) { add_func(args...); };
 
 template <typename T, typename U, typename V>
-void sub_func(const T& x, const U& y, T& z, V& _)
+void sub_func(const T& x, const U& y, T& z, [[maybe_unused]] V& _)
 {
     z = x - y;
 }
 auto sub = [](auto&&... args) { sub_func(args...); };
 
 template <typename T, typename U, typename V>
-void mul_func(const T& x, const U& y, T& z, V& _)
+void mul_func(const T& x, const U& y, T& z, [[maybe_unused]] V& _)
 {
     z = x * y;
 }
@@ -627,21 +631,21 @@ void div_func(const T& x, const U& y, T& q, T& r)
 auto div_ = [](auto&&... args) { div_func(args...); };
 
 template <typename T, typename U, typename V>
-void and_func(const T& x, const U& y, T& z, V& _)
+void and_func(const T& x, const U& y, T& z, [[maybe_unused]] V& _)
 {
     z = x & y;
 }
 auto and_ = [](auto&&... args) { and_func(args...); };
 
 template <typename T, typename U, typename V>
-void or_func(const T& x, const U& y, T& z, V& _)
+void or_func(const T& x, const U& y, T& z, [[maybe_unused]] V& _)
 {
     z = x | y;
 }
 auto or_ = [](auto&&... args) { or_func(args...); };
 
 template <typename T, typename U, typename V>
-void xor_func(const T& x, const U& y, T& z, V& _)
+void xor_func(const T& x, const U& y, T& z, [[maybe_unused]] V& _)
 {
     z = x ^ y;
 }
@@ -655,14 +659,14 @@ void not_func(const T& x, T& z)
 auto not_ = [](auto&&... args) { not_func(args...); };
 
 template <typename T, typename U, typename V>
-void l_shift_func(const T& x, const U& y, T& z, V& _)
+void l_shift_func(const T& x, const U& y, T& z, [[maybe_unused]] V& _)
 {
     z = x << y;
 }
 auto l_shift = [](auto&&... args) { l_shift_func(args...); };
 
 template <typename T, typename U, typename V>
-void r_shift_func(const T& x, const U& y, T& z, V& _)
+void r_shift_func(const T& x, const U& y, T& z, [[maybe_unused]] V& _)
 {
     z = x >> y;
 }
@@ -744,110 +748,109 @@ COMPILE_TIME_FOR(
 
 int main()
 {
-    std::cout << "------ Test of operator+() ------" << std::endl;
-    test<u32, 32, t32, 32, u32>(10, add, add);
-    test<u32, 32, u64, 64, u64>(10, add, add);
-    test<u64, 64, u64, 64, u64>(10, add, add);
+    // std::cout << "------ Test of operator+() ------" << std::endl;
+    // test<u32, 32, t32, 32, u32>(10, add, add);
+    // test<u32, 32, u64, 64, u64>(10, add, add);
+    // test<u64, 64, u64, 64, u64>(10, add, add);
 
-    std::cout << "------ Test of add() ------" << std::endl;
-    test<u32, 32, t32, 32, u32>(
-        10,
-        [](const u32 x, const u32 y, u32& z, uint8_t& c) {
-            const u32 d = std::numeric_limits<u32>::max() - y;
-            c = d <= x;
-            z = x + y;
-        },
-        [](const t32& x, const t32& y, t32& res, t1& carry) {
-            x.add(y, res, carry);
-        });
-    test<u16, 16, t8, 8, u16>(
-        10,
-        [](const u16 x, const u16 y, u16& z, uint8_t& c) {
-            const u16 d = std::numeric_limits<u16>::max() - y;
-            c = d <= x;
-            z = x + y;
-        },
-        [](const t16& x, const t8& y, t16& res, t1& carry) {
-            x.add(y, res, carry);
-        });
-    test<u32, 16, TFHEpp::tfhe_uintN_t<24, TP>, 24, u32>(
-        10,
-        [](const u32 x, const u32 y, u32& z, uint8_t& c) {
-            const u32 mask = make_mask<u32>(16);
-            const u32 new_y = y & mask;
-            const u32 d = std::numeric_limits<u16>::max() - new_y;
-            c = d <= x;
-            z = (x + new_y) & mask;
-        },
-        [](const t16& x, const TFHEpp::tfhe_uintN_t<24, TP>& y, t16& res,
-           t1& carry) { x.add(y, res, carry); });
-    test<u32, 32, u64, 64, u64>(
-        10,
-        [](const u32 x, const u32 y, u32& z, uint8_t& c) {
-            const u32 d = std::numeric_limits<u16>::max() - y;
-            c = d <= x;
-            z = x + y;
-        },
-        [](const t32& x, const u64 y, t32& res, t1& carry) {
-            x.add(y, res, carry);
-        });
-    test<u64, 64, u64, 64, u64>(
-        10,
-        [](const u64 x, const u64 y, u64& z, uint8_t& c) {
-            const u64 d = std::numeric_limits<u64>::max() - y;
-            c = d <= x;
-            z = x + y;
-        },
-        [](const t64& x, const u64 y, t64& res, t1& carry) {
-            x.add(y, res, carry);
-        });
+    // std::cout << "------ Test of add() ------" << std::endl;
+    // test<u32, 32, t32, 32, u32>(
+    //     10,
+    //     [](const u32 x, const u32 y, u32& z, uint8_t& c) {
+    //         const u32 d = std::numeric_limits<u32>::max() - y;
+    //         c = d <= x;
+    //         z = x + y;
+    //     },
+    //     [](const t32& x, const t32& y, t32& res, t1& carry) {
+    //         x.add(y, res, carry);
+    //     });
+    // test<u16, 16, t8, 8, u16>(
+    //     10,
+    //     [](const u16 x, const u16 y, u16& z, uint8_t& c) {
+    //         const u16 d = std::numeric_limits<u16>::max() - y;
+    //         c = d <= x;
+    //         z = x + y;
+    //     },
+    //     [](const t16& x, const t8& y, t16& res, t1& carry) {
+    //         x.add(y, res, carry);
+    //     });
+    // test<u32, 16, TFHEpp::tfhe_uintN_t<24, TP>, 24, u32>(
+    //     10,
+    //     [](const u32 x, const u32 y, u32& z, uint8_t& c) {
+    //         const u32 mask = make_mask<u32>(16);
+    //         const u32 new_y = y & mask;
+    //         const u32 d = std::numeric_limits<u16>::max() - new_y;
+    //         c = d <= x;
+    //         z = (x + new_y) & mask;
+    //     },
+    //     [](const t16& x, const TFHEpp::tfhe_uintN_t<24, TP>& y, t16& res,
+    //        t1& carry) { x.add(y, res, carry); });
+    // test<u32, 32, u64, 64, u64>(
+    //     10,
+    //     [](const u32 x, const u32 y, u32& z, uint8_t& c) {
+    //         const u32 d = std::numeric_limits<u16>::max() - y;
+    //         c = d <= x;
+    //         z = x + y;
+    //     },
+    //     [](const t32& x, const u64 y, t32& res, t1& carry) {
+    //         x.add(y, res, carry);
+    //     });
+    // test<u64, 64, u64, 64, u64>(
+    //     10,
+    //     [](const u64 x, const u64 y, u64& z, uint8_t& c) {
+    //         const u64 d = std::numeric_limits<u64>::max() - y;
+    //         c = d <= x;
+    //         z = x + y;
+    //     },
+    //     [](const t64& x, const u64 y, t64& res, t1& carry) {
+    //         x.add(y, res, carry);
+    //     });
 
-    std::cout << "------ Test of operator-() ------" << std::endl;
-    test<u32, 32, t32, 32, u32>(10, sub, sub);
-    test<u32, 32, u64, 64, u64>(10, sub, sub);
-    test<u64, 64, u64, 64, u64>(10, sub, sub);
+    // std::cout << "------ Test of operator-() ------" << std::endl;
+    // test<u32, 32, t32, 32, u32>(10, sub, sub);
+    // test<u32, 32, u64, 64, u64>(10, sub, sub);
+    // test<u64, 64, u64, 64, u64>(10, sub, sub);
 
-    std::cout << "------ Test of sub() ------" << std::endl;
-    test<u32, 32, t32, 32, u32>(
-        10,
-        [](const u32 x, const u32 y, u32& z, uint8_t& b) {
-            b = x < y;
-            z = x - y;
-        },
-        [](const t32& x, const t32& y, t32& res, t1& borrow) {
-            x.sub(y, res, borrow);
-        });
-    test<u32, 32, u64, 64, u64>(
-        10,
-        [](const u32 x, const u32 y, u32& z, uint8_t& b) {
-            b = x < y;
-            z = x - y;
-        },
-        [](const t32& x, const u64 y, t32& res, t1& borrow) {
-            x.sub(y, res, borrow);
-        });
-    test<u64, 64, u64, 64, u64>(
-        10,
-        [](const u64 x, const u64 y, u64& z, uint8_t& b) {
-            const u64 d = std::numeric_limits<u64>::max() - y;
-            b = x < y;
-            z = x - y;
-        },
-        [](const t64& x, const u64 y, t64& res, t1& borrow) {
-            x.sub(y, res, borrow);
-        });
+    // std::cout << "------ Test of sub() ------" << std::endl;
+    // test<u32, 32, t32, 32, u32>(
+    //     10,
+    //     [](const u32 x, const u32 y, u32& z, uint8_t& b) {
+    //         b = x < y;
+    //         z = x - y;
+    //     },
+    //     [](const t32& x, const t32& y, t32& res, t1& borrow) {
+    //         x.sub(y, res, borrow);
+    //     });
+    // test<u32, 32, u64, 64, u64>(
+    //     10,
+    //     [](const u32 x, const u32 y, u32& z, uint8_t& b) {
+    //         b = x < y;
+    //         z = x - y;
+    //     },
+    //     [](const t32& x, const u64 y, t32& res, t1& borrow) {
+    //         x.sub(y, res, borrow);
+    //     });
+    // test<u64, 64, u64, 64, u64>(
+    //     10,
+    //     [](const u64 x, const u64 y, u64& z, uint8_t& b) {
+    //         b = x < y;
+    //         z = x - y;
+    //     },
+    //     [](const t64& x, const u64 y, t64& res, t1& borrow) {
+    //         x.sub(y, res, borrow);
+    //     });
 
-    std::cout << "------ Test of operator*() ------" << std::endl;
-    test<u16, 16, t16, 16, u16>(5, mul, mul);
-    test<u16, 16, u32, 32, u32>(5, mul, mul);
-    test<u16, 16, u16, 16, u16>(5, mul, mul);
+    // std::cout << "------ Test of operator*() ------" << std::endl;
+    // test<u16, 16, t16, 16, u16>(5, mul, mul);
+    // test<u16, 16, u32, 32, u32>(5, mul, mul);
+    // test<u16, 16, u16, 16, u16>(5, mul, mul);
 
-    std::cout << "------ Test of mul() ------" << std::endl;
-    compile_time_for_test_mul1<1, 32 + 1>()();
-    compile_time_for_test_mul2<1, 32 + 1>()();
-    // test_mul<u16, t16, 16, u32, 16, u16>(5);
-    // test_mul<u16, t16, 16, u32, 32, u16>(5);
-    // test_mul<u16, u64, 16, u32, 32, u64>(5);
+    // std::cout << "------ Test of mul() ------" << std::endl;
+    // compile_time_for_test_mul1<1, 32 + 1>()();
+    // compile_time_for_test_mul2<1, 32 + 1>()();
+    // // test_mul<u16, t16, 16, u32, 16, u16>(5);
+    // // test_mul<u16, t16, 16, u32, 32, u16>(5);
+    // // test_mul<u16, u64, 16, u32, 32, u64>(5);
 
     std::cout << "------ Test of operator/(), "
                  "operator%() ------"
@@ -869,13 +872,13 @@ int main()
     test<u64, 64, u64, 64, u64>(10, and_, and_);
     test<u32, 32, t1, 1, u32>(
         20,
-        [](const u32 x, const u32 y, u32& z, uint8_t& _) {
+        [](const u32 x, const u32 y, u32& z, [[maybe_unused]] uint8_t& _) {
             if (y == 0)
                 z = 0;
             else
                 z = x;
         },
-        [](const t32& x, const t1& y, t32& z, t1& _) { z = x & y; });
+        [](const t32& x, const t1& y, t32& z, [[maybe_unused]] t1& _) { z = x & y; });
 
     std::cout << "------ Test of operator|() ------" << std::endl;
     test<u32, 32, t32, 32, u32>(10, or_, or_);

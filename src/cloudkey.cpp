@@ -250,7 +250,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 template <class P>
 BootstrappingKey<P>& EvalKey::getbk() const
 {
-    if constexpr (std::is_same_v<P, lvl01param>) {
+    if constexpr (std::is_same_v<P, lvl01param> || std::is_same_v<P, lvl0Mparam>) {
         return *bklvl01;
     }
     else if constexpr (std::is_same_v<P, lvl02param>) {
@@ -264,7 +264,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 template <class P>
 BootstrappingKeyFFT<P>& EvalKey::getbkfft() const
 {
-    if constexpr (std::is_same_v<P, lvl01param>) {
+    if constexpr (std::is_same_v<P, lvl01param> || std::is_same_v<P, lvl0Mparam>) {
         return *bkfftlvl01;
     }
     else if constexpr (std::is_same_v<P, lvl02param>) {
@@ -278,7 +278,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 template <class P>
 BootstrappingKeyNTT<P>& EvalKey::getbkntt() const
 {
-    if constexpr (std::is_same_v<P, lvl01param>) {
+    if constexpr (std::is_same_v<P, lvl01param> || std::is_same_v<P, lvl0Mparam>) {
         return *bknttlvl01;
     }
     else if constexpr (std::is_same_v<P, lvl02param>) {
@@ -292,7 +292,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 template <class P>
 KeySwitchingKey<P>& EvalKey::getiksk() const
 {
-    if constexpr (std::is_same_v<P, lvl10param>) {
+    if constexpr (std::is_same_v<P, lvl10param> || std::is_same_v<P, lvlM0param>) {
         return *iksklvl10;
     }
     else if constexpr (std::is_same_v<P, lvl11param>) {
