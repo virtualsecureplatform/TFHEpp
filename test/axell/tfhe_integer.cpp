@@ -26,14 +26,11 @@ T mask_bits(const T x, const size_t n)
 }
 
 template <typename T>
-#ifdef __clang__
-__attribute__((optnone))
-#endif
 T make_mask(const size_t n)
 {
     T ret = 0;
     for (size_t i = 0; i < n; ++i) {
-        ret |= (1 << i);
+        ret |= (1UL << i);
     }
     return ret;
 }
