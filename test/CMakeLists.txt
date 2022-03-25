@@ -7,7 +7,6 @@ foreach(test_source ${test_sources})
 endforeach(test_source ${test_sources})
 
 # For GMP used in INTorus test
-find_library(gmp NAMES gmp gmpxx)
 if(gmp)
     add_compile_definitions(ENABLE_LSHTEST)
     target_link_libraries(INTorus gmp)

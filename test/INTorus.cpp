@@ -1,7 +1,8 @@
+#ifdef ENABLE_LSHTEST
 #include <gmp.h>
 #include <gmpxx.h>
+#endif
 
-#include <boost/multiprecision/cpp_int.hpp>
 #include <cassert>
 #include <cuhe++.hpp>
 #include <iostream>
