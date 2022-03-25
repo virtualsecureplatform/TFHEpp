@@ -16,6 +16,7 @@ option(USE_HEXL "Use Intel HEXL" OFF)
 option(ENABLE_TEST "Build tests" OFF)
 option(ENABLE_BENCHMARK "Build benchmarks" OFF)
 option(ENABLE_TUTORIAL "Build tutorial" OFF)
+option (USE_PERF "Use Google Profiler" OFF)
 
 if(USE_RANDEN)
   add_compile_definitions(USE_RANDEN)
