@@ -15,7 +15,7 @@ RUN cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_
 COPY . /TFHEpp
 RUN mkdir /TFHEpp/build
 WORKDIR /TFHEpp/build
-RUN cmake .. -DENABLE_TEST=ON -DCMAKE_CXX_COMPILER=g++ && make -j$(nproc)
+RUN cmake .. -DENABLE_TEST=ON -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release && make -j$(nproc)
 
-# Run benchmark
-CMD echo "TFHEpp" && /TFHEpp/build/test/nand && echo "original TFHE" && /tfhe/build/test/test-gate-bootstrapping-spqlios-fma 
+# To run benchmark test
+#$ echo "TFHEpp" && /TFHEpp/build/test/nand && echo "original TFHE" && /tfhe/build/test/test-gate-bootstrapping-spqlios-fma 
