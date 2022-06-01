@@ -1,0 +1,27 @@
+name: Test
+
+on:
+  push:
+    branches:
+    - master
+    - matsu-dev
+
+# thanks to https://izumisy.work/entry/2022/03/28/140644
+jobs:
+  ubuntu-2204:
+    name: ubuntu-2204
+    runs-on: Ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: docker/build-push-action@v2
+      with:
+        file: Dockerfile
+        tags: tfhepp-2204
+        push: false
+
+    - uses: addnab/docker-run-action@v3
+      with:
+        image: tfhepp-2204
+        run: /TFHEpp/build/test/test.sh 
