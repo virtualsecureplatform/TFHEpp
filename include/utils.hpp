@@ -97,13 +97,19 @@ template <uint32_t N>
 inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
              const std::array<double, N> &b)
 {
+    // for (int i = 0; i < N / 2; i++) {
+    //     res[i] = std::fma(a[i], b[i], res[i]);
+    //     res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
+    // }
+    // for (int i = 0; i < N / 2; i++) {
+    //     res[i + N / 2] = std::fma(a[i], b[i + N / 2], res[i + N / 2]);
+    //     res[i] -= a[i + N / 2] * b[i + N / 2];
+    // }
     for (int i = 0; i < N / 2; i++) {
-        res[i] = std::fma(a[i], b[i], res[i]);
-        res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
-    }
-    for (int i = 0; i < N / 2; i++) {
+        res[i] = std::fma(a[i + N / 2], b[i + N / 2], -res[i]);
+        res[i] = std::fma(a[i], b[i], -res[i]);
         res[i + N / 2] = std::fma(a[i], b[i + N / 2], res[i + N / 2]);
-        res[i] -= a[i + N / 2] * b[i + N / 2];
+        res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
     }
 }
 
