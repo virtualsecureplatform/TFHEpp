@@ -28,6 +28,8 @@ elseif(USE_CGGI19)
   add_compile_definitions(USE_CGGI19)
 elseif(USE_CONCRETE)
   add_compile_definitions(USE_CONCRETE)
+elseif(USE_TERNARY)
+  add_compile_definitions(USE_TERNARY)
 endif()
 
 if(USE_MKL)

@@ -111,6 +111,39 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
         static_assert(false_v<typename P::T>, "Undefined TwistIFFT!");
 }
 
+template <uint32_t N>
+inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
+                    const std::array<double, N> &b)
+{
+    for (int i = 0; i < N / 2; i++) {
+        double aimbim = a[i + N / 2] * b[i + N / 2];
+        double arebim = a[i] * b[i + N / 2];
+        res[i] = std::fma(a[i], b[i], -aimbim);
+        res[i + N / 2] = std::fma(a[i + N / 2], b[i], arebim);
+    }
+}
+
+// Be careful about memory accesss (We assume b has relatively high memory access cost)
+template <uint32_t N>
+inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
+             const std::array<double, N> &b)
+{
+    // for (int i = 0; i < N / 2; i++) {
+    //     res[i] = std::fma(a[i], b[i], res[i]);
+    //     res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
+    // }
+    // for (int i = 0; i < N / 2; i++) {
+    //     res[i + N / 2] = std::fma(a[i], b[i + N / 2], res[i + N / 2]);
+    //     res[i] -= a[i + N / 2] * b[i + N / 2];
+    // }
+    for (int i = 0; i < N / 2; i++) {
+        res[i] = std::fma(a[i + N / 2], b[i + N / 2], -res[i]);
+        res[i] = std::fma(a[i], b[i], -res[i]);
+        res[i + N / 2] = std::fma(a[i], b[i + N / 2], res[i + N / 2]);
+        res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
+    }
+}
+
 template <class P>
 inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
                     const Polynomial<P> &b)
@@ -174,6 +207,35 @@ inline void PolyMulNaieve(Polynomial<P> &res, const Polynomial<P> &a,
                       a[j]) *
                   b[P::n + i - j];
         res[i] = ri;
+    }
+}
+
+
+template <class P>
+std::array<std::array<double,P::n>,2*P::n> XaittGen(){
+    std::array<std::array<double,P::n>, 2*P::n> xaitt;
+    for(int i = 0;i<2*P::n;i++){
+        std::array<uint,P::n> xai = {};
+        xai[0] = -1;
+        if(i<P::n) xai[i] += 1;
+        else xai[i-P::n] -= 1;
+        TwistIFFT<P>(xaitt[i],xai);
+    }
+    return xaitt;
+}
+
+alignas(32) static const std::array<PolynomialInFD<lvl1param>,2*lvl1param::n> xaittlvl1 = XaittGen<lvl1param>();
+// alignas(32) static const std::array<PolynomialInFD<lvl2param>,2*lvl2param::n> xaittlvl2 = XaittGen<lvl2param>();
+
+template <class P>
+inline void PolynomialMulByXaiMinusOneInFD(PolynomialInFD<P> &res,
+                                       const PolynomialInFD<P> &poly,
+                                       const uint a)
+{
+    const int mod = a % (2*P::n);
+    const int index = mod>0?mod:mod+(2*P::n);
+    if constexpr (std::is_same_v<P, lvl1param>) {
+        MulInFD<P::n>(res,poly,xaittlvl1[index]);
     }
 }
 }  // namespace TFHEpp

@@ -37,7 +37,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                 << bitwidth;
         if (ā == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(res,
+        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res,
                                                                    bkfft[i], ā);
     }
 }

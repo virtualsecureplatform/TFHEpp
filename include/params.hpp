@@ -15,6 +15,8 @@ namespace TFHEpp {
 #include "params/CGGI19.hpp"
 #elif defined(USE_CONCRETE)
 #include "params/concrete.hpp"
+#elif defined(USE_TERNARY)
+#include "params/ternary.hpp"
 #else
 #include "params/128bit.hpp"
 #endif
@@ -68,10 +70,16 @@ template <class P>
 using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
 
 template <class P>
-using BootstrappingKey = std::array<TRGSW<typename P::targetP>, P::domainP::n>;
+using BootstrappingKeyElement = std::array<TRGSW<typename P::targetP>, P::domainP::key_value_diff>;
+template <class P>
+using BootstrappingKeyElementFFT =
+    std::array<TRGSWFFT<typename P::targetP>, P::domainP::key_value_diff>;
+
+template <class P>
+using BootstrappingKey = std::array<BootstrappingKeyElement<P>, P::domainP::n>;
 template <class P>
 using BootstrappingKeyFFT =
-    std::array<TRGSWFFT<typename P::targetP>, P::domainP::n>;
+    std::array<BootstrappingKeyElementFFT<P>, P::domainP::n>;
 template <class P>
 using BootstrappingKeyNTT =
     std::array<TRGSWNTT<typename P::targetP>, P::domainP::n>;

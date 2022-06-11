@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <iostream>
+
 namespace TFHEpp {
 
 template <class P>
@@ -9,9 +11,16 @@ void bkgen(BootstrappingKey<P>& bk, const SecretKey& sk)
 {
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
-        plainpoly[0] = sk.key.get<typename P::domainP>()[i];
-        bk[i] = trgswSymEncrypt<typename P::targetP>(
-            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+        int count = 0;
+        for(int j = P::domainP::key_value_min; j <= P::domainP::key_value_max;j++){
+            plainpoly[0] = sk.key.get<typename P::domainP>()[i] == j;
+            if(j != 0){
+                plainpoly[0] = sk.key.get<typename P::domainP>()[i];
+                bk[i][count] = trgswSymEncrypt<typename P::targetP>(
+                    plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+                count++;
+            }
+        }
     }
 }
 #define INST(P) \
@@ -24,9 +33,18 @@ void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
 {
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
-        plainpoly[0] = sk.key.get<typename P::domainP>()[i];
-        bkfft[i] = trgswfftSymEncrypt<typename P::targetP>(
-            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+        int count = 0;
+        for(int j = P::domainP::key_value_min; j <= P::domainP::key_value_max;j++){
+            if(sk.key.get<typename P::domainP>()[i] == j){
+                plainpoly[0] = 1;
+                std::cout<<"bkfftgen nonzero:"<<i<<":"<<count<<":"<<sk.key.get<typename P::domainP>()[i]<<std::endl;
+            }
+            if(j != 0){
+                bkfft[i][count] = trgswfftSymEncrypt<typename P::targetP>(
+                    plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+                count++;
+            }
+        }
     }
 }
 #define INST(P)                                               \
@@ -142,12 +160,12 @@ void EvalKey::emplacebk2bkfft()
     if constexpr (std::is_same_v<P, lvl01param>) {
         bkfftlvl01 = std::make_unique<BootstrappingKeyFFT<lvl01param>>();
         for (int i = 0; i < lvl01param::domainP::n; i++)
-            (*bkfftlvl01)[i] = ApplyFFT2trgsw<lvl1param>((*bklvl01)[i]);
+            (*bkfftlvl01)[i][0] = ApplyFFT2trgsw<lvl1param>((*bklvl01)[i][0]);
     }
     else if constexpr (std::is_same_v<P, lvl02param>) {
         bkfftlvl02 = std::make_unique<BootstrappingKeyFFT<lvl02param>>();
         for (int i = 0; i < lvl02param::domainP::n; i++)
-            (*bkfftlvl02)[i] = ApplyFFT2trgsw<lvl2param>((*bklvl02)[i]);
+            (*bkfftlvl02)[i][0] = ApplyFFT2trgsw<lvl2param>((*bklvl02)[i][0]);
     }
 }
 #define INST(P) template void EvalKey::emplacebk2bkfft<P>()
@@ -160,12 +178,12 @@ void EvalKey::emplacebk2bkntt()
     if constexpr (std::is_same_v<P, lvl01param>) {
         bknttlvl01 = std::make_unique<BootstrappingKeyNTT<lvl01param>>();
         for (int i = 0; i < lvl01param::domainP::n; i++)
-            (*bknttlvl01)[i] = ApplyNTT2trgsw<lvl1param>((*bklvl01)[i]);
+            (*bknttlvl01)[i] = ApplyNTT2trgsw<lvl1param>((*bklvl01)[i][0]);
     }
     else if constexpr (std::is_same_v<P, lvl02param>) {
         bknttlvl02 = std::make_unique<BootstrappingKeyNTT<lvl02param>>();
         for (int i = 0; i < lvl02param::domainP::n; i++)
-            (*bknttlvl02)[i] = ApplyNTT2trgsw<lvl2param>((*bklvl02)[i]);
+            (*bknttlvl02)[i] = ApplyNTT2trgsw<lvl2param>((*bklvl02)[i][0]);
     }
 }
 #define INST(P) template void EvalKey::emplacebk2bkntt<P>()
