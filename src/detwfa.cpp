@@ -20,7 +20,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 
 template <class bkP>
 void CMUXFFTwithPolynomialMulByXaiMinusOne(TRLWE<typename bkP::targetP> &acc, const BootstrappingKeyElementFFT<bkP> &cs,
-                                           const typename bkP::domainP::T a)
+                                           const int a)
 {
     TRLWE<typename bkP::targetP> temp;
     if constexpr(bkP::domainP::key_value_diff == 1){
@@ -51,7 +51,7 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(TRLWE<typename bkP::targetP> &acc, co
 }
 #define INST(bkP)                                             \
     template void CMUXFFTwithPolynomialMulByXaiMinusOne<bkP>( \
-        TRLWE<typename bkP::targetP> & acc, const BootstrappingKeyElementFFT<bkP> &cs, const typename bkP::domainP::T a)
+        TRLWE<typename bkP::targetP> & acc, const BootstrappingKeyElementFFT<bkP> &cs, const int a)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 

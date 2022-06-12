@@ -29,9 +29,7 @@ struct lvl1param {
     static constexpr std::uint32_t l = 3;
     static constexpr std::uint32_t Bgbit = 6;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
-    // static const inline double α = std::pow(2.0, -25);  // fresh noise
-    // static const inline double α = std::pow(2.0, -25);  // fresh noise
-    static const inline double α = 0;  // fresh noise
+    static const inline double α = std::pow(2.0, -25);  // fresh noise
     using T = uint32_t;                                 // Torus representation
     static constexpr T μ = 1U << 29;
     static constexpr uint32_t plain_modulus = 2;

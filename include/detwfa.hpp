@@ -9,7 +9,7 @@ void CMUXFFT(TRLWE<P> &res, const TRGSWFFT<P> &cs, const TRLWE<P> &c1,
 
 template <class bkP>
 void CMUXFFTwithPolynomialMulByXaiMinusOne(TRLWE<typename bkP::targetP> &acc, const BootstrappingKeyElementFFT<bkP> &cs,
-                                           const typename bkP::domainP::T a);
+                                           const int a);
 template <class P>
 void CMUXNTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWNTT<P> &cs,
                                            const typename P::T a);

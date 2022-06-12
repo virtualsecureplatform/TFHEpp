@@ -44,7 +44,7 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CMUXFFTwithPolynomialMulByXaiMinusOne<lvl01param>(c1[test], cs[test],  lvl1param::n+2);
+        CMUXFFTwithPolynomialMulByXaiMinusOne<lvl01param>(c1[test], cs[test],  -2);
     }
     end = chrono::system_clock::now();
 
@@ -52,7 +52,7 @@ int main()
         pres = trlweSymDecrypt<lvl1param>(c1[test], sk->key.lvl1);
         TFHEpp::Polynomial<TFHEpp::lvl1param> polyres = pmu1[test];
         if(ps[test]==1)
-            TFHEpp::PolynomialMulByXai<lvl1param>(polyres, pmu1[test], lvl1param::n+2);
+            TFHEpp::PolynomialMulByXai<lvl1param>(polyres, pmu1[test], 2*lvl1param::n-2);
         for (int i = 0; i < lvl1param::n; i++){
             // std::cout<<i<<":"<<ps[test]<<":"<<pres[i]<<":"<<(static_cast<int>(polyres[i])>0?1:0)<<std::endl;
             assert(pres[i] ==

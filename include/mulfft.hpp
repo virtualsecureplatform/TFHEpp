@@ -230,7 +230,7 @@ alignas(32) static const std::array<PolynomialInFD<lvl1param>,2*lvl1param::n> xa
 template <class P>
 inline void PolynomialMulByXaiMinusOneInFD(PolynomialInFD<P> &res,
                                        const PolynomialInFD<P> &poly,
-                                       const uint a)
+                                       const int a)
 {
     const int mod = a % (2*P::n);
     const int index = mod>0?mod:mod+(2*P::n);

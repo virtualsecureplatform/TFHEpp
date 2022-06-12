@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include <iostream>
-
 namespace TFHEpp {
 
 template <class P>
@@ -32,14 +30,11 @@ template <class P>
 void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
 {
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
-        Polynomial<typename P::targetP> plainpoly = {};
+        Polynomial<typename P::targetP> plainpoly;
         int count = 0;
         for(int j = P::domainP::key_value_min; j <= P::domainP::key_value_max;j++){
-            if(sk.key.get<typename P::domainP>()[i] == j){
-                plainpoly[0] = 1;
-                std::cout<<"bkfftgen nonzero:"<<i<<":"<<count<<":"<<sk.key.get<typename P::domainP>()[i]<<std::endl;
-            }
             if(j != 0){
+                plainpoly[0] = sk.key.get<typename P::domainP>()[i] == j;
                 bkfft[i][count] = trgswfftSymEncrypt<typename P::targetP>(
                     plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
                 count++;
