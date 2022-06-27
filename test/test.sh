@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 
 # thanks to https://qiita.com/Hayao0819/items/0e04b39b0804a0d16020
 contains() {
@@ -26,6 +26,6 @@ do
     if [[ $RES == "TRUE" ]]; then
         continue
     fi
-    echo "Testing $TEST_BINARY"
+    echo "==== Testing $TEST_BINARY ===="
     ./$TEST_BINARY
 done
