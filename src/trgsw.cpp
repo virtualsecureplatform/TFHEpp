@@ -78,7 +78,7 @@ template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft)
 {
-    std::array<TRLWEInFD<P>,(P::k + 1)*P::l> temptrlwefft;
+    std::array<TRLWEInFD<P>,P::k + 1> temptrlwefft = {};
     {
     #pragma omp parallel for num_threads(4) collapse(1)
     for(int j = 0; j < P::k + 1; j++){
@@ -87,11 +87,11 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
             __builtin_prefetch(trgswfft[i + j * P::l].data());
             DecompositionPolynomialFFT<P>(decpolyfft, trlwe[j], i);
             for (int m = 0; m < P::k + 1; m++)
-                MulInFD<P::n>(temptrlwefft[j*P::l + i][m], decpolyfft, trgswfft[i + j * P::l][m]);
+                FMAInFD<P::n>(temptrlwefft[j][m], decpolyfft, trgswfft[i + j * P::l][m]);
         }
     }
     }
-    for(int j = 1; j < (P::k + 1)*P::l; j++) for(int i = 0; i < P::k + 1; i++)  for(int k = 0; k < P::n; k++) temptrlwefft[0][i][k] += temptrlwefft[j][i][k];
+    for(int j = 1; j < P::k + 1; j++) for(int i = 0; i < P::k + 1; i++)  for(int k = 0; k < P::n; k++) temptrlwefft[0][i][k] += temptrlwefft[j][i][k];
     for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], temptrlwefft[0][k]);
 }
 #define INST(P)                               \
