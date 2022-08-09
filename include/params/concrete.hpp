@@ -13,7 +13,7 @@ struct lvl0param {
     static constexpr std::uint32_t n = 586;  // dimension
     static constexpr std::uint32_t k = 1;
     static constexpr double α =
-        0.00008976167396834998;  // fresh noise, 2^{-13.44...}
+        0.00008976167396834998;  // fresh noise, 2^{-13.4}
     using T = uint32_t;          // Torus representation
     static constexpr T μ = 1U << (std::numeric_limits<T>::digits - 3);
     static constexpr uint32_t plain_modulus = 2;
@@ -32,7 +32,7 @@ struct lvl1param {
     static constexpr std::uint32_t Bgbit = 8;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
     static const inline double α =
-        0.00000002989040792967434;  // fresh noise, 2^{-24.9...}
+        0.0000000342338787018369;  // fresh noise, 2^{-24.8...}
     using T = uint32_t;             // Torus representation
     static constexpr T μ = 1U << 29;
     static constexpr uint32_t plain_modulus = 2;
