@@ -1,10 +1,14 @@
 #include "trgsw.hpp"
 
+#include "BS_thread_pool.hpp"
+
 #include <limits>
 #include <type_traits>
 
 namespace TFHEpp {
 using namespace std;
+
+BS::thread_pool pool(8);
 
 template <class P>
 constexpr typename P::T offsetgen()
@@ -74,23 +78,24 @@ void DecompositionPolynomialNTT(DecomposedPolynomialNTT<P> &decpolyntt,
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
+
+
 template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft)
 {
     std::array<TRLWEInFD<P>,P::k + 1> temptrlwefft = {};
-    {
-    #pragma omp parallel for num_threads(4) collapse(1)
-    for(int j = 0; j < P::k + 1; j++){
-        for (int i = 0; i < P::l; i++) {
-            DecomposedPolynomialInFD<P> decpolyfft;
-            __builtin_prefetch(trgswfft[i + j * P::l].data());
-            DecompositionPolynomialFFT<P>(decpolyfft, trlwe[j], i);
-            for (int m = 0; m < P::k + 1; m++)
-                FMAInFD<P::n>(temptrlwefft[j][m], decpolyfft, trgswfft[i + j * P::l][m]);
+    pool.parallelize_loop(P::k+1,[&](const int a, const int b){
+        for(int j = a; j < b; j++){
+            for (int i = 0; i < P::l; i++) {
+                DecomposedPolynomialInFD<P> decpolyfft;
+                __builtin_prefetch(trgswfft[i + j * P::l].data());
+                DecompositionPolynomialFFT<P>(decpolyfft, trlwe[j], i);
+                for (int m = 0; m < P::k + 1; m++)
+                    FMAInFD<P::n>(temptrlwefft[j][m], decpolyfft, trgswfft[i + j * P::l][m]);
+            }
         }
-    }
-    }
+    }).wait();
     for(int j = 1; j < P::k + 1; j++) for(int i = 0; i < P::k + 1; i++)  for(int k = 0; k < P::n; k++) temptrlwefft[0][i][k] += temptrlwefft[j][i][k];
     for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], temptrlwefft[0][k]);
 }

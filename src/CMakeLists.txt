@@ -11,7 +11,8 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64
     ${PROJECT_SOURCE_DIR}/thirdparties/hexl/hexl/hexl/include
     ${PROJECT_SOURCE_DIR}/thirdparties/randen
-    ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include)
+    ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include
+    ${PROJECT_SOURCE_DIR}/thirdparties/thread-pool)
 
 if(USE_RANDEN)
   target_link_libraries(tfhe++ INTERFACE randen)
