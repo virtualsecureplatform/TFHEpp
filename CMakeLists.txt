@@ -11,10 +11,13 @@ option(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
 option(USE_CONCRETE "Use the parameter set proposed in CONCRETE" OFF)
 option(USE_TERNARY "Use ternary secret keys" OFF)
 option(USE_TERNARY_CMUX "Use ternary cmux" OFF)
+
+option(USE_AVX512 "Use AVX512 ver. SPQLIOS" OFF)
 option(USE_MKL "Use Intel MKL" OFF)
 option(USE_FFTW3 "Use FFTW3" OFF)
 option(USE_SPQLIOX_AARCH64 "Use spqliox_aarch64" OFF)
 option(USE_HEXL "Use Intel HEXL" OFF)
+
 option(ENABLE_TEST "Build tests" OFF)
 option(ENABLE_BENCHMARK "Build benchmarks" OFF)
 option(ENABLE_TUTORIAL "Build tutorial" OFF)
