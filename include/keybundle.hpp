@@ -52,8 +52,8 @@ constexpr TRGSWFFT<P> oneTRGSWFFTgen(){
     return ApplyFFT2trgsw<P>(trgsw);
 }
 
-const TRGSWFFT<lvl1param> onetrgswlvl1 = oneTRGSWFFTgen<lvl1param>();
-const TRGSWFFT<lvl2param> onetrgswlvl2 = oneTRGSWFFTgen<lvl2param>();
+alignas(64) const TRGSWFFT<lvl1param> onetrgswlvl1 = oneTRGSWFFTgen<lvl1param>();
+alignas(64) const TRGSWFFT<lvl2param> onetrgswlvl2 = oneTRGSWFFTgen<lvl2param>();
 
 template <class P>
 void KeyBundleFFT(TRGSWFFT<typename P::targetP>& kbfft, const BootstrappingKeyElementFFT<P> &bkfft, const std::array<typename P::domainP::T,P::Addends> &bara){
