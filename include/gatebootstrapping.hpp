@@ -32,7 +32,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
     PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, b̄);
     #ifdef USE_KEY_BUNDLE
     alignas(64) std::array<TRGSWFFT<typename P::targetP>,  P::domainP::k * P::domainP::n/P::Addends> BKadded;
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(8)
     for (int i = 0; i < P::domainP::k * P::domainP::n/P::Addends; i++) {
         constexpr typename P::domainP::T roundoffset =
             1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
