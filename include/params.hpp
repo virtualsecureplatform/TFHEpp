@@ -95,13 +95,13 @@ using BootstrappingKeyElementFFT =
 #endif
 
 template <class P>
-using BootstrappingKey = std::array<BootstrappingKeyElement<P>, P::domainP::n>;
+using BootstrappingKey = std::array<BootstrappingKeyElement<P>, P::domainP::k * P::domainP::n>;
 template <class P>
 using BootstrappingKeyFFT =
-    std::array<BootstrappingKeyElementFFT<P>, P::domainP::n/P::Addends>;
+    std::array<BootstrappingKeyElementFFT<P>, P::domainP::k * P::domainP::n/P::Addends>;
 template <class P>
 using BootstrappingKeyNTT =
-    std::array<TRGSWNTT<typename P::targetP>, P::domainP::n>;
+    std::array<TRGSWNTT<typename P::targetP>, P::domainP::k * P::domainP::n>;
 
 template <class P>
 using KeySwitchingKey = std::array<
