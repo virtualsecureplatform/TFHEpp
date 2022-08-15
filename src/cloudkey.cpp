@@ -29,8 +29,25 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 template <class P>
 void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
 {
+    Polynomial<typename P::targetP> plainpoly = {};
+    #ifdef USE_KEY_BUNDLE
+     for (int i = 0; i < P::domainP::k * P::domainP::n/P::Addends; i++){
+            plainpoly[0] = static_cast<int32_t>(sk.key.get<typename P::domainP>()[2*i]*sk.key.get<typename P::domainP>()[2*i+1]);
+            bkfft[i][0] = trgswfftSymEncrypt<typename P::targetP>(
+                plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+            plainpoly[0] = static_cast<int32_t>(sk.key.get<typename P::domainP>()[2*i]*(1-sk.key.get<typename P::domainP>()[2*i+1]));
+            bkfft[i][1] = trgswfftSymEncrypt<typename P::targetP>(
+                plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+            plainpoly[0] = static_cast<int32_t>((1-sk.key.get<typename P::domainP>()[2*i])*sk.key.get<typename P::domainP>()[2*i+1]);
+            bkfft[i][2] = trgswfftSymEncrypt<typename P::targetP>(
+                plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+            // plainpoly[0] = static_cast<int32_t>((1-sk.key.get<typename P::domainP>()[2*i])*(1-sk.key.get<typename P::domainP>()[2*i+1]));
+            plainpoly[0] = 1;
+            bkfft[i][3] = trgswfftSymEncrypt<typename P::targetP>(
+                plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+        }
+    #else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
-        Polynomial<typename P::targetP> plainpoly;
         int count = 0;
         for(int j = P::domainP::key_value_min; j <= P::domainP::key_value_max;j++){
             if(j != 0){
@@ -41,6 +58,7 @@ void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
             }
         }
     }
+    #endif
 }
 #define INST(P)                                               \
     template void bkfftgen<P>(BootstrappingKeyFFT<P> & bkfft, \
