@@ -2,6 +2,8 @@
 
 #include "params.hpp"
 #include "mulfft.hpp"
+#include "params/128bit.hpp"
+#include "trgsw.hpp"
 
 namespace TFHEpp{
 
@@ -37,11 +39,32 @@ namespace TFHEpp{
 // }
 
 template <class P>
+constexpr TRGSWFFT<P> oneTRGSWFFTgen(){
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
+    TRGSW<P> trgsw;
+    for (TRLWE<P> &trlwe : trgsw) trlwe = {};
+    for (int i = 0; i < P::l; i++) {
+        for (int k = 0; k < P::k + 1; k++) {
+                trgsw[i + k * P::l][k][0] =
+                    static_cast<typename P::T>(h[i]);
+            }
+        }
+    return ApplyFFT2trgsw<P>(trgsw);
+}
+
+const TRGSWFFT<lvl1param> onetrgswlvl1 = oneTRGSWFFTgen<lvl1param>();
+const TRGSWFFT<lvl2param> onetrgswlvl2 = oneTRGSWFFTgen<lvl2param>();
+
+template <class P>
 void KeyBundleFFT(TRGSWFFT<typename P::targetP>& kbfft, const BootstrappingKeyElementFFT<P> &bkfft, const std::array<typename P::domainP::T,P::Addends> &bara){
+    if constexpr (std::is_same_v<typename P::targetP, lvl1param>){
+        kbfft = onetrgswlvl1;
+    }else{
+        kbfft = onetrgswlvl2;
+    }
     for(int i = 0;i<2*P::targetP::l;i++){
        for(int j = 0;j<P::targetP::k+1;j++){
            constexpr uint32_t indexmask = 2*P::targetP::n-1;
-           kbfft[i][j] = bkfft[3][i][j];
             if constexpr (std::is_same_v<typename P::targetP, lvl1param>){
                 FMAInFD<P::targetP::n>(kbfft[i][j],bkfft[2][i][j],xaittlvl1[bara[1] & indexmask]);
                 FMAInFD<P::targetP::n>(kbfft[i][j],bkfft[1][i][j],xaittlvl1[bara[0] & indexmask]);

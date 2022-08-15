@@ -82,7 +82,7 @@ using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
 
 #ifdef USE_KEY_BUNDLE
 template <class P>
-using BootstrappingKeyElement = std::array<TRGSW<typename P::targetP>, 1<<P::Addends>;
+using BootstrappingKeyElement = std::array<TRGSW<typename P::targetP>, (1<<P::Addends)-1>;
 template <class P>
 using BootstrappingKeyElementFFT =
     std::array<TRGSWFFT<typename P::targetP>, 1<<P::Addends>;

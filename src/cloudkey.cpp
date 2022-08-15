@@ -41,10 +41,6 @@ void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
             plainpoly[0] = static_cast<int32_t>((1-sk.key.get<typename P::domainP>()[2*i])*sk.key.get<typename P::domainP>()[2*i+1]);
             bkfft[i][2] = trgswfftSymEncrypt<typename P::targetP>(
                 plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
-            // plainpoly[0] = static_cast<int32_t>((1-sk.key.get<typename P::domainP>()[2*i])*(1-sk.key.get<typename P::domainP>()[2*i+1]));
-            plainpoly[0] = 1;
-            bkfft[i][3] = trgswfftSymEncrypt<typename P::targetP>(
-                plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
         }
     #else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
