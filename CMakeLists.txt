@@ -51,6 +51,10 @@ if(USE_MKL)
   set(USE_FFTW3 ON)
 endif()
 
+if(USE_AVX512)
+  string(APPEND CMAKE_CXX_FLAGS  " -mprefer-vector-width=512")
+endif()
+
 if(USE_FFTW3)
   add_compile_definitions(USE_FFTW3)
   add_subdirectory(thirdparties/fftw)
