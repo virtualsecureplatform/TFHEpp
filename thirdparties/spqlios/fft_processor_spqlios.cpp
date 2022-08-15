@@ -86,7 +86,7 @@ void FFT_Processor_Spqlios::execute_reverse_torus32(double *res, const uint32_t 
 }
 
 void FFT_Processor_Spqlios::execute_reverse_torus64(double* res, const uint64_t* a) {
-    #ifdef AVX512_OPT
+    #ifdef USE_AVX512
     __m512d * ri512 = (__m512d *) proc->real_inout_rev;
     __m512i * aa = (__m512i *) a;
     for (size_t i = 0; i < proc->N/8; i++) ri512[i] = _mm512_cvtepi64_pd (aa[i]);
@@ -182,7 +182,7 @@ void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, const double* 
 		);
     }
     fft(tables_direct,real_inout_direct); 
-    #ifdef AVX512_OPT
+    #ifdef USE_AVX512
     __m512d * ri512 = (__m512d *) proc->real_inout_direct;
     __m512i * res512 = (__m512i *) res;
     const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
