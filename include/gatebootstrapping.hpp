@@ -63,8 +63,47 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                 << bitwidth;
         if (ā == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res,
-                                                                   bkfft[i], ā);
+            {
+            alignas(64) TRLWE<typename P::targetP> temp;
+            int count = 0;
+            std::array<TRLWEInFD<typename P::targetP>,P::targetP::k + 1> temptrlwefft = {};
+            #pragma omp parallel num_threads(2) 
+            {
+            for(int val = P::domainP::key_value_min; val <= P::domainP::key_value_max; val++){
+                if(val!=0){
+                    #pragma omp single
+                    {
+                    const int mod = (ā*val) % (2*P::targetP::n);
+                    const int index = mod>0?mod:mod+(2*P::targetP::n);
+                    for (int k = 0; k < P::targetP::k + 1; k++)
+                        PolynomialMulByXaiMinusOne<typename P::targetP>(temp[k], res[k], index);
+                    temptrlwefft = {};
+                    }
+
+                    const TRGSWFFT<typename P::targetP>& trgswfft = bkfft[i][count];
+                    #pragma omp for
+                    for(int j = 0; j < P::targetP::k + 1; j++){
+                        for (int k = 0; k < P::targetP::l; k++) {
+                            DecomposedPolynomialInFD<typename P::targetP> decpolyfft;
+                            __builtin_prefetch(trgswfft[k + j * P::targetP::l].data());
+                            DecompositionPolynomialFFT<typename P::targetP>(decpolyfft, temp[j], k);
+                            for (int m = 0; m < P::targetP::k + 1; m++)
+                                FMAInFD<P::targetP::n>(temptrlwefft[j][m], decpolyfft, trgswfft[k + j * P::targetP::l][m]);
+                        }
+                    }
+                    #pragma omp single
+                    {
+                    for(int j = 1; j < P::targetP::k + 1; j++) for(int i = 0; i < P::targetP::k + 1; i++)  for(int k = 0; k < P::targetP::n; k++) temptrlwefft[0][i][k] += temptrlwefft[j][i][k];
+                    for (int k = 0; k < P::targetP::k + 1; k++) TwistFFT<typename P::targetP>(temp[k], temptrlwefft[0][k]);
+
+                    for (int k = 0; k < P::targetP::k + 1; k++)
+                        for (int j = 0; j < P::targetP::n; j++) res[k][j] += temp[k][j];
+                    count++;
+                    }
+                }
+            }
+            }
+        }
     }
     #endif
 }
