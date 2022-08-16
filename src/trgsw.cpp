@@ -80,7 +80,7 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 {
     std::array<TRLWEInFD<P>,P::k + 1> temptrlwefft = {};
     {
-    #pragma omp parallel for num_threads(4) collapse(1)
+    #pragma omp parallel for num_threads(2) 
     for(int j = 0; j < P::k + 1; j++){
         for (int i = 0; i < P::l; i++) {
             DecomposedPolynomialInFD<P> decpolyfft;
