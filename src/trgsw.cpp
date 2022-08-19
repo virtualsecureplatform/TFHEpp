@@ -92,7 +92,7 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     }
     for (int k = 1; k < P::k + 1; k++) {
         for (int i = 0; i < P::l; i++) {
-            __builtin_prefetch(trgswfft[i+ k * P::l].data());
+            __builtin_prefetch(trgswfft[i + k * P::l].data());
             DecompositionPolynomialFFT<P>(decpolyfft, trlwe[k], i);
             for (int m = 0; m < P::k + 1; m++)
                 FMAInFD<P::n>(restrlwefft[m], decpolyfft,
@@ -115,41 +115,51 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     DecompositionPolynomialNTT<P>(decpolyntt, trlwe[0], 0);
     TRLWENTT<P> restrlwentt;
     for (int m = 0; m < P::k + 1; m++)
-    #ifdef USE_HEXL
-    intel::hexl::EltwiseMultMod(&(restrlwentt[m][0].value), &(decpolyntt[0].value), &(trgswntt[0][m][0].value), P::n,lvl1P,1);
-    #else
-    for (int i = 0; i < P::n; i++)
-        restrlwentt[m][i] = decpolyntt[i] * trgswntt[0][m][i];
-    #endif
+#ifdef USE_HEXL
+        intel::hexl::EltwiseMultMod(&(restrlwentt[m][0].value),
+                                    &(decpolyntt[0].value),
+                                    &(trgswntt[0][m][0].value), P::n, lvl1P, 1);
+#else
+        for (int i = 0; i < P::n; i++)
+            restrlwentt[m][i] = decpolyntt[i] * trgswntt[0][m][i];
+#endif
     for (int i = 1; i < P::l; i++) {
         DecompositionPolynomialNTT<P>(decpolyntt, trlwe[0], i);
         for (int m = 0; m < P::k + 1; m++)
-            #ifdef USE_HEXL
-            {
-                std::array<uint64_t,TFHEpp::lvl1param::n> temp;
-                intel::hexl::EltwiseMultMod(temp.data(),&(decpolyntt[0].value),&(trgswntt[i][m][0].value),P::n,lvl1P,1);
-                intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),&(restrlwentt[m][0].value),temp.data(),P::n,lvl1P);
-            }
-            #else
+#ifdef USE_HEXL
+        {
+            std::array<uint64_t, TFHEpp::lvl1param::n> temp;
+            intel::hexl::EltwiseMultMod(temp.data(), &(decpolyntt[0].value),
+                                        &(trgswntt[i][m][0].value), P::n, lvl1P,
+                                        1);
+            intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),
+                                       &(restrlwentt[m][0].value), temp.data(),
+                                       P::n, lvl1P);
+        }
+#else
             for (int j = 0; j < P::n; j++)
                 restrlwentt[m][j] += decpolyntt[j] * trgswntt[i][m][j];
-            #endif
+#endif
     }
     for (int k = 1; k < P::k + 1; k++)
         for (int i = 0; i < P::l; i++) {
             DecompositionPolynomialNTT<P>(decpolyntt, trlwe[k], i);
             for (int m = 0; m < P::k + 1; m++)
-                #ifdef USE_HEXL
-                {
-                    std::array<uint64_t,TFHEpp::lvl1param::n> temp;
-                    intel::hexl::EltwiseMultMod(temp.data(),&(decpolyntt[0].value),&(trgswntt[i + k * P::l][m][0].value),P::n,lvl1P,1);
-                    intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),&(restrlwentt[m][0].value),temp.data(),P::n,lvl1P);
-                }
-                #else
+#ifdef USE_HEXL
+            {
+                std::array<uint64_t, TFHEpp::lvl1param::n> temp;
+                intel::hexl::EltwiseMultMod(
+                    temp.data(), &(decpolyntt[0].value),
+                    &(trgswntt[i + k * P::l][m][0].value), P::n, lvl1P, 1);
+                intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),
+                                           &(restrlwentt[m][0].value),
+                                           temp.data(), P::n, lvl1P);
+            }
+#else
                 for (int j = 0; j < P::n; j++)
                     restrlwentt[m][j] +=
                         decpolyntt[j] * trgswntt[i + k * P::l][m][j];
-                #endif
+#endif
         }
     for (int k = 0; k < P::k + 1; k++) TwistNTT<P>(res[k], restrlwentt[k]);
 }

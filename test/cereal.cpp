@@ -59,7 +59,7 @@ int main()
             std::ifstream ifs{"./gatekey.key", std::ios::binary};
             cereal::PortableBinaryInputArchive ar(ifs);
             ek.serialize(ar);
-            std::cout<<(ek.params.lvl0.n)<<std::endl;
+            std::cout << (ek.params.lvl0.n) << std::endl;
         }
     }
 }

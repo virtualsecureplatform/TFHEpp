@@ -8,7 +8,10 @@ void BM_TRGSWenc(benchmark::State& state)
 {
     const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
     TFHEpp::TRGSWFFT<TFHEpp::lvl1param> res;
-    for (auto _ : state) res=TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>({}, TFHEpp::lvl1param::α, sk->key.lvl1);;
+    for (auto _ : state)
+        res = TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(
+            {}, TFHEpp::lvl1param::α, sk->key.lvl1);
+    ;
 }
 
 void BM_HomGate(benchmark::State& state)
@@ -66,7 +69,8 @@ void BM_TLWE2TRLWE(benchmark::State& state)
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state)
         TFHEpp::BlindRotate<TFHEpp::lvl01param>(
-            res, ca, *ek.bkfftlvl01,TFHEpp::μpolygen<TFHEpp::lvl1param, TFHEpp::lvl1param::μ>());
+            res, ca, *ek.bkfftlvl01,
+            TFHEpp::μpolygen<TFHEpp::lvl1param, TFHEpp::lvl1param::μ>());
 }
 
 void BM_IKS(benchmark::State& state)
@@ -165,7 +169,8 @@ void BM_CB(benchmark::State& state)
         TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
             binary(engine), TFHEpp::lvl1param::α, sk->key.lvl1);
     TFHEpp::TRGSWFFT<TFHEpp::lvl1param> res;
-    for (auto _ : state) TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(res, ca, ek);
+    for (auto _ : state)
+        TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(res, ca, ek);
 }
 
 BENCHMARK(BM_TRGSWenc)

@@ -48,18 +48,18 @@ int main()
     cones = TFHEpp::bootsSymEncrypt(pones, *sk);
 
     std::chrono::system_clock::time_point start, end;
-    #ifdef USE_PERF
+#ifdef USE_PERF
     ProfilerStart("cb.prof");
-    #endif
+#endif
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(bootedTGSW[test],
                                                             cones[test], ek);
     }
     end = std::chrono::system_clock::now();
-    #ifdef USE_PERF
+#ifdef USE_PERF
     ProfilerStop();
-    #endif
+#endif
     for (int test = 0; test < num_test; test++) {
         TFHEpp::trgswfftExternalProduct<typename privksP::targetP>(
             ca[test], ca[test], bootedTGSW[test]);

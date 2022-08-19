@@ -22,7 +22,7 @@ option(USE_HEXL "Use Intel HEXL" OFF)
 option(ENABLE_TEST "Build tests" OFF)
 option(ENABLE_BENCHMARK "Build benchmarks" OFF)
 option(ENABLE_TUTORIAL "Build tutorial" OFF)
-option (USE_PERF "Use Google Profiler" OFF)
+option(USE_PERF "Use Google Profiler" OFF)
 
 if(USE_RANDEN)
   add_compile_definitions(USE_RANDEN)
@@ -52,7 +52,7 @@ if(USE_MKL)
 endif()
 
 if(USE_AVX512)
-  string(APPEND CMAKE_CXX_FLAGS  " -mprefer-vector-width=512")
+  string(APPEND CMAKE_CXX_FLAGS " -mprefer-vector-width=512")
 endif()
 
 if(USE_FFTW3)
@@ -68,9 +68,8 @@ endif()
 if(USE_HEXL)
   add_compile_definitions(USE_HEXL)
   add_subdirectory(thirdparties/hexl)
-# set(CMAKE_CXX_FLAGS
-#     "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare -mprefer-vector-width=512"
-# )
+  # set(CMAKE_CXX_FLAGS "-march=native -O3 -g -funroll-loops -Wall -Wextra
+  # -pedantic -Wno-sign-compare -mprefer-vector-width=512" )
 endif()
 
 # For OpenMP

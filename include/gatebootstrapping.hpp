@@ -30,28 +30,30 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                         << bitwidth);
     res = {};
     PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, b̄);
-    #ifdef USE_KEY_BUNDLE
-    alignas(64) std::array<TRGSWFFT<typename P::targetP>,  P::domainP::k * P::domainP::n/P::Addends> BKadded;
-    #pragma omp parallel for num_threads(8)
-    for (int i = 0; i < P::domainP::k * P::domainP::n/P::Addends; i++) {
+#ifdef USE_KEY_BUNDLE
+    alignas(64) std::array<TRGSWFFT<typename P::targetP>,
+                           P::domainP::k * P::domainP::n / P::Addends>
+        BKadded;
+#pragma omp parallel for num_threads(8)
+    for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
         constexpr typename P::domainP::T roundoffset =
             1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
                      P::targetP::nbit + bitwidth);
-        std::array<typename P::domainP::T,P::Addends> bara;
-        bara[0] = (tlwe[2*i] + roundoffset) >>
-            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
-             P::targetP::nbit + bitwidth)
-                << bitwidth;
-        bara[1] = (tlwe[2*i+1] + roundoffset) >>
-            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
-             P::targetP::nbit + bitwidth)
-                << bitwidth;
+        std::array<typename P::domainP::T, P::Addends> bara;
+        bara[0] = (tlwe[2 * i] + roundoffset) >>
+                  (std::numeric_limits<typename P::domainP::T>::digits - 1 -
+                   P::targetP::nbit + bitwidth)
+                      << bitwidth;
+        bara[1] = (tlwe[2 * i + 1] + roundoffset) >>
+                  (std::numeric_limits<typename P::domainP::T>::digits - 1 -
+                   P::targetP::nbit + bitwidth)
+                      << bitwidth;
         KeyBundleFFT<P>(BKadded[i], bkfft[i], bara);
     }
-    for (int i = 0; i < P::domainP::k * P::domainP::n/P::Addends; i++){
+    for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
         trgswfftExternalProduct<typename P::targetP>(res, res, BKadded[i]);
     }
-    #else
+#else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         constexpr typename P::domainP::T roundoffset =
             1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
@@ -63,10 +65,9 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                 << bitwidth;
         if (ā == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res,
-                                                                   bkfft[i], ā);
+        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], ā);
     }
-    #endif
+#endif
 }
 
 template <class P, uint32_t num_out = 1>
@@ -139,11 +140,12 @@ template <class P>
 void GateBootstrappingTLWE2TLWENTT(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
     const BootstrappingKeyNTT<P> &bkntt,
-    const Polynomial<typename P::targetP> &testvector){
-        TRLWE<typename P::targetP> acc;
-        BlindRotate<P>(acc, tlwe, bkntt, testvector);
-        SampleExtractIndex<typename P::targetP>(res, acc, 0);
-    }
+    const Polynomial<typename P::targetP> &testvector)
+{
+    TRLWE<typename P::targetP> acc;
+    BlindRotate<P>(acc, tlwe, bkntt, testvector);
+    SampleExtractIndex<typename P::targetP>(res, acc, 0);
+}
 
 template <class P, uint32_t num_out>
 void GateBootstrappingManyLUT(
@@ -187,7 +189,7 @@ void GateBootstrapping(TLWE<lvl1param> &res, const TLWE<lvl1param> &tlwe,
 
 template <typename lvl1param::T μ = lvl1param::μ>
 void GateBootstrappingNTT(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe,
-                       const EvalKey &ek)
+                          const EvalKey &ek)
 {
     TLWE<lvl1param> tlwelvl1;
     GateBootstrappingTLWE2TLWENTT<lvl01param>(tlwelvl1, tlwe, *ek.bknttlvl01,
@@ -197,7 +199,7 @@ void GateBootstrappingNTT(TLWE<lvl0param> &res, const TLWE<lvl0param> &tlwe,
 
 template <typename lvl1param::T μ = lvl1param::μ>
 void GateBootstrappingNTT(TLWE<lvl1param> &res, const TLWE<lvl1param> &tlwe,
-                       const EvalKey &ek)
+                          const EvalKey &ek)
 {
     TLWE<lvl0param> tlwelvl0;
     IdentityKeySwitch<lvl10param>(tlwelvl0, tlwe, *ek.iksklvl10);

@@ -6,7 +6,8 @@ using namespace std;
 
 lweKey::lweKey()
 {
-    uniform_int_distribution<int32_t> lvl0gen(lvl0param::key_value_min, lvl0param::key_value_max);
+    uniform_int_distribution<int32_t> lvl0gen(lvl0param::key_value_min,
+                                              lvl0param::key_value_max);
     uniform_int_distribution<uint32_t> binary(0, 1);
     for (typename lvl0param::T &i : lvl0) i = lvl0gen(generator);
     // for (typename lvl0param::T &i : lvl0) i = binary(generator);

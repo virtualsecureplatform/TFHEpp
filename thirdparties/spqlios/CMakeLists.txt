@@ -2,11 +2,11 @@
 enable_language(ASM)
 
 if(USE_AVX512)
-    set(SRCS_FMA spqlios-fft-avx512.s spqlios-ifft-avx512.s fft_processor_spqlios.cpp
-                spqlios-fft-impl-avx512.cpp)
+  set(SRCS_FMA spqlios-fft-avx512.s spqlios-ifft-avx512.s
+               fft_processor_spqlios.cpp spqlios-fft-impl-avx512.cpp)
 else()
-    set(SRCS_FMA spqlios-fft-fma.s spqlios-ifft-fma.s fft_processor_spqlios.cpp
-                spqlios-fft-impl.cpp)
+  set(SRCS_FMA spqlios-fft-fma.s spqlios-ifft-fma.s fft_processor_spqlios.cpp
+               spqlios-fft-impl.cpp)
 endif()
 
 set(SPQLIOS_HEADERS fft_processor_spqlios.h)

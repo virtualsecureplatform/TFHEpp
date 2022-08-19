@@ -107,11 +107,10 @@ int main()
             }
             const __uint128_t temp = ((1UL << 32) - 1) << 32;
             INTorus A(temp);
-            const mpz_class a =  ((1UL << 32) - 1) << 32;
+            const mpz_class a = ((1UL << 32) - 1) << 32;
             mpz_class res = (a << l) % P;
             if ((A << l).value != ((a << l) % P)) {
-                cout << (A << l).value << ":"
-                     << res.get_str() << endl;
+                cout << (A << l).value << ":" << res.get_str() << endl;
                 cout << "Here" << endl;
             }
             assert((A << l).value == ((a << l) % P));

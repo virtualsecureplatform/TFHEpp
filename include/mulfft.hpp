@@ -34,18 +34,19 @@ template <class P>
 inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
-        #ifdef USE_HEXL
-        {
-            std::array<uint64_t,TFHEpp::lvl1param::n> temp;
-            static intel::hexl::NTT nttlvl1(TFHEpp::lvl1param::n, lvl1P);
-            nttlvl1.ComputeInverse(temp.data(),&(a[0].value),1,1);
-            for(int i = 0; i < TFHEpp::lvl1param::n; i++) res[i] = (temp[i]<<32)/lvl1P;
-        }
-        #else
+#ifdef USE_HEXL
+    {
+        std::array<uint64_t, TFHEpp::lvl1param::n> temp;
+        static intel::hexl::NTT nttlvl1(TFHEpp::lvl1param::n, lvl1P);
+        nttlvl1.ComputeInverse(temp.data(), &(a[0].value), 1, 1);
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            res[i] = (temp[i] << 32) / lvl1P;
+    }
+#else
         cuHEpp::TwistNTT<typename TFHEpp::lvl1param::T,
                          TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[0],
                                                   ntttwistlvl1[0]);
-        #endif
+#endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistNTT<typename TFHEpp::lvl2param::T,
                          TFHEpp::lvl2param::nbit>(res, a, ntttablelvl2[0],
@@ -80,18 +81,19 @@ template <class P>
 inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 {
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
-        #ifdef USE_HEXL
-        {
-            std::array<uint64_t,TFHEpp::lvl1param::n> temp;
-            for(int i = 0; i < TFHEpp::lvl1param::n; i++) temp[i] = (lvl1P*static_cast<uint64_t>(a[i]))>>32;
-            static intel::hexl::NTT nttlvl1(TFHEpp::lvl1param::n, lvl1P);
-            nttlvl1.ComputeForward(&(res[0].value),temp.data(),1,1);
-        }
-        #else
+#ifdef USE_HEXL
+    {
+        std::array<uint64_t, TFHEpp::lvl1param::n> temp;
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            temp[i] = (lvl1P * static_cast<uint64_t>(a[i])) >> 32;
+        static intel::hexl::NTT nttlvl1(TFHEpp::lvl1param::n, lvl1P);
+        nttlvl1.ComputeForward(&(res[0].value), temp.data(), 1, 1);
+    }
+#else
         cuHEpp::TwistINTT<typename TFHEpp::lvl1param::T,
                           TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[1],
                                                    ntttwistlvl1[1]);
-        #endif
+#endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistINTT<typename TFHEpp::lvl2param::T,
                           TFHEpp::lvl2param::nbit>(res, a, ntttablelvl2[1],
@@ -123,10 +125,11 @@ inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
     }
 }
 
-// Be careful about memory accesss (We assume b has relatively high memory access cost)
+// Be careful about memory accesss (We assume b has relatively high memory
+// access cost)
 template <uint32_t N>
 inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
-             const std::array<double, N> &b)
+                    const std::array<double, N> &b)
 {
     // for (int i = 0; i < N / 2; i++) {
     //     res[i] = std::fma(a[i], b[i], res[i]);
@@ -210,32 +213,38 @@ inline void PolyMulNaieve(Polynomial<P> &res, const Polynomial<P> &a,
     }
 }
 
-
 template <class P>
-std::array<std::array<double,P::n>,2*P::n> XaittGen(){
-    std::array<std::array<double,P::n>, 2*P::n> xaitt;
-    for(int i = 0;i<2*P::n;i++){
-        std::array<typename P::T,P::n> xai = {};
+std::array<std::array<double, P::n>, 2 * P::n> XaittGen()
+{
+    std::array<std::array<double, P::n>, 2 * P::n> xaitt;
+    for (int i = 0; i < 2 * P::n; i++) {
+        std::array<typename P::T, P::n> xai = {};
         xai[0] = -1;
-        if(i<P::n) xai[i] += 1;
-        else xai[i-P::n] -= 1;
-        TwistIFFT<P>(xaitt[i],xai);
+        if (i < P::n)
+            xai[i] += 1;
+        else
+            xai[i - P::n] -= 1;
+        TwistIFFT<P>(xaitt[i], xai);
     }
     return xaitt;
 }
 
-alignas(64) static const std::array<PolynomialInFD<lvl1param>,2*lvl1param::n> xaittlvl1 = XaittGen<lvl1param>();
-alignas(64) static const std::array<PolynomialInFD<lvl2param>,2*lvl2param::n> xaittlvl2 = XaittGen<lvl2param>();
+alignas(64) static const
+    std::array<PolynomialInFD<lvl1param>, 2 *lvl1param::n> xaittlvl1 =
+        XaittGen<lvl1param>();
+alignas(64) static const
+    std::array<PolynomialInFD<lvl2param>, 2 *lvl2param::n> xaittlvl2 =
+        XaittGen<lvl2param>();
 
 template <class P>
 inline void PolynomialMulByXaiMinusOneInFD(PolynomialInFD<P> &res,
-                                       const PolynomialInFD<P> &poly,
-                                       const int a)
+                                           const PolynomialInFD<P> &poly,
+                                           const int a)
 {
-    const int mod = a % (2*P::n);
-    const int index = mod>0?mod:mod+(2*P::n);
+    const int mod = a % (2 * P::n);
+    const int index = mod > 0 ? mod : mod + (2 * P::n);
     if constexpr (std::is_same_v<P, lvl1param>) {
-        MulInFD<P::n>(res,poly,xaittlvl1[index]);
+        MulInFD<P::n>(res, poly, xaittlvl1[index]);
     }
 }
 }  // namespace TFHEpp

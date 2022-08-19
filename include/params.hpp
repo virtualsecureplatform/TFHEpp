@@ -24,20 +24,20 @@ namespace TFHEpp {
 struct lvl01param {
     using domainP = lvl0param;
     using targetP = lvl1param;
-    #ifdef USE_KEY_BUNDLE
+#ifdef USE_KEY_BUNDLE
     static constexpr uint32_t Addends = 2;
-    #else
+#else
     static constexpr uint32_t Addends = 1;
-    #endif 
+#endif
 };
 struct lvl02param {
     using domainP = lvl0param;
     using targetP = lvl2param;
-    #ifdef USE_KEY_BUNDLE
+#ifdef USE_KEY_BUNDLE
     static constexpr uint32_t Addends = 2;
-    #else
+#else
     static constexpr uint32_t Addends = 1;
-    #endif 
+#endif
 };
 
 template <class P>
@@ -79,26 +79,29 @@ using TRGSWFFT = std::array<TRLWEInFD<P>, (P::k + 1) * P::l>;
 template <class P>
 using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
 
-
 #ifdef USE_KEY_BUNDLE
 template <class P>
-using BootstrappingKeyElement = std::array<TRGSW<typename P::targetP>, (1<<P::Addends)-1>;
+using BootstrappingKeyElement =
+    std::array<TRGSW<typename P::targetP>, (1 << P::Addends) - 1>;
 template <class P>
 using BootstrappingKeyElementFFT =
-    std::array<TRGSWFFT<typename P::targetP>, 1<<P::Addends>;
+    std::array<TRGSWFFT<typename P::targetP>, 1 << P::Addends>;
 #else
 template <class P>
-using BootstrappingKeyElement = std::array<TRGSW<typename P::targetP>, P::domainP::key_value_diff>;
+using BootstrappingKeyElement =
+    std::array<TRGSW<typename P::targetP>, P::domainP::key_value_diff>;
 template <class P>
 using BootstrappingKeyElementFFT =
     std::array<TRGSWFFT<typename P::targetP>, P::domainP::key_value_diff>;
 #endif
 
 template <class P>
-using BootstrappingKey = std::array<BootstrappingKeyElement<P>, P::domainP::k * P::domainP::n>;
+using BootstrappingKey =
+    std::array<BootstrappingKeyElement<P>, P::domainP::k * P::domainP::n>;
 template <class P>
 using BootstrappingKeyFFT =
-    std::array<BootstrappingKeyElementFFT<P>, P::domainP::k * P::domainP::n/P::Addends>;
+    std::array<BootstrappingKeyElementFFT<P>,
+               P::domainP::k * P::domainP::n / P::Addends>;
 template <class P>
 using BootstrappingKeyNTT =
     std::array<TRGSWNTT<typename P::targetP>, P::domainP::k * P::domainP::n>;

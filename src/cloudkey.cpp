@@ -10,12 +10,14 @@ void bkgen(BootstrappingKey<P>& bk, const SecretKey& sk)
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
         int count = 0;
-        for(int j = P::domainP::key_value_min; j <= P::domainP::key_value_max;j++){
+        for (int j = P::domainP::key_value_min; j <= P::domainP::key_value_max;
+             j++) {
             plainpoly[0] = sk.key.get<typename P::domainP>()[i] == j;
-            if(j != 0){
+            if (j != 0) {
                 plainpoly[0] = sk.key.get<typename P::domainP>()[i];
                 bk[i][count] = trgswSymEncrypt<typename P::targetP>(
-                    plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+                    plainpoly, P::targetP::α,
+                    sk.key.get<typename P::targetP>());
                 count++;
             }
         }
@@ -30,31 +32,39 @@ template <class P>
 void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
 {
     Polynomial<typename P::targetP> plainpoly = {};
-    #ifdef USE_KEY_BUNDLE
-     for (int i = 0; i < P::domainP::k * P::domainP::n/P::Addends; i++){
-            plainpoly[0] = static_cast<int32_t>(sk.key.get<typename P::domainP>()[2*i]*sk.key.get<typename P::domainP>()[2*i+1]);
-            bkfft[i][0] = trgswfftSymEncrypt<typename P::targetP>(
-                plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
-            plainpoly[0] = static_cast<int32_t>(sk.key.get<typename P::domainP>()[2*i]*(1-sk.key.get<typename P::domainP>()[2*i+1]));
-            bkfft[i][1] = trgswfftSymEncrypt<typename P::targetP>(
-                plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
-            plainpoly[0] = static_cast<int32_t>((1-sk.key.get<typename P::domainP>()[2*i])*sk.key.get<typename P::domainP>()[2*i+1]);
-            bkfft[i][2] = trgswfftSymEncrypt<typename P::targetP>(
-                plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
-        }
-    #else
+#ifdef USE_KEY_BUNDLE
+    for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
+        plainpoly[0] =
+            static_cast<int32_t>(sk.key.get<typename P::domainP>()[2 * i] *
+                                 sk.key.get<typename P::domainP>()[2 * i + 1]);
+        bkfft[i][0] = trgswfftSymEncrypt<typename P::targetP>(
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+        plainpoly[0] = static_cast<int32_t>(
+            sk.key.get<typename P::domainP>()[2 * i] *
+            (1 - sk.key.get<typename P::domainP>()[2 * i + 1]));
+        bkfft[i][1] = trgswfftSymEncrypt<typename P::targetP>(
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+        plainpoly[0] = static_cast<int32_t>(
+            (1 - sk.key.get<typename P::domainP>()[2 * i]) *
+            sk.key.get<typename P::domainP>()[2 * i + 1]);
+        bkfft[i][2] = trgswfftSymEncrypt<typename P::targetP>(
+            plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+    }
+#else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         int count = 0;
-        for(int j = P::domainP::key_value_min; j <= P::domainP::key_value_max;j++){
-            if(j != 0){
+        for (int j = P::domainP::key_value_min; j <= P::domainP::key_value_max;
+             j++) {
+            if (j != 0) {
                 plainpoly[0] = sk.key.get<typename P::domainP>()[i] == j;
                 bkfft[i][count] = trgswfftSymEncrypt<typename P::targetP>(
-                    plainpoly, P::targetP::α, sk.key.get<typename P::targetP>());
+                    plainpoly, P::targetP::α,
+                    sk.key.get<typename P::targetP>());
                 count++;
             }
         }
     }
-    #endif
+#endif
 }
 #define INST(P)                                               \
     template void bkfftgen<P>(BootstrappingKeyFFT<P> & bkfft, \

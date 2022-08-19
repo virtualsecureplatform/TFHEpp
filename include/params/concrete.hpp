@@ -9,7 +9,7 @@ constexpr bool isternary = false;
 struct lvl0param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = 0;
-    static constexpr int32_t key_value_diff = key_value_max-key_value_min;
+    static constexpr int32_t key_value_diff = key_value_max - key_value_min;
     static constexpr std::uint32_t n = 586;  // dimension
     static constexpr std::uint32_t k = 1;
     static constexpr double α =
@@ -33,7 +33,7 @@ struct lvl1param {
     static constexpr std::uint32_t Bg = 1 << Bgbit;
     static const inline double α =
         0.0000000342338787018369;  // fresh noise, 2^{-24.8...}
-    using T = uint32_t;             // Torus representation
+    using T = uint32_t;            // Torus representation
     static constexpr T μ = 1U << 29;
     static constexpr uint32_t plain_modulus = 2;
     static constexpr double Δ =
