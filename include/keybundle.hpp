@@ -2,7 +2,6 @@
 
 #include "mulfft.hpp"
 #include "params.hpp"
-#include "params/128bit.hpp"
 #include "trgsw.hpp"
 
 namespace TFHEpp {
