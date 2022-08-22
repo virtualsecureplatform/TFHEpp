@@ -45,7 +45,7 @@ int main()
         ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
             pmu[i], privksP::targetP::α,
             sk->key.get<typename privksP::targetP>());
-    cones = TFHEpp::bootsSymEncrypt(pones, *sk);
+    cones = TFHEpp::bootsSymEncrypt<typename iksP::domainP>(pones, *sk);
 
     std::chrono::system_clock::time_point start, end;
 #ifdef USE_PERF
@@ -64,7 +64,7 @@ int main()
         TFHEpp::trgswfftExternalProduct<typename privksP::targetP>(
             ca[test], ca[test], bootedTGSW[test]);
         pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(ca[test],
-                                                                  sk->key.lvl1);
+                                                                  sk->key.get<typename privksP::targetP>());
         for (int i = 0; i < privksP::targetP::n; i++)
             assert(pres[i] == pa[test][i]);
     }
