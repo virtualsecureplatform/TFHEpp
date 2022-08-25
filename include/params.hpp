@@ -128,12 +128,30 @@ using relinKey = std::array<TRLWE<P>, P::l>;
 template <class P>
 using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
 
+struct CCR2019 {
+    static constexpr uint32_t nbit = 11;  // dimension must be a power of 2 for
+                                          // ease of polynomial multiplication.
+    static constexpr uint32_t n = 1 << nbit;  // dimension
+    static constexpr uint32_t k = 1;
+    static constexpr uint32_t l = 7;
+    static constexpr uint32_t Bgbit = 7;
+    static constexpr uint32_t Bg = 1 << Bgbit;
+    static const inline double α = std::pow(2.0, -55);  // fresh noise
+    using T = uint64_t;                                 // Torus representation
+    static constexpr T μ = 1ULL << 61;
+    static constexpr uint32_t plain_modulus = 2;
+    static constexpr double Δ =
+        std::pow(2.0, std::numeric_limits<T>::digits) / plain_modulus;
+};
+
 #define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \
     fun(lvl0param);                             \
     fun(lvl1param);                             \
+    fun(CCR2019);                               \
     fun(lvl2param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(fun) \
     fun(lvl1param);                              \
+    fun(CCR2019);                                \
     fun(lvl2param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(fun) \
     fun(lvl01param);                                    \
