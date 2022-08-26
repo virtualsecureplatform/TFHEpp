@@ -13,7 +13,7 @@ inline Polynomial<P> decryptTRLWE3(const TRLWE3<P> &c, const Key<P> &key)
     for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
 
     PolyMulNaive<P>(keysquare, partkey, partkey);
-    PolyMul<P>(mulres, c[2], keysquare);
+    PolyMulNaive<P>(mulres, c[2], keysquare);
     for (int i = 0; i < P::n; i++) phase[i] += mulres[i];
 
     for (int i = 0; i < P::n; i++)
