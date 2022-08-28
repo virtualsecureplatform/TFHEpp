@@ -1,5 +1,6 @@
 #include <gatebootstrapping.hpp>
 #include <keyswitch.hpp>
+#include <gate.hpp>
 
 namespace TFHEpp {
 
@@ -46,16 +47,6 @@ void HomCOPY(TLWE<P> &res, const TLWE<P> &ca)
 INST(lvl1param);
 INST(lvl0param);
 #undef INST
-
-template <class P, int casign, int cbsign, typename P::T offset>
-inline void HomGate(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
-                    const EvalKey &ek)
-{
-    for (int i = 0; i <= P::k * P::n; i++)
-        res[i] = casign * ca[i] + cbsign * cb[i];
-    res[P::k * P::n] += offset;
-    GateBootstrapping(res, res, ek);
-}
 
 template <class P>
 void HomNAND(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
