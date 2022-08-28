@@ -1,6 +1,8 @@
 #pragma once
 #include <bits/stdint-uintn.h>
+
 #include <cstdint>
+
 #include "keyswitch.hpp"
 #include "mulfft.hpp"
 #include "trgsw.hpp"
@@ -37,14 +39,12 @@ void TRLWEMultWithoutRelinerization(TRLWE3<P> &res, const TRLWE<P> &a,
     for (int i = 0; i < P::n; i++) {
         uint64_t ri = 0;
         for (int j = 0; j <= i; j++)
-            ri += static_cast<uint64_t>(P::plain_modulus) * static_cast<uint64_t>(
-                      a[0][j]) *
-                  b[0][i - j];
+            ri += static_cast<uint64_t>(P::plain_modulus) *
+                  static_cast<uint64_t>(a[0][j]) * b[0][i - j];
         for (int j = i + 1; j < P::n; j++)
-            ri -= P::plain_modulus * static_cast<uint64_t>(
-                      a[0][j]) *
+            ri -= P::plain_modulus * static_cast<uint64_t>(a[0][j]) *
                   b[0][P::n + i - j];
-        res[2][i] = (ri + (1ULL <<31))>> 32;
+        res[2][i] = (ri + (1ULL << 31)) >> 32;
     }
 }
 

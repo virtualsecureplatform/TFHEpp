@@ -197,7 +197,7 @@ inline void PolyMulRescaleUnsigned(Polynomial<P> &res,
 
 template <class P>
 inline void PolyMulNaive(Polynomial<P> &res, const Polynomial<P> &a,
-                          const Polynomial<P> &b)
+                         const Polynomial<P> &b)
 {
     for (int i = 0; i < P::n; i++) {
         typename P::T ri = 0;

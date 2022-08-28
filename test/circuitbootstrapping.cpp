@@ -63,8 +63,8 @@ int main()
     for (int test = 0; test < num_test; test++) {
         TFHEpp::trgswfftExternalProduct<typename privksP::targetP>(
             ca[test], ca[test], bootedTGSW[test]);
-        pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(ca[test],
-                                                                  sk->key.get<typename privksP::targetP>());
+        pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(
+            ca[test], sk->key.get<typename privksP::targetP>());
         for (int i = 0; i < privksP::targetP::n; i++)
             assert(pres[i] == pa[test][i]);
     }

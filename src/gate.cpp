@@ -1,6 +1,6 @@
+#include <gate.hpp>
 #include <gatebootstrapping.hpp>
 #include <keyswitch.hpp>
-#include <gate.hpp>
 
 namespace TFHEpp {
 
