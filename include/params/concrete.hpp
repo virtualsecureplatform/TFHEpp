@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <limits>
 
+// https://github.com/zama-ai/concrete/blob/ec6d786bc076bd3f56eeb656471d06fa9a797eb7/concrete-boolean/src/parameters/mod.rs#L95-L111
+
 constexpr bool isternary = false;
 
 struct lvl0param {
