@@ -25,6 +25,8 @@ struct lvl0param {
 };
 
 struct lvl1param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = 0;
     static constexpr std::uint32_t nbit =
         9;  // dimension must be a power of 2 for ease of polynomial
             // multiplication.
@@ -44,6 +46,8 @@ struct lvl1param {
 };
 
 struct lvl2param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = 0;
     static const std::uint32_t nbit = 11;  // dimension must be a power of 2 for
                                            // ease of polynomial multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension

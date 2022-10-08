@@ -10,7 +10,7 @@ struct lvl0param {
     static constexpr int32_t key_value_diff = key_value_max - key_value_min;
     static constexpr std::uint32_t n = 636;  // dimension
     static constexpr std::uint32_t k = 1;
-    static const inline double α = std::pow(2.0, -15);  // fresh noise
+    static const inline double α = 0.000'092'511'997'467'675'6;  // fresh noise
     using T = uint32_t;                                 // Torus representation
     static constexpr T μ = 1U << (std::numeric_limits<T>::digits - 3);
     static constexpr uint32_t plain_modulus = 8;
@@ -20,6 +20,8 @@ struct lvl0param {
 };
 
 struct lvl1param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
     static constexpr std::uint32_t nbit =
         10;  // dimension must be a power of 2 for ease of polynomial
              // multiplication.
@@ -38,6 +40,8 @@ struct lvl1param {
 };
 
 struct lvl2param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = 0;
     static const std::uint32_t nbit = 11;  // dimension must be a power of 2 for
                                            // ease of polynomial multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension
