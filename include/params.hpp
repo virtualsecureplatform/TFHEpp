@@ -122,7 +122,7 @@ template <class P>
 using PrivateKeySwitchingKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
-    P::domainP::n + 1>;
+    P::domainP::k * P::domainP::n + 1>;
 template <class P>
 using relinKey = std::array<TRLWE<P>, P::l>;
 template <class P>
