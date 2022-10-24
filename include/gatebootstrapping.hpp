@@ -167,24 +167,29 @@ constexpr Polynomial<P> μpolygen()
     return poly;
 }
 
-template <class bkP = TFHEpp::lvl01param, typename bkP::targetP::T μ = lvl1param::μ, class iksP = TFHEpp::lvl10param>
-void GateBootstrapping(TLWE<typename bkP::domainP> &res, const TLWE<typename bkP::domainP> &tlwe,
+template <class bkP = TFHEpp::lvl01param,
+          typename bkP::targetP::T μ = lvl1param::μ,
+          class iksP = TFHEpp::lvl10param>
+void GateBootstrapping(TLWE<typename bkP::domainP> &res,
+                       const TLWE<typename bkP::domainP> &tlwe,
                        const EvalKey &ek)
 {
     TLWE<typename bkP::targetP> tlwelvl1;
     GateBootstrappingTLWE2TLWEFFT<bkP>(tlwelvl1, tlwe, ek.getbkfft<bkP>(),
-                                              μpolygen<typename bkP::targetP, μ>());
+                                       μpolygen<typename bkP::targetP, μ>());
     IdentityKeySwitch<iksP>(res, tlwelvl1, ek.getiksk<iksP>());
 }
 
-template <class iksP = TFHEpp::lvl10param, class bkP = TFHEpp::lvl01param, typename bkP::targetP::T μ = lvl1param::μ>
-void GateBootstrapping(TLWE<typename iksP::domainP> &res, const TLWE<typename iksP::domainP> &tlwe,
+template <class iksP = TFHEpp::lvl10param, class bkP = TFHEpp::lvl01param,
+          typename bkP::targetP::T μ = lvl1param::μ>
+void GateBootstrapping(TLWE<typename iksP::domainP> &res,
+                       const TLWE<typename iksP::domainP> &tlwe,
                        const EvalKey &ek)
 {
     TLWE<typename iksP::targetP> tlwelvl0;
     IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
     GateBootstrappingTLWE2TLWEFFT<bkP>(res, tlwelvl0, ek.getbkfft<bkP>(),
-                                              μpolygen<typename bkP::targetP, μ>());
+                                       μpolygen<typename bkP::targetP, μ>());
 }
 
 template <typename lvl1param::T μ = lvl1param::μ>

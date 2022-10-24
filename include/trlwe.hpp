@@ -28,5 +28,6 @@ template <class P>
 void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index);
 
 template <class P>
-void InvSampleExtractIndex(TRLWE<P> &trlwe, const TLWE<P> &tlwe, const int index);
+void InvSampleExtractIndex(TRLWE<P> &trlwe, const TLWE<P> &tlwe,
+                           const int index);
 }  // namespace TFHEpp
