@@ -115,7 +115,7 @@ void privkskgen(PrivateKeySwitchingKey<P>& privksk,
                 const Polynomial<typename P::targetP>& func,
                 const SecretKey& sk)
 {
-    std::array<typename P::domainP::T, P::domainP::n + 1> key;
+    std::array<typename P::domainP::T, P::domainP::k * P::domainP::n + 1> key;
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++)
         key[i] = sk.key.get<typename P::domainP>()[i];
     key[P::domainP::k * P::domainP::n] = -1;
