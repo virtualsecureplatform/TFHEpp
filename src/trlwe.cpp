@@ -130,7 +130,7 @@ void InvSampleExtractIndex(TRLWE<P> &trlwe, const TLWE<P> &tlwe,
         for (int i = 0; i <= index; i++)
             trlwe[k][index - i] = tlwe[k * P::n + i];
         for (int i = index + 1; i < P::n; i++)
-            trlwe[k][P::n + index - i] = tlwe[k * P::n + i];
+            trlwe[k][P::n + index - i] = -tlwe[k * P::n + i];
     }
     trlwe[P::k] = {};
     trlwe[P::k][index] = tlwe[P::k * P::n];
