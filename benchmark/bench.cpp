@@ -4,13 +4,25 @@
 #include "../include/tfhe++.hpp"
 #include "google-benchmark/include/benchmark/benchmark.h"
 
+void BM_TRGSWenc(benchmark::State& state)
+{
+    const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
+    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> res;
+    for (auto _ : state)
+        res = TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(
+            {}, TFHEpp::lvl1param::α, sk->key.lvl1);
+    ;
+}
+
 void BM_HomGate(benchmark::State& state)
 {
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
     const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
-    const std::unique_ptr<TFHEpp::GateKey> gk(new TFHEpp::GateKey(*sk));
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
+    ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     TFHEpp::TLWE<TFHEpp::lvl0param> ca =
         TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
             binary(engine), TFHEpp::lvl0param::α, sk->key.lvl0);
@@ -18,7 +30,7 @@ void BM_HomGate(benchmark::State& state)
         TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
             binary(engine), TFHEpp::lvl0param::α, sk->key.lvl0);
     TFHEpp::TLWE<TFHEpp::lvl0param> res;
-    for (auto _ : state) TFHEpp::HomNAND(res, ca, cb, *gk);
+    for (auto _ : state) TFHEpp::HomNAND<TFHEpp::lvl0param>(res, ca, cb, ek);
 }
 
 void BM_HomMUX(benchmark::State& state)
@@ -27,7 +39,9 @@ void BM_HomMUX(benchmark::State& state)
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
     const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
-    const std::unique_ptr<TFHEpp::GateKey> gk(new TFHEpp::GateKey(*sk));
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
+    ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     TFHEpp::TLWE<TFHEpp::lvl0param> ca =
         TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
             binary(engine), TFHEpp::lvl0param::α, sk->key.lvl0);
@@ -38,7 +52,7 @@ void BM_HomMUX(benchmark::State& state)
         TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
             binary(engine), TFHEpp::lvl0param::α, sk->key.lvl0);
     TFHEpp::TLWE<TFHEpp::lvl0param> res;
-    for (auto _ : state) TFHEpp::HomMUX(res, cs, ca, cb, *gk);
+    for (auto _ : state) TFHEpp::HomMUX<TFHEpp::lvl0param>(res, cs, ca, cb, ek);
 }
 
 void BM_TLWE2TRLWE(benchmark::State& state)
@@ -47,14 +61,16 @@ void BM_TLWE2TRLWE(benchmark::State& state)
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
     const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
-    const std::unique_ptr<TFHEpp::GateKey> gk(new TFHEpp::GateKey(*sk));
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
     TFHEpp::TLWE<TFHEpp::lvl0param> ca =
         TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
             binary(engine), TFHEpp::lvl0param::α, sk->key.lvl0);
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state)
-        TFHEpp::GateBootstrappingTLWE2TRLWEFFT<TFHEpp::lvl01param>(
-            res, ca, gk->bkfftlvl01);
+        TFHEpp::BlindRotate<TFHEpp::lvl01param>(
+            res, ca, *ek.bkfftlvl01,
+            TFHEpp::μpolygen<TFHEpp::lvl1param, TFHEpp::lvl1param::μ>());
 }
 
 void BM_IKS(benchmark::State& state)
@@ -63,13 +79,14 @@ void BM_IKS(benchmark::State& state)
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
     const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
-    const std::unique_ptr<TFHEpp::GateKey> gk(new TFHEpp::GateKey(*sk));
+    TFHEpp::EvalKey ek;
+    ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     TFHEpp::TLWE<TFHEpp::lvl1param> ca =
         TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
             binary(engine), TFHEpp::lvl1param::α, sk->key.lvl1);
     TFHEpp::TLWE<TFHEpp::lvl0param> res;
     for (auto _ : state)
-        TFHEpp::IdentityKeySwitch<TFHEpp::lvl10param>(res, ca, gk->ksk);
+        TFHEpp::IdentityKeySwitch<TFHEpp::lvl10param>(res, ca, *ek.iksklvl10);
 }
 
 void BM_SEI(benchmark::State& state)
@@ -78,7 +95,6 @@ void BM_SEI(benchmark::State& state)
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
     const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
-    const std::unique_ptr<TFHEpp::GateKey> gk(new TFHEpp::GateKey(*sk));
     std::array<typename TFHEpp::lvl1param::T, TFHEpp::lvl1param::n> pmu;
     for (int j = 0; j < TFHEpp::lvl1param::n; j++)
         pmu[j] = binary(engine) ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
@@ -142,16 +158,25 @@ void BM_CB(benchmark::State& state)
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
     const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
-    const std::unique_ptr<
-        TFHEpp::CircuitKey<TFHEpp::lvl02param, TFHEpp::lvl22param>>
-        ck(new TFHEpp::CircuitKey<TFHEpp::lvl02param, TFHEpp::lvl22param>(*sk));
-    TFHEpp::TLWE<TFHEpp::lvl0param> ca =
-        TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
-            binary(engine), TFHEpp::lvl0param::α, sk->key.lvl0);
-    TFHEpp::TRGSWFFT<TFHEpp::lvl2param> res;
-    for (auto _ : state) TFHEpp::CircuitBootstrappingFFT(res, ca, *ck);
+    TFHEpp::EvalKey ek;
+    using iksP = TFHEpp::lvl10param;
+    using bkP = TFHEpp::lvl02param;
+    using privksP = TFHEpp::lvl21param;
+    ek.emplaceiksk<iksP>(*sk);
+    ek.emplacebkfft<bkP>(*sk);
+    ek.emplaceprivksk4cb<privksP>(*sk);
+    TFHEpp::TLWE<TFHEpp::lvl1param> ca =
+        TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
+            binary(engine), TFHEpp::lvl1param::α, sk->key.lvl1);
+    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> res;
+    for (auto _ : state)
+        TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(res, ca, ek);
 }
 
+BENCHMARK(BM_TRGSWenc)
+    ->Iterations(1)
+    ->Repetitions(100)
+    ->DisplayAggregatesOnly(true);
 BENCHMARK(BM_HomGate)
     ->Iterations(1)
     ->Repetitions(100)

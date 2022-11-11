@@ -1,4 +1,6 @@
+#ifdef USE_PERF
 #include <gperftools/profiler.h>
+#endif
 
 #include <cassert>
 #include <chrono>
@@ -34,7 +36,9 @@ int main()
     cb = bootsSymEncrypt(pb, *sk);
 
     chrono::system_clock::time_point start, end;
+#ifdef USE_PERF
     ProfilerStart("nand.prof");
+#endif
     start = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
@@ -42,7 +46,9 @@ int main()
     }
 
     end = chrono::system_clock::now();
+#ifdef USE_PERF
     ProfilerStop();
+#endif
     pres = bootsSymDecrypt(cres, *sk);
     for (int i = 0; i < num_test; i++) assert(pres[i] == !(pa[i] & pb[i]));
     cout << "Passed" << endl;

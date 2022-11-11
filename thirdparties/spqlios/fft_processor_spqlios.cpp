@@ -86,8 +86,14 @@ void FFT_Processor_Spqlios::execute_reverse_torus32(double *res, const uint32_t 
 }
 
 void FFT_Processor_Spqlios::execute_reverse_torus64(double* res, const uint64_t* a) {
+    #ifdef USE_AVX512
+    __m512d * ri512 = (__m512d *) proc->real_inout_rev;
+    __m512i * aa = (__m512i *) a;
+    for (size_t i = 0; i < proc->N/8; i++) ri512[i] = _mm512_cvtepi64_pd (aa[i]);
+    #else
     int64_t *aa = (int64_t *)a;
     for (int i=0; i<N; i++) real_inout_rev[i]=(double)aa[i];
+    #endif
     ifft(tables_reverse,real_inout_rev);
     for (int i=0; i<N; i++) res[i]=real_inout_rev[i];
 }
@@ -147,7 +153,7 @@ void FFT_Processor_Spqlios::execute_direct_torus32_rescale(uint32_t *res, const 
         );
     }
     fft(tables_direct, real_inout_direct);
-    for (int32_t i = 0; i < N; i++) res[i] = uint32_t(int64_t(real_inout_direct[i]/(Δ/4)));
+    for (int32_t i = 0; i < N; i++) res[i] = uint32_t(std::round(real_inout_direct[i]/(Δ/4)));
 }
 
 void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, const double* a) {
@@ -176,6 +182,17 @@ void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, const double* 
 		);
     }
     fft(tables_direct,real_inout_direct); 
+    #ifdef USE_AVX512
+    __m512d * ri512 = (__m512d *) proc->real_inout_direct;
+    __m512i * res512 = (__m512i *) res;
+    const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
+    for (size_t i = 0; i < proc->N/8; i++) {
+        const __m512d _1 = _mm512_scalef_pd (ri512[i], -modc);
+        const __m512d _2 = _mm512_reduce_pd (_1, 0);
+        const __m512d _3 = _mm512_scalef_pd (_2, modc);
+        res512[i] = _mm512_cvtpd_epi64 (_3);
+    }
+    #else
     const uint64_t* const vals = (const uint64_t*) real_inout_direct;
     static const uint64_t valmask0 = 0x000FFFFFFFFFFFFFul;
     static const uint64_t valmask1 = 0x0010000000000000ul;
@@ -189,6 +206,7 @@ void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, const double* 
         uint64_t val2 = trans>0?(val<<trans):(val>>-trans);
         res[i]=(vals[i]>>63)?-val2:val2;
     }
+    #endif
 }
 
 FFT_Processor_Spqlios::~FFT_Processor_Spqlios() {

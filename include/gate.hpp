@@ -4,7 +4,15 @@
 #include "cloudkey.hpp"
 
 namespace TFHEpp {
-using namespace std;
+template <class P, int casign, int cbsign, typename P::T offset>
+inline void HomGate(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
+                    const EvalKey &ek)
+{
+    for (int i = 0; i <= P::k * P::n; i++)
+        res[i] = casign * ca[i] + cbsign * cb[i];
+    res[P::k * P::n] += offset;
+    GateBootstrapping(res, res, ek);
+}
 template <class P = lvl1param>
 void HomCONSTANTONE(TLWE<P> &res);
 template <class P = lvl1param>

@@ -105,4 +105,9 @@ struct lvlM0param {
 struct lvl0Mparam {
     using domainP = lvl0param;
     using targetP = lvlMparam;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
 };

@@ -204,7 +204,8 @@ struct fft_code : Xbyak_aarch64::CodeGenerator {
         //+=
         // 0x20) 		    double* re1 = pre + block + halfnn + off; //
         // x16
-        // (re1 += 0x20) 		    double* im1 = pim + block + halfnn + off;
+        // (re1 += 0x20) 		    double* im1 = pim + block + halfnn +
+        // off;
         // // x17 (im1
         //+= 0x20) 		    const double* tcs = cur_tt+2*off;  // x18
         //(tcs += 0x40) 		    const double* tsn = tcs+4; // (tcs +

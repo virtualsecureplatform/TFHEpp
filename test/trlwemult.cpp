@@ -12,8 +12,8 @@ inline Polynomial<P> decryptTRLWE3(const TRLWE3<P> &c, const Key<P> &key)
     Polynomial<P> phase = c[1];
     for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
 
-    PolyMulNaieve<P>(keysquare, partkey, partkey);
-    PolyMul<P>(mulres, c[2], keysquare);
+    PolyMulNaive<P>(keysquare, partkey, partkey);
+    PolyMulNaive<P>(mulres, c[2], keysquare);
     for (int i = 0; i < P::n; i++) phase[i] += mulres[i];
 
     for (int i = 0; i < P::n; i++)
@@ -72,7 +72,7 @@ int main()
         TFHEpp::TRLWEMultWithoutRelinerization<P>(cres, c0, c1);
         pres = TFHEpp::decryptTRLWE3<P>(cres, sk->key.get<P>());
 
-        TFHEpp::PolyMulNaieve<P>(ptrue, p0, p1);
+        TFHEpp::PolyMulNaive<P>(ptrue, p0, p1);
         for (int i = 0; i < P::n; i++) ptrue[i] %= P::plain_modulus;
 
         // for (int i = 0; i < P::n; i++)
@@ -101,7 +101,7 @@ int main()
         TFHEpp::TRLWEMult<P>(cres, c0, c1, relinkeyfft);
         pres = TFHEpp::trlweSymIntDecrypt<P>(cres, sk->key.get<P>());
 
-        TFHEpp::PolyMulNaieve<P>(ptrue, p0, p1);
+        TFHEpp::PolyMulNaive<P>(ptrue, p0, p1);
         for (int i = 0; i < P::n; i++) ptrue[i] %= P::plain_modulus;
 
         // for (int i = 0; i < P::n; i++)

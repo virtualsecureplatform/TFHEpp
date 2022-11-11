@@ -1,8 +1,8 @@
-#include <bits/stdint-uintn.h>
+#ifdef ENABLE_LSHTEST
 #include <gmp.h>
 #include <gmpxx.h>
+#endif
 
-#include <boost/multiprecision/cpp_int.hpp>
 #include <cassert>
 #include <cuhe++.hpp>
 #include <iostream>
@@ -10,7 +10,6 @@
 
 using namespace std;
 using namespace cuHEpp;
-namespace mp = boost::multiprecision;
 
 int main()
 {
@@ -93,7 +92,6 @@ int main()
             for (int i = 0; i < numTest; i++) {
                 uint64_t temp = dist(engine);
                 INTorus A(temp);
-                // mp::cpp_int a = temp;
                 mpz_class a = temp;
                 // cout<<static_cast<uint64_t>(a)<<":";
                 // if((A<<l).value!=(static_cast<uint64_t>((a<<l)%P))){
@@ -107,15 +105,15 @@ int main()
                 // assert((A<<l).value==(static_cast<uint64_t>((a<<l)%P)));
                 assert((A << l).value == (a << l) % P);
             }
-            __uint128_t temp = ((1UL << 32) - 1) << 32;
+            const __uint128_t temp = ((1UL << 32) - 1) << 32;
             INTorus A(temp);
-            mp::cpp_int a = temp;
-            if ((A << l).value != (static_cast<uint64_t>((a << l) % P))) {
-                cout << (A << l).value << ":"
-                     << static_cast<uint64_t>((a << l) % P) << endl;
+            const mpz_class a = ((1UL << 32) - 1) << 32;
+            mpz_class res = (a << l) % P;
+            if ((A << l).value != ((a << l) % P)) {
+                cout << (A << l).value << ":" << res.get_str() << endl;
                 cout << "Here" << endl;
             }
-            assert((A << l).value == (static_cast<uint64_t>((a << l) % P)));
+            assert((A << l).value == ((a << l) % P));
         }
         cout << "Lsh" << upper * 32 << " PASS" << endl;
     }

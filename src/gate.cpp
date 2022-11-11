@@ -52,16 +52,6 @@ INST(lvl0param);
 INST(lvlMparam);
 #undef INST
 
-template <class P, int casign, int cbsign, typename P::T offset>
-inline void HomGate(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
-                    const EvalKey &ek)
-{
-    for (int i = 0; i <= P::k * P::n; i++)
-        res[i] = casign * ca[i] + cbsign * cb[i];
-    res[P::k * P::n] += offset;
-    GateBootstrapping<P::μ>(res, res, ek);
-}
-
 template <class P>
 void HomNAND(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
              const EvalKey &ek)

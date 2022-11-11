@@ -1,4 +1,8 @@
 #pragma once
+#include <bits/stdint-uintn.h>
+
+#include <cstdint>
+
 #include "keyswitch.hpp"
 #include "mulfft.hpp"
 #include "trgsw.hpp"
@@ -30,8 +34,18 @@ void TRLWEMultWithoutRelinerization(TRLWE3<P> &res, const TRLWE<P> &a,
     TwistFFTrescale<P>(res[0], fftc);
 
     PolyMulRescaleUnsigned<P>(res[1], aa[1], bb[1]);
+    // PolyMulRescaleUnsigned<P>(res[2], aa[0], bb[0]);
 
-    PolyMulRescaleUnsigned<P>(res[2], aa[0], bb[0]);
+    for (int i = 0; i < P::n; i++) {
+        uint64_t ri = 0;
+        for (int j = 0; j <= i; j++)
+            ri += static_cast<uint64_t>(P::plain_modulus) *
+                  static_cast<uint64_t>(a[0][j]) * b[0][i - j];
+        for (int j = i + 1; j < P::n; j++)
+            ri -= P::plain_modulus * static_cast<uint64_t>(a[0][j]) *
+                  b[0][P::n + i - j];
+        res[2][i] = (ri + (1ULL << 31)) >> 32;
+    }
 }
 
 template <class P>

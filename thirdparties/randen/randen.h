@@ -28,6 +28,9 @@
 #include <limits>
 #include <ostream>
 #include <type_traits>
+#include <random>
+#include <array>
+#include <functional>
 
 // RANDen = RANDom generator or beetroots in Swiss German.
 namespace randen {
@@ -66,6 +69,21 @@ class alignas(32) Randen {
   }
 
   explicit Randen(result_type seed_value = 0) { seed(seed_value); }
+
+  explicit Randen(std::random_device& seed_gen){
+  // https://cpprefjp.github.io/reference/random/seed_seq.html
+  // "We suggest a 256-bit seed, specified as four 64-bit seed integers"
+  // https://arxiv.org/abs/1810.02227
+    std::array<
+    std::seed_seq::result_type,
+    256/std::numeric_limits<std::seed_seq::result_type>::digits
+  > seed_data;
+
+  std::generate(seed_data.begin(), seed_data.end(), std::ref(seed_gen));
+
+  std::seed_seq seq(seed_data.begin(), seed_data.end());
+  seed(seq);
+  }
 
   template <class SeedSequence,
             typename = typename std::enable_if<

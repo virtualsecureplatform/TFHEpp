@@ -16,7 +16,7 @@
 namespace TFHEpp {
 #ifdef USE_RANDEN
 static thread_local std::random_device trng;
-static thread_local randen::Randen<uint64_t> generator(trng());
+static thread_local randen::Randen<uint64_t> generator(trng);
 #else
 static thread_local std::random_device generator;
 #endif
@@ -66,33 +66,6 @@ constexpr int bits_needed()
         }
     }
     return bits + value;
-}
-
-template <uint32_t N>
-inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
-                    const std::array<double, N> &b)
-{
-    for (int i = 0; i < N / 2; i++) {
-        double aimbim = a[i + N / 2] * b[i + N / 2];
-        double arebim = a[i] * b[i + N / 2];
-        res[i] = std::fma(a[i], b[i], -aimbim);
-        res[i + N / 2] = std::fma(a[i + N / 2], b[i], arebim);
-    }
-}
-
-// Be careful about memory accesss (We assume b has relatively high memory access cost)
-template <uint32_t N>
-inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
-             const std::array<double, N> &b)
-{
-    for (int i = 0; i < N / 2; i++) {
-        res[i] = std::fma(a[i], b[i], res[i]);
-        res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
-    }
-    for (int i = 0; i < N / 2; i++) {
-        res[i + N / 2] = std::fma(a[i], b[i + N / 2], res[i + N / 2]);
-        res[i] -= a[i + N / 2] * b[i + N / 2];
-    }
 }
 
 template <class P>

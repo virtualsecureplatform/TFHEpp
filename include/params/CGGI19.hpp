@@ -3,11 +3,12 @@
 #include <cmath>
 #include <cstdint>
 
-// Dummy
-constexpr uint32_t DEF_tlvl22 = 0;
-constexpr uint32_t DEF_basebitlvl22 = 0;
+constexpr bool isternary = false;
 
 struct lvl0param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = 0;
+    static constexpr int32_t key_value_diff = key_value_max - key_value_min;
     static constexpr std::uint32_t n = 630;
     static constexpr std::uint32_t k = 1;
     static const inline double α = std::pow(2.0, -15);
@@ -16,6 +17,8 @@ struct lvl0param {
 };
 
 struct lvl1param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = 0;
     static constexpr std::uint32_t nbit = 10;
     static constexpr std::uint32_t n = 1 << nbit;
     static constexpr std::uint32_t k = 1;
@@ -32,6 +35,8 @@ struct lvl1param {
 };
 
 struct lvl2param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = 0;
     static const std::uint32_t nbit = 11;
     static constexpr std::uint32_t n = 1 << nbit;
     static constexpr std::uint32_t k = 1;

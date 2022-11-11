@@ -121,4 +121,23 @@ void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
                                         const int index)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
+
+template <class P>
+void InvSampleExtractIndex(TRLWE<P> &trlwe, const TLWE<P> &tlwe,
+                           const int index)
+{
+    for (int k = 0; k < P::k; k++) {
+        for (int i = 0; i <= index; i++)
+            trlwe[k][index - i] = tlwe[k * P::n + i];
+        for (int i = index + 1; i < P::n; i++)
+            trlwe[k][P::n + index - i] = -tlwe[k * P::n + i];
+    }
+    trlwe[P::k] = {};
+    trlwe[P::k][index] = tlwe[P::k * P::n];
+}
+#define INST(P)                             \
+    template void InvSampleExtractIndex<P>( \
+        TRLWE<P> & trlwe, const TLWE<P> &tlwe, const int index)
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
+#undef INST
 }  // namespace TFHEpp

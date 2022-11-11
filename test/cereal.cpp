@@ -43,13 +43,23 @@ int main()
     }
 
     {
-        TFHEpp::EvalKey ek;
+        TFHEpp::EvalKey ek(sk);
         ek.emplacebkfft<TFHEpp::lvl01param>(sk);
+        ek.emplacebkntt<TFHEpp::lvl01param>(sk);
         ek.emplaceiksk<TFHEpp::lvl10param>(sk);
         {
             std::ofstream ofs{"./gatekey.key", std::ios::binary};
             cereal::PortableBinaryOutputArchive ar(ofs);
             ek.serialize(ar);
+        }
+    }
+    {
+        TFHEpp::EvalKey ek;
+        {
+            std::ifstream ifs{"./gatekey.key", std::ios::binary};
+            cereal::PortableBinaryInputArchive ar(ifs);
+            ek.serialize(ar);
+            std::cout << (ek.params.lvl0.n) << std::endl;
         }
     }
 }
