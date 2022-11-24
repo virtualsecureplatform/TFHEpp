@@ -229,6 +229,7 @@ std::array<std::array<double, P::n>, 2 * P::n> XaittGen()
     return xaitt;
 }
 
+#ifdef USE_TERNARY
 alignas(64) static const
     std::array<PolynomialInFD<lvl1param>, 2 *lvl1param::n> xaittlvl1 =
         XaittGen<lvl1param>();
@@ -247,4 +248,5 @@ inline void PolynomialMulByXaiMinusOneInFD(PolynomialInFD<P> &res,
         MulInFD<P::n>(res, poly, xaittlvl1[index]);
     }
 }
+#endif
 }  // namespace TFHEpp
