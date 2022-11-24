@@ -1,96 +1,17 @@
 # TFHEpp
-[![Test](https://github.com/virtualsecureplatform/TFHEpp/actions/workflows/test.yml/badge.svg)](https://github.com/virtualsecureplatform/TFHEpp/actions/workflows/test.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-
-## Features
-- Fully scratched with C++
-- 10% faster than the original [TFHE implementation](https://github.com/tfhe/tfhe). 
-- Circuit Bootstrapping and [Private Boootstrapping many LUT](https://eprint.iacr.org/2021/729) are supported.
-- The implementation without assembly(only C++) is provided in `spqlios++` branch
-- Native support for AArch64(requires NEON and Cryptographic-features)
-- `FFTW3` and `Intel-MKL` support.
-
-# Supported Environment
-- Ubuntu 22.04
-- Ubuntu 20.04(requires clang or gcc-10)
-- Ubuntu 18.04(requires clang and cmake later than 3.20.2)
-
-# Getting Started
-## Ubuntu 22.04 on x86-64 with AVX2
-```console
-$ sudo apt-get install -y build-essential g++ libomp-dev cmake git libgoogle-perftools-dev
-
-$ git clone https://github.com/virtualsecureplatform/TFHEpp
-$ cd TFHEpp
-$ git submodule update --init --recursive
-$ mkdir build && cd build
-$ cmake .. -DENABLE_TEST=ON -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release && make -j$(nproc)
-$ test/nand
-1
-Passed
-11.579ms
-```
-
-## Ubuntu 22.04 on AArch64 with Cryptographic-features(ex. VM on M1 Mac)
-TFHEpp provides `spqliox` which is the native spqlios implementation for aarch64.
-It requires [xbyak_arrch64](https://github.com/fujitsu/xbyak_aarch64) to build.
-```console
-$ sudo apt-get install -y build-essential g++ libomp-dev cmake git libgoogle-perftools-dev
-
-$ git clone https://github.com/fujitsu/xbyak_aarch64
-$ cd xbyak_aarch64
-$ make
-$ sudo make install
-$ cd ~/
-
-$ git clone https://github.com/virtualsecureplatform/TFHEpp
-$ cd TFHEpp
-$ git submodule update --init --recursive
-$ mkdir build && cd build
-$ cmake .. -DENABLE_TEST=ON -DUSE_SPQLIOX_AARCH64=ON -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release && make -j$(nproc)
-$ test/nand
-1
-Passed
-13.536ms
-```
-
-## Ubuntu 22.04 on AArch64 without Cryptographic-features(ex. RaspberryPi 4)
-Randen requires Cryptographic-features in AArch64 environment.
-However, RaspberryPi 4 does not provide the features.
-TFHEEpp provides an option to use OS-native CSPRNG instead of Randen.
-
-Also, TFHEpp with `FFTW3` is faster than TFHEpp with `spqliox` in a RaspberryPi 4 environment.
-```console
-$ sudo apt-get install -y build-essential g++ libomp-dev cmake git libgoogle-perftools-dev libfftw3-dev
-
-$ git clone https://github.com/virtualsecureplatform/TFHEpp
-$ cd TFHEpp
-$ git submodule update --init --recursive
-$ mkdir build && cd build
-$ cmake .. -DENABLE_TEST=ON -DUSE_FFTW3=on -DUSE_RANDEN=off -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release && make -j$(nproc)
-$ test/nand
-1
-Passed
-13.536ms
-```
+TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original [TFHE implementation](https://github.com/tfhe/tfhe). In addition to that, THFEpp supports Circuit Bootstrapping and [Private Boootstrapping many LUT](https://eprint.iacr.org/2021/729).
+TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
 
 # Supported Compiler
 
 This code includes utf-8 identifiers like α. Therefore, Clang and GCC10 or later are primarily supported compilers. GCC9 is not supported.
 
-# Build Options
+# Parameter
+The default parameter is 128 bit security. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
 
-<center>
-
-| option name | default | remarks |
-| :---------: | :-----: | :-----: |
-| USE_80BIT_SECURITY | OFF | enable 80 bit security parameter |
-| USE_FFTW3 | OFF | use FFTW3 |
-| USE_MKL | OFF | use Intel-MKL |
-| USE_SPQLIOX_AARCH64 | OFF | use `spqliox` |
-| USE_RANDEN | ON | use Randen |
-
-</center>
+# FFTW3 Support
+Some environments which do not support AVX2 cannot use spqlios. Instead of spqlios, TFHEpp can use fftw3.
+To use fftw3,  install `libfftw3-dev` and add `-DUSE_FFTW3=ON` to the compile option.
 
 # Third party libraries
 Codes under thirdparties directory contain third-party libraries, Randen, Cereal, and SPQLIOS. See the corresponding directory to check the licenses.
@@ -105,7 +26,7 @@ cereal is a header-only C++11 serialization library. TFHEpp uses this to export 
 ## SPQLIOS
 SPQLIOS is the FFT library using AVX2 that is dedicated to the ring R\[X\]/(X^N+1) for N a power of 2. These codes come from [experimental-tfhe](https://github.com/tfhe/experimental-tfhe/tree/master/circuit-bootstrapping/src/spqlios). We just renamed instances to adapt with our codes.
 
-## SPWLIOS-AVX512
+## SPQLIOS-AVX512
 This is the AVX512 version of SPQLIOS developed in [MOSFHET](https://github.com/antoniocgj/MOSFHET). I confirmed that this is faster than SPQLIOS on Intel i5-11400.
 
 ## FFTW3
