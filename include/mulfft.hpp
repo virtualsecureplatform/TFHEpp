@@ -231,9 +231,9 @@ std::array<PolynomialInFD<P>, 2 * P::n> XaittGen()
 }
 
 template <class P>
-std::array<std::array<PolynomialNTTM<P>>, 2 * P::n> XaittGenNTT()
+std::array<PolynomialNTT<P>, 2 * P::n> XaittGenNTT()
 {
-    std::array<std::array<PolynomialNTTM<P>, 2 * P::n> xaitt;
+    std::array<PolynomialNTT<P>, 2 * P::n> xaitt;
     for (int i = 0; i < 2 * P::n; i++) {
         std::array<typename P::T, P::n> xai = {};
         xai[0] = -1;
