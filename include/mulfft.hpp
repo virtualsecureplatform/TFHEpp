@@ -1,5 +1,6 @@
 #pragma once
 
+#include "INTorus.hpp"
 #ifdef USE_FFTW3
 #include <fft_processor_fftw.h>
 #elif USE_SPQLIOX_AARCH64
@@ -214,9 +215,9 @@ inline void PolyMulNaive(Polynomial<P> &res, const Polynomial<P> &a,
 }
 
 template <class P>
-std::array<std::array<double, P::n>, 2 * P::n> XaittGen()
+std::array<PolynomialInFD<P>, 2 * P::n> XaittGen()
 {
-    std::array<std::array<double, P::n>, 2 * P::n> xaitt;
+    std::array<PolynomialInFD<P>, 2 * P::n> xaitt;
     for (int i = 0; i < 2 * P::n; i++) {
         std::array<typename P::T, P::n> xai = {};
         xai[0] = -1;
@@ -225,6 +226,22 @@ std::array<std::array<double, P::n>, 2 * P::n> XaittGen()
         else
             xai[i - P::n] -= 1;
         TwistIFFT<P>(xaitt[i], xai);
+    }
+    return xaitt;
+}
+
+template <class P>
+std::array<std::array<PolynomialNTTM<P>>, 2 * P::n> XaittGenNTT()
+{
+    std::array<std::array<PolynomialNTTM<P>, 2 * P::n> xaitt;
+    for (int i = 0; i < 2 * P::n; i++) {
+        std::array<typename P::T, P::n> xai = {};
+        xai[0] = -1;
+        if (i < P::n)
+            xai[i] += 1;
+        else
+            xai[i - P::n] -= 1;
+        TwistINTT<P>(xaitt[i], xai);
     }
     return xaitt;
 }

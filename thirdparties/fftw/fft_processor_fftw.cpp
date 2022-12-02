@@ -50,8 +50,7 @@ void FFT_Processor_FFTW::execute_reverse_int(double *res, const int32_t *a)
 
 void FFT_Processor_FFTW::execute_reverse_torus32(double *res, const uint32_t *a)
 {
-    int32_t *aa = (int32_t *)a;
-    execute_reverse_int(res, aa);
+    execute_reverse_int(res, (int32_t *)a);
 }
 
 void FFT_Processor_FFTW::execute_reverse_torus64(double *res, const uint64_t *a)
