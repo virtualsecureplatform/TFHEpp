@@ -194,7 +194,7 @@ int main()
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
         std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n> res;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a;
-        for (uint32_t &i : a) i = Bgdist(engine) / 32;
+        for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine) / 32;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             res[i] = cuHEpp::INTorus(a[i]);
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
@@ -221,7 +221,7 @@ int main()
     for (int test = 0; test < num_test; test++) {
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, res;
-        for (uint32_t &i : a) i = Torus32dist(engine);
+        for (typename TFHEpp::lvl1param::T &i : a) i = Torus32dist(engine);
         std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n> resntt;
         cuHEpp::TwistINTT<typename TFHEpp::lvl1param::T,
                           TFHEpp::lvl1param::nbit>(resntt, a, tablelvl1[1],
@@ -238,8 +238,8 @@ int main()
     for (int test = 0; test < num_test; test++) {
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, b, polymul;
         // for (uint32_t &i : a) i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
-        for (uint32_t &i : a) i = Bgdist(engine);
-        for (uint32_t &i : b) i = Torus32dist(engine);
+        for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine);
+        for (typename TFHEpp::lvl1param::T &i : b) i = Torus32dist(engine);
 
         cuHEpp::PolyMullvl1<typename TFHEpp::lvl1param::T,
                             TFHEpp::lvl1param::nbit>(polymul, a, b, tablelvl1,

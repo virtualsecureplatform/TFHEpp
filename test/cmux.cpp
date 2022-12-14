@@ -19,8 +19,8 @@ int main()
     vector<array<uint8_t, lvl1param::n>> p1(num_test);
     vector<array<uint8_t, lvl1param::n>> p0(num_test);
 
-    vector<array<uint32_t, lvl1param::n>> pmu1(num_test);
-    vector<array<uint32_t, lvl1param::n>> pmu0(num_test);
+    vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> pmu1(num_test);
+    vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> pmu0(num_test);
     array<bool, lvl1param::n> pres;
 
     for (int32_t &p : ps) p = binary(engine);

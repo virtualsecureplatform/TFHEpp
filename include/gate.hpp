@@ -1,9 +1,10 @@
 #pragma once
 
+#include <bits/stdint-uintn.h>
 #include "cloudkey.hpp"
 
 namespace TFHEpp {
-template <class P, int casign, int cbsign, typename P::T offset>
+template <class P, int casign, int cbsign, uint64_t offset>
 inline void HomGate(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
                     const EvalKey &ek)
 {

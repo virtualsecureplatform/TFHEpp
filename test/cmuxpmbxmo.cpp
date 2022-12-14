@@ -16,14 +16,14 @@ int main()
 
     SecretKey *sk = new SecretKey;
     vector<int32_t> ps(num_test);
-    vector<array<uint32_t, lvl1param::n>> p1(num_test);
+    vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> p1(num_test);
 
-    vector<array<uint32_t, lvl1param::n>> pmu1(num_test);
+    vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> pmu1(num_test);
     array<bool, lvl1param::n> pres;
 
     for (int32_t &p : ps) p = binary(engine);
-    for (array<uint32_t, lvl1param::n> &i : p1)
-        for (uint32_t &p : i) p = binary(engine);
+    for (array<typename TFHEpp::lvl1param::T, lvl1param::n> &i : p1)
+        for (typename TFHEpp::lvl1param::T &p : i) p = binary(engine);
 
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < lvl1param::n; j++)

@@ -18,7 +18,7 @@ int main()
     cout << "Start LVL1 test." << endl;
     for (int test = 0; test < num_test; test++) {
         Polynomial<lvl1param> a;
-        for (uint32_t &i : a) i = Torus32dist(engine);
+        for (typename TFHEpp::lvl1param::T &i : a) i = Torus32dist(engine);
         PolynomialInFD<lvl1param> resfft;
         TFHEpp::TwistIFFT<lvl1param>(resfft, a);
         Polynomial<lvl1param> res;
@@ -29,12 +29,12 @@ int main()
     cout << "FFT Passed" << endl;
 
     for (int test = 0; test < num_test; test++) {
-        array<uint32_t, lvl1param::n> a;
+        array<typename TFHEpp::lvl1param::T, lvl1param::n> a;
         for (int i = 0; i < lvl1param::n; i++)
             a[i] = Bgdist(engine) - lvl1param::Bg / 2;
-        for (uint32_t &i : a) i = Bgdist(engine) - lvl1param::Bg / 2;
-        array<uint32_t, lvl1param::n> b;
-        for (uint32_t &i : b) i = Torus32dist(engine);
+        for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine) - lvl1param::Bg / 2;
+        array<typename TFHEpp::lvl1param::T, lvl1param::n> b;
+        for (typename TFHEpp::lvl1param::T &i : b) i = Torus32dist(engine);
 
         Polynomial<lvl1param> polymul;
         TFHEpp::PolyMul<lvl1param>(polymul, a, b);

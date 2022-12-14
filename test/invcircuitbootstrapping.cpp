@@ -24,7 +24,7 @@ int main()
     ek.emplacebkfft<bkP>(*sk);
     ek.emplaceprivksk4cb<privksP>(*sk);
     vector<array<uint8_t, lvl1param::n>> pa(num_test);
-    vector<array<uint32_t, lvl1param::n>> pmu(num_test);
+    vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> pmu(num_test);
     vector<uint8_t> pzeros(num_test);
     array<bool, lvl1param::n> pres;
     for (array<uint8_t, lvl1param::n> &i : pa)

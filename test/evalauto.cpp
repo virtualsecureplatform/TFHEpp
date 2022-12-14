@@ -16,7 +16,7 @@ int main()
     for (int test = 0; test < num_test; test++) {
         TFHEpp::SecretKey sk;
         TFHEpp::Polynomial<TFHEpp::lvl1param> pa, pmu, autokey;
-        for (uint32_t &i : pa) i = binary(engine) ? 1 : -1;
+        for (typename TFHEpp::lvl1param::T &i : pa) i = binary(engine) ? 1 : -1;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             pmu[i] =
                 (pa[i] == 1) ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;

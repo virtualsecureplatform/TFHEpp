@@ -34,7 +34,7 @@ constexpr uint64_t lvl1P = 1073707009;
 template <class P>
 inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 {
-    if constexpr (std::is_same_v<typename P::T, uint32_t>)
+    if constexpr (std::is_same_v<P, TFHEpp::lvl1param>)
 #ifdef USE_HEXL
     {
         std::array<uint64_t, TFHEpp::lvl1param::n> temp;
@@ -59,8 +59,12 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 template <class P>
 inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
 {
-    if constexpr (std::is_same_v<typename P::T, uint32_t>)
-        fftplvl1.execute_direct_torus32(res.data(), a.data());
+    if constexpr (std::is_same_v<P,TFHEpp::lvl1param>){
+        if constexpr (std::is_same_v<typename P::T, uint32_t>)
+            fftplvl1.execute_direct_torus32(res.data(), a.data());
+        if constexpr (std::is_same_v<typename P::T, uint64_t>)
+            fftplvl1.execute_direct_torus64(res.data(), a.data());
+    }
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_direct_torus64(res.data(), a.data());
     else
@@ -81,7 +85,7 @@ inline void TwistFFTrescale(Polynomial<P> &res, const PolynomialInFD<P> &a)
 template <class P>
 inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 {
-    if constexpr (std::is_same_v<typename P::T, uint32_t>)
+    if constexpr (std::is_same_v<P, TFHEpp::lvl1param>)
 #ifdef USE_HEXL
     {
         std::array<uint64_t, TFHEpp::lvl1param::n> temp;
@@ -91,8 +95,8 @@ inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
         nttlvl1.ComputeForward(&(res[0].value), temp.data(), 1, 1);
     }
 #else
-        cuHEpp::TwistINTT<typename TFHEpp::lvl1param::T,
-                          TFHEpp::lvl1param::nbit>(res, a, ntttablelvl1[1],
+        cuHEpp::TwistINTT<typename P::T,
+                          P::nbit>(res, a, ntttablelvl1[1],
                                                    ntttwistlvl1[1]);
 #endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
@@ -106,8 +110,12 @@ inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 template <class P>
 inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
 {
-    if constexpr (std::is_same_v<typename P::T, uint32_t>)
-        fftplvl1.execute_reverse_torus32(res.data(), a.data());
+    if constexpr (std::is_same_v<P,TFHEpp::lvl1param>){
+        if constexpr (std::is_same_v<typename P::T, uint32_t>)
+            fftplvl1.execute_reverse_torus32(res.data(), a.data());
+        if constexpr (std::is_same_v<typename P::T, uint64_t>)
+            fftplvl1.execute_reverse_torus64(res.data(), a.data());
+    }
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_reverse_torus64(res.data(), a.data());
     else

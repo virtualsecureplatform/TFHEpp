@@ -69,7 +69,7 @@ int main()
 
         array<bool, lvl1param::n> p;
         for (bool &i : p) i = binary(engine) > 0;
-        array<uint32_t, lvl1param::n> pmu;
+        array<typename TFHEpp::lvl1param::T, lvl1param::n> pmu;
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
         TRLWE<lvl1param> c =

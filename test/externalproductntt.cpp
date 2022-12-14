@@ -46,7 +46,7 @@ int main()
 
         std::array<bool, TFHEpp::lvl1param::n> p;
         for (bool &i : p) i = binary(engine) > 0;
-        std::array<uint32_t, TFHEpp::lvl1param::n> pmu;
+        std::array<typename TFHEpp::lvl1param::T, TFHEpp::lvl1param::n> pmu;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             pmu[i] = p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
         TFHEpp::TRLWE<TFHEpp::lvl1param> c =

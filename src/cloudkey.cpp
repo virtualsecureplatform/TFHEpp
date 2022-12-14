@@ -1,6 +1,7 @@
 #include "cloudkey.hpp"
 
 #include <string>
+#include <iostream>
 
 namespace TFHEpp {
 

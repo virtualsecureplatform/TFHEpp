@@ -15,6 +15,8 @@ namespace TFHEpp {
 #include "params/CGGI19.hpp"
 #elif defined(USE_CONCRETE)
 #include "params/concrete.hpp"
+#elif defined(USE_TFHE_RS)
+#include "params/tfhe-rs.hpp"
 #elif defined(USE_TERNARY)
 #include "params/ternary.hpp"
 #else
