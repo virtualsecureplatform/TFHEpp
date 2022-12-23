@@ -13,13 +13,15 @@ int main()
     random_device seed_gen;
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint32_t> binary(0, 1);
-    uniform_int_distribution<uint> exponentgen(0, 2*TFHEpp::lvl1param::n-1);
+    uniform_int_distribution<uint> exponentgen(0, 2 * TFHEpp::lvl1param::n - 1);
 
     SecretKey *sk = new SecretKey;
     std::vector<int32_t> ps(num_test);
-    std::vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> p1(num_test);
+    std::vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> p1(
+        num_test);
 
-    std::vector<std::array<typename TFHEpp::lvl1param::T, lvl1param::n>> pmu1(num_test);
+    std::vector<std::array<typename TFHEpp::lvl1param::T, lvl1param::n>> pmu1(
+        num_test);
     std::vector<uint> exponents(num_test);
     std::array<bool, TFHEpp::lvl1param::n> pres;
 

@@ -16,7 +16,8 @@ int main()
     std::cout << "Automorphism test" << std::endl;
     for (int test = 0; test < num_test; test++) {
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, b;
-        for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
+        for (typename TFHEpp::lvl1param::T &i : a)
+            i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
         for (typename TFHEpp::lvl1param::T &i : b) i = Torus32dist(engine);
 
         const uint d = (1U << ldist(engine)) + 1;

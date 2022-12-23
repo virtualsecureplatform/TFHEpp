@@ -32,7 +32,8 @@ int main()
         array<typename TFHEpp::lvl1param::T, lvl1param::n> a;
         for (int i = 0; i < lvl1param::n; i++)
             a[i] = Bgdist(engine) - lvl1param::Bg / 2;
-        for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine) - lvl1param::Bg / 2;
+        for (typename TFHEpp::lvl1param::T &i : a)
+            i = Bgdist(engine) - lvl1param::Bg / 2;
         array<typename TFHEpp::lvl1param::T, lvl1param::n> b;
         for (typename TFHEpp::lvl1param::T &i : b) i = Torus32dist(engine);
 
