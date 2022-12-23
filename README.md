@@ -57,7 +57,6 @@ to use this library, add `-DUSE_SPQLIOX_AARCH64=on` to the compile option.
 # Speed Test
 
 Following Code measure how many time homomorphic NAND takes on your computer with TFHEpp. 
-Current implementations of tests consumes large stacks, so you need 'ulimit -s unlimited' to expand the stack usage limit.
 ```
 git clone https://github.com/virtualsecureplatform/TFHEpp
 cd TFHEpp

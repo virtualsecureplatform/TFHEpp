@@ -42,21 +42,21 @@ int main()
     std::uniform_int_distribution<uint32_t> Torus32dist(
         0, std::numeric_limits<typename TFHEpp::lvl1param::T>::max());
 
-    const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n>, 2>
+    const std::unique_ptr<const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n>, 2>>
         twistlvl1 = cuHEpp::TwistGen<TFHEpp::lvl1param::nbit>();
-    const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n>, 2>
+    const std::unique_ptr< const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n>, 2>>
         tablelvl1 = cuHEpp::TableGen<TFHEpp::lvl1param::nbit>();
 
     for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-        assert((twistlvl1[0][i] * twistlvl1[1][i]).value == 1);
+        assert(((*twistlvl1)[0][i] * (*twistlvl1)[1][i]).value == 1);
     for (int i = 1; i < TFHEpp::lvl1param::n; i++)
-        assert(twistlvl1[0][i].value != 1);
+        assert((*twistlvl1)[0][i].value != 1);
     for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-        assert((tablelvl1[0][i] * tablelvl1[1][i]).value == 1);
+        assert(((*tablelvl1)[0][i] * (*tablelvl1)[1][i]).value == 1);
     for (int i = 1; i < TFHEpp::lvl1param::n; i++)
-        assert(tablelvl1[0][i].value != 1);
+        assert((*tablelvl1)[0][i].value != 1);
     assert(
-        (tablelvl1[1][TFHEpp::lvl1param::n / 2 - 1] * tablelvl1[1][1]).value ==
+        ((*tablelvl1)[1][TFHEpp::lvl1param::n / 2 - 1] * (*tablelvl1)[1][1]).value ==
         cuHEpp::P - 1);
 
     // std::cout<<"Bit Reverse"<<std::endl;
@@ -199,10 +199,10 @@ int main()
             res[i] = cuHEpp::INTorus(a[i]);
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             assert(a[i] == res[i].value);
-        cuHEpp::INTT<TFHEpp::lvl1param::nbit, 3>(res, tablelvl1[1]);
+        cuHEpp::INTT<TFHEpp::lvl1param::nbit, 3>(res, (*tablelvl1)[1]);
         // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
         // std::cout<<res[i].value<<":"<<a[i]<<std::endl;
-        cuHEpp::NTT<TFHEpp::lvl1param::nbit, 6>(res, tablelvl1[0]);
+        cuHEpp::NTT<TFHEpp::lvl1param::nbit, 6>(res, (*tablelvl1)[0]);
 
         const cuHEpp::INTorus invN = cuHEpp::InvPow2(TFHEpp::lvl1param::nbit);
         // std::cout<<"InvN:"<<invN.value<<std::endl;
@@ -224,11 +224,11 @@ int main()
         for (typename TFHEpp::lvl1param::T &i : a) i = Torus32dist(engine);
         std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n> resntt;
         cuHEpp::TwistINTT<typename TFHEpp::lvl1param::T,
-                          TFHEpp::lvl1param::nbit>(resntt, a, tablelvl1[1],
-                                                   twistlvl1[1]);
+                          TFHEpp::lvl1param::nbit>(resntt, a, (*tablelvl1)[1],
+                                                   (*twistlvl1)[1]);
         cuHEpp::TwistNTT<typename TFHEpp::lvl1param::T,
-                         TFHEpp::lvl1param::nbit>(res, resntt, tablelvl1[0],
-                                                  twistlvl1[0]);
+                         TFHEpp::lvl1param::nbit>(res, resntt, (*tablelvl1)[0],
+                                                  (*twistlvl1)[0]);
         // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
         // std::cout<<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) assert(a[i] == res[i]);
@@ -242,8 +242,8 @@ int main()
         for (typename TFHEpp::lvl1param::T &i : b) i = Torus32dist(engine);
 
         cuHEpp::PolyMullvl1<typename TFHEpp::lvl1param::T,
-                            TFHEpp::lvl1param::nbit>(polymul, a, b, tablelvl1,
-                                                     twistlvl1);
+                            TFHEpp::lvl1param::nbit>(polymul, a, b, (*tablelvl1),
+                                                     (*twistlvl1));
 
         TFHEpp::Polynomial<TFHEpp::lvl1param> naieve = {};
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {

@@ -12,7 +12,7 @@ struct lvl0param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = 0;
     static constexpr int32_t key_value_diff = key_value_max - key_value_min;
-    static constexpr std::uint32_t n = 778;  // dimension
+    static constexpr std::uint32_t n = 776;  // dimension
     static constexpr std::uint32_t k = 1;
     static constexpr double α =
         5.033523219195911e-06;  // fresh noise, 2^{-17.6}
@@ -64,9 +64,9 @@ struct lvl2param {
 
 // Key Switching parameters
 struct lvl10param {
-    static constexpr std::uint32_t t = 4;  // number of addition in keyswitching
+    static constexpr std::uint32_t t = 3;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
-        3;  // how many bit should be encrypted in keyswitching key
+        4;  // how many bit should be encrypted in keyswitching key
     static const inline double α = lvl0param::α;  // key noise
     using domainP = lvl1param;
     using targetP = lvl0param;
