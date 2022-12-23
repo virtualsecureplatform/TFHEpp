@@ -28,27 +28,32 @@ uint32_t BitReverse(uint32_t in)
 constexpr uint64_t W = 12037493425763644479ULL;
 
 template <uint32_t Nbit>
-inline std::unique_ptr<std::array<std::array<INTorus, 1U << Nbit>, 2>> TwistGen()
+inline std::unique_ptr<std::array<std::array<INTorus, 1U << Nbit>, 2>>
+TwistGen()
 {
     constexpr uint32_t N = 1U << Nbit;
 
-    std::unique_ptr<std::array<std::array<INTorus, 1U << Nbit>, 2>> twist = std::make_unique<std::array<std::array<INTorus, 1U << Nbit>, 2>>();
+    std::unique_ptr<std::array<std::array<INTorus, 1U << Nbit>, 2>> twist =
+        std::make_unique<std::array<std::array<INTorus, 1U << Nbit>, 2>>();
     const INTorus w = INTorus(W).Pow(1U << (32 - Nbit - 1));
     (*twist)[0][0] = (*twist)[1][0] = INTorus(1, false);
     for (uint32_t i = 1; i < N; i++) (*twist)[1][i] = (*twist)[1][i - 1] * w;
     assert(((*twist)[1][N - 1] * w).Pow(2).value == 1);
     (*twist)[0][N - 1] = (*twist)[1][N - 1] * w * w;
-    for (uint32_t i = 2; i < N; i++) (*twist)[0][N - i] = (*twist)[0][N - i + 1] * w;
+    for (uint32_t i = 2; i < N; i++)
+        (*twist)[0][N - i] = (*twist)[0][N - i + 1] * w;
     assert(((*twist)[0][1] * w).value == 1);
     return twist;
 }
 
 template <uint32_t Nbit>
-inline std::unique_ptr<std::array<std::array<INTorus, 1U << Nbit>, 2>> TableGen()
+inline std::unique_ptr<std::array<std::array<INTorus, 1U << Nbit>, 2>>
+TableGen()
 {
     constexpr uint32_t N = 1U << Nbit;
 
-    std::unique_ptr<std::array<std::array<INTorus, N>, 2>> table = std::make_unique<std::array<std::array<INTorus, N>, 2>>();
+    std::unique_ptr<std::array<std::array<INTorus, N>, 2>> table =
+        std::make_unique<std::array<std::array<INTorus, N>, 2>>();
     const INTorus w = INTorus(W).Pow(1U << (32 - Nbit));
     (*table)[0][0] = (*table)[1][0] = INTorus(1, false);
     for (uint32_t i = 1; i < N; i++) (*table)[1][i] = (*table)[1][i - 1] * w;

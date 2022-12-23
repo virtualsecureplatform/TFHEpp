@@ -18,7 +18,8 @@ int main()
     std::vector<TFHEpp::TLWE<TFHEpp::lvl1param>> ca(num_test);
     std::vector<std::array<uint8_t, TFHEpp::lvl1param::n>> pin(num_test);
 
-    std::vector<std::array<typename TFHEpp::lvl1param::T, TFHEpp::lvl1param::n>> pmu(num_test);
+    std::vector<std::array<typename TFHEpp::lvl1param::T, TFHEpp::lvl1param::n>>
+        pmu(num_test);
 
     for (std::array<uint8_t, TFHEpp::lvl1param::n> &i : pin)
         for (uint8_t &p : i) p = binary(engine);
