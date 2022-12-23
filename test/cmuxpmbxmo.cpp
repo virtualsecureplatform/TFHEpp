@@ -13,27 +13,30 @@ int main()
     random_device seed_gen;
     default_random_engine engine(seed_gen());
     uniform_int_distribution<uint32_t> binary(0, 1);
+    uniform_int_distribution<uint> exponentgen(0, 2*TFHEpp::lvl1param::n-1);
 
     SecretKey *sk = new SecretKey;
-    vector<int32_t> ps(num_test);
-    vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> p1(num_test);
+    std::vector<int32_t> ps(num_test);
+    std::vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> p1(num_test);
 
-    vector<array<typename TFHEpp::lvl1param::T, lvl1param::n>> pmu1(num_test);
-    array<bool, lvl1param::n> pres;
+    std::vector<std::array<typename TFHEpp::lvl1param::T, lvl1param::n>> pmu1(num_test);
+    std::vector<uint> exponents(num_test);
+    std::array<bool, TFHEpp::lvl1param::n> pres;
 
     for (int32_t &p : ps) p = binary(engine);
+    for (uint &p : exponents) p = exponentgen(engine);
     for (array<typename TFHEpp::lvl1param::T, lvl1param::n> &i : p1)
         for (typename TFHEpp::lvl1param::T &p : i) p = binary(engine);
 
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < lvl1param::n; j++)
             pmu1[i][j] = (p1[i][j] > 0) ? lvl1param::μ : -lvl1param::μ;
-    vector<BootstrappingKeyElementFFT<lvl01param>> cs(num_test);
-    vector<TRLWE<lvl1param>> c1(num_test);
-    vector<TRLWE<lvl1param>> cres(num_test);
+    std::vector<BootstrappingKeyElementFFT<TFHEpp::lvl01param>> cs(num_test);
+    std::vector<TRLWE<lvl1param>> c1(num_test);
+    std::vector<TRLWE<lvl1param>> cres(num_test);
 
     for (int i = 0; i < num_test; i++) {
-        Polynomial<TFHEpp::lvl1param> plainpoly = {};
+        TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {};
         plainpoly[0] = ps[i];
         cs[i][TFHEpp::lvl0param::key_value_diff - 1] =
             trgswfftSymEncrypt<lvl1param>(plainpoly, lvl1param::α,
@@ -46,7 +49,7 @@ int main()
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         CMUXFFTwithPolynomialMulByXaiMinusOne<lvl01param>(c1[test], cs[test],
-                                                          -2);
+                                                          exponents[test]);
     }
     end = chrono::system_clock::now();
 
@@ -55,7 +58,7 @@ int main()
         TFHEpp::Polynomial<TFHEpp::lvl1param> polyres = pmu1[test];
         if (ps[test] == 1)
             TFHEpp::PolynomialMulByXai<lvl1param>(polyres, pmu1[test],
-                                                  2 * lvl1param::n - 2);
+                                                  exponents[test]);
         for (int i = 0; i < lvl1param::n; i++) {
             // std::cout<<i<<":"<<ps[test]<<":"<<pres[i]<<":"<<(static_cast<int>(polyres[i])>0?1:0)<<std::endl;
             assert(pres[i] == (static_cast<int>(polyres[i]) > 0 ? 1 : 0));
