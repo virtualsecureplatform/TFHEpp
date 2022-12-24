@@ -1,23 +1,21 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
-LABEL maintainer="nindanaoto <matsuoka.kotaro@gmail.com>"
+LABEL maintainer="naoki9911(Naoki MATSUMOTO) <m.naoki9911@gmail.com>"
 
-RUN apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential g++-10 libomp-dev cmake git libgoogle-perftools-dev && git clone --recursive --depth 1 https://github.com/virtualsecureplatform/TFHEpp && git clone --recursive --depth 1 https://github.com/tfhe/tfhe.git  && mkdir TFHEpp/build && mkdir tfhe/build
-# && git clone --recursive --depth 1 https://github.com/virtualsecureplatform/tfhe-10ms.git && mkdir tfhe-10ms/build
+# install build dependencies
+RUN apt-get update && apt-get upgrade -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential g++ libomp-dev cmake git libgoogle-perftools-dev
 
-WORKDIR TFHEpp/build
-
-RUN cmake .. -DENABLE_TEST=ON -DCMAKE_CXX_COMPILER=g++-10 && make
-
+# build TFHE
+RUN git clone --recursive --depth 1 https://github.com/tfhe/tfhe.git  && mkdir tfhe/build
 WORKDIR /tfhe/build
+RUN cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=off -DENABLE_SPQLIOS_AVX=off -DENABLE_SPQLIOS_FMA=on -DCMAKE_BUILD_TYPE=optim && make -j$(nproc)
 
-RUN cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=off -DENABLE_SPQLIOS_AVX=off -DENABLE_SPQLIOS_FMA=on -DCMAKE_BUILD_TYPE=optim && make
+# build TFHEpp
+COPY . /TFHEpp
+RUN mkdir /TFHEpp/build
+WORKDIR /TFHEpp/build
+RUN cmake .. -DENABLE_TEST=ON -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release && make -j$(nproc)
 
-# WORKDIR /tfhe-10ms/build
-
-# RUN cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=off -DENABLE_SPQLIOS_AVX=off -DENABLE_SPQLIOS_FMA=on -DCMAKE_BUILD_TYPE=optim && make
-
-WORKDIR /
-
-CMD echo "TFHEpp" &&./TFHEpp/build/test/nand && echo "original TFHE" && ./tfhe/build/test/test-gate-bootstrapping-spqlios-fma 
-# && echo "TFHE-10ms" && tfhe-10ms/build/test/test-bootstrapping-fft-spqlios-fma 
+# To run benchmark test
+#$ echo "TFHEpp" && /TFHEpp/build/test/nand && echo "original TFHE" && /tfhe/build/test/test-gate-bootstrapping-spqlios-fma 
