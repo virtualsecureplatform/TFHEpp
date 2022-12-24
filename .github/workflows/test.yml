@@ -2,9 +2,6 @@ name: Test
 
 on:
   push:
-    branches:
-    - master
-    - matsu-dev
 
 # thanks to https://izumisy.work/entry/2022/03/28/140644
 jobs:
