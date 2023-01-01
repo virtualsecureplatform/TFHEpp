@@ -11,8 +11,7 @@ using namespace TFHEpp;
 template <uint32_t address_bit, uint32_t words_bit>
 void combUROMUX(TRLWE<lvl1param> &res,
                 const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
-                const array<TRLWE<lvl1param>, 1 << (address_bit + words_bit -
-                                                    lvl1param::nbit)> &data)
+                const std::vector<TRLWE<lvl1param>> &data)
 {
     constexpr uint32_t width_bit =
         lvl1param::nbit -
@@ -40,10 +39,9 @@ void combUROMUX(TRLWE<lvl1param> &res,
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
-void combRAMUX(array<TRLWE<lvl1param>, 1U << words_bit> &res,
+void combRAMUX(std::vector<TRLWE<lvl1param>> &res,
                const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
-               const array<array<TRLWE<lvl1param>, 1 << address_bit>,
-                           1U << words_bit> &data)
+               const std::vector<array<TRLWE<lvl1param>, 1 << address_bit>> &data)
 {
     constexpr uint32_t words = 1U << words_bit;
     constexpr uint32_t num_trlwe = 1 << address_bit;
@@ -72,9 +70,9 @@ void combRAMUX(array<TRLWE<lvl1param>, 1U << words_bit> &res,
 
 template <uint32_t address_bit, uint32_t words_bit>
 void combWRAM(
-    array<array<TRLWE<lvl1param>, 1U << address_bit>, 1U << words_bit> &encram,
+    std::vector<array<TRLWE<lvl1param>, 1U << address_bit>> &encram,
     const array<array<TRGSWFFT<lvl1param>, address_bit>, 2> &address,
-    const array<TRLWE<lvl1param>, 1U << words_bit> &encwritep,
+    const std::vector<TRLWE<lvl1param>> &encwritep,
     const EvalKey &ek)
 {
     constexpr uint32_t memsize = 1U << address_bit;
@@ -160,25 +158,25 @@ int main()
             for (int i = 0; i < words; i++)
                 writep[i] = ramp[addressint * words + i] > 0 ? 0 : 1;
 
-            array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> *bootedTGSW =
+            std::array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> *bootedTGSW =
                 new array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
                           2>;  // MSB of address is evaluated by HomMUX, not
                                // CMUX.
             vector<TLWE<lvl1param>> encaddress(address_bit);
-            array<TRLWE<lvl1param>, numromtrlwe> encrom;
-            array<array<TRLWE<lvl1param>, numramtrlwe>, words> encram;
+            std::vector<TRLWE<lvl1param>> encrom(numromtrlwe);
+            std::vector<array<TRLWE<lvl1param>, numramtrlwe>> encram(words);
 
-            array<TRLWE<lvl1param>, words> encramread;
-            array<TLWE<lvl1param>, words> encramreadres;
+            std::vector<TRLWE<lvl1param>> encramread(words);
+            std::vector<TLWE<lvl1param>> encramreadres(words);
 
             TRLWE<lvl1param> encumemory;
             std::vector<TLWE<lvl1param>> encromreadres(words);
 
-            array<TLWE<lvl1param>, words> encreadres;
+            std::vector<TLWE<lvl1param>> encreadres(words);
 
             TLWE<lvl1param> encwrflag;
-            array<TLWE<lvl1param>, words> encwritep;
-            array<TRLWE<lvl1param>, words> writed;
+            std::vector<TLWE<lvl1param>> encwritep(words);
+            std::vector<TRLWE<lvl1param>> writed(words);
 
             encaddress = bootsSymEncrypt(address, *sk);
             for (int i = 0; i < numromtrlwe; i++)
