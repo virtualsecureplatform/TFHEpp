@@ -108,11 +108,17 @@ template <class P>
 using BootstrappingKeyNTT =
     std::array<TRGSWNTT<typename P::targetP>, P::domainP::k * P::domainP::n>;
 
+
 template <class P>
 using KeySwitchingKey = std::array<
     std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
     P::domainP::k * P::domainP::n>;
+template <class P>
+using SubsetKeySwitchingKey = std::array<
+    std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>,
+               P::t>,
+    P::domainP::k * P::domainP::n - P::targetP::n>;
 template <class P>
 using TLWE2TRLWEIKSKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
@@ -125,6 +131,11 @@ using PrivateKeySwitchingKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
     P::domainP::k * P::domainP::n + 1>;
+template <class P>
+using SubsetPrivateKeySwitchingKey = std::array<
+    std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
+               P::t>,
+    P::targetP::k * P::targetP::n + 1>;
 template <class P>
 using relinKey = std::array<TRLWE<P>, P::l>;
 template <class P>
@@ -161,4 +172,6 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(fun) \
     fun(lvl10param, lvl02param, lvl21param);                     \
     fun(lvl10param, lvl02param, lvl22param);
+#define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING_SUBIKS(fun) \
+    fun(lvl10param, lvl02param, lvl21param);                     
 }  // namespace TFHEpp

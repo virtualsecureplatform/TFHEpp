@@ -54,6 +54,63 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
 template <class P>
+void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
+                       const TLWE<typename P::domainP> &tlwe,
+                       const SubsetKeySwitchingKey<P> &ksk)
+{
+    constexpr typename P::domainP::T prec_offset =
+        1ULL << (numeric_limits<typename P::domainP::T>::digits -
+                 (1 + P::basebit * P::t));
+    constexpr uint32_t mask = (1U << P::basebit) - 1;
+    res = {};
+    constexpr uint32_t domain_digit =
+        std::numeric_limits<typename P::domainP::T>::digits;
+    constexpr uint32_t target_digit =
+        std::numeric_limits<typename P::targetP::T>::digits;
+    if constexpr (domain_digit == target_digit){
+        for(int i = 0; i < P::targetP::k * P::targetP::n; i++)
+            res[i] = tlwe[i];
+        res[P::targetP::k * P::targetP::n] =
+            tlwe[P::domainP::k * P::domainP::n];
+    }
+    else if constexpr (domain_digit > target_digit){
+        for(int i = 0; i < P::targetP::k * P::targetP::n; i++)
+            res[i] =
+                (tlwe[i] +
+                (1ULL << (domain_digit - target_digit - 1))) >>
+                (domain_digit - target_digit);
+        res[P::targetP::k * P::targetP::n] =
+                (tlwe[P::domainP::k * P::domainP::n] +
+                (1ULL << (domain_digit - target_digit - 1))) >>
+                (domain_digit - target_digit);
+    }
+    else if constexpr (domain_digit < target_digit){
+        for(int i = 0; i < P::targetP::k * P::targetP::n; i++)
+            res[i] = tlwe[i] << (target_digit - domain_digit);
+        res[P::targetP::k * P::targetP::n] = tlwe[P::domainP::k * P::domainP::n]
+                                             << (target_digit - domain_digit);
+    }
+    for (int i = 0; i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++) {
+        const typename P::domainP::T aibar = tlwe[i+P::targetP::n] + prec_offset;
+        for (int j = 0; j < P::t; j++) {
+            const uint32_t aij =
+                (aibar >> (numeric_limits<typename P::domainP::T>::digits -
+                           (j + 1) * P::basebit)) &
+                mask;
+            if (aij != 0)
+                for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
+                    res[k] -= ksk[i][j][aij - 1][k];
+        }
+    }
+}
+#define INST(P)                                                               \
+    template void SubsetIdentityKeySwitch<P>(TLWE<typename P::targetP> & res,       \
+                                       const TLWE<typename P::domainP> &tlwe, \
+                                       const KeySwitchingKey<P> &ksk)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
+#undef INST
+
+template <class P>
 void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
                    const TLWE<typename P::domainP> &tlwe,
                    const TLWE2TRLWEIKSKey<P> &iksk)
