@@ -23,7 +23,8 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(*sk);
     ek.emplacebkfft<bkP>(*sk);
-    ek.emplaceprivksk4cb<privksP>(*sk);
+    ek.emplacesubiksk<privksP>(*sk);
+    ek.emplacesubprivksk4cb<privksP>(*sk);
 
     std::vector<std::array<uint8_t, privksP::targetP::n>> pa(num_test);
     std::vector<std::array<typename privksP::targetP::T, privksP::targetP::n>>
@@ -49,11 +50,11 @@ int main()
 
     std::chrono::system_clock::time_point start, end;
 #ifdef USE_PERF
-    ProfilerStart("cb.prof");
+    ProfilerStart("cbsub.prof");
 #endif
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(bootedTGSW[test],
+        TFHEpp::CircuitBootstrappingSubFFT<iksP, bkP, privksP>(bootedTGSW[test],
                                                             cones[test], ek);
     }
     end = std::chrono::system_clock::now();

@@ -12,6 +12,11 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
                        const KeySwitchingKey<P> &ksk);
 
 template <class P>
+void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
+                       const TLWE<typename P::domainP> &tlwe,
+                       const SubsetKeySwitchingKey<P> &ksk);
+
+template <class P>
 void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
                    const TLWE<typename P::domainP> &tlwe,
                    const TLWE2TRLWEIKSKey<P> &iksk);
@@ -52,4 +57,8 @@ template <class P>
 void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                    const TLWE<typename P::domainP> &tlwe,
                    const PrivateKeySwitchingKey<P> &privksk);
+template <class P>
+void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
+                   const TLWE<typename P::targetP> &tlwe,
+                   const SubsetPrivateKeySwitchingKey<P> &privksk);
 }  // namespace TFHEpp

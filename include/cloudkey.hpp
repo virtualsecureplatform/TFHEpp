@@ -103,6 +103,7 @@ struct EvalKey {
     std::unique_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
     std::unique_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
     std::unique_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
+    std::unique_ptr<SubsetKeySwitchingKey<lvl21param>> subiksklvl21;
     std::unordered_map<std::string,
                        std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>>
         privksklvl11;
@@ -112,6 +113,9 @@ struct EvalKey {
     std::unordered_map<std::string,
                        std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>>
         privksklvl22;
+    std::unordered_map<std::string,
+                       std::unique_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>>
+        subprivksklvl21;
 
     EvalKey(SecretKey sk) { params = sk.params; }
     EvalKey() {}
@@ -129,11 +133,19 @@ struct EvalKey {
     template <class P>
     void emplaceiksk(const SecretKey &sk);
     template <class P>
+    void emplacesubiksk(const SecretKey &sk);
+    template <class P>
     void emplaceprivksk(const std::string &key,
                         const Polynomial<typename P::targetP> &func,
                         const SecretKey &sk);
     template <class P>
+    void emplacesubprivksk(const std::string &key,
+                        const Polynomial<typename P::targetP> &func,
+                        const SecretKey &sk);
+    template <class P>
     void emplaceprivksk4cb(const SecretKey &sk);
+    template <class P>
+    void emplacesubprivksk4cb(const SecretKey &sk);
 
     template <class P>
     BootstrappingKey<P> &getbk() const;
@@ -144,7 +156,11 @@ struct EvalKey {
     template <class P>
     KeySwitchingKey<P> &getiksk() const;
     template <class P>
+    SubsetKeySwitchingKey<P> &getsubiksk() const;
+    template <class P>
     PrivateKeySwitchingKey<P> &getprivksk(const std::string &key) const;
+    template <class P>
+    SubsetPrivateKeySwitchingKey<P> &getsubprivksk(const std::string &key) const;
 
     template <class Archive>
     void serialize(Archive &archive)

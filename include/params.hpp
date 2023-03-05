@@ -118,7 +118,7 @@ template <class P>
 using SubsetKeySwitchingKey = std::array<
     std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
-    P::domainP::k * P::domainP::n - P::targetP::n>;
+    P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n>;
 template <class P>
 using TLWE2TRLWEIKSKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,

@@ -25,6 +25,16 @@ void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
                              const EvalKey &ek);
 
 template <class iksP, class bkP, class privksP>
+void CircuitBootstrappingSub(TRGSW<typename privksP::targetP> &trgsw,
+                          const TLWE<typename iksP::domainP> &tlwe,
+                          const EvalKey &ek);
+
+template <class iksP, class bkP, class privksP>
+void CircuitBootstrappingSubFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
+                             const TLWE<typename iksP::domainP> &tlwe,
+                             const EvalKey &ek);
+
+template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFTInv(
     TRGSWFFT<typename privksP::targetP> &invtrgswfft,
     const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek);

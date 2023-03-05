@@ -116,22 +116,21 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk, const SecretKey& sk)
 {
     Key<typename P::targetP> subkey;
     for(int i = 0; i < P::targetP::n; i++) subkey[i] = sk.key.get<typename P::domainP>()[i];
-    for (int l = 0; l < P::domainP::k; l++)
-        for (int i = 0; i < P::domainP::n; i++)
-            for (int j = 0; j < P::t; j++)
-                for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
-                    ksk[l * P::domainP::n + i][j][k] =
-                        tlweSymEncrypt<typename P::targetP>(
-                            sk.key.get<
-                                typename P::domainP>()[l * P::domainP::n + i] *
-                                (k + 1) *
-                                (1ULL << (numeric_limits<
-                                              typename P::targetP::T>::digits -
-                                          (j + 1) * P::basebit)),
-                            P::α, subkey);
+    for (int i = 0; i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++)
+        for (int j = 0; j < P::t; j++)
+            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
+                ksk[i][j][k] =
+                    tlweSymEncrypt<typename P::targetP>(
+                        sk.key.get<
+                            typename P::domainP>()[P::targetP::k * P::targetP::n + i] *
+                            (k + 1) *
+                            (1ULL << (numeric_limits<
+                                            typename P::targetP::T>::digits -
+                                        (j + 1) * P::basebit)),
+                        P::α, subkey);
 }
 #define INST(P) \
-    template void subikskgen<P>(KeySwitchingKey<P> & ksk, const SecretKey& sk)
+    template void subikskgen<P>(SubsetKeySwitchingKey<P> & ksk, const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
@@ -302,6 +301,18 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
 template <class P>
+void EvalKey::emplacesubiksk(const SecretKey& sk)
+{
+    if constexpr (std::is_same_v<P, lvl21param>) {
+        subiksklvl21 = std::make_unique<SubsetKeySwitchingKey<lvl21param>>();
+        subikskgen<lvl21param>(*subiksklvl21, sk);
+    }
+}
+#define INST(P) template void EvalKey::emplacesubiksk<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
+#undef INST
+
+template <class P>
 void EvalKey::emplaceprivksk(const std::string& key,
                              const Polynomial<typename P::targetP>& func,
                              const SecretKey& sk)
@@ -346,9 +357,9 @@ void EvalKey::emplacesubprivksk(const std::string& key,
                              const SecretKey& sk)
 {
     if constexpr (std::is_same_v<P, lvl21param>) {
-        privksklvl11[key] =
-            std::make_unique<PrivateKeySwitchingKey<lvl21param>>();
-        subprivkskgen<lvl21param>(*privksklvl21[key], func, sk);
+        subprivksklvl21[key] =
+            std::make_unique<SubsetPrivateKeySwitchingKey<lvl21param>>();
+        subprivkskgen<lvl21param>(*subprivksklvl21[key], func, sk);
     }
 }
 #define INST(P)                                                              \
@@ -366,9 +377,9 @@ void EvalKey::emplacesubprivksk4cb(const SecretKey& sk)
         for (int i = 0; i < P::targetP::n; i++)
             partkey[i] =
                 -sk.key.get<typename P::targetP>()[k * P::targetP::n + i];
-        emplacesubprivksk<P>("privksk4cb_" + std::to_string(k), partkey, sk);
+        emplacesubprivksk<P>("subprivksk4cb_" + std::to_string(k), partkey, sk);
     }
-    emplacesubprivksk<P>("privksk4cb_" + std::to_string(P::targetP::k), {1}, sk);
+    emplacesubprivksk<P>("subprivksk4cb_" + std::to_string(P::targetP::k), {1}, sk);
 }
 #define INST(P) template void EvalKey::emplacesubprivksk4cb<P>(const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
@@ -440,6 +451,17 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
 template <class P>
+SubsetKeySwitchingKey<P>& EvalKey::getsubiksk() const
+{
+    if constexpr (std::is_same_v<P, lvl21param>) {
+        return *subiksklvl21;
+    }
+}
+#define INST(P) template SubsetKeySwitchingKey<P>& EvalKey::getsubiksk<P>() const
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
+#undef INST
+
+template <class P>
 PrivateKeySwitchingKey<P>& EvalKey::getprivksk(const std::string& key) const
 {
     if constexpr (std::is_same_v<P, lvl11param>) {
@@ -454,6 +476,19 @@ PrivateKeySwitchingKey<P>& EvalKey::getprivksk(const std::string& key) const
 }
 #define INST(P)                                                 \
     template PrivateKeySwitchingKey<P>& EvalKey::getprivksk<P>( \
+        const std::string& key) const
+TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
+#undef INST
+
+template <class P>
+SubsetPrivateKeySwitchingKey<P>& EvalKey::getsubprivksk(const std::string& key) const
+{
+    if constexpr (std::is_same_v<P, lvl21param>) {
+        return *(subprivksklvl21.at(key));
+    }
+}
+#define INST(P)                                                 \
+    template SubsetPrivateKeySwitchingKey<P>& EvalKey::getsubprivksk<P>( \
         const std::string& key) const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
