@@ -1,6 +1,11 @@
 file(GLOB tfhe++_sources "*.cpp")
 
-add_library(tfhe++ ${tfhe++_sources})
+if(ENABLE_SHARED)
+  add_library(tfhe++ SHARED ${tfhe++_sources})
+else()
+  add_library(tfhe++ STATIC ${tfhe++_sources})
+endif()
+
 target_include_directories(
   tfhe++
   PUBLIC
