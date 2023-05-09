@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(tfhe++ CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS
-    "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
+    "-march=native -O3 -g -flto -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
 )
 
 option(USE_RANDEN "Use randen as CSPRNG" ON)
