@@ -52,13 +52,15 @@ template <class P>
 inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
                            const relinKeyFFT<P> &relinkeyfft)
 {
-    DecomposedPolynomialInFD<P> decvecfft;
-    DecompositionPolynomialFFT<P>(decvecfft, poly, 0);
+    DecomposedPolynomial<P> decvec;
+    Decomposition<P>(decvec,poly);
+    PolynomialInFD<P> decvecfft;
+    TwistIFFT<P>(decvecfft, decvec[0]);
     TRLWEInFD<P> resfft;
     MulInFD<P::n>(resfft[0], decvecfft, relinkeyfft[0][0]);
     MulInFD<P::n>(resfft[1], decvecfft, relinkeyfft[0][1]);
     for (int i = 1; i < P::l; i++) {
-        DecompositionPolynomialFFT<P>(decvecfft, poly, i);
+        TwistIFFT<P>(decvecfft, decvec[i]);
         FMAInFD<P::n>(resfft[0], decvecfft, relinkeyfft[i][0]);
         FMAInFD<P::n>(resfft[1], decvecfft, relinkeyfft[i][1]);
     }

@@ -57,11 +57,7 @@ using PolynomialInFD = std::array<double, P::n>;
 template <class P>
 using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
 template <class P>
-using DecomposedPolynomial = Polynomial<P>;
-template <class P>
-using DecomposedPolynomialInFD = PolynomialInFD<P>;
-template <class P>
-using DecomposedPolynomialNTT = PolynomialNTT<P>;
+using DecomposedPolynomial = std::array<Polynomial<P>,P::l>;
 
 template <class P>
 using TRLWE = std::array<Polynomial<P>, P::k + 1>;

@@ -17,10 +17,12 @@ This is the most fundamental type in TFHE. In the actual implementation, Torus i
 In TFHEpp, TLWE is represented by an array of unsigned integers with length n+1, like `std::array<uint32_t,n+1>`.
 This TLWE ciphertext is representing ($\mathbf{a},b$). 
 
-## TRLWE
+### TRLWE
 
 This is the ring version of TLWE. Though I use the term TRLWE in this library because of historical reasons, this is a TMRLWE(Torus Module Ring LWE) ciphertext which means the dimension of the ciphertext can be larger than two.
 The form of TRLWE is $(\mathbf{a}[X],b[X])$, so the $k+1$-dimensional vector of $N$ degree Torus polynomials. 
 This is represented by the type like `std::array<std::array<uint32_t,N>k+1>`.
 
-## TRGSW
+### TRGSW
+
+This is the ring version of the Gentry-Sahai-Walters homomorphic encryption scheme.

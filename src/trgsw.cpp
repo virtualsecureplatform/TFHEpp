@@ -5,23 +5,9 @@
 
 namespace TFHEpp {
 #define INST(P)                                                       \
-    template void DecompositionPolynomial<P>(                         \
+    template void Decomposition<P>(                         \
         DecomposedPolynomial<P> & decpoly, const Polynomial<P> &poly, \
-        const int digit)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
-
-#define INST(P)                                                              \
-    template void DecompositionPolynomialFFT<P>(                             \
-        DecomposedPolynomialInFD<P> & decpolyfft, const Polynomial<P> &poly, \
-        const int digit)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
-
-#define INST(P)                                                             \
-    template void DecompositionPolynomialNTT<P>(                            \
-        DecomposedPolynomialNTT<P> & decpolyntt, const Polynomial<P> &poly, \
-        const int digit)
+        typename P::T randbits)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

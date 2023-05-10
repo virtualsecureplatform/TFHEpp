@@ -9,71 +9,47 @@
 
 namespace TFHEpp {
 
+// https://eprint.iacr.org/2021/1161
 template <class P>
-constexpr typename P::T offsetgen()
+void Decomposition(DecomposedPolynomial<P> &decpoly,
+                             const Polynomial<P> &poly, typename P::T randbits = 0)
 {
-    typename P::T offset = 0;
-    for (int i = 1; i <= P::l; i++)
-        offset +=
-            P::Bg / 2 *
-            (1ULL << (std::numeric_limits<typename P::T>::digits - i * P::Bgbit));
-    return offset;
-}
-
-template <class P>
-void DecompositionPolynomial(DecomposedPolynomial<P> &decpoly,
-                             const Polynomial<P> &poly, const int digit)
-{
-    constexpr typename P::T offset = offsetgen<P>();
     constexpr typename P::T roundoffset =
         1ULL << (std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit -
                  1);
     constexpr typename P::T mask =
         static_cast<typename P::T>((1ULL << P::Bgbit) - 1);
-    constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
+    constexpr typename P::T Bgl = 1ULL<<(P::l * P::Bgbit);
 
-    for (int i = 0; i < P::n; i++) {
-        decpoly[i] = (((poly[i] + offset + roundoffset) >>
-                       (std::numeric_limits<typename P::T>::digits -
-                        (digit + 1) * P::Bgbit)) &
-                      mask) -
-                     halfBg;
+    Polynomial<P> K;
+    for (int i = 0; i < P::n; i++){
+        K[i] = (poly[i] + roundoffset)>>(std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit);
+        if(K[i]>Bgl/2) K[i] -= Bgl;
+        else if(K[i]==Bgl/2){
+            if(randbits&1) K[i] -= Bgl;
+            randbits >>= 1;
+        }
+    }
+    for(int l = 0; l < P::l; l++){
+        for (int i = 0; i < P::n; i++){
+            // https://github.com/zama-ai/tfhe-rs/blob/06b700f9042eb5dfbaf073bb6b7f71bff4be1c2f/tfhe/src/core_crypto/commons/math/decomposition/iter.rs#L117-L124
+            auto& ki = decpoly[P::l-l-1][i];
+            ki = K[i]&mask;
+            K[i] >>= P::Bgbit;
+            // if((ki>P::Bg/2)||((ki==P::Bg/2)&&((K[i]&mask)>=P::Bg/2))){
+            //     ki -= P::Bg;
+            //     K[i] += 1;
+            // }
+            const auto carry = (((ki-1)|K[i])&ki)>>(P::Bgbit-1);
+            K[i] += carry;
+            ki -= carry<<P::Bgbit;
+        }
     }
 }
 #define INST(P)                                                       \
-    extern template void DecompositionPolynomial<P>(                         \
+    extern template void Decomposition<P>(                         \
         DecomposedPolynomial<P> & decpoly, const Polynomial<P> &poly, \
-        const int digit)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
-
-template <class P>
-void DecompositionPolynomialFFT(DecomposedPolynomialInFD<P> &decpolyfft,
-                                const Polynomial<P> &poly, const int digit)
-{
-    DecomposedPolynomial<P> decpoly;
-    DecompositionPolynomial<P>(decpoly, poly, digit);
-    TwistIFFT<P>(decpolyfft, decpoly);
-}
-#define INST(P)                                                              \
-    extern template void DecompositionPolynomialFFT<P>(                             \
-        DecomposedPolynomialInFD<P> & decpolyfft, const Polynomial<P> &poly, \
-        const int digit)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
-
-template <class P>
-void DecompositionPolynomialNTT(DecomposedPolynomialNTT<P> &decpolyntt,
-                                const Polynomial<P> &poly, const int digit)
-{
-    DecomposedPolynomial<P> decpoly;
-    DecompositionPolynomial<P>(decpoly, poly, digit);
-    TwistINTT<P>(decpolyntt, decpoly);
-}
-#define INST(P)                                                             \
-    extern template void DecompositionPolynomialNTT<P>(                            \
-        DecomposedPolynomialNTT<P> & decpolyntt, const Polynomial<P> &poly, \
-        const int digit)
+        typename P::T randbits)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
@@ -81,22 +57,25 @@ template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft)
 {
-    DecomposedPolynomialInFD<P> decpolyfft;
+    DecomposedPolynomial<P> decpoly;
+    Decomposition<P>(decpoly, trlwe[0]);
+    PolynomialInFD<P> decpolyfft;
     __builtin_prefetch(trgswfft[0].data());
-    DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0], 0);
+    TwistIFFT<P>(decpolyfft, decpoly[0]);
     TRLWEInFD<P> restrlwefft;
     for (int m = 0; m < P::k + 1; m++)
         MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
     for (int i = 1; i < P::l; i++) {
         __builtin_prefetch(trgswfft[i].data());
-        DecompositionPolynomialFFT<P>(decpolyfft, trlwe[0], i);
+        TwistIFFT<P>(decpolyfft, decpoly[i]);
         for (int m = 0; m < P::k + 1; m++)
             FMAInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[i][m]);
     }
     for (int k = 1; k < P::k + 1; k++) {
+        Decomposition<P>(decpoly, trlwe[k]);
         for (int i = 0; i < P::l; i++) {
             __builtin_prefetch(trgswfft[i + k * P::l].data());
-            DecompositionPolynomialFFT<P>(decpolyfft, trlwe[k], i);
+            TwistIFFT<P>(decpolyfft, decpoly[i]);
             for (int m = 0; m < P::k + 1; m++)
                 FMAInFD<P::n>(restrlwefft[m], decpolyfft,
                               trgswfft[i + k * P::l][m]);
@@ -114,8 +93,10 @@ template <class P>
 void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWNTT<P> &trgswntt)
 {
-    DecomposedPolynomialNTT<P> decpolyntt;
-    DecompositionPolynomialNTT<P>(decpolyntt, trlwe[0], 0);
+    DecomposedPolynomial<P> decpoly;
+    Decomposition<P>(decpoly, trlwe[0]);
+    PolynomialNTT<P> decpolyntt;
+    TwistINTT<P>(decpolyntt, decpoly[0]);
     TRLWENTT<P> restrlwentt;
     for (int m = 0; m < P::k + 1; m++)
 #ifdef USE_HEXL
@@ -127,7 +108,7 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
             restrlwentt[m][i] = decpolyntt[i] * trgswntt[0][m][i];
 #endif
     for (int i = 1; i < P::l; i++) {
-        DecompositionPolynomialNTT<P>(decpolyntt, trlwe[0], i);
+        TwistINTT<P>(decpolyntt, decpoly[i]);
         for (int m = 0; m < P::k + 1; m++)
 #ifdef USE_HEXL
         {
@@ -144,9 +125,10 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                 restrlwentt[m][j] += decpolyntt[j] * trgswntt[i][m][j];
 #endif
     }
-    for (int k = 1; k < P::k + 1; k++)
+    for (int k = 1; k < P::k + 1; k++){
+        Decomposition<P>(decpoly, trlwe[k]);
         for (int i = 0; i < P::l; i++) {
-            DecompositionPolynomialNTT<P>(decpolyntt, trlwe[k], i);
+            TwistINTT<P>(decpolyntt, decpoly[i]);
             for (int m = 0; m < P::k + 1; m++)
 #ifdef USE_HEXL
             {
@@ -164,6 +146,7 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                         decpolyntt[j] * trgswntt[i + k * P::l][m][j];
 #endif
         }
+    }
     for (int k = 0; k < P::k + 1; k++) TwistNTT<P>(res[k], restrlwentt[k]);
 }
 #define INST(P)                               \
