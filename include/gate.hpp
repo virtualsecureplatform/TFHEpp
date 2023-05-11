@@ -180,7 +180,7 @@ void HomMUXwoSE(TRLWE<typename bkP::targetP> &res,
     for (int i = 0; i <= iksP::domainP::n; i++) temp0[i] = -cs[i] + c0[i];
     temp1[iksP::domainP::n] -= iksP::domainP::μ;
     temp0[iksP::domainP::n] -= iksP::domainP::μ;
-    TLWE<lvl0param> and1, and0;
+    TLWE<typename iksP::targetP> and1, and0;
     IdentityKeySwitch<iksP>(and1, temp1, ek.getiksk<iksP>());
     IdentityKeySwitch<iksP>(and0, temp0, ek.getiksk<iksP>());
     TRLWE<typename bkP::targetP> and0trlwe;
