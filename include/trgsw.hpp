@@ -46,12 +46,6 @@ void Decomposition(DecomposedPolynomial<P> &decpoly,
         }
     }
 }
-#define INST(P)                                                       \
-    extern template void Decomposition<P>(                         \
-        DecomposedPolynomial<P> & decpoly, const Polynomial<P> &poly, \
-        typename P::T randbits)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
@@ -83,11 +77,6 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     }
     for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
 }
-#define INST(P)                               \
-    extern template void trgswfftExternalProduct<P>( \
-        TRLWE<P> & res, const TRLWE<P> &trlwe, const TRGSWFFT<P> &trgswfft)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
@@ -149,11 +138,6 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     }
     for (int k = 0; k < P::k + 1; k++) TwistNTT<P>(res[k], restrlwentt[k]);
 }
-#define INST(P)                               \
-    extern template void trgswnttExternalProduct<P>( \
-        TRLWE<P> & res, const TRLWE<P> &trlwe, const TRGSWNTT<P> &trgswntt)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 constexpr std::array<typename P::T, P::l> hgen()
@@ -174,9 +158,6 @@ TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
             TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
     return trgswfft;
 }
-#define INST(P) template TRGSWFFT<P> ApplyFFT2trgsw<P>(const TRGSW<P> &trgsw)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
@@ -187,9 +168,6 @@ TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
             TwistINTT<P>(trgswntt[i][j], trgsw[i][j]);
     return trgswntt;
 }
-#define INST(P) extern template TRGSWNTT<P> ApplyNTT2trgsw<P>(const TRGSW<P> &trgsw)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 TRGSWNTT<P> TRGSW2NTT(const TRGSW<P> &trgsw)
@@ -204,10 +182,6 @@ TRGSWNTT<P> TRGSW2NTT(const TRGSW<P> &trgsw)
         }
     return trgswntt;
 }
-#define INST(P) extern template TRGSWNTT<P> TRGSW2NTT<P>(const TRGSW<P> &trgsw)
-// TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-INST(lvl1param);
-#undef INST
 
 template <class P>
 TRGSW<P> trgswSymEncrypt(const Polynomial<P> &p, const double α,
@@ -227,11 +201,6 @@ TRGSW<P> trgswSymEncrypt(const Polynomial<P> &p, const double α,
     }
     return trgsw;
 }
-#define INST(P)                                                  \
-    extern template TRGSW<P> trgswSymEncrypt<P>(const Polynomial<P> &p, \
-                                         const double α, const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const double α,
@@ -240,11 +209,6 @@ TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const double α,
     TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
     return ApplyFFT2trgsw<P>(trgsw);
 }
-#define INST(P)                                 \
-    extern template TRGSWFFT<P> trgswfftSymEncrypt<P>( \
-        const Polynomial<P> &p, const double α, const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 TRGSWNTT<P> trgswnttSymEncrypt(const Polynomial<P> &p, const double α,
@@ -253,9 +217,6 @@ TRGSWNTT<P> trgswnttSymEncrypt(const Polynomial<P> &p, const double α,
     TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
     return ApplyNTT2trgsw<P>(trgsw);
 }
-#define INST(P)                                 \
-    extern template TRGSWNTT<P> trgswnttSymEncrypt<P>( \
-        const Polynomial<P> &p, const double α, const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
+
+#include "externs/trgsw.hpp"
 }  // namespace TFHEpp

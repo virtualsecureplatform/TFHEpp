@@ -46,12 +46,6 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
         }
     }
 }
-#define INST(P)                                                               \
-    extern template void IdentityKeySwitch<P>(TLWE<typename P::targetP> & res,       \
-                                       const TLWE<typename P::domainP> &tlwe, \
-                                       const KeySwitchingKey<P> &ksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
-#undef INST
 
 template <class P>
 void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
@@ -103,12 +97,6 @@ void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
         }
     }
 }
-#define INST(P)                                                               \
-    extern template void SubsetIdentityKeySwitch<P>(TLWE<typename P::targetP> & res,       \
-                                       const TLWE<typename P::domainP> &tlwe, \
-                                       const SubsetKeySwitchingKey<P> &ksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
-#undef INST
 
 template <class P>
 void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
@@ -146,12 +134,6 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
         }
     }
 }
-#define INST(P)                                                           \
-    extern template void TLWE2TRLWEIKS<P>(TRLWE<typename P::targetP> & res,      \
-                                   const TLWE<typename P::domainP> &tlwe, \
-                                   const TLWE2TRLWEIKSKey<P> &iksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
-#undef INST
 
 template <class P>
 void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
@@ -167,11 +149,6 @@ void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
         res[1][i] = polyb[i] - res[1][i];
     }
 }
-#define INST(P)                                                      \
-    extern template void EvalAuto<P>(TRLWE<P> & res, const TRLWE<P> &trlwe, \
-                              const int d, const TRGSWFFT<P> &autokey)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
@@ -184,11 +161,6 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
         for (int j = 0; j < 2 * P::n; j++) res[0][j] += evaledauto[0][j];
     }
 }
-#define INST(P)                              \
-    extern template void AnnihilateKeySwitching<P>( \
-        TRLWE<P> & res, const TRLWE<P> &trlwe, const AnnihilateKey<P> &ahk)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P, uint num_func>
 void AnnihilatePrivateKeySwitching(
@@ -242,12 +214,6 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
         }
     }
 }
-#define INST(P)                                                           \
-    extern template void PrivKeySwitch<P>(TRLWE<typename P::targetP> & res,      \
-                                   const TLWE<typename P::domainP> &tlwe, \
-                                   const PrivateKeySwitchingKey<P> &privksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
-#undef INST
 
 template <class P>
 void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
@@ -277,10 +243,6 @@ void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
         }
     }
 }
-#define INST(P)                                                           \
-    extern template void SubsetPrivKeySwitch<P>(TRLWE<typename P::targetP> & res,      \
-                                   const TLWE<typename P::targetP> &tlwe, \
-                                   const SubsetPrivateKeySwitchingKey<P> &privksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
-#undef INST
+
+#include "externs/keyswitch.hpp"
 }  // namespace TFHEpp

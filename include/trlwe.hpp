@@ -21,10 +21,6 @@ TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
     }
     return c;
 }
-#define INST(P) \
-    extern template TRLWE<P> trlweSymEncryptZero<P>(const double α, const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p, const double α,
@@ -34,11 +30,6 @@ TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p, const double 
     for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
     return c;
 }
-#define INST(P)                                                               \
-    extern template TRLWE<P> trlweSymEncrypt<P>(const std::array<typename P::T, P::n> &p, \
-                                         const double α, const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 TRLWE<P> trlweSymIntEncrypt(const std::array<typename P::T, P::n> &p, const double α,
@@ -49,12 +40,6 @@ TRLWE<P> trlweSymIntEncrypt(const std::array<typename P::T, P::n> &p, const doub
         c[P::k][i] += static_cast<typename P::T>(P::Δ * p[i]);
     return c;
 }
-#define INST(P)                                              \
-    extern template TRLWE<P> trlweSymIntEncrypt<P>(                 \
-        const std::array<typename P::T, P::n> &p, const double α, \
-        const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
@@ -74,11 +59,6 @@ std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
                    phase[i]) > 0;
     return p;
 }
-#define INST(P)                                                      \
-    extern template std::array<bool, P::n> trlweSymDecrypt<P>(const TRLWE<P> &c, \
-                                                  const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
@@ -98,11 +78,6 @@ Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
                P::plain_modulus;
     return p;
 }
-#define INST(P)                                                     \
-    extern template Polynomial<P> trlweSymIntDecrypt<P>(const TRLWE<P> &c, \
-                                                 const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
@@ -115,11 +90,6 @@ void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
     }
     tlwe[P::k * P::n] = trlwe[P::k][index];
 }
-#define INST(P)                                                                \
-    extern template void SampleExtractIndex<P>(TLWE<P> & tlwe, const TRLWE<P> &trlwe, \
-                                        const int index)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
 
 template <class P>
 void InvSampleExtractIndex(TRLWE<P> &trlwe, const TLWE<P> &tlwe,
@@ -134,9 +104,6 @@ void InvSampleExtractIndex(TRLWE<P> &trlwe, const TLWE<P> &tlwe,
     trlwe[P::k] = {};
     trlwe[P::k][index] = tlwe[P::k * P::n];
 }
-#define INST(P)                             \
-    extern template void InvSampleExtractIndex<P>( \
-        TRLWE<P> & trlwe, const TLWE<P> &tlwe, const int index)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
+
+#include "externs/trlwe.hpp"
 }  // namespace TFHEpp

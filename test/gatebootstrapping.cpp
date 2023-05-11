@@ -30,7 +30,7 @@ int main()
     start = std::chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::GateBootstrapping<iksP, bkP>(bootedtlwe[test], tlwe[test], ek);
+        TFHEpp::GateBootstrapping<iksP, bkP, bkP::targetP::μ>(bootedtlwe[test], tlwe[test], ek);
     }
 
     end = std::chrono::system_clock::now();

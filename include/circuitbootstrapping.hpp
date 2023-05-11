@@ -41,12 +41,6 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
                 ek.getprivksk<privksP>("privksk4cb_" + std::to_string(k)));
     }
 }
-#define INST(iksP, bkP, privksP)                            \
-    extern template void CircuitBootstrapping<iksP, bkP, privksP>( \
-        TRGSW<typename privksP::targetP> & trgsw,           \
-        const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
-TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
-#undef INST
 
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
@@ -59,12 +53,6 @@ void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
         for (int j = 0; j < privksP::targetP::k + 1; j++)
             TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
 }
-#define INST(iksP, bkP, privksP)                               \
-    extern template void CircuitBootstrappingFFT<iksP, bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & trgswfft,        \
-        const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
-TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
-#undef INST
 
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingSub(TRGSW<typename privksP::targetP> &trgsw,
@@ -89,12 +77,6 @@ void CircuitBootstrappingSub(TRGSW<typename privksP::targetP> &trgsw,
         }
     }
 }
-#define INST(iksP, bkP, privksP)                            \
-    extern template void CircuitBootstrappingSub<iksP, bkP, privksP>( \
-        TRGSW<typename privksP::targetP> & trgsw,           \
-        const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
-TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING_SUBIKS(INST)
-#undef INST
 
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingSubFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
@@ -107,12 +89,6 @@ void CircuitBootstrappingSubFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
         for (int j = 0; j < privksP::targetP::k + 1; j++)
             TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
 }
-#define INST(iksP, bkP, privksP)                               \
-    extern template void CircuitBootstrappingSubFFT<iksP, bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & trgswfft,        \
-        const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
-TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING_SUBIKS(INST)
-#undef INST
 
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFTInv(
@@ -124,12 +100,6 @@ void CircuitBootstrappingFFTInv(
     for (int i = 0; i <= iksP::domainP::n; i++) invtlwe[i] = -tlwe[i];
     CircuitBootstrappingFFT<iksP, bkP, privksP>(invtrgswfft, invtlwe, ek);
 }
-#define INST(iksP, bkP, privksP)                                  \
-    extern template void CircuitBootstrappingFFTInv<iksP, bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & invtrgswfft,        \
-        const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
-TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
-#undef INST
 
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFTwithInv(
@@ -156,12 +126,6 @@ void CircuitBootstrappingFFTwithInv(
             TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j],
                                                  trgsw[i][j]);
 }
-#define INST(iksP, bkP, privksP)                                      \
-    extern template void CircuitBootstrappingFFTwithInv<iksP, bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & trgswfft,               \
-        TRGSWFFT<typename privksP::targetP> & invtrgswfft,            \
-        const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
-TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
-#undef INST
+#include "externs/circuitbootstrapping.hpp"
 
 }  // namespace TFHEpp

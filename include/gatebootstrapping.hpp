@@ -140,14 +140,6 @@ void GateBootstrappingTLWE2TLWEFFT(
     BlindRotate<P>(acc, tlwe, bkfft, testvector);
     SampleExtractIndex<typename P::targetP>(res, acc, 0);
 }
-#define INST(P)                                     \
-    extern template void GateBootstrappingTLWE2TLWEFFT<P>( \
-        TLWE<typename P::targetP> & res,            \
-        const TLWE<typename P::domainP> &tlwe,      \
-        const BootstrappingKeyFFT<P> &bkfft,        \
-        const Polynomial<typename P::targetP> &testvector)
-TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
-#undef INST
 
 template <class P>
 void GateBootstrappingTLWE2TLWENTT(
@@ -180,9 +172,9 @@ constexpr Polynomial<P> μpolygen()
     return poly;
 }
 
-template <class bkP = TFHEpp::lvl01param,
-          typename bkP::targetP::T μ = lvl1param::μ,
-          class iksP = TFHEpp::lvl10param>
+template <class bkP,
+          typename bkP::targetP::T μ,
+          class iksP>
 void GateBootstrapping(TLWE<typename bkP::domainP> &res,
                        const TLWE<typename bkP::domainP> &tlwe,
                        const EvalKey &ek)
@@ -193,8 +185,8 @@ void GateBootstrapping(TLWE<typename bkP::domainP> &res,
     IdentityKeySwitch<iksP>(res, tlwelvl1, ek.getiksk<iksP>());
 }
 
-template <class iksP = TFHEpp::lvl10param, class bkP = TFHEpp::lvl01param,
-          typename bkP::targetP::T μ = lvl1param::μ>
+template <class iksP, class bkP,
+          typename bkP::targetP::T μ>
 void GateBootstrapping(TLWE<typename iksP::domainP> &res,
                        const TLWE<typename iksP::domainP> &tlwe,
                        const EvalKey &ek)
@@ -224,4 +216,6 @@ void GateBootstrappingNTT(TLWE<lvl1param> &res, const TLWE<lvl1param> &tlwe,
     GateBootstrappingTLWE2TLWENTT<lvl01param>(res, tlwelvl0, *ek.bknttlvl01,
                                               μpolygen<lvl1param, μ>());
 }
+
+#include "externs/gatebootstrapping.hpp"
 }  // namespace TFHEpp
