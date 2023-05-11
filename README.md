@@ -5,10 +5,10 @@ TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp withou
 
 # Supported Compiler
 
-This code includes utf-8 identifiers like α and using `extern template`. Therefore, GCC10 or later are primarily supported compilers. GCC9 is not supported because of the lack of utf-8 support. Clang compilers are not supported because it seems to be not workable with `extern template` because of the mimatch of the name mangling.
+This code includes utf-8 identifiers like α and using `extern template`. Therefore, GCC10 or later are primarily supported compilers. GCC9 is not supported because of the lack of utf-8 support. Clang compilers are not supported because it seems to be not workable with `extern template` because of the mismatch of the name mangling.
 
 # Parameter
-The default parameter is 128 bit security. Please add -DUSE_80BIT_SECURITY=ON to use faster but less secure parameter.
+The default parameter is 128-bit security. Please add -DUSE_80BIT_SECURITY=ON to use a faster but less secure parameter.
 
 # FFTW3 Support
 Some environments which do not support AVX2 cannot use spqlios. Instead of spqlios, TFHEpp can use fftw3.
@@ -19,10 +19,10 @@ Codes under thirdparties directory contain third-party libraries, Randen, Cereal
 
 ## Randen
 TFHEpp uses this as a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG). Original repository is [here](https://github.com/google/randen).
-I just removed some unnecessary codes, no modification.
+I just removed some unnecessary codes, with no modification.
 
 ## Cereal
-cereal is a header-only C++11 serialization library. TFHEpp uses this to export ciphertexts and keys. Cereal is treated by git submodule.
+cereal is a header-only C++11 serialization library. TFHEpp uses this to export ciphertexts and keys. Cereal is treated by the git submodule.
 
 ## SPQLIOS
 SPQLIOS is the FFT library using AVX2 that is dedicated to the ring R\[X\]/(X^N+1) for N a power of 2. These codes come from [experimental-tfhe](https://github.com/tfhe/experimental-tfhe/tree/master/circuit-bootstrapping/src/spqlios). We just renamed instances to adapt with our codes.
