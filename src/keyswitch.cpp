@@ -1,4 +1,4 @@
-#include<keyswitch.hpp>
+#include <keyswitch.hpp>
 
 namespace TFHEpp {
 
@@ -9,10 +9,11 @@ namespace TFHEpp {
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
-#define INST(P)                                                               \
-    template void SubsetIdentityKeySwitch<P>(TLWE<typename P::targetP> & res,       \
-                                       const TLWE<typename P::domainP> &tlwe, \
-                                       const SubsetKeySwitchingKey<P> &ksk)
+#define INST(P)                                \
+    template void SubsetIdentityKeySwitch<P>(  \
+        TLWE<typename P::targetP> & res,       \
+        const TLWE<typename P::domainP> &tlwe, \
+        const SubsetKeySwitchingKey<P> &ksk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
@@ -42,10 +43,11 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                           \
-    template void SubsetPrivKeySwitch<P>(TRLWE<typename P::targetP> & res,      \
-                                   const TLWE<typename P::targetP> &tlwe, \
-                                   const SubsetPrivateKeySwitchingKey<P> &privksk)
+#define INST(P)                                \
+    template void SubsetPrivKeySwitch<P>(      \
+        TRLWE<typename P::targetP> & res,      \
+        const TLWE<typename P::targetP> &tlwe, \
+        const SubsetPrivateKeySwitchingKey<P> &privksk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 

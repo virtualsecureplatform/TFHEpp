@@ -86,7 +86,7 @@ void bknttgen(BootstrappingKeyNTT<P>& bkntt, const SecretKey& sk)
 }
 
 template <class P>
-void tlwe2trlweikskkgen(TLWE2TRLWEIKSKey<P> &iksk, const SecretKey &sk)
+void tlwe2trlweikskkgen(TLWE2TRLWEIKSKey<P>& iksk, const SecretKey& sk)
 {
     for (int i = 0; i < P::domainP::n; i++)
         for (int j = 0; j < P::t; j++)
@@ -102,7 +102,7 @@ void tlwe2trlweikskkgen(TLWE2TRLWEIKSKey<P> &iksk, const SecretKey &sk)
 }
 
 template <class P>
-inline void annihilatekeyegen(AnnihilateKey<P> &ahk, const SecretKey &sk)
+inline void annihilatekeyegen(AnnihilateKey<P>& ahk, const SecretKey& sk)
 {
     for (int i = 0; i < P::nbit; i++) {
         Polynomial<P> autokey;
@@ -161,28 +161,30 @@ template <class P>
 void subikskgen(SubsetKeySwitchingKey<P>& ksk, const SecretKey& sk)
 {
     Key<typename P::targetP> subkey;
-    for(int i = 0; i < P::targetP::n; i++) subkey[i] = sk.key.get<typename P::domainP>()[i];
-    for (int i = 0; i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++)
+    for (int i = 0; i < P::targetP::n; i++)
+        subkey[i] = sk.key.get<typename P::domainP>()[i];
+    for (int i = 0;
+         i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++)
         for (int j = 0; j < P::t; j++)
             for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
-                ksk[i][j][k] =
-                    tlweSymEncrypt<typename P::targetP>(
-                        sk.key.get<
-                            typename P::domainP>()[P::targetP::k * P::targetP::n + i] *
-                            (k + 1) *
-                            (1ULL << (numeric_limits<
-                                            typename P::targetP::T>::digits -
-                                        (j + 1) * P::basebit)),
-                        P::α, subkey);
+                ksk[i][j][k] = tlweSymEncrypt<typename P::targetP>(
+                    sk.key.get<typename P::domainP>()[P::targetP::k *
+                                                          P::targetP::n +
+                                                      i] *
+                        (k + 1) *
+                        (1ULL
+                         << (numeric_limits<typename P::targetP::T>::digits -
+                             (j + 1) * P::basebit)),
+                    P::α, subkey);
 }
 
 template <class P>
-void privkskgen(PrivateKeySwitchingKey<P> &privksk,
-                const Polynomial<typename P::targetP> &func,
-                const SecretKey &sk);
+void privkskgen(PrivateKeySwitchingKey<P>& privksk,
+                const Polynomial<typename P::targetP>& func,
+                const SecretKey& sk);
 
 template <class P>
-inline relinKey<P> relinKeygen(const Key<P> &key)
+inline relinKey<P> relinKeygen(const Key<P>& key)
 {
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
 
@@ -191,7 +193,7 @@ inline relinKey<P> relinKeygen(const Key<P> &key)
     for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
     PolyMulNaive<P>(keysquare, partkey, partkey);
     relinKey<P> relinkey;
-    for (TRLWE<P> &ctxt : relinkey) ctxt = trlweSymEncryptZero<P>(P::α, key);
+    for (TRLWE<P>& ctxt : relinkey) ctxt = trlweSymEncryptZero<P>(P::α, key);
     for (int i = 0; i < P::l; i++)
         for (int j = 0; j < P::n; j++)
             relinkey[i][1][j] +=
@@ -201,8 +203,8 @@ inline relinKey<P> relinKeygen(const Key<P> &key)
 
 template <class P>
 void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
-                const Polynomial<typename P::targetP>& func,
-                const SecretKey& sk)
+                   const Polynomial<typename P::targetP>& func,
+                   const SecretKey& sk)
 {
     std::array<typename P::targetP::T, P::targetP::k * P::targetP::n + 1> key;
     for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
@@ -225,7 +227,7 @@ void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
 }
 
 template <class P>
-inline relinKeyFFT<P> relinKeyFFTgen(const Key<P> &key)
+inline relinKeyFFT<P> relinKeyFFTgen(const Key<P>& key)
 {
     relinKey<P> relinkey = relinKeygen<P>(key);
     relinKeyFFT<P> relinkeyfft;
@@ -258,22 +260,22 @@ struct EvalKey {
     std::unordered_map<std::string,
                        std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>>
         privksklvl22;
-    std::unordered_map<std::string,
-                       std::unique_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>>
+    std::unordered_map<
+        std::string, std::unique_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>>
         subprivksklvl21;
 
     EvalKey(SecretKey sk) { params = sk.params; }
     EvalKey() {}
 
     template <class Archive>
-    void serialize(Archive &archive)
+    void serialize(Archive& archive)
     {
         archive(params, bklvl01, bklvl02, bkfftlvl01, bkfftlvl02, bknttlvl01,
                 bknttlvl02, iksklvl10, iksklvl11, iksklvl20, iksklvl21,
                 iksklvl22, privksklvl11, privksklvl21, privksklvl22);
     }
 
-    //emplace keys
+    // emplace keys
     template <class P>
     void emplacebk(const SecretKey& sk)
     {
@@ -309,19 +311,21 @@ struct EvalKey {
             bknttlvl02 = std::make_unique<BootstrappingKeyNTT<lvl02param>>();
             bknttgen<lvl02param>(*bknttlvl02, sk);
         }
-    } 
+    }
     template <class P>
     void emplacebk2bkfft()
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
             bkfftlvl01 = std::make_unique<BootstrappingKeyFFT<lvl01param>>();
             for (int i = 0; i < lvl01param::domainP::n; i++)
-                (*bkfftlvl01)[i][0] = ApplyFFT2trgsw<lvl1param>((*bklvl01)[i][0]);
+                (*bkfftlvl01)[i][0] =
+                    ApplyFFT2trgsw<lvl1param>((*bklvl01)[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
             bkfftlvl02 = std::make_unique<BootstrappingKeyFFT<lvl02param>>();
             for (int i = 0; i < lvl02param::domainP::n; i++)
-                (*bkfftlvl02)[i][0] = ApplyFFT2trgsw<lvl2param>((*bklvl02)[i][0]);
+                (*bkfftlvl02)[i][0] =
+                    ApplyFFT2trgsw<lvl2param>((*bklvl02)[i][0]);
         }
     }
     template <class P>
@@ -358,14 +362,15 @@ struct EvalKey {
     void emplacesubiksk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
-            subiksklvl21 = std::make_unique<SubsetKeySwitchingKey<lvl21param>>();
+            subiksklvl21 =
+                std::make_unique<SubsetKeySwitchingKey<lvl21param>>();
             subikskgen<lvl21param>(*subiksklvl21, sk);
         }
     }
     template <class P>
     void emplaceprivksk(const std::string& key,
-                                const Polynomial<typename P::targetP>& func,
-                                const SecretKey& sk)
+                        const Polynomial<typename P::targetP>& func,
+                        const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
             privksklvl21[key] =
@@ -380,8 +385,8 @@ struct EvalKey {
     }
     template <class P>
     void emplacesubprivksk(const std::string& key,
-                                const Polynomial<typename P::targetP>& func,
-                                const SecretKey& sk)
+                           const Polynomial<typename P::targetP>& func,
+                           const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
             subprivksklvl21[key] =
@@ -399,7 +404,8 @@ struct EvalKey {
                     -sk.key.get<typename P::targetP>()[k * P::targetP::n + i];
             emplaceprivksk<P>("privksk4cb_" + std::to_string(k), partkey, sk);
         }
-        emplaceprivksk<P>("privksk4cb_" + std::to_string(P::targetP::k), {1}, sk);
+        emplaceprivksk<P>("privksk4cb_" + std::to_string(P::targetP::k), {1},
+                          sk);
     }
     template <class P>
     void emplacesubprivksk4cb(const SecretKey& sk)
@@ -409,12 +415,14 @@ struct EvalKey {
             for (int i = 0; i < P::targetP::n; i++)
                 partkey[i] =
                     -sk.key.get<typename P::targetP>()[k * P::targetP::n + i];
-            emplacesubprivksk<P>("subprivksk4cb_" + std::to_string(k), partkey, sk);
+            emplacesubprivksk<P>("subprivksk4cb_" + std::to_string(k), partkey,
+                                 sk);
         }
-        emplacesubprivksk<P>("subprivksk4cb_" + std::to_string(P::targetP::k), {1}, sk);
+        emplacesubprivksk<P>("subprivksk4cb_" + std::to_string(P::targetP::k),
+                             {1}, sk);
     }
 
-    //get keys
+    // get keys
     template <class P>
     BootstrappingKey<P>& getbk() const
     {

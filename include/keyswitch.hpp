@@ -3,8 +3,8 @@
 #include <array>
 
 #include "params.hpp"
-#include "utils.hpp"
 #include "trgsw.hpp"
+#include "utils.hpp"
 
 namespace TFHEpp {
 
@@ -49,8 +49,8 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
 
 template <class P>
 void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
-                       const TLWE<typename P::domainP> &tlwe,
-                       const SubsetKeySwitchingKey<P> &ksk)
+                             const TLWE<typename P::domainP> &tlwe,
+                             const SubsetKeySwitchingKey<P> &ksk)
 {
     constexpr typename P::domainP::T prec_offset =
         1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
@@ -61,31 +61,32 @@ void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
         std::numeric_limits<typename P::domainP::T>::digits;
     constexpr uint32_t target_digit =
         std::numeric_limits<typename P::targetP::T>::digits;
-    if constexpr (domain_digit == target_digit){
-        for(int i = 0; i < P::targetP::k * P::targetP::n; i++)
+    if constexpr (domain_digit == target_digit) {
+        for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
             res[i] = tlwe[i];
         res[P::targetP::k * P::targetP::n] =
             tlwe[P::domainP::k * P::domainP::n];
     }
-    else if constexpr (domain_digit > target_digit){
-        for(int i = 0; i < P::targetP::k * P::targetP::n; i++)
-            res[i] =
-                (tlwe[i] +
-                (1ULL << (domain_digit - target_digit - 1))) >>
-                (domain_digit - target_digit);
+    else if constexpr (domain_digit > target_digit) {
+        for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
+            res[i] = (tlwe[i] + (1ULL << (domain_digit - target_digit - 1))) >>
+                     (domain_digit - target_digit);
         res[P::targetP::k * P::targetP::n] =
-                (tlwe[P::domainP::k * P::domainP::n] +
-                (1ULL << (domain_digit - target_digit - 1))) >>
-                (domain_digit - target_digit);
+            (tlwe[P::domainP::k * P::domainP::n] +
+             (1ULL << (domain_digit - target_digit - 1))) >>
+            (domain_digit - target_digit);
     }
-    else if constexpr (domain_digit < target_digit){
-        for(int i = 0; i < P::targetP::k * P::targetP::n; i++)
+    else if constexpr (domain_digit < target_digit) {
+        for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
             res[i] = tlwe[i] << (target_digit - domain_digit);
         res[P::targetP::k * P::targetP::n] = tlwe[P::domainP::k * P::domainP::n]
                                              << (target_digit - domain_digit);
     }
-    for (int i = 0; i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++) {
-        const typename P::domainP::T aibar = tlwe[i+P::targetP::n] + prec_offset;
+    for (int i = 0;
+         i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n;
+         i++) {
+        const typename P::domainP::T aibar =
+            tlwe[i + P::targetP::n] + prec_offset;
         for (int j = 0; j < P::t; j++) {
             const uint32_t aij =
                 (aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
@@ -116,10 +117,11 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
         res[P::targetP::k][0] = tlwe[P::domainP::n];
     else if constexpr (domain_digit > target_digit)
         res[P::targetP::k][0] = (tlwe[P::domainP::n] +
-                     (1ULL << (domain_digit - target_digit - 1))) >>
-                    (domain_digit - target_digit);
+                                 (1ULL << (domain_digit - target_digit - 1))) >>
+                                (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
-        res[P::targetP::k][0] = tlwe[P::domainP::n] << (target_digit - domain_digit);
+        res[P::targetP::k][0] = tlwe[P::domainP::n]
+                                << (target_digit - domain_digit);
     for (int i = 0; i < P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + prec_offset;
         for (int j = 0; j < P::t; j++) {
@@ -128,8 +130,8 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
                            (j + 1) * P::basebit)) &
                 mask;
             if (aij != 0)
-                for(int l = 0; l < P::targetP::k+1; l++)
-                    for (int k = 0; k < P::targetP::n; k++) 
+                for (int l = 0; l < P::targetP::k + 1; l++)
+                    for (int k = 0; k < P::targetP::n; k++)
                         res[l][k] -= iksk[i][j][aij - 1][l][k];
         }
     }
@@ -217,8 +219,8 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
 
 template <class P>
 void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
-                   const TLWE<typename P::targetP> &tlwe,
-                   const SubsetPrivateKeySwitchingKey<P> &privksk)
+                         const TLWE<typename P::targetP> &tlwe,
+                         const SubsetPrivateKeySwitchingKey<P> &privksk)
 {
     constexpr uint32_t mask = (1 << P::basebit) - 1;
     constexpr uint64_t prec_offset =

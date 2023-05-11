@@ -39,9 +39,10 @@ void combUROMUX(TRLWE<lvl1param> &res,
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
-void combRAMUX(std::vector<TRLWE<lvl1param>> &res,
-               const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
-               const std::vector<array<TRLWE<lvl1param>, 1 << address_bit>> &data)
+void combRAMUX(
+    std::vector<TRLWE<lvl1param>> &res,
+    const array<TRGSWFFT<lvl1param>, address_bit> &invaddress,
+    const std::vector<array<TRLWE<lvl1param>, 1 << address_bit>> &data)
 {
     constexpr uint32_t words = 1U << words_bit;
     constexpr uint32_t num_trlwe = 1 << address_bit;
@@ -69,11 +70,9 @@ void combRAMUX(std::vector<TRLWE<lvl1param>> &res,
 }
 
 template <uint32_t address_bit, uint32_t words_bit>
-void combWRAM(
-    std::vector<array<TRLWE<lvl1param>, 1U << address_bit>> &encram,
-    const array<array<TRGSWFFT<lvl1param>, address_bit>, 2> &address,
-    const std::vector<TRLWE<lvl1param>> &encwritep,
-    const EvalKey &ek)
+void combWRAM(std::vector<array<TRLWE<lvl1param>, 1U << address_bit>> &encram,
+              const array<array<TRGSWFFT<lvl1param>, address_bit>, 2> &address,
+              const std::vector<TRLWE<lvl1param>> &encwritep, const EvalKey &ek)
 {
     constexpr uint32_t memsize = 1U << address_bit;
     constexpr uint32_t words = 1U << words_bit;
@@ -158,10 +157,11 @@ int main()
             for (int i = 0; i < words; i++)
                 writep[i] = ramp[addressint * words + i] > 0 ? 0 : 1;
 
-            std::array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2> *bootedTGSW =
-                new array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
-                          2>;  // MSB of address is evaluated by HomMUX, not
-                               // CMUX.
+            std::array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2>
+                *bootedTGSW =
+                    new array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
+                              2>;  // MSB of address is evaluated by HomMUX, not
+                                   // CMUX.
             vector<TLWE<lvl1param>> encaddress(address_bit);
             std::vector<TRLWE<lvl1param>> encrom(numromtrlwe);
             std::vector<array<TRLWE<lvl1param>, numramtrlwe>> encram(words);

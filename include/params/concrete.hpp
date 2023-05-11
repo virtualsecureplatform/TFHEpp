@@ -49,7 +49,7 @@ struct lvl2param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = 0;
     static const std::uint32_t nbit = 9;  // dimension must be a power of 2 for
-                                           // ease of polynomial multiplication.
+                                          // ease of polynomial multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension
     static constexpr std::uint32_t k = 3;
     static constexpr std::uint32_t l = 3;
@@ -92,7 +92,7 @@ struct lvl20param {
 
 struct lvl21param {
     static constexpr std::uint32_t t = 6;  // number of addition in
-                                            // keyswitching
+                                           // keyswitching
     static constexpr std::uint32_t basebit =
         4;  // how many bit should be encrypted in keyswitching key
     static const inline double α = lvl1param::α;  // key noise

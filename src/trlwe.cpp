@@ -6,22 +6,23 @@ namespace TFHEpp {
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                               \
-    template TRLWE<P> trlweSymEncrypt<P>(const std::array<typename P::T, P::n> &p, \
-                                         const double α, const Key<P> &key)
-TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
-#undef INST
-
-#define INST(P)                                              \
-    template TRLWE<P> trlweSymIntEncrypt<P>(                 \
+#define INST(P)                                                   \
+    template TRLWE<P> trlweSymEncrypt<P>(                         \
         const std::array<typename P::T, P::n> &p, const double α, \
         const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                      \
+#define INST(P)                                                   \
+    template TRLWE<P> trlweSymIntEncrypt<P>(                      \
+        const std::array<typename P::T, P::n> &p, const double α, \
+        const Key<P> &key)
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
+#undef INST
+
+#define INST(P)                                                           \
     template std::array<bool, P::n> trlweSymDecrypt<P>(const TRLWE<P> &c, \
-                                                  const Key<P> &key)
+                                                       const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

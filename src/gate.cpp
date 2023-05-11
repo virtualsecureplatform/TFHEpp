@@ -138,7 +138,6 @@ INST(lvl1param);
 INST(lvl0param);
 #undef INST
 
-
 #define INST(bkP)                                                              \
     template void HomMUXwoIKSandSE<bkP>(TRLWE<typename bkP::targetP> & res,    \
                                         const TLWE<typename bkP::domainP> &cs, \
@@ -148,7 +147,6 @@ INST(lvl0param);
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
-
 #define INST(iksP, bkP)                         \
     template void HomMUXwoSE<iksP, bkP>(        \
         TRLWE<typename bkP::targetP> & res,     \
@@ -157,6 +155,5 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
         const TLWE<typename iksP::domainP> &c0, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE(INST)
 #undef INST
-
 
 }  // namespace TFHEpp

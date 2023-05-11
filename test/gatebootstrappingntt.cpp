@@ -24,20 +24,21 @@ int main()
     for (int i = 0; i < num_test; i++) p[i] = binary(engine) > 0;
     for (int i = 0; i < num_test; i++)
         tlwe[i] = TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
-            p[i] ? iksP::domainP::μ : -iksP::domainP::μ,
-            iksP::domainP::α, sk.key.get<typename iksP::domainP>());
+            p[i] ? iksP::domainP::μ : -iksP::domainP::μ, iksP::domainP::α,
+            sk.key.get<typename iksP::domainP>());
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::GateBootstrappingNTT<iksP,bkP,bkP::targetP::μ>(bootedtlwe[test], tlwe[test], ek);
+        TFHEpp::GateBootstrappingNTT<iksP, bkP, bkP::targetP::μ>(
+            bootedtlwe[test], tlwe[test], ek);
     }
 
     end = std::chrono::system_clock::now();
     for (int i = 0; i < num_test; i++) {
-        bool p2 = TFHEpp::tlweSymDecrypt<typename bkP::targetP>(bootedtlwe[i],
-                                                            sk.key.get<typename bkP::targetP>());
+        bool p2 = TFHEpp::tlweSymDecrypt<typename bkP::targetP>(
+            bootedtlwe[i], sk.key.get<typename bkP::targetP>());
         assert(p[i] == p2);
     }
     std::cout << "Passed" << std::endl;

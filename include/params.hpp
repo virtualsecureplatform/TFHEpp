@@ -57,7 +57,7 @@ using PolynomialInFD = std::array<double, P::n>;
 template <class P>
 using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
 template <class P>
-using DecomposedPolynomial = std::array<Polynomial<P>,P::l>;
+using DecomposedPolynomial = std::array<Polynomial<P>, P::l>;
 
 template <class P>
 using TRLWE = std::array<Polynomial<P>, P::k + 1>;
@@ -103,7 +103,6 @@ using BootstrappingKeyFFT =
 template <class P>
 using BootstrappingKeyNTT =
     std::array<TRGSWNTT<typename P::targetP>, P::domainP::k * P::domainP::n>;
-
 
 template <class P>
 using KeySwitchingKey = std::array<
@@ -169,5 +168,5 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
     fun(lvl10param, lvl02param, lvl21param);                     \
     fun(lvl10param, lvl02param, lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING_SUBIKS(fun) \
-    fun(lvl10param, lvl02param, lvl21param);                     
+    fun(lvl10param, lvl02param, lvl21param);
 }  // namespace TFHEpp

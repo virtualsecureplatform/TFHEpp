@@ -2,9 +2,9 @@
 
 namespace TFHEpp {
 #define INST(P)                                                       \
-    template void Decomposition<P>(                         \
-        DecomposedPolynomial<P> & decpoly, const Polynomial<P> &poly, \
-        typename P::T randbits)
+    template void Decomposition<P>(DecomposedPolynomial<P> & decpoly, \
+                                   const Polynomial<P> &poly,         \
+                                   typename P::T randbits)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

@@ -53,7 +53,7 @@ inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
                            const relinKeyFFT<P> &relinkeyfft)
 {
     DecomposedPolynomial<P> decvec;
-    Decomposition<P>(decvec,poly);
+    Decomposition<P>(decvec, poly);
     PolynomialInFD<P> decvecfft;
     TwistIFFT<P>(decvecfft, decvec[0]);
     TRLWEInFD<P> resfft;

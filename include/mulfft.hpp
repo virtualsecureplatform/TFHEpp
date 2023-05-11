@@ -54,7 +54,7 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
                          TFHEpp::lvl1param::nbit>(res, a, (*ntttablelvl1)[0],
                                                   (*ntttwistlvl1)[0]);
 #endif
-    else if constexpr (std::is_same_v<typename P::T, uint64_t>){
+    else if constexpr (std::is_same_v<typename P::T, uint64_t>) {
         cuHEpp::TwistNTT<typename TFHEpp::lvl2param::T,
                          TFHEpp::lvl2param::nbit>(res, a, (*ntttablelvl2)[0],
                                                   (*ntttwistlvl2)[0]);
@@ -106,9 +106,8 @@ inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
                                                   (*ntttwistlvl1)[1]);
 #endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
-        cuHEpp::TwistINTT<typename P::T,
-                          P::nbit>(res, a, (*ntttablelvl2)[1],
-                                                   (*ntttwistlvl2)[1]);
+        cuHEpp::TwistINTT<typename P::T, P::nbit>(res, a, (*ntttablelvl2)[1],
+                                                  (*ntttwistlvl2)[1]);
     else
         static_assert(false_v<typename P::T>, "Undefined TwistINTT!");
 }

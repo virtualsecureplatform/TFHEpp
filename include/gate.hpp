@@ -1,8 +1,8 @@
 #pragma once
 
 #include "cloudkey.hpp"
-#include "keyswitch.hpp"
 #include "gatebootstrapping.hpp"
+#include "keyswitch.hpp"
 
 namespace TFHEpp {
 template <class P, int casign, int cbsign, uint64_t offset>
@@ -12,8 +12,10 @@ inline void HomGate(TLWE<P> &res, const TLWE<P> &ca, const TLWE<P> &cb,
     for (int i = 0; i <= P::k * P::n; i++)
         res[i] = casign * ca[i] + cbsign * cb[i];
     res[P::k * P::n] += offset;
-    if constexpr (std::is_same_v<P, lvl1param>) GateBootstrapping<lvl10param,lvl01param,lvl1param::μ>(res, res, ek);
-    else if constexpr (std::is_same_v<P, lvl0param>) GateBootstrapping<lvl01param,lvl1param::μ,lvl10param>(res, res, ek);
+    if constexpr (std::is_same_v<P, lvl1param>)
+        GateBootstrapping<lvl10param, lvl01param, lvl1param::μ>(res, res, ek);
+    else if constexpr (std::is_same_v<P, lvl0param>)
+        GateBootstrapping<lvl01param, lvl1param::μ, lvl10param>(res, res, ek);
 }
 
 // No input

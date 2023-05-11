@@ -1,7 +1,7 @@
 #pragma once
 
-#include "params.hpp"
 #include "mulfft.hpp"
+#include "params.hpp"
 
 namespace TFHEpp {
 template <class P>
@@ -23,8 +23,8 @@ TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
 }
 
 template <class P>
-TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p, const double α,
-                         const Key<P> &key)
+TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
+                         const double α, const Key<P> &key)
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(α, key);
     for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
@@ -32,8 +32,8 @@ TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p, const double 
 }
 
 template <class P>
-TRLWE<P> trlweSymIntEncrypt(const std::array<typename P::T, P::n> &p, const double α,
-                            const Key<P> &key)
+TRLWE<P> trlweSymIntEncrypt(const std::array<typename P::T, P::n> &p,
+                            const double α, const Key<P> &key)
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(α, key);
     for (int i = 0; i < P::n; i++)

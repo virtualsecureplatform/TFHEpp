@@ -132,10 +132,13 @@ inline void TwistMulInvert(std::array<INTorus, 1 << Nbit> &res,
     constexpr uint32_t N = 1 << Nbit;
     if constexpr (std::is_same_v<T, uint64_t>) {
         for (int i = 0; i < N; i++)
-            res[i] = INTorus(static_cast<uint64_t>(
-                                 ((static_cast<__uint128_t>(a[i]) * P)+(1ULL<<63)) >> 64),
-                             true) *
-                     twist[i];
+            res[i] =
+                INTorus(
+                    static_cast<uint64_t>(
+                        ((static_cast<__uint128_t>(a[i]) * P) + (1ULL << 63)) >>
+                        64),
+                    true) *
+                twist[i];
     }
     else {
         for (int i = 0; i < N; i++) res[i] = INTorus(a[i], false) * twist[i];
@@ -208,10 +211,11 @@ inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
     const INTorus invN = InvPow2(Nbit);
     constexpr uint32_t N = 1 << Nbit;
     if constexpr (std::is_same_v<T, uint64_t>) {
-        for (int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++) {
             const __uint128_t mul = (a[i] * twist[i] * invN).value;
             // multiply (2⁶⁴+2³²-1)/2⁶⁴ ≈ 2⁶⁴/P
-            res[i] = static_cast<T>(((mul<<64)+(mul<<32)+mul+(1ULL<<63))>>64);
+            res[i] = static_cast<T>(
+                ((mul << 64) + (mul << 32) + mul + (1ULL << 63)) >> 64);
             // res[i] = static_cast<T>(
             //     (static_cast<__uint128_t>((a[i] * twist[i] * invN).value)
             //      << 64) /

@@ -13,9 +13,11 @@ int main()
 
     TFHEpp::SecretKey *sk = new TFHEpp::SecretKey();
 
-    std::unique_ptr<TFHEpp::relinKeyFFT<P>> relinkeyfft = std::make_unique<TFHEpp::relinKeyFFT<P>>();
+    std::unique_ptr<TFHEpp::relinKeyFFT<P>> relinkeyfft =
+        std::make_unique<TFHEpp::relinKeyFFT<P>>();
     *relinkeyfft = TFHEpp::relinKeyFFTgen<P>(sk->key.get<P>());
-    std::unique_ptr<TFHEpp::PrivateKeySwitchingKey<privksP>> privksk = std::make_unique<TFHEpp::PrivateKeySwitchingKey<privksP>>();
+    std::unique_ptr<TFHEpp::PrivateKeySwitchingKey<privksP>> privksk =
+        std::make_unique<TFHEpp::PrivateKeySwitchingKey<privksP>>();
     TFHEpp::privkskgen<privksP>(*privksk, {1}, *sk);
 
     int count = 0;
@@ -36,12 +38,13 @@ int main()
         TFHEpp::TLWE<P> cres;
         TFHEpp::TLWEMult<privksP>(cres, c0, c1, *relinkeyfft, *privksk);
         pres = TFHEpp::tlweSymIntDecrypt<P>(cres, sk->key.get<P>());
-        
-        if(pres != ptrue) count++;
+
+        if (pres != ptrue) count++;
         // std::cout << p0 << ":" << p1 << ":" << pres << ":" << ptrue
         //           << std::endl;
         // assert(pres == ptrue);
     }
-    std::cout << "Number of erros: "<<count<<std::endl; 
-    std::cout << "Currently, we does not support working parameters!" << std::endl;
+    std::cout << "Number of erros: " << count << std::endl;
+    std::cout << "Currently, we does not support working parameters!"
+              << std::endl;
 }

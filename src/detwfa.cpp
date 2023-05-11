@@ -1,6 +1,6 @@
 #include <detwfa.hpp>
 
-namespace TFHEpp{
+namespace TFHEpp {
 #define INST(P)                                                     \
     template void CMUXFFT<P>(TRLWE<P> & res, const TRGSWFFT<P> &cs, \
                              const TRLWE<P> &c1, const TRLWE<P> &c0)
@@ -19,4 +19,4 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
         TRLWE<P> & acc, const TRGSWNTT<P> &cs, const typename P::T a)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
-}
+}  // namespace TFHEpp

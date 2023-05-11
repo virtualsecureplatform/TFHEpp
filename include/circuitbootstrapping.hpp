@@ -56,8 +56,8 @@ void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
 
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingSub(TRGSW<typename privksP::targetP> &trgsw,
-                          const TLWE<typename iksP::domainP> &tlwe,
-                          const EvalKey &ek)
+                             const TLWE<typename iksP::domainP> &tlwe,
+                             const EvalKey &ek)
 {
     TLWE<typename bkP::domainP> tlwelvl0;
     IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
@@ -68,20 +68,22 @@ void CircuitBootstrappingSub(TRGSW<typename privksP::targetP> &trgsw,
         temp[i][privksP::domainP::k * privksP::domainP::n] +=
             1ULL << (numeric_limits<typename privksP::domainP::T>::digits -
                      (i + 1) * privksP::targetP::Bgbit - 1);
-        for (int k = 0; k < privksP::targetP::k + 1; k++){
+        for (int k = 0; k < privksP::targetP::k + 1; k++) {
             TLWE<typename privksP::targetP> subsettlwe;
-            SubsetIdentityKeySwitch<privksP>(subsettlwe,temp[i],ek.getsubiksk<privksP>());
+            SubsetIdentityKeySwitch<privksP>(subsettlwe, temp[i],
+                                             ek.getsubiksk<privksP>());
             SubsetPrivKeySwitch<privksP>(
                 trgsw[i + k * privksP::targetP::l], subsettlwe,
-                ek.getsubprivksk<privksP>("subprivksk4cb_" + std::to_string(k)));
+                ek.getsubprivksk<privksP>("subprivksk4cb_" +
+                                          std::to_string(k)));
         }
     }
 }
 
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingSubFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
-                             const TLWE<typename iksP::domainP> &tlwe,
-                             const EvalKey &ek)
+                                const TLWE<typename iksP::domainP> &tlwe,
+                                const EvalKey &ek)
 {
     TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrappingSub<iksP, bkP, privksP>(trgsw, tlwe, ek);
@@ -112,8 +114,8 @@ void CircuitBootstrappingFFTwithInv(
 
     TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<iksP, bkP, privksP>(trgsw, tlwe, ek);
-    for (int i = 0; i < (privksP::targetP::k+1) * privksP::targetP::l; i++)
-        for (int j = 0; j < privksP::targetP::k+1; j++) {
+    for (int i = 0; i < (privksP::targetP::k + 1) * privksP::targetP::l; i++)
+        for (int j = 0; j < privksP::targetP::k + 1; j++) {
             TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
             for (int k = 0; k < privksP::targetP::n; k++) trgsw[i][j][k] *= -1;
         }
@@ -121,8 +123,8 @@ void CircuitBootstrappingFFTwithInv(
         trgsw[i][0][0] += h[i];
         trgsw[i + privksP::targetP::l][1][0] += h[i];
     }
-    for (int i = 0; i < (privksP::targetP::k+1) * privksP::targetP::l; i++)
-        for (int j = 0; j < privksP::targetP::k+1; j++)
+    for (int i = 0; i < (privksP::targetP::k + 1) * privksP::targetP::l; i++)
+        for (int j = 0; j < privksP::targetP::k + 1; j++)
             TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j],
                                                  trgsw[i][j]);
 }

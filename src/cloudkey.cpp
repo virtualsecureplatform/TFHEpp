@@ -1,6 +1,6 @@
-#include<cloudkey.hpp>
+#include <cloudkey.hpp>
 
-namespace TFHEpp{
+namespace TFHEpp {
 #define INST(P) \
     template void bkgen<P>(BootstrappingKey<P> & bk, const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
@@ -23,8 +23,9 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
-#define INST(P) \
-    template void subikskgen<P>(SubsetKeySwitchingKey<P> & ksk, const SecretKey& sk)
+#define INST(P)                                                 \
+    template void subikskgen<P>(SubsetKeySwitchingKey<P> & ksk, \
+                                const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
@@ -35,10 +36,10 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                              \
-    template void subprivkskgen<P>(SubsetPrivateKeySwitchingKey<P> & ksk,             \
-                                const Polynomial<typename P::targetP>& func, \
-                                const SecretKey& sk)
+#define INST(P)                                \
+    template void subprivkskgen<P>(            \
+        SubsetPrivateKeySwitchingKey<P> & ksk, \
+        const Polynomial<typename P::targetP>& func, const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
@@ -82,13 +83,14 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
 #define INST(P)                                                              \
-    template void EvalKey::emplacesubprivksk<P>(                                \
+    template void EvalKey::emplacesubprivksk<P>(                             \
         const std::string& key, const Polynomial<typename P::targetP>& func, \
         const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
-#define INST(P) template void EvalKey::emplacesubprivksk4cb<P>(const SecretKey& sk)
+#define INST(P) \
+    template void EvalKey::emplacesubprivksk4cb<P>(const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
@@ -108,7 +110,8 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
-#define INST(P) template SubsetKeySwitchingKey<P>& EvalKey::getsubiksk<P>() const
+#define INST(P) \
+    template SubsetKeySwitchingKey<P>& EvalKey::getsubiksk<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
@@ -118,9 +121,9 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                 \
+#define INST(P)                                                          \
     template SubsetPrivateKeySwitchingKey<P>& EvalKey::getsubprivksk<P>( \
         const std::string& key) const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
-}
+}  // namespace TFHEpp
