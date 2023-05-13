@@ -65,24 +65,38 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
     return res;
 }
 
+template <class P>
+std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
+                                     const Key<P> &key)
+{
+    vector<TLWE<P>> c(p.size());
+    for (int i = 0; i < p.size(); i++)
+        c[i] = tlweSymEncrypt<P>(p[i] ? P::μ : -P::μ, P::α, key);
+    return c;
+}
+
 template <class P = lvl1param>
 std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
                                      const SecretKey &sk)
 {
-    vector<TLWE<P>> c(p.size());
-    for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncrypt<P>(p[i] ? P::μ : -P::μ, P::α, sk.key.get<P>());
-    return c;
+    return bootsSymEncrypt<P>(p, sk.key.get<P>());
+}
+
+template <class P>
+std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
+                                     const Key<P> &key)
+{
+    vector<uint8_t> p(c.size());
+    for (int i = 0; i < c.size(); i++)
+        p[i] = tlweSymDecrypt<P>(c[i], key);
+    return p;
 }
 
 template <class P = lvl1param>
 std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
                                      const SecretKey &sk)
 {
-    vector<uint8_t> p(c.size());
-    for (int i = 0; i < c.size(); i++)
-        p[i] = tlweSymDecrypt<P>(c[i], sk.key.get<P>());
-    return p;
+    return bootsSymDecrypt<P>(c, sk.key.get<P>());
 }
 
 #include "externs/tlwe.hpp"
