@@ -16,24 +16,22 @@
 namespace TFHEpp {
 
 template <class P>
-void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey, const Key<typename P::targetP>& targetkey)
+void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey,
+           const Key<typename P::targetP>& targetkey)
 {
     Polynomial<typename P::targetP> plainpoly = {};
 #ifdef USE_KEY_BUNDLE
     for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
         plainpoly[0] =
-            static_cast<int32_t>(domainkey[2 * i] *
-                                 domainkey[2 * i + 1]);
+            static_cast<int32_t>(domainkey[2 * i] * domainkey[2 * i + 1]);
         bkfft[i][0] = trgswSymEncrypt<typename P::targetP>(
             plainpoly, P::targetP::α, targetkey);
-        plainpoly[0] = static_cast<int32_t>(
-            domainkey[2 * i] *
-            (1 - domainkey[2 * i + 1]));
+        plainpoly[0] =
+            static_cast<int32_t>(domainkey[2 * i] * (1 - domainkey[2 * i + 1]));
         bkfft[i][1] = trgswSymEncrypt<typename P::targetP>(
             plainpoly, P::targetP::α, targetkey);
-        plainpoly[0] = static_cast<int32_t>(
-            (1 - domainkey[2 * i]) *
-            domainkey[2 * i + 1]);
+        plainpoly[0] =
+            static_cast<int32_t>((1 - domainkey[2 * i]) * domainkey[2 * i + 1]);
         bkfft[i][2] = trgswSymEncrypt<typename P::targetP>(
             plainpoly, P::targetP::α, targetkey);
     }
@@ -45,8 +43,7 @@ void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey, c
             if (j != 0) {
                 plainpoly[0] = domainkey[i] == j;
                 bk[i][count] = trgswSymEncrypt<typename P::targetP>(
-                    plainpoly, P::targetP::α,
-                    targetkey);
+                    plainpoly, P::targetP::α, targetkey);
                 count++;
             }
         }
@@ -57,28 +54,28 @@ void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey, c
 template <class P>
 void bkgen(BootstrappingKey<P>& bk, const SecretKey& sk)
 {
-    bkgen<P>(bk,sk.key.get<typename P::domainP>(),sk.key.get<typename P::targetP>());
+    bkgen<P>(bk, sk.key.get<typename P::domainP>(),
+             sk.key.get<typename P::targetP>());
 }
 
 template <class P>
-void bkfftgen(BootstrappingKeyFFT<P>& bk, const Key<typename P::domainP>& domainkey, const Key<typename P::targetP>& targetkey)
+void bkfftgen(BootstrappingKeyFFT<P>& bk,
+              const Key<typename P::domainP>& domainkey,
+              const Key<typename P::targetP>& targetkey)
 {
     Polynomial<typename P::targetP> plainpoly = {};
 #ifdef USE_KEY_BUNDLE
     for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
         plainpoly[0] =
-            static_cast<int32_t>(domainkey[2 * i] *
-                                 domainkey[2 * i + 1]);
+            static_cast<int32_t>(domainkey[2 * i] * domainkey[2 * i + 1]);
         bkfft[i][0] = trgswfftSymEncrypt<typename P::targetP>(
             plainpoly, P::targetP::α, targetkey);
-        plainpoly[0] = static_cast<int32_t>(
-            domainkey[2 * i] *
-            (1 - domainkey[2 * i + 1]));
+        plainpoly[0] =
+            static_cast<int32_t>(domainkey[2 * i] * (1 - domainkey[2 * i + 1]));
         bkfft[i][1] = trgswfftSymEncrypt<typename P::targetP>(
             plainpoly, P::targetP::α, targetkey);
-        plainpoly[0] = static_cast<int32_t>(
-            (1 - domainkey[2 * i]) *
-            domainkey[2 * i + 1]);
+        plainpoly[0] =
+            static_cast<int32_t>((1 - domainkey[2 * i]) * domainkey[2 * i + 1]);
         bkfft[i][2] = trgswfftSymEncrypt<typename P::targetP>(
             plainpoly, P::targetP::α, targetkey);
     }
@@ -90,8 +87,7 @@ void bkfftgen(BootstrappingKeyFFT<P>& bk, const Key<typename P::domainP>& domain
             if (j != 0) {
                 plainpoly[0] = domainkey[i] == j;
                 bk[i][count] = trgswfftSymEncrypt<typename P::targetP>(
-                    plainpoly, P::targetP::α,
-                    targetkey);
+                    plainpoly, P::targetP::α, targetkey);
                 count++;
             }
         }
@@ -102,11 +98,14 @@ void bkfftgen(BootstrappingKeyFFT<P>& bk, const Key<typename P::domainP>& domain
 template <class P>
 void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
 {
-    bkfftgen<P>(bkfft, sk.key.get<typename P::domainP>(), sk.key.get<typename P::targetP>());
+    bkfftgen<P>(bkfft, sk.key.get<typename P::domainP>(),
+                sk.key.get<typename P::targetP>());
 }
 
 template <class P>
-void bknttgen(BootstrappingKeyNTT<P>& bkntt, const Key<typename P::domainP>& domainkey, const Key<typename P::targetP>& targetkey)
+void bknttgen(BootstrappingKeyNTT<P>& bkntt,
+              const Key<typename P::domainP>& domainkey,
+              const Key<typename P::targetP>& targetkey)
 {
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
@@ -119,11 +118,14 @@ void bknttgen(BootstrappingKeyNTT<P>& bkntt, const Key<typename P::domainP>& dom
 template <class P>
 void bknttgen(BootstrappingKeyNTT<P>& bkntt, const SecretKey& sk)
 {
-    bknttgen<P>(bkntt,sk.key.get<typename P::domainP>(), sk.key.get<typename P::targetP>());
+    bknttgen<P>(bkntt, sk.key.get<typename P::domainP>(),
+                sk.key.get<typename P::targetP>());
 }
 
 template <class P>
-void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk, const Key<typename P::domainP>& domainkey, const Key<typename P::targetP>& targetkey)
+void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk,
+                       const Key<typename P::domainP>& domainkey,
+                       const Key<typename P::targetP>& targetkey)
 {
     for (int i = 0; i < P::domainP::n; i++)
         for (int j = 0; j < P::t; j++)
@@ -133,15 +135,16 @@ void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk, const Key<typename P::domainP>
                     domainkey[i] * (k + 1) *
                     (1ULL << (numeric_limits<typename P::targetP::T>::digits -
                               (j + 1) * P::basebit));
-                iksk[i][j][k] = trlweSymEncrypt<typename P::targetP>(
-                    p, P::α, targetkey);
+                iksk[i][j][k] =
+                    trlweSymEncrypt<typename P::targetP>(p, P::α, targetkey);
             }
 }
 
 template <class P>
 void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk, const SecretKey& sk)
 {
-    tlwe2trlweikskgen<P>(iksk, sk.key.get<typename P::domainP>(), sk.key.get<typename P::targetP>());
+    tlwe2trlweikskgen<P>(iksk, sk.key.get<typename P::domainP>(),
+                         sk.key.get<typename P::targetP>());
 }
 
 template <class P>
@@ -150,8 +153,7 @@ void annihilatekeygen(AnnihilateKey<P>& ahk, const Key<P>& key)
     for (int i = 0; i < P::nbit; i++) {
         Polynomial<P> autokey;
         std::array<typename P::T, P::n> partkey;
-        for (int i = 0; i < P::n; i++)
-            partkey[i] = key[0 * P::n + i];
+        for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
         Automorphism<P>(autokey, partkey, (1 << (P::nbit - i)) + 1);
         ahk[i] = trgswfftSymEncrypt<P>(autokey, P::α, key);
     }
@@ -164,7 +166,8 @@ void annihilatekeygen(AnnihilateKey<P>& ahk, const SecretKey& sk)
 }
 
 template <class P>
-void ikskgen(KeySwitchingKey<P>& ksk, const Key<typename P::domainP>& domainkey, const Key<typename P::targetP>& targetkey)
+void ikskgen(KeySwitchingKey<P>& ksk, const Key<typename P::domainP>& domainkey,
+             const Key<typename P::targetP>& targetkey)
 {
     for (int l = 0; l < P::domainP::k; l++)
         for (int i = 0; i < P::domainP::n; i++)
@@ -172,8 +175,7 @@ void ikskgen(KeySwitchingKey<P>& ksk, const Key<typename P::domainP>& domainkey,
                 for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
                     ksk[l * P::domainP::n + i][j][k] =
                         tlweSymEncrypt<typename P::targetP>(
-                            domainkey[l * P::domainP::n + i] *
-                                (k + 1) *
+                            domainkey[l * P::domainP::n + i] * (k + 1) *
                                 (1ULL << (numeric_limits<
                                               typename P::targetP::T>::digits -
                                           (j + 1) * P::basebit)),
@@ -183,13 +185,15 @@ void ikskgen(KeySwitchingKey<P>& ksk, const Key<typename P::domainP>& domainkey,
 template <class P>
 void ikskgen(KeySwitchingKey<P>& ksk, const SecretKey& sk)
 {
-    ikskgen<P>(ksk, sk.key.get<typename P::domainP>(), sk.key.get<typename P::targetP>());
+    ikskgen<P>(ksk, sk.key.get<typename P::domainP>(),
+               sk.key.get<typename P::targetP>());
 }
 
 template <class P>
 void privkskgen(PrivateKeySwitchingKey<P>& privksk,
                 const Polynomial<typename P::targetP>& func,
-                const Key<typename P::domainP>& domainkey, const Key<typename P::targetP>& targetkey)
+                const Key<typename P::domainP>& domainkey,
+                const Key<typename P::targetP>& targetkey)
 {
     std::array<typename P::domainP::T, P::domainP::k * P::domainP::n + 1> key;
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++)
@@ -200,8 +204,7 @@ void privkskgen(PrivateKeySwitchingKey<P>& privksk,
         for (int j = 0; j < P::t; j++)
             for (typename P::targetP::T u = 0; u < (1 << P::basebit) - 1; u++) {
                 TRLWE<typename P::targetP> c =
-                    trlweSymEncryptZero<typename P::targetP>(
-                        P::α, targetkey);
+                    trlweSymEncryptZero<typename P::targetP>(P::α, targetkey);
                 for (int k = 0; k < P::targetP::n; k++)
                     c[P::targetP::k][k] +=
                         (u + 1) * func[k] * key[i]
@@ -216,24 +219,22 @@ void privkskgen(PrivateKeySwitchingKey<P>& privksk,
                 const Polynomial<typename P::targetP>& func,
                 const SecretKey& sk)
 {
-    privkskgen<P>(privksk, func, sk.key.get<typename P::domainP>(), sk.key.get<typename P::targetP>());
+    privkskgen<P>(privksk, func, sk.key.get<typename P::domainP>(),
+                  sk.key.get<typename P::targetP>());
 }
 
 template <class P>
-void subikskgen(SubsetKeySwitchingKey<P>& ksk, const Key<typename P::domainP>& domainkey)
+void subikskgen(SubsetKeySwitchingKey<P>& ksk,
+                const Key<typename P::domainP>& domainkey)
 {
     Key<typename P::targetP> subkey;
-    for (int i = 0; i < P::targetP::n; i++)
-        subkey[i] = domainkey[i];
+    for (int i = 0; i < P::targetP::n; i++) subkey[i] = domainkey[i];
     for (int i = 0;
          i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++)
         for (int j = 0; j < P::t; j++)
             for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
                 ksk[i][j][k] = tlweSymEncrypt<typename P::targetP>(
-                    domainkey[P::targetP::k *
-                                                          P::targetP::n +
-                                                      i] *
-                        (k + 1) *
+                    domainkey[P::targetP::k * P::targetP::n + i] * (k + 1) *
                         (1ULL
                          << (numeric_limits<typename P::targetP::T>::digits -
                              (j + 1) * P::basebit)),
@@ -267,7 +268,8 @@ relinKey<P> relinKeygen(const Key<P>& key)
 template <class P>
 void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
                    const Polynomial<typename P::targetP>& func,
-                   const Key<typename P::domainP>& domainkey, const Key<typename P::targetP>& targetkey)
+                   const Key<typename P::domainP>& domainkey,
+                   const Key<typename P::targetP>& targetkey)
 {
     std::array<typename P::targetP::T, P::targetP::k * P::targetP::n + 1> key;
     for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
@@ -278,8 +280,7 @@ void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
         for (int j = 0; j < P::t; j++)
             for (typename P::targetP::T u = 0; u < (1 << P::basebit) - 1; u++) {
                 TRLWE<typename P::targetP> c =
-                    trlweSymEncryptZero<typename P::targetP>(
-                        P::α, targetkey);
+                    trlweSymEncryptZero<typename P::targetP>(P::α, targetkey);
                 for (int k = 0; k < P::targetP::n; k++)
                     c[P::targetP::k][k] +=
                         (u + 1) * func[k] * key[i]
@@ -294,7 +295,8 @@ void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
                    const Polynomial<typename P::targetP>& func,
                    const SecretKey& sk)
 {
-    subprivkskgen<P>(privksk,func, sk.key.get<typename P::domainP>(), sk.key.get<typename P::targetP>());
+    subprivkskgen<P>(privksk, func, sk.key.get<typename P::domainP>(),
+                     sk.key.get<typename P::targetP>());
 }
 
 template <class P>

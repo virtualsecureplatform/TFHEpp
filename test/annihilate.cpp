@@ -39,7 +39,7 @@ int main()
 
     std::unique_ptr<TFHEpp::AnnihilateKey<TFHEpp::lvl1param>> ahk(
         new TFHEpp::AnnihilateKey<TFHEpp::lvl1param>());
-    TFHEpp::annihilatekeyegen<TFHEpp::lvl1param>(*ahk, *sk);
+    TFHEpp::annihilatekeygen<TFHEpp::lvl1param>(*ahk, *sk);
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();

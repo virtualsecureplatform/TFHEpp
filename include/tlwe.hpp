@@ -87,8 +87,7 @@ std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
                                      const Key<P> &key)
 {
     vector<uint8_t> p(c.size());
-    for (int i = 0; i < c.size(); i++)
-        p[i] = tlweSymDecrypt<P>(c[i], key);
+    for (int i = 0; i < c.size(); i++) p[i] = tlweSymDecrypt<P>(c[i], key);
     return p;
 }
 

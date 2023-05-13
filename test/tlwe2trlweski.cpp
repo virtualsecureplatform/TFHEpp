@@ -22,7 +22,7 @@ int main()
 
     TFHEpp::TLWE2TRLWEIKSKey<TFHEpp::lvl11param>* iksk =
         new TFHEpp::TLWE2TRLWEIKSKey<TFHEpp::lvl11param>();
-    TFHEpp::tlwe2trlweikskkgen<TFHEpp::lvl11param>(*iksk, *sk);
+    TFHEpp::tlwe2trlweikskgen<TFHEpp::lvl11param>(*iksk, *sk);
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
