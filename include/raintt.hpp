@@ -10,6 +10,6 @@ constexpr T ipow(T num, unsigned int pow)
 }
 constexpr uint32_t k = 5;
 constexpr uint32_t P = ((ipow<uint32_t>(5, 4))ULL << 20) + 1;
-constexpr uint32_t W = 11;
+constexpr uint32_t W = 3;
 
 }  // namespace raintt
