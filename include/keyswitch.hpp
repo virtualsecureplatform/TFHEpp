@@ -13,15 +13,16 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
                        const TLWE<typename P::domainP> &tlwe,
                        const KeySwitchingKey<P> &ksk)
 {
-    constexpr typename P::domainP::T prec_offset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
-                 (1 + P::basebit * P::t));
     constexpr uint32_t mask = (1U << P::basebit) - 1;
     res = {};
-    constexpr uint32_t domain_digit =
+    constexpr uint domain_digit =
         std::numeric_limits<typename P::domainP::T>::digits;
-    constexpr uint32_t target_digit =
+    constexpr uint target_digit =
         std::numeric_limits<typename P::targetP::T>::digits;
+    constexpr typename P::domainP::T prec_offset = (P::basebit * P::t)<domain_digit?
+        1ULL << (domain_digit -
+                 (1 + P::basebit * P::t)):0;
+
     if constexpr (domain_digit == target_digit)
         res[P::targetP::k * P::targetP::n] =
             tlwe[P::domainP::k * P::domainP::n];
@@ -31,7 +32,7 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
              (1ULL << (domain_digit - target_digit - 1))) >>
             (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
-        res[P::targetP::k * P::targetP::n] = tlwe[P::domainP::k * P::domainP::n]
+        res[P::targetP::k * P::targetP::n] = static_cast<typename P::targetP::T>(tlwe[P::domainP::k * P::domainP::n])
                                              << (target_digit - domain_digit);
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + prec_offset;
