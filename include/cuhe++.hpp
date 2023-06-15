@@ -215,7 +215,7 @@ inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
             const __uint128_t mul = (a[i] * twist[i] * invN).value;
             // multiply (2⁶⁴+2³²-1)/2⁶⁴ ≈ 2⁶⁴/P
             res[i] = static_cast<T>(
-                ((mul << 64) + (mul << 32) + mul + (1ULL << 63)) >> 64);
+                ((mul << 64) + (mul << 32) - mul + (1ULL << 63)) >> 64);
             // res[i] = static_cast<T>(
             //     (static_cast<__uint128_t>((a[i] * twist[i] * invN).value)
             //      << 64) /
