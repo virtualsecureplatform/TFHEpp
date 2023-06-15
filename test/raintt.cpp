@@ -262,18 +262,17 @@ int main()
         for (typename TFHEpp::lvl1param::T &i : b) i = Pdist(engine);
 
         raintt::PolyMullvl1<typename TFHEpp::lvl1param::T,
-                            TFHEpp::lvl1param::nbit>(
+                            TFHEpp::lvl1param::nbit, false, false>(
             polymul, a, b, (*tablelvl1), (*twistlvl1));
 
         TFHEpp::Polynomial<TFHEpp::lvl1param> naieve = {};
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             for (int j = 0; j <= i; j++)
-                naieve[i] += (static_cast<int64_t>(a[j]) * b[i - j]) % raintt::P;
+                naieve[i] = (naieve[i] + static_cast<int64_t>(a[j]) * b[i - j]) % raintt::P;
             for (int j = i + 1; j < TFHEpp::lvl1param::n; j++)
-                naieve[i] -= (static_cast<int64_t>(a[j]) *
-                             b[TFHEpp::lvl1param::n + i - j]) % raintt::P;
+                naieve[i] = ((static_cast<int64_t>(naieve[i]) - static_cast<int64_t>(a[j]) *
+                             b[TFHEpp::lvl1param::n + i - j]) % raintt::P + raintt::P) % raintt::P;
         }
-        for (int i = 0; i < TFHEpp::lvl1param::n/2; i++) std::cout<<i<<":"<<naieve[i]<<":"<<polymul[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <= 1);
         }
@@ -287,7 +286,7 @@ int main()
         for (typename TFHEpp::lvl1param::T &i : b) i = Torus32dist(engine);
 
         raintt::PolyMullvl1<typename TFHEpp::lvl1param::T,
-                            TFHEpp::lvl1param::nbit>(
+                            TFHEpp::lvl1param::nbit, false, true>(
             polymul, a, b, (*tablelvl1), (*twistlvl1));
 
         TFHEpp::Polynomial<TFHEpp::lvl1param> naieve = {};

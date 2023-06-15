@@ -320,18 +320,17 @@ void TwistNTT(std::array<T, 1 << Nbit> &res, std::array<SWord, 1 << Nbit> &a,
     TwistMulDirect<T, Nbit, modsiwtch>(res, a, twist);
 }
 
-template <typename T, uint32_t Nbit>
+template <typename T, uint32_t Nbit, bool modswitcha, bool modswitchb>
 void PolyMullvl1(std::array<T, 1 << Nbit> &res, std::array<T, 1 << Nbit> &a,
                  std::array<T, 1 << Nbit> &b,
                  const std::array<std::array<SWord, 1 << Nbit>, 2> &table,
                  const std::array<std::array<SWord, 1 << Nbit>, 2> &twist)
 {
     std::array<SWord, 1 << Nbit> ntta, nttb;
-    TwistINTT<T, Nbit, false>(ntta, a, table[1], twist[1]);
-    TwistINTT<T, Nbit, false>(nttb, b, table[1], twist[1]);
-    for (int i = 0; i < (1U << Nbit); i++) ntta[i] = MulSREDC(ntta[i],R2);
-    for (int i = 0; i < (1U << Nbit); i++) ntta[i] = MulSREDC(ntta[i],nttb[i]);
-    TwistNTT<T, Nbit, false>(res, ntta, table[0], twist[0]);
+    TwistINTT<T, Nbit, modswitcha>(ntta, a, table[1], twist[1]);
+    TwistINTT<T, Nbit, modswitchb>(nttb, b, table[1], twist[1]);
+    for (int i = 0; i < (1U << Nbit); i++) ntta[i] = MulSREDC(MulSREDC(ntta[i],R2),nttb[i]);
+    TwistNTT<T, Nbit, modswitcha>(res, ntta, table[0], twist[0]);
 }
 
 }  // namespace raintt
