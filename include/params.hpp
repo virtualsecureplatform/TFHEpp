@@ -156,6 +156,10 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
     fun(lvl11param);                                           \
     fun(lvl21param);                                           \
     fun(lvl22param);
+#define TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(fun) \
+    fun(lvl10param, lvl01param, lvl1param::μ);
+#define TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(fun) \
+    fun(lvl01param, lvl1param::μ, lvl10param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_GATE(fun) \
     fun(lvl10param, lvl01param);                \
     fun(lvl10param, lvl02param);                \

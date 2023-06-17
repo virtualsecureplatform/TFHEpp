@@ -19,9 +19,10 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
         std::numeric_limits<typename P::domainP::T>::digits;
     constexpr uint target_digit =
         std::numeric_limits<typename P::targetP::T>::digits;
-    constexpr typename P::domainP::T prec_offset = (P::basebit * P::t)<domain_digit?
-        1ULL << (domain_digit -
-                 (1 + P::basebit * P::t)):0;
+    constexpr typename P::domainP::T prec_offset =
+        (P::basebit * P::t) < domain_digit
+            ? 1ULL << (domain_digit - (1 + P::basebit * P::t))
+            : 0;
 
     if constexpr (domain_digit == target_digit)
         res[P::targetP::k * P::targetP::n] =
@@ -32,8 +33,10 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
              (1ULL << (domain_digit - target_digit - 1))) >>
             (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
-        res[P::targetP::k * P::targetP::n] = static_cast<typename P::targetP::T>(tlwe[P::domainP::k * P::domainP::n])
-                                             << (target_digit - domain_digit);
+        res[P::targetP::k * P::targetP::n] =
+            static_cast<typename P::targetP::T>(
+                tlwe[P::domainP::k * P::domainP::n])
+            << (target_digit - domain_digit);
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + prec_offset;
         for (int j = 0; j < P::t; j++) {

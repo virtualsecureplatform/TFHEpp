@@ -60,8 +60,8 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++)
             phase -= c[k * P::n + i] * key[k * P::n + i];
-    typename P::T res =
-        static_cast<typename P::T>(std::round(phase / P::Δ)) % (2*P::plain_modulus);
+    typename P::T res = static_cast<typename P::T>(std::round(phase / P::Δ)) %
+                        (2 * P::plain_modulus);
     return res;
 }
 

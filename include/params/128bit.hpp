@@ -36,7 +36,7 @@ struct lvl1param {
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ =
         static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
-        (2*plain_modulus);
+        (2 * plain_modulus);
 };
 
 struct lvl2param {
@@ -53,8 +53,8 @@ struct lvl2param {
     using T = uint64_t;                                 // Torus representation
     static constexpr T μ = 1ULL << 61;
     static constexpr uint32_t plain_modulus = 8;
-    static constexpr double Δ = 
-        static_cast<double>(1ULL << (std::numeric_limits<T>::digits- 4));
+    static constexpr double Δ =
+        static_cast<double>(1ULL << (std::numeric_limits<T>::digits - 4));
 };
 
 // Key Switching parameters
