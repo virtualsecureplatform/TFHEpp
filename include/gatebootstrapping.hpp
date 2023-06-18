@@ -200,10 +200,10 @@ void GateBootstrappingNTT(TLWE<typename iksP::tagetP> &res,
                           const EvalKey &ek)
 {
     TLWE<typename bkP::targetP> tlwelvl1;
-    GateBootstrappingTLWE2TLWENTT<lvl01param>(
+    GateBootstrappingTLWE2TLWENTT<bkP>(
         tlwelvl1, tlwe, ek.getbkntt<bkP>(),
         μpolygen<typename bkP::targetP, μ>());
-    IdentityKeySwitch<lvl10param>(res, tlwelvl1, ek.getiksk<iksP>());
+    IdentityKeySwitch<iksP>(res, tlwelvl1, ek.getiksk<iksP>());
 }
 
 template <class iksP, class bkP, typename bkP::targetP::T μ>
