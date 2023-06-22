@@ -250,11 +250,15 @@ inline void TwistMulInvert(std::array<SWord, 1 << Nbit> &res,
 {
     constexpr uint N = 1 << Nbit;
     for (int i = 0; i < N; i++) {
-        res[i] = MulREDC(a[i], twist[i]);
-        if constexpr (modswitch)
-            res[i] = (static_cast<__uint128_t>(res[i]) * ((1ULL << 61) / P) +
-                      (1ULL << (std::numeric_limits<T>::digits - 1))) >>
-                     29;
+        if constexpr (modswitch){
+            res[i] =
+                (((static_cast<DoubleWord>(a[i]) * K) << shiftamount) +
+                 a[i] + (1ULL << (32 - 1))) >>
+                32;
+        }else{
+            res[i] = a[i];
+        }
+        res[i] = MulREDC(res[i], twist[i]);
     }
 }
 
@@ -326,10 +330,9 @@ inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
         const SWord mulres = MulSREDC(a[i], twist[i]);
         res[i] = (mulres < 0) ? mulres + P : mulres;
         if constexpr (modswitch)
-            res[i] =
-                (((static_cast<__uint128_t>(res[i]) * K) << shiftamount) +
-                 res[i] + (1ULL << (std::numeric_limits<T>::digits - 1))) >>
-                30;
+            res[i] = (static_cast<DoubleWord>(res[i]) * ((1ULL << 61) / P) +
+                      (1ULL << (29 - 1))) >>
+                     29;
     }
 }
 
@@ -353,7 +356,7 @@ void PolyMullvl1(std::array<T, 1 << Nbit> &res, std::array<T, 1 << Nbit> &a,
     TwistINTT<T, Nbit, modswitchb>(nttb, b, table[1], twist[1]);
     for (int i = 0; i < (1U << Nbit); i++)
         ntta[i] = MulSREDC(MulSREDC(ntta[i], R2), nttb[i]);
-    TwistNTT<T, Nbit, modswitcha>(res, ntta, table[0], twist[0]);
+    TwistNTT<T, Nbit, modswitcha | modswitchb>(res, ntta, table[0], twist[0]);
 }
 
 }  // namespace raintt
