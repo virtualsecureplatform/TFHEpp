@@ -140,10 +140,11 @@ uint32_t BitReverse(uint32_t in)
     }
 }
 
-template <uint32_t Nbit>
+template <uint Nbit,uint radixbit>
 std::unique_ptr<std::array<std::array<SWord, 1U << Nbit>, 2>> TwistGen()
 {
-    constexpr uint32_t N = 1U << Nbit;
+    constexpr uint N = 1U << Nbit;
+    constexpr uint8_t remainder = ((Nbit - 1) % radixbit) + 1;
     const Word invN = inv_mod<N>();
 
     std::unique_ptr<std::array<std::array<SWord, 1U << Nbit>, 2>> twist =
@@ -160,27 +161,32 @@ std::unique_ptr<std::array<std::array<SWord, 1U << Nbit>, 2>> TwistGen()
     for (uint32_t i = 2; i < N; i++)
         (*twist)[0][N - i] = MulREDC((*twist)[0][N - i + 1], wR);
     assert(MulREDC((*twist)[0][1], wR) == (*twist)[0][0]);
+
+    if constexpr(remainder!=1) for (uint i = 0; i < N; i++) (*twist)[1][i] = MulREDC((*twist)[1][i], R2);
     return twist;
 }
 
 template <uint32_t Nbit>
-inline std::unique_ptr<std::array<std::array<SWord, 1U << Nbit>, 2>> TableGen()
+inline std::unique_ptr<std::array<std::array<std::array<SWord, 1U << Nbit>, 2>, 2>> TableGen()
 {
     constexpr uint32_t N = 1U << Nbit;
 
-    std::unique_ptr<std::array<std::array<SWord, N>, 2>> table =
-        std::make_unique<std::array<std::array<SWord, N>, 2>>();
+    std::unique_ptr<std::array<std::array<std::array<SWord, N>, 2>, 2>> table =
+        std::make_unique<std::array<std::array<std::array<SWord, N>, 2>, 2>>();
     const Word w = PowREDC(W, 1ULL << (shiftamount - Nbit));
     const Word wR = MulREDC(w, R2);
-    (*table)[0][0] = (*table)[1][0] = R;
+    (*table)[0][0][0] = (*table)[1][0][0] = R;
+    (*table)[0][1][0] = (*table)[1][1][0] = R2;
     for (uint32_t i = 1; i < N; i++)
-        (*table)[1][i] = MulREDC((*table)[1][i - 1], wR);
-    assert(MulREDC((*table)[1][N - 1], wR) == R);
-    for (uint32_t i = 1; i < N; i++) (*table)[0][i] = (*table)[1][N - i];
+        (*table)[1][0][i] = MulREDC((*table)[1][0][i - 1], wR);
+    assert(MulREDC((*table)[1][0][N - 1], wR) == R);
+    for (uint32_t i = 1; i < N; i++)
+        (*table)[1][1][i] = MulREDC((*table)[1][0][i], R2);
+    for(int j = 0; j<2; j++) for (uint32_t i = 1; i < N; i++)(*table)[0][j][i] = (*table)[1][j][N - i];
     return table;
 }
 
-void ButterflyAdd(DoubleSWord *const res, const uint size)
+void ButterflyAddBothMod(DoubleSWord *const res, const uint size)
 {
     for (uint index = 0; index < size / 2; index++) {
         const SWord temp = res[index];
@@ -189,45 +195,85 @@ void ButterflyAdd(DoubleSWord *const res, const uint size)
     }
 }
 
+void ButterflyAddAddMod(DoubleSWord *const res, const uint size)
+{
+    for (uint index = 0; index < size / 2; index++) {
+        const SWord temp = res[index];
+        res[index] = AddMod(res[index], res[index + size / 2]);
+        res[index + size / 2] = temp - res[index + size / 2];
+    }
+}
+
+void ButterflyAdd(DoubleSWord *const res, const uint size)
+{
+    for (uint index = 0; index < size / 2; index++) {
+        const SWord temp = res[index];
+        res[index] += res[index + size / 2];
+        res[index + size / 2] = temp - res[index + size / 2];
+    }
+}
+
+void ButterflyAddBothSREDC(DoubleSWord *const res, const uint size)
+{
+    for (uint index = 0; index < size / 2; index++) {
+        const DoubleSWord temp = res[index];
+        res[index] = SREDC(res[index]+res[index + size / 2]);
+        res[index + size / 2] = SREDC(temp - res[index + size / 2]);
+    }
+}
+
 template <uint32_t Nbit>
 inline void TwiddleMul(DoubleSWord *const res, const uint size, const uint stride,
                        const std::array<SWord, 1 << Nbit> &table)
 {
-    for (uint32_t index = 1; index < size; index++)
+    for (uint32_t index = 0; index < size; index++)
         res[index] = MulSREDC(res[index], table[stride * index]);
 }
 
-template <uint8_t radixbit>
+template <uint8_t radixbit, bool last>
 inline void INTTradixButterfly(DoubleSWord *const res, const uint32_t size)
 {
     static_assert(radixbit <= 2, "radix 4 is the maximum!");
     if constexpr (radixbit == 1) {
-        ButterflyAdd(res, size);
+        ButterflyAddBothMod(res, size);
     }else if constexpr(radixbit == 2){
-        ButterflyAdd(res, size);
+        if constexpr(!last){
+            ButterflyAddAddMod(res, size);
+            ButterflyAddBothMod(&res[0], size / 2);
+        }else{
+            ButterflyAdd(res, size);
+            ButterflyAddBothSREDC(&res[0], size / 2);
+        }
         const uint32_t block = size >> radixbit;
         for (int i = 1; i < (1 << (radixbit - 1)); i++)
             for (int j = 0; j < block; j++)
-                res[i * block + j + size / 2] = ((static_cast<DoubleSWord>(res[i * block + j + size / 2]) * ipow<DoubleSWord>(k,i*(radixs2>>(radixbit-1))))<<(shiftamount>>(radixbit-1)))%P;
-        INTTradixButterfly<radixbit - 1>(&res[0], size / 2);
-        INTTradixButterfly<radixbit - 1>(&res[size / 2], size / 2);
+                res[i * block + j + size / 2] = (res[i * block + j + size / 2] * ipow<DoubleSWord>(k,i*(radixs2>>(radixbit-1))))<<(shiftamount>>(radixbit-1));
+        ButterflyAddBothSREDC(&res[size / 2], size / 2);
     }
 }
 
 template <uint32_t Nbit, uint8_t radixbit>
 inline void INTTradix(DoubleSWord *const res, const uint32_t size,
                       const uint32_t num_block,
-                      const std::array<SWord, 1 << Nbit> &table)
+                      const std::array<std::array<SWord, 1 << Nbit>,2> &table)
 {
-    INTTradixButterfly<radixbit>(res, size);
-    for (uint32_t i = 1; i < (1 << radixbit); i++)
-        TwiddleMul<Nbit>(&res[i * (size >> radixbit)], size >> radixbit,
-                         BitReverse<radixbit>(i) * num_block, table);
+    INTTradixButterfly<radixbit,false>(res, size);
+    if constexpr(radixbit==1){
+        for (uint i = 1; i < (1 << radixbit); i++)
+            TwiddleMul<Nbit>(&res[i * (size >> radixbit)], size >> radixbit,
+                            BitReverse<radixbit>(i) * num_block, table[0]);
+    }else{
+        TwiddleMul<Nbit>(&res[1 * (size >> radixbit)], size >> radixbit,
+                        BitReverse<radixbit>(1) * num_block, table[0]);
+        for (uint i = 2; i < (1 << radixbit); i++)
+            TwiddleMul<Nbit>(&res[i * (size >> radixbit)], size >> radixbit,
+                            BitReverse<radixbit>(i) * num_block, table[1]);
+    }
 }
 
 template <uint32_t Nbit, uint8_t radixbit>
 inline void INTT(std::array<DoubleSWord, 1 << Nbit> &res,
-                 const std::array<SWord, 1 << Nbit> &table)
+                 const std::array<std::array<SWord, 1 << Nbit>,2> &table)
 {
     for (uint8_t sizebit = Nbit; sizebit > radixbit; sizebit -= radixbit) {
         const uint32_t size = 1U << sizebit;
@@ -240,7 +286,7 @@ inline void INTT(std::array<DoubleSWord, 1 << Nbit> &res,
     constexpr uint32_t size = 1U << remainder;
     constexpr uint32_t num_block = 1U << (Nbit - remainder);
     for (uint32_t block = 0; block < num_block; block++)
-        INTTradixButterfly<remainder>(&res[size * block], size);
+        INTTradixButterfly<remainder,true>(&res[size * block], size);
 }
 
 template <typename T = uint32_t, uint Nbit, bool modswitch>
@@ -265,11 +311,11 @@ inline void TwistMulInvert(std::array<DoubleSWord, 1 << Nbit> &res,
 template <typename T, uint32_t Nbit, bool modsiwtch = false>
 void TwistINTT(std::array<DoubleSWord, 1 << Nbit> &res,
                const std::array<T, 1 << Nbit> &a,
-               const std::array<SWord, 1 << Nbit> &table,
+               const std::array<std::array<SWord, 1 << Nbit>,2> &table,
                const std::array<SWord, 1 << Nbit> &twist)
 {
     TwistMulInvert<T, Nbit, modsiwtch>(res, a, twist);
-    INTT<Nbit, 1>(res, table);
+    INTT<Nbit, 2>(res, table);
 }
 
 template <uint8_t radixbit>
@@ -286,7 +332,7 @@ inline void NTTradixButterfly(DoubleSWord *const res, const uint32_t size)
         //             res[i * block + j + size / 2] =
         //                 res[i * block + j + size / 2]
         //                 << (3 * (64 - (i << (6 - radixbit))));
-        ButterflyAdd(res, size);
+        ButterflyAddBothMod(res, size);
     }
 }
 
@@ -338,17 +384,17 @@ inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
 
 template <typename T, uint32_t Nbit, bool modsiwtch = false>
 void TwistNTT(std::array<T, 1 << Nbit> &res, std::array<DoubleSWord, 1 << Nbit> &a,
-              const std::array<SWord, 1 << Nbit> &table,
+              const std::array<std::array<SWord, 1 << Nbit>,2> &table,
               const std::array<SWord, 1 << Nbit> &twist)
 {
-    NTT<Nbit, 1>(a, table);
+    NTT<Nbit, 1>(a, table[0]);
     TwistMulDirect<T, Nbit, modsiwtch>(res, a, twist);
 }
 
 template <typename T, uint32_t Nbit, bool modswitcha, bool modswitchb>
 void PolyMullvl1(std::array<T, 1 << Nbit> &res, std::array<T, 1 << Nbit> &a,
                  std::array<T, 1 << Nbit> &b,
-                 const std::array<std::array<SWord, 1 << Nbit>, 2> &table,
+                 const std::array<std::array<std::array<SWord, 1 << Nbit>, 2>, 2> &table,
                  const std::array<std::array<SWord, 1 << Nbit>, 2> &twist)
 {
     std::array<DoubleSWord, 1 << Nbit> ntta, nttb;

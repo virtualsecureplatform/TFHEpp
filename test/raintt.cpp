@@ -71,20 +71,20 @@ int main()
     }
 
     const std::unique_ptr<
-        const std::array<std::array<raintt::SWord, TFHEpp::lvl1param::n>, 2>>
+        const std::array<std::array<std::array<raintt::SWord, TFHEpp::lvl1param::n>, 2>, 2>>
         tablelvl1 = raintt::TableGen<TFHEpp::lvl1param::nbit>();
     const std::unique_ptr<
         const std::array<std::array<raintt::SWord, TFHEpp::lvl1param::n>, 2>>
-        twistlvl1 = raintt::TwistGen<TFHEpp::lvl1param::nbit>();
+        twistlvl1 = raintt::TwistGen<TFHEpp::lvl1param::nbit,2>();
 
     for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-        assert((raintt::MulREDC((*tablelvl1)[0][i], (*tablelvl1)[1][i])) ==
+        assert((raintt::MulREDC((*tablelvl1)[0][0][i], (*tablelvl1)[1][0][i])) ==
                raintt::R);
     for (int i = 1; i < TFHEpp::lvl1param::n; i++)
-        assert((*tablelvl1)[0][i] != raintt::R);
-    for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-        assert((raintt::MulREDC((*twistlvl1)[0][i], (*twistlvl1)[1][i])) ==
-               (*twistlvl1)[0][0]);
+        assert((*tablelvl1)[0][0][i] != raintt::R);
+    // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+    //     assert((raintt::MulREDC((*twistlvl1)[0][i], (*twistlvl1)[1][i])) ==
+    //            (*twistlvl1)[0][0]);
     for (int i = 1; i < TFHEpp::lvl1param::n; i++)
         assert((*twistlvl1)[0][i] != 1);
     // assert(((static_cast<raintt::DoubleWord>((*tablelvl1)[1][TFHEpp::lvl1param::n
@@ -224,13 +224,19 @@ int main()
     std::cout << "Start NTT only test." << std::endl;
     for (int test = 0; test < num_test; test++) {
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
-        std::array<raintt::DoubleSWord, TFHEpp::lvl1param::n> res;
+        std::array<raintt::DoubleSWord, TFHEpp::lvl1param::n> res,temp;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a;
         for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine);
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             res[i] = raintt::SWord(a[i]);
+        temp = res;
         raintt::INTT<TFHEpp::lvl1param::nbit, 2>(res, (*tablelvl1)[1]);
-        raintt::NTT<TFHEpp::lvl1param::nbit, 1>(res, (*tablelvl1)[0]);
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++) res[i] = raintt::MulSREDC(res[i],raintt::R2);
+        raintt::INTT<TFHEpp::lvl1param::nbit, 1>(temp, (*tablelvl1)[1]);
+        // for (int i = 0; i < TFHEpp::lvl1param::n/2+1; i++)
+        // if (temp[i] != res[i])
+        //  std::cout << i << ":" <<res[i]<<":"<<temp[i]<<std::endl;
+        raintt::NTT<TFHEpp::lvl1param::nbit, 1>(res, (*tablelvl1)[0][0]);
 
         const raintt::Word invN =
             (static_cast<raintt::DoubleWord>(
@@ -240,8 +246,8 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             res[i] =
                 raintt::MulREDC(res[i] < 0 ? res[i] + raintt::P : res[i], invN);
-        // for (int i = 0; i < TFHEpp::lvl1param::n/2+1; i++)
-        // if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<a[i]<<std::endl;
+        for (int i = 0; i < TFHEpp::lvl1param::n/2+1; i++)
+        if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             assert(a[i] == res[i]);
         }
