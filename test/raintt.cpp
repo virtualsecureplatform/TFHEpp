@@ -224,7 +224,7 @@ int main()
     std::cout << "Start NTT only test." << std::endl;
     for (int test = 0; test < num_test; test++) {
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
-        std::array<raintt::SWord, TFHEpp::lvl1param::n> res;
+        std::array<raintt::DoubleSWord, TFHEpp::lvl1param::n> res;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a;
         for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine);
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
@@ -253,7 +253,7 @@ int main()
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, res;
         for (typename TFHEpp::lvl1param::T &i : a) i = Pdist(engine);
-        std::array<raintt::SWord, TFHEpp::lvl1param::n> resntt;
+        std::array<raintt::DoubleSWord, TFHEpp::lvl1param::n> resntt;
         raintt::TwistINTT<typename TFHEpp::lvl1param::T,
                           TFHEpp::lvl1param::nbit>(resntt, a, (*tablelvl1)[1],
                                                    (*twistlvl1)[1]);
@@ -281,7 +281,7 @@ int main()
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, res;
         for (typename TFHEpp::lvl1param::T &i : a) i = Torus32dist(engine);
-        std::array<raintt::SWord, TFHEpp::lvl1param::n> resntt;
+        std::array<raintt::DoubleSWord, TFHEpp::lvl1param::n> resntt;
         raintt::TwistINTT<typename TFHEpp::lvl1param::T,
                           TFHEpp::lvl1param::nbit,true>(resntt, a, (*tablelvl1)[1],
                                                    (*twistlvl1)[1]);
