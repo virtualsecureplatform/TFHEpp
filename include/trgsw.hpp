@@ -9,11 +9,23 @@
 
 namespace TFHEpp {
 
-// https://eprint.iacr.org/2021/1161
+template <class P>
+constexpr typename P::T offsetgen()
+{
+    typename P::T offset = 0;
+    for (int i = 1; i <= P::l; i++)
+        offset +=
+            P::Bg / 2 *
+            (1ULL << (std::numeric_limits<typename P::T>::digits - i * P::Bgbit));
+    return offset;
+}
+
 template <class P>
 void Decomposition(DecomposedPolynomial<P> &decpoly, const Polynomial<P> &poly,
                    typename P::T randbits = 0)
 {
+    #ifdef USE_OPTIMAL_DECOMPOSITION
+    // https://eprint.iacr.org/2021/1161
     constexpr typename P::T roundoffset =
         1ULL << (std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit -
                  1);
@@ -47,6 +59,33 @@ void Decomposition(DecomposedPolynomial<P> &decpoly, const Polynomial<P> &poly,
             ki -= carry << P::Bgbit;
         }
     }
+    #else
+    constexpr typename P::T offset = offsetgen<P>();
+    constexpr typename P::T roundoffset =
+        1ULL << (std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit -
+                 1);
+    constexpr typename P::T mask =
+        static_cast<typename P::T>((1ULL << P::Bgbit) - 1);
+    constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
+
+    for (int l = 0; l < P::l; l++) 
+        for (int i = 0; i < P::n; i++) 
+            decpoly[l][i] = (((poly[i] + offset + roundoffset) >>
+                        (std::numeric_limits<typename P::T>::digits -
+                            (l + 1) * P::Bgbit)) &
+                        mask) -
+                        halfBg;
+    #endif
+}
+
+template<class P>
+void DecompositionNTT(DecomposedPolynomialNTT<P> &decpolyntt, const Polynomial<P> &poly,
+                   typename P::T randbits = 0)
+{
+    DecomposedPolynomial<P> decpoly;
+    Decomposition<P>(decpoly,poly);
+    for(int i = 0; i < P::l; i++)
+        TwistINTT<P>(decpolyntt[i],decpoly[i]);
 }
 
 template <class P>

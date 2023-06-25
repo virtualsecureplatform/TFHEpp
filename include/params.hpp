@@ -58,6 +58,8 @@ template <class P>
 using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
 template <class P>
 using DecomposedPolynomial = std::array<Polynomial<P>, P::l>;
+template <class P>
+using DecomposedPolynomialNTT = std::array<PolynomialNTT<P>, P::l>;
 
 template <class P>
 using TRLWE = std::array<Polynomial<P>, P::k + 1>;
