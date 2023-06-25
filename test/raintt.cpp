@@ -229,7 +229,7 @@ int main()
         for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine);
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             res[i] = raintt::SWord(a[i]);
-        raintt::INTT<TFHEpp::lvl1param::nbit, 1>(res, (*tablelvl1)[1]);
+        raintt::INTT<TFHEpp::lvl1param::nbit, 2>(res, (*tablelvl1)[1]);
         raintt::NTT<TFHEpp::lvl1param::nbit, 1>(res, (*tablelvl1)[0]);
 
         const raintt::Word invN =
@@ -240,11 +240,8 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             res[i] =
                 raintt::MulREDC(res[i] < 0 ? res[i] + raintt::P : res[i], invN);
-        // for (int i = 0; i < TFHEpp::lvl1param::n; i++e
-        // std::cout<<res[i].value<<":"<<a[i]<<std::endl;
         // for (int i = 0; i < TFHEpp::lvl1param::n/2+1; i++)
-        // if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<a[i]<<
-        // std::endl;
+        // if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             assert(a[i] == res[i]);
         }

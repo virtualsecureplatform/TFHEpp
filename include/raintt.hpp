@@ -200,17 +200,17 @@ inline void TwiddleMul(SWord *const res, const uint size, const uint stride,
 template <uint8_t radixbit>
 inline void INTTradixButterfly(SWord *const res, const uint32_t size)
 {
-    static_assert(radixbit <= 1, "radix 2 is the maximum!");
-    if constexpr (radixbit != 0) {
+    static_assert(radixbit <= 2, "radix 4 is the maximum!");
+    if constexpr (radixbit == 1) {
         ButterflyAdd(res, size);
-        // const uint32_t block = size >> radixbit;
-        // for (int i = 1; i < (1 << (radixbit - 1)); i++)
-        //     for (int j = 0; j < block; j++)
-        //         res[i * block + j + size / 2] = res[i * block + j + size / 2]
-        //                                         << (3 * (i << (6 -
-        //                                         radixbit)));
-        // INTTradixButterfly<radixbit - 1>(&res[0], size / 2);
-        // INTTradixButterfly<radixbit - 1>(&res[size / 2], size / 2);
+    }else if constexpr(radixbit == 2){
+        ButterflyAdd(res, size);
+        const uint32_t block = size >> radixbit;
+        for (int i = 1; i < (1 << (radixbit - 1)); i++)
+            for (int j = 0; j < block; j++)
+                res[i * block + j + size / 2] = ((static_cast<DoubleSWord>(res[i * block + j + size / 2]) * ipow<DoubleSWord>(k,i*(radixs2>>(radixbit-1))))<<(shiftamount>>(radixbit-1)))%P;
+        INTTradixButterfly<radixbit - 1>(&res[0], size / 2);
+        INTTradixButterfly<radixbit - 1>(&res[size / 2], size / 2);
     }
 }
 
