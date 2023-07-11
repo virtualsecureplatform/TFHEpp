@@ -141,7 +141,7 @@ int main()
                          TFHEpp::lvl1param::nbit>(res, resntt, (*tablelvl1)[0],
                                                   (*twistlvl1)[0]);
         // for (int i = 0; i < TFHEpp::lvl1param::n/2; i++)
-        // std::cout<<res[i]<<":"<<a[i]<<std::endl;
+            //  if (a[i] != res[i]) std::cout<<i<<":"<<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) assert(a[i] == res[i]);
     }
     std::cout << "NTT witout modswitch Passed" << std::endl;

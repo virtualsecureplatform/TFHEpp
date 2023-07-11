@@ -163,7 +163,11 @@ std::unique_ptr<std::array<std::array<SWord, 1U << Nbit>, 2>> TwistGen()
     assert(MulREDC((*twist)[0][1], wR) == (*twist)[0][0]);
 
     if constexpr(remainder!=1) for (uint i = 0; i < N; i++) (*twist)[1][i] = MulREDC((*twist)[1][i], R2);
-    // if constexpr(radixbit != 1)  for(uint j = 0; j < 1 << radixbit-1; j++) for (uint i = 0; i < N>>radixbit; i++)  (*twist)[0][(2*j+1)*(N>>radixbit)+i] = MulREDC((*twist)[0][(2*j+1)*(N>>radixbit)+i], R2);
+    if constexpr(radixbit != 1)  {
+    // for(uint j = 0; j < (1U << radixbit-1); j++) for (uint i = 0; i < N>>radixbit; i++)  (*twist)[0][(2*j+1)*(N>>radixbit)+i] = MulREDC((*twist)[0][(2*j+1)*(N>>radixbit)+i], R2);
+    constexpr uint radixbit2 = 2;
+    for(uint j = 0; j < (1U << radixbit2-1); j++) for (uint i = 0; i < N>>radixbit2; i++)  (*twist)[0][(2*j+1)*(N>>radixbit2)+i] = MulREDC((*twist)[0][(2*j+1)*(N>>radixbit2)+i], R2);
+    }
     return twist;
 }
 
@@ -450,7 +454,7 @@ void TwistNTT(std::array<T, 1 << Nbit> &res, std::array<DoubleSWord, 1 << Nbit> 
               const std::array<std::array<SWord, 1 << Nbit>,2> &table,
               const std::array<SWord, 1 << Nbit> &twist)
 {
-    NTT<Nbit, 1>(a, table);
+    NTT<Nbit, 2>(a, table);
     TwistMulDirect<T, Nbit, modsiwtch>(res, a, twist);
 }
 
