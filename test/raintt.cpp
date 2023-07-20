@@ -106,11 +106,15 @@ int main()
         // for (int i = 0; i < TFHEpp::lvl1param::n/2+1; i++)
         // if (temp[i] != res[i])
         //  std::cout << i << ":" <<res[i]<<":"<<temp[i]<<std::endl;
-        raintt::NTT<TFHEpp::lvl1param::nbit, 2>(res, (*tablelvl1)[0]);
-        for(int i = 0; i < TFHEpp::lvl1param::n>>2; i++){
-            res[i + (TFHEpp::lvl1param::n>>2)] = raintt::MulSREDC(res[i + (TFHEpp::lvl1param::n>>2)],raintt::R2);
-            res[i + 3 * (TFHEpp::lvl1param::n>>2)] = raintt::MulSREDC(res[i + 3 * (TFHEpp::lvl1param::n>>2)],raintt::R2);
-        }
+        raintt::NTT<TFHEpp::lvl1param::nbit, 3>(res, (*tablelvl1)[0]);
+        // radix4
+        // for(int i = 0; i < TFHEpp::lvl1param::n>>2; i++){
+        //     res[i + (TFHEpp::lvl1param::n>>2)] = raintt::MulSREDC(res[i + (TFHEpp::lvl1param::n>>2)],raintt::R2);
+        //     res[i + 3 * (TFHEpp::lvl1param::n>>2)] = raintt::MulSREDC(res[i + 3 * (TFHEpp::lvl1param::n>>2)],raintt::R2);
+        // }
+        // radix8
+        for(int i = 0; i < TFHEpp::lvl1param::n; i++)
+            if((i >> (TFHEpp::lvl1param::nbit - 3) & 3)!=0)res[i] = raintt::MulSREDC(res[i],raintt::R2);
 
         const raintt::Word invN =
             (static_cast<raintt::DoubleWord>(
@@ -120,8 +124,8 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             res[i] =
                 raintt::MulREDC(res[i] < 0 ? res[i] + raintt::P : res[i], invN);
-        // for (int i = 0; i < TFHEpp::lvl1param::n/2+2; i++)
-        // if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<a[i]<<std::endl;
+        for (int i = 0; i < TFHEpp::lvl1param::n/2+2; i++)
+        if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             assert(a[i] == res[i]);
         }

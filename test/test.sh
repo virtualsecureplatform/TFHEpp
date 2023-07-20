@@ -21,7 +21,7 @@ cd $SCRIPT_DIR
 ./show_info.sh
 
 TEST_BINARIES=`find . -maxdepth 1 -perm -111 -type f`
-IGNORED_BINARIES=('raintt')
+IGNORED_BINARIES=('')
 for TEST_BINARY in $TEST_BINARIES
 do
     RES=`contains $TEST_BINARY "${IGNORED_BINARIES[*]}"`
