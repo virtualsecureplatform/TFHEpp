@@ -32,6 +32,10 @@ inline const std::unique_ptr<
 inline const std::unique_ptr<
     const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl2param::n>, 2>>
     ntttablelvl2 = cuHEpp::TableGen<TFHEpp::lvl2param::nbit>();
+inline const std::unique_ptr<std::array<std::array<raintt::SWord, TFHEpp::lvl1param::n>, 2>> 
+    raintttwist = raintt::TwistGen<TFHEpp::lvl1param::nbit,3>();
+inline const std::unique_ptr<std::array<std::array<std::array<raintt::SWord, TFHEpp::lvl1param::n>, 2>, 2>> 
+    raintttable = raintt::TableGen<TFHEpp::lvl1param::nbit>();
 #ifdef USE_HEXL
 // Biggest prime number less than 2^30 and staisfies 1 mod 2N.
 constexpr uint64_t lvl1P = 1073707009;

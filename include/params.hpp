@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "cuhe++.hpp"
+#include "raintt.hpp"
 
 namespace TFHEpp {
 
@@ -57,9 +58,14 @@ using PolynomialInFD = std::array<double, P::n>;
 template <class P>
 using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
 template <class P>
+using PolynomialRAINTT = std::array<raintt::DoubleSWord, P::n>;
+template <class P>
 using DecomposedPolynomial = std::array<Polynomial<P>, P::l>;
 template <class P>
 using DecomposedPolynomialNTT = std::array<PolynomialNTT<P>, P::l>;
+template <class P>
+using DecomposedPolynomialRAINTT = std::array<PolynomialRAINTT<P>, P::l>;
+
 
 template <class P>
 using TRLWE = std::array<Polynomial<P>, P::k + 1>;
@@ -71,6 +77,8 @@ template <class P>
 using TRLWEInFD = std::array<PolynomialInFD<P>, P::k + 1>;
 template <class P>
 using TRLWENTT = std::array<PolynomialNTT<P>, P::k + 1>;
+template <class P>
+using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 
 template <class P>
 using TRGSW = std::array<TRLWE<P>, (P::k + 1) * P::l>;
@@ -78,6 +86,8 @@ template <class P>
 using TRGSWFFT = std::array<TRLWEInFD<P>, (P::k + 1) * P::l>;
 template <class P>
 using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
+template <class P>
+using TRGSWRAINTT = std::array<TRLWERAINTT<P>, (P::k + 1) * P::l>;
 
 #ifdef USE_KEY_BUNDLE
 template <class P>

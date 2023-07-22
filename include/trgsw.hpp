@@ -87,6 +87,15 @@ void DecompositionNTT(DecomposedPolynomialNTT<P> &decpolyntt, const Polynomial<P
     for(int i = 0; i < P::l; i++)
         TwistINTT<P>(decpolyntt[i],decpoly[i]);
 }
+template<class P>
+void DecompositionRAINTT(DecomposedPolynomialRAINTT<P> &decpolyntt, const Polynomial<P> &poly,
+                   typename P::T randbits = 0)
+{
+    DecomposedPolynomial<P> decpoly;
+    Decomposition<P>(decpoly,poly);
+    for(int i = 0; i < P::l; i++)
+        raintt::TwistINTT<typename P::T, P::nbit, false>(decpolyntt[i],decpoly[i],(*raintttable)[1],(*raintttwist)[1]);
+}
 
 template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
@@ -117,6 +126,33 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
         }
     }
     for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
+}
+
+template <class P>
+void trgswrainttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
+                             const TRGSWRAINTT<P> &trgswntt)
+{
+    DecomposedPolynomialRAINTT<P> decpolyntt;
+    DecompositionRAINTT<P>(decpolyntt, trlwe[0]);
+    TRLWERAINTT<P> restrlwentt;
+    for (int m = 0; m < P::k + 1; m++)
+        for (int i = 0; i < P::n; i++)
+            restrlwentt[m][i] = raintt::MulSREDC(decpolyntt[0][i],trgswntt[0][m][i]);
+    for (int i = 1; i < P::l; i++) {
+        for (int m = 0; m < P::k + 1; m++)
+            for (int j = 0; j < P::n; j++)
+                restrlwentt[m][j] = raintt::AddMod(restrlwentt[m][j],raintt::MulSREDC(decpolyntt[i][j], trgswntt[i][m][j]));
+    }
+    for (int k = 1; k < P::k + 1; k++) {
+        DecompositionRAINTT<P>(decpolyntt, trlwe[k]);
+        for (int i = 0; i < P::l; i++) {
+            for (int m = 0; m < P::k + 1; m++)
+                for (int j = 0; j < P::n; j++)
+                    restrlwentt[m][j] =
+                        raintt::AddMod(restrlwentt[m][j],raintt::MulSREDC(decpolyntt[i][j], trgswntt[i + k * P::l][m][j]));
+        }
+    }
+    for (int k = 0; k < P::k + 1; k++) raintt::TwistNTT<typename P::T,P::nbit, true>(res[k], restrlwentt[k],(*raintttable)[0],(*raintttwist)[0]);
 }
 
 template <class P>
@@ -211,6 +247,18 @@ TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
 }
 
 template <class P>
+TRGSWRAINTT<P> ApplyRAINTT2trgsw(const TRGSW<P> &trgsw)
+{
+    TRGSWRAINTT<P> trgswntt;
+    for (int i = 0; i < (P::k + 1) * P::l; i++)
+        for (int j = 0; j < P::k + 1; j++){
+            raintt::TwistINTT<typename P::T,P::nbit,true>(trgswntt[i][j], trgsw[i][j],(*raintttable)[1],(*raintttwist)[1]);
+            for(int k = 0; k <P::n; k++) trgswntt[i][j][k] = raintt::MulSREDC(trgswntt[i][j][k],raintt::R2);
+        }
+    return trgswntt;
+}
+
+template <class P>
 TRGSWNTT<P> TRGSW2NTT(const TRGSW<P> &trgsw)
 {
     TRGSWNTT<P> trgswntt;
@@ -257,6 +305,14 @@ TRGSWNTT<P> trgswnttSymEncrypt(const Polynomial<P> &p, const double α,
 {
     TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
     return ApplyNTT2trgsw<P>(trgsw);
+}
+
+template <class P>
+TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p, const double α,
+                               const Key<P> &key)
+{
+    TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
+    return ApplyRAINTT2trgsw<P>(trgsw);
 }
 
 #include "externs/trgsw.hpp"

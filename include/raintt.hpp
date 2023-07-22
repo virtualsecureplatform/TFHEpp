@@ -43,7 +43,7 @@ constexpr Word REDC(const DoubleWord T)
 }
 
 // https://eprint.iacr.org/2018/039
-SWord SREDC(const DoubleWord a)
+inline SWord SREDC(const DoubleWord a)
 {
     const Word a0 = a & wordmask;
     const SWord a1 = a >> wordbits;
@@ -53,7 +53,7 @@ SWord SREDC(const DoubleWord a)
     return a1 - t1;
 }
 
-SWord AddMod(const SWord a, const SWord b)
+inline SWord AddMod(const SWord a, const SWord b)
 {
     SWord add = a + b;
     if (add >= P)
@@ -64,7 +64,7 @@ SWord AddMod(const SWord a, const SWord b)
         return add;
 }
 
-SWord SubMod(const SWord a, const SWord b)
+inline SWord SubMod(const SWord a, const SWord b)
 {
     SWord sub = a - b;
     if (sub >= P)
@@ -81,7 +81,7 @@ constexpr Word MulREDC(const Word a, const Word b)
     return REDC(mul);
 }
 
-SWord MulSREDC(const SWord a, const SWord b)
+inline SWord MulSREDC(const SWord a, const SWord b)
 {
     const DoubleSWord mul = static_cast<DoubleSWord>(a) * b;
     return SREDC(mul);
@@ -192,7 +192,7 @@ inline std::unique_ptr<std::array<std::array<std::array<SWord, 1U << Nbit>, 2>, 
     return table;
 }
 
-void ButterflyAddBothMod(DoubleSWord *const res, const uint size)
+inline void ButterflyAddBothMod(DoubleSWord *const res, const uint size)
 {
     for (uint index = 0; index < size / 2; index++) {
         const SWord temp = res[index];
@@ -201,7 +201,7 @@ void ButterflyAddBothMod(DoubleSWord *const res, const uint size)
     }
 }
 
-void ButterflyAddAddMod(DoubleSWord *const res, const uint size)
+inline void ButterflyAddAddMod(DoubleSWord *const res, const uint size)
 {
     for (uint index = 0; index < size / 2; index++) {
         const SWord temp = res[index];
@@ -210,7 +210,7 @@ void ButterflyAddAddMod(DoubleSWord *const res, const uint size)
     }
 }
 
-void ButterflyAdd(DoubleSWord *const res, const uint size)
+inline void ButterflyAdd(DoubleSWord *const res, const uint size)
 {
     for (uint index = 0; index < size / 2; index++) {
         const SWord temp = res[index];
@@ -219,7 +219,7 @@ void ButterflyAdd(DoubleSWord *const res, const uint size)
     }
 }
 
-void ButterflyAddBothSREDC(DoubleSWord *const res, const uint size)
+inline void ButterflyAddBothSREDC(DoubleSWord *const res, const uint size)
 {
     for (uint index = 0; index < size / 2; index++) {
         const DoubleSWord temp = res[index];
@@ -331,9 +331,9 @@ inline void TwistMulInvert(std::array<DoubleSWord, 1 << Nbit> &res,
                  a[i] + (1ULL << (32 - 1))) >>
                 32;
         }else{
-            res[i] = a[i];
+            res[i] = static_cast<DoubleSWord>(static_cast<typename std::make_signed<T>::type>(a[i]));
         }
-        res[i] = MulREDC(res[i], twist[i]);
+        res[i] = MulSREDC(res[i], twist[i]);
     }
 }
 
@@ -474,11 +474,12 @@ inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
     constexpr uint32_t N = 1 << Nbit;
     for (int i = 0; i < N; i++) {
         const SWord mulres = MulSREDC(a[i], twist[i]);
-        res[i] = (mulres < 0) ? mulres + P : mulres;
         if constexpr (modswitch)
-            res[i] = (static_cast<DoubleWord>(res[i]) * ((1ULL << 61) / P) +
+            res[i] = (static_cast<DoubleSWord>((mulres < 0) ? mulres + P : mulres) * ((1ULL << 61) / P) +
                       (1ULL << (29 - 1))) >>
                      29;
+        else
+            res[i] = mulres;
     }
 }
 
@@ -501,7 +502,7 @@ void PolyMullvl1(std::array<T, 1 << Nbit> &res, std::array<T, 1 << Nbit> &a,
     TwistINTT<T, Nbit, modswitcha>(ntta, a, table[1], twist[1]);
     TwistINTT<T, Nbit, modswitchb>(nttb, b, table[1], twist[1]);
     for (int i = 0; i < (1U << Nbit); i++)
-        ntta[i] = MulSREDC(MulSREDC(ntta[i], R2), nttb[i]);
+        ntta[i] = MulSREDC(MulSREDC(nttb[i], R2), ntta[i]);
     TwistNTT<T, Nbit, modswitcha | modswitchb>(res, ntta, table[0], twist[0]);
 }
 

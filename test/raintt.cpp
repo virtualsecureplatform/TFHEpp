@@ -42,8 +42,8 @@ int main()
     std::uniform_int_distribution<uint32_t> Bgdist(0, TFHEpp::lvl1param::Bg);
     std::uniform_int_distribution<uint32_t> Torus32dist(
         0, std::numeric_limits<typename TFHEpp::lvl1param::T>::max());
-    std::uniform_int_distribution<raintt::Word> Pdist(0, raintt::P);
-    std::uniform_int_distribution<raintt::SWord> sPdist(-raintt::P, raintt::P);
+    std::uniform_int_distribution<raintt::Word> Pdist(0, raintt::P-1);
+    std::uniform_int_distribution<raintt::SWord> sPdist(-raintt::P, raintt::P-1);
 
     for (int i = 0; i < num_test; i++) {
         raintt::Word a = Pdist(engine);
@@ -96,13 +96,16 @@ int main()
         // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
         std::array<raintt::DoubleSWord, TFHEpp::lvl1param::n> res,temp;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a;
-        for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine);
+        // for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine);
+        // for (typename TFHEpp::lvl1param::T &i : a) i = Pdist(engine);
+        for (typename TFHEpp::lvl1param::T &i : a) i = sPdist(engine);
+        // for (uint32_t &i : a) i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-            res[i] = raintt::SWord(a[i]);
+            res[i] = static_cast<raintt::DoubleSWord>(static_cast<int32_t>(a[i]));
         temp = res;
         raintt::INTT<TFHEpp::lvl1param::nbit, 3>(res, (*tablelvl1)[1]);
         // for (int i = 0; i < TFHEpp::lvl1param::n; i++) res[i] = raintt::MulSREDC(res[i],raintt::R2);
-        raintt::INTT<TFHEpp::lvl1param::nbit, 1>(temp, (*tablelvl1)[1]);
+        // raintt::INTT<TFHEpp::lvl1param::nbit, 1>(temp, (*tablelvl1)[1]);
         // for (int i = 0; i < TFHEpp::lvl1param::n/2+1; i++)
         // if (temp[i] != res[i])
         //  std::cout << i << ":" <<res[i]<<":"<<temp[i]<<std::endl;
@@ -122,10 +125,13 @@ int main()
              raintt::R) %
             raintt::P;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-            res[i] =
-                raintt::MulREDC(res[i] < 0 ? res[i] + raintt::P : res[i], invN);
+            res[i] = raintt::MulSREDC(res[i], invN);
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            res[i] = res[i] < 0? res[i]+raintt::P: res[i];
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            a[i] = static_cast<int32_t>(a[i]) < 0? a[i]+raintt::P: a[i];
         for (int i = 0; i < TFHEpp::lvl1param::n/2+2; i++)
-        if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<a[i]<<std::endl;
+        if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<static_cast<int32_t>(a[i])<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             assert(a[i] == res[i]);
         }
@@ -134,18 +140,23 @@ int main()
 
     std::cout << "Start LVL1 test." << std::endl;
     for (int test = 0; test < num_test; test++) {
-        // std::array<typename TFHEpp::lvl1param::T,TFHEpp::lvl1param::n> a,res;
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, res;
-        for (typename TFHEpp::lvl1param::T &i : a) i = Pdist(engine);
+        for (typename TFHEpp::lvl1param::T &i : a) i = sPdist(engine);
+        // for (typename TFHEpp::lvl1param::T &i : a) i = Pdist(engine);
+        // for (uint32_t &i : a) i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
         std::array<raintt::DoubleSWord, TFHEpp::lvl1param::n> resntt;
         raintt::TwistINTT<typename TFHEpp::lvl1param::T,
-                          TFHEpp::lvl1param::nbit>(resntt, a, (*tablelvl1)[1],
+                          TFHEpp::lvl1param::nbit,false>(resntt, a, (*tablelvl1)[1],
                                                    (*twistlvl1)[1]);
         raintt::TwistNTT<typename TFHEpp::lvl1param::T,
-                         TFHEpp::lvl1param::nbit>(res, resntt, (*tablelvl1)[0],
+                         TFHEpp::lvl1param::nbit,false>(res, resntt, (*tablelvl1)[0],
                                                   (*twistlvl1)[0]);
-        // for (int i = 0; i < TFHEpp::lvl1param::n/2; i++)
-            //  if (a[i] != res[i]) std::cout<<i<<":"<<res[i]<<":"<<a[i]<<std::endl;
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            res[i] = static_cast<int32_t>(res[i]) < 0? res[i]+raintt::P: res[i];
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            a[i] = static_cast<int32_t>(a[i]) < 0? a[i]+raintt::P: a[i];
+        for (int i = 0; i < TFHEpp::lvl1param::n/2; i++)
+             if (a[i] != res[i]) std::cout<<i<<":"<<static_cast<int32_t>(res[i])<<":"<<static_cast<int32_t>(a[i])<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) assert(a[i] == res[i]);
     }
     std::cout << "NTT witout modswitch Passed" << std::endl;
@@ -172,8 +183,8 @@ int main()
         raintt::TwistNTT<typename TFHEpp::lvl1param::T,
                          TFHEpp::lvl1param::nbit,true>(res, resntt, (*tablelvl1)[0],
                                                   (*twistlvl1)[0]);
-        // for (int i = 0; i < TFHEpp::lvl1param::n/2; i++)
-        // std::cout<<res[i]<<":"<<a[i]<<std::endl;
+        for (int i = 0; i < TFHEpp::lvl1param::n/2; i++)
+            if(std::abs(static_cast<int>(res[i] - a[i])) > 4)std::cout<<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             assert(std::abs(static_cast<int>(res[i] - a[i])) <= 4);
     }
@@ -182,6 +193,7 @@ int main()
     for (int test = 0; test < num_test; test++) {
         TFHEpp::Polynomial<TFHEpp::lvl1param> a, b, polymul;
         for (typename TFHEpp::lvl1param::T &i : a) i = Bgdist(engine);
+        // for (uint32_t &i : a) i = Bgdist(engine) - TFHEpp::lvl1param::Bg / 2;
         for (typename TFHEpp::lvl1param::T &i : b) i = Pdist(engine);
 
         raintt::PolyMullvl1<typename TFHEpp::lvl1param::T,
@@ -192,16 +204,18 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             for (int j = 0; j <= i; j++)
                 naieve[i] =
-                    ((static_cast<int64_t>(naieve[i]) + static_cast<int64_t>(a[j]) * b[i - j]) %
-                    raintt::P + raintt::P) % raintt::P;
+                    ((static_cast<int64_t>(naieve[i]) + (static_cast<int64_t>(static_cast<int32_t>(a[j])) * b[i - j]) %
+                    raintt::P) + raintt::P) % raintt::P;
             for (int j = i + 1; j < TFHEpp::lvl1param::n; j++)
                 naieve[i] = ((static_cast<int64_t>(naieve[i]) -
-                              static_cast<int64_t>(a[j]) *
+                              static_cast<int64_t>(static_cast<int32_t>(a[j])) *
                                   b[TFHEpp::lvl1param::n + i - j]) %
                                  raintt::P +
                              raintt::P) %
                             raintt::P;
         }
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+            polymul[i] = static_cast<int32_t>(polymul[i]) < 0? polymul[i]+raintt::P: polymul[i];
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <= 1);
         }
