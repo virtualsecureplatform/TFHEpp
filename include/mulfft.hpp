@@ -177,7 +177,7 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         MulInFD<P::n>(ffta, ffta, fftb);
         TwistFFT<P>(res, ffta);
     }
-    else if constexpr (std::is_same_v<typename P::T, uint64_t>) {
+    else{
         for (int i = 0; i < P::n; i++) {
             typename P::T ri = 0;
             for (int j = 0; j <= i; j++)
@@ -193,8 +193,6 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
             res[i] = ri;
         }
     }
-    else
-        static_assert(false_v<typename P::T>, "Undefined PolyMul!");
 }
 
 template <class P>
