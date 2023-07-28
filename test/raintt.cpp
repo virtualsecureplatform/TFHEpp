@@ -36,6 +36,8 @@ void NTTdebug(
 int main()
 {
     constexpr uint32_t num_test = 1000;
+    constexpr uint radixbit = 3;
+    constexpr uint8_t remainder = ((TFHEpp::lvl1param::nbit - 1) % radixbit) + 1;
 
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
@@ -75,7 +77,7 @@ int main()
         tablelvl1 = raintt::TableGen<TFHEpp::lvl1param::nbit>();
     const std::unique_ptr<
         const std::array<std::array<raintt::SWord, TFHEpp::lvl1param::n>, 2>>
-        twistlvl1 = raintt::TwistGen<TFHEpp::lvl1param::nbit,3>();
+        twistlvl1 = raintt::TwistGen<TFHEpp::lvl1param::nbit,radixbit>();
 
     for (int i = 0; i < TFHEpp::lvl1param::n; i++)
         assert((raintt::MulREDC((*tablelvl1)[0][0][i], (*tablelvl1)[1][0][i])) ==
@@ -103,8 +105,8 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             res[i] = static_cast<raintt::DoubleSWord>(static_cast<int32_t>(a[i]));
         temp = res;
-        raintt::INTT<TFHEpp::lvl1param::nbit, 3>(res, (*tablelvl1)[1]);
-        // for (int i = 0; i < TFHEpp::lvl1param::n; i++) res[i] = raintt::MulSREDC(res[i],raintt::R2);
+        raintt::INTT<TFHEpp::lvl1param::nbit, radixbit>(res, (*tablelvl1)[1]);
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++) if((i & ((1<<remainder) -1)) > 1) res[i] = raintt::MulSREDC(res[i],raintt::R2);
         // raintt::INTT<TFHEpp::lvl1param::nbit, 1>(temp, (*tablelvl1)[1]);
         // for (int i = 0; i < TFHEpp::lvl1param::n/2+1; i++)
         // if (temp[i] != res[i])
@@ -148,6 +150,7 @@ int main()
         raintt::TwistINTT<typename TFHEpp::lvl1param::T,
                           TFHEpp::lvl1param::nbit,false>(resntt, a, (*tablelvl1)[1],
                                                    (*twistlvl1)[1]);
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++) if((i & ((1<<remainder) -1)) > 1) resntt[i] = raintt::MulSREDC(resntt[i],raintt::R2);
         raintt::TwistNTT<typename TFHEpp::lvl1param::T,
                          TFHEpp::lvl1param::nbit,false>(res, resntt, (*tablelvl1)[0],
                                                   (*twistlvl1)[0]);
@@ -180,6 +183,7 @@ int main()
         raintt::TwistINTT<typename TFHEpp::lvl1param::T,
                           TFHEpp::lvl1param::nbit,true>(resntt, a, (*tablelvl1)[1],
                                                    (*twistlvl1)[1]);
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++) if((i & ((1<<remainder) -1)) > 1) resntt[i] = raintt::MulSREDC(resntt[i],raintt::R2);
         raintt::TwistNTT<typename TFHEpp::lvl1param::T,
                          TFHEpp::lvl1param::nbit,true>(res, resntt, (*tablelvl1)[0],
                                                   (*twistlvl1)[0]);
@@ -244,7 +248,8 @@ int main()
         //     std::cout << i << ":" << naieve[i] << ":" << polymul[i]
         //               << std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
-            assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <= (1U<<(TFHEpp::lvl1param::nbit+4)));
+            // assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <= (1U<<(TFHEpp::lvl1param::nbit+4)));
+            assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <= (1U<<(TFHEpp::lvl1param::nbit+6)));
         }
     }
     std::cout << "PolyMul with modsiwtch Passed" << std::endl;

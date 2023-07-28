@@ -249,11 +249,14 @@ TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
 template <class P>
 TRGSWRAINTT<P> ApplyRAINTT2trgsw(const TRGSW<P> &trgsw)
 {
+    constexpr uint8_t remainder = ((P::nbit - 1) % 3) + 1;
     TRGSWRAINTT<P> trgswntt;
     for (int i = 0; i < (P::k + 1) * P::l; i++)
         for (int j = 0; j < P::k + 1; j++){
             raintt::TwistINTT<typename P::T,P::nbit,true>(trgswntt[i][j], trgsw[i][j],(*raintttable)[1],(*raintttwist)[1]);
-            for(int k = 0; k <P::n; k++) trgswntt[i][j][k] = raintt::MulSREDC(trgswntt[i][j][k],raintt::R2);
+            for(int k = 0; k <P::n; k++) 
+                if ((k & ((1<<remainder) -1)) > 1) trgswntt[i][j][k] = raintt::MulSREDC(trgswntt[i][j][k],raintt::R4);
+                else trgswntt[i][j][k] = raintt::MulSREDC(trgswntt[i][j][k],raintt::R2);
         }
     return trgswntt;
 }
