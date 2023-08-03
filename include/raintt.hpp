@@ -283,7 +283,7 @@ inline void INTTradix(DoubleSWord *const res, const uint32_t size,
                       const std::array<std::array<SWord, 1 << Nbit>,2> &table)
 {
     INTTradixButterfly<radixbit>(res, size);
-    for (uint32_t i = 0; i < (1 << radixbit); i++)
+    for (uint32_t i = 1; i < (1 << radixbit); i++)
         TwiddleMulInvert<Nbit,radixbit>(&res[i * (size >> radixbit)], size >> radixbit, i,
                         BitReverse<radixbit>(i) * num_block, table);
 }
@@ -345,9 +345,6 @@ inline void NTTradixButterfly(DoubleSWord *const res, const uint32_t size)
         NTTradixButterfly<radixbit - 1>(&res[0], size / 2);
         NTTradixButterfly<radixbit - 1>(&res[size / 2], size / 2);
         const uint32_t block = size >> radixbit;
-        for (int i = 1; i < (1 << (radixbit - 1)); i++)
-            for (int j = 0; j < block; j++)
-                res[i * block + j + size / 2] = -ConstTwiddleMul<radixbit,1>(res[i * block + j + size / 2]);
         for (uint index = 0; index < size / 4; index++) {
             const SWord temp = res[index];
             res[index] = AddMod(res[index], res[index + size / 2]);
@@ -355,6 +352,7 @@ inline void NTTradixButterfly(DoubleSWord *const res, const uint32_t size)
         }
         for (uint index = size/4; index < size / 2; index++) {
             const DoubleSWord temp = res[index];
+            res[index + size / 2] = -ConstTwiddleMul<radixbit,1>(res[index + size / 2]);
             if constexpr(redc){
                 res[index] = SREDC(res[index]+res[index + size / 2]);
                 res[index + size / 2] = SREDC(temp - res[index + size / 2]);
