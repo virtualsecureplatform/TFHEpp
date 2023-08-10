@@ -115,6 +115,9 @@ using BootstrappingKeyFFT =
 template <class P>
 using BootstrappingKeyNTT =
     std::array<TRGSWNTT<typename P::targetP>, P::domainP::k * P::domainP::n>;
+template <class P>
+using BootstrappingKeyRAINTT =
+    std::array<TRGSWRAINTT<typename P::targetP>, P::domainP::k * P::domainP::n>;
 
 template <class P>
 using KeySwitchingKey = std::array<

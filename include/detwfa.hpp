@@ -109,5 +109,17 @@ void CMUXNTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWNTT<P> &cs,
         for (int i = 0; i < P::n; i++) acc[k][i] += temp[k][i];
 }
 
+template <class P>
+void CMUXRAINTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWRAINTT<P> &cs,
+                                           const typename P::T a)
+{
+    TRLWE<P> temp;
+    for (int k = 0; k < P::k + 1; k++)
+        PolynomialMulByXaiMinusOne<P>(temp[k], acc[k], a);
+    trgswrainttExternalProduct<P>(temp, temp, cs);
+    for (int k = 0; k < P::k + 1; k++)
+        for (int i = 0; i < P::n; i++) acc[k][i] += temp[k][i];
+}
+
 #include "externs/detwfa.hpp"
 }  // namespace TFHEpp

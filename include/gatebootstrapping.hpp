@@ -130,6 +130,36 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
     }
 }
 
+template <class P, uint32_t num_out = 1>
+void BlindRotate(TRLWE<typename P::targetP> &res,
+                 const TLWE<typename P::domainP> &tlwe,
+                 const BootstrappingKeyRAINTT<P> &bkraintt,
+                 const Polynomial<typename P::targetP> &testvector)
+{
+    constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
+    const uint32_t b̄ = 2 * P::targetP::n -
+                       ((tlwe[P::domainP::k * P::domainP::n] >>
+                         (std::numeric_limits<typename P::domainP::T>::digits -
+                          1 - P::targetP::nbit + bitwidth))
+                        << bitwidth);
+    res = {};
+    PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, b̄);
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
+        constexpr typename P::domainP::T roundoffset =
+            1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
+                     P::targetP::nbit + bitwidth);
+        const uint32_t ā =
+            (tlwe[i] + roundoffset) >>
+            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
+             P::targetP::nbit + bitwidth)
+                << bitwidth;
+        if (ā == 0) continue;
+        // Do not use CMUXNTT to avoid unnecessary copy.
+        CMUXRAINTTwithPolynomialMulByXaiMinusOne<typename P::targetP>(res,
+                                                                   bkraintt[i], ā);
+    }
+}
+
 template <class P>
 void GateBootstrappingTLWE2TLWEFFT(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
@@ -149,6 +179,17 @@ void GateBootstrappingTLWE2TLWENTT(
 {
     TRLWE<typename P::targetP> acc;
     BlindRotate<P>(acc, tlwe, bkntt, testvector);
+    SampleExtractIndex<typename P::targetP>(res, acc, 0);
+}
+
+template <class P>
+void GateBootstrappingTLWE2TLWERAINTT(
+    TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
+    const BootstrappingKeyRAINTT<P> &bkraintt,
+    const Polynomial<typename P::targetP> &testvector)
+{
+    TRLWE<typename P::targetP> acc;
+    BlindRotate<P>(acc, tlwe, bkraintt, testvector);
     SampleExtractIndex<typename P::targetP>(res, acc, 0);
 }
 
