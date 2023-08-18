@@ -14,8 +14,9 @@ int main()
     using bkP = TFHEpp::lvl01param;
 
     TFHEpp::SecretKey sk;
-    TFHEpp::BootstrappingKeyRAINTT<bkP> bk;
-    TFHEpp::bkrainttgen<TFHEpp::lvl01param>(bk,sk);
+    std::unique_ptr<TFHEpp::BootstrappingKeyRAINTT<bkP>> bk;
+    bk = std::make_unique<TFHEpp::BootstrappingKeyRAINTT<bkP>>();
+    TFHEpp::bkrainttgen<TFHEpp::lvl01param>(*bk,sk);
     std::array<TFHEpp::TLWE<typename bkP::domainP>, num_test> tlwe;
     std::array<TFHEpp::TLWE<typename bkP::targetP>, num_test> bootedtlwe;
     
@@ -31,7 +32,7 @@ int main()
 
     for (int test = 0; test < num_test; test++) {
         TFHEpp::GateBootstrappingTLWE2TLWERAINTT<bkP>(
-            bootedtlwe[test], tlwe[test], bk, TFHEpp::μpolygen<typename bkP::targetP, bkP::targetP::μ>());
+            bootedtlwe[test], tlwe[test], *bk, TFHEpp::μpolygen<typename bkP::targetP, bkP::targetP::μ>());
     }
 
     end = std::chrono::system_clock::now();
