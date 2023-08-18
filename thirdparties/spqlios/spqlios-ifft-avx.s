@@ -1,4 +1,7 @@
 	.file	"spqlios-ifft-avx.s"
+#if !__APPLE__
+	.section .note.GNU-stack,"",%progbits
+#endif
 	.text
 	.p2align 4
 #if !__APPLE__
