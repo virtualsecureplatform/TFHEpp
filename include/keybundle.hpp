@@ -74,21 +74,21 @@ void KeyBundleFFT(TRGSWFFT<typename P::targetP> &kbfft,
             constexpr uint32_t indexmask = 2 * P::targetP::n - 1;
             if constexpr (std::is_same_v<typename P::targetP, lvl1param>) {
                 FMAInFD<P::targetP::n>(kbfft[i][j], bkfft[2][i][j],
-                                       xaittlvl1[bara[1] & indexmask]);
+                                       (*xaittlvl1)[bara[1] & indexmask]);
                 FMAInFD<P::targetP::n>(kbfft[i][j], bkfft[1][i][j],
-                                       xaittlvl1[bara[0] & indexmask]);
+                                       (*xaittlvl1)[bara[0] & indexmask]);
                 FMAInFD<P::targetP::n>(
                     kbfft[i][j], bkfft[0][i][j],
-                    xaittlvl1[(bara[0] + bara[1]) & indexmask]);
+                    (*xaittlvl1)[(bara[0] + bara[1]) & indexmask]);
             }
             else {
                 FMAInFD<P::targetP::n>(kbfft[i][j], bkfft[2][i][j],
-                                       xaittlvl2[bara[1] & indexmask]);
+                                       (*xaittlvl2)[bara[1] & indexmask]);
                 FMAInFD<P::targetP::n>(kbfft[i][j], bkfft[1][i][j],
-                                       xaittlvl2[bara[0] & indexmask]);
+                                       (*xaittlvl2)[bara[0] & indexmask]);
                 FMAInFD<P::targetP::n>(
                     kbfft[i][j], bkfft[0][i][j],
-                    xaittlvl2[(bara[0] + bara[1]) & indexmask]);
+                    (*xaittlvl2)[(bara[0] + bara[1]) & indexmask]);
             }
         }
     }

@@ -263,14 +263,15 @@ std::unique_ptr<std::array<PolynomialNTT<P>, 2 * P::n>> XaittGenNTT()
     return xaitt;
 }
 
-#ifdef USE_TERNARY
+#if defined(USE_TERNARY) || defined(USE_KEY_BUNDLE)
 alignas(64) static const std::unique_ptr<
     const std::array<PolynomialInFD<lvl1param>, 2 *lvl1param::n>> xaittlvl1 =
     XaittGen<lvl1param>();
 alignas(64) static const std::unique_ptr<
     const std::array<PolynomialInFD<lvl2param>, 2 *lvl2param::n>> xaittlvl2 =
     XaittGen<lvl2param>();
-
+#endif
+#ifdef USE_TERNARY
 template <class P>
 inline void PolynomialMulByXaiMinusOneInFD(PolynomialInFD<P> &res,
                                            const PolynomialInFD<P> &poly,

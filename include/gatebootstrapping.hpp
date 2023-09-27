@@ -84,6 +84,28 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                         << bitwidth);
     for (int k = 0; k < P::targetP::k + 1; k++)
         PolynomialMulByXai<typename P::targetP>(res[k], testvector[k], b̄);
+#ifdef USE_KEY_BUNDLE
+    alignas(64) std::array<TRGSWFFT<typename P::targetP>,  P::domainP::k * P::domainP::n/P::Addends> BKadded;
+    #pragma omp parallel for num_threads(4)
+    for (int i = 0; i < P::domainP::k * P::domainP::n/P::Addends; i++) {
+        constexpr typename P::domainP::T roundoffset =
+            1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
+                     P::targetP::nbit + bitwidth);
+        std::array<typename P::domainP::T,P::Addends> bara;
+        bara[0] = (tlwe[2*i] + roundoffset) >>
+            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
+             P::targetP::nbit + bitwidth)
+                << bitwidth;
+        bara[1] = (tlwe[2*i+1] + roundoffset) >>
+            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
+             P::targetP::nbit + bitwidth)
+                << bitwidth;
+        KeyBundleFFT<P>(BKadded[i], bkfft[i], bara);
+    }
+    for (int i = 0; i < P::domainP::k * P::domainP::n/P::Addends; i++){
+        trgswfftExternalProduct<typename P::targetP>(res, res, BKadded[i]);
+    }
+#else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         constexpr typename P::domainP::T roundoffset =
             1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
@@ -98,6 +120,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
         CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(res,
                                                                    bkfft[i], ā);
     }
+#endif
 }
 
 template <class P, uint32_t num_out = 1>
