@@ -42,6 +42,27 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
     }
 }
 
+// template <class iksP, class bkP, class privksP>
+// void AnnihilateCircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
+//                           const TLWE<typename iksP::domainP> &tlwe,
+//                           const EvalKey &ek)
+// {
+//     TLWE<typename bkP::domainP> tlwelvl0;
+//     IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
+//     TRLWE<typename bkP::targetP>> trlwe;
+//     BlindRotate<bkP, privksP::targetP::l>(
+//         trlwe, tlwelvl0, ek.getbkfft<bkP>(), CBtestvector<privksP>());
+//     for (int i = 0; i < privksP::targetP::l; i++) 
+//         temp[i][privksP::domainP::k * privksP::domainP::n] +=
+//             1ULL << (numeric_limits<typename privksP::domainP::T>::digits -
+//                      (i + 1) * privksP::targetP::Bgbit - 1);
+//     for (int i = 0; i < privksP::targetP::l; i++) 
+//         for (int k = 0; k < privksP::targetP::k + 1; k++)
+//             PrivKeySwitch<privksP>(
+//                 trgsw[i + k * privksP::targetP::l], temp[i],
+//                 ek.getprivksk<privksP>("privksk4cb_" + std::to_string(k)));
+// }
+
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
                              const TLWE<typename iksP::domainP> &tlwe,
