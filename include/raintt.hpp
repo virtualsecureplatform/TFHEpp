@@ -14,10 +14,20 @@ constexpr T ipow(T num, unsigned int pow)
                                              : num * ipow(num, pow - 1);
 }
 
+#ifdef __clang__
+//Currently _BigInt is only implemented in clang
+constexpr uint wordbits = 31;
+using Word = unsigned _BitInt(wordbits);
+using SWord = signed _BitInt(wordbits);
+using DoubleWord = unsigned _BitInt(2*wordbits);
+using DoubleSWord = signed _BitInt(2*wordbits);
+#else
+constexpr uint wordbits = 32;
 using Word = uint32_t;
 using SWord = int32_t;
 using DoubleWord = uint64_t;
 using DoubleSWord = int64_t;
+#endif
 constexpr uint k = 5;
 constexpr uint radixbit = 3;
 constexpr uint radixs2 = 1U << (radixbit - 1);
@@ -25,7 +35,6 @@ constexpr Word K = ipow<Word>(k, radixs2);
 constexpr uint shiftunit = 5;
 constexpr uint shiftamount = radixs2 * shiftunit;
 constexpr SWord shiftval = 1 << shiftamount;
-constexpr uint wordbits = 32;
 constexpr Word wordmask = (1ULL << wordbits) - 1;
 constexpr SWord P = (K << shiftamount) + 1;
 
@@ -54,9 +63,9 @@ inline SWord SREDC(const DoubleSWord a)
     return a1 - t1;
 }
 
-inline SWord AddMod(const SWord a, const SWord b)
+inline SWord AddMod(const DoubleSWord a, const DoubleSWord b)
 {
-    SWord add = a + b;
+    DoubleSWord add = a + b;
     if (add >= P)
         return add - P;
     else if (add <= -P)
@@ -65,9 +74,9 @@ inline SWord AddMod(const SWord a, const SWord b)
         return add;
 }
 
-inline SWord SubMod(const SWord a, const SWord b)
+inline SWord SubMod(const DoubleSWord a, const DoubleSWord b)
 {
-    SWord sub = a - b;
+    DoubleSWord sub = a - b;
     if (sub >= P)
         return sub - P;
     else if (sub <= -P)

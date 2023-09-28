@@ -98,5 +98,4 @@ std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
     return bootsSymDecrypt<P>(c, sk.key.get<P>());
 }
 
-#include "externs/tlwe.hpp"
 }  // namespace TFHEpp

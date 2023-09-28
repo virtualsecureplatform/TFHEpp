@@ -1,5 +1,7 @@
 #pragma once
+#include"../cloudkey.hpp"
 
+namespace TFHEpp{
 #define INST(P) \
     extern template void bkgen<P>(BootstrappingKey<P> & bk, const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
@@ -122,3 +124,4 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
         const std::string& key) const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
+}

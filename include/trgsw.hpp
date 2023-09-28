@@ -318,5 +318,4 @@ TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p, const double α,
     return ApplyRAINTT2trgsw<P>(trgsw);
 }
 
-#include "externs/trgsw.hpp"
 }  // namespace TFHEpp

@@ -279,5 +279,4 @@ void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
                             const TRLWE<lvl1param> &c1r,
                             const TRLWE<lvl1param> &c0r, const EvalKey &ek);
 
-#include "externs/gate.hpp"
 }  // namespace TFHEpp

@@ -1,5 +1,7 @@
 #pragma once 
+#include"../trlwe.hpp"
 
+namespace TFHEpp{
 #define INST(P) \
     extern template TRLWE<P> trlweSymEncryptZero<P>(const double α, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
@@ -41,3 +43,4 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
         TRLWE<P> & trlwe, const TLWE<P> &tlwe, const int index)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
+}

@@ -1,5 +1,7 @@
 #pragma once
+#include"../trgsw.hpp"
 
+namespace TFHEpp{
 #define INST(P)                                                       \
     extern template void Decomposition<P>(                         \
         DecomposedPolynomial<P> & decpoly, const Polynomial<P> &poly, \
@@ -49,3 +51,4 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
         const Polynomial<P> &p, const double α, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
+}

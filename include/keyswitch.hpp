@@ -298,5 +298,4 @@ void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
     }
 }
 
-#include "externs/keyswitch.hpp"
 }  // namespace TFHEpp

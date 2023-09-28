@@ -1,5 +1,7 @@
 #pragma once
+#include"../tlwe.hpp"
 
+namespace TFHEpp{
 #define INST(P)                                                               \
     extern template TLWE<P> tlweSymEncrypt<P>(const typename P::T p, const double α, \
                                        const Key<P> &key)
@@ -34,3 +36,4 @@ TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
         const std::vector<TLWE<P>> &c, const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
+}

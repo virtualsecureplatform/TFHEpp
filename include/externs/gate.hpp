@@ -1,5 +1,7 @@
 #pragma once
+#include"../gate.hpp"
 
+namespace TFHEpp{
 #define INST(P) extern template void HomCONSTANTONE<P>(TLWE<P> & res)
 INST(lvl1param);
 INST(lvl0param);
@@ -185,3 +187,4 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
         const TLWE<typename iksP::domainP> &c0, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE(INST)
 #undef INST
+}

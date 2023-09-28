@@ -1,5 +1,7 @@
 #pragma once
+#include"../circuitbootstrapping.hpp"
 
+namespace TFHEpp{
 #define INST(iksP, bkP, privksP)                            \
     extern template void CircuitBootstrapping<iksP, bkP, privksP>( \
         TRGSW<typename privksP::targetP> & trgsw,           \
@@ -42,3 +44,4 @@ TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
         const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
+}

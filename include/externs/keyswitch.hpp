@@ -1,5 +1,7 @@
 #pragma once
+#include"../keyswitch.hpp"
 
+namespace TFHEpp{
 #define INST(P)                                                               \
     extern template void IdentityKeySwitch<P>(TLWE<typename P::targetP> & res,       \
                                        const TLWE<typename P::domainP> &tlwe, \
@@ -46,3 +48,4 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
                                    const SubsetPrivateKeySwitchingKey<P> &privksk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
+}

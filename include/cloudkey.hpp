@@ -594,5 +594,4 @@ struct EvalKey {
     }
 };
 
-#include "externs/cloudkey.hpp"
 }  // namespace TFHEpp

@@ -149,6 +149,5 @@ void CircuitBootstrappingFFTwithInv(
             TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j],
                                                  trgsw[i][j]);
 }
-#include "externs/circuitbootstrapping.hpp"
 
 }  // namespace TFHEpp

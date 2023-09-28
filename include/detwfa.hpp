@@ -121,5 +121,4 @@ void CMUXRAINTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWRAINTT<P
         for (int i = 0; i < P::n; i++) acc[k][i] += temp[k][i];
 }
 
-#include "externs/detwfa.hpp"
 }  // namespace TFHEpp

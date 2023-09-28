@@ -44,8 +44,8 @@ int main()
     std::uniform_int_distribution<uint32_t> Bgdist(0, TFHEpp::lvl1param::Bg);
     std::uniform_int_distribution<uint32_t> Torus32dist(
         0, std::numeric_limits<typename TFHEpp::lvl1param::T>::max());
-    std::uniform_int_distribution<raintt::Word> Pdist(0, raintt::P-1);
-    std::uniform_int_distribution<raintt::SWord> sPdist(-raintt::P, raintt::P-1);
+    std::uniform_int_distribution<uint> Pdist(0, raintt::P-1);
+    std::uniform_int_distribution<int> sPdist(-raintt::P, raintt::P-1);
 
     for (int i = 0; i < num_test; i++) {
         raintt::Word a = Pdist(engine);
@@ -53,7 +53,7 @@ int main()
             (static_cast<raintt::DoubleWord>(a) * raintt::R) % raintt::P;
         raintt::Word res = raintt::MulREDC(a, raintt::R2);
         if (res != tres) {
-            std::cout << "REDC:" << tres << ":" << res << ":" << a << std::endl;
+            std::cout << "REDC:" << static_cast<uint>(tres) << ":" << static_cast<uint>(res) << ":" << static_cast<uint>(a) << std::endl;
             exit(1);
         }
     }
@@ -66,7 +66,7 @@ int main()
         raintt::SWord res = raintt::MulSREDC(a, raintt::R2);
         res = res < 0 ? res + raintt::P : res;
         if (res != tres) {
-            std::cout << "SREDC:" << tres << ":" << res << ":" << a
+            std::cout << "SREDC:" <<i<<":"<< static_cast<int>(tres) << ":" << static_cast<int>(res) << ":" << static_cast<int>(a)
                       << std::endl;
             exit(1);
         }
@@ -110,7 +110,7 @@ int main()
         // raintt::INTT<TFHEpp::lvl1param::nbit, 1>(temp, (*tablelvl1)[1]);
         // for (int i = 0; i < TFHEpp::lvl1param::n/2+1; i++)
         // if (temp[i] != res[i])
-        //  std::cout << i << ":" <<res[i]<<":"<<temp[i]<<std::endl;
+        //  std::cout << i << ":" <<static_cast<int>(res[i])<<":"<<static_cast<int>(temp[i])<<std::endl;
         raintt::NTT<TFHEpp::lvl1param::nbit, 3>(res, (*tablelvl1)[0]);
         // radix4
         // for(int i = 0; i < TFHEpp::lvl1param::n>>2; i++){
@@ -133,7 +133,7 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             a[i] = static_cast<int32_t>(a[i]) < 0? a[i]+raintt::P: a[i];
         for (int i = 0; i < TFHEpp::lvl1param::n/2+2; i++)
-        if (a[i] != res[i]) std::cout << i << ":" <<res[i]<<":"<<static_cast<int32_t>(a[i])<<std::endl;
+        if (a[i] != res[i]) std::cout << i << ":" <<static_cast<int>(res[i])<<":"<<static_cast<int32_t>(a[i])<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             assert(a[i] == res[i]);
         }

@@ -21,21 +21,21 @@
 namespace TFHEpp {
 
 inline const std::unique_ptr<
-    const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n>, 2>>
-    ntttwistlvl1 = cuHEpp::TwistGen<TFHEpp::lvl1param::nbit>();
+    const std::array<std::array<cuHEpp::INTorus, lvl1param::n>, 2>>
+    ntttwistlvl1 = cuHEpp::TwistGen<lvl1param::nbit>();
 inline const std::unique_ptr<
-    const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl1param::n>, 2>>
-    ntttablelvl1 = cuHEpp::TableGen<TFHEpp::lvl1param::nbit>();
+    const std::array<std::array<cuHEpp::INTorus, lvl1param::n>, 2>>
+    ntttablelvl1 = cuHEpp::TableGen<lvl1param::nbit>();
 inline const std::unique_ptr<
-    const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl2param::n>, 2>>
-    ntttwistlvl2 = cuHEpp::TwistGen<TFHEpp::lvl2param::nbit>();
+    const std::array<std::array<cuHEpp::INTorus, lvl2param::n>, 2>>
+    ntttwistlvl2 = cuHEpp::TwistGen<lvl2param::nbit>();
 inline const std::unique_ptr<
-    const std::array<std::array<cuHEpp::INTorus, TFHEpp::lvl2param::n>, 2>>
-    ntttablelvl2 = cuHEpp::TableGen<TFHEpp::lvl2param::nbit>();
-inline const std::unique_ptr<std::array<std::array<raintt::SWord, TFHEpp::lvl1param::n>, 2>> 
-    raintttwist = raintt::TwistGen<TFHEpp::lvl1param::nbit,3>();
-inline const std::unique_ptr<std::array<std::array<std::array<raintt::SWord, TFHEpp::lvl1param::n>, 2>, 2>> 
-    raintttable = raintt::TableGen<TFHEpp::lvl1param::nbit>();
+    const std::array<std::array<cuHEpp::INTorus, lvl2param::n>, 2>>
+    ntttablelvl2 = cuHEpp::TableGen<lvl2param::nbit>();
+inline const std::unique_ptr<std::array<std::array<raintt::SWord, lvl1param::n>, 2>> 
+    raintttwist = raintt::TwistGen<lvl1param::nbit,3>();
+inline const std::unique_ptr<std::array<std::array<std::array<raintt::SWord, lvl1param::n>, 2>, 2>> 
+    raintttable = raintt::TableGen<lvl1param::nbit>();
 #ifdef USE_HEXL
 // Biggest prime number less than 2^30 and staisfies 1 mod 2N.
 constexpr uint64_t lvl1P = 1073707009;
@@ -44,23 +44,23 @@ constexpr uint64_t lvl1P = 1073707009;
 template <class P>
 inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 {
-    if constexpr (std::is_same_v<P, TFHEpp::lvl1param>)
+    if constexpr (std::is_same_v<P, lvl1param>)
 #ifdef USE_HEXL
     {
-        std::array<uint64_t, TFHEpp::lvl1param::n> temp;
-        static intel::hexl::NTT nttlvl1(TFHEpp::lvl1param::n, lvl1P);
+        std::array<uint64_t, lvl1param::n> temp;
+        static intel::hexl::NTT nttlvl1(lvl1param::n, lvl1P);
         nttlvl1.ComputeInverse(temp.data(), &(a[0].value), 1, 1);
-        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+        for (int i = 0; i < lvl1param::n; i++)
             res[i] = (temp[i] << 32) / lvl1P;
     }
 #else
-        cuHEpp::TwistNTT<typename TFHEpp::lvl1param::T,
-                         TFHEpp::lvl1param::nbit>(res, a, (*ntttablelvl1)[0],
+        cuHEpp::TwistNTT<typename lvl1param::T,
+                         lvl1param::nbit>(res, a, (*ntttablelvl1)[0],
                                                   (*ntttwistlvl1)[0]);
 #endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>) {
-        cuHEpp::TwistNTT<typename TFHEpp::lvl2param::T,
-                         TFHEpp::lvl2param::nbit>(res, a, (*ntttablelvl2)[0],
+        cuHEpp::TwistNTT<typename lvl2param::T,
+                         lvl2param::nbit>(res, a, (*ntttablelvl2)[0],
                                                   (*ntttwistlvl2)[0]);
     }
     else
@@ -70,7 +70,7 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 template <class P>
 inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
 {
-    if constexpr (std::is_same_v<P, TFHEpp::lvl1param>) {
+    if constexpr (std::is_same_v<P, lvl1param>) {
         if constexpr (std::is_same_v<typename P::T, uint32_t>)
             fftplvl1.execute_direct_torus32(res.data(), a.data());
         if constexpr (std::is_same_v<typename P::T, uint64_t>)
@@ -96,13 +96,13 @@ inline void TwistFFTrescale(Polynomial<P> &res, const PolynomialInFD<P> &a)
 template <class P>
 inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 {
-    if constexpr (std::is_same_v<P, TFHEpp::lvl1param>)
+    if constexpr (std::is_same_v<P, lvl1param>)
 #ifdef USE_HEXL
     {
-        std::array<uint64_t, TFHEpp::lvl1param::n> temp;
-        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
+        std::array<uint64_t, lvl1param::n> temp;
+        for (int i = 0; i < lvl1param::n; i++)
             temp[i] = (lvl1P * static_cast<uint64_t>(a[i])) >> 32;
-        static intel::hexl::NTT nttlvl1(TFHEpp::lvl1param::n, lvl1P);
+        static intel::hexl::NTT nttlvl1(lvl1param::n, lvl1P);
         nttlvl1.ComputeForward(&(res[0].value), temp.data(), 1, 1);
     }
 #else
@@ -119,7 +119,7 @@ inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 template <class P>
 inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
 {
-    if constexpr (std::is_same_v<P, TFHEpp::lvl1param>) {
+    if constexpr (std::is_same_v<P, lvl1param>) {
         if constexpr (std::is_same_v<typename P::T, uint32_t>)
             fftplvl1.execute_reverse_torus32(res.data(), a.data());
         if constexpr (std::is_same_v<typename P::T, uint64_t>)

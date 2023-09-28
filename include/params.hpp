@@ -50,11 +50,11 @@ template <class P>
 using TLWE = std::array<typename P::T, P::k * P::n + 1>;
 
 template <class P>
-using Polynomial alignas(64)  = std::array<typename P::T, P::n>;
+using Polynomial = std::array<typename P::T, P::n>;
 template <class P>
 using UnsignedPolynomial = Polynomial<P>;
 template <class P>
-using PolynomialInFD alignas(64)  = std::array<double, P::n>;
+using PolynomialInFD = std::array<double, P::n>;
 template <class P>
 using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
 template <class P>
@@ -68,13 +68,13 @@ using DecomposedPolynomialRAINTT = std::array<PolynomialRAINTT<P>, P::l>;
 
 
 template <class P>
-using TRLWE alignas(64)  = std::array<Polynomial<P>, P::k + 1>;
+using TRLWE = std::array<Polynomial<P>, P::k + 1>;
 template <class P>
 using UnsignedTRLWE = std::array<Polynomial<P>, P::k + 1>;
 template <class P>
 using TRLWE3 = std::array<Polynomial<P>, 3>;
 template <class P>
-using TRLWEInFD alignas(64)  = std::array<PolynomialInFD<P>, P::k + 1>;
+using TRLWEInFD = std::array<PolynomialInFD<P>, P::k + 1>;
 template <class P>
 using TRLWENTT = std::array<PolynomialNTT<P>, P::k + 1>;
 template <class P>
@@ -83,7 +83,7 @@ using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 template <class P>
 using TRGSW = std::array<TRLWE<P>, (P::k + 1) * P::l>;
 template <class P>
-using TRGSWFFT alignas(64) = std::array<TRLWEInFD<P>, (P::k + 1) * P::l>;
+using TRGSWFFT = std::array<TRLWEInFD<P>, (P::k + 1) * P::l>;
 template <class P>
 using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
 template <class P>

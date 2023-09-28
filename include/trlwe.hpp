@@ -105,5 +105,4 @@ void InvSampleExtractIndex(TRLWE<P> &trlwe, const TLWE<P> &tlwe,
     trlwe[P::k][index] = tlwe[P::k * P::n];
 }
 
-#include "externs/trlwe.hpp"
 }  // namespace TFHEpp

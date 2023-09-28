@@ -281,5 +281,4 @@ void GateBootstrappingNTT(TLWE<typename bkP::targetP> &res,
                                        μpolygen<typename bkP::targetP, μ>());
 }
 
-#include "externs/gatebootstrapping.hpp"
 }  // namespace TFHEpp
