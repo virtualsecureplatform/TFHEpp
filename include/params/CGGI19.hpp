@@ -11,6 +11,7 @@ struct lvl0param {
     static constexpr int32_t key_value_diff = key_value_max - key_value_min;
     static constexpr std::uint32_t n = 630;
     static constexpr std::uint32_t k = 1;
+    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
     static const inline double α = std::pow(2.0, -15);
     using T = uint32_t;
     static constexpr T μ = 1U << 29;
@@ -29,6 +30,7 @@ struct lvl1param {
     static constexpr std::uint32_t l = 3;
     static constexpr std::uint32_t Bgbit = 7;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
+    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
     static const inline double α = std::pow(2.0, -25);
     using T = uint32_t;
     static constexpr T μ = 1U << 29;
@@ -47,6 +49,7 @@ struct lvl2param {
     static constexpr std::uint32_t l = 4;
     static constexpr std::uint32_t Bgbit = 9;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
+    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
     static const inline double α = std::pow(2.0, -44);
     using T = uint64_t;
     static constexpr T μ = 1ULL << 61;
@@ -59,6 +62,7 @@ struct lvl11param {
     static constexpr std::uint32_t t = 0;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
         0;  // how many bit should be encrypted in keyswitching key
+    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
     static const inline double α = lvl0param::α;  // key noise
     using domainP = lvl1param;
     using targetP = lvl0param;
@@ -67,6 +71,7 @@ struct lvl11param {
 struct lvl10param {
     static constexpr std::uint32_t t = 8;
     static constexpr std::uint32_t basebit = 2;
+    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
     static const inline double α = lvl0param::α;
     using domainP = lvl1param;
     using targetP = lvl0param;
@@ -75,6 +80,7 @@ struct lvl10param {
 struct lvl21param {
     static constexpr std::uint32_t t = 10;
     static constexpr std::uint32_t basebit = 3;
+    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
     static const inline double α = std::pow(2, -29);
     using domainP = lvl2param;
     using targetP = lvl1param;
@@ -85,6 +91,7 @@ struct lvl20param {
     static constexpr std::uint32_t t = 0;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
         0;  // how many bit should be encrypted in keyswitching key
+    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
     static const inline double α = lvl0param::α;  // key noise
     using domainP = lvl2param;
     using targetP = lvl0param;
@@ -94,6 +101,7 @@ struct lvl20param {
 struct lvl22param {
     static constexpr std::uint32_t t = 0;
     static constexpr std::uint32_t basebit = 0;
+    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
     static const inline double α = lvl2param::α;
     using domainP = lvl2param;
     using targetP = lvl2param;

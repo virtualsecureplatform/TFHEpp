@@ -3,14 +3,14 @@
 
 namespace TFHEpp{
 #define INST(P)                                                               \
-    extern template TLWE<P> tlweSymEncrypt<P>(const typename P::T p, const double α, \
+    extern template TLWE<P> tlweSymEncrypt<P>(const typename P::T p, \
                                        const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
 #define INST(P)                                                  \
     extern template TLWE<P> tlweSymIntEncrypt<P>(const typename P::T p, \
-                                          const double α, const Key<P> &key)
+                                          const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 

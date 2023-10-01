@@ -36,19 +36,19 @@ INST(lvl1param);
 
 #define INST(P)                                                  \
     extern template TRGSW<P> trgswSymEncrypt<P>(const Polynomial<P> &p, \
-                                         const double α, const Key<P> &key)
+                                         const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 #define INST(P)                                 \
     extern template TRGSWFFT<P> trgswfftSymEncrypt<P>( \
-        const Polynomial<P> &p, const double α, const Key<P> &key)
+        const Polynomial<P> &p, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 #define INST(P)                                 \
     extern template TRGSWNTT<P> trgswnttSymEncrypt<P>( \
-        const Polynomial<P> &p, const double α, const Key<P> &key)
+        const Polynomial<P> &p, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 }

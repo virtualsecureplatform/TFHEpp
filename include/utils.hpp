@@ -11,8 +11,6 @@
 #include <limits>
 #include <random>
 
-#include "params.hpp"
-
 namespace TFHEpp {
 #ifdef USE_RANDEN
 static thread_local std::random_device trng;
@@ -63,6 +61,12 @@ inline typename P::T ModularGaussian(typename P::T center, double stdev)
     }
     else
         static_assert(false_v<typename P::T>, "Undefined Modular Gaussian!");
+}
+
+template<class P>
+inline typename P::T CenteredBinomial(uint η){
+    std::binomial_distribution<typename P::T> distribution(2*η,0.5);
+    return distribution(generator) - η;
 }
 
 // https://stackoverflow.com/questions/21191307/minimum-number-of-bits-to-represent-a-given-int

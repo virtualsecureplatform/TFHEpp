@@ -87,6 +87,7 @@ void DecompositionNTT(DecomposedPolynomialNTT<P> &decpolyntt, const Polynomial<P
     for(int i = 0; i < P::l; i++)
         TwistINTT<P>(decpolyntt[i],decpoly[i]);
 }
+
 template<class P>
 void DecompositionRAINTT(DecomposedPolynomialRAINTT<P> &decpolyntt, const Polynomial<P> &poly,
                    typename P::T randbits = 0)
@@ -295,11 +296,58 @@ TRGSW<P> trgswSymEncrypt(const Polynomial<P> &p, const double α,
 }
 
 template <class P>
+TRGSW<P> trgswSymEncrypt(const Polynomial<P> &p, const uint η,
+                         const Key<P> &key)
+{
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
+
+    TRGSW<P> trgsw;
+    for (TRLWE<P> &trlwe : trgsw) trlwe = trlweSymEncryptZero<P>(η, key);
+    for (int i = 0; i < P::l; i++) {
+        for (int k = 0; k < P::k + 1; k++) {
+            for (int j = 0; j < P::n; j++) {
+                trgsw[i + k * P::l][k][j] +=
+                    static_cast<typename P::T>(p[j]) * h[i];
+            }
+        }
+    }
+    return trgsw;
+}
+
+template <class P>
+TRGSW<P> trgswSymEncrypt(const Polynomial<P> &p,
+                         const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return trgswSymEncrypt<P>(p, P::α, key);
+    else
+        return trgswSymEncrypt<P>(p, P::η, key);
+}
+
+template <class P>
 TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const double α,
                                const Key<P> &key)
 {
     TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
     return ApplyFFT2trgsw<P>(trgsw);
+}
+
+template <class P>
+TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const uint η,
+                               const Key<P> &key)
+{
+    TRGSW<P> trgsw = trgswSymEncrypt<P>(p, η, key);
+    return ApplyFFT2trgsw<P>(trgsw);
+}
+
+template <class P>
+TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p,
+                         const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return trgswfftSymEncrypt<P>(p, P::α, key);
+    else
+        return trgswfftSymEncrypt<P>(p, P::η, key);
 }
 
 template <class P>
@@ -311,11 +359,46 @@ TRGSWNTT<P> trgswnttSymEncrypt(const Polynomial<P> &p, const double α,
 }
 
 template <class P>
+TRGSWNTT<P> trgswnttSymEncrypt(const Polynomial<P> &p, const uint η,
+                               const Key<P> &key)
+{
+    TRGSW<P> trgsw = trgswSymEncrypt<P>(p, η, key);
+    return ApplyNTT2trgsw<P>(trgsw);
+}
+
+template <class P>
+TRGSWNTT<P> trgswnttSymEncrypt(const Polynomial<P> &p, const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return trgswnttSymEncrypt<P>(p, P::α, key);
+    else
+        return trgswnttSymEncrypt<P>(p, P::η, key);
+}
+
+template <class P>
 TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p, const double α,
                                const Key<P> &key)
 {
     TRGSW<P> trgsw = trgswSymEncrypt<P>(p, α, key);
     return ApplyRAINTT2trgsw<P>(trgsw);
+}
+
+template <class P>
+TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p, const uint η,
+                               const Key<P> &key)
+{
+    TRGSW<P> trgsw = trgswSymEncrypt<P>(p, η, key);
+    return ApplyRAINTT2trgsw<P>(trgsw);
+}
+
+template <class P>
+TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p,
+                               const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return trgswrainttSymEncrypt<P>(p, key);
+    else
+        return trgswrainttSymEncrypt<P>(p, key);
 }
 
 }  // namespace TFHEpp

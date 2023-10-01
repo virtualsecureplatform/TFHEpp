@@ -25,20 +25,50 @@ TLWE<P> tlweSymEncrypt(const typename P::T p, const double α, const Key<P> &key
 }
 
 template <class P>
-TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
-                          const Key<P> &key)
+TLWE<P> tlweSymEncrypt(const typename P::T p, const uint η, const Key<P> &key)
 {
     std::uniform_int_distribution<typename P::T> Torusdist(
-        0, std::numeric_limits<typename P::T>::max());
+        0, P::q-1);
     TLWE<P> res = {};
-    res[P::k * P::n] =
-        ModularGaussian<P>(static_cast<typename P::T>(p * P::Δ), α);
+    res[P::k * P::n] = CenteredBinomial<P>(η)<<(std::numeric_limits<typename P::T>::digits-P::qbit);
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++) {
-            res[k * P::n + i] = Torusdist(generator);
+            res[k * P::n + i] = Torusdist(generator)<<(std::numeric_limits<typename P::T>::digits-P::qbit);
             res[P::k * P::n] += res[k * P::n + i] * key[k * P::n + i];
         }
     return res;
+}
+
+template <class P>
+TLWE<P> tlweSymEncrypt(const typename P::T p, const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return tlweSymEncrypt<P>(p, P::α,key); 
+    else
+        return tlweSymEncrypt<P>(p, P::η,key); 
+}
+
+template <class P>
+TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
+                          const Key<P> &key)
+{
+    return tlweSymEncrypt<P>(static_cast<typename P::T>(p * P::Δ),α,key);
+}
+
+template <class P>
+TLWE<P> tlweSymIntEncrypt(const typename P::T p, const uint η,
+                          const Key<P> &key)
+{
+    return tlweSymEncrypt<P>(static_cast<typename P::T>(p * P::Δ),η,key);
+}
+
+template <class P>
+TLWE<P> tlweSymIntEncrypt(const typename P::T p, const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return tlweSymIntEncrypt<P>(p, P::α,key); 
+    else
+        return tlweSymIntEncrypt<P>(p, P::η,key); 
 }
 
 template <class P>
@@ -71,7 +101,7 @@ std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
 {
     vector<TLWE<P>> c(p.size());
     for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncrypt<P>(p[i] ? P::μ : -P::μ, P::α, key);
+        c[i] = tlweSymEncrypt<P>(p[i] ? P::μ : -P::μ, key);
     return c;
 }
 

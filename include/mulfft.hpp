@@ -178,20 +178,26 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         TwistFFT<P>(res, ffta);
     }
     else{
-        for (int i = 0; i < P::n; i++) {
-            typename P::T ri = 0;
-            for (int j = 0; j <= i; j++)
-                ri +=
-                    static_cast<typename std::make_signed<typename P::T>::type>(
-                        a[j]) *
-                    b[i - j];
-            for (int j = i + 1; j < P::n; j++)
-                ri -=
-                    static_cast<typename std::make_signed<typename P::T>::type>(
-                        a[j]) *
-                    b[P::n + i - j];
-            res[i] = ri;
-        }
+        // Naieve
+        // for (int i = 0; i < P::n; i++) {
+        //     typename P::T ri = 0;
+        //     for (int j = 0; j <= i; j++)
+        //         ri +=
+        //             static_cast<typename std::make_signed<typename P::T>::type>(
+        //                 a[j]) *
+        //             b[i - j];
+        //     for (int j = i + 1; j < P::n; j++)
+        //         ri -=
+        //             static_cast<typename std::make_signed<typename P::T>::type>(
+        //                 a[j]) *
+        //             b[P::n + i - j];
+        //     res[i] = ri;
+        // }
+        PolynomialNTT<P> ntta,nttb;
+        TwistINTT<P>(ntta, a);
+        TwistINTT<P>(nttb, b);
+        for(int i = 0; i < P::n; i++) ntta[i] *= nttb[i];
+        TwistNTT<P>(res, ntta);
     }
 }
 

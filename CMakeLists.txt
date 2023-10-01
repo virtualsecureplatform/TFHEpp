@@ -1,18 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
 project(tfhe++ CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS
     "-march=native -O3 -g -flto -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
 )
 
-option(USE_RANDEN "Use randen as CSPRNG" ON)
 option(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 option(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
 option(USE_CONCRETE "Use the parameter set proposed in CONCRETE" OFF)
 option(USE_TFHE_RS "Use the parameter set proposed in TFHE-rs" OFF)
 option(USE_TERNARY "Use ternary secret keys" OFF)
+option(USE_COMPRESS "Use compressed ciphertexts" OFF)
+
 option(USE_TERNARY_CMUX "Use ternary cmux" OFF)
 option(USE_KEY_BUNDLE "Use key bundle algorithm" OFF)
+
+option(USE_RANDEN "Use randen as CSPRNG" ON)
+option(USE_BLAKE3 "Use blake3 as CSPRNG" ON)
 
 option(USE_AVX512 "Use AVX512 ver. SPQLIOS" OFF)
 option(USE_MKL "Use Intel MKL" OFF)
@@ -33,6 +37,8 @@ endif()
 
 if(USE_80BIT_SECURITY)
   add_compile_definitions(USE_80BIT_SECURITY)
+elseif(USE_COMPRESS)
+  add_compile_definitions(USE_COMPRESS)
 elseif(USE_CGGI19)
   add_compile_definitions(USE_CGGI19)
 elseif(USE_CONCRETE)

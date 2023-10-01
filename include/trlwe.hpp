@@ -23,12 +23,58 @@ TRLWE<P> trlweSymEncryptZero(const double α, const Key<P> &key)
 }
 
 template <class P>
+TRLWE<P> trlweSymEncryptZero(const uint η, const Key<P> &key)
+{
+    std::uniform_int_distribution<typename P::T> Torusdist(
+        0, P::q-1);
+    TRLWE<P> c;
+    for (typename P::T &i : c[P::k]) i = CenteredBinomial<P>(η)<<(std::numeric_limits<typename P::T>::digits-P::qbit);
+    for (int k = 0; k < P::k; k++) {
+        for (typename P::T &i : c[k]) i = Torusdist(generator)<<(std::numeric_limits<typename P::T>::digits-P::qbit);
+        std::array<typename P::T, P::n> partkey;
+        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+        Polynomial<P> temp;
+        PolyMul<P>(temp, c[k], partkey);
+        for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
+    }
+    return c;
+}
+
+template <class P>
+TRLWE<P> trlweSymEncryptZero(const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return trlweSymEncryptZero<P>(P::α,key); 
+    else
+        return trlweSymEncryptZero<P>(P::η,key); 
+}
+
+template <class P>
 TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
                          const double α, const Key<P> &key)
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(α, key);
     for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
     return c;
+}
+
+template <class P>
+TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
+                         const uint η, const Key<P> &key)
+{
+    TRLWE<P> c = trlweSymEncryptZero<P>(η, key);
+    for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
+    return c;
+}
+
+template <class P>
+TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
+                         const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return trlweSymEncrypt<P>(p, P::α,key); 
+    else
+        return trlweSymEncrypt<P>(p, P::η,key); 
 }
 
 template <class P>
@@ -39,6 +85,26 @@ TRLWE<P> trlweSymIntEncrypt(const std::array<typename P::T, P::n> &p,
     for (int i = 0; i < P::n; i++)
         c[P::k][i] += static_cast<typename P::T>(P::Δ * p[i]);
     return c;
+}
+
+template <class P>
+TRLWE<P> trlweSymIntEncrypt(const std::array<typename P::T, P::n> &p,
+                            const uint η, const Key<P> &key)
+{
+    TRLWE<P> c = trlweSymEncryptZero<P>(η, key);
+    for (int i = 0; i < P::n; i++)
+        c[P::k][i] += static_cast<typename P::T>(P::Δ * p[i]);
+    return c;
+}
+
+template <class P>
+TRLWE<P> trlweSymIntEncrypt(const std::array<typename P::T, P::n> &p,
+                            const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return trlweSymIntEncrypt<P>(p, P::α,key); 
+    else
+        return trlweSymIntEncrypt<P>(p, P::η,key); 
 }
 
 template <class P>

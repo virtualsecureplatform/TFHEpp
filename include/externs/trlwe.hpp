@@ -3,19 +3,19 @@
 
 namespace TFHEpp{
 #define INST(P) \
-    extern template TRLWE<P> trlweSymEncryptZero<P>(const double α, const Key<P> &key)
+    extern template TRLWE<P> trlweSymEncryptZero<P>(const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 #define INST(P)                                                               \
     extern template TRLWE<P> trlweSymEncrypt<P>(const std::array<typename P::T, P::n> &p, \
-                                         const double α, const Key<P> &key)
+                                         const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
 #define INST(P)                                              \
     extern template TRLWE<P> trlweSymIntEncrypt<P>(                 \
-        const std::array<typename P::T, P::n> &p, const double α, \
+        const std::array<typename P::T, P::n> &p, \
         const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST

@@ -72,7 +72,7 @@ struct portablelvl2param {
     std::uint32_t l;
     std::uint32_t Bgbit;
     std::uint32_t Bg;
-    double α;                  // fresh noise
+    // double α;                  // fresh noise
     std::uint32_t approx_bit;  // Torus representation bit size
 
     portablelvl2param()
@@ -81,7 +81,7 @@ struct portablelvl2param {
           l(lvl2param::l),
           Bgbit(lvl2param::Bgbit),
           Bg(lvl2param::Bg),
-          α(lvl2param::α),
+        //   α(lvl2param::α),
           approx_bit(std::numeric_limits<typename lvl2param::T>::digits)
     {
     }
@@ -89,14 +89,14 @@ struct portablelvl2param {
     template <class Archive>
     void serialize(Archive& archive)
     {
-        archive(nbit, n, l, Bgbit, Bg, α, approx_bit);
+        archive(nbit, n, l, Bgbit, Bg, approx_bit);
     }
 
     bool operator==(const portablelvl2param& in) const
     {
         return (nbit == in.nbit) && (n == in.n) && (l == in.l) &&
-               (Bgbit == in.Bgbit) && (Bg == in.Bg) && (α == in.α) &&
-               (approx_bit == in.approx_bit);
+               (Bgbit == in.Bgbit) && (Bg == in.Bg) //&& (α == in.α) 
+               && (approx_bit == in.approx_bit);
     };
 };
 
@@ -108,7 +108,7 @@ struct portablelvl10param {
     double α;     // key noise
 
     portablelvl10param()
-        : t(lvl10param::t), basebit(lvl10param::basebit), α(lvl10param::α)
+        : t(lvl10param::t), basebit(lvl10param::basebit), α(lvl10param::targetP::α)
     {
     }
 
@@ -131,7 +131,7 @@ struct portablelvl20param {
     double α;     // key noise
 
     portablelvl20param()
-        : t(lvl20param::t), basebit(lvl20param::basebit), α(lvl20param::α)
+        : t(lvl20param::t), basebit(lvl20param::basebit), α(lvl20param::targetP::α)
     {
     }
 
@@ -154,7 +154,7 @@ struct portablelvl21param {
     double α;     // key noise
 
     portablelvl21param()
-        : t(lvl21param::t), basebit(lvl21param::basebit), α(lvl21param::α)
+        : t(lvl21param::t), basebit(lvl21param::basebit), α(lvl21param::targetP::α)
     {
     }
 
@@ -174,16 +174,16 @@ struct portablelvl22param {
     std::uint32_t t;  // number of addition in keyswitching
     std::uint32_t
         basebit;  // how many bit should be encrypted in keyswitching key
-    double α;     // key noise
+    // double α;     // key noise
 
     portablelvl22param()
-        : t(lvl22param::t), basebit(lvl22param::basebit), α(lvl22param::α)
+        : t(lvl22param::t), basebit(lvl22param::basebit)//, α(lvl22param::targetP::α)
     {
     }
 
     bool operator==(const portablelvl22param& in) const
     {
-        return (t == in.t) && (basebit == in.basebit) && (α == in.α);
+        return (t == in.t) && (basebit == in.basebit);// && (α == in.α);
     }
 };
 
@@ -203,9 +203,9 @@ struct lweParams {
     {
         archive(lvl0.n, lvl0.α, lvl0.approx_bit, lvl1.nbit, lvl1.n, lvl1.l,
                 lvl1.Bgbit, lvl1.α, lvl1.approx_bit, lvl2.nbit, lvl2.n, lvl2.l,
-                lvl2.Bgbit, lvl2.α, lvl2.approx_bit, lvl10.t, lvl10.basebit,
+                lvl2.Bgbit, /*lvl2.α,*/ lvl2.approx_bit, lvl10.t, lvl10.basebit,
                 lvl10.α, lvl20.t, lvl20.basebit, lvl20.α, lvl21.t,
-                lvl21.basebit, lvl21.α, lvl22.t, lvl22.basebit, lvl22.α);
+                lvl21.basebit, lvl21.α, lvl22.t, lvl22.basebit /*lvl22.α*/);
     }
 
     // https://cpprefjp.github.io/lang/cpp20/consistent_comparison.html

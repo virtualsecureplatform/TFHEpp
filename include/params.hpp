@@ -8,10 +8,16 @@
 
 namespace TFHEpp {
 
-// Use old 80bit security parameters. It is faster, but not recommended.
+enum class ErrorDistribution{
+    ModularGaussian,
+    CenteredBinomial
+};
 
+// Use old 80bit security parameters. It is faster, but not recommended.
 #if defined(USE_80BIT_SECURITY)
 #include "params/CGGI16.hpp"
+#elif defined(USE_COMPRESS)
+#include "params/compress.hpp"
 #elif defined(USE_CGGI19)
 #include "params/CGGI19.hpp"
 #elif defined(USE_CONCRETE)
