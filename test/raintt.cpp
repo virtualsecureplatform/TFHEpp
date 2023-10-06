@@ -47,6 +47,8 @@ int main()
     std::uniform_int_distribution<uint> Pdist(0, raintt::P-1);
     std::uniform_int_distribution<int> sPdist(-raintt::P, raintt::P-1);
 
+    std::cout<<"wordbits:"<<raintt::wordbits<<std::endl;
+
     for (int i = 0; i < num_test; i++) {
         raintt::Word a = Pdist(engine);
         raintt::Word tres =

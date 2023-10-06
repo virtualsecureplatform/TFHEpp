@@ -30,7 +30,7 @@ TLWE<P> tlweSymEncrypt(const typename P::T p, const uint η, const Key<P> &key)
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, P::q-1);
     TLWE<P> res = {};
-    res[P::k * P::n] = CenteredBinomial<P>(η)<<(std::numeric_limits<typename P::T>::digits-P::qbit);
+    res[P::k * P::n] = p + CenteredBinomial<P>(η)<<(std::numeric_limits<typename P::T>::digits-P::qbit);
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++) {
             res[k * P::n + i] = Torusdist(generator)<<(std::numeric_limits<typename P::T>::digits-P::qbit);

@@ -38,6 +38,8 @@ struct lvl1param {
     static const inline double α =
         0.0000000342338787018369;  // fresh noise, 2^{-24.8...}
     using T = uint32_t;            // Torus representation
+    static constexpr T q = 40960001;
+    static constexpr uint qbit = 27;
     static constexpr T μ = 1U << 29;
     static constexpr uint32_t plain_modulus = 2;
     static constexpr double Δ =

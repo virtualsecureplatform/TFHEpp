@@ -16,7 +16,11 @@ constexpr T ipow(T num, unsigned int pow)
 
 #ifdef __clang__
 //Currently _BigInt is only implemented in clang
+#ifdef USE_COMPRESS
+constexpr uint wordbits = 27;
+#else
 constexpr uint wordbits = 31;
+#endif
 using Word = unsigned _BitInt(wordbits);
 using SWord = signed _BitInt(wordbits);
 using DoubleWord = unsigned _BitInt(2*wordbits);
@@ -32,7 +36,11 @@ constexpr uint k = 5;
 constexpr uint radixbit = 3;
 constexpr uint radixs2 = 1U << (radixbit - 1);
 constexpr Word K = ipow<Word>(k, radixs2);
+#ifdef USE_COMPRESS
+constexpr uint shiftunit = 4;
+#else
 constexpr uint shiftunit = 5;
+#endif
 constexpr uint shiftamount = radixs2 * shiftunit;
 constexpr SWord shiftval = 1 << shiftamount;
 constexpr Word wordmask = (1ULL << wordbits) - 1;
@@ -134,7 +142,11 @@ constexpr Word inv_mod()
 }
 
 // NTT related
+#if defined(__clang__)&defined(USE_COMPRESS)
+constexpr SWord W = PowREDC(31, K);
+#else
 constexpr SWord W = PowREDC(11, K);
+#endif
 
 template <uint8_t bit>
 uint32_t BitReverse(uint32_t in)
