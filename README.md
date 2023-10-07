@@ -5,7 +5,7 @@ TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp withou
 
 # Supported Compiler
 
-This code includes utf-8 identifiers like α and using `extern template`. Therefore, GCC10 or later are primarily supported compilers. GCC9 is not supported because of the lack of utf-8 support. Clang compilers are not supported because it seems to be not workable with `extern template` because of the mismatch of the name mangling.
+This code includes utf-8 identifiers like α, using `extern template`, and std::make_unique_for_overwrite. Therefore, GCC11 or later and Clang16 or later are primarily supported compilers. 
 
 # Parameter
 The default parameter is 128-bit security. Please add -DUSE_80BIT_SECURITY=ON to use a faster but less secure parameter.
