@@ -65,8 +65,19 @@ inline typename P::T ModularGaussian(typename P::T center, double stdev)
 
 template<class P>
 inline typename P::T CenteredBinomial(uint η){
-    std::binomial_distribution<typename P::T> distribution(2*η,0.5);
-    return distribution(generator) - η;
+    static uint64_t buf;
+    static uint_fast8_t count = 64;
+    typename P::T acc = 0;
+    std::uniform_int_distribution<uint64_t> dist(0, std::numeric_limits<uint64_t>::max());
+    for(int i = 0; i < η; i++){
+        if(count >= 64){
+            buf = dist(generator);
+        }
+        acc += buf&1;
+        buf >>= 1;
+        count++;
+    }
+    return acc - η;
 }
 
 // https://stackoverflow.com/questions/21191307/minimum-number-of-bits-to-represent-a-given-int

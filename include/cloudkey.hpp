@@ -380,6 +380,8 @@ struct EvalKey {
             bklvl02 = std::make_unique_for_overwrite<BootstrappingKey<lvl02param>>();
             bkgen<lvl02param>(*bklvl02, sk);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplacebkfft(const SecretKey& sk)
@@ -392,6 +394,8 @@ struct EvalKey {
             bkfftlvl02 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl02param>>();
             bkfftgen<lvl02param>(*bkfftlvl02, sk);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplacebkntt(const SecretKey& sk)
@@ -404,6 +408,8 @@ struct EvalKey {
             bknttlvl02 = std::make_unique_for_overwrite<BootstrappingKeyNTT<lvl02param>>();
             bknttgen<lvl02param>(*bknttlvl02, sk);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplacebk2bkfft()
@@ -420,6 +426,8 @@ struct EvalKey {
                 (*bkfftlvl02)[i][0] =
                     ApplyFFT2trgsw<lvl2param>((*bklvl02)[i][0]);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplacebk2bkntt()
@@ -434,6 +442,8 @@ struct EvalKey {
             for (int i = 0; i < lvl02param::domainP::n; i++)
                 (*bknttlvl02)[i] = ApplyNTT2trgsw<lvl2param>((*bklvl02)[i][0]);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplaceiksk(const SecretKey& sk)
@@ -450,6 +460,8 @@ struct EvalKey {
             iksklvl21 = std::make_unique_for_overwrite<KeySwitchingKey<lvl21param>>();
             ikskgen<lvl21param>(*iksklvl21, sk);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplacesubiksk(const SecretKey& sk)
@@ -459,6 +471,8 @@ struct EvalKey {
                 std::make_unique_for_overwrite<SubsetKeySwitchingKey<lvl21param>>();
             subikskgen<lvl21param>(*subiksklvl21, sk);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplaceprivksk(const std::string& key,
@@ -475,6 +489,8 @@ struct EvalKey {
                 std::make_unique_for_overwrite<PrivateKeySwitchingKey<lvl22param>>();
             privkskgen<lvl22param>(*privksklvl22[key], func, sk);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplacesubprivksk(const std::string& key,
@@ -486,6 +502,8 @@ struct EvalKey {
                 std::make_unique_for_overwrite<SubsetPrivateKeySwitchingKey<lvl21param>>();
             subprivkskgen<lvl21param>(*subprivksklvl21[key], func, sk);
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplaceprivksk4cb(const SecretKey& sk)
@@ -525,6 +543,8 @@ struct EvalKey {
         else if constexpr (std::is_same_v<P, lvl02param>) {
             return *bklvl02;
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     BootstrappingKeyFFT<P>& getbkfft() const
@@ -535,6 +555,8 @@ struct EvalKey {
         else if constexpr (std::is_same_v<P, lvl02param>) {
             return *bkfftlvl02;
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     BootstrappingKeyNTT<P>& getbkntt() const
@@ -545,6 +567,8 @@ struct EvalKey {
         else if constexpr (std::is_same_v<P, lvl02param>) {
             return *bknttlvl02;
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     KeySwitchingKey<P>& getiksk() const
@@ -564,6 +588,8 @@ struct EvalKey {
         else if constexpr (std::is_same_v<P, lvl22param>) {
             return *iksklvl22;
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     SubsetKeySwitchingKey<P>& getsubiksk() const
@@ -571,6 +597,8 @@ struct EvalKey {
         if constexpr (std::is_same_v<P, lvl21param>) {
             return *subiksklvl21;
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     PrivateKeySwitchingKey<P>& getprivksk(const std::string& key) const
@@ -584,6 +612,8 @@ struct EvalKey {
         else if constexpr (std::is_same_v<P, lvl22param>) {
             return *(privksklvl22.at(key));
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
     template <class P>
     SubsetPrivateKeySwitchingKey<P>& getsubprivksk(const std::string& key) const
@@ -591,6 +621,8 @@ struct EvalKey {
         if constexpr (std::is_same_v<P, lvl21param>) {
             return *(subprivksklvl21.at(key));
         }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
 };
 

@@ -7,6 +7,3 @@
 [submodule "thirdparties/hexl/hexl"]
 	path = thirdparties/hexl/hexl
 	url = https://github.com/intel/hexl.git
-[submodule "thirdparties/BLAKE3"]
-	path = thirdparties/BLAKE3
-	url = https://github.com/BLAKE3-team/BLAKE3.git
