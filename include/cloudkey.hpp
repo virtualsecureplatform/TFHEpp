@@ -339,7 +339,6 @@ struct EvalKey {
     std::unique_ptr<BootstrappingKeyNTT<lvl01param>> bknttlvl01;
     std::unique_ptr<BootstrappingKeyNTT<lvl02param>> bknttlvl02;
     std::unique_ptr<KeySwitchingKey<lvl10param>> iksklvl10;
-    std::unique_ptr<KeySwitchingKey<lvl11param>> iksklvl11;
     std::unique_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
     std::unique_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
     std::unique_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
@@ -364,7 +363,7 @@ struct EvalKey {
     void serialize(Archive& archive)
     {
         archive(params, bklvl01, bklvl02, bkfftlvl01, bkfftlvl02, bknttlvl01,
-                bknttlvl02, iksklvl10, iksklvl11, iksklvl20, iksklvl21,
+                bknttlvl02, iksklvl10, iksklvl20, iksklvl21,
                 iksklvl22, privksklvl11, privksklvl21, privksklvl22);
     }
 
@@ -461,7 +460,7 @@ struct EvalKey {
             ikskgen<lvl21param>(*iksklvl21, sk);
         }
         else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+            static_assert(false_v<typename P::targetP::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplacesubiksk(const SecretKey& sk)
@@ -478,8 +477,13 @@ struct EvalKey {
     void emplaceprivksk(const std::string& key,
                         const Polynomial<typename P::targetP>& func,
                         const SecretKey& sk)
-    {
-        if constexpr (std::is_same_v<P, lvl21param>) {
+    {   
+        if constexpr (std::is_same_v<P, lvl11param>) {
+            privksklvl11[key] =
+                std::make_unique_for_overwrite<PrivateKeySwitchingKey<lvl11param>>();
+            privkskgen<lvl11param>(*privksklvl11[key], func, sk);
+        }
+        else if constexpr (std::is_same_v<P, lvl21param>) {
             privksklvl21[key] =
                 std::make_unique_for_overwrite<PrivateKeySwitchingKey<lvl21param>>();
             privkskgen<lvl21param>(*privksklvl21[key], func, sk);
@@ -490,7 +494,7 @@ struct EvalKey {
             privkskgen<lvl22param>(*privksklvl22[key], func, sk);
         }
         else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+            static_assert(false_v<typename P::targetP::T>, "Not predefined parameter!");
     }
     template <class P>
     void emplacesubprivksk(const std::string& key,
@@ -576,9 +580,6 @@ struct EvalKey {
         if constexpr (std::is_same_v<P, lvl10param>) {
             return *iksklvl10;
         }
-        else if constexpr (std::is_same_v<P, lvl11param>) {
-            return *iksklvl11;
-        }
         else if constexpr (std::is_same_v<P, lvl20param>) {
             return *iksklvl20;
         }
@@ -622,7 +623,7 @@ struct EvalKey {
             return *(subprivksklvl21.at(key));
         }
         else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+            static_assert(false_v<typename P::targetP::T>, "Not predefined parameter!");
     }
 };
 

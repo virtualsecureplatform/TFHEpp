@@ -34,9 +34,8 @@ struct lvl1param {
     static constexpr std::uint32_t l = 2;
     static constexpr std::uint32_t Bgbit = 8;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
-    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
-    static const inline double α =
-        0.0000000342338787018369;  // fresh noise, 2^{-24.8...}
+    static constexpr ErrorDistribution errordist = ErrorDistribution::CenteredBinomial;
+    static constexpr uint η = 3;
     using T = uint32_t;            // Torus representation
     static constexpr T q = 40960001;
     static constexpr uint qbit = 27;

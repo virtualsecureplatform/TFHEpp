@@ -383,12 +383,27 @@ TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p, const double α,
     return ApplyRAINTT2trgsw<P>(trgsw);
 }
 
-template <class P>
+template <class P, bool modswitch = true>
 TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p, const uint η,
                                const Key<P> &key)
 {
-    TRGSW<P> trgsw = trgswSymEncrypt<P>(p, η, key);
-    return ApplyRAINTT2trgsw<P>(trgsw);
+    if constexpr(P::q==raintt::P && P::qbit==raintt::wordbits){
+        constexpr std::array<typename P::T, P::l> h = hgen<P>();
+        TRGSWRAINTT<P> trgswraintt;
+        for (TRLWERAINTT<P> &trlweraintt : trgswraintt) trlweraintt = trlwerainttSymEncryptZero<P>(η, key);
+        for (int i = 0; i < P::l; i++) {
+            for (int k = 0; k < P::k + 1; k++) {
+                Polynomial<P> pscaled;
+                for (int j = 0; j < P::n; j++) pscaled[j] = p[j] * h[i];
+                PolynomialRAINTT<P> praintt;
+                raintt::TwistINTT<typename P::T, P::nbit, modswitch>(praintt,pscaled);
+                for (int j = 0; j < P::n; j++) trgswraintt[i + k * P::l][k][j] += praintt[j];
+            }
+        }
+    }else{
+        TRGSW<P> trgsw = trgswSymEncrypt<P>(p, η, key);
+        return ApplyRAINTT2trgsw<P>(trgsw);
+    }
 }
 
 template <class P>

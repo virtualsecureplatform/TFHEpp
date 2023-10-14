@@ -50,21 +50,27 @@ TRLWE<P> trlweSymEncryptZero(const Key<P> &key)
 }
 
 template <class P>
-TRLWERAINTT<P> trlweSymEncryptZeroRejection(const uint η, const Key<P> &key)
+TRLWERAINTT<P> trlwerainttSaymEncryptZero(const uint η, const Key<P> &key)
 {
     static_assert(P::q==raintt::P);
     static_assert(P::qbit==raintt::wordbits);
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, P::q-1);
     TRLWERAINTT<P> c;
-    for (typename P::T &i : c[P::k]) i = CenteredBinomial<P>(η);
+    {
+        Polynomial<P> b;
+        for (typename P::T &i : b) i = CenteredBinomial<P>(η);
+        raintt::TwistINTT<typename P::T, P::nbit, false>(c[P::k],b);
+    }
     for (int k = 0; k < P::k; k++) {
         for (typename P::T &i : c[k]) i = Torusdist(generator);
-        std::array<typename P::T, P::n> partkey;
-        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
-        Polynomial<P> temp;
-        PolyMul<P>(temp, c[k], partkey);
-        for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
+        PolynomialRAINTT<P> partkeyraintt;
+        {
+            Polynomial<P> partkey;
+            for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i] * raintt::R;
+            raintt::TwistINTT<typename P::T, P::nbit, false>(partkeyraintt,partkey);
+        }
+        for (int i = 0; i < P::n; i++) c[P::k][i] = raintt::AddMod(c[P::k][i],raintt::MulSREDC(c[k][i],partkeyraintt[i]));
     }
     return c;
 }
@@ -95,6 +101,17 @@ TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
         return trlweSymEncrypt<P>(p, P::α,key); 
     else
         return trlweSymEncrypt<P>(p, P::η,key); 
+}
+
+template <class P, bool modswitch = true>
+TRLWERAINTT<P> trlwerainttSymEncrypt(const Polynomial<P> &p,
+                         const uint η, const Key<P> &key)
+{
+    TRLWERAINTT<P> c = trlwerainttSymEncryptZero<P>(η, key);
+    PolynomialRAINTT<P> pntt;
+    raintt::TwistINTT<typename P::T, P::nbit, modswitch>(pntt,p);
+    for (int i = 0; i < P::n; i++) c[P::k][i] += pntt[i];
+    return c;
 }
 
 template <class P>
