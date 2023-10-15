@@ -127,6 +127,35 @@ void FFT_Processor_Spqlios::execute_direct_torus32(uint32_t *res, const double *
     for (int32_t i = 0; i < N; i++) res[i] = uint32_t(int64_t(real_inout_direct[i]));
 }
 
+void FFT_Processor_Spqlios::execute_direct_torus32_q(uint32_t *res, const double *a, const uint32_t q) {
+    //TODO: parallelization
+    static const double _2sN = double(2) / double(N);
+    //for (int32_t i=0; i<N; i++) real_inout_direct[i]=a[i]*_2sn;
+    {
+        double *dst = real_inout_direct;
+        const double *sit = a;
+        const double *send = a + N;
+        //double __2sN = 2./N;
+        const double *bla = &_2sN;
+        __asm__ __volatile__ (
+        "vbroadcastsd (%3),%%ymm2\n"
+                "1:\n"
+                "vmovupd (%1),%%ymm0\n"
+                "vmulpd	%%ymm2,%%ymm0,%%ymm0\n"
+                "vmovapd %%ymm0,(%0)\n"
+                "addq $32,%1\n"
+                "addq $32,%0\n"
+                "cmpq %2,%1\n"
+                "jb 1b\n"
+        : "=r"(dst), "=r"(sit), "=r"(send), "=r"(bla)
+        : "0"(dst), "1"(sit), "2"(send), "3"(bla)
+        : "%ymm0", "%ymm2", "memory"
+        );
+    }
+    fft(tables_direct, real_inout_direct);
+    for (int32_t i = 0; i < N; i++) res[i] = uint32_t((int64_t(real_inout_direct[i])%q+q)%q);
+}
+
 void FFT_Processor_Spqlios::execute_direct_torus32_rescale(uint32_t *res, const double *a, const double Δ) {
     //TODO: parallelization
     static const double _2sN = double(2) / double(N);

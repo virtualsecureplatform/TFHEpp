@@ -48,6 +48,7 @@ constexpr SWord P = (K << shiftamount) + 1;
 
 constexpr SWord R = (1ULL << wordbits) % P;
 constexpr SWord R2 = (static_cast<DoubleWord>(R) * R) % P;
+constexpr SWord R3 = (static_cast<DoubleWord>(R2) * R) % P;
 constexpr SWord R4 = (static_cast<DoubleWord>(R2) * R2) % P;
 
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication

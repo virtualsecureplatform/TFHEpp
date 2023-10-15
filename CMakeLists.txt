@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 project(tfhe++ CXX)
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS
-    "-march=native -O3 -g -flto -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
-)
+option(DEBUG "Debug mode" OFF)
+if(DEBUG)
+  set(CMAKE_CXX_FLAGS
+      "-march=native -g -Wall -Wextra -pedantic -Wno-sign-compare"
+  )
+else()
+  set(CMAKE_CXX_FLAGS
+      "-march=native -O3 -g -flto -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
+  )
+endif()
 
 option(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 option(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)

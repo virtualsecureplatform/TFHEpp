@@ -17,8 +17,7 @@ int main()
         bool p = binary(engine) > 0;
         TFHEpp::TLWE<TFHEpp::lvl1param> tlwe =
             TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
-                p ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ,
-                TFHEpp::lvl1param::α, sk.key.lvl1);
+                p ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ, sk.key.lvl1);
         TFHEpp::TLWE<TFHEpp::lvl0param> res;
         TFHEpp::IdentityKeySwitch<TFHEpp::lvl10param>(res, tlwe, *ek.iksklvl10);
         bool p2 = TFHEpp::tlweSymDecrypt<TFHEpp::lvl0param>(res, sk.key.lvl0);

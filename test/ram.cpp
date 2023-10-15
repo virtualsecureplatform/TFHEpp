@@ -66,12 +66,12 @@ int main()
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < memsize; i++)
         (*encmemory)[i] = trlweSymEncrypt<typename ksP::domainP>(
-            pmu[i], ksP::domainP::α, (*sk).key.get<typename ksP::domainP>());
+            pmu[i], (*sk).key.get<typename ksP::domainP>());
     cs = tlweSymEncrypt<typename ksP::domainP>(
-        wrflag ? ksP::domainP::μ : -ksP::domainP::μ, ksP::domainP::α,
+        wrflag ? ksP::domainP::μ : -ksP::domainP::μ,
         (*sk).key.get<typename ksP::domainP>());
     c1 = tlweSymEncrypt<typename ksP::domainP>(
-        writep ? ksP::domainP::μ : -ksP::domainP::μ, ksP::domainP::α,
+        writep ? ksP::domainP::μ : -ksP::domainP::μ,
         (*sk).key.get<typename ksP::domainP>());
 
     chrono::system_clock::time_point start, end;

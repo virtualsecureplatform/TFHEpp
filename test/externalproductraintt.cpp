@@ -23,14 +23,14 @@ int main()
             pmu[i] = p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
         TFHEpp::TRLWE<TFHEpp::lvl1param> c =
             TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(
-                pmu, TFHEpp::lvl1param::α, key.lvl1);
+                pmu, key.lvl1);
 
         const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {
             static_cast<typename TFHEpp::lvl1param::T>(1)};
 
         TFHEpp::TRGSWRAINTT<TFHEpp::lvl1param> trgswntt =
             TFHEpp::trgswrainttSymEncrypt<TFHEpp::lvl1param>(
-                plainpoly, TFHEpp::lvl1param::α, key.lvl1);
+                plainpoly, key.lvl1);
         TFHEpp::trgswrainttExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
         std::array<bool, TFHEpp::lvl1param::n> p2 =
             TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(c, key.lvl1);
@@ -52,14 +52,14 @@ int main()
             pmu[i] = p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
         TFHEpp::TRLWE<TFHEpp::lvl1param> c =
             TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(
-                pmu, TFHEpp::lvl1param::α, key.lvl1);
+                pmu, key.lvl1);
 
         const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {
             static_cast<typename TFHEpp::lvl1param::T>(-1)};
 
         TFHEpp::TRGSWRAINTT<TFHEpp::lvl1param> trgswntt =
             TFHEpp::trgswrainttSymEncrypt<TFHEpp::lvl1param>(
-                plainpoly, TFHEpp::lvl1param::α, key.lvl1);
+                plainpoly, key.lvl1);
         TFHEpp::trgswrainttExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
         std::array<bool, TFHEpp::lvl1param::n> p2 =
             TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(c, key.lvl1);

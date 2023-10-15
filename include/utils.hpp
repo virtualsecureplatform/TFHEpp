@@ -23,6 +23,15 @@ static thread_local std::random_device generator;
 template <typename T>
 constexpr bool false_v = false;
 
+// https://qiita.com/negi-drums/items/a527c05050781a5af523
+template<typename T> concept hasq = requires { 
+  T::q;
+};
+
+template<typename T> concept hasqbit = requires { 
+  T::qbit;
+};
+
 // Double to Torus(32bit fixed-point number)
 inline uint16_t dtot16(double d)
 {
@@ -69,7 +78,7 @@ inline typename P::T CenteredBinomial(uint η){
     static uint_fast8_t count = 64;
     typename P::T acc = 0;
     std::uniform_int_distribution<uint64_t> dist(0, std::numeric_limits<uint64_t>::max());
-    for(int i = 0; i < η; i++){
+    for(int i = 0; i < 2*η; i++){
         if(count >= 64){
             buf = dist(generator);
         }

@@ -28,15 +28,16 @@ TRLWE<P> trlweSymEncryptZero(const uint η, const Key<P> &key)
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, P::q-1);
     TRLWE<P> c;
-    for (typename P::T &i : c[P::k]) i = CenteredBinomial<P>(η)<<(std::numeric_limits<typename P::T>::digits-P::qbit);
+    for (typename P::T &i : c[P::k]) i = CenteredBinomial<P>(η);
     for (int k = 0; k < P::k; k++) {
-        for (typename P::T &i : c[k]) i = Torusdist(generator)<<(std::numeric_limits<typename P::T>::digits-P::qbit);
+        for (typename P::T &i : c[k]) i = Torusdist(generator);
         std::array<typename P::T, P::n> partkey;
         for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
         Polynomial<P> temp;
         PolyMul<P>(temp, c[k], partkey);
         for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
     }
+    if constexpr(hasq<P>) for (int i = 0; i < P::n; i++) c[P::k][i] %= P::q;
     return c;
 }
 
@@ -50,25 +51,31 @@ TRLWE<P> trlweSymEncryptZero(const Key<P> &key)
 }
 
 template <class P>
-TRLWERAINTT<P> trlwerainttSaymEncryptZero(const uint η, const Key<P> &key)
+TRLWERAINTT<P> trlwerainttSymEncryptZero(const uint η, const Key<P> &key)
 {
     static_assert(P::q==raintt::P);
     static_assert(P::qbit==raintt::wordbits);
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, P::q-1);
-    TRLWERAINTT<P> c;
+    constexpr uint8_t remainder = ((P::nbit - 1) % 3) + 1;
+    TRLWERAINTT<P> c = {};
     {
         Polynomial<P> b;
         for (typename P::T &i : b) i = CenteredBinomial<P>(η);
-        raintt::TwistINTT<typename P::T, P::nbit, false>(c[P::k],b);
+        raintt::TwistINTT<typename P::T, P::nbit, false>(c[P::k],b,(*raintttable)[1],(*raintttwist)[1]);
+        for(int i = 0; i <P::n; i++) 
+            if ((i & ((1<<remainder) -1)) > 1) c[P::k][i] = raintt::MulSREDC(c[P::k][i],raintt::R2);
     }
     for (int k = 0; k < P::k; k++) {
-        for (typename P::T &i : c[k]) i = Torusdist(generator);
+        for (typename raintt::DoubleSWord &i : c[k]) i = Torusdist(generator);
         PolynomialRAINTT<P> partkeyraintt;
         {
             Polynomial<P> partkey;
-            for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i] * raintt::R;
-            raintt::TwistINTT<typename P::T, P::nbit, false>(partkeyraintt,partkey);
+            for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+            raintt::TwistINTT<typename P::T, P::nbit, false>(partkeyraintt,partkey,(*raintttable)[1],(*raintttwist)[1]);
+            for(int i = 0; i <P::n; i++) 
+                if ((i & ((1<<remainder) -1)) > 1) partkeyraintt[i] = raintt::MulSREDC(partkeyraintt[i],raintt::R3);
+                else partkeyraintt[i] = raintt::MulSREDC(partkeyraintt[i],raintt::R2);
         }
         for (int i = 0; i < P::n; i++) c[P::k][i] = raintt::AddMod(c[P::k][i],raintt::MulSREDC(c[k][i],partkeyraintt[i]));
     }
@@ -90,6 +97,7 @@ TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(η, key);
     for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
+    if constexpr(hasq<P>) for (int i = 0; i < P::n; i++) c[P::k][i] %= P::q;
     return c;
 }
 
@@ -103,14 +111,17 @@ TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
         return trlweSymEncrypt<P>(p, P::η,key); 
 }
 
-template <class P, bool modswitch = true>
+template <class P, bool modswitch = false>
 TRLWERAINTT<P> trlwerainttSymEncrypt(const Polynomial<P> &p,
                          const uint η, const Key<P> &key)
 {
     TRLWERAINTT<P> c = trlwerainttSymEncryptZero<P>(η, key);
     PolynomialRAINTT<P> pntt;
-    raintt::TwistINTT<typename P::T, P::nbit, modswitch>(pntt,p);
-    for (int i = 0; i < P::n; i++) c[P::k][i] += pntt[i];
+    raintt::TwistINTT<typename P::T, P::nbit, modswitch>(pntt,p,(*raintttable)[1],(*raintttwist)[1]);
+    constexpr uint8_t remainder = ((P::nbit - 1) % 3) + 1;
+    for(int i = 0; i <P::n; i++) 
+        if ((i & ((1<<remainder) -1)) > 1) pntt[i] = raintt::MulSREDC(pntt[i],raintt::R2);
+    for (int i = 0; i < P::n; i++) c[P::k][i] = raintt::AddMod(pntt[i],c[P::k][i]);
     return c;
 }
 
@@ -153,13 +164,18 @@ std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
         std::array<typename P::T, P::n> partkey;
         for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
         PolyMul<P>(mulres, c[k], partkey);
-        for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+        if constexpr(hasq<P>) for (int i = 0; i < P::n; i++) phase[i] += P::q - mulres[i];
+        else for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
     }
 
     std::array<bool, P::n> p;
-    for (int i = 0; i < P::n; i++)
-        p[i] = static_cast<typename std::make_signed<typename P::T>::type>(
-                   phase[i]) > 0;
+    if constexpr(hasq<P>){
+        for (int i = 0; i < P::n; i++)
+            p[i] = (phase[i]%P::q) < P::q/2;
+    }else
+        for (int i = 0; i < P::n; i++)
+            p[i] = static_cast<typename std::make_signed<typename P::T>::type>(
+                    phase[i]) > 0;
     return p;
 }
 

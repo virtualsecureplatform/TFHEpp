@@ -131,7 +131,7 @@ void bkrainttgen(BootstrappingKeyRAINTT<P>& bkraintt,
         Polynomial<typename P::targetP> plainpoly = {};
         plainpoly[0] = domainkey[i];
         bkraintt[i] = trgswrainttSymEncrypt<typename P::targetP>(
-            plainpoly, P::targetP::α, targetkey);
+            plainpoly, targetkey);
     }
 }
 
@@ -175,7 +175,7 @@ void annihilatekeygen(AnnihilateKey<P>& ahk, const Key<P>& key)
         std::array<typename P::T, P::n> partkey;
         for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
         Automorphism<P>(autokey, partkey, (1 << (P::nbit - i)) + 1);
-        ahk[i] = trgswfftSymEncrypt<P>(autokey, P::α, key);
+        ahk[i] = trgswfftSymEncrypt<P>(autokey, key);
     }
 }
 

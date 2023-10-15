@@ -43,13 +43,13 @@ int main()
     for (int i = 0; i < num_test; i++) {
         Polynomial<TFHEpp::lvl1param> plainpoly = {};
         plainpoly[0] = ps[i];
-        cs[i] = trgswfftSymEncrypt<lvl1param>(plainpoly, lvl1param::α,
+        cs[i] = trgswfftSymEncrypt<lvl1param>(plainpoly, 
                                               sk->key.lvl1);
     }
     for (int i = 0; i < num_test; i++)
-        c1[i] = trlweSymEncrypt<lvl1param>(pmu1[i], lvl1param::α, sk->key.lvl1);
+        c1[i] = trlweSymEncrypt<lvl1param>(pmu1[i], sk->key.lvl1);
     for (int i = 0; i < num_test; i++)
-        c0[i] = trlweSymEncrypt<lvl1param>(pmu0[i], lvl1param::α, sk->key.lvl1);
+        c0[i] = trlweSymEncrypt<lvl1param>(pmu0[i], sk->key.lvl1);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();

@@ -39,7 +39,7 @@ int main()
     vector<TRGSWFFT<lvl1param>> invbootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = trlweSymEncrypt<lvl1param>(pmu[i], lvl1param::α, sk->key.lvl1);
+        ca[i] = trlweSymEncrypt<lvl1param>(pmu[i], sk->key.lvl1);
     czeros = bootsSymEncrypt(pzeros, *sk);
 
     chrono::system_clock::time_point start, end;

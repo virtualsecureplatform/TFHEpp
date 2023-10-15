@@ -60,7 +60,7 @@ int main()
     encaddress = bootsSymEncrypt(address, *sk);
     for (int i = 0; i < num_trlwe; i++)
         encmemory[i] = trlweSymEncrypt<typename ksP::domainP>(
-            pmu[i], ksP::domainP::α, (*sk).key.get<typename ksP::domainP>());
+            pmu[i], (*sk).key.get<typename ksP::domainP>());
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
