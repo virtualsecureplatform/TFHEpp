@@ -487,7 +487,7 @@ inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
                       (1ULL << (29 - 1))) >>
                      29;
         else
-            res[i] = mulres;
+            res[i] = (mulres < 0) ? mulres + P : mulres;
     }
 }
 

@@ -96,7 +96,7 @@ TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
                          const uint η, const Key<P> &key)
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(η, key);
-    for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
+    for (int i = 0; i < P::n; i++) c[P::k][i] += (static_cast<int32_t>(p[i])>=0)?p[i]:P::q+p[i];
     if constexpr(hasq<P>) for (int i = 0; i < P::n; i++) c[P::k][i] %= P::q;
     return c;
 }

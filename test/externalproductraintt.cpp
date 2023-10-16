@@ -32,9 +32,10 @@ int main()
             TFHEpp::trgswrainttSymEncrypt<TFHEpp::lvl1param>(
                 plainpoly, key.lvl1);
         TFHEpp::trgswrainttExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
+        // if constexpr(TFHEpp::hasq<TFHEpp::lvl1param>) for(int i=0;i<TFHEpp::lvl1param::n;i++) assert(c[0][i]<TFHEpp::lvl1param::q);
         std::array<bool, TFHEpp::lvl1param::n> p2 =
             TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(c, key.lvl1);
-        // for (int i = 0; i < TFHEpp::lvl1param::n; i++) std::cout<<(p[i]?1:0)<<":"<<(p2[i]?1:0)<<std::endl;
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++) if(p[i]!=p2[i]) std::cout<<i<<":"<<(p[i]?1:0)<<":"<<(p2[i]?1:0)<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) assert(p[i] == p2[i]);
     }
     std::cout << "Passed" << std::endl;

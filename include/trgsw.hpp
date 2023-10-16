@@ -69,9 +69,9 @@ void Decomposition(DecomposedPolynomial<P> &decpoly, const Polynomial<P> &poly,
     constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
 
     for (int i = 0; i < P::n; i++) {
-        typename P::T inradix2 = poly[i] + offset + roundoffset;
+        typename P::T inradix2;
         if constexpr (hasq<P>){
-            inradix2 = (static_cast<uint64_t>(poly[i]>>(std::numeric_limits<typename P::T>::digits-P::qbit))<<std::numeric_limits<typename P::T>::digits) /P::q + offset + roundoffset;
+            inradix2 = (static_cast<uint64_t>(poly[i])<<std::numeric_limits<typename P::T>::digits) /P::q + offset + roundoffset;
         }else{
             inradix2 = poly[i] + offset + roundoffset;
         }
@@ -229,9 +229,13 @@ template <class P>
 constexpr std::array<typename P::T, P::l> hgen()
 {
     std::array<typename P::T, P::l> h{};
-    for (int i = 0; i < P::l; i++)
-        h[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
-                        (i + 1) * P::Bgbit);
+    if constexpr(hasq<P>)
+        for (int i = 0; i < P::l; i++)
+            h[i] = (P::q + (1ULL<<((i + 1) * P::Bgbit-1))) >> ((i + 1) * P::Bgbit);
+    else
+        for (int i = 0; i < P::l; i++)
+            h[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
+                            (i + 1) * P::Bgbit);
     return h;
 }
 
@@ -391,20 +395,31 @@ TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p, const double α,
     return ApplyRAINTT2trgsw<P>(trgsw);
 }
 
-template <class P, bool modswitch = true>
+template <class P>
 TRGSWRAINTT<P> trgswrainttSymEncrypt(const Polynomial<P> &p, const uint η,
                                const Key<P> &key)
 {
-    if constexpr(hasq<P> && P::q==raintt::P && P::qbit==raintt::wordbits){
+    if constexpr(hasq<P> && P::q==raintt::P){
+        constexpr uint8_t remainder = ((P::nbit - 1) % 3) + 1;
         constexpr std::array<typename P::T, P::l> h = hgen<P>();
         TRGSWRAINTT<P> trgswraintt;
-        for (TRLWERAINTT<P> &trlweraintt : trgswraintt) trlweraintt = trlwerainttSymEncryptZero<P>(η, key);
+        for (TRLWERAINTT<P> &trlweraintt : trgswraintt){
+            trlweraintt = trlwerainttSymEncryptZero<P>(η, key);
+            for(int k = 0; k <= P::k; k++)
+                for(int j = 0; j < P::n; j++)
+                    trlweraintt[k][j] = raintt::MulSREDC(trlweraintt[k][j],((j & ((1<<remainder) -1)) > 1)?raintt::R3:raintt::R2);
+        }
         for (int i = 0; i < P::l; i++) {
+            Polynomial<P> pscaled;
+            for (int j = 0; j < P::n; j++){
+                pscaled[j] = static_cast<uint64_t>(static_cast<int32_t>(p[j])>=0?p[j]:(P::q+p[j])) * h[i] % P::q;
+            }
             for (int k = 0; k < P::k + 1; k++) {
-                Polynomial<P> pscaled;
-                for (int j = 0; j < P::n; j++) pscaled[j] = p[j] * h[i];
                 PolynomialRAINTT<P> praintt;
-                raintt::TwistINTT<typename P::T, P::nbit, modswitch>(praintt,pscaled,(*raintttable)[1],(*raintttwist)[1]);
+                raintt::TwistINTT<typename P::T, P::nbit, false>(praintt,pscaled,(*raintttable)[1],(*raintttwist)[1]);
+                for(int j = 0; j <P::n; j++)
+                    if ((j & ((1<<remainder) -1)) > 1) praintt[j] = raintt::MulSREDC(praintt[j],raintt::R4);
+                    else praintt[j] = raintt::MulSREDC(praintt[j],raintt::R2);
                 for (int j = 0; j < P::n; j++) trgswraintt[i + k * P::l][k][j] = raintt::AddMod(trgswraintt[i + k * P::l][k][j],praintt[j]);
             }
         }
