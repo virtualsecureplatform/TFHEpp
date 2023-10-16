@@ -72,9 +72,9 @@ inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
 {
     if constexpr (std::is_same_v<P, lvl1param>) {
         if constexpr (std::is_same_v<typename P::T, uint32_t>)
-            if constexpr(hasq<P>)
-                fftplvl1.execute_direct_torus32_q(res.data(), a.data(), P::q);
-            else
+            // if constexpr(hasq<P>)
+                // fftplvl1.execute_direct_torus32_q(res.data(), a.data(), P::q);
+            // else
                 fftplvl1.execute_direct_torus32(res.data(), a.data());
         if constexpr (std::is_same_v<typename P::T, uint64_t>)
             fftplvl1.execute_direct_torus64(res.data(), a.data());

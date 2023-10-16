@@ -39,7 +39,7 @@ struct lvl1param {
     using T = uint32_t;            // Torus representation
     static constexpr T q = 40960001;
     static constexpr uint qbit = 27;
-    static constexpr T μ = q/8;
+    static constexpr T μ = 1U << (std::numeric_limits<T>::digits - 3);
     static constexpr uint32_t plain_modulus = 2;
     static constexpr double Δ =
         static_cast<double>(1ULL << std::numeric_limits<T>::digits) /

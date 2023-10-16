@@ -26,9 +26,9 @@ template <class P>
 TRLWE<P> trlweSymEncryptZero(const uint η, const Key<P> &key)
 {
     std::uniform_int_distribution<typename P::T> Torusdist(
-        0, P::q-1);
+        0, std::numeric_limits<typename P::T>::max());
     TRLWE<P> c;
-    for (typename P::T &i : c[P::k]) i = CenteredBinomial<P>(η);
+    for (typename P::T &i : c[P::k]) i = (CenteredBinomial<P>(η)<<std::numeric_limits<P>::digits)/P::q;
     for (int k = 0; k < P::k; k++) {
         for (typename P::T &i : c[k]) i = Torusdist(generator);
         std::array<typename P::T, P::n> partkey;
@@ -37,7 +37,6 @@ TRLWE<P> trlweSymEncryptZero(const uint η, const Key<P> &key)
         PolyMul<P>(temp, c[k], partkey);
         for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
     }
-    if constexpr(hasq<P>) for (int i = 0; i < P::n; i++) c[P::k][i] %= P::q;
     return c;
 }
 
@@ -96,8 +95,7 @@ TRLWE<P> trlweSymEncrypt(const std::array<typename P::T, P::n> &p,
                          const uint η, const Key<P> &key)
 {
     TRLWE<P> c = trlweSymEncryptZero<P>(η, key);
-    for (int i = 0; i < P::n; i++) c[P::k][i] += (static_cast<int32_t>(p[i])>=0)?p[i]:P::q+p[i];
-    if constexpr(hasq<P>) for (int i = 0; i < P::n; i++) c[P::k][i] %= P::q;
+    for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
     return c;
 }
 

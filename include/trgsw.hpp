@@ -69,14 +69,8 @@ void Decomposition(DecomposedPolynomial<P> &decpoly, const Polynomial<P> &poly,
     constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
 
     for (int i = 0; i < P::n; i++) {
-        typename P::T inradix2;
-        if constexpr (hasq<P>){
-            inradix2 = (static_cast<uint64_t>(poly[i])<<std::numeric_limits<typename P::T>::digits) /P::q + offset + roundoffset;
-        }else{
-            inradix2 = poly[i] + offset + roundoffset;
-        }
         for (int l = 0; l < P::l; l++)
-            decpoly[l][i] = ((inradix2 >>
+            decpoly[l][i] = ((poly[i] + offset + roundoffset >>
                         (std::numeric_limits<typename P::T>::digits -
                             (l + 1) * P::Bgbit)) &
                         mask) -
@@ -160,8 +154,8 @@ void trgswrainttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                         raintt::AddMod(restrlwentt[m][j],raintt::MulSREDC(decpolyntt[i][j], trgswntt[i + k * P::l][m][j]));
         }
     }
-    if constexpr(hasq<P>) for (int k = 0; k < P::k + 1; k++) raintt::TwistNTT<typename P::T,P::nbit, P::q == (1ULL<<P::qbit)>(res[k], restrlwentt[k],(*raintttable)[0],(*raintttwist)[0]);
-    else for (int k = 0; k < P::k + 1; k++) raintt::TwistNTT<typename P::T,P::nbit, true>(res[k], restrlwentt[k],(*raintttable)[0],(*raintttwist)[0]);
+    // if constexpr(hasq<P>) for (int k = 0; k < P::k + 1; k++) raintt::TwistNTT<typename P::T,P::nbit, P::q == (1ULL<<P::qbit)>(res[k], restrlwentt[k],(*raintttable)[0],(*raintttwist)[0]);
+    for (int k = 0; k < P::k + 1; k++) raintt::TwistNTT<typename P::T,P::nbit, true>(res[k], restrlwentt[k],(*raintttable)[0],(*raintttwist)[0]);
 }
 
 template <class P>
