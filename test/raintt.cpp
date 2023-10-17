@@ -167,14 +167,13 @@ int main()
     std::cout << "NTT witout modswitch Passed" << std::endl;
     for (int test = 0; test < num_test; test++) {
         typename TFHEpp::lvl1param::T a = Torus32dist(engine);
-        raintt::Word b = (((static_cast<raintt::DoubleWord>(a) * raintt::K) << raintt::shiftamount) +
+        raintt::Word b = (((static_cast<uint64_t>(a) * raintt::K) << raintt::shiftamount) +
                  a + (1ULL << (32 - 1))) >>
                 32;
-        typename TFHEpp::lvl1param::T c = (static_cast<raintt::DoubleWord>(b) * ((1ULL << 61) / raintt::P) +
-                      (1ULL << (29 - 1))) >>
-                     29;
-        // std::cout<<a<<":"<<b<<":"<<c<<std::endl;
-        assert(std::abs(static_cast<int>(a - c)) <= 4);
+        typename TFHEpp::lvl1param::T c = (static_cast<uint64_t>(b) * ((1ULL << (32+raintt::wordbits-1)) / raintt::P) +
+                      (1ULL << (raintt::wordbits-1 - 1))) >>
+                     (raintt::wordbits-1);
+        assert(std::abs(static_cast<int>(a - c)) <= (1<<(32-raintt::wordbits+1)));
     }
     std::cout << "Modswitch Passed" << std::endl;
     for (int test = 0; test < num_test; test++) {
@@ -189,10 +188,10 @@ int main()
         raintt::TwistNTT<typename TFHEpp::lvl1param::T,
                          TFHEpp::lvl1param::nbit,true>(res, resntt, (*tablelvl1)[0],
                                                   (*twistlvl1)[0]);
-        for (int i = 0; i < TFHEpp::lvl1param::n/2; i++)
-            if(std::abs(static_cast<int>(res[i] - a[i])) > 4)std::cout<<res[i]<<":"<<a[i]<<std::endl;
+        // for (int i = 0; i < TFHEpp::lvl1param::n/2; i++)
+            // if(std::abs(static_cast<int>(res[i] - a[i])) > 4)std::cout<<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-            assert(std::abs(static_cast<int>(res[i] - a[i])) <= 4);
+            assert(std::abs(static_cast<int>(res[i] - a[i])) <= (1<<(32-raintt::wordbits+1)));
     }
     std::cout << "NTT with modswitch Passed" << std::endl;
 
@@ -251,7 +250,7 @@ int main()
         //               << std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             // assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <= (1U<<(TFHEpp::lvl1param::nbit+4)));
-            assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <= (1U<<(TFHEpp::lvl1param::nbit+6)));
+            assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <= (1U<<(TFHEpp::lvl1param::nbit+(32-raintt::wordbits+1)+4)));
         }
     }
     std::cout << "PolyMul with modsiwtch Passed" << std::endl;

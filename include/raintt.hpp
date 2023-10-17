@@ -337,7 +337,7 @@ inline void TwistMulInvert(std::array<DoubleSWord, 1 << Nbit> &res,
     for (int i = 0; i < N; i++) {
         if constexpr (modswitch){
             res[i] =
-                (((static_cast<DoubleWord>(a[i]) * K) << shiftamount) +
+                (((static_cast<uint64_t>(a[i]) * K) << shiftamount) +
                  a[i] + (1ULL << (32 - 1))) >>
                 32;
         }else{
@@ -483,9 +483,9 @@ inline void TwistMulDirect(std::array<T, 1 << Nbit> &res,
     for (int i = 0; i < N; i++) {
         const SWord mulres = MulSREDC(a[i], twist[i]);
         if constexpr (modswitch)
-            res[i] = (static_cast<DoubleSWord>((mulres < 0) ? mulres + P : mulres) * ((1ULL << 61) / P) +
-                      (1ULL << (29 - 1))) >>
-                     29;
+            res[i] = (static_cast<uint64_t>((mulres < 0) ? mulres + P : mulres) * ((1ULL << (32+wordbits-1)) / P) +
+                      (1ULL << (wordbits-1 - 1))) >>
+                     (wordbits-1);
         else
             res[i] = (mulres < 0) ? mulres + P : mulres;
     }
