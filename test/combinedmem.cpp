@@ -180,21 +180,18 @@ int main()
 
             encaddress = bootsSymEncrypt(address, *sk);
             for (int i = 0; i < numromtrlwe; i++)
-                encrom[i] = trlweSymEncrypt<lvl1param>(romu[i],
-                                                       (*sk).key.lvl1);
+                encrom[i] = trlweSymEncrypt<lvl1param>(romu[i], (*sk).key.lvl1);
             for (int i = 0; i < words; i++)
                 for (int j = 0; j < numramtrlwe; j++)
-                    encram[i][j] = trlweSymEncrypt<lvl1param>(
-                        ramu[i][j], (*sk).key.lvl1);
+                    encram[i][j] =
+                        trlweSymEncrypt<lvl1param>(ramu[i][j], (*sk).key.lvl1);
 
             encwrflag = tlweSymEncrypt<lvl1param>(
-                (wrflag > 0) ? lvl1param::μ : -lvl1param::μ,
-                (*sk).key.lvl1);
+                (wrflag > 0) ? lvl1param::μ : -lvl1param::μ, (*sk).key.lvl1);
 
             for (int i = 0; i < words; i++)
                 encwritep[i] = tlweSymEncrypt<lvl1param>(
-                    writep[i] ? lvl1param::μ : -lvl1param::μ,
-                    (*sk).key.lvl1);
+                    writep[i] ? lvl1param::μ : -lvl1param::μ, (*sk).key.lvl1);
 
             chrono::system_clock::time_point start, end;
             start = chrono::system_clock::now();

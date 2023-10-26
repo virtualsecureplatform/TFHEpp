@@ -52,9 +52,10 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
 }
 
 template <class P, uint numcat>
-void CatIdentityKeySwitch(std::array<TLWE<typename P::targetP>, numcat> &res,
-                       const std::array<TLWE<typename P::domainP>, numcat> &tlwe,
-                       const KeySwitchingKey<P> &ksk)
+void CatIdentityKeySwitch(
+    std::array<TLWE<typename P::targetP>, numcat> &res,
+    const std::array<TLWE<typename P::domainP>, numcat> &tlwe,
+    const KeySwitchingKey<P> &ksk)
 {
     constexpr uint32_t mask = (1U << P::basebit) - 1;
     res = {};
@@ -67,14 +68,14 @@ void CatIdentityKeySwitch(std::array<TLWE<typename P::targetP>, numcat> &res,
             ? 1ULL << (domain_digit - (1 + P::basebit * P::t))
             : 0;
 
-    for(int cat = 0; cat < numcat; cat++){
+    for (int cat = 0; cat < numcat; cat++) {
         if constexpr (domain_digit == target_digit)
             res[cat][P::targetP::k * P::targetP::n] =
                 tlwe[cat][P::domainP::k * P::domainP::n];
         else if constexpr (domain_digit > target_digit)
             res[cat][P::targetP::k * P::targetP::n] =
                 (tlwe[cat][P::domainP::k * P::domainP::n] +
-                (1ULL << (domain_digit - target_digit - 1))) >>
+                 (1ULL << (domain_digit - target_digit - 1))) >>
                 (domain_digit - target_digit);
         else if constexpr (domain_digit < target_digit)
             res[cat][P::targetP::k * P::targetP::n] =
@@ -82,14 +83,16 @@ void CatIdentityKeySwitch(std::array<TLWE<typename P::targetP>, numcat> &res,
                     tlwe[cat][P::domainP::k * P::domainP::n])
                 << (target_digit - domain_digit);
     }
-    for (int i = 0; i < P::domainP::k * P::domainP::n; i++){
-        std::array<typename P::domainP::T,numcat> aibarcat;
-        for(int cat = 0; cat < numcat; cat++) aibarcat[cat] = tlwe[cat][i] + prec_offset;
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
+        std::array<typename P::domainP::T, numcat> aibarcat;
+        for (int cat = 0; cat < numcat; cat++)
+            aibarcat[cat] = tlwe[cat][i] + prec_offset;
         for (int j = 0; j < P::t; j++) {
-            for(int cat = 0; cat < numcat; cat++){
+            for (int cat = 0; cat < numcat; cat++) {
                 const uint32_t aij =
-                    (aibarcat[cat] >> (std::numeric_limits<typename P::domainP::T>::digits -
-                                (j + 1) * P::basebit)) &
+                    (aibarcat[cat] >>
+                     (std::numeric_limits<typename P::domainP::T>::digits -
+                      (j + 1) * P::basebit)) &
                     mask;
                 if (aij != 0)
                     for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)

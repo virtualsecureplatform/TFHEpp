@@ -24,12 +24,16 @@ template <typename T>
 constexpr bool false_v = false;
 
 // https://qiita.com/negi-drums/items/a527c05050781a5af523
-template<typename T> concept hasq = requires { 
-  T::q;
+template <typename T>
+concept hasq = requires
+{
+    T::q;
 };
 
-template<typename T> concept hasqbit = requires { 
-  T::qbit;
+template <typename T>
+concept hasqbit = requires
+{
+    T::qbit;
 };
 
 // Double to Torus(32bit fixed-point number)
@@ -72,17 +76,19 @@ inline typename P::T ModularGaussian(typename P::T center, double stdev)
         static_assert(false_v<typename P::T>, "Undefined Modular Gaussian!");
 }
 
-template<class P>
-inline typename P::T CenteredBinomial(uint η){
+template <class P>
+inline typename P::T CenteredBinomial(uint η)
+{
     static uint64_t buf;
     static uint_fast8_t count = 64;
     typename P::T acc = 0;
-    std::uniform_int_distribution<uint64_t> dist(0, std::numeric_limits<uint64_t>::max());
-    for(int i = 0; i < 2*η; i++){
-        if(count >= 64){
+    std::uniform_int_distribution<uint64_t> dist(
+        0, std::numeric_limits<uint64_t>::max());
+    for (int i = 0; i < 2 * η; i++) {
+        if (count >= 64) {
             buf = dist(generator);
         }
-        acc += buf&1;
+        acc += buf & 1;
         buf >>= 1;
         count++;
     }

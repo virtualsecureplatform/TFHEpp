@@ -14,9 +14,8 @@
 
 namespace TFHEpp {
 
-#define INST(P)                                                               \
-    template TLWE<P> tlweSymEncrypt<P>(const typename P::T p,\
-                                       const Key<P> &key)
+#define INST(P) \
+    template TLWE<P> tlweSymEncrypt<P>(const typename P::T p, const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 

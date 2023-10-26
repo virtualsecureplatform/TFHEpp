@@ -42,8 +42,8 @@ void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey,
              j++) {
             if (j != 0) {
                 plainpoly[0] = domainkey[i] == j;
-                bk[i][count] = trgswSymEncrypt<typename P::targetP>(
-                    plainpoly, targetkey);
+                bk[i][count] =
+                    trgswSymEncrypt<typename P::targetP>(plainpoly, targetkey);
                 count++;
             }
         }
@@ -110,8 +110,8 @@ void bknttgen(BootstrappingKeyNTT<P>& bkntt,
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
         plainpoly[0] = domainkey[i];
-        bkntt[i] = trgswnttSymEncrypt<typename P::targetP>(
-            plainpoly, targetkey);
+        bkntt[i] =
+            trgswnttSymEncrypt<typename P::targetP>(plainpoly, targetkey);
     }
 }
 
@@ -124,14 +124,14 @@ void bknttgen(BootstrappingKeyNTT<P>& bkntt, const SecretKey& sk)
 
 template <class P>
 void bkrainttgen(BootstrappingKeyRAINTT<P>& bkraintt,
-              const Key<typename P::domainP>& domainkey,
-              const Key<typename P::targetP>& targetkey)
+                 const Key<typename P::domainP>& domainkey,
+                 const Key<typename P::targetP>& targetkey)
 {
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
         plainpoly[0] = domainkey[i];
-        bkraintt[i] = trgswrainttSymEncrypt<typename P::targetP>(
-            plainpoly, targetkey);
+        bkraintt[i] =
+            trgswrainttSymEncrypt<typename P::targetP>(plainpoly, targetkey);
     }
 }
 
@@ -139,7 +139,7 @@ template <class P>
 void bkrainttgen(BootstrappingKeyRAINTT<P>& bkraintt, const SecretKey& sk)
 {
     bkrainttgen<P>(bkraintt, sk.key.get<typename P::domainP>(),
-                sk.key.get<typename P::targetP>());
+                   sk.key.get<typename P::targetP>());
 }
 
 template <class P>
@@ -363,8 +363,8 @@ struct EvalKey {
     void serialize(Archive& archive)
     {
         archive(params, bklvl01, bklvl02, bkfftlvl01, bkfftlvl02, bknttlvl01,
-                bknttlvl02, iksklvl10, iksklvl20, iksklvl21,
-                iksklvl22, privksklvl11, privksklvl21, privksklvl22);
+                bknttlvl02, iksklvl10, iksklvl20, iksklvl21, iksklvl22,
+                privksklvl11, privksklvl21, privksklvl22);
     }
 
     // emplace keys
@@ -372,11 +372,13 @@ struct EvalKey {
     void emplacebk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bklvl01 = std::make_unique_for_overwrite<BootstrappingKey<lvl01param>>();
+            bklvl01 =
+                std::make_unique_for_overwrite<BootstrappingKey<lvl01param>>();
             bkgen<lvl01param>(*bklvl01, sk);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bklvl02 = std::make_unique_for_overwrite<BootstrappingKey<lvl02param>>();
+            bklvl02 =
+                std::make_unique_for_overwrite<BootstrappingKey<lvl02param>>();
             bkgen<lvl02param>(*bklvl02, sk);
         }
         else
@@ -386,11 +388,13 @@ struct EvalKey {
     void emplacebkfft(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bkfftlvl01 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl01param>>();
+            bkfftlvl01 = std::make_unique_for_overwrite<
+                BootstrappingKeyFFT<lvl01param>>();
             bkfftgen<lvl01param>(*bkfftlvl01, sk);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bkfftlvl02 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl02param>>();
+            bkfftlvl02 = std::make_unique_for_overwrite<
+                BootstrappingKeyFFT<lvl02param>>();
             bkfftgen<lvl02param>(*bkfftlvl02, sk);
         }
         else
@@ -400,11 +404,13 @@ struct EvalKey {
     void emplacebkntt(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bknttlvl01 = std::make_unique_for_overwrite<BootstrappingKeyNTT<lvl01param>>();
+            bknttlvl01 = std::make_unique_for_overwrite<
+                BootstrappingKeyNTT<lvl01param>>();
             bknttgen<lvl01param>(*bknttlvl01, sk);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bknttlvl02 = std::make_unique_for_overwrite<BootstrappingKeyNTT<lvl02param>>();
+            bknttlvl02 = std::make_unique_for_overwrite<
+                BootstrappingKeyNTT<lvl02param>>();
             bknttgen<lvl02param>(*bknttlvl02, sk);
         }
         else
@@ -414,13 +420,15 @@ struct EvalKey {
     void emplacebk2bkfft()
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bkfftlvl01 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl01param>>();
+            bkfftlvl01 = std::make_unique_for_overwrite<
+                BootstrappingKeyFFT<lvl01param>>();
             for (int i = 0; i < lvl01param::domainP::n; i++)
                 (*bkfftlvl01)[i][0] =
                     ApplyFFT2trgsw<lvl1param>((*bklvl01)[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bkfftlvl02 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl02param>>();
+            bkfftlvl02 = std::make_unique_for_overwrite<
+                BootstrappingKeyFFT<lvl02param>>();
             for (int i = 0; i < lvl02param::domainP::n; i++)
                 (*bkfftlvl02)[i][0] =
                     ApplyFFT2trgsw<lvl2param>((*bklvl02)[i][0]);
@@ -432,12 +440,14 @@ struct EvalKey {
     void emplacebk2bkntt()
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bknttlvl01 = std::make_unique_for_overwrite<BootstrappingKeyNTT<lvl01param>>();
+            bknttlvl01 = std::make_unique_for_overwrite<
+                BootstrappingKeyNTT<lvl01param>>();
             for (int i = 0; i < lvl01param::domainP::n; i++)
                 (*bknttlvl01)[i] = ApplyNTT2trgsw<lvl1param>((*bklvl01)[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bknttlvl02 = std::make_unique_for_overwrite<BootstrappingKeyNTT<lvl02param>>();
+            bknttlvl02 = std::make_unique_for_overwrite<
+                BootstrappingKeyNTT<lvl02param>>();
             for (int i = 0; i < lvl02param::domainP::n; i++)
                 (*bknttlvl02)[i] = ApplyNTT2trgsw<lvl2param>((*bklvl02)[i][0]);
         }
@@ -448,26 +458,30 @@ struct EvalKey {
     void emplaceiksk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl10param>) {
-            iksklvl10 = std::make_unique_for_overwrite<KeySwitchingKey<lvl10param>>();
+            iksklvl10 =
+                std::make_unique_for_overwrite<KeySwitchingKey<lvl10param>>();
             ikskgen<lvl10param>(*iksklvl10, sk);
         }
         else if constexpr (std::is_same_v<P, lvl20param>) {
-            iksklvl20 = std::make_unique_for_overwrite<KeySwitchingKey<lvl20param>>();
+            iksklvl20 =
+                std::make_unique_for_overwrite<KeySwitchingKey<lvl20param>>();
             ikskgen<lvl20param>(*iksklvl20, sk);
         }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            iksklvl21 = std::make_unique_for_overwrite<KeySwitchingKey<lvl21param>>();
+            iksklvl21 =
+                std::make_unique_for_overwrite<KeySwitchingKey<lvl21param>>();
             ikskgen<lvl21param>(*iksklvl21, sk);
         }
         else
-            static_assert(false_v<typename P::targetP::T>, "Not predefined parameter!");
+            static_assert(false_v<typename P::targetP::T>,
+                          "Not predefined parameter!");
     }
     template <class P>
     void emplacesubiksk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
-            subiksklvl21 =
-                std::make_unique_for_overwrite<SubsetKeySwitchingKey<lvl21param>>();
+            subiksklvl21 = std::make_unique_for_overwrite<
+                SubsetKeySwitchingKey<lvl21param>>();
             subikskgen<lvl21param>(*subiksklvl21, sk);
         }
         else
@@ -477,24 +491,25 @@ struct EvalKey {
     void emplaceprivksk(const std::string& key,
                         const Polynomial<typename P::targetP>& func,
                         const SecretKey& sk)
-    {   
+    {
         if constexpr (std::is_same_v<P, lvl11param>) {
-            privksklvl11[key] =
-                std::make_unique_for_overwrite<PrivateKeySwitchingKey<lvl11param>>();
+            privksklvl11[key] = std::make_unique_for_overwrite<
+                PrivateKeySwitchingKey<lvl11param>>();
             privkskgen<lvl11param>(*privksklvl11[key], func, sk);
         }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            privksklvl21[key] =
-                std::make_unique_for_overwrite<PrivateKeySwitchingKey<lvl21param>>();
+            privksklvl21[key] = std::make_unique_for_overwrite<
+                PrivateKeySwitchingKey<lvl21param>>();
             privkskgen<lvl21param>(*privksklvl21[key], func, sk);
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            privksklvl22[key] =
-                std::make_unique_for_overwrite<PrivateKeySwitchingKey<lvl22param>>();
+            privksklvl22[key] = std::make_unique_for_overwrite<
+                PrivateKeySwitchingKey<lvl22param>>();
             privkskgen<lvl22param>(*privksklvl22[key], func, sk);
         }
         else
-            static_assert(false_v<typename P::targetP::T>, "Not predefined parameter!");
+            static_assert(false_v<typename P::targetP::T>,
+                          "Not predefined parameter!");
     }
     template <class P>
     void emplacesubprivksk(const std::string& key,
@@ -502,8 +517,8 @@ struct EvalKey {
                            const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
-            subprivksklvl21[key] =
-                std::make_unique_for_overwrite<SubsetPrivateKeySwitchingKey<lvl21param>>();
+            subprivksklvl21[key] = std::make_unique_for_overwrite<
+                SubsetPrivateKeySwitchingKey<lvl21param>>();
             subprivkskgen<lvl21param>(*subprivksklvl21[key], func, sk);
         }
         else
@@ -623,7 +638,8 @@ struct EvalKey {
             return *(subprivksklvl21.at(key));
         }
         else
-            static_assert(false_v<typename P::targetP::T>, "Not predefined parameter!");
+            static_assert(false_v<typename P::targetP::T>,
+                          "Not predefined parameter!");
     }
 };
 

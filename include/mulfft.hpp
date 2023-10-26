@@ -32,9 +32,11 @@ inline const std::unique_ptr<
 inline const std::unique_ptr<
     const std::array<std::array<cuHEpp::INTorus, lvl2param::n>, 2>>
     ntttablelvl2 = cuHEpp::TableGen<lvl2param::nbit>();
-inline const std::unique_ptr<std::array<std::array<raintt::SWord, lvl1param::n>, 2>> 
-    raintttwist = raintt::TwistGen<lvl1param::nbit,3>();
-inline const std::unique_ptr<std::array<std::array<std::array<raintt::SWord, lvl1param::n>, 2>, 2>> 
+inline const std::unique_ptr<
+    std::array<std::array<raintt::SWord, lvl1param::n>, 2>>
+    raintttwist = raintt::TwistGen<lvl1param::nbit, 3>();
+inline const std::unique_ptr<
+    std::array<std::array<std::array<raintt::SWord, lvl1param::n>, 2>, 2>>
     raintttable = raintt::TableGen<lvl1param::nbit>();
 #ifdef USE_HEXL
 // Biggest prime number less than 2^30 and staisfies 1 mod 2N.
@@ -50,18 +52,15 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
         std::array<uint64_t, lvl1param::n> temp;
         static intel::hexl::NTT nttlvl1(lvl1param::n, lvl1P);
         nttlvl1.ComputeInverse(temp.data(), &(a[0].value), 1, 1);
-        for (int i = 0; i < lvl1param::n; i++)
-            res[i] = (temp[i] << 32) / lvl1P;
+        for (int i = 0; i < lvl1param::n; i++) res[i] = (temp[i] << 32) / lvl1P;
     }
 #else
-        cuHEpp::TwistNTT<typename lvl1param::T,
-                         lvl1param::nbit>(res, a, (*ntttablelvl1)[0],
-                                                  (*ntttwistlvl1)[0]);
+        cuHEpp::TwistNTT<typename lvl1param::T, lvl1param::nbit>(
+            res, a, (*ntttablelvl1)[0], (*ntttwistlvl1)[0]);
 #endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>) {
-        cuHEpp::TwistNTT<typename lvl2param::T,
-                         lvl2param::nbit>(res, a, (*ntttablelvl2)[0],
-                                                  (*ntttwistlvl2)[0]);
+        cuHEpp::TwistNTT<typename lvl2param::T, lvl2param::nbit>(
+            res, a, (*ntttablelvl2)[0], (*ntttwistlvl2)[0]);
     }
     else
         static_assert(false_v<typename P::T>, "Undefined TwistNTT!");
@@ -73,9 +72,9 @@ inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
     if constexpr (std::is_same_v<P, lvl1param>) {
         if constexpr (std::is_same_v<typename P::T, uint32_t>)
             // if constexpr(hasq<P>)
-                // fftplvl1.execute_direct_torus32_q(res.data(), a.data(), P::q);
+            // fftplvl1.execute_direct_torus32_q(res.data(), a.data(), P::q);
             // else
-                fftplvl1.execute_direct_torus32(res.data(), a.data());
+            fftplvl1.execute_direct_torus32(res.data(), a.data());
         if constexpr (std::is_same_v<typename P::T, uint64_t>)
             fftplvl1.execute_direct_torus64(res.data(), a.data());
     }
@@ -179,28 +178,32 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         TwistIFFT<P>(fftb, b);
         MulInFD<P::n>(ffta, ffta, fftb);
         TwistFFT<P>(res, ffta);
-    }else if constexpr (std::is_same_v<P, lvl2param>){
+    }
+    else if constexpr (std::is_same_v<P, lvl2param>) {
         // Naieve
         // for (int i = 0; i < P::n; i++) {
         //     typename P::T ri = 0;
         //     for (int j = 0; j <= i; j++)
         //         ri +=
-        //             static_cast<typename std::make_signed<typename P::T>::type>(
+        //             static_cast<typename std::make_signed<typename
+        //             P::T>::type>(
         //                 a[j]) *
         //             b[i - j];
         //     for (int j = i + 1; j < P::n; j++)
         //         ri -=
-        //             static_cast<typename std::make_signed<typename P::T>::type>(
+        //             static_cast<typename std::make_signed<typename
+        //             P::T>::type>(
         //                 a[j]) *
         //             b[P::n + i - j];
         //     res[i] = ri;
         // }
-        PolynomialNTT<P> ntta,nttb;
+        PolynomialNTT<P> ntta, nttb;
         TwistINTT<P>(ntta, a);
         TwistINTT<P>(nttb, b);
-        for(int i = 0; i < P::n; i++) ntta[i] *= nttb[i];
+        for (int i = 0; i < P::n; i++) ntta[i] *= nttb[i];
         TwistNTT<P>(res, ntta);
-    }else{
+    }
+    else {
         // Naieve
         for (int i = 0; i < P::n; i++) {
             typename P::T ri = 0;

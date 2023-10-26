@@ -52,11 +52,11 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
 //     TRLWE<typename bkP::targetP>> trlwe;
 //     BlindRotate<bkP, privksP::targetP::l>(
 //         trlwe, tlwelvl0, ek.getbkfft<bkP>(), CBtestvector<privksP>());
-//     for (int i = 0; i < privksP::targetP::l; i++) 
+//     for (int i = 0; i < privksP::targetP::l; i++)
 //         temp[i][privksP::domainP::k * privksP::domainP::n] +=
 //             1ULL << (numeric_limits<typename privksP::domainP::T>::digits -
 //                      (i + 1) * privksP::targetP::Bgbit - 1);
-//     for (int i = 0; i < privksP::targetP::l; i++) 
+//     for (int i = 0; i < privksP::targetP::l; i++)
 //         for (int k = 0; k < privksP::targetP::k + 1; k++)
 //             PrivKeySwitch<privksP>(
 //                 trgsw[i + k * privksP::targetP::l], temp[i],

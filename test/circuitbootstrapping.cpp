@@ -43,8 +43,7 @@ int main()
 
     for (int i = 0; i < num_test; i++)
         ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
-            pmu[i], 
-            sk->key.get<typename privksP::targetP>());
+            pmu[i], sk->key.get<typename privksP::targetP>());
     cones = TFHEpp::bootsSymEncrypt<typename iksP::domainP>(pones, *sk);
 
     std::chrono::system_clock::time_point start, end;

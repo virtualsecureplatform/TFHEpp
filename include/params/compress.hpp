@@ -12,7 +12,8 @@ struct lvl0param {
     static constexpr int32_t key_value_diff = key_value_max - key_value_min;
     static constexpr std::uint32_t n = 636;  // dimension
     static constexpr std::uint32_t k = 1;
-    static constexpr ErrorDistribution errordist = ErrorDistribution::ModularGaussian;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
     static constexpr inline double α =
         0.000'092'511'997'467'675'6;  // fresh noise, 2^{-13.4}
     using T = uint32_t;               // Torus representation
@@ -34,9 +35,10 @@ struct lvl1param {
     static constexpr std::uint32_t l = 2;
     static constexpr std::uint32_t Bgbit = 8;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
-    static constexpr ErrorDistribution errordist = ErrorDistribution::CenteredBinomial;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::CenteredBinomial;
     static constexpr uint η = 3;
-    using T = uint32_t;            // Torus representation
+    using T = uint32_t;  // Torus representation
     static constexpr T q = 40960001;
     static constexpr uint qbit = 27;
     static constexpr T μ = 1U << (std::numeric_limits<T>::digits - 3);
@@ -56,12 +58,13 @@ struct lvl2param {
     static constexpr std::uint32_t l = 3;
     static constexpr std::uint32_t Bgbit = 9;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
-    static constexpr ErrorDistribution errordist = ErrorDistribution::CenteredBinomial;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::CenteredBinomial;
     static constexpr uint η = 3;
-    using T = uint64_t;                                 // Torus representation
-    static constexpr T q = 1ULL<<48;
+    using T = uint64_t;  // Torus representation
+    static constexpr T q = 1ULL << 48;
     static constexpr uint qbit = 48;
-    static constexpr T μ = q/8;
+    static constexpr T μ = q / 8;
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ = μ;
 };
@@ -101,7 +104,8 @@ struct lvl21param {
 };
 
 struct lvl22param {
-    static constexpr std::uint32_t t = 38;  // number of addition in keyswitching
+    static constexpr std::uint32_t t =
+        38;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
         1;  // how many bit should be encrypted in keyswitching key
     using domainP = lvl2param;

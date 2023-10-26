@@ -52,133 +52,153 @@ INST(lvl1param);
 INST(lvl0param);
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomNAND<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                      \
+    template void HomNAND<iksP, brP, μ>(        \
+        TLWE<typename brP::targetP> & res,      \
+        const TLWE<typename iksP::domainP> &ca, \
+        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomNAND<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
+#define INST(brP, μ, iksP)                                                     \
+    template void HomNAND<brP, μ, iksP>(TLWE<typename iksP::targetP> & res,    \
                                         const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+                                        const TLWE<typename brP::domainP> &cb, \
+                                        const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomNOR<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                                                     \
+    template void HomNOR<iksP, brP, μ>(TLWE<typename brP::targetP> & res,      \
+                                       const TLWE<typename iksP::domainP> &ca, \
+                                       const TLWE<typename iksP::domainP> &cb, \
+                                       const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomNOR<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
-                                        const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+#define INST(brP, μ, iksP)                                                    \
+    template void HomNOR<brP, μ, iksP>(TLWE<typename iksP::targetP> & res,    \
+                                       const TLWE<typename brP::domainP> &ca, \
+                                       const TLWE<typename brP::domainP> &cb, \
+                                       const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomXNOR<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                      \
+    template void HomXNOR<iksP, brP, μ>(        \
+        TLWE<typename brP::targetP> & res,      \
+        const TLWE<typename iksP::domainP> &ca, \
+        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomXNOR<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
+#define INST(brP, μ, iksP)                                                     \
+    template void HomXNOR<brP, μ, iksP>(TLWE<typename iksP::targetP> & res,    \
                                         const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+                                        const TLWE<typename brP::domainP> &cb, \
+                                        const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomAND<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                                                     \
+    template void HomAND<iksP, brP, μ>(TLWE<typename brP::targetP> & res,      \
+                                       const TLWE<typename iksP::domainP> &ca, \
+                                       const TLWE<typename iksP::domainP> &cb, \
+                                       const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomAND<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
-                                        const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+#define INST(brP, μ, iksP)                                                    \
+    template void HomAND<brP, μ, iksP>(TLWE<typename iksP::targetP> & res,    \
+                                       const TLWE<typename brP::domainP> &ca, \
+                                       const TLWE<typename brP::domainP> &cb, \
+                                       const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomOR<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                                                    \
+    template void HomOR<iksP, brP, μ>(TLWE<typename brP::targetP> & res,      \
+                                      const TLWE<typename iksP::domainP> &ca, \
+                                      const TLWE<typename iksP::domainP> &cb, \
+                                      const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomOR<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
-                                        const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+#define INST(brP, μ, iksP)                                                   \
+    template void HomOR<brP, μ, iksP>(TLWE<typename iksP::targetP> & res,    \
+                                      const TLWE<typename brP::domainP> &ca, \
+                                      const TLWE<typename brP::domainP> &cb, \
+                                      const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomXOR<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                                                     \
+    template void HomXOR<iksP, brP, μ>(TLWE<typename brP::targetP> & res,      \
+                                       const TLWE<typename iksP::domainP> &ca, \
+                                       const TLWE<typename iksP::domainP> &cb, \
+                                       const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomXOR<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
-                                        const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+#define INST(brP, μ, iksP)                                                    \
+    template void HomXOR<brP, μ, iksP>(TLWE<typename iksP::targetP> & res,    \
+                                       const TLWE<typename brP::domainP> &ca, \
+                                       const TLWE<typename brP::domainP> &cb, \
+                                       const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomANDNY<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                      \
+    template void HomANDNY<iksP, brP, μ>(       \
+        TLWE<typename brP::targetP> & res,      \
+        const TLWE<typename iksP::domainP> &ca, \
+        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomANDNY<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
-                                        const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+#define INST(brP, μ, iksP)                     \
+    template void HomANDNY<brP, μ, iksP>(      \
+        TLWE<typename iksP::targetP> & res,    \
+        const TLWE<typename brP::domainP> &ca, \
+        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomANDYN<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                      \
+    template void HomANDYN<iksP, brP, μ>(       \
+        TLWE<typename brP::targetP> & res,      \
+        const TLWE<typename iksP::domainP> &ca, \
+        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomANDYN<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
-                                        const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+#define INST(brP, μ, iksP)                     \
+    template void HomANDYN<brP, μ, iksP>(      \
+        TLWE<typename iksP::targetP> & res,    \
+        const TLWE<typename brP::domainP> &ca, \
+        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomORNY<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                      \
+    template void HomORNY<iksP, brP, μ>(        \
+        TLWE<typename brP::targetP> & res,      \
+        const TLWE<typename iksP::domainP> &ca, \
+        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomORNY<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
+#define INST(brP, μ, iksP)                                                     \
+    template void HomORNY<brP, μ, iksP>(TLWE<typename iksP::targetP> & res,    \
                                         const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+                                        const TLWE<typename brP::domainP> &cb, \
+                                        const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 
-#define INST(iksP, brP, μ)                                                \
-    template void HomORYN<iksP, brP, μ>(TLWE<typename brP::targetP> &res, \
-                                        const TLWE<typename iksP::domainP> &ca, \
-                                        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
+#define INST(iksP, brP, μ)                      \
+    template void HomORYN<iksP, brP, μ>(        \
+        TLWE<typename brP::targetP> & res,      \
+        const TLWE<typename iksP::domainP> &ca, \
+        const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_IKSBR(INST)
 #undef INST
-#define INST(brP, μ, iksP)                                                \
-    template void HomORYN<brP, μ, iksP>(TLWE<typename iksP::targetP> &res, \
+#define INST(brP, μ, iksP)                                                     \
+    template void HomORYN<brP, μ, iksP>(TLWE<typename iksP::targetP> & res,    \
                                         const TLWE<typename brP::domainP> &ca, \
-                                        const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
+                                        const TLWE<typename brP::domainP> &cb, \
+                                        const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_GATE_BRIKS(INST)
 #undef INST
 

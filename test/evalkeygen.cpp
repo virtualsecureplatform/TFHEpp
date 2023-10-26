@@ -4,21 +4,20 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/vector.hpp>
+#include <chrono>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <random>
-#include <chrono>
-#include<iostream>
 #include <tfhe++.hpp>
 
 int main()
 {
-
     // generate a random key
     using brP = TFHEpp::lvl02param;
     using xorbrP = TFHEpp::lvl01param;
-	using briksP = TFHEpp::lvl10param;
-	using cbiksP = TFHEpp::lvl21param;
+    using briksP = TFHEpp::lvl10param;
+    using cbiksP = TFHEpp::lvl21param;
     using privksP = TFHEpp::lvl21param;
 
     // To see performance

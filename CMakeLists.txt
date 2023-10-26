@@ -4,8 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 option(DEBUG "Debug mode" OFF)
 if(DEBUG)
   set(CMAKE_CXX_FLAGS
-      "-march=native -g -Wall -Wextra -pedantic -Wno-sign-compare"
-  )
+      "-march=native -g -Wall -Wextra -pedantic -Wno-sign-compare")
 else()
   set(CMAKE_CXX_FLAGS
       "-march=native -O3 -g -flto -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"

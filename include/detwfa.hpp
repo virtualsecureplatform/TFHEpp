@@ -110,8 +110,9 @@ void CMUXNTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWNTT<P> &cs,
 }
 
 template <class P>
-void CMUXRAINTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWRAINTT<P> &cs,
-                                           const typename P::T a)
+void CMUXRAINTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
+                                              const TRGSWRAINTT<P> &cs,
+                                              const typename P::T a)
 {
     TRLWE<P> temp;
     for (int k = 0; k < P::k + 1; k++)
