@@ -179,8 +179,7 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         TwistIFFT<P>(fftb, b);
         MulInFD<P::n>(ffta, ffta, fftb);
         TwistFFT<P>(res, ffta);
-    }
-    else{
+    }else if constexpr (std::is_same_v<P, lvl2param>){
         // Naieve
         // for (int i = 0; i < P::n; i++) {
         //     typename P::T ri = 0;
@@ -201,6 +200,22 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         TwistINTT<P>(nttb, b);
         for(int i = 0; i < P::n; i++) ntta[i] *= nttb[i];
         TwistNTT<P>(res, ntta);
+    }else{
+        // Naieve
+        for (int i = 0; i < P::n; i++) {
+            typename P::T ri = 0;
+            for (int j = 0; j <= i; j++)
+                ri +=
+                    static_cast<typename std::make_signed<typename P::T>::type>(
+                        a[j]) *
+                    b[i - j];
+            for (int j = i + 1; j < P::n; j++)
+                ri -=
+                    static_cast<typename std::make_signed<typename P::T>::type>(
+                        a[j]) *
+                    b[P::n + i - j];
+            res[i] = ri;
+        }
     }
 }
 
