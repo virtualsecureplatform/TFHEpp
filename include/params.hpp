@@ -5,6 +5,7 @@
 
 #include "cuhe++.hpp"
 #include "raintt.hpp"
+#include "nussbaumer.hpp"
 
 namespace TFHEpp {
 
