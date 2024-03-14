@@ -13,7 +13,7 @@ struct lvl0param {
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
     static const inline double α = 0.000'092'511'997'467'675'6;  // fresh noise
-    using T = uint32_t;  // Torus representation
+    using T = uint16_t;  // Torus representation
     static constexpr T μ = 1U << (std::numeric_limits<T>::digits - 3);
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ =
