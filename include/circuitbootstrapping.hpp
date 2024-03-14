@@ -119,7 +119,8 @@ void CircuitBootstrappingFFTInv(
 {
     TLWE<typename brP::domainP> invtlwe;
     // HomNot
-    for (int i = 0; i <= brP::domainP::k*brP::domainP::n; i++) invtlwe[i] = -tlwe[i];
+    for (int i = 0; i <= brP::domainP::k * brP::domainP::n; i++)
+        invtlwe[i] = -tlwe[i];
     CircuitBootstrappingFFT<brP, privksP>(invtrgswfft, invtlwe, ek);
 }
 
@@ -130,7 +131,8 @@ void CircuitBootstrappingFFTInv(
 {
     TLWE<typename iksP::domainP> invtlwe;
     // HomNot
-    for (int i = 0; i <= iksP::domainP::k*iksP::domainP::n; i++) invtlwe[i] = -tlwe[i];
+    for (int i = 0; i <= iksP::domainP::k * iksP::domainP::n; i++)
+        invtlwe[i] = -tlwe[i];
     CircuitBootstrappingFFT<iksP, bkP, privksP>(invtrgswfft, invtlwe, ek);
 }
 

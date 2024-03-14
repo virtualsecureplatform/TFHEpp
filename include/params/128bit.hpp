@@ -39,7 +39,8 @@ struct lvl1param {
     static constexpr T μ = 1U << 29;
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ =
-        static_cast<double>(1ULL << std::numeric_limits<T>::digits) / plain_modulus;
+        static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
+        plain_modulus;
 };
 
 struct lvl2param {

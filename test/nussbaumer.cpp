@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <nussbaumer.hpp>
 #include <random>
 #include <tfhe++.hpp>
-#include <nussbaumer.hpp>
 
 int main()
 {
@@ -16,13 +16,16 @@ int main()
     // std::cout << "Start LVL1 test." << std::endl;
     for (int test = 0; test < num_test; test++) {
         using T = uint64_t;
-        std::array<T,TFHEpp::lvl1param::n> a,res;
+        std::array<T, TFHEpp::lvl1param::n> a, res;
         for (T &i : a) i = Torus32dist(engine);
         res = a;
-        Nussbaumer::NussbaumerTransform<T,TFHEpp::lvl1param::nbit>(std::span{res});
-        Nussbaumer::InverseNussbaumerTransform<T,TFHEpp::lvl1param::nbit>(std::span{res});
+        Nussbaumer::NussbaumerTransform<T, TFHEpp::lvl1param::nbit>(
+            std::span{res});
+        Nussbaumer::InverseNussbaumerTransform<T, TFHEpp::lvl1param::nbit>(
+            std::span{res});
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-            assert(abs(static_cast<int32_t>(a[i] - res[i]/TFHEpp::lvl1param::n) <= 1));
+            assert(abs(static_cast<int32_t>(
+                           a[i] - res[i] / TFHEpp::lvl1param::n) <= 1));
     }
     std::cout << "Id Passed" << std::endl;
 
