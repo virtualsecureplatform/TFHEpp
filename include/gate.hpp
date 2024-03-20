@@ -6,7 +6,7 @@
 
 namespace TFHEpp {
 template <class brP, typename brP::targetP::T μ, class iksP, int casign,
-          int cbsign, std::make_signed_t<typename iksP::targetP::T> offset>
+          int cbsign, std::make_signed_t<typename brP::domainP::T> offset>
 inline void HomGate(TLWE<typename iksP::targetP> &res,
                     const TLWE<typename brP::domainP> &ca,
                     const TLWE<typename brP::domainP> &cb, const EvalKey &ek)
@@ -17,7 +17,7 @@ inline void HomGate(TLWE<typename iksP::targetP> &res,
     GateBootstrapping<brP, μ, iksP>(res, res, ek);
 }
 template <class iksP, class brP, typename brP::targetP::T μ, int casign,
-          int cbsign, typename brP::targetP::T offset>
+          int cbsign, typename iksP::domainP::T offset>
 inline void HomGate(TLWE<typename brP::targetP> &res,
                     const TLWE<typename iksP::domainP> &ca,
                     const TLWE<typename iksP::domainP> &cb, const EvalKey &ek)
