@@ -332,28 +332,28 @@ relinKeyFFT<P> relinKeyFFTgen(const Key<P>& key)
 
 struct EvalKey {
     lweParams params;
-    std::unique_ptr<BootstrappingKey<lvl01param>> bklvl01;
-    std::unique_ptr<BootstrappingKey<lvl02param>> bklvl02;
-    std::unique_ptr<BootstrappingKeyFFT<lvl01param>> bkfftlvl01;
-    std::unique_ptr<BootstrappingKeyFFT<lvl02param>> bkfftlvl02;
-    std::unique_ptr<BootstrappingKeyNTT<lvl01param>> bknttlvl01;
-    std::unique_ptr<BootstrappingKeyNTT<lvl02param>> bknttlvl02;
-    std::unique_ptr<KeySwitchingKey<lvl10param>> iksklvl10;
-    std::unique_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
-    std::unique_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
-    std::unique_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
-    std::unique_ptr<SubsetKeySwitchingKey<lvl21param>> subiksklvl21;
+    std::shared_ptr<BootstrappingKey<lvl01param>> bklvl01;
+    std::shared_ptr<BootstrappingKey<lvl02param>> bklvl02;
+    std::shared_ptr<BootstrappingKeyFFT<lvl01param>> bkfftlvl01;
+    std::shared_ptr<BootstrappingKeyFFT<lvl02param>> bkfftlvl02;
+    std::shared_ptr<BootstrappingKeyNTT<lvl01param>> bknttlvl01;
+    std::shared_ptr<BootstrappingKeyNTT<lvl02param>> bknttlvl02;
+    std::shared_ptr<KeySwitchingKey<lvl10param>> iksklvl10;
+    std::shared_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
+    std::shared_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
+    std::shared_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
+    std::shared_ptr<SubsetKeySwitchingKey<lvl21param>> subiksklvl21;
     std::unordered_map<std::string,
-                       std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>>
+                       std::shared_ptr<PrivateKeySwitchingKey<lvl11param>>>
         privksklvl11;
     std::unordered_map<std::string,
-                       std::unique_ptr<PrivateKeySwitchingKey<lvl21param>>>
+                       std::shared_ptr<PrivateKeySwitchingKey<lvl21param>>>
         privksklvl21;
     std::unordered_map<std::string,
-                       std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>>
+                       std::shared_ptr<PrivateKeySwitchingKey<lvl22param>>>
         privksklvl22;
     std::unordered_map<
-        std::string, std::unique_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>>
+        std::string, std::shared_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>>
         subprivksklvl21;
 
     EvalKey(SecretKey sk) { params = sk.params; }
