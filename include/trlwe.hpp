@@ -166,7 +166,7 @@ TRLWE<P> trlweSymIntEncrypt(const std::array<typename P::T, P::n> &p,
 }
 
 template <class P>
-std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
+Polynomial<P> trlwePhase(const TRLWE<P> &c, const Key<P> &key)
 {
     Polynomial<P> phase = c[P::k];
     for (int k = 0; k < P::k; k++) {
@@ -174,11 +174,15 @@ std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
         std::array<typename P::T, P::n> partkey;
         for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
         PolyMul<P>(mulres, c[k], partkey);
-        if constexpr (hasq<P>)
-            for (int i = 0; i < P::n; i++) phase[i] += P::q - mulres[i];
-        else
-            for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+        for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
     }
+    return phase;
+}
+
+template <class P>
+std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
+{
+    Polynomial<P> phase = trlwePhase<P>(c, key);
 
     std::array<bool, P::n> p;
     if constexpr (hasq<P>) {

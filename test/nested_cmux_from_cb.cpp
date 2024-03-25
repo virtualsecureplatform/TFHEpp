@@ -25,21 +25,8 @@ PolyLvl1 uint2weight(uint64_t n)
 TRLWELvl1 trivial_TRLWELvl1(const PolyLvl1 &src)
 {
     TRLWELvl1 ret = {};
-    ret[1] = src;
+    ret[TFHEpp::lvl1param::k] = src;
     return ret;
-}
-
-PolyLvl1 phase_of_TRLWELvl1(const TRLWELvl1 &src, const SecretKey &skey)
-{
-    PolyLvl1 as;
-
-    TFHEpp::Polynomial<TFHEpp::lvl1param> partkey;
-    for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-        partkey[i] = skey.key.lvl1[0 * TFHEpp::lvl1param::n + i];
-    TFHEpp::PolyMul<Lvl1>(as, src[0], partkey);
-    PolyLvl1 phase = src[1];
-    for (size_t i = 0; i < Lvl1::n; i++) phase[i] -= as[i];
-    return phase;
 }
 
 void dump_histgram_of_phase_of_TRLWELvl1(std::ostream &os, const PolyLvl1 &src)
@@ -57,7 +44,7 @@ void dump_histgram_of_phase_of_TRLWELvl1(std::ostream &os, const PolyLvl1 &src)
 
 int main()
 {
-    const size_t N = 500;
+    const size_t N = 10;
     std::cout << "N = " << N << std::endl;
 
     SecretKey skey;
@@ -80,13 +67,13 @@ int main()
               c0 = trivial_TRLWELvl1(uint2weight(0));
     TRLWELvl1 res = c1;
     dump_histgram_of_phase_of_TRLWELvl1(std::cout,
-                                        phase_of_TRLWELvl1(res, skey));
+                                        TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.lvl1));
     for (size_t i = 0; i < N; i++) {
         TRLWELvl1 tmp = res;
         TFHEpp::CMUXFFT<Lvl1>(res, guard.at(i), tmp, c0);
     }
     dump_histgram_of_phase_of_TRLWELvl1(std::cout,
-                                        phase_of_TRLWELvl1(res, skey));
+                                        TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.lvl1));
 
     /*
     PolyLvl1 testvec1 = {}, testvec2 = {};
