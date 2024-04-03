@@ -75,27 +75,37 @@ TLWE<P> tlweSymIntEncrypt(const typename P::T p, const Key<P> &key)
 }
 
 template <class P>
-bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
+typename P::T tlweSymPhase(const TLWE<P> &c, const Key<P> &key)
 {
     typename P::T phase = c[P::k * P::n];
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++)
             phase -= c[k * P::n + i] * key[k * P::n + i];
+    return phase;
+}
+
+template <class P>
+bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
+{
+    typename P::T phase = tlweSymPhase<P>(c, key);
     bool res =
         static_cast<typename std::make_signed<typename P::T>::type>(phase) > 0;
     return res;
 }
 
+template <class P, const uint plain_modulus>
+typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
+{
+    constexpr double Δ = 2* static_cast<double>(1ULL << (std::numeric_limits<typename P::T>::digits - 1))/plain_modulus;
+    const typename P::T phase = tlweSymPhase<P>(c, key);
+    typename P::T res = static_cast<typename P::T>(std::round(phase / Δ));
+    return res >= plain_modulus/2 ? res - plain_modulus : res;
+}
+
 template <class P>
 typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
 {
-    typename P::T phase = c[P::k * P::n];
-    for (int k = 0; k < P::k; k++)
-        for (int i = 0; i < P::n; i++)
-            phase -= c[k * P::n + i] * key[k * P::n + i];
-    typename P::T res = static_cast<typename P::T>(std::round(phase / P::Δ)) %
-                        (2 * P::plain_modulus);
-    return res;
+    return tlweSymIntDecrypt<P,P::plain_modulus>(c, key);
 }
 
 template <class P>
