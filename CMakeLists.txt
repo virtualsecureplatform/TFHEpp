@@ -7,8 +7,9 @@ if(DEBUG)
       "-march=native -g -Wall -Wextra -pedantic -Wno-sign-compare")
 else()
   set(CMAKE_CXX_FLAGS
-      "-march=native -O3 -g -flto -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
+      "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
   )
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 option(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
