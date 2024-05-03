@@ -19,11 +19,26 @@ struct lvl0param {
     static constexpr double α =
         5.033523219195911e-06;  // fresh noise, 2^{-17.6}
     using T = uint32_t;         // Torus representation
-    static constexpr std::make_signed_t<T> μ = 1U << (std::numeric_limits<T>::digits - 3);
+    static constexpr T μ = 1U << (std::numeric_limits<T>::digits - 3);
     static constexpr uint32_t plain_modulus = 2;
     static constexpr double Δ =
         static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
         plain_modulus;
+};
+
+struct lvlhalfparam {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = 0;
+    static constexpr int32_t key_value_diff = key_value_max - key_value_min;
+    static constexpr std::uint32_t n = 760; // dimension
+    static constexpr std::uint32_t k = 1;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = std::pow(2.0, -17); // fresh noise
+    using T = uint32_t;                                // Torus representation
+    static constexpr T μ = 1U << (std::numeric_limits<T>::digits - 3);
+    static constexpr uint32_t plain_modulus = 8;
+    static constexpr double Δ = static_cast<double>(1ULL << std::numeric_limits<T>::digits) / plain_modulus;
 };
 
 struct lvl1param {
@@ -42,7 +57,7 @@ struct lvl1param {
     static const inline double α =
         0.0000000000034525330484572114;  // fresh noise, 2^{-24.8...}
     using T = uint64_t;                  // Torus representation
-    static constexpr std::make_signed_t<T> μ = 1LL << 61;
+    static constexpr T μ = 1ULL << 61;
     static constexpr uint32_t plain_modulus = 2;
     static constexpr double Δ =
         2 * static_cast<double>(1ULL << (std::numeric_limits<T>::digits - 1)) /
@@ -63,7 +78,7 @@ struct lvl2param {
         ErrorDistribution::ModularGaussian;
     static const inline double α = std::pow(2.0, -44);  // fresh noise
     using T = uint64_t;                                 // Torus representation
-    static constexpr std::make_signed_t<T> μ = 1LL << 61;
+    static constexpr T μ = 1ULL << 61;
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ = μ;
 };
@@ -78,6 +93,14 @@ struct lvl10param {
     static const inline double α = lvl0param::α;  // key noise
     using domainP = lvl1param;
     using targetP = lvl0param;
+};
+
+struct lvl1hparam {
+    static constexpr std::uint32_t t = 10;           // number of addition in keyswitching
+    static constexpr std::uint32_t basebit = 3;     // how many bit should be encrypted in keyswitching key
+    static const inline double α = lvlhalfparam::α; // key noise
+    using domainP = lvl1param;
+    using targetP = lvlhalfparam;
 };
 
 struct lvl11param {

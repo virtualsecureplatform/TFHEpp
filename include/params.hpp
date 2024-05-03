@@ -36,8 +36,29 @@ struct lvl01param {
     static constexpr uint32_t Addends = 1;
 #endif
 };
+
+struct lvlh1param {
+    using domainP = lvlhalfparam;
+    using targetP = lvl1param;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
+};
+
 struct lvl02param {
     using domainP = lvl0param;
+    using targetP = lvl2param;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
+};
+
+struct lvlh2param {
+    using domainP = lvlhalfparam;
     using targetP = lvl2param;
 #ifdef USE_KEY_BUNDLE
     static constexpr uint32_t Addends = 2;
@@ -155,6 +176,7 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
 
 #define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \
     fun(lvl0param);                             \
+    fun(lvlhalfparam);                          \
     fun(lvl1param);                             \
     fun(lvl2param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(fun) \
@@ -165,6 +187,7 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
     fun(lvl02param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(fun) \
     fun(lvl10param);                                          \
+    fun(lvl1hparam);                                          \
     fun(lvl20param);                                          \
     fun(lvl21param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(fun) \
