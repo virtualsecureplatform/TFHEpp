@@ -6,8 +6,8 @@ lweKey::lweKey()
 {
     std::uniform_int_distribution<int32_t> lvl0gen(lvl0param::key_value_min,
                                                    lvl0param::key_value_max);
-    std::uniform_int_distribution<int32_t> lvlhalfgen(lvlhalfparam::key_value_min,
-                                                   lvlhalfparam::key_value_max);
+    std::uniform_int_distribution<int32_t> lvlhalfgen(
+        lvlhalfparam::key_value_min, lvlhalfparam::key_value_max);
     std::uniform_int_distribution<int32_t> lvl1gen(lvl1param::key_value_min,
                                                    lvl1param::key_value_max);
     std::uniform_int_distribution<int32_t> lvl2gen(lvl2param::key_value_min,

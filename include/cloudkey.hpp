@@ -127,7 +127,7 @@ void bkrainttgen(BootstrappingKeyRAINTT<P>& bkraintt,
                  const Key<typename P::domainP>& domainkey,
                  const Key<typename P::targetP>& targetkey)
 {
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
         plainpoly[0] = domainkey[i];
@@ -378,9 +378,11 @@ struct EvalKey {
     template <class Archive>
     void serialize(Archive& archive)
     {
-        archive(params, bklvl01, bklvlh1, bklvl02, bklvlh2, bkfftlvl01, bkfftlvlh1, bkfftlvl02, bkfftlvlh2, bknttlvl01,
-                bknttlvlh1, bknttlvl02, bknttlvlh2, iksklvl10, iksklvl1h, iksklvl20, iksklvl21, iksklvl22, iksklvl31,
-                privksklvl11, privksklvl21, privksklvl22);
+        archive(params, bklvl01, bklvlh1, bklvl02, bklvlh2, bkfftlvl01,
+                bkfftlvlh1, bkfftlvl02, bkfftlvlh2, bknttlvl01, bknttlvlh1,
+                bknttlvl02, bknttlvlh2, iksklvl10, iksklvl1h, iksklvl20,
+                iksklvl21, iksklvl22, iksklvl31, privksklvl11, privksklvl21,
+                privksklvl22);
     }
 
     // emplace keys
@@ -505,7 +507,7 @@ struct EvalKey {
             for (int i = 0; i < lvl01param::domainP::n; i++)
                 (*bknttlvl01)[i] = ApplyNTT2trgsw<lvl1param>((*bklvl01)[i][0]);
         }
-        else if constexpr (std::is_same_v<P, lvlh1param>){
+        else if constexpr (std::is_same_v<P, lvlh1param>) {
             bknttlvlh1 = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvlh1param>>();
             for (int i = 0; i < lvlh1param::domainP::n; i++)
