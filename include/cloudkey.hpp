@@ -335,9 +335,9 @@ struct EvalKey {
     lweParams params;
     // BootstrapingKey
     std::shared_ptr<BootstrappingKey<lvl01param>> bklvl01;
-    std::shared_ptr<BootstrappingKey<lvl01param>> bklvlh1;
+    std::shared_ptr<BootstrappingKey<lvlh1param>> bklvlh1;
     std::shared_ptr<BootstrappingKey<lvl02param>> bklvl02;
-    std::shared_ptr<BootstrappingKey<lvl02param>> bklvlh2;
+    std::shared_ptr<BootstrappingKey<lvlh2param>> bklvlh2;
     // BoostrappingKeyFFT
     std::shared_ptr<BootstrappingKeyFFT<lvl01param>> bkfftlvl01;
     std::shared_ptr<BootstrappingKeyFFT<lvlh1param>> bkfftlvlh1;
@@ -354,6 +354,7 @@ struct EvalKey {
     std::shared_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
     std::shared_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
     std::shared_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
+    std::shared_ptr<KeySwitchingKey<lvl31param>> iksklvl31;
     // SubsetKeySwitchingKey
     std::shared_ptr<SubsetKeySwitchingKey<lvl21param>> subiksklvl21;
     // PrivateKeySwitchingKey
@@ -378,7 +379,7 @@ struct EvalKey {
     void serialize(Archive& archive)
     {
         archive(params, bklvl01, bklvlh1, bklvl02, bklvlh2, bkfftlvl01, bkfftlvlh1, bkfftlvl02, bkfftlvlh2, bknttlvl01,
-                bknttlvlh1, bknttlvl02, bknttlvlh2, iksklvl10, iksklvl1h, iksklvl20, iksklvl21, iksklvl22,
+                bknttlvlh1, bknttlvl02, bknttlvlh2, iksklvl10, iksklvl1h, iksklvl20, iksklvl21, iksklvl22, iksklvl31,
                 privksklvl11, privksklvl21, privksklvl22);
     }
 
@@ -391,10 +392,20 @@ struct EvalKey {
                 std::make_unique_for_overwrite<BootstrappingKey<lvl01param>>();
             bkgen<lvl01param>(*bklvl01, sk);
         }
+        else if constexpr (std::is_same_v<P, lvlh1param>) {
+            bklvlh1 =
+                std::make_unique_for_overwrite<BootstrappingKey<lvlh1param>>();
+            bkgen<lvlh1param>(*bklvlh1, sk);
+        }
         else if constexpr (std::is_same_v<P, lvl02param>) {
             bklvl02 =
                 std::make_unique_for_overwrite<BootstrappingKey<lvl02param>>();
             bkgen<lvl02param>(*bklvl02, sk);
+        }
+        else if constexpr (std::is_same_v<P, lvlh2param>) {
+            bklvlh2 =
+                std::make_unique_for_overwrite<BootstrappingKey<lvlh2param>>();
+            bkgen<lvlh2param>(*bklvlh2, sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -547,6 +558,11 @@ struct EvalKey {
             iksklvl22 =
                 std::make_unique_for_overwrite<KeySwitchingKey<lvl22param>>();
             ikskgen<lvl22param>(*iksklvl22, sk);
+        }
+        else if constexpr (std::is_same_v<P, lvl31param>) {
+            iksklvl31 =
+                std::make_unique_for_overwrite<KeySwitchingKey<lvl31param>>();
+            ikskgen<lvl31param>(*iksklvl31, sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -702,6 +718,9 @@ struct EvalKey {
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
             return *iksklvl22;
+        }
+        else if constexpr (std::is_same_v<P, lvl31param>) {
+            return *iksklvl31;
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");

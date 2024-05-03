@@ -20,6 +20,7 @@
 #include "tlwe.hpp"
 #include "trgsw.hpp"
 #include "trlwe.hpp"
+#include "homdecomp.hpp"
 
 #ifndef __clang__
 // Because of some resons (may be clang bug?) this will gives linking error

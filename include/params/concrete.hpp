@@ -26,6 +26,7 @@ struct lvl0param {
         plain_modulus;
 };
 
+//Dummy
 struct lvlhalfparam {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = 0;
@@ -83,6 +84,27 @@ struct lvl2param {
     static constexpr double Δ = μ;
 };
 
+
+struct lvl3param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static const std::uint32_t nbit = 13; // dimension must be a power of 2 for
+    // ease of polynomial multiplication.
+    static constexpr std::uint32_t n = 1 << nbit; // dimension
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgbit = 9;
+    static constexpr std::uint32_t Bg = 1 << Bgbit;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = std::pow(2.0, -47); // fresh noise
+    using T = uint64_t;                                // Torus representation
+    static constexpr T μ = 1ULL << 61;
+    static constexpr uint32_t plain_modulusbit = 31;
+    static constexpr uint64_t plain_modulus = 1ULL << plain_modulusbit;
+    static constexpr double Δ = 1ULL << (64 - plain_modulusbit - 1);
+};
+
 // Key Switching parameters
 struct lvl10param {
     static constexpr std::uint32_t t = 5;  // number of addition in keyswitching
@@ -95,6 +117,7 @@ struct lvl10param {
     using targetP = lvl0param;
 };
 
+//Dummy
 struct lvl1hparam {
     static constexpr std::uint32_t t = 10;           // number of addition in keyswitching
     static constexpr std::uint32_t basebit = 3;     // how many bit should be encrypted in keyswitching key
@@ -147,4 +170,13 @@ struct lvl22param {
     static const inline double α = lvl2param::α;  // key noise
     using domainP = lvl2param;
     using targetP = lvl2param;
+};
+
+//Dummy
+struct lvl31param {
+    static constexpr std::uint32_t t = 7;        // number of addition in keyswitching
+    static constexpr std::uint32_t basebit = 2;  // how many bit should be encrypted in keyswitching key
+    static const inline double α = lvl1param::α; // key noise
+    using domainP = lvl3param;
+    using targetP = lvl1param;
 };
