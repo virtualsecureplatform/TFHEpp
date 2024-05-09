@@ -21,10 +21,11 @@ constexpr uint wordbits = 27;
 #else
 constexpr uint wordbits = 31;
 #endif
-using Word = unsigned _BitInt(wordbits);
-using SWord = signed _BitInt(wordbits);
-using DoubleWord = unsigned _BitInt(2 * wordbits);
-using DoubleSWord = signed _BitInt(2 * wordbits);
+//_ExtInt is equivalent to _BitInt in C23
+using Word = unsigned _ExtInt(wordbits);
+using SWord = signed _ExtInt(wordbits);
+using DoubleWord = unsigned _ExtInt(2 * wordbits);
+using DoubleSWord = signed _ExtInt(2 * wordbits);
 #else
 constexpr uint wordbits = 32;
 using Word = uint32_t;
@@ -394,7 +395,7 @@ inline void NTTradixButterfly(DoubleSWord *const res, const uint32_t size)
     else if constexpr (radixbit == 2) {
         NTTradixButterfly<radixbit - 1>(&res[0], size / 2);
         NTTradixButterfly<radixbit - 1>(&res[size / 2], size / 2);
-        const uint32_t block = size >> radixbit;
+        // const uint32_t block = size >> radixbit;
         for (uint index = 0; index < size / 4; index++) {
             const SWord temp = res[index];
             res[index] = AddMod(res[index], res[index + size / 2]);
