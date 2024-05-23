@@ -106,13 +106,13 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     DecomposedPolynomial<P> decpoly;
     Decomposition<P>(decpoly, trlwe[0]);
     PolynomialInFD<P> decpolyfft;
-    __builtin_prefetch(trgswfft[0].data());
+    // __builtin_prefetch(trgswfft[0].data());
     TwistIFFT<P>(decpolyfft, decpoly[0]);
     TRLWEInFD<P> restrlwefft;
     for (int m = 0; m < P::k + 1; m++)
         MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
     for (int i = 1; i < P::l; i++) {
-        __builtin_prefetch(trgswfft[i].data());
+        // __builtin_prefetch(trgswfft[i].data());
         TwistIFFT<P>(decpolyfft, decpoly[i]);
         for (int m = 0; m < P::k + 1; m++)
             FMAInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[i][m]);
@@ -120,7 +120,7 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     for (int k = 1; k < P::k + 1; k++) {
         Decomposition<P>(decpoly, trlwe[k]);
         for (int i = 0; i < P::l; i++) {
-            __builtin_prefetch(trgswfft[i + k * P::l].data());
+            // __builtin_prefetch(trgswfft[i + k * P::l].data());
             TwistIFFT<P>(decpolyfft, decpoly[i]);
             for (int m = 0; m < P::k + 1; m++)
                 FMAInFD<P::n>(restrlwefft[m], decpolyfft,
