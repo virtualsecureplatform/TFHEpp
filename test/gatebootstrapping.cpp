@@ -1,3 +1,7 @@
+#ifdef USE_PERF
+#include <gperftools/profiler.h>
+#endif
+
 #include <cassert>
 #include <chrono>
 #include <iostream>
@@ -6,7 +10,7 @@
 
 int main()
 {
-    constexpr uint32_t num_test = 10;
+    constexpr uint32_t num_test = 1000;
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
@@ -28,11 +32,16 @@ int main()
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
-
+#ifdef USE_PERF
+    ProfilerStart("gb.prof");
+#endif
     for (int test = 0; test < num_test; test++) {
         TFHEpp::GateBootstrapping<iksP, bkP, bkP::targetP::μ>(bootedtlwe[test],
                                                               tlwe[test], ek);
     }
+#ifdef USE_PERF
+    ProfilerStop();
+#endif
 
     end = std::chrono::system_clock::now();
     double elapsed =

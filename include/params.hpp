@@ -133,7 +133,7 @@ using BootstrappingKey =
     std::array<BootstrappingKeyElement<P>, P::domainP::k * P::domainP::n>;
 template <class P>
 using BootstrappingKeyFFT =
-    std::array<BootstrappingKeyElementFFT<P>,
+    alignas(16) std::array<BootstrappingKeyElementFFT<P>,
                P::domainP::k * P::domainP::n / P::Addends>;
 template <class P>
 using BootstrappingKeyNTT =
@@ -143,7 +143,7 @@ using BootstrappingKeyRAINTT =
     std::array<TRGSWRAINTT<typename P::targetP>, P::domainP::k * P::domainP::n>;
 
 template <class P>
-using KeySwitchingKey = std::array<
+using KeySwitchingKey = alignas(16) std::array<
     std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
     P::domainP::k * P::domainP::n>;
