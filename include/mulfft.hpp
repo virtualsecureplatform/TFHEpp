@@ -5,6 +5,8 @@
 #include "INTorus.hpp"
 #ifdef USE_FFTW3
 #include <fft_processor_fftw.h>
+#elif USE_MKL
+#include <fft_processor_mkl.hpp>
 #elif USE_SPQLIOX_AARCH64
 #include <fft_processor_spqliox_aarch64.h>
 #else
@@ -12,6 +14,10 @@
 #endif
 #ifdef USE_HEXL
 #include "hexl/hexl.hpp"
+#endif
+
+#ifdef USE_INTERLEAVED_FORMAT
+#include <complex>
 #endif
 
 #include "cuhe++.hpp"
@@ -141,12 +147,20 @@ template <uint32_t N>
 inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
                     const std::array<double, N> &b)
 {
+    #ifdef USE_INTERLEAVED_FORMAT
+    for(int i = 0; i < N / 2; i++){
+        const std::complex tmp = std::complex(a[2*i], a[2*i+1]) * std::complex(b[2*i], b[2*i+1]);
+        res[2*i] = tmp.real();
+        res[2*i+1] = tmp.imag();
+    }
+    #else
     for (int i = 0; i < N / 2; i++) {
         double aimbim = a[i + N / 2] * b[i + N / 2];
         double arebim = a[i] * b[i + N / 2];
         res[i] = std::fma(a[i], b[i], -aimbim);
         res[i + N / 2] = std::fma(a[i + N / 2], b[i], arebim);
     }
+    #endif
 }
 
 // Be careful about memory accesss (We assume b has relatively high memory
@@ -155,6 +169,13 @@ template <uint32_t N>
 inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
                     const std::array<double, N> &b)
 {
+    #ifdef USE_INTERLEAVED_FORMAT
+    for(int i = 0; i < N / 2; i++){
+        std::complex tmp = std::complex(a[2*i], a[2*i+1]) * std::complex(b[2*i], b[2*i+1]);
+        res[2*i] += tmp.real();
+        res[2*i+1] += tmp.imag();
+    }
+    #else
     for (int i = 0; i < N / 2; i++) {
         res[i] = std::fma(a[i], b[i], res[i]);
         res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
@@ -169,6 +190,7 @@ inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
     //     res[i + N / 2] = std::fma(a[i], b[i + N / 2], res[i + N / 2]);
     //     res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
     // }
+    #endif
 }
 
 template <class P>

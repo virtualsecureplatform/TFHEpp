@@ -96,9 +96,6 @@ if(NOT USE_TERNARY)
   endif()
 endif()
 
-if(USE_MKL)
-  set(USE_FFTW3 ON)
-endif()
 
 if(USE_AVX512)
   string(APPEND CMAKE_CXX_FLAGS " -mprefer-vector-width=512")
@@ -110,6 +107,15 @@ if(USE_FFTW3)
       PARENT_SCOPE)
   add_compile_definitions(USE_FFTW3)
   add_subdirectory(thirdparties/fftw)
+elseif(USE_MKL)
+  set(TFHEpp_DEFINITIONS
+      "${TFHEpp_DEFINITIONS};USE_MKL"
+      PARENT_SCOPE)
+  add_compile_definitions(USE_MKL)
+  add_compile_definitions(USE_INTERLEAVED_FORMAT)
+  find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
+  include_directories(${MKLROOT}/include)
+  add_subdirectory(thirdparties/mkl)
 elseif(USE_SPQLIOX_AARCH64)
   set(TFHEpp_DEFINITIONS
       "${TFHEpp_DEFINITIONS};USE_SPQLIOX_AARCH64"
