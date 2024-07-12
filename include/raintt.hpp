@@ -22,10 +22,10 @@ constexpr uint wordbits = 27;
 constexpr uint wordbits = 31;
 #endif
 //_ExtInt is equivalent to _BitInt in C23
-using Word = unsigned _ExtInt(wordbits);
-using SWord = signed _ExtInt(wordbits);
-using DoubleWord = unsigned _ExtInt(2 * wordbits);
-using DoubleSWord = signed _ExtInt(2 * wordbits);
+using Word = unsigned _BitInt(wordbits);
+using SWord = signed _BitInt(wordbits);
+using DoubleWord = unsigned _BitInt(2 * wordbits);
+using DoubleSWord = signed _BitInt(2 * wordbits);
 #else
 constexpr uint wordbits = 32;
 using Word = uint32_t;
@@ -116,7 +116,7 @@ constexpr Word PowREDC(const Word a, const uint e)
 }
 
 template <Word a, Word b>
-constexpr Word ext_gcd(SWord &x, SWord &y)
+constexpr Word Bit_gcd(SWord &x, SWord &y)
 {
     if constexpr (b == 0) {
         x = 1;
@@ -124,7 +124,7 @@ constexpr Word ext_gcd(SWord &x, SWord &y)
         return a;
     }
     else {
-        Word d = ext_gcd<b, a % b>(y, x);
+        Word d = Bit_gcd<b, a % b>(y, x);
         y -= a / b * x;
         return d;
     }
@@ -134,7 +134,7 @@ template <Word a>
 constexpr Word inv_mod()
 {
     SWord x, y;
-    const Word g = ext_gcd<a, P>(x, y);
+    const Word g = Bit_gcd<a, P>(x, y);
     if (g != 1) {
         throw "Inverse doesn't exist";
     }
@@ -168,7 +168,7 @@ template <uint Nbit, uint radixbit>
 std::unique_ptr<std::array<std::array<SWord, 1U << Nbit>, 2>> TwistGen()
 {
     constexpr uint N = 1U << Nbit;
-    constexpr uint8_t remainder = ((Nbit - 1) % radixbit) + 1;
+    // constexpr uint8_t remainder = ((Nbit - 1) % radixbit) + 1;
     const Word invN = inv_mod<N>();
 
     std::unique_ptr<std::array<std::array<SWord, 1U << Nbit>, 2>> twist =

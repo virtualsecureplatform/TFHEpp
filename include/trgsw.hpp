@@ -70,7 +70,7 @@ inline void Decomposition(DecomposedPolynomial<P> &decpoly, const Polynomial<P> 
 
     for (int i = 0; i < P::n; i++) {
         for (int l = 0; l < P::l; l++)
-            decpoly[l][i] = ((poly[i] + offset + roundoffset >>
+            decpoly[l][i] = (((poly[i] + offset + roundoffset) >>
                               (std::numeric_limits<typename P::T>::digits -
                                (l + 1) * P::Bgbit)) &
                              mask) -
