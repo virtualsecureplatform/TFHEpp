@@ -149,6 +149,9 @@ template <uint32_t N>
 inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
                     const std::array<double, N> &b)
 {
+    std::assume_aligned<16>(res.data());
+    std::assume_aligned<16>(a.data());
+    std::assume_aligned<16>(b.data());
     #ifdef USE_INTERLEAVED_FORMAT
     for(int i = 0; i < N / 2; i++){
         const std::complex tmp = std::complex(a[2*i], a[2*i+1]) * std::complex(b[2*i], b[2*i+1]);
@@ -171,6 +174,9 @@ template <uint32_t N>
 inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
                     const std::array<double, N> &b)
 {
+    std::assume_aligned<16>(res.data());
+    std::assume_aligned<16>(a.data());
+    std::assume_aligned<16>(b.data());
     #ifdef USE_INTERLEAVED_FORMAT
     for(int i = 0; i < N / 2; i++){
         std::complex tmp = std::complex(a[2*i], a[2*i+1]) * std::complex(b[2*i], b[2*i+1]);

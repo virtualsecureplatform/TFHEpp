@@ -41,6 +41,15 @@ We assume to install MKL by [this procedure](https://www.intel.com/content/www/u
 
 Add `-DUSE_MKL` to the CMake option to use MKL
 
+### FFTW3 API
+To use this, you have to also add `-DUSE_FFTW3`.
+
+### Native API
+Instead of FFTW3 API, I also added native API version. This will be enabled if `-DUSE_FFTW3` is not specified with `-DUSE_MKL`.
+
+## concrete-fft
+concrete-fft is the pure rust FFT library developed by Zama.ai. This can be enabled by `-DUSE_CONCRETE_FFT`.
+
 ## spqliox_aarch64
 spqliox_aarch64 is the FFT library for aarch64 forked from SPQLIOS.
 This is slightly faster than FFTW3(average 1ms).
