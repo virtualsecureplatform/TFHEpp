@@ -9,6 +9,8 @@
 #include <fft_processor_mkl.hpp>
 #elif USE_SPQLIOX_AARCH64
 #include <fft_processor_spqliox_aarch64.h>
+#elif USE_CONCRETE_FFT
+#include <fft_processor_concrete.hpp>
 #else
 #include <fft_processor_spqlios.h>
 #endif

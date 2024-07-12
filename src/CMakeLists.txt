@@ -12,6 +12,8 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/thirdparties/spqlios
     ${PROJECT_SOURCE_DIR}/thirdparties/fftw
+    ${PROJECT_SOURCE_DIR}/thirdparties/concrete-fft/cpp
+    ${PROJECT_BINARY_DIR}/thirdparties/concrete-fft
     ${PROJECT_SOURCE_DIR}/thirdparties/spqliox_aarch64
     ${PROJECT_SOURCE_DIR}/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64
     ${PROJECT_SOURCE_DIR}/thirdparties/hexl/hexl/hexl/include
@@ -39,6 +41,8 @@ elseif(USE_SPQLIOX_AARCH64)
   target_link_libraries(tfhe++ INTERFACE spqliox_aarch64 xbyak_aarch64)
 elseif(USE_HEXL)
   target_link_libraries(tfhe++ INTERFACE spqlios HEXL::hexl)
+elseif(USE_CONCRETE_FFT)
+  target_link_libraries(tfhe++ INTERFACE concrete-fft)
 else()
   if(USE_MKL)
     target_link_libraries(tfhe++ INTERFACE mklproc)
