@@ -191,7 +191,7 @@ void GateBootstrappingTLWE2TLWEFFT(
     const BootstrappingKeyFFT<P> &bkfft,
     const Polynomial<typename P::targetP> &testvector)
 {
-    TRLWE<typename P::targetP> acc;
+    alignas(64) TRLWE<typename P::targetP> acc;
     BlindRotate<P>(acc, tlwe, bkfft, testvector);
     SampleExtractIndex<typename P::targetP>(res, acc, 0);
 }
@@ -202,7 +202,7 @@ void GateBootstrappingTLWE2TLWENTT(
     const BootstrappingKeyNTT<P> &bkntt,
     const Polynomial<typename P::targetP> &testvector)
 {
-    TRLWE<typename P::targetP> acc;
+    alignas(64) TRLWE<typename P::targetP> acc;
     BlindRotate<P>(acc, tlwe, bkntt, testvector);
     SampleExtractIndex<typename P::targetP>(res, acc, 0);
 }
@@ -213,7 +213,7 @@ void GateBootstrappingTLWE2TLWERAINTT(
     const BootstrappingKeyRAINTT<P> &bkraintt,
     const Polynomial<typename P::targetP> &testvector)
 {
-    TRLWE<typename P::targetP> acc;
+    alignas(64) TRLWE<typename P::targetP> acc;
     BlindRotate<P>(acc, tlwe, bkraintt, testvector);
     SampleExtractIndex<typename P::targetP>(res, acc, 0);
 }
@@ -224,7 +224,7 @@ void GateBootstrappingManyLUT(
     const TLWE<typename P::domainP> &tlwe, const BootstrappingKeyFFT<P> &bkfft,
     const Polynomial<typename P::targetP> &testvector)
 {
-    TRLWE<typename P::targetP> acc;
+    alignas(64) TRLWE<typename P::targetP> acc;
     BlindRotate<P, num_out>(acc, tlwe, bkfft, testvector);
     for (int i = 0; i < num_out; i++)
         SampleExtractIndex<typename P::targetP>(res[i], acc, i);
@@ -243,7 +243,7 @@ void GateBootstrapping(TLWE<typename bkP::domainP> &res,
                        const TLWE<typename bkP::domainP> &tlwe,
                        const EvalKey &ek)
 {
-    TLWE<typename bkP::targetP> tlwelvl1;
+    alignas(64) TLWE<typename bkP::targetP> tlwelvl1;
     GateBootstrappingTLWE2TLWEFFT<bkP>(tlwelvl1, tlwe, ek.getbkfft<bkP>(),
                                        μpolygen<typename bkP::targetP, μ>());
     IdentityKeySwitch<iksP>(res, tlwelvl1, ek.getiksk<iksP>());
@@ -254,7 +254,7 @@ void GateBootstrapping(TLWE<typename iksP::domainP> &res,
                        const TLWE<typename iksP::domainP> &tlwe,
                        const EvalKey &ek)
 {
-    TLWE<typename iksP::targetP> tlwelvl0;
+    alignas(64) TLWE<typename iksP::targetP> tlwelvl0;
     IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
     GateBootstrappingTLWE2TLWEFFT<bkP>(res, tlwelvl0, ek.getbkfft<bkP>(),
                                        μpolygen<typename bkP::targetP, μ>());
@@ -265,7 +265,7 @@ void GateBootstrappingNTT(TLWE<typename iksP::tagetP> &res,
                           const TLWE<typename bkP::domainP> &tlwe,
                           const EvalKey &ek)
 {
-    TLWE<typename bkP::targetP> tlwelvl1;
+    alignas(64) TLWE<typename bkP::targetP> tlwelvl1;
     GateBootstrappingTLWE2TLWENTT<bkP>(tlwelvl1, tlwe, ek.getbkntt<bkP>(),
                                        μpolygen<typename bkP::targetP, μ>());
     IdentityKeySwitch<iksP>(res, tlwelvl1, ek.getiksk<iksP>());
@@ -276,7 +276,7 @@ void GateBootstrappingNTT(TLWE<typename bkP::targetP> &res,
                           const TLWE<typename iksP::domainP> &tlwe,
                           const EvalKey &ek)
 {
-    TLWE<typename iksP::targetP> tlwelvl0;
+    alignas(64) TLWE<typename iksP::targetP> tlwelvl0;
     IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
     GateBootstrappingTLWE2TLWENTT<bkP>(res, tlwelvl0, ek.getbkntt<bkP>(),
                                        μpolygen<typename bkP::targetP, μ>());

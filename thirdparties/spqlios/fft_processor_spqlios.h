@@ -23,8 +23,6 @@ public:
 private:
     double *real_inout_direct;
     double *imag_inout_direct;
-    double *real_inout_rev;
-    double *imag_inout_rev;
     void *tables_direct;
     void *tables_reverse;
 public:

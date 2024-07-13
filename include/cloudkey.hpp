@@ -528,18 +528,15 @@ struct EvalKey {
     void emplaceiksk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl10param>) {
-            iksklvl10 =
-                std::make_unique_for_overwrite<KeySwitchingKey<lvl10param>>();
+            iksklvl10 = std::unique_ptr<KeySwitchingKey<lvl10param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl10param>());
             ikskgen<lvl10param>(*iksklvl10, sk);
         }
         else if constexpr (std::is_same_v<P, lvl1hparam>) {
-            iksklvl1h =
-                std::make_unique_for_overwrite<KeySwitchingKey<lvl1hparam>>();
+            iksklvl1h = std::unique_ptr<KeySwitchingKey<lvl1hparam>>(new (std::align_val_t(64)) KeySwitchingKey<lvl1hparam>());
             ikskgen<lvl1hparam>(*iksklvl1h, sk);
         }
         else if constexpr (std::is_same_v<P, lvl20param>) {
-            iksklvl20 =
-                std::make_unique_for_overwrite<KeySwitchingKey<lvl20param>>();
+            iksklvl20 = std::unique_ptr<KeySwitchingKey<lvl20param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl20param>());
             ikskgen<lvl20param>(*iksklvl20, sk);
         }
         // else if constexpr (std::is_same_v<P, lvl2hparam>) {
@@ -548,18 +545,15 @@ struct EvalKey {
         //     ikskgen<lvlh2param>(*iksklvlh2, sk);
         // }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            iksklvl21 =
-                std::make_unique_for_overwrite<KeySwitchingKey<lvl21param>>();
+            iksklvl21 = std::unique_ptr<KeySwitchingKey<lvl21param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl21param>());
             ikskgen<lvl21param>(*iksklvl21, sk);
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            iksklvl22 =
-                std::make_unique_for_overwrite<KeySwitchingKey<lvl22param>>();
+            iksklvl22 = std::unique_ptr<KeySwitchingKey<lvl22param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl22param>());
             ikskgen<lvl22param>(*iksklvl22, sk);
         }
         else if constexpr (std::is_same_v<P, lvl31param>) {
-            iksklvl31 =
-                std::make_unique_for_overwrite<KeySwitchingKey<lvl31param>>();
+            iksklvl31 = std::unique_ptr<KeySwitchingKey<lvl31param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl31param>());
             ikskgen<lvl31param>(*iksklvl31, sk);
         }
         else
