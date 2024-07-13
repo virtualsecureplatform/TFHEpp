@@ -9,7 +9,7 @@ else()
                spqlios-fft-impl.cpp)
 endif()
 
-set(SPQLIOS_HEADERS fft_processor_spqlios.h)
+set(SPQLIOS_HEADERS fft_processor_spqlios.h x86.h)
 
 if(ENABLE_SHARED)
   add_library(spqlios SHARED ${SRCS_FMA} ${SPQLIOS_HEADERS})

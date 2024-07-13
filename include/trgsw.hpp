@@ -103,12 +103,12 @@ template <class P>
 void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                              const TRGSWFFT<P> &trgswfft)
 {
-    DecomposedPolynomial<P> decpoly;
+    alignas(64) DecomposedPolynomial<P> decpoly;
     Decomposition<P>(decpoly, trlwe[0]);
-    PolynomialInFD<P> decpolyfft;
+    alignas(64) PolynomialInFD<P> decpolyfft;
     // __builtin_prefetch(trgswfft[0].data());
     TwistIFFT<P>(decpolyfft, decpoly[0]);
-    TRLWEInFD<P> restrlwefft;
+    alignas(64) TRLWEInFD<P> restrlwefft;
     for (int m = 0; m < P::k + 1; m++)
         MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
     for (int i = 1; i < P::l; i++) {
@@ -246,7 +246,7 @@ constexpr std::array<typename P::T, P::l> hgen()
 template <class P>
 TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
 {
-    TRGSWFFT<P> trgswfft;
+    alignas(64) TRGSWFFT<P> trgswfft;
     for (int i = 0; i < (P::k + 1) * P::l; i++)
         for (int j = 0; j < (P::k + 1); j++)
             TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
