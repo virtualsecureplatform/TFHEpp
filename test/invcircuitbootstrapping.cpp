@@ -33,10 +33,10 @@ int main()
         for (int j = 0; j < lvl1param::n; j++)
             pmu[i][j] = pa[i][j] ? lvl1param::μ : -lvl1param::μ;
     for (int i = 0; i < num_test; i++) pzeros[i] = false;
-    vector<TRLWE<lvl1param>> ca(num_test);
+    vector<TRLWE<lvl1param>,TFHEpp::AlignedAllocator<TFHEpp::TRLWE<TFHEpp::lvl1param>,64>> ca(num_test);
     vector<TLWE<lvl1param>> czeros(num_test);
-    vector<TRGSWFFT<lvl1param>> bootedTGSW(num_test);
-    vector<TRGSWFFT<lvl1param>> invbootedTGSW(num_test);
+    vector<TRGSWFFT<lvl1param>,TFHEpp::AlignedAllocator<TFHEpp::TRGSWFFT<TFHEpp::lvl1param>,64>> bootedTGSW(num_test);
+    vector<TRGSWFFT<lvl1param>,TFHEpp::AlignedAllocator<TFHEpp::TRGSWFFT<TFHEpp::lvl1param>,64>> invbootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
         ca[i] = trlweSymEncrypt<lvl1param>(pmu[i], sk->key.lvl1);
