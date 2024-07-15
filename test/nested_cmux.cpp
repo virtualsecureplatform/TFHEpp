@@ -49,7 +49,7 @@ int main()
 
     SecretKey skey;
 
-    alignas(64) std::vector<TRGSWLvl1FFT> guard;
+    std::vector<TRGSWLvl1FFT,TFHEpp::AlignedAllocator<TFHEpp::TRGSWFFT<TFHEpp::lvl1param>,64>> guard;
     TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {};
     plainpoly[0] = 1;
     for (size_t i = 0; i < N; i++)
@@ -62,7 +62,7 @@ int main()
     dump_histgram_of_phase_of_TRLWELvl1(
         std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.lvl1));
     for (size_t i = 0; i < N; i++) {
-        TRLWELvl1 tmp = res;
+        alignas(64) TRLWELvl1 tmp = res;
         TFHEpp::CMUXFFT<Lvl1>(res, guard.at(i), tmp, c0);
     }
     dump_histgram_of_phase_of_TRLWELvl1(
