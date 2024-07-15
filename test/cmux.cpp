@@ -35,7 +35,7 @@ int main()
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < lvl1param::n; j++)
             pmu0[i][j] = (p0[i][j] > 0) ? lvl1param::μ : -lvl1param::μ;
-    vector<TRGSWFFT<lvl1param>> cs(num_test);
+    vector<TRGSWFFT<lvl1param>,TFHEpp::AlignedAllocator<TFHEpp::TRGSWFFT<TFHEpp::lvl1param>,64>> cs(num_test);
     vector<TRLWE<lvl1param>> c1(num_test);
     vector<TRLWE<lvl1param>> c0(num_test);
     vector<TRLWE<lvl1param>> cres(num_test);

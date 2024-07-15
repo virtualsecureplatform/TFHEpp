@@ -33,7 +33,7 @@ int main()
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < lvl1param::n; j++)
             pmu1[i][j] = (p1[i][j] > 0) ? lvl1param::μ : -lvl1param::μ;
-    std::vector<BootstrappingKeyElementFFT<TFHEpp::lvl01param>> cs(num_test);
+    std::vector<TFHEpp::BootstrappingKeyElementFFT<TFHEpp::lvl01param>,TFHEpp::AlignedAllocator<TFHEpp::BootstrappingKeyElementFFT<TFHEpp::lvl01param>,64>> cs(num_test);
     std::vector<TRLWE<lvl1param>> c1(num_test);
     std::vector<TRLWE<lvl1param>> cres(num_test);
 
