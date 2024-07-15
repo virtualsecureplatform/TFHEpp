@@ -144,6 +144,24 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
     else
         static_assert(false_v<typename P::T>, "Undefined TwistIFFT!");
 }
+template <uint32_t N>
+inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &b)
+{
+    #ifdef USE_INTERLEAVED_FORMAT
+    for(int i = 0; i < N / 2; i++){
+        const std::complex tmp = std::complex(res[2*i], res[2*i+1]) * std::complex(b[2*i], b[2*i+1]);
+        res[2*i] = tmp.real();
+        res[2*i+1] = tmp.imag();
+    }
+    #else
+    for (int i = 0; i < N / 2; i++) {
+        double aimbim = res[i + N / 2] * b[i + N / 2];
+        double arebim = res[i] * b[i + N / 2];
+        res[i] = std::fma(res[i], b[i], -aimbim);
+        res[i + N / 2] = std::fma(res[i + N / 2], b[i], arebim);
+    }
+    #endif
+}
 
 template <uint32_t N>
 inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
@@ -156,11 +174,36 @@ inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
         res[2*i+1] = tmp.imag();
     }
     #else
+    // for (int i = 0; i < N / 2; i++) {
+    //     double aimbim = a[i + N / 2] * b[i + N / 2];
+    //     double arebim = a[i] * b[i + N / 2];
+    //     res[i] = std::fma(a[i], b[i], -aimbim);
+    //     res[i + N / 2] = std::fma(a[i + N / 2], b[i], arebim);
+    // }
+
+    // for (int i = 0; i < N / 2; i++) {
+    //     res[i] = a[i + N / 2] * b[i + N / 2];
+    //     res[i + N / 2] = a[i] * b[i + N / 2];
+    // }
+    // for (int i = 0; i < N / 2; i++) {
+    //     res[i] = std::fma(a[i], b[i], -res[i]);
+    //     res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
+    // }
+
+    // for (int i = 0; i < N / 2; i++) {
+    //     double arebre = a[i] * b[i];
+    //     double aimbre = a[i + N/2] * b[i];
+    //     res[i] = std::fma(- a[i + N / 2] , b[i + N / 2],arebre);
+    //     res[i + N / 2] = std::fma(a[i], b[i  + N / 2], aimbre);
+    // }
+
     for (int i = 0; i < N / 2; i++) {
-        double aimbim = a[i + N / 2] * b[i + N / 2];
-        double arebim = a[i] * b[i + N / 2];
-        res[i] = std::fma(a[i], b[i], -aimbim);
-        res[i + N / 2] = std::fma(a[i + N / 2], b[i], arebim);
+        res[i] = a[i] * b[i];
+        res[i + N / 2] = a[i + N / 2] * b[i];
+    }
+    for (int i = 0; i < N / 2; i++) {
+        res[i + N / 2] += a[i] * b[i + N / 2];
+        res[i] -= a[i + N / 2] * b[i + N / 2];
     }
     #endif
 }
@@ -204,8 +247,11 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         TwistIFFT<P>(ffta, a);
         alignas(64) PolynomialInFD<P> fftb;
         TwistIFFT<P>(fftb, b);
-        MulInFD<P::n>(ffta, ffta, fftb);
+        MulInFD<P::n>(ffta, fftb);
         TwistFFT<P>(res, ffta);
+        // alignas(64) PolynomialInFD<P> fftres;
+        // MulInFD<P::n>(fftres, ffta, fftb);
+        // TwistFFT<P>(res, fftres);
     }
     else if constexpr (std::is_same_v<typename P::T, uint64_t>) {
         // Naieve

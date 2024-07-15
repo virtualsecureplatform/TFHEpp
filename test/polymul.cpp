@@ -34,15 +34,15 @@ int main()
     cout << "FFT Passed" << endl;
 
     for (int test = 0; test < num_test; test++) {
-        array<typename TFHEpp::lvl1param::T, lvl1param::n> a;
+        alignas(64) array<typename TFHEpp::lvl1param::T, lvl1param::n> a;
         for (int i = 0; i < lvl1param::n; i++)
             a[i] = Bgdist(engine) - lvl1param::Bg / 2;
         for (typename TFHEpp::lvl1param::T &i : a)
             i = Bgdist(engine) - lvl1param::Bg / 2;
-        array<typename TFHEpp::lvl1param::T, lvl1param::n> b;
+        alignas(64) array<typename TFHEpp::lvl1param::T, lvl1param::n> b;
         for (typename TFHEpp::lvl1param::T &i : b) i = Torus32dist(engine);
 
-        Polynomial<lvl1param> polymul;
+        alignas(64) Polynomial<lvl1param> polymul;
         TFHEpp::PolyMul<lvl1param>(polymul, a, b);
         Polynomial<lvl1param> naieve = {};
         for (int i = 0; i < lvl1param::n; i++) {
