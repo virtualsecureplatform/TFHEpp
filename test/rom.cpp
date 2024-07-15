@@ -52,7 +52,7 @@ int main()
                                                      // torellance.
     for (uint8_t &p : address) p = binary(engine);
 
-    array<TRGSWFFT<typename ksP::domainP>, address_bit> bootedTGSW;
+    alignas(64) array<TRGSWFFT<typename ksP::domainP>, address_bit> bootedTGSW;
     vector<TLWE<typename ksP::domainP>> encaddress(address_bit);
     array<TRLWE<typename ksP::domainP>, num_trlwe> encmemory;
     vector<TLWE<typename ksP::domainP>> encres(word);
