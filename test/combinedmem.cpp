@@ -159,7 +159,7 @@ int main()
 
             std::array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2>
                 *bootedTGSW =
-                    new array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
+                    new (std::align_val_t(64))  array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
                               2>;  // MSB of address is evaluated by HomMUX, not
                                    // CMUX.
             vector<TLWE<lvl1param>> encaddress(address_bit);
