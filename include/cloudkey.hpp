@@ -576,18 +576,15 @@ struct EvalKey {
                         const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl11param>) {
-            privksklvl11[key] = std::make_unique_for_overwrite<
-                PrivateKeySwitchingKey<lvl11param>>();
+            privksklvl11[key] = std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>(new (std::align_val_t(64)) PrivateKeySwitchingKey<lvl11param>());
             privkskgen<lvl11param>(*privksklvl11[key], func, sk);
         }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            privksklvl21[key] = std::make_unique_for_overwrite<
-                PrivateKeySwitchingKey<lvl21param>>();
+            privksklvl21[key] = std::unique_ptr<PrivateKeySwitchingKey<lvl21param>>(new (std::align_val_t(64)) PrivateKeySwitchingKey<lvl21param>());
             privkskgen<lvl21param>(*privksklvl21[key], func, sk);
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            privksklvl22[key] = std::make_unique_for_overwrite<
-                PrivateKeySwitchingKey<lvl22param>>();
+            privksklvl22[key] = std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>(new (std::align_val_t(64)) PrivateKeySwitchingKey<lvl22param>());
             privkskgen<lvl22param>(*privksklvl22[key], func, sk);
         }
         else

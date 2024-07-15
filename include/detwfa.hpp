@@ -39,7 +39,7 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(
     const BootstrappingKeyElementFFT<bkP> &cs, const int a)
 {
     if constexpr (bkP::domainP::key_value_diff == 1) {
-        TRLWE<typename bkP::targetP> temp;
+        alignas(64) TRLWE<typename bkP::targetP> temp;
         for (int k = 0; k < bkP::targetP::k + 1; k++)
             PolynomialMulByXaiMinusOne<typename bkP::targetP>(temp[k], acc[k],
                                                               a);

@@ -36,9 +36,9 @@ int main()
         for (int j = 0; j < privksP::targetP::n; j++)
             pmu[i][j] = pa[i][j] ? privksP::targetP::μ : -privksP::targetP::μ;
     for (int i = 0; i < num_test; i++) pones[i] = true;
-    std::vector<TFHEpp::TRLWE<typename privksP::targetP>> ca(num_test);
-    std::vector<TFHEpp::TLWE<typename iksP::domainP>> cones(num_test);
-    std::vector<TFHEpp::TRGSWFFT<typename privksP::targetP>> bootedTGSW(
+    alignas(64) std::vector<TFHEpp::TRLWE<typename privksP::targetP>> ca(num_test);
+    alignas(64) std::vector<TFHEpp::TLWE<typename iksP::domainP>> cones(num_test);
+    std::vector<TFHEpp::TRGSWFFT<typename privksP::targetP>,TFHEpp::AlignedAllocator<TFHEpp::TRGSWFFT<typename privksP::targetP>,64>> bootedTGSW(
         num_test);
 
     for (int i = 0; i < num_test; i++)

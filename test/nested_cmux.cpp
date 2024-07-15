@@ -49,16 +49,16 @@ int main()
 
     SecretKey skey;
 
-    std::vector<TRGSWLvl1FFT> guard;
+    alignas(64) std::vector<TRGSWLvl1FFT> guard;
     TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {};
     plainpoly[0] = 1;
     for (size_t i = 0; i < N; i++)
         guard.push_back(
             TFHEpp::trgswfftSymEncrypt<Lvl1>(plainpoly, skey.key.lvl1));
 
-    TRLWELvl1 c1 = trivial_TRLWELvl1(uint2weight(1)),
+    alignas(64) TRLWELvl1 c1 = trivial_TRLWELvl1(uint2weight(1)),
               c0 = trivial_TRLWELvl1(uint2weight(0));
-    TRLWELvl1 res = c1;
+    alignas(64) TRLWELvl1 res = c1;
     dump_histgram_of_phase_of_TRLWELvl1(
         std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.lvl1));
     for (size_t i = 0; i < N; i++) {
