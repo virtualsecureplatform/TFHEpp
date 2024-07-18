@@ -158,10 +158,10 @@ int main()
                 writep[i] = ramp[addressint * words + i] > 0 ? 0 : 1;
 
             std::array<array<TRGSWFFT<lvl1param>, address_bit - 1>, 2>
-                *bootedTGSW =
-                    new (std::align_val_t(64))  array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
-                              2>;  // MSB of address is evaluated by HomMUX, not
-                                   // CMUX.
+                *bootedTGSW = new (std::align_val_t(64))
+                    array<array<TRGSWFFT<lvl1param>, address_bit - 1>,
+                          2>;  // MSB of address is evaluated by HomMUX, not
+                               // CMUX.
             vector<TLWE<lvl1param>> encaddress(address_bit);
             std::vector<TRLWE<lvl1param>> encrom(numromtrlwe);
             std::vector<array<TRLWE<lvl1param>, numramtrlwe>> encram(words);

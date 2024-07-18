@@ -22,7 +22,8 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplacebkfft<bkP>(sk);
     ek.emplaceiksk<iksP>(sk);
-    std::vector<TFHEpp::TLWE<typename iksP::domainP>> tlwe(num_test), bootedtlwe(num_test);
+    std::vector<TFHEpp::TLWE<typename iksP::domainP>> tlwe(num_test),
+        bootedtlwe(num_test);
     std::array<bool, num_test> p;
     for (int i = 0; i < num_test; i++) p[i] = binary(engine) > 0;
     for (int i = 0; i < num_test; i++)

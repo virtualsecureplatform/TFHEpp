@@ -26,7 +26,8 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
                           const TLWE<typename bkP::domainP> &tlwe,
                           const EvalKey &ek)
 {
-    alignas(64) std::array<TLWE<typename bkP::targetP>, privksP::targetP::l> temp;
+    alignas(64) std::array<TLWE<typename bkP::targetP>, privksP::targetP::l>
+        temp;
     GateBootstrappingManyLUT<bkP, privksP::targetP::l>(
         temp, tlwe, ek.getbkfft<bkP>(), CBtestvector<privksP>());
     for (int i = 0; i < privksP::targetP::l; i++) {
@@ -81,7 +82,8 @@ void CircuitBootstrappingSub(TRGSW<typename privksP::targetP> &trgsw,
 {
     alignas(64) TLWE<typename bkP::domainP> tlwelvl0;
     IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
-    alignas(64) std::array<TLWE<typename bkP::targetP>, privksP::targetP::l> temp;
+    alignas(64) std::array<TLWE<typename bkP::targetP>, privksP::targetP::l>
+        temp;
     GateBootstrappingManyLUT<bkP, privksP::targetP::l>(
         temp, tlwelvl0, ek.getbkfft<bkP>(), CBtestvector<privksP>());
     for (int i = 0; i < privksP::targetP::l; i++) {

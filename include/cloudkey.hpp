@@ -416,19 +416,23 @@ struct EvalKey {
     void emplacebkfft(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bkfftlvl01 = std::unique_ptr<BootstrappingKeyFFT<lvl01param>>(new (std::align_val_t(64)) BootstrappingKeyFFT<lvl01param>());
+            bkfftlvl01 = std::unique_ptr<BootstrappingKeyFFT<lvl01param>>(
+                new (std::align_val_t(64)) BootstrappingKeyFFT<lvl01param>());
             bkfftgen<lvl01param>(*bkfftlvl01, sk);
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            bkfftlvlh1 = std::unique_ptr<BootstrappingKeyFFT<lvlh1param>>(new (std::align_val_t(64)) BootstrappingKeyFFT<lvlh1param>());
+            bkfftlvlh1 = std::unique_ptr<BootstrappingKeyFFT<lvlh1param>>(
+                new (std::align_val_t(64)) BootstrappingKeyFFT<lvlh1param>());
             bkfftgen<lvlh1param>(*bkfftlvlh1, sk);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bkfftlvl02 = std::unique_ptr<BootstrappingKeyFFT<lvl02param>>(new (std::align_val_t(64)) BootstrappingKeyFFT<lvl02param>());
+            bkfftlvl02 = std::unique_ptr<BootstrappingKeyFFT<lvl02param>>(
+                new (std::align_val_t(64)) BootstrappingKeyFFT<lvl02param>());
             bkfftgen<lvl02param>(*bkfftlvl02, sk);
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            bkfftlvlh2 = std::unique_ptr<BootstrappingKeyFFT<lvlh2param>>(new (std::align_val_t(64)) BootstrappingKeyFFT<lvlh2param>());
+            bkfftlvlh2 = std::unique_ptr<BootstrappingKeyFFT<lvlh2param>>(
+                new (std::align_val_t(64)) BootstrappingKeyFFT<lvlh2param>());
             bkfftgen<lvlh2param>(*bkfftlvlh2, sk);
         }
         else
@@ -528,15 +532,18 @@ struct EvalKey {
     void emplaceiksk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl10param>) {
-            iksklvl10 = std::unique_ptr<KeySwitchingKey<lvl10param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl10param>());
+            iksklvl10 = std::unique_ptr<KeySwitchingKey<lvl10param>>(
+                new (std::align_val_t(64)) KeySwitchingKey<lvl10param>());
             ikskgen<lvl10param>(*iksklvl10, sk);
         }
         else if constexpr (std::is_same_v<P, lvl1hparam>) {
-            iksklvl1h = std::unique_ptr<KeySwitchingKey<lvl1hparam>>(new (std::align_val_t(64)) KeySwitchingKey<lvl1hparam>());
+            iksklvl1h = std::unique_ptr<KeySwitchingKey<lvl1hparam>>(
+                new (std::align_val_t(64)) KeySwitchingKey<lvl1hparam>());
             ikskgen<lvl1hparam>(*iksklvl1h, sk);
         }
         else if constexpr (std::is_same_v<P, lvl20param>) {
-            iksklvl20 = std::unique_ptr<KeySwitchingKey<lvl20param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl20param>());
+            iksklvl20 = std::unique_ptr<KeySwitchingKey<lvl20param>>(
+                new (std::align_val_t(64)) KeySwitchingKey<lvl20param>());
             ikskgen<lvl20param>(*iksklvl20, sk);
         }
         // else if constexpr (std::is_same_v<P, lvl2hparam>) {
@@ -545,15 +552,18 @@ struct EvalKey {
         //     ikskgen<lvlh2param>(*iksklvlh2, sk);
         // }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            iksklvl21 = std::unique_ptr<KeySwitchingKey<lvl21param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl21param>());
+            iksklvl21 = std::unique_ptr<KeySwitchingKey<lvl21param>>(
+                new (std::align_val_t(64)) KeySwitchingKey<lvl21param>());
             ikskgen<lvl21param>(*iksklvl21, sk);
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            iksklvl22 = std::unique_ptr<KeySwitchingKey<lvl22param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl22param>());
+            iksklvl22 = std::unique_ptr<KeySwitchingKey<lvl22param>>(
+                new (std::align_val_t(64)) KeySwitchingKey<lvl22param>());
             ikskgen<lvl22param>(*iksklvl22, sk);
         }
         else if constexpr (std::is_same_v<P, lvl31param>) {
-            iksklvl31 = std::unique_ptr<KeySwitchingKey<lvl31param>>(new (std::align_val_t(64)) KeySwitchingKey<lvl31param>());
+            iksklvl31 = std::unique_ptr<KeySwitchingKey<lvl31param>>(
+                new (std::align_val_t(64)) KeySwitchingKey<lvl31param>());
             ikskgen<lvl31param>(*iksklvl31, sk);
         }
         else
@@ -576,15 +586,21 @@ struct EvalKey {
                         const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl11param>) {
-            privksklvl11[key] = std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>(new (std::align_val_t(64)) PrivateKeySwitchingKey<lvl11param>());
+            privksklvl11[key] =
+                std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>(new (
+                    std::align_val_t(64)) PrivateKeySwitchingKey<lvl11param>());
             privkskgen<lvl11param>(*privksklvl11[key], func, sk);
         }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            privksklvl21[key] = std::unique_ptr<PrivateKeySwitchingKey<lvl21param>>(new (std::align_val_t(64)) PrivateKeySwitchingKey<lvl21param>());
+            privksklvl21[key] =
+                std::unique_ptr<PrivateKeySwitchingKey<lvl21param>>(new (
+                    std::align_val_t(64)) PrivateKeySwitchingKey<lvl21param>());
             privkskgen<lvl21param>(*privksklvl21[key], func, sk);
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            privksklvl22[key] = std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>(new (std::align_val_t(64)) PrivateKeySwitchingKey<lvl22param>());
+            privksklvl22[key] =
+                std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>(new (
+                    std::align_val_t(64)) PrivateKeySwitchingKey<lvl22param>());
             privkskgen<lvl22param>(*privksklvl22[key], func, sk);
         }
         else

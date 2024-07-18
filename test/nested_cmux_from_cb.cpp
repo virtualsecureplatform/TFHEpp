@@ -53,7 +53,9 @@ int main()
     ekey.emplacebkfft<TFHEpp::lvl02param>(skey);
     ekey.emplaceprivksk4cb<TFHEpp::lvl21param>(skey);
 
-    std::vector<TRGSWLvl1FFT,TFHEpp::AlignedAllocator<TFHEpp::TRGSWFFT<TFHEpp::lvl1param>,64>> guard;
+    std::vector<TRGSWLvl1FFT, TFHEpp::AlignedAllocator<
+                                  TFHEpp::TRGSWFFT<TFHEpp::lvl1param>, 64>>
+        guard;
     for (size_t i = 0; i < N; i++) {
         TFHEpp::TRGSWFFT<Lvl1> trgsw;
         TFHEpp::TLWE<Lvl1> tlwe =

@@ -8,7 +8,8 @@
 
 namespace TFHEpp {
 
-template<class T, size_t N> struct alignas( 64 ) aligned_array : public std::array<T,N> { };
+template <class T, size_t N>
+struct alignas(64) aligned_array : public std::array<T, N> {};
 
 enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 

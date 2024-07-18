@@ -21,8 +21,8 @@ constexpr typename P::T offsetgen()
 }
 
 template <class P>
-inline void Decomposition(DecomposedPolynomial<P> &decpoly, const Polynomial<P> &poly,
-                   typename P::T randbits = 0)
+inline void Decomposition(DecomposedPolynomial<P> &decpoly,
+                          const Polynomial<P> &poly, typename P::T randbits = 0)
 {
 #ifdef USE_OPTIMAL_DECOMPOSITION
     // https://eprint.iacr.org/2021/1161

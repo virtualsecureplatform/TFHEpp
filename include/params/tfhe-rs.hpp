@@ -18,8 +18,9 @@ struct lvl0param {
         ErrorDistribution::ModularGaussian;
     static constexpr double α =
         3.2192861177056265e-06;  // fresh noise, 2^{-17.6}
-    using T = uint32_t;         // Torus representation
-    static  constexpr std::make_signed_t<T> μ = 1U << (std::numeric_limits<T>::digits - 3);
+    using T = uint32_t;          // Torus representation
+    static constexpr std::make_signed_t<T> μ =
+        1U << (std::numeric_limits<T>::digits - 3);
     static constexpr uint32_t plain_modulus = 2;
     static constexpr double Δ =
         static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
@@ -37,7 +38,8 @@ struct lvlhalfparam {
         ErrorDistribution::ModularGaussian;
     static const inline double α = std::pow(2.0, -17);  // fresh noise
     using T = uint32_t;                                 // Torus representation
-    static constexpr std::make_signed_t<T> μ = 1U << (std::numeric_limits<T>::digits - 3);
+    static constexpr std::make_signed_t<T> μ =
+        1U << (std::numeric_limits<T>::digits - 3);
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ =
         static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
@@ -59,7 +61,7 @@ struct lvl1param {
         ErrorDistribution::ModularGaussian;
     static const inline double α =
         3.966608917163306e-12;  // fresh noise, 2^{-24.8...}
-    using T = uint64_t;                  // Torus representation
+    using T = uint64_t;         // Torus representation
     static constexpr std::make_signed_t<T> μ = 1ULL << 61;
     static constexpr uint32_t plain_modulus = 2;
     static constexpr double Δ =

@@ -17,8 +17,10 @@ FFT_Processor_FFTW::FFT_Processor_FFTW(const int32_t N)
 {
     inbuf = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * Ns2);
     outbuf = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * Ns2);
-    plan_forward = fftw_plan_dft_1d(Ns2, inbuf, outbuf, FFTW_FORWARD, FFTW_MEASURE);
-    plan_backward = fftw_plan_dft_1d(Ns2, inbuf, outbuf, FFTW_BACKWARD, FFTW_MEASURE);
+    plan_forward =
+        fftw_plan_dft_1d(Ns2, inbuf, outbuf, FFTW_FORWARD, FFTW_MEASURE);
+    plan_backward =
+        fftw_plan_dft_1d(Ns2, inbuf, outbuf, FFTW_BACKWARD, FFTW_MEASURE);
 
     for (int i = 0; i < Ns2; i++) {
         double value = (double)i * M_PI / (double)N;
@@ -68,8 +70,8 @@ void FFT_Processor_FFTW::execute_direct_torus32(uint32_t *res, const double *a)
     }
     fftw_execute_dft(plan_backward, inbuf, outbuf);
     for (int i = 0; i < Ns2; i++) {
-        auto res_tmp =
-            std::complex<double>(outbuf[i][0], outbuf[i][1]) * std::conj(twist[i]);
+        auto res_tmp = std::complex<double>(outbuf[i][0], outbuf[i][1]) *
+                       std::conj(twist[i]);
         res[i] = CAST_DOUBLE_TO_UINT32(res_tmp.real());
         res[i + Ns2] = CAST_DOUBLE_TO_UINT32(res_tmp.imag());
     }
@@ -85,8 +87,8 @@ void FFT_Processor_FFTW::execute_direct_torus32_rescale(uint32_t *res,
     }
     fftw_execute_dft(plan_backward, inbuf, outbuf);
     for (int i = 0; i < Ns2; i++) {
-        auto res_tmp =
-            std::complex<double>(outbuf[i][0], outbuf[i][1]) * std::conj(twist[i]);
+        auto res_tmp = std::complex<double>(outbuf[i][0], outbuf[i][1]) *
+                       std::conj(twist[i]);
         res[i] = CAST_DOUBLE_TO_UINT32(res_tmp.real() / (Δ / 4));
         res[i + Ns2] = CAST_DOUBLE_TO_UINT32(res_tmp.imag() / (Δ / 4));
     }
@@ -101,8 +103,8 @@ void FFT_Processor_FFTW::execute_direct_torus64(uint64_t *res, const double *a)
     fftw_execute_dft(plan_backward, inbuf, outbuf);
     double tmp[N];
     for (int i = 0; i < Ns2; i++) {
-        auto res_tmp =
-            std::complex<double>(outbuf[i][0], outbuf[i][1]) * std::conj(twist[i]);
+        auto res_tmp = std::complex<double>(outbuf[i][0], outbuf[i][1]) *
+                       std::conj(twist[i]);
         tmp[i] = res_tmp.real();
         tmp[i + Ns2] = res_tmp.imag();
     }
@@ -121,7 +123,10 @@ void FFT_Processor_FFTW::execute_direct_torus64(uint64_t *res, const double *a)
     }
 }
 
-void FFT_Processor_FFTW::execute_direct_torus64_rescale(uint64_t* res, const double* a, const double Δ) {
+void FFT_Processor_FFTW::execute_direct_torus64_rescale(uint64_t *res,
+                                                        const double *a,
+                                                        const double Δ)
+{
     for (int i = 0; i < Ns2; i++) {
         inbuf[i][0] = a[i] / Ns2;
         inbuf[i][1] = a[Ns2 + i] / Ns2;
@@ -129,12 +134,12 @@ void FFT_Processor_FFTW::execute_direct_torus64_rescale(uint64_t* res, const dou
     fftw_execute_dft(plan_backward, inbuf, outbuf);
     double tmp[N];
     for (int i = 0; i < Ns2; i++) {
-        auto res_tmp =
-            std::complex<double>(outbuf[i][0], outbuf[i][1]) * std::conj(twist[i]);
+        auto res_tmp = std::complex<double>(outbuf[i][0], outbuf[i][1]) *
+                       std::conj(twist[i]);
         tmp[i] = res_tmp.real();
         tmp[i + Ns2] = res_tmp.imag();
     }
-    for (int i=0; i<N; i++) res[i] = uint64_t(std::round(tmp[i]/(Δ/4)));
+    for (int i = 0; i < N; i++) res[i] = uint64_t(std::round(tmp[i] / (Δ / 4)));
 }
 
 FFT_Processor_FFTW::~FFT_Processor_FFTW()

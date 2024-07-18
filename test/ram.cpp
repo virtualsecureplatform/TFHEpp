@@ -51,12 +51,13 @@ int main()
     wrflag = binary(engine);
     writep = pmemory[addressint] > 0 ? 0 : 1;
 
-    array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>,
-          2> *bootedTGSW =
-        new (std::align_val_t(64))  array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>, 2>;
+    array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>, 2>
+        *bootedTGSW = new (std::align_val_t(64))
+            array<array<TRGSWFFT<typename CBprivksP::targetP>, address_bit>, 2>;
     vector<TLWE<typename CBprivksP::targetP>> encaddress(address_bit);
     array<TRLWE<typename CBprivksP::targetP>, memsize> *encmemory =
-        new (std::align_val_t(64))  array<TRLWE<typename CBprivksP::targetP>, memsize>;
+        new (std::align_val_t(64))
+            array<TRLWE<typename CBprivksP::targetP>, memsize>;
     TLWE<typename CBprivksP::targetP> encreadres;
     TRLWE<typename CBiksP::domainP> encumemory;
     TLWE<typename ksP::domainP> cs;

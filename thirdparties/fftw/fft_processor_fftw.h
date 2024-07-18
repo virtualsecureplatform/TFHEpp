@@ -19,8 +19,8 @@ private:
     std::vector<std::complex<double>> twist;
     fftw_plan plan_forward;
     fftw_plan plan_backward;
-    fftw_complex * inbuf;
-    fftw_complex * outbuf;
+    fftw_complex *inbuf;
+    fftw_complex *outbuf;
 
 public:
     FFT_Processor_FFTW(const int32_t N);
@@ -38,7 +38,8 @@ public:
 
     void execute_direct_torus64(uint64_t *res, const double *a);
 
-    void execute_direct_torus64_rescale(uint64_t *res, const double *a, const double Δ);
+    void execute_direct_torus64_rescale(uint64_t *res, const double *a,
+                                        const double Δ);
 
     ~FFT_Processor_FFTW();
 };
