@@ -8,6 +8,8 @@
 
 namespace TFHEpp {
 
+template<class T, size_t N> struct alignas( 64 ) aligned_array : public std::array<T,N> { };
+
 enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 
 // Use old 80bit security parameters. It is faster, but not recommended.
@@ -106,7 +108,7 @@ using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 template <class P>
 using TRGSW = std::array<TRLWE<P>, (P::k + 1) * P::l>;
 template <class P>
-using TRGSWFFT = std::array<TRLWEInFD<P>, (P::k + 1) * P::l>;
+using TRGSWFFT = aligned_array<TRLWEInFD<P>, (P::k + 1) * P::l>;
 template <class P>
 using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
 template <class P>

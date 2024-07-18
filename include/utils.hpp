@@ -214,4 +214,5 @@ inline void Automorphism(Polynomial<P> &res, const Polynomial<P> &poly,
             res[index & Nmask] += poly[i];
     }
 }
+
 }  // namespace TFHEpp

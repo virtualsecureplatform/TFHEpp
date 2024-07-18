@@ -28,9 +28,9 @@ TRGSWFFT<P> TRGSWFFTOneGen()
     return ApplyFFT2trgsw<P>(trgsw);
 }
 
-alignas(32) const TRGSWFFT<lvl1param> trgswonelvl1 =
+alignas(64) const TRGSWFFT<lvl1param> trgswonelvl1 =
     TRGSWFFTOneGen<lvl1param>();
-alignas(32) const TRGSWFFT<lvl2param> trgswonelvl2 =
+alignas(64) const TRGSWFFT<lvl2param> trgswonelvl2 =
     TRGSWFFTOneGen<lvl2param>();
 
 template <class bkP>
