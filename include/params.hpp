@@ -147,7 +147,7 @@ using BootstrappingKeyRAINTT =
 
 template <class P>
 using KeySwitchingKey = std::array<
-    std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>,
+    std::array<std::array<TLWE<typename P::targetP>, (1 << (P::basebit-1))>,
                P::t>,
     P::domainP::k * P::domainP::n>;
 template <class P>
