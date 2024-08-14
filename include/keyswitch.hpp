@@ -112,13 +112,13 @@ void CatIdentityKeySwitch(
         for (int j = 0; j < P::t; j++) {
             for (int cat = 0; cat < numcat; cat++) {
                 const int32_t aij =
-                ((aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
+                ((aibarcat[cat] >> (std::numeric_limits<typename P::domainP::T>::digits -
                            (j + 1) * P::basebit)) &
                 mask)-halfbase;
                 if (aij > 0)
                     for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
                         res[cat][k] -= ksk[i][j][aij - 1][k];
-                if (aij < 0)
+                else if (aij < 0)
                     for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
                         res[cat][k] += ksk[i][j][-aij - 1][k];
             }
