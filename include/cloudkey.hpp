@@ -193,7 +193,7 @@ void ikskgen(KeySwitchingKey<P>& ksk, const Key<typename P::domainP>& domainkey,
     for (int l = 0; l < P::domainP::k; l++)
         for (int i = 0; i < P::domainP::n; i++)
             for (int j = 0; j < P::t; j++)
-                for (uint32_t k = 0; k < 1U << (P::basebit-1); k++)
+                for (uint32_t k = 0; k < 1U << (P::basebit - 1); k++)
                     ksk[l * P::domainP::n + i][j][k] =
                         tlweSymEncrypt<typename P::targetP>(
                             domainkey[l * P::domainP::n + i] * (k + 1) *
@@ -223,7 +223,8 @@ void privkskgen(PrivateKeySwitchingKey<P>& privksk,
 #pragma omp parallel for collapse(3)
     for (int i = 0; i <= P::domainP::k * P::domainP::n; i++)
         for (int j = 0; j < P::t; j++)
-            for (typename P::targetP::T u = 0; u < (1 << (P::basebit-1)); u++) {
+            for (typename P::targetP::T u = 0; u < (1 << (P::basebit - 1));
+                 u++) {
                 TRLWE<typename P::targetP> c =
                     trlweSymEncryptZero<typename P::targetP>(targetkey);
                 for (int k = 0; k < P::targetP::n; k++)

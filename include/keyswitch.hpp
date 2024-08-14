@@ -13,9 +13,10 @@ constexpr typename P::domainP::T iksoffsetgen()
 {
     typename P::domainP::T offset = 0;
     for (int i = 1; i <= P::t; i++)
-        offset += (1ULL<<P::basebit) / 2 *
-                  (1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
-                            i * P::basebit));
+        offset +=
+            (1ULL << P::basebit) / 2 *
+            (1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+                      i * P::basebit));
     return offset;
 }
 
@@ -47,22 +48,24 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
                 tlwe[P::domainP::k * P::domainP::n])
             << (target_digit - domain_digit);
 
-//Koga's Optimization
+    // Koga's Optimization
     constexpr typename P::domainP::T offset = iksoffsetgen<P>();
-    constexpr typename P::domainP::T mask = (1ULL << P::basebit) - 1; 
+    constexpr typename P::domainP::T mask = (1ULL << P::basebit) - 1;
     constexpr typename P::domainP::T halfbase = 1ULL << (P::basebit - 1);
 
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + offset + roundoffset;
         for (int j = 0; j < P::t; j++) {
             const int32_t aij =
-                ((aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
-                           (j + 1) * P::basebit)) &
-                mask)-halfbase;
-            if(aij > 0)
+                ((aibar >>
+                  (std::numeric_limits<typename P::domainP::T>::digits -
+                   (j + 1) * P::basebit)) &
+                 mask) -
+                halfbase;
+            if (aij > 0)
                 for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
                     res[k] -= ksk[i][j][aij - 1][k];
-            else if(aij < 0)
+            else if (aij < 0)
                 for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
                     res[k] += ksk[i][j][-aij - 1][k];
         }
@@ -101,9 +104,9 @@ void CatIdentityKeySwitch(
                 << (target_digit - domain_digit);
     }
 
-    //Koga's Optimization
+    // Koga's Optimization
     constexpr typename P::domainP::T offset = iksoffsetgen<P>();
-    constexpr typename P::domainP::T mask = (1ULL << P::basebit) - 1; 
+    constexpr typename P::domainP::T mask = (1ULL << P::basebit) - 1;
     constexpr typename P::domainP::T halfbase = 1ULL << (P::basebit - 1);
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         std::array<typename P::domainP::T, numcat> aibarcat;
@@ -112,9 +115,11 @@ void CatIdentityKeySwitch(
         for (int j = 0; j < P::t; j++) {
             for (int cat = 0; cat < numcat; cat++) {
                 const int32_t aij =
-                ((aibarcat[cat] >> (std::numeric_limits<typename P::domainP::T>::digits -
-                           (j + 1) * P::basebit)) &
-                mask)-halfbase;
+                    ((aibarcat[cat] >>
+                      (std::numeric_limits<typename P::domainP::T>::digits -
+                       (j + 1) * P::basebit)) &
+                     mask) -
+                    halfbase;
                 if (aij > 0)
                     for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
                         res[cat][k] -= ksk[i][j][aij - 1][k];
@@ -276,9 +281,9 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
         1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
                  (1 + P::basebit * P::t));
 
-    //Koga's Optimization
+    // Koga's Optimization
     constexpr typename P::domainP::T offset = iksoffsetgen<P>();
-    constexpr typename P::domainP::T mask = (1ULL << P::basebit) - 1; 
+    constexpr typename P::domainP::T mask = (1ULL << P::basebit) - 1;
     constexpr typename P::domainP::T halfbase = 1ULL << (P::basebit - 1);
     res = {};
     for (int i = 0; i <= P::domainP::k * P::domainP::n; i++) {
@@ -286,15 +291,17 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
 
         for (int j = 0; j < P::t; j++) {
             const int32_t aij =
-                ((aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
-                           (j + 1) * P::basebit)) &
-                mask)-halfbase;
+                ((aibar >>
+                  (std::numeric_limits<typename P::domainP::T>::digits -
+                   (j + 1) * P::basebit)) &
+                 mask) -
+                halfbase;
 
-            if(aij > 0)
+            if (aij > 0)
                 for (int k = 0; k < P::targetP::k + 1; k++)
                     for (int p = 0; p < P::targetP::n; p++)
                         res[k][p] -= privksk[i][j][aij - 1][k][p];
-            else if(aij < 0)
+            else if (aij < 0)
                 for (int k = 0; k < P::targetP::k + 1; k++)
                     for (int p = 0; p < P::targetP::n; p++)
                         res[k][p] += privksk[i][j][abs(aij) - 1][k][p];
