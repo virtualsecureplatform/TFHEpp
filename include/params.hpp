@@ -164,7 +164,7 @@ template <class P>
 using AnnihilateKey = std::array<TRGSWFFT<P>, P::nbit>;
 template <class P>
 using PrivateKeySwitchingKey = std::array<
-    std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
+    std::array<std::array<TRLWE<typename P::targetP>, (1 << (P::basebit-1))>,
                P::t>,
     P::domainP::k * P::domainP::n + 1>;
 template <class P>

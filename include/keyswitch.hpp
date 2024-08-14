@@ -266,26 +266,32 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                    const TLWE<typename P::domainP> &tlwe,
                    const PrivateKeySwitchingKey<P> &privksk)
 {
-    constexpr uint32_t mask = (1 << P::basebit) - 1;
-    constexpr uint64_t prec_offset =
+    constexpr typename P::domainP::T roundoffset =
         1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
                  (1 + P::basebit * P::t));
 
+    //Koga's Optimization
+    constexpr typename P::domainP::T offset = iksoffsetgen<P>();
+    constexpr typename P::domainP::T mask = (1ULL << P::basebit) - 1; 
+    constexpr typename P::domainP::T halfbase = 1ULL << (P::basebit - 1);
     res = {};
     for (int i = 0; i <= P::domainP::k * P::domainP::n; i++) {
-        const typename P::domainP::T aibar = tlwe[i] + prec_offset;
+        const typename P::domainP::T aibar = tlwe[i] + offset + roundoffset;
 
         for (int j = 0; j < P::t; j++) {
-            const typename P::domainP::T aij =
-                (aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
+            const int32_t aij =
+                ((aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
                            (j + 1) * P::basebit)) &
-                mask;
+                mask)-halfbase;
 
-            if (aij != 0) {
+            if(aij > 0)
                 for (int k = 0; k < P::targetP::k + 1; k++)
                     for (int p = 0; p < P::targetP::n; p++)
                         res[k][p] -= privksk[i][j][aij - 1][k][p];
-            }
+            else if(aij < 0)
+                for (int k = 0; k < P::targetP::k + 1; k++)
+                    for (int p = 0; p < P::targetP::n; p++)
+                        res[k][p] += privksk[i][j][abs(aij) - 1][k][p];
         }
     }
 }

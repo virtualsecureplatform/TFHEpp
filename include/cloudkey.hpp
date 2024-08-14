@@ -223,7 +223,7 @@ void privkskgen(PrivateKeySwitchingKey<P>& privksk,
 #pragma omp parallel for collapse(3)
     for (int i = 0; i <= P::domainP::k * P::domainP::n; i++)
         for (int j = 0; j < P::t; j++)
-            for (typename P::targetP::T u = 0; u < (1 << P::basebit) - 1; u++) {
+            for (typename P::targetP::T u = 0; u < (1 << (P::basebit-1)); u++) {
                 TRLWE<typename P::targetP> c =
                     trlweSymEncryptZero<typename P::targetP>(targetkey);
                 for (int k = 0; k < P::targetP::n; k++)
