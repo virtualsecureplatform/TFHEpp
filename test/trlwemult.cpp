@@ -76,7 +76,7 @@ int main()
         for (int i = 0; i < P::n; i++) ptrue[i] %= P::plain_modulus;
 
         // for (int i = 0; i < P::n; i++)
-            // std::cout<<pres[i]<<":"<<ptrue[i]<<std::endl;
+        // std::cout<<pres[i]<<":"<<ptrue[i]<<std::endl;
         for (int i = 0; i < P::n; i++) assert(pres[i] == ptrue[i]);
     }
     std::cout << "Passed" << std::endl;

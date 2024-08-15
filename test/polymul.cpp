@@ -91,6 +91,6 @@ int main()
             assert(abs(static_cast<int>(pres[i] - ptrue[i])) <= 2);
         }
     }
-    std::cout << "PolyMulRescaleUnsigned Passed" << std::endl; 
+    std::cout << "PolyMulRescaleUnsigned Passed" << std::endl;
     return 0;
 }
