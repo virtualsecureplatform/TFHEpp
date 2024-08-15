@@ -37,6 +37,30 @@ FFT_Processor_Spqlios::FFT_Processor_Spqlios(const int32_t N) : _2N(2 * N), N(N)
     }
 }
 
+void FFT_Processor_Spqlios::execute_reverse_uint(double *res, const uint32_t *a) {
+    //for (int32_t i=0; i<N; i++) real_inout_rev[i]=(double)a[i];
+    {
+        double *dst = res;
+        // double *dst = real_inout_rev;
+        const uint32_t *ait = a;
+        const uint32_t *aend = a + N;
+        __asm__ __volatile__ (
+        "0:\n"
+                "vmovupd (%1),%%xmm0\n"
+                "vcvtudq2pd %%xmm0,%%ymm1\n"
+                "vmovapd %%ymm1,(%0)\n"
+                "addq $16,%1\n"
+                "addq $32,%0\n"
+                "cmpq %2,%1\n"
+                "jb 0b\n"
+        : "=r"(dst), "=r"(ait), "=r"(aend)
+        : "0"(dst), "1"(ait), "2"(aend)
+        : "%xmm0", "%ymm1", "memory"
+        );
+    }
+    ifft(tables_reverse, res);
+}
+
 void FFT_Processor_Spqlios::execute_reverse_int(double *res, const int32_t *a) {
     //for (int32_t i=0; i<N; i++) real_inout_rev[i]=(double)a[i];
     {
@@ -163,7 +187,7 @@ void FFT_Processor_Spqlios::execute_direct_torus32_rescale(uint32_t *res, const 
         );
     }
     fft(tables_direct, real_inout_direct);
-    for (int32_t i = 0; i < N; i++) res[i] = static_cast<uint32_t>(int64_t(real_inout_direct[i]/(Δ/4)));
+    for (int32_t i = 0; i < N; i++) res[i] = static_cast<uint32_t>(int64_t(real_inout_direct[i]/Δ));
 }
 
 void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, const double* a) {
@@ -245,7 +269,7 @@ void FFT_Processor_Spqlios::execute_direct_torus64_rescale(uint64_t* res, const 
 		);
     }
     fft(tables_direct,real_inout_direct); 
-    for (int i=0; i<N; i++) res[i] = uint64_t(std::round(real_inout_direct[i]/(Δ/4)));
+    for (int i=0; i<N; i++) res[i] = uint64_t(std::round(real_inout_direct[i]/Δ));
 }
 
 FFT_Processor_Spqlios::~FFT_Processor_Spqlios() {

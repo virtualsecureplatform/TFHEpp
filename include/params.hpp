@@ -79,8 +79,6 @@ using TLWE = aligned_array<typename P::T, P::k * P::n + 1>;
 template <class P>
 using Polynomial = std::array<typename P::T, P::n>;
 template <class P>
-using UnsignedPolynomial = Polynomial<P>;
-template <class P>
 using PolynomialInFD = std::array<double, P::n>;
 template <class P>
 using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
@@ -95,8 +93,6 @@ using DecomposedPolynomialRAINTT = std::array<PolynomialRAINTT<P>, P::l>;
 
 template <class P>
 using TRLWE = std::array<Polynomial<P>, P::k + 1>;
-template <class P>
-using UnsignedTRLWE = std::array<Polynomial<P>, P::k + 1>;
 template <class P>
 using TRLWE3 = std::array<Polynomial<P>, 3>;
 template <class P>

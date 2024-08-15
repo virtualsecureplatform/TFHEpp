@@ -221,10 +221,4 @@ inline void Automorphism(Polynomial<P> &res, const Polynomial<P> &poly,
     }
 }
 
-template <class P>
-inline void RemoveSign(UnsignedPolynomial<P> &res, const Polynomial<P> &a)
-{
-    for (int i = 0; i < P::n; i++) res[i] = (a[i] + 1) / 2;
-}
-
 }  // namespace TFHEpp

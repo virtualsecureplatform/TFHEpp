@@ -83,14 +83,14 @@ int main()
         for (typename TFHEpp::lvl1param::T &i : p0) i = message(engine);
         for (typename TFHEpp::lvl1param::T &i : p1) i = message(engine);
 
-        TFHEpp::PolyMulRescale<TFHEpp::lvl1param>(pres, p0, p1);
-        TFHEpp::PolyMulNaieveRescale<TFHEpp::lvl1param>(ptrue, p0, p1);
+        TFHEpp::PolyMulRescaleUnsigned<TFHEpp::lvl1param>(pres, p0, p1);
+        TFHEpp::PolyMulNaieveRescaleUnsigned<TFHEpp::lvl1param>(ptrue, p0, p1);
 
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
             // std::cout<<pres[i]<<":"<<ptrue[i]<<std::endl;
             assert(abs(static_cast<int>(pres[i] - ptrue[i])) <= 2);
         }
     }
-    std::cout << "PolyMulRescale Passed" << std::endl; 
+    std::cout << "PolyMulRescaleUnsigned Passed" << std::endl; 
     return 0;
 }
