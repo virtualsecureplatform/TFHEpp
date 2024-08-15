@@ -72,5 +72,25 @@ int main()
     }
     cout << "FFT Passed" << endl;
 
+    std::cout << "PolyMulRescale Test" << std::endl;
+    for (int test = 0; test < num_test; test++) {
+        std::random_device seed_gen;
+        std::default_random_engine engine(seed_gen());
+        std::uniform_int_distribution<typename TFHEpp::lvl1param::T> message(
+            0, (1ULL << 32) - 1);
+
+        TFHEpp::Polynomial<TFHEpp::lvl1param> p0, p1, pres, ptrue;
+        for (typename TFHEpp::lvl1param::T &i : p0) i = message(engine);
+        for (typename TFHEpp::lvl1param::T &i : p1) i = message(engine);
+
+        TFHEpp::PolyMulRescale<TFHEpp::lvl1param>(pres, p0, p1);
+        TFHEpp::PolyMulNaieveRescale<TFHEpp::lvl1param>(ptrue, p0, p1);
+
+        for (int i = 0; i < TFHEpp::lvl1param::n; i++) {
+            // std::cout<<pres[i]<<":"<<ptrue[i]<<std::endl;
+            assert(abs(static_cast<int>(pres[i] - ptrue[i])) <= 2);
+        }
+    }
+    std::cout << "PolyMulRescale Passed" << std::endl; 
     return 0;
 }

@@ -163,7 +163,7 @@ void FFT_Processor_Spqlios::execute_direct_torus32_rescale(uint32_t *res, const 
         );
     }
     fft(tables_direct, real_inout_direct);
-    for (int32_t i = 0; i < N; i++) res[i] = uint32_t(std::round(real_inout_direct[i]/(Δ/4)));
+    for (int32_t i = 0; i < N; i++) res[i] = static_cast<uint32_t>(int64_t(real_inout_direct[i]/(Δ/4)));
 }
 
 void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, const double* a) {

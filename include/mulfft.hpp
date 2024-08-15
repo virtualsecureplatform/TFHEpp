@@ -144,6 +144,7 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
     else
         static_assert(false_v<typename P::T>, "Undefined TwistIFFT!");
 }
+
 template <uint32_t N>
 inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &b)
 {
@@ -308,7 +309,7 @@ inline void PolyMulRescaleUnsigned(Polynomial<P> &res,
     PolynomialInFD<P> ffta, fftb;
     TwistIFFT<P>(ffta, a);
     TwistIFFT<P>(fftb, b);
-    MulInFD<P::n>(ffta, ffta, fftb);
+    MulInFD<P::n>(ffta, fftb);
     TwistFFTrescale<P>(res, ffta);
     // }
     // else
@@ -330,6 +331,38 @@ inline void PolyMulNaive(Polynomial<P> &res, const Polynomial<P> &a,
                       a[j]) *
                   b[P::n + i - j];
         res[i] = ri;
+    }
+}
+
+template <class P>
+inline void PolyMulRescale(Polynomial<P> &res, const Polynomial<P> &a,
+                           const Polynomial<P> &b)
+{
+    if constexpr (std::is_same_v<typename P::T, uint32_t>) {
+        UnsignedPolynomial<P> aa, bb;
+        RemoveSign<P>(aa, a);
+        RemoveSign<P>(bb, b);
+        PolyMulRescaleUnsigned<P>(res, aa, bb);
+    }
+    else
+        static_assert(false_v<typename P::T>, "Undefined PolyMul!");
+}
+
+template <class P>
+inline void PolyMulNaieveRescale(Polynomial<P> &res, const Polynomial<P> &a,
+                                 const Polynomial<P> &b)
+{
+    Polynomial<P> aa, bb;
+    for (int i = 0; i < P::n; i++) aa[i] = (a[i] + 1) / 2;
+    for (int i = 0; i < P::n; i++) bb[i] = (b[i] + 1) / 2;
+    for (int i = 0; i < P::n; i++) {
+        __int128_t ri = 0;
+        for (int j = 0; j <= i; j++)
+            ri += static_cast<__int128_t>(aa[j]) * bb[i - j];
+        for (int j = i + 1; j < P::n; j++)
+            ri -= static_cast<__int128_t>(aa[j]) * bb[P::n + i - j];
+        // res[i] = static_cast<typename P::T>((ri) >> (std::numeric_limits<typename P::T>::digits - 3));
+        res[i] = static_cast<typename P::T>((ri) >> 29);
     }
 }
 
