@@ -41,6 +41,16 @@ public:
         DftiComputeForward(desc_handle, res);
     }
 
+    void execute_reverse_uint(double *res, const uint32_t *a)
+    {
+        for (int i = 0; i < Ns2; i++) {
+            auto tmp = twist[i] * std::complex((double)a[i], (double)a[Ns2 + i]);
+            res[2*i] = tmp.real();
+            res[2*i+1] = tmp.imag();
+        }
+        DftiComputeForward(desc_handle, res);
+    }
+
     void execute_reverse_torus32(double *res, const uint32_t *a)
     {
         execute_reverse_int(res, (int32_t *)a);

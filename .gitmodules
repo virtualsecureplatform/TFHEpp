@@ -10,3 +10,6 @@
 [submodule "thirdparties/concrete-fft"]
 	path = thirdparties/concrete-fft
 	url = https://github.com/virtualsecureplatform/concrete-fft.git
+[submodule "thirdparties/concrete-ntt"]
+	path = thirdparties/concrete-ntt
+	url = https://github.com/virtualsecureplatform/concrete-ntt.git
