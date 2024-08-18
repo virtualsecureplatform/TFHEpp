@@ -8,3 +8,4 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential g++ libomp
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y 
 ENV PATH="/root/.cargo/bin:${PATH}"
 RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y intel-oneapi-mkl-devel && rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+RUN rustup default nightly
