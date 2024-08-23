@@ -194,7 +194,7 @@ void FFT_Processor_Spqliox_AArch64::execute_reverse_int(double *res,
 }
 
 void FFT_Processor_Spqliox_AArch64::execute_reverse_uint(double *res,
-                                                        const uint32_t *a)
+                                                         const uint32_t *a)
 {
     for (size_t i = 0; i < N; i++) real_inout[i] = (double)a[i];
 
@@ -263,7 +263,6 @@ void FFT_Processor_Spqliox_AArch64::execute_direct_torus64_rescale(
     for (int32_t i = 0; i < N; i++)
         res[i] = uint64_t(int64_t(real_inout[i] / Δ));
 }
-
 
 void FFT_Processor_Spqliox_AArch64::execute_direct_torus64(uint64_t *res,
                                                            const double *a)
