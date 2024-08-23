@@ -29,7 +29,7 @@
 #define RANDEN_BIG_ENDIAN 1
 #include <altivec.h>
 
-#elif defined(__ARM_NEON) && defined(__ARM_FEATURE_CRYPTO)
+#elif defined(__ARM_NEON) && defined(__ARM_FEATURE_AES)
 
 #define RANDEN_ARM 1
 #include <arm_neon.h>
