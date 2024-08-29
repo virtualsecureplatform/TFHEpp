@@ -193,6 +193,17 @@ void FFT_Processor_Spqliox_AArch64::execute_reverse_int(double *res,
     for (size_t i = 0; i < N; i++) res[i] = real_inout[i];
 }
 
+void FFT_Processor_Spqliox_AArch64::execute_reverse_uint(double *res,
+                                                         const uint32_t *a)
+{
+    for (size_t i = 0; i < N; i++) real_inout[i] = (double)a[i];
+
+    ifft_(real_inout, NULL, NULL, &tables_reverse_, real_inout,
+          table_negation_reverse_.trig_tables);
+
+    for (size_t i = 0; i < N; i++) res[i] = real_inout[i];
+}
+
 void FFT_Processor_Spqliox_AArch64::execute_reverse_torus32(double *res,
                                                             const uint32_t *a)
 {
@@ -236,7 +247,21 @@ void FFT_Processor_Spqliox_AArch64::execute_direct_torus32_rescale(
     fft_(dst, sit, send, bla, &tables_direct_, real_inout,
          table_negation_forward_.trig_tables);
     for (int32_t i = 0; i < N; i++)
-        res[i] = uint32_t(int64_t(real_inout[i] / (Δ / 4)));
+        res[i] = uint32_t(int64_t(real_inout[i] / Δ));
+}
+
+void FFT_Processor_Spqliox_AArch64::execute_direct_torus64_rescale(
+    uint64_t *res, const double *a, const double Δ)
+{
+    const double *sit = a;
+    const double *send = a + N;
+    static const double _2sN = double(2) / double(N);
+    const double *bla = &_2sN;
+    double *dst = real_inout;
+    fft_(dst, sit, send, bla, &tables_direct_, real_inout,
+         table_negation_forward_.trig_tables);
+    for (int32_t i = 0; i < N; i++)
+        res[i] = uint64_t(int64_t(real_inout[i] / Δ));
 }
 
 void FFT_Processor_Spqliox_AArch64::execute_direct_torus64(uint64_t *res,
