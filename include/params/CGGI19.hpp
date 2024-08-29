@@ -154,7 +154,7 @@ struct lvl20param {
     using targetP = lvl0param;
 };
 
-//Dummy
+// Dummy
 struct lvl2hparam {
     static constexpr std::uint32_t t = 7;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =

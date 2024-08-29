@@ -152,10 +152,10 @@ inline void TwistIFFTUInt(PolynomialInFD<P> &res, const Polynomial<P> &a)
         if constexpr (std::is_same_v<typename P::T, uint32_t>)
             fftplvl1.execute_reverse_uint(res.data(), a.data());
         // if constexpr (std::is_same_v<typename P::T, uint64_t>)
-            // fftplvl1.execute_reverse_torus64(res.data(), a.data());
+        // fftplvl1.execute_reverse_torus64(res.data(), a.data());
     }
     // else if constexpr (std::is_same_v<typename P::T, uint64_t>)
-        // fftplvl2.execute_reverse_torus64(res.data(), a.data());
+    // fftplvl2.execute_reverse_torus64(res.data(), a.data());
     else
         static_assert(false_v<typename P::T>, "Undefined TwistIFFT!");
 }
@@ -316,8 +316,7 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
 }
 
 template <class P>
-inline void PolyMulRescaleUnsigned(Polynomial<P> &res,
-                                   const Polynomial<P> &a,
+inline void PolyMulRescaleUnsigned(Polynomial<P> &res, const Polynomial<P> &a,
                                    const Polynomial<P> &b)
 {
     // if constexpr (std::is_same_v<typename P::T, uint32_t>) {
@@ -350,16 +349,20 @@ inline void PolyMulNaive(Polynomial<P> &res, const Polynomial<P> &a,
 }
 
 template <class P>
-inline void PolyMulNaieveRescaleUnsigned(Polynomial<P> &res, const Polynomial<P> &a,
-                                 const Polynomial<P> &b)
+inline void PolyMulNaieveRescaleUnsigned(Polynomial<P> &res,
+                                         const Polynomial<P> &a,
+                                         const Polynomial<P> &b)
 {
     for (int i = 0; i < P::n; i++) {
         __int128_t ri = 0;
         for (int j = 0; j <= i; j++)
-            ri += static_cast<__int128_t>(a[j]) * static_cast<__int128_t>(b[i - j]);
+            ri += static_cast<__int128_t>(a[j]) *
+                  static_cast<__int128_t>(b[i - j]);
         for (int j = i + 1; j < P::n; j++)
-            ri -= static_cast<__int128_t>(a[j]) * static_cast<__int128_t>(b[P::n + i - j]);
-        // res[i] = static_cast<typename P::T>((ri) >> (std::numeric_limits<typename P::T>::digits - 3));
+            ri -= static_cast<__int128_t>(a[j]) *
+                  static_cast<__int128_t>(b[P::n + i - j]);
+        // res[i] = static_cast<typename P::T>((ri) >>
+        // (std::numeric_limits<typename P::T>::digits - 3));
         res[i] = static_cast<typename P::T>((ri) >> 29);
     }
 }
