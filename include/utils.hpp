@@ -49,7 +49,7 @@ public:
     AlignedAllocator() noexcept {};
 
     template <typename U>
-    AlignedAllocator(const AlignedAllocator<U, alignment> &other) noexcept {};
+    AlignedAllocator(const AlignedAllocator<U, alignment> &other) noexcept {}
 
     template <typename U>
     inline bool operator==(

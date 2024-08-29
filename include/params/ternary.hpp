@@ -146,6 +146,18 @@ struct lvl20param {
     using targetP = lvl0param;
 };
 
+//Dummy
+struct lvl2hparam {
+    static constexpr std::uint32_t t = 7;  // number of addition in keyswitching
+    static constexpr std::uint32_t basebit =
+        2;  // how many bit should be encrypted in keyswitching key
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = lvlhalfparam::α;  // key noise
+    using domainP = lvl2param;
+    using targetP = lvlhalfparam;
+};
+
 struct lvl21param {
     static constexpr std::uint32_t t = 10;  // number of addition in
                                             // keyswitching

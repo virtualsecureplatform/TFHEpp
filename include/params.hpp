@@ -189,6 +189,7 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
     fun(lvl10param);                                          \
     fun(lvl1hparam);                                          \
     fun(lvl20param);                                          \
+    fun(lvl2hparam);                                          \
     fun(lvl21param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(fun) \
     fun(lvl11param);                                           \

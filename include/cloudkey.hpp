@@ -353,6 +353,7 @@ struct EvalKey {
     std::shared_ptr<KeySwitchingKey<lvl10param>> iksklvl10;
     std::shared_ptr<KeySwitchingKey<lvl1hparam>> iksklvl1h;
     std::shared_ptr<KeySwitchingKey<lvl20param>> iksklvl20;
+    std::shared_ptr<KeySwitchingKey<lvl2hparam>> iksklvl2h;
     std::shared_ptr<KeySwitchingKey<lvl21param>> iksklvl21;
     std::shared_ptr<KeySwitchingKey<lvl22param>> iksklvl22;
     std::shared_ptr<KeySwitchingKey<lvl31param>> iksklvl31;
@@ -547,11 +548,11 @@ struct EvalKey {
                 new (std::align_val_t(64)) KeySwitchingKey<lvl20param>());
             ikskgen<lvl20param>(*iksklvl20, sk);
         }
-        // else if constexpr (std::is_same_v<P, lvl2hparam>) {
-        //     iksklvlh2 =
-        //         std::make_unique_for_overwrite<KeySwitchingKey<lvlh2param>>();
-        //     ikskgen<lvlh2param>(*iksklvlh2, sk);
-        // }
+        else if constexpr (std::is_same_v<P, lvl2hparam>) {
+            iksklvl2h =
+                std::make_unique_for_overwrite<KeySwitchingKey<lvl2hparam>>();
+            ikskgen<lvl2hparam>(*iksklvl2h, sk);
+        }
         else if constexpr (std::is_same_v<P, lvl21param>) {
             iksklvl21 = std::unique_ptr<KeySwitchingKey<lvl21param>>(
                 new (std::align_val_t(64)) KeySwitchingKey<lvl21param>());
@@ -716,9 +717,9 @@ struct EvalKey {
         else if constexpr (std::is_same_v<P, lvl20param>) {
             return *iksklvl20;
         }
-        // else if constexpr (std::is_same_v<P, lvl2hparam>) {
-        //     return *iksklvl2h;
-        // }
+        else if constexpr (std::is_same_v<P, lvl2hparam>) {
+            return *iksklvl2h;
+        }
         else if constexpr (std::is_same_v<P, lvl21param>) {
             return *iksklvl21;
         }
