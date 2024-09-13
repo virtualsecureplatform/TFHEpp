@@ -226,13 +226,13 @@ void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
               const TRGSWFFT<P> &autokey)
 {
     Polynomial<P> polyb;
-    Automorphism<P>(polyb, trlwe[1], d);
+    Automorphism<P>(polyb, trlwe[P::k], d);
     res = {};
-    Automorphism<P>(res[1], trlwe[0], d);
+    Automorphism<P>(res[P::k], trlwe[0], d);
     trgswfftExternalProduct<P>(res, res, autokey);
     for (int i = 0; i < P::n; i++) {
         res[0][i] = -res[0][i];
-        res[1][i] = polyb[i] - res[1][i];
+        res[P::k][i] = polyb[i] - res[P::k][i];
     }
 }
 
@@ -242,9 +242,10 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
 {
     res = trlwe;
     for (int i = 0; i < P::nbit; i++) {
+        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] /= 2;
         TRLWE<P> evaledauto;
         EvalAuto<P>(evaledauto, res, (1 << (P::nbit - i)) + 1, ahk[i]);
-        for (int j = 0; j < 2 * P::n; j++) res[0][j] += evaledauto[0][j];
+        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] += evaledauto[0][j];
     }
 }
 

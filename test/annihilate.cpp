@@ -27,8 +27,8 @@ int main()
         for (int j = 0; j < TFHEpp::lvl1param::n; j++)
             pmu[i][j] =
                 (pin[i][j] > 0)
-                    ? (TFHEpp::lvl1param::μ >> TFHEpp::lvl1param::nbit)
-                    : -(TFHEpp::lvl1param::μ >> TFHEpp::lvl1param::nbit);
+                    ? (TFHEpp::lvl1param::μ)
+                    : -(TFHEpp::lvl1param::μ);
 
     std::vector<TFHEpp::TRLWE<TFHEpp::lvl1param>> cin(num_test);
     for (int i = 0; i < num_test; i++)
