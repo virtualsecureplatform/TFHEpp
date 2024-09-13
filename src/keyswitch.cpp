@@ -26,7 +26,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 
 #define INST(P)                                                      \
     template void EvalAuto<P>(TRLWE<P> & res, const TRLWE<P> &trlwe, \
-                              const int d, const TRGSWFFT<P> &autokey)
+                              const int d, const EvalAutoKey<P> &autokey)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

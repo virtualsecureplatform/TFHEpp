@@ -26,15 +26,11 @@ int main()
         TFHEpp::TRLWE<TFHEpp::lvl1param> ca =
             TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(pmu, sk.key.lvl1);
 
-        TFHEpp::Polynomial<TFHEpp::lvl1param> partkey;
-        for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-            partkey[i] = sk.key.lvl1[0 * TFHEpp::lvl1param::n + i];
-        TFHEpp::Automorphism<TFHEpp::lvl1param>(autokey, partkey, d);
-        TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs =
-            TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(autokey, sk.key.lvl1);
+        TFHEpp::EvalAutoKey<TFHEpp::lvl1param> eak;
+        TFHEpp::evalautokeygen<TFHEpp::lvl1param>(eak, d, sk.key.lvl1);
 
         TFHEpp::TRLWE<TFHEpp::lvl1param> cres;
-        TFHEpp::EvalAuto<TFHEpp::lvl1param>(cres, ca, d, cs);
+        TFHEpp::EvalAuto<TFHEpp::lvl1param>(cres, ca, d, eak);
 
         TFHEpp::Polynomial<TFHEpp::lvl1param> autopoly;
         TFHEpp::Automorphism<TFHEpp::lvl1param>(autopoly, pa, d);

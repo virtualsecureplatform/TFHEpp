@@ -223,16 +223,19 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
 
 template <class P>
 void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
-              const TRGSWFFT<P> &autokey)
+              const EvalAutoKey<P> &autokey)
 {
-    Polynomial<P> polyb;
-    Automorphism<P>(polyb, trlwe[P::k], d);
     res = {};
-    Automorphism<P>(res[P::k], trlwe[0], d);
-    trgswfftExternalProduct<P>(res, res, autokey);
-    for (int i = 0; i < P::n; i++) {
-        res[0][i] = -res[0][i];
-        res[P::k][i] = polyb[i] - res[P::k][i];
+    Automorphism<P>(res[P::k], trlwe[P::k], d);
+
+    for(int i = 0; i < P::k; i++){
+        Polynomial<P> temppoly;
+        TRLWE<P> temptrlwe;
+        Automorphism<P>(temppoly, trlwe[i], d);
+        halftrgswfftExternalProduct<P>(temptrlwe, temppoly, autokey[i]);
+        for(int j = 0; j < P::k+1; j++)
+            for (int k = 0; k < P::n; k++)
+                res[j][k] -= temptrlwe[j][k];
     }
 }
 
@@ -242,8 +245,8 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
 {
     res = trlwe;
     for (int i = 0; i < P::nbit; i++) {
-        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] /= 2;
         TRLWE<P> evaledauto;
+        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] /= 2;
         EvalAuto<P>(evaledauto, res, (1 << (P::nbit - i)) + 1, ahk[i]);
         for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] += evaledauto[0][j];
     }
@@ -261,14 +264,14 @@ void AnnihilatePrivateKeySwitching(
         TRLWE<P> evaledauto;
         EvalAuto<P>(evaledauto, res[num_func - 1], (1 << (P::nbit - i)) + 1,
                     ahk[i]);
-        for (int j = 0; j < 2 * P::n; j++)
+        for (int j = 0; j < (P::k+1) * P::n; j++)
             res[num_func - 1][0][j] += evaledauto[0][j];
     }
     for (int i = 0; i < num_func; i++) {
         TRLWE<P> evaledauto;
         EvalAuto<P>(evaledauto, res[num_func - 1], (1 << (P::nbit - i)) + 1,
                     privks[i]);
-        for (int j = 0; j < 2 * P::n; j++)
+        for (int j = 0; j < (P::k+1) * P::n; j++)
             res[i][0][j] += res[num_func - 1][0][j] + evaledauto[0][j];
     }
 }

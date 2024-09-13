@@ -131,6 +131,27 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 }
 
 template <class P>
+void halftrgswfftExternalProduct(TRLWE<P> &res, const Polynomial<P> &poly,
+                             const HalfTRGSWFFT<P> &halftrgswfft)
+{
+    alignas(64) DecomposedPolynomial<P> decpoly;
+    Decomposition<P>(decpoly, poly);
+    alignas(64) PolynomialInFD<P> decpolyfft;
+    // __builtin_prefetch(trgswfft[0].data());
+    TwistIFFT<P>(decpolyfft, decpoly[0]);
+    alignas(64) TRLWEInFD<P> restrlwefft;
+    for (int m = 0; m < P::k + 1; m++)
+        MulInFD<P::n>(restrlwefft[m], decpolyfft, halftrgswfft[0][m]);
+    for (int i = 1; i < P::l; i++) {
+        // __builtin_prefetch(trgswfft[i].data());
+        TwistIFFT<P>(decpolyfft, decpoly[i]);
+        for (int m = 0; m < P::k + 1; m++)
+            FMAInFD<P::n>(restrlwefft[m], decpolyfft, halftrgswfft[i][m]);
+    }
+    for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
+}
+
+template <class P>
 void trgswrainttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                                 const TRGSWRAINTT<P> &trgswntt)
 {
@@ -254,6 +275,16 @@ TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
 }
 
 template <class P>
+HalfTRGSWFFT<P> ApplyFFT2halftrgsw(const HalfTRGSW<P> &trgsw)
+{
+    alignas(64) HalfTRGSWFFT<P> halftrgswfft;
+    for (int i = 0; i < P::l; i++)
+        for (int j = 0; j < (P::k + 1); j++)
+            TwistIFFT<P>(halftrgswfft[i][j], trgsw[i][j]);
+    return halftrgswfft;
+}
+
+template <class P>
 TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
 {
     TRGSWNTT<P> trgswntt;
@@ -346,6 +377,45 @@ TRGSW<P> trgswSymEncrypt(const Polynomial<P> &p, const Key<P> &key)
 }
 
 template <class P>
+HalfTRGSW<P> halftrgswSymEncrypt(const Polynomial<P> &p, const double α,
+                         const Key<P> &key)
+{
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
+
+    HalfTRGSW<P> halftrgsw;
+    for (TRLWE<P> &trlwe : halftrgsw) trlwe = trlweSymEncryptZero<P>(α, key);
+    for (int i = 0; i < P::l; i++)
+        for (int j = 0; j < P::n; j++)
+            halftrgsw[i][P::k][j] +=
+                static_cast<typename P::T>(p[j]) * h[i];
+    return halftrgsw;
+}
+
+template <class P>
+HalfTRGSW<P> halftrgswSymEncrypt(const Polynomial<P> &p,  const uint η,
+                         const Key<P> &key)
+{
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
+
+    HalfTRGSW<P> halftrgsw;
+    for (TRLWE<P> &trlwe : halftrgsw) trlwe = trlweSymEncryptZero<P>(η, key);
+    for (int i = 0; i < P::l; i++)
+        for (int j = 0; j < P::n; j++)
+            halftrgsw[i][P::k][j] +=
+                static_cast<typename P::T>(p[j]) * h[i];
+    return halftrgsw;
+}
+
+template <class P>
+HalfTRGSW<P> halftrgswSymEncrypt(const Polynomial<P> &p, const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return halftrgswSymEncrypt<P>(p, P::α, key);
+    else
+        return halftrgswSymEncrypt<P>(p, P::η, key);
+}
+
+template <class P>
 TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const double α,
                                const Key<P> &key)
 {
@@ -368,6 +438,31 @@ TRGSWFFT<P> trgswfftSymEncrypt(const Polynomial<P> &p, const Key<P> &key)
         return trgswfftSymEncrypt<P>(p, P::α, key);
     else
         return trgswfftSymEncrypt<P>(p, P::η, key);
+}
+
+template <class P>
+HalfTRGSWFFT<P> halftrgswfftSymEncrypt(const Polynomial<P> &p, const double α,
+                               const Key<P> &key)
+{
+    HalfTRGSW<P> halftrgsw = halftrgswSymEncrypt<P>(p, α, key);
+    return ApplyFFT2halftrgsw<P>(halftrgsw);
+}
+
+template <class P>
+HalfTRGSWFFT<P> halftrgswfftSymEncrypt(const Polynomial<P> &p, const uint η,
+                               const Key<P> &key)
+{
+    HalfTRGSW<P> halftrgsw = halftrgswSymEncrypt<P>(p, η, key);
+    return ApplyFFT2halftrgsw<P>(halftrgsw);
+}
+
+template <class P>
+HalfTRGSWFFT<P> halftrgswfftSymEncrypt(const Polynomial<P> &p, const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        return halftrgswfftSymEncrypt<P>(p, P::α, key);
+    else
+        return halftrgswfftSymEncrypt<P>(p, P::η, key);
 }
 
 template <class P>

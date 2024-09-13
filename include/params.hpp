@@ -105,7 +105,11 @@ using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 template <class P>
 using TRGSW = std::array<TRLWE<P>, (P::k + 1) * P::l>;
 template <class P>
+using HalfTRGSW = std::array<TRLWE<P>, P::l>;
+template <class P>
 using TRGSWFFT = aligned_array<TRLWEInFD<P>, (P::k + 1) * P::l>;
+template <class P>
+using HalfTRGSWFFT = aligned_array<TRLWEInFD<P>, P::l>;
 template <class P>
 using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
 template <class P>
@@ -157,7 +161,9 @@ using TLWE2TRLWEIKSKey = std::array<
                P::t>,
     P::domainP::n>;
 template <class P>
-using AnnihilateKey = std::array<TRGSWFFT<P>, P::nbit>;
+using EvalAutoKey = std::array<HalfTRGSWFFT<P>, P::k>;
+template <class P>
+using AnnihilateKey = std::array<EvalAutoKey<P>, P::nbit>;
 template <class P>
 using PrivateKeySwitchingKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << (P::basebit - 1))>,

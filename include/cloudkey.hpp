@@ -169,15 +169,22 @@ void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk, const SecretKey& sk)
 }
 
 template <class P>
-void annihilatekeygen(AnnihilateKey<P>& ahk, const Key<P>& key)
+void evalautokeygen(EvalAutoKey<P>& eak, const uint d, const Key<P>& key)
 {
-    for (int i = 0; i < P::nbit; i++) {
+    for(int j = 0; j < P::k; j++) {
         Polynomial<P> autokey;
         std::array<typename P::T, P::n> partkey;
-        for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
-        Automorphism<P>(autokey, partkey, (1 << (P::nbit - i)) + 1);
-        ahk[i] = trgswfftSymEncrypt<P>(autokey, key);
+        for (int k = 0; k < P::n; k++) partkey[k] = key[j * P::n + k];
+        Automorphism<P>(autokey, partkey, d);
+        eak[j] = halftrgswfftSymEncrypt<P>(autokey, key);
     }
+}
+
+template <class P>
+void annihilatekeygen(AnnihilateKey<P>& ahk, const Key<P>& key)
+{
+    for (int i = 0; i < P::nbit; i++)
+        evalautokeygen<P>(ahk[i], (1 << (P::nbit - i)) + 1, key);
 }
 
 template <class P>
