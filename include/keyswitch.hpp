@@ -385,4 +385,38 @@ void TLWE2TRLWEChengsPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe, const An
         for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] += evaledauto[0][j];
     }
 }
+
+template <class P> 
+void PackLWEsLSB(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe, const AnnihilateKey<P> &ahk, const uint l, const uint offset, const uint interval)
+{
+    if(offset >= tlwe.size()) res = {};
+    else if(l==0) InvSampleExtractIndex<P>(res,tlwe[offset],0);
+    else{
+        TRLWE<P> tempeven;
+        PackLWEsLSB<P>(tempeven, tlwe, ahk, l-1, offset, interval*2);
+        TRLWE<P> tempodd;
+        PackLWEsLSB<P>(tempodd, tlwe, ahk, l-1, offset+interval, interval*2);
+        TRLWE<P> tempoddmul;
+        for(int i = 0; i < P::k+1; i++){
+            PolynomialMulByXai<P>(tempoddmul[i], tempodd[i], P::n>>l);
+            for(int j = 0; j < P::n; j++){
+                tempeven[i][j] /= 2;
+                tempoddmul[i][j] /= 2;
+                tempodd[i][j] = tempeven[i][j] - tempoddmul[i][j];
+                // tempodd[i][j] = (tempeven[i][j] - tempoddmul[i][j])/2;
+            }
+        }
+        EvalAuto<P>(res, tempodd, (1<<l)+1, ahk[P::nbit - l]);
+        for(int i = 0; i < P::k+1; i++)
+            for(int j = 0; j < P::n; j++)
+                res[i][j] += tempeven[i][j] + tempoddmul[i][j];
+                // res[i][j] += (tempeven[i][j] + tempoddmul[i][j])/2;
+    }
+}
+
+template <class P> 
+void TLWE2TRLWEPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe, const AnnihilateKey<P> &ahk)
+{
+    PackLWEsLSB<P>(res, tlwe, ahk, P::nbit, 0, 1);
+}
 }  // namespace TFHEpp
