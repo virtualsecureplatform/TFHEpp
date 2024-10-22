@@ -342,4 +342,47 @@ void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
     }
 }
 
+template <class P> 
+void PackLWEs(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe, const AnnihilateKey<P> &ahk, const uint l, const uint offset, const uint interval)
+{
+    if(l==0) InvSampleExtractIndex<P>(res,tlwe[offset],0);
+    else{
+        TRLWE<P> tempeven;
+        PackLWEs<P>(tempeven, tlwe, ahk, l-1, offset, interval*2);
+        TRLWE<P> tempodd;
+        PackLWEs<P>(tempodd, tlwe, ahk, l-1, offset+interval, interval*2);
+        TRLWE<P> tempoddmul;
+        for(int i = 0; i < P::k+1; i++){
+            PolynomialMulByXai<P>(tempoddmul[i], tempodd[i], P::n>>l);
+            for(int j = 0; j < P::n; j++){
+                tempeven[i][j] /= 2;
+                tempoddmul[i][j] /= 2;
+                tempodd[i][j] = tempeven[i][j] - tempoddmul[i][j];
+                // tempodd[i][j] = (tempeven[i][j] - tempoddmul[i][j])/2;
+            }
+        }
+        EvalAuto<P>(res, tempodd, (1<<l)+1, ahk[P::nbit - l]);
+        for(int i = 0; i < P::k+1; i++)
+            for(int j = 0; j < P::n; j++)
+                res[i][j] += tempeven[i][j] + tempoddmul[i][j];
+                // res[i][j] += (tempeven[i][j] + tempoddmul[i][j])/2;
+    }
+}
+
+template <class P> 
+void TLWE2TRLWEChengsPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe, const AnnihilateKey<P> &ahk)
+{
+    uint l = std::bit_width(tlwe.size()) - 1;
+    if(!std::has_single_bit(tlwe.size())){
+        l++;
+        tlwe.resize(1<<l);
+    }
+    PackLWEs<P>(res, tlwe, ahk, l, 0, 1);
+    for (int i = 0; i < P::nbit - l; i++) {
+        TRLWE<P> evaledauto;
+        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] /= 2;
+        EvalAuto<P>(evaledauto, res, (1 << (P::nbit - i)) + 1, ahk[i]);
+        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] += evaledauto[0][j];
+    }
+}
 }  // namespace TFHEpp
