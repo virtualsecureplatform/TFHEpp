@@ -112,15 +112,22 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
     return tlweSymIntDecrypt<P, P::plain_modulus>(c, key);
 }
 
-template <class P>
+template <class P, typename P::T μ>
 std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
                                      const Key<P> &key)
 {
     vector<TLWE<P>> c(p.size());
 #pragma omp parallel for
     for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncrypt<P>(p[i] ? P::μ : -P::μ, key);
+        c[i] = tlweSymEncrypt<P>(p[i] ? μ : -μ, key);
     return c;
+}
+
+template <class P>
+std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
+                                     const Key<P> &key)
+{
+    return bootsSymEncrypt<P, typename P::T>(p, key);
 }
 
 template <class P = lvl1param>
