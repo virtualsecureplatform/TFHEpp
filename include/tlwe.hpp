@@ -112,7 +112,7 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
     return tlweSymIntDecrypt<P, P::plain_modulus>(c, key);
 }
 
-template <class P, typename P::T μ>
+template <class P, std::make_signed_t<typename P::T> μ>
 std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
                                      const Key<P> &key)
 {
@@ -127,7 +127,7 @@ template <class P>
 std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
                                      const Key<P> &key)
 {
-    return bootsSymEncrypt<P, typename P::T>(p, key);
+    return bootsSymEncrypt<P, P::μ>(p, key);
 }
 
 template <class P = lvl1param>
@@ -135,6 +135,13 @@ std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
                                      const SecretKey &sk)
 {
     return bootsSymEncrypt<P>(p, sk.key.get<P>());
+}
+
+template <class P = lvl1param, std::make_signed_t<typename P::T> μ>
+std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
+                                     const SecretKey &sk)
+{
+    return bootsSymEncrypt<P, μ>(p, sk.key.get<P>());
 }
 
 template <class P>
