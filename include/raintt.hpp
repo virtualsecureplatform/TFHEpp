@@ -13,6 +13,11 @@ constexpr T ipow(T num, unsigned int pow)
            : pow == 0                        ? 1
                                              : num * ipow(num, pow - 1);
 }
+#ifdef USE_COMPRESS
+constexpr uint min_wordbits = 27;
+#else
+constexpr uint min_wordbits = 31;
+#endif
 
 #ifdef __clang__
 // Currently _BigInt is only implemented in clang
