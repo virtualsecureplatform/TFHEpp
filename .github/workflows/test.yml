@@ -34,19 +34,19 @@ jobs:
     container:
       image: ubuntu:24.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
     - name: Install libraries
       run: |
         apt-get update
         apt-get upgrade -y
-        apt-get install -y build-essential g++ libomp-dev cmake git ninja-build libfftw3-dev wget curl
+        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build libfftw3-dev wget curl
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y 
         source $HOME/.cargo/env'
         wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB && echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y intel-oneapi-mkl-devel && rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
         rustup default nightly
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - name: build
       run: |
         cmake . -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON
