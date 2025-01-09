@@ -170,7 +170,7 @@ void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
          i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n;
          i++) {
         const typename P::domainP::T aibar =
-            tlwe[i + P::targetP::n] + prec_offset;
+            tlwe[i + P::targetP::k*P::targetP::n] + prec_offset;
         for (int j = 0; j < P::t; j++) {
             const uint32_t aij =
                 (aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
@@ -329,7 +329,7 @@ void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
 
         for (int j = 0; j < P::t; j++) {
             const typename P::domainP::T aij =
-                (aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
+                (aibar >> (std::numeric_limits<typename P::targetP::T>::digits -
                            (j + 1) * P::basebit)) &
                 mask;
 

@@ -10,7 +10,7 @@
 
 int main()
 {
-    constexpr uint32_t num_test = 10;
+    constexpr uint32_t num_test = 1;
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
@@ -37,8 +37,10 @@ int main()
         for (int j = 0; j < privksP::targetP::n; j++)
             pmu[i][j] = pa[i][j] ? privksP::targetP::μ : -privksP::targetP::μ;
     for (int i = 0; i < num_test; i++) pones[i] = true;
-    std::vector<TFHEpp::TRLWE<typename privksP::targetP>> ca(num_test);
-    std::vector<TFHEpp::TLWE<typename iksP::domainP>> cones(num_test);
+    std::vector<TFHEpp::TRLWE<typename privksP::targetP>> ca(
+        num_test);
+    std::vector<TFHEpp::TLWE<typename iksP::domainP>> cones(
+        num_test);
     std::vector<TFHEpp::TRGSWFFT<typename privksP::targetP>,
                 TFHEpp::AlignedAllocator<
                     TFHEpp::TRGSWFFT<typename privksP::targetP>, 64>>

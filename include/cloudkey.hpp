@@ -257,7 +257,7 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk,
                 const Key<typename P::domainP>& domainkey)
 {
     Key<typename P::targetP> subkey;
-    for (int i = 0; i < P::targetP::n; i++) subkey[i] = domainkey[i];
+    for (int i = 0; i < P::targetP::k*P::targetP::n; i++) subkey[i] = domainkey[i];
     for (int i = 0;
          i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++)
         for (int j = 0; j < P::t; j++)
@@ -622,8 +622,9 @@ struct EvalKey {
                            const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
-            subprivksklvl21[key] = std::make_unique_for_overwrite<
-                SubsetPrivateKeySwitchingKey<lvl21param>>();
+            subprivksklvl21[key] =
+                std::unique_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>(new (
+                    std::align_val_t(64)) SubsetPrivateKeySwitchingKey<lvl21param>());
             subprivkskgen<lvl21param>(*subprivksklvl21[key], func, sk);
         }
         else

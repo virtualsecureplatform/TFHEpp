@@ -59,10 +59,14 @@ public:
     INTorus operator*(const INTorus &b) const
     {
         __uint128_t tmp = static_cast<__uint128_t>(this->value) * b.value;
-        uint32_t *tmpa = reinterpret_cast<uint32_t *>(&tmp);
+        const uint64_t lo = static_cast<uint64_t>(tmp);
+        std::array<uint32_t, 4> tmpa;
+        for(int i = 0; i < 4; i++) {
+            tmpa[i] = static_cast<uint32_t>(tmp);
+            tmp >>= 32;
+        }
         uint64_t res = ((static_cast<uint64_t>(tmpa[1]) + tmpa[2]) << 32) +
                        tmpa[0] - tmpa[3] - tmpa[2];
-        uint64_t lo = static_cast<uint64_t>(tmp);
         res -= static_cast<uint32_t>(-((res > lo) && (tmpa[2] == 0)));
         res += static_cast<uint32_t>(-((res < lo) && (tmpa[2] != 0)));
         return INTorus(res);
