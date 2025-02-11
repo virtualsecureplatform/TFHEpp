@@ -174,6 +174,7 @@ namespace FNTpp{
                 IFNT<latersizebit>(std::span{tempa}.subspan(i*latersize).template first<latersize>());
                 MulInvN<latersizebit>(std::span{tempa}.subspan(i*latersize).template first<latersize>());
             }
+            res = {};
             //Former
             for(unsigned int i = 0; i < latersize/2; i++){
                 std::array<int64_t, formersize> temp;
@@ -182,7 +183,18 @@ namespace FNTpp{
                 IFNT<formersizebit>(std::span{temp});
                 MulInvN<formersizebit>(temp);
                 for(unsigned int j = 0; j < formersize; j++)
-                    res[j*(latersize/2) + i] = ModLshift(temp[j],2*K-(j<<(Kbit-formersizebit)));
+                    res[j*(latersize/2) + i] = (res[j*(latersize/2) + i] + ModLshift(temp[j],2*K-(j<<(Kbit-formersizebit))))%P;
+                for(unsigned int j = 0; j < formersize; j++)
+                    temp[j] = tempa[j*latersize + i + latersize/2];
+                IFNT<formersizebit>(std::span{temp});
+                MulInvN<formersizebit>(temp);
+                // if(i != latersize/2 - 1)
+                for(unsigned int j = 0; j < formersize-1; j++)
+                    res[(j+1)*(latersize/2)+i] = (res[(j+1)*(latersize/2)+i] + ModLshift(temp[j],2*K-(j<<(Kbit-formersizebit))))%P;
+                res[i] = (res[i] + P - ModLshift(temp[formersize-1],2*K-((formersize-1)<<(Kbit-formersizebit))))%P;
+                // else
+                // for(unsigned int j = 0; j < formersize; j++)
+                    // res[j*(latersize/2)+i] = (res[j*(latersize/2)+i] + P - ModLshift(temp[j],2*K-(j<<(Kbit-formersizebit))))%P;
             }
         }
     }

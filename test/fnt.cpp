@@ -107,5 +107,32 @@ int main(){
     }
     std::cout << "Multivariable TwistFNT only test Passed" << std::endl;
 
+    std::cout << "Start multivariable TwistFNT Mul test." << std::endl;
+    for(int test = 0; test < num_test; test++){
+        std::array<int64_t, N> a,b;
+        for(int i = 0; i < N; i++) a[i] = Pdist(engine);
+        for(int i = 0; i < N; i++) b[i] = Pdist(engine);
+        std::array<int64_t, N> res,naieve;
+        naieve = {};
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j <= i; j++)
+                naieve[i] = (naieve[i] + static_cast<__int128_t>(a[j]) * b[i - j]) % FNTpp::P;
+            for (int j = i + 1; j < N; j++)
+                naieve[i] = (naieve[i] - static_cast<__int128_t>(a[j]) *
+                             b[N + i - j]) % FNTpp::P;
+        }
+        for(int i = 0; i < N; i++) naieve[i] = (naieve[i]+FNTpp::P)%FNTpp::P;
+        
+        std::array<int64_t, NinFNT> fnta,fntb;
+        FNTpp::TwistFNT<Nbit>(fnta,a);
+        FNTpp::TwistFNT<Nbit>(fntb,b);
+        for(int i = 0; i < NinFNT; i++) fnta[i] = (static_cast<__int128_t>(fnta[i]) * fntb[i]) % FNTpp::P;
+        FNTpp::TwistIFNT<Nbit>(res,fnta);
+        for(int i = 0; i < N; i++)
+            if(naieve[i] != res[i])   std::cout << "i: "<< i << " naieve: " << naieve[i] << " res: " << res[i] << std::endl;
+        for(int i = 0; i < N; i++) assert(naieve[i] == res[i]);
+    }
+    std::cout << "Multivariable TwistFNT Mul test Passed" << std::endl;
+
     return 0;
 }
