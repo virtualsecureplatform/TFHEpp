@@ -194,7 +194,7 @@ int main()
              (1ULL << (raintt::wordbits - 1 - 1))) >>
             (raintt::wordbits - 1);
         assert(std::abs(static_cast<int>(a - c)) <=
-                ((1U << raintt::min_wordbits)/raintt::P)+1);
+               ((1U << raintt::min_wordbits) / raintt::P) + 1);
     }
     std::cout << "Modswitch Passed" << std::endl;
     for (int test = 0; test < num_test; test++) {
@@ -215,7 +215,7 @@ int main()
         // 4)std::cout<<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             assert(std::abs(static_cast<int>(res[i] - a[i])) <=
-                ((1U << raintt::min_wordbits)/raintt::P)+1);
+                   ((1U << raintt::min_wordbits) / raintt::P) + 1);
     }
     std::cout << "NTT with modswitch Passed" << std::endl;
 

@@ -164,7 +164,7 @@ void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk, const SecretKey& sk)
 template <class P>
 void evalautokeygen(EvalAutoKey<P>& eak, const uint d, const Key<P>& key)
 {
-    for(int j = 0; j < P::k; j++) {
+    for (int j = 0; j < P::k; j++) {
         Polynomial<P> autokey;
         std::array<typename P::T, P::n> partkey;
         for (int k = 0; k < P::n; k++) partkey[k] = key[j * P::n + k];
@@ -250,7 +250,8 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk,
                 const Key<typename P::domainP>& domainkey)
 {
     Key<typename P::targetP> subkey;
-    for (int i = 0; i < P::targetP::k*P::targetP::n; i++) subkey[i] = domainkey[i];
+    for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
+        subkey[i] = domainkey[i];
     for (int i = 0;
          i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++)
         for (int j = 0; j < P::t; j++)
@@ -331,4 +332,4 @@ relinKeyFFT<P> relinKeyFFTgen(const Key<P>& key)
             TwistIFFT<P>(relinkeyfft[i][j], relinkey[i][j]);
     return relinkeyfft;
 }
-}
+}  // namespace TFHEpp

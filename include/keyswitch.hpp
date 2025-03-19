@@ -170,7 +170,7 @@ void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
          i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n;
          i++) {
         const typename P::domainP::T aibar =
-            tlwe[i + P::targetP::k*P::targetP::n] + prec_offset;
+            tlwe[i + P::targetP::k * P::targetP::n] + prec_offset;
         for (int j = 0; j < P::t; j++) {
             const uint32_t aij =
                 (aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
@@ -228,14 +228,13 @@ void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
     res = {};
     Automorphism<P>(res[P::k], trlwe[P::k], d);
 
-    for(int i = 0; i < P::k; i++){
+    for (int i = 0; i < P::k; i++) {
         Polynomial<P> temppoly;
         TRLWE<P> temptrlwe;
         Automorphism<P>(temppoly, trlwe[i], d);
         halftrgswfftExternalProduct<P>(temptrlwe, temppoly, autokey[i]);
-        for(int j = 0; j < P::k+1; j++)
-            for (int k = 0; k < P::n; k++)
-                res[j][k] -= temptrlwe[j][k];
+        for (int j = 0; j < P::k + 1; j++)
+            for (int k = 0; k < P::n; k++) res[j][k] -= temptrlwe[j][k];
     }
 }
 
@@ -246,11 +245,12 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
                             const AnnihilateKey<P> &ahk)
 {
     res = trlwe;
-    for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] /= P::n;
+    for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] /= P::n;
     for (int i = 0; i < P::nbit; i++) {
         TRLWE<P> evaledauto;
         EvalAuto<P>(evaledauto, res, (1 << (P::nbit - i)) + 1, ahk[i]);
-        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] += evaledauto[0][j];
+        for (int j = 0; j < (P::k + 1) * P::n; j++)
+            res[0][j] += evaledauto[0][j];
     }
 }
 
@@ -266,14 +266,14 @@ void AnnihilatePrivateKeySwitching(
         TRLWE<P> evaledauto;
         EvalAuto<P>(evaledauto, res[num_func - 1], (1 << (P::nbit - i)) + 1,
                     ahk[i]);
-        for (int j = 0; j < (P::k+1) * P::n; j++)
+        for (int j = 0; j < (P::k + 1) * P::n; j++)
             res[num_func - 1][0][j] += evaledauto[0][j];
     }
     for (int i = 0; i < num_func; i++) {
         TRLWE<P> evaledauto;
         EvalAuto<P>(evaledauto, res[num_func - 1], (1 << (P::nbit - i)) + 1,
                     privks[i]);
-        for (int j = 0; j < (P::k+1) * P::n; j++)
+        for (int j = 0; j < (P::k + 1) * P::n; j++)
             res[i][0][j] += res[num_func - 1][0][j] + evaledauto[0][j];
     }
 }
@@ -344,80 +344,91 @@ void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
     }
 }
 
-template <class P> 
-void PackLWEs(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe, const AnnihilateKey<P> &ahk, const uint l, const uint offset, const uint interval)
+template <class P>
+void PackLWEs(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe,
+              const AnnihilateKey<P> &ahk, const uint l, const uint offset,
+              const uint interval)
 {
-    if(l==0) InvSampleExtractIndex<P>(res,tlwe[offset],0);
-    else{
+    if (l == 0)
+        InvSampleExtractIndex<P>(res, tlwe[offset], 0);
+    else {
         TRLWE<P> tempeven;
-        PackLWEs<P>(tempeven, tlwe, ahk, l-1, offset, interval*2);
+        PackLWEs<P>(tempeven, tlwe, ahk, l - 1, offset, interval * 2);
         TRLWE<P> tempodd;
-        PackLWEs<P>(tempodd, tlwe, ahk, l-1, offset+interval, interval*2);
+        PackLWEs<P>(tempodd, tlwe, ahk, l - 1, offset + interval, interval * 2);
         TRLWE<P> tempoddmul;
-        for(int i = 0; i < P::k+1; i++){
-            PolynomialMulByXai<P>(tempoddmul[i], tempodd[i], P::n>>l);
-            for(int j = 0; j < P::n; j++){
+        for (int i = 0; i < P::k + 1; i++) {
+            PolynomialMulByXai<P>(tempoddmul[i], tempodd[i], P::n >> l);
+            for (int j = 0; j < P::n; j++) {
                 tempeven[i][j] /= 2;
                 tempoddmul[i][j] /= 2;
                 tempodd[i][j] = tempeven[i][j] - tempoddmul[i][j];
                 // tempodd[i][j] = (tempeven[i][j] - tempoddmul[i][j])/2;
             }
         }
-        EvalAuto<P>(res, tempodd, (1<<l)+1, ahk[P::nbit - l]);
-        for(int i = 0; i < P::k+1; i++)
-            for(int j = 0; j < P::n; j++)
+        EvalAuto<P>(res, tempodd, (1 << l) + 1, ahk[P::nbit - l]);
+        for (int i = 0; i < P::k + 1; i++)
+            for (int j = 0; j < P::n; j++)
                 res[i][j] += tempeven[i][j] + tempoddmul[i][j];
-                // res[i][j] += (tempeven[i][j] + tempoddmul[i][j])/2;
+        // res[i][j] += (tempeven[i][j] + tempoddmul[i][j])/2;
     }
 }
 
-template <class P> 
-void TLWE2TRLWEChengsPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe, const AnnihilateKey<P> &ahk)
+template <class P>
+void TLWE2TRLWEChengsPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe,
+                             const AnnihilateKey<P> &ahk)
 {
     uint l = std::bit_width(tlwe.size()) - 1;
-    if(!std::has_single_bit(tlwe.size())){
+    if (!std::has_single_bit(tlwe.size())) {
         l++;
-        tlwe.resize(1<<l);
+        tlwe.resize(1 << l);
     }
     PackLWEs<P>(res, tlwe, ahk, l, 0, 1);
     for (int i = 0; i < P::nbit - l; i++) {
         TRLWE<P> evaledauto;
-        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] /= 2;
+        for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] /= 2;
         EvalAuto<P>(evaledauto, res, (1 << (P::nbit - i)) + 1, ahk[i]);
-        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] += evaledauto[0][j];
+        for (int j = 0; j < (P::k + 1) * P::n; j++)
+            res[0][j] += evaledauto[0][j];
     }
 }
 
-template <class P> 
-void PackLWEsLSB(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe, const AnnihilateKey<P> &ahk, const uint l, const uint offset, const uint interval)
+template <class P>
+void PackLWEsLSB(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe,
+                 const AnnihilateKey<P> &ahk, const uint l, const uint offset,
+                 const uint interval)
 {
-    if(offset >= tlwe.size()) res = {};
-    else if(l==0) InvSampleExtractIndex<P>(res,tlwe[offset],0);
-    else{
+    if (offset >= tlwe.size())
+        res = {};
+    else if (l == 0)
+        InvSampleExtractIndex<P>(res, tlwe[offset], 0);
+    else {
         TRLWE<P> tempeven;
-        PackLWEsLSB<P>(tempeven, tlwe, ahk, l-1, offset, interval*2);
+        PackLWEsLSB<P>(tempeven, tlwe, ahk, l - 1, offset, interval * 2);
         TRLWE<P> tempodd;
-        PackLWEsLSB<P>(tempodd, tlwe, ahk, l-1, offset+interval, interval*2);
+        PackLWEsLSB<P>(tempodd, tlwe, ahk, l - 1, offset + interval,
+                       interval * 2);
         TRLWE<P> tempoddmul;
-        for(int i = 0; i < P::k+1; i++){
-            PolynomialMulByXai<P>(tempoddmul[i], tempodd[i], P::n>>l);
-            for(int j = 0; j < P::n; j++){
+        for (int i = 0; i < P::k + 1; i++) {
+            PolynomialMulByXai<P>(tempoddmul[i], tempodd[i], P::n >> l);
+            for (int j = 0; j < P::n; j++) {
                 tempeven[i][j] /= 2;
                 tempoddmul[i][j] /= 2;
                 tempodd[i][j] = tempeven[i][j] - tempoddmul[i][j];
                 // tempodd[i][j] = (tempeven[i][j] - tempoddmul[i][j])/2;
             }
         }
-        EvalAuto<P>(res, tempodd, (1<<l)+1, ahk[P::nbit - l]);
-        for(int i = 0; i < P::k+1; i++)
-            for(int j = 0; j < P::n; j++)
+        EvalAuto<P>(res, tempodd, (1 << l) + 1, ahk[P::nbit - l]);
+        for (int i = 0; i < P::k + 1; i++)
+            for (int j = 0; j < P::n; j++)
                 res[i][j] += tempeven[i][j] + tempoddmul[i][j];
-                // res[i][j] += (tempeven[i][j] + tempoddmul[i][j])/2;
+        // res[i][j] += (tempeven[i][j] + tempoddmul[i][j])/2;
     }
 }
 
-template <class P> 
-void TLWE2TRLWEPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe, const AnnihilateKey<P> &ahk)
+template <class P>
+void TLWE2TRLWEPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe,
+                       const AnnihilateKey<P> &ahk)
 {
     PackLWEsLSB<P>(res, tlwe, ahk, P::nbit, 0, 1);
 }

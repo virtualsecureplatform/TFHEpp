@@ -40,9 +40,10 @@ int main()
         num_test);
     alignas(64) std::vector<TFHEpp::TLWE<typename iksP::domainP>> cones(
         num_test);
-    std::vector<TFHEpp::TRGSWFFT<typename privksP::targetP>, TFHEpp::AlignedAllocator<
-                    TFHEpp::TRGSWFFT<typename privksP::targetP>, 64>> bootedTGSW(
-        num_test);
+    std::vector<TFHEpp::TRGSWFFT<typename privksP::targetP>,
+                TFHEpp::AlignedAllocator<
+                    TFHEpp::TRGSWFFT<typename privksP::targetP>, 64>>
+        bootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
         ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(

@@ -300,8 +300,9 @@ struct EvalKey {
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
             subprivksklvl21[key] =
-                std::unique_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>(new (
-                    std::align_val_t(64)) SubsetPrivateKeySwitchingKey<lvl21param>());
+                std::unique_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>(
+                    new (std::align_val_t(64))
+                        SubsetPrivateKeySwitchingKey<lvl21param>());
             subprivkskgen<lvl21param>(*subprivksklvl21[key], func, sk);
         }
         else
@@ -339,11 +340,13 @@ struct EvalKey {
     void emplaceahk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl1param>) {
-            ahklvl1 = std::make_unique_for_overwrite<AnnihilateKey<lvl1param>>();
+            ahklvl1 =
+                std::make_unique_for_overwrite<AnnihilateKey<lvl1param>>();
             annihilatekeygen<lvl1param>(*ahklvl1, sk);
         }
         else if constexpr (std::is_same_v<P, lvl2param>) {
-            ahklvl2 = std::make_unique_for_overwrite<AnnihilateKey<lvl2param>>();
+            ahklvl2 =
+                std::make_unique_for_overwrite<AnnihilateKey<lvl2param>>();
             annihilatekeygen<lvl2param>(*ahklvl2, sk);
         }
         else
@@ -354,23 +357,25 @@ struct EvalKey {
     void emplacecbsk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl1param>) {
-            cbsklvl1 = std::make_unique_for_overwrite<CBswitchingKey<lvl1param>>();
-            for (int i = 0; i < lvl1param::k; i++){
+            cbsklvl1 =
+                std::make_unique_for_overwrite<CBswitchingKey<lvl1param>>();
+            for (int i = 0; i < lvl1param::k; i++) {
                 Polynomial<P> partkey;
                 for (int j = 0; j < P::n; j++)
-                    partkey[j] =
-                        -sk.key.get<P>()[i * P::n + j];
-                (*cbsklvl1)[i] = trgswfftSymEncrypt<P>(partkey,sk.key.get<P>());
+                    partkey[j] = -sk.key.get<P>()[i * P::n + j];
+                (*cbsklvl1)[i] =
+                    trgswfftSymEncrypt<P>(partkey, sk.key.get<P>());
             }
         }
         else if constexpr (std::is_same_v<P, lvl2param>) {
-            cbsklvl2 = std::make_unique_for_overwrite<CBswitchingKey<lvl2param>>();
-            for (int i = 0; i < lvl2param::k; i++){
+            cbsklvl2 =
+                std::make_unique_for_overwrite<CBswitchingKey<lvl2param>>();
+            for (int i = 0; i < lvl2param::k; i++) {
                 Polynomial<P> partkey;
                 for (int j = 0; j < P::n; j++)
-                    partkey[j] =
-                        -sk.key.get<P>()[i * P::n + j];
-                (*cbsklvl2)[i] = trgswfftSymEncrypt<P>(partkey,sk.key.get<P>());
+                    partkey[j] = -sk.key.get<P>()[i * P::n + j];
+                (*cbsklvl2)[i] =
+                    trgswfftSymEncrypt<P>(partkey, sk.key.get<P>());
             }
         }
         else

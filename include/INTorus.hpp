@@ -61,7 +61,7 @@ public:
         __uint128_t tmp = static_cast<__uint128_t>(this->value) * b.value;
         const uint64_t lo = static_cast<uint64_t>(tmp);
         std::array<uint32_t, 4> tmpa;
-        for(int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             tmpa[i] = static_cast<uint32_t>(tmp);
             tmp >>= 32;
         }

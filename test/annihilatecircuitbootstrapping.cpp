@@ -26,8 +26,8 @@ int main()
     ek.emplacecbsk<typename brP::targetP>(*sk);
 
     std::vector<std::array<uint8_t, brP::targetP::n>> pa(num_test);
-    std::vector<std::array<typename brP::targetP::T, brP::targetP::n>>
-        pmu(num_test);
+    std::vector<std::array<typename brP::targetP::T, brP::targetP::n>> pmu(
+        num_test);
     std::vector<uint8_t> pones(num_test);
     std::array<bool, brP::targetP::n> pres;
     for (std::array<uint8_t, brP::targetP::n> &i : pa)
@@ -36,17 +36,17 @@ int main()
         for (int j = 0; j < brP::targetP::n; j++)
             pmu[i][j] = pa[i][j] ? brP::targetP::μ : -brP::targetP::μ;
     for (int i = 0; i < num_test; i++) pones[i] = true;
-    alignas(64) std::vector<TFHEpp::TRLWE<typename brP::targetP>> ca(
-        num_test);
+    alignas(64) std::vector<TFHEpp::TRLWE<typename brP::targetP>> ca(num_test);
     alignas(64) std::vector<TFHEpp::TLWE<typename iksP::domainP>> cones(
         num_test);
-    std::vector<TFHEpp::TRGSWFFT<typename brP::targetP>, TFHEpp::AlignedAllocator<
-                    TFHEpp::TRGSWFFT<typename brP::targetP>, 64>> bootedTGSW(
-        num_test);
+    std::vector<
+        TFHEpp::TRGSWFFT<typename brP::targetP>,
+        TFHEpp::AlignedAllocator<TFHEpp::TRGSWFFT<typename brP::targetP>, 64>>
+        bootedTGSW(num_test);
 
-    for (int i = 0; i < num_test; i++){
+    for (int i = 0; i < num_test; i++) {
         // ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
-            // pmu[i], sk->key.get<typename privksP::targetP>());
+        // pmu[i], sk->key.get<typename privksP::targetP>());
         ca[i] = {};
         ca[i][brP::targetP::k] = pmu[i];
     }
@@ -59,7 +59,7 @@ int main()
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         TFHEpp::AnnihilateCircuitBootstrappingFFT<iksP, brP>(bootedTGSW[test],
-                                                            cones[test], ek);
+                                                             cones[test], ek);
     }
     end = std::chrono::system_clock::now();
 #ifdef USE_PERF
