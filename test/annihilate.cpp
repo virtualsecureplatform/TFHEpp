@@ -12,49 +12,54 @@ int main()
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
 
+    using P = TFHEpp::lvl2param;
+
     std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
     std::vector<uint8_t> pa(num_test);
     for (int i = 0; i < num_test; i++) pa[i] = binary(engine) > 0;
-    std::vector<TFHEpp::TLWE<TFHEpp::lvl1param>> ca(num_test);
-    std::vector<std::array<uint8_t, TFHEpp::lvl1param::n>> pin(num_test);
+    std::vector<TFHEpp::TLWE<P>> ca(num_test);
+    std::vector<std::array<uint8_t, P::n>> pin(num_test);
 
-    std::vector<std::array<typename TFHEpp::lvl1param::T, TFHEpp::lvl1param::n>>
+    std::vector<std::array<typename P::T, P::n>>
         pmu(num_test);
 
-    for (std::array<uint8_t, TFHEpp::lvl1param::n> &i : pin)
+    for (std::array<uint8_t, P::n> &i : pin)
         for (uint8_t &p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
-        for (int j = 0; j < TFHEpp::lvl1param::n; j++)
+        for (int j = 0; j < P::n; j++)
             pmu[i][j] =
                 (pin[i][j] > 0)
-                    ? (TFHEpp::lvl1param::μ)
-                    : -(TFHEpp::lvl1param::μ);
+                    ? (P::μ)
+                    : -(P::μ);
 
-    std::vector<TFHEpp::TRLWE<TFHEpp::lvl1param>> cin(num_test);
+    std::vector<TFHEpp::TRLWE<P>> cin(num_test);
     for (int i = 0; i < num_test; i++)
         cin[i] =
-            TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(pmu[i], sk->key.lvl1);
+            TFHEpp::trlweSymEncrypt<P>(pmu[i], sk->key.get<P>());
 
-    std::vector<TFHEpp::TRLWE<TFHEpp::lvl1param>> cres(num_test);
+    std::vector<TFHEpp::TRLWE<P>> cres(num_test);
 
-    std::unique_ptr<TFHEpp::AnnihilateKey<TFHEpp::lvl1param>> ahk(
-        new TFHEpp::AnnihilateKey<TFHEpp::lvl1param>());
-    TFHEpp::annihilatekeygen<TFHEpp::lvl1param>(*ahk, *sk);
+    std::unique_ptr<TFHEpp::AnnihilateKey<P>> ahk(
+        new TFHEpp::AnnihilateKey<P>());
+    TFHEpp::annihilatekeygen<P>(*ahk, *sk);
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::AnnihilateKeySwitching<TFHEpp::lvl1param>(cres[test], cin[test],
+        TFHEpp::AnnihilateKeySwitching<P>(cres[test], cin[test],
                                                           *ahk);
     }
 
     end = std::chrono::system_clock::now();
-    std::vector<std::array<bool, TFHEpp::lvl1param::n>> pres(num_test);
+    std::vector<std::array<bool, P::n>> pres(num_test);
     for (int i = 0; i < num_test; i++)
         pres[i] =
-            TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(cres[i], sk->key.lvl1);
+            TFHEpp::trlweSymDecrypt<P>(cres[i], sk->key.get<P>());
     for (int i = 0; i < num_test; i++) assert(pres[i][0] == (pin[i][0] > 0));
+    TFHEpp::Polynomial<P> phase = TFHEpp::trlwePhase<P>(cres[0], sk->key.get<P>());
+    for (int i = 0; i < P::n; i++) std::cout << static_cast<int64_t>(phase[i]) << ":";
+    std::cout << std::endl;
     std::cout << "Passed" << std::endl;
     double elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)

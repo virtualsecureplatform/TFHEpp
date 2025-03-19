@@ -275,6 +275,14 @@ TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
 }
 
 template <class P>
+void ApplyFFT2trgsw(TRGSWFFT<P>& trgswfft, const TRGSW<P> &trgsw)
+{
+    for (int i = 0; i < (P::k + 1) * P::l; i++)
+        for (int j = 0; j < (P::k + 1); j++)
+            TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
+}
+
+template <class P>
 HalfTRGSWFFT<P> ApplyFFT2halftrgsw(const HalfTRGSW<P> &trgsw)
 {
     alignas(64) HalfTRGSWFFT<P> halftrgswfft;

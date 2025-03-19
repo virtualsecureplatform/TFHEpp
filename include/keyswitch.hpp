@@ -239,14 +239,16 @@ void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
     }
 }
 
+// https://eprint.iacr.org/2024/1318
+// TODO: They says we should divide by N first, not by 2 for each step. Why?
 template <class P>
 void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
                             const AnnihilateKey<P> &ahk)
 {
     res = trlwe;
+    for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] /= P::n;
     for (int i = 0; i < P::nbit; i++) {
         TRLWE<P> evaledauto;
-        for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] /= 2;
         EvalAuto<P>(evaledauto, res, (1 << (P::nbit - i)) + 1, ahk[i]);
         for (int j = 0; j < (P::k+1) * P::n; j++) res[0][j] += evaledauto[0][j];
     }

@@ -175,6 +175,8 @@ using SubsetPrivateKeySwitchingKey = std::array<
                P::t>,
     P::targetP::k * P::targetP::n + 1>;
 template <class P>
+using CBswitchingKey = aligned_array<TRGSWFFT<P>, P::k>;
+template <class P>
 using relinKey = std::array<TRLWE<P>, P::l>;
 template <class P>
 using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
