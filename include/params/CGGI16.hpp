@@ -44,6 +44,7 @@ struct lvl1param {
     static constexpr std::uint32_t nbit = 10;
     static constexpr std::uint32_t n = 1 << nbit;
     static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 2;
     static constexpr std::uint32_t l = 2;
     static constexpr std::uint32_t Bgbit = 10;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
@@ -64,6 +65,7 @@ struct lvl2param {
     static const std::uint32_t nbit = 11;
     static constexpr std::uint32_t n = 1 << nbit;
     static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 4;
     static constexpr std::uint32_t l = 4;
     static constexpr std::uint32_t Bgbit = 9;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
@@ -84,6 +86,7 @@ struct lvl3param {
     // ease of polynomial multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension
     static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 4;
     static constexpr std::uint32_t l = 4;
     static constexpr std::uint32_t Bgbit = 9;
     static constexpr std::uint32_t Bg = 1 << Bgbit;

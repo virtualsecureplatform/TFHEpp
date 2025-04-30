@@ -88,9 +88,15 @@ using PolynomialRAINTT = std::array<raintt::DoubleSWord, P::n>;
 template <class P>
 using DecomposedPolynomial = std::array<Polynomial<P>, P::l>;
 template <class P>
+using DecomposedNoncePolynomial = std::array<Polynomial<P>, P::lₐ>;
+template <class P>
 using DecomposedPolynomialNTT = std::array<PolynomialNTT<P>, P::l>;
 template <class P>
+using DecomposedNoncePolynomialNTT = std::array<PolynomialNTT<P>, P::lₐ>;
+template <class P>
 using DecomposedPolynomialRAINTT = std::array<PolynomialRAINTT<P>, P::l>;
+template <class P>
+using DecomposedNoncePolynomialRAINTT = std::array<PolynomialRAINTT<P>, P::lₐ>;
 
 template <class P>
 using TRLWE = std::array<Polynomial<P>, P::k + 1>;
@@ -104,17 +110,17 @@ template <class P>
 using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 
 template <class P>
-using TRGSW = std::array<TRLWE<P>, (P::k + 1) * P::l>;
+using TRGSW = std::array<TRLWE<P>, P::k* P::lₐ+P::l>;
 template <class P>
 using HalfTRGSW = std::array<TRLWE<P>, P::l>;
 template <class P>
-using TRGSWFFT = aligned_array<TRLWEInFD<P>, (P::k + 1) * P::l>;
+using TRGSWFFT = aligned_array<TRLWEInFD<P>, P::k* P::lₐ+P::l>;
 template <class P>
 using HalfTRGSWFFT = aligned_array<TRLWEInFD<P>, P::l>;
 template <class P>
-using TRGSWNTT = std::array<TRLWENTT<P>, (P::k + 1) * P::l>;
+using TRGSWNTT = std::array<TRLWENTT<P>, P::k* P::lₐ+P::l>;
 template <class P>
-using TRGSWRAINTT = std::array<TRLWERAINTT<P>, (P::k + 1) * P::l>;
+using TRGSWRAINTT = std::array<TRLWERAINTT<P>, P::k* P::lₐ+P::l>;
 
 #ifdef USE_KEY_BUNDLE
 template <class P>

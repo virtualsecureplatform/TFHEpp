@@ -273,18 +273,13 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk, const SecretKey& sk)
 template <class P>
 relinKey<P> relinKeygen(const Key<P>& key)
 {
-    constexpr std::array<typename P::T, P::l> h = hgen<P>();
-
     Polynomial<P> keysquare;
     std::array<typename P::T, P::n> partkey;
     for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
     PolyMulNaive<P>(keysquare, partkey, partkey);
     relinKey<P> relinkey;
     for (TRLWE<P>& ctxt : relinkey) ctxt = trlweSymEncryptZero<P>(key);
-    for (int i = 0; i < P::l; i++)
-        for (int j = 0; j < P::n; j++)
-            relinkey[i][1][j] +=
-                static_cast<typename P::T>(keysquare[j]) * h[i];
+    halftrgswhadd<P>(relinkey, keysquare);
     return relinkey;
 }
 

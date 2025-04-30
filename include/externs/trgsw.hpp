@@ -4,8 +4,13 @@
 namespace TFHEpp{
 #define INST(P)                                                       \
     extern template void Decomposition<P>(                         \
-        DecomposedPolynomial<P> & decpoly, const Polynomial<P> &poly, \
-        typename P::T randbits)
+        DecomposedPolynomial<P> & decpoly, const Polynomial<P> &poly)
+TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
+#undef INST
+
+#define INST(P)                                                       \
+    extern template void NonceDecomposition<P>(                         \
+        DecomposedNoncePolynomial<P> & decpoly, const Polynomial<P> &poly)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

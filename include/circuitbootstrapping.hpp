@@ -230,9 +230,6 @@ void CircuitBootstrappingFFTwithInv(
     TRGSWFFT<typename privksP::targetP> &invtrgswfft,
     const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 {
-    constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
-        hgen<typename privksP::targetP>();
-
     alignas(64) TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<iksP, bkP, privksP>(trgsw, tlwe, ek);
     for (int i = 0; i < (privksP::targetP::k + 1) * privksP::targetP::l; i++)
@@ -240,10 +237,7 @@ void CircuitBootstrappingFFTwithInv(
             TwistIFFT<typename privksP::targetP>(trgswfft[i][j], trgsw[i][j]);
             for (int k = 0; k < privksP::targetP::n; k++) trgsw[i][j][k] *= -1;
         }
-    for (int i = 0; i < privksP::targetP::l; i++) {
-        trgsw[i][0][0] += h[i];
-        trgsw[i + privksP::targetP::l][1][0] += h[i];
-    }
+    trgswhoneadd<typename privksP::targetP>(trgsw);
     for (int i = 0; i < (privksP::targetP::k + 1) * privksP::targetP::l; i++)
         for (int j = 0; j < privksP::targetP::k + 1; j++)
             TwistIFFT<typename privksP::targetP>(invtrgswfft[i][j],
