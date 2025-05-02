@@ -102,7 +102,7 @@ struct lvl3param {
     static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -47);  // fresh noise
+    static const inline double α = std::pow(2.0, -51);  // fresh noise
     using T = uint64_t;                                 // Torus representation
     static constexpr T μ = 1ULL << 61;
     static constexpr uint32_t plain_modulusbit = 31;
