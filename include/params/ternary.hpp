@@ -50,7 +50,9 @@ struct lvl1param {
     static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t lₐ = 3;
     static constexpr std::uint32_t l = 3;
+    static constexpr std::uint32_t Bgₐbit = 6;
     static constexpr std::uint32_t Bgbit = 6;
+    static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
@@ -72,7 +74,9 @@ struct lvl2param {
     static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t lₐ = 4;
     static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgₐbit = 9;
     static constexpr std::uint32_t Bgbit = 9;
+    static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
@@ -92,7 +96,9 @@ struct lvl3param {
     static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t lₐ = 4;
     static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgₐbit = 9;
     static constexpr std::uint32_t Bgbit = 9;
+    static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;

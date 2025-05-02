@@ -88,9 +88,9 @@ constexpr typename P::T nonceoffsetgen()
 {
     typename P::T offset = 0;
     for (int i = 1; i <= P::lₐ; i++)
-        offset += P::Bg / 2 *
+        offset += P::Bgₐ / 2 *
                   (1ULL << (std::numeric_limits<typename P::T>::digits -
-                            i * P::Bgbit));
+                            i * P::Bgₐbit));
     return offset;
 }
 
@@ -100,17 +100,17 @@ inline void NonceDecomposition(DecomposedNoncePolynomial<P> &decpoly,
 {
     constexpr typename P::T offset = nonceoffsetgen<P>();
     constexpr typename P::T roundoffset =
-        1ULL << (std::numeric_limits<typename P::T>::digits - P::lₐ * P::Bgbit -
+        1ULL << (std::numeric_limits<typename P::T>::digits - P::lₐ * P::Bgₐbit -
                  1);
     constexpr typename P::T mask =
-        static_cast<typename P::T>((1ULL << P::Bgbit) - 1);
-    constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
+        static_cast<typename P::T>((1ULL << P::Bgₐbit) - 1);
+    constexpr typename P::T halfBg = (1ULL << (P::Bgₐbit - 1));
 
     for (int i = 0; i < P::n; i++) {
         for (int l = 0; l < P::lₐ; l++)
             decpoly[l][i] = (((poly[i] + offset + roundoffset) >>
                               (std::numeric_limits<typename P::T>::digits -
-                               (l + 1) * P::Bgbit)) &
+                               (l + 1) * P::Bgₐbit)) &
                              mask) -
                             halfBg;
     }
@@ -422,27 +422,38 @@ TRGSWNTT<P> TRGSW2NTT(const TRGSW<P> &trgsw)
 }
 
 template <class P>
-constexpr std::array<typename P::T, P::lₐ> hgen()
+constexpr std::array<typename P::T, P::l> hgen()
 {
-    // If the parameter is selected by resoble way, this is reasonable assumption
-    static_assert(
-        P::l <= P::lₐ,
-        "Since lₐ is more noise sensitive, lₐ should be larger than or equal to l");
-    std::array<typename P::T, P::lₐ> h{};
+    std::array<typename P::T, P::l> h{};
     if constexpr (hasq<P>)
         for (int i = 0; i < P::lₐ; i++)
             h[i] = (P::q + (1ULL << ((i + 1) * P::Bgbit - 1))) >>
                    ((i + 1) * P::Bgbit);
     else
-        for (int i = 0; i < P::lₐ; i++)
+        for (int i = 0; i < P::l; i++)
             h[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
                             (i + 1) * P::Bgbit);
     return h;
 }
 
 template <class P>
+constexpr std::array<typename P::T, P::lₐ> noncehgen()
+{
+    std::array<typename P::T, P::lₐ> h{};
+    if constexpr (hasq<P>)
+        for (int i = 0; i < P::lₐ; i++)
+            h[i] = (P::q + (1ULL << ((i + 1) * P::Bgₐbit - 1))) >>
+                   ((i + 1) * P::Bgₐbit);
+    else
+        for (int i = 0; i < P::lₐ; i++)
+            h[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
+                            (i + 1) * P::Bgₐbit);
+    return h;
+}
+
+template <class P>
 inline void halftrgswhadd(HalfTRGSW<P>& halftrgsw, const Polynomial<P> &p){
-    constexpr std::array<typename P::T, P::lₐ> h = hgen<P>();
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
     for (int i = 0; i < P::l; i++) {
         for (int j = 0; j < P::n; j++) {
             halftrgsw[i][P::k][j] +=
@@ -453,15 +464,16 @@ inline void halftrgswhadd(HalfTRGSW<P>& halftrgsw, const Polynomial<P> &p){
 
 template <class P>
 inline void trgswhadd(TRGSW<P>& trgsw, const Polynomial<P> &p){
-    constexpr std::array<typename P::T, P::lₐ> h = hgen<P>();
+    constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
     for (int i = 0; i < P::lₐ; i++) {
         for (int k = 0; k < P::k; k++) {
             for (int j = 0; j < P::n; j++) {
                 trgsw[i + k * P::lₐ][k][j] +=
-                    static_cast<typename P::T>(p[j]) * h[i];
+                    static_cast<typename P::T>(p[j]) * nonceh[i];
             }
         }
     }
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
     for (int i = 0; i < P::l; i++) {
         for (int j = 0; j < P::n; j++) {
             trgsw[i + P::k * P::lₐ][P::k][j] +=
@@ -472,11 +484,12 @@ inline void trgswhadd(TRGSW<P>& trgsw, const Polynomial<P> &p){
 
 template <class P>
 inline void trgswhoneadd(TRGSW<P>& trgsw){
-    constexpr std::array<typename P::T, P::lₐ> h = hgen<P>();
+    constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
     for (int i = 0; i < P::lₐ; i++)
         for (int k = 0; k < P::k; k++)
-            trgsw[i + k * P::lₐ][k][0] += h[i];
+            trgsw[i + k * P::lₐ][k][0] += nonceh[i];
     
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
     for (int i = 0; i < P::l; i++) 
             trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
 }
@@ -515,7 +528,7 @@ template <class P>
 HalfTRGSW<P> halftrgswSymEncrypt(const Polynomial<P> &p, const double α,
                                  const Key<P> &key)
 {
-    constexpr std::array<typename P::T, P::lₐ> h = hgen<P>();
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
 
     HalfTRGSW<P> halftrgsw;
     for (TRLWE<P> &trlwe : halftrgsw) trlwe = trlweSymEncryptZero<P>(α, key);
@@ -529,7 +542,7 @@ template <class P>
 HalfTRGSW<P> halftrgswSymEncrypt(const Polynomial<P> &p, const uint η,
                                  const Key<P> &key)
 {
-    constexpr std::array<typename P::T, P::lₐ> h = hgen<P>();
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
 
     HalfTRGSW<P> halftrgsw;
     for (TRLWE<P> &trlwe : halftrgsw) trlwe = trlweSymEncryptZero<P>(η, key);
