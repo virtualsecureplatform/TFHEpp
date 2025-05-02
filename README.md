@@ -21,11 +21,17 @@ Some environments which do not support AVX2 cannot use spqlios. Instead of spqli
 To use fftw3,  install `libfftw3-dev` and add `-DUSE_FFTW3=ON` to the compile option.
 
 # Third party libraries
-Codes under thirdparties directory contain third-party libraries, Randen, Cereal, and SPQLIOS. See the corresponding directory to check the licenses.
+Codes under thirdparties directory contain third-party libraries, Randen, BLAKE3, Cereal, and SPQLIOS. See the corresponding directory to check the licenses.
 
 ## Randen
-TFHEpp uses this as a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG). Original repository is [here](https://github.com/google/randen).
-I just removed some unnecessary codes, with no modification.
+Previous (till Version 9 in release tags) TFHEpp uses this as a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG). Original repository is [here](https://github.com/google/randen).
+I just removed some unnecessary codes, with no modification. 
+This is now deprecated. To use this, set `-DUSE_BLAKE3=OFF -DUSE_RANDEN=ON` explicitly. 
+
+## BLAKE3
+This is used as another CSPRNG implementation using its eXtended Output Function (XOF) mode. Because Randen is not peer-reviewed algorithm and BLAKE3 is now bit faster than RANDEN, we are now using this as a default CSPRNG. 
+FYI, CRYSTAL-Kyber is using SHA-3's XOF as a CSPRNG generator. We are currently not implemening this because it is slow. 
+Micorosft SEAL implements BLAKE2 as one of the supported CSPRNGs. 
 
 ## Cereal
 cereal is a header-only C++11 serialization library. TFHEpp uses this to export ciphertexts and keys. Cereal is treated by the git submodule.

@@ -1,6 +1,8 @@
 #pragma once
 
-#ifdef USE_RANDEN
+#if defined(USE_BLAKE3)
+#include "BLAKE3PRNG.hpp"
+#elif defined(USE_RANDEN)
 #include <randen.h>
 #endif
 
@@ -13,7 +15,10 @@
 #include <random>
 
 namespace TFHEpp {
-#ifdef USE_RANDEN
+#if defined(USE_BLAKE3)
+static thread_local std::random_device trng;
+static thread_local BLAKE3PRNG::BLAKE3PRNG<uint64_t> generator(trng);
+#elif defined(USE_RANDEN)
 static thread_local std::random_device trng;
 static thread_local randen::Randen<uint64_t> generator(trng);
 #else

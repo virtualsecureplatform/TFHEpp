@@ -13,3 +13,6 @@
 [submodule "thirdparties/concrete-ntt"]
 	path = thirdparties/concrete-ntt
 	url = https://github.com/virtualsecureplatform/concrete-ntt.git
+[submodule "thirdparties/BLAKE3"]
+	path = thirdparties/BLAKE3
+	url = https://github.com/BLAKE3-team/BLAKE3.git

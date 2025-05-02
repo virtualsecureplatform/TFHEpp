@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(tfhe++ CXX)
+project(tfhe++ CXX C)
 set(CMAKE_CXX_STANDARD 20)
 option(DEBUG "Debug mode" OFF)
 if(DEBUG)
@@ -22,8 +22,8 @@ option(USE_COMPRESS "Use compressed ciphertexts" OFF)
 option(USE_TERNARY_CMUX "Use ternary cmux" OFF)
 option(USE_KEY_BUNDLE "Use key bundle algorithm" OFF)
 
-option(USE_RANDEN "Use randen as CSPRNG" ON)
 option(USE_BLAKE3 "Use blake3 as CSPRNG" ON)
+option(USE_RANDEN "Use randen as CSPRNG" OFF)
 
 option(USE_AVX512 "Use AVX512 ver. SPQLIOS" OFF)
 option(USE_CONCRETE_FFT "Use concrete-fft" OFF)
@@ -43,7 +43,13 @@ set(TFHEpp_DEFINITIONS
     ""
     PARENT_SCOPE)
 
-if(USE_RANDEN)
+if(USE_BLAKE3)
+  set(TFHEpp_DEFINITIONS
+      "${TFHEpp_DEFINITIONS};USE_BLAKE3"
+      PARENT_SCOPE)
+  add_compile_definitions(USE_BLAKE3)
+  add_subdirectory(thirdparties/BLAKE3/c)
+elseif(USE_RANDEN)
   set(TFHEpp_DEFINITIONS
       "${TFHEpp_DEFINITIONS};USE_RANDEN"
       PARENT_SCOPE)
