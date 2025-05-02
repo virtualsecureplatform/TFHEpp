@@ -1,6 +1,7 @@
 [![Test](https://github.com/virtualsecureplatform/TFHEpp/actions/workflows/test.yml/badge.svg)](https://github.com/virtualsecureplatform/TFHEpp/actions/workflows/test.yml)
 # TFHEpp
-TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original [TFHE implementation](https://github.com/tfhe/tfhe). In addition to that, THFEpp supports Circuit Bootstrapping, [Private Boootstrapping many LUT](https://eprint.iacr.org/2021/729), and [Modifed Cheng's Packing](https://eprint.iacr.org/2024/1318).
+TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original [TFHE implementation](https://github.com/tfhe/tfhe). In addition to that, THFEpp supports [Circuit Bootstrapping](https://eprint.iacr.org/2018/421), [Programable Boootstrapping many LUT](https://eprint.iacr.org/2021/729), and [Modifed Cheng's Packing](https://eprint.iacr.org/2024/1318) (We call it as annihilate key switching in our code). 
+We also includes partial support for B/FV, written in include/bfv++.hpp.
 TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
 
 # Supported Compiler
@@ -8,7 +9,12 @@ TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp withou
 This code includes utf-8 identifiers like α, using `extern template`, and std::make_unique_for_overwrite. Therefore, GCC11 or later and Clang16 or later are primarily supported compilers. 
 
 # Parameter
-The default parameter is 128-bit security. Please add -DUSE_80BIT_SECURITY=ON to use a faster but less secure parameter.
+The default parameter (128bit.hpp) is 128-bit security. Please add -DUSE_80BIT_SECURITY=ON to use a faster but less secure parameter.
+The fastest parameter with 128-bit security is concrete.hpp. Please add -DUSE_CONCRETE=ON to use a faster parameter. 
+If you need your own parameter, please modify the files under include/params/ or add your own hpp and add change the macro definition in include/param.hpp. 
+
+## Ternary Key
+As you will see in the files under include/params, we use ternary key for lvl1 or higher levels parameters. 
 
 # FFTW3 Support
 Some environments which do not support AVX2 cannot use spqlios. Instead of spqlios, TFHEpp can use fftw3.
@@ -28,7 +34,7 @@ cereal is a header-only C++11 serialization library. TFHEpp uses this to export 
 SPQLIOS is the FFT library using AVX2 that is dedicated to the ring R\[X\]/(X^N+1) for N a power of 2. These codes come from [experimental-tfhe](https://github.com/tfhe/experimental-tfhe/tree/master/circuit-bootstrapping/src/spqlios). We just renamed instances to adapt to our codes.
 
 ## SPQLIOS-AVX512
-This is the AVX512 version of SPQLIOS developed in [MOSFHET](https://github.com/antoniocgj/MOSFHET). I confirmed that this is faster than SPQLIOS on Intel i5-11400.
+This is the AVX512 version of SPQLIOS developed in [MOSFHET](https://github.com/antoniocgj/MOSFHET). I confirmed that this is faster than SPQLIOS on Intel i5-11400 and AMD Ryzen 7700X. 
 
 ## FFTW3
 [FFTW](https://www.fftw.org/) is one of the most famous FFT libraries. 
