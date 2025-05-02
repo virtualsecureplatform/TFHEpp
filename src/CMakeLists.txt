@@ -22,7 +22,8 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include)
 
 if(USE_BLAKE3)
-  target_include_directories(tfhe++ PUBLIC ${PROJECT_SOURCE_DIR}/thirdparties/BLAKE3/c)
+  target_include_directories(tfhe++
+                             PUBLIC ${PROJECT_SOURCE_DIR}/thirdparties/BLAKE3/c)
   target_link_libraries(tfhe++ INTERFACE blake3)
 elseif(USE_RANDEN)
   target_link_libraries(tfhe++ INTERFACE randen)
