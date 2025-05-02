@@ -370,7 +370,7 @@ inline void PolyMulNaieveRescaleUnsigned(Polynomial<P> &res,
 template <class P>
 std::unique_ptr<std::array<PolynomialInFD<P>, 2 * P::n>> XaittGen()
 {
-    std::unique_ptr<std::array<PolynomialInFD<P>, 2 *P::n>> xaitt =
+    std::unique_ptr<std::array<PolynomialInFD<P>, 2 * P::n>> xaitt =
         std::make_unique<std::array<PolynomialInFD<P>, 2 * P::n>>();
     for (int i = 0; i < 2 * P::n; i++) {
         std::array<typename P::T, P::n> xai = {};
@@ -387,7 +387,7 @@ std::unique_ptr<std::array<PolynomialInFD<P>, 2 * P::n>> XaittGen()
 template <class P>
 std::unique_ptr<std::array<PolynomialNTT<P>, 2 * P::n>> XaittGenNTT()
 {
-    std::unique_ptr<std::array<PolynomialNTT<P>, 2 *P::n>> xaitt =
+    std::unique_ptr<std::array<PolynomialNTT<P>, 2 * P::n>> xaitt =
         std::make_unique<std::array<PolynomialNTT<P>, 2 * P::n>>();
     for (int i = 0; i < 2 * P::n; i++) {
         std::array<typename P::T, P::n> xai = {};
@@ -403,10 +403,10 @@ std::unique_ptr<std::array<PolynomialNTT<P>, 2 * P::n>> XaittGenNTT()
 
 #if defined(USE_TERNARY) || defined(USE_KEY_BUNDLE)
 alignas(64) static const std::unique_ptr<
-    const std::array<PolynomialInFD<lvl1param>, 2 *lvl1param::n>> xaittlvl1 =
+    const std::array<PolynomialInFD<lvl1param>, 2 * lvl1param::n>> xaittlvl1 =
     XaittGen<lvl1param>();
 alignas(64) static const std::unique_ptr<
-    const std::array<PolynomialInFD<lvl2param>, 2 *lvl2param::n>> xaittlvl2 =
+    const std::array<PolynomialInFD<lvl2param>, 2 * lvl2param::n>> xaittlvl2 =
     XaittGen<lvl2param>();
 #endif
 #ifdef USE_TERNARY

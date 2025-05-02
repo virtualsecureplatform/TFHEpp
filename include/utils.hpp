@@ -26,16 +26,10 @@ constexpr bool false_v = false;
 
 // https://qiita.com/negi-drums/items/a527c05050781a5af523
 template <typename T>
-concept hasq = requires
-{
-    T::q;
-};
+concept hasq = requires { T::q; };
 
 template <typename T>
-concept hasqbit = requires
-{
-    T::qbit;
-};
+concept hasqbit = requires { T::qbit; };
 
 // https://github.com/zhourrr/aligned-memory-allocator/blob/main/aligned_allocator.h
 // A minimal implementation of an allocator for C++ Standard Library, which

@@ -9,8 +9,7 @@
 namespace TFHEpp {
 
 template <class T, size_t N>
-struct alignas(64) aligned_array : public std::array<T, N> {
-};
+struct alignas(64) aligned_array : public std::array<T, N> {};
 
 enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 
@@ -110,17 +109,17 @@ template <class P>
 using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 
 template <class P>
-using TRGSW = std::array<TRLWE<P>, P::k* P::lₐ+P::l>;
+using TRGSW = std::array<TRLWE<P>, P::k * P::lₐ + P::l>;
 template <class P>
 using HalfTRGSW = std::array<TRLWE<P>, P::l>;
 template <class P>
-using TRGSWFFT = aligned_array<TRLWEInFD<P>, P::k* P::lₐ+P::l>;
+using TRGSWFFT = aligned_array<TRLWEInFD<P>, P::k * P::lₐ + P::l>;
 template <class P>
 using HalfTRGSWFFT = aligned_array<TRLWEInFD<P>, P::l>;
 template <class P>
-using TRGSWNTT = std::array<TRLWENTT<P>, P::k* P::lₐ+P::l>;
+using TRGSWNTT = std::array<TRLWENTT<P>, P::k * P::lₐ + P::l>;
 template <class P>
-using TRGSWRAINTT = std::array<TRLWERAINTT<P>, P::k* P::lₐ+P::l>;
+using TRGSWRAINTT = std::array<TRLWERAINTT<P>, P::k * P::lₐ + P::l>;
 
 #ifdef USE_KEY_BUNDLE
 template <class P>

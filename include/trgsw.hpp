@@ -63,7 +63,8 @@ inline void Decomposition(DecomposedPolynomial<P> &decpoly,
 #endif
 
 template <class P>
-inline void Decomposition(DecomposedPolynomial<P> &decpoly, const Polynomial<P> &poly)
+inline void Decomposition(DecomposedPolynomial<P> &decpoly,
+                          const Polynomial<P> &poly)
 {
     constexpr typename P::T offset = offsetgen<P>();
     constexpr typename P::T roundoffset =
@@ -96,12 +97,12 @@ constexpr typename P::T nonceoffsetgen()
 
 template <class P>
 inline void NonceDecomposition(DecomposedNoncePolynomial<P> &decpoly,
-                          const Polynomial<P> &poly)
+                               const Polynomial<P> &poly)
 {
     constexpr typename P::T offset = nonceoffsetgen<P>();
     constexpr typename P::T roundoffset =
-        1ULL << (std::numeric_limits<typename P::T>::digits - P::lₐ * P::Bgₐbit -
-                 1);
+        1ULL << (std::numeric_limits<typename P::T>::digits -
+                 P::lₐ * P::Bgₐbit - 1);
     constexpr typename P::T mask =
         static_cast<typename P::T>((1ULL << P::Bgₐbit) - 1);
     constexpr typename P::T halfBg = (1ULL << (P::Bgₐbit - 1));
@@ -127,7 +128,7 @@ void DecompositionNTT(DecomposedPolynomialNTT<P> &decpolyntt,
 
 template <class P>
 void NonceDecompositionNTT(DecomposedNoncePolynomialNTT<P> &decpolyntt,
-                      const Polynomial<P> &poly)
+                           const Polynomial<P> &poly)
 {
     DecomposedNoncePolynomial<P> decpoly;
     NonceDecomposition<P>(decpoly, poly);
@@ -147,7 +148,7 @@ void DecompositionRAINTT(DecomposedPolynomialRAINTT<P> &decpolyntt,
 
 template <class P>
 void NonceDecompositionRAINTT(DecomposedNoncePolynomialRAINTT<P> &decpolyntt,
-                         const Polynomial<P> &poly)
+                              const Polynomial<P> &poly)
 {
     DecomposedNoncePolynomial<P> decpoly;
     NonceDecomposition<P>(decpoly, poly);
@@ -179,7 +180,7 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                 TwistIFFT<P>(decpolyfft, decpoly[i]);
                 for (int m = 0; m < P::k + 1; m++)
                     FMAInFD<P::n>(restrlwefft[m], decpolyfft,
-                                trgswfft[i + k * P::lₐ][m]);
+                                  trgswfft[i + k * P::lₐ][m]);
             }
         }
     }
@@ -189,7 +190,7 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
         TwistIFFT<P>(decpolyfft, decpoly[i]);
         for (int m = 0; m < P::k + 1; m++)
             FMAInFD<P::n>(restrlwefft[m], decpolyfft,
-                        trgswfft[i + P::k * P::lₐ][m]);
+                          trgswfft[i + P::k * P::lₐ][m]);
     }
     for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
 }
@@ -242,7 +243,7 @@ void trgswrainttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                         restrlwentt[m][j] = raintt::AddMod(
                             restrlwentt[m][j],
                             raintt::MulSREDC(decpolyntt[i][j],
-                                            trgswntt[i + k * P::lₐ][m][j]));
+                                             trgswntt[i + k * P::lₐ][m][j]));
             }
         }
     }
@@ -254,7 +255,7 @@ void trgswrainttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                 restrlwentt[m][j] = raintt::AddMod(
                     restrlwentt[m][j],
                     raintt::MulSREDC(decpolyntt[i][j],
-                                    trgswntt[i + P::k * P::lₐ][m][j]));
+                                     trgswntt[i + P::k * P::lₐ][m][j]));
     }
     // if constexpr(hasq<P>) for (int k = 0; k < P::k + 1; k++)
     // raintt::TwistNTT<typename P::T,P::nbit, P::q == (1ULL<<P::qbit)>(res[k],
@@ -275,52 +276,52 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
         NonceDecomposition<P>(decpoly, trlwe[0]);
         TwistINTT<P>(decpolyntt, decpoly[0]);
         for (int m = 0; m < P::k + 1; m++)
-    #ifdef USE_HEXL
-            intel::hexl::EltwiseMultMod(&(restrlwentt[m][0].value),
-                                        &(decpolyntt[0].value),
-                                        &(trgswntt[0][m][0].value), P::n, lvl1P, 1);
-    #else
+#ifdef USE_HEXL
+            intel::hexl::EltwiseMultMod(
+                &(restrlwentt[m][0].value), &(decpolyntt[0].value),
+                &(trgswntt[0][m][0].value), P::n, lvl1P, 1);
+#else
             for (int i = 0; i < P::n; i++)
                 restrlwentt[m][i] = decpolyntt[i] * trgswntt[0][m][i];
-    #endif
+#endif
         for (int i = 1; i < P::l; i++) {
             TwistINTT<P>(decpolyntt, decpoly[i]);
             for (int m = 0; m < P::k + 1; m++)
-    #ifdef USE_HEXL
+#ifdef USE_HEXL
             {
                 std::array<uint64_t, TFHEpp::lvl1param::n> temp;
                 intel::hexl::EltwiseMultMod(temp.data(), &(decpolyntt[0].value),
-                                            &(trgswntt[i][m][0].value), P::n, lvl1P,
-                                            1);
+                                            &(trgswntt[i][m][0].value), P::n,
+                                            lvl1P, 1);
                 intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),
-                                        &(restrlwentt[m][0].value), temp.data(),
-                                        P::n, lvl1P);
+                                           &(restrlwentt[m][0].value),
+                                           temp.data(), P::n, lvl1P);
             }
-    #else
+#else
                 for (int j = 0; j < P::n; j++)
                     restrlwentt[m][j] += decpolyntt[j] * trgswntt[i][m][j];
-    #endif
+#endif
         }
         for (int k = 1; k < P::k; k++) {
             NonceDecomposition<P>(decpoly, trlwe[k]);
             for (int i = 0; i < P::lₐ; i++) {
                 TwistINTT<P>(decpolyntt, decpoly[i]);
                 for (int m = 0; m < P::k + 1; m++)
-    #ifdef USE_HEXL
+#ifdef USE_HEXL
                 {
                     std::array<uint64_t, TFHEpp::lvl1param::n> temp;
                     intel::hexl::EltwiseMultMod(
                         temp.data(), &(decpolyntt[0].value),
                         &(trgswntt[i + k * P::l][m][0].value), P::n, lvl1P, 1);
                     intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),
-                                            &(restrlwentt[m][0].value),
-                                            temp.data(), P::n, lvl1P);
+                                               &(restrlwentt[m][0].value),
+                                               temp.data(), P::n, lvl1P);
                 }
-    #else
+#else
                     for (int j = 0; j < P::n; j++)
                         restrlwentt[m][j] +=
                             decpolyntt[j] * trgswntt[i + k * P::lₐ][m][j];
-    #endif
+#endif
             }
         }
     }
@@ -332,12 +333,12 @@ void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 #ifdef USE_HEXL
         {
             std::array<uint64_t, TFHEpp::lvl1param::n> temp;
-            intel::hexl::EltwiseMultMod(
-                temp.data(), &(decpolyntt[0].value),
-                &(trgswntt[i + k * P::l][m][0].value), P::n, lvl1P, 1);
+            intel::hexl::EltwiseMultMod(temp.data(), &(decpolyntt[0].value),
+                                        &(trgswntt[i + k * P::l][m][0].value),
+                                        P::n, lvl1P, 1);
             intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),
-                                    &(restrlwentt[m][0].value),
-                                    temp.data(), P::n, lvl1P);
+                                       &(restrlwentt[m][0].value), temp.data(),
+                                       P::n, lvl1P);
         }
 #else
             for (int j = 0; j < P::n; j++)
@@ -352,7 +353,7 @@ template <class P>
 TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
 {
     alignas(64) TRGSWFFT<P> trgswfft;
-    for (int i = 0; i < P::k * P::lₐ+P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
         for (int j = 0; j < (P::k + 1); j++)
             TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
     return trgswfft;
@@ -361,7 +362,7 @@ TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
 template <class P>
 void ApplyFFT2trgsw(TRGSWFFT<P> &trgswfft, const TRGSW<P> &trgsw)
 {
-    for (int i = 0; i < P::k * P::lₐ+P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
         for (int j = 0; j < (P::k + 1); j++)
             TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
 }
@@ -380,7 +381,7 @@ template <class P>
 TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
 {
     TRGSWNTT<P> trgswntt;
-    for (int i = 0; i < P::k * P::lₐ+P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
         for (int j = 0; j < P::k + 1; j++)
             TwistINTT<P>(trgswntt[i][j], trgsw[i][j]);
     return trgswntt;
@@ -391,7 +392,7 @@ TRGSWRAINTT<P> ApplyRAINTT2trgsw(const TRGSW<P> &trgsw)
 {
     constexpr uint8_t remainder = ((P::nbit - 1) % 3) + 1;
     TRGSWRAINTT<P> trgswntt;
-    for (int i = 0; i < P::k * P::lₐ+P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
         for (int j = 0; j < P::k + 1; j++) {
             raintt::TwistINTT<typename P::T, P::nbit, true>(
                 trgswntt[i][j], trgsw[i][j], (*raintttable)[1],
@@ -411,7 +412,7 @@ template <class P>
 TRGSWNTT<P> TRGSW2NTT(const TRGSW<P> &trgsw)
 {
     TRGSWNTT<P> trgswntt;
-    for (int i = 0; i < P::k * P::lₐ+P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
         for (int j = 0; j < P::k + 1; j++) {
             PolynomialNTT<P> temp;
             TwistINTT<P>(temp, trgsw[i][j]);
@@ -452,18 +453,19 @@ constexpr std::array<typename P::T, P::lₐ> noncehgen()
 }
 
 template <class P>
-inline void halftrgswhadd(HalfTRGSW<P>& halftrgsw, const Polynomial<P> &p){
+inline void halftrgswhadd(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p)
+{
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
     for (int i = 0; i < P::l; i++) {
         for (int j = 0; j < P::n; j++) {
-            halftrgsw[i][P::k][j] +=
-                static_cast<typename P::T>(p[j]) * h[i];
+            halftrgsw[i][P::k][j] += static_cast<typename P::T>(p[j]) * h[i];
         }
     }
 }
 
 template <class P>
-inline void trgswhadd(TRGSW<P>& trgsw, const Polynomial<P> &p){
+inline void trgswhadd(TRGSW<P> &trgsw, const Polynomial<P> &p)
+{
     constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
     for (int i = 0; i < P::lₐ; i++) {
         for (int k = 0; k < P::k; k++) {
@@ -483,15 +485,14 @@ inline void trgswhadd(TRGSW<P>& trgsw, const Polynomial<P> &p){
 }
 
 template <class P>
-inline void trgswhoneadd(TRGSW<P>& trgsw){
+inline void trgswhoneadd(TRGSW<P> &trgsw)
+{
     constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
     for (int i = 0; i < P::lₐ; i++)
-        for (int k = 0; k < P::k; k++)
-            trgsw[i + k * P::lₐ][k][0] += nonceh[i];
-    
+        for (int k = 0; k < P::k; k++) trgsw[i + k * P::lₐ][k][0] += nonceh[i];
+
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
-    for (int i = 0; i < P::l; i++) 
-            trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
+    for (int i = 0; i < P::l; i++) trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
 }
 
 template <class P>

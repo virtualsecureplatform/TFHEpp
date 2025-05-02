@@ -7,9 +7,9 @@ namespace TFHEpp {
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                       \
-    template void NonceDecomposition<P>(DecomposedNoncePolynomial<P> & decpoly, \
-                                   const Polynomial<P> &poly)
+#define INST(P)                          \
+    template void NonceDecomposition<P>( \
+        DecomposedNoncePolynomial<P> & decpoly, const Polynomial<P> &poly)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
