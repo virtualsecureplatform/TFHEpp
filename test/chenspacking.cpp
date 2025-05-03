@@ -36,7 +36,7 @@ int main()
     start = std::chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::TLWE2TRLWEChengsPacking<TFHEpp::lvl1param>(cres[test], ca[test],
+        TFHEpp::TLWE2TRLWEChensPacking<TFHEpp::lvl1param>(cres[test], ca[test],
                                                            *ahk);
     }
 

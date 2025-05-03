@@ -1,5 +1,6 @@
 #pragma once
 
+#include "key.hpp"
 #include "mulfft.hpp"
 #include "params.hpp"
 
@@ -195,7 +196,7 @@ std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
     return p;
 }
 
-template <class P>
+template <class P, uint plain_modulus = P::plain_modulus>
 Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
     Polynomial<P> phase = c[P::k];
@@ -207,11 +208,20 @@ Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
         for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
     }
 
+    constexpr double Δ =
+        std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
+        plain_modulus;
     Polynomial<P> p;
     for (int i = 0; i < P::n; i++)
-        p[i] = static_cast<typename P::T>(std::round(phase[i] / P::Δ)) %
-               P::plain_modulus;
+        p[i] = static_cast<typename P::T>(std::round(phase[i] / Δ)) %
+               plain_modulus;
     return p;
+}
+
+template <class P, uint plain_modulus = P::plain_modulus>
+Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const SecretKey &sk)
+{
+    return trlweSymIntDecrypt<P, plain_modulus>(c, sk.key.get<P>());
 }
 
 template <class P>

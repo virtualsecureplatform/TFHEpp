@@ -50,11 +50,11 @@ int main()
     for (int i = 0; i < num_test; i++)
         pres[i] = TFHEpp::trlweSymDecrypt<P>(cres[i], sk->key.get<P>());
     for (int i = 0; i < num_test; i++) assert(pres[i][0] == (pin[i][0] > 0));
-    TFHEpp::Polynomial<P> phase =
-        TFHEpp::trlwePhase<P>(cres[0], sk->key.get<P>());
-    for (int i = 0; i < P::n; i++)
-        std::cout << static_cast<int64_t>(phase[i]) << ":";
-    std::cout << std::endl;
+    // TFHEpp::Polynomial<P> phase =
+        // TFHEpp::trlwePhase<P>(cres[0], sk->key.get<P>());
+    // for (int i = 0; i < P::n; i++)
+        // std::cout << static_cast<int64_t>(phase[i]) << ":";
+    // std::cout << std::endl;
     std::cout << "Passed" << std::endl;
     double elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)

@@ -51,27 +51,38 @@ TLWE<P> tlweSymEncrypt(const typename P::T p, const Key<P> &key)
         return tlweSymEncrypt<P>(p, P::η, key);
 }
 
-template <class P>
+template <class P, uint plain_modulus = P::plain_modulus>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
                           const Key<P> &key)
-{
-    return tlweSymEncrypt<P>(static_cast<typename P::T>(p * P::Δ), α, key);
+{   constexpr double Δ =
+        std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
+        plain_modulus;
+    return tlweSymEncrypt<P>(static_cast<typename P::T>(p * Δ), α, key);
 }
 
-template <class P>
+template <class P, uint plain_modulus = P::plain_modulus>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const uint η,
                           const Key<P> &key)
 {
-    return tlweSymEncrypt<P>(static_cast<typename P::T>(p * P::Δ), η, key);
+    constexpr double Δ =
+        std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
+        plain_modulus;
+    return tlweSymEncrypt<P>(static_cast<typename P::T>(p * Δ), η, key);
 }
 
-template <class P>
+template <class P, uint plain_modulus = P::plain_modulus>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const Key<P> &key)
 {
     if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
-        return tlweSymIntEncrypt<P>(p, P::α, key);
+        return tlweSymIntEncrypt<P, plain_modulus>(p, P::α, key);
     else
-        return tlweSymIntEncrypt<P>(p, P::η, key);
+        return tlweSymIntEncrypt<P, plain_modulus>(p, P::η, key);
+}
+
+template <class P, uint plain_modulus = P::plain_modulus>
+TLWE<P> tlweSymIntEncrypt(const typename P::T p, const SecretKey &sk)
+{
+    return tlweSymIntEncrypt<P,plain_modulus>(p, sk.key.get<P>());
 }
 
 template <class P>
@@ -110,6 +121,12 @@ template <class P>
 typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
 {
     return tlweSymIntDecrypt<P, P::plain_modulus>(c, key);
+}
+
+template <class P>
+typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const SecretKey &sk)
+{
+    return tlweSymIntDecrypt<P, P::plain_modulus>(c, sk.key.get<P>());
 }
 
 template <class P, std::make_signed_t<typename P::T> μ>

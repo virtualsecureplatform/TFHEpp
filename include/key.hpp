@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef USE_RANDEN
-#include <randen.h>
-#endif
-
 #include <algorithm>
 #include <array>
 #include <cereal/archives/portable_binary.hpp>
