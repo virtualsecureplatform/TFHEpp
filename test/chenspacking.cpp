@@ -37,7 +37,7 @@ int main()
 
     for (int test = 0; test < num_test; test++) {
         TFHEpp::TLWE2TRLWEChensPacking<TFHEpp::lvl1param>(cres[test], ca[test],
-                                                           *ahk);
+                                                          *ahk);
     }
 
     end = std::chrono::system_clock::now();

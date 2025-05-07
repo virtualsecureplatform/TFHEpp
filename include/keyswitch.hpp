@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include <span>
 #include <bit>
+#include <span>
 
 #include "params.hpp"
 #include "trgsw.hpp"
@@ -307,7 +307,7 @@ void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
 }
 
 // https://eprint.iacr.org/2024/1318
-// Reversed order but this is easily proved by packing trivial all 0 TRLWE. 
+// Reversed order but this is easily proved by packing trivial all 0 TRLWE.
 // TODO: They says we should divide by N first, not by 2 for each step. Why?
 template <class P>
 void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
@@ -318,7 +318,7 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
     for (int i = 0; i < P::nbit; i++) {
         for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] /= 2;
         TRLWE<P> evaledauto;
-        EvalAuto<P>(evaledauto, res, (1 << (i+1)) + 1, ahk[i]);
+        EvalAuto<P>(evaledauto, res, (1 << (i + 1)) + 1, ahk[i]);
         for (int j = 0; j < (P::k + 1) * P::n; j++)
             res[0][j] += evaledauto[0][j];
     }
@@ -349,13 +349,13 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
 // }
 
 // template <class P, uint num_tlwe>
-// void AnnihilatePacking(TRLWE<P> &res, const std::array<TLWE<P>, num_tlwe> &tlwes,
+// void AnnihilatePacking(TRLWE<P> &res, const std::array<TLWE<P>, num_tlwe>
+// &tlwes,
 //                             const AnnihilateKey<P> &ahk)
 // {
-//     static_assert(std::has_single_bit(num_tlwe), "Currently, num_tlwe must be power of 2");
-//     std::array<TRLWE<P>, num_tlwe> trlwes;
-//     constexpr uint l = std::count_zero(num_tlwe);
-//     for (int i = 0; i < num_tlwe; i++) {
+//     static_assert(std::has_single_bit(num_tlwe), "Currently, num_tlwe must be
+//     power of 2"); std::array<TRLWE<P>, num_tlwe> trlwes; constexpr uint l =
+//     std::count_zero(num_tlwe); for (int i = 0; i < num_tlwe; i++) {
 //         InvSampleExtractIndex<P>(trlwes[i], tlwes[i], 0);
 //         for (int j = 0; j <= P::k * P::n; j++)//rest are known to be 0
 //             trlwes[i][0][j] /= P::n;
@@ -369,8 +369,8 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
 //                 trlwes[stride+j][k] = trlwes[j][k] - res[k];
 //             for(int k = 0; i < (P::k+1) * P::n; k++)
 //                 trlwes[j][k] += res[k];
-//             EvalAuto<P>(res, trlwes[stride+j], (1 << (P::nbit - i)) + 1, ahk[i]);
-//             for(int k = 0; i < (P::k+1) * P::n; k++)
+//             EvalAuto<P>(res, trlwes[stride+j], (1 << (P::nbit - i)) + 1,
+//             ahk[i]); for(int k = 0; i < (P::k+1) * P::n; k++)
 //                 trlwes[j][k] += res[k];
 //         }
 //     }
@@ -385,9 +385,8 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
 // }
 
 template <class P, class Container>
-void PackLWEs(TRLWE<P> &res, const Container &tlwe,
-              const AnnihilateKey<P> &ahk, const uint l, const uint offset,
-              const uint interval)
+void PackLWEs(TRLWE<P> &res, const Container &tlwe, const AnnihilateKey<P> &ahk,
+              const uint l, const uint offset, const uint interval)
 {
     if (l == 0)
         InvSampleExtractIndex<P>(res, tlwe[offset], 0);
@@ -405,7 +404,7 @@ void PackLWEs(TRLWE<P> &res, const Container &tlwe,
                 tempodd[i][j] = tempeven[i][j] - tempoddmul[i][j];
             }
         }
-        EvalAuto<P>(res, tempodd, (1 << l) + 1, ahk[l-1]);
+        EvalAuto<P>(res, tempodd, (1 << l) + 1, ahk[l - 1]);
         for (int i = 0; i < P::k + 1; i++)
             for (int j = 0; j < P::n; j++)
                 res[i][j] += tempeven[i][j] + tempoddmul[i][j];
@@ -414,7 +413,7 @@ void PackLWEs(TRLWE<P> &res, const Container &tlwe,
 
 template <class P>
 void TLWE2TRLWEChensPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe,
-                             const AnnihilateKey<P> &ahk)
+                            const AnnihilateKey<P> &ahk)
 {
     uint l = std::bit_width(tlwe.size()) - 1;
     if (!std::has_single_bit(tlwe.size())) {
@@ -425,34 +424,34 @@ void TLWE2TRLWEChensPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe,
     for (int i = l; i < P::nbit; i++) {
         TRLWE<P> evaledauto;
         for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] /= 2;
-        EvalAuto<P>(evaledauto, res, (1 << (i+1)) + 1, ahk[i]);
+        EvalAuto<P>(evaledauto, res, (1 << (i + 1)) + 1, ahk[i]);
         for (int j = 0; j < (P::k + 1) * P::n; j++)
             res[0][j] += evaledauto[0][j];
     }
 }
 
 template <class P, uint num_tlwe>
-void TLWE2TablePacking(TRLWE<P> &res, std::array<TLWE<P>,num_tlwe> &tlwe,
-                             const AnnihilateKey<P> &ahk)
+void TLWE2TablePacking(TRLWE<P> &res, std::array<TLWE<P>, num_tlwe> &tlwe,
+                       const AnnihilateKey<P> &ahk)
 {
-    static_assert(std::has_single_bit(num_tlwe), "Currently, num_tlwe must be power of 2");
+    static_assert(std::has_single_bit(num_tlwe),
+                  "Currently, num_tlwe must be power of 2");
     constexpr uint l = std::countr_zero(num_tlwe);
     PackLWEs<P>(res, tlwe, ahk, l, 0, 1);
     for (int i = l; i < P::nbit; i++) {
         TRLWE<P> tempmul;
-        for (int j = 0; j < P::k + 1; j++) 
-            PolynomialMulByXai<P>(tempmul[j], res[j], P::n >> (i+1));
+        for (int j = 0; j < P::k + 1; j++)
+            PolynomialMulByXai<P>(tempmul[j], res[j], P::n >> (i + 1));
         TRLWE<P> tempsub;
-        for (int j = 0; j < (P::k + 1) * P::n; j++){
+        for (int j = 0; j < (P::k + 1) * P::n; j++) {
             res[0][j] /= 2;
             tempmul[0][j] /= 2;
             tempsub[0][j] = res[0][j] - tempmul[0][j];
             res[0][j] += tempmul[0][j];
         }
-        //reuse tempmul
-        EvalAuto<P>(tempmul, tempsub, (1 << (i+1)) + 1, ahk[i]);
-        for (int j = 0; j < (P::k + 1) * P::n; j++)
-            res[0][j] += tempmul[0][j];
+        // reuse tempmul
+        EvalAuto<P>(tempmul, tempsub, (1 << (i + 1)) + 1, ahk[i]);
+        for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] += tempmul[0][j];
     }
 }
 
@@ -480,7 +479,7 @@ void PackLWEsLSB(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe,
                 tempodd[i][j] = tempeven[i][j] - tempoddmul[i][j];
             }
         }
-        EvalAuto<P>(res, tempodd, (1 << l) + 1, ahk[l-1]);
+        EvalAuto<P>(res, tempodd, (1 << l) + 1, ahk[l - 1]);
         for (int i = 0; i < P::k + 1; i++)
             for (int j = 0; j < P::n; j++)
                 res[i][j] += tempeven[i][j] + tempoddmul[i][j];

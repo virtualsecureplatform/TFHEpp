@@ -75,7 +75,7 @@ struct lvl2param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
     static const std::uint32_t nbit = 10;  // dimension must be a power of 2 for
-                                          // ease of polynomial multiplication.
+                                           // ease of polynomial multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension
     static constexpr std::uint32_t k = 2;
     static constexpr std::uint32_t lₐ = 3;

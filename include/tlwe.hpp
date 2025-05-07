@@ -54,7 +54,8 @@ TLWE<P> tlweSymEncrypt(const typename P::T p, const Key<P> &key)
 template <class P, uint plain_modulus = P::plain_modulus>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
                           const Key<P> &key)
-{   constexpr double Δ =
+{
+    constexpr double Δ =
         std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
         plain_modulus;
     return tlweSymEncrypt<P>(static_cast<typename P::T>(p * Δ), α, key);
@@ -82,7 +83,7 @@ TLWE<P> tlweSymIntEncrypt(const typename P::T p, const Key<P> &key)
 template <class P, uint plain_modulus = P::plain_modulus>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const SecretKey &sk)
 {
-    return tlweSymIntEncrypt<P,plain_modulus>(p, sk.key.get<P>());
+    return tlweSymIntEncrypt<P, plain_modulus>(p, sk.key.get<P>());
 }
 
 template <class P>
@@ -117,7 +118,7 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
     return res >= plain_modulus / 2 ? res - plain_modulus : res;
 }
 
-template <class P, uint plain_modulus=P::plain_modulus>
+template <class P, uint plain_modulus = P::plain_modulus>
 typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const SecretKey &sk)
 {
     return tlweSymIntDecrypt<P, plain_modulus>(c, sk.key.get<P>());

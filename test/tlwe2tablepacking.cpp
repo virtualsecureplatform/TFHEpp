@@ -14,8 +14,8 @@ int main()
     constexpr uint segment = 1 << (P::nbit - l);
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
-    constexpr uint32_t plain_modulus = 1<<(l+1);
-    std::uniform_int_distribution<uint32_t> intgen(0, plain_modulus-1);
+    constexpr uint32_t plain_modulus = 1 << (l + 1);
+    std::uniform_int_distribution<uint32_t> intgen(0, plain_modulus - 1);
 
     std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
 
@@ -28,7 +28,8 @@ int main()
     }
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < numtlwe; j++)
-            ca[i][j] = TFHEpp::tlweSymIntEncrypt<P, plain_modulus>(pin[i][j], *sk);
+            ca[i][j] =
+                TFHEpp::tlweSymIntEncrypt<P, plain_modulus>(pin[i][j], *sk);
 
     std::vector<TFHEpp::TRLWE<P>> cres(num_test);
 
@@ -40,8 +41,7 @@ int main()
     start = std::chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::TLWE2TablePacking<P,numtlwe>(cres[test], ca[test],
-                                                     *ahk);
+        TFHEpp::TLWE2TablePacking<P, numtlwe>(cres[test], ca[test], *ahk);
     }
 
     end = std::chrono::system_clock::now();
@@ -49,10 +49,11 @@ int main()
     for (int i = 0; i < num_test; i++) {
         TFHEpp::Polynomial<P> pres;
         pres = TFHEpp::trlweSymIntDecrypt<P, plain_modulus>(cres[i], *sk);
-        // for (int j = 0; j < numtlwe; j++) 
+        // for (int j = 0; j < numtlwe; j++)
         //     for (int k = 0; k < segment; k++)
-        //         std::cout << static_cast<int64_t>(pres[j * segment + k]) << ":" << static_cast<int64_t>(pin[i][j]) << std::endl;
-        for (int j = 0; j < numtlwe; j++) 
+        //         std::cout << static_cast<int64_t>(pres[j * segment + k]) <<
+        //         ":" << static_cast<int64_t>(pin[i][j]) << std::endl;
+        for (int j = 0; j < numtlwe; j++)
             for (int k = 0; k < segment; k++)
                 assert(pres[j * segment + k] == pin[i][j]);
     }

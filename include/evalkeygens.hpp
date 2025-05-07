@@ -177,7 +177,7 @@ template <class P>
 void annihilatekeygen(AnnihilateKey<P>& ahk, const Key<P>& key)
 {
     for (int i = 0; i < P::nbit; i++)
-        evalautokeygen<P>(ahk[i], (1 << (i+1)) + 1, key);
+        evalautokeygen<P>(ahk[i], (1 << (i + 1)) + 1, key);
 }
 
 template <class P>
