@@ -18,6 +18,7 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64
     ${PROJECT_SOURCE_DIR}/thirdparties/hexl/hexl/hexl/include
     ${PROJECT_SOURCE_DIR}/thirdparties/randen
+    ${PROJECT_SOURCE_DIR}/thirdparties/AES/src
     ${PROJECT_SOURCE_DIR}/thirdparties/HLS_arbitrary_Precision_Types/include
     ${PROJECT_SOURCE_DIR}/thirdparties/cereal/include)
 

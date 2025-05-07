@@ -119,7 +119,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                 << bitwidth;
         if (ā == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<typename P::targetP>(res,
+        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res,
                                                                    bkfft[i], ā);
     }
 #endif
@@ -190,6 +190,17 @@ void GateBootstrappingTLWE2TLWEFFT(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
     const BootstrappingKeyFFT<P> &bkfft,
     const Polynomial<typename P::targetP> &testvector)
+{
+    alignas(64) TRLWE<typename P::targetP> acc;
+    BlindRotate<P>(acc, tlwe, bkfft, testvector);
+    SampleExtractIndex<typename P::targetP>(res, acc, 0);
+}
+
+template <class P>
+void GateBootstrappingTLWE2TLWEFFT(
+    TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
+    const BootstrappingKeyFFT<P> &bkfft,
+    const TRLWE<typename P::targetP> &testvector)
 {
     alignas(64) TRLWE<typename P::targetP> acc;
     BlindRotate<P>(acc, tlwe, bkfft, testvector);

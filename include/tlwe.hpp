@@ -104,7 +104,7 @@ bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
     return res;
 }
 
-template <class P, const uint plain_modulus>
+template <class P, uint plain_modulus = P::plain_modulus>
 typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
 {
     constexpr double Δ =
@@ -117,16 +117,10 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
     return res >= plain_modulus / 2 ? res - plain_modulus : res;
 }
 
-template <class P>
-typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
-{
-    return tlweSymIntDecrypt<P, P::plain_modulus>(c, key);
-}
-
-template <class P>
+template <class P, uint plain_modulus=P::plain_modulus>
 typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const SecretKey &sk)
 {
-    return tlweSymIntDecrypt<P, P::plain_modulus>(c, sk.key.get<P>());
+    return tlweSymIntDecrypt<P, plain_modulus>(c, sk.key.get<P>());
 }
 
 template <class P, std::make_signed_t<typename P::T> μ>

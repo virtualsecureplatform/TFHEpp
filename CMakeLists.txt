@@ -165,6 +165,7 @@ add_subdirectory(src)
 
 if(ENABLE_TEST)
   add_subdirectory(test)
+  add_subdirectory(thirdparties/AES)
 endif()
 if(ENABLE_BENCHMARK)
   add_subdirectory(benchmark)
