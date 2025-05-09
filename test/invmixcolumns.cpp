@@ -5,7 +5,7 @@
 #include <random>
 #include <tfhe++.hpp>
 
-void MixColumns(unsigned char state[4][4]) {
+void InvMixColumns(unsigned char state[4][4]) {
   unsigned char temp_state[4][4];
 
   for (size_t i = 0; i < 4; ++i) {
@@ -15,10 +15,7 @@ void MixColumns(unsigned char state[4][4]) {
   for (size_t i = 0; i < 4; ++i) {
     for (size_t k = 0; k < 4; ++k) {
       for (size_t j = 0; j < 4; ++j) {
-        if (CMDS[i][k] == 1)
-          temp_state[i][j] ^= state[k][j];
-        else
-          temp_state[i][j] ^= GF_MUL_TABLE[CMDS[i][k]][state[k][j]];
+        temp_state[i][j] ^= GF_MUL_TABLE[INV_CMDS[i][k]][state[k][j]];
       }
     }
   }
@@ -51,7 +48,7 @@ int main()
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         // std::cout << "test: " << test << std::endl;
-        TFHEpp::MixColumns<P>(cstate[test]);
+        TFHEpp::InvMixColumns<P>(cstate[test]);
     }
 
     end = std::chrono::system_clock::now();
@@ -72,7 +69,7 @@ int main()
                     byte |= plaintext[i][j*32 + k * 8 + l] << l;
                 state[j][k] = byte;
             }
-        MixColumns(state);
+        InvMixColumns(state);
         for (int j = 0; j < 4; j++)
             for (int k = 0; k < 4; k++){
                 uint8_t byte = 0;
