@@ -51,6 +51,12 @@ TLWE<P> tlweSymEncrypt(const typename P::T p, const Key<P> &key)
         return tlweSymEncrypt<P>(p, P::η, key);
 }
 
+template <class P>
+TLWE<P> tlweSymEncrypt(const typename P::T p, const SecretKey &sk)
+{
+    return tlweSymEncrypt<P>(p, sk.key.get<P>());
+}
+
 template <class P, uint plain_modulus = P::plain_modulus>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
                           const Key<P> &key)
@@ -103,6 +109,12 @@ bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
     bool res =
         static_cast<typename std::make_signed<typename P::T>::type>(phase) > 0;
     return res;
+}
+
+template <class P>
+bool tlweSymDecrypt(const TLWE<P> &c, const SecretKey &sk)
+{
+    return tlweSymDecrypt<P>(c, sk.key.get<P>());
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
@@ -171,6 +183,12 @@ std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
                                      const SecretKey &sk)
 {
     return bootsSymDecrypt<P>(c, sk.key.get<P>());
+}
+
+template <class P>
+void TLWEAdd(TLWE<P> &res, const TLWE<P> &a, const TLWE<P> &b)
+{
+    for (int i = 0; i <= P::k * P::n; i++) res[i] = a[i] + b[i];
 }
 
 }  // namespace TFHEpp

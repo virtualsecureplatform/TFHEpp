@@ -48,24 +48,33 @@ void UROMUX(TRLWE<P> &res, const array<TRGSWFFT<P>, address_bit> &invaddress,
 {
     constexpr uint32_t Ubit = address_bit - width_bit;
     constexpr uint32_t num_trlwe = 1 << (Ubit);
-    array<TRLWE<P>, num_trlwe / 2> temp;
+    if constexpr (Ubit == 0) {
+        res = data[0];
+        return;
+    }else if constexpr (Ubit == 1) {
+        CMUXFFT<P>(res, invaddress[address_bit-1], data[0], data[1]);
+        return;
+    }else{
+        array<TRLWE<P>, num_trlwe / 2> temp;
 
-    for (int index = 0; index < num_trlwe / 2; index++) {
-        CMUXFFT<P>(temp[index], invaddress[width_bit], data[2 * index],
-                   data[2 * index + 1]);
-    }
-
-    for (int bit = 0; bit < (Ubit - 2); bit++) {
-        const uint32_t stride = 1 << bit;
-        for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
-            CMUXFFT<P>(
-                temp[(2 * index) * stride], invaddress[width_bit + bit + 1],
-                temp[(2 * index) * stride], temp[(2 * index + 1) * stride]);
+        // By using inv, we can reuse the same element to store the result
+        for (int index = 0; index < num_trlwe / 2; index++) {
+            CMUXFFT<P>(temp[index], invaddress[width_bit], data[2 * index],
+                    data[2 * index + 1]);
         }
-    }
 
-    constexpr uint32_t stride = 1 << (Ubit - 2);
-    CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+        for (int bit = 0; bit < (Ubit - 2); bit++) {
+            const uint32_t stride = 1 << bit;
+            for (uint32_t index = 0; index < (num_trlwe >> (bit + 2)); index++) {
+                CMUXFFT<P>(
+                    temp[(2 * index) * stride], invaddress[width_bit + bit + 1],
+                    temp[(2 * index) * stride], temp[(2 * index + 1) * stride]);
+            }
+        }
+
+        constexpr uint32_t stride = 1 << (Ubit - 2);
+        CMUXFFT<P>(res, invaddress[address_bit - 1], temp[0], temp[stride]);
+    }
 }
 
 // MUX tree for horizontal packing
@@ -75,25 +84,47 @@ void LROMUX(vector<TLWE<P>> &res,
             const TRLWE<P> &data)
 {
     TRLWE<P> temp, acc;
-    PolynomialMulByXaiMinusOne<P>(temp[0], data[0], 2 * P::n - (P::n >> 1));
-    PolynomialMulByXaiMinusOne<P>(temp[1], data[1], 2 * P::n - (P::n >> 1));
+    for(int i = 0; i < P::k+1; i++)
+        PolynomialMulByXaiMinusOne<P>(temp[i], data[i], 2 * P::n - (P::n >> 1));
     trgswfftExternalProduct<P>(temp, temp, address[width_bit - 1]);
-    for (int i = 0; i < P::n; i++) {
+    for (int i = 0; i < (P::k+1)*P::n; i++) 
         // initialize acc
         acc[0][i] = temp[0][i] + data[0][i];
-        acc[1][i] = temp[1][i] + data[1][i];
-    }
-
+    
     for (uint32_t bit = 2; bit <= width_bit; bit++) {
-        PolynomialMulByXaiMinusOne<P>(temp[0], acc[0],
-                                      2 * P::n - (P::n >> bit));
-        PolynomialMulByXaiMinusOne<P>(temp[1], acc[1],
+        for(int i = 0; i < P::k+1; i++)
+        PolynomialMulByXaiMinusOne<P>(temp[i], acc[i],
                                       2 * P::n - (P::n >> bit));
         trgswfftExternalProduct<P>(temp, temp, address[width_bit - bit]);
-        for (int i = 0; i < P::n; i++) {
+        for (int i = 0; i < (P::k+1)*P::n; i++) 
             acc[0][i] += temp[0][i];
-            acc[1][i] += temp[1][i];
-        }
+    }
+
+    constexpr uint32_t word = 1 << (P::nbit - width_bit);
+    for (int i = 0; i < word; i++) SampleExtractIndex<P>(res[i], acc, i);
+}
+
+// MUX tree for horizontal packing
+template <class P, uint32_t address_bit, uint32_t width_bit>
+void LROMUX(std::array<TLWE<P>,1 << (P::nbit - width_bit)> &res,
+            const array<TRGSWFFT<P>, address_bit> &address,
+            const TRLWE<P> &data)
+{
+    TRLWE<P> temp, acc;
+    for(int i = 0; i < P::k+1; i++)
+        PolynomialMulByXaiMinusOne<P>(temp[i], data[i], 2 * P::n - (P::n >> 1));
+    trgswfftExternalProduct<P>(temp, temp, address[width_bit - 1]);
+    for (int i = 0; i < (P::k+1)*P::n; i++) 
+        // initialize acc
+        acc[0][i] = temp[0][i] + data[0][i];
+    
+    for (uint32_t bit = 2; bit <= width_bit; bit++) {
+        for(int i = 0; i < P::k+1; i++)
+        PolynomialMulByXaiMinusOne<P>(temp[i], acc[i],
+                                      2 * P::n - (P::n >> bit));
+        trgswfftExternalProduct<P>(temp, temp, address[width_bit - bit]);
+        for (int i = 0; i < (P::k+1)*P::n; i++) 
+            acc[0][i] += temp[0][i];
     }
 
     constexpr uint32_t word = 1 << (P::nbit - width_bit);
