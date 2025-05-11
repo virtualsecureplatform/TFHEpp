@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bitset>
+#include <span>
 
 #include "detwfa.hpp"
 
@@ -106,7 +107,7 @@ void LROMUX(vector<TLWE<P>> &res,
 
 // MUX tree for horizontal packing
 template <class P, uint32_t address_bit, uint32_t width_bit>
-void LROMUX(std::array<TLWE<P>,1 << (P::nbit - width_bit)> &res,
+void LROMUX(std::span<TLWE<P>,1 << (P::nbit - width_bit)> res,
             const array<TRGSWFFT<P>, address_bit> &address,
             const TRLWE<P> &data)
 {
@@ -129,5 +130,13 @@ void LROMUX(std::array<TLWE<P>,1 << (P::nbit - width_bit)> &res,
 
     constexpr uint32_t word = 1 << (P::nbit - width_bit);
     for (int i = 0; i < word; i++) SampleExtractIndex<P>(res[i], acc, i);
+}
+
+template <class P, uint32_t address_bit, uint32_t width_bit>
+void LROMUX(std::array<TLWE<P>,1 << (P::nbit - width_bit)> &res,
+            const array<TRGSWFFT<P>, address_bit> &address,
+            const TRLWE<P> &data)
+{
+    LROMUX<P, address_bit, width_bit>(std::span(res), address, data);
 }
 }  // namespace TFHEpp

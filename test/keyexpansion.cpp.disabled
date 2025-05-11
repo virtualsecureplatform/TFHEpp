@@ -1,0 +1,148 @@
+// It increase the noise too much (we may need to insert Bootstrapping)
+
+#include <cassert>
+#include <chrono>
+#include <iostream>
+#include <memory>
+#include <random>
+#include <tfhe++.hpp>
+
+unsigned char xtime(unsigned char b)  // multiply on x
+{
+  return (b << 1) ^ (((b >> 7) & 1) * 0x1b);
+}
+
+void SubWord(unsigned char *a) {
+  int i;
+  for (i = 0; i < 4; i++) {
+    a[i] = sbox[a[i] / 16][a[i] % 16];
+  }
+}
+
+void RotWord(unsigned char *a) {
+  unsigned char c = a[0];
+  a[0] = a[1];
+  a[1] = a[2];
+  a[2] = a[3];
+  a[3] = c;
+}
+
+void XorWords(unsigned char *a, unsigned char *b, unsigned char *c) {
+  int i;
+  for (i = 0; i < 4; i++) {
+    c[i] = a[i] ^ b[i];
+  }
+}
+
+void Rcon(unsigned char *a, unsigned int n) {
+  unsigned int i;
+  unsigned char c = 1;
+  for (i = 0; i < n - 1; i++) {
+    c = xtime(c);
+  }
+
+  a[0] = c;
+  a[1] = a[2] = a[3] = 0;
+}
+
+constexpr uint Nk = 4;  // Number of 32-bit words in the key
+constexpr uint Nb = 4;  // Number of columns (32-bit words) comprising the state
+constexpr uint Nr = 10; // Number of rounds, which is a function of Nk and Nb
+
+void KeyExpansion(const unsigned char key[], unsigned char w[]) {
+  unsigned char temp[4];
+  unsigned char rcon[4];
+
+  unsigned int i = 0;
+  while (i < 4 * Nk) {
+    w[i] = key[i];
+    i++;
+  }
+
+  i = 4 * Nk;
+  while (i < 4 * Nb * (Nr + 1)) {
+    temp[0] = w[i - 4 + 0];
+    temp[1] = w[i - 4 + 1];
+    temp[2] = w[i - 4 + 2];
+    temp[3] = w[i - 4 + 3];
+
+    if (i / 4 % Nk == 0) {
+      RotWord(temp);
+      SubWord(temp);
+      Rcon(rcon, i / (Nk * 4));
+      XorWords(temp, rcon, temp);
+    } else if (Nk > 6 && i / 4 % Nk == 4) {
+      SubWord(temp);
+    }
+
+    w[i + 0] = w[i - 4 * Nk] ^ temp[0];
+    w[i + 1] = w[i + 1 - 4 * Nk] ^ temp[1];
+    w[i + 2] = w[i + 2 - 4 * Nk] ^ temp[2];
+    w[i + 3] = w[i + 3 - 4 * Nk] ^ temp[3];
+    i += 4;
+  }
+}
+
+int main()
+{
+    using brP = TFHEpp::lvlh2param;
+    using iksP = TFHEpp::lvl2hparam;
+    using P = TFHEpp::lvl2param;
+    std::random_device seed_gen;
+    std::default_random_engine engine(seed_gen());
+    std::uniform_int_distribution<uint32_t> binary(0, 1);
+
+    std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
+    constexpr uint num_test = 1;
+    std::vector<std::array<TFHEpp::TLWE<P>,128>> ckey(num_test);
+    std::vector<std::array<std::array<TFHEpp::TLWE<P>,128>,10>> cexpandedkey(num_test);
+    std::vector<std::array<uint8_t, 128>> key(num_test);
+
+    for (int i = 0; i < num_test; i++) {
+        for (int j = 0; j < 128; j++){
+            key[i][j] = binary(engine);
+            ckey[i][j] = TFHEpp::tlweSymEncrypt<P>(key[i][j]?1ULL << (std::numeric_limits<typename P::T>::digits - 2):-(1ULL << (std::numeric_limits<typename P::T>::digits - 2)), *sk);
+        }
+    }
+
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<brP>(*sk);
+    ek.emplaceiksk<iksP>(*sk);
+    ek.emplaceahk<typename brP::targetP>(*sk);
+    ek.emplacecbsk<typename brP::targetP>(*sk);
+
+    std::chrono::system_clock::time_point start, end;
+    start = std::chrono::system_clock::now();
+    for (int test = 0; test < num_test; test++) {
+        std::cout << "test: " << test << std::endl;
+        TFHEpp::KeyExpansion<iksP, brP>(cexpandedkey[test],ckey[test],ek);
+    }
+
+    end = std::chrono::system_clock::now();
+    double elapsed =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count();
+    std::cout << elapsed / num_test << "ms" << std::endl;
+
+    for (int i = 0; i < num_test; i++) {
+        uint8_t keybytes[16];
+        for (int j = 0; j < 16; j++){
+            keybytes[j] = 0;
+            for (int k = 0; k < 8; k++)
+                keybytes[j] |= (key[i][j*8 + k] << k);
+        }
+        uint8_t roundKeys[16*11];
+        KeyExpansion(keybytes, roundKeys);
+        for(int round = 0; round < 10; round++){
+          for (int j = 0; j < 16; j++){
+            uint8_t pres = 0;
+            for (int k = 0; k < 8; k++)
+              if(TFHEpp::tlweSymDecrypt<P>(cexpandedkey[i][round][j*8+k], *sk))
+                pres |= (1 << k);
+            std::cout << "round: " << round <<", byte:" << j << "," << (int)pres << "," << (int)roundKeys[(round+1)*16 + j] << std::endl;
+            assert(pres == roundKeys[(round+1)*16 + j]);
+          }
+        }
+    }
+  std::cout << "PASS" << std::endl;
+}

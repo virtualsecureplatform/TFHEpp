@@ -7,6 +7,133 @@ namespace TFHEpp {
 
 constexpr uint aesNb = 4;
 
+void SubWord(std::array<uint8_t,4>& a) {
+  int i;
+  for (i = 0; i < 4; i++) {
+    a[i] = sbox[a[i] / 16][a[i] % 16];
+  }
+}
+
+void RotWord(std::array<uint8_t,4>& a) {
+  uint8_t c = a[0];
+  a[0] = a[1];
+  a[1] = a[2];
+  a[2] = a[3];
+  a[3] = c;
+}
+
+
+inline uint8_t xtime(uint8_t b)  // multiply on x
+{
+  return (b << 1) ^ (((b >> 7) & 1) * 0x1b);
+}
+
+uint8_t Rcon(unsigned int n) {
+  uint8_t c = 1;
+  for (uint i = 0; i < n - 1; i++) {
+    c = xtime(c);
+  }
+  return c;
+}
+
+constexpr uint Nk = 4;  // Number of 32-bit words in the key
+constexpr uint Nb = 4;  // Number of columns (32-bit words) comprising the state
+constexpr uint Nr = 10; // Number of rounds, which is a function of Nk and Nb
+
+void KeyExpansion(std::array<uint8_t, 4*Nb*(Nr+1)> w, const std::array<uint8_t,16> key) {
+  std::array<uint8_t,4> temp;
+
+  unsigned int i = 0;
+  while (i < 4 * Nk) {
+    w[i] = key[i];
+    i++;
+  }
+
+  i = 4 * Nk;
+  while (i < 4 * Nb * (Nr + 1)) {
+    temp[0] = w[i - 4 + 0];
+    temp[1] = w[i - 4 + 1];
+    temp[2] = w[i - 4 + 2];
+    temp[3] = w[i - 4 + 3];
+
+    if (i / 4 % Nk == 0) {
+      RotWord(temp);
+      SubWord(temp);
+      temp[0] ^= Rcon(i / (Nk * 4));
+    } else if (Nk > 6 && i / 4 % Nk == 4) {
+      SubWord(temp);
+    }
+
+    w[i + 0] = w[i - 4 * Nk] ^ temp[0];
+    w[i + 1] = w[i + 1 - 4 * Nk] ^ temp[1];
+    w[i + 2] = w[i + 2 - 4 * Nk] ^ temp[2];
+    w[i + 3] = w[i + 3 - 4 * Nk] ^ temp[3];
+    i += 4;
+  }
+}
+
+template <class P>
+inline std::array<Polynomial<P>, (1<<8)/(P::n/8)> AESSboxROMPoly()
+{
+    std::array<Polynomial<P>, (1<<8)/(P::n/8)> polys;
+    for(int i = 0; i < (1<<8)/(P::n/8); i++) 
+        for(int j = 0; j < P::n/8; j++) 
+            for(int k = 0; k < 8; k++) {
+                const uint index = i * (P::n/8) + j;
+                polys[i][j*8+k] = ((sbox[index>>4][index&0xf] >> k) & 0x1)?1ULL << (std::numeric_limits<typename P::T>::digits - 2):-(1ULL << (std::numeric_limits<typename P::T>::digits - 2));
+            }
+    return polys;
+}
+
+template <class iksP, class brP>
+void AESSboxROM(const std::span<TLWE<typename brP::targetP>,8> res,
+                const std::span<const TLWE<typename iksP::domainP>, 8> tlwe,
+                const EvalKey &ek)
+{
+    constexpr uint32_t address_bit = 8;  // Address by words.
+    constexpr uint32_t words_bit = 3;
+    constexpr uint32_t width_bit =
+        brP::targetP::nbit -
+        words_bit;  // log_2 of how many words are in one TRLWE message.
+    static_assert(address_bit >= width_bit);
+    alignas(64) std::array<TRGSWFFT<typename brP::targetP>, 8> trgsw;
+    for(int i = 0; i < 8; i++){
+        TLWE<typename iksP::domainP> shifted = tlwe[i];
+        // shifted[iksP::targetP::k * iksP::targetP::n] -=
+            // 1ULL << (std::numeric_limits<typename iksP::domainP::T>::digits - 2);
+        if(i >= width_bit) for(int j = 0; j <= iksP::domainP::k*iksP::domainP::n; j++)
+            shifted[j] *= -1;
+        AnnihilateCircuitBootstrappingFFT<iksP, brP>(trgsw[i], shifted, ek);
+    }
+    std::array<TRLWE<typename brP::targetP>, (1<<8)/(brP::targetP::n/8)> rom = {};
+    for(int i = 0; i < (1<<8)/(brP::targetP::n/8); i++) rom[i][brP::targetP::k] = AESSboxROMPoly<typename brP::targetP>()[i];
+    if constexpr (address_bit!=width_bit){
+        TRLWE<typename brP::targetP> trlwe;
+        UROMUX<typename brP::targetP, address_bit, width_bit>(
+            trlwe, trgsw, rom);
+        LROMUX<typename brP::targetP, address_bit, width_bit>(res, trgsw, trlwe);
+    }else{
+        LROMUX<typename brP::targetP, address_bit, width_bit>(res, trgsw, rom[0]);
+    }
+}
+
+template <class iksP, class brP>
+void AESSboxROM(std::array<TLWE<typename brP::targetP>,8> &res,
+                const std::array<TLWE<typename iksP::domainP>, 8> &tlwe,
+                const EvalKey &ek)
+{
+    AESSboxROM<iksP, brP>(std::span(res), std::span(tlwe), ek);
+}
+
+template <class iksP, class brP>
+void SubBytes(std::array<TLWE<typename brP::targetP>, 128> &res,
+                const std::array<TLWE<typename iksP::domainP>, 128> &tlwe,
+                const EvalKey &ek)
+{
+    for(int i = 0; i < 16; i++)
+        AESSboxROM<iksP, brP>(std::span(res).subspan(i*8,(i+1)*8-1), std::span(tlwe).subspan(i*8,(i+1)*8-1), ek);
+}
+
 template <class P>
 inline Polynomial<P> AESInvSboxPoly(const uint8_t upperindex)
 {
@@ -310,6 +437,97 @@ void InvMixColumns(std::array<TLWE<P>, 128> &state) {
     }
     for(int i = 0; i < 128; i++)
         state[i][P::k*P::n] -= (1ULL << (std::numeric_limits<typename P::T>::digits - 2));
+}
+
+template <class P>
+void AddRoundKey(std::array<TLWE<P>, 128> &state,
+                const std::array<TLWE<P>, 128> &roundkey)
+{
+    for (int i = 0; i < 128; i++){
+        TLWEAdd<P>(state[i], state[i], roundkey[i]);
+        state[i][P::k * P::n] += 1ULL << (std::numeric_limits<typename P::T>::digits - 2);
+    }
+}
+
+template <class iksP, class brP>
+void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
+            const std::array<TLWE<typename iksP::domainP>, 128> &plain,
+            const std::array<std::array<TLWE<typename brP::targetP>, 128>, 11> &expandedkey,
+            EvalKey &ek)
+{
+    // Initial AddRoundKey
+    for (int i = 0; i < 128; i++){
+        TLWEAdd<typename iksP::domainP>(cipher[i], plain[i], expandedkey[0][i]);
+        cipher[i][brP::targetP::k * brP::targetP::n] += 1ULL << (std::numeric_limits<typename brP::targetP::T>::digits - 2);
+    }
+
+    // Rounds
+    for (int round = 1; round < Nr; round++) {
+        SubBytes<iksP, brP>(cipher, cipher, ek);
+        ShiftRows(cipher);
+        MixColumns(cipher);
+        AddRoundKey(cipher, expandedkey[round]);
+    }
+    SubBytes<iksP, brP>(cipher, cipher, ek);
+    ShiftRows(cipher);
+    AddRoundKey(cipher, expandedkey[Nr]);
+}
+
+uint8_t Rcon(const uint8_t n){
+    uint8_t rcon = 1;
+    for (int i = 0; i < n - 1; i++) {
+        rcon = xtime(rcon);
+    }
+    return rcon;
+}
+
+// Currently, assuming only AES128
+    // AES key expansion
+template <class iksP, class brP>
+void KeyExpand(std::array<TLWE<typename brP::targetP>, 128> &next, const std::array<TLWE<typename iksP::domainP>,128> &prev, EvalKey &ek, const uint8_t n)
+{
+    // SubWord & RotWord
+    std::array<TLWE<typename iksP::domainP>, 8> sbox;
+    for (int i = 0; i < 8; i++)
+        sbox[i] = prev[96+i];
+    AESSboxROM<iksP, brP>(sbox, sbox, ek);
+    for (int i = 0; i < 8; i++)
+        TLWEAdd<typename iksP::domainP>(next[8*3+i], sbox[i], prev[8*3 + i]);
+    for (int i = 0; i < 8; i++)
+        sbox[i] = prev[96+8+i];
+    AESSboxROM<iksP, brP>(sbox, sbox, ek);
+    for (int i = 0; i < 8; i++)
+        TLWEAdd<typename iksP::domainP>(next[i], sbox[i], prev[i]);
+    // Add round constant
+    const uint8_t rcon = Rcon(n);
+    for (int i = 0; i < 8; i++)
+        if ((rcon >> i) & 0x1) next[i][brP::targetP::k * brP::targetP::n] += 1ULL << (std::numeric_limits<typename brP::targetP::T>::digits - 1);
+    for (int pos = 2; pos < 4; pos++){
+        for (int i = 0; i < 8; i++)
+            sbox[i] = prev[96+pos*8+i];
+        AESSboxROM<iksP, brP>(sbox, sbox, ek);
+        for (int i = 0; i < 8; i++)
+            TLWEAdd<typename iksP::domainP>(next[(pos-1)*8 + i], sbox[i], prev[(pos-1)*8 + i]);
+    }
+    for (int i = 0; i < 32; i++)
+        next[i][brP::targetP::k * brP::targetP::n] += 1ULL << (std::numeric_limits<typename brP::targetP::T>::digits - 2);
+
+    for (int i = 1; i < 4; i++){
+        for (int j = 0; j < 32; j++){
+            TLWEAdd<typename iksP::domainP>(next[i*32 + j], prev[i*32 + j], next[(i-1)*32 + j]);
+            next[i*32+j][brP::targetP::k * brP::targetP::n] += 1ULL << (std::numeric_limits<typename brP::targetP::T>::digits - 2);
+        }
+    }
+}
+
+template <class iksP, class brP>
+void KeyExpansion(std::array<std::array<TLWE<typename brP::targetP>, 128>, 10> &expandedkey,
+                  const std::array<TLWE<typename iksP::domainP>, 128> &key,
+                  EvalKey &ek)
+{
+    KeyExpand<iksP, brP>(expandedkey[0], key, ek, 1);
+    for (int i = 1; i < 10; i++)
+        KeyExpand<iksP, brP>(expandedkey[i], expandedkey[i-1], ek, i+1);
 }
 
 }  // namespace TFHEpp
