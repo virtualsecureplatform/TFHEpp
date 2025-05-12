@@ -131,7 +131,7 @@ void SubBytes(std::array<TLWE<typename brP::targetP>, 128> &res,
                 const EvalKey &ek)
 {
     for(int i = 0; i < 16; i++)
-        AESSboxROM<iksP, brP>(std::span(res).subspan(i*8,(i+1)*8-1), std::span(tlwe).subspan(i*8,(i+1)*8-1), ek);
+        AESSboxROM<iksP, brP>(std::span(res).subspan(i*8).template first<8>(), std::span(tlwe).subspan(i*8).template first<8>(), ek);
 }
 
 template <class P>
@@ -227,12 +227,12 @@ void AESInvSboxROM(std::array<TLWE<typename brP::targetP>, 8> &res,
 template <class P, uint index, uint n>
 void ShiftRow(std::array<TLWE<P>, 128> &res)
 {
-    std::array<TLWE<P>, 32> tmp;
-    for (int i = 0; i < aesNb; i++)
+    std::array<TLWE<P>, Nb*8> tmp;
+    for (int i = 0; i < Nb; i++)
         for(int j = 0; j < 8; j++)
-            tmp[i*8 + j] = res[index * aesNb * 8 + ((i+n)%aesNb)*8 + j];
-    for (int i = 0; i < aesNb*8; i++)
-        res[index * aesNb * 8 + i] = tmp[i];
+            tmp[i*8 + j] = res[index * Nb * 8 + ((i+n)%Nb)*8 + j];
+    for (int i = 0; i < Nb*8; i++)
+        res[index * Nb * 8 + i] = tmp[i];
 }
 
 template <class P>
@@ -443,34 +443,48 @@ template <class P>
 void AddRoundKey(std::array<TLWE<P>, 128> &state,
                 const std::array<TLWE<P>, 128> &roundkey)
 {
-    for (int i = 0; i < 128; i++){
-        TLWEAdd<P>(state[i], state[i], roundkey[i]);
-        state[i][P::k * P::n] += 1ULL << (std::numeric_limits<typename P::T>::digits - 2);
-    }
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for(int k = 0; k < 8; k++) {
+                TLWEAdd<P>(state[i*Nb*8+j*8+k], state[i*Nb*8+j*8+k], roundkey[j*4*8+i*8+k]);
+                state[i*Nb*8+j*8+k][P::k * P::n] += 1ULL << (std::numeric_limits<typename P::T>::digits - 2);
+            }
 }
 
 template <class iksP, class brP>
 void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
             const std::array<TLWE<typename iksP::domainP>, 128> &plain,
-            const std::array<std::array<TLWE<typename brP::targetP>, 128>, 11> &expandedkey,
+            const std::array<std::array<TLWE<typename brP::targetP>, 128>, Nr+1> &expandedkey,
             EvalKey &ek)
 {
+    std::array<TLWE<typename iksP::domainP>, 128> state;
+    // Copy plaintext to state with transposition
     // Initial AddRoundKey
-    for (int i = 0; i < 128; i++){
-        TLWEAdd<typename iksP::domainP>(cipher[i], plain[i], expandedkey[0][i]);
-        cipher[i][brP::targetP::k * brP::targetP::n] += 1ULL << (std::numeric_limits<typename brP::targetP::T>::digits - 2);
-    }
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for(int k = 0; k < 8; k++){
+                TLWEAdd<typename iksP::domainP>(state[i*Nb*8+j*8+k], plain[j*4*8+i*8+k], expandedkey[0][j*4*8+i*8+k]);
+                state[i*Nb*8+j*8+k][iksP::domainP::k * iksP::domainP::n] += 1ULL << (std::numeric_limits<typename iksP::domainP::T>::digits - 2);
+            }
+            // state[i*Nb+j] = plain[j*4+i];]
+    // AddRoundKey<typename iksP::domainP>(state, expandedkey[0]);
 
     // Rounds
     for (int round = 1; round < Nr; round++) {
-        SubBytes<iksP, brP>(cipher, cipher, ek);
-        ShiftRows(cipher);
-        MixColumns(cipher);
-        AddRoundKey(cipher, expandedkey[round]);
+        SubBytes<iksP, brP>(state, state, ek);
+        ShiftRows<typename brP::targetP>(state);
+        MixColumns<typename brP::targetP>(state);
+        AddRoundKey<typename brP::targetP>(state, expandedkey[round]);
     }
-    SubBytes<iksP, brP>(cipher, cipher, ek);
-    ShiftRows(cipher);
-    AddRoundKey(cipher, expandedkey[Nr]);
+    SubBytes<iksP, brP>(state, state, ek);
+    ShiftRows<typename brP::targetP>(state);
+    AddRoundKey<typename brP::targetP>(state, expandedkey[Nr]);
+
+    // Copy state to ciphertext with transposition
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for(int k = 0; k < 8; k++)
+                cipher[j*4*8+i*8+k] = state[i*Nb*8+j*8+k];
 }
 
 uint8_t Rcon(const uint8_t n){
