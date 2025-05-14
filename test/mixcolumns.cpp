@@ -78,6 +78,7 @@ int main()
                 uint8_t byte = 0;
                 for (int l = 0; l < 8; l++)
                     byte |= pres[j*32 + k * 8 + l] << l;
+                // std::cout <<"j: " << j << " k: " << k << std::endl;
                 // std::cout << (int)state[j][k] << " " << (int)byte << std::endl;
                 assert(state[j][k] == byte);
             }

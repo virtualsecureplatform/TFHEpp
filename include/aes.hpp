@@ -40,7 +40,7 @@ constexpr uint Nk = 4;  // Number of 32-bit words in the key
 constexpr uint Nb = 4;  // Number of columns (32-bit words) comprising the state
 constexpr uint Nr = 10; // Number of rounds, which is a function of Nk and Nb
 
-void KeyExpansion(std::array<uint8_t, 4*Nb*(Nr+1)> w, const std::array<uint8_t,16> key) {
+void KeyExpansion(std::array<uint8_t, 4*Nb*(Nr+1)>& w, const std::array<uint8_t,16>& key) {
   std::array<uint8_t,4> temp;
 
   unsigned int i = 0;
@@ -126,13 +126,25 @@ void AESSboxROM(std::array<TLWE<typename brP::targetP>,8> &res,
 }
 
 template <class iksP, class brP>
-void SubBytes(std::array<TLWE<typename brP::targetP>, 128> &res,
-                const std::array<TLWE<typename iksP::domainP>, 128> &tlwe,
+void SubBytes(std::array<TLWE<typename brP::targetP>, 128>& state,
                 const EvalKey &ek)
 {
     for(int i = 0; i < 16; i++)
-        AESSboxROM<iksP, brP>(std::span(res).subspan(i*8).template first<8>(), std::span(tlwe).subspan(i*8).template first<8>(), ek);
+        AESSboxROM<iksP, brP>(std::span(state).subspan(i*8).template first<8>(), std::span(state).subspan(i*8).template first<8>(), ek);
 }
+
+template <class iksP, class brP, class cbiksP, class cbbrP>
+void SubBytes(std::array<TLWE<typename brP::targetP>, 128>& state,
+                const EvalKey &ek)
+{
+    for(int i = 0; i < 16; i++){
+        std::array<TLWE<typename cbbrP::targetP>, 8> temp;
+        AESSboxROM<iksP, cbbrP>(std::span(temp), std::span(state).subspan(i*8).template first<8>(), ek);
+        for(int j = 0; j < 8; j++)
+            GateBootstrapping<cbiksP, brP, 1ULL << (std::numeric_limits<typename brP::targetP::T>::digits - 2)>(state[i*8+j], temp[j], ek);
+    }
+}
+
 
 template <class P>
 inline Polynomial<P> AESInvSboxPoly(const uint8_t upperindex)
@@ -357,6 +369,121 @@ void MixColumn(std::array<TLWE<P>, 32>& y_out, const std::array<TLWE<P>, 32>& x)
     TLWEAdd<P>(y_out[28], x[20], t[59]);
 }
 
+// https://eprint.iacr.org/2024/1076
+template <class P>
+void MixColumnDepth4(std::array<TLWE<P>, 32>& y, const std::array<TLWE<P>, 32>& x){
+    // r0 … r64
+    std::array<TLWE<P>, 65> r;
+
+    // --- first stage --------------------------------------------------------
+    TLWEAdd<P>(r[ 0], x[23], x[31]);
+    TLWEAdd<P>(r[ 1], x[21], x[29]);
+    TLWEAdd<P>(r[ 2], x[17], x[25]);
+    TLWEAdd<P>(r[ 3], x[16], x[24]);
+    TLWEAdd<P>(r[ 4], x[15], x[23]);
+    TLWEAdd<P>(r[ 5], x[14], x[22]);
+    TLWEAdd<P>(r[ 6], x[12], x[20]);
+    TLWEAdd<P>(r[ 7], x[12], x[13]);
+    TLWEAdd<P>(r[ 8], x[11], x[20]);
+    TLWEAdd<P>(r[ 9], x[10], x[25]);
+    TLWEAdd<P>(r[10], x[10], x[18]);
+    TLWEAdd<P>(r[11], x[ 9], x[18]);
+    TLWEAdd<P>(r[12], x[ 7], x[31]);
+    TLWEAdd<P>(r[13], x[ 7], x[15]);
+    TLWEAdd<P>(r[14], x[ 6], x[31]);
+    TLWEAdd<P>(r[15], x[ 6], x[30]);
+    TLWEAdd<P>(r[16], x[ 5], x[13]);
+    TLWEAdd<P>(r[17], x[ 5], x[ 6]);
+    TLWEAdd<P>(r[18], x[ 4], x[28]);
+    TLWEAdd<P>(r[19], x[ 3], x[27]);
+    TLWEAdd<P>(r[20], x[ 3], x[11]);
+    TLWEAdd<P>(r[21], x[ 2], x[26]);
+    TLWEAdd<P>(r[22], x[ 1], x[ 9]);
+    TLWEAdd<P>(r[23], x[ 0], x[ 8]);
+
+    // --- second stage -------------------------------------------------------
+    TLWEAdd<P>(r[24], r[ 0], x[27]);
+    TLWEAdd<P>(r[25], r[ 0], x[ 7]);
+    TLWEAdd<P>(r[26], r[ 1], x[ 5]);
+    TLWEAdd<P>(r[27], r[ 1], x[ 4]);
+    TLWEAdd<P>(r[28], r[ 2], x[ 1]);
+    TLWEAdd<P>(r[29], r[ 3], x[ 8]);
+    TLWEAdd<P>(r[30], r[ 3], r[ 0]);
+    TLWEAdd<P>(r[31], r[ 4], x[14]);
+    TLWEAdd<P>(r[32], r[ 4], x[ 7]);
+    TLWEAdd<P>(r[33], r[ 4], x[ 0]);
+    TLWEAdd<P>(r[34], r[ 5], x[29]);
+    TLWEAdd<P>(r[35], r[ 6], x[28]);
+    TLWEAdd<P>(r[36], r[ 6], x[ 4]);
+    TLWEAdd<P>(r[37], r[10], x[26]);
+    TLWEAdd<P>(r[38], r[10], r[ 4]);
+    TLWEAdd<P>(r[39], r[13], r[ 2]);
+    TLWEAdd<P>(r[40], r[15], x[22]);
+    TLWEAdd<P>(r[41], r[16], x[30]);
+    TLWEAdd<P>(r[42], r[16], x[28]);
+    TLWEAdd<P>(r[43], r[18], x[19]);
+    TLWEAdd<P>(r[44], r[19], x[19]);
+    TLWEAdd<P>(r[45], r[19], r[12]);
+    TLWEAdd<P>(r[46], r[20], x[26]);
+    TLWEAdd<P>(r[47], r[20], r[13]);
+    TLWEAdd<P>(r[48], r[21], x[17]);
+    TLWEAdd<P>(r[49], r[22], x[25]);
+    TLWEAdd<P>(r[50], r[22], x[17]);
+    TLWEAdd<P>(r[51], r[23], x[16]);
+    TLWEAdd<P>(r[52], r[23], x[ 9]);
+    TLWEAdd<P>(r[53], r[24], x[18]);
+    TLWEAdd<P>(r[54], r[24], x[12]);
+
+    // --- outputs that depend only on r0 … r54 -------------------------------
+    TLWEAdd<P>(y[15], r[25], r[ 5]);
+    TLWEAdd<P>(y[13], r[26], r[ 6]);
+    TLWEAdd<P>(y[ 5], r[27], r[ 7]);
+    TLWEAdd<P>(y[ 0], r[29], r[13]);
+    TLWEAdd<P>(y[ 7], r[31], r[14]);
+    TLWEAdd<P>(y[31], r[32], r[15]);
+    TLWEAdd<P>(y[ 8], r[33], r[ 3]);
+    TLWEAdd<P>(y[30], r[34], r[17]);
+    TLWEAdd<P>(y[ 2], r[37], r[22]);
+
+    // --- remaining intermediates -------------------------------------------
+    TLWEAdd<P>(r[55], r[37], r[28]);
+    TLWEAdd<P>(r[56], r[40], x[21]);
+    TLWEAdd<P>(r[57], r[40], r[13]);
+    TLWEAdd<P>(y[ 6], r[41], r[ 5]);
+    TLWEAdd<P>(r[58], r[42], x[29]);
+    TLWEAdd<P>(r[59], r[43], r[ 4]);
+    TLWEAdd<P>(r[60], r[44], x[ 2]);
+    TLWEAdd<P>(y[11], r[44], r[38]);
+    TLWEAdd<P>(y[28], r[45], r[36]);
+    TLWEAdd<P>(r[61], r[46], r[45]);
+    TLWEAdd<P>(r[62], r[47], x[10]);
+    TLWEAdd<P>(y[ 4], r[47], r[35]);
+    TLWEAdd<P>(y[18], r[48], r[ 9]);
+    TLWEAdd<P>(y[10], r[48], r[11]);
+    TLWEAdd<P>(y[17], r[49], r[30]);
+    TLWEAdd<P>(r[63], r[50], r[29]);
+    TLWEAdd<P>(y[24], r[51], r[12]);
+    TLWEAdd<P>(y[16], r[51], r[30]);
+    TLWEAdd<P>(r[64], r[51], r[33]);
+    TLWEAdd<P>(y[ 1], r[52], r[39]);
+    TLWEAdd<P>(y[19], r[53], r[46]);
+    TLWEAdd<P>(y[20], r[54], r[43]);
+    TLWEAdd<P>(y[26], r[55], r[48]);
+    TLWEAdd<P>(y[14], r[56], x[13]);
+    TLWEAdd<P>(y[22], r[56], r[34]);
+    TLWEAdd<P>(y[23], r[57], r[14]);
+    TLWEAdd<P>(y[21], r[58], x[20]);
+    TLWEAdd<P>(y[29], r[58], r[27]);
+    TLWEAdd<P>(y[12], r[59], r[ 8]);
+    TLWEAdd<P>(y[27], r[61], r[60]);
+    TLWEAdd<P>(y[ 3], r[62], r[60]);
+
+    // y25 depends on y24 already produced
+    TLWEAdd<P>(y[25], y[24], r[63]);
+
+    TLWEAdd<P>(y[ 9], r[64], r[28]);
+}
+
 // https://eprint.iacr.org/2019/833
 template <class P>
 void MixColumns(std::array<TLWE<P>, 128> &state) {
@@ -374,6 +501,7 @@ void MixColumns(std::array<TLWE<P>, 128> &state) {
         // Apply the MixColumn transformation
         std::array<TLWE<P>, 32> y_out; // For final output bits y0...y31
         MixColumn<P>(y_out, x);
+        // MixColumnDepth4<P>(y_out, x);
 
         // Place the resulting 32-bit column (y_out) back into the state array
         for (int i = 0; i < 4; ++i) 
@@ -466,17 +594,49 @@ void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
                 TLWEAdd<typename iksP::domainP>(state[i*Nb*8+j*8+k], plain[j*4*8+i*8+k], expandedkey[0][j*4*8+i*8+k]);
                 state[i*Nb*8+j*8+k][iksP::domainP::k * iksP::domainP::n] += 1ULL << (std::numeric_limits<typename iksP::domainP::T>::digits - 2);
             }
-            // state[i*Nb+j] = plain[j*4+i];]
-    // AddRoundKey<typename iksP::domainP>(state, expandedkey[0]);
 
     // Rounds
     for (int round = 1; round < Nr; round++) {
-        SubBytes<iksP, brP>(state, state, ek);
+        SubBytes<iksP, brP>(state, ek);
         ShiftRows<typename brP::targetP>(state);
         MixColumns<typename brP::targetP>(state);
         AddRoundKey<typename brP::targetP>(state, expandedkey[round]);
     }
-    SubBytes<iksP, brP>(state, state, ek);
+    SubBytes<iksP, brP>(state, ek);
+    ShiftRows<typename brP::targetP>(state);
+    AddRoundKey<typename brP::targetP>(state, expandedkey[Nr]);
+
+    // Copy state to ciphertext with transposition
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for(int k = 0; k < 8; k++)
+                cipher[j*4*8+i*8+k] = state[i*Nb*8+j*8+k];
+}
+
+template <class iksP, class brP, class cbiksP, class cbbrP>
+void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
+            const std::array<TLWE<typename iksP::domainP>, 128> &plain,
+            const std::array<std::array<TLWE<typename brP::targetP>, 128>, Nr+1> &expandedkey,
+            EvalKey &ek)
+{
+    std::array<TLWE<typename iksP::domainP>, 128> state;
+    // Copy plaintext to state with transposition
+    // Initial AddRoundKey
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for(int k = 0; k < 8; k++){
+                TLWEAdd<typename iksP::domainP>(state[i*Nb*8+j*8+k], plain[j*4*8+i*8+k], expandedkey[0][j*4*8+i*8+k]);
+                state[i*Nb*8+j*8+k][iksP::domainP::k * iksP::domainP::n] += 1ULL << (std::numeric_limits<typename iksP::domainP::T>::digits - 2);
+            }
+
+    // Rounds
+    for (int round = 1; round < Nr; round++) {
+        SubBytes<iksP, brP, cbiksP, cbbrP>(state, ek);
+        ShiftRows<typename brP::targetP>(state);
+        MixColumns<typename brP::targetP>(state);
+        AddRoundKey<typename brP::targetP>(state, expandedkey[round]);
+    }
+    SubBytes<iksP, brP, cbiksP, cbbrP>(state, ek);
     ShiftRows<typename brP::targetP>(state);
     AddRoundKey<typename brP::targetP>(state, expandedkey[Nr]);
 

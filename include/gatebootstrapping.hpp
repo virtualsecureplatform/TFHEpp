@@ -249,7 +249,7 @@ constexpr Polynomial<P> μpolygen()
 }
 
 template <class bkP, typename bkP::targetP::T μ, class iksP>
-void GateBootstrapping(TLWE<typename bkP::domainP> &res,
+void GateBootstrapping(TLWE<typename iksP::targetP> &res,
                        const TLWE<typename bkP::domainP> &tlwe,
                        const EvalKey &ek)
 {
@@ -260,7 +260,7 @@ void GateBootstrapping(TLWE<typename bkP::domainP> &res,
 }
 
 template <class iksP, class bkP, typename bkP::targetP::T μ>
-void GateBootstrapping(TLWE<typename iksP::domainP> &res,
+void GateBootstrapping(TLWE<typename bkP::targetP> &res,
                        const TLWE<typename iksP::domainP> &tlwe,
                        const EvalKey &ek)
 {

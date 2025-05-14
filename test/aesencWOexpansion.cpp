@@ -7,8 +7,12 @@
 
 int main()
 {
-    using brP = TFHEpp::lvl02param;
-    using iksP = TFHEpp::lvl20param;
+    using brP = TFHEpp::lvl01param;
+    using iksP = TFHEpp::lvl10param;
+    using cbiksP = TFHEpp::lvl20param;
+    using cbbrP = TFHEpp::lvl02param;
+    // using brP = TFHEpp::lvl02param;
+    // using iksP = TFHEpp::lvl20param;
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
@@ -44,15 +48,18 @@ int main()
         num_test);
     TFHEpp::EvalKey ek;
     ek.emplacebkfft<brP>(*sk);
+    ek.emplacebkfft<cbbrP>(*sk);
     ek.emplaceiksk<iksP>(*sk);
-    ek.emplaceahk<typename brP::targetP>(*sk);
-    ek.emplacecbsk<typename brP::targetP>(*sk);
+    ek.emplaceiksk<cbiksP>(*sk);
+    ek.emplaceahk<typename cbbrP::targetP>(*sk);
+    ek.emplacecbsk<typename cbbrP::targetP>(*sk);
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         std::cout << "test: " << test << std::endl;
-        TFHEpp::AESEnc<iksP, brP>(cres[test], cin[test], cexpandedkey[test], ek);
+        TFHEpp::AESEnc<iksP, brP, cbiksP, cbbrP>(cres[test], cin[test], cexpandedkey[test], ek);
+        // TFHEpp::AESEnc<iksP, brP>(cres[test], cin[test], cexpandedkey[test], ek);
     }
 
     end = std::chrono::system_clock::now();
@@ -70,7 +77,7 @@ int main()
                      cres[i][j*8+k], *sk)) 
                     pres |= (1 << k);
             }
-            std::cout << "j: " << j << ",c: " << (int)c[j] << " pres: " << (int)pres << std::endl;
+            // std::cout << "j: " << j << ",c: " << (int)c[j] << " pres: " << (int)pres << std::endl;
             assert(pres == c[j]);
         }
     }
