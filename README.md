@@ -1,6 +1,6 @@
 [![Test](https://github.com/virtualsecureplatform/TFHEpp/actions/workflows/test.yml/badge.svg)](https://github.com/virtualsecureplatform/TFHEpp/actions/workflows/test.yml)
 # TFHEpp
-TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original [TFHE implementation](https://github.com/tfhe/tfhe). In addition to that, THFEpp supports [Circuit Bootstrapping](https://eprint.iacr.org/2018/421), [Programable Boootstrapping many LUT](https://eprint.iacr.org/2021/729), and [Modifed Chen's Packing](https://eprint.iacr.org/2024/1318) (We call it as annihilate key switching in our code). 
+TFHEpp is full Scracthed pure C++ Ver. of TFHE. TFHEpp is slightly(about 10%) faster than original [TFHE implementation](https://github.com/tfhe/tfhe). In addition to that, THFEpp supports [Circuit Bootstrapping](https://eprint.iacr.org/2018/421), [Programable Boootstrapping many LUT](https://eprint.iacr.org/2021/729), [Partial Key](https://eprint.iacr.org/2023/979) (Named as subset key in the code),and [Modifed Chen's Packing](https://eprint.iacr.org/2024/1318) (We call it as annihilate key switching in our code). 
 We also includes partial support for B/FV, written in include/bfv++.hpp.
 TFHEpp depends on AVX2 because we use SPQLIOS FMA. If you want run TFHEpp without AVX2, see spqlios++ branch. It include pure C++ implementation of SPQLIOS as header only library, but slow.
 
