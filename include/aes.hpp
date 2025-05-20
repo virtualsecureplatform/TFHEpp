@@ -180,13 +180,13 @@ void AESInvSbox(std::array<TLWE<typename brP::targetP>, 2> &res,
     IdentityKeySwitch<iksP>(shifted, tlwe[1], ek.getiksk<iksP>());
     shifted[iksP::targetP::k * iksP::targetP::n] +=
         1ULL << (std::numeric_limits<typename iksP::targetP::T>::digits - 6);
-    for (int i = 0; i < 2; i++) {
+    {
         TRLWE<typename brP::targetP> trlwe;
-        std::array<TLWE<typename iksP::domainP>, 16> tabletlwe;
-        for (int j = 0; j < 16; j++) tabletlwe[j] = midtlwes[j][i];
-        TLWE2TablePacking<typename brP::targetP, 16>(
+        std::array<std::array<TLWE<typename iksP::domainP>, 16>, 2> tabletlwe;
+        for(int i = 0; i <2; i++) for (int j = 0; j < 16; j++) tabletlwe[i][j] = midtlwes[j][i];
+        TLWE2TablePackingManyLUT<typename brP::targetP, 16, 2>(
             trlwe, tabletlwe, ek.getahk<typename brP::targetP>());
-        GateBootstrappingTLWE2TLWEFFT<brP>(res[i], shifted, ek.getbkfft<brP>(),
+        GateBootstrappingManyLUT<brP,2>(res, shifted, ek.getbkfft<brP>(),
                                            trlwe);
     }
 }

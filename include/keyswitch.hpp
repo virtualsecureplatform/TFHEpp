@@ -455,6 +455,52 @@ void TLWE2TablePacking(TRLWE<P> &res, std::array<TLWE<P>, num_tlwe> &tlwe,
     }
 }
 
+template <class P, uint num_tlwe, uint num_func>
+void TLWE2TablePackingManyLUT(TRLWE<P> &res, std::array<std::array<TLWE<P>, num_tlwe>,num_func> &tlwe,
+                       const AnnihilateKey<P> &ahk)
+{
+    static_assert(std::has_single_bit(num_tlwe),
+                  "Currently, num_tlwe must be power of 2");
+    constexpr uint l = std::countr_zero(num_tlwe);
+    static_assert(num_func == 2,
+                  "Currently, num_func must be 2");
+    constexpr uint f = std::countr_zero(num_func);
+    std::array<TRLWE<P>, num_func> temptrlwe;
+    for(int index = 0; index < num_func; index++){
+        PackLWEs<P>(temptrlwe[index], tlwe[index], ahk, l, 0, 1);
+        for (int i = l; i < P::nbit-f; i++) {
+            TRLWE<P> tempmul;
+            for (int j = 0; j < P::k + 1; j++)
+                PolynomialMulByXai<P>(tempmul[j], temptrlwe[index][j], P::n >> (i + 1));
+            TRLWE<P> tempsub;
+            for (int j = 0; j < (P::k + 1) * P::n; j++) {
+                temptrlwe[index][0][j] /= 2;
+                tempmul[0][j] /= 2;
+                tempsub[0][j] = temptrlwe[index][0][j] - tempmul[0][j];
+                temptrlwe[index][0][j] += tempmul[0][j];
+            }
+            // reuse tempmul
+            EvalAuto<P>(tempmul, tempsub, (1 << (i + 1)) + 1, ahk[i]);
+            for (int j = 0; j < (P::k + 1) * P::n; j++) temptrlwe[index][0][j] += tempmul[0][j];
+        }
+    }
+    {
+        TRLWE<P> tempoddmul;
+        for (int i = 0; i < P::k + 1; i++) {
+            PolynomialMulByXai<P>(tempoddmul[i], temptrlwe[1][i],1);
+            for (int j = 0; j < P::n; j++) {
+                temptrlwe[0][i][j] /= 2;
+                tempoddmul[i][j] /= 2;
+                temptrlwe[1][i][j] = temptrlwe[0][i][j] - tempoddmul[i][j];
+            }
+        }
+        EvalAuto<P>(res, temptrlwe[1], (1 << P::nbit) + 1, ahk[P::nbit - 1]);
+        for (int i = 0; i < P::k + 1; i++)
+            for (int j = 0; j < P::n; j++)
+                res[i][j] += temptrlwe[0][i][j] + tempoddmul[i][j];
+    }
+}
+
 template <class P>
 void PackLWEsLSB(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe,
                  const AnnihilateKey<P> &ahk, const uint l, const uint offset,

@@ -240,6 +240,18 @@ void GateBootstrappingManyLUT(
         SampleExtractIndex<typename P::targetP>(res[i], acc, i);
 }
 
+template <class P, uint32_t num_out>
+void GateBootstrappingManyLUT(
+    std::array<TLWE<typename P::targetP>, num_out> &res,
+    const TLWE<typename P::domainP> &tlwe, const BootstrappingKeyFFT<P> &bkfft,
+    const TRLWE<typename P::targetP> &testvector)
+{
+    alignas(64) TRLWE<typename P::targetP> acc;
+    BlindRotate<P, num_out>(acc, tlwe, bkfft, testvector);
+    for (int i = 0; i < num_out; i++)
+        SampleExtractIndex<typename P::targetP>(res[i], acc, i);
+}
+
 template <class P, typename P::T μ>
 constexpr Polynomial<P> μpolygen()
 {
