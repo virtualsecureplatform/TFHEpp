@@ -1,11 +1,11 @@
 #pragma once
 
-#include <array>
-#include <cstdint>
+#import <array>
+#import <cstdint>
 
-#include "mulfft.hpp"
-#include "params.hpp"
-#include "trlwe.hpp"
+#import "mulfft.hpp"
+#import "params.hpp"
+#import "trlwe.hpp"
 
 namespace TFHEpp {
 

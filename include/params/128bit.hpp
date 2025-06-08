@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cmath>
-#include <cstdint>
-#include <limits>
+#import <cmath>
+#import <cstdint>
+#import <limits>
 
 struct lvl0param {
     static constexpr int32_t key_value_max = 1;

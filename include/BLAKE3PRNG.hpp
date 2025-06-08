@@ -1,9 +1,9 @@
 #pragma once
-#include <algorithm>
-#include <random>
+#import <algorithm>
+#import <random>
 
 extern "C" {
-#include <blake3.h>
+#import <blake3.h>
 }
 
 namespace BLAKE3PRNG {

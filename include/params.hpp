@@ -1,10 +1,10 @@
 #pragma once
-#include <array>
-#include <cmath>
-#include <cstdint>
+#import <array>
+#import <cmath>
+#import <cstdint>
 
-#include "cuhe++.hpp"
-#include "raintt.hpp"
+#import "cuhe++.hpp"
+#import "raintt.hpp"
 
 namespace TFHEpp {
 
@@ -15,19 +15,19 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 
 // Use old 80bit security parameters. It is faster, but not recommended.
 #if defined(USE_80BIT_SECURITY)
-#include "params/CGGI16.hpp"
+#import "params/CGGI16.hpp"
 #elif defined(USE_COMPRESS)
-#include "params/compress.hpp"
+#import "params/compress.hpp"
 #elif defined(USE_CGGI19)
-#include "params/CGGI19.hpp"
+#import "params/CGGI19.hpp"
 #elif defined(USE_CONCRETE)
-#include "params/concrete.hpp"
+#import "params/concrete.hpp"
 #elif defined(USE_TFHE_RS)
-#include "params/tfhe-rs.hpp"
+#import "params/tfhe-rs.hpp"
 #elif defined(USE_TERNARY)
-#include "params/ternary.hpp"
+#import "params/ternary.hpp"
 #else
-#include "params/128bit.hpp"
+#import "params/128bit.hpp"
 #endif
 
 struct lvl01param {

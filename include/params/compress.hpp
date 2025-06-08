@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cmath>
-#include <cstdint>
-#include <limits>
+#import <cmath>
+#import <cstdint>
+#import <limits>
 
 constexpr bool isternary = false;
 

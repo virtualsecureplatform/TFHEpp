@@ -1,8 +1,8 @@
 #pragma once
 
-#include <array>
-#include <cassert>
-#include <cstdint>
+#import <array>
+#import <cassert>
+#import <cstdint>
 
 namespace hexelpp {
 constexpr uint32_t P = 1073741789;

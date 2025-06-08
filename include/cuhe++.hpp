@@ -1,11 +1,11 @@
 #pragma once
 
-#include <array>
-#include <cassert>
-#include <cstdint>
-#include <memory>
+#import <array>
+#import <cassert>
+#import <cstdint>
+#import <memory>
 
-#include "INTorus.hpp"
+#import "INTorus.hpp"
 
 namespace cuHEpp {
 

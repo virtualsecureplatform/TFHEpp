@@ -1,10 +1,10 @@
 #pragma once
-#include <cstdint>
+#import <cstdint>
 
-#include "keyswitch.hpp"
-#include "mulfft.hpp"
-#include "trgsw.hpp"
-#include "trlwe.hpp"
+#import "keyswitch.hpp"
+#import "mulfft.hpp"
+#import "trgsw.hpp"
+#import "trlwe.hpp"
 
 // #include "hexl/hexl.hpp"
 

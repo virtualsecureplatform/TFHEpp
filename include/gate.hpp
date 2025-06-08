@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cloudkey.hpp"
-#include "gatebootstrapping.hpp"
-#include "keyswitch.hpp"
+#import "cloudkey.hpp"
+#import "gatebootstrapping.hpp"
+#import "keyswitch.hpp"
 
 namespace TFHEpp {
 template <class brP, typename brP::targetP::T μ, class iksP, int casign,

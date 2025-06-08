@@ -1,11 +1,11 @@
 #pragma once
 
-#include "key.hpp"
-#include "params.hpp"
-#include "tlwe.hpp"
-#include "trgsw.hpp"
-#include "trlwe.hpp"
-#include "utils.hpp"
+#import "key.hpp"
+#import "params.hpp"
+#import "tlwe.hpp"
+#import "trgsw.hpp"
+#import "trlwe.hpp"
+#import "utils.hpp"
 
 namespace TFHEpp {
 template <class P>

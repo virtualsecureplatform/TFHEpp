@@ -1,12 +1,12 @@
 #pragma once
 
-#include <array>
-#include <bit>
-#include <span>
+#import <array>
+#import <bit>
+#import <span>
 
-#include "params.hpp"
-#include "trgsw.hpp"
-#include "utils.hpp"
+#import "params.hpp"
+#import "trgsw.hpp"
+#import "utils.hpp"
 
 namespace TFHEpp {
 

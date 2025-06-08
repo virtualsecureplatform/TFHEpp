@@ -1,8 +1,8 @@
 #pragma once
 
-#include <array>
-#include <cassert>
-#include <cstdint>
+#import <array>
+#import <cassert>
+#import <cstdint>
 
 namespace cuHEpp {
 template <typename T>

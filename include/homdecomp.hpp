@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "gatebootstrapping.hpp"
+#import "gatebootstrapping.hpp"
 
 namespace TFHEpp {
 /*!

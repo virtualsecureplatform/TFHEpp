@@ -1,8 +1,8 @@
 #pragma once
 
-#include "mulfft.hpp"
-#include "params.hpp"
-#include "trgsw.hpp"
+#import "mulfft.hpp"
+#import "params.hpp"
+#import "trgsw.hpp"
 
 namespace TFHEpp {
 

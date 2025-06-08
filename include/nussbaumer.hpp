@@ -1,5 +1,5 @@
 #pragma once
-#include <span>
+#import <span>
 
 namespace Nussbaumer {
 

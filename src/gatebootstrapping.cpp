@@ -1,4 +1,4 @@
-#include <gatebootstrapping.hpp>
+#import <gatebootstrapping.hpp>
 
 namespace TFHEpp {
 
@@ -8,7 +8,6 @@ namespace TFHEpp {
         const TLWE<typename P::domainP> &tlwe,      \
         const BootstrappingKeyFFT<P> &bkfft,        \
         const Polynomial<typename P::targetP> &testvector)
-TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
 }  // namespace TFHEpp

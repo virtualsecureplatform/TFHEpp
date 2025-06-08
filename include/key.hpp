@@ -1,13 +1,13 @@
 #pragma once
 
-#include <algorithm>
-#include <array>
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/types/array.hpp>
+#import <algorithm>
+#import <array>
+#import <cereal/archives/portable_binary.hpp>
+#import <cereal/types/array.hpp>
 
-#include "lweParams.hpp"
-#include "params.hpp"
-#include "random"
+#import "lweParams.hpp"
+#import "params.hpp"
+#import "random"
 
 namespace TFHEpp {
 using namespace std;
@@ -17,9 +17,20 @@ struct lweKey {
     Key<lvl1param> lvl1;
     Key<lvl2param> lvl2;
     Key<lvl3param> lvl3;
-    lweKey();
+    lweKey(); // Constructor definition can remain in key.cpp
     template <class P>
-    Key<P> get() const;
+    Key<P> get() const { // Definition moved here
+        if constexpr (std::is_same_v<P, lvl0param>)
+            return lvl0;
+        else if constexpr (std::is_same_v<P, lvlhalfparam>)
+            return lvlhalf;
+        else if constexpr (std::is_same_v<P, lvl1param>)
+            return lvl1;
+        else if constexpr (std::is_same_v<P, lvl2param>)
+            return lvl2;
+        else if constexpr (std::is_same_v<P, lvl3param>)
+            return lvl3;
+    }
 };
 
 struct SecretKey {

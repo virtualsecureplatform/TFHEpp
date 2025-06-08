@@ -1,30 +1,30 @@
 #pragma once
 
-#include <memory>
+#import <memory>
 
-#include "INTorus.hpp"
+#import "INTorus.hpp"
 #ifdef USE_FFTW3
-#include <fft_processor_fftw.h>
+#import <fft_processor_fftw.h>
 #elif USE_MKL
-#include <fft_processor_mkl.hpp>
+#import <fft_processor_mkl.hpp>
 #elif USE_SPQLIOX_AARCH64
-#include <fft_processor_spqliox_aarch64.h>
+#import <fft_processor_spqliox_aarch64.h>
 #elif USE_CONCRETE_FFT
-#include <fft_processor_concrete.hpp>
+#import <fft_processor_concrete.hpp>
 #else
-#include <fft_processor_spqlios.h>
+#import <fft_processor_spqlios.h>
 #endif
 #ifdef USE_HEXL
-#include "hexl/hexl.hpp"
+#import "hexl/hexl.hpp"
 #endif
 
 #ifdef USE_INTERLEAVED_FORMAT
-#include <complex>
+#import <complex>
 #endif
 
-#include "cuhe++.hpp"
-#include "params.hpp"
-#include "utils.hpp"
+#import "cuhe++.hpp"
+#import "params.hpp"
+#import "utils.hpp"
 
 namespace TFHEpp {
 

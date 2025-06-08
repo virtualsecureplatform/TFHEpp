@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstdint>
+#import <cstdint>
 
-#include "cloudkey.hpp"
-#include "gatebootstrapping.hpp"
-#include "keyswitch.hpp"
+#import "cloudkey.hpp"
+#import "gatebootstrapping.hpp"
+#import "keyswitch.hpp"
 
 namespace TFHEpp {
 

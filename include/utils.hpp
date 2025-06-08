@@ -1,18 +1,18 @@
 #pragma once
 
 #if defined(USE_BLAKE3)
-#include "BLAKE3PRNG.hpp"
+#import "BLAKE3PRNG.hpp"
 #elif defined(USE_RANDEN)
-#include <randen.h>
+#import <randen.h>
 #endif
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstdlib>
-#include <functional>
-#include <limits>
-#include <random>
+#import <algorithm>
+#import <array>
+#import <cmath>
+#import <cstdlib>
+#import <functional>
+#import <limits>
+#import <random>
 
 namespace TFHEpp {
 #if defined(USE_BLAKE3)

@@ -1,6 +1,6 @@
 #pragma once
-#include <AES.h>
-#include <ranges>
+#import <AES.h>
+#import <ranges>
 // Transciphering by AES
 //  Based on Hippogryph
 namespace TFHEpp {

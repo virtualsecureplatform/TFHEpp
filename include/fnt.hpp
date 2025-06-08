@@ -1,7 +1,7 @@
 #pragma once
-#include <array>
-#include <cstdint>
-#include <span>
+#import <array>
+#import <cstdint>
+#import <span>
 
 namespace FNTpp {
 constexpr unsigned int Kbit = 5;

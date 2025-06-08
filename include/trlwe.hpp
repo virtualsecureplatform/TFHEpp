@@ -1,8 +1,8 @@
 #pragma once
 
-#include "key.hpp"
-#include "mulfft.hpp"
-#include "params.hpp"
+#import "key.hpp"
+#import "mulfft.hpp"
+#import "params.hpp"
 
 namespace TFHEpp {
 template <class P>

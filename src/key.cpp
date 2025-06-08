@@ -1,5 +1,5 @@
-#include <key.hpp>
-#include <utils.hpp>
+#import <key.hpp>
+#import <utils.hpp>
 
 namespace TFHEpp {
 lweKey::lweKey()
@@ -21,22 +21,7 @@ lweKey::lweKey()
     #endif
 }
 
-template <class P>
-Key<P> lweKey::get() const
-{
-    if constexpr (std::is_same_v<P, lvl0param>)
-        return lvl0;
-    else if constexpr (std::is_same_v<P, lvlhalfparam>)
-        return lvlhalf;
-    else if constexpr (std::is_same_v<P, lvl1param>)
-        return lvl1;
-    else if constexpr (std::is_same_v<P, lvl2param>)
-        return lvl2;
-    else if constexpr (std::is_same_v<P, lvl3param>)
-        return lvl3;
-}
-#define INST(P) template Key<P> lweKey::get<P>() const;
-TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
-#undef INST
+// Definition of lweKey::get<P>() const removed from here.
+// The #define INST(P) and #undef INST are also removed.
 
 }  // namespace TFHEpp

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <array>
-#include <cstdint>
-#include <vector>
+#import <array>
+#import <cstdint>
+#import <vector>
 
-#include "key.hpp"
-#include "params.hpp"
-#include "utils.hpp"
+#import "key.hpp"
+#import "params.hpp"
+#import "utils.hpp"
 
 namespace TFHEpp {
 template <class P>

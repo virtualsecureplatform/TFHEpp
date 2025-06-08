@@ -1,17 +1,17 @@
 #pragma once
 
-#include <cmath>
-#include <limits>
+#import <cmath>
+#import <limits>
 
-#include "cloudkey.hpp"
-#include "detwfa.hpp"
-#include "keyswitch.hpp"
-#include "params.hpp"
-#include "trlwe.hpp"
-#include "utils.hpp"
+#import "cloudkey.hpp"
+#import "detwfa.hpp"
+#import "keyswitch.hpp"
+#import "params.hpp"
+#import "trlwe.hpp"
+#import "utils.hpp"
 
 #ifdef USE_KEY_BUNDLE
-#include "keybundle.hpp"
+#import "keybundle.hpp"
 #endif
 
 namespace TFHEpp {

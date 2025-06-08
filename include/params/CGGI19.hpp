@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cmath>
-#include <cstdint>
+#import <cmath>
+#import <cstdint>
 
 constexpr bool isternary = false;
 

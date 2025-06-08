@@ -1,9 +1,9 @@
 #pragma once
 
-#include <bitset>
-#include <span>
+#import <bitset>
+#import <span>
 
-#include "detwfa.hpp"
+#import "detwfa.hpp"
 
 namespace TFHEpp {
 template <class P, uint32_t address_bit>
