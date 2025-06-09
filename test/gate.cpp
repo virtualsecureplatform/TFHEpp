@@ -1,4 +1,4 @@
-#include <tfhe++.hpp>
+import tfhepp;
 using namespace TFHEpp;
 
 #include <chrono>

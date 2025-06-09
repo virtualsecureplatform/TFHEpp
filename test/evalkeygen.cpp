@@ -9,7 +9,7 @@
 #include <iostream>
 #include <memory>
 #include <random>
-#include <tfhe++.hpp>
+import tfhepp;
 
 int main()
 {

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <nussbaumer.hpp>
 #include <random>
-#include <tfhe++.hpp>
+import tfhepp;
 
 int main()
 {

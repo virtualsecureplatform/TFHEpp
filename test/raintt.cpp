@@ -3,7 +3,7 @@
 #include <iostream>
 #include <raintt.hpp>
 #include <random>
-#include <tfhe++.hpp>
+import tfhepp;
 
 namespace raintt {
 template <uint32_t Nbit, uint8_t radixbit>

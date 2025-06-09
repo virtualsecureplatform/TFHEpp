@@ -2,7 +2,7 @@
 #include <chrono>
 #include <iostream>
 #include <random>
-#include <tfhe++.hpp>
+import tfhepp;
 
 using TRGSWLvl1FFT = TFHEpp::TRGSWFFT<TFHEpp::lvl1param>;
 using TRLWELvl1 = TFHEpp::TRLWE<TFHEpp::lvl1param>;

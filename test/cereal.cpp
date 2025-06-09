@@ -1,7 +1,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
-#include <tfhe++.hpp>
+import tfhepp;
 
 int main()
 {

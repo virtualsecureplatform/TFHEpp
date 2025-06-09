@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <random>
-#include <tfhe++.hpp>
+import tfhepp;
 
 using namespace std;
 using namespace TFHEpp;

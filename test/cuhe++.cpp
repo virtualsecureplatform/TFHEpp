@@ -3,7 +3,7 @@
 #include <cuhe++.hpp>
 #include <iostream>
 #include <random>
-#include <tfhe++.hpp>
+import tfhepp;
 
 namespace cuHEpp {
 template <uint32_t Nbit, uint8_t radixbit>

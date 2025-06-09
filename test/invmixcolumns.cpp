@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <random>
-#include <tfhe++.hpp>
+import tfhepp;
 
 void InvMixColumns(unsigned char state[4][4]) {
   unsigned char temp_state[4][4];
