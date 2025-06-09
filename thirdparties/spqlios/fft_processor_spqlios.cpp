@@ -2,7 +2,7 @@
 #include <cmath>
 #include<cstdint>
 
-#include<params.hpp>
+import tfhepp:params;
 
 #include "x86.h"
 #include "fft_processor_spqlios.h"
