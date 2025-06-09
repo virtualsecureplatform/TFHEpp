@@ -5,7 +5,6 @@
 #include <random>
 #include <tfhe++.hpp>
 
-
 int main()
 {
     using P = TFHEpp::lvl2param;
@@ -15,27 +14,35 @@ int main()
 
     std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
     constexpr uint num_test = 1000;
-    std::vector<std::array<TFHEpp::TLWE<P>,32>> cin(num_test);
+    std::vector<std::array<TFHEpp::TLWE<P>, 32>> cin(num_test);
     std::vector<std::array<uint8_t, 32>> pin(num_test);
 
     for (int i = 0; i < num_test; i++) {
-        for (int j = 0; j < 32; j++){
+        for (int j = 0; j < 32; j++) {
             pin[i][j] = binary(engine);
-            cin[i][j] = TFHEpp::tlweSymEncrypt<P>(pin[i][j]?1ULL << (std::numeric_limits<typename P::T>::digits - 2):-(1ULL << (std::numeric_limits<typename P::T>::digits - 2)), *sk);
-            cin[i][j][P::k * P::n] += 1ULL << (std::numeric_limits<typename P::T>::digits - 2);
+            cin[i][j] = TFHEpp::tlweSymEncrypt<P>(
+                pin[i][j]
+                    ? 1ULL << (std::numeric_limits<typename P::T>::digits - 2)
+                    : -(1ULL
+                        << (std::numeric_limits<typename P::T>::digits - 2)),
+                *sk);
+            cin[i][j][P::k * P::n] +=
+                1ULL << (std::numeric_limits<typename P::T>::digits - 2);
         }
     }
 
-    std::vector<std::array<TFHEpp::TLWE<P>,32>> cres(num_test);
-    std::vector<std::array<TFHEpp::TLWE<P>,32>> cref(num_test);
+    std::vector<std::array<TFHEpp::TLWE<P>, 32>> cres(num_test);
+    std::vector<std::array<TFHEpp::TLWE<P>, 32>> cref(num_test);
 
     for (int test = 0; test < num_test; test++) {
         // std::cout << "test: " << test << std::endl;
-        TFHEpp::MixColumn<P>(cref[test],cin[test]);
-        TFHEpp::MixColumnDepth4<P>(cres[test],cin[test]);
-        for (int j = 0; j < 32; j++){
-          cref[test][j][P::k * P::n] -= 1ULL << (std::numeric_limits<typename P::T>::digits - 2);
-          cres[test][j][P::k * P::n] -= 1ULL << (std::numeric_limits<typename P::T>::digits - 2);
+        TFHEpp::MixColumn<P>(cref[test], cin[test]);
+        TFHEpp::MixColumnDepth4<P>(cres[test], cin[test]);
+        for (int j = 0; j < 32; j++) {
+            cref[test][j][P::k * P::n] -=
+                1ULL << (std::numeric_limits<typename P::T>::digits - 2);
+            cres[test][j][P::k * P::n] -=
+                1ULL << (std::numeric_limits<typename P::T>::digits - 2);
         }
     }
 
@@ -43,9 +50,13 @@ int main()
         uint32_t pincat = 0;
         uint32_t pres = 0;
         uint32_t pref = 0;
-        for (int j = 0; j < 32; j++){
-            pres |= (static_cast<uint32_t>(TFHEpp::tlweSymDecrypt<P>(cres[i][j], *sk))) << j;
-            pref |= (static_cast<uint32_t>(TFHEpp::tlweSymDecrypt<P>(cref[i][j], *sk))) << j;
+        for (int j = 0; j < 32; j++) {
+            pres |= (static_cast<uint32_t>(
+                        TFHEpp::tlweSymDecrypt<P>(cres[i][j], *sk)))
+                    << j;
+            pref |= (static_cast<uint32_t>(
+                        TFHEpp::tlweSymDecrypt<P>(cref[i][j], *sk)))
+                    << j;
             pincat |= static_cast<uint32_t>(pin[i][j]) << j;
         }
         // std::bitset<32> bpin(pincat);
@@ -57,5 +68,5 @@ int main()
         // std::cout << "pref: " << bpref << std::endl;
         assert(pres == pref);
     }
-  std::cout << "PASS" << std::endl;
+    std::cout << "PASS" << std::endl;
 }

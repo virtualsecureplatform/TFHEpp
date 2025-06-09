@@ -61,9 +61,8 @@ template <class P, uint plain_modulus = P::plain_modulus>
 TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
                           const Key<P> &key)
 {
-    const double Δ =
-        std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
-        plain_modulus;
+    const double Δ = std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
+                     plain_modulus;
     return tlweSymEncrypt<P>(static_cast<typename P::T>(p * Δ), α, key);
 }
 

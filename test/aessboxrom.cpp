@@ -18,9 +18,16 @@ int main()
         num_test);
 
     for (int i = 0; i < num_test; i++) {
-        for(int j = 0; j < 8; j++)
-            cin[i][j] =
-                TFHEpp::tlweSymEncrypt<typename iksP::domainP>(((i>>j)&0x1)?1ULL << (std::numeric_limits<typename iksP::domainP::T>::digits - 2):-(1ULL << (std::numeric_limits<typename iksP::domainP::T>::digits - 2)), *sk);
+        for (int j = 0; j < 8; j++)
+            cin[i][j] = TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
+                ((i >> j) & 0x1)
+                    ? 1ULL << (std::numeric_limits<
+                                   typename iksP::domainP::T>::digits -
+                               2)
+                    : -(1ULL << (std::numeric_limits<
+                                     typename iksP::domainP::T>::digits -
+                                 2)),
+                *sk);
     }
     std::vector<std::array<TFHEpp::TLWE<typename brP::targetP>, 8>> cres(
         num_test);
@@ -45,8 +52,7 @@ int main()
     for (int i = 0; i < num_test; i++) {
         uint8_t pres = 0;
         for (int j = 0; j < 8; j++) {
-            if(TFHEpp::tlweSymDecrypt<typename brP::targetP>(
-                 cres[i][j], *sk)) 
+            if (TFHEpp::tlweSymDecrypt<typename brP::targetP>(cres[i][j], *sk))
                 pres += (1 << j);
         }
         // std::cout << "test: " << i << " pres: " << (int)pres << " expected: "

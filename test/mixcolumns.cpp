@@ -5,27 +5,28 @@
 #include <random>
 #include <tfhe++.hpp>
 
-void MixColumns(unsigned char state[4][4]) {
-  unsigned char temp_state[4][4];
+void MixColumns(unsigned char state[4][4])
+{
+    unsigned char temp_state[4][4];
 
-  for (size_t i = 0; i < 4; ++i) {
-    memset(temp_state[i], 0, 4);
-  }
-
-  for (size_t i = 0; i < 4; ++i) {
-    for (size_t k = 0; k < 4; ++k) {
-      for (size_t j = 0; j < 4; ++j) {
-        if (CMDS[i][k] == 1)
-          temp_state[i][j] ^= state[k][j];
-        else
-          temp_state[i][j] ^= GF_MUL_TABLE[CMDS[i][k]][state[k][j]];
-      }
+    for (size_t i = 0; i < 4; ++i) {
+        memset(temp_state[i], 0, 4);
     }
-  }
 
-  for (size_t i = 0; i < 4; ++i) {
-    memcpy(state[i], temp_state[i], 4);
-  }
+    for (size_t i = 0; i < 4; ++i) {
+        for (size_t k = 0; k < 4; ++k) {
+            for (size_t j = 0; j < 4; ++j) {
+                if (CMDS[i][k] == 1)
+                    temp_state[i][j] ^= state[k][j];
+                else
+                    temp_state[i][j] ^= GF_MUL_TABLE[CMDS[i][k]][state[k][j]];
+            }
+        }
+    }
+
+    for (size_t i = 0; i < 4; ++i) {
+        memcpy(state[i], temp_state[i], 4);
+    }
 }
 
 int main()
@@ -37,13 +38,18 @@ int main()
 
     std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
     constexpr uint num_test = 1000;
-    std::vector<std::array<TFHEpp::TLWE<P>,128>> cstate(num_test);
+    std::vector<std::array<TFHEpp::TLWE<P>, 128>> cstate(num_test);
     std::vector<std::array<uint8_t, 128>> plaintext(num_test);
 
     for (int i = 0; i < num_test; i++) {
-        for (int j = 0; j < 128; j++){
+        for (int j = 0; j < 128; j++) {
             plaintext[i][j] = binary(engine);
-            cstate[i][j] = TFHEpp::tlweSymEncrypt<P>(plaintext[i][j]?1ULL << (std::numeric_limits<typename P::T>::digits - 2):-(1ULL << (std::numeric_limits<typename P::T>::digits - 2)), *sk);
+            cstate[i][j] = TFHEpp::tlweSymEncrypt<P>(
+                plaintext[i][j]
+                    ? 1ULL << (std::numeric_limits<typename P::T>::digits - 2)
+                    : -(1ULL
+                        << (std::numeric_limits<typename P::T>::digits - 2)),
+                *sk);
         }
     }
 
@@ -66,22 +72,23 @@ int main()
             pres[j] = TFHEpp::tlweSymDecrypt<P>(cstate[i][j], *sk);
         unsigned char state[4][4];
         for (int j = 0; j < 4; j++)
-            for (int k = 0; k < 4; k++){
+            for (int k = 0; k < 4; k++) {
                 uint8_t byte = 0;
                 for (int l = 0; l < 8; l++)
-                    byte |= plaintext[i][j*32 + k * 8 + l] << l;
+                    byte |= plaintext[i][j * 32 + k * 8 + l] << l;
                 state[j][k] = byte;
             }
         MixColumns(state);
         for (int j = 0; j < 4; j++)
-            for (int k = 0; k < 4; k++){
+            for (int k = 0; k < 4; k++) {
                 uint8_t byte = 0;
                 for (int l = 0; l < 8; l++)
-                    byte |= pres[j*32 + k * 8 + l] << l;
+                    byte |= pres[j * 32 + k * 8 + l] << l;
                 // std::cout <<"j: " << j << " k: " << k << std::endl;
-                // std::cout << (int)state[j][k] << " " << (int)byte << std::endl;
+                // std::cout << (int)state[j][k] << " " << (int)byte <<
+                // std::endl;
                 assert(state[j][k] == byte);
             }
     }
-  std::cout << "PASS" << std::endl;
+    std::cout << "PASS" << std::endl;
 }

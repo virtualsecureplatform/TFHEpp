@@ -16,9 +16,9 @@ lweKey::lweKey()
     for (typename lvlhalfparam::T &i : lvlhalf) i = lvlhalfgen(generator);
     for (typename lvl1param::T &i : lvl1) i = lvl1gen(generator);
     for (typename lvl2param::T &i : lvl2) i = lvl2gen(generator);
-    #ifdef USE_SUBSET_KEY
-    for(int i = 0; i < lvl1param::k*lvl1param::n; i++) lvl2[i] = lvl1[i];
-    #endif
+#ifdef USE_SUBSET_KEY
+    for (int i = 0; i < lvl1param::k * lvl1param::n; i++) lvl2[i] = lvl1[i];
+#endif
 }
 
 template <class P>
