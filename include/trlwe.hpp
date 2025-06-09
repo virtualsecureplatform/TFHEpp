@@ -208,7 +208,7 @@ Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
         for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
     }
 
-    constexpr double Δ =
+    const double Δ =
         std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
         plain_modulus;
     Polynomial<P> p;
