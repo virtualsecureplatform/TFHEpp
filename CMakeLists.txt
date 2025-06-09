@@ -1,15 +1,23 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 project(tfhe++ CXX C)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 option(DEBUG "Debug mode" OFF)
 if(DEBUG)
-  set(CMAKE_CXX_FLAGS
-      "-march=native -g -Wall -Wextra -pedantic -Wno-sign-compare")
+  set(CMAKE_CXX_FLAGS_INIT "-march=native -g -Wall -Wextra -pedantic -Wno-sign-compare")
 else()
-  set(CMAKE_CXX_FLAGS
-      "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
-  )
+  set(CMAKE_CXX_FLAGS_INIT "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare")
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT}")
+
+# Add compiler flags for C++ Modules
+string(APPEND CMAKE_CXX_FLAGS " -fmodules-ts")
+if(MSVC)
+  string(APPEND CMAKE_CXX_FLAGS " /experimental:module /std:c++latest")
 endif()
 
 option(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
@@ -162,7 +170,57 @@ endif()
 if(USE_RANDEN)
   add_subdirectory(thirdparties/randen)
 endif()
-add_subdirectory(src)
+# Remove Old Source Directory: add_subdirectory(src) is removed.
+
+# Collect .ixx Source Files
+file(GLOB_RECURSE TFHEPP_MODULE_SOURCES CONFIGURE_DEPENDS "include/*.ixx" "include/params/*.ixx")
+
+# Define the tfhe++ Library Target
+if(ENABLE_SHARED)
+  add_library(tfhe++ SHARED ${TFHEPP_MODULE_SOURCES})
+else()
+  add_library(tfhe++ STATIC ${TFHEPP_MODULE_SOURCES}) # Explicitly STATIC
+endif()
+
+set_target_properties(tfhe++ PROPERTIES CXX_STANDARD 23)
+target_include_directories(tfhe++
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# Link Dependencies
+if(OpenMP_FOUND)
+  target_link_libraries(tfhe++ PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
+if(USE_BLAKE3)
+  target_link_libraries(tfhe++ PUBLIC blake3) # Assuming blake3 target from thirdparties/BLAKE3/c/CMakeLists.txt is 'blake3'
+endif()
+if(USE_RANDEN)
+  target_link_libraries(tfhe++ PUBLIC randen_lib) # Assuming randen target is 'randen_lib'
+endif()
+
+# FFT library linking
+if(USE_FFTW3)
+  target_link_libraries(tfhe++ PUBLIC fft_processor_fftw)
+elseif(USE_MKL)
+  target_link_libraries(tfhe++ PUBLIC fft_processor_mkl)
+  target_link_libraries(tfhe++ PUBLIC MKL::MKL) # From find_package(MKL)
+elseif(USE_SPQLIOX_AARCH64)
+  target_link_libraries(tfhe++ PUBLIC fft_processor_spqliox_aarch64)
+elseif(USE_CONCRETE_FFT)
+  target_link_libraries(tfhe++ PUBLIC fft_processor_concrete)
+else() # Default spqlios
+  target_link_libraries(tfhe++ PUBLIC fft_processor_spqlios)
+endif()
+
+if(USE_HEXL)
+  target_link_libraries(tfhe++ PUBLIC Intel::hexl) # HEXL CMake usually defines Intel::hexl
+endif()
+
 
 if(ENABLE_TEST)
   add_subdirectory(test)
@@ -175,4 +233,25 @@ if(ENABLE_TUTORIAL)
   add_subdirectory(tutorial)
 endif()
 
-install(TARGETS tfhe++ LIBRARY DESTINATION lib)
+# Ensure this is after tfhe++ target is defined
+install(TARGETS tfhe++ LIBRARY DESTINATION lib COMPONENT tfhepp)
+# Install header files (module interfaces)
+install(
+    DIRECTORY include/
+    DESTINATION include
+    COMPONENT tfhepp
+    FILES_MATCHING PATTERN "*.ixx"
+)
+install(
+    DIRECTORY include/params/
+    DESTINATION include/params
+    COMPONENT tfhepp
+    FILES_MATCHING PATTERN "*.ixx"
+)
+# Potentially install other public headers if any remain that are not modules
+# install(
+#     DIRECTORY include/
+#     DESTINATION include
+#     COMPONENT tfhepp
+#     FILES_MATCHING PATTERN "*.hpp" PATTERN "externs" EXCLUDE
+# )
