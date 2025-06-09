@@ -45,7 +45,31 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-        cmake . -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON
+        cd build
+        ninja
+    - name: test
+      run: |
+        cd build
+        test/test.sh
+  ubuntu-2404-clang:
+    name: ubuntu-2404-clang
+    runs-on: Ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    steps:
+    - name: Install libraries
+      run: |
+        apt-get update
+        apt-get upgrade -y
+        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build clang-18
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: build
+      run: |
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_C_COMPILER=clang-18 -DENABLE_TEST=ON
         cd build
         ninja
     - name: test
