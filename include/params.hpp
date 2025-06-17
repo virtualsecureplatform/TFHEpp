@@ -79,7 +79,7 @@ using TLWE = aligned_array<typename P::T, P::k * P::n + 1>;
 template <class P>
 using Polynomial = std::array<typename P::T, P::n>;
 template <class P>
-using PolynomialInFD = std::array<double, P::n>;
+using PolynomialInFD = aligned_array<double, P::n>;
 template <class P>
 using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
 template <class P>

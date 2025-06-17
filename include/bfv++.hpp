@@ -14,7 +14,7 @@ template <class P>
 void TRLWEMultWithoutRelinerization(TRLWE3<P> &res, const TRLWE<P> &a,
                                     const TRLWE<P> &b)
 {
-    PolynomialInFD<P> ffta, fftb, fftc;
+    alignas(64) PolynomialInFD<P> ffta, fftb, fftc;
     TwistIFFTUInt<P>(ffta, a[0]);
     TwistIFFTUInt<P>(fftb, b[1]);
     MulInFD<P::n>(fftc, ffta, fftb);

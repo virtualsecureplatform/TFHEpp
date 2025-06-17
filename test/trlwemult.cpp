@@ -64,11 +64,11 @@ int main()
         for (typename P::T &i : p0) i = message(engine);
         for (typename P::T &i : p1) i = message(engine);
 
-        TFHEpp::TRLWE<P> c0 =
+        alignas(64) TFHEpp::TRLWE<P> c0 =
             TFHEpp::trlweSymIntEncrypt<P>(p0, sk->key.get<P>());
-        TFHEpp::TRLWE<P> c1 =
+        alignas(64) TFHEpp::TRLWE<P> c1 =
             TFHEpp::trlweSymIntEncrypt<P>(p1, sk->key.get<P>());
-        TFHEpp::TRLWE3<P> cres;
+        alignas(64) TFHEpp::TRLWE3<P> cres;
         TFHEpp::TRLWEMultWithoutRelinerization<P>(cres, c0, c1);
         pres = TFHEpp::decryptTRLWE3<P>(cres, sk->key.get<P>());
 
