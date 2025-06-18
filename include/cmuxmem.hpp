@@ -108,11 +108,13 @@ void LROMUX(vector<TLWE<P>> &res,
 }
 
 // MUX tree for horizontal packing
-template <class P, uint32_t address_bit, uint32_t width_bit>
-void LROMUX(std::span<TLWE<P>, 1 << (P::nbit - width_bit)> res,
+template <class P, uint32_t address_bit, uint32_t width_bit , uint32_t num_tlwe>
+void LROMUX(std::span<TLWE<P>, num_tlwe> res,
             const array<TRGSWFFT<P>, address_bit> &address,
             const TRLWE<P> &data)
 {
+    static_assert(num_tlwe <= (1 << (P::nbit - width_bit)),
+                  "num_tlwe must be less than or equal to 2^(nbit - width_bit)");
     TRLWE<P> temp, acc;
     for (int i = 0; i < P::k + 1; i++)
         PolynomialMulByXaiMinusOne<P>(temp[i], data[i], 2 * P::n - (P::n >> 1));
@@ -129,8 +131,16 @@ void LROMUX(std::span<TLWE<P>, 1 << (P::nbit - width_bit)> res,
         for (int i = 0; i < (P::k + 1) * P::n; i++) acc[0][i] += temp[0][i];
     }
 
-    constexpr uint32_t word = 1 << (P::nbit - width_bit);
-    for (int i = 0; i < word; i++) SampleExtractIndex<P>(res[i], acc, i);
+    for (int i = 0; i < num_tlwe; i++) SampleExtractIndex<P>(res[i], acc, i);
+}
+
+// MUX tree for horizontal packing
+template <class P, uint32_t address_bit, uint32_t width_bit>
+void LROMUX(std::span<TLWE<P>, 1 << (P::nbit - width_bit)> res,
+            const array<TRGSWFFT<P>, address_bit> &address,
+            const TRLWE<P> &data)
+{
+    LROMUX<P, address_bit, width_bit, 1 << (P::nbit - width_bit)>(res, address, data);
 }
 
 template <class P, uint32_t address_bit, uint32_t width_bit>
