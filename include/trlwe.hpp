@@ -223,6 +223,24 @@ Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const SecretKey &sk)
     return trlweSymIntDecrypt<P, plain_modulus>(c, sk.key.get<P>());
 }
 
+template <class P, class... Args>
+void TRLWEAdd(TRLWE<P> &res, const TRLWE<P> &first, const Args&... rest)
+{
+    for (int i = 0; i < (P::k+1) * P::n; i++) {
+        // A binary fold expression sums all corresponding elements at once.
+        res[0][i] = (first[0][i] + ... + rest[0][i]);
+    }
+}
+
+template <class P, class... Args>
+void TRLWESub(TRLWE<P> &res, const TRLWE<P> &first, const Args&... rest)
+{
+    for (int i = 0; i < (P::k+1) * P::n; i++) {
+        // A binary fold expression subtracts all corresponding elements at once.
+        res[0][i] = (first[0][i] - ... - rest[0][i]);
+    }
+}
+
 template <class P>
 void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
 {
