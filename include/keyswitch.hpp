@@ -5,6 +5,7 @@
 #include <span>
 
 #include "params.hpp"
+#include "tlwe.hpp"
 #include "trgsw.hpp"
 #include "utils.hpp"
 
@@ -65,11 +66,9 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
                  mask) -
                 halfbase;
             if (aij > 0)
-                for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
-                    res[k] -= ksk[i][j][aij - 1][k];
+                TLWESub<typename P::targetP>(res, res, ksk[i][j][aij - 1]);
             else if (aij < 0)
-                for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
-                    res[k] += ksk[i][j][-aij - 1][k];
+                TLWEAdd<typename P::targetP>(res, res, ksk[i][j][-aij - 1]);
         }
     }
 }
@@ -123,11 +122,11 @@ void CatIdentityKeySwitch(
                      mask) -
                     halfbase;
                 if (aij > 0)
-                    for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
-                        res[cat][k] -= ksk[i][j][aij - 1][k];
+                    TLWESub<typename P::targetP>(
+                        res[cat], res[cat], ksk[i][j][aij - 1]);
                 else if (aij < 0)
-                    for (int k = 0; k <= P::targetP::k * P::targetP::n; k++)
-                        res[cat][k] += ksk[i][j][-aij - 1][k];
+                    TLWEAdd<typename P::targetP>(
+                        res[cat], res[cat], ksk[i][j][-aij - 1]);
             }
         }
     }

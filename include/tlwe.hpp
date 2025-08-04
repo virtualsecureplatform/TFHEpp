@@ -184,10 +184,45 @@ std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
     return bootsSymDecrypt<P>(c, sk.key.get<P>());
 }
 
-template <class P>
-void TLWEAdd(TLWE<P> &res, const TLWE<P> &a, const TLWE<P> &b)
+/**
+ * @brief Adds an arbitrary number of TLWE ciphertexts element-wise.
+ *
+ * This function calculates res = c_1 + c_2 + ... + c_n.
+ * It uses a C++17 fold expression within a loop to sum the elements
+ * of all provided ciphertexts directly into the result.
+ *
+ * @tparam P The TLWE parameter type.
+ * @tparam Args A parameter pack of TLWE<P> types.
+ * @param res The output ciphertext where the sum is stored.
+ * @param first The first ciphertext in the sum.
+ * @param rest The remaining ciphertexts in the sum.
+ */
+template <class P, class... Args>
+void TLWEAdd(TLWE<P> &res, const TLWE<P> &first, const Args&... rest)
 {
-    for (int i = 0; i <= P::k * P::n; i++) res[i] = a[i] + b[i];
+    for (int i = 0; i <= P::k * P::n; i++) {
+        // A binary fold expression sums all corresponding elements at once.
+        res[i] = (first[i] + ... + rest[i]);
+    }
+}
+
+/**
+ * @brief Subtracts multiple TLWE ciphertexts element-wise.
+ *
+ * Calculates res = c1 - c2 - c3 - ...
+ * NOTE: This implementation requires at least two input ciphertexts.
+ */
+template <class P, class... Args>
+void TLWESub(TLWE<P> &res, const TLWE<P> &first, const Args&... rest)
+{
+    // A binary fold requires the parameter pack 'rest' to be non-empty.
+    static_assert(sizeof...(Args) > 0, "This TLWESub implementation requires at least two arguments.");
+
+    for (int i = 0; i <= P::k * P::n; i++) {
+        // Binary fold over the '-' operator.
+        // Expands to (((first[i] - c2[i]) - c3[i]) - ...)
+        res[i] = (first[i] - ... - rest[i]);
+    }
 }
 
 }  // namespace TFHEpp
