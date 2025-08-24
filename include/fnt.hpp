@@ -25,23 +25,23 @@ uint32_t BitReverse(uint32_t in)
 
 static inline int64_t ModLshift(int64_t a, uint8_t b)
 {
-    // If b >= 32, multiply by 2^32 ≡ -1 (mod P).
-    // => a = P - a  (unless a == 0), then reduce b by 32.
+    // If b >= K, multiply by 2^K ≡ -1 (mod P).
+    // => a = P - a  (unless a == 0), then reduce b by K.
     if (b == 2 * K) return a;
-    if (b >= 32) {
+    if (b >= K) {
         if (a != 0) {
             a = P - a;
         }
-        b -= 32;  // now b < 32
+        b -= K;  // now b < K
     }
 
-    // Shift by b < 32 in 64-bit arithmetic (safe from overflow).
+    // Shift by b < K in 64-bit arithmetic (safe from overflow).
     int64_t r = a << b;
 
     // Now reduce a modulo P:
-    //   hi = upper 32 bits
-    //   lo = lower 32 bits
-    // Since (hi << 32) ≡ -hi (mod P),
+    //   hi = upper K bits
+    //   lo = lower K bits
+    // Since (hi << K) ≡ -hi (mod P),
     // we can do (lo + hi) mod P  and then subtract P if needed.
     const int64_t hi = r >> K;
     const int64_t lo = r & wordmask;
