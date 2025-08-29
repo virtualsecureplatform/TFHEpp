@@ -75,6 +75,8 @@ using Key = std::array<typename P::T, P::k * P::n>;
 
 template <class P>
 using TLWE = std::array<typename P::T, P::k * P::n + 1>;
+template <class P>
+using ModswitchTLWE = TLWE<P>;
 
 template <class P>
 using Polynomial = std::array<typename P::T, P::n>;

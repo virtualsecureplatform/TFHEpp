@@ -16,20 +16,39 @@
 
 namespace TFHEpp {
 
+// https://eprint.iacr.org/2025/809
+template <class P, uint32_t num_out>
+void BRModSwitch(ModswitchTLWE<typename P::domainP> &moded, const TLWE<typename P::domainP> &tlwe)
+{
+    constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
+    std::make_signed_t<typename P::domainP::T> c = 0;
+    constexpr typename P::domainP::T roundoffset =
+            1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
+                     P::targetP::nbit + bitwidth);
+    for(int i = 0; i < P::domainP::k * P::domainP::n; i++) {
+        moded[i] =
+            (tlwe[i] + roundoffset) >>
+            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
+             P::targetP::nbit + bitwidth)
+                << bitwidth;
+        c += tlwe[i] - (moded[i]<<(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit));
+    }
+    moded[P::domainP::k * P::domainP::n] = 2 * P::targetP::n - (static_cast<typename P::domainP::T>(tlwe[P::domainP::k * P::domainP::n] - c/2 + roundoffset) >>
+            (std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth)
+                << bitwidth);
+}
+
+
 template <class P, uint32_t num_out = 1>
 void BlindRotate(TRLWE<typename P::targetP> &res,
                  const TLWE<typename P::domainP> &tlwe,
                  const BootstrappingKeyFFT<P> &bkfft,
                  const Polynomial<typename P::targetP> &testvector)
 {
-    constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
-    const uint32_t b̄ = 2 * P::targetP::n -
-                       ((tlwe[P::domainP::k * P::domainP::n] >>
-                         (std::numeric_limits<typename P::domainP::T>::digits -
-                          1 - P::targetP::nbit + bitwidth))
-                        << bitwidth);
+    ModswitchTLWE<typename P::domainP> moded;
+    BRModSwitch<P,num_out>(moded, tlwe);
     res = {};
-    PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, b̄);
+    PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, moded[P::domainP::k * P::domainP::n]);
 #ifdef USE_KEY_BUNDLE
     alignas(64) std::array<TRGSWFFT<typename P::targetP>,
                            P::domainP::k * P::domainP::n / P::Addends>
@@ -40,14 +59,8 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
             1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
                      P::targetP::nbit + bitwidth);
         std::array<typename P::domainP::T, P::Addends> bara;
-        bara[0] = (tlwe[2 * i] + roundoffset) >>
-                  (std::numeric_limits<typename P::domainP::T>::digits - 1 -
-                   P::targetP::nbit + bitwidth)
-                      << bitwidth;
-        bara[1] = (tlwe[2 * i + 1] + roundoffset) >>
-                  (std::numeric_limits<typename P::domainP::T>::digits - 1 -
-                   P::targetP::nbit + bitwidth)
-                      << bitwidth;
+        bara[0] = moded[2 * i];
+        bara[1] = moded[2 * i + 1];
         KeyBundleFFT<P>(BKadded[i], bkfft[i], bara);
     }
     for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
@@ -55,17 +68,9 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
     }
 #else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
-        constexpr typename P::domainP::T roundoffset =
-            1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
-                     P::targetP::nbit + bitwidth);
-        const uint32_t ā =
-            (tlwe[i] + roundoffset) >>
-            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
-             P::targetP::nbit + bitwidth)
-                << bitwidth;
-        if (ā == 0) continue;
+        if (moded[i] == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], ā);
+        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], moded[i]);
     }
 #endif
 }
