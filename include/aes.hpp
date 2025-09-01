@@ -8,7 +8,7 @@ namespace TFHEpp {
 
 constexpr uint aesNb = 4;
 
-void SubWord(std::array<uint8_t, 4> &a)
+inline void SubWord(std::array<uint8_t, 4> &a)
 {
     int i;
     for (i = 0; i < 4; i++) {
@@ -16,7 +16,7 @@ void SubWord(std::array<uint8_t, 4> &a)
     }
 }
 
-void RotWord(std::array<uint8_t, 4> &a)
+inline void RotWord(std::array<uint8_t, 4> &a)
 {
     uint8_t c = a[0];
     a[0] = a[1];
@@ -30,7 +30,7 @@ inline uint8_t xtime(uint8_t b)  // multiply on x
     return (b << 1) ^ (((b >> 7) & 1) * 0x1b);
 }
 
-uint8_t Rcon(unsigned int n)
+inline uint8_t Rcon(unsigned int n)
 {
     uint8_t c = 1;
     for (uint i = 0; i < n - 1; i++) {
@@ -43,7 +43,7 @@ constexpr uint Nk = 4;  // Number of 32-bit words in the key
 constexpr uint Nb = 4;  // Number of columns (32-bit words) comprising the state
 constexpr uint Nr = 10;  // Number of rounds, which is a function of Nk and Nb
 
-void KeyExpansion(std::array<uint8_t, 4 * Nb *(Nr + 1)> &w,
+inline void KeyExpansion(std::array<uint8_t, 4 * Nb *(Nr + 1)> &w,
                   const std::array<uint8_t, 16> &key)
 {
     std::array<uint8_t, 4> temp;
@@ -715,7 +715,7 @@ void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
                 cipher[j * 4 * 8 + i * 8 + k] = state[i * Nb * 8 + j * 8 + k];
 }
 
-uint8_t Rcon(const uint8_t n)
+inline uint8_t Rcon(const uint8_t n)
 {
     uint8_t rcon = 1;
     for (int i = 0; i < n - 1; i++) {
