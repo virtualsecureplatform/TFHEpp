@@ -54,9 +54,9 @@ struct lvl1param {
     static constexpr std::uint32_t n = 1 << nbit;  // dimension
     static constexpr std::uint32_t k = 2;
     static constexpr std::uint32_t lₐ = 2;
-    static constexpr std::uint32_t l = 2;
+    static constexpr std::uint32_t l = 1;
     static constexpr std::uint32_t Bgₐbit = 8;
-    static constexpr std::uint32_t Bgbit = 8;
+    static constexpr std::uint32_t Bgbit = 10;
     static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
     static constexpr ErrorDistribution errordist =
