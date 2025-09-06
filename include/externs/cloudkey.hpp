@@ -82,6 +82,14 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
+#define INST(P) extern template void EvalKey::emplaceahk<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
+#undef INST
+
+#define INST(P) extern template void EvalKey::emplacecbsk<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
+#undef INST
+
 #define INST(P)                                                              \
     extern template void EvalKey::emplacesubprivksk<P>(                                \
         const std::string& key, const Polynomial<typename P::targetP>& func, \
@@ -123,5 +131,13 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
     extern template SubsetPrivateKeySwitchingKey<P>& EvalKey::getsubprivksk<P>( \
         const std::string& key) const
 TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TRLWE(INST)
+#undef INST
+
+#define INST(P) extern template AnnihilateKey<P>& EvalKey::getahk<P>() const
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
+#undef INST
+
+#define INST(P) extern template CBswitchingKey<P>& EvalKey::getcbsk<P>() const
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
 #undef INST
 }

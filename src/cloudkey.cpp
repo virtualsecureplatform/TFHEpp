@@ -1,6 +1,7 @@
 #include <cloudkey.hpp>
 
 namespace TFHEpp {
+
 #define INST(P) \
     template void bkgen<P>(BootstrappingKey<P> & bk, const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
@@ -82,6 +83,14 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
+#define INST(P) template void EvalKey::emplaceahk<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
+#undef INST
+
+#define INST(P) template void EvalKey::emplacecbsk<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
+#undef INST
+
 #define INST(P)                                                              \
     template void EvalKey::emplacesubprivksk<P>(                             \
         const std::string& key, const Polynomial<typename P::targetP>& func, \
@@ -125,5 +134,13 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
     template SubsetPrivateKeySwitchingKey<P>& EvalKey::getsubprivksk<P>( \
         const std::string& key) const
 TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TRLWE(INST)
+#undef INST
+
+#define INST(P) template AnnihilateKey<P>& EvalKey::getahk<P>() const
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
+#undef INST
+
+#define INST(P) template CBswitchingKey<P>& EvalKey::getcbsk<P>() const
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
 #undef INST
 }  // namespace TFHEpp
