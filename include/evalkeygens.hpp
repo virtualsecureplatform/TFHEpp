@@ -58,6 +58,7 @@ void bkfftgen(BootstrappingKeyFFT<P>& bkfft,
 {
     Polynomial<typename P::targetP> plainpoly = {};
 #ifdef USE_KEY_BUNDLE
+    static_assert(P::Addends == 2, "Addends must be 2");
     for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
         plainpoly[0] =
             static_cast<int32_t>(domainkey[2 * i] * domainkey[2 * i + 1]);

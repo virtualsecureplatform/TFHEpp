@@ -50,21 +50,10 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
     res = {};
     PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, moded[P::domainP::k * P::domainP::n]);
 #ifdef USE_KEY_BUNDLE
-    alignas(64) std::array<TRGSWFFT<typename P::targetP>,
-                           P::domainP::k * P::domainP::n / P::Addends>
-        BKadded;
-#pragma omp parallel for num_threads(8)
     for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
-        constexpr typename P::domainP::T roundoffset =
-            1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
-                     P::targetP::nbit + bitwidth);
-        std::array<typename P::domainP::T, P::Addends> bara;
-        bara[0] = moded[2 * i];
-        bara[1] = moded[2 * i + 1];
-        KeyBundleFFT<P>(BKadded[i], bkfft[i], bara);
-    }
-    for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
-        trgswfftExternalProduct<typename P::targetP>(res, res, BKadded[i]);
+        alignas(64) TRGSWFFT<typename P::targetP> BKadded;
+        KeyBundleFFT<P>(BKadded, bkfft[i], std::span(moded).subspan(P::Addends*i,P::Addends).template first<P::Addends>());
+        trgswfftExternalProduct<typename P::targetP>(res, res, BKadded);
     }
 #else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {

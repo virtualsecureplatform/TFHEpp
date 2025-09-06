@@ -61,7 +61,7 @@ alignas(64) const TRGSWFFT<lvl2param> onetrgswlvl2 =
 template <class P>
 void KeyBundleFFT(TRGSWFFT<typename P::targetP> &kbfft,
                   const BootstrappingKeyElementFFT<P> &bkfft,
-                  const std::array<typename P::domainP::T, P::Addends> &bara)
+                  const std::span<typename P::domainP::T, P::Addends> &bara)
 {
     if constexpr (std::is_same_v<typename P::targetP, lvl1param>) {
         kbfft = onetrgswlvl1;
