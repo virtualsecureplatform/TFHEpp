@@ -71,6 +71,9 @@ struct lvl1param {
         plain_modulus;
 };
 
+// Dummy
+using AHlvl1param = lvl1param;
+
 struct lvl2param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
@@ -92,6 +95,9 @@ struct lvl2param {
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ = μ;
 };
+
+// Dummy
+using AHlvl2param = lvl2param;
 
 struct lvl3param {
     static constexpr int32_t key_value_max = 1;
