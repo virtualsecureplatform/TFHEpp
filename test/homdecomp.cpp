@@ -6,7 +6,6 @@
 
 int main()
 {
-    constexpr uint32_t num_test = 1000;
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
 

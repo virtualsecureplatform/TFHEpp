@@ -97,7 +97,7 @@ inline std::array<Polynomial<P>, (1 << 8) / (P::n / 8)> AESSboxROMPoly()
     return polys;
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void AESSboxROM(const std::span<TLWE<typename brP::targetP>, 8> res,
                 const std::span<const TLWE<typename iksP::domainP>, 8> tlwe,
                 const EvalKey &ek)
@@ -116,7 +116,7 @@ void AESSboxROM(const std::span<TLWE<typename brP::targetP>, 8> res,
         if (i >= width_bit)
             for (int j = 0; j <= iksP::domainP::k * iksP::domainP::n; j++)
                 shifted[j] *= -1;
-        AnnihilateCircuitBootstrappingFFT<iksP, brP>(trgsw[i], shifted, ek);
+        AnnihilateCircuitBootstrappingFFT<iksP, brP, ahP>(trgsw[i], shifted, ek);
     }
     std::array<TRLWE<typename brP::targetP>, (1 << 8) / (brP::targetP::n / 8)>
         rom = {};
@@ -135,31 +135,31 @@ void AESSboxROM(const std::span<TLWE<typename brP::targetP>, 8> res,
     }
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void AESSboxROM(std::array<TLWE<typename brP::targetP>, 8> &res,
                 const std::array<TLWE<typename iksP::domainP>, 8> &tlwe,
                 const EvalKey &ek)
 {
-    AESSboxROM<iksP, brP>(std::span(res), std::span(tlwe), ek);
+    AESSboxROM<iksP, brP, ahP>(std::span(res), std::span(tlwe), ek);
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void SubBytes(std::array<TLWE<typename brP::targetP>, 128> &state,
               const EvalKey &ek)
 {
     for (int i = 0; i < 16; i++)
-        AESSboxROM<iksP, brP>(
+        AESSboxROM<iksP, brP, ahP>(
             std::span(state).subspan(i * 8).template first<8>(),
             std::span(state).subspan(i * 8).template first<8>(), ek);
 }
 
-template <class iksP, class brP, class cbiksP, class cbbrP>
+template <class iksP, class brP, class cbiksP, class cbbrP, class ahP>
 void SubBytes(std::array<TLWE<typename brP::targetP>, 128> &state,
               const EvalKey &ek)
 {
     for (int i = 0; i < 16; i++) {
         std::array<TLWE<typename cbbrP::targetP>, 8> temp;
-        AESSboxROM<iksP, cbbrP>(
+        AESSboxROM<iksP, cbbrP, ahP>(
             std::span(temp),
             std::span(state).subspan(i * 8).template first<8>(), ek);
         for (int j = 0; j < 8; j++)
@@ -187,7 +187,7 @@ inline Polynomial<P> AESInvSboxPoly(const uint8_t upperindex)
     return poly;
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void AESInvSbox(std::array<TLWE<typename brP::targetP>, 2> &res,
                 const std::array<TLWE<typename iksP::domainP>, 2> &tlwe,
                 const EvalKey &ek)
@@ -209,8 +209,8 @@ void AESInvSbox(std::array<TLWE<typename brP::targetP>, 2> &res,
         std::array<std::array<TLWE<typename iksP::domainP>, 16>, 2> tabletlwe;
         for (int i = 0; i < 2; i++)
             for (int j = 0; j < 16; j++) tabletlwe[i][j] = midtlwes[j][i];
-        TLWE2TablePackingManyLUT<typename brP::targetP, 16, 2>(
-            trlwe, tabletlwe, ek.getahk<typename brP::targetP>());
+        TLWE2TablePackingManyLUT<ahP, 16, 2>(
+            trlwe, tabletlwe, ek.getahk<ahP>());
         GateBootstrappingManyLUT<brP, 2>(res, shifted, ek.getbkfft<brP>(),
                                          trlwe);
     }
@@ -235,7 +235,7 @@ inline std::array<Polynomial<P>, (1 << 8) / (P::n / 8)> AESInvSboxROMPoly()
     return polys;
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void AESInvSboxROM(std::array<TLWE<typename brP::targetP>, 8> &res,
                    const std::array<TLWE<typename iksP::domainP>, 8> &tlwe,
                    const EvalKey &ek)
@@ -254,7 +254,7 @@ void AESInvSboxROM(std::array<TLWE<typename brP::targetP>, 8> &res,
         if (i >= width_bit)
             for (int j = 0; j <= iksP::domainP::k * iksP::domainP::n; j++)
                 shifted[j] *= -1;
-        AnnihilateCircuitBootstrappingFFT<iksP, brP>(trgsw[i], shifted, ek);
+        AnnihilateCircuitBootstrappingFFT<iksP, brP, ahP>(trgsw[i], shifted, ek);
     }
     std::array<TRLWE<typename brP::targetP>, (1 << 8) / (brP::targetP::n / 8)>
         rom = {};
@@ -633,7 +633,7 @@ void AddRoundKey(std::array<TLWE<P>, 128> &state,
             }
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
             const std::array<TLWE<typename iksP::domainP>, 128> &plain,
             const std::array<std::array<TLWE<typename brP::targetP>, 128>,
@@ -658,12 +658,12 @@ void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
 
     // Rounds
     for (int round = 1; round < Nr; round++) {
-        SubBytes<iksP, brP>(state, ek);
+        SubBytes<iksP, brP, ahP>(state, ek);
         ShiftRows<typename brP::targetP>(state);
         MixColumns<typename brP::targetP>(state);
         AddRoundKey<typename brP::targetP>(state, expandedkey[round]);
     }
-    SubBytes<iksP, brP>(state, ek);
+    SubBytes<iksP, brP, ahP>(state, ek);
     ShiftRows<typename brP::targetP>(state);
     AddRoundKey<typename brP::targetP>(state, expandedkey[Nr]);
 
@@ -674,7 +674,7 @@ void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
                 cipher[j * 4 * 8 + i * 8 + k] = state[i * Nb * 8 + j * 8 + k];
 }
 
-template <class iksP, class brP, class cbiksP, class cbbrP>
+template <class iksP, class brP, class cbiksP, class cbbrP, class ahP>
 void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
             const std::array<TLWE<typename iksP::domainP>, 128> &plain,
             const std::array<std::array<TLWE<typename brP::targetP>, 128>,
@@ -699,12 +699,12 @@ void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
 
     // Rounds
     for (int round = 1; round < Nr; round++) {
-        SubBytes<iksP, brP, cbiksP, cbbrP>(state, ek);
+        SubBytes<iksP, brP, cbiksP, cbbrP, ahP>(state, ek);
         ShiftRows<typename brP::targetP>(state);
         MixColumns<typename brP::targetP>(state);
         AddRoundKey<typename brP::targetP>(state, expandedkey[round]);
     }
-    SubBytes<iksP, brP, cbiksP, cbbrP>(state, ek);
+    SubBytes<iksP, brP, cbiksP, cbbrP, ahP>(state, ek);
     ShiftRows<typename brP::targetP>(state);
     AddRoundKey<typename brP::targetP>(state, expandedkey[Nr]);
 
@@ -726,7 +726,7 @@ inline uint8_t Rcon(const uint8_t n)
 
 // Currently, assuming only AES128
 // AES key expansion
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void KeyExpand(std::array<TLWE<typename brP::targetP>, 128> &next,
                const std::array<TLWE<typename iksP::domainP>, 128> &prev,
                EvalKey &ek, const uint8_t n)
@@ -734,12 +734,12 @@ void KeyExpand(std::array<TLWE<typename brP::targetP>, 128> &next,
     // SubWord & RotWord
     std::array<TLWE<typename iksP::domainP>, 8> sbox;
     for (int i = 0; i < 8; i++) sbox[i] = prev[96 + i];
-    AESSboxROM<iksP, brP>(sbox, sbox, ek);
+    AESSboxROM<iksP, brP, ahP>(sbox, sbox, ek);
     for (int i = 0; i < 8; i++)
         TLWEAdd<typename iksP::domainP>(next[8 * 3 + i], sbox[i],
                                         prev[8 * 3 + i]);
     for (int i = 0; i < 8; i++) sbox[i] = prev[96 + 8 + i];
-    AESSboxROM<iksP, brP>(sbox, sbox, ek);
+    AESSboxROM<iksP, brP, ahP>(sbox, sbox, ek);
     for (int i = 0; i < 8; i++)
         TLWEAdd<typename iksP::domainP>(next[i], sbox[i], prev[i]);
     // Add round constant
@@ -751,7 +751,7 @@ void KeyExpand(std::array<TLWE<typename brP::targetP>, 128> &next,
                          1);
     for (int pos = 2; pos < 4; pos++) {
         for (int i = 0; i < 8; i++) sbox[i] = prev[96 + pos * 8 + i];
-        AESSboxROM<iksP, brP>(sbox, sbox, ek);
+        AESSboxROM<iksP, brP, ahP>(sbox, sbox, ek);
         for (int i = 0; i < 8; i++)
             TLWEAdd<typename iksP::domainP>(next[(pos - 1) * 8 + i], sbox[i],
                                             prev[(pos - 1) * 8 + i]);
@@ -771,14 +771,14 @@ void KeyExpand(std::array<TLWE<typename brP::targetP>, 128> &next,
     }
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void KeyExpansion(
     std::array<std::array<TLWE<typename brP::targetP>, 128>, 10> &expandedkey,
     const std::array<TLWE<typename iksP::domainP>, 128> &key, EvalKey &ek)
 {
-    KeyExpand<iksP, brP>(expandedkey[0], key, ek, 1);
+    KeyExpand<iksP, brP,ahP>(expandedkey[0], key, ek, 1);
     for (int i = 1; i < 10; i++)
-        KeyExpand<iksP, brP>(expandedkey[i], expandedkey[i - 1], ek, i + 1);
+        KeyExpand<iksP, brP, ahP>(expandedkey[i], expandedkey[i - 1], ek, i + 1);
 }
 
 }  // namespace TFHEpp

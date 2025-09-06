@@ -52,11 +52,11 @@ struct EvalKey {
         std::string, std::shared_ptr<SubsetPrivateKeySwitchingKey<lvl21param>>>
         subprivksklvl21;
     // AnnihilateKey
-    std::shared_ptr<AnnihilateKey<lvl1param>> ahklvl1;
-    std::shared_ptr<AnnihilateKey<lvl2param>> ahklvl2;
+    std::shared_ptr<AnnihilateKey<AHlvl1param>> ahklvl1;
+    std::shared_ptr<AnnihilateKey<AHlvl2param>> ahklvl2;
     // CBswitchKey
-    std::shared_ptr<CBswitchingKey<lvl1param>> cbsklvl1;
-    std::shared_ptr<CBswitchingKey<lvl2param>> cbsklvl2;
+    std::shared_ptr<CBswitchingKey<AHlvl1param>> cbsklvl1;
+    std::shared_ptr<CBswitchingKey<AHlvl2param>> cbsklvl2;
 
     EvalKey(SecretKey sk) { params = sk.params; }
     EvalKey() {}
@@ -327,15 +327,15 @@ struct EvalKey {
     template <class P>
     void emplaceahk(const SecretKey& sk)
     {
-        if constexpr (std::is_same_v<P, lvl1param>) {
+        if constexpr (std::is_same_v<P, AHlvl1param>) {
             ahklvl1 =
-                std::make_unique_for_overwrite<AnnihilateKey<lvl1param>>();
-            annihilatekeygen<lvl1param>(*ahklvl1, sk);
+                std::make_unique_for_overwrite<AnnihilateKey<AHlvl1param>>();
+            annihilatekeygen<AHlvl1param>(*ahklvl1, sk);
         }
-        else if constexpr (std::is_same_v<P, lvl2param>) {
+        else if constexpr (std::is_same_v<P, AHlvl2param>) {
             ahklvl2 =
-                std::make_unique_for_overwrite<AnnihilateKey<lvl2param>>();
-            annihilatekeygen<lvl2param>(*ahklvl2, sk);
+                std::make_unique_for_overwrite<AnnihilateKey<AHlvl2param>>();
+            annihilatekeygen<AHlvl2param>(*ahklvl2, sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -344,10 +344,10 @@ struct EvalKey {
     template <class P>
     void emplacecbsk(const SecretKey& sk)
     {
-        if constexpr (std::is_same_v<P, lvl1param>) {
+        if constexpr (std::is_same_v<P, AHlvl1param>) {
             cbsklvl1 =
-                std::make_unique_for_overwrite<CBswitchingKey<lvl1param>>();
-            for (int i = 0; i < lvl1param::k; i++) {
+                std::make_unique_for_overwrite<CBswitchingKey<AHlvl1param>>();
+            for (int i = 0; i < P::k; i++) {
                 Polynomial<P> partkey;
                 for (int j = 0; j < P::n; j++)
                     partkey[j] = -sk.key.get<P>()[i * P::n + j];
@@ -355,10 +355,10 @@ struct EvalKey {
                     trgswfftSymEncrypt<P>(partkey, sk.key.get<P>());
             }
         }
-        else if constexpr (std::is_same_v<P, lvl2param>) {
+        else if constexpr (std::is_same_v<P, AHlvl2param>) {
             cbsklvl2 =
-                std::make_unique_for_overwrite<CBswitchingKey<lvl2param>>();
-            for (int i = 0; i < lvl2param::k; i++) {
+                std::make_unique_for_overwrite<CBswitchingKey<AHlvl2param>>();
+            for (int i = 0; i < P::k; i++) {
                 Polynomial<P> partkey;
                 for (int j = 0; j < P::n; j++)
                     partkey[j] = -sk.key.get<P>()[i * P::n + j];
@@ -489,10 +489,10 @@ struct EvalKey {
     template <class P>
     AnnihilateKey<P>& getahk() const
     {
-        if constexpr (std::is_same_v<P, lvl1param>) {
+        if constexpr (std::is_same_v<P, AHlvl1param>) {
             return *ahklvl1;
         }
-        else if constexpr (std::is_same_v<P, lvl2param>) {
+        else if constexpr (std::is_same_v<P, AHlvl2param>) {
             return *ahklvl2;
         }
         else
@@ -501,10 +501,10 @@ struct EvalKey {
     template <class P>
     CBswitchingKey<P>& getcbsk() const
     {
-        if constexpr (std::is_same_v<P, lvl1param>) {
+        if constexpr (std::is_same_v<P, AHlvl1param>) {
             return *cbsklvl1;
         }
-        else if constexpr (std::is_same_v<P, lvl2param>) {
+        else if constexpr (std::is_same_v<P, AHlvl2param>) {
             return *cbsklvl2;
         }
         else

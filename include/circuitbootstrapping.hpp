@@ -48,11 +48,13 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
 }
 
 // https://eprint.iacr.org/2024/1318
-template <class brP>
+template <class brP, class ahP>
 void AnnihilateCircuitBootstrapping(TRGSW<typename brP::targetP> &trgsw,
                                     const TLWE<typename brP::domainP> &tlwe,
                                     const EvalKey &ek)
 {
+    static_assert(brP::targetP::k == ahP::k,
+                  "brP::targetP::k must be equal to ahP::k");
     alignas(64) std::array<TLWE<typename brP::targetP>, brP::targetP::l> temp;
     GateBootstrappingManyLUT<brP, brP::targetP::l>(
         temp, tlwe, ek.getbkfft<brP>(),
@@ -63,15 +65,15 @@ void AnnihilateCircuitBootstrapping(TRGSW<typename brP::targetP> &trgsw,
                      (i + 1) * brP::targetP::Bgbit - 1);
         TRLWE<typename brP::targetP> temptrlwe;
         InvSampleExtractIndex<typename brP::targetP>(temptrlwe, temp[i], 0);
-        AnnihilateKeySwitching<typename brP::targetP>(
+        AnnihilateKeySwitching<ahP>(
             trgsw[i + brP::targetP::k * brP::targetP::l], temptrlwe,
-            ek.getahk<typename brP::targetP>());
+            ek.getahk<ahP>());
         // Scheme Switching
         for (int k = 0; k < brP::targetP::k; k++)
-            trgswfftExternalProduct<typename brP::targetP>(
+            trgswfftExternalProduct<ahP>(
                 trgsw[i + k * brP::targetP::l],
                 trgsw[i + brP::targetP::k * brP::targetP::l],
-                ek.getcbsk<typename brP::targetP>()[k]);
+                ek.getcbsk<ahP>()[k]);
     }
 }
 
@@ -85,14 +87,14 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP> &trgsw,
     CircuitBootstrapping<bkP, privksP>(trgsw, tlwelvl0, ek);
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void AnnihilateCircuitBootstrapping(TRGSW<typename brP::targetP> &trgsw,
                                     const TLWE<typename iksP::domainP> &tlwe,
                                     const EvalKey &ek)
 {
     TLWE<typename brP::domainP> tlwelvl0;
     IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
-    AnnihilateCircuitBootstrapping<brP>(trgsw, tlwelvl0, ek);
+    AnnihilateCircuitBootstrapping<brP, ahP>(trgsw, tlwelvl0, ek);
 }
 
 template <class brP, class privksP>
@@ -115,23 +117,23 @@ void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
     ApplyFFT2trgsw<typename privksP::targetP>(trgswfft, trgsw);
 }
 
-template <class brP>
+template <class brP, class ahP>
 void AnnihilateCircuitBootstrappingFFT(
     TRGSWFFT<typename brP::targetP> &trgswfft,
     const TLWE<typename brP::domainP> &tlwe, const EvalKey &ek)
 {
     alignas(64) TRGSW<typename brP::targetP> trgsw;
-    AnnihilateCircuitBootstrapping<brP>(trgsw, tlwe, ek);
+    AnnihilateCircuitBootstrapping<brP, ahP>(trgsw, tlwe, ek);
     ApplyFFT2trgsw<typename brP::targetP>(trgswfft, trgsw);
 }
 
-template <class iksP, class brP>
+template <class iksP, class brP, class ahP>
 void AnnihilateCircuitBootstrappingFFT(
     TRGSWFFT<typename brP::targetP> &trgswfft,
     const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 {
     alignas(64) TRGSW<typename brP::targetP> trgsw;
-    AnnihilateCircuitBootstrapping<iksP, brP>(trgsw, tlwe, ek);
+    AnnihilateCircuitBootstrapping<iksP, brP, ahP>(trgsw, tlwe, ek);
     ApplyFFT2trgsw<typename brP::targetP>(trgswfft, trgsw);
 }
 

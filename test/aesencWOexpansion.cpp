@@ -11,6 +11,7 @@ int main()
     using iksP = TFHEpp::lvl10param;
     using cbiksP = TFHEpp::lvl20param;
     using cbbrP = TFHEpp::lvl02param;
+    using ahP = TFHEpp::AHlvl2param;
     // using brP = TFHEpp::lvl02param;
     // using iksP = TFHEpp::lvl20param;
     std::random_device seed_gen;
@@ -68,14 +69,14 @@ int main()
     ek.emplacebkfft<cbbrP>(*sk);
     ek.emplaceiksk<iksP>(*sk);
     ek.emplaceiksk<cbiksP>(*sk);
-    ek.emplaceahk<typename cbbrP::targetP>(*sk);
-    ek.emplacecbsk<typename cbbrP::targetP>(*sk);
+    ek.emplaceahk<ahP>(*sk);
+    ek.emplacecbsk<ahP>(*sk);
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         std::cout << "test: " << test << std::endl;
-        TFHEpp::AESEnc<iksP, brP, cbiksP, cbbrP>(cres[test], cin[test],
+        TFHEpp::AESEnc<iksP, brP, cbiksP, cbbrP, ahP>(cres[test], cin[test],
                                                  cexpandedkey[test], ek);
         // TFHEpp::AESEnc<iksP, brP>(cres[test], cin[test], cexpandedkey[test],
         // ek);

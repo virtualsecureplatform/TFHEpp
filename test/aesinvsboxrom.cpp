@@ -9,6 +9,7 @@ int main()
 {
     using brP = TFHEpp::lvl02param;
     using iksP = TFHEpp::lvl20param;
+    using ahP = TFHEpp::AHlvl2param;
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
@@ -34,14 +35,14 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplacebkfft<brP>(*sk);
     ek.emplaceiksk<iksP>(*sk);
-    ek.emplaceahk<typename brP::targetP>(*sk);
-    ek.emplacecbsk<typename brP::targetP>(*sk);
+    ek.emplaceahk<ahP>(*sk);
+    ek.emplacecbsk<ahP>(*sk);
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         std::cout << "test: " << test << std::endl;
-        TFHEpp::AESInvSboxROM<iksP, brP>(cres[test], cin[test], ek);
+        TFHEpp::AESInvSboxROM<iksP, brP, ahP>(cres[test], cin[test], ek);
     }
 
     end = std::chrono::system_clock::now();

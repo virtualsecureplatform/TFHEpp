@@ -17,13 +17,14 @@ int main()
 
     using iksP = TFHEpp::lvl10param;
     using brP = TFHEpp::lvl02param;
+    using ahP = TFHEpp::AHlvl2param;
 
     TFHEpp::SecretKey *sk = new TFHEpp::SecretKey;
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(*sk);
     ek.emplacebkfft<brP>(*sk);
-    ek.emplaceahk<typename brP::targetP>(*sk);
-    ek.emplacecbsk<typename brP::targetP>(*sk);
+    ek.emplaceahk<ahP>(*sk);
+    ek.emplacecbsk<ahP>(*sk);
 
     std::vector<std::array<uint8_t, brP::targetP::n>> pa(num_test);
     std::vector<std::array<typename brP::targetP::T, brP::targetP::n>> pmu(
@@ -58,7 +59,7 @@ int main()
 #endif
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::AnnihilateCircuitBootstrappingFFT<iksP, brP>(bootedTGSW[test],
+        TFHEpp::AnnihilateCircuitBootstrappingFFT<iksP, brP, ahP>(bootedTGSW[test],
                                                              cones[test], ek);
     }
     end = std::chrono::system_clock::now();
