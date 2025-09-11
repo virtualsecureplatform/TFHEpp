@@ -146,15 +146,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
-#define INST(P) extern template const std::shared_ptr<BootstrappingKey<P>>& EvalKey::ptrbk<P>() const
-TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
-#undef INST
-
 #define INST(P) extern template std::shared_ptr<BootstrappingKeyFFT<P>>& EvalKey::ptrbkfft<P>()
-TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
-#undef INST
-
-#define INST(P) extern template const std::shared_ptr<BootstrappingKeyFFT<P>>& EvalKey::ptrbkfft<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
@@ -162,15 +154,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
-#define INST(P) extern template const std::shared_ptr<BootstrappingKeyNTT<P>>& EvalKey::ptrbkntt<P>() const
-TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
-#undef INST
-
 #define INST(P) extern template std::shared_ptr<KeySwitchingKey<P>>& EvalKey::ptriksk<P>()
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
-#undef INST
-
-#define INST(P) extern template const std::shared_ptr<KeySwitchingKey<P>>& EvalKey::ptriksk<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
@@ -178,15 +162,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
-#define INST(P) extern template const std::shared_ptr<SubsetKeySwitchingKey<P>>& EvalKey::ptrsubiksk<P>() const
-TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TLWE(INST)
-#undef INST
-
 #define INST(P) extern template std::unordered_map<std::string, std::shared_ptr<PrivateKeySwitchingKey<P>>>& EvalKey::ptrprivksk<P>()
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
-#undef INST
-
-#define INST(P) extern template const std::unordered_map<std::string, std::shared_ptr<PrivateKeySwitchingKey<P>>>& EvalKey::ptrprivksk<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
@@ -194,23 +170,11 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
-#define INST(P) extern template const std::unordered_map<std::string, std::shared_ptr<SubsetPrivateKeySwitchingKey<P>>>& EvalKey::ptrsubprivksk<P>() const
-TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TRLWE(INST)
-#undef INST
-
 #define INST(P) extern template std::shared_ptr<AnnihilateKey<P>>& EvalKey::ptrahk<P>()
 TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
 #undef INST
 
-#define INST(P) extern template const std::shared_ptr<AnnihilateKey<P>>& EvalKey::ptrahk<P>() const
-TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
-#undef INST
-
 #define INST(P) extern template std::shared_ptr<CBswitchingKey<P>>& EvalKey::ptrcbsk<P>()
-TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
-#undef INST
-
-#define INST(P) extern template const std::shared_ptr<CBswitchingKey<P>>& EvalKey::ptrcbsk<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
 #undef INST
 }

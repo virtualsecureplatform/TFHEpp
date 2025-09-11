@@ -209,154 +209,6 @@ struct EvalKey {
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
     }
 
-    // const versions of ptr* functions
-    template <class P>
-    const std::shared_ptr<BootstrappingKey<P>>& ptrbk() const
-    {
-        if constexpr (std::is_same_v<P, lvl01param>) {
-            return bklvl01;
-        }
-        else if constexpr (std::is_same_v<P, lvlh1param>) {
-            return bklvlh1;
-        }
-        else if constexpr (std::is_same_v<P, lvl02param>) {
-            return bklvl02;
-        }
-        else if constexpr (std::is_same_v<P, lvlh2param>) {
-            return bklvlh2;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
-    template <class P>
-    const std::shared_ptr<BootstrappingKeyFFT<P>>& ptrbkfft() const
-    {
-        if constexpr (std::is_same_v<P, lvl01param>) {
-            return bkfftlvl01;
-        }
-        else if constexpr (std::is_same_v<P, lvlh1param>) {
-            return bkfftlvlh1;
-        }
-        else if constexpr (std::is_same_v<P, lvl02param>) {
-            return bkfftlvl02;
-        }
-        else if constexpr (std::is_same_v<P, lvlh2param>) {
-            return bkfftlvlh2;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
-    template <class P>
-    const std::shared_ptr<BootstrappingKeyNTT<P>>& ptrbkntt() const
-    {
-        if constexpr (std::is_same_v<P, lvl01param>) {
-            return bknttlvl01;
-        }
-        else if constexpr (std::is_same_v<P, lvlh1param>) {
-            return bknttlvlh1;
-        }
-        else if constexpr (std::is_same_v<P, lvl02param>) {
-            return bknttlvl02;
-        }
-        else if constexpr (std::is_same_v<P, lvlh2param>) {
-            return bknttlvlh2;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
-    template <class P>
-    const std::shared_ptr<KeySwitchingKey<P>>& ptriksk() const
-    {
-        if constexpr (std::is_same_v<P, lvl10param>) {
-            return iksklvl10;
-        }
-        else if constexpr (std::is_same_v<P, lvl1hparam>) {
-            return iksklvl1h;
-        }
-        else if constexpr (std::is_same_v<P, lvl20param>) {
-            return iksklvl20;
-        }
-        else if constexpr (std::is_same_v<P, lvl2hparam>) {
-            return iksklvl2h;
-        }
-        else if constexpr (std::is_same_v<P, lvl21param>) {
-            return iksklvl21;
-        }
-        else if constexpr (std::is_same_v<P, lvl22param>) {
-            return iksklvl22;
-        }
-        else if constexpr (std::is_same_v<P, lvl31param>) {
-            return iksklvl31;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
-    template <class P>
-    const std::shared_ptr<SubsetKeySwitchingKey<P>>& ptrsubiksk() const
-    {
-        if constexpr (std::is_same_v<P, lvl21param>) {
-            return subiksklvl21;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
-    template <class P>
-    const std::unordered_map<std::string, std::shared_ptr<PrivateKeySwitchingKey<P>>>& ptrprivksk() const
-    {
-        if constexpr (std::is_same_v<P, lvl11param>) {
-            return privksklvl11;
-        }
-        else if constexpr (std::is_same_v<P, lvl21param>) {
-            return privksklvl21;
-        }
-        else if constexpr (std::is_same_v<P, lvl22param>) {
-            return privksklvl22;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
-    template <class P>
-    const std::unordered_map<std::string, std::shared_ptr<SubsetPrivateKeySwitchingKey<P>>>& ptrsubprivksk() const
-    {
-        if constexpr (std::is_same_v<P, lvl21param>) {
-            return subprivksklvl21;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
-    template <class P>
-    const std::shared_ptr<AnnihilateKey<P>>& ptrahk() const
-    {
-        if constexpr (std::is_same_v<P, AHlvl1param>) {
-            return ahklvl1;
-        }
-        else if constexpr (std::is_same_v<P, AHlvl2param>) {
-            return ahklvl2;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
-    template <class P>
-    const std::shared_ptr<CBswitchingKey<P>>& ptrcbsk() const
-    {
-        if constexpr (std::is_same_v<P, AHlvl1param>) {
-            return cbsklvl1;
-        }
-        else if constexpr (std::is_same_v<P, AHlvl2param>) {
-            return cbsklvl2;
-        }
-        else
-            static_assert(false_v<typename P::T>, "Not predefined parameter!");
-    }
-
     template <class Archive>
     void serialize(Archive& archive)
     {
@@ -500,47 +352,47 @@ struct EvalKey {
     template <class P>
     BootstrappingKey<P>& getbk() const
     {
-        return *ptrbk<P>();
+        return *const_cast<EvalKey*>(this)->ptrbk<P>();
     }
     template <class P>
     BootstrappingKeyFFT<P>& getbkfft() const
     {
-        return *ptrbkfft<P>();
+        return *const_cast<EvalKey*>(this)->ptrbkfft<P>();
     }
     template <class P>
     BootstrappingKeyNTT<P>& getbkntt() const
     {
-        return *ptrbkntt<P>();
+        return *const_cast<EvalKey*>(this)->ptrbkntt<P>();
     }
     template <class P>
     KeySwitchingKey<P>& getiksk() const
     {
-        return *ptriksk<P>();
+        return *const_cast<EvalKey*>(this)->ptriksk<P>();
     }
     template <class P>
     SubsetKeySwitchingKey<P>& getsubiksk() const
     {
-        return *ptrsubiksk<P>();
+        return *const_cast<EvalKey*>(this)->ptrsubiksk<P>();
     }
     template <class P>
     PrivateKeySwitchingKey<P>& getprivksk(const std::string& key) const
     {
-        return *(ptrprivksk<P>().at(key));
+        return *(const_cast<EvalKey*>(this)->ptrprivksk<P>().at(key));
     }
     template <class P>
     SubsetPrivateKeySwitchingKey<P>& getsubprivksk(const std::string& key) const
     {
-        return *(ptrsubprivksk<P>().at(key));
+        return *(const_cast<EvalKey*>(this)->ptrsubprivksk<P>().at(key));
     }
     template <class P>
     AnnihilateKey<P>& getahk() const
     {
-        return *ptrahk<P>();
+        return *const_cast<EvalKey*>(this)->ptrahk<P>();
     }
     template <class P>
     CBswitchingKey<P>& getcbsk() const
     {
-        return *ptrcbsk<P>();
+        return *const_cast<EvalKey*>(this)->ptrcbsk<P>();
     }
 };
 
