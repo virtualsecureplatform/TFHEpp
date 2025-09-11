@@ -61,6 +61,302 @@ struct EvalKey {
     EvalKey(SecretKey sk) { params = sk.params; }
     EvalKey() {}
 
+    // ptr* functions for accessing shared_ptr members
+    template <class P>
+    std::shared_ptr<BootstrappingKey<P>>& ptrbk()
+    {
+        if constexpr (std::is_same_v<P, lvl01param>) {
+            return bklvl01;
+        }
+        else if constexpr (std::is_same_v<P, lvlh1param>) {
+            return bklvlh1;
+        }
+        else if constexpr (std::is_same_v<P, lvl02param>) {
+            return bklvl02;
+        }
+        else if constexpr (std::is_same_v<P, lvlh2param>) {
+            return bklvlh2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    std::shared_ptr<BootstrappingKeyFFT<P>>& ptrbkfft()
+    {
+        if constexpr (std::is_same_v<P, lvl01param>) {
+            return bkfftlvl01;
+        }
+        else if constexpr (std::is_same_v<P, lvlh1param>) {
+            return bkfftlvlh1;
+        }
+        else if constexpr (std::is_same_v<P, lvl02param>) {
+            return bkfftlvl02;
+        }
+        else if constexpr (std::is_same_v<P, lvlh2param>) {
+            return bkfftlvlh2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    std::shared_ptr<BootstrappingKeyNTT<P>>& ptrbkntt()
+    {
+        if constexpr (std::is_same_v<P, lvl01param>) {
+            return bknttlvl01;
+        }
+        else if constexpr (std::is_same_v<P, lvlh1param>) {
+            return bknttlvlh1;
+        }
+        else if constexpr (std::is_same_v<P, lvl02param>) {
+            return bknttlvl02;
+        }
+        else if constexpr (std::is_same_v<P, lvlh2param>) {
+            return bknttlvlh2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    std::shared_ptr<KeySwitchingKey<P>>& ptriksk()
+    {
+        if constexpr (std::is_same_v<P, lvl10param>) {
+            return iksklvl10;
+        }
+        else if constexpr (std::is_same_v<P, lvl1hparam>) {
+            return iksklvl1h;
+        }
+        else if constexpr (std::is_same_v<P, lvl20param>) {
+            return iksklvl20;
+        }
+        else if constexpr (std::is_same_v<P, lvl2hparam>) {
+            return iksklvl2h;
+        }
+        else if constexpr (std::is_same_v<P, lvl21param>) {
+            return iksklvl21;
+        }
+        else if constexpr (std::is_same_v<P, lvl22param>) {
+            return iksklvl22;
+        }
+        else if constexpr (std::is_same_v<P, lvl31param>) {
+            return iksklvl31;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    std::shared_ptr<SubsetKeySwitchingKey<P>>& ptrsubiksk()
+    {
+        if constexpr (std::is_same_v<P, lvl21param>) {
+            return subiksklvl21;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    std::unordered_map<std::string, std::shared_ptr<PrivateKeySwitchingKey<P>>>& ptrprivksk()
+    {
+        if constexpr (std::is_same_v<P, lvl11param>) {
+            return privksklvl11;
+        }
+        else if constexpr (std::is_same_v<P, lvl21param>) {
+            return privksklvl21;
+        }
+        else if constexpr (std::is_same_v<P, lvl22param>) {
+            return privksklvl22;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    std::unordered_map<std::string, std::shared_ptr<SubsetPrivateKeySwitchingKey<P>>>& ptrsubprivksk()
+    {
+        if constexpr (std::is_same_v<P, lvl21param>) {
+            return subprivksklvl21;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    std::shared_ptr<AnnihilateKey<P>>& ptrahk()
+    {
+        if constexpr (std::is_same_v<P, AHlvl1param>) {
+            return ahklvl1;
+        }
+        else if constexpr (std::is_same_v<P, AHlvl2param>) {
+            return ahklvl2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    std::shared_ptr<CBswitchingKey<P>>& ptrcbsk()
+    {
+        if constexpr (std::is_same_v<P, AHlvl1param>) {
+            return cbsklvl1;
+        }
+        else if constexpr (std::is_same_v<P, AHlvl2param>) {
+            return cbsklvl2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    // const versions of ptr* functions
+    template <class P>
+    const std::shared_ptr<BootstrappingKey<P>>& ptrbk() const
+    {
+        if constexpr (std::is_same_v<P, lvl01param>) {
+            return bklvl01;
+        }
+        else if constexpr (std::is_same_v<P, lvlh1param>) {
+            return bklvlh1;
+        }
+        else if constexpr (std::is_same_v<P, lvl02param>) {
+            return bklvl02;
+        }
+        else if constexpr (std::is_same_v<P, lvlh2param>) {
+            return bklvlh2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    const std::shared_ptr<BootstrappingKeyFFT<P>>& ptrbkfft() const
+    {
+        if constexpr (std::is_same_v<P, lvl01param>) {
+            return bkfftlvl01;
+        }
+        else if constexpr (std::is_same_v<P, lvlh1param>) {
+            return bkfftlvlh1;
+        }
+        else if constexpr (std::is_same_v<P, lvl02param>) {
+            return bkfftlvl02;
+        }
+        else if constexpr (std::is_same_v<P, lvlh2param>) {
+            return bkfftlvlh2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    const std::shared_ptr<BootstrappingKeyNTT<P>>& ptrbkntt() const
+    {
+        if constexpr (std::is_same_v<P, lvl01param>) {
+            return bknttlvl01;
+        }
+        else if constexpr (std::is_same_v<P, lvlh1param>) {
+            return bknttlvlh1;
+        }
+        else if constexpr (std::is_same_v<P, lvl02param>) {
+            return bknttlvl02;
+        }
+        else if constexpr (std::is_same_v<P, lvlh2param>) {
+            return bknttlvlh2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    const std::shared_ptr<KeySwitchingKey<P>>& ptriksk() const
+    {
+        if constexpr (std::is_same_v<P, lvl10param>) {
+            return iksklvl10;
+        }
+        else if constexpr (std::is_same_v<P, lvl1hparam>) {
+            return iksklvl1h;
+        }
+        else if constexpr (std::is_same_v<P, lvl20param>) {
+            return iksklvl20;
+        }
+        else if constexpr (std::is_same_v<P, lvl2hparam>) {
+            return iksklvl2h;
+        }
+        else if constexpr (std::is_same_v<P, lvl21param>) {
+            return iksklvl21;
+        }
+        else if constexpr (std::is_same_v<P, lvl22param>) {
+            return iksklvl22;
+        }
+        else if constexpr (std::is_same_v<P, lvl31param>) {
+            return iksklvl31;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    const std::shared_ptr<SubsetKeySwitchingKey<P>>& ptrsubiksk() const
+    {
+        if constexpr (std::is_same_v<P, lvl21param>) {
+            return subiksklvl21;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    const std::unordered_map<std::string, std::shared_ptr<PrivateKeySwitchingKey<P>>>& ptrprivksk() const
+    {
+        if constexpr (std::is_same_v<P, lvl11param>) {
+            return privksklvl11;
+        }
+        else if constexpr (std::is_same_v<P, lvl21param>) {
+            return privksklvl21;
+        }
+        else if constexpr (std::is_same_v<P, lvl22param>) {
+            return privksklvl22;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    const std::unordered_map<std::string, std::shared_ptr<SubsetPrivateKeySwitchingKey<P>>>& ptrsubprivksk() const
+    {
+        if constexpr (std::is_same_v<P, lvl21param>) {
+            return subprivksklvl21;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    const std::shared_ptr<AnnihilateKey<P>>& ptrahk() const
+    {
+        if constexpr (std::is_same_v<P, AHlvl1param>) {
+            return ahklvl1;
+        }
+        else if constexpr (std::is_same_v<P, AHlvl2param>) {
+            return ahklvl2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
+    template <class P>
+    const std::shared_ptr<CBswitchingKey<P>>& ptrcbsk() const
+    {
+        if constexpr (std::is_same_v<P, AHlvl1param>) {
+            return cbsklvl1;
+        }
+        else if constexpr (std::is_same_v<P, AHlvl2param>) {
+            return cbsklvl2;
+        }
+        else
+            static_assert(false_v<typename P::T>, "Not predefined parameter!");
+    }
+
     template <class Archive>
     void serialize(Archive& archive)
     {
@@ -76,24 +372,24 @@ struct EvalKey {
     void emplacebk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bklvl01 =
+            ptrbk<lvl01param>() =
                 std::make_unique_for_overwrite<BootstrappingKey<lvl01param>>();
-            bkgen<lvl01param>(*bklvl01, sk);
+            bkgen<lvl01param>(*ptrbk<lvl01param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            bklvlh1 =
+            ptrbk<lvlh1param>() =
                 std::make_unique_for_overwrite<BootstrappingKey<lvlh1param>>();
-            bkgen<lvlh1param>(*bklvlh1, sk);
+            bkgen<lvlh1param>(*ptrbk<lvlh1param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bklvl02 =
+            ptrbk<lvl02param>() =
                 std::make_unique_for_overwrite<BootstrappingKey<lvl02param>>();
-            bkgen<lvl02param>(*bklvl02, sk);
+            bkgen<lvl02param>(*ptrbk<lvl02param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            bklvlh2 =
+            ptrbk<lvlh2param>() =
                 std::make_unique_for_overwrite<BootstrappingKey<lvlh2param>>();
-            bkgen<lvlh2param>(*bklvlh2, sk);
+            bkgen<lvlh2param>(*ptrbk<lvlh2param>(), sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -102,20 +398,20 @@ struct EvalKey {
     void emplacebkfft(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bkfftlvl01 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl01param>>();
-            bkfftgen<lvl01param>(*bkfftlvl01, sk);
+            ptrbkfft<lvl01param>() = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl01param>>();
+            bkfftgen<lvl01param>(*ptrbkfft<lvl01param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            bkfftlvlh1 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvlh1param>>();
-            bkfftgen<lvlh1param>(*bkfftlvlh1, sk);
+            ptrbkfft<lvlh1param>() = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvlh1param>>();
+            bkfftgen<lvlh1param>(*ptrbkfft<lvlh1param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bkfftlvl02 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl02param>>();
-            bkfftgen<lvl02param>(*bkfftlvl02, sk);
+            ptrbkfft<lvl02param>() = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvl02param>>();
+            bkfftgen<lvl02param>(*ptrbkfft<lvl02param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            bkfftlvlh2 = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvlh2param>>();
-            bkfftgen<lvlh2param>(*bkfftlvlh2, sk);
+            ptrbkfft<lvlh2param>() = std::make_unique_for_overwrite<BootstrappingKeyFFT<lvlh2param>>();
+            bkfftgen<lvlh2param>(*ptrbkfft<lvlh2param>(), sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -124,24 +420,24 @@ struct EvalKey {
     void emplacebkntt(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bknttlvl01 = std::make_unique_for_overwrite<
+            ptrbkntt<lvl01param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvl01param>>();
-            bknttgen<lvl01param>(*bknttlvl01, sk);
+            bknttgen<lvl01param>(*ptrbkntt<lvl01param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            bknttlvlh1 = std::make_unique_for_overwrite<
+            ptrbkntt<lvlh1param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvlh1param>>();
-            bknttgen<lvlh1param>(*bknttlvlh1, sk);
+            bknttgen<lvlh1param>(*ptrbkntt<lvlh1param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bknttlvl02 = std::make_unique_for_overwrite<
+            ptrbkntt<lvl02param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvl02param>>();
-            bknttgen<lvl02param>(*bknttlvl02, sk);
+            bknttgen<lvl02param>(*ptrbkntt<lvl02param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            bknttlvlh2 = std::make_unique_for_overwrite<
+            ptrbkntt<lvlh2param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvlh2param>>();
-            bknttgen<lvlh2param>(*bknttlvlh2, sk);
+            bknttgen<lvlh2param>(*ptrbkntt<lvlh2param>(), sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -150,32 +446,32 @@ struct EvalKey {
     void emplacebk2bkfft()
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bkfftlvl01 = std::make_unique_for_overwrite<
+            ptrbkfft<lvl01param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyFFT<lvl01param>>();
             for (int i = 0; i < lvl01param::domainP::n; i++)
-                (*bkfftlvl01)[i][0] =
-                    ApplyFFT2trgsw<lvl1param>((*bklvl01)[i][0]);
+                (*ptrbkfft<lvl01param>())[i][0] =
+                    ApplyFFT2trgsw<lvl1param>((*ptrbk<lvl01param>())[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            bkfftlvlh1 = std::make_unique_for_overwrite<
+            ptrbkfft<lvlh1param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyFFT<lvlh1param>>();
             for (int i = 0; i < lvlh1param::domainP::n; i++)
-                (*bkfftlvlh1)[i][0] =
-                    ApplyFFT2trgsw<lvl1param>((*bklvlh1)[i][0]);
+                (*ptrbkfft<lvlh1param>())[i][0] =
+                    ApplyFFT2trgsw<lvl1param>((*ptrbk<lvlh1param>())[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bkfftlvl02 = std::make_unique_for_overwrite<
+            ptrbkfft<lvl02param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyFFT<lvl02param>>();
             for (int i = 0; i < lvl02param::domainP::n; i++)
-                (*bkfftlvl02)[i][0] =
-                    ApplyFFT2trgsw<lvl2param>((*bklvl02)[i][0]);
+                (*ptrbkfft<lvl02param>())[i][0] =
+                    ApplyFFT2trgsw<lvl2param>((*ptrbk<lvl02param>())[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            bkfftlvlh2 = std::make_unique_for_overwrite<
+            ptrbkfft<lvlh2param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyFFT<lvlh2param>>();
             for (int i = 0; i < lvlh2param::domainP::n; i++)
-                (*bkfftlvlh2)[i][0] =
-                    ApplyFFT2trgsw<lvl2param>((*bklvlh2)[i][0]);
+                (*ptrbkfft<lvlh2param>())[i][0] =
+                    ApplyFFT2trgsw<lvl2param>((*ptrbk<lvlh2param>())[i][0]);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -184,28 +480,28 @@ struct EvalKey {
     void emplacebk2bkntt()
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            bknttlvl01 = std::make_unique_for_overwrite<
+            ptrbkntt<lvl01param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvl01param>>();
             for (int i = 0; i < lvl01param::domainP::n; i++)
-                (*bknttlvl01)[i] = ApplyNTT2trgsw<lvl1param>((*bklvl01)[i][0]);
+                (*ptrbkntt<lvl01param>())[i] = ApplyNTT2trgsw<lvl1param>((*ptrbk<lvl01param>())[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            bknttlvlh1 = std::make_unique_for_overwrite<
+            ptrbkntt<lvlh1param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvlh1param>>();
             for (int i = 0; i < lvlh1param::domainP::n; i++)
-                (*bknttlvlh1)[i] = ApplyNTT2trgsw<lvl1param>((*bklvlh1)[i][0]);
+                (*ptrbkntt<lvlh1param>())[i] = ApplyNTT2trgsw<lvl1param>((*ptrbk<lvlh1param>())[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            bknttlvl02 = std::make_unique_for_overwrite<
+            ptrbkntt<lvl02param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvl02param>>();
             for (int i = 0; i < lvl02param::domainP::n; i++)
-                (*bknttlvl02)[i] = ApplyNTT2trgsw<lvl2param>((*bklvl02)[i][0]);
+                (*ptrbkntt<lvl02param>())[i] = ApplyNTT2trgsw<lvl2param>((*ptrbk<lvl02param>())[i][0]);
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            bknttlvlh2 = std::make_unique_for_overwrite<
+            ptrbkntt<lvlh2param>() = std::make_unique_for_overwrite<
                 BootstrappingKeyNTT<lvlh2param>>();
             for (int i = 0; i < lvlh2param::domainP::n; i++)
-                (*bknttlvlh2)[i] = ApplyNTT2trgsw<lvl2param>((*bklvlh2)[i][0]);
+                (*ptrbkntt<lvlh2param>())[i] = ApplyNTT2trgsw<lvl2param>((*ptrbk<lvlh2param>())[i][0]);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -214,33 +510,33 @@ struct EvalKey {
     void emplaceiksk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl10param>) {
-            iksklvl10 = std::make_unique_for_overwrite<KeySwitchingKey<lvl10param>>();
-            ikskgen<lvl10param>(*iksklvl10, sk);
+            ptriksk<lvl10param>() = std::make_unique_for_overwrite<KeySwitchingKey<lvl10param>>();
+            ikskgen<lvl10param>(*ptriksk<lvl10param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl1hparam>) {
-            iksklvl1h = std::make_unique_for_overwrite<KeySwitchingKey<lvl1hparam>>();
-            ikskgen<lvl1hparam>(*iksklvl1h, sk);
+            ptriksk<lvl1hparam>() = std::make_unique_for_overwrite<KeySwitchingKey<lvl1hparam>>();
+            ikskgen<lvl1hparam>(*ptriksk<lvl1hparam>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl20param>) {
-            iksklvl20 = std::make_unique_for_overwrite<KeySwitchingKey<lvl20param>>();
-            ikskgen<lvl20param>(*iksklvl20, sk);
+            ptriksk<lvl20param>() = std::make_unique_for_overwrite<KeySwitchingKey<lvl20param>>();
+            ikskgen<lvl20param>(*ptriksk<lvl20param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl2hparam>) {
-            iksklvl2h =
+            ptriksk<lvl2hparam>() =
                 std::make_unique_for_overwrite<KeySwitchingKey<lvl2hparam>>();
-            ikskgen<lvl2hparam>(*iksklvl2h, sk);
+            ikskgen<lvl2hparam>(*ptriksk<lvl2hparam>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            iksklvl21 = std::make_unique_for_overwrite<KeySwitchingKey<lvl21param>>();
-            ikskgen<lvl21param>(*iksklvl21, sk);
+            ptriksk<lvl21param>() = std::make_unique_for_overwrite<KeySwitchingKey<lvl21param>>();
+            ikskgen<lvl21param>(*ptriksk<lvl21param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            iksklvl22 = std::make_unique_for_overwrite<KeySwitchingKey<lvl22param>>();
-            ikskgen<lvl22param>(*iksklvl22, sk);
+            ptriksk<lvl22param>() = std::make_unique_for_overwrite<KeySwitchingKey<lvl22param>>();
+            ikskgen<lvl22param>(*ptriksk<lvl22param>(), sk);
         }
         else if constexpr (std::is_same_v<P, lvl31param>) {
-            iksklvl31 = std::make_unique_for_overwrite<KeySwitchingKey<lvl31param>>();
-            ikskgen<lvl31param>(*iksklvl31, sk);
+            ptriksk<lvl31param>() = std::make_unique_for_overwrite<KeySwitchingKey<lvl31param>>();
+            ikskgen<lvl31param>(*ptriksk<lvl31param>(), sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -249,9 +545,9 @@ struct EvalKey {
     void emplacesubiksk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
-            subiksklvl21 = std::make_unique_for_overwrite<
+            ptrsubiksk<lvl21param>() = std::make_unique_for_overwrite<
                 SubsetKeySwitchingKey<lvl21param>>();
-            subikskgen<lvl21param>(*subiksklvl21, sk);
+            subikskgen<lvl21param>(*ptrsubiksk<lvl21param>(), sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -262,22 +558,22 @@ struct EvalKey {
                         const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl11param>) {
-            privksklvl11[key] =
+            ptrprivksk<lvl11param>()[key] =
                 std::unique_ptr<PrivateKeySwitchingKey<lvl11param>>(new (
                     std::align_val_t(64)) PrivateKeySwitchingKey<lvl11param>());
-            privkskgen<lvl11param>(*privksklvl11[key], func, sk);
+            privkskgen<lvl11param>(*ptrprivksk<lvl11param>()[key], func, sk);
         }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            privksklvl21[key] =
+            ptrprivksk<lvl21param>()[key] =
                 std::unique_ptr<PrivateKeySwitchingKey<lvl21param>>(new (
                     std::align_val_t(64)) PrivateKeySwitchingKey<lvl21param>());
-            privkskgen<lvl21param>(*privksklvl21[key], func, sk);
+            privkskgen<lvl21param>(*ptrprivksk<lvl21param>()[key], func, sk);
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            privksklvl22[key] =
+            ptrprivksk<lvl22param>()[key] =
                 std::unique_ptr<PrivateKeySwitchingKey<lvl22param>>(new (
                     std::align_val_t(64)) PrivateKeySwitchingKey<lvl22param>());
-            privkskgen<lvl22param>(*privksklvl22[key], func, sk);
+            privkskgen<lvl22param>(*ptrprivksk<lvl22param>()[key], func, sk);
         }
         else
             static_assert(false_v<typename P::targetP::T>,
@@ -289,9 +585,9 @@ struct EvalKey {
                            const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
-            subprivksklvl21[key] =
+            ptrsubprivksk<lvl21param>()[key] =
                 std::make_unique_for_overwrite<SubsetPrivateKeySwitchingKey<lvl21param>>();
-            subprivkskgen<lvl21param>(*subprivksklvl21[key], func, sk);
+            subprivkskgen<lvl21param>(*ptrsubprivksk<lvl21param>()[key], func, sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -328,14 +624,14 @@ struct EvalKey {
     void emplaceahk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, AHlvl1param>) {
-            ahklvl1 =
+            ptrahk<AHlvl1param>() =
                 std::make_unique_for_overwrite<AnnihilateKey<AHlvl1param>>();
-            annihilatekeygen<AHlvl1param>(*ahklvl1, sk);
+            annihilatekeygen<AHlvl1param>(*ptrahk<AHlvl1param>(), sk);
         }
         else if constexpr (std::is_same_v<P, AHlvl2param>) {
-            ahklvl2 =
+            ptrahk<AHlvl2param>() =
                 std::make_unique_for_overwrite<AnnihilateKey<AHlvl2param>>();
-            annihilatekeygen<AHlvl2param>(*ahklvl2, sk);
+            annihilatekeygen<AHlvl2param>(*ptrahk<AHlvl2param>(), sk);
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -345,24 +641,24 @@ struct EvalKey {
     void emplacecbsk(const SecretKey& sk)
     {
         if constexpr (std::is_same_v<P, AHlvl1param>) {
-            cbsklvl1 =
+            ptrcbsk<AHlvl1param>() =
                 std::make_unique_for_overwrite<CBswitchingKey<AHlvl1param>>();
             for (int i = 0; i < P::k; i++) {
                 Polynomial<P> partkey;
                 for (int j = 0; j < P::n; j++)
                     partkey[j] = -sk.key.get<P>()[i * P::n + j];
-                (*cbsklvl1)[i] =
+                (*ptrcbsk<AHlvl1param>())[i] =
                     trgswfftSymEncrypt<P>(partkey, sk.key.get<P>());
             }
         }
         else if constexpr (std::is_same_v<P, AHlvl2param>) {
-            cbsklvl2 =
+            ptrcbsk<AHlvl2param>() =
                 std::make_unique_for_overwrite<CBswitchingKey<AHlvl2param>>();
             for (int i = 0; i < P::k; i++) {
                 Polynomial<P> partkey;
                 for (int j = 0; j < P::n; j++)
                     partkey[j] = -sk.key.get<P>()[i * P::n + j];
-                (*cbsklvl2)[i] =
+                (*ptrcbsk<AHlvl2param>())[i] =
                     trgswfftSymEncrypt<P>(partkey, sk.key.get<P>());
             }
         }
@@ -375,16 +671,16 @@ struct EvalKey {
     BootstrappingKey<P>& getbk() const
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            return *bklvl01;
+            return *ptrbk<lvl01param>();
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            return *bklvlh1;
+            return *ptrbk<lvlh1param>();
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            return *bklvl02;
+            return *ptrbk<lvl02param>();
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            return *bklvlh2;
+            return *ptrbk<lvlh2param>();
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -393,16 +689,16 @@ struct EvalKey {
     BootstrappingKeyFFT<P>& getbkfft() const
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            return *bkfftlvl01;
+            return *ptrbkfft<lvl01param>();
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            return *bkfftlvlh1;
+            return *ptrbkfft<lvlh1param>();
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            return *bkfftlvl02;
+            return *ptrbkfft<lvl02param>();
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            return *bkfftlvlh2;
+            return *ptrbkfft<lvlh2param>();
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -411,16 +707,16 @@ struct EvalKey {
     BootstrappingKeyNTT<P>& getbkntt() const
     {
         if constexpr (std::is_same_v<P, lvl01param>) {
-            return *bknttlvl01;
+            return *ptrbkntt<lvl01param>();
         }
         else if constexpr (std::is_same_v<P, lvlh1param>) {
-            return *bknttlvlh1;
+            return *ptrbkntt<lvlh1param>();
         }
         else if constexpr (std::is_same_v<P, lvl02param>) {
-            return *bknttlvl02;
+            return *ptrbkntt<lvl02param>();
         }
         else if constexpr (std::is_same_v<P, lvlh2param>) {
-            return *bknttlvlh2;
+            return *ptrbkntt<lvlh2param>();
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -429,25 +725,25 @@ struct EvalKey {
     KeySwitchingKey<P>& getiksk() const
     {
         if constexpr (std::is_same_v<P, lvl10param>) {
-            return *iksklvl10;
+            return *ptriksk<lvl10param>();
         }
         else if constexpr (std::is_same_v<P, lvl1hparam>) {
-            return *iksklvl1h;
+            return *ptriksk<lvl1hparam>();
         }
         else if constexpr (std::is_same_v<P, lvl20param>) {
-            return *iksklvl20;
+            return *ptriksk<lvl20param>();
         }
         else if constexpr (std::is_same_v<P, lvl2hparam>) {
-            return *iksklvl2h;
+            return *ptriksk<lvl2hparam>();
         }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            return *iksklvl21;
+            return *ptriksk<lvl21param>();
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            return *iksklvl22;
+            return *ptriksk<lvl22param>();
         }
         else if constexpr (std::is_same_v<P, lvl31param>) {
-            return *iksklvl31;
+            return *ptriksk<lvl31param>();
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -456,7 +752,7 @@ struct EvalKey {
     SubsetKeySwitchingKey<P>& getsubiksk() const
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
-            return *subiksklvl21;
+            return *ptrsubiksk<lvl21param>();
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -465,13 +761,13 @@ struct EvalKey {
     PrivateKeySwitchingKey<P>& getprivksk(const std::string& key) const
     {
         if constexpr (std::is_same_v<P, lvl11param>) {
-            return *(privksklvl11.at(key));
+            return *(ptrprivksk<lvl11param>().at(key));
         }
         else if constexpr (std::is_same_v<P, lvl21param>) {
-            return *(privksklvl21.at(key));
+            return *(ptrprivksk<lvl21param>().at(key));
         }
         else if constexpr (std::is_same_v<P, lvl22param>) {
-            return *(privksklvl22.at(key));
+            return *(ptrprivksk<lvl22param>().at(key));
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -480,7 +776,7 @@ struct EvalKey {
     SubsetPrivateKeySwitchingKey<P>& getsubprivksk(const std::string& key) const
     {
         if constexpr (std::is_same_v<P, lvl21param>) {
-            return *(subprivksklvl21.at(key));
+            return *(ptrsubprivksk<lvl21param>().at(key));
         }
         else
             static_assert(false_v<typename P::targetP::T>,
@@ -490,10 +786,10 @@ struct EvalKey {
     AnnihilateKey<P>& getahk() const
     {
         if constexpr (std::is_same_v<P, AHlvl1param>) {
-            return *ahklvl1;
+            return *ptrahk<AHlvl1param>();
         }
         else if constexpr (std::is_same_v<P, AHlvl2param>) {
-            return *ahklvl2;
+            return *ptrahk<AHlvl2param>();
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
@@ -502,10 +798,10 @@ struct EvalKey {
     CBswitchingKey<P>& getcbsk() const
     {
         if constexpr (std::is_same_v<P, AHlvl1param>) {
-            return *cbsklvl1;
+            return *ptrcbsk<AHlvl1param>();
         }
         else if constexpr (std::is_same_v<P, AHlvl2param>) {
-            return *cbsklvl2;
+            return *ptrcbsk<AHlvl2param>();
         }
         else
             static_assert(false_v<typename P::T>, "Not predefined parameter!");
