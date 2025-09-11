@@ -70,6 +70,26 @@ struct lvlh2param {
 #endif
 };
 
+struct cblvl02param {
+    using domainP = lvl0param;
+    using targetP = lvl2param;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
+};
+
+struct cblvlh2param {
+    using domainP = lvlhalfparam;
+    using targetP = lvl2param;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
+};
+
 template <class P>
 using Key = std::array<typename P::T, P::k * P::n>;
 
@@ -233,6 +253,8 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(fun) \
     fun(lvl10param, lvl02param, lvl21param);                     \
     fun(lvl10param, lvl02param, lvl22param);
+#define TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE_CIRCUIT_BOOTSTRAPPING(fun) \
+    fun(lvl10param, lvl02param, AHlvl2param);                     
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING_SUBIKS(fun) \
     fun(lvl10param, lvl02param, lvl21param);
 }  // namespace TFHEpp

@@ -7,11 +7,25 @@ namespace TFHEpp {
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
+#define INST(iksP, brP, ahP)                            \
+    template void AnnihilateCircuitBootstrapping<iksP, brP, ahP>( \
+        TRGSW<typename brP::targetP> & trgsw,           \
+        const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE_CIRCUIT_BOOTSTRAPPING(INST)
+#undef INST
+
 #define INST(iksP, bkP, privksP)                               \
     template void CircuitBootstrappingFFT<iksP, bkP, privksP>( \
         TRGSWFFT<typename privksP::targetP> & trgswfft,        \
         const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
+#undef INST
+
+#define INST(iksP, brP, ahP)                            \
+    template void AnnihilateCircuitBootstrappingFFT<iksP, brP, ahP>( \
+        TRGSWFFT<typename brP::targetP> & trgswfft,        \
+        const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
+TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
 #define INST(iksP, bkP, privksP)                               \
