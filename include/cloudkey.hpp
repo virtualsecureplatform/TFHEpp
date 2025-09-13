@@ -242,33 +242,15 @@ struct EvalKey {
     void emplacebk2bkfft()
     {
         ptrbkfft<P>() = std::make_unique_for_overwrite<BootstrappingKeyFFT<P>>();
-        for (int i = 0; i < P::domainP::n; i++) {
-            if constexpr (std::is_same_v<P, lvl01param> || std::is_same_v<P, lvlh1param>) {
-                (*ptrbkfft<P>())[i][0] = ApplyFFT2trgsw<lvl1param>((*ptrbk<P>())[i][0]);
-            }
-            else if constexpr (std::is_same_v<P, lvl02param> || std::is_same_v<P, lvlh2param>) {
-                (*ptrbkfft<P>())[i][0] = ApplyFFT2trgsw<lvl2param>((*ptrbk<P>())[i][0]);
-            }
-            else {
-                static_assert(false_v<typename P::T>, "Not predefined parameter!");
-            }
-        }
+        for (int i = 0; i < P::domainP::n; i++) 
+       	    (*ptrbkfft<P>())[i][0] = ApplyFFT2trgsw<typename P::targetP>((*ptrbk<P>())[i][0]);
     }
     template <class P>
     void emplacebk2bkntt()
     {
         ptrbkntt<P>() = std::make_unique_for_overwrite<BootstrappingKeyNTT<P>>();
-        for (int i = 0; i < P::domainP::n; i++) {
-            if constexpr (std::is_same_v<P, lvl01param> || std::is_same_v<P, lvlh1param>) {
-                (*ptrbkntt<P>())[i] = ApplyNTT2trgsw<lvl1param>((*ptrbk<P>())[i][0]);
-            }
-            else if constexpr (std::is_same_v<P, lvl02param> || std::is_same_v<P, lvlh2param>) {
-                (*ptrbkntt<P>())[i] = ApplyNTT2trgsw<lvl2param>((*ptrbk<P>())[i][0]);
-            }
-            else {
-                static_assert(false_v<typename P::T>, "Not predefined parameter!");
-            }
-        }
+        for (int i = 0; i < P::domainP::n; i++) 
+            (*ptrbkntt<P>())[i] = ApplyNTT2trgsw<typename P::targetP>((*ptrbk<P>())[i][0]);
     }
     template <class P>
     void emplaceiksk(const SecretKey& sk)
