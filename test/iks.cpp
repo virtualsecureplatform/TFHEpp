@@ -19,7 +19,7 @@ int main()
             TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
                 p ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ, sk.key.lvl1);
         TFHEpp::TLWE<TFHEpp::lvl0param> res;
-        TFHEpp::IdentityKeySwitch<TFHEpp::lvl10param>(res, tlwe, *ek.iksklvl10);
+        TFHEpp::IdentityKeySwitch<TFHEpp::lvl10param>(res, tlwe, ek.getiksk<TFHEpp::lvl10param>());
         bool p2 = TFHEpp::tlweSymDecrypt<TFHEpp::lvl0param>(res, sk.key.lvl0);
         assert(p == p2);
     }

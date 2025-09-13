@@ -88,8 +88,8 @@ void combWRAM(std::vector<array<TRLWE<lvl1param>, 1U << address_bit>> &encram,
             TLWE<lvl1param> temp2;
             SampleExtractIndex<lvl1param>(temp2, temp, 0);
             TLWE<lvl0param> temp3;
-            IdentityKeySwitch<lvl10param>(temp3, temp2, *ek.iksklvl10);
-            BlindRotate<lvl01param>(encram[j][i], temp3, *ek.bkfftlvl01,
+            IdentityKeySwitch<lvl10param>(temp3, temp2, ek.getiksk<lvl10param>());
+            BlindRotate<lvl01param>(encram[j][i], temp3, ek.getbkfft<lvl01param>(),
                                     μpolygen<lvl1param, lvl1param::μ>());
         }
     }

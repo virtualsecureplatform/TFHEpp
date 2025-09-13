@@ -9,20 +9,20 @@ void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
     TLWE<lvl1param> templvl1;
     TLWE<lvl0param> cs, c1, c0;
     SampleExtractIndex<lvl1param>(templvl1, csr, 0);
-    IdentityKeySwitch<lvl10param>(cs, templvl1, *ek.iksklvl10);
+    IdentityKeySwitch<lvl10param>(cs, templvl1, ek.getiksk<lvl10param>());
     SampleExtractIndex<lvl1param>(templvl1, c1r, 0);
-    IdentityKeySwitch<lvl10param>(c1, templvl1, *ek.iksklvl10);
+    IdentityKeySwitch<lvl10param>(c1, templvl1, ek.getiksk<lvl10param>());
     SampleExtractIndex<lvl1param>(templvl1, c0r, 0);
-    IdentityKeySwitch<lvl10param>(c0, templvl1, *ek.iksklvl10);
+    IdentityKeySwitch<lvl10param>(c0, templvl1, ek.getiksk<lvl10param>());
 
     for (int i = 0; i <= lvl0param::n; i++) c1[i] += cs[i];
     for (int i = 0; i <= lvl0param::n; i++) c0[i] -= cs[i];
     c1[lvl0param::n] -= lvl0param::μ;
     c0[lvl0param::n] -= lvl0param::μ;
     TRLWE<lvl1param> and0;
-    BlindRotate<lvl01param>(res, c1, *ek.bkfftlvl01,
+    BlindRotate<lvl01param>(res, c1, ek.getbkfft<lvl01param>(),
                             μpolygen<lvl1param, lvl1param::μ>());
-    BlindRotate<lvl01param>(and0, c0, *ek.bkfftlvl01,
+    BlindRotate<lvl01param>(and0, c0, ek.getbkfft<lvl01param>(),
                             μpolygen<lvl1param, lvl1param::μ>());
 
     for (int i = 0; i < lvl1param::n; i++) {
