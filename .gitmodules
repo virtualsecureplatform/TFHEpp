@@ -1,6 +1,3 @@
-[submodule "thirdparties/cereal"]
-	path = thirdparties/cereal
-	url = https://github.com/USCiLab/cereal.git
 [submodule "benchmark/google-benchmark"]
 	path = benchmark/google-benchmark
 	url = https://github.com/google/benchmark.git
@@ -18,4 +15,7 @@
 	url = https://github.com/BLAKE3-team/BLAKE3.git
 [submodule "thirdparties/AES"]
 	path = thirdparties/AES
-	url = https://github.com/SergeyBel/AES.git
+	url = https://github.com/virtualsecureplatform/AES.git
+[submodule "thirdparties/cereal"]
+	path = thirdparties/cereal
+	url = https://github.com/virtualsecureplatform/cereal.git

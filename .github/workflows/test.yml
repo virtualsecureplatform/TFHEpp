@@ -86,14 +86,14 @@ jobs:
       run: |
         apt-get update
         apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build clang-20
+        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build clang-20 lld-20
     - name: Checkout
       uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: build
       run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++-20 -DCMAKE_C_COMPILER=clang-20 -DENABLE_TEST=ON
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++-20 -DCMAKE_C_COMPILER=clang-20 -DCMAKE_LINKER_TYPE=LLD -DENABLE_TEST=ON
         cd build
         ninja
     - name: test
