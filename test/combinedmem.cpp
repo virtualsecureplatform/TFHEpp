@@ -180,18 +180,18 @@ int main()
 
             encaddress = bootsSymEncrypt(address, *sk);
             for (int i = 0; i < numromtrlwe; i++)
-                encrom[i] = trlweSymEncrypt<lvl1param>(romu[i], (*sk).key.lvl1);
+                encrom[i] = trlweSymEncrypt<lvl1param>(romu[i], (*sk).key.get<lvl1param>());
             for (int i = 0; i < words; i++)
                 for (int j = 0; j < numramtrlwe; j++)
                     encram[i][j] =
-                        trlweSymEncrypt<lvl1param>(ramu[i][j], (*sk).key.lvl1);
+                        trlweSymEncrypt<lvl1param>(ramu[i][j], (*sk).key.get<lvl1param>());
 
             encwrflag = tlweSymEncrypt<lvl1param>(
-                (wrflag > 0) ? lvl1param::μ : -lvl1param::μ, (*sk).key.lvl1);
+                (wrflag > 0) ? lvl1param::μ : -lvl1param::μ, (*sk).key.get<lvl1param>());
 
             for (int i = 0; i < words; i++)
                 encwritep[i] = tlweSymEncrypt<lvl1param>(
-                    writep[i] ? lvl1param::μ : -lvl1param::μ, (*sk).key.lvl1);
+                    writep[i] ? lvl1param::μ : -lvl1param::μ, (*sk).key.get<lvl1param>());
 
             chrono::system_clock::time_point start, end;
             start = chrono::system_clock::now();
@@ -242,16 +242,16 @@ int main()
             // test
             for (int i = 0; i < words; i++)
                 pres[i] =
-                    tlweSymDecrypt<lvl1param>(encreadres[i], (*sk).key.lvl1);
+                    tlweSymDecrypt<lvl1param>(encreadres[i], (*sk).key.get<lvl1param>());
 
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(ramp[addressint * words + i]) ==
                        static_cast<int>(tlweSymDecrypt<lvl1param>(
-                           encramreadres[i], (*sk).key.lvl1)));
+                           encramreadres[i], (*sk).key.get<lvl1param>())));
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(romp[addressint * words + i]) ==
                        static_cast<int>(tlweSymDecrypt<lvl1param>(
-                           encromreadres[i], (*sk).key.lvl1)));
+                           encromreadres[i], (*sk).key.get<lvl1param>())));
 
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(pres[i]) ==
@@ -262,32 +262,32 @@ int main()
             array<array<bool, lvl1param::n>, words> pwriteres;
             for (int i = 0; i < words; i++)
                 pwriteres[i] = trlweSymDecrypt<lvl1param>(encram[i][addressint],
-                                                          (*sk).key.lvl1);
+                                                          (*sk).key.get<lvl1param>());
 
             cout << static_cast<int>(wrflag > 0) << ":"
                  << static_cast<int>(
-                        tlweSymDecrypt<lvl1param>(encwrflag, (*sk).key.lvl1))
+                        tlweSymDecrypt<lvl1param>(encwrflag, (*sk).key.get<lvl1param>()))
                  << endl;
             cout << static_cast<int>(address[address_bit - 1] > 0) << ":"
                  << static_cast<int>(tlweSymDecrypt<lvl1param>(
-                        encaddress[address_bit - 1], (*sk).key.lvl1))
+                        encaddress[address_bit - 1], (*sk).key.get<lvl1param>()))
                  << endl;
             bool csp = ((wrflag > 0) & (address[address_bit - 1] > 0));
             cout << static_cast<int>(csp) << ":"
                  << static_cast<int>(
-                        tlweSymDecrypt<lvl1param>(cs, (*sk).key.lvl1))
+                        tlweSymDecrypt<lvl1param>(cs, (*sk).key.get<lvl1param>()))
                  << endl;
             assert(static_cast<int>(tlweSymDecrypt<lvl1param>(
-                       cs, (*sk).key.lvl1)) == static_cast<int>(csp));
+                       cs, (*sk).key.get<lvl1param>())) == static_cast<int>(csp));
             array<array<bool, lvl1param::n>, words> writedp;
             for (int i = 0; i < words; i++)
                 writedp[i] =
-                    trlweSymDecrypt<lvl1param>(writed[i], (*sk).key.lvl1);
+                    trlweSymDecrypt<lvl1param>(writed[i], (*sk).key.get<lvl1param>());
 
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(writep[i]) ==
                        static_cast<int>(tlweSymDecrypt<lvl1param>(
-                           encwritep[i], (*sk).key.lvl1)));
+                           encwritep[i], (*sk).key.get<lvl1param>())));
             for (int i = 0; i < words; i++)
                 assert(static_cast<int>(writedp[i][0]) ==
                        static_cast<int>(csp ? writep[i]

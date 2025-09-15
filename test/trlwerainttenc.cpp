@@ -25,7 +25,7 @@ int main()
                 pmu[i] = p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
             TFHEpp::TRLWERAINTT<TFHEpp::lvl1param> craintt =
                 TFHEpp::trlwerainttSymEncrypt<TFHEpp::lvl1param>(pmu, 3,
-                                                                 key.lvl1);
+                                                                 key.get<TFHEpp::lvl1param>());
             TFHEpp::TRLWE<TFHEpp::lvl1param> c;
             for (int k = 0; k <= TFHEpp::lvl1param::k; k++) {
                 raintt::TwistNTT<typename TFHEpp::lvl1param::T,
@@ -38,7 +38,7 @@ int main()
                                   : c[k][i];
             }
             std::array<bool, TFHEpp::lvl1param::n> p2 =
-                TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(c, key.lvl1);
+                TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(c, key.get<TFHEpp::lvl1param>());
             // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             // std::cout<<test<<":"<<i<<":"<<c[TFHEpp::lvl1param::k][i]<<":"<<(p[i]?1:0)<<":"<<(p2[i]?1:0)<<std::endl;
             for (int i = 0; i < TFHEpp::lvl1param::n; i++)

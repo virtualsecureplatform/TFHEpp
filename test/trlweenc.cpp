@@ -20,11 +20,11 @@ int main()
         array<typename lvl1param::T, lvl1param::n> pmu;
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
-        TRLWE<TFHEpp::lvl1param> c = trlweSymEncrypt<lvl1param>(pmu, key.lvl1);
+        TRLWE<TFHEpp::lvl1param> c = trlweSymEncrypt<lvl1param>(pmu, key.get<lvl1param>());
         // if constexpr(hasq<lvl1param>) for (int i = 0; i < lvl1param::n; i++)
         // if(c[lvl1param::k][i] >= lvl1param::q)
         // std::cout<<i<<":"<<c[lvl1param::k][i]<<std::endl;
-        array<bool, lvl1param::n> p2 = trlweSymDecrypt<lvl1param>(c, key.lvl1);
+        array<bool, lvl1param::n> p2 = trlweSymDecrypt<lvl1param>(c, key.get<lvl1param>());
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == p2[i]);
     }
     cout << "Passed" << endl;
@@ -41,8 +41,8 @@ int main()
         array<typename lvl2param::T, lvl2param::n> pmu;
         for (int i = 0; i < lvl2param::n; i++)
             pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
-        TRLWE<lvl2param> c = trlweSymEncrypt<lvl2param>(pmu, key.lvl2);
-        array<bool, lvl2param::n> p2 = trlweSymDecrypt<lvl2param>(c, key.lvl2);
+        TRLWE<lvl2param> c = trlweSymEncrypt<lvl2param>(pmu, key.get<lvl2param>());
+        array<bool, lvl2param::n> p2 = trlweSymDecrypt<lvl2param>(c, key.get<lvl2param>());
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == p2[i]);
     }
     cout << "Passed" << endl;

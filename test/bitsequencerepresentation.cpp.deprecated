@@ -96,7 +96,7 @@ int main()
         std::array<uint32_t, int_width + 1> resbit;
         for (int i = 0; i < int_width + 1; i++)
             resbit[i] = TFHEpp::tlweSymDecrypt<TFHEpp::lvl2param>(restlwe[i],
-                                                                  sk->key.lvl2)
+                                                                  sk->key.get<TFHEpp::lvl2param>())
                             ? 1
                             : 0;
         int resint = 0;

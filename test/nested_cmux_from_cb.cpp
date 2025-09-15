@@ -59,7 +59,7 @@ int main()
     for (size_t i = 0; i < N; i++) {
         TFHEpp::TRGSWFFT<Lvl1> trgsw;
         TFHEpp::TLWE<Lvl1> tlwe =
-            TFHEpp::tlweSymEncrypt<Lvl1>(Lvl1::μ, skey.key.lvl1);
+            TFHEpp::tlweSymEncrypt<Lvl1>(Lvl1::μ, skey.key.get<Lvl1>());
         TFHEpp::CircuitBootstrappingFFT<TFHEpp::lvl10param, TFHEpp::lvl02param,
                                         TFHEpp::lvl21param>(trgsw, tlwe, ekey);
         guard.emplace_back(std::move(trgsw));
@@ -69,13 +69,13 @@ int main()
               c0 = trivial_TRLWELvl1(uint2weight(0));
     TRLWELvl1 res = c1;
     dump_histgram_of_phase_of_TRLWELvl1(
-        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.lvl1));
+        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.get<TFHEpp::lvl1param>()));
     for (size_t i = 0; i < N; i++) {
         TRLWELvl1 tmp = res;
         TFHEpp::CMUXFFT<Lvl1>(res, guard.at(i), tmp, c0);
     }
     dump_histgram_of_phase_of_TRLWELvl1(
-        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.lvl1));
+        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.get<TFHEpp::lvl1param>()));
 
     /*
     PolyLvl1 testvec1 = {}, testvec2 = {};

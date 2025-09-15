@@ -72,7 +72,7 @@ struct lvlh2param {
 
 struct cblvl02param {
     using domainP = lvl0param;
-    using targetP = lvl2param;
+    using targetP = cblvl2param;
 #ifdef USE_KEY_BUNDLE
     static constexpr uint32_t Addends = 2;
 #else
@@ -82,7 +82,7 @@ struct cblvl02param {
 
 struct cblvlh2param {
     using domainP = lvlhalfparam;
-    using targetP = lvl2param;
+    using targetP = cblvl2param;
 #ifdef USE_KEY_BUNDLE
     static constexpr uint32_t Addends = 2;
 #else

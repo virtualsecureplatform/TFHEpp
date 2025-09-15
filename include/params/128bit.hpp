@@ -131,6 +131,27 @@ struct cblvl2param{
 };
 
 struct AHlvl2param {
+    using baseP = lvl2param;
+    static constexpr int32_t key_value_max = baseP::key_value_max;
+    static constexpr int32_t key_value_min = baseP::key_value_min;
+    static constexpr std::uint32_t nbit = baseP::nbit;
+    static constexpr std::uint32_t n = baseP::n;  // dimension
+    static constexpr std::uint32_t k = baseP::k;
+    static constexpr std::uint32_t lₐ = 5;
+    static constexpr std::uint32_t l = 5;
+    static constexpr std::uint32_t Bgbit = 9;
+    static constexpr std::uint32_t Bgₐbit = 9;
+    static constexpr std::uint32_t Bg = 1 << Bgbit;
+    static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
+    static constexpr ErrorDistribution errordist = baseP::errordist;
+    static const inline double α = baseP::α;  // fresh noise
+    using T = typename baseP::T;                                 // Torus representation
+    static constexpr std::make_signed_t<T> μ = baseP::μ;
+    static constexpr uint32_t plain_modulus = baseP::plain_modulus;
+    static constexpr double Δ = baseP::Δ;
+};
+
+struct cbAHlvl2param {
     using baseP = cblvl2param;
     static constexpr int32_t key_value_max = baseP::key_value_max;
     static constexpr int32_t key_value_min = baseP::key_value_min;

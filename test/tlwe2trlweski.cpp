@@ -35,7 +35,7 @@ int main()
     std::vector<std::array<bool, TFHEpp::lvl1param::n>> pres(num_test);
     for (int i = 0; i < num_test; i++)
         pres[i] =
-            TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(cres[i], sk->key.lvl1);
+            TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(cres[i], sk->key.get<TFHEpp::lvl1param>());
     for (int i = 0; i < num_test; i++) assert(pres[i][0] == (pa[i] > 0));
     std::cout << "Passed" << std::endl;
     double elapsed =

@@ -20,7 +20,7 @@ int main()
     TFHEpp::EvalKey ek;
     std::uniform_int_distribution<int32_t> lvl3gen(
         TFHEpp::lvl3param::key_value_min, TFHEpp::lvl3param::key_value_max);
-    for (typename TFHEpp::lvl3param::T &i : sk.key.lvl3)
+    for (typename TFHEpp::lvl3param::T &i : sk.key.get<TFHEpp::lvl3param>())
         i = lvl3gen(TFHEpp::generator);
     ek.emplacebkfft<low2midP>(sk);
     ek.emplaceiksk<mid2lowP>(sk);
@@ -38,7 +38,7 @@ int main()
     std::array<TFHEpp::TLWE<TFHEpp::lvl3param>, numtest> ciphers{};
     for (uint i = 0; i < numtest; i++) {
         ciphers[i] = TFHEpp::tlweSymIntEncrypt<TFHEpp::lvl3param>(
-            plains[i], TFHEpp::lvl3param::α, sk.key.lvl3);
+            plains[i], TFHEpp::lvl3param::α, sk.key.get<TFHEpp::lvl3param>());
         ciphers[i][TFHEpp::lvl3param::n] += maskgen(engine);
     }
 
@@ -58,7 +58,7 @@ int main()
     // Check the correctness of the results
     for (uint test = 0; test < numtest; test++) {
         uint64_t phase = TFHEpp::tlweSymPhase<typename high2midP::domainP>(
-            ciphers.at(test), sk.key.lvl3);
+            ciphers.at(test), sk.key.get<TFHEpp::lvl3param>());
         for (uint digit = 0; digit < numdigits; digit++) {
             int plainResult =
                 TFHEpp::tlweSymIntDecrypt<typename high2midP::targetP,

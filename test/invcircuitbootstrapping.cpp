@@ -45,7 +45,7 @@ int main()
         invbootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = trlweSymEncrypt<lvl1param>(pmu[i], sk->key.lvl1);
+        ca[i] = trlweSymEncrypt<lvl1param>(pmu[i], sk->key.get<lvl1param>());
     czeros = bootsSymEncrypt(pzeros, *sk);
 
     chrono::system_clock::time_point start, end;
@@ -59,7 +59,7 @@ int main()
     for (int test = 0; test < num_test; test++) {
         trgswfftExternalProduct<lvl1param>(ca[test], ca[test],
                                            invbootedTGSW[test]);
-        pres = trlweSymDecrypt<lvl1param>(ca[test], sk->key.lvl1);
+        pres = trlweSymDecrypt<lvl1param>(ca[test], sk->key.get<lvl1param>());
         for (int i = 0; i < lvl1param::n; i++) assert(pres[i] == pa[test][i]);
     }
     cout << "Passed" << endl;

@@ -16,8 +16,8 @@ int main()
     std::uniform_int_distribution<uint32_t> binary(0, 1);
 
     using iksP = TFHEpp::lvl10param;
-    using brP = TFHEpp::lvl02param;
-    using ahP = TFHEpp::AHlvl2param;
+    using brP = TFHEpp::cblvl02param;
+    using ahP = TFHEpp::cbAHlvl2param;
 
     TFHEpp::SecretKey *sk = new TFHEpp::SecretKey;
     TFHEpp::EvalKey ek;

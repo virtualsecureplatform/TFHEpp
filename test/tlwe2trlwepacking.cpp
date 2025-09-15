@@ -44,7 +44,7 @@ int main()
 
     for (int i = 0; i < num_test; i++) {
         std::array<bool, TFHEpp::lvl1param::n> pres =
-            TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(cres[i], sk->key.lvl1);
+            TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(cres[i], sk->key.get<TFHEpp::lvl1param>());
         for (int j = 0; j < numtlwe; j++) assert(pres[j] == (pin[i][j] > 0));
     }
 
