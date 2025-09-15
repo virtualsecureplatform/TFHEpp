@@ -30,6 +30,13 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 #include "params/128bit.hpp"
 #endif
 
+#ifndef USE_DIFFERENT_BR_PARAM
+    using cblvl2param = lvl2param;
+#endif
+#ifndef USE_DIFFERENT_AH_PARAM
+    using cbAHlvl2param = AHlvl2param;
+#endif
+
 struct lvl01param {
     using domainP = lvl0param;
     using targetP = lvl1param;
@@ -218,12 +225,29 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
 #define TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(fun) \
     fun(lvl1param);                              \
     fun(lvl2param);
+#ifdef USE_DIFFERENT_AH_PARAM
+#define TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(fun) \
+    fun(AHlvl1param);                              \
+    fun(AHlvl2param);                               \
+    fun(cbAHlvl2param);
+#else
 #define TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(fun) \
     fun(AHlvl1param);                              \
     fun(AHlvl2param);
+#endif
+#ifdef USE_DIFFERENT_BR_PARAM
 #define TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(fun) \
     fun(lvl01param);                                    \
-    fun(lvl02param);
+    fun(lvl02param);                                    \
+    fun(lvlh2param);                                    \
+    fun(cblvl02param);                                  \
+    fun(cblvlh2param);
+#else
+#define TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(fun) \
+    fun(lvl01param);                                    \
+    fun(lvl02param);                                    \
+    fun(lvlh2param);                                    
+#endif
 #define TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(fun) \
     fun(lvl10param);                                          \
     fun(lvl1hparam);                                          \
@@ -254,7 +278,7 @@ using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
     fun(lvl10param, lvl02param, lvl21param);                     \
     fun(lvl10param, lvl02param, lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE_CIRCUIT_BOOTSTRAPPING(fun) \
-    fun(lvl10param, lvl02param, AHlvl2param);                     
+    fun(lvl10param, cblvl02param, cbAHlvl2param);                     
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING_SUBIKS(fun) \
     fun(lvl10param, lvl02param, lvl21param);
 }  // namespace TFHEpp

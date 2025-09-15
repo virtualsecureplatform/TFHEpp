@@ -92,10 +92,10 @@ struct lvl2param {
                                            // ease of polynomial multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension
     static constexpr std::uint32_t k = 1;
-    static constexpr std::uint32_t lₐ = 4;
     static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t lₐ = l;
     static constexpr std::uint32_t Bgbit = 10;
-    static constexpr std::uint32_t Bgₐbit = 10;
+    static constexpr std::uint32_t Bgₐbit = Bgbit;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
     static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr ErrorDistribution errordist =
@@ -108,51 +108,8 @@ struct lvl2param {
         static_cast<double>(1ULL << (std::numeric_limits<T>::digits - 4));
 };
 
-struct cblvl2param{
-    using baseP = lvl2param;
-    static constexpr int32_t key_value_max = baseP::key_value_max;
-    static constexpr int32_t key_value_min = baseP::key_value_min;
-    static constexpr std::uint32_t nbit = baseP::nbit;
-    static constexpr std::uint32_t n = baseP::n;  // dimension
-    static constexpr std::uint32_t k = baseP::k;
-    static_assert(n*k==baseP::n*baseP::k,"cblvl2param must have same key size as lvl2param");
-    static constexpr std::uint32_t l = 4;
-    static constexpr std::uint32_t lₐ = l;
-    static constexpr std::uint32_t Bgbit = 10;
-    static constexpr std::uint32_t Bgₐbit = Bgbit;
-    static constexpr std::uint32_t Bg = 1 << Bgbit;
-    static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
-    static constexpr ErrorDistribution errordist = baseP::errordist;
-    static const inline double α = baseP::α;  // fresh noise
-    using T = typename baseP::T;                                 // Torus representation
-    static constexpr std::make_signed_t<T> μ = baseP::μ;
-    static constexpr uint32_t plain_modulus = baseP::plain_modulus;
-    static constexpr double Δ = baseP::Δ;
-};
-
 struct AHlvl2param {
     using baseP = lvl2param;
-    static constexpr int32_t key_value_max = baseP::key_value_max;
-    static constexpr int32_t key_value_min = baseP::key_value_min;
-    static constexpr std::uint32_t nbit = baseP::nbit;
-    static constexpr std::uint32_t n = baseP::n;  // dimension
-    static constexpr std::uint32_t k = baseP::k;
-    static constexpr std::uint32_t lₐ = 5;
-    static constexpr std::uint32_t l = 5;
-    static constexpr std::uint32_t Bgbit = 9;
-    static constexpr std::uint32_t Bgₐbit = 9;
-    static constexpr std::uint32_t Bg = 1 << Bgbit;
-    static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
-    static constexpr ErrorDistribution errordist = baseP::errordist;
-    static const inline double α = baseP::α;  // fresh noise
-    using T = typename baseP::T;                                 // Torus representation
-    static constexpr std::make_signed_t<T> μ = baseP::μ;
-    static constexpr uint32_t plain_modulus = baseP::plain_modulus;
-    static constexpr double Δ = baseP::Δ;
-};
-
-struct cbAHlvl2param {
-    using baseP = cblvl2param;
     static constexpr int32_t key_value_max = baseP::key_value_max;
     static constexpr int32_t key_value_min = baseP::key_value_min;
     static constexpr std::uint32_t nbit = baseP::nbit;

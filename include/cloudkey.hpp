@@ -22,16 +22,28 @@ struct EvalKey {
         std::shared_ptr<BootstrappingKey<lvlh1param>>,    // 1
         std::shared_ptr<BootstrappingKey<lvl02param>>,    // 2
         std::shared_ptr<BootstrappingKey<lvlh2param>>,    // 3
+        #ifdef USE_DIFFERENT_BR_PARAM
+        std::shared_ptr<BootstrappingKey<cblvl02param>>,  
+        std::shared_ptr<BootstrappingKey<cblvlh2param>>,   
+        #endif
         // BootstrappingKeyFFT
         std::shared_ptr<BootstrappingKeyFFT<lvl01param>>, // 4
         std::shared_ptr<BootstrappingKeyFFT<lvlh1param>>, // 5
         std::shared_ptr<BootstrappingKeyFFT<lvl02param>>, // 6
         std::shared_ptr<BootstrappingKeyFFT<lvlh2param>>, // 7
+        #ifdef USE_DIFFERENT_BR_PARAM
+        std::shared_ptr<BootstrappingKeyFFT<cblvl02param>>, // 6
+        std::shared_ptr<BootstrappingKeyFFT<cblvlh2param>>, // 7
+        #endif
         // BootstrappingKeyNTT
         std::shared_ptr<BootstrappingKeyNTT<lvl01param>>, // 8
         std::shared_ptr<BootstrappingKeyNTT<lvlh1param>>, // 9
         std::shared_ptr<BootstrappingKeyNTT<lvl02param>>, // 10
         std::shared_ptr<BootstrappingKeyNTT<lvlh2param>>, // 11
+        #ifdef USE_DIFFERENT_BR_PARAM
+        std::shared_ptr<BootstrappingKeyNTT<cblvl02param>>, // 10
+        std::shared_ptr<BootstrappingKeyNTT<cblvlh2param>>, // 11
+        #endif
         // KeySwitchingKey
         std::shared_ptr<KeySwitchingKey<lvl10param>>,     // 12
         std::shared_ptr<KeySwitchingKey<lvl1hparam>>,     // 13
@@ -51,9 +63,16 @@ struct EvalKey {
         // AnnihilateKey
         std::shared_ptr<AnnihilateKey<AHlvl1param>>,      // 24
         std::shared_ptr<AnnihilateKey<AHlvl2param>>,      // 25
+        #ifdef USE_DIFFERENT_AH_PARAM
+        std::shared_ptr<AnnihilateKey<cbAHlvl2param>>,    // 25
+        #endif
         // CBswitchingKey
         std::shared_ptr<CBswitchingKey<AHlvl1param>>,     // 26
         std::shared_ptr<CBswitchingKey<AHlvl2param>>      // 27
+        #ifdef USE_DIFFERENT_AH_PARAM
+        ,
+        std::shared_ptr<CBswitchingKey<cbAHlvl2param>>      // 27
+        #endif
     > keys;
 
     EvalKey(SecretKey sk) { params = sk.params; }
