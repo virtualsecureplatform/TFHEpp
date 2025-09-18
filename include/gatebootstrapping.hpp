@@ -18,26 +18,31 @@ namespace TFHEpp {
 
 // https://eprint.iacr.org/2025/809
 template <class P, uint32_t num_out>
-void BRModSwitch(ModswitchTLWE<typename P::domainP> &moded, const TLWE<typename P::domainP> &tlwe)
+void BRModSwitch(ModswitchTLWE<typename P::domainP> &moded,
+                 const TLWE<typename P::domainP> &tlwe)
 {
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
     std::make_signed_t<typename P::domainP::T> c = 0;
     constexpr typename P::domainP::T roundoffset =
-            1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
-                     P::targetP::nbit + bitwidth);
-    for(int i = 0; i < P::domainP::k * P::domainP::n; i++) {
-        moded[i] =
-            (tlwe[i] + roundoffset) >>
-            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
-             P::targetP::nbit + bitwidth)
-                << bitwidth;
-        c += tlwe[i] - (moded[i]<<(std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit));
+        1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
+                 P::targetP::nbit + bitwidth);
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
+        moded[i] = (tlwe[i] + roundoffset) >>
+                   (std::numeric_limits<typename P::domainP::T>::digits - 1 -
+                    P::targetP::nbit + bitwidth)
+                       << bitwidth;
+        c += tlwe[i] -
+             (moded[i] << (std::numeric_limits<typename P::domainP::T>::digits -
+                           1 - P::targetP::nbit));
     }
-    moded[P::domainP::k * P::domainP::n] = 2 * P::targetP::n - (static_cast<typename P::domainP::T>(tlwe[P::domainP::k * P::domainP::n] - c/2 + roundoffset) >>
-            (std::numeric_limits<typename P::domainP::T>::digits - 1 - P::targetP::nbit + bitwidth)
-                << bitwidth);
+    moded[P::domainP::k * P::domainP::n] =
+        2 * P::targetP::n -
+        (static_cast<typename P::domainP::T>(
+             tlwe[P::domainP::k * P::domainP::n] - c / 2 + roundoffset) >>
+         (std::numeric_limits<typename P::domainP::T>::digits - 1 -
+          P::targetP::nbit + bitwidth)
+             << bitwidth);
 }
-
 
 template <class P, uint32_t num_out = 1>
 void BlindRotate(TRLWE<typename P::targetP> &res,
@@ -46,13 +51,17 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                  const Polynomial<typename P::targetP> &testvector)
 {
     ModswitchTLWE<typename P::domainP> moded;
-    BRModSwitch<P,num_out>(moded, tlwe);
+    BRModSwitch<P, num_out>(moded, tlwe);
     res = {};
-    PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, moded[P::domainP::k * P::domainP::n]);
+    PolynomialMulByXai<typename P::targetP>(
+        res[P::targetP::k], testvector, moded[P::domainP::k * P::domainP::n]);
 #ifdef USE_KEY_BUNDLE
     for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
         alignas(64) TRGSWFFT<typename P::targetP> BKadded;
-        KeyBundleFFT<P>(BKadded, bkfft[i], std::span(moded).subspan(P::Addends*i,P::Addends).template first<P::Addends>());
+        KeyBundleFFT<P>(BKadded, bkfft[i],
+                        std::span(moded)
+                            .subspan(P::Addends * i, P::Addends)
+                            .template first<P::Addends>());
         trgswfftExternalProduct<typename P::targetP>(res, res, BKadded);
     }
 #else

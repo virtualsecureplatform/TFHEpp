@@ -24,7 +24,8 @@ int main()
         Polynomial<lvl1param> pmu;
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
-        TRLWE<lvl1param> c = trlweSymEncrypt<lvl1param>(pmu, key.get<lvl1param>());
+        TRLWE<lvl1param> c =
+            trlweSymEncrypt<lvl1param>(pmu, key.get<lvl1param>());
 
         const Polynomial<TFHEpp::lvl1param> plainpoly = {
             static_cast<typename lvl1param::T>(1)};
@@ -47,7 +48,8 @@ int main()
         Polynomial<lvl2param> pmu;
         for (int i = 0; i < lvl2param::n; i++)
             pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
-        TRLWE<lvl2param> c = trlweSymEncrypt<lvl2param>(pmu, key.get<lvl2param>());
+        TRLWE<lvl2param> c =
+            trlweSymEncrypt<lvl2param>(pmu, key.get<lvl2param>());
 
         const Polynomial<TFHEpp::lvl2param> plainpoly = {
             static_cast<typename lvl2param::T>(1)};
@@ -72,7 +74,8 @@ int main()
         array<typename TFHEpp::lvl1param::T, lvl1param::n> pmu;
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
-        TRLWE<lvl1param> c = trlweSymEncrypt<lvl1param>(pmu, key.get<lvl1param>());
+        TRLWE<lvl1param> c =
+            trlweSymEncrypt<lvl1param>(pmu, key.get<lvl1param>());
 
         const Polynomial<TFHEpp::lvl1param> plainpoly = {
             static_cast<typename lvl1param::T>(-1)};
@@ -95,7 +98,8 @@ int main()
         Polynomial<lvl2param> pmu;
         for (int i = 0; i < lvl2param::n; i++)
             pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
-        TRLWE<lvl2param> c = trlweSymEncrypt<lvl2param>(pmu, key.get<lvl2param>());
+        TRLWE<lvl2param> c =
+            trlweSymEncrypt<lvl2param>(pmu, key.get<lvl2param>());
 
         const Polynomial<TFHEpp::lvl2param> plainpoly = {
             static_cast<typename lvl2param::T>(-1)};

@@ -146,7 +146,9 @@ elseif(USE_SPQLIOS_ARITHMETIC)
       PARENT_SCOPE)
   add_compile_definitions(USE_SPQLIOS_ARITHMETIC)
   # Disable spqlios-arithmetic tests to avoid gtest dependency
-  set(ENABLE_TESTING OFF CACHE BOOL "Disable spqlios-arithmetic tests" FORCE)
+  set(ENABLE_TESTING
+      OFF
+      CACHE BOOL "Disable spqlios-arithmetic tests" FORCE)
   add_subdirectory(thirdparties/spqlios-arithmetic)
   # Restore ENABLE_TEST for the parent project
   set(ENABLE_TESTING ${ENABLE_TEST})

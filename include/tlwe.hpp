@@ -198,7 +198,7 @@ std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
  * @param rest The remaining ciphertexts in the sum.
  */
 template <class P, class... Args>
-void TLWEAdd(TLWE<P> &res, const TLWE<P> &first, const Args&... rest)
+void TLWEAdd(TLWE<P> &res, const TLWE<P> &first, const Args &...rest)
 {
     for (int i = 0; i <= P::k * P::n; i++) {
         // A binary fold expression sums all corresponding elements at once.
@@ -213,10 +213,12 @@ void TLWEAdd(TLWE<P> &res, const TLWE<P> &first, const Args&... rest)
  * NOTE: This implementation requires at least two input ciphertexts.
  */
 template <class P, class... Args>
-void TLWESub(TLWE<P> &res, const TLWE<P> &first, const Args&... rest)
+void TLWESub(TLWE<P> &res, const TLWE<P> &first, const Args &...rest)
 {
     // A binary fold requires the parameter pack 'rest' to be non-empty.
-    static_assert(sizeof...(Args) > 0, "This TLWESub implementation requires at least two arguments.");
+    static_assert(
+        sizeof...(Args) > 0,
+        "This TLWESub implementation requires at least two arguments.");
 
     for (int i = 0; i <= P::k * P::n; i++) {
         // Binary fold over the '-' operator.

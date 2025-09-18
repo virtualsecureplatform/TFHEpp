@@ -1,10 +1,10 @@
+#include <fft_processor_spqlios_arithmetic.h>
+
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
-
 #include <params.hpp>
-#include <fft_processor_spqlios_arithmetic.h>
 
 extern "C" {
 #include "../thirdparties/spqlios-arithmetic/spqlios/reim/reim_fft.h"
@@ -12,7 +12,8 @@ extern "C" {
 
 using namespace std;
 
-static int32_t rev(int32_t x, int32_t M) {
+static int32_t rev(int32_t x, int32_t M)
+{
     int32_t reps = 0;
     for (int32_t j = M; j > 1; j /= 2) {
         reps = 2 * reps + (x % 2);
@@ -21,9 +22,10 @@ static int32_t rev(int32_t x, int32_t M) {
     return reps;
 }
 
-FFT_Processor_Spqlios_Arithmetic::FFT_Processor_Spqlios_Arithmetic(const int32_t N)
-    : _2N(2 * N), N(N), Ns2(N / 2) {
-
+FFT_Processor_Spqlios_Arithmetic::FFT_Processor_Spqlios_Arithmetic(
+    const int32_t N)
+    : _2N(2 * N), N(N), Ns2(N / 2)
+{
     // Initialize FFT and IFFT tables (may not be needed for simple API)
     tables_direct = nullptr;
     tables_reverse = nullptr;
@@ -50,7 +52,9 @@ FFT_Processor_Spqlios_Arithmetic::FFT_Processor_Spqlios_Arithmetic(const int32_t
     }
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_reverse_uint(double* res, const uint32_t* a) {
+void FFT_Processor_Spqlios_Arithmetic::execute_reverse_uint(double* res,
+                                                            const uint32_t* a)
+{
     // Convert uint32_t to double
     for (int32_t i = 0; i < N; i++) {
         res[i] = (double)a[i];
@@ -60,7 +64,9 @@ void FFT_Processor_Spqlios_Arithmetic::execute_reverse_uint(double* res, const u
     reim_ifft_simple(Ns2, res);
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_reverse_int(double* res, const int32_t* a) {
+void FFT_Processor_Spqlios_Arithmetic::execute_reverse_int(double* res,
+                                                           const int32_t* a)
+{
     // Convert int32_t to double
     for (int32_t i = 0; i < N; i++) {
         res[i] = (double)a[i];
@@ -70,12 +76,16 @@ void FFT_Processor_Spqlios_Arithmetic::execute_reverse_int(double* res, const in
     reim_ifft_simple(Ns2, res);
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_reverse_torus32(double* res, const uint32_t* a) {
+void FFT_Processor_Spqlios_Arithmetic::execute_reverse_torus32(
+    double* res, const uint32_t* a)
+{
     int32_t* aa = (int32_t*)a;
     execute_reverse_int(res, aa);
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_reverse_torus64(double* res, const uint64_t* a) {
+void FFT_Processor_Spqlios_Arithmetic::execute_reverse_torus64(
+    double* res, const uint64_t* a)
+{
     // Convert int64_t to double
     int64_t* aa = (int64_t*)a;
     for (int i = 0; i < N; i++) {
@@ -86,7 +96,9 @@ void FFT_Processor_Spqlios_Arithmetic::execute_reverse_torus64(double* res, cons
     reim_ifft_simple(Ns2, res);
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32(uint32_t* res, const double* a) {
+void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32(uint32_t* res,
+                                                              const double* a)
+{
     static const double _2sN = double(2) / double(N);
 
     // Copy and scale input to buffer
@@ -114,7 +126,9 @@ void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32(uint32_t* res, con
     }
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32_q(uint32_t* res, const double* a, const uint32_t q) {
+void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32_q(
+    uint32_t* res, const double* a, const uint32_t q)
+{
     static const double _2sN = double(2) / double(N);
 
     // Copy and scale input to buffer
@@ -142,7 +156,9 @@ void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32_q(uint32_t* res, c
     }
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32_rescale(uint32_t* res, const double* a, const double Δ) {
+void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32_rescale(
+    uint32_t* res, const double* a, const double Δ)
+{
     static const double _2sN = double(2) / double(N);
 
     // Copy and scale input to buffer
@@ -168,7 +184,9 @@ void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus32_rescale(uint32_t* 
     }
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus64(uint64_t* res, const double* a) {
+void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus64(uint64_t* res,
+                                                              const double* a)
+{
     static const double _2sN = double(2) / double(N);
 
     // Copy and scale input to buffer
@@ -197,7 +215,9 @@ void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus64(uint64_t* res, con
     }
 }
 
-void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus64_rescale(uint64_t* res, const double* a, const double Δ) {
+void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus64_rescale(
+    uint64_t* res, const double* a, const double Δ)
+{
     static const double _2sN = double(2) / double(N);
 
     // Copy and scale input to buffer
@@ -223,7 +243,8 @@ void FFT_Processor_Spqlios_Arithmetic::execute_direct_torus64_rescale(uint64_t* 
     }
 }
 
-FFT_Processor_Spqlios_Arithmetic::~FFT_Processor_Spqlios_Arithmetic() {
+FFT_Processor_Spqlios_Arithmetic::~FFT_Processor_Spqlios_Arithmetic()
+{
     delete[] buffer_direct;
     delete[] buffer_reverse;
     delete[] reva;

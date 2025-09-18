@@ -79,7 +79,7 @@ struct AHlvl1param {
     static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr ErrorDistribution errordist = baseP::errordist;
     static const inline double α = baseP::α;  // fresh noise
-    using T = typename baseP::T;                                 // Torus representation
+    using T = typename baseP::T;              // Torus representation
     static constexpr std::make_signed_t<T> μ = baseP::μ;
     static constexpr uint32_t plain_modulus = baseP::plain_modulus;
     static constexpr double Δ = baseP::Δ;
@@ -123,7 +123,7 @@ struct AHlvl2param {
     static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr ErrorDistribution errordist = baseP::errordist;
     static const inline double α = baseP::α;  // fresh noise
-    using T = typename baseP::T;                                 // Torus representation
+    using T = typename baseP::T;              // Torus representation
     static constexpr std::make_signed_t<T> μ = baseP::μ;
     static constexpr uint32_t plain_modulus = baseP::plain_modulus;
     static constexpr double Δ = baseP::Δ;

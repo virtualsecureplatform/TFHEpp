@@ -44,7 +44,7 @@ constexpr uint Nb = 4;  // Number of columns (32-bit words) comprising the state
 constexpr uint Nr = 10;  // Number of rounds, which is a function of Nk and Nb
 
 inline void KeyExpansion(std::array<uint8_t, 4 * Nb *(Nr + 1)> &w,
-                  const std::array<uint8_t, 16> &key)
+                         const std::array<uint8_t, 16> &key)
 {
     std::array<uint8_t, 4> temp;
 
@@ -116,7 +116,8 @@ void AESSboxROM(const std::span<TLWE<typename brP::targetP>, 8> res,
         if (i >= width_bit)
             for (int j = 0; j <= iksP::domainP::k * iksP::domainP::n; j++)
                 shifted[j] *= -1;
-        AnnihilateCircuitBootstrappingFFT<iksP, brP, ahP>(trgsw[i], shifted, ek);
+        AnnihilateCircuitBootstrappingFFT<iksP, brP, ahP>(trgsw[i], shifted,
+                                                          ek);
     }
     std::array<TRLWE<typename brP::targetP>, (1 << 8) / (brP::targetP::n / 8)>
         rom = {};
@@ -209,8 +210,8 @@ void AESInvSbox(std::array<TLWE<typename brP::targetP>, 2> &res,
         std::array<std::array<TLWE<typename iksP::domainP>, 16>, 2> tabletlwe;
         for (int i = 0; i < 2; i++)
             for (int j = 0; j < 16; j++) tabletlwe[i][j] = midtlwes[j][i];
-        TLWE2TablePackingManyLUT<ahP, 16, 2>(
-            trlwe, tabletlwe, ek.getahk<ahP>());
+        TLWE2TablePackingManyLUT<ahP, 16, 2>(trlwe, tabletlwe,
+                                             ek.getahk<ahP>());
         GateBootstrappingManyLUT<brP, 2>(res, shifted, ek.getbkfft<brP>(),
                                          trlwe);
     }
@@ -254,7 +255,8 @@ void AESInvSboxROM(std::array<TLWE<typename brP::targetP>, 8> &res,
         if (i >= width_bit)
             for (int j = 0; j <= iksP::domainP::k * iksP::domainP::n; j++)
                 shifted[j] *= -1;
-        AnnihilateCircuitBootstrappingFFT<iksP, brP, ahP>(trgsw[i], shifted, ek);
+        AnnihilateCircuitBootstrappingFFT<iksP, brP, ahP>(trgsw[i], shifted,
+                                                          ek);
     }
     std::array<TRLWE<typename brP::targetP>, (1 << 8) / (brP::targetP::n / 8)>
         rom = {};
@@ -776,9 +778,10 @@ void KeyExpansion(
     std::array<std::array<TLWE<typename brP::targetP>, 128>, 10> &expandedkey,
     const std::array<TLWE<typename iksP::domainP>, 128> &key, EvalKey &ek)
 {
-    KeyExpand<iksP, brP,ahP>(expandedkey[0], key, ek, 1);
+    KeyExpand<iksP, brP, ahP>(expandedkey[0], key, ek, 1);
     for (int i = 1; i < 10; i++)
-        KeyExpand<iksP, brP, ahP>(expandedkey[i], expandedkey[i - 1], ek, i + 1);
+        KeyExpand<iksP, brP, ahP>(expandedkey[i], expandedkey[i - 1], ek,
+                                  i + 1);
 }
 
 }  // namespace TFHEpp

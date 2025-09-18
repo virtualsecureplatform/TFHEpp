@@ -38,7 +38,7 @@ int main()
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
         std::cout << "test: " << test << std::endl;
-        TFHEpp::AESInvSbox<iksP, brP,ahP>(cres[test], cin[test], ek);
+        TFHEpp::AESInvSbox<iksP, brP, ahP>(cres[test], cin[test], ek);
     }
 
     end = std::chrono::system_clock::now();

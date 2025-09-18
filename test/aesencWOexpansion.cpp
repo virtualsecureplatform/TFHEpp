@@ -77,7 +77,7 @@ int main()
     for (int test = 0; test < num_test; test++) {
         std::cout << "test: " << test << std::endl;
         TFHEpp::AESEnc<iksP, brP, cbiksP, cbbrP, ahP>(cres[test], cin[test],
-                                                 cexpandedkey[test], ek);
+                                                      cexpandedkey[test], ek);
         // TFHEpp::AESEnc<iksP, brP>(cres[test], cin[test], cexpandedkey[test],
         // ek);
     }

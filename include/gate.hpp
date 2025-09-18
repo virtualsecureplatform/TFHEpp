@@ -243,18 +243,22 @@ void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
         IdentityKeySwitch<lvl10param>(and1, temp, ek.getiksk<lvl10param>());
         IdentityKeySwitch<lvl10param>(and0, res, ek.getiksk<lvl10param>());
         GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            temp, and1, ek.getbkfft<lvl01param>(), μpolygen<lvl1param, lvl1param::μ>());
+            temp, and1, ek.getbkfft<lvl01param>(),
+            μpolygen<lvl1param, lvl1param::μ>());
         GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            res, and0, ek.getbkfft<lvl01param>(), μpolygen<lvl1param, lvl1param::μ>());
+            res, and0, ek.getbkfft<lvl01param>(),
+            μpolygen<lvl1param, lvl1param::μ>());
         for (int i = 0; i <= P::k * lvl1param::n; i++) res[i] += temp[i];
         res[P::k * P::n] += P::μ;
     }
     else if constexpr (std::is_same_v<P, lvl0param>) {
         TLWE<lvl1param> and1, and0;
         GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            and1, temp, ek.getbkfft<lvl01param>(), μpolygen<lvl1param, lvl1param::μ>());
+            and1, temp, ek.getbkfft<lvl01param>(),
+            μpolygen<lvl1param, lvl1param::μ>());
         GateBootstrappingTLWE2TLWEFFT<lvl01param>(
-            and0, res, ek.getbkfft<lvl01param>(), μpolygen<lvl1param, lvl1param::μ>());
+            and0, res, ek.getbkfft<lvl01param>(),
+            μpolygen<lvl1param, lvl1param::μ>());
         for (int i = 0; i <= lvl1param::k * lvl1param::n; i++)
             and0[i] += and1[i];
         IdentityKeySwitch<lvl10param>(res, and0, ek.getiksk<lvl10param>());

@@ -19,11 +19,14 @@ int main()
             ski.serialize(ar);
         }
         for (int i = 0; i < TFHEpp::lvl0param::n; i++)
-            assert(sk.key.get<TFHEpp::lvl0param>()[i] == ski.key.get<TFHEpp::lvl0param>()[i]);
+            assert(sk.key.get<TFHEpp::lvl0param>()[i] ==
+                   ski.key.get<TFHEpp::lvl0param>()[i]);
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
-            assert(sk.key.get<TFHEpp::lvl1param>()[i] == ski.key.get<TFHEpp::lvl1param>()[i]);
+            assert(sk.key.get<TFHEpp::lvl1param>()[i] ==
+                   ski.key.get<TFHEpp::lvl1param>()[i]);
         for (int i = 0; i < TFHEpp::lvl2param::n; i++)
-            assert(sk.key.get<TFHEpp::lvl2param>()[i] == ski.key.get<TFHEpp::lvl2param>()[i]);
+            assert(sk.key.get<TFHEpp::lvl2param>()[i] ==
+                   ski.key.get<TFHEpp::lvl2param>()[i]);
         std::cout << "n" << ":" << ski.params.lvl0.n << std::endl;
         assert(sk.params == ski.params);
     }
@@ -33,7 +36,8 @@ int main()
         iopacket.tlwelvl0ports["test"].resize(1);
         iopacket.tlwelvl0ports["test"][0] =
             TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
-                TFHEpp::lvl0param::μ, TFHEpp::lvl0param::α, sk.key.get<TFHEpp::lvl0param>());
+                TFHEpp::lvl0param::μ, TFHEpp::lvl0param::α,
+                sk.key.get<TFHEpp::lvl0param>());
         {
             std::ofstream ofs{"./iopacket.data", std::ios::binary};
             cereal::PortableBinaryOutputArchive ar(ofs);

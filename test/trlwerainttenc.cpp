@@ -8,7 +8,7 @@ int main()
     // THIS TEST CAUSES COMPILE ERROR WITH CLANG 19 AND 20
     std::cout << "lvl1" << std::endl;
     constexpr uint32_t num_test = 1000;
-    #ifndef __clang__
+#ifndef __clang__
     if constexpr (TFHEpp::hasq<TFHEpp::lvl1param>)
         for (int test = 0; test < num_test; test++) {
             std::random_device seed_gen;
@@ -24,8 +24,8 @@ int main()
             for (int i = 0; i < TFHEpp::lvl1param::n; i++)
                 pmu[i] = p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
             TFHEpp::TRLWERAINTT<TFHEpp::lvl1param> craintt =
-                TFHEpp::trlwerainttSymEncrypt<TFHEpp::lvl1param>(pmu, 3,
-                                                                 key.get<TFHEpp::lvl1param>());
+                TFHEpp::trlwerainttSymEncrypt<TFHEpp::lvl1param>(
+                    pmu, 3, key.get<TFHEpp::lvl1param>());
             TFHEpp::TRLWE<TFHEpp::lvl1param> c;
             for (int k = 0; k <= TFHEpp::lvl1param::k; k++) {
                 raintt::TwistNTT<typename TFHEpp::lvl1param::T,
@@ -38,14 +38,15 @@ int main()
                                   : c[k][i];
             }
             std::array<bool, TFHEpp::lvl1param::n> p2 =
-                TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(c, key.get<TFHEpp::lvl1param>());
+                TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(
+                    c, key.get<TFHEpp::lvl1param>());
             // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             // std::cout<<test<<":"<<i<<":"<<c[TFHEpp::lvl1param::k][i]<<":"<<(p[i]?1:0)<<":"<<(p2[i]?1:0)<<std::endl;
             for (int i = 0; i < TFHEpp::lvl1param::n; i++)
                 assert(p[i] == p2[i]);
         }
     else
-    #endif
+#endif
         std::cout << "Nothing to do" << std::endl;
     std::cout << "Passed" << std::endl;
 }

@@ -69,13 +69,15 @@ int main()
               c0 = trivial_TRLWELvl1(uint2weight(0));
     TRLWELvl1 res = c1;
     dump_histgram_of_phase_of_TRLWELvl1(
-        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.get<TFHEpp::lvl1param>()));
+        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(
+                       res, skey.key.get<TFHEpp::lvl1param>()));
     for (size_t i = 0; i < N; i++) {
         TRLWELvl1 tmp = res;
         TFHEpp::CMUXFFT<Lvl1>(res, guard.at(i), tmp, c0);
     }
     dump_histgram_of_phase_of_TRLWELvl1(
-        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(res, skey.key.get<TFHEpp::lvl1param>()));
+        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(
+                       res, skey.key.get<TFHEpp::lvl1param>()));
 
     /*
     PolyLvl1 testvec1 = {}, testvec2 = {};

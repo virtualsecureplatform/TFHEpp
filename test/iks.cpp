@@ -17,10 +17,13 @@ int main()
         bool p = binary(engine) > 0;
         TFHEpp::TLWE<TFHEpp::lvl1param> tlwe =
             TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
-                p ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ, sk.key.get<TFHEpp::lvl1param>());
+                p ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ,
+                sk.key.get<TFHEpp::lvl1param>());
         TFHEpp::TLWE<TFHEpp::lvl0param> res;
-        TFHEpp::IdentityKeySwitch<TFHEpp::lvl10param>(res, tlwe, ek.getiksk<TFHEpp::lvl10param>());
-        bool p2 = TFHEpp::tlweSymDecrypt<TFHEpp::lvl0param>(res, sk.key.get<TFHEpp::lvl0param>());
+        TFHEpp::IdentityKeySwitch<TFHEpp::lvl10param>(
+            res, tlwe, ek.getiksk<TFHEpp::lvl10param>());
+        bool p2 = TFHEpp::tlweSymDecrypt<TFHEpp::lvl0param>(
+            res, sk.key.get<TFHEpp::lvl0param>());
         assert(p == p2);
     }
     std::cout << "Passed" << std::endl;

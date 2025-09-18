@@ -178,7 +178,8 @@ TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 
-#define INST(P) template auto& EvalKey::get_map<SubsetPrivateKeySwitchingKey<P>>()
+#define INST(P) \
+    template auto& EvalKey::get_map<SubsetPrivateKeySwitchingKey<P>>()
 TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TRLWE(INST)
 #undef INST
 

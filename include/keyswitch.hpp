@@ -122,11 +122,11 @@ void CatIdentityKeySwitch(
                      mask) -
                     halfbase;
                 if (aij > 0)
-                    TLWESub<typename P::targetP>(
-                        res[cat], res[cat], ksk[i][j][aij - 1]);
+                    TLWESub<typename P::targetP>(res[cat], res[cat],
+                                                 ksk[i][j][aij - 1]);
                 else if (aij < 0)
-                    TLWEAdd<typename P::targetP>(
-                        res[cat], res[cat], ksk[i][j][-aij - 1]);
+                    TLWEAdd<typename P::targetP>(res[cat], res[cat],
+                                                 ksk[i][j][-aij - 1]);
             }
         }
     }
@@ -209,17 +209,16 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                 halfbase;
 
             if (aij > 0)
-                TRLWESub<typename P::targetP>(
-                        res, res, privksk[i][j][aij - 1]);
-                // for (int k = 0; k < P::targetP::k + 1; k++)
-                //     for (int p = 0; p < P::targetP::n; p++)
-                //         res[k][p] -= privksk[i][j][aij - 1][k][p];
+                TRLWESub<typename P::targetP>(res, res, privksk[i][j][aij - 1]);
+            // for (int k = 0; k < P::targetP::k + 1; k++)
+            //     for (int p = 0; p < P::targetP::n; p++)
+            //         res[k][p] -= privksk[i][j][aij - 1][k][p];
             else if (aij < 0)
-                TRLWEAdd<typename P::targetP>(
-                        res, res, privksk[i][j][-aij - 1]);
-                // for (int k = 0; k < P::targetP::k + 1; k++)
-                //     for (int p = 0; p < P::targetP::n; p++)
-                //         res[k][p] += privksk[i][j][abs(aij) - 1][k][p];
+                TRLWEAdd<typename P::targetP>(res, res,
+                                              privksk[i][j][-aij - 1]);
+            // for (int k = 0; k < P::targetP::k + 1; k++)
+            //     for (int p = 0; p < P::targetP::n; p++)
+            //         res[k][p] += privksk[i][j][abs(aij) - 1][k][p];
         }
     }
 }
@@ -245,11 +244,10 @@ void SubsetPrivKeySwitch(TRLWE<typename P::targetP> &res,
                 mask;
 
             if (aij != 0)
-                TRLWEAdd<typename P::targetP>(
-                        res, res, privksk[i][j][aij - 1]);
-                // for (int p = 0; p < P::targetP::n; p++)
-                    // for (int k = 0; k < P::targetP::k + 1; k++)
-                        // res[k][p] -= privksk[i][j][aij - 1][k][p];
+                TRLWEAdd<typename P::targetP>(res, res, privksk[i][j][aij - 1]);
+            // for (int p = 0; p < P::targetP::n; p++)
+            // for (int k = 0; k < P::targetP::k + 1; k++)
+            // res[k][p] -= privksk[i][j][aij - 1][k][p];
         }
     }
 }
@@ -285,11 +283,10 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
                            (j + 1) * P::basebit)) &
                 mask;
             if (aij != 0)
-                TRLWESub<typename P::targetP>(
-                    res, res, iksk[i][j][aij - 1]);
-                // for (int l = 0; l < P::targetP::k + 1; l++)
-                    // for (int k = 0; k < P::targetP::n; k++)
-                        // res[l][k] -= iksk[i][j][aij - 1][l][k];
+                TRLWESub<typename P::targetP>(res, res, iksk[i][j][aij - 1]);
+            // for (int l = 0; l < P::targetP::k + 1; l++)
+            // for (int k = 0; k < P::targetP::n; k++)
+            // res[l][k] -= iksk[i][j][aij - 1][l][k];
         }
     }
 }
@@ -431,7 +428,7 @@ void TLWE2TRLWEChensPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe,
         EvalAuto<P>(evaledauto, res, (1 << (i + 1)) + 1, ahk[i]);
         TRLWEAdd<P>(res, res, evaledauto);
         // for (int j = 0; j < (P::k + 1) * P::n; j++)
-            // res[0][j] += evaledauto[0][j];
+        // res[0][j] += evaledauto[0][j];
     }
 }
 
@@ -457,7 +454,8 @@ void TLWE2TablePacking(TRLWE<P> &res, std::array<TLWE<P>, num_tlwe> &tlwe,
         // reuse tempmul
         EvalAuto<P>(tempmul, tempsub, (1 << (i + 1)) + 1, ahk[i]);
         TRLWEAdd<P>(res, res, tempmul);
-        // for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] += tempmul[0][j];
+        // for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] +=
+        // tempmul[0][j];
     }
 }
 
@@ -490,7 +488,7 @@ void TLWE2TablePackingManyLUT(
             EvalAuto<P>(tempmul, tempsub, (1 << (i + 1)) + 1, ahk[i]);
             TRLWEAdd<P>(temptrlwe[index], temptrlwe[index], tempmul);
             // for (int j = 0; j < (P::k + 1) * P::n; j++)
-                // temptrlwe[index][0][j] += tempmul[0][j];
+            // temptrlwe[index][0][j] += tempmul[0][j];
         }
     }
     {
@@ -506,8 +504,8 @@ void TLWE2TablePackingManyLUT(
         EvalAuto<P>(res, temptrlwe[1], (1 << P::nbit) + 1, ahk[P::nbit - 1]);
         TRLWEAdd<P>(res, res, temptrlwe[0], tempoddmul);
         // for (int i = 0; i < P::k + 1; i++)
-            // for (int j = 0; j < P::n; j++)
-                // res[i][j] += temptrlwe[0][i][j] + tempoddmul[i][j];
+        // for (int j = 0; j < P::n; j++)
+        // res[i][j] += temptrlwe[0][i][j] + tempoddmul[i][j];
     }
 }
 
@@ -538,8 +536,8 @@ void PackLWEsLSB(TRLWE<P> &res, const std::vector<TLWE<P>> &tlwe,
         EvalAuto<P>(res, tempodd, (1 << l) + 1, ahk[l - 1]);
         TRLWEAdd<P>(res, res, tempeven, tempoddmul);
         // for (int i = 0; i < P::k + 1; i++)
-            // for (int j = 0; j < P::n; j++)
-                // res[i][j] += tempeven[i][j] + tempoddmul[i][j];
+        // for (int j = 0; j < P::n; j++)
+        // res[i][j] += tempeven[i][j] + tempoddmul[i][j];
     }
 }
 
