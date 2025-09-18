@@ -7,6 +7,7 @@
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 #include <tuple>
+#include <iostream>
 
 #include "evalkeygens.hpp"
 
@@ -101,24 +102,40 @@ struct EvalKey {
     template <class P>
     void emplacebk(const SecretKey& sk)
     {
+        if (get<BootstrappingKey<P>>() != nullptr) {
+            std::cerr << "Warning: BootstrappingKey<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<BootstrappingKey<P>>() = std::make_unique_for_overwrite<BootstrappingKey<P>>();
         bkgen<P>(*get<BootstrappingKey<P>>(), sk);
     }
     template <class P>
     void emplacebkfft(const SecretKey& sk)
     {
+        if (get<BootstrappingKeyFFT<P>>() != nullptr) {
+            std::cerr << "Warning: BootstrappingKeyFFT<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<BootstrappingKeyFFT<P>>() = std::make_unique_for_overwrite<BootstrappingKeyFFT<P>>();
         bkfftgen<P>(*get<BootstrappingKeyFFT<P>>(), sk);
     }
     template <class P>
     void emplacebkntt(const SecretKey& sk)
     {
+        if (get<BootstrappingKeyNTT<P>>() != nullptr) {
+            std::cerr << "Warning: BootstrappingKeyNTT<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<BootstrappingKeyNTT<P>>() = std::make_unique_for_overwrite<BootstrappingKeyNTT<P>>();
         bknttgen<P>(*get<BootstrappingKeyNTT<P>>(), sk);
     }
     template <class P>
     void emplacebk2bkfft()
     {
+        if (get<BootstrappingKeyFFT<P>>() != nullptr) {
+            std::cerr << "Warning: BootstrappingKeyFFT<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<BootstrappingKeyFFT<P>>() = std::make_unique_for_overwrite<BootstrappingKeyFFT<P>>();
         for (int i = 0; i < P::domainP::n; i++)
             (*get<BootstrappingKeyFFT<P>>())[i][0] = ApplyFFT2trgsw<typename P::targetP>((*get<BootstrappingKey<P>>())[i][0]);
@@ -126,6 +143,10 @@ struct EvalKey {
     template <class P>
     void emplacebk2bkntt()
     {
+        if (get<BootstrappingKeyNTT<P>>() != nullptr) {
+            std::cerr << "Warning: BootstrappingKeyNTT<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<BootstrappingKeyNTT<P>>() = std::make_unique_for_overwrite<BootstrappingKeyNTT<P>>();
         for (int i = 0; i < P::domainP::n; i++)
             (*get<BootstrappingKeyNTT<P>>())[i] = ApplyNTT2trgsw<typename P::targetP>((*get<BootstrappingKey<P>>())[i][0]);
@@ -133,12 +154,20 @@ struct EvalKey {
     template <class P>
     void emplaceiksk(const SecretKey& sk)
     {
+        if (get<KeySwitchingKey<P>>() != nullptr) {
+            std::cerr << "Warning: KeySwitchingKey<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<KeySwitchingKey<P>>() = std::make_unique_for_overwrite<KeySwitchingKey<P>>();
         ikskgen<P>(*get<KeySwitchingKey<P>>(), sk);
     }
     template <class P>
     void emplacesubiksk(const SecretKey& sk)
     {
+        if (get<SubsetKeySwitchingKey<P>>() != nullptr) {
+            std::cerr << "Warning: SubsetKeySwitchingKey<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<SubsetKeySwitchingKey<P>>() = std::make_unique_for_overwrite<SubsetKeySwitchingKey<P>>();
         subikskgen<P>(*get<SubsetKeySwitchingKey<P>>(), sk);
     }
@@ -147,6 +176,10 @@ struct EvalKey {
                         const Polynomial<typename P::targetP>& func,
                         const SecretKey& sk)
     {
+        if (get_map<PrivateKeySwitchingKey<P>>().find(key) != get_map<PrivateKeySwitchingKey<P>>().end()) {
+            std::cerr << "Warning: PrivateKeySwitchingKey<P> with key '" << key << "' already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get_map<PrivateKeySwitchingKey<P>>()[key] =
             std::unique_ptr<PrivateKeySwitchingKey<P>>(new (
                 std::align_val_t(64)) PrivateKeySwitchingKey<P>());
@@ -157,6 +190,10 @@ struct EvalKey {
                            const Polynomial<typename P::targetP>& func,
                            const SecretKey& sk)
     {
+        if (get_map<SubsetPrivateKeySwitchingKey<P>>().find(key) != get_map<SubsetPrivateKeySwitchingKey<P>>().end()) {
+            std::cerr << "Warning: SubsetPrivateKeySwitchingKey<P> with key '" << key << "' already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get_map<SubsetPrivateKeySwitchingKey<P>>()[key] =
             std::make_unique_for_overwrite<SubsetPrivateKeySwitchingKey<P>>();
         subprivkskgen<P>(*get_map<SubsetPrivateKeySwitchingKey<P>>()[key], func, sk);
@@ -192,6 +229,10 @@ struct EvalKey {
     template <class P>
     void emplaceahk(const SecretKey& sk)
     {
+        if (get<AnnihilateKey<P>>() != nullptr) {
+            std::cerr << "Warning: AnnihilateKey<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<AnnihilateKey<P>>() = std::make_unique_for_overwrite<AnnihilateKey<P>>();
         annihilatekeygen<P>(*get<AnnihilateKey<P>>(), sk);
     }
@@ -199,6 +240,10 @@ struct EvalKey {
     template <class P>
     void emplacecbsk(const SecretKey& sk)
     {
+        if (get<CBswitchingKey<P>>() != nullptr) {
+            std::cerr << "Warning: CBswitchingKey<P> already exists. Skipping duplicate key generation." << std::endl;
+            return;
+        }
         get<CBswitchingKey<P>>() = std::make_unique_for_overwrite<CBswitchingKey<P>>();
         for (int i = 0; i < P::k; i++) {
             Polynomial<P> partkey;
