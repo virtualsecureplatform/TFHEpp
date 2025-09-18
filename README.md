@@ -42,6 +42,9 @@ SPQLIOS is the FFT library using AVX2 dedicated to the ring R\[X\]/(X^N+1) for N
 ## SPQLIOS-AVX512
 This AVX512 version of SPQLIOS developed in [MOSFHET](https://github.com/antoniocgj/MOSFHET). I confirmed this is faster than SPQLIOS on Intel i5-11400 and AMD Ryzen 7700X. 
 
+## SPQlios-Arithmetic
+[SPQlios Arithmetic](https://github.com/tfhe/spqlios-arithmetic) seems to be the successor of SPQLIOS. Currently, only FFT is supported. 
+
 ## FFTW3
 [FFTW](https://www.fftw.org/) is one of the most famous FFT libraries. 
 
