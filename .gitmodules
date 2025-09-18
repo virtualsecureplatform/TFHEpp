@@ -19,3 +19,6 @@
 [submodule "thirdparties/cereal"]
 	path = thirdparties/cereal
 	url = https://github.com/virtualsecureplatform/cereal.git
+[submodule "thirdparties/spqlios-arithmetic"]
+	path = thirdparties/spqlios-arithmetic
+	url = https://github.com/tfhe/spqlios-arithmetic.git

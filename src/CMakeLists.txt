@@ -1,5 +1,10 @@
 file(GLOB tfhe++_sources "*.cpp")
 
+# Exclude spqlios-arithmetic processor by default
+if(NOT USE_SPQLIOS_ARITHMETIC)
+  list(REMOVE_ITEM tfhe++_sources ${CMAKE_CURRENT_SOURCE_DIR}/fft_processor_spqlios_arithmetic.cpp)
+endif()
+
 if(ENABLE_SHARED)
   add_library(tfhe++ SHARED ${tfhe++_sources})
 else()
@@ -48,6 +53,9 @@ elseif(USE_HEXL)
   target_link_libraries(tfhe++ INTERFACE spqlios HEXL::hexl)
 elseif(USE_CONCRETE_FFT)
   target_link_libraries(tfhe++ INTERFACE concrete-fft)
+elseif(USE_SPQLIOS_ARITHMETIC)
+  target_link_libraries(tfhe++ INTERFACE libspqlios)
+  target_include_directories(tfhe++ PUBLIC ${PROJECT_SOURCE_DIR}/thirdparties/spqlios-arithmetic)
 else()
   if(USE_MKL)
     target_link_libraries(tfhe++ INTERFACE mklproc)

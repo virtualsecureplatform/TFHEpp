@@ -11,6 +11,8 @@
 #include <fft_processor_spqliox_aarch64.h>
 #elif USE_CONCRETE_FFT
 #include <fft_processor_concrete.hpp>
+#elif USE_SPQLIOS_ARITHMETIC
+#include <fft_processor_spqlios_arithmetic.h>
 #else
 #include <fft_processor_spqlios.h>
 #endif

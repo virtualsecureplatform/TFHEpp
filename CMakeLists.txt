@@ -31,6 +31,7 @@ option(USE_CONCRETE_FFT "Use concrete-fft" OFF)
 option(USE_MKL "Use Intel MKL" OFF)
 option(USE_FFTW3 "Use FFTW3" OFF)
 option(USE_SPQLIOX_AARCH64 "Use spqliox_aarch64" OFF)
+option(USE_SPQLIOS_ARITHMETIC "Use spqlios-arithmetic backend" OFF)
 option(USE_HEXL "Use Intel HEXL" OFF)
 
 option(ENABLE_TEST "Build tests" OFF)
@@ -139,6 +140,16 @@ elseif(USE_CONCRETE_FFT)
   add_compile_definitions(USE_CONCRETE_FFT)
   add_compile_definitions(USE_INTERLEAVED_FORMAT)
   add_subdirectory(thirdparties/concrete-fft)
+elseif(USE_SPQLIOS_ARITHMETIC)
+  set(TFHEpp_DEFINITIONS
+      "${TFHEpp_DEFINITIONS};USE_SPQLIOS_ARITHMETIC"
+      PARENT_SCOPE)
+  add_compile_definitions(USE_SPQLIOS_ARITHMETIC)
+  # Disable spqlios-arithmetic tests to avoid gtest dependency
+  set(ENABLE_TESTING OFF CACHE BOOL "Disable spqlios-arithmetic tests" FORCE)
+  add_subdirectory(thirdparties/spqlios-arithmetic)
+  # Restore ENABLE_TEST for the parent project
+  set(ENABLE_TESTING ${ENABLE_TEST})
 else()
   add_subdirectory(thirdparties/spqlios)
 endif()
