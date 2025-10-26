@@ -49,7 +49,7 @@ static inline int64_t ModLshift(int64_t a, uint8_t b)
 
     // Subtract P once or twice if needed to ensure a < P
     if (r < 0) r += P;
-    if (r >= P) r -= P;
+    else if (r >= P) r -= P;
     return r;
 }
 
