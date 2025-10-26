@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdint>
 #include <span>
+#include <iostream>
 
 namespace FNTpp {
 constexpr unsigned int Kbit = 5;
@@ -27,7 +28,9 @@ static inline int64_t ModLshift(int64_t a, uint8_t b)
 {
     // If b >= K, multiply by 2^K ≡ -1 (mod P).
     // => a = P - a  (unless a == 0), then reduce b by K.
-    if (b == 2 * K) return a;
+    // if (b == 2 * K) return a;
+    b %= 2 * K;
+    if (b==0) return a;
     if (b >= K) {
         if (a != 0) {
             a = P - a;
@@ -35,17 +38,14 @@ static inline int64_t ModLshift(int64_t a, uint8_t b)
         b -= K;  // now b < K
     }
 
-    // Shift by b < K in 64-bit arithmetic (safe from overflow).
-    int64_t r = a << b;
-
     // Now reduce a modulo P:
     //   hi = upper K bits
     //   lo = lower K bits
     // Since (hi << K) ≡ -hi (mod P),
     // we can do (lo + hi) mod P  and then subtract P if needed.
-    const int64_t hi = r >> K;
-    const int64_t lo = r & wordmask;
-    r = -hi + lo;
+    const int64_t hi = a >> (K-b);
+    const int64_t lo = (a<<b) & wordmask;
+    int64_t r = -hi + lo;
 
     // Subtract P once or twice if needed to ensure a < P
     if (r < 0) r += P;
@@ -71,11 +71,13 @@ void FNT(const std::span<int64_t, 1u << Nbit> res)
     static_assert(Nbit <= Kbit + 1,
                   "sizebit must be less than or equal to Kbit+1");
     if constexpr (Nbit == 1) {
+        // std::cout<<"Prev: "<< res[0]<<" "<<res[1]<<std::endl;
         const int64_t temp = res[0];
         res[0] += res[1];
         if (res[0] >= P) res[0] -= P;
         res[1] = temp - res[1];
         if (res[1] < 0) res[1] += P;
+        // std::cout<< res[0]<<" "<<res[1]<<std::endl;
     }
     else {
         constexpr unsigned int N = 1u << Nbit;
@@ -197,35 +199,15 @@ void TwistIFNT(std::array<int64_t, 1u << Nbit> &res,
         for (unsigned int i = 0; i < latersize / 2; i++) {
             std::array<int64_t, formersize> temp;
             for (unsigned int j = 0; j < formersize; j++)
-                temp[j] = tempa[j * latersize + i];
+                temp[j] = (tempa[j * latersize + i] + ModLshift(
+                                                       tempa[j * latersize + i + latersize / 2],
+                                                       (BitReverse<formersizebit>(j) << (Kbit + 1 - formersizebit)) + (1 << (Kbit - formersizebit)))) % P;
             IFNT<formersizebit>(std::span{temp});
             MulInvN<formersizebit>(temp);
             for (unsigned int j = 0; j < formersize; j++)
                 res[j * (latersize / 2) + i] =
-                    (res[j * (latersize / 2) + i] +
                      ModLshift(temp[j],
-                               2 * K - (j << (Kbit - formersizebit)))) %
-                    P;
-            for (unsigned int j = 0; j < formersize; j++)
-                temp[j] = tempa[j * latersize + i + latersize / 2];
-            IFNT<formersizebit>(std::span{temp});
-            MulInvN<formersizebit>(temp);
-            // if(i != latersize/2 - 1)
-            for (unsigned int j = 0; j < formersize - 1; j++)
-                res[(j + 1) * (latersize / 2) + i] =
-                    (res[(j + 1) * (latersize / 2) + i] +
-                     ModLshift(temp[j],
-                               2 * K - (j << (Kbit - formersizebit)))) %
-                    P;
-            res[i] = (res[i] + P -
-                      ModLshift(temp[formersize - 1],
-                                2 * K - ((formersize - 1)
-                                         << (Kbit - formersizebit)))) %
-                     P;
-            // else
-            // for(unsigned int j = 0; j < formersize; j++)
-            // res[j*(latersize/2)+i] = (res[j*(latersize/2)+i] + P -
-            // ModLshift(temp[j],2*K-(j<<(Kbit-formersizebit))))%P;
+                               2 * K - (j << (Kbit - formersizebit)));
         }
     }
 }

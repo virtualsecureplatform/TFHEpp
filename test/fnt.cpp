@@ -56,9 +56,27 @@ int main()
     }
 
     {
-        std::cout << "Start univariable TwistFNT only test." << std::endl;
+
         constexpr unsigned int Nbit = FNTpp::Kbit;
         constexpr unsigned int N = 1u << Nbit;
+
+        std::cout << "X TwistFNT test" << std::endl;
+        {
+        std::cout << FNTpp::ModLshift(1, 63) << std::endl;
+        std::array<int64_t, N> res, a={};
+        a[1] = 1;
+        FNTpp::TwistFNT<Nbit>(res,a);
+        for (int i = 0; i < N; i++)
+            a[i] = FNTpp::ModLshift(1, ((FNTpp::BitReverse<Nbit>(i)) << (FNTpp::Kbit + 1 - Nbit)) + (1 << (FNTpp::Kbit - Nbit)));
+        for (int i = 0; i < N; i++)
+            if (res[i] != a[i])
+                std::cout << "i: " << i << " a: " << a[i]
+                            << " res: " << res[i] << " exponent:" << (FNTpp::BitReverse<Nbit>(i) << (FNTpp::Kbit + 1 - Nbit)) + (1 << (FNTpp::Kbit - Nbit)) << std::endl;
+        for (int i = 0; i < N; i++) assert(a[i] == res[i]);
+        }
+        std::cout << "Passed X TwistFNT test" << std::endl;
+
+        std::cout << "Start univariable TwistFNT only test." << std::endl;
         for (int test = 0; test < num_test; test++) {
             std::array<int64_t, N> a;
             for (int i = 0; i < N; i++) a[i] = Pdist(engine);
