@@ -14,8 +14,8 @@ int main()
     using bkP = TFHEpp::lvl01param;
 
     TFHEpp::SecretKey sk;
-    TFHEpp::BootstrappingKeyFFT<bkP> bkfft;
-    TFHEpp::bkfftgen<TFHEpp::lvl01param>(bkfft, sk);
+    auto bkfft = std::make_unique<TFHEpp::BootstrappingKeyFFT<bkP>>();
+    TFHEpp::bkfftgen<TFHEpp::lvl01param>(*bkfft, sk);
     std::array<TFHEpp::TLWE<typename bkP::domainP>, num_test> tlwe;
     std::array<TFHEpp::TLWE<typename bkP::targetP>, num_test> bootedtlwe;
 
@@ -31,7 +31,7 @@ int main()
 
     for (int test = 0; test < num_test; test++) {
         TFHEpp::GateBootstrappingTLWE2TLWEFFT<bkP>(
-            bootedtlwe[test], tlwe[test], bkfft,
+            bootedtlwe[test], tlwe[test], *bkfft,
             TFHEpp::μpolygen<typename bkP::targetP, bkP::targetP::μ>());
     }
 
