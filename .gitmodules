@@ -13,12 +13,12 @@
 [submodule "thirdparties/BLAKE3"]
 	path = thirdparties/BLAKE3
 	url = https://github.com/BLAKE3-team/BLAKE3.git
-[submodule "thirdparties/AES"]
-	path = thirdparties/AES
-	url = https://github.com/virtualsecureplatform/AES.git
 [submodule "thirdparties/cereal"]
 	path = thirdparties/cereal
 	url = https://github.com/virtualsecureplatform/cereal.git
 [submodule "thirdparties/spqlios-arithmetic"]
 	path = thirdparties/spqlios-arithmetic
 	url = https://github.com/tfhe/spqlios-arithmetic.git
+[submodule "thirdparties/AES"]
+	path = thirdparties/AES
+	url = https://github.com/SergeyBel/AES.git
