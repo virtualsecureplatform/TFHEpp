@@ -90,7 +90,7 @@ jobs:
         wget https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.tar.gz
         tar -xzvf cmake*
         rm cmake*.tar.gz
-        mv cmake* /camke-binary
+        mv cmake* /cmake-binary
     - name: Checkout
       uses: actions/checkout@v4
       with:
