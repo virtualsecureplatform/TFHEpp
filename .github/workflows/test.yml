@@ -86,7 +86,7 @@ jobs:
       run: |
         apt-get update
         apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev ninja-build clang lld wget
+        apt-get install -y git build-essential g++ libomp-dev ninja-build clang lld wget libssl-dev
         wget https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2.tar.gz
         tar -xzvf cmake*.tar.gz
         rm cmake*.tar.gz
