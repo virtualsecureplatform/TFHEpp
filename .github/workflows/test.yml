@@ -86,21 +86,18 @@ jobs:
       run: |
         apt-get update
         apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev ninja-build clang lld wget libssl-dev
-        wget https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2.tar.gz
-        tar -xzvf cmake*.tar.gz
+        apt-get install -y git build-essential g++ libomp-dev ninja-build clang lld wget
+        wget https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.tar.gz
+        tar -xzvf cmake*
         rm cmake*.tar.gz
-        cd cmake*
-        ./bootstrap
-        make -j
-        make install
+        mv cmake* /camke-binary
     - name: Checkout
       uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: build
       run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_LINKER_TYPE=LLD -DENABLE_TEST=ON
+        /cmake-binary/bin/cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_LINKER_TYPE=LLD -DENABLE_TEST=ON
         cd build
         ninja
     - name: test
