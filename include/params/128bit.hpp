@@ -154,9 +154,9 @@ struct lvl3param {
 
 // Key Switching parameters
 struct lvl10param {
-    static constexpr std::uint32_t t = 4;  // number of addition in keyswitching
+    static constexpr std::uint32_t t = 7;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
-        3;  // how many bit should be encrypted in keyswitching key
+        2;  // how many bit should be encrypted in keyswitching key
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
     static const inline double α = lvl0param::α;  // key noise
