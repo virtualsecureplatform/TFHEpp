@@ -69,7 +69,7 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_CONCRETE=ON
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_CONCRETE=ON
         cd build
         ninja
     - name: test
@@ -86,7 +86,8 @@ jobs:
       run: |
         apt-get update
         apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build clang lld
+        apt-get install -y git build-essential g++ libomp-dev ninja-build clang lld
+        snap install cmake
     - name: Checkout
       uses: actions/checkout@v4
       with:
