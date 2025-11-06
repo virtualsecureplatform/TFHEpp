@@ -83,7 +83,7 @@ jobs:
       image: ubuntu:24.04
     steps:
     - name: Install libraries
-      run:
+      run: |
         apt-get update
         apt-get upgrade -y
         apt-get install -y git build-essential g++ libomp-dev ninja-build clang lld gnupg
