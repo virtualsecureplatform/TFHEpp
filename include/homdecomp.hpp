@@ -76,7 +76,7 @@ void HomDecomp(std::array<TLWE<typename high2midP::targetP>, numdigit> &cres,
             << (std::numeric_limits<typename mid2lowP::targetP::T>::digits -
                 basebit - 1);
         if (digit != numdigit)
-            GateBootstrappingTLWE2TLWEFFT<brP>(
+            GateBootstrappingTLWE2TLWE<brP>(
                 subtlwe, tlwelvlhalf, bkfft,
                 subtractpolygen<typename high2midP::targetP, basebit>());
     }

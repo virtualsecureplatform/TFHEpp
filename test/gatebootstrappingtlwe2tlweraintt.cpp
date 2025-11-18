@@ -31,7 +31,7 @@ int main()
     start = std::chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::GateBootstrappingTLWE2TLWERAINTT<bkP>(
+        TFHEpp::GateBootstrappingTLWE2TLWE<bkP>(
             bootedtlwe[test], tlwe[test], *bk,
             TFHEpp::μpolygen<typename bkP::targetP, bkP::targetP::μ>());
     }

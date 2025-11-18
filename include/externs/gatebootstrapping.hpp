@@ -3,7 +3,7 @@
 
 namespace TFHEpp{
 #define INST(P)                                     \
-    extern template void GateBootstrappingTLWE2TLWEFFT<P>( \
+    extern template void GateBootstrappingTLWE2TLWE<P>( \
         TLWE<typename P::targetP> & res,            \
         const TLWE<typename P::domainP> &tlwe,      \
         const BootstrappingKeyFFT<P> &bkfft,        \
