@@ -28,7 +28,7 @@ alignas(64) const TRGSWFFT<lvl2param> trgswonelvl2 =
     TRGSWFFTOneGen<lvl2param>();
 
 template <class bkP>
-void CMUXFFTwithPolynomialMulByXaiMinusOne(
+void CMUXwithPolynomialMulByXaiMinusOne(
     TRLWE<typename bkP::targetP> &acc,
     const BootstrappingKeyElementFFT<bkP> &cs, const int a)
 {
@@ -92,8 +92,8 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(
 }
 
 template <class P>
-void CMUXNTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWNTT<P> &cs,
-                                           const typename P::T a)
+void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWNTT<P> &cs,
+                                        const typename P::T a)
 {
     TRLWE<P> temp;
     for (int k = 0; k < P::k + 1; k++)
@@ -104,9 +104,9 @@ void CMUXNTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWNTT<P> &cs,
 }
 
 template <class P>
-void CMUXRAINTTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
-                                              const TRGSWRAINTT<P> &cs,
-                                              const typename P::T a)
+void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
+                                        const TRGSWRAINTT<P> &cs,
+                                        const typename P::T a)
 {
     TRLWE<P> temp;
     for (int k = 0; k < P::k + 1; k++)

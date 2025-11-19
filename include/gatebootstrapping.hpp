@@ -68,7 +68,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         if (moded[i] == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], moded[i]);
+        CMUXwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], moded[i]);
     }
 #endif
 }
@@ -122,7 +122,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                 << bitwidth;
         if (ā == 0) continue;
         // Do not use CMUXFFT to avoid unnecessary copy.
-        CMUXFFTwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], ā);
+        CMUXwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], ā);
     }
 #endif
 }
@@ -152,7 +152,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                 << bitwidth;
         if (ā == 0) continue;
         // Do not use CMUXNTT to avoid unnecessary copy.
-        CMUXNTTwithPolynomialMulByXaiMinusOne<typename P::targetP>(res,
+        CMUXwithPolynomialMulByXaiMinusOne<typename P::targetP>(res,
                                                                    bkntt[i], ā);
     }
 }
@@ -182,7 +182,7 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                 << bitwidth;
         if (ā == 0) continue;
         // Do not use CMUXNTT to avoid unnecessary copy.
-        CMUXRAINTTwithPolynomialMulByXaiMinusOne<typename P::targetP>(
+        CMUXwithPolynomialMulByXaiMinusOne<typename P::targetP>(
             res, bkraintt[i], ā);
     }
 }

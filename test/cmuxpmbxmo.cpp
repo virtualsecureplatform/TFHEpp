@@ -52,8 +52,8 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        CMUXFFTwithPolynomialMulByXaiMinusOne<lvl01param>(c1[test], cs[test],
-                                                          exponents[test]);
+        CMUXwithPolynomialMulByXaiMinusOne<lvl01param>(c1[test], cs[test],
+                                                       exponents[test]);
     }
     end = chrono::system_clock::now();
 
