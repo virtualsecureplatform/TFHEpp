@@ -33,11 +33,13 @@ if(NOT DEFINED AVX512_SUPPORTED)
     set(CMAKE_REQUIRED_FLAGS "-mavx512f")
     check_cxx_source_runs("
       #include <immintrin.h>
-      int main() {
-        __m512d a = _mm512_set1_pd(1.0);
-        __m512d b = _mm512_set1_pd(2.0);
-        __m512d c = _mm512_add_pd(a, b);
-        return 0;
+      int main(int argc, char**) {
+        double data[8] __attribute__((aligned(64)));
+        for (int i = 0; i < 8; i++) data[i] = static_cast<double>(argc + i);
+        __m512d a = _mm512_load_pd(data);
+        __m512d b = _mm512_add_pd(a, a);
+        _mm512_store_pd(data, b);
+        return static_cast<int>(data[0]) - 2 * argc;
       }
     " AVX512_SUPPORTED)
     unset(CMAKE_REQUIRED_FLAGS)
