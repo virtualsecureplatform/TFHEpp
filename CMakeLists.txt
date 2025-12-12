@@ -26,7 +26,35 @@ option(USE_KEY_BUNDLE "Use key bundle algorithm" OFF)
 option(USE_BLAKE3 "Use blake3 as CSPRNG" ON)
 option(USE_RANDEN "Use randen as CSPRNG" OFF)
 
-option(USE_AVX512 "Use AVX512 ver. SPQLIOS" OFF)
+# Detect AVX-512 support at configure time
+if(NOT DEFINED AVX512_SUPPORTED)
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+    include(CheckCXXSourceRuns)
+    set(CMAKE_REQUIRED_FLAGS "-mavx512f")
+    check_cxx_source_runs("
+      #include <immintrin.h>
+      int main() {
+        __m512d a = _mm512_set1_pd(1.0);
+        __m512d b = _mm512_set1_pd(2.0);
+        __m512d c = _mm512_add_pd(a, b);
+        return 0;
+      }
+    " AVX512_SUPPORTED)
+    unset(CMAKE_REQUIRED_FLAGS)
+  else()
+    set(AVX512_SUPPORTED FALSE)
+  endif()
+endif()
+
+if(AVX512_SUPPORTED)
+  message(STATUS "AVX-512 support detected, USE_AVX512 defaults to ON")
+  set(USE_AVX512_DEFAULT ON)
+else()
+  message(STATUS "AVX-512 support not detected, USE_AVX512 defaults to OFF")
+  set(USE_AVX512_DEFAULT OFF)
+endif()
+
+option(USE_AVX512 "Use AVX512 ver. SPQLIOS" ${USE_AVX512_DEFAULT})
 option(USE_CONCRETE_FFT "Use concrete-fft" OFF)
 option(USE_MKL "Use Intel MKL" OFF)
 option(USE_FFTW3 "Use FFTW3" OFF)
