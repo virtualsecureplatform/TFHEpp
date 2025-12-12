@@ -65,8 +65,8 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < width_bit; i++)
-        CircuitBootstrappingFFT<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
-                                                       encaddress[i], ek);
+        CircuitBootstrapping<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
+                                                    encaddress[i], ek);
     for (int i = width_bit; i < address_bit; i++)
         CircuitBootstrappingFFTInv<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
                                                           encaddress[i], ek);

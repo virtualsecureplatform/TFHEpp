@@ -98,9 +98,9 @@ void AnnihilateCircuitBootstrapping(TRGSW<typename brP::targetP> &trgsw,
 }
 
 template <class brP, class privksP>
-void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
-                             const TLWE<typename brP::domainP> &tlwe,
-                             const EvalKey &ek)
+void CircuitBootstrapping(TRGSWFFT<typename privksP::targetP> &trgswfft,
+                          const TLWE<typename brP::domainP> &tlwe,
+                          const EvalKey &ek)
 {
     alignas(64) TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<brP, privksP>(trgsw, tlwe, ek);
@@ -108,9 +108,9 @@ void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
 }
 
 template <class iksP, class bkP, class privksP>
-void CircuitBootstrappingFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
-                             const TLWE<typename iksP::domainP> &tlwe,
-                             const EvalKey &ek)
+void CircuitBootstrapping(TRGSWFFT<typename privksP::targetP> &trgswfft,
+                          const TLWE<typename iksP::domainP> &tlwe,
+                          const EvalKey &ek)
 {
     alignas(64) TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<iksP, bkP, privksP>(trgsw, tlwe, ek);
@@ -185,7 +185,7 @@ void CircuitBootstrappingFFTInv(
     // HomNot
     for (int i = 0; i <= brP::domainP::k * brP::domainP::n; i++)
         invtlwe[i] = -tlwe[i];
-    CircuitBootstrappingFFT<brP, privksP>(invtrgswfft, invtlwe, ek);
+    CircuitBootstrapping<brP, privksP>(invtrgswfft, invtlwe, ek);
 }
 
 template <class iksP, class bkP, class privksP>
@@ -197,7 +197,7 @@ void CircuitBootstrappingFFTInv(
     // HomNot
     for (int i = 0; i <= iksP::domainP::k * iksP::domainP::n; i++)
         invtlwe[i] = -tlwe[i];
-    CircuitBootstrappingFFT<iksP, bkP, privksP>(invtrgswfft, invtlwe, ek);
+    CircuitBootstrapping<iksP, bkP, privksP>(invtrgswfft, invtlwe, ek);
 }
 
 template <class brP, class privksP>

@@ -170,7 +170,7 @@ void BM_CB(benchmark::State& state)
             binary(engine), TFHEpp::lvl1param::α, sk->key.lvl1);
     TFHEpp::TRGSWFFT<TFHEpp::lvl1param> res;
     for (auto _ : state)
-        TFHEpp::CircuitBootstrappingFFT<iksP, bkP, privksP>(res, ca, ek);
+        TFHEpp::CircuitBootstrapping<iksP, bkP, privksP>(res, ca, ek);
 }
 
 BENCHMARK(BM_TRGSWenc)

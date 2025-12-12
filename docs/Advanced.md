@@ -21,8 +21,8 @@ circuits.
 
 Entry points (see `include/circuitbootstrapping.hpp`):
 
-- `CircuitBootstrapping<brP, privksP>(trgsw, tlwe, ek)`
-- `CircuitBootstrappingFFT<brP, privksP>(trgswfft, tlwe, ek)`
+- `CircuitBootstrapping<brP, privksP>(trgsw, tlwe, ek)` (outputs TRGSW)
+- `CircuitBootstrapping<brP, privksP>(trgswfft, tlwe, ek)` (outputs TRGSWFFT)
 - `CircuitBootstrappingSub<iksP, bkP, privksP>(...)` for subset keys.
 
 You must generate:

@@ -14,9 +14,9 @@ TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
-#define INST(iksP, bkP, privksP)                               \
-    template void CircuitBootstrappingFFT<iksP, bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & trgswfft,        \
+#define INST(iksP, bkP, privksP)                            \
+    template void CircuitBootstrapping<iksP, bkP, privksP>( \
+        TRGSWFFT<typename privksP::targetP> & trgswfft,     \
         const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
