@@ -118,7 +118,7 @@ void CircuitBootstrapping(TRGSWFFT<typename privksP::targetP> &trgswfft,
 }
 
 template <class brP, class ahP>
-void AnnihilateCircuitBootstrappingFFT(
+void AnnihilateCircuitBootstrapping(
     TRGSWFFT<typename brP::targetP> &trgswfft,
     const TLWE<typename brP::domainP> &tlwe, const EvalKey &ek)
 {
@@ -128,7 +128,7 @@ void AnnihilateCircuitBootstrappingFFT(
 }
 
 template <class iksP, class brP, class ahP>
-void AnnihilateCircuitBootstrappingFFT(
+void AnnihilateCircuitBootstrapping(
     TRGSWFFT<typename brP::targetP> &trgswfft,
     const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 {
