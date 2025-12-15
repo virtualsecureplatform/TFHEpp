@@ -68,8 +68,8 @@ int main()
         CircuitBootstrapping<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
                                                     encaddress[i], ek);
     for (int i = width_bit; i < address_bit; i++)
-        CircuitBootstrappingFFTInv<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
-                                                          encaddress[i], ek);
+        CircuitBootstrappingInv<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
+                                                       encaddress[i], ek);
     TRLWE<typename ksP::domainP> encumemory;
 
     UROMUX<typename ksP::domainP, address_bit, width_bit>(

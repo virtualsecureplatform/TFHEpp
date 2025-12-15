@@ -37,24 +37,24 @@ TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE_CIRCUIT_BOOTSTRAPPING(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING_SUBIKS(INST)
 #undef INST
 
-#define INST(iksP, bkP, privksP)                               \
-    extern template void CircuitBootstrappingSubFFT<iksP, bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & trgswfft,        \
+#define INST(iksP, bkP, privksP)                                        \
+    extern template void CircuitBootstrappingSub<iksP, bkP, privksP>(   \
+        TRGSWFFT<typename privksP::targetP> & trgswfft,                 \
         const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING_SUBIKS(INST)
 #undef INST
 
-#define INST(iksP, bkP, privksP)                                  \
-    extern template void CircuitBootstrappingFFTInv<iksP, bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & invtrgswfft,        \
+#define INST(iksP, bkP, privksP)                                        \
+    extern template void CircuitBootstrappingInv<iksP, bkP, privksP>(   \
+        TRGSWFFT<typename privksP::targetP> & invtrgswfft,              \
         const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST
 
-#define INST(iksP, bkP, privksP)                                      \
-    extern template void CircuitBootstrappingFFTwithInv<iksP, bkP, privksP>( \
-        TRGSWFFT<typename privksP::targetP> & trgswfft,               \
-        TRGSWFFT<typename privksP::targetP> & invtrgswfft,            \
+#define INST(iksP, bkP, privksP)                                            \
+    extern template void CircuitBootstrappingWithInv<iksP, bkP, privksP>(   \
+        TRGSWFFT<typename privksP::targetP> & trgswfft,                     \
+        TRGSWFFT<typename privksP::targetP> & invtrgswfft,                  \
         const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
 TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(INST)
 #undef INST

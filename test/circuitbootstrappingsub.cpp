@@ -55,8 +55,8 @@ int main()
 #endif
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::CircuitBootstrappingSubFFT<iksP, bkP, privksP>(bootedTGSW[test],
-                                                               cones[test], ek);
+        TFHEpp::CircuitBootstrappingSub<iksP, bkP, privksP>(bootedTGSW[test],
+                                                            cones[test], ek);
     }
     end = std::chrono::system_clock::now();
 #ifdef USE_PERF

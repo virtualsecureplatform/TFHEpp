@@ -202,10 +202,8 @@ int main()
             start = chrono::system_clock::now();
             // Addres CB
             for (int i = 0; i < address_bit - 1; i++) {
-                CircuitBootstrappingFFTwithInv<lvl10param, lvl02param,
-                                               lvl21param>((*bootedTGSW)[1][i],
-                                                           (*bootedTGSW)[0][i],
-                                                           encaddress[i], ek);
+                CircuitBootstrappingWithInv<lvl10param, lvl02param, lvl21param>(
+                    (*bootedTGSW)[1][i], (*bootedTGSW)[0][i], encaddress[i], ek);
             }
 
             // Read

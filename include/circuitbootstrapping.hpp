@@ -165,9 +165,9 @@ void CircuitBootstrappingSub(TRGSW<typename privksP::targetP> &trgsw,
 }
 
 template <class iksP, class bkP, class privksP>
-void CircuitBootstrappingSubFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
-                                const TLWE<typename iksP::domainP> &tlwe,
-                                const EvalKey &ek)
+void CircuitBootstrappingSub(TRGSWFFT<typename privksP::targetP> &trgswfft,
+                             const TLWE<typename iksP::domainP> &tlwe,
+                             const EvalKey &ek)
 {
     alignas(64) TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrappingSub<iksP, bkP, privksP>(trgsw, tlwe, ek);
@@ -177,9 +177,9 @@ void CircuitBootstrappingSubFFT(TRGSWFFT<typename privksP::targetP> &trgswfft,
 }
 
 template <class brP, class privksP>
-void CircuitBootstrappingFFTInv(
-    TRGSWFFT<typename privksP::targetP> &invtrgswfft,
-    const TLWE<typename brP::domainP> &tlwe, const EvalKey &ek)
+void CircuitBootstrappingInv(TRGSWFFT<typename privksP::targetP> &invtrgswfft,
+                             const TLWE<typename brP::domainP> &tlwe,
+                             const EvalKey &ek)
 {
     alignas(64) TLWE<typename brP::domainP> invtlwe;
     // HomNot
@@ -189,9 +189,9 @@ void CircuitBootstrappingFFTInv(
 }
 
 template <class iksP, class bkP, class privksP>
-void CircuitBootstrappingFFTInv(
-    TRGSWFFT<typename privksP::targetP> &invtrgswfft,
-    const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
+void CircuitBootstrappingInv(TRGSWFFT<typename privksP::targetP> &invtrgswfft,
+                             const TLWE<typename iksP::domainP> &tlwe,
+                             const EvalKey &ek)
 {
     alignas(64) TLWE<typename iksP::domainP> invtlwe;
     // HomNot
@@ -201,10 +201,10 @@ void CircuitBootstrappingFFTInv(
 }
 
 template <class brP, class privksP>
-void CircuitBootstrappingFFTwithInv(
-    TRGSWFFT<typename privksP::targetP> &trgswfft,
-    TRGSWFFT<typename privksP::targetP> &invtrgswfft,
-    const TLWE<typename brP::domainP> &tlwe, const EvalKey &ek)
+void CircuitBootstrappingWithInv(TRGSWFFT<typename privksP::targetP> &trgswfft,
+                                 TRGSWFFT<typename privksP::targetP> &invtrgswfft,
+                                 const TLWE<typename brP::domainP> &tlwe,
+                                 const EvalKey &ek)
 {
     constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
         hgen<typename privksP::targetP>();
@@ -227,10 +227,10 @@ void CircuitBootstrappingFFTwithInv(
 }
 
 template <class iksP, class bkP, class privksP>
-void CircuitBootstrappingFFTwithInv(
-    TRGSWFFT<typename privksP::targetP> &trgswfft,
-    TRGSWFFT<typename privksP::targetP> &invtrgswfft,
-    const TLWE<typename iksP::domainP> &tlwe, const EvalKey &ek)
+void CircuitBootstrappingWithInv(TRGSWFFT<typename privksP::targetP> &trgswfft,
+                                 TRGSWFFT<typename privksP::targetP> &invtrgswfft,
+                                 const TLWE<typename iksP::domainP> &tlwe,
+                                 const EvalKey &ek)
 {
     alignas(64) TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<iksP, bkP, privksP>(trgsw, tlwe, ek);
