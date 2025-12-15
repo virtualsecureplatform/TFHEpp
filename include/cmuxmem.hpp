@@ -90,7 +90,7 @@ void LROMUX(vector<TLWE<P>> &res,
     TRLWE<P> temp, acc;
     for (int i = 0; i < P::k + 1; i++)
         PolynomialMulByXaiMinusOne<P>(temp[i], data[i], 2 * P::n - (P::n >> 1));
-    trgswfftExternalProduct<P>(temp, temp, address[width_bit - 1]);
+    ExternalProduct<P>(temp, temp, address[width_bit - 1]);
     for (int i = 0; i < (P::k + 1) * P::n; i++)
         // initialize acc
         acc[0][i] = temp[0][i] + data[0][i];
@@ -99,7 +99,7 @@ void LROMUX(vector<TLWE<P>> &res,
         for (int i = 0; i < P::k + 1; i++)
             PolynomialMulByXaiMinusOne<P>(temp[i], acc[i],
                                           2 * P::n - (P::n >> bit));
-        trgswfftExternalProduct<P>(temp, temp, address[width_bit - bit]);
+        ExternalProduct<P>(temp, temp, address[width_bit - bit]);
         for (int i = 0; i < (P::k + 1) * P::n; i++) acc[0][i] += temp[0][i];
     }
 
@@ -119,7 +119,7 @@ void LROMUX(std::span<TLWE<P>, num_tlwe> res,
     TRLWE<P> temp, acc;
     for (int i = 0; i < P::k + 1; i++)
         PolynomialMulByXaiMinusOne<P>(temp[i], data[i], 2 * P::n - (P::n >> 1));
-    trgswfftExternalProduct<P>(temp, temp, address[width_bit - 1]);
+    ExternalProduct<P>(temp, temp, address[width_bit - 1]);
     for (int i = 0; i < (P::k + 1) * P::n; i++)
         // initialize acc
         acc[0][i] = temp[0][i] + data[0][i];
@@ -128,7 +128,7 @@ void LROMUX(std::span<TLWE<P>, num_tlwe> res,
         for (int i = 0; i < P::k + 1; i++)
             PolynomialMulByXaiMinusOne<P>(temp[i], acc[i],
                                           2 * P::n - (P::n >> bit));
-        trgswfftExternalProduct<P>(temp, temp, address[width_bit - bit]);
+        ExternalProduct<P>(temp, temp, address[width_bit - bit]);
         for (int i = 0; i < (P::k + 1) * P::n; i++) acc[0][i] += temp[0][i];
     }
 

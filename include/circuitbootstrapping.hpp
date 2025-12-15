@@ -70,7 +70,7 @@ void AnnihilateCircuitBootstrapping(TRGSW<typename brP::targetP> &trgsw,
             ek.getahk<ahP>());
         // Scheme Switching
         for (int k = 0; k < brP::targetP::k; k++)
-            trgswfftExternalProduct<ahP>(
+            ExternalProduct<ahP>(
                 trgsw[i + k * brP::targetP::l],
                 trgsw[i + brP::targetP::k * brP::targetP::l],
                 ek.getcbsk<ahP>()[k]);

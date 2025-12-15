@@ -158,8 +158,8 @@ void NonceDecompositionRAINTT(DecomposedNoncePolynomialRAINTT<P> &decpolyntt,
 }
 
 template <class P>
-void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
-                             const TRGSWFFT<P> &trgswfft)
+void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
+                     const TRGSWFFT<P> &trgswfft)
 {
     alignas(64) PolynomialInFD<P> decpolyfft;
     alignas(64) TRLWEInFD<P> restrlwefft;
@@ -196,8 +196,8 @@ void trgswfftExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 }
 
 template <class P>
-void halftrgswfftExternalProduct(TRLWE<P> &res, const Polynomial<P> &poly,
-                                 const HalfTRGSWFFT<P> &halftrgswfft)
+void ExternalProduct(TRLWE<P> &res, const Polynomial<P> &poly,
+                     const HalfTRGSWFFT<P> &halftrgswfft)
 {
     alignas(64) DecomposedPolynomial<P> decpoly;
     Decomposition<P>(decpoly, poly);
@@ -217,8 +217,8 @@ void halftrgswfftExternalProduct(TRLWE<P> &res, const Polynomial<P> &poly,
 }
 
 template <class P>
-void trgswrainttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
-                                const TRGSWRAINTT<P> &trgswntt)
+void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
+                     const TRGSWRAINTT<P> &trgswntt)
 {
     TRLWERAINTT<P> restrlwentt;
     {
@@ -266,8 +266,8 @@ void trgswrainttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 }
 
 template <class P>
-void trgswnttExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
-                             const TRGSWNTT<P> &trgswntt)
+void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
+                     const TRGSWNTT<P> &trgswntt)
 {
     PolynomialNTT<P> decpolyntt;
     TRLWENTT<P> restrlwentt;

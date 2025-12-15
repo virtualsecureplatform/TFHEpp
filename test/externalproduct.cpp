@@ -32,7 +32,7 @@ int main()
 
         TRGSWFFT<lvl1param> trgswfft =
             trgswfftSymEncrypt<lvl1param>(plainpoly, key.get<lvl1param>());
-        trgswfftExternalProduct<lvl1param>(c, c, trgswfft);
+        ExternalProduct<lvl1param>(c, c, trgswfft);
         const array<bool, lvl1param::n> p2 =
             trlweSymDecrypt<lvl1param>(c, key.get<lvl1param>());
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == p2[i]);
@@ -56,7 +56,7 @@ int main()
 
         TRGSWFFT<lvl2param> trgswfft =
             trgswfftSymEncrypt<lvl2param>(plainpoly, key.get<lvl2param>());
-        trgswfftExternalProduct<lvl2param>(c, c, trgswfft);
+        ExternalProduct<lvl2param>(c, c, trgswfft);
         const array<bool, lvl2param::n> p2 =
             trlweSymDecrypt<lvl2param>(c, key.get<lvl2param>());
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == p2[i]);
@@ -82,7 +82,7 @@ int main()
 
         TRGSWFFT<lvl1param> trgswfft =
             trgswfftSymEncrypt<lvl1param>(plainpoly, key.get<lvl1param>());
-        trgswfftExternalProduct<lvl1param>(c, c, trgswfft);
+        ExternalProduct<lvl1param>(c, c, trgswfft);
         const array<bool, lvl1param::n> p2 =
             trlweSymDecrypt<lvl1param>(c, key.get<lvl1param>());
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == !p2[i]);
@@ -106,7 +106,7 @@ int main()
 
         TRGSWFFT<lvl2param> trgswfft =
             trgswfftSymEncrypt<lvl2param>(plainpoly, key.get<lvl2param>());
-        trgswfftExternalProduct<lvl2param>(c, c, trgswfft);
+        ExternalProduct<lvl2param>(c, c, trgswfft);
         const array<bool, lvl2param::n> p2 =
             trlweSymDecrypt<lvl2param>(c, key.get<lvl2param>());
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == !p2[i]);

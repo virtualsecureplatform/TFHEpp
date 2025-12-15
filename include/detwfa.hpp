@@ -9,7 +9,7 @@ void CMUXFFT(TRLWE<P> &res, const TRGSWFFT<P> &cs, const TRLWE<P> &c1,
 {
     for (int k = 0; k < P::k + 1; k++)
         for (int i = 0; i < P::n; i++) res[k][i] = c1[k][i] - c0[k][i];
-    trgswfftExternalProduct<P>(res, res, cs);
+    ExternalProduct<P>(res, res, cs);
     for (int k = 0; k < P::k + 1; k++)
         for (int i = 0; i < P::n; i++) res[k][i] += c0[k][i];
 }
@@ -37,7 +37,7 @@ void CMUXwithPolynomialMulByXaiMinusOne(
         for (int k = 0; k < bkP::targetP::k + 1; k++)
             PolynomialMulByXaiMinusOne<typename bkP::targetP>(temp[k], acc[k],
                                                               a);
-        trgswfftExternalProduct<typename bkP::targetP>(temp, temp, cs[0]);
+        ExternalProduct<typename bkP::targetP>(temp, temp, cs[0]);
         for (int k = 0; k < bkP::targetP::k + 1; k++)
             for (int i = 0; i < bkP::targetP::n; i++) acc[k][i] += temp[k][i];
     }
@@ -67,7 +67,7 @@ void CMUXwithPolynomialMulByXaiMinusOne(
                 count++;
             }
         }
-        trgswfftExternalProduct<typename bkP::targetP>(acc, acc, trgsw);
+        ExternalProduct<typename bkP::targetP>(acc, acc, trgsw);
 #else
         alignas(32) TRLWE<typename bkP::targetP> temp;
         int count = 0;
@@ -79,7 +79,7 @@ void CMUXwithPolynomialMulByXaiMinusOne(
                 for (int k = 0; k < bkP::targetP::k + 1; k++)
                     PolynomialMulByXaiMinusOne<typename bkP::targetP>(
                         temp[k], acc[k], index);
-                trgswfftExternalProduct<typename bkP::targetP>(temp, temp,
+                ExternalProduct<typename bkP::targetP>(temp, temp,
                                                                cs[count]);
                 for (int k = 0; k < bkP::targetP::k + 1; k++)
                     for (int i = 0; i < bkP::targetP::n; i++)
@@ -98,7 +98,7 @@ void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWNTT<P> &cs,
     TRLWE<P> temp;
     for (int k = 0; k < P::k + 1; k++)
         PolynomialMulByXaiMinusOne<P>(temp[k], acc[k], a);
-    trgswnttExternalProduct<P>(temp, temp, cs);
+    ExternalProduct<P>(temp, temp, cs);
     for (int k = 0; k < P::k + 1; k++)
         for (int i = 0; i < P::n; i++) acc[k][i] += temp[k][i];
 }
@@ -111,7 +111,7 @@ void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
     TRLWE<P> temp;
     for (int k = 0; k < P::k + 1; k++)
         PolynomialMulByXaiMinusOne<P>(temp[k], acc[k], a);
-    trgswrainttExternalProduct<P>(temp, temp, cs);
+    ExternalProduct<P>(temp, temp, cs);
     for (int k = 0; k < P::k + 1; k++)
         for (int i = 0; i < P::n; i++) acc[k][i] += temp[k][i];
 }

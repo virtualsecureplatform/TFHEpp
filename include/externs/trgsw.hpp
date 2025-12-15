@@ -14,14 +14,14 @@ TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                               \
-    extern template void trgswfftExternalProduct<P>( \
+#define INST(P)                          \
+    extern template void ExternalProduct<P>( \
         TRLWE<P> & res, const TRLWE<P> &trlwe, const TRGSWFFT<P> &trgswfft)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                               \
-    extern template void trgswnttExternalProduct<P>( \
+#define INST(P)                          \
+    extern template void ExternalProduct<P>( \
         TRLWE<P> & res, const TRLWE<P> &trlwe, const TRGSWNTT<P> &trgswntt)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST

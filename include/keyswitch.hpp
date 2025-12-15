@@ -302,7 +302,7 @@ void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
         Polynomial<P> temppoly;
         TRLWE<P> temptrlwe;
         Automorphism<P>(temppoly, trlwe[i], d);
-        halftrgswfftExternalProduct<P>(temptrlwe, temppoly, autokey[i]);
+        ExternalProduct<P>(temptrlwe, temppoly, autokey[i]);
         TRLWESub<P>(res, res, temptrlwe);
     }
 }

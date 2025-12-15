@@ -149,7 +149,7 @@ void BM_ExternalProduct(benchmark::State& state)
             plainpoly, TFHEpp::lvl1param::α, sk->key.lvl1);
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state)
-        TFHEpp::trgswfftExternalProduct<TFHEpp::lvl1param>(res, c0, cs);
+        TFHEpp::ExternalProduct<TFHEpp::lvl1param>(res, c0, cs);
 }
 
 void BM_CB(benchmark::State& state)

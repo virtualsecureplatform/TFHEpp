@@ -31,7 +31,7 @@ int main()
         TFHEpp::TRGSWRAINTT<TFHEpp::lvl1param> trgswntt =
             TFHEpp::trgswrainttSymEncrypt<TFHEpp::lvl1param>(
                 plainpoly, key.get<TFHEpp::lvl1param>());
-        TFHEpp::trgswrainttExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
+        TFHEpp::ExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
         // if constexpr(TFHEpp::hasq<TFHEpp::lvl1param>) for(int
         // i=0;i<TFHEpp::lvl1param::n;i++) assert(c[0][i]<TFHEpp::lvl1param::q);
         std::array<bool, TFHEpp::lvl1param::n> p2 =
@@ -66,7 +66,7 @@ int main()
         TFHEpp::TRGSWRAINTT<TFHEpp::lvl1param> trgswntt =
             TFHEpp::trgswrainttSymEncrypt<TFHEpp::lvl1param>(
                 plainpoly, key.get<TFHEpp::lvl1param>());
-        TFHEpp::trgswrainttExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
+        TFHEpp::ExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
         std::array<bool, TFHEpp::lvl1param::n> p2 =
             TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(
                 c, key.get<TFHEpp::lvl1param>());
