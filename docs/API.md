@@ -65,23 +65,42 @@ Low‑level accessors: `ek.getbkfft<P>()`, `ek.getiksk<P>()`, etc.
 Batch encrypt/decrypt bits at a given level:
 
 ```cpp
-auto c = bootsSymEncrypt<lvl1param>(plain_bits, sk);
+std::vector<TLWE<lvl1param>> c;
+bootsSymEncrypt<lvl1param>(c, plain_bits, sk);
 auto p = bootsSymDecrypt<lvl1param>(c, sk);
 ```
 
-Single‑ciphertext primitives:
+Single‑ciphertext primitives (output parameter as first argument):
 
-- `tlweSymEncrypt<P>(torus_message, sk)`
-- `tlweSymDecrypt<P>(ciphertext, sk)`
-- `tlweSymIntEncrypt<P, plain_modulus>(integer, sk)`
-- `tlweSymIntDecrypt<P, plain_modulus>(ciphertext, sk)`
+```cpp
+TLWE<P> c;
+tlweSymEncrypt<P>(c, torus_message, key);
+tlweSymIntEncrypt<P, plain_modulus>(c, integer, key);
+```
+
+Decryption functions return values:
+
+- `tlweSymDecrypt<P>(ciphertext, key)` — returns `bool`
+- `tlweSymIntDecrypt<P, plain_modulus>(ciphertext, key)` — returns integer
 
 ### TRLWE / TRGSW
 
-Ring encryption lives in:
+Ring encryption lives in `include/trlwe.hpp` and `include/trgsw.hpp`.
+All encryption functions use output parameters:
 
-- `include/trlwe.hpp` — `trlweSymEncrypt`, `trlweSymIntEncrypt`, decryptors.
-- `include/trgsw.hpp` — `trgswSymEncrypt` and helpers.
+```cpp
+TRLWE<P> c;
+trlweSymEncrypt<P>(c, polynomial, key);
+trlweSymIntEncrypt<P>(c, polynomial, key);
+
+TRGSWFFT<P> trgsw;
+trgswSymEncrypt<P>(trgsw, polynomial, key);
+```
+
+Decryption functions return values:
+
+- `trlweSymDecrypt<P>(ciphertext, key)` — returns `std::array<bool, P::n>`
+- `trlweSymIntDecrypt<P>(ciphertext, key)` — returns `Polynomial<P>`
 
 These are used for LUT bootstrapping and circuit bootstrapping.
 

@@ -44,8 +44,9 @@ int main() {
     std::vector<uint8_t> pa = {1};
     std::vector<uint8_t> pb = {0};
 
-    auto ca = bootsSymEncrypt(pa, sk);  // TLWE<lvl1param>
-    auto cb = bootsSymEncrypt(pb, sk);
+    std::vector<TLWE<lvl1param>> ca, cb;
+    bootsSymEncrypt(ca, pa, sk);
+    bootsSymEncrypt(cb, pb, sk);
 
     TLWE<lvl1param> cres;
     HomNAND(cres, ca[0], cb[0], ek);

@@ -37,8 +37,8 @@ int main()
     // encrypt the input
     std::vector<uint8_t> p(16);
     for (int i = 0; i < 16; i++) p[i] = (client_input >> i) & 1;
-    std::vector<TFHEpp::TLWE<TFHEpp::lvl1param>> ciphertext =
-        TFHEpp::bootsSymEncrypt(p, *sk);
+    std::vector<TFHEpp::TLWE<TFHEpp::lvl1param>> ciphertext;
+    TFHEpp::bootsSymEncrypt(ciphertext, p, *sk);
 
     // export the ciphertexts to a file
     {
