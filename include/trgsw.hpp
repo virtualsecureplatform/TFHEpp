@@ -118,8 +118,8 @@ inline void NonceDecomposition(DecomposedNoncePolynomial<P> &decpoly,
 }
 
 template <class P>
-void DecompositionNTT(DecomposedPolynomialNTT<P> &decpolyntt,
-                      const Polynomial<P> &poly)
+void Decomposition(DecomposedPolynomialNTT<P> &decpolyntt,
+                   const Polynomial<P> &poly)
 {
     DecomposedPolynomial<P> decpoly;
     Decomposition<P>(decpoly, poly);
@@ -127,8 +127,8 @@ void DecompositionNTT(DecomposedPolynomialNTT<P> &decpolyntt,
 }
 
 template <class P>
-void NonceDecompositionNTT(DecomposedNoncePolynomialNTT<P> &decpolyntt,
-                           const Polynomial<P> &poly)
+void NonceDecomposition(DecomposedNoncePolynomialNTT<P> &decpolyntt,
+                        const Polynomial<P> &poly)
 {
     DecomposedNoncePolynomial<P> decpoly;
     NonceDecomposition<P>(decpoly, poly);
@@ -136,8 +136,8 @@ void NonceDecompositionNTT(DecomposedNoncePolynomialNTT<P> &decpolyntt,
 }
 
 template <class P>
-void DecompositionRAINTT(DecomposedPolynomialRAINTT<P> &decpolyntt,
-                         const Polynomial<P> &poly)
+void Decomposition(DecomposedPolynomialRAINTT<P> &decpolyntt,
+                   const Polynomial<P> &poly)
 {
     DecomposedPolynomial<P> decpoly;
     Decomposition<P>(decpoly, poly);
@@ -147,8 +147,8 @@ void DecompositionRAINTT(DecomposedPolynomialRAINTT<P> &decpolyntt,
 }
 
 template <class P>
-void NonceDecompositionRAINTT(DecomposedNoncePolynomialRAINTT<P> &decpolyntt,
-                              const Polynomial<P> &poly)
+void NonceDecomposition(DecomposedNoncePolynomialRAINTT<P> &decpolyntt,
+                        const Polynomial<P> &poly)
 {
     DecomposedNoncePolynomial<P> decpoly;
     NonceDecomposition<P>(decpoly, poly);
@@ -223,7 +223,7 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
     TRLWERAINTT<P> restrlwentt;
     {
         DecomposedNoncePolynomialRAINTT<P> decpolyntt;
-        NonceDecompositionRAINTT<P>(decpolyntt, trlwe[0]);
+        NonceDecomposition<P>(decpolyntt, trlwe[0]);
         for (int m = 0; m < P::k + 1; m++)
             for (int i = 0; i < P::n; i++)
                 restrlwentt[m][i] =
@@ -236,7 +236,7 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                         raintt::MulSREDC(decpolyntt[i][j], trgswntt[i][m][j]));
         }
         for (int k = 1; k < P::k; k++) {
-            NonceDecompositionRAINTT<P>(decpolyntt, trlwe[k]);
+            NonceDecomposition<P>(decpolyntt, trlwe[k]);
             for (int i = 0; i < P::lₐ; i++) {
                 for (int m = 0; m < P::k + 1; m++)
                     for (int j = 0; j < P::n; j++)
@@ -248,7 +248,7 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
         }
     }
     DecomposedPolynomialRAINTT<P> decpolyntt;
-    DecompositionRAINTT<P>(decpolyntt, trlwe[P::k]);
+    Decomposition<P>(decpolyntt, trlwe[P::k]);
     for (int i = 0; i < P::l; i++) {
         for (int m = 0; m < P::k + 1; m++)
             for (int j = 0; j < P::n; j++)
