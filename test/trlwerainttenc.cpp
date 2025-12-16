@@ -23,9 +23,9 @@ int main()
                 pmu = {};
             for (int i = 0; i < TFHEpp::lvl1param::n; i++)
                 pmu[i] = p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
-            TFHEpp::TRLWERAINTT<TFHEpp::lvl1param> craintt =
-                TFHEpp::trlwerainttSymEncrypt<TFHEpp::lvl1param>(
-                    pmu, 3, key.get<TFHEpp::lvl1param>());
+            TFHEpp::TRLWERAINTT<TFHEpp::lvl1param> craintt;
+            TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(
+                craintt, pmu, 3, key.get<TFHEpp::lvl1param>());
             TFHEpp::TRLWE<TFHEpp::lvl1param> c;
             for (int k = 0; k <= TFHEpp::lvl1param::k; k++) {
                 raintt::TwistNTT<typename TFHEpp::lvl1param::T,

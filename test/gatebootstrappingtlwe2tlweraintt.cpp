@@ -23,8 +23,8 @@ int main()
     std::array<bool, num_test> p;
     for (int i = 0; i < num_test; i++) p[i] = binary(engine) > 0;
     for (int i = 0; i < num_test; i++)
-        tlwe[i] = TFHEpp::tlweSymEncrypt<typename bkP::domainP>(
-            p[i] ? bkP::domainP::μ : -bkP::domainP::μ, bkP::domainP::α,
+        TFHEpp::tlweSymEncrypt<typename bkP::domainP>(
+            tlwe[i], p[i] ? bkP::domainP::μ : -bkP::domainP::μ, bkP::domainP::α,
             sk.key.get<typename bkP::domainP>());
 
     std::chrono::system_clock::time_point start, end;

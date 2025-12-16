@@ -64,15 +64,15 @@ int main()
     TLWE<typename ksP::domainP> c1;
     TRLWE<typename CBiksP::domainP> writed;
 
-    encaddress = bootsSymEncrypt(address, *sk);
+    bootsSymEncrypt(encaddress, address, *sk);
     for (int i = 0; i < memsize; i++)
-        (*encmemory)[i] = trlweSymEncrypt<typename ksP::domainP>(
-            pmu[i], (*sk).key.get<typename ksP::domainP>());
-    cs = tlweSymEncrypt<typename ksP::domainP>(
-        wrflag ? ksP::domainP::μ : -ksP::domainP::μ,
+        trlweSymEncrypt<typename ksP::domainP>(
+            (*encmemory)[i], pmu[i], (*sk).key.get<typename ksP::domainP>());
+    tlweSymEncrypt<typename ksP::domainP>(
+        cs, wrflag ? ksP::domainP::μ : -ksP::domainP::μ,
         (*sk).key.get<typename ksP::domainP>());
-    c1 = tlweSymEncrypt<typename ksP::domainP>(
-        writep ? ksP::domainP::μ : -ksP::domainP::μ,
+    tlweSymEncrypt<typename ksP::domainP>(
+        c1, writep ? ksP::domainP::μ : -ksP::domainP::μ,
         (*sk).key.get<typename ksP::domainP>());
 
     chrono::system_clock::time_point start, end;

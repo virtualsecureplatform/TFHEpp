@@ -20,12 +20,10 @@ int main()
         num_test);
 
     for (int i = 0; i < num_test; i++) {
-        cin[i][0] =
-            TFHEpp::tlweSymIntEncrypt<typename iksP::domainP, plain_modulus>(
-                i & 0xF, *sk);
-        cin[i][1] =
-            TFHEpp::tlweSymIntEncrypt<typename iksP::domainP, plain_modulus>(
-                (i >> 4), *sk);
+        TFHEpp::tlweSymIntEncrypt<typename iksP::domainP, plain_modulus>(
+            cin[i][0], i & 0xF, *sk);
+        TFHEpp::tlweSymIntEncrypt<typename iksP::domainP, plain_modulus>(
+            cin[i][1], (i >> 4), *sk);
     }
     std::vector<std::array<TFHEpp::TLWE<typename brP::targetP>, 2>> cres(
         num_test);

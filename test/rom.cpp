@@ -57,10 +57,10 @@ int main()
     array<TRLWE<typename ksP::domainP>, num_trlwe> encmemory;
     vector<TLWE<typename ksP::domainP>> encres(word);
 
-    encaddress = bootsSymEncrypt(address, *sk);
+    bootsSymEncrypt(encaddress, address, *sk);
     for (int i = 0; i < num_trlwe; i++)
-        encmemory[i] = trlweSymEncrypt<typename ksP::domainP>(
-            pmu[i], (*sk).key.get<typename ksP::domainP>());
+        trlweSymEncrypt<typename ksP::domainP>(
+            encmemory[i], pmu[i], (*sk).key.get<typename ksP::domainP>());
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();

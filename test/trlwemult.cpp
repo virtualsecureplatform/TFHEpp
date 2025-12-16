@@ -41,10 +41,10 @@ int main()
         for (typename P::T &i : p0) i = message(engine);
         for (typename P::T &i : p1) i = message(engine);
 
-        TFHEpp::TRLWE<P> c0 =
-            TFHEpp::trlweSymIntEncrypt<P>(p0, sk->key.get<P>());
-        TFHEpp::TRLWE<P> c1 =
-            TFHEpp::trlweSymIntEncrypt<P>(p1, sk->key.get<P>());
+        TFHEpp::TRLWE<P> c0;
+        TFHEpp::trlweSymIntEncrypt<P>(c0, p0, sk->key.get<P>());
+        TFHEpp::TRLWE<P> c1;
+        TFHEpp::trlweSymIntEncrypt<P>(c1, p1, sk->key.get<P>());
         TFHEpp::TRLWE<P> cres;
         for (int i = 0; i < 2 * P::n; i++) cres[0][i] = c0[0][i] + c1[0][i];
         pres = TFHEpp::trlweSymIntDecrypt<P>(cres, sk->key.get<P>());
@@ -64,10 +64,10 @@ int main()
         for (typename P::T &i : p0) i = message(engine);
         for (typename P::T &i : p1) i = message(engine);
 
-        alignas(64) TFHEpp::TRLWE<P> c0 =
-            TFHEpp::trlweSymIntEncrypt<P>(p0, sk->key.get<P>());
-        alignas(64) TFHEpp::TRLWE<P> c1 =
-            TFHEpp::trlweSymIntEncrypt<P>(p1, sk->key.get<P>());
+        alignas(64) TFHEpp::TRLWE<P> c0;
+        TFHEpp::trlweSymIntEncrypt<P>(c0, p0, sk->key.get<P>());
+        alignas(64) TFHEpp::TRLWE<P> c1;
+        TFHEpp::trlweSymIntEncrypt<P>(c1, p1, sk->key.get<P>());
         alignas(64) TFHEpp::TRLWE3<P> cres;
         TFHEpp::TRLWEMultWithoutRelinerization<P>(cres, c0, c1);
         pres = TFHEpp::decryptTRLWE3<P>(cres, sk->key.get<P>());
@@ -93,10 +93,10 @@ int main()
         for (typename P::T &i : p0) i = message(engine);
         for (typename P::T &i : p1) i = message(engine);
 
-        TFHEpp::TRLWE<P> c0 =
-            TFHEpp::trlweSymIntEncrypt<P>(p0, sk->key.get<P>());
-        TFHEpp::TRLWE<P> c1 =
-            TFHEpp::trlweSymIntEncrypt<P>(p1, sk->key.get<P>());
+        TFHEpp::TRLWE<P> c0;
+        TFHEpp::trlweSymIntEncrypt<P>(c0, p0, sk->key.get<P>());
+        TFHEpp::TRLWE<P> c1;
+        TFHEpp::trlweSymIntEncrypt<P>(c1, p1, sk->key.get<P>());
         TFHEpp::TRLWE<P> cres;
         TFHEpp::TRLWEMult<P>(cres, c0, c1, relinkeyfft);
         pres = TFHEpp::trlweSymIntDecrypt<P>(cres, sk->key.get<P>());

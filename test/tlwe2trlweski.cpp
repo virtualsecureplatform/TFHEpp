@@ -16,7 +16,7 @@ int main()
     for (int i = 0; i < num_test; i++) pa[i] = binary(engine) > 0;
     std::vector<TFHEpp::TLWE<TFHEpp::lvl1param>> ca(num_test);
 
-    ca = TFHEpp::bootsSymEncrypt<TFHEpp::lvl1param>(pa, *sk);
+    TFHEpp::bootsSymEncrypt<TFHEpp::lvl1param>(ca, pa, *sk);
 
     std::vector<TFHEpp::TRLWE<TFHEpp::lvl1param>> cres(num_test);
 

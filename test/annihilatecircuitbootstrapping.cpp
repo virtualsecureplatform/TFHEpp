@@ -51,7 +51,7 @@ int main()
         ca[i] = {};
         ca[i][brP::targetP::k] = pmu[i];
     }
-    cones = TFHEpp::bootsSymEncrypt<typename iksP::domainP>(pones, *sk);
+    TFHEpp::bootsSymEncrypt<typename iksP::domainP>(cones, pones, *sk);
 
     std::chrono::system_clock::time_point start, end;
 #ifdef USE_PERF

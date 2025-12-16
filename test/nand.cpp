@@ -32,8 +32,8 @@ int main()
     vector<TLWE<TFHEpp::lvl1param>> cb(num_test);
     vector<TLWE<TFHEpp::lvl1param>> cres(num_test);
 
-    ca = bootsSymEncrypt(pa, *sk);
-    cb = bootsSymEncrypt(pb, *sk);
+    bootsSymEncrypt(ca, pa, *sk);
+    bootsSymEncrypt(cb, pb, *sk);
 
     chrono::system_clock::time_point start, end;
 #ifdef USE_PERF

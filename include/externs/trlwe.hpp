@@ -2,21 +2,23 @@
 #include"../trlwe.hpp"
 
 namespace TFHEpp{
-#define INST(P) \
-    extern template TRLWE<P> trlweSymEncryptZero<P>(const Key<P> &key)
+#define INST(P)                                                \
+    extern template void trlweSymEncryptZero<P>(TRLWE<P> & c,  \
+                                                const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                               \
-    extern template TRLWE<P> trlweSymEncrypt<P>(const std::array<typename P::T, P::n> &p, \
-                                         const Key<P> &key)
+#define INST(P)                                                                \
+    extern template void trlweSymEncrypt<P>(TRLWE<P> & c,                      \
+                                            const std::array<typename P::T, P::n> &p, \
+                                            const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                              \
-    extern template TRLWE<P> trlweSymIntEncrypt<P>(                 \
-        const std::array<typename P::T, P::n> &p, \
-        const Key<P> &key)
+#define INST(P)                                                                   \
+    extern template void trlweSymIntEncrypt<P>(TRLWE<P> & c,                      \
+                                               const std::array<typename P::T, P::n> &p, \
+                                               const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

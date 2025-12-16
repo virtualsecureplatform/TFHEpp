@@ -45,9 +45,9 @@ int main()
         bootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
-            pmu[i], sk->key.get<typename privksP::targetP>());
-    cones = TFHEpp::bootsSymEncrypt<typename iksP::domainP>(pones, *sk);
+        TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
+            ca[i], pmu[i], sk->key.get<typename privksP::targetP>());
+    TFHEpp::bootsSymEncrypt<typename iksP::domainP>(cones, pones, *sk);
 
     std::chrono::system_clock::time_point start, end;
 #ifdef USE_PERF

@@ -44,7 +44,8 @@ int main()
     for (int i = 0; i < num_test; i++) {
         for (int j = 0; j < 128; j++) {
             plaintext[i][j] = binary(engine);
-            cstate[i][j] = TFHEpp::tlweSymEncrypt<P>(
+            TFHEpp::tlweSymEncrypt<P>(
+                cstate[i][j],
                 plaintext[i][j]
                     ? 1ULL << (std::numeric_limits<typename P::T>::digits - 2)
                     : -(1ULL

@@ -19,8 +19,8 @@ int main()
     std::array<bool, num_test> p;
     for (int i = 0; i < num_test; i++) p[i] = binary(engine) > 0;
     for (int i = 0; i < num_test; i++)
-        tlwe[i] = TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
-            p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ,
+        TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
+            tlwe[i], p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ,
             sk.key.get<TFHEpp::lvl1param>());
 
     std::chrono::system_clock::time_point start, end;

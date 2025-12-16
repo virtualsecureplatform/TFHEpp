@@ -37,8 +37,8 @@ int main()
     }
     std::array<TFHEpp::TLWE<TFHEpp::lvl3param>, numtest> ciphers{};
     for (uint i = 0; i < numtest; i++) {
-        ciphers[i] = TFHEpp::tlweSymIntEncrypt<TFHEpp::lvl3param>(
-            plains[i], TFHEpp::lvl3param::α, sk.key.get<TFHEpp::lvl3param>());
+        TFHEpp::tlweSymIntEncrypt<TFHEpp::lvl3param>(
+            ciphers[i], plains[i], TFHEpp::lvl3param::α, sk.key.get<TFHEpp::lvl3param>());
         ciphers[i][TFHEpp::lvl3param::n] += maskgen(engine);
     }
 

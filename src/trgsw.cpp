@@ -35,8 +35,9 @@ INST(lvl1param);
 #undef INST
 
 #define INST(P)                                                  \
-    template TRGSW<P> trgswSymEncrypt<P>(const Polynomial<P> &p, \
-                                         const Key<P> &key)
+    template void trgswSymEncrypt<P>(TRGSW<P> & trgsw,           \
+                                     const Polynomial<P> &p,     \
+                                     const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 

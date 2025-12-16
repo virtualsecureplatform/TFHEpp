@@ -14,14 +14,17 @@
 
 namespace TFHEpp {
 
-#define INST(P) \
-    template TLWE<P> tlweSymEncrypt<P>(const typename P::T p, const Key<P> &key)
+#define INST(P)                                            \
+    template void tlweSymEncrypt<P>(TLWE<P> & res,         \
+                                    const typename P::T p, \
+                                    const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
-#define INST(P)                                                  \
-    template TLWE<P> tlweSymIntEncrypt<P>(const typename P::T p, \
-                                          const Key<P> &key)
+#define INST(P)                                               \
+    template void tlweSymIntEncrypt<P>(TLWE<P> & res,         \
+                                       const typename P::T p, \
+                                       const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
@@ -36,9 +39,9 @@ TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 
-#define INST(P)                                       \
-    template std::vector<TLWE<P>> bootsSymEncrypt<P>( \
-        const std::vector<uint8_t> &p, const SecretKey &sk)
+#define INST(P)                                               \
+    template void bootsSymEncrypt<P>(std::vector<TLWE<P>> & c, \
+                                     const std::vector<uint8_t> &p, const SecretKey &sk)
 TFHEPP_EXPLICIT_INSTANTIATION_TLWE(INST)
 #undef INST
 

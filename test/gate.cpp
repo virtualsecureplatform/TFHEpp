@@ -74,7 +74,7 @@ void Test(string type, Func func, Chegk chegk, vector<uint8_t> p,
     cout << "Number of tests:\t" << kNumTests << endl;
 
     for (uint8_t& i : p) i = binary(engine);
-    c = bootsSymEncrypt<P>(p, sk);
+    bootsSymEncrypt<P>(c, p, sk);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();

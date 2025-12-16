@@ -45,8 +45,8 @@ int main()
         invbootedTGSW(num_test);
 
     for (int i = 0; i < num_test; i++)
-        ca[i] = trlweSymEncrypt<lvl1param>(pmu[i], sk->key.get<lvl1param>());
-    czeros = bootsSymEncrypt(pzeros, *sk);
+        trlweSymEncrypt<lvl1param>(ca[i], pmu[i], sk->key.get<lvl1param>());
+    bootsSymEncrypt(czeros, pzeros, *sk);
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();

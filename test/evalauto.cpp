@@ -23,9 +23,9 @@ int main()
 
         const uint d = (1U << ldist(engine)) + 1;
 
-        TFHEpp::TRLWE<TFHEpp::lvl1param> ca =
-            TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(
-                pmu, sk.key.get<TFHEpp::lvl1param>());
+        TFHEpp::TRLWE<TFHEpp::lvl1param> ca;
+        TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(
+            ca, pmu, sk.key.get<TFHEpp::lvl1param>());
 
         TFHEpp::EvalAutoKey<TFHEpp::lvl1param> eak;
         TFHEpp::evalautokeygen<TFHEpp::lvl1param>(

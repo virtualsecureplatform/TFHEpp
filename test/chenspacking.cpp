@@ -24,7 +24,7 @@ int main()
         for (uint8_t &p : i) p = binary(engine);
     }
     for (int i = 0; i < num_test; i++)
-        ca[i] = TFHEpp::bootsSymEncrypt<TFHEpp::lvl1param>(pin[i], *sk);
+        TFHEpp::bootsSymEncrypt<TFHEpp::lvl1param>(ca[i], pin[i], *sk);
 
     std::vector<TFHEpp::TRLWE<TFHEpp::lvl1param>> cres(num_test);
 

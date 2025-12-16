@@ -47,7 +47,7 @@ int main()
                                    plainpoly, sk->key.get<lvl1param>());
     }
     for (int i = 0; i < num_test; i++)
-        c1[i] = trlweSymEncrypt<lvl1param>(pmu1[i], sk->key.get<lvl1param>());
+        trlweSymEncrypt<lvl1param>(c1[i], pmu1[i], sk->key.get<lvl1param>());
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();

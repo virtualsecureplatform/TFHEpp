@@ -31,8 +31,10 @@ int main()
         p1 = message(engine);
         ptrue = (p0 * p1) % P::plain_modulus;
 
-        TFHEpp::TLWE<P> c0 = TFHEpp::tlweSymIntEncrypt<P>(p0, sk->key.get<P>());
-        TFHEpp::TLWE<P> c1 = TFHEpp::tlweSymIntEncrypt<P>(p1, sk->key.get<P>());
+        TFHEpp::TLWE<P> c0;
+        TFHEpp::tlweSymIntEncrypt<P>(c0, p0, sk->key.get<P>());
+        TFHEpp::TLWE<P> c1;
+        TFHEpp::tlweSymIntEncrypt<P>(c1, p1, sk->key.get<P>());
         TFHEpp::TLWE<P> cres;
         TFHEpp::TLWEMult<privksP>(cres, c0, c1, *relinkeyfft, *privksk);
         pres = TFHEpp::tlweSymIntDecrypt<P>(cres, sk->key.get<P>());

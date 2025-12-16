@@ -30,7 +30,7 @@ int main()
 
     std::vector<TFHEpp::TRLWE<P>> cin(num_test);
     for (int i = 0; i < num_test; i++)
-        cin[i] = TFHEpp::trlweSymEncrypt<P>(pmu[i], sk->key.get<P>());
+        TFHEpp::trlweSymEncrypt<P>(cin[i], pmu[i], sk->key.get<P>());
 
     std::vector<TFHEpp::TRLWE<P>> cres(num_test);
 

@@ -20,7 +20,8 @@ int main()
     for (int i = 0; i < num_test; i++) {
         for (int j = 0; j < 32; j++) {
             pin[i][j] = binary(engine);
-            cin[i][j] = TFHEpp::tlweSymEncrypt<P>(
+            TFHEpp::tlweSymEncrypt<P>(
+                cin[i][j],
                 pin[i][j]
                     ? 1ULL << (std::numeric_limits<typename P::T>::digits - 2)
                     : -(1ULL

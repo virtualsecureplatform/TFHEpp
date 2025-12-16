@@ -58,8 +58,8 @@ int main()
         guard;
     for (size_t i = 0; i < N; i++) {
         TFHEpp::TRGSWFFT<Lvl1> trgsw;
-        TFHEpp::TLWE<Lvl1> tlwe =
-            TFHEpp::tlweSymEncrypt<Lvl1>(Lvl1::μ, skey.key.get<Lvl1>());
+        TFHEpp::TLWE<Lvl1> tlwe;
+        TFHEpp::tlweSymEncrypt<Lvl1>(tlwe, Lvl1::μ, skey.key.get<Lvl1>());
         TFHEpp::CircuitBootstrapping<TFHEpp::lvl10param, TFHEpp::lvl02param,
                                      TFHEpp::lvl21param>(trgsw, tlwe, ekey);
         guard.emplace_back(std::move(trgsw));

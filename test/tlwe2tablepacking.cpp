@@ -28,8 +28,7 @@ int main()
     }
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < numtlwe; j++)
-            ca[i][j] =
-                TFHEpp::tlweSymIntEncrypt<P, plain_modulus>(pin[i][j], *sk);
+            TFHEpp::tlweSymIntEncrypt<P, plain_modulus>(ca[i][j], pin[i][j], *sk);
 
     std::vector<TFHEpp::TRLWE<P>> cres(num_test);
 

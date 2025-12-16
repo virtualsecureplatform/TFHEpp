@@ -20,7 +20,8 @@ int main()
 
     for (int i = 0; i < num_test; i++) {
         for (int j = 0; j < 8; j++)
-            cin[i][j] = TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
+            TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
+                cin[i][j],
                 ((i >> j) & 0x1)
                     ? 1ULL << (std::numeric_limits<
                                    typename iksP::domainP::T>::digits -

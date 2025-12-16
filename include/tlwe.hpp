@@ -10,25 +10,26 @@
 
 namespace TFHEpp {
 template <class P>
-TLWE<P> tlweSymEncrypt(const typename P::T p, const double α, const Key<P> &key)
+void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const double α,
+                    const Key<P> &key)
 {
     std::uniform_int_distribution<typename P::T> Torusdist(
         0, std::numeric_limits<typename P::T>::max());
-    TLWE<P> res = {};
+    res = {};
     res[P::k * P::n] = ModularGaussian<P>(p, α);
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++) {
             res[k * P::n + i] = Torusdist(generator);
             res[P::k * P::n] += res[k * P::n + i] * key[k * P::n + i];
         }
-    return res;
 }
 
 template <class P>
-TLWE<P> tlweSymEncrypt(const typename P::T p, const uint η, const Key<P> &key)
+void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const uint η,
+                    const Key<P> &key)
 {
     std::uniform_int_distribution<typename P::T> Torusdist(0, P::q - 1);
-    TLWE<P> res = {};
+    res = {};
     res[P::k * P::n] =
         p + CenteredBinomial<P>(η)
         << (std::numeric_limits<typename P::T>::digits - P::qbit);
@@ -39,56 +40,55 @@ TLWE<P> tlweSymEncrypt(const typename P::T p, const uint η, const Key<P> &key)
                 << (std::numeric_limits<typename P::T>::digits - P::qbit);
             res[P::k * P::n] += res[k * P::n + i] * key[k * P::n + i];
         }
-    return res;
 }
 
 template <class P>
-TLWE<P> tlweSymEncrypt(const typename P::T p, const Key<P> &key)
+void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const Key<P> &key)
 {
     if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
-        return tlweSymEncrypt<P>(p, P::α, key);
+        tlweSymEncrypt<P>(res, p, P::α, key);
     else
-        return tlweSymEncrypt<P>(p, P::η, key);
+        tlweSymEncrypt<P>(res, p, P::η, key);
 }
 
 template <class P>
-TLWE<P> tlweSymEncrypt(const typename P::T p, const SecretKey &sk)
+void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const SecretKey &sk)
 {
-    return tlweSymEncrypt<P>(p, sk.key.get<P>());
+    tlweSymEncrypt<P>(res, p, sk.key.get<P>());
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-TLWE<P> tlweSymIntEncrypt(const typename P::T p, const double α,
-                          const Key<P> &key)
+void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const double α,
+                       const Key<P> &key)
 {
     const double Δ = std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
                      plain_modulus;
-    return tlweSymEncrypt<P>(static_cast<typename P::T>(p * Δ), α, key);
+    tlweSymEncrypt<P>(res, static_cast<typename P::T>(p * Δ), α, key);
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-TLWE<P> tlweSymIntEncrypt(const typename P::T p, const uint η,
-                          const Key<P> &key)
+void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const uint η,
+                       const Key<P> &key)
 {
     constexpr double Δ =
         std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
         plain_modulus;
-    return tlweSymEncrypt<P>(static_cast<typename P::T>(p * Δ), η, key);
+    tlweSymEncrypt<P>(res, static_cast<typename P::T>(p * Δ), η, key);
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-TLWE<P> tlweSymIntEncrypt(const typename P::T p, const Key<P> &key)
+void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const Key<P> &key)
 {
     if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
-        return tlweSymIntEncrypt<P, plain_modulus>(p, P::α, key);
+        tlweSymIntEncrypt<P, plain_modulus>(res, p, P::α, key);
     else
-        return tlweSymIntEncrypt<P, plain_modulus>(p, P::η, key);
+        tlweSymIntEncrypt<P, plain_modulus>(res, p, P::η, key);
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-TLWE<P> tlweSymIntEncrypt(const typename P::T p, const SecretKey &sk)
+void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const SecretKey &sk)
 {
-    return tlweSymIntEncrypt<P, plain_modulus>(p, sk.key.get<P>());
+    tlweSymIntEncrypt<P, plain_modulus>(res, p, sk.key.get<P>());
 }
 
 template <class P>
@@ -136,35 +136,34 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const SecretKey &sk)
 }
 
 template <class P, std::make_signed_t<typename P::T> μ>
-std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
-                                     const Key<P> &key)
+void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
+                     const Key<P> &key)
 {
-    vector<TLWE<P>> c(p.size());
+    c.resize(p.size());
 #pragma omp parallel for
     for (int i = 0; i < p.size(); i++)
-        c[i] = tlweSymEncrypt<P>(p[i] ? μ : -μ, key);
-    return c;
+        tlweSymEncrypt<P>(c[i], p[i] ? μ : -μ, key);
 }
 
 template <class P>
-std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
-                                     const Key<P> &key)
+void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
+                     const Key<P> &key)
 {
-    return bootsSymEncrypt<P, P::μ>(p, key);
+    bootsSymEncrypt<P, P::μ>(c, p, key);
 }
 
 template <class P = lvl1param>
-std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
-                                     const SecretKey &sk)
+void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
+                     const SecretKey &sk)
 {
-    return bootsSymEncrypt<P>(p, sk.key.get<P>());
+    bootsSymEncrypt<P>(c, p, sk.key.get<P>());
 }
 
 template <class P = lvl1param, std::make_signed_t<typename P::T> μ>
-std::vector<TLWE<P>> bootsSymEncrypt(const std::vector<uint8_t> &p,
-                                     const SecretKey &sk)
+void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
+                     const SecretKey &sk)
 {
-    return bootsSymEncrypt<P, μ>(p, sk.key.get<P>());
+    bootsSymEncrypt<P, μ>(c, p, sk.key.get<P>());
 }
 
 template <class P>

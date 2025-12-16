@@ -34,10 +34,10 @@ int main()
     {
         TFHEpp::IOpacket iopacket;
         iopacket.tlwelvl0ports["test"].resize(1);
-        iopacket.tlwelvl0ports["test"][0] =
-            TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
-                TFHEpp::lvl0param::μ, TFHEpp::lvl0param::α,
-                sk.key.get<TFHEpp::lvl0param>());
+        TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
+            iopacket.tlwelvl0ports["test"][0],
+            TFHEpp::lvl0param::μ, TFHEpp::lvl0param::α,
+            sk.key.get<TFHEpp::lvl0param>());
         {
             std::ofstream ofs{"./iopacket.data", std::ios::binary};
             cereal::PortableBinaryOutputArchive ar(ofs);

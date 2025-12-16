@@ -35,8 +35,8 @@ int main()
         for (int j = 0; j < 11; j++)
             for (int k = 0; k < 16; k++)
                 for (int l = 0; l < 8; l++)
-                    cexpandedkey[i][j][k * 8 + l] = TFHEpp::tlweSymEncrypt<
-                        typename iksP::domainP>(
+                    TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
+                        cexpandedkey[i][j][k * 8 + l],
                         (w[j * 16 + k] >> l) & 0x1
                             ? 1ULL << (std::numeric_limits<
                                            typename iksP::domainP::T>::digits -
@@ -50,17 +50,17 @@ int main()
         for (int j = 0; j < 16; j++) pin[i][j] = bytegen(engine);
         for (int j = 0; j < 16; j++)
             for (int k = 0; k < 8; k++)
-                cin[i][j * 8 + k] =
-                    TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
-                        (pin[i][j] >> k) & 0x1
-                            ? 1ULL << (std::numeric_limits<
-                                           typename iksP::domainP::T>::digits -
-                                       2)
-                            : -(1ULL
-                                << (std::numeric_limits<
-                                        typename iksP::domainP::T>::digits -
-                                    2)),
-                        *sk);
+                TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
+                    cin[i][j * 8 + k],
+                    (pin[i][j] >> k) & 0x1
+                        ? 1ULL << (std::numeric_limits<
+                                       typename iksP::domainP::T>::digits -
+                                   2)
+                        : -(1ULL
+                            << (std::numeric_limits<
+                                    typename iksP::domainP::T>::digits -
+                                2)),
+                    *sk);
     }
     std::vector<std::array<TFHEpp::TLWE<typename brP::targetP>, 128>> cres(
         num_test);

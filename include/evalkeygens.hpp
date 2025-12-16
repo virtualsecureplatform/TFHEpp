@@ -17,16 +17,16 @@ void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey,
     for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
         plainpoly[0] =
             static_cast<int32_t>(domainkey[2 * i] * domainkey[2 * i + 1]);
-        bk[i][0] = trgswSymEncrypt<typename P::targetP>(
-            plainpoly, P::targetP::α, targetkey);
+        trgswSymEncrypt<typename P::targetP>(bk[i][0], plainpoly,
+                                             P::targetP::α, targetkey);
         plainpoly[0] =
             static_cast<int32_t>(domainkey[2 * i] * (1 - domainkey[2 * i + 1]));
-        bk[i][1] = trgswSymEncrypt<typename P::targetP>(
-            plainpoly, P::targetP::α, targetkey);
+        trgswSymEncrypt<typename P::targetP>(bk[i][1], plainpoly,
+                                             P::targetP::α, targetkey);
         plainpoly[0] =
             static_cast<int32_t>((1 - domainkey[2 * i]) * domainkey[2 * i + 1]);
-        bk[i][2] = trgswSymEncrypt<typename P::targetP>(
-            plainpoly, P::targetP::α, targetkey);
+        trgswSymEncrypt<typename P::targetP>(bk[i][2], plainpoly,
+                                             P::targetP::α, targetkey);
     }
 #else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
@@ -35,8 +35,8 @@ void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey,
              j++) {
             if (j != 0) {
                 plainpoly[0] = domainkey[i] == j;
-                bk[i][count] =
-                    trgswSymEncrypt<typename P::targetP>(plainpoly, targetkey);
+                trgswSymEncrypt<typename P::targetP>(bk[i][count], plainpoly,
+                                                     targetkey);
                 count++;
             }
         }
@@ -148,8 +148,8 @@ void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk,
                     domainkey[i] * (k + 1) *
                     (1ULL << (numeric_limits<typename P::targetP::T>::digits -
                               (j + 1) * P::basebit));
-                iksk[i][j][k] =
-                    trlweSymEncrypt<typename P::targetP>(p, targetkey);
+                trlweSymEncrypt<typename P::targetP>(iksk[i][j][k], p,
+                                                     targetkey);
             }
 }
 
@@ -193,13 +193,13 @@ void ikskgen(KeySwitchingKey<P>& ksk, const Key<typename P::domainP>& domainkey,
         for (int i = 0; i < P::domainP::n; i++)
             for (int j = 0; j < P::t; j++)
                 for (uint32_t k = 0; k < 1U << (P::basebit - 1); k++)
-                    ksk[l * P::domainP::n + i][j][k] =
-                        tlweSymEncrypt<typename P::targetP>(
-                            domainkey[l * P::domainP::n + i] * (k + 1) *
-                                (1ULL << (numeric_limits<
-                                              typename P::targetP::T>::digits -
-                                          (j + 1) * P::basebit)),
-                            targetkey);
+                    tlweSymEncrypt<typename P::targetP>(
+                        ksk[l * P::domainP::n + i][j][k],
+                        domainkey[l * P::domainP::n + i] * (k + 1) *
+                            (1ULL << (numeric_limits<
+                                          typename P::targetP::T>::digits -
+                                      (j + 1) * P::basebit)),
+                        targetkey);
 }
 
 template <class P>
@@ -224,14 +224,13 @@ void privkskgen(PrivateKeySwitchingKey<P>& privksk,
         for (int j = 0; j < P::t; j++)
             for (typename P::targetP::T u = 0; u < (1 << (P::basebit - 1));
                  u++) {
-                TRLWE<typename P::targetP> c =
-                    trlweSymEncryptZero<typename P::targetP>(targetkey);
+                trlweSymEncryptZero<typename P::targetP>(privksk[i][j][u],
+                                                         targetkey);
                 for (int k = 0; k < P::targetP::n; k++)
-                    c[P::targetP::k][k] +=
+                    privksk[i][j][u][P::targetP::k][k] +=
                         (u + 1) * func[k] * key[i]
                         << (numeric_limits<typename P::targetP::T>::digits -
                             (j + 1) * P::basebit);
-                privksk[i][j][u] = c;
             }
 }
 
@@ -255,7 +254,8 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk,
          i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++)
         for (int j = 0; j < P::t; j++)
             for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
-                ksk[i][j][k] = tlweSymEncrypt<typename P::targetP>(
+                tlweSymEncrypt<typename P::targetP>(
+                    ksk[i][j][k],
                     domainkey[P::targetP::k * P::targetP::n + i] * (k + 1) *
                         (1ULL
                          << (numeric_limits<typename P::targetP::T>::digits -
@@ -277,7 +277,7 @@ relinKey<P> relinKeygen(const Key<P>& key)
     for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
     PolyMulNaive<P>(keysquare, partkey, partkey);
     relinKey<P> relinkey;
-    for (TRLWE<P>& ctxt : relinkey) ctxt = trlweSymEncryptZero<P>(key);
+    for (TRLWE<P>& ctxt : relinkey) trlweSymEncryptZero<P>(ctxt, key);
     halftrgswhadd<P>(relinkey, keysquare);
     return relinkey;
 }
@@ -296,14 +296,13 @@ void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
     for (int i = 0; i <= P::targetP::k * P::targetP::n; i++)
         for (int j = 0; j < P::t; j++)
             for (typename P::targetP::T u = 0; u < (1 << P::basebit) - 1; u++) {
-                TRLWE<typename P::targetP> c =
-                    trlweSymEncryptZero<typename P::targetP>(targetkey);
+                trlweSymEncryptZero<typename P::targetP>(privksk[i][j][u],
+                                                         targetkey);
                 for (int k = 0; k < P::targetP::n; k++)
-                    c[P::targetP::k][k] +=
+                    privksk[i][j][u][P::targetP::k][k] +=
                         (u + 1) * func[k] * key[i]
                         << (numeric_limits<typename P::targetP::T>::digits -
                             (j + 1) * P::basebit);
-                privksk[i][j][u] = c;
             }
 }
 
