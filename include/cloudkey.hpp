@@ -296,8 +296,8 @@ struct EvalKey {
             Polynomial<P> partkey;
             for (int j = 0; j < P::n; j++)
                 partkey[j] = -sk.key.get<P>()[i * P::n + j];
-            (*get<CBswitchingKey<P>>())[i] =
-                trgswfftSymEncrypt<P>(partkey, sk.key.get<P>());
+            trgswSymEncrypt<P>((*get<CBswitchingKey<P>>())[i], partkey,
+                               sk.key.get<P>());
         }
     }
 

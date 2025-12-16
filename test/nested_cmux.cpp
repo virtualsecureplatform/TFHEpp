@@ -54,9 +54,11 @@ int main()
         guard;
     TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {};
     plainpoly[0] = 1;
-    for (size_t i = 0; i < N; i++)
-        guard.push_back(
-            TFHEpp::trgswfftSymEncrypt<Lvl1>(plainpoly, skey.key.get<Lvl1>()));
+    for (size_t i = 0; i < N; i++) {
+        guard.emplace_back();
+        TFHEpp::trgswSymEncrypt<Lvl1>(guard.back(), plainpoly,
+                                      skey.key.get<Lvl1>());
+    }
 
     alignas(64) TRLWELvl1 c1 = trivial_TRLWELvl1(uint2weight(1)),
                           c0 = trivial_TRLWELvl1(uint2weight(0));

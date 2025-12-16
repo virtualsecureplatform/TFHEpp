@@ -45,8 +45,7 @@ int main()
     for (int i = 0; i < num_test; i++) {
         Polynomial<TFHEpp::lvl1param> plainpoly = {};
         plainpoly[0] = ps[i];
-        cs[i] =
-            trgswfftSymEncrypt<lvl1param>(plainpoly, sk->key.get<lvl1param>());
+        trgswSymEncrypt<lvl1param>(cs[i], plainpoly, sk->key.get<lvl1param>());
     }
     for (int i = 0; i < num_test; i++)
         c1[i] = trlweSymEncrypt<lvl1param>(pmu1[i], sk->key.get<lvl1param>());

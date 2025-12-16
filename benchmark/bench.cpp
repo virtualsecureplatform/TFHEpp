@@ -9,9 +9,9 @@ void BM_TRGSWenc(benchmark::State& state)
     const std::unique_ptr<TFHEpp::SecretKey> sk(new TFHEpp::SecretKey());
     TFHEpp::TRGSWFFT<TFHEpp::lvl1param> res;
     for (auto _ : state)
-        res = TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(
-            {}, TFHEpp::lvl1param::α, sk->key.lvl1);
-    ;
+        TFHEpp::trgswSymEncrypt<TFHEpp::lvl1param>(res, {},
+                                                   TFHEpp::lvl1param::α,
+                                                   sk->key.lvl1);
 }
 
 void BM_HomGate(benchmark::State& state)
@@ -124,9 +124,10 @@ void BM_CMUX(benchmark::State& state)
         TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(pmu1, TFHEpp::lvl1param::α,
                                                    sk->key.lvl1);
     const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {binary(engine)};
-    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs =
-        TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(
-            plainpoly, TFHEpp::lvl1param::α, sk->key.lvl1);
+    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs;
+    TFHEpp::trgswSymEncrypt<TFHEpp::lvl1param>(cs, plainpoly,
+                                               TFHEpp::lvl1param::α,
+                                               sk->key.lvl1);
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state) TFHEpp::CMUXFFT<TFHEpp::lvl1param>(res, cs, c1, c0);
 }
@@ -144,9 +145,10 @@ void BM_ExternalProduct(benchmark::State& state)
         TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(pmu0, TFHEpp::lvl1param::α,
                                                    sk->key.lvl1);
     const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {binary(engine)};
-    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs =
-        TFHEpp::trgswfftSymEncrypt<TFHEpp::lvl1param>(
-            plainpoly, TFHEpp::lvl1param::α, sk->key.lvl1);
+    TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs;
+    TFHEpp::trgswSymEncrypt<TFHEpp::lvl1param>(cs, plainpoly,
+                                               TFHEpp::lvl1param::α,
+                                               sk->key.lvl1);
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state)
         TFHEpp::ExternalProduct<TFHEpp::lvl1param>(res, c0, cs);

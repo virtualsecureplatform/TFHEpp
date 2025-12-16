@@ -40,15 +40,17 @@ INST(lvl1param);
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                        \
-    template TRGSWFFT<P> trgswfftSymEncrypt<P>(const Polynomial<P> &p, \
-                                               const Key<P> &key)
+#define INST(P)                                                     \
+    template void trgswSymEncrypt<P>(TRGSWFFT<P> &trgswfft,          \
+                                     const Polynomial<P> &p,        \
+                                     const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 
-#define INST(P)                                                        \
-    template TRGSWNTT<P> trgswnttSymEncrypt<P>(const Polynomial<P> &p, \
-                                               const Key<P> &key)
+#define INST(P)                                                     \
+    template void trgswSymEncrypt<P>(TRGSWNTT<P> &trgswntt,         \
+                                     const Polynomial<P> &p,        \
+                                     const Key<P> &key)
 TFHEPP_EXPLICIT_INSTANTIATION_TRLWE(INST)
 #undef INST
 }  // namespace TFHEpp
