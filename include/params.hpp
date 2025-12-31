@@ -138,17 +138,17 @@ template <class P>
 using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 
 template <class P>
-using TRGSW = std::array<TRLWE<P>, P::k * P::lₐ + P::l>;
+using TRGSW = std::array<TRLWE<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 template <class P>
-using HalfTRGSW = std::array<TRLWE<P>, P::l>;
+using HalfTRGSW = std::array<TRLWE<P>, P::l * P::l̅>;
 template <class P>
-using TRGSWFFT = aligned_array<TRLWEInFD<P>, P::k * P::lₐ + P::l>;
+using TRGSWFFT = aligned_array<TRLWEInFD<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 template <class P>
-using HalfTRGSWFFT = aligned_array<TRLWEInFD<P>, P::l>;
+using HalfTRGSWFFT = aligned_array<TRLWEInFD<P>, P::l * P::l̅>;
 template <class P>
-using TRGSWNTT = std::array<TRLWENTT<P>, P::k * P::lₐ + P::l>;
+using TRGSWNTT = std::array<TRLWENTT<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 template <class P>
-using TRGSWRAINTT = std::array<TRLWERAINTT<P>, P::k * P::lₐ + P::l>;
+using TRGSWRAINTT = std::array<TRLWERAINTT<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 
 #ifdef USE_KEY_BUNDLE
 template <class P>

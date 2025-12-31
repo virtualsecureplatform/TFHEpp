@@ -353,7 +353,7 @@ template <class P>
 TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
 {
     alignas(64) TRGSWFFT<P> trgswfft;
-    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
         for (int j = 0; j < (P::k + 1); j++)
             TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
     return trgswfft;
@@ -362,7 +362,7 @@ TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
 template <class P>
 void ApplyFFT2trgsw(TRGSWFFT<P> &trgswfft, const TRGSW<P> &trgsw)
 {
-    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
         for (int j = 0; j < (P::k + 1); j++)
             TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
 }
@@ -371,7 +371,7 @@ template <class P>
 HalfTRGSWFFT<P> ApplyFFT2halftrgsw(const HalfTRGSW<P> &trgsw)
 {
     alignas(64) HalfTRGSWFFT<P> halftrgswfft;
-    for (int i = 0; i < P::l; i++)
+    for (int i = 0; i < P::l * P::l̅; i++)
         for (int j = 0; j < (P::k + 1); j++)
             TwistIFFT<P>(halftrgswfft[i][j], trgsw[i][j]);
     return halftrgswfft;
@@ -381,7 +381,7 @@ template <class P>
 TRGSWNTT<P> ApplyNTT2trgsw(const TRGSW<P> &trgsw)
 {
     TRGSWNTT<P> trgswntt;
-    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
         for (int j = 0; j < P::k + 1; j++)
             TwistINTT<P>(trgswntt[i][j], trgsw[i][j]);
     return trgswntt;
@@ -392,7 +392,7 @@ TRGSWRAINTT<P> ApplyRAINTT2trgsw(const TRGSW<P> &trgsw)
 {
     constexpr uint8_t remainder = ((P::nbit - 1) % 3) + 1;
     TRGSWRAINTT<P> trgswntt;
-    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
         for (int j = 0; j < P::k + 1; j++) {
             raintt::TwistINTT<typename P::T, P::nbit, true>(
                 trgswntt[i][j], trgsw[i][j], (*raintttable)[1],
@@ -412,7 +412,7 @@ template <class P>
 TRGSWNTT<P> TRGSW2NTT(const TRGSW<P> &trgsw)
 {
     TRGSWNTT<P> trgswntt;
-    for (int i = 0; i < P::k * P::lₐ + P::l; i++)
+    for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
         for (int j = 0; j < P::k + 1; j++) {
             PolynomialNTT<P> temp;
             TwistINTT<P>(temp, trgsw[i][j]);
@@ -452,13 +452,38 @@ constexpr std::array<typename P::T, P::lₐ> noncehgen()
     return h;
 }
 
+// Auxiliary h generation for Double Decomposition (bivariate representation)
+template <class P>
+constexpr std::array<typename P::T, P::l̅> h̅gen()
+{
+    std::array<typename P::T, P::l̅> h̅{};
+    for (int i = 0; i < P::l̅; i++)
+        h̅[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
+                        (i + 1) * P::B̅gbit);
+    return h̅;
+}
+
+template <class P>
+constexpr std::array<typename P::T, P::l̅ₐ> nonceh̅gen()
+{
+    std::array<typename P::T, P::l̅ₐ> h̅{};
+    for (int i = 0; i < P::l̅ₐ; i++)
+        h̅[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
+                        (i + 1) * P::B̅gₐbit);
+    return h̅;
+}
+
 template <class P>
 inline void halftrgswhadd(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p)
 {
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
+    constexpr std::array<typename P::T, P::l̅> h̅ = h̅gen<P>();
     for (int i = 0; i < P::l; i++) {
-        for (int j = 0; j < P::n; j++) {
-            halftrgsw[i][P::k][j] += static_cast<typename P::T>(p[j]) * h[i];
+        for (int ī = 0; ī < P::l̅; ī++) {
+            for (int j = 0; j < P::n; j++) {
+                halftrgsw[i * P::l̅ + ī][P::k][j] +=
+                    static_cast<typename P::T>(p[j]) * h[i] * h̅[ī];
+            }
         }
     }
 }
@@ -467,19 +492,26 @@ template <class P>
 inline void trgswhadd(TRGSW<P> &trgsw, const Polynomial<P> &p)
 {
     constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
+    constexpr std::array<typename P::T, P::l̅ₐ> nonceh̅ = nonceh̅gen<P>();
     for (int i = 0; i < P::lₐ; i++) {
-        for (int k = 0; k < P::k; k++) {
-            for (int j = 0; j < P::n; j++) {
-                trgsw[i + k * P::lₐ][k][j] +=
-                    static_cast<typename P::T>(p[j]) * nonceh[i];
+        for (int ī = 0; ī < P::l̅ₐ; ī++) {
+            for (int k = 0; k < P::k; k++) {
+                for (int j = 0; j < P::n; j++) {
+                    trgsw[(i * P::l̅ₐ + ī) + k * P::lₐ * P::l̅ₐ][k][j] +=
+                        static_cast<typename P::T>(p[j]) * nonceh[i] *
+                        nonceh̅[ī];
+                }
             }
         }
     }
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
+    constexpr std::array<typename P::T, P::l̅> h̅ = h̅gen<P>();
     for (int i = 0; i < P::l; i++) {
-        for (int j = 0; j < P::n; j++) {
-            trgsw[i + P::k * P::lₐ][P::k][j] +=
-                static_cast<typename P::T>(p[j]) * h[i];
+        for (int ī = 0; ī < P::l̅; ī++) {
+            for (int j = 0; j < P::n; j++) {
+                trgsw[(i * P::l̅ + ī) + P::k * P::lₐ * P::l̅ₐ][P::k][j] +=
+                    static_cast<typename P::T>(p[j]) * h[i] * h̅[ī];
+            }
         }
     }
 }
@@ -488,11 +520,19 @@ template <class P>
 inline void trgswhoneadd(TRGSW<P> &trgsw)
 {
     constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
+    constexpr std::array<typename P::T, P::l̅ₐ> nonceh̅ = nonceh̅gen<P>();
     for (int i = 0; i < P::lₐ; i++)
-        for (int k = 0; k < P::k; k++) trgsw[i + k * P::lₐ][k][0] += nonceh[i];
+        for (int ī = 0; ī < P::l̅ₐ; ī++)
+            for (int k = 0; k < P::k; k++)
+                trgsw[(i * P::l̅ₐ + ī) + k * P::lₐ * P::l̅ₐ][k][0] +=
+                    nonceh[i] * nonceh̅[ī];
 
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
-    for (int i = 0; i < P::l; i++) trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
+    constexpr std::array<typename P::T, P::l̅> h̅ = h̅gen<P>();
+    for (int i = 0; i < P::l; i++)
+        for (int ī = 0; ī < P::l̅; ī++)
+            trgsw[(i * P::l̅ + ī) + P::k * P::lₐ * P::l̅ₐ][P::k][0] +=
+                h[i] * h̅[ī];
 }
 
 template <class P>
@@ -525,24 +565,16 @@ template <class P>
 void halftrgswSymEncrypt(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p,
                          const double α, const Key<P> &key)
 {
-    constexpr std::array<typename P::T, P::l> h = hgen<P>();
-
     for (TRLWE<P> &trlwe : halftrgsw) trlweSymEncryptZero<P>(trlwe, α, key);
-    for (int i = 0; i < P::l; i++)
-        for (int j = 0; j < P::n; j++)
-            halftrgsw[i][P::k][j] += static_cast<typename P::T>(p[j]) * h[i];
+    halftrgswhadd<P>(halftrgsw, p);
 }
 
 template <class P>
 void halftrgswSymEncrypt(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p,
                          const uint η, const Key<P> &key)
 {
-    constexpr std::array<typename P::T, P::l> h = hgen<P>();
-
     for (TRLWE<P> &trlwe : halftrgsw) trlweSymEncryptZero<P>(trlwe, η, key);
-    for (int i = 0; i < P::l; i++)
-        for (int j = 0; j < P::n; j++)
-            halftrgsw[i][P::k][j] += static_cast<typename P::T>(p[j]) * h[i];
+    halftrgswhadd<P>(halftrgsw, p);
 }
 
 template <class P>

@@ -70,6 +70,13 @@ struct lvl1param {
     static constexpr double Δ =
         2 * static_cast<double>(1ULL << (std::numeric_limits<T>::digits - 1)) /
         plain_modulus;
+    // Double Decomposition (bivariate representation) parameters
+    // For now, set to trivial values (no actual second decomposition)
+    static constexpr std::uint32_t l̅ = 1;  // auxiliary decomposition levels
+    static constexpr std::uint32_t l̅ₐ = l̅;
+    static constexpr std::uint32_t B̅gbit =
+        std::numeric_limits<T>::digits;  // full coefficient width
+    static constexpr std::uint32_t B̅gₐbit = B̅gbit;
 };
 
 struct lvl2param {
@@ -92,6 +99,13 @@ struct lvl2param {
     static constexpr std::make_signed_t<T> μ = 1ULL << 61;
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ = μ;
+    // Double Decomposition (bivariate representation) parameters
+    // For now, set to trivial values (no actual second decomposition)
+    static constexpr std::uint32_t l̅ = 1;  // auxiliary decomposition levels
+    static constexpr std::uint32_t l̅ₐ = l̅;
+    static constexpr std::uint32_t B̅gbit =
+        std::numeric_limits<T>::digits;  // full coefficient width
+    static constexpr std::uint32_t B̅gₐbit = B̅gbit;
 };
 
 // Dummy
@@ -114,6 +128,13 @@ struct lvl3param {
     static constexpr uint32_t plain_modulusbit = 31;
     static constexpr uint64_t plain_modulus = 1ULL << plain_modulusbit;
     static constexpr double Δ = 1ULL << (64 - plain_modulusbit - 1);
+    // Double Decomposition (bivariate representation) parameters
+    // For now, set to trivial values (no actual second decomposition)
+    static constexpr std::uint32_t l̅ = 1;  // auxiliary decomposition levels
+    static constexpr std::uint32_t l̅ₐ = l̅;
+    static constexpr std::uint32_t B̅gbit =
+        std::numeric_limits<T>::digits;  // full coefficient width
+    static constexpr std::uint32_t B̅gₐbit = B̅gbit;
 };
 
 // Key Switching parameters
