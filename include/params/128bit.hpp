@@ -153,7 +153,41 @@ struct AHlvl2param {
     static constexpr std::uint32_t B̅gₐbit = baseP::B̅gₐbit;
 };
 
+// New lvl3param with 128-bit Torus and non-trivial Double Decomposition
+// Double decomposition constraint: l * Bgbit + l̅ * B̅gbit <= 128
+// Using l=4, Bgbit=16, l̅=4, B̅gbit=16: 4*16 + 4*16 = 128 bits (fully utilized)
 struct lvl3param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static const std::uint32_t nbit = 12;  // dimension must be a power of 2 for
+    // ease of polynomial multiplication.
+    static constexpr std::uint32_t n = 1 << nbit;  // dimension = 4096
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 4;
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgbit = 16;
+    static constexpr std::uint32_t Bgₐbit = 16;
+    static constexpr uint32_t Bg = 1U << Bgbit;
+    static constexpr uint32_t Bgₐ = 1U << Bgₐbit;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = std::pow(2.0, -105);  // fresh noise
+    using T = __uint128_t;                               // Torus representation
+    static constexpr T μ = static_cast<T>(1) << 125;
+    static constexpr uint32_t plain_modulusbit = 31;
+    static constexpr __uint128_t plain_modulus = static_cast<T>(1) << plain_modulusbit;
+    static constexpr double Δ =
+        static_cast<double>(static_cast<T>(1) << (128 - plain_modulusbit - 1));
+    // Double Decomposition (bivariate representation) parameters
+    // Non-trivial values for testing actual double decomposition
+    // Constraint: l * Bgbit + l̅ * B̅gbit <= 128
+    static constexpr std::uint32_t l̅ = 4;    // auxiliary decomposition levels
+    static constexpr std::uint32_t l̅ₐ = 4;
+    static constexpr std::uint32_t B̅gbit = 16;   // 2^16 base for auxiliary
+    static constexpr std::uint32_t B̅gₐbit = 16;
+};
+
+struct lvl4param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
     static const std::uint32_t nbit = 13;  // dimension must be a power of 2 for
@@ -175,7 +209,7 @@ struct lvl3param {
     static constexpr uint64_t plain_modulus = 1ULL << plain_modulusbit;
     static constexpr double Δ = 1ULL << (64 - plain_modulusbit - 1);
     // Double Decomposition (bivariate representation) parameters
-    // For now, set to trivial values (no actual second decomposition)
+    // Trivial values (no actual second decomposition)
     static constexpr std::uint32_t l̅ = 1;  // auxiliary decomposition levels
     static constexpr std::uint32_t l̅ₐ = l̅;
     static constexpr std::uint32_t B̅gbit =
@@ -268,5 +302,14 @@ struct lvl31param {
         2;  // how many bit should be encrypted in keyswitching key
     static const inline double α = lvl1param::α;  // key noise
     using domainP = lvl3param;
+    using targetP = lvl1param;
+};
+
+struct lvl41param {
+    static constexpr std::uint32_t t = 7;  // number of addition in keyswitching
+    static constexpr std::uint32_t basebit =
+        2;  // how many bit should be encrypted in keyswitching key
+    static const inline double α = lvl1param::α;  // key noise
+    using domainP = lvl4param;
     using targetP = lvl1param;
 };

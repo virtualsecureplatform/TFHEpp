@@ -201,6 +201,9 @@ struct lvl3param {
     static constexpr std::uint32_t B̅gₐbit = B̅gbit;
 };
 
+// Dummy
+using lvl4param = lvl3param;
+
 // Key Switching parameters
 struct lvl10param {
     static constexpr std::uint32_t t = 5;  // number of addition in keyswitching
@@ -291,3 +294,6 @@ struct lvl31param {
     using domainP = lvl3param;
     using targetP = lvl1param;
 };
+
+// Dummy
+using lvl41param = lvl31param;

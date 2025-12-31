@@ -118,6 +118,10 @@ using DecomposedPolynomial = std::array<Polynomial<P>, P::l>;
 template <class P>
 using DecomposedNoncePolynomial = std::array<Polynomial<P>, P::lₐ>;
 template <class P>
+using DecomposedPolynomialDD = std::array<Polynomial<P>, P::l * P::l̅>;
+template <class P>
+using DecomposedNoncePolynomialDD = std::array<Polynomial<P>, P::lₐ * P::l̅ₐ>;
+template <class P>
 using DecomposedPolynomialNTT = std::array<PolynomialNTT<P>, P::l>;
 template <class P>
 using DecomposedNoncePolynomialNTT = std::array<PolynomialNTT<P>, P::lₐ>;

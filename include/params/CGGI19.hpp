@@ -126,6 +126,9 @@ struct lvl3param {
 };
 
 // Dummy
+using lvl4param = lvl3param;
+
+// Dummy
 struct lvl11param {
     static constexpr std::uint32_t t = 0;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
@@ -212,3 +215,6 @@ struct lvl31param {
     using domainP = lvl3param;
     using targetP = lvl1param;
 };
+
+// Dummy
+using lvl41param = lvl31param;

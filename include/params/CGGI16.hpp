@@ -127,6 +127,9 @@ struct lvl3param {
     static constexpr std::uint32_t B̅gₐbit = B̅gbit;
 };
 
+// Dummy
+using lvl4param = lvl3param;
+
 struct lvl10param {
     static constexpr std::uint32_t t = 8;
     static constexpr std::uint32_t basebit = 2;
@@ -213,3 +216,6 @@ struct lvl31param {
     using domainP = lvl3param;
     using targetP = lvl1param;
 };
+
+// Dummy
+using lvl41param = lvl31param;
