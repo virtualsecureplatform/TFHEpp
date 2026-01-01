@@ -18,7 +18,7 @@ int main()
     // lvl3param has nbit=12 (n=4096) and non-trivial DD: l=2, l̅=2, Bgbit=16, B̅gbit=16
     using bkP = lvl03param;
 
-    cout << "=== Testing GateBootstrappingTLWE2TLWEDD with lvl3param (nbit=12) ===" << endl;
+    cout << "=== Testing GateBootstrappingTLWE2TLWE with DD (lvl3param, nbit=12) ===" << endl;
     cout << "Domain: n=" << bkP::domainP::n << ", T=" << sizeof(typename bkP::domainP::T) * 8 << "-bit" << endl;
     cout << "Target: n=" << bkP::targetP::n << ", nbit=" << bkP::targetP::nbit << ", T=" << sizeof(typename bkP::targetP::T) * 8 << "-bit" << endl;
     cout << "Primary decomposition: l=" << bkP::targetP::l << ", Bgbit=" << bkP::targetP::Bgbit << endl;
@@ -60,13 +60,13 @@ int main()
             domainKey);
     }
 
-    // Perform gate bootstrapping with double decomposition
-    cout << "Running GateBootstrappingTLWE2TLWEDD..." << endl;
+    // Perform gate bootstrapping (automatically uses DD when l̅ > 1)
+    cout << "Running GateBootstrappingTLWE2TLWE (with DD)..." << endl;
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        GateBootstrappingTLWE2TLWEDD<bkP>(
+        GateBootstrappingTLWE2TLWE<bkP>(
             bootedtlwe[test], tlwe[test], *bkfft,
             μpolygen<typename bkP::targetP, bkP::targetP::μ>());
     }
@@ -96,6 +96,6 @@ int main()
         chrono::duration_cast<chrono::milliseconds>(end - start).count();
     cout << "Average time per bootstrapping: " << elapsed / num_test << "ms" << endl;
 
-    cout << "=== GateBootstrappingTLWE2TLWEDD test completed ===" << endl;
+    cout << "=== GateBootstrappingTLWE2TLWE (DD) test completed ===" << endl;
     return 0;
 }

@@ -120,7 +120,7 @@ void testDoubleDecomposition()
 
 // Test External Product with Double Decomposition
 template <class P>
-void testExternalProductDD()
+void testExternalProduct()
 {
     constexpr uint32_t num_test = 10;
     random_device seed_gen;
@@ -160,21 +160,21 @@ void testExternalProductDD()
         TRGSWFFT<P> trgswfft;
         trgswSymEncrypt<P>(trgswfft, plainpoly, key);
 
-        // Apply external product with double decomposition
+        // Apply external product (automatically uses DD when P::l̅ > 1)
         TRLWE<P> result;
-        ExternalProductDD<P>(result, c, trgswfft);
+        ExternalProduct<P>(result, c, trgswfft);
 
         // Decrypt and verify
         const array<bool, P::n> p2 = trlweSymDecrypt<P>(result, key);
         for (int i = 0; i < P::n; i++) {
             if (p[i] != p2[i]) {
-                cerr << "ExternalProductDD failed at index " << i
+                cerr << "ExternalProduct (DD) failed at index " << i
                      << ": expected " << p[i] << " got " << p2[i] << endl;
                 assert(false);
             }
         }
     }
-    cout << "ExternalProductDD test passed (p=1)" << endl;
+    cout << "ExternalProduct (DD) test passed (p=1)" << endl;
 
     // Test with p=-1 (negation)
     cout << "Testing with plaintext = -1 (negation)..." << endl;
@@ -202,18 +202,18 @@ void testExternalProductDD()
         trgswSymEncrypt<P>(trgswfft, plainpoly, key);
 
         TRLWE<P> result;
-        ExternalProductDD<P>(result, c, trgswfft);
+        ExternalProduct<P>(result, c, trgswfft);
 
         const array<bool, P::n> p2 = trlweSymDecrypt<P>(result, key);
         for (int i = 0; i < P::n; i++) {
             if (p[i] != !p2[i]) {
-                cerr << "ExternalProductDD (p=-1) failed at index " << i
+                cerr << "ExternalProduct (DD, p=-1) failed at index " << i
                      << ": expected " << !p[i] << " got " << p2[i] << endl;
                 assert(false);
             }
         }
     }
-    cout << "ExternalProductDD test passed (p=-1)" << endl;
+    cout << "ExternalProduct (DD) test passed (p=-1)" << endl;
 }
 
 int main()
@@ -250,8 +250,8 @@ int main()
     testDoubleDecomposition<DDTestParam>();
     cout << endl;
 
-    cout << "--- Testing ExternalProductDD ---" << endl;
-    testExternalProductDD<DDTestParam>();
+    cout << "--- Testing ExternalProduct (DD) ---" << endl;
+    testExternalProduct<DDTestParam>();
     cout << endl;
 
     cout << "=== All Double Decomposition tests passed ===" << endl;

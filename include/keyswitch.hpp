@@ -17,8 +17,8 @@ constexpr typename P::domainP::T iksoffsetgen()
     typename P::domainP::T offset = 0;
     for (int i = 1; i <= P::t; i++)
         offset +=
-            (1ULL << P::basebit) / 2 *
-            (1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+            (static_cast<typename P::domainP::T>(1) << P::basebit) / 2 *
+            (static_cast<typename P::domainP::T>(1) << (std::numeric_limits<typename P::domainP::T>::digits -
                       i * P::basebit));
     return offset;
 }
@@ -35,7 +35,7 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
         std::numeric_limits<typename P::targetP::T>::digits;
     constexpr typename P::domainP::T roundoffset =
         (P::basebit * P::t) < domain_digit
-            ? 1ULL << (domain_digit - (1 + P::basebit * P::t))
+            ? static_cast<typename P::domainP::T>(1) << (domain_digit - (1 + P::basebit * P::t))
             : 0;
     if constexpr (domain_digit == target_digit)
         res[P::targetP::k * P::targetP::n] =
@@ -43,7 +43,7 @@ void IdentityKeySwitch(TLWE<typename P::targetP> &res,
     else if constexpr (domain_digit > target_digit)
         res[P::targetP::k * P::targetP::n] =
             (tlwe[P::domainP::k * P::domainP::n] +
-             (1ULL << (domain_digit - target_digit - 1))) >>
+             (static_cast<typename P::domainP::T>(1) << (domain_digit - target_digit - 1))) >>
             (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
         res[P::targetP::k * P::targetP::n] =
@@ -86,7 +86,7 @@ void CatIdentityKeySwitch(
         std::numeric_limits<typename P::targetP::T>::digits;
     constexpr typename P::domainP::T roundoffset =
         (P::basebit * P::t) < domain_digit
-            ? 1ULL << (domain_digit - (1 + P::basebit * P::t))
+            ? static_cast<typename P::domainP::T>(1) << (domain_digit - (1 + P::basebit * P::t))
             : 0;
 
     for (int cat = 0; cat < numcat; cat++) {
@@ -96,7 +96,7 @@ void CatIdentityKeySwitch(
         else if constexpr (domain_digit > target_digit)
             res[cat][P::targetP::k * P::targetP::n] =
                 (tlwe[cat][P::domainP::k * P::domainP::n] +
-                 (1ULL << (domain_digit - target_digit - 1))) >>
+                 (static_cast<typename P::domainP::T>(1) << (domain_digit - target_digit - 1))) >>
                 (domain_digit - target_digit);
         else if constexpr (domain_digit < target_digit)
             res[cat][P::targetP::k * P::targetP::n] =
@@ -138,7 +138,7 @@ void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
                              const SubsetKeySwitchingKey<P> &ksk)
 {
     constexpr typename P::domainP::T prec_offset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+        static_cast<typename P::domainP::T>(1) << (std::numeric_limits<typename P::domainP::T>::digits -
                  (1 + P::basebit * P::t));
     constexpr uint32_t mask = (1U << P::basebit) - 1;
     res = {};
@@ -154,11 +154,11 @@ void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
     }
     else if constexpr (domain_digit > target_digit) {
         for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
-            res[i] = (tlwe[i] + (1ULL << (domain_digit - target_digit - 1))) >>
+            res[i] = (tlwe[i] + (static_cast<typename P::domainP::T>(1) << (domain_digit - target_digit - 1))) >>
                      (domain_digit - target_digit);
         res[P::targetP::k * P::targetP::n] =
             (tlwe[P::domainP::k * P::domainP::n] +
-             (1ULL << (domain_digit - target_digit - 1))) >>
+             (static_cast<typename P::domainP::T>(1) << (domain_digit - target_digit - 1))) >>
             (domain_digit - target_digit);
     }
     else if constexpr (domain_digit < target_digit) {
@@ -189,13 +189,13 @@ void PrivKeySwitch(TRLWE<typename P::targetP> &res,
                    const PrivateKeySwitchingKey<P> &privksk)
 {
     constexpr typename P::domainP::T roundoffset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+        static_cast<typename P::domainP::T>(1) << (std::numeric_limits<typename P::domainP::T>::digits -
                  (1 + P::basebit * P::t));
 
     // Koga's Optimization
     constexpr typename P::domainP::T offset = iksoffsetgen<P>();
-    constexpr typename P::domainP::T mask = (1ULL << P::basebit) - 1;
-    constexpr typename P::domainP::T halfbase = 1ULL << (P::basebit - 1);
+    constexpr typename P::domainP::T mask = (static_cast<typename P::domainP::T>(1) << P::basebit) - 1;
+    constexpr typename P::domainP::T halfbase = static_cast<typename P::domainP::T>(1) << (P::basebit - 1);
     res = {};
     for (int i = 0; i <= P::domainP::k * P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + offset + roundoffset;
@@ -258,7 +258,7 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
                    const TLWE2TRLWEIKSKey<P> &iksk)
 {
     constexpr typename P::domainP::T prec_offset =
-        1ULL << (std::numeric_limits<typename P::domainP::T>::digits -
+        static_cast<typename P::domainP::T>(1) << (std::numeric_limits<typename P::domainP::T>::digits -
                  (1 + P::basebit * P::t));
     constexpr uint32_t mask = (1U << P::basebit) - 1;
     res = {};
@@ -270,7 +270,7 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
         res[P::targetP::k][0] = tlwe[P::domainP::n];
     else if constexpr (domain_digit > target_digit)
         res[P::targetP::k][0] = (tlwe[P::domainP::n] +
-                                 (1ULL << (domain_digit - target_digit - 1))) >>
+                                 (static_cast<typename P::domainP::T>(1) << (domain_digit - target_digit - 1))) >>
                                 (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
         res[P::targetP::k][0] = tlwe[P::domainP::n]

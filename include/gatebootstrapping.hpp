@@ -263,46 +263,6 @@ constexpr Polynomial<P> μpolygen()
     return poly;
 }
 
-// Double Decomposition variants
-template <class P, uint32_t num_out = 1>
-void BlindRotateDD(TRLWE<typename P::targetP> &res,
-                   const TLWE<typename P::domainP> &tlwe,
-                   const BootstrappingKeyFFT<P> &bkfft,
-                   const Polynomial<typename P::targetP> &testvector)
-{
-    constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
-    const uint32_t b̄ = 2 * P::targetP::n -
-                       ((tlwe[P::domainP::k * P::domainP::n] >>
-                         (std::numeric_limits<typename P::domainP::T>::digits -
-                          1 - P::targetP::nbit + bitwidth))
-                        << bitwidth);
-    res = {};
-    PolynomialMulByXai<typename P::targetP>(res[P::targetP::k], testvector, b̄);
-    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
-        constexpr typename P::domainP::T roundoffset =
-            1ULL << (std::numeric_limits<typename P::domainP::T>::digits - 2 -
-                     P::targetP::nbit + bitwidth);
-        const uint32_t ā =
-            (tlwe[i] + roundoffset) >>
-            (std::numeric_limits<typename P::domainP::T>::digits - 1 -
-             P::targetP::nbit + bitwidth)
-                << bitwidth;
-        if (ā == 0) continue;
-        CMUXwithPolynomialMulByXaiMinusOneDD<P>(res, bkfft[i], ā);
-    }
-}
-
-template <class P>
-void GateBootstrappingTLWE2TLWEDD(
-    TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
-    const BootstrappingKeyFFT<P> &bkfft,
-    const Polynomial<typename P::targetP> &testvector)
-{
-    alignas(64) TRLWE<typename P::targetP> acc;
-    BlindRotateDD<P>(acc, tlwe, bkfft, testvector);
-    SampleExtractIndex<typename P::targetP>(res, acc, 0);
-}
-
 template <class bkP, typename bkP::targetP::T μ, class iksP>
 void GateBootstrapping(TLWE<typename iksP::targetP> &res,
                        const TLWE<typename bkP::domainP> &tlwe,

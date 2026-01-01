@@ -267,87 +267,79 @@ void NonceDecomposition(DecomposedNoncePolynomialRAINTT<P> &decpolyntt,
             decpolyntt[i], decpoly[i], (*raintttable)[1], (*raintttwist)[1]);
 }
 
+// External product with TRGSWFFT
+// Automatically uses Double Decomposition when P::l̅ > 1
 template <class P>
 void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                      const TRGSWFFT<P> &trgswfft)
 {
     alignas(64) PolynomialInFD<P> decpolyfft;
     alignas(64) TRLWEInFD<P> restrlwefft;
-    {
-        alignas(64) DecomposedNoncePolynomial<P> decpoly;
-        NonceDecomposition<P>(decpoly, trlwe[0]);
-        TwistIFFT<P>(decpolyfft, decpoly[0]);
-        for (int m = 0; m < P::k + 1; m++)
-            MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
-        for (int i = 1; i < P::lₐ; i++) {
-            TwistIFFT<P>(decpolyfft, decpoly[i]);
+
+    if constexpr (P::l̅ > 1) {
+        // Double Decomposition (bivariate representation)
+        // Uses l*l̅ rows for "b" block and k*lₐ*l̅ₐ rows for "a" blocks
+        {
+            alignas(64) DecomposedNoncePolynomialDD<P> decpoly;
+            NonceDoubleDecomposition<P>(decpoly, trlwe[0]);
+            TwistIFFT<P>(decpolyfft, decpoly[0]);
             for (int m = 0; m < P::k + 1; m++)
-                FMAInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[i][m]);
-        }
-        for (int k = 1; k < P::k; k++) {
-            NonceDecomposition<P>(decpoly, trlwe[k]);
-            for (int i = 0; i < P::lₐ; i++) {
+                MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
+            for (int i = 1; i < P::lₐ * P::l̅ₐ; i++) {
                 TwistIFFT<P>(decpolyfft, decpoly[i]);
                 for (int m = 0; m < P::k + 1; m++)
-                    FMAInFD<P::n>(restrlwefft[m], decpolyfft,
-                                  trgswfft[i + k * P::lₐ][m]);
+                    FMAInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[i][m]);
+            }
+            for (int k = 1; k < P::k; k++) {
+                NonceDoubleDecomposition<P>(decpoly, trlwe[k]);
+                for (int i = 0; i < P::lₐ * P::l̅ₐ; i++) {
+                    TwistIFFT<P>(decpolyfft, decpoly[i]);
+                    for (int m = 0; m < P::k + 1; m++)
+                        FMAInFD<P::n>(restrlwefft[m], decpolyfft,
+                                      trgswfft[i + k * P::lₐ * P::l̅ₐ][m]);
+                }
             }
         }
-    }
-    alignas(64) DecomposedPolynomial<P> decpoly;
-    Decomposition<P>(decpoly, trlwe[P::k]);
-    for (int i = 0; i < P::l; i++) {
-        TwistIFFT<P>(decpolyfft, decpoly[i]);
-        for (int m = 0; m < P::k + 1; m++)
-            FMAInFD<P::n>(restrlwefft[m], decpolyfft,
-                          trgswfft[i + P::k * P::lₐ][m]);
-    }
-    for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
-}
-
-// External product with Double Decomposition (bivariate representation)
-// Uses the full TRGSW structure with l*l̅ rows for "b" block and k*lₐ*l̅ₐ rows
-// for "a" blocks
-template <class P>
-void ExternalProductDD(TRLWE<P> &res, const TRLWE<P> &trlwe,
-                       const TRGSWFFT<P> &trgswfft)
-{
-    alignas(64) PolynomialInFD<P> decpolyfft;
-    alignas(64) TRLWEInFD<P> restrlwefft;
-
-    // Handle "a" polynomials (indices 0 to k-1 in TRLWE)
-    // Uses NonceDoubleDecomposition with lₐ*l̅ₐ levels
-    {
-        alignas(64) DecomposedNoncePolynomialDD<P> decpoly;
-        NonceDoubleDecomposition<P>(decpoly, trlwe[0]);
-        TwistIFFT<P>(decpolyfft, decpoly[0]);
-        for (int m = 0; m < P::k + 1; m++)
-            MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
-        for (int i = 1; i < P::lₐ * P::l̅ₐ; i++) {
+        alignas(64) DecomposedPolynomialDD<P> decpoly;
+        DoubleDecomposition<P>(decpoly, trlwe[P::k]);
+        for (int i = 0; i < P::l * P::l̅; i++) {
             TwistIFFT<P>(decpolyfft, decpoly[i]);
             for (int m = 0; m < P::k + 1; m++)
-                FMAInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[i][m]);
-        }
-        for (int k = 1; k < P::k; k++) {
-            NonceDoubleDecomposition<P>(decpoly, trlwe[k]);
-            for (int i = 0; i < P::lₐ * P::l̅ₐ; i++) {
-                TwistIFFT<P>(decpolyfft, decpoly[i]);
-                for (int m = 0; m < P::k + 1; m++)
-                    FMAInFD<P::n>(restrlwefft[m], decpolyfft,
-                                  trgswfft[i + k * P::lₐ * P::l̅ₐ][m]);
-            }
+                FMAInFD<P::n>(restrlwefft[m], decpolyfft,
+                              trgswfft[i + P::k * P::lₐ * P::l̅ₐ][m]);
         }
     }
-
-    // Handle "b" polynomial (index k in TRLWE)
-    // Uses DoubleDecomposition with l*l̅ levels
-    alignas(64) DecomposedPolynomialDD<P> decpoly;
-    DoubleDecomposition<P>(decpoly, trlwe[P::k]);
-    for (int i = 0; i < P::l * P::l̅; i++) {
-        TwistIFFT<P>(decpolyfft, decpoly[i]);
-        for (int m = 0; m < P::k + 1; m++)
-            FMAInFD<P::n>(restrlwefft[m], decpolyfft,
-                          trgswfft[i + P::k * P::lₐ * P::l̅ₐ][m]);
+    else {
+        // Standard decomposition (l̅ == 1)
+        {
+            alignas(64) DecomposedNoncePolynomial<P> decpoly;
+            NonceDecomposition<P>(decpoly, trlwe[0]);
+            TwistIFFT<P>(decpolyfft, decpoly[0]);
+            for (int m = 0; m < P::k + 1; m++)
+                MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
+            for (int i = 1; i < P::lₐ; i++) {
+                TwistIFFT<P>(decpolyfft, decpoly[i]);
+                for (int m = 0; m < P::k + 1; m++)
+                    FMAInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[i][m]);
+            }
+            for (int k = 1; k < P::k; k++) {
+                NonceDecomposition<P>(decpoly, trlwe[k]);
+                for (int i = 0; i < P::lₐ; i++) {
+                    TwistIFFT<P>(decpolyfft, decpoly[i]);
+                    for (int m = 0; m < P::k + 1; m++)
+                        FMAInFD<P::n>(restrlwefft[m], decpolyfft,
+                                      trgswfft[i + k * P::lₐ][m]);
+                }
+            }
+        }
+        alignas(64) DecomposedPolynomial<P> decpoly;
+        Decomposition<P>(decpoly, trlwe[P::k]);
+        for (int i = 0; i < P::l; i++) {
+            TwistIFFT<P>(decpolyfft, decpoly[i]);
+            for (int m = 0; m < P::k + 1; m++)
+                FMAInFD<P::n>(restrlwefft[m], decpolyfft,
+                              trgswfft[i + P::k * P::lₐ][m]);
+        }
     }
     for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
 }

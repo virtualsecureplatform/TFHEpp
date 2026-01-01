@@ -154,8 +154,13 @@ struct AHlvl2param {
 };
 
 // lvl3param with 128-bit Torus and non-trivial Double Decomposition
-// Double decomposition constraint: l * Bgbit + l̅ * B̅gbit <= 128
-// Using l=4, Bgbit=16, l̅=4, B̅gbit=16: 4*16 + 4*16 = 128 bits (fully utilized)
+// Double decomposition structure:
+//   - Primary decomposition (l, Bgbit): Decomposes plaintext by μ in TRGSW gadget
+//   - Auxiliary decomposition (l̅, B̅gbit): Decomposes TRLWE ciphertext coefficients
+//     in the external product. Must cover full 128-bit coefficient.
+// Constraint for DD algorithm: l*Bgbit + (l̅-1)*B̅gbit ≤ 128
+// Using l=2, Bgbit=16 for primary (32 bits); l̅=4, B̅gbit=32 for auxiliary (128 bits)
+// This gives: 32 + 96 = 128 ✓
 struct lvl3param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
@@ -163,8 +168,8 @@ struct lvl3param {
     // ease of polynomial multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension = 4096
     static constexpr std::uint32_t k = 1;
-    static constexpr std::uint32_t lₐ = 4;
-    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t lₐ = 2;     // reduced to fit DD constraint
+    static constexpr std::uint32_t l = 2;      // reduced to fit DD constraint
     static constexpr std::uint32_t Bgbit = 16;
     static constexpr std::uint32_t Bgₐbit = 16;
     static constexpr uint32_t Bg = 1U << Bgbit;
@@ -179,12 +184,12 @@ struct lvl3param {
     static constexpr double Δ =
         static_cast<double>(static_cast<T>(1) << (128 - plain_modulusbit - 1));
     // Double Decomposition (bivariate representation) parameters
-    // Non-trivial values for testing actual double decomposition
-    // Constraint: l * Bgbit + l̅ * B̅gbit <= 128
-    static constexpr std::uint32_t l̅ = 4;    // auxiliary decomposition levels
+    // Auxiliary decomposition must cover full 128-bit ciphertext coefficients
+    // l̅ * B̅gbit = 4 * 32 = 128 bits
+    static constexpr std::uint32_t l̅ = 4;     // auxiliary decomposition levels
     static constexpr std::uint32_t l̅ₐ = 4;
-    static constexpr std::uint32_t B̅gbit = 16;   // 2^16 base for auxiliary
-    static constexpr std::uint32_t B̅gₐbit = 16;
+    static constexpr std::uint32_t B̅gbit = 32;    // 2^32 base for auxiliary (covers 128-bit T)
+    static constexpr std::uint32_t B̅gₐbit = 32;
 };
 
 struct lvl4param {
