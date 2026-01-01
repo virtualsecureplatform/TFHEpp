@@ -9,12 +9,12 @@ using namespace TFHEpp;
 // Custom parameter set for testing double decomposition with 64-bit Torus
 // Using trivial double decomposition (l̅=1) which reduces to standard decomposition
 // This verifies the code path works correctly
-// Note: nbit must match lvl2param (11) for FFT compatibility
+// Note: nbit must match lvl2param for FFT compatibility
 struct DDTestParam {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
-    static constexpr std::uint32_t nbit = 11;
-    static constexpr std::uint32_t n = 1 << nbit;  // 2048
+    static constexpr std::uint32_t nbit = lvl2param::nbit;  // Use lvl2param's nbit for FFT compatibility
+    static constexpr std::uint32_t n = 1 << nbit;
     static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t lₐ = 4;
     static constexpr std::uint32_t l = 4;
