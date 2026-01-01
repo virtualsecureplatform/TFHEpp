@@ -928,145 +928,228 @@ constexpr std::array<typename P::T, P::l̅ₐ> nonceh̅gen()
     return h̅;
 }
 
+// Add gadget values to HalfTRGSW (standard decomposition only)
+// For Double Decomposition, use halftrgswSymEncrypt directly
 template <class P>
 inline void halftrgswhadd(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p)
 {
+    static_assert(P::l̅ == 1,
+                  "halftrgswhadd only supports standard decomposition (l̅=1). "
+                  "Use halftrgswSymEncrypt for DD.");
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
-
-    if constexpr (P::l̅ > 1) {
-        // Double Decomposition: first add ordinary gadget, then decompose TRLWE
-        // Create l temporary TRLWEs with ordinary gadget values p * h[i]
-        for (int i = 0; i < P::l; i++) {
-            TRLWE<P> temp_trlwe = halftrgsw[i * P::l̅];  // Copy base row (encrypted zero)
-            for (int j = 0; j < P::n; j++) {
-                temp_trlwe[P::k][j] +=
-                    static_cast<typename P::T>(p[j]) * h[i];
-            }
-            // Decompose this TRLWE to base B̅g to get l̅ rows
-            std::array<TRLWE<P>, P::l̅> decomposed;
-            TRLWEBaseBbarDecompose<P>(decomposed, temp_trlwe);
-            for (int ī = 0; ī < P::l̅; ī++) {
-                halftrgsw[i * P::l̅ + ī] = decomposed[ī];
-            }
-        }
-    }
-    else {
-        // Standard decomposition (l̅ = 1): add ordinary gadget values directly
-        for (int i = 0; i < P::l; i++) {
-            for (int j = 0; j < P::n; j++) {
-                halftrgsw[i][P::k][j] +=
-                    static_cast<typename P::T>(p[j]) * h[i];
-            }
+    for (int i = 0; i < P::l; i++) {
+        for (int j = 0; j < P::n; j++) {
+            halftrgsw[i][P::k][j] +=
+                static_cast<typename P::T>(p[j]) * h[i];
         }
     }
 }
 
+// Add gadget values to TRGSW (standard decomposition only)
+// For Double Decomposition, use trgswSymEncrypt directly
 template <class P>
 inline void trgswhadd(TRGSW<P> &trgsw, const Polynomial<P> &p)
 {
+    static_assert(P::l̅ == 1 && P::l̅ₐ == 1,
+                  "trgswhadd only supports standard decomposition (l̅=l̅ₐ=1). "
+                  "Use trgswSymEncrypt for DD.");
     constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
-
-    if constexpr (P::l̅ₐ > 1) {
-        // DD for nonce part: first add ordinary gadget, then decompose TRLWE
-        for (int k = 0; k < P::k; k++) {
-            for (int i = 0; i < P::lₐ; i++) {
-                TRLWE<P> temp_trlwe = trgsw[(i * P::l̅ₐ) + k * P::lₐ * P::l̅ₐ];
-                for (int j = 0; j < P::n; j++) {
-                    temp_trlwe[k][j] +=
-                        static_cast<typename P::T>(p[j]) * nonceh[i];
-                }
-                // Decompose to base B̅gₐ
-                std::array<TRLWE<P>, P::l̅ₐ> decomposed;
-                TRLWEBaseBbarDecomposeNonce<P>(decomposed, temp_trlwe);
-                for (int ī = 0; ī < P::l̅ₐ; ī++) {
-                    trgsw[(i * P::l̅ₐ + ī) + k * P::lₐ * P::l̅ₐ] = decomposed[ī];
-                }
-            }
-        }
-    }
-    else {
-        // Standard decomposition for nonce part
-        for (int i = 0; i < P::lₐ; i++) {
-            for (int k = 0; k < P::k; k++) {
-                for (int j = 0; j < P::n; j++) {
-                    trgsw[i + k * P::lₐ][k][j] +=
-                        static_cast<typename P::T>(p[j]) * nonceh[i];
-                }
-            }
-        }
-    }
-
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
 
-    if constexpr (P::l̅ > 1) {
-        // DD for main part: first add ordinary gadget, then decompose TRLWE
-        for (int i = 0; i < P::l; i++) {
-            TRLWE<P> temp_trlwe = trgsw[(i * P::l̅) + P::k * P::lₐ * P::l̅ₐ];
+    // Nonce part
+    for (int i = 0; i < P::lₐ; i++) {
+        for (int k = 0; k < P::k; k++) {
             for (int j = 0; j < P::n; j++) {
-                temp_trlwe[P::k][j] +=
-                    static_cast<typename P::T>(p[j]) * h[i];
-            }
-            // Decompose to base B̅g
-            std::array<TRLWE<P>, P::l̅> decomposed;
-            TRLWEBaseBbarDecompose<P>(decomposed, temp_trlwe);
-            for (int ī = 0; ī < P::l̅; ī++) {
-                trgsw[(i * P::l̅ + ī) + P::k * P::lₐ * P::l̅ₐ] = decomposed[ī];
+                trgsw[i + k * P::lₐ][k][j] +=
+                    static_cast<typename P::T>(p[j]) * nonceh[i];
             }
         }
     }
-    else {
-        // Standard decomposition for main part
-        for (int i = 0; i < P::l; i++) {
-            for (int j = 0; j < P::n; j++) {
-                trgsw[i + P::k * P::lₐ][P::k][j] +=
-                    static_cast<typename P::T>(p[j]) * h[i];
-            }
+
+    // Main part
+    for (int i = 0; i < P::l; i++) {
+        for (int j = 0; j < P::n; j++) {
+            trgsw[i + P::k * P::lₐ][P::k][j] +=
+                static_cast<typename P::T>(p[j]) * h[i];
         }
     }
 }
 
+// Add gadget values for constant 1 to TRGSW (standard decomposition only)
+// For Double Decomposition, use trgswSymEncryptOne directly
 template <class P>
 inline void trgswhoneadd(TRGSW<P> &trgsw)
 {
+    static_assert(P::l̅ == 1 && P::l̅ₐ == 1,
+                  "trgswhoneadd only supports standard decomposition (l̅=l̅ₐ=1). "
+                  "Use trgswSymEncryptOne for DD.");
     constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
 
-    if constexpr (P::l̅ₐ > 1) {
-        // DD for nonce part: add ordinary gadget, then decompose
-        for (int k = 0; k < P::k; k++) {
+    // Nonce part
+    for (int i = 0; i < P::lₐ; i++)
+        for (int k = 0; k < P::k; k++)
+            trgsw[i + k * P::lₐ][k][0] += nonceh[i];
+
+    // Main part
+    for (int i = 0; i < P::l; i++)
+        trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
+}
+
+// Encrypt constant 1 in TRGSW with proper DD support
+template <class P, typename NoiseType>
+void trgswSymEncryptOneImpl(TRGSW<P> &trgsw, const NoiseType noise,
+                            const Key<P> &key)
+{
+    constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
+
+    if constexpr (P::l̅ > 1 || P::l̅ₐ > 1) {
+        // Double Decomposition path
+        constexpr int ordinary_rows = P::k * P::lₐ + P::l;
+        std::array<TRLWE<P>, ordinary_rows> ordinary_trgsw;
+        for (auto &trlwe : ordinary_trgsw)
+            trlweSymEncryptZero<P>(trlwe, noise, key);
+
+        // Add gadget for constant 1
+        for (int i = 0; i < P::lₐ; i++)
+            for (int k_idx = 0; k_idx < P::k; k_idx++)
+                ordinary_trgsw[i + k_idx * P::lₐ][k_idx][0] += nonceh[i];
+
+        for (int i = 0; i < P::l; i++)
+            ordinary_trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
+
+        // Apply DD
+        for (int k_idx = 0; k_idx < P::k; k_idx++) {
             for (int i = 0; i < P::lₐ; i++) {
-                TRLWE<P> temp_trlwe = trgsw[(i * P::l̅ₐ) + k * P::lₐ * P::l̅ₐ];
-                temp_trlwe[k][0] += nonceh[i];  // Add 1 * h[i]
                 std::array<TRLWE<P>, P::l̅ₐ> decomposed;
-                TRLWEBaseBbarDecomposeNonce<P>(decomposed, temp_trlwe);
-                for (int ī = 0; ī < P::l̅ₐ; ī++) {
-                    trgsw[(i * P::l̅ₐ + ī) + k * P::lₐ * P::l̅ₐ] = decomposed[ī];
+                TRLWEBaseBbarDecomposeNonce<P>(decomposed,
+                                               ordinary_trgsw[i + k_idx * P::lₐ]);
+                for (int j = 0; j < P::l̅ₐ; j++)
+                    trgsw[(i * P::l̅ₐ + j) + k_idx * P::lₐ * P::l̅ₐ] =
+                        decomposed[j];
+            }
+        }
+        for (int i = 0; i < P::l; i++) {
+            std::array<TRLWE<P>, P::l̅> decomposed;
+            TRLWEBaseBbarDecompose<P>(decomposed,
+                                      ordinary_trgsw[i + P::k * P::lₐ]);
+            for (int j = 0; j < P::l̅; j++)
+                trgsw[(i * P::l̅ + j) + P::k * P::lₐ * P::l̅ₐ] = decomposed[j];
+        }
+    }
+    else {
+        // Standard path
+        for (TRLWE<P> &trlwe : trgsw)
+            trlweSymEncryptZero<P>(trlwe, noise, key);
+
+        for (int i = 0; i < P::lₐ; i++)
+            for (int k_idx = 0; k_idx < P::k; k_idx++)
+                trgsw[i + k_idx * P::lₐ][k_idx][0] += nonceh[i];
+
+        for (int i = 0; i < P::l; i++)
+            trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
+    }
+}
+
+template <class P>
+void trgswSymEncryptOne(TRGSW<P> &trgsw, const double α, const Key<P> &key)
+{
+    trgswSymEncryptOneImpl<P>(trgsw, α, key);
+}
+
+template <class P>
+void trgswSymEncryptOne(TRGSW<P> &trgsw, const uint η, const Key<P> &key)
+{
+    trgswSymEncryptOneImpl<P>(trgsw, η, key);
+}
+
+template <class P>
+void trgswSymEncryptOne(TRGSW<P> &trgsw, const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        trgswSymEncryptOne<P>(trgsw, P::α, key);
+    else
+        trgswSymEncryptOne<P>(trgsw, P::η, key);
+}
+
+template <class P, typename NoiseType>
+void trgswSymEncryptImpl(TRGSW<P> &trgsw, const Polynomial<P> &p,
+                         const NoiseType noise, const Key<P> &key)
+{
+    constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
+
+    if constexpr (P::l̅ > 1 || P::l̅ₐ > 1) {
+        // Double Decomposition path:
+        // Step 1: Create ordinary TRGSW with k*lₐ + l rows
+        constexpr int ordinary_rows = P::k * P::lₐ + P::l;
+        std::array<TRLWE<P>, ordinary_rows> ordinary_trgsw;
+        for (auto &trlwe : ordinary_trgsw)
+            trlweSymEncryptZero<P>(trlwe, noise, key);
+
+        // Step 2: Add gadget values to create ordinary TRGSW
+        // Nonce part
+        for (int i = 0; i < P::lₐ; i++) {
+            for (int k_idx = 0; k_idx < P::k; k_idx++) {
+                for (int n = 0; n < P::n; n++) {
+                    ordinary_trgsw[i + k_idx * P::lₐ][k_idx][n] +=
+                        static_cast<typename P::T>(p[n]) * nonceh[i];
                 }
             }
         }
-    }
-    else {
-        for (int i = 0; i < P::lₐ; i++)
-            for (int k = 0; k < P::k; k++)
-                trgsw[i + k * P::lₐ][k][0] += nonceh[i];
-    }
-
-    constexpr std::array<typename P::T, P::l> h = hgen<P>();
-
-    if constexpr (P::l̅ > 1) {
-        // DD for main part: add ordinary gadget, then decompose
+        // Main part
         for (int i = 0; i < P::l; i++) {
-            TRLWE<P> temp_trlwe = trgsw[(i * P::l̅) + P::k * P::lₐ * P::l̅ₐ];
-            temp_trlwe[P::k][0] += h[i];  // Add 1 * h[i]
+            for (int n = 0; n < P::n; n++) {
+                ordinary_trgsw[i + P::k * P::lₐ][P::k][n] +=
+                    static_cast<typename P::T>(p[n]) * h[i];
+            }
+        }
+
+        // Step 3: Apply DD to each ordinary row
+        // Nonce part: each of the k*lₐ rows expands to l̅ₐ rows
+        for (int k_idx = 0; k_idx < P::k; k_idx++) {
+            for (int i = 0; i < P::lₐ; i++) {
+                std::array<TRLWE<P>, P::l̅ₐ> decomposed;
+                TRLWEBaseBbarDecomposeNonce<P>(decomposed,
+                                               ordinary_trgsw[i + k_idx * P::lₐ]);
+                for (int j = 0; j < P::l̅ₐ; j++) {
+                    trgsw[(i * P::l̅ₐ + j) + k_idx * P::lₐ * P::l̅ₐ] =
+                        decomposed[j];
+                }
+            }
+        }
+        // Main part: each of the l rows expands to l̅ rows
+        for (int i = 0; i < P::l; i++) {
             std::array<TRLWE<P>, P::l̅> decomposed;
-            TRLWEBaseBbarDecompose<P>(decomposed, temp_trlwe);
-            for (int ī = 0; ī < P::l̅; ī++) {
-                trgsw[(i * P::l̅ + ī) + P::k * P::lₐ * P::l̅ₐ] = decomposed[ī];
+            TRLWEBaseBbarDecompose<P>(decomposed,
+                                      ordinary_trgsw[i + P::k * P::lₐ]);
+            for (int j = 0; j < P::l̅; j++) {
+                trgsw[(i * P::l̅ + j) + P::k * P::lₐ * P::l̅ₐ] = decomposed[j];
             }
         }
     }
     else {
-        for (int i = 0; i < P::l; i++)
-            trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
+        // Standard path (no DD): encrypt and add gadget directly
+        for (TRLWE<P> &trlwe : trgsw)
+            trlweSymEncryptZero<P>(trlwe, noise, key);
+
+        // Nonce part
+        for (int i = 0; i < P::lₐ; i++) {
+            for (int k_idx = 0; k_idx < P::k; k_idx++) {
+                for (int n = 0; n < P::n; n++) {
+                    trgsw[i + k_idx * P::lₐ][k_idx][n] +=
+                        static_cast<typename P::T>(p[n]) * nonceh[i];
+                }
+            }
+        }
+        // Main part
+        for (int i = 0; i < P::l; i++) {
+            for (int n = 0; n < P::n; n++) {
+                trgsw[i + P::k * P::lₐ][P::k][n] +=
+                    static_cast<typename P::T>(p[n]) * h[i];
+            }
+        }
     }
 }
 
@@ -1074,16 +1157,14 @@ template <class P>
 void trgswSymEncrypt(TRGSW<P> &trgsw, const Polynomial<P> &p, const double α,
                      const Key<P> &key)
 {
-    for (TRLWE<P> &trlwe : trgsw) trlweSymEncryptZero<P>(trlwe, α, key);
-    trgswhadd<P>(trgsw, p);
+    trgswSymEncryptImpl<P>(trgsw, p, α, key);
 }
 
 template <class P>
 void trgswSymEncrypt(TRGSW<P> &trgsw, const Polynomial<P> &p, const uint η,
                      const Key<P> &key)
 {
-    for (TRLWE<P> &trlwe : trgsw) trlweSymEncryptZero<P>(trlwe, η, key);
-    trgswhadd<P>(trgsw, p);
+    trgswSymEncryptImpl<P>(trgsw, p, η, key);
 }
 
 template <class P>
@@ -1096,20 +1177,62 @@ void trgswSymEncrypt(TRGSW<P> &trgsw, const Polynomial<P> &p,
         trgswSymEncrypt<P>(trgsw, p, P::η, key);
 }
 
+template <class P, typename NoiseType>
+void halftrgswSymEncryptImpl(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p,
+                              const NoiseType noise, const Key<P> &key)
+{
+    constexpr std::array<typename P::T, P::l> h = hgen<P>();
+
+    if constexpr (P::l̅ > 1) {
+        // Double Decomposition path:
+        // Step 1: Create ordinary HalfTRGSW with l rows
+        std::array<TRLWE<P>, P::l> ordinary_halftrgsw;
+        for (auto &trlwe : ordinary_halftrgsw)
+            trlweSymEncryptZero<P>(trlwe, noise, key);
+
+        // Step 2: Add gadget values
+        for (int i = 0; i < P::l; i++) {
+            for (int n = 0; n < P::n; n++) {
+                ordinary_halftrgsw[i][P::k][n] +=
+                    static_cast<typename P::T>(p[n]) * h[i];
+            }
+        }
+
+        // Step 3: Apply DD to each row, expanding l rows to l*l̅ rows
+        for (int i = 0; i < P::l; i++) {
+            std::array<TRLWE<P>, P::l̅> decomposed;
+            TRLWEBaseBbarDecompose<P>(decomposed, ordinary_halftrgsw[i]);
+            for (int j = 0; j < P::l̅; j++) {
+                halftrgsw[i * P::l̅ + j] = decomposed[j];
+            }
+        }
+    }
+    else {
+        // Standard path (no DD)
+        for (TRLWE<P> &trlwe : halftrgsw)
+            trlweSymEncryptZero<P>(trlwe, noise, key);
+
+        for (int i = 0; i < P::l; i++) {
+            for (int n = 0; n < P::n; n++) {
+                halftrgsw[i][P::k][n] +=
+                    static_cast<typename P::T>(p[n]) * h[i];
+            }
+        }
+    }
+}
+
 template <class P>
 void halftrgswSymEncrypt(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p,
                          const double α, const Key<P> &key)
 {
-    for (TRLWE<P> &trlwe : halftrgsw) trlweSymEncryptZero<P>(trlwe, α, key);
-    halftrgswhadd<P>(halftrgsw, p);
+    halftrgswSymEncryptImpl<P>(halftrgsw, p, α, key);
 }
 
 template <class P>
 void halftrgswSymEncrypt(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p,
                          const uint η, const Key<P> &key)
 {
-    for (TRLWE<P> &trlwe : halftrgsw) trlweSymEncryptZero<P>(trlwe, η, key);
-    halftrgswhadd<P>(halftrgsw, p);
+    halftrgswSymEncryptImpl<P>(halftrgsw, p, η, key);
 }
 
 template <class P>
