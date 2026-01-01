@@ -67,6 +67,16 @@ struct lvl02param {
 #endif
 };
 
+struct lvl03param {
+    using domainP = lvl0param;
+    using targetP = lvl3param;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
+};
+
 struct lvlh2param {
     using domainP = lvlhalfparam;
     using targetP = lvl2param;

@@ -8,11 +8,9 @@ namespace TFHEpp {
 template <class P>
 void trlweSymEncryptZero(TRLWE<P> &c, const double α, const Key<P> &key)
 {
-    std::uniform_int_distribution<typename P::T> Torusdist(
-        0, std::numeric_limits<typename P::T>::max());
     for (typename P::T &i : c[P::k]) i = ModularGaussian<P>(0, α);
     for (int k = 0; k < P::k; k++) {
-        for (typename P::T &i : c[k]) i = Torusdist(generator);
+        for (typename P::T &i : c[k]) i = UniformTorusRandom<P>();
         std::array<typename P::T, P::n> partkey;
         for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
         Polynomial<P> temp;
@@ -24,12 +22,10 @@ void trlweSymEncryptZero(TRLWE<P> &c, const double α, const Key<P> &key)
 template <class P>
 void trlweSymEncryptZero(TRLWE<P> &c, const uint η, const Key<P> &key)
 {
-    std::uniform_int_distribution<typename P::T> Torusdist(
-        0, std::numeric_limits<typename P::T>::max());
     for (typename P::T &i : c[P::k])
         i = (CenteredBinomial<P>(η) << std::numeric_limits<P>::digits) / P::q;
     for (int k = 0; k < P::k; k++) {
-        for (typename P::T &i : c[k]) i = Torusdist(generator);
+        for (typename P::T &i : c[k]) i = UniformTorusRandom<P>();
         alignas(64) std::array<typename P::T, P::n> partkey;
         for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
         alignas(64) Polynomial<P> temp;

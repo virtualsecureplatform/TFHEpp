@@ -116,4 +116,52 @@ void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
         for (int i = 0; i < P::n; i++) acc[k][i] += temp[k][i];
 }
 
+// Double Decomposition variants
+template <class P>
+void CMUXFFTDD(TRLWE<P> &res, const TRGSWFFT<P> &cs, const TRLWE<P> &c1,
+               const TRLWE<P> &c0)
+{
+    for (int k = 0; k < P::k + 1; k++)
+        for (int i = 0; i < P::n; i++) res[k][i] = c1[k][i] - c0[k][i];
+    ExternalProductDD<P>(res, res, cs);
+    for (int k = 0; k < P::k + 1; k++)
+        for (int i = 0; i < P::n; i++) res[k][i] += c0[k][i];
+}
+
+template <class bkP>
+void CMUXwithPolynomialMulByXaiMinusOneDD(
+    TRLWE<typename bkP::targetP> &acc,
+    const BootstrappingKeyElementFFT<bkP> &cs, const int a)
+{
+    if constexpr (bkP::domainP::key_value_diff == 1) {
+        alignas(64) TRLWE<typename bkP::targetP> temp;
+        for (int k = 0; k < bkP::targetP::k + 1; k++)
+            PolynomialMulByXaiMinusOne<typename bkP::targetP>(temp[k], acc[k],
+                                                              a);
+        ExternalProductDD<typename bkP::targetP>(temp, temp, cs[0]);
+        for (int k = 0; k < bkP::targetP::k + 1; k++)
+            for (int i = 0; i < bkP::targetP::n; i++) acc[k][i] += temp[k][i];
+    }
+    else {
+        alignas(32) TRLWE<typename bkP::targetP> temp;
+        int count = 0;
+        for (int i = bkP::domainP::key_value_min;
+             i <= bkP::domainP::key_value_max; i++) {
+            if (i != 0) {
+                const int mod = (a * i) % (2 * bkP::targetP::n);
+                const int index = mod > 0 ? mod : mod + (2 * bkP::targetP::n);
+                for (int k = 0; k < bkP::targetP::k + 1; k++)
+                    PolynomialMulByXaiMinusOne<typename bkP::targetP>(
+                        temp[k], acc[k], index);
+                ExternalProductDD<typename bkP::targetP>(temp, temp,
+                                                         cs[count]);
+                for (int k = 0; k < bkP::targetP::k + 1; k++)
+                    for (int i = 0; i < bkP::targetP::n; i++)
+                        acc[k][i] += temp[k][i];
+                count++;
+            }
+        }
+    }
+}
+
 }  // namespace TFHEpp

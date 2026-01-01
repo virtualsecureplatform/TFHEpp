@@ -29,6 +29,26 @@ static thread_local std::random_device generator;
 template <typename T>
 constexpr bool false_v = false;
 
+// Helper function to generate uniform random Torus values
+// For standard types, use uniform_int_distribution
+// For __uint128_t, combine two 64-bit random values
+template <class P>
+inline typename P::T UniformTorusRandom()
+{
+    if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        std::uniform_int_distribution<uint64_t> dist64(
+            0, std::numeric_limits<uint64_t>::max());
+        __uint128_t high = dist64(generator);
+        __uint128_t low = dist64(generator);
+        return (high << 64) | low;
+    }
+    else {
+        std::uniform_int_distribution<typename P::T> dist(
+            0, std::numeric_limits<typename P::T>::max());
+        return dist(generator);
+    }
+}
+
 // https://qiita.com/negi-drums/items/a527c05050781a5af523
 template <typename T>
 concept hasq = requires { T::q; };
@@ -139,6 +159,15 @@ inline typename P::T ModularGaussian(typename P::T center, double stdev)
         const double val = stdev * distribution(generator) * _2p64;
         const uint64_t ival = static_cast<typename P::T>(val);
         return ival + center;
+    }
+    else if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        // 128bit fixed-point number version
+        // Use two 64-bit Gaussians for high and low parts
+        static const double _2p64 = std::pow(2., 64);
+        std::normal_distribution<double> distribution(0., 1.0);
+        const double val = stdev * distribution(generator) * _2p64;
+        const __int128_t ival = static_cast<__int128_t>(val);
+        return static_cast<__uint128_t>(ival) + center;
     }
     else
         static_assert(false_v<typename P::T>, "Undefined Modular Gaussian!");

@@ -15,7 +15,7 @@ constexpr typename P::T offsetgen()
     typename P::T offset = 0;
     for (int i = 1; i <= P::l; i++)
         offset += P::Bg / 2 *
-                  (1ULL << (std::numeric_limits<typename P::T>::digits -
+                  (static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits -
                             i * P::Bgbit));
     return offset;
 }
@@ -27,11 +27,11 @@ inline void Decomposition(DecomposedPolynomial<P> &decpoly,
 {
     // https://eprint.iacr.org/2021/1161
     constexpr typename P::T roundoffset =
-        1ULL << (std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit -
+        static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit -
                  1);
     constexpr typename P::T mask =
-        static_cast<typename P::T>((1ULL << P::Bgbit) - 1);
-    constexpr typename P::T Bgl = 1ULL << (P::l * P::Bgbit);
+        static_cast<typename P::T>((static_cast<typename P::T>(1) << P::Bgbit) - 1);
+    constexpr typename P::T Bgl = static_cast<typename P::T>(1) << (P::l * P::Bgbit);
 
     Polynomial<P> K;
     for (int i = 0; i < P::n; i++) {
@@ -68,11 +68,11 @@ inline void Decomposition(DecomposedPolynomial<P> &decpoly,
 {
     constexpr typename P::T offset = offsetgen<P>();
     constexpr typename P::T roundoffset =
-        1ULL << (std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit -
+        static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits - P::l * P::Bgbit -
                  1);
     constexpr typename P::T mask =
-        static_cast<typename P::T>((1ULL << P::Bgbit) - 1);
-    constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
+        static_cast<typename P::T>((static_cast<typename P::T>(1) << P::Bgbit) - 1);
+    constexpr typename P::T halfBg = (static_cast<typename P::T>(1) << (P::Bgbit - 1));
 
     for (int i = 0; i < P::n; i++) {
         for (int l = 0; l < P::l; l++)
@@ -90,7 +90,7 @@ constexpr typename P::T nonceoffsetgen()
     typename P::T offset = 0;
     for (int i = 1; i <= P::lₐ; i++)
         offset += P::Bgₐ / 2 *
-                  (1ULL << (std::numeric_limits<typename P::T>::digits -
+                  (static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits -
                             i * P::Bgₐbit));
     return offset;
 }
@@ -101,11 +101,11 @@ inline void NonceDecomposition(DecomposedNoncePolynomial<P> &decpoly,
 {
     constexpr typename P::T offset = nonceoffsetgen<P>();
     constexpr typename P::T roundoffset =
-        1ULL << (std::numeric_limits<typename P::T>::digits -
+        static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits -
                  P::lₐ * P::Bgₐbit - 1);
     constexpr typename P::T mask =
-        static_cast<typename P::T>((1ULL << P::Bgₐbit) - 1);
-    constexpr typename P::T halfBg = (1ULL << (P::Bgₐbit - 1));
+        static_cast<typename P::T>((static_cast<typename P::T>(1) << P::Bgₐbit) - 1);
+    constexpr typename P::T halfBg = (static_cast<typename P::T>(1) << (P::Bgₐbit - 1));
 
     for (int i = 0; i < P::n; i++) {
         for (int l = 0; l < P::lₐ; l++)
@@ -148,8 +148,8 @@ inline void DoubleDecomposition(DecomposedPolynomialDD<P> &decpoly,
             ? (static_cast<typename P::T>(1) << (remaining_bits - 1))
             : static_cast<typename P::T>(0);
     constexpr typename P::T maskBg =
-        static_cast<typename P::T>((1ULL << P::Bgbit) - 1);
-    constexpr typename P::T halfBg = (1ULL << (P::Bgbit - 1));
+        static_cast<typename P::T>((static_cast<typename P::T>(1) << P::Bgbit) - 1);
+    constexpr typename P::T halfBg = (static_cast<typename P::T>(1) << (P::Bgbit - 1));
 
     for (int n = 0; n < P::n; n++) {
         typename P::T a = poly[n] + offset + roundoffset;
@@ -159,9 +159,16 @@ inline void DoubleDecomposition(DecomposedPolynomialDD<P> &decpoly,
                 // When l̅=1 (j=0 only), this reduces to standard decomposition
                 const int shift = std::numeric_limits<typename P::T>::digits -
                                   (i + 1) * P::Bgbit - j * P::B̅gbit;
-                decpoly[i * P::l̅ + j][n] =
+                auto decomp_val =
                     static_cast<std::make_signed_t<typename P::T>>(
                         ((a >> shift) & maskBg) - halfBg);
+                // For 128-bit types, shift left by 64 so TwistIFFT (which uses
+                // top 64 bits) gets the correct small integer value
+                if constexpr (std::is_same_v<typename P::T, __uint128_t>)
+                    decpoly[i * P::l̅ + j][n] =
+                        static_cast<typename P::T>(decomp_val) << 64;
+                else
+                    decpoly[i * P::l̅ + j][n] = decomp_val;
             }
         }
     }
@@ -194,8 +201,8 @@ inline void NonceDoubleDecomposition(DecomposedNoncePolynomialDD<P> &decpoly,
             ? (static_cast<typename P::T>(1) << (remaining_bits - 1))
             : static_cast<typename P::T>(0);
     constexpr typename P::T maskBg =
-        static_cast<typename P::T>((1ULL << P::Bgₐbit) - 1);
-    constexpr typename P::T halfBg = (1ULL << (P::Bgₐbit - 1));
+        static_cast<typename P::T>((static_cast<typename P::T>(1) << P::Bgₐbit) - 1);
+    constexpr typename P::T halfBg = (static_cast<typename P::T>(1) << (P::Bgₐbit - 1));
 
     for (int n = 0; n < P::n; n++) {
         typename P::T a = poly[n] + offset + roundoffset;
@@ -205,9 +212,16 @@ inline void NonceDoubleDecomposition(DecomposedNoncePolynomialDD<P> &decpoly,
                 // When l̅ₐ=1 (j=0 only), this reduces to standard decomposition
                 const int shift = std::numeric_limits<typename P::T>::digits -
                                   (i + 1) * P::Bgₐbit - j * P::B̅gₐbit;
-                decpoly[i * P::l̅ₐ + j][n] =
+                auto decomp_val =
                     static_cast<std::make_signed_t<typename P::T>>(
                         ((a >> shift) & maskBg) - halfBg);
+                // For 128-bit types, shift left by 64 so TwistIFFT (which uses
+                // top 64 bits) gets the correct small integer value
+                if constexpr (std::is_same_v<typename P::T, __uint128_t>)
+                    decpoly[i * P::l̅ₐ + j][n] =
+                        static_cast<typename P::T>(decomp_val) << 64;
+                else
+                    decpoly[i * P::l̅ₐ + j][n] = decomp_val;
             }
         }
     }
@@ -575,7 +589,7 @@ constexpr std::array<typename P::T, P::l> hgen()
                    ((i + 1) * P::Bgbit);
     else
         for (int i = 0; i < P::l; i++)
-            h[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
+            h[i] = static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits -
                             (i + 1) * P::Bgbit);
     return h;
 }
@@ -590,7 +604,7 @@ constexpr std::array<typename P::T, P::lₐ> noncehgen()
                    ((i + 1) * P::Bgₐbit);
     else
         for (int i = 0; i < P::lₐ; i++)
-            h[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
+            h[i] = static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits -
                             (i + 1) * P::Bgₐbit);
     return h;
 }
@@ -605,7 +619,7 @@ constexpr std::array<typename P::T, P::l̅> h̅gen()
     std::array<typename P::T, P::l̅> h̅{};
     h̅[0] = 1;  // j=0 means no auxiliary shift
     for (int i = 1; i < P::l̅; i++)
-        h̅[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
+        h̅[i] = static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits -
                         i * P::B̅gbit);
     return h̅;
 }
@@ -617,7 +631,7 @@ constexpr std::array<typename P::T, P::l̅ₐ> nonceh̅gen()
     std::array<typename P::T, P::l̅ₐ> h̅{};
     h̅[0] = 1;  // j=0 means no auxiliary shift
     for (int i = 1; i < P::l̅ₐ; i++)
-        h̅[i] = 1ULL << (std::numeric_limits<typename P::T>::digits -
+        h̅[i] = static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits -
                         i * P::B̅gₐbit);
     return h̅;
 }

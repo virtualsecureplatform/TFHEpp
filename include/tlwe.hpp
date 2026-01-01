@@ -13,13 +13,11 @@ template <class P>
 void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const double α,
                     const Key<P> &key)
 {
-    std::uniform_int_distribution<typename P::T> Torusdist(
-        0, std::numeric_limits<typename P::T>::max());
     res = {};
     res[P::k * P::n] = ModularGaussian<P>(p, α);
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++) {
-            res[k * P::n + i] = Torusdist(generator);
+            res[k * P::n + i] = UniformTorusRandom<P>();
             res[P::k * P::n] += res[k * P::n + i] * key[k * P::n + i];
         }
 }
@@ -122,7 +120,7 @@ typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
     constexpr double Δ =
         2 *
         static_cast<double>(
-            1ULL << (std::numeric_limits<typename P::T>::digits - 1)) /
+            static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits - 1)) /
         plain_modulus;
     const typename P::T phase = tlweSymPhase<P>(c, key);
     typename P::T res = static_cast<typename P::T>(std::round(phase / Δ));
