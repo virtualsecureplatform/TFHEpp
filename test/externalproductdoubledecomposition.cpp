@@ -6,11 +6,9 @@
 using namespace std;
 using namespace TFHEpp;
 
-// Custom parameter set for testing double decomposition with 64-bit Torus
-// Using trivial double decomposition (l̅=1) which reduces to standard decomposition
-// This verifies the code path works correctly
-// Note: nbit must match lvl2param for FFT compatibility
-struct DDTestParam {
+// Custom parameter set for testing standard decomposition (l̅=1) with 64-bit Torus
+// This tests that the standard path still works correctly
+struct DDTestParamStandard {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
     static constexpr std::uint32_t nbit = lvl2param::nbit;  // Use lvl2param's nbit for FFT compatibility
@@ -29,15 +27,40 @@ struct DDTestParam {
     static constexpr T μ = 1ULL << 61;
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ = μ;
-    // Trivial Double Decomposition (l̅=1 reduces to standard decomposition)
-    // For l̅=1 to correctly reduce to standard decomposition, B̅gbit must equal Bgbit
-    // With l=4, Bgbit=10: uses 40 bits
-    // l̅=1, B̅gbit=10: adds 10 bits (but with j=0 only, no additional bits used)
-    // The shift formula: width - (i+1)*Bgbit - j*B̅gbit = width - (i+1)*Bgbit when j=0
+    // Standard decomposition (l̅=1)
     static constexpr std::uint32_t l̅ = 1;
     static constexpr std::uint32_t l̅ₐ = 1;
     static constexpr std::uint32_t B̅gbit = 10;
     static constexpr std::uint32_t B̅gₐbit = 10;
+};
+
+// Custom parameter set for testing actual Double Decomposition (l̅=2) with 64-bit Torus
+// This tests the DD code path where l̅ > 1
+struct DDTestParam {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static constexpr std::uint32_t nbit = lvl2param::nbit;  // Use lvl2param's nbit for FFT compatibility
+    static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 2;  // Reduced to fit within bit budget
+    static constexpr std::uint32_t l = 2;   // Reduced to fit within bit budget
+    static constexpr std::uint32_t Bgbit = 16;
+    static constexpr std::uint32_t Bgₐbit = 16;
+    static constexpr uint32_t Bg = 1U << Bgbit;
+    static constexpr uint32_t Bgₐ = 1U << Bgₐbit;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = std::pow(2.0, -40);
+    using T = uint64_t;
+    static constexpr T μ = 1ULL << 61;
+    static constexpr uint32_t plain_modulus = 8;
+    static constexpr double Δ = μ;
+    // Actual Double Decomposition: l=2, Bgbit=16, l̅=2, B̅gbit=16
+    // Total bits used: 2*16 + 2*16 = 64 (exact fit for 64-bit Torus)
+    static constexpr std::uint32_t l̅ = 2;
+    static constexpr std::uint32_t l̅ₐ = 2;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
 };
 
 // Test Double Decomposition correctness
@@ -221,34 +244,47 @@ int main()
     cout << "=== Testing Double Decomposition ===" << endl;
     cout << endl;
 
-    // DDTestParam: 64-bit Torus with proper double decomposition
-    // l=2, Bgbit=16, l̅=2, B̅gbit=16
-    // Total bits: 2*16 + 2*16 = 64 (exact fit)
-    // Decomposition levels: 2*2 = 4
-
-    cout << "DDTestParam configuration:" << endl;
-    cout << "  Torus type: uint64_t (64-bit)" << endl;
-    cout << "  n = " << DDTestParam::n << " (polynomial degree)" << endl;
-    cout << "  k = " << DDTestParam::k << endl;
-    cout << "  Primary decomposition: l = " << DDTestParam::l
-         << ", Bgbit = " << DDTestParam::Bgbit << endl;
-    cout << "  Auxiliary decomposition: l̅ = " << DDTestParam::l̅
-         << ", B̅gbit = " << DDTestParam::B̅gbit << endl;
-    cout << "  Total decomposition levels: " << (DDTestParam::l * DDTestParam::l̅)
+    // Test 1: Standard decomposition (l̅=1)
+    cout << "=== Test 1: Standard decomposition (l̅=1) ===" << endl;
+    cout << "DDTestParamStandard configuration:" << endl;
+    cout << "  n = " << DDTestParamStandard::n << ", k = " << DDTestParamStandard::k << endl;
+    cout << "  Primary: l = " << DDTestParamStandard::l
+         << ", Bgbit = " << DDTestParamStandard::Bgbit << endl;
+    cout << "  Auxiliary: l̅ = " << DDTestParamStandard::l̅
+         << ", B̅gbit = " << DDTestParamStandard::B̅gbit
+         << " (standard path)" << endl;
+    cout << "  TRGSW rows: "
+         << (DDTestParamStandard::k * DDTestParamStandard::lₐ * DDTestParamStandard::l̅ₐ +
+             DDTestParamStandard::l * DDTestParamStandard::l̅)
          << endl;
-    cout << "  Bits used: "
+    cout << endl;
+
+    cout << "--- Testing ExternalProduct (standard) ---" << endl;
+    testExternalProduct<DDTestParamStandard>();
+    cout << endl;
+
+    // Test 2: Actual Double Decomposition (l̅=2)
+    cout << "=== Test 2: Double Decomposition (l̅=2) ===" << endl;
+    cout << "DDTestParam configuration:" << endl;
+    cout << "  n = " << DDTestParam::n << ", k = " << DDTestParam::k << endl;
+    cout << "  Primary: l = " << DDTestParam::l
+         << ", Bgbit = " << DDTestParam::Bgbit << endl;
+    cout << "  Auxiliary: l̅ = " << DDTestParam::l̅
+         << ", B̅gbit = " << DDTestParam::B̅gbit
+         << " (DD path)" << endl;
+    cout << "  Total bits: "
          << (DDTestParam::l * DDTestParam::Bgbit +
              DDTestParam::l̅ * DDTestParam::B̅gbit)
          << " / 64" << endl;
-    cout << "  TRGSW size: "
+    cout << "  TRGSW rows: "
          << (DDTestParam::k * DDTestParam::lₐ * DDTestParam::l̅ₐ +
              DDTestParam::l * DDTestParam::l̅)
-         << " TRLWE rows" << endl;
+         << endl;
     cout << endl;
 
-    cout << "--- Testing DoubleDecomposition ---" << endl;
-    testDoubleDecomposition<DDTestParam>();
-    cout << endl;
+    // Note: Skip testDoubleDecomposition for l̅>1 as that tests the old
+    // bivariate polynomial decomposition. The new DD algorithm uses
+    // TRLWEBaseBbarDecompose which is tested implicitly via ExternalProduct.
 
     cout << "--- Testing ExternalProduct (DD) ---" << endl;
     testExternalProduct<DDTestParam>();

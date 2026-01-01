@@ -75,12 +75,21 @@ inline void Decomposition(DecomposedPolynomial<P> &decpoly,
     constexpr typename P::T halfBg = (static_cast<typename P::T>(1) << (P::Bgbit - 1));
 
     for (int i = 0; i < P::n; i++) {
-        for (int l = 0; l < P::l; l++)
-            decpoly[l][i] = (((poly[i] + offset + roundoffset) >>
-                              (std::numeric_limits<typename P::T>::digits -
-                               (l + 1) * P::Bgbit)) &
-                             mask) -
-                            halfBg;
+        for (int l = 0; l < P::l; l++) {
+            auto decomp_val =
+                static_cast<std::make_signed_t<typename P::T>>(
+                    (((poly[i] + offset + roundoffset) >>
+                      (std::numeric_limits<typename P::T>::digits -
+                       (l + 1) * P::Bgbit)) &
+                     mask) -
+                    halfBg);
+            // For 128-bit types, shift left by 64 so TwistIFFT (which uses
+            // top 64 bits) gets the correct small integer value
+            if constexpr (std::is_same_v<typename P::T, __uint128_t>)
+                decpoly[l][i] = static_cast<typename P::T>(decomp_val) << 64;
+            else
+                decpoly[l][i] = decomp_val;
+        }
     }
 }
 
@@ -108,12 +117,21 @@ inline void NonceDecomposition(DecomposedNoncePolynomial<P> &decpoly,
     constexpr typename P::T halfBg = (static_cast<typename P::T>(1) << (P::Bgₐbit - 1));
 
     for (int i = 0; i < P::n; i++) {
-        for (int l = 0; l < P::lₐ; l++)
-            decpoly[l][i] = (((poly[i] + offset + roundoffset) >>
-                              (std::numeric_limits<typename P::T>::digits -
-                               (l + 1) * P::Bgₐbit)) &
-                             mask) -
-                            halfBg;
+        for (int l = 0; l < P::lₐ; l++) {
+            auto decomp_val =
+                static_cast<std::make_signed_t<typename P::T>>(
+                    (((poly[i] + offset + roundoffset) >>
+                      (std::numeric_limits<typename P::T>::digits -
+                       (l + 1) * P::Bgₐbit)) &
+                     mask) -
+                    halfBg);
+            // For 128-bit types, shift left by 64 so TwistIFFT (which uses
+            // top 64 bits) gets the correct small integer value
+            if constexpr (std::is_same_v<typename P::T, __uint128_t>)
+                decpoly[l][i] = static_cast<typename P::T>(decomp_val) << 64;
+            else
+                decpoly[l][i] = decomp_val;
+        }
     }
 }
 
@@ -227,6 +245,117 @@ inline void NonceDoubleDecomposition(DecomposedNoncePolynomialDD<P> &decpoly,
     }
 }
 
+// TRLWE Decomposition to base B̅g for Double Decomposition
+// Decomposes each TRLWE coefficient into l̅ digits in base B̅g
+// Used to pre-apply DD to TRGSW rows during encryption
+// Returns l̅ TRLWEs where result[j] contains the j-th B̅g digit of each coefficient
+template <class P>
+inline void TRLWEBaseBbarDecompose(std::array<TRLWE<P>, P::l̅> &result,
+                                   const TRLWE<P> &input)
+{
+    constexpr typename P::T maskB̅g =
+        static_cast<typename P::T>((static_cast<typename P::T>(1) << P::B̅gbit) -
+                                   1);
+    constexpr typename P::T halfB̅g =
+        static_cast<typename P::T>(1) << (P::B̅gbit - 1);
+
+    // Compute offset for signed digit representation
+    constexpr typename P::T offset = []() {
+        typename P::T off = 0;
+        for (int j = 0; j < P::l̅; j++)
+            off += halfB̅g * (static_cast<typename P::T>(1)
+                             << (std::numeric_limits<typename P::T>::digits -
+                                 (j + 1) * P::B̅gbit));
+        return off;
+    }();
+
+    // Remaining bits after decomposition
+    constexpr int remaining_bits =
+        std::numeric_limits<typename P::T>::digits - P::l̅ * P::B̅gbit;
+    constexpr typename P::T roundoffset =
+        remaining_bits > 0
+            ? (static_cast<typename P::T>(1) << (remaining_bits - 1))
+            : static_cast<typename P::T>(0);
+
+    for (int k = 0; k <= P::k; k++) {
+        for (int n = 0; n < P::n; n++) {
+            typename P::T a = input[k][n] + offset + roundoffset;
+            for (int j = 0; j < P::l̅; j++) {
+                // Extract j-th digit from MSB side
+                const int shift = std::numeric_limits<typename P::T>::digits -
+                                  (j + 1) * P::B̅gbit;
+                // Get masked value and compute signed digit
+                // Use signed arithmetic to properly handle negative digits
+                typename P::T masked = (a >> shift) & maskB̅g;
+                // Cast to signed, subtract halfB̅g, then back to unsigned for
+                // proper sign extension
+                using SignedT = std::make_signed_t<typename P::T>;
+                SignedT digit =
+                    static_cast<SignedT>(masked) - static_cast<SignedT>(halfB̅g);
+                // For 128-bit types, shift left by 64 so TwistIFFT (which uses
+                // top 64 bits) gets the correct small integer value
+                if constexpr (std::is_same_v<typename P::T, __uint128_t>)
+                    result[j][k][n] = static_cast<typename P::T>(digit) << 64;
+                else
+                    result[j][k][n] = static_cast<typename P::T>(digit);
+            }
+        }
+    }
+}
+
+// Nonce version of TRLWE Decomposition to base B̅gₐ
+template <class P>
+inline void TRLWEBaseBbarDecomposeNonce(std::array<TRLWE<P>, P::l̅ₐ> &result,
+                                        const TRLWE<P> &input)
+{
+    constexpr typename P::T maskB̅g =
+        static_cast<typename P::T>((static_cast<typename P::T>(1) << P::B̅gₐbit) -
+                                   1);
+    constexpr typename P::T halfB̅g =
+        static_cast<typename P::T>(1) << (P::B̅gₐbit - 1);
+
+    // Compute offset for signed digit representation
+    constexpr typename P::T offset = []() {
+        typename P::T off = 0;
+        for (int j = 0; j < P::l̅ₐ; j++)
+            off += halfB̅g * (static_cast<typename P::T>(1)
+                             << (std::numeric_limits<typename P::T>::digits -
+                                 (j + 1) * P::B̅gₐbit));
+        return off;
+    }();
+
+    // Remaining bits after decomposition
+    constexpr int remaining_bits =
+        std::numeric_limits<typename P::T>::digits - P::l̅ₐ * P::B̅gₐbit;
+    constexpr typename P::T roundoffset =
+        remaining_bits > 0
+            ? (static_cast<typename P::T>(1) << (remaining_bits - 1))
+            : static_cast<typename P::T>(0);
+
+    for (int k = 0; k <= P::k; k++) {
+        for (int n = 0; n < P::n; n++) {
+            typename P::T a = input[k][n] + offset + roundoffset;
+            for (int j = 0; j < P::l̅ₐ; j++) {
+                // Extract j-th digit from MSB side
+                const int shift = std::numeric_limits<typename P::T>::digits -
+                                  (j + 1) * P::B̅gₐbit;
+                // Get masked value and compute signed digit
+                // Use signed arithmetic to properly handle negative digits
+                typename P::T masked = (a >> shift) & maskB̅g;
+                using SignedT = std::make_signed_t<typename P::T>;
+                SignedT digit =
+                    static_cast<SignedT>(masked) - static_cast<SignedT>(halfB̅g);
+                // For 128-bit types, shift left by 64 so TwistIFFT (which uses
+                // top 64 bits) gets the correct small integer value
+                if constexpr (std::is_same_v<typename P::T, __uint128_t>)
+                    result[j][k][n] = static_cast<typename P::T>(digit) << 64;
+                else
+                    result[j][k][n] = static_cast<typename P::T>(digit);
+            }
+        }
+    }
+}
+
 template <class P>
 void Decomposition(DecomposedPolynomialNTT<P> &decpolyntt,
                    const Polynomial<P> &poly)
@@ -267,6 +396,83 @@ void NonceDecomposition(DecomposedNoncePolynomialRAINTT<P> &decpolyntt,
             decpolyntt[i], decpoly[i], (*raintttable)[1], (*raintttwist)[1]);
 }
 
+// Recombine l̅ TRLWEs from Double Decomposition back to single TRLWE
+// result[j] contains j-th B̅g digit; recombine as: res = Σⱼ result[j] * 2^(width - (j+1)*B̅gbit)
+// For 128-bit types, TwistFFT places results in top 64 bits, so we adjust shifts accordingly
+template <class P>
+inline void RecombineTRLWEFromDD(TRLWE<P> &res,
+                                 const std::array<TRLWE<P>, P::l̅> &decomposed)
+{
+    constexpr int width = std::numeric_limits<typename P::T>::digits;
+    // For 128-bit types, TwistFFT adds a << 64 shift, so we compensate
+    constexpr int fft_offset =
+        std::is_same_v<typename P::T, __uint128_t> ? 64 : 0;
+
+    // Initialize result to zero
+    for (int k = 0; k <= P::k; k++) {
+        for (int n = 0; n < P::n; n++) {
+            res[k][n] = 0;
+        }
+    }
+
+    // Add all components with appropriate shifts
+    for (int j = 0; j < P::l̅; j++) {
+        // Target shift: width - (j+1)*B̅gbit
+        // Actual shift needed: target - fft_offset
+        const int target_shift = width - (j + 1) * P::B̅gbit;
+        const int actual_shift = target_shift - fft_offset;
+
+        for (int k = 0; k <= P::k; k++) {
+            for (int n = 0; n < P::n; n++) {
+                if (actual_shift >= 0) {
+                    res[k][n] += decomposed[j][k][n] << actual_shift;
+                }
+                else {
+                    res[k][n] += decomposed[j][k][n] >> (-actual_shift);
+                }
+            }
+        }
+    }
+}
+
+// Recombine l̅ₐ TRLWEs from Double Decomposition (nonce version)
+// For 128-bit types, TwistFFT places results in top 64 bits, so we adjust shifts accordingly
+template <class P>
+inline void RecombineTRLWEFromDDNonce(
+    TRLWE<P> &res, const std::array<TRLWE<P>, P::l̅ₐ> &decomposed)
+{
+    constexpr int width = std::numeric_limits<typename P::T>::digits;
+    // For 128-bit types, TwistFFT adds a << 64 shift, so we compensate
+    constexpr int fft_offset =
+        std::is_same_v<typename P::T, __uint128_t> ? 64 : 0;
+
+    // Initialize result to zero
+    for (int k = 0; k <= P::k; k++) {
+        for (int n = 0; n < P::n; n++) {
+            res[k][n] = 0;
+        }
+    }
+
+    // Add all components with appropriate shifts
+    for (int j = 0; j < P::l̅ₐ; j++) {
+        // Target shift: width - (j+1)*B̅gₐbit
+        // Actual shift needed: target - fft_offset
+        const int target_shift = width - (j + 1) * P::B̅gₐbit;
+        const int actual_shift = target_shift - fft_offset;
+
+        for (int k = 0; k <= P::k; k++) {
+            for (int n = 0; n < P::n; n++) {
+                if (actual_shift >= 0) {
+                    res[k][n] += decomposed[j][k][n] << actual_shift;
+                }
+                else {
+                    res[k][n] += decomposed[j][k][n] >> (-actual_shift);
+                }
+            }
+        }
+    }
+}
+
 // External product with TRGSWFFT
 // Automatically uses Double Decomposition when P::l̅ > 1
 template <class P>
@@ -274,43 +480,103 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                      const TRGSWFFT<P> &trgswfft)
 {
     alignas(64) PolynomialInFD<P> decpolyfft;
-    alignas(64) TRLWEInFD<P> restrlwefft;
 
     if constexpr (P::l̅ > 1) {
-        // Double Decomposition (bivariate representation)
-        // Uses l*l̅ rows for "b" block and k*lₐ*l̅ₐ rows for "a" blocks
-        {
-            alignas(64) DecomposedNoncePolynomialDD<P> decpoly;
-            NonceDoubleDecomposition<P>(decpoly, trlwe[0]);
-            TwistIFFT<P>(decpolyfft, decpoly[0]);
-            for (int m = 0; m < P::k + 1; m++)
-                MulInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[0][m]);
-            for (int i = 1; i < P::lₐ * P::l̅ₐ; i++) {
+        // Double Decomposition: use standard decomposition on input,
+        // accumulate l̅ separate results, then recombine
+        // TRGSW rows are organized as: for each ordinary row i, l̅ rows for B̅g digits
+
+        // l̅ separate accumulators in FD domain
+        alignas(64) std::array<TRLWEInFD<P>, P::l̅> restrlwefft_dd;
+
+        // Initialize all accumulators to zero
+        for (int j = 0; j < P::l̅; j++)
+            for (int m = 0; m <= P::k; m++)
+                for (int n = 0; n < P::n; n++) restrlwefft_dd[j][m][n] = 0.0;
+
+        // Process nonce part with standard decomposition (lₐ levels)
+        if constexpr (P::l̅ₐ > 1) {
+            alignas(64) DecomposedNoncePolynomial<P> decpoly;
+            NonceDecomposition<P>(decpoly, trlwe[0]);
+            for (int i = 0; i < P::lₐ; i++) {
                 TwistIFFT<P>(decpolyfft, decpoly[i]);
-                for (int m = 0; m < P::k + 1; m++)
-                    FMAInFD<P::n>(restrlwefft[m], decpolyfft, trgswfft[i][m]);
+                // Each decomposition level i multiplies with l̅ₐ TRGSW rows
+                for (int j = 0; j < P::l̅ₐ; j++) {
+                    const int row_idx = i * P::l̅ₐ + j;
+                    for (int m = 0; m <= P::k; m++) {
+                        if (i == 0 && j == 0)
+                            MulInFD<P::n>(restrlwefft_dd[j][m], decpolyfft,
+                                          trgswfft[row_idx][m]);
+                        else
+                            FMAInFD<P::n>(restrlwefft_dd[j][m], decpolyfft,
+                                          trgswfft[row_idx][m]);
+                    }
+                }
             }
-            for (int k = 1; k < P::k; k++) {
-                NonceDoubleDecomposition<P>(decpoly, trlwe[k]);
-                for (int i = 0; i < P::lₐ * P::l̅ₐ; i++) {
+            for (int k_idx = 1; k_idx < P::k; k_idx++) {
+                NonceDecomposition<P>(decpoly, trlwe[k_idx]);
+                for (int i = 0; i < P::lₐ; i++) {
                     TwistIFFT<P>(decpolyfft, decpoly[i]);
-                    for (int m = 0; m < P::k + 1; m++)
-                        FMAInFD<P::n>(restrlwefft[m], decpolyfft,
-                                      trgswfft[i + k * P::lₐ * P::l̅ₐ][m]);
+                    for (int j = 0; j < P::l̅ₐ; j++) {
+                        const int row_idx =
+                            (i * P::l̅ₐ + j) + k_idx * P::lₐ * P::l̅ₐ;
+                        for (int m = 0; m <= P::k; m++)
+                            FMAInFD<P::n>(restrlwefft_dd[j][m], decpolyfft,
+                                          trgswfft[row_idx][m]);
+                    }
                 }
             }
         }
-        alignas(64) DecomposedPolynomialDD<P> decpoly;
-        DoubleDecomposition<P>(decpoly, trlwe[P::k]);
-        for (int i = 0; i < P::l * P::l̅; i++) {
-            TwistIFFT<P>(decpolyfft, decpoly[i]);
-            for (int m = 0; m < P::k + 1; m++)
-                FMAInFD<P::n>(restrlwefft[m], decpolyfft,
-                              trgswfft[i + P::k * P::lₐ * P::l̅ₐ][m]);
+        else {
+            // l̅ₐ == 1: nonce part has no DD, just standard decomposition
+            alignas(64) DecomposedNoncePolynomial<P> decpoly;
+            NonceDecomposition<P>(decpoly, trlwe[0]);
+            TwistIFFT<P>(decpolyfft, decpoly[0]);
+            for (int m = 0; m <= P::k; m++)
+                MulInFD<P::n>(restrlwefft_dd[0][m], decpolyfft, trgswfft[0][m]);
+            for (int i = 1; i < P::lₐ; i++) {
+                TwistIFFT<P>(decpolyfft, decpoly[i]);
+                for (int m = 0; m <= P::k; m++)
+                    FMAInFD<P::n>(restrlwefft_dd[0][m], decpolyfft,
+                                  trgswfft[i][m]);
+            }
+            for (int k_idx = 1; k_idx < P::k; k_idx++) {
+                NonceDecomposition<P>(decpoly, trlwe[k_idx]);
+                for (int i = 0; i < P::lₐ; i++) {
+                    TwistIFFT<P>(decpolyfft, decpoly[i]);
+                    for (int m = 0; m <= P::k; m++)
+                        FMAInFD<P::n>(restrlwefft_dd[0][m], decpolyfft,
+                                      trgswfft[i + k_idx * P::lₐ][m]);
+                }
+            }
         }
+
+        // Process main part with standard decomposition (l levels)
+        alignas(64) DecomposedPolynomial<P> decpoly;
+        Decomposition<P>(decpoly, trlwe[P::k]);
+        for (int i = 0; i < P::l; i++) {
+            TwistIFFT<P>(decpolyfft, decpoly[i]);
+            // Each decomposition level i multiplies with l̅ TRGSW rows
+            for (int j = 0; j < P::l̅; j++) {
+                const int row_idx = (i * P::l̅ + j) + P::k * P::lₐ * P::l̅ₐ;
+                for (int m = 0; m <= P::k; m++)
+                    FMAInFD<P::n>(restrlwefft_dd[j][m], decpolyfft,
+                                  trgswfft[row_idx][m]);
+            }
+        }
+
+        // FFT back to coefficient domain for each accumulator and recombine
+        std::array<TRLWE<P>, P::l̅> results_dd;
+        for (int j = 0; j < P::l̅; j++)
+            for (int k = 0; k <= P::k; k++)
+                TwistFFT<P>(results_dd[j][k], restrlwefft_dd[j][k]);
+
+        // Recombine the l̅ TRLWEs back to single TRLWE
+        RecombineTRLWEFromDD<P>(res, results_dd);
     }
     else {
         // Standard decomposition (l̅ == 1)
+        alignas(64) TRLWEInFD<P> restrlwefft;
         {
             alignas(64) DecomposedNoncePolynomial<P> decpoly;
             NonceDecomposition<P>(decpoly, trlwe[0]);
@@ -340,8 +606,8 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                 FMAInFD<P::n>(restrlwefft[m], decpolyfft,
                               trgswfft[i + P::k * P::lₐ][m]);
         }
+        for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
     }
-    for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
 }
 
 template <class P>
@@ -351,18 +617,52 @@ void ExternalProduct(TRLWE<P> &res, const Polynomial<P> &poly,
     alignas(64) DecomposedPolynomial<P> decpoly;
     Decomposition<P>(decpoly, poly);
     alignas(64) PolynomialInFD<P> decpolyfft;
-    // __builtin_prefetch(trgswfft[0].data());
-    TwistIFFT<P>(decpolyfft, decpoly[0]);
-    alignas(64) TRLWEInFD<P> restrlwefft;
-    for (int m = 0; m < P::k + 1; m++)
-        MulInFD<P::n>(restrlwefft[m], decpolyfft, halftrgswfft[0][m]);
-    for (int i = 1; i < P::l; i++) {
-        // __builtin_prefetch(trgswfft[i].data());
-        TwistIFFT<P>(decpolyfft, decpoly[i]);
-        for (int m = 0; m < P::k + 1; m++)
-            FMAInFD<P::n>(restrlwefft[m], decpolyfft, halftrgswfft[i][m]);
+
+    if constexpr (P::l̅ > 1) {
+        // DD: use standard decomposition, accumulate l̅ results, recombine
+        alignas(64) std::array<TRLWEInFD<P>, P::l̅> restrlwefft_dd;
+
+        // Initialize accumulators to zero
+        for (int j = 0; j < P::l̅; j++)
+            for (int m = 0; m <= P::k; m++)
+                for (int n = 0; n < P::n; n++) restrlwefft_dd[j][m][n] = 0.0;
+
+        for (int i = 0; i < P::l; i++) {
+            TwistIFFT<P>(decpolyfft, decpoly[i]);
+            for (int j = 0; j < P::l̅; j++) {
+                const int row_idx = i * P::l̅ + j;
+                for (int m = 0; m <= P::k; m++) {
+                    if (i == 0 && j == 0)
+                        MulInFD<P::n>(restrlwefft_dd[j][m], decpolyfft,
+                                      halftrgswfft[row_idx][m]);
+                    else
+                        FMAInFD<P::n>(restrlwefft_dd[j][m], decpolyfft,
+                                      halftrgswfft[row_idx][m]);
+                }
+            }
+        }
+
+        // FFT back and recombine
+        std::array<TRLWE<P>, P::l̅> results_dd;
+        for (int j = 0; j < P::l̅; j++)
+            for (int k = 0; k <= P::k; k++)
+                TwistFFT<P>(results_dd[j][k], restrlwefft_dd[j][k]);
+
+        RecombineTRLWEFromDD<P>(res, results_dd);
     }
-    for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
+    else {
+        // Standard decomposition (l̅ == 1)
+        TwistIFFT<P>(decpolyfft, decpoly[0]);
+        alignas(64) TRLWEInFD<P> restrlwefft;
+        for (int m = 0; m < P::k + 1; m++)
+            MulInFD<P::n>(restrlwefft[m], decpolyfft, halftrgswfft[0][m]);
+        for (int i = 1; i < P::l; i++) {
+            TwistIFFT<P>(decpolyfft, decpoly[i]);
+            for (int m = 0; m < P::k + 1; m++)
+                FMAInFD<P::n>(restrlwefft[m], decpolyfft, halftrgswfft[i][m]);
+        }
+        for (int k = 0; k < P::k + 1; k++) TwistFFT<P>(res[k], restrlwefft[k]);
+    }
 }
 
 template <class P>
@@ -632,12 +932,30 @@ template <class P>
 inline void halftrgswhadd(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p)
 {
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
-    constexpr std::array<typename P::T, P::l̅> h̅ = h̅gen<P>();
-    for (int i = 0; i < P::l; i++) {
-        for (int ī = 0; ī < P::l̅; ī++) {
+
+    if constexpr (P::l̅ > 1) {
+        // Double Decomposition: first add ordinary gadget, then decompose TRLWE
+        // Create l temporary TRLWEs with ordinary gadget values p * h[i]
+        for (int i = 0; i < P::l; i++) {
+            TRLWE<P> temp_trlwe = halftrgsw[i * P::l̅];  // Copy base row (encrypted zero)
             for (int j = 0; j < P::n; j++) {
-                halftrgsw[i * P::l̅ + ī][P::k][j] +=
-                    static_cast<typename P::T>(p[j]) * h[i] * h̅[ī];
+                temp_trlwe[P::k][j] +=
+                    static_cast<typename P::T>(p[j]) * h[i];
+            }
+            // Decompose this TRLWE to base B̅g to get l̅ rows
+            std::array<TRLWE<P>, P::l̅> decomposed;
+            TRLWEBaseBbarDecompose<P>(decomposed, temp_trlwe);
+            for (int ī = 0; ī < P::l̅; ī++) {
+                halftrgsw[i * P::l̅ + ī] = decomposed[ī];
+            }
+        }
+    }
+    else {
+        // Standard decomposition (l̅ = 1): add ordinary gadget values directly
+        for (int i = 0; i < P::l; i++) {
+            for (int j = 0; j < P::n; j++) {
+                halftrgsw[i][P::k][j] +=
+                    static_cast<typename P::T>(p[j]) * h[i];
             }
         }
     }
@@ -647,25 +965,61 @@ template <class P>
 inline void trgswhadd(TRGSW<P> &trgsw, const Polynomial<P> &p)
 {
     constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
-    constexpr std::array<typename P::T, P::l̅ₐ> nonceh̅ = nonceh̅gen<P>();
-    for (int i = 0; i < P::lₐ; i++) {
-        for (int ī = 0; ī < P::l̅ₐ; ī++) {
-            for (int k = 0; k < P::k; k++) {
+
+    if constexpr (P::l̅ₐ > 1) {
+        // DD for nonce part: first add ordinary gadget, then decompose TRLWE
+        for (int k = 0; k < P::k; k++) {
+            for (int i = 0; i < P::lₐ; i++) {
+                TRLWE<P> temp_trlwe = trgsw[(i * P::l̅ₐ) + k * P::lₐ * P::l̅ₐ];
                 for (int j = 0; j < P::n; j++) {
-                    trgsw[(i * P::l̅ₐ + ī) + k * P::lₐ * P::l̅ₐ][k][j] +=
-                        static_cast<typename P::T>(p[j]) * nonceh[i] *
-                        nonceh̅[ī];
+                    temp_trlwe[k][j] +=
+                        static_cast<typename P::T>(p[j]) * nonceh[i];
+                }
+                // Decompose to base B̅gₐ
+                std::array<TRLWE<P>, P::l̅ₐ> decomposed;
+                TRLWEBaseBbarDecomposeNonce<P>(decomposed, temp_trlwe);
+                for (int ī = 0; ī < P::l̅ₐ; ī++) {
+                    trgsw[(i * P::l̅ₐ + ī) + k * P::lₐ * P::l̅ₐ] = decomposed[ī];
                 }
             }
         }
     }
+    else {
+        // Standard decomposition for nonce part
+        for (int i = 0; i < P::lₐ; i++) {
+            for (int k = 0; k < P::k; k++) {
+                for (int j = 0; j < P::n; j++) {
+                    trgsw[i + k * P::lₐ][k][j] +=
+                        static_cast<typename P::T>(p[j]) * nonceh[i];
+                }
+            }
+        }
+    }
+
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
-    constexpr std::array<typename P::T, P::l̅> h̅ = h̅gen<P>();
-    for (int i = 0; i < P::l; i++) {
-        for (int ī = 0; ī < P::l̅; ī++) {
+
+    if constexpr (P::l̅ > 1) {
+        // DD for main part: first add ordinary gadget, then decompose TRLWE
+        for (int i = 0; i < P::l; i++) {
+            TRLWE<P> temp_trlwe = trgsw[(i * P::l̅) + P::k * P::lₐ * P::l̅ₐ];
             for (int j = 0; j < P::n; j++) {
-                trgsw[(i * P::l̅ + ī) + P::k * P::lₐ * P::l̅ₐ][P::k][j] +=
-                    static_cast<typename P::T>(p[j]) * h[i] * h̅[ī];
+                temp_trlwe[P::k][j] +=
+                    static_cast<typename P::T>(p[j]) * h[i];
+            }
+            // Decompose to base B̅g
+            std::array<TRLWE<P>, P::l̅> decomposed;
+            TRLWEBaseBbarDecompose<P>(decomposed, temp_trlwe);
+            for (int ī = 0; ī < P::l̅; ī++) {
+                trgsw[(i * P::l̅ + ī) + P::k * P::lₐ * P::l̅ₐ] = decomposed[ī];
+            }
+        }
+    }
+    else {
+        // Standard decomposition for main part
+        for (int i = 0; i < P::l; i++) {
+            for (int j = 0; j < P::n; j++) {
+                trgsw[i + P::k * P::lₐ][P::k][j] +=
+                    static_cast<typename P::T>(p[j]) * h[i];
             }
         }
     }
@@ -675,19 +1029,45 @@ template <class P>
 inline void trgswhoneadd(TRGSW<P> &trgsw)
 {
     constexpr std::array<typename P::T, P::lₐ> nonceh = noncehgen<P>();
-    constexpr std::array<typename P::T, P::l̅ₐ> nonceh̅ = nonceh̅gen<P>();
-    for (int i = 0; i < P::lₐ; i++)
-        for (int ī = 0; ī < P::l̅ₐ; ī++)
+
+    if constexpr (P::l̅ₐ > 1) {
+        // DD for nonce part: add ordinary gadget, then decompose
+        for (int k = 0; k < P::k; k++) {
+            for (int i = 0; i < P::lₐ; i++) {
+                TRLWE<P> temp_trlwe = trgsw[(i * P::l̅ₐ) + k * P::lₐ * P::l̅ₐ];
+                temp_trlwe[k][0] += nonceh[i];  // Add 1 * h[i]
+                std::array<TRLWE<P>, P::l̅ₐ> decomposed;
+                TRLWEBaseBbarDecomposeNonce<P>(decomposed, temp_trlwe);
+                for (int ī = 0; ī < P::l̅ₐ; ī++) {
+                    trgsw[(i * P::l̅ₐ + ī) + k * P::lₐ * P::l̅ₐ] = decomposed[ī];
+                }
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < P::lₐ; i++)
             for (int k = 0; k < P::k; k++)
-                trgsw[(i * P::l̅ₐ + ī) + k * P::lₐ * P::l̅ₐ][k][0] +=
-                    nonceh[i] * nonceh̅[ī];
+                trgsw[i + k * P::lₐ][k][0] += nonceh[i];
+    }
 
     constexpr std::array<typename P::T, P::l> h = hgen<P>();
-    constexpr std::array<typename P::T, P::l̅> h̅ = h̅gen<P>();
-    for (int i = 0; i < P::l; i++)
-        for (int ī = 0; ī < P::l̅; ī++)
-            trgsw[(i * P::l̅ + ī) + P::k * P::lₐ * P::l̅ₐ][P::k][0] +=
-                h[i] * h̅[ī];
+
+    if constexpr (P::l̅ > 1) {
+        // DD for main part: add ordinary gadget, then decompose
+        for (int i = 0; i < P::l; i++) {
+            TRLWE<P> temp_trlwe = trgsw[(i * P::l̅) + P::k * P::lₐ * P::l̅ₐ];
+            temp_trlwe[P::k][0] += h[i];  // Add 1 * h[i]
+            std::array<TRLWE<P>, P::l̅> decomposed;
+            TRLWEBaseBbarDecompose<P>(decomposed, temp_trlwe);
+            for (int ī = 0; ī < P::l̅; ī++) {
+                trgsw[(i * P::l̅ + ī) + P::k * P::lₐ * P::l̅ₐ] = decomposed[ī];
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < P::l; i++)
+            trgsw[i + P::k * P::lₐ][P::k][0] += h[i];
+    }
 }
 
 template <class P>
