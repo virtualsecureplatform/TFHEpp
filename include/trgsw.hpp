@@ -75,21 +75,12 @@ inline void Decomposition(DecomposedPolynomial<P> &decpoly,
     constexpr typename P::T halfBg = (static_cast<typename P::T>(1) << (P::Bgbit - 1));
 
     for (int i = 0; i < P::n; i++) {
-        for (int l = 0; l < P::l; l++) {
-            auto decomp_val =
-                static_cast<std::make_signed_t<typename P::T>>(
-                    (((poly[i] + offset + roundoffset) >>
-                      (std::numeric_limits<typename P::T>::digits -
-                       (l + 1) * P::Bgbit)) &
-                     mask) -
-                    halfBg);
-            // For 128-bit types, shift left by 64 so TwistIFFT (which uses
-            // top 64 bits) gets the correct small integer value
-            if constexpr (std::is_same_v<typename P::T, __uint128_t>)
-                decpoly[l][i] = static_cast<typename P::T>(decomp_val) << 64;
-            else
-                decpoly[l][i] = decomp_val;
-        }
+        for (int l = 0; l < P::l; l++)
+            decpoly[l][i] = (((poly[i] + offset + roundoffset) >>
+                              (std::numeric_limits<typename P::T>::digits -
+                               (l + 1) * P::Bgbit)) &
+                             mask) -
+                            halfBg;
     }
 }
 
@@ -117,21 +108,12 @@ inline void NonceDecomposition(DecomposedNoncePolynomial<P> &decpoly,
     constexpr typename P::T halfBg = (static_cast<typename P::T>(1) << (P::Bgₐbit - 1));
 
     for (int i = 0; i < P::n; i++) {
-        for (int l = 0; l < P::lₐ; l++) {
-            auto decomp_val =
-                static_cast<std::make_signed_t<typename P::T>>(
-                    (((poly[i] + offset + roundoffset) >>
-                      (std::numeric_limits<typename P::T>::digits -
-                       (l + 1) * P::Bgₐbit)) &
-                     mask) -
-                    halfBg);
-            // For 128-bit types, shift left by 64 so TwistIFFT (which uses
-            // top 64 bits) gets the correct small integer value
-            if constexpr (std::is_same_v<typename P::T, __uint128_t>)
-                decpoly[l][i] = static_cast<typename P::T>(decomp_val) << 64;
-            else
-                decpoly[l][i] = decomp_val;
-        }
+        for (int l = 0; l < P::lₐ; l++)
+            decpoly[l][i] = (((poly[i] + offset + roundoffset) >>
+                              (std::numeric_limits<typename P::T>::digits -
+                               (l + 1) * P::Bgₐbit)) &
+                             mask) -
+                            halfBg;
     }
 }
 
@@ -177,16 +159,7 @@ inline void DoubleDecomposition(DecomposedPolynomialDD<P> &decpoly,
                 // When l̅=1 (j=0 only), this reduces to standard decomposition
                 const int shift = std::numeric_limits<typename P::T>::digits -
                                   (i + 1) * P::Bgbit - j * P::B̅gbit;
-                auto decomp_val =
-                    static_cast<std::make_signed_t<typename P::T>>(
-                        ((a >> shift) & maskBg) - halfBg);
-                // For 128-bit types, shift left by 64 so TwistIFFT (which uses
-                // top 64 bits) gets the correct small integer value
-                if constexpr (std::is_same_v<typename P::T, __uint128_t>)
-                    decpoly[i * P::l̅ + j][n] =
-                        static_cast<typename P::T>(decomp_val) << 64;
-                else
-                    decpoly[i * P::l̅ + j][n] = decomp_val;
+                decpoly[i * P::l̅ + j][n] = ((a >> shift) & maskBg) - halfBg;
             }
         }
     }
@@ -230,16 +203,7 @@ inline void NonceDoubleDecomposition(DecomposedNoncePolynomialDD<P> &decpoly,
                 // When l̅ₐ=1 (j=0 only), this reduces to standard decomposition
                 const int shift = std::numeric_limits<typename P::T>::digits -
                                   (i + 1) * P::Bgₐbit - j * P::B̅gₐbit;
-                auto decomp_val =
-                    static_cast<std::make_signed_t<typename P::T>>(
-                        ((a >> shift) & maskBg) - halfBg);
-                // For 128-bit types, shift left by 64 so TwistIFFT (which uses
-                // top 64 bits) gets the correct small integer value
-                if constexpr (std::is_same_v<typename P::T, __uint128_t>)
-                    decpoly[i * P::l̅ₐ + j][n] =
-                        static_cast<typename P::T>(decomp_val) << 64;
-                else
-                    decpoly[i * P::l̅ₐ + j][n] = decomp_val;
+                decpoly[i * P::l̅ₐ + j][n] = ((a >> shift) & maskBg) - halfBg;
             }
         }
     }
@@ -284,20 +248,7 @@ inline void TRLWEBaseBbarDecompose(std::array<TRLWE<P>, P::l̅> &result,
                 // Extract j-th digit from MSB side
                 const int shift = std::numeric_limits<typename P::T>::digits -
                                   (j + 1) * P::B̅gbit;
-                // Get masked value and compute signed digit
-                // Use signed arithmetic to properly handle negative digits
-                typename P::T masked = (a >> shift) & maskB̅g;
-                // Cast to signed, subtract halfB̅g, then back to unsigned for
-                // proper sign extension
-                using SignedT = std::make_signed_t<typename P::T>;
-                SignedT digit =
-                    static_cast<SignedT>(masked) - static_cast<SignedT>(halfB̅g);
-                // For 128-bit types, shift left by 64 so TwistIFFT (which uses
-                // top 64 bits) gets the correct small integer value
-                if constexpr (std::is_same_v<typename P::T, __uint128_t>)
-                    result[j][k][n] = static_cast<typename P::T>(digit) << 64;
-                else
-                    result[j][k][n] = static_cast<typename P::T>(digit);
+                result[j][k][n] = ((a >> shift) & maskB̅g) - halfB̅g;
             }
         }
     }
@@ -339,18 +290,7 @@ inline void TRLWEBaseBbarDecomposeNonce(std::array<TRLWE<P>, P::l̅ₐ> &result,
                 // Extract j-th digit from MSB side
                 const int shift = std::numeric_limits<typename P::T>::digits -
                                   (j + 1) * P::B̅gₐbit;
-                // Get masked value and compute signed digit
-                // Use signed arithmetic to properly handle negative digits
-                typename P::T masked = (a >> shift) & maskB̅g;
-                using SignedT = std::make_signed_t<typename P::T>;
-                SignedT digit =
-                    static_cast<SignedT>(masked) - static_cast<SignedT>(halfB̅g);
-                // For 128-bit types, shift left by 64 so TwistIFFT (which uses
-                // top 64 bits) gets the correct small integer value
-                if constexpr (std::is_same_v<typename P::T, __uint128_t>)
-                    result[j][k][n] = static_cast<typename P::T>(digit) << 64;
-                else
-                    result[j][k][n] = static_cast<typename P::T>(digit);
+                result[j][k][n] = ((a >> shift) & maskB̅g) - halfB̅g;
             }
         }
     }
@@ -398,15 +338,11 @@ void NonceDecomposition(DecomposedNoncePolynomialRAINTT<P> &decpolyntt,
 
 // Recombine l̅ TRLWEs from Double Decomposition back to single TRLWE
 // result[j] contains j-th B̅g digit; recombine as: res = Σⱼ result[j] * 2^(width - (j+1)*B̅gbit)
-// For 128-bit types, TwistFFT places results in top 64 bits, so we adjust shifts accordingly
 template <class P>
 inline void RecombineTRLWEFromDD(TRLWE<P> &res,
                                  const std::array<TRLWE<P>, P::l̅> &decomposed)
 {
     constexpr int width = std::numeric_limits<typename P::T>::digits;
-    // For 128-bit types, TwistFFT adds a << 64 shift, so we compensate
-    constexpr int fft_offset =
-        std::is_same_v<typename P::T, __uint128_t> ? 64 : 0;
 
     // Initialize result to zero
     for (int k = 0; k <= P::k; k++) {
@@ -417,34 +353,21 @@ inline void RecombineTRLWEFromDD(TRLWE<P> &res,
 
     // Add all components with appropriate shifts
     for (int j = 0; j < P::l̅; j++) {
-        // Target shift: width - (j+1)*B̅gbit
-        // Actual shift needed: target - fft_offset
-        const int target_shift = width - (j + 1) * P::B̅gbit;
-        const int actual_shift = target_shift - fft_offset;
-
+        const int shift = width - (j + 1) * P::B̅gbit;
         for (int k = 0; k <= P::k; k++) {
             for (int n = 0; n < P::n; n++) {
-                if (actual_shift >= 0) {
-                    res[k][n] += decomposed[j][k][n] << actual_shift;
-                }
-                else {
-                    res[k][n] += decomposed[j][k][n] >> (-actual_shift);
-                }
+                res[k][n] += decomposed[j][k][n] << shift;
             }
         }
     }
 }
 
 // Recombine l̅ₐ TRLWEs from Double Decomposition (nonce version)
-// For 128-bit types, TwistFFT places results in top 64 bits, so we adjust shifts accordingly
 template <class P>
 inline void RecombineTRLWEFromDDNonce(
     TRLWE<P> &res, const std::array<TRLWE<P>, P::l̅ₐ> &decomposed)
 {
     constexpr int width = std::numeric_limits<typename P::T>::digits;
-    // For 128-bit types, TwistFFT adds a << 64 shift, so we compensate
-    constexpr int fft_offset =
-        std::is_same_v<typename P::T, __uint128_t> ? 64 : 0;
 
     // Initialize result to zero
     for (int k = 0; k <= P::k; k++) {
@@ -455,19 +378,10 @@ inline void RecombineTRLWEFromDDNonce(
 
     // Add all components with appropriate shifts
     for (int j = 0; j < P::l̅ₐ; j++) {
-        // Target shift: width - (j+1)*B̅gₐbit
-        // Actual shift needed: target - fft_offset
-        const int target_shift = width - (j + 1) * P::B̅gₐbit;
-        const int actual_shift = target_shift - fft_offset;
-
+        const int shift = width - (j + 1) * P::B̅gₐbit;
         for (int k = 0; k <= P::k; k++) {
             for (int n = 0; n < P::n; n++) {
-                if (actual_shift >= 0) {
-                    res[k][n] += decomposed[j][k][n] << actual_shift;
-                }
-                else {
-                    res[k][n] += decomposed[j][k][n] >> (-actual_shift);
-                }
+                res[k][n] += decomposed[j][k][n] << shift;
             }
         }
     }
