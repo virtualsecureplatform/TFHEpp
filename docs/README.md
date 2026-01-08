@@ -16,7 +16,7 @@ This documentation lives in `docs/` and is meant to complement the root
 - `Parameters.md` — parameter sets and security/compile‑time selection.
 - `API.md` — core types, keys, encryption/decryption, and gate APIs.
 - `Advanced.md` — LUT bootstrapping, circuit bootstrapping, subset keys, packing,
-  BFV++, and other advanced features.
+  Double Decomposition, BFV++, and other advanced features.
 - `Serialization.md` — exporting/importing keys and ciphertexts with cereal.
 
 ## Quick Links
