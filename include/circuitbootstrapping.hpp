@@ -206,8 +206,7 @@ void CircuitBootstrappingWithInv(TRGSWFFT<typename privksP::targetP> &trgswfft,
                                  const TLWE<typename brP::domainP> &tlwe,
                                  const EvalKey &ek)
 {
-    constexpr array<typename privksP::targetP::T, privksP::targetP::l> h =
-        hgen<typename privksP::targetP>();
+    constexpr auto h = hgen<typename privksP::targetP, false>();
 
     alignas(64) TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<brP, privksP>(trgsw, tlwe, ek);
