@@ -68,10 +68,9 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
         cuHEpp::TwistNTT<typename lvl1param::T, lvl1param::nbit>(
             res, a, (*ntttablelvl1)[0], (*ntttwistlvl1)[0]);
 #endif
-    else if constexpr (std::is_same_v<typename P::T, uint64_t>) {
+    else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistNTT<typename lvl2param::T, lvl2param::nbit>(
             res, a, (*ntttablelvl2)[0], (*ntttwistlvl2)[0]);
-    }
     else
         static_assert(false_v<typename P::T>, "Undefined TwistNTT!");
 }
@@ -88,6 +87,15 @@ inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
             fftplvl1.execute_direct_torus32(res.data(), a.data());
         else if constexpr (std::is_same_v<typename P::T, uint64_t>)
             fftplvl1.execute_direct_torus64(res.data(), a.data());
+    }
+    else if constexpr (std::is_same_v<P, lvl3param>) {
+        // For 128-bit lvl3param with Double Decomposition:
+        // Output is intermediate result that will be recombined
+        // Store in low 64 bits - reconstruction handles proper positioning
+        alignas(64) std::array<uint64_t, P::n> temp;
+        fftplvl3.execute_direct_torus64(temp.data(), a.data());
+        for (int i = 0; i < P::n; i++)
+            res[i] = static_cast<__uint128_t>(temp[i]);
     }
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_direct_torus64(res.data(), a.data());
@@ -142,6 +150,15 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
             fftplvl1.execute_reverse_torus32(res.data(), a.data());
         if constexpr (std::is_same_v<typename P::T, uint64_t>)
             fftplvl1.execute_reverse_torus64(res.data(), a.data());
+    }
+    else if constexpr (std::is_same_v<P, lvl3param>) {
+        // For 128-bit lvl3param with Double Decomposition:
+        // Input is always decomposition digits (small integers in low 64 bits)
+        // Use low 64 bits directly - no shift needed
+        alignas(64) std::array<uint64_t, P::n> temp;
+        for (int i = 0; i < P::n; i++)
+            temp[i] = static_cast<uint64_t>(a[i]);
+        fftplvl3.execute_reverse_torus64(res.data(), temp.data());
     }
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_reverse_torus64(res.data(), a.data());
@@ -301,8 +318,21 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         for (int i = 0; i < P::n; i++) ntta[i] *= nttb[i];
         TwistNTT<P>(res, ntta);
     }
+    else if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        // Naive for 128-bit types (FFT/NTT don't support 128-bit precision)
+        for (int i = 0; i < P::n; i++) {
+            __uint128_t ri = 0;
+            for (int j = 0; j <= i; j++)
+                ri += static_cast<__int128_t>(a[j]) *
+                      static_cast<__int128_t>(b[i - j]);
+            for (int j = i + 1; j < P::n; j++)
+                ri -= static_cast<__int128_t>(a[j]) *
+                      static_cast<__int128_t>(b[P::n + i - j]);
+            res[i] = ri;
+        }
+    }
     else {
-        // Naieve
+        // Naive for other types
         for (int i = 0; i < P::n; i++) {
             typename P::T ri = 0;
             for (int j = 0; j <= i; j++)
@@ -339,17 +369,33 @@ template <class P>
 inline void PolyMulNaive(Polynomial<P> &res, const Polynomial<P> &a,
                          const Polynomial<P> &b)
 {
-    for (int i = 0; i < P::n; i++) {
-        typename P::T ri = 0;
-        for (int j = 0; j <= i; j++)
-            ri += static_cast<typename std::make_signed<typename P::T>::type>(
-                      a[j]) *
-                  b[i - j];
-        for (int j = i + 1; j < P::n; j++)
-            ri -= static_cast<typename std::make_signed<typename P::T>::type>(
-                      a[j]) *
-                  b[P::n + i - j];
-        res[i] = ri;
+    if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        for (int i = 0; i < P::n; i++) {
+            __uint128_t ri = 0;
+            for (int j = 0; j <= i; j++)
+                ri += static_cast<__int128_t>(a[j]) *
+                      static_cast<__int128_t>(b[i - j]);
+            for (int j = i + 1; j < P::n; j++)
+                ri -= static_cast<__int128_t>(a[j]) *
+                      static_cast<__int128_t>(b[P::n + i - j]);
+            res[i] = ri;
+        }
+    }
+    else {
+        for (int i = 0; i < P::n; i++) {
+            typename P::T ri = 0;
+            for (int j = 0; j <= i; j++)
+                ri +=
+                    static_cast<typename std::make_signed<typename P::T>::type>(
+                        a[j]) *
+                    b[i - j];
+            for (int j = i + 1; j < P::n; j++)
+                ri -=
+                    static_cast<typename std::make_signed<typename P::T>::type>(
+                        a[j]) *
+                    b[P::n + i - j];
+            res[i] = ri;
+        }
     }
 }
 

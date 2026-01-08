@@ -67,6 +67,16 @@ struct lvl02param {
 #endif
 };
 
+struct lvl03param {
+    using domainP = lvl0param;
+    using targetP = lvl3param;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
+};
+
 struct lvlh2param {
     using domainP = lvlhalfparam;
     using targetP = lvl2param;
@@ -118,6 +128,10 @@ using DecomposedPolynomial = std::array<Polynomial<P>, P::l>;
 template <class P>
 using DecomposedNoncePolynomial = std::array<Polynomial<P>, P::lₐ>;
 template <class P>
+using DecomposedPolynomialDD = std::array<Polynomial<P>, P::l * P::l̅>;
+template <class P>
+using DecomposedNoncePolynomialDD = std::array<Polynomial<P>, P::lₐ * P::l̅ₐ>;
+template <class P>
 using DecomposedPolynomialNTT = std::array<PolynomialNTT<P>, P::l>;
 template <class P>
 using DecomposedNoncePolynomialNTT = std::array<PolynomialNTT<P>, P::lₐ>;
@@ -138,17 +152,17 @@ template <class P>
 using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 
 template <class P>
-using TRGSW = std::array<TRLWE<P>, P::k * P::lₐ + P::l>;
+using TRGSW = std::array<TRLWE<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 template <class P>
-using HalfTRGSW = std::array<TRLWE<P>, P::l>;
+using HalfTRGSW = std::array<TRLWE<P>, P::l * P::l̅>;
 template <class P>
-using TRGSWFFT = aligned_array<TRLWEInFD<P>, P::k * P::lₐ + P::l>;
+using TRGSWFFT = aligned_array<TRLWEInFD<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 template <class P>
-using HalfTRGSWFFT = aligned_array<TRLWEInFD<P>, P::l>;
+using HalfTRGSWFFT = aligned_array<TRLWEInFD<P>, P::l * P::l̅>;
 template <class P>
-using TRGSWNTT = std::array<TRLWENTT<P>, P::k * P::lₐ + P::l>;
+using TRGSWNTT = std::array<TRLWENTT<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 template <class P>
-using TRGSWRAINTT = std::array<TRLWERAINTT<P>, P::k * P::lₐ + P::l>;
+using TRGSWRAINTT = std::array<TRLWERAINTT<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 
 #ifdef USE_KEY_BUNDLE
 template <class P>

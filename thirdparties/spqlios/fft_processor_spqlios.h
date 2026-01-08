@@ -55,3 +55,4 @@ public:
 
 extern thread_local FFT_Processor_Spqlios fftplvl1;
 extern thread_local FFT_Processor_Spqlios fftplvl2;
+extern thread_local FFT_Processor_Spqlios fftplvl3;
