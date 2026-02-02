@@ -44,6 +44,11 @@ Build products:
 - `-DENABLE_SHARED=ON` — build `tfhe++` as a shared library.
 - `-DDEBUG=ON` — disable `-O3`, enable debug flags.
 
+Toolchain / CPU flags:
+
+- `-DUSE_MARCH_NATIVE=ON` (default) — enable `-march=native` for CPU‑tuned builds.
+- `-DUSE_MARCH_NATIVE=OFF` — build portable binaries (useful in CI or mixed CPUs).
+
 Randomness:
 
 - `-DUSE_BLAKE3=ON` (default) — BLAKE3‑XOF CSPRNG.
@@ -81,4 +86,3 @@ target_include_directories(my_target PRIVATE /path/to/prefix/include)
   AArch64 backend.
 - OpenMP is enabled when available; it accelerates batch encryption/decryption
   and some bootstrapping routines.
-

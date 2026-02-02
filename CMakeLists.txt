@@ -2,13 +2,15 @@ cmake_minimum_required(VERSION 3.16)
 project(tfhe++ CXX C)
 set(CMAKE_CXX_STANDARD 20)
 option(DEBUG "Debug mode" OFF)
+option(USE_MARCH_NATIVE "Enable -march=native" ON)
+set(TFHEPP_BASE_CXX_FLAGS "-g -Wall -Wextra -pedantic -Wno-sign-compare")
+if(USE_MARCH_NATIVE)
+  string(APPEND TFHEPP_BASE_CXX_FLAGS " -march=native")
+endif()
 if(DEBUG)
-  set(CMAKE_CXX_FLAGS
-      "-march=native -g -Wall -Wextra -pedantic -Wno-sign-compare")
+  set(CMAKE_CXX_FLAGS "${TFHEPP_BASE_CXX_FLAGS}")
 else()
-  set(CMAKE_CXX_FLAGS
-      "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
-  )
+  set(CMAKE_CXX_FLAGS "${TFHEPP_BASE_CXX_FLAGS} -O3 -funroll-loops")
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
