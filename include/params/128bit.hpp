@@ -170,8 +170,8 @@ struct lvl3param {
     static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t lₐ = 4;
     static constexpr std::uint32_t l = 4;
-    static constexpr std::uint32_t Bgbit = 19;
-    static constexpr std::uint32_t Bgₐbit = 19;
+    static constexpr std::uint32_t Bgbit = 21;
+    static constexpr std::uint32_t Bgₐbit = 21;
     static constexpr uint32_t Bg = 1U << Bgbit;
     static constexpr uint32_t Bgₐ = 1U << Bgₐbit;
     static constexpr ErrorDistribution errordist =
