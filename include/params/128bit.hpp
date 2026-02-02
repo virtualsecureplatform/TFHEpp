@@ -168,10 +168,10 @@ struct lvl3param {
     // ease of polynomial multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension = 4096
     static constexpr std::uint32_t k = 1;
-    static constexpr std::uint32_t lₐ = 2;     // reduced to fit DD constraint
-    static constexpr std::uint32_t l = 2;      // reduced to fit DD constraint
-    static constexpr std::uint32_t Bgbit = 16;
-    static constexpr std::uint32_t Bgₐbit = 16;
+    static constexpr std::uint32_t lₐ = 4;
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgbit = 19;
+    static constexpr std::uint32_t Bgₐbit = 19;
     static constexpr uint32_t Bg = 1U << Bgbit;
     static constexpr uint32_t Bgₐ = 1U << Bgₐbit;
     static constexpr ErrorDistribution errordist =
@@ -185,11 +185,11 @@ struct lvl3param {
         static_cast<double>(static_cast<T>(1) << (128 - plain_modulusbit - 1));
     // Double Decomposition (bivariate representation) parameters
     // Auxiliary decomposition must cover full 128-bit ciphertext coefficients
-    // l̅ * B̅gbit = 4 * 32 = 128 bits
-    static constexpr std::uint32_t l̅ = 4;     // auxiliary decomposition levels
-    static constexpr std::uint32_t l̅ₐ = 4;
-    static constexpr std::uint32_t B̅gbit = 32;    // 2^32 base for auxiliary (covers 128-bit T)
-    static constexpr std::uint32_t B̅gₐbit = 32;
+    // l̅ * B̅gbit = 8 * 16 = 128 bits
+    static constexpr std::uint32_t l̅ = 8;     // auxiliary decomposition levels
+    static constexpr std::uint32_t l̅ₐ = 8;
+    static constexpr std::uint32_t B̅gbit = 16;    // 2^16 limb base (covers 128-bit T with l̅=8)
+    static constexpr std::uint32_t B̅gₐbit = 16;
 };
 
 struct lvl4param {

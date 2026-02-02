@@ -51,13 +51,33 @@ struct DecompParams<P, true, true> {
     static constexpr int B̅gbit = 0;
 };
 
+// Selector that optionally enables Double Decomposition (DD).
+// - UseDD=false: standard decomposition (ignore l̅/B̅gbit).
+// - UseDD=true:  double decomposition (use l̅/B̅gbit as defined in P).
+template <class P, bool IsNonce, bool AuxOnly = false, bool UseDD = false>
+struct DecompParamsSel;
+
+template <class P, bool IsNonce, bool AuxOnly>
+struct DecompParamsSel<P, IsNonce, AuxOnly, false> {
+    using Base = DecompParams<P, IsNonce, AuxOnly>;
+    static constexpr int l = Base::l;
+    static constexpr int Bgbit = Base::Bgbit;
+    static constexpr typename P::T Bg = Base::Bg;
+    static constexpr int l̅ = 1;
+    static constexpr int B̅gbit = 0;
+};
+
+template <class P, bool IsNonce, bool AuxOnly>
+struct DecompParamsSel<P, IsNonce, AuxOnly, true> : DecompParams<P, IsNonce, AuxOnly> {};
+
+
 // Unified offset generation for decomposition
 // Computes: Σᵢ Σⱼ (Bg/2) * 2^(width - i*Bgbit - j*B̅gbit)
 // When l̅=1 (j=0 only), reduces to standard offset
-template <class P, bool IsNonce, bool AuxOnly = false>
+template <class P, bool IsNonce, bool AuxOnly = false, bool UseDD = false>
 constexpr typename P::T offsetgen()
 {
-    using D = DecompParams<P, IsNonce, AuxOnly>;
+    using D = DecompParamsSel<P, IsNonce, AuxOnly, UseDD>;
     typename P::T offset = 0;
     for (int i = 1; i <= D::l; i++)
         for (int j = 0; j < D::l̅; j++)
@@ -116,11 +136,11 @@ inline void Decomposition(DecomposedPolynomial<P> &decpoly,
 // a ≈ Σᵢ Σⱼ aᵢⱼ * Bg^(l-i) * B̅g^(l̅-j)
 // When l̅=1 (j=0 only), this reduces to standard decomposition.
 // AuxOnly=true: use B̅g as primary decomposition base (for TRLWEBaseBbarDecompose)
-template <class P, bool IsNonce, bool AuxOnly = false, class DecPolyType>
+template <class P, bool IsNonce, bool AuxOnly = false, bool UseDD = false, class DecPolyType>
 inline void DecompositionImpl(DecPolyType &decpoly, const Polynomial<P> &poly)
 {
-    using D = DecompParams<P, IsNonce, AuxOnly>;
-    constexpr typename P::T offset = offsetgen<P, IsNonce, AuxOnly>();
+    using D = DecompParamsSel<P, IsNonce, AuxOnly, UseDD>;
+    constexpr typename P::T offset = offsetgen<P, IsNonce, AuxOnly, UseDD>();
     // Remaining bits after decomposition
     constexpr int remaining_bits = std::numeric_limits<typename P::T>::digits -
                                    D::l * D::Bgbit - D::l̅ * D::B̅gbit;
@@ -153,28 +173,28 @@ template <class P>
 inline void Decomposition(DecomposedPolynomial<P> &decpoly,
                           const Polynomial<P> &poly)
 {
-    DecompositionImpl<P, false>(decpoly, poly);
+    DecompositionImpl<P, false, false, false>(decpoly, poly);
 }
 
 template <class P>
 inline void NonceDecomposition(DecomposedNoncePolynomial<P> &decpoly,
                                const Polynomial<P> &poly)
 {
-    DecompositionImpl<P, true>(decpoly, poly);
+    DecompositionImpl<P, true, false, false>(decpoly, poly);
 }
 
 template <class P>
 inline void DoubleDecomposition(DecomposedPolynomialDD<P> &decpoly,
                                 const Polynomial<P> &poly)
 {
-    DecompositionImpl<P, false>(decpoly, poly);
+    DecompositionImpl<P, false, false, true>(decpoly, poly);
 }
 
 template <class P>
 inline void NonceDoubleDecomposition(DecomposedNoncePolynomialDD<P> &decpoly,
                                      const Polynomial<P> &poly)
 {
-    DecompositionImpl<P, true>(decpoly, poly);
+    DecompositionImpl<P, true, false, true>(decpoly, poly);
 }
 
 // Unified TRLWE Decomposition to base B̅g for Double Decomposition
