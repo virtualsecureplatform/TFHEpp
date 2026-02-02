@@ -7,24 +7,33 @@ on:
 jobs:
   ubuntu-2204:
     name: ubuntu-2204
-    runs-on: Ubuntu-22.04
+    runs-on: Ubuntu-latest
+    container:
+      image: ubuntu:22.04
     steps:
+    - name: Install libraries
+      run: |
+        apt-get update
+        apt-get upgrade -y
+        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build
     - name: Checkout
       uses: actions/checkout@v4
-    
-    - name: Set up Buildx
-      uses: docker/setup-buildx-action@v3
-    
-    - uses: docker/build-push-action@v6
       with:
-        file: Dockerfile
-        tags: tfhepp-2204
-        push: false
-        load: true
-        cache-from: type=gha,scope=buildx-${{ github.workflow }}-${{ github.job }}
-        cache-to: type=gha,mode=max,scope=buildx-${{ github.workflow }}-${{ github.job }}
-
-    - uses: addnab/docker-run-action@v3
-      with:
-        image: tfhepp-2204
-        run: /TFHEpp/build/test/benchmark_docker.sh
+        submodules: recursive
+    - name: build TFHEpp
+      run: |
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON
+        cd build
+        ninja
+    - name: build original TFHE
+      run: |
+        git clone --recursive --depth 1 https://github.com/tfhe/tfhe.git
+        mkdir tfhe/build
+        cd tfhe/build
+        cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=off -DENABLE_SPQLIOS_AVX=off -DENABLE_SPQLIOS_FMA=on -DCMAKE_BUILD_TYPE=optim
+        make -j$(nproc)
+    - name: benchmark
+      run: |
+        test/show_info.sh
+        echo "TFHEpp" && build/test/nand
+        echo "original TFHE" && tfhe/build/test/test-gate-bootstrapping-spqlios-fma
