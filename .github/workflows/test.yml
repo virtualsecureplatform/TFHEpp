@@ -22,7 +22,7 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_MARCH_NATIVE=OFF
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON
         cd build
         ninja
     - name: test
@@ -46,7 +46,7 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_MARCH_NATIVE=OFF
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON
         cd build
         ninja
     - name: test
@@ -70,7 +70,7 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_CONCRETE=ON -DUSE_MARCH_NATIVE=OFF
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_CONCRETE=ON
         cd build
         ninja
     - name: test
@@ -94,7 +94,7 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TUTORIAL=ON -DUSE_MARCH_NATIVE=OFF
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TUTORIAL=ON
         cd build
         ninja
     - name: run tutorial
@@ -124,7 +124,7 @@ jobs:
         submodules: recursive
     - name: build
       run: |
-        /cmake-binary/bin/cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_LINKER_TYPE=LLD -DENABLE_TEST=ON -DUSE_MARCH_NATIVE=OFF
+        /cmake-binary/bin/cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_LINKER_TYPE=LLD -DENABLE_TEST=ON
         cd build
         ninja
     - name: test
