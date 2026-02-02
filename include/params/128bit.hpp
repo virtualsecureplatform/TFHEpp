@@ -158,9 +158,8 @@ struct AHlvl2param {
 //   - Primary decomposition (l, Bgbit): Decomposes plaintext by μ in TRGSW gadget
 //   - Auxiliary decomposition (l̅, B̅gbit): Decomposes TRLWE ciphertext coefficients
 //     in the external product. Must cover full 128-bit coefficient.
-// Constraint for DD algorithm: l*Bgbit + (l̅-1)*B̅gbit ≤ 128
-// Using l=2, Bgbit=16 for primary (32 bits); l̅=4, B̅gbit=32 for auxiliary (128 bits)
-// This gives: 32 + 96 = 128 ✓
+// Numerical safety for FFT (double mantissa): Bgbit + B̅gbit + nbit + 3 < 53.
+// Full limb cover: l̅ * B̅gbit = 128 (same for nonce part).
 struct lvl3param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
