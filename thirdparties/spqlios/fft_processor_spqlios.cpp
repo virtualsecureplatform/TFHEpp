@@ -141,7 +141,7 @@ void FFT_Processor_Spqlios::execute_direct_torus32(uint32_t *res, const double *
         const double *sit = a;
         const double *send = a + N;
         const double *bla = &_2sN;
-        #ifdef AVX512
+        #ifdef USE_AVX512
         __asm__ __volatile__ (
         "vbroadcastsd (%3),%%zmm2\n"  // Broadcast _2sN to zmm2
             "1:\n"
