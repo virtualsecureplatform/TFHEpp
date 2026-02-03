@@ -20,14 +20,11 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: build
+    - name: build and test
       run: |
         cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON
         cd build
         ninja
-    - name: test
-      run: |
-        cd build
         test/test.sh
   ubuntu-2404:
     name: ubuntu-2404
@@ -44,14 +41,11 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: build
+    - name: build and test
       run: |
         cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON
         cd build
         ninja
-    - name: test
-      run: |
-        cd build
         test/test.sh
   ubuntu-2404-concrete:
     name: ubuntu-2404-concrete
@@ -68,14 +62,11 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: build
+    - name: build and test
       run: |
         cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_CONCRETE=ON
         cd build
         ninja
-    - name: test
-      run: |
-        cd build
         test/test.sh
   ubuntu-2404-tutorial:
     name: ubuntu-2404-tutorial
@@ -122,12 +113,9 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: build
+    - name: build and test
       run: |
         /cmake-binary/bin/cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_LINKER_TYPE=LLD -DENABLE_TEST=ON
         cd build
         ninja
-    - name: test
-      run: |
-        cd build
         test/test.sh
