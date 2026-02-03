@@ -83,14 +83,11 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: build
+    - name: build and run tutorial
       run: |
         cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TUTORIAL=ON
         cd build
         ninja
-    - name: run tutorial
-      run: |
-        cd build
         echo "12345" | ./tutorial/client
         echo "54321" | ./tutorial/cloud
         ./tutorial/verify
