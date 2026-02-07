@@ -40,6 +40,31 @@ auxiliary decomposition parameters:
 | `l̅ₐ` | Auxiliary depth for nonce/key part |
 | `B̅gₐbit` | Auxiliary base bits for nonce part |
 
+
+
+## Notation correspondence
+
+TFHEpp parameter structs (in `include/params/*.hpp`) follow the TFHE notation with a few
+implementation-oriented splits:
+
+| Concept | TFHEpp field | Meaning | Common paper notation |
+|--------|--------------|---------|------------------------|
+| Ring degree | `nbit`, `n` | `n = 2^nbit` polynomial degree | `N` (often `N=2^nbit`) |
+| TLWE/TRLWE dimension | `k` | number of polynomials minus 1 (`k=1` for TFHE-style) | `k` |
+| Primary (TRGSW) decomposition levels | `l`, `lₐ` | #digits for gadget decomposition (main / nonce part) | `ℓ` / `ℓ_a` |
+| Primary base (bits) | `Bgbit`, `Bgₐbit` | base is `Bg = 2^{Bgbit}` (main / nonce) | `B_g` bits / `B_g` |
+| Primary base (value) | `Bg`, `Bgₐ` | `2^{Bgbit}` (main / nonce) | `B_g` |
+| DD limb count | `l̅`, `l̅ₐ` | #limbs for bivariate/DD row representation (main / nonce) | `\\bar{ℓ}` / `\\bar{ℓ}_a` |
+| DD limb size (bits) | `B̅gbit`, `B̅gₐbit` | limb base is `2^{B̅gbit}` (main / nonce) | `K` (limb size in bits) |
+| Fresh noise | `α` (or `η`) | error distribution parameter (depends on `errordist`) | `α` / `σ` |
+| Torus type | `T` | torus word type (e.g. `uint64_t`, `__uint128_t`) | `\mathbb{T}` discretization |
+
+Notes:
+- In TFHEpp's current DD external product, the *input* TRLWE is still decomposed using the
+  primary `(l, Bgbit)`; DD parameters `(l̅, B̅gbit)` control how TRGSW rows are stored/recombined.
+- For FFT-based polynomial multiplication with `double`, a practical safety constraint is
+  `Bgbit + B̅gbit + nbit < 53` (often keep a few extra margin bits for repeated accumulations).
+
 When `l̅=1`, standard decomposition is used. When `l̅>1`, Double Decomposition
 is automatically enabled. See `docs/Advanced.md` for details.
 
