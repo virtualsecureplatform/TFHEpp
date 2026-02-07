@@ -225,15 +225,13 @@ using SubsetPrivateKeySwitchingKey = std::array<
     P::targetP::k * P::targetP::n + 1>;
 template <class P>
 using CBswitchingKey = aligned_array<TRGSWFFT<P>, P::k>;
+
+// Relinearization keys: use l * l̅ rows to support both standard and DD
+// When l̅ == 1 (standard), this equals l rows for backward compatibility
 template <class P>
-using relinKey = std::array<TRLWE<P>, P::l>;
+using relinKey = std::array<TRLWE<P>, P::l * P::l̅>;
 template <class P>
-using relinKeyFFT = std::array<TRLWEInFD<P>, P::l>;
-// Double Decomposition variants with l * l̅ rows
-template <class P>
-using relinKeyDD = std::array<TRLWE<P>, P::l * P::l̅>;
-template <class P>
-using relinKeyFFTDD = aligned_array<TRLWEInFD<P>, P::l * P::l̅>;
+using relinKeyFFT = aligned_array<TRLWEInFD<P>, P::l * P::l̅>;
 
 #define TFHEPP_EXPLICIT_INSTANTIATION_TLWE(fun) \
     fun(lvl0param);                             \

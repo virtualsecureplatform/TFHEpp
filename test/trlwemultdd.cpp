@@ -38,10 +38,8 @@ struct DDRelinParam {
     static constexpr std::uint32_t B̅gₐbit = B̅gbit;
 };
 
-// Test that the DD relinearization key generation and key switch work correctly
-// by verifying that:
-// 1. relinKeygenDD produces keys with l * l̅ rows
-// 2. relinKeySwitchDD can process a polynomial and produce valid TRLWE output
+// Test that the relinearization key generation works correctly for DD parameters
+// Verifies that relinKeygen produces keys with l * l̅ rows when l̅ > 1
 template <class P>
 void testDDRelinKeyGeneration()
 {
@@ -51,7 +49,7 @@ void testDDRelinKeyGeneration()
 
     cout << "Testing DD relinearization key generation..." << endl;
     cout << "Parameters: n=" << P::n << ", l=" << P::l << ", l̅=" << P::l̅ << endl;
-    cout << "Expected relinKeyDD rows: " << (P::l * P::l̅) << endl;
+    cout << "Expected relinKey rows: " << (P::l * P::l̅) << endl;
 
     // Generate secret key
     Key<P> key;
@@ -60,30 +58,30 @@ void testDDRelinKeyGeneration()
                                      : static_cast<typename P::T>(-1);
     }
 
-    // Generate DD relinearization key
-    relinKeyDD<P> relinkey = relinKeygenDD<P>(key);
+    // Generate relinearization key (automatically handles DD)
+    relinKey<P> relinkey = relinKeygen<P>(key);
 
     // Verify the structure
     static_assert(sizeof(relinkey) / sizeof(relinkey[0]) == P::l * P::l̅,
-                  "relinKeyDD should have l * l̅ rows");
+                  "relinKey should have l * l̅ rows");
 
-    cout << "relinKeyDD generated with " << (sizeof(relinkey) / sizeof(relinkey[0]))
+    cout << "relinKey generated with " << (sizeof(relinkey) / sizeof(relinkey[0]))
          << " rows." << endl;
 
     // Generate FFT version
-    relinKeyFFTDD<P> relinkeyfft = relinKeyFFTgenDD<P>(key);
+    relinKeyFFT<P> relinkeyfft = relinKeyFFTgen<P>(key);
 
     static_assert(sizeof(relinkeyfft) / sizeof(relinkeyfft[0]) == P::l * P::l̅,
-                  "relinKeyFFTDD should have l * l̅ rows");
+                  "relinKeyFFT should have l * l̅ rows");
 
-    cout << "relinKeyFFTDD generated with " << (sizeof(relinkeyfft) / sizeof(relinkeyfft[0]))
+    cout << "relinKeyFFT generated with " << (sizeof(relinkeyfft) / sizeof(relinkeyfft[0]))
          << " rows." << endl;
 
     cout << "Passed!" << endl;
 }
 
-// Test the DD key switch operation
-// This verifies that relinKeySwitchDD produces valid output
+// Test the key switch operation for DD parameters
+// Verifies that relinKeySwitch produces valid output (uses DD path when l̅ > 1)
 template <class P>
 void testDDRelinKeySwitch()
 {
@@ -102,8 +100,8 @@ void testDDRelinKeySwitch()
                                      : static_cast<typename P::T>(-1);
     }
 
-    // Generate DD relinearization key
-    relinKeyFFTDD<P> relinkeyfft = relinKeyFFTgenDD<P>(key);
+    // Generate relinearization key (automatically handles DD)
+    relinKeyFFT<P> relinkeyfft = relinKeyFFTgen<P>(key);
 
     for (int test = 0; test < num_test; test++) {
         // Create a random polynomial
@@ -112,9 +110,9 @@ void testDDRelinKeySwitch()
             poly[i] = coeffDist(engine);
         }
 
-        // Apply DD key switch
+        // Apply key switch (automatically uses DD path when l̅ > 1)
         TRLWE<P> result;
-        relinKeySwitchDD<P>(result, poly, relinkeyfft);
+        relinKeySwitch<P>(result, poly, relinkeyfft);
 
         // The result should be a valid TRLWE with k+1 polynomials
         // Just verify the structure is correct (full verification would require
@@ -189,7 +187,7 @@ int main()
 
     // Test 4: Full DD TRLWE multiplication
     cout << "=== Test 4: Full DD TRLWE Multiplication ===" << endl;
-    cout << "Testing TRLWEMultWithoutRelinearizationDD..." << endl;
+    cout << "Testing TRLWEMultWithoutRelinearizationFullDD..." << endl;
 
     // Use the DDRelinParam which has l̅=2
     {
@@ -204,8 +202,8 @@ int main()
                                             : static_cast<typename PDD::T>(-1);
         }
 
-        // Generate relinearization key
-        relinKeyFFTDD<PDD> relinkeyfftDD = relinKeyFFTgenDD<PDD>(keyDD);
+        // Generate relinearization key (unified function handles DD automatically)
+        relinKeyFFT<PDD> relinkeyfftDD = relinKeyFFTgen<PDD>(keyDD);
 
         // Test a few multiplications
         constexpr int num_dd_test = 5;

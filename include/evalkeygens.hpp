@@ -269,38 +269,22 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk, const SecretKey& sk)
     subikskgen<P>(ksk, sk.key.get<typename P::domainP>());
 }
 
+// Relinearization key generation - automatically handles DD when l̅ > 1
+// Creates relinearization key with l * l̅ rows (equals l when l̅ == 1)
 template <class P>
 relinKey<P> relinKeygen(const Key<P>& key)
 {
-    static_assert(P::l̅ == 1,
-                  "relinKeygen only supports standard decomposition (l̅=1). "
-                  "Use relinKeygenDD for Double Decomposition.");
-    Polynomial<P> keysquare;
-    std::array<typename P::T, P::n> partkey;
-    for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
-    PolyMulNaive<P>(keysquare, partkey, partkey);
-    relinKey<P> relinkey;
-    for (TRLWE<P>& ctxt : relinkey) trlweSymEncryptZero<P>(ctxt, key);
-    halftrgswhadd<P>(relinkey, keysquare);
-    return relinkey;
-}
-
-// Double Decomposition variant of relinKeygen
-// Creates relinearization key with l * l̅ rows for DD-based TRLWE multiplication
-template <class P>
-relinKeyDD<P> relinKeygenDD(const Key<P>& key)
-{
     Polynomial<P> keysquare;
     std::array<typename P::T, P::n> partkey;
     for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
     PolyMulNaive<P>(keysquare, partkey, partkey);
 
-    // Use halftrgswSymEncrypt which properly handles DD
+    // halftrgswSymEncrypt uses constexpr if internally to handle DD vs standard
     HalfTRGSW<P> halftrgsw;
     halftrgswSymEncrypt<P>(halftrgsw, keysquare, key);
 
-    // Copy to relinKeyDD (they have the same structure: l * l̅ TRLWEs)
-    relinKeyDD<P> relinkey;
+    // Copy to relinKey (same structure: l * l̅ TRLWEs)
+    relinKey<P> relinkey;
     for (int i = 0; i < P::l * P::l̅; i++)
         relinkey[i] = halftrgsw[i];
 
@@ -340,27 +324,13 @@ void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
                      sk.key.get<typename P::targetP>());
 }
 
+// FFT relinearization key generation - automatically handles DD when l̅ > 1
+// Creates FFT relinearization key with l * l̅ rows (equals l when l̅ == 1)
 template <class P>
 relinKeyFFT<P> relinKeyFFTgen(const Key<P>& key)
 {
-    static_assert(P::l̅ == 1,
-                  "relinKeyFFTgen only supports standard decomposition (l̅=1). "
-                  "Use relinKeyFFTgenDD for Double Decomposition.");
     relinKey<P> relinkey = relinKeygen<P>(key);
     relinKeyFFT<P> relinkeyfft;
-    for (int i = 0; i < P::l; i++)
-        for (int j = 0; j < 2; j++)
-            TwistIFFT<P>(relinkeyfft[i][j], relinkey[i][j]);
-    return relinkeyfft;
-}
-
-// Double Decomposition variant of relinKeyFFTgen
-// Creates FFT relinearization key with l * l̅ rows
-template <class P>
-relinKeyFFTDD<P> relinKeyFFTgenDD(const Key<P>& key)
-{
-    relinKeyDD<P> relinkey = relinKeygenDD<P>(key);
-    relinKeyFFTDD<P> relinkeyfft;
     for (int i = 0; i < P::l * P::l̅; i++)
         for (int j = 0; j <= P::k; j++)
             TwistIFFT<P>(relinkeyfft[i][j], relinkey[i][j]);
