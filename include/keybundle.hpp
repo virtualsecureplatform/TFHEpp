@@ -42,7 +42,7 @@ namespace TFHEpp {
 template <class P>
 constexpr TRGSWFFT<P> oneTRGSWFFTgen()
 {
-    constexpr std::array<typename P::T, P::l> h = hgen<P>();
+    constexpr std::array<typename P::T, P::l> h = hgen<P, false>();
     TRGSW<P> trgsw;
     for (TRLWE<P> &trlwe : trgsw) trlwe = {};
     for (int i = 0; i < P::l; i++) {
