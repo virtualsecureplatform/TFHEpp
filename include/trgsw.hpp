@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 
 #include "mulfft.hpp"
 #include "params.hpp"
@@ -1058,18 +1059,20 @@ template <class P>
 void trgswSymEncrypt(TRGSWFFT<P> &trgswfft, const Polynomial<P> &p,
                      const double α, const Key<P> &key)
 {
-    TRGSW<P> trgsw;
-    trgswSymEncrypt<P>(trgsw, p, α, key);
-    ApplyFFT2trgsw<P>(trgswfft, trgsw);
+    // Use heap allocation for large TRGSW (e.g., lvl3param with 128-bit coefficients)
+    auto trgsw = std::make_unique<TRGSW<P>>();
+    trgswSymEncrypt<P>(*trgsw, p, α, key);
+    ApplyFFT2trgsw<P>(trgswfft, *trgsw);
 }
 
 template <class P>
 void trgswSymEncrypt(TRGSWFFT<P> &trgswfft, const Polynomial<P> &p,
                      const uint η, const Key<P> &key)
 {
-    TRGSW<P> trgsw;
-    trgswSymEncrypt<P>(trgsw, p, η, key);
-    ApplyFFT2trgsw<P>(trgswfft, trgsw);
+    // Use heap allocation for large TRGSW (e.g., lvl3param with 128-bit coefficients)
+    auto trgsw = std::make_unique<TRGSW<P>>();
+    trgswSymEncrypt<P>(*trgsw, p, η, key);
+    ApplyFFT2trgsw<P>(trgswfft, *trgsw);
 }
 
 template <class P>
@@ -1086,18 +1089,20 @@ template <class P>
 void halftrgswSymEncrypt(HalfTRGSWFFT<P> &halftrgswfft, const Polynomial<P> &p,
                          const double α, const Key<P> &key)
 {
-    HalfTRGSW<P> halftrgsw;
-    halftrgswSymEncrypt<P>(halftrgsw, p, α, key);
-    halftrgswfft = ApplyFFT2halftrgsw<P>(halftrgsw);
+    // Use heap allocation for large HalfTRGSW
+    auto halftrgsw = std::make_unique<HalfTRGSW<P>>();
+    halftrgswSymEncrypt<P>(*halftrgsw, p, α, key);
+    halftrgswfft = ApplyFFT2halftrgsw<P>(*halftrgsw);
 }
 
 template <class P>
 void halftrgswSymEncrypt(HalfTRGSWFFT<P> &halftrgswfft, const Polynomial<P> &p,
                          const uint η, const Key<P> &key)
 {
-    HalfTRGSW<P> halftrgsw;
-    halftrgswSymEncrypt<P>(halftrgsw, p, η, key);
-    halftrgswfft = ApplyFFT2halftrgsw<P>(halftrgsw);
+    // Use heap allocation for large HalfTRGSW
+    auto halftrgsw = std::make_unique<HalfTRGSW<P>>();
+    halftrgswSymEncrypt<P>(*halftrgsw, p, η, key);
+    halftrgswfft = ApplyFFT2halftrgsw<P>(*halftrgsw);
 }
 
 template <class P>
@@ -1114,18 +1119,20 @@ template <class P>
 void trgswSymEncrypt(TRGSWNTT<P> &trgswntt, const Polynomial<P> &p,
                      const double α, const Key<P> &key)
 {
-    TRGSW<P> trgsw;
-    trgswSymEncrypt<P>(trgsw, p, α, key);
-    trgswntt = ApplyNTT2trgsw<P>(trgsw);
+    // Use heap allocation for large TRGSW
+    auto trgsw = std::make_unique<TRGSW<P>>();
+    trgswSymEncrypt<P>(*trgsw, p, α, key);
+    trgswntt = ApplyNTT2trgsw<P>(*trgsw);
 }
 
 template <class P>
 void trgswSymEncrypt(TRGSWNTT<P> &trgswntt, const Polynomial<P> &p,
                      const uint η, const Key<P> &key)
 {
-    TRGSW<P> trgsw;
-    trgswSymEncrypt<P>(trgsw, p, η, key);
-    trgswntt = ApplyNTT2trgsw<P>(trgsw);
+    // Use heap allocation for large TRGSW
+    auto trgsw = std::make_unique<TRGSW<P>>();
+    trgswSymEncrypt<P>(*trgsw, p, η, key);
+    trgswntt = ApplyNTT2trgsw<P>(*trgsw);
 }
 
 template <class P>
@@ -1142,9 +1149,10 @@ template <class P>
 void trgswSymEncrypt(TRGSWRAINTT<P> &trgswraintt, const Polynomial<P> &p,
                      const double α, const Key<P> &key)
 {
-    TRGSW<P> trgsw;
-    trgswSymEncrypt<P>(trgsw, p, α, key);
-    trgswraintt = ApplyRAINTT2trgsw<P>(trgsw);
+    // Use heap allocation for large TRGSW
+    auto trgsw = std::make_unique<TRGSW<P>>();
+    trgswSymEncrypt<P>(*trgsw, p, α, key);
+    trgswraintt = ApplyRAINTT2trgsw<P>(*trgsw);
 }
 
 template <class P>
@@ -1209,8 +1217,10 @@ void trgswSymEncrypt(TRGSWRAINTT<P> &trgswraintt, const Polynomial<P> &p,
         }
     }
     else {
-        TRGSW<P> trgsw = trgswSymEncrypt<P>(p, η, key);
-        trgswraintt = ApplyRAINTT2trgsw<P>(trgsw);
+        // Use heap allocation for large TRGSW
+        auto trgsw = std::make_unique<TRGSW<P>>();
+        trgswSymEncrypt<P>(*trgsw, p, η, key);
+        trgswraintt = ApplyRAINTT2trgsw<P>(*trgsw);
     }
 }
 

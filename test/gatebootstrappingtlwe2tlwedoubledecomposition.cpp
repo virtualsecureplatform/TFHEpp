@@ -52,9 +52,9 @@ int main()
     auto bkfft = make_unique<BootstrappingKeyFFT<bkP>>();
     bkfftgen<bkP>(*bkfft, domainKey, targetKey);
 
-    // Test arrays
-    array<TLWE<typename bkP::domainP>, num_test> tlwe;
-    array<TLWE<typename bkP::targetP>, num_test> bootedtlwe;
+    // Test arrays - use heap allocation for large 128-bit TLWEs to avoid stack overflow
+    auto tlwe = make_unique<array<TLWE<typename bkP::domainP>, num_test>>();
+    auto bootedtlwe = make_unique<array<TLWE<typename bkP::targetP>, num_test>>();
     array<bool, num_test> p;
 
     // Encrypt test values
@@ -62,7 +62,7 @@ int main()
     for (int i = 0; i < num_test; i++) {
         p[i] = binary(engine) > 0;
         tlweSymEncrypt<typename bkP::domainP>(
-            tlwe[i], p[i] ? bkP::domainP::μ : -bkP::domainP::μ, bkP::domainP::α,
+            (*tlwe)[i], p[i] ? bkP::domainP::μ : -bkP::domainP::μ, bkP::domainP::α,
             domainKey);
     }
 
@@ -73,7 +73,7 @@ int main()
 
     for (int test = 0; test < num_test; test++) {
         GateBootstrappingTLWE2TLWE<bkP>(
-            bootedtlwe[test], tlwe[test], *bkfft,
+            (*bootedtlwe)[test], (*tlwe)[test], *bkfft,
             μpolygen<typename bkP::targetP, bkP::targetP::μ>());
     }
 
@@ -83,7 +83,7 @@ int main()
     cout << "Verifying results..." << endl;
     int errors = 0;
     for (int i = 0; i < num_test; i++) {
-        bool p2 = tlweSymDecrypt<typename bkP::targetP>(bootedtlwe[i], targetKey);
+        bool p2 = tlweSymDecrypt<typename bkP::targetP>((*bootedtlwe)[i], targetKey);
         if (p[i] != p2) {
             cerr << "Error at index " << i << ": expected " << p[i] << " got " << p2 << endl;
             errors++;
