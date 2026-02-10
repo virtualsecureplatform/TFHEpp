@@ -182,7 +182,8 @@ using BootstrappingKeyElementFFT =
 
 template <class P>
 using BootstrappingKey =
-    std::array<BootstrappingKeyElement<P>, P::domainP::k * P::domainP::n>;
+    std::array<BootstrappingKeyElement<P>,
+               P::domainP::k * P::domainP::n / P::Addends>;
 template <class P>
 using BootstrappingKeyFFT =
     std::array<BootstrappingKeyElementFFT<P>,
