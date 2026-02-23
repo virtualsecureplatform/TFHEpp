@@ -138,6 +138,14 @@ __m256i pack64to32(__m256i a, __m256i b)
 
 
 inline void convert_f64_to_u32(uint32_t* const res, const double* const real_inout_direct, const int32_t N) {
+#ifdef USE_AVX512
+    for (int32_t i = 0; i < N; i += 8) {
+        const __m512d vals = _mm512_loadu_pd(&real_inout_direct[i]);
+        const __m512i i64 = _mm512_cvtpd_epi64(vals);
+        const __m256i i32 = _mm512_cvtepi64_epi32(i64);
+        _mm256_storeu_si256((__m256i*)&res[i], i32);
+    }
+#else
     for (int32_t i = 0; i < N; i += 8) {
         // Load 4 double values
         const __m256d real_vals1 = _mm256_loadu_pd(&real_inout_direct[i]);
@@ -152,5 +160,6 @@ inline void convert_f64_to_u32(uint32_t* const res, const double* const real_ino
         // Store the result
         _mm256_storeu_si256((__m256i*)&res[i], packed32);
     }
+#endif
 }
 }

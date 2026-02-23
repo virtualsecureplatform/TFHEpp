@@ -2,6 +2,10 @@
 
 #include <memory>
 
+#ifdef USE_AVX512
+#include <immintrin.h>
+#endif
+
 #include "INTorus.hpp"
 #ifdef USE_FFTW3
 #include <fft_processor_fftw.h>
@@ -192,6 +196,22 @@ inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &b)
         res[2 * i] = tmp.real();
         res[2 * i + 1] = tmp.imag();
     }
+#elif defined(USE_AVX512)
+    static_assert(N >= 16 && (N & (N - 1)) == 0);
+    double *rre = res.data(), *rim = res.data() + N / 2;
+    const double *bre = b.data(), *bim = b.data() + N / 2;
+    for (uint32_t i = 0; i < N / 2; i += 8) {
+        __m512d va_re = _mm512_load_pd(rre + i);
+        __m512d va_im = _mm512_load_pd(rim + i);
+        __m512d vb_re = _mm512_load_pd(bre + i);
+        __m512d vb_im = _mm512_load_pd(bim + i);
+        __m512d vr_re = _mm512_mul_pd(va_re, vb_re);
+        vr_re = _mm512_fnmadd_pd(va_im, vb_im, vr_re);
+        __m512d vr_im = _mm512_mul_pd(va_im, vb_re);
+        vr_im = _mm512_fmadd_pd(va_re, vb_im, vr_im);
+        _mm512_store_pd(rre + i, vr_re);
+        _mm512_store_pd(rim + i, vr_im);
+    }
 #else
     for (int i = 0; i < N / 2; i++) {
         double aimbim = res[i + N / 2] * b[i + N / 2];
@@ -213,30 +233,24 @@ inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
         res[2 * i] = tmp.real();
         res[2 * i + 1] = tmp.imag();
     }
+#elif defined(USE_AVX512)
+    static_assert(N >= 16 && (N & (N - 1)) == 0);
+    const double *are = a.data(), *aim = a.data() + N / 2;
+    const double *bre = b.data(), *bim = b.data() + N / 2;
+    double *rre = res.data(), *rim = res.data() + N / 2;
+    for (uint32_t i = 0; i < N / 2; i += 8) {
+        __m512d va_re = _mm512_load_pd(are + i);
+        __m512d va_im = _mm512_load_pd(aim + i);
+        __m512d vb_re = _mm512_load_pd(bre + i);
+        __m512d vb_im = _mm512_load_pd(bim + i);
+        __m512d vr_re = _mm512_mul_pd(va_re, vb_re);
+        vr_re = _mm512_fnmadd_pd(va_im, vb_im, vr_re);
+        __m512d vr_im = _mm512_mul_pd(va_im, vb_re);
+        vr_im = _mm512_fmadd_pd(va_re, vb_im, vr_im);
+        _mm512_store_pd(rre + i, vr_re);
+        _mm512_store_pd(rim + i, vr_im);
+    }
 #else
-    // for (int i = 0; i < N / 2; i++) {
-    //     double aimbim = a[i + N / 2] * b[i + N / 2];
-    //     double arebim = a[i] * b[i + N / 2];
-    //     res[i] = std::fma(a[i], b[i], -aimbim);
-    //     res[i + N / 2] = std::fma(a[i + N / 2], b[i], arebim);
-    // }
-
-    // for (int i = 0; i < N / 2; i++) {
-    //     res[i] = a[i + N / 2] * b[i + N / 2];
-    //     res[i + N / 2] = a[i] * b[i + N / 2];
-    // }
-    // for (int i = 0; i < N / 2; i++) {
-    //     res[i] = std::fma(a[i], b[i], -res[i]);
-    //     res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
-    // }
-
-    // for (int i = 0; i < N / 2; i++) {
-    //     double arebre = a[i] * b[i];
-    //     double aimbre = a[i + N/2] * b[i];
-    //     res[i] = std::fma(- a[i + N / 2] , b[i + N / 2],arebre);
-    //     res[i + N / 2] = std::fma(a[i], b[i  + N / 2], aimbre);
-    // }
-
     for (int i = 0; i < N / 2; i++) {
         res[i] = a[i] * b[i];
         res[i + N / 2] = a[i + N / 2] * b[i];
@@ -261,6 +275,27 @@ inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
         res[2 * i] += tmp.real();
         res[2 * i + 1] += tmp.imag();
     }
+#elif defined(USE_AVX512)
+    static_assert(N >= 16 && (N & (N - 1)) == 0);
+    const double *are = a.data(), *aim = a.data() + N / 2;
+    const double *bre = b.data(), *bim = b.data() + N / 2;
+    double *rre = res.data(), *rim = res.data() + N / 2;
+    for (uint32_t i = 0; i < N / 2; i += 8) {
+        __m512d va_re = _mm512_load_pd(are + i);
+        __m512d va_im = _mm512_load_pd(aim + i);
+        __m512d vb_re = _mm512_load_pd(bre + i);
+        __m512d vb_im = _mm512_load_pd(bim + i);
+        __m512d vr_re = _mm512_load_pd(rre + i);
+        __m512d vr_im = _mm512_load_pd(rim + i);
+        // res_re += a_re * b_re - a_im * b_im
+        vr_re = _mm512_fmadd_pd(va_re, vb_re, vr_re);
+        vr_re = _mm512_fnmadd_pd(va_im, vb_im, vr_re);
+        // res_im += a_im * b_re + a_re * b_im
+        vr_im = _mm512_fmadd_pd(va_im, vb_re, vr_im);
+        vr_im = _mm512_fmadd_pd(va_re, vb_im, vr_im);
+        _mm512_store_pd(rre + i, vr_re);
+        _mm512_store_pd(rim + i, vr_im);
+    }
 #else
     for (int i = 0; i < N / 2; i++) {
         res[i] = std::fma(a[i], b[i], res[i]);
@@ -270,12 +305,6 @@ inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
         res[i + N / 2] = std::fma(a[i], b[i + N / 2], res[i + N / 2]);
         res[i] -= a[i + N / 2] * b[i + N / 2];
     }
-// for (int i = 0; i < N / 2; i++) {
-//     res[i] = std::fma(a[i + N / 2], b[i + N / 2], -res[i]);
-//     res[i] = std::fma(a[i], b[i], -res[i]);
-//     res[i + N / 2] = std::fma(a[i], b[i + N / 2], res[i + N / 2]);
-//     res[i + N / 2] = std::fma(a[i + N / 2], b[i], res[i + N / 2]);
-// }
 #endif
 }
 
