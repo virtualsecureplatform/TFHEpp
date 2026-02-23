@@ -58,9 +58,9 @@ void FFT_Processor_Spqlios::execute_reverse_uint(double *res, const uint32_t *a)
         // );
         __asm__ __volatile__ (
         "0:\n"
-                "vmovupd (%1),%%ymm0\n"
+                "vmovdqu (%1),%%ymm0\n"
                 "vcvtudq2pd %%ymm0,%%zmm1\n"
-                "vmovapd %%ymm1,(%0)\n"
+                "vmovapd %%zmm1,(%0)\n"
                 "addq $32,%1\n"
                 "addq $64,%0\n"
                 "cmpq %2,%1\n"
@@ -85,16 +85,16 @@ void FFT_Processor_Spqlios::execute_reverse_int(double *res, const int32_t *a) {
         #ifdef USE_AVX512
         __asm__ __volatile__ (
         "0:\n"
-            "vmovdqu32 (%1),%%zmm0\n"       // Load 16 int32_t values from `ait` into zmm0
-            "vcvtdq2pd %%zmm0,%%zmm1\n"     // Convert 16 int32_t values to 8 double-precision values
+            "vmovdqu (%1),%%ymm0\n"         // Load 8 int32_t values from `ait` into ymm0
+            "vcvtdq2pd %%ymm0,%%zmm1\n"     // Convert 8 int32_t values to 8 double-precision values
             "vmovapd %%zmm1,(%0)\n"         // Store the result (8 doubles) in `dst`
-            "addq $64,%1\n"                 // Increment `ait` by 64 bytes (16 int32_t values)
+            "addq $32,%1\n"                 // Increment `ait` by 32 bytes (8 int32_t values)
             "addq $64,%0\n"                 // Increment `dst` by 64 bytes (8 double-precision values)
             "cmpq %2,%1\n"                  // Compare `ait` with `aend`
             "jb 0b\n"                       // Jump back if `ait < aend`
             : "=r"(dst), "=r"(ait), "=r"(aend)
             : "0"(dst), "1"(ait), "2"(aend)
-            : "%zmm0", "%zmm1", "memory"
+            : "%ymm0", "%zmm1", "memory"
         );
         #else
         __asm__ __volatile__ (
@@ -124,7 +124,7 @@ void FFT_Processor_Spqlios::execute_reverse_torus64(double* res, const uint64_t*
     #ifdef USE_AVX512
     __m512d * ri512 = (__m512d *) res;
     __m512i * aa = (__m512i *) a;
-    for (size_t i = 0; i < proc->N/8; i++) ri512[i] = _mm512_cvtepi64_pd (aa[i]);
+    for (size_t i = 0; i < N/8; i++) ri512[i] = _mm512_cvtepi64_pd (aa[i]);
     #else
     int64_t *aa = (int64_t *)a;
     for (int i=0; i<N; i++) res[i]=(double)aa[i];
@@ -313,10 +313,10 @@ void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, const double* 
     }
     fft(tables_direct,real_inout_direct); 
     #ifdef USE_AVX512
-    __m512d * ri512 = (__m512d *) proc->real_inout_direct;
+    __m512d * ri512 = (__m512d *) real_inout_direct;
     __m512i * res512 = (__m512i *) res;
     const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
-    for (size_t i = 0; i < proc->N/8; i++) {
+    for (size_t i = 0; i < N/8; i++) {
         const __m512d _1 = _mm512_scalef_pd (ri512[i], -modc);
         const __m512d _2 = _mm512_reduce_pd (_1, 0);
         const __m512d _3 = _mm512_scalef_pd (_2, modc);

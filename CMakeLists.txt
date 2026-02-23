@@ -191,6 +191,12 @@ elseif(USE_SPQLIOS_ARITHMETIC)
   # Restore ENABLE_TEST for the parent project
   set(ENABLE_TESTING ${ENABLE_TEST})
 else()
+  if(USE_AVX512)
+    set(TFHEpp_DEFINITIONS
+        "${TFHEpp_DEFINITIONS};USE_AVX512"
+        PARENT_SCOPE)
+    add_compile_definitions(USE_AVX512)
+  endif()
   add_subdirectory(thirdparties/spqlios)
 endif()
 
