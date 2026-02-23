@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#ifdef USE_AVX512
+#if defined(USE_AVX512) || defined(__AVX2__)
 #include <immintrin.h>
 #endif
 
@@ -212,6 +212,21 @@ inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &b)
         _mm512_store_pd(rre + i, vr_re);
         _mm512_store_pd(rim + i, vr_im);
     }
+#elif defined(__AVX2__) && !defined(__AVX512F__)
+    double *rre = res.data(), *rim = res.data() + N / 2;
+    const double *bre = b.data(), *bim = b.data() + N / 2;
+    for (uint32_t i = 0; i < N / 2; i += 4) {
+        __m256d va_re = _mm256_load_pd(rre + i);
+        __m256d va_im = _mm256_load_pd(rim + i);
+        __m256d vb_re = _mm256_load_pd(bre + i);
+        __m256d vb_im = _mm256_load_pd(bim + i);
+        __m256d vr_re = _mm256_mul_pd(va_re, vb_re);
+        vr_re = _mm256_fnmadd_pd(va_im, vb_im, vr_re);
+        __m256d vr_im = _mm256_mul_pd(va_im, vb_re);
+        vr_im = _mm256_fmadd_pd(va_re, vb_im, vr_im);
+        _mm256_store_pd(rre + i, vr_re);
+        _mm256_store_pd(rim + i, vr_im);
+    }
 #else
     for (int i = 0; i < N / 2; i++) {
         double aimbim = res[i + N / 2] * b[i + N / 2];
@@ -249,6 +264,22 @@ inline void MulInFD(std::array<double, N> &res, const std::array<double, N> &a,
         vr_im = _mm512_fmadd_pd(va_re, vb_im, vr_im);
         _mm512_store_pd(rre + i, vr_re);
         _mm512_store_pd(rim + i, vr_im);
+    }
+#elif defined(__AVX2__) && !defined(__AVX512F__)
+    const double *are = a.data(), *aim = a.data() + N / 2;
+    const double *bre = b.data(), *bim = b.data() + N / 2;
+    double *rre = res.data(), *rim = res.data() + N / 2;
+    for (uint32_t i = 0; i < N / 2; i += 4) {
+        __m256d va_re = _mm256_load_pd(are + i);
+        __m256d va_im = _mm256_load_pd(aim + i);
+        __m256d vb_re = _mm256_load_pd(bre + i);
+        __m256d vb_im = _mm256_load_pd(bim + i);
+        __m256d vr_re = _mm256_mul_pd(va_re, vb_re);
+        vr_re = _mm256_fnmadd_pd(va_im, vb_im, vr_re);
+        __m256d vr_im = _mm256_mul_pd(va_im, vb_re);
+        vr_im = _mm256_fmadd_pd(va_re, vb_im, vr_im);
+        _mm256_store_pd(rre + i, vr_re);
+        _mm256_store_pd(rim + i, vr_im);
     }
 #else
     for (int i = 0; i < N / 2; i++) {
@@ -295,6 +326,24 @@ inline void FMAInFD(std::array<double, N> &res, const std::array<double, N> &a,
         vr_im = _mm512_fmadd_pd(va_re, vb_im, vr_im);
         _mm512_store_pd(rre + i, vr_re);
         _mm512_store_pd(rim + i, vr_im);
+    }
+#elif defined(__AVX2__) && !defined(__AVX512F__)
+    const double *are = a.data(), *aim = a.data() + N / 2;
+    const double *bre = b.data(), *bim = b.data() + N / 2;
+    double *rre = res.data(), *rim = res.data() + N / 2;
+    for (uint32_t i = 0; i < N / 2; i += 4) {
+        __m256d va_re = _mm256_load_pd(are + i);
+        __m256d va_im = _mm256_load_pd(aim + i);
+        __m256d vb_re = _mm256_load_pd(bre + i);
+        __m256d vb_im = _mm256_load_pd(bim + i);
+        __m256d vr_re = _mm256_load_pd(rre + i);
+        __m256d vr_im = _mm256_load_pd(rim + i);
+        vr_re = _mm256_fmadd_pd(va_re, vb_re, vr_re);
+        vr_re = _mm256_fnmadd_pd(va_im, vb_im, vr_re);
+        vr_im = _mm256_fmadd_pd(va_im, vb_re, vr_im);
+        vr_im = _mm256_fmadd_pd(va_re, vb_im, vr_im);
+        _mm256_store_pd(rre + i, vr_re);
+        _mm256_store_pd(rim + i, vr_im);
     }
 #else
     for (int i = 0; i < N / 2; i++) {

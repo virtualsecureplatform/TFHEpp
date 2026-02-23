@@ -126,8 +126,12 @@ void FFT_Processor_Spqlios::execute_reverse_torus64(double* res, const uint64_t*
     __m512i * aa = (__m512i *) a;
     for (size_t i = 0; i < N/8; i++) ri512[i] = _mm512_cvtepi64_pd (aa[i]);
     #else
-    int64_t *aa = (int64_t *)a;
-    for (int i=0; i<N; i++) res[i]=(double)aa[i];
+    const int64_t *aa = (const int64_t *)a;
+    for (int i=0; i<N; i+=4) {
+        __m256i vi = _mm256_loadu_si256((const __m256i*)(aa + i));
+        __m256d vd = SPQLIOS::mm256_cvtepi64_pd(vi);
+        _mm256_storeu_pd(res + i, vd);
+    }
     #endif
     ifft(tables_reverse,res);
 }

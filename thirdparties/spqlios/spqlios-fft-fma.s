@@ -260,12 +260,12 @@ fftfinalloop:
 	vmovapd	(%r11),%ymm1 /* im */
 	vmovapd (%rdx),%ymm2 /* cos */
 	vmovapd 32(%rdx),%ymm3 /* sin */
-	vmulpd %ymm0,%ymm2,%ymm4
-	vmulpd %ymm0,%ymm3,%ymm5
-	vmulpd %ymm1,%ymm2,%ymm6
-	vmulpd %ymm1,%ymm3,%ymm7
-	vsubpd %ymm7,%ymm4,%ymm0
-	vaddpd %ymm6,%ymm5,%ymm1
+	vmulpd %ymm0,%ymm2,%ymm4        /* re*cos */
+	vmulpd %ymm0,%ymm3,%ymm5        /* re*sin */
+	vfnmadd231pd %ymm1,%ymm3,%ymm4  /* re*cos - im*sin */
+	vfmadd231pd %ymm1,%ymm2,%ymm5   /* re*sin + im*cos */
+	vmovapd %ymm4,%ymm0
+	vmovapd %ymm5,%ymm1
 	vmovapd %ymm0,(%r10)
 	vmovapd %ymm1,(%r11)
     	/* end of final loop */
