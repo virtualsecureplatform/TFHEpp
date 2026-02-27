@@ -2,12 +2,17 @@ cmake_minimum_required(VERSION 3.16)
 project(tfhe++ CXX C)
 set(CMAKE_CXX_STANDARD 20)
 option(DEBUG "Debug mode" OFF)
+# TFHEPP_MARCH: target architecture for -march flag (default: native).
+# Set to e.g. "x86-64-v3" for a portable AVX2 build.
+if(NOT DEFINED TFHEPP_MARCH)
+  set(TFHEPP_MARCH "native")
+endif()
 if(DEBUG)
   set(CMAKE_CXX_FLAGS
-      "-march=native -g -Wall -Wextra -pedantic -Wno-sign-compare")
+      "-march=${TFHEPP_MARCH} -g -Wall -Wextra -pedantic -Wno-sign-compare")
 else()
   set(CMAKE_CXX_FLAGS
-      "-march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
+      "-march=${TFHEPP_MARCH} -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare"
   )
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
