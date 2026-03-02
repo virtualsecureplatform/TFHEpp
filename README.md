@@ -149,6 +149,7 @@ Both sides use exactly the same parameters:
 
 On TFHEpp's side, enable these with `-DUSE_TFHE_RS=ON`.
 The operation benchmarked is one boolean NAND gate (linear combination + PBS + key switch).
+Both sides run single-threaded (tfhe-rs Rayon pool pinned to 1 thread via `ThreadPoolBuilder`).
 
 ## Results
 
@@ -158,8 +159,8 @@ Measured with `apptainer run compare-tfhers.sif` (Ubuntu 24.04, single-threaded)
 
 | Library | Time per NAND gate |
 |:---:|:---:|
-| **TFHEpp** (C++, SPQLIOS-AVX512, `-O3`) | **6.66 ms** |
-| **tfhe-rs** (Rust, `DEFAULT_PARAMETERS`) | **5.997 ms** |
+| **TFHEpp** (C++, SPQLIOS-AVX512, `-O3`) | **6.384 ms** |
+| **tfhe-rs** (Rust, `DEFAULT_PARAMETERS`, 1 thread) | **5.695 ms** |
 
 ## Reproducing locally (Apptainer)
 

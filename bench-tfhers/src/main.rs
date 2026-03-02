@@ -23,6 +23,13 @@ use tfhe::boolean::prelude::*;
 fn main() {
     const NUM_TESTS: usize = 1000;
 
+    // Force single-threaded execution so Rayon's parallel key switch does not
+    // give tfhe-rs an unfair advantage over TFHEpp's sequential implementation.
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(1)
+        .build_global()
+        .unwrap();
+
     // Key generation uses DEFAULT_PARAMETERS internally.
     // This is the slow step (bootstrapping key generation); not timed.
     let (client_key, server_key) = gen_keys();

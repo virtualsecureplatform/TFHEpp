@@ -19,3 +19,4 @@ rust-version = "1.82"
 
 [dependencies]
 tfhe = { path = "../tfhe-rs/tfhe", default-features = false, features = ["boolean"] }
+rayon = "1"
