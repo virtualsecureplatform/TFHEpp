@@ -60,7 +60,10 @@ constexpr uint64_t lvl1P = 1073707009;
 template <class P>
 inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 {
-    if constexpr (std::is_same_v<P, lvl1param>)
+    // AHlvl1param shares the same polynomial ring as lvl1param (same nbit/n),
+    // so it uses the lvl1 NTT tables regardless of its Torus type.
+    if constexpr (std::is_same_v<P, lvl1param> ||
+                  std::is_same_v<P, AHlvl1param>)
 #ifdef USE_HEXL
     {
         std::array<uint64_t, lvl1param::n> temp;
@@ -69,7 +72,7 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
         for (int i = 0; i < lvl1param::n; i++) res[i] = (temp[i] << 32) / lvl1P;
     }
 #else
-        cuHEpp::TwistNTT<typename lvl1param::T, lvl1param::nbit>(
+        cuHEpp::TwistNTT<typename P::T, P::nbit>(
             res, a, (*ntttablelvl1)[0], (*ntttwistlvl1)[0]);
 #endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
@@ -125,7 +128,10 @@ inline void TwistFFTrescale(Polynomial<P> &res, const PolynomialInFD<P> &a)
 template <class P>
 inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
 {
-    if constexpr (std::is_same_v<P, lvl1param>)
+    // AHlvl1param shares the same polynomial ring as lvl1param (same nbit/n),
+    // so it uses the lvl1 NTT tables regardless of its Torus type.
+    if constexpr (std::is_same_v<P, lvl1param> ||
+                  std::is_same_v<P, AHlvl1param>)
 #ifdef USE_HEXL
     {
         std::array<uint64_t, lvl1param::n> temp;

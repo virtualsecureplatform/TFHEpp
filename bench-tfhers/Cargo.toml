@@ -1,0 +1,21 @@
+[package]
+name = "pbs-tfhers-bench"
+version = "0.1.0"
+edition = "2021"
+# Minimum Rust version required by tfhe-rs
+rust-version = "1.82"
+
+# tfhe-rs is expected at ../tfhe-rs relative to the TFHEpp repository root.
+# The CI workflow and Apptainer definition both set up this layout:
+#
+#   <workspace>/
+#   ├── TFHEpp/              ← this repository
+#   │   ├── bench-tfhers/   ← this crate
+#   │   └── tfhe-rs/        ← tfhe-rs clone  (git clone … TFHEpp/tfhe-rs)
+#
+# To build manually from the TFHEpp root:
+#   git clone --depth 1 https://github.com/zama-ai/tfhe-rs.git tfhe-rs
+#   cargo build --release --manifest-path bench-tfhers/Cargo.toml
+
+[dependencies]
+tfhe = { path = "../tfhe-rs/tfhe", default-features = false, features = ["boolean"] }

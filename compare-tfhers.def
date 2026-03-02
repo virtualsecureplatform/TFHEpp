@@ -1,0 +1,111 @@
+Bootstrap: docker
+From: ubuntu:24.04
+
+# ============================================================================
+# compare-tfhers.def — Apptainer image for local TFHEpp vs tfhe-rs comparison
+#
+# Build (from the TFHEpp repository root, submodules must be initialised):
+#   git submodule update --init --recursive   # if not done yet
+#   apptainer build compare-tfhers.sif compare-tfhers.def
+#
+# Run the benchmark:
+#   apptainer run compare-tfhers.sif
+#
+# Both sides use identical parameters (tfhe-rs DEFAULT_PARAMETERS, 132-bit):
+#   n=805, k=3, N=512, pbs_level=2, pbs_base_log=10,
+#   ks_level=5, ks_base_log=3
+# ============================================================================
+
+%labels
+    Description TFHEpp vs tfhe-rs NAND-gate PBS comparison on Ubuntu 24.04
+
+%environment
+    export PATH="/root/.cargo/bin:${PATH}"
+    export WORKSPACE="/opt/tfhe-compare"
+
+# Copy the local TFHEpp source tree (including initialised submodules) into
+# the container at build time.  Run `apptainer build` from the TFHEpp root.
+%files
+    CMakeLists.txt         /opt/tfhe-compare/TFHEpp/CMakeLists.txt
+    include                /opt/tfhe-compare/TFHEpp/include
+    src                    /opt/tfhe-compare/TFHEpp/src
+    test                   /opt/tfhe-compare/TFHEpp/test
+    bench-tfhers           /opt/tfhe-compare/TFHEpp/bench-tfhers
+    thirdparties           /opt/tfhe-compare/TFHEpp/thirdparties
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    export PATH="/root/.cargo/bin:${PATH}"
+    export WORKSPACE="/opt/tfhe-compare"
+
+    # ── System packages ──────────────────────────────────────────────────────
+    apt-get update
+    apt-get upgrade -y
+    apt-get install -y \
+        build-essential g++ libomp-dev cmake ninja-build \
+        git curl wget ca-certificates
+
+    # ── Rust toolchain (stable + let tfhe-rs pin its own version) ────────────
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --default-toolchain stable --no-modify-path
+
+    # ── Clone tfhe-rs alongside TFHEpp ───────────────────────────────────────
+    # bench-tfhers/Cargo.toml expects: ../tfhe-rs/tfhe (relative to bench-tfhers/)
+    cd "${WORKSPACE}/TFHEpp"
+    git clone --depth 1 https://github.com/zama-ai/tfhe-rs.git tfhe-rs
+
+    # ── Build TFHEpp pbs_tfhers benchmark ────────────────────────────────────
+    cmake . -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DUSE_TFHE_RS=ON \
+        -DENABLE_TEST=ON
+    cmake --build build --target pbs_tfhers
+
+    # ── Build tfhe-rs Rust benchmark ─────────────────────────────────────────
+    cd bench-tfhers
+    # Download the Rust toolchain pinned in rust-toolchain.toml
+    rustup show
+    cargo build --release
+    cd ..
+
+    # Remove large intermediate artefacts to keep image size small
+    rm -rf build/_deps build/CMakeFiles
+
+%runscript
+    export PATH="/root/.cargo/bin:${PATH}"
+    TFHEPP_ROOT="/opt/tfhe-compare/TFHEpp"
+
+    echo "============================================================"
+    echo "  TFHEpp vs tfhe-rs — NAND gate bootstrap comparison"
+    echo "  Parameter set: tfhe-rs DEFAULT_PARAMETERS (132-bit security)"
+    echo "    n=805  k=3  N=512  pbs_level=2  pbs_base_log=10"
+    echo "    ks_level=5  ks_base_log=3"
+    echo "============================================================"
+    echo ""
+
+    echo "--- Machine info ---"
+    lscpu 2>/dev/null | grep -E "Model name|CPU\(s\)|Thread|MHz" || true
+    free -h 2>/dev/null || true
+    echo ""
+
+    echo "--- TFHEpp (C++, USE_TFHE_RS) ---"
+    "${TFHEPP_ROOT}/build/test/pbs_tfhers"
+    echo ""
+
+    echo "--- tfhe-rs (Rust, DEFAULT_PARAMETERS) ---"
+    "${TFHEPP_ROOT}/bench-tfhers/target/release/pbs-tfhers-bench"
+    echo ""
+    echo "Done."
+
+%help
+    Runs a NAND gate bootstrapping benchmark comparing TFHEpp and tfhe-rs
+    using identical parameters (tfhe-rs DEFAULT_PARAMETERS, 132-bit security).
+
+    Prerequisites (on the build host):
+        git submodule update --init --recursive
+
+    Build the image (requires internet access, run from TFHEpp root):
+        apptainer build compare-tfhers.sif compare-tfhers.def
+
+    Run:
+        apptainer run compare-tfhers.sif

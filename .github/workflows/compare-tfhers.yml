@@ -1,0 +1,82 @@
+name: Compare with tfhe-rs
+
+# Runs on every push and can also be triggered manually.
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  compare-pbs:
+    name: PBS benchmark (TFHEpp vs tfhe-rs) on Ubuntu 24.04
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+
+    steps:
+      # ── System dependencies ───────────────────────────────────────────────
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            build-essential g++ libomp-dev cmake ninja-build git \
+            curl wget ca-certificates
+
+      # ── Rust toolchain (rustup) ───────────────────────────────────────────
+      - name: Install Rust via rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | sh -s -- -y --default-toolchain stable --no-modify-path
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      # ── Checkout TFHEpp ───────────────────────────────────────────────────
+      - name: Checkout TFHEpp
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # ── Clone tfhe-rs alongside TFHEpp ───────────────────────────────────
+      # Layout expected by bench-tfhers/Cargo.toml:
+      #   $GITHUB_WORKSPACE/            ← TFHEpp root
+      #   $GITHUB_WORKSPACE/tfhe-rs/    ← tfhe-rs clone
+      - name: Clone tfhe-rs
+        run: |
+          git clone --depth 1 https://github.com/zama-ai/tfhe-rs.git tfhe-rs
+
+      # ── Build TFHEpp pbs_tfhers benchmark ────────────────────────────────
+      - name: Build TFHEpp (USE_TFHE_RS, Release)
+        run: |
+          cmake . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DUSE_TFHE_RS=ON \
+            -DENABLE_TEST=ON
+          cmake --build build --target pbs_tfhers
+
+      # ── Build tfhe-rs Rust benchmark ──────────────────────────────────────
+      - name: Install pinned Rust toolchain (from tfhe-rs/rust-toolchain.toml)
+        working-directory: bench-tfhers
+        run: rustup show  # triggers toolchain download from rust-toolchain.toml
+
+      - name: Build tfhe-rs benchmark (Release)
+        working-directory: bench-tfhers
+        run: cargo build --release
+
+      # ── Show machine info ─────────────────────────────────────────────────
+      - name: Machine info
+        run: |
+          echo "=== CPU info ==="
+          lscpu | grep -E "Model name|CPU\(s\)|Thread|MHz" || true
+          echo "=== Memory ==="
+          free -h || true
+
+      # ── Run benchmarks and compare ────────────────────────────────────────
+      - name: Run TFHEpp pbs_tfhers
+        run: |
+          echo "=== TFHEpp NAND gate (USE_TFHE_RS parameters) ==="
+          echo "Parameters: n=805, k=3, N=512, pbs_level=2, pbs_base_log=10"
+          build/test/pbs_tfhers
+
+      - name: Run tfhe-rs benchmark
+        run: |
+          echo "=== tfhe-rs NAND gate (DEFAULT_PARAMETERS) ==="
+          echo "Parameters: n=805, k=3, N=512, pbs_level=2, pbs_base_log=10"
+          bench-tfhers/target/release/pbs-tfhers-bench

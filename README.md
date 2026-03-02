@@ -128,6 +128,56 @@ make
 ./test/test-bootstrapping-fft-spqlios-fma 
 ```
 
+# Comparison with tfhe-rs
+
+TFHEpp can be benchmarked directly against [tfhe-rs](https://github.com/zama-ai/tfhe-rs) using
+identical parameters (`DEFAULT_PARAMETERS`, 132-bit security, boolean API).
+
+## Parameter set
+
+Both sides use exactly the same parameters:
+
+| Parameter | Value | Description |
+|:---:|:---:|:---|
+| `n` | 805 | LWE dimension |
+| `k` | 3 | GLWE dimension |
+| `N` | 512 | Polynomial size |
+| `pbs_level` | 2 | PBS decomposition levels |
+| `pbs_base_log` | 10 | PBS decomposition log-base |
+| `ks_level` | 5 | Key-switch decomposition levels |
+| `ks_base_log` | 3 | Key-switch decomposition log-base |
+
+On TFHEpp's side, enable these with `-DUSE_TFHE_RS=ON`.
+The operation benchmarked is one boolean NAND gate (linear combination + PBS + key switch).
+
+## Results
+
+Measured with `apptainer run compare-tfhers.sif` (Ubuntu 24.04, single-threaded).
+
+**CPU**: AMD Ryzen 9 9950X3D 16-Core Processor (max 5752 MHz)
+
+| Library | Time per NAND gate |
+|:---:|:---:|
+| **TFHEpp** (C++, SPQLIOS-AVX512, `-O3`) | **6.66 ms** |
+| **tfhe-rs** (Rust, `DEFAULT_PARAMETERS`) | **5.997 ms** |
+
+## Reproducing locally (Apptainer)
+
+Requires Apptainer and internet access to clone tfhe-rs and pull the Ubuntu 24.04 image.
+
+```bash
+git clone --recurse-submodules https://github.com/virtualsecureplatform/TFHEpp
+cd TFHEpp
+apptainer build compare-tfhers.sif compare-tfhers.def
+apptainer run compare-tfhers.sif
+```
+
+## CI
+
+The comparison runs automatically on every push via
+[`.github/workflows/compare-tfhers.yml`](.github/workflows/compare-tfhers.yml)
+using an Ubuntu 24.04 container.
+
 # Theory
 
 Here is the slides (in japanese).
