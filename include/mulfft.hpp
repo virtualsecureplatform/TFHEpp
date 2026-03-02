@@ -83,7 +83,7 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 }
 
 template <class P>
-inline void TwistFFT(Polynomial<P> &res, const PolynomialInFD<P> &a)
+inline void TwistFFT(Polynomial<P> &res, PolynomialInFD<P> &a)
 {
     if constexpr (std::is_same_v<P, lvl1param> ||
                   std::is_same_v<P, AHlvl1param>) {

@@ -46,7 +46,7 @@ public:
 
     void execute_reverse_torus64(double* res, const uint64_t* a);
     
-    void execute_direct_torus64(uint64_t* res, const double* a);
+    void execute_direct_torus64(uint64_t* res, double* a);
 
     void execute_direct_torus64_rescale(uint64_t* res, const double* a, const double Δ);
 
