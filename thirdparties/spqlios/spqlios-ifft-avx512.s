@@ -157,106 +157,213 @@ offloop:
 	jb blockloop
 	/* end of nn loop */
 	movq %r13,%r12
-	cmpq $64,%r12
+	cmpq $128,%r12
 	jae nnloop
 
-# ── Option B: fused {halfnn=16, halfnn=8} pass for N >= 256 ─────────────────
-# After modified nnloop (exits when r12 < 64):
-#   N>=256: r12=32 (halfnn=32 was last nnloop iter; halfnn=16,8 unprocessed)
-#   N=128:  r12=16 (halfnn=16 was last; halfnn=8 unprocessed)
-#   N=64:   r12=8  (halfnn=8 was last; nothing left before size8)
-# Fused pass runs only when r12=32.
+# ── Option C: fused {halfnn=32, halfnn=16, halfnn=8} pass for N >= 512 ──────
+# After modified nnloop (exits when r12 < 128):
+#   N>=512: r12=64 (halfnn=64 was last; halfnn=32,16,8 unprocessed) → fused pass
+#   N=256:  r12=32 (halfnn=32 was last; halfnn=16,8 unprocessed)    → fallback
+#   N=128:  r12=16 (halfnn=16 was last; halfnn=8 unprocessed)       → fallback
+#   N=64:   r12=8  (halfnn=8 was last; nothing left)                → fallback
 #
 # IFFT DIF butterfly: new_re0=re0+re1, new_im0=im0+im1,
-#   new_re1=(re0-re1)*cos-(im0-im1)*sin, new_im1=(re0-re1)*sin+(im0-im1)*cos
+#   diff=(re0-re1, im0-im1); new_re1=diff_re*cos-diff_im*sin,
+#                             new_im1=diff_re*sin+diff_im*cos
 #
-# Super-block of 32 doubles [A=+0..7, B=+8..15, C=+16..23, D=+24..31]:
-#   Step 1: halfnn=16 butterfly A<->C (off=0, trig W16) and B<->D (off=8, trig W16)
-#   Step 2: halfnn=8  butterfly A'<->B' (trig W8) and C'<->D' (trig W8)
+# Super-block of 64 doubles [A=+0,B=+8,C=+16,D=+24,E=+32,F=+40,G=+48,H=+56]
+#   Step 1 (halfnn=32): A<->E (W32[0]), B<->F (W32[8]), C<->G (W32[16]), D<->H (W32[24])
+#   Step 2 (halfnn=16): A'<->C' (W16[0]), B'<->D' (W16[8]), E'<->G' (W16[0]), F'<->H' (W16[8])
+#   Step 3 (halfnn=8):  A''<->B'', C''<->D'', E''<->F'', G''<->H''  (all W8[0])
 #
-# Trig advance: halfnn=16 uses 2*32*8=512 bytes from current r8;
-#               halfnn=8  uses 2*16*8=256 bytes from that position.
-	cmpq	$32,%r12
+# Trig advances (from current r8 after nnloop exit with r12=64):
+#   halfnn=32: advance r8 by 2*64*8=1024  (r8 → W32 base)
+#   halfnn=16: advance r8 by 2*32*8=512   (r8 → W16 base)
+#   halfnn=8:  advance r8 by 2*16*8=256   (r8 → W8 base)
+#
+# Register map: zmm0-7=re, zmm8-15=im, zmm16-17=W8, zmm18-21=W16, zmm22-29=W32, zmm30-31=tmp
+	cmpq	$64,%r12
 	jne	ifft_fallback_last
-	# Advance r8 for halfnn=16 (nn=32)
+	# Advance r8 for halfnn=32 (nn=64, r12=64)
 	leaq (%r8,%r12,8),%r8
-	leaq (%r8,%r12,8),%r8		/* r8 = W16 trig base */
-	vmovapd    (%r8),%zmm14		/* W16[off=0]_cos */
-	vmovapd  64(%r8),%zmm15		/* W16[off=0]_sin */
-	vmovapd 128(%r8),%zmm16		/* W16[off=8]_cos */
-	vmovapd 192(%r8),%zmm17		/* W16[off=8]_sin */
+	leaq (%r8,%r12,8),%r8		/* r8 = W32 trig base */
+	vmovapd   0(%r8),%zmm22		/* W32[0]_cos */
+	vmovapd  64(%r8),%zmm23		/* W32[0]_sin */
+	vmovapd 128(%r8),%zmm24		/* W32[8]_cos */
+	vmovapd 192(%r8),%zmm25		/* W32[8]_sin */
+	vmovapd 256(%r8),%zmm26		/* W32[16]_cos */
+	vmovapd 320(%r8),%zmm27		/* W32[16]_sin */
+	vmovapd 384(%r8),%zmm28		/* W32[24]_cos */
+	vmovapd 448(%r8),%zmm29		/* W32[24]_sin */
+	# Advance r8 for halfnn=16 (nn=32)
+	movq	$32,%rcx
+	leaq (%r8,%rcx,8),%r8
+	leaq (%r8,%rcx,8),%r8		/* r8 = W16 trig base */
+	vmovapd   0(%r8),%zmm18		/* W16[0]_cos */
+	vmovapd  64(%r8),%zmm19		/* W16[0]_sin */
+	vmovapd 128(%r8),%zmm20		/* W16[8]_cos */
+	vmovapd 192(%r8),%zmm21		/* W16[8]_sin */
 	# Advance r8 for halfnn=8 (nn=16)
 	movq	$16,%rcx
 	leaq (%r8,%rcx,8),%r8
 	leaq (%r8,%rcx,8),%r8		/* r8 = W8 trig base */
-	vmovapd   (%r8),%zmm12		/* W8[off=0]_cos */
-	vmovapd 64(%r8),%zmm13		/* W8[off=0]_sin */
+	vmovapd   0(%r8),%zmm16		/* W8[0]_cos */
+	vmovapd  64(%r8),%zmm17		/* W8[0]_sin */
 	movq	$0,%r11			/* r11: super-block base (doubles) */
 .p2align 4
-ifft_r4_16_8_loop:
+ifft_r4_32_16_8_loop:
 	vmovapd    (%rdi,%r11,8),%zmm0	/* A_re */
 	vmovapd  64(%rdi,%r11,8),%zmm1	/* B_re */
 	vmovapd 128(%rdi,%r11,8),%zmm2	/* C_re */
 	vmovapd 192(%rdi,%r11,8),%zmm3	/* D_re */
+	vmovapd 256(%rdi,%r11,8),%zmm4	/* E_re */
+	vmovapd 320(%rdi,%r11,8),%zmm5	/* F_re */
+	vmovapd 384(%rdi,%r11,8),%zmm6	/* G_re */
+	vmovapd 448(%rdi,%r11,8),%zmm7	/* H_re */
 	vmovapd    (%rsi,%r11,8),%zmm8	/* A_im */
 	vmovapd  64(%rsi,%r11,8),%zmm9	/* B_im */
 	vmovapd 128(%rsi,%r11,8),%zmm10	/* C_im */
 	vmovapd 192(%rsi,%r11,8),%zmm11	/* D_im */
-	# halfnn=16 butterfly: A<->C (off=0)
-	vsubpd	%zmm2,%zmm0,%zmm4		/* diff_re = A_re - C_re */
-	vsubpd	%zmm10,%zmm8,%zmm5		/* diff_im = A_im - C_im */
-	vaddpd	%zmm2,%zmm0,%zmm0		/* new_A_re = A_re + C_re */
-	vaddpd	%zmm10,%zmm8,%zmm8		/* new_A_im = A_im + C_im */
-	vmulpd	%zmm4,%zmm14,%zmm2		/* diff_re * W16_0_cos */
-	vfnmadd231pd %zmm5,%zmm15,%zmm2	/* new_C_re = diff_re*cos - diff_im*sin */
-	vmulpd	%zmm4,%zmm15,%zmm10		/* diff_re * W16_0_sin */
-	vfmadd231pd  %zmm5,%zmm14,%zmm10	/* new_C_im = diff_re*sin + diff_im*cos */
-	# halfnn=16 butterfly: B<->D (off=8)
-	vsubpd	%zmm3,%zmm1,%zmm4		/* diff_re = B_re - D_re */
-	vsubpd	%zmm11,%zmm9,%zmm5		/* diff_im = B_im - D_im */
-	vaddpd	%zmm3,%zmm1,%zmm1		/* new_B_re = B_re + D_re */
-	vaddpd	%zmm11,%zmm9,%zmm9		/* new_B_im = B_im + D_im */
-	vmulpd	%zmm4,%zmm16,%zmm3		/* diff_re * W16_8_cos */
-	vfnmadd231pd %zmm5,%zmm17,%zmm3	/* new_D_re = diff_re*cos - diff_im*sin */
-	vmulpd	%zmm4,%zmm17,%zmm11		/* diff_re * W16_8_sin */
-	vfmadd231pd  %zmm5,%zmm16,%zmm11	/* new_D_im = diff_re*sin + diff_im*cos */
-	# halfnn=8 butterfly: A'<->B'
-	vsubpd	%zmm1,%zmm0,%zmm4		/* diff_re = A_re - B_re */
-	vsubpd	%zmm9,%zmm8,%zmm5		/* diff_im = A_im - B_im */
-	vaddpd	%zmm1,%zmm0,%zmm0		/* new_A_re = A_re + B_re */
-	vaddpd	%zmm9,%zmm8,%zmm8		/* new_A_im = A_im + B_im */
-	vmulpd	%zmm4,%zmm12,%zmm1		/* diff_re * W8_cos */
-	vfnmadd231pd %zmm5,%zmm13,%zmm1	/* new_B_re = diff_re*cos - diff_im*sin */
-	vmulpd	%zmm4,%zmm13,%zmm9		/* diff_re * W8_sin */
-	vfmadd231pd  %zmm5,%zmm12,%zmm9	/* new_B_im = diff_re*sin + diff_im*cos */
-	# halfnn=8 butterfly: C'<->D'
-	vsubpd	%zmm3,%zmm2,%zmm4		/* diff_re = C_re - D_re */
-	vsubpd	%zmm11,%zmm10,%zmm5		/* diff_im = C_im - D_im */
-	vaddpd	%zmm3,%zmm2,%zmm2		/* new_C_re = C_re + D_re */
-	vaddpd	%zmm11,%zmm10,%zmm10		/* new_C_im = C_im + D_im */
-	vmulpd	%zmm4,%zmm12,%zmm3		/* diff_re * W8_cos */
-	vfnmadd231pd %zmm5,%zmm13,%zmm3	/* new_D_re = diff_re*cos - diff_im*sin */
-	vmulpd	%zmm4,%zmm13,%zmm11		/* diff_re * W8_sin */
-	vfmadd231pd  %zmm5,%zmm12,%zmm11	/* new_D_im = diff_re*sin + diff_im*cos */
+	vmovapd 256(%rsi,%r11,8),%zmm12	/* E_im */
+	vmovapd 320(%rsi,%r11,8),%zmm13	/* F_im */
+	vmovapd 384(%rsi,%r11,8),%zmm14	/* G_im */
+	vmovapd 448(%rsi,%r11,8),%zmm15	/* H_im */
+	# halfnn=32: A<->E (W32[0])
+	vsubpd	%zmm4,%zmm0,%zmm30
+	vsubpd	%zmm12,%zmm8,%zmm31
+	vaddpd	%zmm4,%zmm0,%zmm0
+	vaddpd	%zmm12,%zmm8,%zmm8
+	vmulpd	%zmm30,%zmm22,%zmm4
+	vfnmadd231pd %zmm31,%zmm23,%zmm4
+	vmulpd	%zmm30,%zmm23,%zmm12
+	vfmadd231pd  %zmm31,%zmm22,%zmm12
+	# halfnn=32: B<->F (W32[8])
+	vsubpd	%zmm5,%zmm1,%zmm30
+	vsubpd	%zmm13,%zmm9,%zmm31
+	vaddpd	%zmm5,%zmm1,%zmm1
+	vaddpd	%zmm13,%zmm9,%zmm9
+	vmulpd	%zmm30,%zmm24,%zmm5
+	vfnmadd231pd %zmm31,%zmm25,%zmm5
+	vmulpd	%zmm30,%zmm25,%zmm13
+	vfmadd231pd  %zmm31,%zmm24,%zmm13
+	# halfnn=32: C<->G (W32[16])
+	vsubpd	%zmm6,%zmm2,%zmm30
+	vsubpd	%zmm14,%zmm10,%zmm31
+	vaddpd	%zmm6,%zmm2,%zmm2
+	vaddpd	%zmm14,%zmm10,%zmm10
+	vmulpd	%zmm30,%zmm26,%zmm6
+	vfnmadd231pd %zmm31,%zmm27,%zmm6
+	vmulpd	%zmm30,%zmm27,%zmm14
+	vfmadd231pd  %zmm31,%zmm26,%zmm14
+	# halfnn=32: D<->H (W32[24])
+	vsubpd	%zmm7,%zmm3,%zmm30
+	vsubpd	%zmm15,%zmm11,%zmm31
+	vaddpd	%zmm7,%zmm3,%zmm3
+	vaddpd	%zmm15,%zmm11,%zmm11
+	vmulpd	%zmm30,%zmm28,%zmm7
+	vfnmadd231pd %zmm31,%zmm29,%zmm7
+	vmulpd	%zmm30,%zmm29,%zmm15
+	vfmadd231pd  %zmm31,%zmm28,%zmm15
+	# halfnn=16: A'<->C' (W16[0])
+	vsubpd	%zmm2,%zmm0,%zmm30
+	vsubpd	%zmm10,%zmm8,%zmm31
+	vaddpd	%zmm2,%zmm0,%zmm0
+	vaddpd	%zmm10,%zmm8,%zmm8
+	vmulpd	%zmm30,%zmm18,%zmm2
+	vfnmadd231pd %zmm31,%zmm19,%zmm2
+	vmulpd	%zmm30,%zmm19,%zmm10
+	vfmadd231pd  %zmm31,%zmm18,%zmm10
+	# halfnn=16: B'<->D' (W16[8])
+	vsubpd	%zmm3,%zmm1,%zmm30
+	vsubpd	%zmm11,%zmm9,%zmm31
+	vaddpd	%zmm3,%zmm1,%zmm1
+	vaddpd	%zmm11,%zmm9,%zmm9
+	vmulpd	%zmm30,%zmm20,%zmm3
+	vfnmadd231pd %zmm31,%zmm21,%zmm3
+	vmulpd	%zmm30,%zmm21,%zmm11
+	vfmadd231pd  %zmm31,%zmm20,%zmm11
+	# halfnn=16: E'<->G' (W16[0])
+	vsubpd	%zmm6,%zmm4,%zmm30
+	vsubpd	%zmm14,%zmm12,%zmm31
+	vaddpd	%zmm6,%zmm4,%zmm4
+	vaddpd	%zmm14,%zmm12,%zmm12
+	vmulpd	%zmm30,%zmm18,%zmm6
+	vfnmadd231pd %zmm31,%zmm19,%zmm6
+	vmulpd	%zmm30,%zmm19,%zmm14
+	vfmadd231pd  %zmm31,%zmm18,%zmm14
+	# halfnn=16: F'<->H' (W16[8])
+	vsubpd	%zmm7,%zmm5,%zmm30
+	vsubpd	%zmm15,%zmm13,%zmm31
+	vaddpd	%zmm7,%zmm5,%zmm5
+	vaddpd	%zmm15,%zmm13,%zmm13
+	vmulpd	%zmm30,%zmm20,%zmm7
+	vfnmadd231pd %zmm31,%zmm21,%zmm7
+	vmulpd	%zmm30,%zmm21,%zmm15
+	vfmadd231pd  %zmm31,%zmm20,%zmm15
+	# halfnn=8: A''<->B''
+	vsubpd	%zmm1,%zmm0,%zmm30
+	vsubpd	%zmm9,%zmm8,%zmm31
+	vaddpd	%zmm1,%zmm0,%zmm0
+	vaddpd	%zmm9,%zmm8,%zmm8
+	vmulpd	%zmm30,%zmm16,%zmm1
+	vfnmadd231pd %zmm31,%zmm17,%zmm1
+	vmulpd	%zmm30,%zmm17,%zmm9
+	vfmadd231pd  %zmm31,%zmm16,%zmm9
+	# halfnn=8: C''<->D''
+	vsubpd	%zmm3,%zmm2,%zmm30
+	vsubpd	%zmm11,%zmm10,%zmm31
+	vaddpd	%zmm3,%zmm2,%zmm2
+	vaddpd	%zmm11,%zmm10,%zmm10
+	vmulpd	%zmm30,%zmm16,%zmm3
+	vfnmadd231pd %zmm31,%zmm17,%zmm3
+	vmulpd	%zmm30,%zmm17,%zmm11
+	vfmadd231pd  %zmm31,%zmm16,%zmm11
+	# halfnn=8: E''<->F''
+	vsubpd	%zmm5,%zmm4,%zmm30
+	vsubpd	%zmm13,%zmm12,%zmm31
+	vaddpd	%zmm5,%zmm4,%zmm4
+	vaddpd	%zmm13,%zmm12,%zmm12
+	vmulpd	%zmm30,%zmm16,%zmm5
+	vfnmadd231pd %zmm31,%zmm17,%zmm5
+	vmulpd	%zmm30,%zmm17,%zmm13
+	vfmadd231pd  %zmm31,%zmm16,%zmm13
+	# halfnn=8: G''<->H''
+	vsubpd	%zmm7,%zmm6,%zmm30
+	vsubpd	%zmm15,%zmm14,%zmm31
+	vaddpd	%zmm7,%zmm6,%zmm6
+	vaddpd	%zmm15,%zmm14,%zmm14
+	vmulpd	%zmm30,%zmm16,%zmm7
+	vfnmadd231pd %zmm31,%zmm17,%zmm7
+	vmulpd	%zmm30,%zmm17,%zmm15
+	vfmadd231pd  %zmm31,%zmm16,%zmm15
 	vmovapd %zmm0,   (%rdi,%r11,8)
 	vmovapd %zmm1, 64(%rdi,%r11,8)
 	vmovapd %zmm2,128(%rdi,%r11,8)
 	vmovapd %zmm3,192(%rdi,%r11,8)
+	vmovapd %zmm4,256(%rdi,%r11,8)
+	vmovapd %zmm5,320(%rdi,%r11,8)
+	vmovapd %zmm6,384(%rdi,%r11,8)
+	vmovapd %zmm7,448(%rdi,%r11,8)
 	vmovapd %zmm8,   (%rsi,%r11,8)
 	vmovapd %zmm9, 64(%rsi,%r11,8)
 	vmovapd %zmm10,128(%rsi,%r11,8)
 	vmovapd %zmm11,192(%rsi,%r11,8)
-	addq	$32,%r11
+	vmovapd %zmm12,256(%rsi,%r11,8)
+	vmovapd %zmm13,320(%rsi,%r11,8)
+	vmovapd %zmm14,384(%rsi,%r11,8)
+	vmovapd %zmm15,448(%rsi,%r11,8)
+	addq	$64,%r11
 	cmpq	%r10,%r11
-	jb	ifft_r4_16_8_loop
+	jb	ifft_r4_32_16_8_loop
 	jmp	ifft_before_size8
 ifft_fallback_last:
-	# r12 != 32: run remaining iterations one at a time (small N edge cases)
-	cmpq	$16,%r12
-	jb	ifft_before_size8	/* r12=8: nothing left, go to size8 */
-	# r12=16: process halfnn=8 via original blockloop pattern
+	# r12 != 64: run remaining iterations one at a time (small N / edge cases)
+	# r12 ∈ {8,16,32} — loop until halfnn=4 (handled by ifftsize8loop)
+ifft_fallback_iter:
+	cmpq	$8,%r12
+	jbe	ifft_before_size8
 	movq %r12,%r13
-	shr  $1,%r13			/* r13 = halfnn */
+	shr  $1,%r13
 	leaq (%r8,%r12,8),%r8
 	leaq (%r8,%r12,8),%r8
 	movq $0,%r11
@@ -293,6 +400,8 @@ ifft_fallback_offloop:
 	addq %r12,%r11
 	cmpq %r10,%r11
 	jb ifft_fallback_blockloop
+	movq %r13,%r12
+	jmp ifft_fallback_iter
 ifft_before_size8:
 	movq $0,%r11   /* r11 (block) */
 # size 8 pass (IFFT last iteration): replace halfnn=4 YMM loop with ZMM, 2 blocks/iter
