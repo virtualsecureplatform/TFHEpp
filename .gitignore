@@ -1,4 +1,7 @@
 build
+build-*
 .vscode
 .claude
 *.sif
+tfhe-rs
+bench-tfhers-fft/target

@@ -1,0 +1,115 @@
+Bootstrap: docker
+From: ubuntu:24.04
+
+# ============================================================================
+# compare-fft.def — Apptainer image for TFHEpp vs tfhe-rs FFT comparison
+#
+# Build (from the TFHEpp repository root, submodules must be initialised):
+#   git submodule update --init --recursive
+#   apptainer build compare-fft.sif compare-fft.def
+#
+# Run the benchmark:
+#   apptainer run compare-fft.sif
+#
+# Benchmarks individual FFT operations at N=512 (matching DEFAULT_PARAMETERS):
+#   - Forward/Backward FFT
+#   - Pointwise multiply (MulInFD) and FMA (FMAInFD)
+#   - Full polynomial multiplication
+#   - IFFT + Mul + FFT pipeline (ExternalProduct core)
+# ============================================================================
+
+%labels
+    Description TFHEpp vs tfhe-rs FFT micro-benchmark comparison on Ubuntu 24.04
+
+%environment
+    export PATH="/root/.cargo/bin:${PATH}"
+    export WORKSPACE="/opt/fft-compare"
+
+%files
+    CMakeLists.txt         /opt/fft-compare/TFHEpp/CMakeLists.txt
+    include                /opt/fft-compare/TFHEpp/include
+    src                    /opt/fft-compare/TFHEpp/src
+    benchmark              /opt/fft-compare/TFHEpp/benchmark
+    bench-tfhers-fft       /opt/fft-compare/TFHEpp/bench-tfhers-fft
+    thirdparties           /opt/fft-compare/TFHEpp/thirdparties
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    export PATH="/root/.cargo/bin:${PATH}"
+    export WORKSPACE="/opt/fft-compare"
+
+    # ── System packages ──────────────────────────────────────────────────────
+    apt-get update
+    apt-get upgrade -y
+    apt-get install -y \
+        build-essential g++ libomp-dev cmake ninja-build \
+        git curl wget ca-certificates
+
+    # ── Rust toolchain ────────────────────────────────────────────────────────
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --default-toolchain stable --no-modify-path
+
+    # ── Clone tfhe-rs alongside TFHEpp ─────────────────────────────────────
+    cd "${WORKSPACE}/TFHEpp"
+    git clone --depth 1 https://github.com/zama-ai/tfhe-rs.git tfhe-rs
+
+    # ── Build TFHEpp bench_fft ─────────────────────────────────────────────
+    cmake . -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DENABLE_BENCHMARK=ON
+    cmake --build build --target bench_fft
+
+    # ── Build tfhe-rs FFT benchmark ────────────────────────────────────────
+    cd bench-tfhers-fft
+    rustup show
+    cargo build --release
+    cd ..
+
+    # Remove large intermediate artefacts
+    rm -rf build/_deps build/CMakeFiles
+    rm -rf bench-tfhers-fft/target/debug
+
+%runscript
+    export PATH="/root/.cargo/bin:${PATH}"
+    TFHEPP_ROOT="/opt/fft-compare/TFHEpp"
+
+    echo "============================================================"
+    echo "  TFHEpp vs tfhe-rs — FFT micro-benchmark comparison"
+    echo "  Polynomial size N=512 (DEFAULT_PARAMETERS)"
+    echo "============================================================"
+    echo ""
+
+    echo "--- Machine info ---"
+    lscpu 2>/dev/null | grep -E "Model name|CPU\(s\)|Thread|MHz" || true
+    free -h 2>/dev/null || true
+    echo ""
+
+    echo "--- TFHEpp FFT (C++, SPQLIOS AVX-512) ---"
+    "${TFHEPP_ROOT}/build/benchmark/bench_fft" \
+        --benchmark_filter="lvl1|RawIFFT.512.|RawFFT.512.|RawIFFTMulFFT.512." \
+        --benchmark_repetitions=5 \
+        --benchmark_display_aggregates_only=true
+    echo ""
+
+    echo "--- tfhe-rs FFT (Rust, concrete-fft) ---"
+    "${TFHEPP_ROOT}/bench-tfhers-fft/target/release/fft-tfhers-bench"
+    echo ""
+    echo "Done."
+
+%help
+    Runs FFT micro-benchmarks comparing TFHEpp (SPQLIOS) and tfhe-rs
+    (concrete-fft) at polynomial size N=512.
+
+    Benchmarks:
+      - Forward FFT (coefficient -> Fourier domain)
+      - Backward FFT (Fourier -> coefficient domain)
+      - Pointwise complex multiply / FMA
+      - Full polynomial multiplication
+      - IFFT + Mul + FFT pipeline (ExternalProduct core)
+
+    Build the image (run from TFHEpp root):
+        git submodule update --init --recursive
+        apptainer build compare-fft.sif compare-fft.def
+
+    Run:
+        apptainer run compare-fft.sif

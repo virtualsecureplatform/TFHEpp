@@ -1,0 +1,20 @@
+[package]
+name = "fft-tfhers-bench"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+
+# tfhe-rs is expected at ../tfhe-rs relative to the TFHEpp repository root.
+# Same layout as bench-tfhers/:
+#
+#   TFHEpp/
+#   ├── bench-tfhers-fft/   <- this crate
+#   └── tfhe-rs/             <- tfhe-rs clone
+
+[dependencies]
+tfhe = { path = "../tfhe-rs/tfhe", default-features = false, features = ["boolean"] }
+tfhe-fft = { path = "../tfhe-rs/tfhe-fft" }
+dyn-stack = "0.13"
+aligned-vec = "0.6"
+rayon = "1"
+libc = "0.2"
