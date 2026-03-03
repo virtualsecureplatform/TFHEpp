@@ -48,8 +48,9 @@ if(NOT DEFINED AVX512_SUPPORTED)
       if(TFHEPP_CPUINFO MATCHES "avx512f")
         set(AVX512_SUPPORTED TRUE)
       endif()
-    endif()
-    if(NOT AVX512_SUPPORTED)
+    else()
+      # No /proc/cpuinfo — non-Linux environment (macOS, Windows, etc.).
+      # Use a compile-only check as a proxy for AVX-512 availability.
       include(CheckCXXSourceCompiles)
       set(CMAKE_REQUIRED_FLAGS "-mavx512f")
       check_cxx_source_compiles("
