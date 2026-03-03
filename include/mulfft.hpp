@@ -120,6 +120,12 @@ inline void TwistFFTAdd(Polynomial<P> &res, PolynomialInFD<P> &a)
         else if constexpr (std::is_same_v<typename P::T, uint64_t>)
             fftplvl1.execute_direct_torus64_add(res.data(), a.data());
     }
+    else if constexpr (std::is_same_v<P, lvl3param>) {
+        alignas(64) std::array<uint64_t, P::n> temp;
+        fftplvl3.execute_direct_torus64(temp.data(), a.data());
+        for (int i = 0; i < P::n; i++)
+            res[i] += static_cast<__uint128_t>(temp[i]);
+    }
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_direct_torus64_add(res.data(), a.data());
     else
