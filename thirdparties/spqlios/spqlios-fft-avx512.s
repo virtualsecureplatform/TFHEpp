@@ -71,175 +71,93 @@ _fft:
 //	    add4(d1,tmp0,tmp1);
 //	}
 //    }
-	vmovapd     size4negation0(%rip), %zmm15
-	vmovapd     size4negation1(%rip), %zmm14
-	vmovapd     size4negation2(%rip), %zmm13
-	vmovapd     size4negation3(%rip), %zmm12
-	vmovapd     permutex1(%rip), %zmm11
-	
-	movq	$0,%rax	/* rax: block */
-	movq	%rdi,%r10
-	movq	%rsi,%r11
+# ── Fused size-2 + size-4 + size-8 pass ──────────────────────────────────────
+# Replaces separate fftsize2loop, fftsize4loop, fftsize8loop
+# Processes 16 doubles (2 blocks of 8) per iteration, doing all 3 stages in-register.
+# DIT order: size-2 → size-4 → size-8 (halfnn=4)
+#
+# Register map:
+#   zmm24 = size4negation3 [+1,-1,+1,-1,...] (for size-2)
+#   zmm25 = size4negation2 [+1,+1,-1,-1,...] (for size-4 re)
+#   zmm26 = size4negation1 [+1,-1,-1,+1,...] (for size-4 im)
+#   zmm27 = permutex1 index (for size-4)
+#   zmm28 = fftsize8cos (for size-8)
+#   zmm29 = fftsize8sin (for size-8)
+#   zmm0-3 = loaded data; zmm4-15 = temps
+	vmovapd     size4negation3(%rip), %zmm24
+	vmovapd     size4negation2(%rip), %zmm25
+	vmovapd     size4negation1(%rip), %zmm26
+	vmovapd     permutex1(%rip), %zmm27
+	vmovapd     fftsize8cos(%rip), %zmm28
+	vmovapd     fftsize8sin(%rip), %zmm29
+	movq	$0,%rax
 .p2align 5
-fftsize2loop:
-	vmovapd (%r10),%zmm0 /* r0 r1 r2 r3 r4 r5 r6 r7 */
-	vmovapd (%r11),%zmm1 /* i0 i1 i2 i3 i4 i5 i6 i7 */
-	vshufpd $0,%zmm0,%zmm0,%zmm2  /* r0 r0 r2 r2 r4 r4 r6 r6 */
-	vshufpd $255,%zmm0,%zmm0,%zmm3 /* r1 r1 r3 r3 r5 r5 r7 r7 */
-	vshufpd $0,%zmm1,%zmm1,%zmm4  /* i0 i0 i2 i2 i4 i4 i6 i6 */
-	vshufpd $255,%zmm1,%zmm1,%zmm5 /* i1 i1 i3 i3 i5 i5 i7 i7 */
-	vfmadd231pd %zmm3,%zmm12,%zmm2 /* (r0 r0 r2 r2 r4 r4 r6 r6) + (r1 -r1 r3 -r3 r5 -r5 r7 -r7) */
-	vfmadd231pd %zmm5,%zmm12,%zmm4 /* (i0 i0 i2 i2 i4 i4 i6 i6) + (i1 -i1 i3 -i3 i5 -i5 i7 -i7) */
-	vmovapd %zmm2,(%r10)
-	vmovapd %zmm4,(%r11)
-	/* end of loop */
-        leaq 64(%r10),%r10
-        leaq 64(%r11),%r11
-        addq $8,%rax
-	cmpq %r9,%rax
-	jb fftsize2loop
-
-//    //size 4
-//    //[1  0  1  0]
-//    //[0  1  0 -i]
-//    //[1  0 -1  0]
-//    //[0  1  0  i]
-//    // r0 + r2    i0 + i2
-//    // r1 + i3    i1 - r3
-//    // r0 - r2    i0 - i2
-//    // r1 - i3    i1 + r3
-//    {
-//	for (int32_t block=0; block<ns4; block+=4) {
-//	    double* re = pre+block;
-//	    double* im = pim+block;
-//	    tmp0[0]=re[0];
-//	    tmp0[1]=re[1];
-//	    tmp0[2]=re[0];
-//	    tmp0[3]=re[1];
-//	    tmp1[0]=re[2];
-//	    tmp1[1]=im[3];
-//	    tmp1[2]=-re[2];
-//	    tmp1[3]=-im[3];
-//	    tmp2[0]=im[0];
-//	    tmp2[1]=im[1];
-//	    tmp2[2]=im[0];
-//	    tmp2[3]=im[1];
-//	    tmp3[0]=im[2];
-//	    tmp3[1]=-re[3];
-//	    tmp3[2]=-im[2];
-//	    tmp3[3]=re[3];
-//	    add4(re,tmp0,tmp1);
-//	    add4(im,tmp2,tmp3);
-//	}
-//    }
-	movq	$0, %rax
-	movq	%rdi,%r10
-	movq	%rsi,%r11
-.p2align 5
-fftsize4loop:
-	vmovapd (%r10),%zmm0 /* r0 r1 r2 r3 */
-	vmovapd (%r11),%zmm1 /* i0 i1 i2 i3 */
-	// vperm2f128 $32,%zmm0,%zmm0,%zmm4 /* r0 r1 r0 r1 */
-	// vperm2f128 $32,%zmm1,%zmm1,%zmm5 /* i0 i1 i0 i1 */
-	vpermpd $68, %zmm0,%zmm4
-	vpermpd $68, %zmm1,%zmm5
-	# vperm2f128 $49,%zmm0,%zmm0,%zmm6 /* r2 r3 r2 r3 */
-	# vperm2f128 $49,%zmm1,%zmm1,%zmm7 /* i2 i3 i2 i3 */
-	# vshufpd $10,%zmm7,%zmm6,%zmm8    /* r2 i3 r2 i3 */
-	# vshufpd $10,%zmm6,%zmm7,%zmm9    /* i2 r3 i2 r3 */
-	vmovapd %zmm11, %zmm8
-	vpermi2pd %zmm1, %zmm0, %zmm8
-	vmovapd %zmm11, %zmm9
-	vpermi2pd %zmm0, %zmm1, %zmm9
-
-	vfmadd231pd %zmm8,%zmm13,%zmm4   /* (r0 r1 r0 r1) + (r2 i3 -r2 -i3) */
-	vfmadd231pd %zmm9,%zmm14,%zmm5   /* (i0 i1 i0 i1) + (i2 -r3 -i2 r3) */
-	vmovapd %zmm4,(%r10)
-  vmovapd %zmm5,(%r11)
-        /* end of loop */
-        leaq 64(%r10),%r10
-        leaq 64(%r11),%r11
-        addq $8,%rax
-	cmpq %r9,%rax
-	jb fftsize4loop
-
-
-//    
-//    //general loop
-//    const double* cur_tt = trig_tables;
-//    for (int32_t halfnn=4; halfnn<ns4; halfnn*=2) {
-//	int32_t nn = 2*halfnn;
-//	for (int32_t block=0; block<ns4; block+=nn) {
-//	    for (int32_t off=0; off<halfnn; off+=4) {
-//		double* re0 = pre + block + off;
-//		double* im0 = pim + block + off;
-//		double* re1 = pre + block + halfnn + off;
-//		double* im1 = pim + block + halfnn + off;
-//		const double* tcs = cur_tt+2*off;
-//		const double* tsn = tcs+4;
-//		dotp4(tmp0,re1,tcs); // re*cos
-//		dotp4(tmp1,re1,tsn); // re*sin
-//		dotp4(tmp2,im1,tcs); // im*cos
-//		dotp4(tmp3,im1,tsn); // im*sin
-//		sub4(tmp0,tmp0,tmp3); // re2
-//		add4(tmp1,tmp1,tmp2); // im2
-//		add4(tmp2,re0,tmp0); // re + re
-//		add4(tmp3,im0,tmp1); // im + im
-//		sub4(tmp0,re0,tmp0); // re - re
-//		sub4(tmp1,im0,tmp1); // im - im
-//		copy4(re0,tmp2);
-//		copy4(im0,tmp3);
-//		copy4(re1,tmp0);
-//		copy4(im1,tmp1);
-//	    }
-//	}
-//	cur_tt += nn;
-//    }
-
-# size 8 pass: replace halfnn=4 YMM loop with ZMM, processing 2 blocks/iter
-# Trig for halfnn=4: cos(-2pi*k/8) = [1, 1/sqrt2, 0, -1/sqrt2] for k=0..3
-#                    sin(-2pi*k/8) = [0, -1/sqrt2, -1, -1/sqrt2]
-# Load hardcoded ZMM constants (two repetitions for both blocks)
-vmovapd fftsize8cos(%rip), %zmm8
-vmovapd fftsize8sin(%rip), %zmm9
-movq $0, %rax          /* rax: block index in doubles (step 16 = 2 blocks) */
-.p2align 5
-fftsize8loop:
-	# Load block B: pre[rax..rax+7] = [re0_B, re1_B]
-	#              pim[rax..rax+7] = [im0_B, im1_B]
-	# Load block B+8: pre[rax+8..rax+15] = [re0_{B+8}, re1_{B+8}]
-	vmovapd    (%rdi,%rax,8), %zmm0  /* [re0_B, re1_B] */
-	vmovapd 64(%rdi,%rax,8), %zmm1  /* [re0_{B+8}, re1_{B+8}] */
-	vmovapd    (%rsi,%rax,8), %zmm2  /* [im0_B, im1_B] */
-	vmovapd 64(%rsi,%rax,8), %zmm3  /* [im0_{B+8}, im1_{B+8}] */
-	# Interleave: gather re0/re1/im0/im1 across both blocks
-	vshuff64x2 $0x44, %zmm1, %zmm0, %zmm4  /* [re0_B, re0_{B+8}] */
-	vshuff64x2 $0xEE, %zmm1, %zmm0, %zmm5  /* [re1_B, re1_{B+8}] */
-	vshuff64x2 $0x44, %zmm3, %zmm2, %zmm6  /* [im0_B, im0_{B+8}] */
-	vshuff64x2 $0xEE, %zmm3, %zmm2, %zmm7  /* [im1_B, im1_{B+8}] */
-	# Butterfly: re2 = re1*cos - im1*sin,  im2 = re1*sin + im1*cos
-	vmulpd       %zmm5, %zmm8, %zmm10       /* re1*cos */
-	vfnmadd231pd %zmm7, %zmm9, %zmm10       /* re2 = re1*cos - im1*sin */
-	vmulpd       %zmm5, %zmm9, %zmm11       /* re1*sin */
-	vfmadd231pd  %zmm7, %zmm8, %zmm11       /* im2 = re1*sin + im1*cos */
-	# Output
-	vsubpd %zmm10, %zmm4, %zmm5  /* new_re1 = re0 - re2 */
-	vsubpd %zmm11, %zmm6, %zmm7  /* new_im1 = im0 - im2 */
-	vaddpd %zmm10, %zmm4, %zmm4  /* new_re0 = re0 + re2 */
-	vaddpd %zmm11, %zmm6, %zmm6  /* new_im0 = im0 + im2 */
-	# Deinterleave: recombine [new_re0_B, new_re1_B] and [new_re0_{B+8}, new_re1_{B+8}]
-	vshuff64x2 $0x44, %zmm5, %zmm4, %zmm0  /* [new_re0_B, new_re1_B] */
-	vshuff64x2 $0xEE, %zmm5, %zmm4, %zmm1  /* [new_re0_{B+8}, new_re1_{B+8}] */
-	vshuff64x2 $0x44, %zmm7, %zmm6, %zmm2  /* [new_im0_B, new_im1_B] */
-	vshuff64x2 $0xEE, %zmm7, %zmm6, %zmm3  /* [new_im0_{B+8}, new_im1_{B+8}] */
+fft_fused_248_loop:
+	# Load 2 blocks: re[0..7], re[8..15], im[0..7], im[8..15]
+	vmovapd    (%rdi,%rax,8), %zmm0
+	vmovapd 64(%rdi,%rax,8), %zmm1
+	vmovapd    (%rsi,%rax,8), %zmm2
+	vmovapd 64(%rsi,%rax,8), %zmm3
+	# ── Size-2 butterfly (within each ZMM independently) ──
+	# [a0+a1, a0-a1, a2+a3, a2-a3, a4+a5, a4-a5, a6+a7, a6-a7]
+	vshufpd $0x00, %zmm0, %zmm0, %zmm4
+	vshufpd $0xFF, %zmm0, %zmm0, %zmm0
+	vfmadd231pd %zmm0, %zmm24, %zmm4
+	vshufpd $0x00, %zmm1, %zmm1, %zmm5
+	vshufpd $0xFF, %zmm1, %zmm1, %zmm1
+	vfmadd231pd %zmm1, %zmm24, %zmm5
+	vshufpd $0x00, %zmm2, %zmm2, %zmm6
+	vshufpd $0xFF, %zmm2, %zmm2, %zmm2
+	vfmadd231pd %zmm2, %zmm24, %zmm6
+	vshufpd $0x00, %zmm3, %zmm3, %zmm7
+	vshufpd $0xFF, %zmm3, %zmm3, %zmm3
+	vfmadd231pd %zmm3, %zmm24, %zmm7
+	# Data: re_lo=zmm4, re_hi=zmm5, im_lo=zmm6, im_hi=zmm7
+	# ── Size-4 butterfly (cross re/im within each ZMM pair) ──
+	# Pair 1: (zmm4=re_lo, zmm6=im_lo) → (zmm0=new_re_lo, zmm2=new_im_lo)
+	vpermpd $0x44, %zmm4, %zmm0
+	vmovapd %zmm27, %zmm8
+	vpermi2pd %zmm6, %zmm4, %zmm8
+	vpermpd $0x44, %zmm6, %zmm2
+	vmovapd %zmm27, %zmm9
+	vpermi2pd %zmm4, %zmm6, %zmm9
+	vfmadd231pd %zmm8, %zmm25, %zmm0
+	vfmadd231pd %zmm9, %zmm26, %zmm2
+	# Pair 2: (zmm5=re_hi, zmm7=im_hi) → (zmm4=new_re_hi, zmm6=new_im_hi)
+	vpermpd $0x44, %zmm5, %zmm4
+	vmovapd %zmm27, %zmm8
+	vpermi2pd %zmm7, %zmm5, %zmm8
+	vpermpd $0x44, %zmm7, %zmm6
+	vmovapd %zmm27, %zmm9
+	vpermi2pd %zmm5, %zmm7, %zmm9
+	vfmadd231pd %zmm8, %zmm25, %zmm4
+	vfmadd231pd %zmm9, %zmm26, %zmm6
+	# Data: re_lo=zmm0, re_hi=zmm4, im_lo=zmm2, im_hi=zmm6
+	# ── Size-8 (halfnn=4) butterfly across the two blocks ──
+	vshuff64x2 $0x44, %zmm4, %zmm0, %zmm1
+	vshuff64x2 $0xEE, %zmm4, %zmm0, %zmm3
+	vshuff64x2 $0x44, %zmm6, %zmm2, %zmm5
+	vshuff64x2 $0xEE, %zmm6, %zmm2, %zmm7
+	vmulpd       %zmm3, %zmm28, %zmm8
+	vfnmadd231pd %zmm7, %zmm29, %zmm8
+	vmulpd       %zmm3, %zmm29, %zmm9
+	vfmadd231pd  %zmm7, %zmm28, %zmm9
+	vsubpd %zmm8, %zmm1, %zmm3
+	vsubpd %zmm9, %zmm5, %zmm7
+	vaddpd %zmm8, %zmm1, %zmm1
+	vaddpd %zmm9, %zmm5, %zmm5
+	vshuff64x2 $0x44, %zmm3, %zmm1, %zmm0
+	vshuff64x2 $0xEE, %zmm3, %zmm1, %zmm4
+	vshuff64x2 $0x44, %zmm7, %zmm5, %zmm2
+	vshuff64x2 $0xEE, %zmm7, %zmm5, %zmm6
 	# Store
 	vmovapd %zmm0,    (%rdi,%rax,8)
-	vmovapd %zmm1, 64(%rdi,%rax,8)
+	vmovapd %zmm4, 64(%rdi,%rax,8)
 	vmovapd %zmm2,    (%rsi,%rax,8)
-	vmovapd %zmm3, 64(%rsi,%rax,8)
+	vmovapd %zmm6, 64(%rsi,%rax,8)
 	addq $16, %rax
 	cmpq %r9, %rax
-	jb fftsize8loop
+	jb fft_fused_248_loop
 # ── Option C: fused {halfnn=8, halfnn=16, halfnn=32} pass ───────────────────
 # Trig table layout relative to %r8 (base of runtime trig table):
 #   [+0  ..+63 ] halfnn=4 entry (unused; fftsize8loop uses hardcoded consts)

@@ -549,39 +549,94 @@ ifft_fallback_offloop:
 	movq %r13,%r12
 	jmp ifft_fallback_iter
 ifft_before_size8:
-	movq $0,%r11   /* r11 (block) */
-# size 8 pass (IFFT last iteration): replace halfnn=4 YMM loop with ZMM, 2 blocks/iter
-# Trig: conjugate of FFT: cos=[1, 1/sqrt2, 0, -1/sqrt2], sin=[0, +1/sqrt2, +1, +1/sqrt2]
-vmovapd ifftsize8cos(%rip), %zmm8
-vmovapd ifftsize8sin(%rip), %zmm9
-movq $0, %r11  /* r11: block index in doubles (step 16 = 2 blocks) */
+# ── Fused size-8 + size-4 + size-2 pass ──────────────────────────────────────
+# Replaces separate ifftsize8loop, size4loop, size2loop
+# Processes 16 doubles (2 blocks of 8) per iteration, doing all 3 stages in-register.
+# DIF order: size-8 (halfnn=4) → size-4 → size-2
+#
+# Register map:
+#   zmm24 = ifftsize8cos (for size-8)
+#   zmm25 = ifftsize8sin (for size-8)
+#   zmm26 = permutex1 [0,1,0,9,4,5,4,13] (for size-4)
+#   zmm27 = permutex2 [2,3,2,11,6,7,6,15] (for size-4)
+#   zmm28 = size4negation0 [+1,+1,+1,-1,...] (for size-4 re vmulpd)
+#   zmm29 = size4negation1 [+1,+1,-1,+1,...] (for size-4 re vfmadd)
+#   zmm30 = size4negation2 [+1,+1,-1,-1,...] (for size-4 im vfmadd)
+#   zmm31 = size4negation3 [+1,-1,+1,-1,...] (for size-2)
+#   zmm0-3 = loaded data; zmm4-23 = temps
+	vmovapd     ifftsize8cos(%rip), %zmm24
+	vmovapd     ifftsize8sin(%rip), %zmm25
+	vmovapd     permutex1(%rip), %zmm26
+	vmovapd     permutex2(%rip), %zmm27
+	vmovapd     size4negation0(%rip), %zmm28
+	vmovapd     size4negation1(%rip), %zmm29
+	vmovapd     size4negation2(%rip), %zmm30
+	vmovapd     size4negation3(%rip), %zmm31
+	movq $0, %r11
 .p2align 5
-ifftsize8loop:
-	# Load block B: are[r11..r11+7]=[re0_B,re1_B], block B+8: are[r11+8..r11+15]
-	vmovapd    (%rdi,%r11,8), %zmm0  /* [re0_B, re1_B] */
-	vmovapd 64(%rdi,%r11,8), %zmm1  /* [re0_{B+8}, re1_{B+8}] */
-	vmovapd    (%rsi,%r11,8), %zmm2  /* [im0_B, im1_B] */
-	vmovapd 64(%rsi,%r11,8), %zmm3  /* [im0_{B+8}, im1_{B+8}] */
-	# Interleave: gather re0/re1/im0/im1 across both blocks
-	vshuff64x2 $0x44, %zmm1, %zmm0, %zmm4  /* [re0_B, re0_{B+8}] */
-	vshuff64x2 $0xEE, %zmm1, %zmm0, %zmm5  /* [re1_B, re1_{B+8}] */
-	vshuff64x2 $0x44, %zmm3, %zmm2, %zmm6  /* [im0_B, im0_{B+8}] */
-	vshuff64x2 $0xEE, %zmm3, %zmm2, %zmm7  /* [im1_B, im1_{B+8}] */
-	# IFFT butterfly: new_re0=re0+re1, new_im0=im0+im1,
-	#   new_re1=(re0-re1)*cos-(im0-im1)*sin, new_im1=(re0-re1)*sin+(im0-im1)*cos
-	vaddpd %zmm4, %zmm5, %zmm10  /* new_re0 = re0 + re1 */
-	vaddpd %zmm6, %zmm7, %zmm11  /* new_im0 = im0 + im1 */
-	vsubpd %zmm5, %zmm4, %zmm4   /* diff_re = re0 - re1 */
-	vsubpd %zmm7, %zmm6, %zmm6   /* diff_im = im0 - im1 */
-	vmulpd       %zmm4, %zmm8, %zmm5       /* diff_re * cos */
-	vfnmadd231pd %zmm6, %zmm9, %zmm5       /* new_re1 = diff_re*cos - diff_im*sin */
-	vmulpd       %zmm4, %zmm9, %zmm7       /* diff_re * sin */
-	vfmadd231pd  %zmm6, %zmm8, %zmm7       /* new_im1 = diff_re*sin + diff_im*cos */
-	# Deinterleave: pack [new_re0_B, new_re1_B] and [new_re0_{B+8}, new_re1_{B+8}]
-	vshuff64x2 $0x44, %zmm5, %zmm10, %zmm0  /* [new_re0_B, new_re1_B] */
-	vshuff64x2 $0xEE, %zmm5, %zmm10, %zmm1  /* [new_re0_{B+8}, new_re1_{B+8}] */
-	vshuff64x2 $0x44, %zmm7, %zmm11, %zmm2  /* [new_im0_B, new_im1_B] */
-	vshuff64x2 $0xEE, %zmm7, %zmm11, %zmm3  /* [new_im0_{B+8}, new_im1_{B+8}] */
+ifft_fused_842_loop:
+	# Load 2 blocks: re[0..7], re[8..15], im[0..7], im[8..15]
+	vmovapd    (%rdi,%r11,8), %zmm0
+	vmovapd 64(%rdi,%r11,8), %zmm1
+	vmovapd    (%rsi,%r11,8), %zmm2
+	vmovapd 64(%rsi,%r11,8), %zmm3
+	# ── Size-8 (halfnn=4) IFFT DIF butterfly across 2 blocks ──
+	vshuff64x2 $0x44, %zmm1, %zmm0, %zmm4
+	vshuff64x2 $0xEE, %zmm1, %zmm0, %zmm5
+	vshuff64x2 $0x44, %zmm3, %zmm2, %zmm6
+	vshuff64x2 $0xEE, %zmm3, %zmm2, %zmm7
+	vaddpd %zmm4, %zmm5, %zmm8
+	vaddpd %zmm6, %zmm7, %zmm9
+	vsubpd %zmm5, %zmm4, %zmm4
+	vsubpd %zmm7, %zmm6, %zmm6
+	vmulpd       %zmm4, %zmm24, %zmm5
+	vfnmadd231pd %zmm6, %zmm25, %zmm5
+	vmulpd       %zmm4, %zmm25, %zmm7
+	vfmadd231pd  %zmm6, %zmm24, %zmm7
+	vshuff64x2 $0x44, %zmm5, %zmm8, %zmm0
+	vshuff64x2 $0xEE, %zmm5, %zmm8, %zmm1
+	vshuff64x2 $0x44, %zmm7, %zmm9, %zmm2
+	vshuff64x2 $0xEE, %zmm7, %zmm9, %zmm3
+	# Data: re_lo=zmm0, re_hi=zmm1, im_lo=zmm2, im_hi=zmm3
+	# ── Size-4 IFFT DIF butterfly (cross re/im within each ZMM pair) ──
+	# Pair 1: (zmm0=re_lo, zmm2=im_lo) → (zmm4=new_re_lo, zmm6=new_im_lo)
+	vmovapd %zmm26, %zmm4
+	vpermi2pd %zmm2, %zmm0, %zmm4
+	vmovapd %zmm27, %zmm5
+	vpermi2pd %zmm2, %zmm0, %zmm5
+	vmovapd %zmm26, %zmm6
+	vpermi2pd %zmm0, %zmm2, %zmm6
+	vmovapd %zmm27, %zmm7
+	vpermi2pd %zmm0, %zmm2, %zmm7
+	vmulpd %zmm4, %zmm28, %zmm4
+	vfmadd231pd %zmm5, %zmm29, %zmm4
+	vfmadd231pd %zmm7, %zmm30, %zmm6
+	# Pair 2: (zmm1=re_hi, zmm3=im_hi) → (zmm8=new_re_hi, zmm10=new_im_hi)
+	vmovapd %zmm26, %zmm8
+	vpermi2pd %zmm3, %zmm1, %zmm8
+	vmovapd %zmm27, %zmm9
+	vpermi2pd %zmm3, %zmm1, %zmm9
+	vmovapd %zmm26, %zmm10
+	vpermi2pd %zmm1, %zmm3, %zmm10
+	vmovapd %zmm27, %zmm11
+	vpermi2pd %zmm1, %zmm3, %zmm11
+	vmulpd %zmm8, %zmm28, %zmm8
+	vfmadd231pd %zmm9, %zmm29, %zmm8
+	vfmadd231pd %zmm11, %zmm30, %zmm10
+	# Data: re_lo=zmm4, re_hi=zmm8, im_lo=zmm6, im_hi=zmm10
+	# ── Size-2 butterfly (within each ZMM independently) ──
+	vshufpd $0x00, %zmm4, %zmm4, %zmm0
+	vshufpd $0xFF, %zmm4, %zmm4, %zmm4
+	vfmadd231pd %zmm4, %zmm31, %zmm0
+	vshufpd $0x00, %zmm8, %zmm8, %zmm1
+	vshufpd $0xFF, %zmm8, %zmm8, %zmm8
+	vfmadd231pd %zmm8, %zmm31, %zmm1
+	vshufpd $0x00, %zmm6, %zmm6, %zmm2
+	vshufpd $0xFF, %zmm6, %zmm6, %zmm6
+	vfmadd231pd %zmm6, %zmm31, %zmm2
+	vshufpd $0x00, %zmm10, %zmm10, %zmm3
+	vshufpd $0xFF, %zmm10, %zmm10, %zmm10
+	vfmadd231pd %zmm10, %zmm31, %zmm3
 	# Store
 	vmovapd %zmm0,    (%rdi,%r11,8)
 	vmovapd %zmm1, 64(%rdi,%r11,8)
@@ -589,128 +644,7 @@ ifftsize8loop:
 	vmovapd %zmm3, 64(%rsi,%r11,8)
 	addq $16, %r11
 	cmpq %r10, %r11
-	jb ifftsize8loop
-
-
-/*
-    //size 4 loop
-    {
-	for (int32_t block=0; block<ns4; block+=4) {
-	    double* d0 = are+block;
-	    double* d1 = aim+block;
-	    tmp0[0]=d0[0];
-	    tmp0[1]=d0[1];
-	    tmp0[2]=d0[0];
-	    tmp0[3]=-d1[1];
-	    tmp1[0]=d0[2];
-	    tmp1[1]=d0[3];
-	    tmp1[2]=-d0[2];
-	    tmp1[3]=d1[3];
-	    tmp2[0]=d1[0];
-	    tmp2[1]=d1[1];
-	    tmp2[2]=d1[0];
-	    tmp2[3]=d0[1];
-	    tmp3[0]=d1[2];
-	    tmp3[1]=d1[3];
-	    tmp3[2]=-d1[2];
-	    tmp3[3]=-d0[3];
-	    add4(d0,tmp0,tmp1);
-	    add4(d1,tmp2,tmp3);
-	}
-    }
-*/
-    	/* r10 is still = n/4  (constant) */
-	vmovapd     size4negation0(%rip), %zmm15
-	vmovapd     size4negation1(%rip), %zmm14
-	vmovapd     size4negation2(%rip), %zmm13
-	vmovapd     size4negation3(%rip), %zmm12
-	vmovapd     permutex1(%rip), %zmm11
-	vmovapd     permutex2(%rip), %zmm10
-	movq $0,%rax /* rax (block) */
-	movq %rdi,%r11 /* r11 (are+block) */
-	movq %rsi,%r12 /* r12 (aim+block) */
-.p2align 5
-size4loop:
-	vmovapd (%r11),%zmm0 /* r0 r1 r2 r3 */
-	vmovapd (%r12),%zmm1 /* i0 i1 i2 i3 */
-
-	# vshufpd $10,%zmm1,%zmm0,%zmm2 /* r0 i1 r2 i3 */
-	# vshufpd $10,%zmm0,%zmm1,%zmm3 /* i0 r1 i2 r3 */
-	# vperm2f128 $32,%zmm2,%zmm0,%zmm4 /* r0 r1 r0 i1 */
-	# vperm2f128 $49,%zmm2,%zmm0,%zmm5 /* r2 r3 r2 i3 */
-	# vperm2f128 $32,%zmm3,%zmm1,%zmm6 /* i0 i1 i0 r1 */
-	# vperm2f128 $49,%zmm3,%zmm1,%zmm7 /* i2 i3 i2 r3 */
-	vmovapd %zmm11, %zmm4
-	vmovapd %zmm11, %zmm6
-	vmovapd %zmm10, %zmm5
-	vmovapd %zmm10, %zmm7
-	vpermi2pd %zmm1, %zmm0, %zmm4
-	vpermi2pd %zmm0, %zmm1, %zmm6
-	vpermi2pd %zmm1, %zmm0, %zmm5
-	vpermi2pd %zmm0, %zmm1, %zmm7
-
-	vmulpd	%zmm4,%zmm15,%zmm4 /* r0 r1 r0 -i1 */
-	vfmadd231pd	%zmm5,%zmm14,%zmm4 /* (r0 r1 r0 -i1) + (r2 r3 -r2 i3) */
-	vfmadd231pd	%zmm7,%zmm13,%zmm6 /* (i0 i1 i0 r1) + (i2 i3 -i2 -r3) */
-	vmovapd %zmm4,(%r11) 
-	vmovapd %zmm6,(%r12)
-        /* end of loop */
-        leaq 64(%r11),%r11
-        leaq 64(%r12),%r12
-        addq $8,%rax
-	cmpq %r10,%rax
-	jb size4loop
-
-
-/*
-    //size 2
-    {
-	for (int32_t block=0; block<ns4; block+=4) {
-	    double* d0 = are+block;
-	    double* d1 = aim+block;
-	    tmp0[0]=d0[0];
-	    tmp0[1]=d0[0];
-	    tmp0[2]=d0[2];
-	    tmp0[3]=d0[2];
-	    tmp1[0]=d0[1];
-	    tmp1[1]=-d0[1];
-	    tmp1[2]=d0[3];
-	    tmp1[3]=-d0[3];
-	    add4(d0,tmp0,tmp1);
-	    tmp0[0]=d1[0];
-	    tmp0[1]=d1[0];
-	    tmp0[2]=d1[2];
-	    tmp0[3]=d1[2];
-	    tmp1[0]=d1[1];
-	    tmp1[1]=-d1[1];
-	    tmp1[2]=d1[3];
-	    tmp1[3]=-d1[3];
-	    add4(d1,tmp0,tmp1);
-	}
-    }
-}
-*/
-	movq $0,%rax /* rax (block) */
-	movq %rdi,%r11 /* r11 (are+block) */
-	movq %rsi,%r12 /* r12 (aim+block) */
-.p2align 5
-size2loop:
-	vmovapd (%r11),%zmm0 /* r0 r1 r2 r3 */
-	vmovapd (%r12),%zmm1 /* i0 i1 i2 i3 */
-	vshufpd $0,%zmm0,%zmm0,%zmm2 /* r0 r0 r2 r2 */
-	vshufpd $255,%zmm0,%zmm0,%zmm3 /* r1 r1 r3 r3 */
-	vshufpd $0,%zmm1,%zmm1,%zmm4 /* i0 i0 i2 i2 */
-	vshufpd $255,%zmm1,%zmm1,%zmm5 /* i1 i1 i3 i3 */
-	vfmadd231pd %zmm3,%zmm12,%zmm2 /* (r0 r0 r2 r2) + (r1 -r1 r3 -r3) */
-	vfmadd231pd %zmm5,%zmm12,%zmm4 /* (i0 i0 i2 i2) + (i1 -i1 i3 -i3) */ 
-	vmovapd %zmm2,(%r11)
-	vmovapd %zmm4,(%r12)
-	/* end of loop */
-        leaq 64(%r11),%r11
-        leaq 64(%r12),%r12
-        addq $8,%rax
-	cmpq %r10,%rax
-	jb size2loop
+	jb ifft_fused_842_loop
 
 
 	/* Restore registers */
