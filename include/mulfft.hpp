@@ -111,6 +111,22 @@ inline void TwistFFT(Polynomial<P> &res, PolynomialInFD<P> &a)
 }
 
 template <class P>
+inline void TwistFFTAdd(Polynomial<P> &res, PolynomialInFD<P> &a)
+{
+    if constexpr (std::is_same_v<P, lvl1param> ||
+                  std::is_same_v<P, AHlvl1param>) {
+        if constexpr (std::is_same_v<typename P::T, uint32_t>)
+            fftplvl1.execute_direct_torus32_add(res.data(), a.data());
+        else if constexpr (std::is_same_v<typename P::T, uint64_t>)
+            fftplvl1.execute_direct_torus64_add(res.data(), a.data());
+    }
+    else if constexpr (std::is_same_v<typename P::T, uint64_t>)
+        fftplvl2.execute_direct_torus64_add(res.data(), a.data());
+    else
+        static_assert(false_v<typename P::T>, "Undefined TwistFFTAdd!");
+}
+
+template <class P>
 inline void TwistFFTrescale(Polynomial<P> &res, const PolynomialInFD<P> &a)
 {
     if constexpr (std::is_same_v<P, lvl1param>) {

@@ -78,12 +78,9 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(
         }
     }
 
-    // --- IFFT and add to acc ---
-    for (int k = 0; k < P::k + 1; k++) {
-        TwistFFT<P>(rotated, restrlwefft[k]);
-        for (int i = 0; i < P::n; i++)
-            acc[k][i] += rotated[i];
-    }
+    // --- Fused IFFT + accumulation ---
+    for (int k = 0; k < P::k + 1; k++)
+        TwistFFTAdd<P>(acc[k], restrlwefft[k]);
 }
 
 template <class bkP>

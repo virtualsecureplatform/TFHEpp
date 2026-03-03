@@ -48,6 +48,10 @@ public:
     
     void execute_direct_torus64(uint64_t* res, double* a);
 
+    void execute_direct_torus32_add(uint32_t *res, const double *a);
+
+    void execute_direct_torus64_add(uint64_t* res, double* a);
+
     void execute_direct_torus64_rescale(uint64_t* res, const double* a, const double Δ);
 
     ~FFT_Processor_Spqlios();
