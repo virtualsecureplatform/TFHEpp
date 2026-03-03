@@ -153,20 +153,33 @@ Both sides run single-threaded (tfhe-rs Rayon pool pinned to 1 thread via `Threa
 
 ## Results
 
-Measured with `apptainer run compare-tfhers.sif` (Ubuntu 24.04, single-threaded).
+Measured with `taskset -c 0` on Ubuntu 24.04, single-threaded.
+On AMD Ryzen 9 9950X3D, core 0 belongs to the CCD with 3D V-Cache (96 MB L3).
+Pin the benchmark to a V-Cache core for best and most stable results.
 
 **CPU**: AMD Ryzen 9 9950X3D 16-Core Processor (max 5752 MHz)
 
 | Phase | TFHEpp | tfhe-rs |
 |:---:|:---:|:---:|
-| **Blind Rotate (BR)** | 5.51 ms | 5.34 ms |
-| **Identity Key Switch (IKS)** | 0.85 ms | 0.36 ms |
-| **NAND gate (end-to-end)** | 6.58 ms | 6.09 ms |
+| **Blind Rotate (BR)** | **4.50 ms** | 5.06 ms |
+| **Identity Key Switch (IKS)** | 0.51 ms | **0.32 ms** |
+| **NAND gate (end-to-end)** | 5.99 ms | **5.82 ms** |
 
-The BR phase dominates runtime in both implementations and is closely matched.
-The IKS phase accounts for most of the end-to-end difference (~2.4x faster in tfhe-rs).
+TFHEpp's BR is ~11% faster than tfhe-rs.
+The IKS phase accounts for most of the end-to-end difference (~1.6x faster in tfhe-rs).
 
-## Reproducing locally (Apptainer)
+## Reproducing locally
+
+```bash
+git clone --recurse-submodules https://github.com/virtualsecureplatform/TFHEpp
+cd TFHEpp
+mkdir build && cd build
+cmake .. -DUSE_TFHE_RS=ON -DENABLE_TEST=ON
+make -j$(nproc) pbs_tfhers
+taskset -c 0 ./test/pbs_tfhers
+```
+
+### Apptainer
 
 Requires Apptainer and internet access to clone tfhe-rs and pull the Ubuntu 24.04 image.
 
@@ -174,7 +187,7 @@ Requires Apptainer and internet access to clone tfhe-rs and pull the Ubuntu 24.0
 git clone --recurse-submodules https://github.com/virtualsecureplatform/TFHEpp
 cd TFHEpp
 apptainer build compare-tfhers.sif compare-tfhers.def
-apptainer run compare-tfhers.sif
+taskset -c 0 apptainer run compare-tfhers.sif
 ```
 
 ## CI
