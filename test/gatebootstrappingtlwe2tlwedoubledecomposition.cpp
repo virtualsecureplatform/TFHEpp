@@ -23,6 +23,18 @@ int main()
     // Use lvl03param which bootstraps from lvl0param to lvl3param
     // lvl3param has nbit=12 (n=4096) and non-trivial DD: l=2, l̅=2, Bgbit=16, B̅gbit=16
     using bkP = lvl03param;
+    using TargetT = typename bkP::targetP::T;
+
+    constexpr uint32_t decomposition_bits =
+        bkP::targetP::l * bkP::targetP::Bgbit +
+        bkP::targetP::l̅ * bkP::targetP::B̅gbit;
+    constexpr uint32_t torus_bits = std::numeric_limits<TargetT>::digits;
+    if constexpr (decomposition_bits > torus_bits) {
+        cout << "Skipping DD gate bootstrapping test: decomposition budget "
+             << decomposition_bits << " exceeds target torus width "
+             << torus_bits << " bits." << endl;
+        return 0;
+    }
 
     cout << "=== Testing GateBootstrappingTLWE2TLWE with DD (lvl3param, nbit=12) ===" << endl;
     cout << "Domain: n=" << bkP::domainP::n << ", T=" << sizeof(typename bkP::domainP::T) * 8 << "-bit" << endl;
@@ -30,7 +42,7 @@ int main()
     cout << "Primary decomposition: l=" << bkP::targetP::l << ", Bgbit=" << bkP::targetP::Bgbit << endl;
     cout << "Auxiliary decomposition: l̅=" << bkP::targetP::l̅ << ", B̅gbit=" << bkP::targetP::B̅gbit << endl;
     cout << "Total decomposition levels: " << (bkP::targetP::l * bkP::targetP::l̅) << endl;
-    cout << "Bits used: " << (bkP::targetP::l * bkP::targetP::Bgbit + bkP::targetP::l̅ * bkP::targetP::B̅gbit) << " / " << std::numeric_limits<typename bkP::targetP::T>::digits << endl;
+    cout << "Bits used: " << decomposition_bits << " / " << torus_bits << endl;
     cout << endl;
 
     // Generate keys

@@ -1,5 +1,6 @@
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include <random>
 #include <tfhe++.hpp>
 
@@ -100,8 +101,9 @@ void testDDRelinKeySwitch()
                                      : static_cast<typename P::T>(-1);
     }
 
-    // Generate relinearization key (automatically handles DD)
-    relinKeyFFT<P> relinkeyfft = relinKeyFFTgen<P>(key);
+    // Keep the large key material off the stack to avoid platform-dependent
+    // crashes on constrained CI environments.
+    auto relinkeyfft = std::make_unique<relinKeyFFT<P>>(relinKeyFFTgen<P>(key));
 
     for (int test = 0; test < num_test; test++) {
         // Create a random polynomial
@@ -112,7 +114,7 @@ void testDDRelinKeySwitch()
 
         // Apply key switch (automatically uses DD path when l̅ > 1)
         TRLWE<P> result;
-        relinKeySwitch<P>(result, poly, relinkeyfft);
+        relinKeySwitch<P>(result, poly, *relinkeyfft);
 
         // The result should be a valid TRLWE with k+1 polynomials
         // Just verify the structure is correct (full verification would require
