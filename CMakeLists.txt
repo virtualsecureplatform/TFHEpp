@@ -31,33 +31,40 @@ option(USE_KEY_BUNDLE "Use key bundle algorithm" OFF)
 option(USE_BLAKE3 "Use blake3 as CSPRNG" ON)
 option(USE_RANDEN "Use randen as CSPRNG" OFF)
 
-# Detect AVX-512 support at configure time
+# Detect AVX-512 support at configure time.
+# Strategy (in priority order):
+#   1. /proc/cpuinfo — works in containers (Apptainer/Docker) without executing
+#      a compiled binary, because the host kernel's /proc is always visible.
+#   2. check_cxx_source_compiles with -mavx512f — compile-only check for
+#      non-Linux or cross-compile environments (macOS, Windows, etc.).
+# check_cxx_source_runs is intentionally avoided: it fails in container build
+# environments (Apptainer %post, Docker RUN) where sandbox restrictions prevent
+# executing compiled binaries during cmake configuration.
 if(NOT DEFINED AVX512_SUPPORTED)
+  set(AVX512_SUPPORTED FALSE)
   if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-    include(CheckCXXSourceRuns)
-    set(CMAKE_REQUIRED_FLAGS "-mavx512f")
-    check_cxx_source_runs("
-      #include <immintrin.h>
-      int main(int argc, char**) {
-        double data[8] __attribute__((aligned(64)));
-        for (int i = 0; i < 8; i++) data[i] = static_cast<double>(argc + i);
-        __m512d a = _mm512_load_pd(data);
-        __m512d b = _mm512_add_pd(a, a);
-        _mm512_store_pd(data, b);
-        return static_cast<int>(data[0]) - 2 * argc;
-      }
-    " AVX512_SUPPORTED)
-    unset(CMAKE_REQUIRED_FLAGS)
-  else()
-    set(AVX512_SUPPORTED FALSE)
-  endif()
-endif()
-
-if(AVX512_SUPPORTED AND EXISTS "/proc/cpuinfo")
-  file(READ "/proc/cpuinfo" TFHEPP_CPUINFO)
-  if(NOT TFHEPP_CPUINFO MATCHES "avx512f")
-    message(STATUS "AVX-512 flags not found in /proc/cpuinfo; disabling AVX-512")
-    set(AVX512_SUPPORTED FALSE)
+    if(EXISTS "/proc/cpuinfo")
+      file(READ "/proc/cpuinfo" TFHEPP_CPUINFO)
+      if(TFHEPP_CPUINFO MATCHES "avx512f")
+        set(AVX512_SUPPORTED TRUE)
+      endif()
+    endif()
+    if(NOT AVX512_SUPPORTED)
+      include(CheckCXXSourceCompiles)
+      set(CMAKE_REQUIRED_FLAGS "-mavx512f")
+      check_cxx_source_compiles("
+        #include <immintrin.h>
+        int main() {
+          __m512d a = _mm512_setzero_pd();
+          (void)a;
+          return 0;
+        }
+      " AVX512_COMPILE_SUPPORTED)
+      unset(CMAKE_REQUIRED_FLAGS)
+      if(AVX512_COMPILE_SUPPORTED)
+        set(AVX512_SUPPORTED TRUE)
+      endif()
+    endif()
   endif()
 endif()
 

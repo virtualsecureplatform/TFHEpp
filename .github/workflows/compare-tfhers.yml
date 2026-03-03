@@ -18,7 +18,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            build-essential g++ libomp-dev cmake ninja-build git \
+            build-essential g++-14 libomp-dev cmake ninja-build git \
             curl wget ca-certificates
 
       # ── Rust toolchain (rustup) ───────────────────────────────────────────
@@ -47,6 +47,8 @@ jobs:
         run: |
           cmake . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=g++-14 \
+            -DCMAKE_C_COMPILER=gcc-14 \
             -DUSE_TFHE_RS=ON \
             -DENABLE_TEST=ON
           cmake --build build --target pbs_tfhers

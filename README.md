@@ -159,8 +159,8 @@ Measured with `apptainer run compare-tfhers.sif` (Ubuntu 24.04, single-threaded)
 
 | Library | Time per NAND gate |
 |:---:|:---:|
-| **TFHEpp** (C++, SPQLIOS-AVX512, `-O3`) | **6.450 ms** |
-| **tfhe-rs** (Rust, `DEFAULT_PARAMETERS`, 1 thread) | **5.897 ms** |
+| **TFHEpp** (C++, g++-14, SPQLIOS-AVX512, `-O3`) | **6.17 ms** |
+| **tfhe-rs** (Rust, `DEFAULT_PARAMETERS`, 1 thread) | **5.83 ms** |
 
 ## Reproducing locally (Apptainer)
 
