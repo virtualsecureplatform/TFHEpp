@@ -157,10 +157,14 @@ Measured with `apptainer run compare-tfhers.sif` (Ubuntu 24.04, single-threaded)
 
 **CPU**: AMD Ryzen 9 9950X3D 16-Core Processor (max 5752 MHz)
 
-| Library | Time per NAND gate |
-|:---:|:---:|
-| **TFHEpp** (C++, g++-14, SPQLIOS-AVX512, `-O3`) | **6.17 ms** |
-| **tfhe-rs** (Rust, `DEFAULT_PARAMETERS`, 1 thread) | **5.83 ms** |
+| Phase | TFHEpp | tfhe-rs |
+|:---:|:---:|:---:|
+| **Blind Rotate (BR)** | 5.51 ms | 5.34 ms |
+| **Identity Key Switch (IKS)** | 0.85 ms | 0.36 ms |
+| **NAND gate (end-to-end)** | 6.58 ms | 6.09 ms |
+
+The BR phase dominates runtime in both implementations and is closely matched.
+The IKS phase accounts for most of the end-to-end difference (~2.4x faster in tfhe-rs).
 
 ## Reproducing locally (Apptainer)
 
