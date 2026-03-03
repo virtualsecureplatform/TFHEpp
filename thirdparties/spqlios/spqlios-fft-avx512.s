@@ -80,6 +80,7 @@ _fft:
 	movq	$0,%rax	/* rax: block */
 	movq	%rdi,%r10
 	movq	%rsi,%r11
+.p2align 5
 fftsize2loop:
 	vmovapd (%r10),%zmm0 /* r0 r1 r2 r3 r4 r5 r6 r7 */
 	vmovapd (%r11),%zmm1 /* i0 i1 i2 i3 i4 i5 i6 i7 */
@@ -134,6 +135,7 @@ fftsize2loop:
 	movq	$0, %rax
 	movq	%rdi,%r10
 	movq	%rsi,%r11
+.p2align 5
 fftsize4loop:
 	vmovapd (%r10),%zmm0 /* r0 r1 r2 r3 */
 	vmovapd (%r11),%zmm1 /* i0 i1 i2 i3 */
@@ -201,6 +203,7 @@ fftsize4loop:
 vmovapd fftsize8cos(%rip), %zmm8
 vmovapd fftsize8sin(%rip), %zmm9
 movq $0, %rax          /* rax: block index in doubles (step 16 = 2 blocks) */
+.p2align 5
 fftsize8loop:
 	# Load block B: pre[rax..rax+7] = [re0_B, re1_B]
 	#              pim[rax..rax+7] = [im0_B, im1_B]
@@ -583,6 +586,7 @@ fftbeforefinal:
 	movq $0,%rax /* j */
 	movq %rdi,%r10
 	movq %rsi,%r11
+.p2align 5
 fftfinalloop:
 	vmovapd	(%r10),%zmm0 /* re */
 	vmovapd	(%r11),%zmm1 /* im */
@@ -592,10 +596,8 @@ fftfinalloop:
 	vmulpd %zmm0,%zmm3,%zmm5        /* re*sin */
 	vfnmadd231pd %zmm1,%zmm3,%zmm4  /* re*cos - im*sin */
 	vfmadd231pd %zmm1,%zmm2,%zmm5   /* re*sin + im*cos */
-	vmovapd %zmm4,%zmm0
-	vmovapd %zmm5,%zmm1
-	vmovapd %zmm0,(%r10)
-	vmovapd %zmm1,(%r11)
+	vmovapd %zmm4,(%r10)
+	vmovapd %zmm5,(%r11)
     	/* end of final loop */
     	leaq	64(%r10),%r10
     	leaq	64(%r11),%r11
@@ -606,7 +608,7 @@ fftfinalloop:
 
 	/* Restore registers */
 fftend:
-	vzeroall
+	vzeroupper
 	popq        %rbx
 	popq        %r14
 	popq        %r13

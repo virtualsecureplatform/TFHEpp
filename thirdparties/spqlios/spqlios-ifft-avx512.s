@@ -64,6 +64,7 @@ _ifft:
 	shr	$3, %r10  /* now, r10 is n/4 (the last iteration) */
 	movq    $0, %rcx  /* Loop counter: Range [0, r10), step size 4 */
 	movq	%r8, %r11 /* r11 is the trig table pointer, step size 64 */
+.p2align 5
 firstloop:
         vmovapd (%rdi,%rcx,8), %zmm0 /* real */
         vmovapd (%rsi,%rcx,8), %zmm1 /* imag */
@@ -554,6 +555,7 @@ ifft_before_size8:
 vmovapd ifftsize8cos(%rip), %zmm8
 vmovapd ifftsize8sin(%rip), %zmm9
 movq $0, %r11  /* r11: block index in doubles (step 16 = 2 blocks) */
+.p2align 5
 ifftsize8loop:
 	# Load block B: are[r11..r11+7]=[re0_B,re1_B], block B+8: are[r11+8..r11+15]
 	vmovapd    (%rdi,%r11,8), %zmm0  /* [re0_B, re1_B] */
@@ -627,6 +629,7 @@ ifftsize8loop:
 	movq $0,%rax /* rax (block) */
 	movq %rdi,%r11 /* r11 (are+block) */
 	movq %rsi,%r12 /* r12 (aim+block) */
+.p2align 5
 size4loop:
 	vmovapd (%r11),%zmm0 /* r0 r1 r2 r3 */
 	vmovapd (%r12),%zmm1 /* i0 i1 i2 i3 */
@@ -690,6 +693,7 @@ size4loop:
 	movq $0,%rax /* rax (block) */
 	movq %rdi,%r11 /* r11 (are+block) */
 	movq %rsi,%r12 /* r12 (aim+block) */
+.p2align 5
 size2loop:
 	vmovapd (%r11),%zmm0 /* r0 r1 r2 r3 */
 	vmovapd (%r12),%zmm1 /* i0 i1 i2 i3 */
@@ -711,7 +715,7 @@ size2loop:
 
 	/* Restore registers */
 end:
-	vzeroall
+	vzeroupper
 	popq        %rbx
 	popq        %r14
 	popq        %r13
