@@ -114,11 +114,13 @@ firstloop:
         /* r10 is still = n/4  (constant) */
         /* r8 is cur_tt (initially, base of trig table) */
 	movq %r10,%r12 /* r12 (nn): outer loop counter from n/4 to 8 */
+	cmpq $256,%r12
+	jbe ifft_post_nnloop	/* skip nnloop for N <= 1024 */
 nnloop:
-	movq %r12,%r13 
+	movq %r12,%r13
 	shr  $1,%r13   /* r13 = halfnn */
-	leaq (%r8,%r12,8),%r8  
-	leaq (%r8,%r12,8),%r8 /* update cur_tt += nn*16 */ 
+	leaq (%r8,%r12,8),%r8
+	leaq (%r8,%r12,8),%r8 /* update cur_tt += nn*16 */
 	movq $0,%r11   /* r11 (block) */
 blockloop:
 	leaq (%rdi,%r11,8),%rax /* are + block */
@@ -157,15 +159,158 @@ offloop:
 	jb blockloop
 	/* end of nn loop */
 	movq %r13,%r12
+	cmpq $256,%r12
+	ja nnloop		/* loop while r12 > 256 */
+
+ifft_post_nnloop:
+	# r12 = 256 for N >= 1024, or ns4 for N <= 1024
+	cmpq $256,%r12
+	jne ifft_d_small_n
+
+# ── Option D: fused {halfnn=128, halfnn=64} pass for N >= 1024 ──────────────
+# DIF order: process halfnn=128 first (large), then halfnn=64 (small)
+# 4-column groups: (i, i+64, i+128, i+192) for i=0..63 step 8
+# Trig: W128[i] + W128[i+64] (4 ZMMs) + W64[i] (2 ZMMs) = 6 trig ZMMs
+# Data: 4 re + 4 im = 8 ZMMs. Temp: zmm30-31. Total: 16 ZMMs.
+	# Advance r8 for halfnn=128 (nn=256, r12=256)
+	leaq (%r8,%r12,8),%r8
+	leaq (%r8,%r12,8),%r8		/* r8 = W128 trig base */
+	movq %r8,%rcx			/* rcx = W128 trig pointer */
+	leaq 1024(%rcx),%r14		/* r14 = W128[i+64] trig pointer */
+	# Advance r8 for halfnn=64 (nn=128)
+	movq $128,%r13
+	leaq (%r8,%r13,8),%r8
+	leaq (%r8,%r13,8),%r8		/* r8 = W64 trig base */
+	movq %r8,%rdx			/* rdx = W64 trig pointer */
+	movq $0,%rbx			/* rbx = byte offset */
+.p2align 4
+ifft_d128_64_loop:
+	# Load 4 columns of data
+	vmovapd	(%rdi,%rbx),%zmm0		/* re[i] */
+	vmovapd	512(%rdi,%rbx),%zmm1		/* re[i+64] */
+	vmovapd	1024(%rdi,%rbx),%zmm2		/* re[i+128] */
+	vmovapd	1536(%rdi,%rbx),%zmm3		/* re[i+192] */
+	vmovapd	(%rsi,%rbx),%zmm4		/* im[i] */
+	vmovapd	512(%rsi,%rbx),%zmm5		/* im[i+64] */
+	vmovapd	1024(%rsi,%rbx),%zmm6		/* im[i+128] */
+	vmovapd	1536(%rsi,%rbx),%zmm7		/* im[i+192] */
+	# Load W128[i] trig
+	vmovapd	(%rcx),%zmm8			/* W128[i] cos */
+	vmovapd	64(%rcx),%zmm9			/* W128[i] sin */
+	# halfnn=128 DIF: zmm0 <-> zmm2 with W128[i]
+	vsubpd	%zmm2,%zmm0,%zmm30
+	vsubpd	%zmm6,%zmm4,%zmm31
+	vaddpd	%zmm2,%zmm0,%zmm0
+	vaddpd	%zmm6,%zmm4,%zmm4
+	vmulpd	%zmm30,%zmm8,%zmm2
+	vfnmadd231pd %zmm31,%zmm9,%zmm2
+	vmulpd	%zmm30,%zmm9,%zmm6
+	vfmadd231pd  %zmm31,%zmm8,%zmm6
+	# Load W128[i+64] trig
+	vmovapd	(%r14),%zmm8			/* W128[i+64] cos */
+	vmovapd	64(%r14),%zmm9			/* W128[i+64] sin */
+	# halfnn=128 DIF: zmm1 <-> zmm3 with W128[i+64]
+	vsubpd	%zmm3,%zmm1,%zmm30
+	vsubpd	%zmm7,%zmm5,%zmm31
+	vaddpd	%zmm3,%zmm1,%zmm1
+	vaddpd	%zmm7,%zmm5,%zmm5
+	vmulpd	%zmm30,%zmm8,%zmm3
+	vfnmadd231pd %zmm31,%zmm9,%zmm3
+	vmulpd	%zmm30,%zmm9,%zmm7
+	vfmadd231pd  %zmm31,%zmm8,%zmm7
+	# Load W64[i] trig (same for both halfnn=64 pairs)
+	vmovapd	(%rdx),%zmm8			/* W64[i] cos */
+	vmovapd	64(%rdx),%zmm9			/* W64[i] sin */
+	# halfnn=64 DIF: zmm0 <-> zmm1 with W64[i]
+	vsubpd	%zmm1,%zmm0,%zmm30
+	vsubpd	%zmm5,%zmm4,%zmm31
+	vaddpd	%zmm1,%zmm0,%zmm0
+	vaddpd	%zmm5,%zmm4,%zmm4
+	vmulpd	%zmm30,%zmm8,%zmm1
+	vfnmadd231pd %zmm31,%zmm9,%zmm1
+	vmulpd	%zmm30,%zmm9,%zmm5
+	vfmadd231pd  %zmm31,%zmm8,%zmm5
+	# halfnn=64 DIF: zmm2 <-> zmm3 with W64[i] (same trig)
+	vsubpd	%zmm3,%zmm2,%zmm30
+	vsubpd	%zmm7,%zmm6,%zmm31
+	vaddpd	%zmm3,%zmm2,%zmm2
+	vaddpd	%zmm7,%zmm6,%zmm6
+	vmulpd	%zmm30,%zmm8,%zmm3
+	vfnmadd231pd %zmm31,%zmm9,%zmm3
+	vmulpd	%zmm30,%zmm9,%zmm7
+	vfmadd231pd  %zmm31,%zmm8,%zmm7
+	# Store results
+	vmovapd	%zmm0,(%rdi,%rbx)
+	vmovapd	%zmm1,512(%rdi,%rbx)
+	vmovapd	%zmm2,1024(%rdi,%rbx)
+	vmovapd	%zmm3,1536(%rdi,%rbx)
+	vmovapd	%zmm4,(%rsi,%rbx)
+	vmovapd	%zmm5,512(%rsi,%rbx)
+	vmovapd	%zmm6,1024(%rsi,%rbx)
+	vmovapd	%zmm7,1536(%rsi,%rbx)
+	# Advance pointers
+	addq	$64,%rbx		/* data: +8 doubles */
+	leaq	128(%rcx),%rcx		/* W128 lo: +128 bytes */
+	leaq	128(%r14),%r14		/* W128 hi: +128 bytes */
+	leaq	128(%rdx),%rdx		/* W64: +128 bytes */
+	cmpq	$512,%rbx		/* done when rbx = 64*8 = 512 */
+	jb	ifft_d128_64_loop
+	# r8 is at W64 trig base (correct for Option C to advance from)
+	movq	$64,%r12		/* r12 = 64 (nn for Option C) */
+	jmp	ifft_option_c_entry
+
+ifft_d_small_n:
+	# N <= 512: process remaining stages individually until r12 < 128
+	cmpq	$128,%r12
+	jb	ifft_option_c_entry
+ifft_d_small_loop:
+	movq %r12,%r13
+	shr  $1,%r13
+	leaq (%r8,%r12,8),%r8
+	leaq (%r8,%r12,8),%r8
+	movq $0,%r11
+ifft_d_small_blockloop:
+	leaq (%rdi,%r11,8),%rax
+	leaq (%rsi,%r11,8),%rbx
+	leaq (%rax,%r13,8),%rcx
+	leaq (%rbx,%r13,8),%rdx
+	movq $0,%r9
+	movq %r8,%r14
+ifft_d_small_offloop:
+	vmovapd (%rax,%r9,8),%zmm0
+	vmovapd (%rbx,%r9,8),%zmm1
+	vmovapd (%rcx,%r9,8),%zmm2
+	vmovapd (%rdx,%r9,8),%zmm3
+	vaddpd %zmm0,%zmm2,%zmm4
+	vaddpd %zmm1,%zmm3,%zmm5
+	vsubpd %zmm2,%zmm0,%zmm6
+	vsubpd %zmm3,%zmm1,%zmm7
+	vmovapd %zmm4,(%rax,%r9,8)
+	vmovapd %zmm5,(%rbx,%r9,8)
+	vmovapd (%r14),%zmm8
+	vmovapd 64(%r14),%zmm9
+	vmulpd %zmm6,%zmm8,%zmm4
+	vfnmadd231pd %zmm7,%zmm9,%zmm4
+	vmulpd %zmm6,%zmm9,%zmm5
+	vfmadd231pd %zmm7,%zmm8,%zmm5
+	vmovapd %zmm4,(%rcx,%r9,8)
+	vmovapd %zmm5,(%rdx,%r9,8)
+	leaq 128(%r14),%r14
+	addq $8,%r9
+	cmpq %r13,%r9
+	jb ifft_d_small_offloop
+	addq %r12,%r11
+	cmpq %r10,%r11
+	jb ifft_d_small_blockloop
+	movq %r13,%r12
 	cmpq $128,%r12
-	jae nnloop
+	jae ifft_d_small_loop
+ifft_option_c_entry:
 
 # ── Option C: fused {halfnn=32, halfnn=16, halfnn=8} pass for N >= 512 ──────
-# After modified nnloop (exits when r12 < 128):
-#   N>=512: r12=64 (halfnn=64 was last; halfnn=32,16,8 unprocessed) → fused pass
-#   N=256:  r12=32 (halfnn=32 was last; halfnn=16,8 unprocessed)    → fallback
-#   N=128:  r12=16 (halfnn=16 was last; halfnn=8 unprocessed)       → fallback
-#   N=64:   r12=8  (halfnn=8 was last; nothing left)                → fallback
+# After nnloop/Option D (r12 = 64 for N >= 512):
+#   r12=64: halfnn=32,16,8 unprocessed → fused pass
+#   r12<64: fallback for smaller N
 #
 # IFFT DIF butterfly: new_re0=re0+re1, new_im0=im0+im1,
 #   diff=(re0-re1, im0-im1); new_re1=diff_re*cos-diff_im*sin,

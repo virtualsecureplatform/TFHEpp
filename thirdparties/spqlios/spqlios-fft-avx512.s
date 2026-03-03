@@ -425,11 +425,93 @@ fft_r4_8_16_32_loop:
 	addq	$64,%rbx
 	cmpq	%r9,%rbx
 	jb	fft_r4_8_16_32_loop
-	# General loop for halfnn=64+ (skip 4+8+16+32 entries: 64+128+256+512=960 bytes)
+	# Skip halfnn=4,8,16,32 trig entries (64+128+256+512=960 bytes)
 	leaq	960(%r8),%rdx
 	movq	$64,%rax
-	cmpq	%r9,%rax
+	# Option D: fuse halfnn=64+128 when ns4 >= 256 (N >= 1024)
+	cmpq	$256,%r9
 	jb	ffthalfnnloop
+	# Set up trig pointers: rdx=W64, r10=W128_lo, r11=W128_hi
+	leaq	1024(%rdx),%r10		/* r10 = W128 base (r8+1984) */
+	leaq	1024(%r10),%r11		/* r11 = W128[i+64] base (r8+3008) */
+	movq	$0,%rbx			/* rbx = byte offset (0..448 step 64) */
+.p2align 4
+fft_d64_128_loop:
+	# Load 4 columns of re data
+	vmovapd	(%rdi,%rbx),%zmm0		/* re[i] */
+	vmovapd	512(%rdi,%rbx),%zmm1		/* re[i+64] */
+	vmovapd	1024(%rdi,%rbx),%zmm2		/* re[i+128] */
+	vmovapd	1536(%rdi,%rbx),%zmm3		/* re[i+192] */
+	# Load 4 columns of im data
+	vmovapd	(%rsi,%rbx),%zmm4		/* im[i] */
+	vmovapd	512(%rsi,%rbx),%zmm5		/* im[i+64] */
+	vmovapd	1024(%rsi,%rbx),%zmm6		/* im[i+128] */
+	vmovapd	1536(%rsi,%rbx),%zmm7		/* im[i+192] */
+	# Load W64 trig (same for both halfnn=64 pairs)
+	vmovapd	(%rdx),%zmm8			/* W64 cos */
+	vmovapd	64(%rdx),%zmm9			/* W64 sin */
+	# halfnn=64 butterfly A: zmm0<->zmm1 (re[i] <-> re[i+64])
+	vmulpd	%zmm1,%zmm8,%zmm14
+	vmulpd	%zmm1,%zmm9,%zmm15
+	vfnmadd231pd %zmm5,%zmm9,%zmm14	/* re2 = re1*cos - im1*sin */
+	vfmadd231pd  %zmm5,%zmm8,%zmm15	/* im2 = re1*sin + im1*cos */
+	vsubpd	%zmm14,%zmm0,%zmm1		/* new re[i+64] = re[i] - re2 */
+	vsubpd	%zmm15,%zmm4,%zmm5		/* new im[i+64] = im[i] - im2 */
+	vaddpd	%zmm14,%zmm0,%zmm0		/* new re[i] = re[i] + re2 */
+	vaddpd	%zmm15,%zmm4,%zmm4		/* new im[i] = im[i] + im2 */
+	# halfnn=64 butterfly B: zmm2<->zmm3 (re[i+128] <-> re[i+192]), same W64
+	vmulpd	%zmm3,%zmm8,%zmm14
+	vmulpd	%zmm3,%zmm9,%zmm15
+	vfnmadd231pd %zmm7,%zmm9,%zmm14
+	vfmadd231pd  %zmm7,%zmm8,%zmm15
+	vsubpd	%zmm14,%zmm2,%zmm3		/* new re[i+192] */
+	vsubpd	%zmm15,%zmm6,%zmm7		/* new im[i+192] */
+	vaddpd	%zmm14,%zmm2,%zmm2		/* new re[i+128] */
+	vaddpd	%zmm15,%zmm6,%zmm6		/* new im[i+128] */
+	# Load W128 trig (two different sets)
+	vmovapd	(%r10),%zmm8			/* W128[i] cos */
+	vmovapd	64(%r10),%zmm9			/* W128[i] sin */
+	vmovapd	(%r11),%zmm10			/* W128[i+64] cos */
+	vmovapd	64(%r11),%zmm11			/* W128[i+64] sin */
+	# halfnn=128 butterfly A: zmm0<->zmm2 with W128[i]
+	vmulpd	%zmm2,%zmm8,%zmm14
+	vmulpd	%zmm2,%zmm9,%zmm15
+	vfnmadd231pd %zmm6,%zmm9,%zmm14
+	vfmadd231pd  %zmm6,%zmm8,%zmm15
+	vsubpd	%zmm14,%zmm0,%zmm2		/* new re[i+128] */
+	vsubpd	%zmm15,%zmm4,%zmm6		/* new im[i+128] */
+	vaddpd	%zmm14,%zmm0,%zmm0		/* new re[i] */
+	vaddpd	%zmm15,%zmm4,%zmm4		/* new im[i] */
+	# halfnn=128 butterfly B: zmm1<->zmm3 with W128[i+64]
+	vmulpd	%zmm3,%zmm10,%zmm14
+	vmulpd	%zmm3,%zmm11,%zmm15
+	vfnmadd231pd %zmm7,%zmm11,%zmm14
+	vfmadd231pd  %zmm7,%zmm10,%zmm15
+	vsubpd	%zmm14,%zmm1,%zmm3		/* new re[i+192] */
+	vsubpd	%zmm15,%zmm5,%zmm7		/* new im[i+192] */
+	vaddpd	%zmm14,%zmm1,%zmm1		/* new re[i+64] */
+	vaddpd	%zmm15,%zmm5,%zmm5		/* new im[i+64] */
+	# Store results
+	vmovapd	%zmm0,(%rdi,%rbx)
+	vmovapd	%zmm1,512(%rdi,%rbx)
+	vmovapd	%zmm2,1024(%rdi,%rbx)
+	vmovapd	%zmm3,1536(%rdi,%rbx)
+	vmovapd	%zmm4,(%rsi,%rbx)
+	vmovapd	%zmm5,512(%rsi,%rbx)
+	vmovapd	%zmm6,1024(%rsi,%rbx)
+	vmovapd	%zmm7,1536(%rsi,%rbx)
+	# Advance
+	addq	$64,%rbx		/* data: +8 doubles */
+	leaq	128(%rdx),%rdx		/* W64 trig: +128 bytes */
+	leaq	128(%r10),%r10		/* W128 lo: +128 bytes */
+	leaq	128(%r11),%r11		/* W128 hi: +128 bytes */
+	cmpq	$512,%rbx		/* done when rbx = 64*8 = 512 */
+	jb	fft_d64_128_loop
+	# After fused pass: r11 = r8+4032 = next trig entry (W256 or final twist)
+	movq	%r11,%rdx
+	movq	$256,%rax		/* halfnn = 256 */
+	cmpq	%r9,%rax
+	jb	ffthalfnnloop		/* continue general loop for N >= 2048 */
 	jmp	fftbeforefinal
 fft_fallback_to_8:
 	leaq	64(%r8),%rdx		/* skip halfnn=4 entry; halfnn=8 at r8+64 */
