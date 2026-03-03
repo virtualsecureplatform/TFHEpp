@@ -352,7 +352,8 @@ fft_r4_8_16_32_loop:
 	# Option D: fuse halfnn=64+128 when ns4 >= 256 (N >= 1024)
 	cmpq	$256,%r9
 	jb	ffthalfnnloop
-	# Set up trig pointers: rdx=W64, r10=W128_lo, r11=W128_hi
+	je	fft_d64_128_twist_setup	/* N=1024: fuse with final twist */
+	# Regular Option D for N >= 2048
 	leaq	1024(%rdx),%r10		/* r10 = W128 base (r8+1984) */
 	leaq	1024(%r10),%r11		/* r11 = W128[i+64] base (r8+3008) */
 	movq	$0,%rbx			/* rbx = byte offset (0..448 step 64) */
@@ -434,6 +435,112 @@ fft_d64_128_loop:
 	cmpq	%r9,%rax
 	jb	ffthalfnnloop		/* continue general loop for N >= 2048 */
 	jmp	fftbeforefinal
+fft_d64_128_twist_setup:
+	# Fused Option D + final twist for N=1024 (ns4=256)
+	# After butterflies, apply twist multiply in-register before storing.
+	# Eliminates the separate fftfinalloop entirely.
+	leaq	1024(%rdx),%r10		/* r10 = W128 base */
+	leaq	1024(%r10),%r11		/* r11 = W128[i+64] base */
+	leaq	4032(%r8),%rcx		/* rcx = twist trig base (r8+4032) */
+	movq	$0,%rbx
+.p2align 4
+fft_d64_128_twist_loop:
+	# Load 4 columns of data (identical to regular Option D)
+	vmovapd	(%rdi,%rbx),%zmm0
+	vmovapd	512(%rdi,%rbx),%zmm1
+	vmovapd	1024(%rdi,%rbx),%zmm2
+	vmovapd	1536(%rdi,%rbx),%zmm3
+	vmovapd	(%rsi,%rbx),%zmm4
+	vmovapd	512(%rsi,%rbx),%zmm5
+	vmovapd	1024(%rsi,%rbx),%zmm6
+	vmovapd	1536(%rsi,%rbx),%zmm7
+	# W64 butterflies (identical to regular Option D)
+	vmovapd	(%rdx),%zmm8
+	vmovapd	64(%rdx),%zmm9
+	vmulpd	%zmm1,%zmm8,%zmm14
+	vmulpd	%zmm1,%zmm9,%zmm15
+	vfnmadd231pd %zmm5,%zmm9,%zmm14
+	vfmadd231pd  %zmm5,%zmm8,%zmm15
+	vsubpd	%zmm14,%zmm0,%zmm1
+	vsubpd	%zmm15,%zmm4,%zmm5
+	vaddpd	%zmm14,%zmm0,%zmm0
+	vaddpd	%zmm15,%zmm4,%zmm4
+	vmulpd	%zmm3,%zmm8,%zmm14
+	vmulpd	%zmm3,%zmm9,%zmm15
+	vfnmadd231pd %zmm7,%zmm9,%zmm14
+	vfmadd231pd  %zmm7,%zmm8,%zmm15
+	vsubpd	%zmm14,%zmm2,%zmm3
+	vsubpd	%zmm15,%zmm6,%zmm7
+	vaddpd	%zmm14,%zmm2,%zmm2
+	vaddpd	%zmm15,%zmm6,%zmm6
+	# W128 butterflies (identical to regular Option D)
+	vmovapd	(%r10),%zmm8
+	vmovapd	64(%r10),%zmm9
+	vmovapd	(%r11),%zmm10
+	vmovapd	64(%r11),%zmm11
+	vmulpd	%zmm2,%zmm8,%zmm14
+	vmulpd	%zmm2,%zmm9,%zmm15
+	vfnmadd231pd %zmm6,%zmm9,%zmm14
+	vfmadd231pd  %zmm6,%zmm8,%zmm15
+	vsubpd	%zmm14,%zmm0,%zmm2
+	vsubpd	%zmm15,%zmm4,%zmm6
+	vaddpd	%zmm14,%zmm0,%zmm0
+	vaddpd	%zmm15,%zmm4,%zmm4
+	vmulpd	%zmm3,%zmm10,%zmm14
+	vmulpd	%zmm3,%zmm11,%zmm15
+	vfnmadd231pd %zmm7,%zmm11,%zmm14
+	vfmadd231pd  %zmm7,%zmm10,%zmm15
+	vsubpd	%zmm14,%zmm1,%zmm3
+	vsubpd	%zmm15,%zmm5,%zmm7
+	vaddpd	%zmm14,%zmm1,%zmm1
+	vaddpd	%zmm15,%zmm5,%zmm5
+	# ── Apply final twist multiply to all 4 columns in-register ──
+	# Column 0 (zmm0=re[i], zmm4=im[i]): twist at rcx
+	vmovapd	(%rcx),%zmm8
+	vmovapd	64(%rcx),%zmm9
+	vmulpd	%zmm0,%zmm8,%zmm10
+	vmulpd	%zmm0,%zmm9,%zmm11
+	vfnmadd231pd %zmm4,%zmm9,%zmm10
+	vfmadd231pd  %zmm4,%zmm8,%zmm11
+	vmovapd	%zmm10,(%rdi,%rbx)
+	vmovapd	%zmm11,(%rsi,%rbx)
+	# Column 1 (zmm1=re[i+64], zmm5=im[i+64]): twist at rcx+1024
+	vmovapd	1024(%rcx),%zmm8
+	vmovapd	1088(%rcx),%zmm9
+	vmulpd	%zmm1,%zmm8,%zmm10
+	vmulpd	%zmm1,%zmm9,%zmm11
+	vfnmadd231pd %zmm5,%zmm9,%zmm10
+	vfmadd231pd  %zmm5,%zmm8,%zmm11
+	vmovapd	%zmm10,512(%rdi,%rbx)
+	vmovapd	%zmm11,512(%rsi,%rbx)
+	# Column 2 (zmm2=re[i+128], zmm6=im[i+128]): twist at rcx+2048
+	vmovapd	2048(%rcx),%zmm8
+	vmovapd	2112(%rcx),%zmm9
+	vmulpd	%zmm2,%zmm8,%zmm10
+	vmulpd	%zmm2,%zmm9,%zmm11
+	vfnmadd231pd %zmm6,%zmm9,%zmm10
+	vfmadd231pd  %zmm6,%zmm8,%zmm11
+	vmovapd	%zmm10,1024(%rdi,%rbx)
+	vmovapd	%zmm11,1024(%rsi,%rbx)
+	# Column 3 (zmm3=re[i+192], zmm7=im[i+192]): twist at rcx+3072
+	vmovapd	3072(%rcx),%zmm8
+	vmovapd	3136(%rcx),%zmm9
+	vmulpd	%zmm3,%zmm8,%zmm10
+	vmulpd	%zmm3,%zmm9,%zmm11
+	vfnmadd231pd %zmm7,%zmm9,%zmm10
+	vfmadd231pd  %zmm7,%zmm8,%zmm11
+	vmovapd	%zmm10,1536(%rdi,%rbx)
+	vmovapd	%zmm11,1536(%rsi,%rbx)
+	# Advance
+	addq	$64,%rbx
+	leaq	128(%rdx),%rdx
+	leaq	128(%r10),%r10
+	leaq	128(%r11),%r11
+	leaq	128(%rcx),%rcx
+	cmpq	$512,%rbx
+	jb	fft_d64_128_twist_loop
+	jmp	fftend			/* skip fftfinalloop entirely */
+
 fft_fallback_to_8:
 	leaq	64(%r8),%rdx		/* skip halfnn=4 entry; halfnn=8 at r8+64 */
 	movq	$8,%rax

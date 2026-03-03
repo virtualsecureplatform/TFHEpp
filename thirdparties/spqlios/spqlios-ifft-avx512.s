@@ -62,6 +62,8 @@ _ifft:
 	//    }
 
 	shr	$3, %r10  /* now, r10 is n/4 (the last iteration) */
+	cmpq	$256, %r10
+	je	ifft_fused_twist_d_setup	/* N=1024: skip firstloop, fuse twist with Option D */
 	movq    $0, %rcx  /* Loop counter: Range [0, r10), step size 4 */
 	movq	%r8, %r11 /* r11 is the trig table pointer, step size 64 */
 .p2align 5
@@ -258,6 +260,131 @@ ifft_d128_64_loop:
 	jb	ifft_d128_64_loop
 	# r8 is at W64 trig base (correct for Option C to advance from)
 	movq	$64,%r12		/* r12 = 64 (nn for Option C) */
+	jmp	ifft_option_c_entry
+
+ifft_fused_twist_d_setup:
+	# Fused twist + Option D for N=1024 (ns4=256)
+	# Applies firstloop twist AND halfnn=128+64 DIF butterflies in one pass.
+	# Eliminates the separate firstloop and Option D store/load round-trips.
+	movq	%r8,%rax		/* rax = twist trig base (original r8) */
+	movq	%r10,%r12		/* r12 = ns4 = 256 */
+	# Advance r8 for halfnn=128 (nn=256)
+	leaq	(%r8,%r12,8),%r8
+	leaq	(%r8,%r12,8),%r8	/* r8 = W128 trig base */
+	movq	%r8,%rcx		/* rcx = W128 trig pointer */
+	leaq	1024(%rcx),%r14		/* r14 = W128[i+64] trig pointer */
+	# Advance r8 for halfnn=64 (nn=128)
+	movq	$128,%r13
+	leaq	(%r8,%r13,8),%r8
+	leaq	(%r8,%r13,8),%r8	/* r8 = W64 trig base */
+	movq	%r8,%rdx		/* rdx = W64 trig pointer */
+	movq	$0,%rbx
+.p2align 4
+ifft_fused_twist_d_loop:
+	# Load 4 columns of data
+	vmovapd	(%rdi,%rbx),%zmm0
+	vmovapd	512(%rdi,%rbx),%zmm1
+	vmovapd	1024(%rdi,%rbx),%zmm2
+	vmovapd	1536(%rdi,%rbx),%zmm3
+	vmovapd	(%rsi,%rbx),%zmm4
+	vmovapd	512(%rsi,%rbx),%zmm5
+	vmovapd	1024(%rsi,%rbx),%zmm6
+	vmovapd	1536(%rsi,%rbx),%zmm7
+	# ── Apply twist to each column in-register ──
+	# Column 0 (zmm0=re, zmm4=im): twist at rax
+	vmovapd	(%rax),%zmm8
+	vmovapd	64(%rax),%zmm9
+	vmulpd	%zmm0,%zmm9,%zmm10
+	vmulpd	%zmm0,%zmm8,%zmm0
+	vfnmadd231pd %zmm4,%zmm9,%zmm0
+	vfmadd231pd  %zmm4,%zmm8,%zmm10
+	vmovapd	%zmm10,%zmm4
+	# Column 1 (zmm1=re, zmm5=im): twist at rax+1024
+	vmovapd	1024(%rax),%zmm8
+	vmovapd	1088(%rax),%zmm9
+	vmulpd	%zmm1,%zmm9,%zmm10
+	vmulpd	%zmm1,%zmm8,%zmm1
+	vfnmadd231pd %zmm5,%zmm9,%zmm1
+	vfmadd231pd  %zmm5,%zmm8,%zmm10
+	vmovapd	%zmm10,%zmm5
+	# Column 2 (zmm2=re, zmm6=im): twist at rax+2048
+	vmovapd	2048(%rax),%zmm8
+	vmovapd	2112(%rax),%zmm9
+	vmulpd	%zmm2,%zmm9,%zmm10
+	vmulpd	%zmm2,%zmm8,%zmm2
+	vfnmadd231pd %zmm6,%zmm9,%zmm2
+	vfmadd231pd  %zmm6,%zmm8,%zmm10
+	vmovapd	%zmm10,%zmm6
+	# Column 3 (zmm3=re, zmm7=im): twist at rax+3072
+	vmovapd	3072(%rax),%zmm8
+	vmovapd	3136(%rax),%zmm9
+	vmulpd	%zmm3,%zmm9,%zmm10
+	vmulpd	%zmm3,%zmm8,%zmm3
+	vfnmadd231pd %zmm7,%zmm9,%zmm3
+	vfmadd231pd  %zmm7,%zmm8,%zmm10
+	vmovapd	%zmm10,%zmm7
+	# ── IFFT DIF butterflies (identical to regular Option D) ──
+	# halfnn=128 DIF: zmm0<->zmm2 with W128[i]
+	vmovapd	(%rcx),%zmm8
+	vmovapd	64(%rcx),%zmm9
+	vsubpd	%zmm2,%zmm0,%zmm30
+	vsubpd	%zmm6,%zmm4,%zmm31
+	vaddpd	%zmm2,%zmm0,%zmm0
+	vaddpd	%zmm6,%zmm4,%zmm4
+	vmulpd	%zmm30,%zmm8,%zmm2
+	vfnmadd231pd %zmm31,%zmm9,%zmm2
+	vmulpd	%zmm30,%zmm9,%zmm6
+	vfmadd231pd  %zmm31,%zmm8,%zmm6
+	# halfnn=128 DIF: zmm1<->zmm3 with W128[i+64]
+	vmovapd	(%r14),%zmm8
+	vmovapd	64(%r14),%zmm9
+	vsubpd	%zmm3,%zmm1,%zmm30
+	vsubpd	%zmm7,%zmm5,%zmm31
+	vaddpd	%zmm3,%zmm1,%zmm1
+	vaddpd	%zmm7,%zmm5,%zmm5
+	vmulpd	%zmm30,%zmm8,%zmm3
+	vfnmadd231pd %zmm31,%zmm9,%zmm3
+	vmulpd	%zmm30,%zmm9,%zmm7
+	vfmadd231pd  %zmm31,%zmm8,%zmm7
+	# halfnn=64 DIF: zmm0<->zmm1 with W64[i]
+	vmovapd	(%rdx),%zmm8
+	vmovapd	64(%rdx),%zmm9
+	vsubpd	%zmm1,%zmm0,%zmm30
+	vsubpd	%zmm5,%zmm4,%zmm31
+	vaddpd	%zmm1,%zmm0,%zmm0
+	vaddpd	%zmm5,%zmm4,%zmm4
+	vmulpd	%zmm30,%zmm8,%zmm1
+	vfnmadd231pd %zmm31,%zmm9,%zmm1
+	vmulpd	%zmm30,%zmm9,%zmm5
+	vfmadd231pd  %zmm31,%zmm8,%zmm5
+	# halfnn=64 DIF: zmm2<->zmm3 with W64[i] (same trig)
+	vsubpd	%zmm3,%zmm2,%zmm30
+	vsubpd	%zmm7,%zmm6,%zmm31
+	vaddpd	%zmm3,%zmm2,%zmm2
+	vaddpd	%zmm7,%zmm6,%zmm6
+	vmulpd	%zmm30,%zmm8,%zmm3
+	vfnmadd231pd %zmm31,%zmm9,%zmm3
+	vmulpd	%zmm30,%zmm9,%zmm7
+	vfmadd231pd  %zmm31,%zmm8,%zmm7
+	# Store results
+	vmovapd	%zmm0,(%rdi,%rbx)
+	vmovapd	%zmm1,512(%rdi,%rbx)
+	vmovapd	%zmm2,1024(%rdi,%rbx)
+	vmovapd	%zmm3,1536(%rdi,%rbx)
+	vmovapd	%zmm4,(%rsi,%rbx)
+	vmovapd	%zmm5,512(%rsi,%rbx)
+	vmovapd	%zmm6,1024(%rsi,%rbx)
+	vmovapd	%zmm7,1536(%rsi,%rbx)
+	# Advance
+	addq	$64,%rbx
+	leaq	128(%rcx),%rcx
+	leaq	128(%r14),%r14
+	leaq	128(%rdx),%rdx
+	leaq	128(%rax),%rax
+	cmpq	$512,%rbx
+	jb	ifft_fused_twist_d_loop
+	# r8 is already at W64 trig base (set up before loop)
+	movq	$64,%r12
 	jmp	ifft_option_c_entry
 
 ifft_d_small_n:
