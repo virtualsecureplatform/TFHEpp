@@ -34,12 +34,12 @@ int main()
     }
 
     {
-        using iksP10 = TFHEpp::lvl10param;
+        using iksP10 = TFHEpp::lvl1hparam;
         using iksP21 = TFHEpp::lvl21param;
-        using bkP01 = TFHEpp::lvl01param;
-        using bkP02 = TFHEpp::lvl02param;
-        using iksP20 = TFHEpp::lvl22param;
-        using bigP = typename iksP20::domainP;
+        using bkP01 = TFHEpp::lvlh1param;
+        using bkP02 = TFHEpp::lvlh2param;
+        using iksP20 = TFHEpp::lvl2hparam;
+        using bigP = TFHEpp::lvl2param;
         constexpr uint32_t validbit = 8;
 
         TFHEpp::SecretKey sk;
@@ -53,7 +53,7 @@ int main()
         const auto encoded = TFHEpp::EncodeHatEncoderP<bigP>(9);
         const auto big = TFHEpp::bigNumSymIntEncrypt<bigP>(encoded, sk.key.get<bigP>());
 
-        std::vector<TFHEpp::TLWE<typename bkP01::targetP>> out(validbit);
+        std::vector<TFHEpp::TLWE<typename iksP10::domainP>> out(validbit);
         TFHEpp::BIGNUM2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02, iksP20, 4, 2>(
             out, big, ek, sk);
 
