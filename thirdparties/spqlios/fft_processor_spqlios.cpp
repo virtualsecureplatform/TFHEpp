@@ -136,6 +136,19 @@ void FFT_Processor_Spqlios::execute_reverse_torus64(double* res, const uint64_t*
     ifft(tables_reverse,res);
 }
 
+void FFT_Processor_Spqlios::execute_reverse_torus64_uint(
+    double *res, const uint64_t *a)
+{
+#ifdef USE_AVX512
+    __m512d *ri512 = (__m512d *) res;
+    __m512i *aa = (__m512i *) a;
+    for (size_t i = 0; i < N / 8; i++) ri512[i] = _mm512_cvtepi64_pd(aa[i]);
+#else
+    for (int i = 0; i < N; i++) res[i] = static_cast<double>(a[i]);
+#endif
+    ifft(tables_reverse, res);
+}
+
 void FFT_Processor_Spqlios::execute_direct_torus32(uint32_t *res, const double *a) {
     //TODO: parallelization
     static const double _2sN = double(2) / double(N);
@@ -317,6 +330,59 @@ void FFT_Processor_Spqlios::execute_direct_torus32_rescale(uint32_t *res, const 
     for (int32_t i = 0; i < N; i++) res[i] = static_cast<uint32_t>(int64_t(real_inout_direct[i]/Δ));
 }
 
+void FFT_Processor_Spqlios::execute_direct_torus32_rescale_bignum(
+    uint32_t *res, const double *a, const double q,
+    const uint32_t plain_modulus)
+{
+    static const double _2sN = double(2) / double(N);
+    {
+        double *dst = real_inout_direct;
+        const double *sit = a;
+        const double *send = a + N;
+        const double *bla = &_2sN;
+#ifdef USE_AVX512
+        __asm__ __volatile__(
+            "vbroadcastsd (%3),%%zmm2\n"
+            "1:\n"
+            "vmovupd (%1),%%zmm0\n"
+            "vmulpd %%zmm2,%%zmm0,%%zmm0\n"
+            "vmovupd %%zmm0,(%0)\n"
+            "addq $64,%1\n"
+            "addq $64,%0\n"
+            "cmpq %2,%1\n"
+            "jb 1b\n"
+            : "=r"(dst), "=r"(sit), "=r"(send), "=r"(bla)
+            : "0"(dst), "1"(sit), "2"(send), "3"(bla)
+            : "%zmm0", "%zmm2", "memory");
+#else
+        __asm__ __volatile__(
+            "vbroadcastsd (%3),%%ymm2\n"
+            "1:\n"
+            "vmovupd (%1),%%ymm0\n"
+            "vmulpd %%ymm2,%%ymm0,%%ymm0\n"
+            "vmovapd %%ymm0,(%0)\n"
+            "addq $32,%1\n"
+            "addq $32,%0\n"
+            "cmpq %2,%1\n"
+            "jb 1b\n"
+            : "=r"(dst), "=r"(sit), "=r"(send), "=r"(bla)
+            : "0"(dst), "1"(sit), "2"(send), "3"(bla)
+            : "%ymm0", "%ymm2", "memory");
+#endif
+    }
+    fft(tables_direct, real_inout_direct);
+    for (int32_t i = 0; i < N; i++) {
+        if (i == 0)
+            res[i] = static_cast<uint32_t>(
+                std::llround(-real_inout_direct[N - 1] / q -
+                             real_inout_direct[0] * plain_modulus / q));
+        else
+            res[i] = static_cast<uint32_t>(
+                std::llround(real_inout_direct[i - 1] / q -
+                             real_inout_direct[i] * plain_modulus / q));
+    }
+}
+
 void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, double* a) {
     static const double _2sN = double(2)/double(N);
     // Scale a in-place by 2/N, then FFT directly on a — no copy to real_inout_direct.
@@ -440,6 +506,71 @@ void FFT_Processor_Spqlios::execute_direct_torus64_rescale(uint64_t* res, const 
     }
     fft(tables_direct,real_inout_direct); 
     for (int i=0; i<N; i++) res[i] = uint64_t(std::round(real_inout_direct[i]/Δ));
+}
+
+void FFT_Processor_Spqlios::execute_direct_torus64_rescale_bignum(
+    uint64_t *res, const double *a, const uint32_t plain_modulus)
+{
+    static const double _2sN = double(2) / double(N);
+    {
+        double *dst = real_inout_direct;
+        const double *sit = a;
+        const double *send = a + N;
+        const double *bla = &_2sN;
+        __asm__ __volatile__(
+            "vbroadcastsd (%3),%%ymm2\n"
+            "1:\n"
+            "vmovupd (%1),%%ymm0\n"
+            "vmulpd %%ymm2,%%ymm0,%%ymm0\n"
+            "vmovapd %%ymm0,(%0)\n"
+            "addq $32,%1\n"
+            "addq $32,%0\n"
+            "cmpq %2,%1\n"
+            "jb 1b\n"
+            : "=r"(dst), "=r"(sit), "=r"(send), "=r"(bla)
+            : "0"(dst), "1"(sit), "2"(send), "3"(bla)
+            : "%ymm0", "%ymm2", "memory");
+    }
+    fft(tables_direct, real_inout_direct);
+#ifdef USE_AVX512
+    __m512d *ri512 = (__m512d *) real_inout_direct;
+    __m512i *res512 = (__m512i *) res;
+    const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
+    for (size_t i = 0; i < N / 8; i++) {
+        const __m512d v1 = _mm512_scalef_pd(ri512[i], -modc);
+        const __m512d v2 = _mm512_reduce_pd(v1, 0);
+        const __m512d v3 = _mm512_scalef_pd(v2, modc);
+        res512[i] = _mm512_cvtpd_epi64(v3);
+    }
+#else
+    const uint64_t *vals = (const uint64_t *) real_inout_direct;
+    static const uint64_t valmask0 = 0x000FFFFFFFFFFFFFul;
+    static const uint64_t valmask1 = 0x0010000000000000ul;
+    static const uint16_t expmask0 = 0x07FFu;
+    for (int i = 0; i < N; i++) {
+        uint32_t prev = (i == 0) ? N - 1 : i - 1;
+
+        uint64_t val_prev = (vals[prev] & valmask0) | valmask1;
+        uint16_t exp_prev = (vals[prev] >> 52) & expmask0;
+        int16_t shift_prev = exp_prev - 1075 - 63;
+        uint64_t scaled_prev =
+            shift_prev > 0 ? (val_prev << shift_prev) : (val_prev >> -shift_prev);
+
+        uint64_t val_cur = (vals[i] & valmask0) | valmask1;
+        uint16_t exp_cur = (vals[i] >> 52) & expmask0;
+        int16_t shift_cur = exp_cur - 1075 - 63;
+        val_cur *= plain_modulus;
+        uint64_t scaled_cur =
+            shift_cur > 0 ? (val_cur << shift_cur) : (val_cur >> -shift_cur);
+
+        if (i == 0)
+            res[i] = -((vals[prev] >> 63) ? -scaled_prev : scaled_prev) -
+                     ((vals[i] >> 63) ? -scaled_cur : scaled_cur);
+        else
+            res[i] = ((vals[prev] >> 63) ? -scaled_prev : scaled_prev) -
+                     ((vals[i] >> 63) ? -scaled_cur : scaled_cur);
+    }
+#endif
 }
 
 FFT_Processor_Spqlios::~FFT_Processor_Spqlios() {

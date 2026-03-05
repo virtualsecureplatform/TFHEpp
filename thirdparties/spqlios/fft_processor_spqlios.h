@@ -44,7 +44,13 @@ public:
 
     void execute_direct_torus32_rescale(uint32_t *res, const double *a, const double Δ);
 
+    void execute_direct_torus32_rescale_bignum(
+        uint32_t *res, const double *a, const double q,
+        const uint32_t plain_modulus);
+
     void execute_reverse_torus64(double* res, const uint64_t* a);
+
+    void execute_reverse_torus64_uint(double *res, const uint64_t *a);
     
     void execute_direct_torus64(uint64_t* res, double* a);
 
@@ -53,6 +59,9 @@ public:
     void execute_direct_torus64_add(uint64_t* res, double* a);
 
     void execute_direct_torus64_rescale(uint64_t* res, const double* a, const double Δ);
+
+    void execute_direct_torus64_rescale_bignum(
+        uint64_t *res, const double *a, const uint32_t plain_modulus);
 
     ~FFT_Processor_Spqlios();
 };

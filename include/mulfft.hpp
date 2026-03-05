@@ -208,8 +208,8 @@ inline void TwistIFFTUInt(PolynomialInFD<P> &res, const Polynomial<P> &a)
         // if constexpr (std::is_same_v<typename P::T, uint64_t>)
         // fftplvl1.execute_reverse_torus64(res.data(), a.data());
     }
-    // else if constexpr (std::is_same_v<typename P::T, uint64_t>)
-    // fftplvl2.execute_reverse_torus64(res.data(), a.data());
+    else if constexpr (std::is_same_v<typename P::T, uint64_t>)
+        fftplvl2.execute_reverse_torus64_uint(res.data(), a.data());
     else
         static_assert(false_v<typename P::T>, "Undefined TwistIFFT!");
 }
