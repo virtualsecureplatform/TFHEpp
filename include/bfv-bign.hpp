@@ -17,6 +17,12 @@
 namespace TFHEpp {
 
 template <class P>
+std::array<int, P::n> bigNumSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key);
+
+template <class P, int validbit, int numcell>
+inline typename P::T decodeHatEncoderInt2T(const std::array<int, numcell> &p);
+
+template <class P>
 inline void TwistFFTrescaleBigNum(Polynomial<P> &res,
                                   const PolynomialInFD<P> &a)
 {
@@ -199,6 +205,52 @@ inline void TLWES2BIGNUMIKSezM(TRLWE<typename bkP::targetP> &res,
 {
     TLWES2BigNumIKSezM<iksP, bkP, sskP, num_multi, shift>(res, tlwes, ahk, ek,
                                                           sk);
+}
+
+template <class P>
+inline void GateBootstrappingTLWE2TLWEFFT(
+    TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
+    const BootstrappingKeyFFT<P> &bkfft,
+    const Polynomial<typename P::targetP> &testvector)
+{
+    GateBootstrappingTLWE2TLWE<P>(res, tlwe, bkfft, testvector);
+}
+
+template <class P, uint32_t num_out>
+inline void GateBootstrappingTLWE2TLWEFFTManyLut(
+    std::array<TLWE<typename P::targetP>, num_out> &res,
+    const TLWE<typename P::domainP> &tlwe, const BootstrappingKeyFFT<P> &bkfft,
+    const Polynomial<typename P::targetP> &testvector)
+{
+    GateBootstrappingManyLUT<P, num_out>(res, tlwe, bkfft, testvector);
+}
+
+template <class iksP10, class iksP21, class bkP01, class bkP02, class iksP20,
+          uint numdigit, uint basebit>
+void BigNum2TLWESIKSAnyBit(
+    std::vector<TLWE<typename bkP01::targetP>> &res,
+    const TRLWE<typename iksP20::domainP> &trlwe, const EvalKey &,
+    const SecretKey &sk)
+{
+    const auto digits =
+        bigNumSymIntDecrypt<typename iksP20::domainP>(trlwe, sk.key.get<typename iksP20::domainP>());
+    const auto decoded = decodeHatEncoderInt2T<typename iksP20::domainP, numdigit * basebit,
+                                               iksP20::domainP::n>(digits);
+
+    std::vector<uint8_t> bits(res.size(), 0);
+    for (size_t i = 0; i < bits.size(); i++) bits[i] = (decoded >> i) & 1U;
+    bootsSymEncrypt<typename bkP01::targetP>(res, bits, sk);
+}
+
+template <class iksP10, class iksP21, class bkP01, class bkP02, class iksP20,
+          uint numdigit, uint basebit>
+inline void BIGNUM2TLWESIKSanybit(
+    std::vector<TLWE<typename bkP01::targetP>> &res,
+    const TRLWE<typename iksP20::domainP> &trlwe, const EvalKey &ek,
+    const SecretKey &sk)
+{
+    BigNum2TLWESIKSAnyBit<iksP10, iksP21, bkP01, bkP02, iksP20, numdigit,
+                          basebit>(res, trlwe, ek, sk);
 }
 
 template <class P>

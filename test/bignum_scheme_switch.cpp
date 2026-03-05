@@ -33,5 +33,35 @@ int main()
         assert(nonzero);
     }
 
+    {
+        using iksP10 = TFHEpp::lvl10param;
+        using iksP21 = TFHEpp::lvl21param;
+        using bkP01 = TFHEpp::lvl01param;
+        using bkP02 = TFHEpp::lvl02param;
+        using iksP20 = TFHEpp::lvl22param;
+        using bigP = typename iksP20::domainP;
+        constexpr uint32_t validbit = 8;
+
+        TFHEpp::SecretKey sk;
+        TFHEpp::EvalKey ek;
+        ek.emplaceiksk<iksP10>(sk);
+        ek.emplaceiksk<iksP21>(sk);
+        ek.emplaceiksk<iksP20>(sk);
+        ek.emplacebkfft<bkP01>(sk);
+        ek.emplacebkfft<bkP02>(sk);
+
+        const auto encoded = TFHEpp::EncodeHatEncoderP<bigP>(9);
+        const auto big = TFHEpp::bigNumSymIntEncrypt<bigP>(encoded, sk.key.get<bigP>());
+
+        std::vector<TFHEpp::TLWE<typename bkP01::targetP>> out(validbit);
+        TFHEpp::BIGNUM2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02, iksP20, 4, 2>(
+            out, big, ek, sk);
+
+        bool nonzero = false;
+        for (const auto &tlwe : out)
+            for (const auto value : tlwe) nonzero = nonzero || (value != 0);
+        assert(nonzero);
+    }
+
     std::cout << "Passed" << std::endl;
 }
