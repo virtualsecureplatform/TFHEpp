@@ -17,28 +17,28 @@
 namespace TFHEpp {
 
 template <class P>
-std::array<int, P::n> bigNumSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key);
+std::array<int, P::n> clpxSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key);
 
 template <class P, int validbit, int numcell>
 inline typename P::T decodeHatEncoderInt2T(const std::array<int, numcell> &p);
 
 template <class P>
-inline void TwistFFTrescaleBigNum(Polynomial<P> &res,
+inline void TwistFFTrescaleCLPX(Polynomial<P> &res,
                                   const PolynomialInFD<P> &a)
 {
     const double q = std::ldexp(1.0, std::numeric_limits<typename P::T>::digits - 1);
     if constexpr (std::is_same_v<typename P::T, uint32_t>)
-        fftplvl1.execute_direct_torus32_rescale_bignum(
+        fftplvl1.execute_direct_torus32_rescale_clpx(
             res.data(), a.data(), q, P::plain_modulus);
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
-        fftplvl2.execute_direct_torus64_rescale_bignum(
+        fftplvl2.execute_direct_torus64_rescale_clpx(
             res.data(), a.data(), P::plain_modulus);
     else
-        static_assert(false_v<typename P::T>, "Undefined BigNum FFT rescale");
+        static_assert(false_v<typename P::T>, "Undefined CLPX FFT rescale");
 }
 
 template <class P>
-inline void PolyMulRescaleUnsignedBigNum(Polynomial<P> &res,
+inline void PolyMulRescaleUnsignedCLPX(Polynomial<P> &res,
                                          const Polynomial<P> &a,
                                          const Polynomial<P> &b)
 {
@@ -46,11 +46,11 @@ inline void PolyMulRescaleUnsignedBigNum(Polynomial<P> &res,
     TwistIFFTUInt<P>(ffta, a);
     TwistIFFTUInt<P>(fftb, b);
     MulInFD<P::n>(ffta, fftb);
-    TwistFFTrescaleBigNum<P>(res, ffta);
+    TwistFFTrescaleCLPX<P>(res, ffta);
 }
 
 template <class P>
-inline void TRLWEMultWithoutRelinerizationBigNum(TRLWE3<P> &res,
+inline void TRLWEMultWithoutRelinerizationCLPX(TRLWE3<P> &res,
                                                  const TRLWE<P> &a,
                                                  const TRLWE<P> &b)
 {
@@ -61,18 +61,18 @@ inline void TRLWEMultWithoutRelinerizationBigNum(TRLWE3<P> &res,
     TwistIFFTUInt<P>(ffta, a[1]);
     TwistIFFTUInt<P>(fftb, b[0]);
     FMAInFD<P::n>(fftc, ffta, fftb);
-    TwistFFTrescaleBigNum<P>(res[0], fftc);
+    TwistFFTrescaleCLPX<P>(res[0], fftc);
 
-    PolyMulRescaleUnsignedBigNum<P>(res[1], a[1], b[1]);
-    PolyMulRescaleUnsignedBigNum<P>(res[2], a[0], b[0]);
+    PolyMulRescaleUnsignedCLPX<P>(res[1], a[1], b[1]);
+    PolyMulRescaleUnsignedCLPX<P>(res[2], a[0], b[0]);
 }
 
 template <class P>
-inline void BigNumMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
+inline void CLPXMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
                        const relinKeyFFT<P> &relinkeyfft)
 {
     TRLWE3<P> mult;
-    TRLWEMultWithoutRelinerizationBigNum<P>(mult, a, b);
+    TRLWEMultWithoutRelinerizationCLPX<P>(mult, a, b);
     Relinearization<P>(res, mult, relinkeyfft);
 }
 
@@ -147,7 +147,7 @@ inline Polynomial<P> trlweSymDecryptpra(const TRLWE<P> &c, const Key<P> &key)
 }
 
 template <class iksP, class bkP, class sskP, int num_multi, int shift = 0>
-void TLWES2BigNumIKSezM(TRLWE<typename bkP::targetP> &res,
+void TLWES2CLPXIKSezM(TRLWE<typename bkP::targetP> &res,
                        const std::vector<TLWE<typename iksP::domainP>> &tlwes,
                        const AnnihilateKey<typename bkP::targetP> &ahk,
                        const EvalKey &ek, const SecretKey &)
@@ -197,16 +197,6 @@ void TLWES2BigNumIKSezM(TRLWE<typename bkP::targetP> &res,
     TLWE2TRLWEPacking<typename bkP::targetP>(res, temp1, ahk);
 }
 
-template <class iksP, class bkP, class sskP, int num_multi, int shift = 0>
-inline void TLWES2BIGNUMIKSezM(TRLWE<typename bkP::targetP> &res,
-                               const std::vector<TLWE<typename iksP::domainP>> &tlwes,
-                               const AnnihilateKey<typename bkP::targetP> &ahk,
-                               const EvalKey &ek, const SecretKey &sk)
-{
-    TLWES2BigNumIKSezM<iksP, bkP, sskP, num_multi, shift>(res, tlwes, ahk, ek,
-                                                          sk);
-}
-
 template <class P>
 inline void GateBootstrappingTLWE2TLWEFFT(
     TLWE<typename P::targetP> &res, const TLWE<typename P::domainP> &tlwe,
@@ -227,7 +217,7 @@ inline void GateBootstrappingTLWE2TLWEFFTManyLut(
 
 template <class iksP10, class iksP21, class bkP01, class bkP02, class iksP20,
           uint numdigit, uint basebit>
-void BigNum2TLWESIKSAnyBit(
+void CLPX2TLWESIKSAnyBit(
     std::vector<TLWE<typename bkP01::targetP>> &res,
     const TRLWE<typename iksP20::domainP> &trlwe, const EvalKey &ek,
     const SecretKey &sk)
@@ -453,12 +443,12 @@ void BigNum2TLWESIKSAnyBit(
 
 template <class iksP10, class iksP21, class bkP01, class bkP02, class iksP20,
           uint numdigit, uint basebit>
-inline void BIGNUM2TLWESIKSanybit(
+inline void CLPX2TLWESIKSanybit(
     std::vector<TLWE<typename bkP01::targetP>> &res,
     const TRLWE<typename iksP20::domainP> &trlwe, const EvalKey &ek,
     const SecretKey &sk)
 {
-    BigNum2TLWESIKSAnyBit<iksP10, iksP21, bkP01, bkP02, iksP20, numdigit,
+    CLPX2TLWESIKSAnyBit<iksP10, iksP21, bkP01, bkP02, iksP20, numdigit,
                           basebit>(res, trlwe, ek, sk);
 }
 
@@ -484,7 +474,7 @@ std::array<typename P::T, P::n> generateDelbM(
 }
 
 template <class P>
-inline TRLWE<P> bigNumSymIntEncrypt(const std::array<typename P::T, P::n> &p,
+inline TRLWE<P> clpxSymIntEncrypt(const std::array<typename P::T, P::n> &p,
                                     const Key<P> &key)
 {
     const auto hatp = generateDelbM<P>(p);
@@ -494,7 +484,7 @@ inline TRLWE<P> bigNumSymIntEncrypt(const std::array<typename P::T, P::n> &p,
 }
 
 template <class P>
-std::array<int, P::n> bigNumSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
+std::array<int, P::n> clpxSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
     const auto phase = trlwePhase<P>(c, key);
     std::array<double, P::n> signed_phase{};

@@ -24,7 +24,7 @@ int main()
         assert(tlwes.size() == digits.size());
 
         TFHEpp::TRLWE<typename sskP::targetP> switched;
-        TFHEpp::TLWES2BigNumIKSezM<iksP, bkP, sskP, 4, 0>(switched, tlwes, ahk, ek,
+        TFHEpp::TLWES2CLPXIKSezM<iksP, bkP, sskP, 4, 0>(switched, tlwes, ahk, ek,
                                                           sk);
 
         bool nonzero = false;
@@ -51,10 +51,10 @@ int main()
         ek.emplacebkfft<bkP02>(sk);
 
         const auto encoded = TFHEpp::EncodeHatEncoderP<bigP>(9);
-        const auto big = TFHEpp::bigNumSymIntEncrypt<bigP>(encoded, sk.key.get<bigP>());
+        const auto big = TFHEpp::clpxSymIntEncrypt<bigP>(encoded, sk.key.get<bigP>());
 
         std::vector<TFHEpp::TLWE<typename iksP10::domainP>> out(validbit);
-        TFHEpp::BIGNUM2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02, iksP20, 4, 2>(
+        TFHEpp::CLPX2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02, iksP20, 4, 2>(
             out, big, ek, sk);
 
         bool nonzero = false;

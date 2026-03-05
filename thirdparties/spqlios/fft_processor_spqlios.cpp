@@ -330,7 +330,7 @@ void FFT_Processor_Spqlios::execute_direct_torus32_rescale(uint32_t *res, const 
     for (int32_t i = 0; i < N; i++) res[i] = static_cast<uint32_t>(int64_t(real_inout_direct[i]/Δ));
 }
 
-void FFT_Processor_Spqlios::execute_direct_torus32_rescale_bignum(
+void FFT_Processor_Spqlios::execute_direct_torus32_rescale_clpx(
     uint32_t *res, const double *a, const double q,
     const uint32_t plain_modulus)
 {
@@ -508,7 +508,7 @@ void FFT_Processor_Spqlios::execute_direct_torus64_rescale(uint64_t* res, const 
     for (int i=0; i<N; i++) res[i] = uint64_t(std::round(real_inout_direct[i]/Δ));
 }
 
-void FFT_Processor_Spqlios::execute_direct_torus64_rescale_bignum(
+void FFT_Processor_Spqlios::execute_direct_torus64_rescale_clpx(
     uint64_t *res, const double *a, const uint32_t plain_modulus)
 {
     static const double _2sN = double(2) / double(N);
