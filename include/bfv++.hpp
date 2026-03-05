@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <cstdint>
 
 #include "keyswitch.hpp"
@@ -39,14 +40,15 @@ inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
     alignas(64) PolynomialInFD<P> decvecfft;
 
     if constexpr (P::l̅ > 1) {
-        // Double Decomposition path: l̅ separate accumulators
-        alignas(64) std::array<TRLWEInFD<P>, P::l̅> resfft_dd;
+        // Keep the DD scratch buffers off the stack to avoid
+        // platform-dependent crashes on constrained CI runners.
+        auto resfft_dd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
 
         // Initialize all accumulators to zero
         for (int j = 0; j < P::l̅; j++)
             for (int m = 0; m <= P::k; m++)
                 for (int n = 0; n < P::n; n++)
-                    resfft_dd[j][m][n] = 0.0;
+                    (*resfft_dd)[j][m][n] = 0.0;
 
         // Process with standard decomposition (l levels), accumulate into l̅ results
         for (int i = 0; i < P::l; i++) {
@@ -55,20 +57,20 @@ inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
             for (int j = 0; j < P::l̅; j++) {
                 const int row_idx = i * P::l̅ + j;
                 for (int m = 0; m <= P::k; m++) {
-                    FMAInFD<P::n>(resfft_dd[j][m], decvecfft,
+                    FMAInFD<P::n>((*resfft_dd)[j][m], decvecfft,
                                   relinkeyfft[row_idx][m]);
                 }
             }
         }
 
         // FFT back to coefficient domain for each accumulator and recombine
-        std::array<TRLWE<P>, P::l̅> results_dd;
+        auto results_dd = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
         for (int j = 0; j < P::l̅; j++)
             for (int k = 0; k <= P::k; k++)
-                TwistFFT<P>(results_dd[j][k], resfft_dd[j][k]);
+                TwistFFT<P>((*results_dd)[j][k], (*resfft_dd)[j][k]);
 
         // Recombine the l̅ TRLWEs back to single TRLWE
-        RecombineTRLWEFromDD<P, false>(res, results_dd);
+        RecombineTRLWEFromDD<P, false>(res, *results_dd);
     }
     else {
         // Standard path

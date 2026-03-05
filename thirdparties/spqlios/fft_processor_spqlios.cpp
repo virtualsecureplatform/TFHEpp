@@ -122,9 +122,12 @@ void FFT_Processor_Spqlios::execute_reverse_torus32(double *res, const uint32_t 
 
 void FFT_Processor_Spqlios::execute_reverse_torus64(double* res, const uint64_t* a) {
     #ifdef USE_AVX512
-    __m512d * ri512 = (__m512d *) res;
-    __m512i * aa = (__m512i *) a;
-    for (size_t i = 0; i < N/8; i++) ri512[i] = _mm512_cvtepi64_pd (aa[i]);
+    for (size_t i = 0; i < N / 8; i++) {
+        const __m512i vi =
+            _mm512_loadu_si512(reinterpret_cast<const __m512i *>(a + i * 8));
+        const __m512d vd = _mm512_cvtepi64_pd(vi);
+        _mm512_storeu_pd(res + i * 8, vd);
+    }
     #else
     const int64_t *aa = (const int64_t *)a;
     for (int i=0; i<N; i+=4) {
@@ -140,9 +143,12 @@ void FFT_Processor_Spqlios::execute_reverse_torus64_uint(
     double *res, const uint64_t *a)
 {
 #ifdef USE_AVX512
-    __m512d *ri512 = (__m512d *) res;
-    __m512i *aa = (__m512i *) a;
-    for (size_t i = 0; i < N / 8; i++) ri512[i] = _mm512_cvtepi64_pd(aa[i]);
+    for (size_t i = 0; i < N / 8; i++) {
+        const __m512i vi =
+            _mm512_loadu_si512(reinterpret_cast<const __m512i *>(a + i * 8));
+        const __m512d vd = _mm512_cvtepi64_pd(vi);
+        _mm512_storeu_pd(res + i * 8, vd);
+    }
 #else
     for (int i = 0; i < N; i++) res[i] = static_cast<double>(a[i]);
 #endif
@@ -396,16 +402,14 @@ void FFT_Processor_Spqlios::execute_direct_torus64(uint64_t* res, double* a) {
         }
     }
     fft(tables_direct, a);
-    {
-        __m512d * ri512 = (__m512d *) a;
-        __m512i * res512 = (__m512i *) res;
-        const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
-        for (size_t i = 0; i < (size_t)N / 8; i++) {
-            const __m512d _1 = _mm512_scalef_pd (ri512[i], -modc);
-            const __m512d _2 = _mm512_reduce_pd (_1, 0);
-            const __m512d _3 = _mm512_scalef_pd (_2, modc);
-            res512[i] = _mm512_cvtpd_epi64 (_3);
-        }
+    const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
+    for (size_t i = 0; i < (size_t)N / 8; i++) {
+        const __m512d v = _mm512_loadu_pd(a + i * 8);
+        const __m512d v1 = _mm512_scalef_pd(v, -modc);
+        const __m512d v2 = _mm512_reduce_pd(v1, 0);
+        const __m512d v3 = _mm512_scalef_pd(v2, modc);
+        const __m512i out = _mm512_cvtpd_epi64(v3);
+        _mm512_storeu_si512(reinterpret_cast<__m512i *>(res + i * 8), out);
     }
     #else
     {
@@ -443,16 +447,17 @@ void FFT_Processor_Spqlios::execute_direct_torus64_add(uint64_t* res, double* a)
         }
     }
     fft(tables_direct, a);
-    {
-        __m512d * ri512 = (__m512d *) a;
-        __m512i * res512 = (__m512i *) res;
-        const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
-        for (size_t i = 0; i < (size_t)N / 8; i++) {
-            const __m512d _1 = _mm512_scalef_pd (ri512[i], -modc);
-            const __m512d _2 = _mm512_reduce_pd (_1, 0);
-            const __m512d _3 = _mm512_scalef_pd (_2, modc);
-            res512[i] = _mm512_add_epi64(res512[i], _mm512_cvtpd_epi64 (_3));
-        }
+    const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
+    for (size_t i = 0; i < (size_t)N / 8; i++) {
+        const __m512d v = _mm512_loadu_pd(a + i * 8);
+        const __m512d v1 = _mm512_scalef_pd(v, -modc);
+        const __m512d v2 = _mm512_reduce_pd(v1, 0);
+        const __m512d v3 = _mm512_scalef_pd(v2, modc);
+        const __m512i add = _mm512_cvtpd_epi64(v3);
+        const __m512i cur = _mm512_loadu_si512(
+            reinterpret_cast<const __m512i *>(res + i * 8));
+        const __m512i out = _mm512_add_epi64(cur, add);
+        _mm512_storeu_si512(reinterpret_cast<__m512i *>(res + i * 8), out);
     }
     #else
     {
@@ -533,14 +538,14 @@ void FFT_Processor_Spqlios::execute_direct_torus64_rescale_clpx(
     }
     fft(tables_direct, real_inout_direct);
 #ifdef USE_AVX512
-    __m512d *ri512 = (__m512d *) real_inout_direct;
-    __m512i *res512 = (__m512i *) res;
     const __m512d modc = {64, 64, 64, 64, 64, 64, 64, 64};
     for (size_t i = 0; i < N / 8; i++) {
-        const __m512d v1 = _mm512_scalef_pd(ri512[i], -modc);
+        const __m512d v = _mm512_loadu_pd(real_inout_direct + i * 8);
+        const __m512d v1 = _mm512_scalef_pd(v, -modc);
         const __m512d v2 = _mm512_reduce_pd(v1, 0);
         const __m512d v3 = _mm512_scalef_pd(v2, modc);
-        res512[i] = _mm512_cvtpd_epi64(v3);
+        const __m512i out = _mm512_cvtpd_epi64(v3);
+        _mm512_storeu_si512(reinterpret_cast<__m512i *>(res + i * 8), out);
     }
 #else
     const uint64_t *vals = (const uint64_t *) real_inout_direct;
