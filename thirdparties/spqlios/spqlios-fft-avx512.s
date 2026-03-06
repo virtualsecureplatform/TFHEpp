@@ -349,14 +349,27 @@ fft_r4_8_16_32_loop:
 	# Skip halfnn=4,8,16,32 trig entries (64+128+256+512=960 bytes)
 	leaq	960(%r8),%rdx
 	movq	$64,%rax
-	# Option D: fuse halfnn=64+128 when ns4 >= 256 (N >= 1024)
+	# Option D: fuse halfnn=64+128 into a single pass over 4-column groups.
+	# Each super-block covers 256 elements (4 columns × 64 elements).
+	# Trig values repeat across super-blocks, so we reset trig pointers
+	# each super-block and advance the data offset by 2048 bytes.
 	cmpq	$256,%r9
 	jb	ffthalfnnloop
-	je	fft_d64_128_twist_setup	/* N=1024: fuse with final twist */
-	# Regular Option D for N >= 2048
-	leaq	1024(%rdx),%r10		/* r10 = W128 base (r8+1984) */
-	leaq	1024(%r10),%r11		/* r11 = W128[i+64] base (r8+3008) */
-	movq	$0,%rbx			/* rbx = byte offset (0..448 step 64) */
+	je	fft_d64_128_twist_setup	/* ns4==256: fuse with final twist */
+	# ns4 > 256: Option D with outer super-block loop
+	leaq	1024(%rdx),%r10		/* r10 = W128 lo base */
+	leaq	1024(%r10),%r11		/* r11 = W128 hi base */
+	movq	%rdx,%r12		/* r12 = saved W64 trig base */
+	movq	%r10,%r13		/* r13 = saved W128 lo base */
+	movq	%r11,%r14		/* r14 = saved W128 hi base */
+	movq	$0,%rbx			/* rbx = data byte offset (outer+inner) */
+	leaq	(,%r9,8),%rax		/* rax = ns4 * 8 = total data bytes */
+.p2align 4
+fft_d64_128_outer:
+	movq	%r12,%rdx		/* reset W64 trig */
+	movq	%r13,%r10		/* reset W128 lo trig */
+	movq	%r14,%r11		/* reset W128 hi trig */
+	leaq	512(%rbx),%rcx		/* rcx = end of this super-block inner */
 .p2align 4
 fft_d64_128_loop:
 	# Load 4 columns of re data
@@ -422,15 +435,19 @@ fft_d64_128_loop:
 	vmovapd	%zmm5,512(%rsi,%rbx)
 	vmovapd	%zmm6,1024(%rsi,%rbx)
 	vmovapd	%zmm7,1536(%rsi,%rbx)
-	# Advance
+	# Advance inner
 	addq	$64,%rbx		/* data: +8 doubles */
 	leaq	128(%rdx),%rdx		/* W64 trig: +128 bytes */
 	leaq	128(%r10),%r10		/* W128 lo: +128 bytes */
 	leaq	128(%r11),%r11		/* W128 hi: +128 bytes */
-	cmpq	$512,%rbx		/* done when rbx = 64*8 = 512 */
+	cmpq	%rcx,%rbx		/* end of this super-block? */
 	jb	fft_d64_128_loop
-	# After fused pass: r11 = r8+4032 = next trig entry (W256 or final twist)
-	movq	%r11,%rdx
+	# Advance to next super-block: skip from sb+512 to sb+2048
+	leaq	1536(%rbx),%rbx
+	cmpq	%rax,%rbx		/* done with all super-blocks? */
+	jb	fft_d64_128_outer
+	# After fused pass: advance to halfnn=256 trig
+	leaq	4032(%r8),%rdx		/* rdx = r8 + 960 + 1024 + 2048 */
 	movq	$256,%rax		/* halfnn = 256 */
 	cmpq	%r9,%rax
 	jb	ffthalfnnloop		/* continue general loop for N >= 2048 */

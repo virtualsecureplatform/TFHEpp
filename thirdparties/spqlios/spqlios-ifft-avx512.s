@@ -170,22 +170,35 @@ ifft_post_nnloop:
 	cmpq $256,%r12
 	jne ifft_d_small_n
 
-# ── Option D: fused {halfnn=128, halfnn=64} pass for N >= 1024 ──────────────
+# ── Option D: fused {halfnn=128, halfnn=64} pass ────────────────────────────
 # DIF order: process halfnn=128 first (large), then halfnn=64 (small)
 # 4-column groups: (i, i+64, i+128, i+192) for i=0..63 step 8
+# Each super-block covers 256 elements. Trig repeats across super-blocks.
 # Trig: W128[i] + W128[i+64] (4 ZMMs) + W64[i] (2 ZMMs) = 6 trig ZMMs
 # Data: 4 re + 4 im = 8 ZMMs. Temp: zmm30-31. Total: 16 ZMMs.
 	# Advance r8 for halfnn=128 (nn=256, r12=256)
 	leaq (%r8,%r12,8),%r8
 	leaq (%r8,%r12,8),%r8		/* r8 = W128 trig base */
-	movq %r8,%rcx			/* rcx = W128 trig pointer */
-	leaq 1024(%rcx),%r14		/* r14 = W128[i+64] trig pointer */
+	movq %r8,%rcx			/* rcx = W128 lo trig base */
+	leaq 1024(%rcx),%r14		/* r14 = W128 hi trig base */
 	# Advance r8 for halfnn=64 (nn=128)
 	movq $128,%r13
 	leaq (%r8,%r13,8),%r8
 	leaq (%r8,%r13,8),%r8		/* r8 = W64 trig base */
-	movq %r8,%rdx			/* rdx = W64 trig pointer */
-	movq $0,%rbx			/* rbx = byte offset */
+	movq %r8,%rdx			/* rdx = W64 trig base */
+	# Save trig bases for super-block reset
+	# r9 is free in IFFT (not used as ns4 constant here; r10 is ns4)
+	movq %rcx,%r9			/* r9 = saved W128 lo base */
+	movq %r14,%r13			/* r13 = saved W128 hi base */
+	movq %rdx,%r11			/* r11 = saved W64 base */
+	movq $0,%rbx			/* rbx = data byte offset */
+	leaq (,%r10,8),%rax		/* rax = ns4 * 8 = total data bytes */
+.p2align 4
+ifft_d128_64_outer:
+	movq %r9,%rcx			/* reset W128 lo trig */
+	movq %r13,%r14			/* reset W128 hi trig */
+	movq %r11,%rdx			/* reset W64 trig */
+	leaq 512(%rbx),%r12		/* r12 = end of this super-block */
 .p2align 4
 ifft_d128_64_loop:
 	# Load 4 columns of data
@@ -251,13 +264,17 @@ ifft_d128_64_loop:
 	vmovapd	%zmm5,512(%rsi,%rbx)
 	vmovapd	%zmm6,1024(%rsi,%rbx)
 	vmovapd	%zmm7,1536(%rsi,%rbx)
-	# Advance pointers
+	# Advance inner pointers
 	addq	$64,%rbx		/* data: +8 doubles */
 	leaq	128(%rcx),%rcx		/* W128 lo: +128 bytes */
 	leaq	128(%r14),%r14		/* W128 hi: +128 bytes */
 	leaq	128(%rdx),%rdx		/* W64: +128 bytes */
-	cmpq	$512,%rbx		/* done when rbx = 64*8 = 512 */
+	cmpq	%r12,%rbx		/* end of this super-block? */
 	jb	ifft_d128_64_loop
+	# Advance to next super-block: skip from sb+512 to sb+2048
+	leaq	1536(%rbx),%rbx
+	cmpq	%rax,%rbx		/* done with all super-blocks? */
+	jb	ifft_d128_64_outer
 	# r8 is at W64 trig base (correct for Option C to advance from)
 	movq	$64,%r12		/* r12 = 64 (nn for Option C) */
 	jmp	ifft_option_c_entry
