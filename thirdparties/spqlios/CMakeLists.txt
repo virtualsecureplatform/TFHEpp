@@ -2,8 +2,12 @@
 enable_language(ASM)
 
 if(USE_AVX512)
-  set(SRCS_FMA spqlios-fft-avx512.s spqlios-ifft-avx512.s
-               fft_processor_spqlios.cpp spqlios-fft-impl-avx512.cpp)
+  # The dedicated AVX-512 SPQLIOS FFT kernel is currently numerically
+  # unstable on the TFHEpp test suite. Keep USE_AVX512 enabled for the
+  # higher-level FD arithmetic intrinsics, but route the FFT backend through
+  # the stable FMA implementation until the AVX-512 kernel is fixed.
+  set(SRCS_FMA spqlios-fft-fma.s spqlios-ifft-fma.s fft_processor_spqlios.cpp
+               spqlios-fft-impl.cpp)
 else()
   set(SRCS_FMA spqlios-fft-fma.s spqlios-ifft-fma.s fft_processor_spqlios.cpp
                spqlios-fft-impl.cpp)
