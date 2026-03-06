@@ -201,6 +201,9 @@ using an Ubuntu 24.04 container.
 Here is the slides (in japanese).
 https://nindanaoto.github.io/
 
+# Contribution
+Scheme Switching between TFHE and CLPX is contributed by Toshi Nagai, a former Master student graduated from the same lab.
+
 # Citation
 
 For the people who want to cite this library directly (may be in addition to [VSP paper](https://www.usenix.org/conference/usenixsecurity21/presentation/matsuoka)), I give a below example of bibtex citation.
