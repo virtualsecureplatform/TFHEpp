@@ -147,10 +147,10 @@ inline Polynomial<P> trlweSymDecryptpra(const TRLWE<P> &c, const Key<P> &key)
 }
 
 template <class iksP, class bkP, class sskP, int num_multi, int shift = 0>
-void TLWES2CLPXIKSezM(TRLWE<typename bkP::targetP> &res,
-                       const std::vector<TLWE<typename iksP::domainP>> &tlwes,
-                       const AnnihilateKey<typename bkP::targetP> &ahk,
-                       const EvalKey &ek, const SecretKey &)
+void TLWES2CLPXIKS(TRLWE<typename bkP::targetP> &res,
+                   const std::vector<TLWE<typename iksP::domainP>> &tlwes,
+                   const AnnihilateKey<typename bkP::targetP> &ahk,
+                   const EvalKey &ek)
 {
     constexpr int t = std::numeric_limits<typename bkP::targetP::T>::digits;
     const uint32_t tlnum = static_cast<uint32_t>(tlwes.size());

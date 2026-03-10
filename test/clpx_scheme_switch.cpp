@@ -24,8 +24,7 @@ int main()
         assert(tlwes.size() == digits.size());
 
         TFHEpp::TRLWE<typename sskP::targetP> switched;
-        TFHEpp::TLWES2CLPXIKSezM<iksP, bkP, sskP, 4, 0>(switched, tlwes, ahk, ek,
-                                                          sk);
+        TFHEpp::TLWES2CLPXIKS<iksP, bkP, sskP, 4, 0>(switched, tlwes, ahk, ek);
 
         bool nonzero = false;
         for (const auto &poly : switched)
