@@ -98,7 +98,7 @@ inline void TwistFFT(Polynomial<P> &res, PolynomialInFD<P> &a)
             fftplvl1.execute_direct_torus64(res.data(), a.data());
     }
     else if constexpr (std::is_same_v<P, lvl3param> ||
-                       std::is_same_v<typename P::T, __uint128_t>) {
+                       std::is_same_v<P, lvl3simdparam>) {
         // Use rounding (execute_direct_torus64_rescale with D=1.0) and
         // sign-extend the int64 result to __int128_t → __uint128_t.
         // Both fixes are critical:
@@ -130,7 +130,7 @@ inline void TwistFFTAdd(Polynomial<P> &res, PolynomialInFD<P> &a)
             fftplvl1.execute_direct_torus64_add(res.data(), a.data());
     }
     else if constexpr (std::is_same_v<P, lvl3param> ||
-                       std::is_same_v<typename P::T, __uint128_t>) {
+                       std::is_same_v<P, lvl3simdparam>) {
         alignas(64) std::array<uint64_t, P::n> temp;
         fftplvl3.execute_direct_torus64_rescale(temp.data(), a.data(), 1.0);
         for (int i = 0; i < P::n; i++)
@@ -195,7 +195,7 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
             fftplvl1.execute_reverse_torus64(res.data(), a.data());
     }
     else if constexpr (std::is_same_v<P, lvl3param> ||
-                       std::is_same_v<typename P::T, __uint128_t>) {
+                       std::is_same_v<P, lvl3simdparam>) {
         // For 128-bit params with Double Decomposition:
         // Input is always decomposition digits (small integers in low 64 bits)
         // Use low 64 bits directly - no shift needed
@@ -547,7 +547,7 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         for (int i = 0; i < P::n; i++) ntta[i] *= nttb[i];
         TwistNTT<P>(res, ntta);
     }
-    else if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+    else if constexpr (std::is_same_v<P, lvl3simdparam>) {
         // Naive for 128-bit types (FFT/NTT don't support 128-bit precision)
         for (int i = 0; i < P::n; i++) {
             __uint128_t ri = 0;
@@ -598,7 +598,7 @@ template <class P>
 inline void PolyMulNaive(Polynomial<P> &res, const Polynomial<P> &a,
                          const Polynomial<P> &b)
 {
-    if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+    if constexpr (std::is_same_v<P, lvl3simdparam>) {
         for (int i = 0; i < P::n; i++) {
             __uint128_t ri = 0;
             for (int j = 0; j <= i; j++)

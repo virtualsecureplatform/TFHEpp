@@ -327,3 +327,38 @@ struct lvl31param {
 
 // Dummy
 using lvl41param = lvl31param;
+
+
+// lvl3simdparam: BFV SIMD parameter set with prime plain_modulus.
+// Full copy from params/128bit.hpp so that mulfft.hpp compiles regardless
+// of which parameter header is selected.
+struct lvl3simdparam {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static constexpr std::uint32_t nbit = 12;
+    static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 4;
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgbit = 21;
+    static constexpr std::uint32_t Bgₐbit = 21;
+    static constexpr uint32_t Bg = 1U << Bgbit;
+    static constexpr uint32_t Bgₐ = 1U << Bgₐbit;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = std::pow(2.0, -125);
+    using T = __uint128_t;
+    static constexpr T μ = static_cast<T>(1) << 125;
+    static constexpr uint32_t plain_modulusbit = 18;
+    static constexpr T plain_modulus = static_cast<T>(114689);
+    static constexpr double Δ =
+        static_cast<double>(static_cast<T>(1) << (128 - plain_modulusbit));
+    static constexpr T delta_int =
+        static_cast<T>(-1) / plain_modulus;
+    static constexpr uint64_t Q_mod_t =
+        static_cast<uint64_t>(static_cast<T>(-1) % plain_modulus) + 1;
+    static constexpr std::uint32_t l̅ = 8;
+    static constexpr std::uint32_t l̅ₐ = 8;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
+};
