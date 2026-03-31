@@ -1133,8 +1133,10 @@ void FFT_Processor_Spqlios_Intl::execute_direct_torus64_rescale(uint64_t *res, c
     alignas(64) double tmp[N];
     intl_fft_from(tables, a, tmp);
     for (int32_t i = 0; i < Ns2; i++) {
-        res[i] = (uint64_t)std::round(tmp[2*i]/D);
-        res[i+Ns2] = (uint64_t)std::round(tmp[2*i+1]/D);
+        // Cast through int64_t to avoid UB on negative doubles → uint64_t.
+        // std::llround gives the correctly rounded signed integer.
+        res[i] = static_cast<uint64_t>(static_cast<int64_t>(std::llround(tmp[2*i]/D)));
+        res[i+Ns2] = static_cast<uint64_t>(static_cast<int64_t>(std::llround(tmp[2*i+1]/D)));
     }
 }
 

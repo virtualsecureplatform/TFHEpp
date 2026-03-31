@@ -32,5 +32,8 @@
 #include "externs/gatebootstrapping.hpp"
 #endif
 
+// BFV SIMD slot operations
+#include "bfv-slots.hpp"
+
 // Application
 #include "aes.hpp"

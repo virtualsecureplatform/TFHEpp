@@ -107,125 +107,187 @@ inline void TRLWEMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
     Relinearization<P>(res, resmult, relinkeyfft);
 }
 
+// ---------------------------------------------------------------------------
+// 384-bit unsigned accumulator for BFV FullDD multiplication.
+// Stores a 6-limb (6 × 64-bit) unsigned value and supports wide shift-add.
+// The raw product c_a·c_b (256-bit) is accumulated using the positional weights
+// of the B̅g digits (up to 2^224), then divided by Δ = floor(Q/t) at the end.
+// ---------------------------------------------------------------------------
+struct Wide384 {
+    uint64_t w[6] = {};  // w[0] = LSB, w[5] = MSB
+
+    // Add a SIGNED 128-bit value left-shifted by `shift` bits.
+    // Handles negative values correctly (sign-extends before shifting).
+    void add_shifted(__int128_t svalue, int shift)
+    {
+        if (shift <= -128 || shift >= 384) return;
+        if (shift < 0) {
+            svalue >>= (-shift);
+            shift = 0;
+        }
+        // For negative values: decompose into magnitude + sign, add/subtract
+        const bool negative = (svalue < 0);
+        __uint128_t value = negative ? static_cast<__uint128_t>(-svalue)
+                                     : static_cast<__uint128_t>(svalue);
+
+        const int limb_offset = shift / 64;
+        const int bit_offset  = shift % 64;
+
+        uint64_t v0 = static_cast<uint64_t>(value);
+        uint64_t v1 = static_cast<uint64_t>(value >> 64);
+
+        uint64_t s0, s1, s2;
+        if (bit_offset == 0) {
+            s0 = v0; s1 = v1; s2 = 0;
+        } else {
+            s0 = v0 << bit_offset;
+            s1 = (v1 << bit_offset) | (v0 >> (64 - bit_offset));
+            s2 = v1 >> (64 - bit_offset);
+        }
+
+        if (!negative) {
+            // Add s0:s1:s2 with carry
+            uint64_t carry = 0;
+            for (int k = 0; k < 3 && limb_offset + k < 6; k++) {
+                uint64_t sv = (k == 0) ? s0 : (k == 1) ? s1 : s2;
+                __uint128_t sum = static_cast<__uint128_t>(w[limb_offset + k])
+                                + sv + carry;
+                w[limb_offset + k] = static_cast<uint64_t>(sum);
+                carry = static_cast<uint64_t>(sum >> 64);
+            }
+            for (int k = 3; carry && limb_offset + k < 6; k++) {
+                __uint128_t sum = static_cast<__uint128_t>(w[limb_offset + k]) + carry;
+                w[limb_offset + k] = static_cast<uint64_t>(sum);
+                carry = static_cast<uint64_t>(sum >> 64);
+            }
+        } else {
+            // Subtract s0:s1:s2 with borrow
+            uint64_t borrow = 0;
+            for (int k = 0; k < 3 && limb_offset + k < 6; k++) {
+                uint64_t sv = (k == 0) ? s0 : (k == 1) ? s1 : s2;
+                uint64_t wk = w[limb_offset + k];
+                // borrow detection: wk < sv + borrow (with care for overflow of sv+borrow)
+                uint64_t new_borrow = (wk < sv) || (wk - sv < borrow) ? 1 : 0;
+                w[limb_offset + k] = wk - sv - borrow;
+                borrow = new_borrow;
+            }
+            for (int k = 3; borrow && limb_offset + k < 6; k++) {
+                uint64_t wk = w[limb_offset + k];
+                uint64_t new_borrow = (wk < borrow) ? 1 : 0;
+                w[limb_offset + k] = wk - borrow;
+                borrow = new_borrow;
+            }
+        }
+    }
+
+    // Divide this 384-bit value by a 128-bit divisor, return low 128 bits of quotient.
+    // Uses the identity: the result modulo Q is just the low 128 bits.
+    __uint128_t div128(__uint128_t divisor) const
+    {
+        // Schoolbook long division with 128-bit "digits":
+        // Treat the 384-bit value as three 128-bit limbs: [L2:L1:L0]
+        // where L0 = w[0]:w[1], L1 = w[2]:w[3], L2 = w[4]:w[5].
+        __uint128_t L0 = static_cast<__uint128_t>(w[1]) << 64 | w[0];
+        __uint128_t L1 = static_cast<__uint128_t>(w[3]) << 64 | w[2];
+        __uint128_t L2 = static_cast<__uint128_t>(w[5]) << 64 | w[4];
+
+        // Long division from MSB: quotient digits q2, q1, q0
+        // Remainder fits in 128 bits at each step.
+        __uint128_t rem = L2 % divisor;
+
+        // Now divide (rem:L1) by divisor. rem < divisor, so this fits.
+        // Use: (rem * 2^128 + L1) / divisor
+        // Since rem < divisor < 2^128, rem*2^128 + L1 < 2*2^256 — needs care.
+        // Use iterative approach: process 64 bits at a time.
+        auto div256by128 = [](__uint128_t hi, __uint128_t lo,
+                              __uint128_t d) -> std::pair<__uint128_t, __uint128_t> {
+            // Divide (hi:lo) by d where hi < d. Returns (quotient, remainder).
+            // Process bit by bit for the high part, then use hardware div for low.
+            if (hi == 0) return {lo / d, lo % d};
+            __uint128_t q = 0;
+            __uint128_t r = hi;
+            // Process 128 bits of lo from MSB to LSB
+            for (int bit = 127; bit >= 0; bit--) {
+                // r = r * 2 + next_bit
+                bool overflow = (r >> 127) != 0;
+                r = (r << 1) | (static_cast<__uint128_t>((lo >> bit) & 1));
+                if (overflow || r >= d) {
+                    r -= d;
+                    q |= static_cast<__uint128_t>(1) << bit;
+                }
+            }
+            return {q, r};
+        };
+
+        auto [q1, rem1] = div256by128(rem, L1, divisor);
+        auto [q0, rem0] = div256by128(rem1, L0, divisor);
+
+        // The full quotient is (q2 * 2^256 + q1 * 2^128 + q0).
+        // We only need the low 128 bits for torus arithmetic.
+        return q0;
+    }
+};
+
 // Full Double Decomposition TRLWE Multiplication (without relinearization)
-// Both TRLWEs are decomposed by l̅, multiplication is polynomial-like in decomposition indices
-// Algorithm:
-//   1. Decompose a[k] and b[k] into l̅ components each using base B̅g
-//   2. For polynomial product, compute convolution in decomposition index space:
-//      (Σᵢ aᵢ·B̅g^i) × (Σⱼ bⱼ·B̅g^j) = Σₖ (Σᵢ₊ⱼ₌ₖ aᵢ·bⱼ)·B̅g^k
-//   3. Each aᵢ·bⱼ is computed via FFT polynomial multiplication
-//   4. IFFT to recover coefficients, rescale by Δ
-//   5. Recombine the 2l̅-1 terms back to proper scaling
+//
+// Accumulates the raw product c_a · c_b into 384-bit accumulators (one per
+// polynomial coefficient, per TRLWE3 component), then divides by
+// Δ = floor(Q/t) to perform the BFV rescaling.
+//
+// The digit positional weights are powers of 2 (from B̅g decomposition), so the
+// accumulation uses only shifts. The Δ-division is a single wide-divide at the end.
 template <class P>
 void TRLWEMultWithoutRelinearizationFullDD(TRLWE3<P> &res, const TRLWE<P> &a,
                                             const TRLWE<P> &b)
 {
     constexpr int width = std::numeric_limits<typename P::T>::digits;
 
-    // Decompose all input polynomials into l̅ components
-    // TRLWEBaseBbarDecompose gives: a = Σⱼ a_dec[j] * 2^(width - (j+1)*B̅gbit)
-    // where a_dec[j] has coefficients in [-B̅g/2, B̅g/2)
     std::array<TRLWE<P>, P::l̅> a_dec, b_dec;
     TRLWEBaseBbarDecompose<P>(a_dec, a);
     TRLWEBaseBbarDecompose<P>(b_dec, b);
 
-    // FFT all decomposed components
-    std::array<std::array<PolynomialInFD<P>, P::l̅>, P::k + 1> a_fft, b_fft;
-    for (int poly_idx = 0; poly_idx <= P::k; poly_idx++) {
-        for (int j = 0; j < P::l̅; j++) {
-            TwistIFFT<P>(a_fft[poly_idx][j], a_dec[j][poly_idx]);
-            TwistIFFT<P>(b_fft[poly_idx][j], b_dec[j][poly_idx]);
+    // 384-bit accumulators: [component][coefficient]
+    std::array<std::array<Wide384, P::n>, 3> acc{};
+
+    for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+        for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+            const int k = i + j;
+            // Raw positional shift (no Δ cancellation):
+            // digit_i weight = 2^(width - (i+1)*B̅gbit)
+            // digit_j weight = 2^(width - (j+1)*B̅gbit)
+            // product weight = 2^(2*width - (k+2)*B̅gbit)
+            const int shift = 2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+
+            if (shift <= -width) continue;
+
+            Polynomial<P> prod;
+
+            // c2: a[0]*b[0]
+            PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][0]);
+            for (uint32_t n = 0; n < P::n; n++)
+                acc[2][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+
+            // c1: a[1]*b[1]
+            PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][1]);
+            for (uint32_t n = 0; n < P::n; n++)
+                acc[1][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+
+            // c0: a[0]*b[1] + a[1]*b[0]
+            PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][1]);
+            for (uint32_t n = 0; n < P::n; n++)
+                acc[0][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+            PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][0]);
+            for (uint32_t n = 0; n < P::n; n++)
+                acc[0][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
         }
     }
 
-    // Compute c[0] = a[0]*b[1] + a[1]*b[0] using DD polynomial multiplication
-    std::array<PolynomialInFD<P>, 2 * P::l̅ - 1> c0_fft;
-    for (int k = 0; k < 2 * P::l̅ - 1; k++) {
-        for (int n = 0; n < P::n; n++) c0_fft[k][n] = 0.0;
-    }
-    for (int i = 0; i < P::l̅; i++) {
-        for (int j = 0; j < P::l̅; j++) {
-            FMAInFD<P::n>(c0_fft[i + j], a_fft[0][i], b_fft[1][j]);
-            FMAInFD<P::n>(c0_fft[i + j], a_fft[1][i], b_fft[0][j]);
-        }
-    }
-
-    // Compute c[1] = a[1]*b[1]
-    std::array<PolynomialInFD<P>, 2 * P::l̅ - 1> c1_fft;
-    for (int k = 0; k < 2 * P::l̅ - 1; k++) {
-        for (int n = 0; n < P::n; n++) c1_fft[k][n] = 0.0;
-    }
-    for (int i = 0; i < P::l̅; i++) {
-        for (int j = 0; j < P::l̅; j++) {
-            FMAInFD<P::n>(c1_fft[i + j], a_fft[1][i], b_fft[1][j]);
-        }
-    }
-
-    // Compute c[2] = a[0]*b[0]
-    std::array<PolynomialInFD<P>, 2 * P::l̅ - 1> c2_fft;
-    for (int k = 0; k < 2 * P::l̅ - 1; k++) {
-        for (int n = 0; n < P::n; n++) c2_fft[k][n] = 0.0;
-    }
-    for (int i = 0; i < P::l̅; i++) {
-        for (int j = 0; j < P::l̅; j++) {
-            FMAInFD<P::n>(c2_fft[i + j], a_fft[0][i], b_fft[0][j]);
-        }
-    }
-
-    // Initialize results to zero
-    for (int n = 0; n < P::n; n++) {
-        res[0][n] = 0;
-        res[1][n] = 0;
-        res[2][n] = 0;
-    }
-
-    // IFFT and recombine with Δ rescaling
-    // The decomposition was: x = Σⱼ x_j * h̅[j] where h̅[j] = 2^(width - (j+1)*B̅gbit)
-    // Product of positions i and j: scale = h̅[i] * h̅[j] = 2^(2*width - (i+j+2)*B̅gbit)
-    // At convolution position k = i+j: scale = 2^(2*width - (k+2)*B̅gbit)
-    //
-    // The original ciphertext coefficients are scaled by Δ = 2^(width - plain_modulusbit).
-    // After multiplying a × b = Δ² × plaintext_product.
-    // We need to divide by Δ to get back to Δ scaling.
-    //
-    // For convolution position k:
-    //   raw_scale = 2^(2*width - (k+2)*B̅gbit)
-    //   after /Δ: scale = raw_scale / Δ = 2^(2*width - (k+2)*B̅gbit) / 2^(width - plain_modulusbit)
-    //                   = 2^(width - (k+2)*B̅gbit + plain_modulusbit)
-    //
-    // So the shift for position k is: width - (k+2)*B̅gbit + plain_modulusbit
-
-    for (int k = 0; k < 2 * P::l̅ - 1; k++) {
-        Polynomial<P> temp0, temp1, temp2;
-        TwistFFT<P>(temp0, c0_fft[k]);
-        TwistFFT<P>(temp1, c1_fft[k]);
-        TwistFFT<P>(temp2, c2_fft[k]);
-
-        // Shift includes the Δ division: width - (k+2)*B̅gbit + plain_modulusbit
-        // Positive shift means left shift, negative means right shift
-        const int shift = width - (k + 2) * P::B̅gbit + P::plain_modulusbit;
-
-        if (shift >= 0 && shift < width) {
-            // Left shift
-            for (int n = 0; n < P::n; n++) {
-                res[0][n] += temp0[n] << shift;
-                res[1][n] += temp1[n] << shift;
-                res[2][n] += temp2[n] << shift;
-            }
-        } else if (shift < 0 && -shift < width) {
-            // Right shift
-            const int right_shift = -shift;
-            for (int n = 0; n < P::n; n++) {
-                res[0][n] += static_cast<typename P::T>(
-                    static_cast<std::make_signed_t<typename P::T>>(temp0[n]) >> right_shift);
-                res[1][n] += static_cast<typename P::T>(
-                    static_cast<std::make_signed_t<typename P::T>>(temp1[n]) >> right_shift);
-                res[2][n] += static_cast<typename P::T>(
-                    static_cast<std::make_signed_t<typename P::T>>(temp2[n]) >> right_shift);
-            }
-        }
-        // If |shift| >= width, contribution is zero
-    }
+    // Divide each 384-bit accumulator by Δ = floor(Q/t).
+    // The quotient mod Q gives the 128-bit torus result.
+    constexpr typename P::T delta = P::delta_int;
+    for (int c = 0; c < 3; c++)
+        for (uint32_t n = 0; n < P::n; n++)
+            res[c][n] = acc[c][n].div128(delta);
 }
 
 // Full DD TRLWE multiplication with relinearization

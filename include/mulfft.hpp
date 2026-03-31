@@ -97,14 +97,21 @@ inline void TwistFFT(Polynomial<P> &res, PolynomialInFD<P> &a)
         else if constexpr (std::is_same_v<typename P::T, uint64_t>)
             fftplvl1.execute_direct_torus64(res.data(), a.data());
     }
-    else if constexpr (std::is_same_v<P, lvl3param>) {
-        // For 128-bit lvl3param with Double Decomposition:
-        // Output is intermediate result that will be recombined
-        // Store in low 64 bits - reconstruction handles proper positioning
+    else if constexpr (std::is_same_v<P, lvl3param> ||
+                       std::is_same_v<P, lvl3simdparam>) {
+        // Use rounding (execute_direct_torus64_rescale with D=1.0) and
+        // sign-extend the int64 result to __int128_t → __uint128_t.
+        // Both fixes are critical:
+        //  - Rounding (not truncation): ±0.5 truncation error per DD level
+        //    gets amplified by RecombineTRLWEFromDD positional shifts.
+        //  - Sign extension: negative convolution results stored as
+        //    uint64_t(2^64-x) must become uint128_t(2^128-x), not (2^64-x).
+        //    Without this, shifts < 64 bits produce wrong torus values.
         alignas(64) std::array<uint64_t, P::n> temp;
-        fftplvl3.execute_direct_torus64(temp.data(), a.data());
+        fftplvl3.execute_direct_torus64_rescale(temp.data(), a.data(), 1.0);
         for (int i = 0; i < P::n; i++)
-            res[i] = static_cast<__uint128_t>(temp[i]);
+            res[i] = static_cast<__uint128_t>(
+                static_cast<__int128_t>(static_cast<int64_t>(temp[i])));
     }
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_direct_torus64(res.data(), a.data());
@@ -122,11 +129,13 @@ inline void TwistFFTAdd(Polynomial<P> &res, PolynomialInFD<P> &a)
         else if constexpr (std::is_same_v<typename P::T, uint64_t>)
             fftplvl1.execute_direct_torus64_add(res.data(), a.data());
     }
-    else if constexpr (std::is_same_v<P, lvl3param>) {
+    else if constexpr (std::is_same_v<P, lvl3param> ||
+                       std::is_same_v<P, lvl3simdparam>) {
         alignas(64) std::array<uint64_t, P::n> temp;
-        fftplvl3.execute_direct_torus64(temp.data(), a.data());
+        fftplvl3.execute_direct_torus64_rescale(temp.data(), a.data(), 1.0);
         for (int i = 0; i < P::n; i++)
-            res[i] += static_cast<__uint128_t>(temp[i]);
+            res[i] += static_cast<__uint128_t>(
+                static_cast<__int128_t>(static_cast<int64_t>(temp[i])));
     }
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_direct_torus64_add(res.data(), a.data());
@@ -185,8 +194,9 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
         if constexpr (std::is_same_v<typename P::T, uint64_t>)
             fftplvl1.execute_reverse_torus64(res.data(), a.data());
     }
-    else if constexpr (std::is_same_v<P, lvl3param>) {
-        // For 128-bit lvl3param with Double Decomposition:
+    else if constexpr (std::is_same_v<P, lvl3param> ||
+                       std::is_same_v<P, lvl3simdparam>) {
+        // For 128-bit params with Double Decomposition:
         // Input is always decomposition digits (small integers in low 64 bits)
         // Use low 64 bits directly - no shift needed
         alignas(64) std::array<uint64_t, P::n> temp;

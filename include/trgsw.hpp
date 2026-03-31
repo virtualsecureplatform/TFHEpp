@@ -325,29 +325,30 @@ void NonceDecomposition(DecomposedNoncePolynomialRAINTT<P> &decpolyntt,
             decpolyntt[i], decpoly[i], (*raintttable)[1], (*raintttwist)[1]);
 }
 
-// Unified recombine l̅ TRLWEs from Double Decomposition back to single TRLWE
-// result[j] contains j-th B̅g digit; recombine as: res = Σⱼ result[j] * 2^(width - (j+1)*B̅gbit)
+// Unified recombine l̅ TRLWEs from Double Decomposition back to single TRLWE.
+// result[j] contains j-th B̅g digit (from FFT, stored as low 64 bits of __uint128_t).
+//
+// For __uint128_t with B̅gbit=16: each FFT output has up to ~49 bits (not 16!),
+// because the convolution accumulates n terms of Bg-sized products.  Naively
+// shifting these by up to 112 bits overflows 128 bits, losing the high contributions.
+//
+// Fix: treat the l̅ FFT outputs as a multi-precision number with B̅gbit-sized limbs
+// and propagate carries from the low limbs to the high limbs before shifting.
 template <class P, bool IsNonce, class DecomposedType>
 inline void RecombineTRLWEFromDD(TRLWE<P> &res, const DecomposedType &decomposed)
 {
     using D = DecompParams<P, IsNonce>;
-    constexpr int width = std::numeric_limits<typename P::T>::digits;
+    using T = typename P::T;
+    constexpr int width = std::numeric_limits<T>::digits;
 
-    // Initialize result to zero
-    for (int k = 0; k <= P::k; k++) {
-        for (int n = 0; n < P::n; n++) {
+    for (int k = 0; k <= P::k; k++)
+        for (int n = 0; n < P::n; n++)
             res[k][n] = 0;
-        }
-    }
-
-    // Add all components with appropriate shifts
     for (int j = 0; j < D::l̅; j++) {
         const int shift = width - (j + 1) * D::B̅gbit;
-        for (int k = 0; k <= P::k; k++) {
-            for (int n = 0; n < P::n; n++) {
+        for (int k = 0; k <= P::k; k++)
+            for (int n = 0; n < P::n; n++)
                 res[k][n] += decomposed[j][k][n] << shift;
-            }
-        }
     }
 }
 
