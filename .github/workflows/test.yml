@@ -5,27 +5,6 @@ on:
 
 # thanks to https://izumisy.work/entry/2022/03/28/140644
 jobs:
-  ubuntu-2204:
-    name: ubuntu-2204
-    runs-on: Ubuntu-latest
-    container:
-      image: ubuntu:22.04
-    steps:
-    - name: Install libraries
-      run: |
-        apt-get update
-        apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: build and test
-      run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DCMAKE_C_FLAGS_RELEASE="-O3"
-        cd build
-        ninja
-        test/test.sh
   ubuntu-2404:
     name: ubuntu-2404
     runs-on: Ubuntu-latest

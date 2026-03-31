@@ -5,11 +5,11 @@ on:
 
 # thanks to https://izumisy.work/entry/2022/03/28/140644
 jobs:
-  ubuntu-2204:
-    name: ubuntu-2204
+  ubuntu-2404:
+    name: ubuntu-2404
     runs-on: Ubuntu-latest
     container:
-      image: ubuntu:22.04
+      image: ubuntu:24.04
     steps:
     - name: Install libraries
       run: |

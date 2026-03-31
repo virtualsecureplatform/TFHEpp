@@ -97,7 +97,35 @@ struct lvl2param {
 };
 
 // Dummy
+// lvl3param with 128-bit Torus and Double Decomposition (from 128bit.hpp)
 struct lvl3param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static const std::uint32_t nbit = 12;
+    static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 4;
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgbit = 21;
+    static constexpr std::uint32_t Bgₐbit = 21;
+    static constexpr uint32_t Bg = 1U << Bgbit;
+    static constexpr uint32_t Bgₐ = 1U << Bgₐbit;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = std::pow(2.0, -105);
+    using T = __uint128_t;
+    static constexpr T μ = static_cast<T>(1) << 125;
+    static constexpr uint32_t plain_modulusbit = 31;
+    static constexpr T plain_modulus = static_cast<T>(1) << plain_modulusbit;
+    static constexpr double Δ =
+        static_cast<double>(static_cast<T>(1) << (128 - plain_modulusbit - 1));
+    static constexpr std::uint32_t l̅ = 8;
+    static constexpr std::uint32_t l̅ₐ = 8;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
+};
+
+struct lvl4param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
     static const std::uint32_t nbit = 13;  // dimension must be a power of 2 for
@@ -112,23 +140,22 @@ struct lvl3param {
     static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -47);  // fresh noise
-    using T = uint64_t;                                 // Torus representation
-    static constexpr T μ = 1ULL << 61;
+    static const inline double α = std::pow(2.0, -105);  // fresh noise
+    using T = __uint128_t;                                 // Torus representation
+    static constexpr T μ = static_cast<T>(1) << 125;
     static constexpr uint32_t plain_modulusbit = 31;
-    static constexpr uint64_t plain_modulus = 1ULL << plain_modulusbit;
-    static constexpr double Δ = 1ULL << (64 - plain_modulusbit - 1);
+    static constexpr T plain_modulus = static_cast<T>(1) << plain_modulusbit;
+    static constexpr double Δ =
+        static_cast<double>(static_cast<T>(1) << (128 - plain_modulusbit - 1));
     // Double Decomposition (bivariate representation) parameters
     // For now, set to trivial values (no actual second decomposition)
-    static constexpr std::uint32_t l̅ = 1;  // auxiliary decomposition levels
-    static constexpr std::uint32_t l̅ₐ = l̅;
-    static constexpr std::uint32_t B̅gbit =
-        std::numeric_limits<T>::digits;  // full coefficient width
-    static constexpr std::uint32_t B̅gₐbit = B̅gbit;
+    static constexpr std::uint32_t l̅ = 8;  // auxiliary decomposition levels
+    static constexpr std::uint32_t l̅ₐ = 8;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
 };
 
 // Dummy
-using lvl4param = lvl3param;
 
 struct lvl10param {
     static constexpr std::uint32_t t = 8;
@@ -218,16 +245,20 @@ struct lvl31param {
 };
 
 // Dummy
-using lvl41param = lvl31param;
-
+struct lvl41param {
+    static constexpr std::uint32_t t = 7;
+    static constexpr std::uint32_t basebit = 2;
+    static const inline double α = lvl1param::α;
+    using domainP = lvl4param;
+    using targetP = lvl1param;
+};
 
 // lvl3simdparam: BFV SIMD parameter set with prime plain_modulus.
-// Full copy from params/128bit.hpp so that mulfft.hpp compiles regardless
-// of which parameter header is selected.
+// Must use the same nbit as lvl3param so that fftplvl3 is compatible.
 struct lvl3simdparam {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
-    static constexpr std::uint32_t nbit = 12;
+    static constexpr std::uint32_t nbit = lvl3param::nbit;
     static constexpr std::uint32_t n = 1 << nbit;
     static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t lₐ = 4;
@@ -238,7 +269,7 @@ struct lvl3simdparam {
     static constexpr uint32_t Bgₐ = 1U << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -125);
+    static const inline double α = std::pow(2.0, -105);
     using T = __uint128_t;
     static constexpr T μ = static_cast<T>(1) << 125;
     static constexpr uint32_t plain_modulusbit = 18;

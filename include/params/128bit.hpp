@@ -214,9 +214,7 @@ struct lvl3simdparam {
     static constexpr uint32_t Bgₐ = 1U << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    // α = 2^{-125}: σ_discrete ≈ 2^(128-125)/√(2π) ≈ 3.2, close to poulpy.
-    // Provides ~88 bits of noise budget for BFV multiplication.
-    static const inline double α = std::pow(2.0, -125);
+    static const inline double α = std::pow(2.0, -105);  // same as lvl3param
     using T = __uint128_t;
     static constexpr T μ = static_cast<T>(1) << 125;
     // plain_modulusbit kept for DD decomposition compatibility (used by existing
@@ -258,18 +256,18 @@ struct lvl4param {
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
     static const inline double α = std::pow(2.0, -51);  // fresh noise
-    using T = uint64_t;                                 // Torus representation
-    static constexpr T μ = 1ULL << 61;
+    using T = __uint128_t;                                 // Torus representation
+    static constexpr T μ = static_cast<T>(1) << 125;
     static constexpr uint32_t plain_modulusbit = 31;
-    static constexpr uint64_t plain_modulus = 1ULL << plain_modulusbit;
-    static constexpr double Δ = 1ULL << (64 - plain_modulusbit - 1);
+    static constexpr T plain_modulus = static_cast<T>(1) << plain_modulusbit;
+    static constexpr double Δ =
+        static_cast<double>(static_cast<T>(1) << (128 - plain_modulusbit - 1));
     // Double Decomposition (bivariate representation) parameters
     // Trivial values (no actual second decomposition)
-    static constexpr std::uint32_t l̅ = 1;  // auxiliary decomposition levels
-    static constexpr std::uint32_t l̅ₐ = l̅;
-    static constexpr std::uint32_t B̅gbit =
-        std::numeric_limits<T>::digits;  // full coefficient width
-    static constexpr std::uint32_t B̅gₐbit = B̅gbit;
+    static constexpr std::uint32_t l̅ = 8;  // auxiliary decomposition levels
+    static constexpr std::uint32_t l̅ₐ = 8;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
 };
 
 // Key Switching parameters
