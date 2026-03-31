@@ -47,14 +47,19 @@ int main()
     TFHEpp::TRLWE<P> ct_in;
     TFHEpp::trlweSlotEncrypt<P>(ct_in, slots_in, key);
 
-    // Rotation step amounts to test
-    const int steps_to_test[] = {1, 3, 7, n / 2, -1, n - 1};
+    // Rotation step amounts to test.
+    // With Galois group structure, rotation by k cyclically shifts each
+    // "row" of n/2 slots independently:
+    //   Row 0: slots [0, n/2)     → slot[i] becomes slot[(i+k) mod (n/2)]
+    //   Row 1: slots [n/2, n)     → slot[n/2+i] becomes slot[n/2 + (i+k) mod (n/2)]
+    constexpr int half = n / 2;
+    const int steps_to_test[] = {1, 3, 7, half / 2, -1, half - 1};
     int failures = 0;
 
     for (int steps : steps_to_test) {
-        const int normalized = ((steps % n) + n) % n;
-        std::cout << "  Rotate by " << steps << " (normalized=" << normalized
-                  << ")... " << std::flush;
+        const int norm = ((steps % half) + half) % half;
+        std::cout << "  Rotate by " << steps << " (norm=" << norm
+                  << " within row of " << half << ")... " << std::flush;
 
         TFHEpp::TRLWE<P> ct_rot;
         TFHEpp::RotateSlots<P>(ct_rot, ct_in, steps, *gk);
@@ -64,7 +69,12 @@ int main()
 
         bool ok = true;
         for (int i = 0; i < n; i++) {
-            const uint64_t expected = slots_in[(i + normalized) % n];
+            // Expected: rotation within each row of n/2
+            uint64_t expected;
+            if (i < half)
+                expected = slots_in[(i + norm) % half];
+            else
+                expected = slots_in[half + (i - half + norm) % half];
             if (slots_rot[i] != expected) {
                 std::cerr << "\n    FAIL slot=" << i << " expected=" << expected
                           << " got=" << slots_rot[i] << std::endl;

@@ -70,6 +70,52 @@ struct SIMDConstants<lvl3simdparam> {
 };
 
 // ---------------------------------------------------------------------------
+// Galois permutation tables for slot rotation.
+//
+// The Galois group for x^n+1 with n=2^k is (Z/2n)* ≅ Z_2 × Z_{n/2}.
+// Generator g=5 generates the Z_{n/2} factor.  The n NTT evaluation points
+// split into two "rows" of n/2, indexed by powers of 5:
+//   Row 0: NTT positions (5^i - 1)/2 mod n   for i=0..n/2-1
+//   Row 1: NTT positions (2n - 5^i - 1)/2 mod n
+//
+// For slot rotation to work, the user's slot[i] must correspond to the
+// i-th Galois orbit position (5^i mod 2n), NOT the i-th NTT position.
+// The automorphism x→x^5 then cyclically rotates slot indices by 1.
+//
+// galois_ntt_index[i] = (5^i - 1)/2 mod n  (row 0)
+// galois_ntt_index[i + n/2] = (2n - 5^i - 1)/2 mod n  (row 1)
+// ---------------------------------------------------------------------------
+
+template <class P>
+struct GaloisPermutation {
+    static const std::array<uint32_t, P::n> &ntt_index() {
+        static const auto table = []() {
+            std::array<uint32_t, P::n> tbl;
+            constexpr uint64_t twon = 2 * P::n;
+            uint64_t g = 1;  // 5^0
+            for (uint32_t i = 0; i < P::n / 2; i++) {
+                tbl[i]         = static_cast<uint32_t>((g - 1) / 2);
+                tbl[i + P::n/2] = static_cast<uint32_t>((twon - g - 1) / 2);
+                g = g * 5 % twon;
+            }
+            return tbl;
+        }();
+        return table;
+    }
+    // Inverse: given NTT position, return slot index
+    static const std::array<uint32_t, P::n> &slot_index() {
+        static const auto table = []() {
+            std::array<uint32_t, P::n> tbl;
+            const auto &fwd = ntt_index();
+            for (uint32_t i = 0; i < P::n; i++)
+                tbl[fwd[i]] = i;
+            return tbl;
+        }();
+        return table;
+    }
+};
+
+// ---------------------------------------------------------------------------
 // In-place bit-reversal permutation (standard for Cooley-Tukey NTT)
 // ---------------------------------------------------------------------------
 
@@ -200,10 +246,15 @@ void INTTmod(std::array<uint64_t, P::n> &a)
 template <class P>
 void SlotEncode(Polynomial<P> &poly, const std::array<uint64_t, P::n> &slots)
 {
-    std::array<uint64_t, P::n> tmp = slots;
-    INTTmod<P>(tmp);  // inverse NTT: slot evaluations → polynomial coefficients
+    // Apply Galois permutation: user slot[i] → NTT position galois_ntt_index[i]
+    const auto &perm = GaloisPermutation<P>::ntt_index();
+    std::array<uint64_t, P::n> ntt_order;
     for (uint32_t i = 0; i < P::n; i++)
-        poly[i] = static_cast<typename P::T>(tmp[i]);
+        ntt_order[perm[i]] = slots[i];
+
+    INTTmod<P>(ntt_order);  // inverse NTT: slot evaluations → polynomial coefficients
+    for (uint32_t i = 0; i < P::n; i++)
+        poly[i] = static_cast<typename P::T>(ntt_order[i]);
 }
 
 // ---------------------------------------------------------------------------
@@ -214,11 +265,15 @@ template <class P>
 void SlotDecode(std::array<uint64_t, P::n> &slots, const Polynomial<P> &poly)
 {
     constexpr uint64_t t = static_cast<uint64_t>(P::plain_modulus);
-    std::array<uint64_t, P::n> tmp;
+    std::array<uint64_t, P::n> ntt_order;
     for (uint32_t i = 0; i < P::n; i++)
-        tmp[i] = static_cast<uint64_t>(poly[i]) % t;
-    NTTmod<P>(tmp);  // forward NTT: polynomial coefficients → slot evaluations
-    slots = tmp;
+        ntt_order[i] = static_cast<uint64_t>(poly[i]) % t;
+    NTTmod<P>(ntt_order);  // forward NTT: polynomial coefficients → slot evaluations
+
+    // Apply inverse Galois permutation: NTT position → user slot[i]
+    const auto &inv_perm = GaloisPermutation<P>::slot_index();
+    for (uint32_t i = 0; i < P::n; i++)
+        slots[inv_perm[i]] = ntt_order[i];
 }
 
 // ---------------------------------------------------------------------------
@@ -349,20 +404,23 @@ template <class P>
 void RotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
                  const GaloisKey<P> &gk)
 {
-    // Normalize to [0, n)
-    steps = ((steps % static_cast<int>(P::n)) + static_cast<int>(P::n)) %
-            static_cast<int>(P::n);
+    // The Galois group Z_{n/2} acts on each row of n/2 slots.
+    // Rotation by k applies automorphism 5^k mod 2n.
+    // Normalize steps to [0, n/2).
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
 
     if (steps == 0) {
         res = ct;
         return;
     }
 
-    // Binary decomposition: apply one EvalAuto per set bit of steps
-    // d tracks the Galois element for the current bit position: 5^{2^i} mod 2n
+    // Binary decomposition of steps in [0, n/2):
+    // bit i of steps → apply automorphism 5^{2^i} mod 2n (key gk[i]).
+    // Only nbit-1 bits needed (since steps < n/2 = 2^{nbit-1}).
     TRLWE<P> cur = ct, tmp;
     uint64_t d = 5;
-    for (int i = 0; i < static_cast<int>(P::nbit); i++) {
+    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++) {
         if ((steps >> i) & 1) {
             EvalAuto<P>(tmp, cur, static_cast<uint>(d), gk[i]);
             cur = tmp;
