@@ -230,12 +230,12 @@ struct Wide384 {
 
 // Full Double Decomposition TRLWE Multiplication (without relinearization)
 //
-// Accumulates the raw product c_a · c_b into 384-bit accumulators (one per
-// polynomial coefficient, per TRLWE3 component), then divides by
-// Δ = floor(Q/t) to perform the BFV rescaling.
+// For __uint128_t params (lvl3simdparam): uses 384-bit accumulators and
+// divides by Δ=floor(Q/t) — required because the raw 256-bit product
+// overflows 128-bit torus arithmetic.
 //
-// The digit positional weights are powers of 2 (from B̅g decomposition), so the
-// accumulation uses only shifts. The Δ-division is a single wide-divide at the end.
+// For smaller types (uint64_t): uses the original shift-based approach
+// with power-of-2 Δ cancellation folded into the shift.
 template <class P>
 void TRLWEMultWithoutRelinearizationFullDD(TRLWE3<P> &res, const TRLWE<P> &a,
                                             const TRLWE<P> &b)
@@ -246,48 +246,66 @@ void TRLWEMultWithoutRelinearizationFullDD(TRLWE3<P> &res, const TRLWE<P> &a,
     TRLWEBaseBbarDecompose<P>(a_dec, a);
     TRLWEBaseBbarDecompose<P>(b_dec, b);
 
-    // 384-bit accumulators: [component][coefficient]
-    std::array<std::array<Wide384, P::n>, 3> acc{};
+    if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        // 128-bit torus: 384-bit accumulation + Δ-division
+        std::array<std::array<Wide384, P::n>, 3> acc{};
 
-    for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-        for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-            const int k = i + j;
-            // Raw positional shift (no Δ cancellation):
-            // digit_i weight = 2^(width - (i+1)*B̅gbit)
-            // digit_j weight = 2^(width - (j+1)*B̅gbit)
-            // product weight = 2^(2*width - (k+2)*B̅gbit)
-            const int shift = 2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+        for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                const int k = i + j;
+                const int shift = 2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+                if (shift <= -width) continue;
 
-            if (shift <= -width) continue;
-
-            Polynomial<P> prod;
-
-            // c2: a[0]*b[0]
-            PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][0]);
+                Polynomial<P> prod;
+                PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][0]);
+                for (uint32_t n = 0; n < P::n; n++)
+                    acc[2][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+                PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][1]);
+                for (uint32_t n = 0; n < P::n; n++)
+                    acc[1][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+                PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][1]);
+                for (uint32_t n = 0; n < P::n; n++)
+                    acc[0][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+                PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][0]);
+                for (uint32_t n = 0; n < P::n; n++)
+                    acc[0][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+            }
+        }
+        constexpr typename P::T delta = P::delta_int;
+        for (int c = 0; c < 3; c++)
             for (uint32_t n = 0; n < P::n; n++)
-                acc[2][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+                res[c][n] = acc[c][n].div128(delta);
+    }
+    else {
+        // 32/64-bit torus: shift-based with power-of-2 Δ cancellation
+        for (int n = 0; n < static_cast<int>(P::n); n++) {
+            res[0][n] = 0; res[1][n] = 0; res[2][n] = 0;
+        }
+        for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                const int k = i + j;
+                const int shift = width - (k + 2) * static_cast<int>(P::B̅gbit)
+                                + static_cast<int>(P::plain_modulusbit);
+                if (shift >= width || (shift < 0 && -shift >= width)) continue;
 
-            // c1: a[1]*b[1]
-            PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][1]);
-            for (uint32_t n = 0; n < P::n; n++)
-                acc[1][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
-
-            // c0: a[0]*b[1] + a[1]*b[0]
-            PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][1]);
-            for (uint32_t n = 0; n < P::n; n++)
-                acc[0][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
-            PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][0]);
-            for (uint32_t n = 0; n < P::n; n++)
-                acc[0][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+                Polynomial<P> prod;
+                auto apply = [&](int comp) {
+                    if (shift >= 0) {
+                        for (int n = 0; n < static_cast<int>(P::n); n++)
+                            res[comp][n] += prod[n] << shift;
+                    } else {
+                        for (int n = 0; n < static_cast<int>(P::n); n++)
+                            res[comp][n] += static_cast<typename P::T>(
+                                static_cast<std::make_signed_t<typename P::T>>(prod[n]) >> (-shift));
+                    }
+                };
+                PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][0]); apply(2);
+                PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][1]); apply(1);
+                PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][1]); apply(0);
+                PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][0]); apply(0);
+            }
         }
     }
-
-    // Divide each 384-bit accumulator by Δ = floor(Q/t).
-    // The quotient mod Q gives the 128-bit torus result.
-    constexpr typename P::T delta = P::delta_int;
-    for (int c = 0; c < 3; c++)
-        for (uint32_t n = 0; n < P::n; n++)
-            res[c][n] = acc[c][n].div128(delta);
 }
 
 // Full DD TRLWE multiplication with relinearization
