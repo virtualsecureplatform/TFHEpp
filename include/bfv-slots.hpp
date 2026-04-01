@@ -471,4 +471,53 @@ std::unique_ptr<relinKeyFFT<P>> makeRelinKeyFFT(const Key<P> &key)
     return relinkeyfft;
 }
 
+// ---------------------------------------------------------------------------
+// makeBootKeyFFT<P> — heap-safe boot key generation for BFV bootstrapping
+//
+// Generates a HalfTRGSWFFT encrypting the secret key s (circular encryption).
+// Uses gadget decomposition for noise-controlled multiplication in
+// HomomorphicInnerProduct: noise grows as l·Bg·√n·σ instead of ||ct[0]||·σ.
+// ---------------------------------------------------------------------------
+
+template <class P>
+std::unique_ptr<relinKeyFFT<P>> makeBootKeyFFT(const Key<P> &key)
+{
+    Polynomial<P> partkey;
+    for (int i = 0; i < static_cast<int>(P::n); i++) partkey[i] = key[i];
+
+    auto bootkeyfft = std::make_unique<relinKeyFFT<P>>();
+    halftrgswSymEncrypt<P>(*bootkeyfft, partkey, key);
+    return bootkeyfft;
+}
+
+// ---------------------------------------------------------------------------
+// HomomorphicInnerProduct<P> — first step of BFV bootstrapping
+//
+// Given a BFV ciphertext ct = (a, b) where phase = b - a·s = Δ·m + noise,
+// and a boot key (HalfTRGSWFFT encrypting s), computes a fresh TRLWE
+// encrypting the phase of ct.
+//
+// TFHEpp convention: TRLWE = (ct[0], ct[1]) = (a, b), phase = b - a·s.
+//
+// The mask a = ct[0] is decomposed via the gadget and multiplied with the
+// boot key (HalfTRGSW(s)) using relinKeySwitch. This keeps noise growth
+// controlled regardless of the magnitude of a's coefficients.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void HomomorphicInnerProduct(TRLWE<P> &res, const TRLWE<P> &ct,
+                             const relinKeyFFT<P> &bootkeyfft)
+{
+    // relinKeySwitch(ct[0], bootKey) → TRLWE(a·s)
+    relinKeySwitch<P>(res, ct[0], bootkeyfft);
+    // Subtract from trivial TRLWE(b):
+    //   new_mask = -res_mask,  new_body = b - res_body
+    // Phase: (b - res_body) - (-res_mask)·s = b - (res_body - res_mask·s) = b - a·s
+    for (int k = 0; k < P::k; k++)
+        for (uint32_t i = 0; i < P::n; i++)
+            res[k][i] = -res[k][i];
+    for (uint32_t i = 0; i < P::n; i++)
+        res[P::k][i] = ct[P::k][i] - res[P::k][i];
+}
+
 }  // namespace TFHEpp

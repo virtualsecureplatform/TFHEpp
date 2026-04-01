@@ -99,7 +99,7 @@ static inline void radix4_last_butterfly512(
     out3 = _mm512_add_pd(amc, jbmd);
 }
 
-#else  // AVX2
+#endif  // USE_AVX512
 
 // ── Complex arithmetic with AVX2 ────────────────────────────────────────────
 
@@ -206,8 +206,6 @@ static inline void radix4_butterfly_inv(
     out3 = cmul(_mm256_add_pd(amc, jbmd), w3);
 }
 
-#endif  // USE_AVX512
-
 // ── Table structures ────────────────────────────────────────────────────────
 
 struct INTL_FFT_PRECOMP {
@@ -268,90 +266,51 @@ static void stockham_r4_from(int32_t ns2, const double *trig,
                 _mm512_storeu_pd(dst + (p + 3*q) * 2, r3);
             }
         } else {
-            // Subsequent passes: preload w1/w2/w3 into zmm0-2 and jmask into zmm3,
-            // then run hand-tuned asm p-loop to guarantee no ZMM register spills.
-            int64_t stride_bytes = (int64_t)stride * 16;  // stride × 2 doubles × 8 bytes
-            for (int32_t j = 0; j < s; j += 4) {
-                int64_t q_bytes = (int64_t)q * 16;  // q × 2 doubles × 8 bytes
-
-                // Preload twiddles and jmask before the p-loop.
-                // zmm0-3 clobbered; GCC will not assign C variables to them
-                // between this block and the inner asm, leaving our values intact.
-                __asm__ __volatile__ (
-                    "vmovupd    (%[tw]),   %%zmm0\n\t"  // w1: 4 complex twiddles
-                    "vmovupd  64(%[tw]),   %%zmm1\n\t"  // w2
-                    "vmovupd 128(%[tw]),   %%zmm2\n\t"  // w3
-                    "vmovapd    %[jm],     %%zmm3\n\t"  // jmask (compile-time constant)
-                    : : [tw] "r"(tw), [jm] "x"(jmask)
-                    : "zmm0","zmm1","zmm2","zmm3"
-                );
+            // Subsequent passes (s >= 4): process one j at a time using __m128d
+            // to avoid the output-interleaving problem of packing 4 j-values.
+            // Twiddles are packed as 4 complex per group (24 doubles per j-group).
+            for (int32_t j = 0; j < s; j++) {
+                // Extract per-j twiddles from the packed table
+                int32_t jj = j & 3;  // position within the 4-wide group
+                const double *tw_base = tw + (j / 4) * 24;
+                __m128d w1 = _mm_loadu_pd(tw_base + jj * 2);
+                __m128d w2 = _mm_loadu_pd(tw_base + 8 + jj * 2);
+                __m128d w3 = _mm_loadu_pd(tw_base + 16 + jj * 2);
 
                 for (int32_t p = 0; p < q; p++) {
-                    const double *sptr = src + (int64_t)(j + s * p) * 2;
-                    double *dptr = dst + (int64_t)(p + q * (4 * j)) * 2;
+                    const double *sptr = src + (int64_t)(j + (int64_t)s * p) * 2;
+                    __m128d a = _mm_loadu_pd(sptr);
+                    __m128d b = _mm_loadu_pd(sptr + (int64_t)stride * 2);
+                    __m128d c = _mm_loadu_pd(sptr + (int64_t)stride * 4);
+                    __m128d d = _mm_loadu_pd(sptr + (int64_t)stride * 6);
 
-                    // zmm0=w1, zmm1=w2, zmm2=w3, zmm3=jmask (preserved across p-loop).
-                    // zmm4-zmm11: temporaries; zmm12-zmm31: untouched.
-                    __asm__ __volatile__ (
-                        // ── Load a, b, c, d ──────────────────────────────────
-                        "vmovupd    (%[src]),           %%zmm4\n\t"  // a
-                        "vmovupd    (%[src],%[st]),     %%zmm5\n\t"  // b
-                        "vmovupd    (%[src],%[st],2),   %%zmm6\n\t"  // c
-                        "vmovupd    (%[src],%[st3]),    %%zmm7\n\t"  // d
+                    __m128d apc = _mm_add_pd(a, c);
+                    __m128d amc = _mm_sub_pd(a, c);
+                    __m128d bpd = _mm_add_pd(b, d);
+                    __m128d bmd = _mm_sub_pd(b, d);
+                    // j-multiply bmd
+                    __m128d bmd_swap = _mm_permute_pd(bmd, 1);
+                    __m128d jbmd = Fwd
+                        ? _mm_xor_pd(bmd_swap, _mm_set_pd(0.0, -0.0))
+                        : _mm_xor_pd(bmd_swap, _mm_set_pd(-0.0, 0.0));
 
-                        // ── Radix-4 butterfly sums/diffs ─────────────────────
-                        "vaddpd     %%zmm6, %%zmm4, %%zmm8\n\t"   // apc = a+c
-                        "vsubpd     %%zmm6, %%zmm4, %%zmm9\n\t"   // amc = a-c
-                        "vaddpd     %%zmm7, %%zmm5, %%zmm10\n\t"  // bpd = b+d
-                        "vsubpd     %%zmm7, %%zmm5, %%zmm4\n\t"   // bmd = b-d  (reuse zmm4)
-                        // j-multiply: swap re/im pairs, then apply sign mask
-                        "vpermilpd  $0x55, %%zmm4, %%zmm4\n\t"
-                        "vxorpd     %%zmm3, %%zmm4, %%zmm11\n\t"  // jbmd  (zmm3=jmask)
-                        // live: apc(8), amc(9), bpd(10), jbmd(11)
+                    // cmul helper (128-bit)
+                    auto cmul128 = [](__m128d t, __m128d w) -> __m128d {
+                        __m128d w_swap = _mm_permute_pd(w, 1);
+                        __m128d t_re = _mm_unpacklo_pd(t, t);
+                        __m128d t_im = _mm_unpackhi_pd(t, t);
+                        return _mm_fmaddsub_pd(t_re, w, _mm_mul_pd(t_im, w_swap));
+                    };
 
-                        // ── out0 = apc + bpd  (store immediately) ────────────
-                        "vaddpd     %%zmm10, %%zmm8, %%zmm4\n\t"
-                        "vmovupd    %%zmm4, (%[dst])\n\t"
-
-                        // ── out2 = (apc − bpd) × w2 ──────────────────────────
-                        "vsubpd     %%zmm10, %%zmm8, %%zmm4\n\t"   // t = apc-bpd
-                        "vpermilpd  $0x55, %%zmm1, %%zmm5\n\t"     // w2_swap
-                        "vunpckhpd  %%zmm4, %%zmm4, %%zmm6\n\t"    // t_im broadcast
-                        "vunpcklpd  %%zmm4, %%zmm4, %%zmm4\n\t"    // t_re broadcast
-                        "vmulpd     %%zmm5, %%zmm6, %%zmm6\n\t"    // t_im × w2_swap
-                        "vfmaddsub231pd %%zmm1, %%zmm4, %%zmm6\n\t"// t_re×w2 ± t_im×w2_swap
-                        "vmovupd    %%zmm6, (%[dst],%[q2])\n\t"
-
-                        // ── out1 = (amc − jbmd) × w1 ─────────────────────────
-                        "vsubpd     %%zmm11, %%zmm9, %%zmm4\n\t"   // t = amc-jbmd
-                        "vpermilpd  $0x55, %%zmm0, %%zmm5\n\t"     // w1_swap
-                        "vunpckhpd  %%zmm4, %%zmm4, %%zmm6\n\t"
-                        "vunpcklpd  %%zmm4, %%zmm4, %%zmm4\n\t"
-                        "vmulpd     %%zmm5, %%zmm6, %%zmm6\n\t"
-                        "vfmaddsub231pd %%zmm0, %%zmm4, %%zmm6\n\t"
-                        "vmovupd    %%zmm6, (%[dst],%[q1])\n\t"
-
-                        // ── out3 = (amc + jbmd) × w3 ─────────────────────────
-                        "vaddpd     %%zmm11, %%zmm9, %%zmm4\n\t"
-                        "vpermilpd  $0x55, %%zmm2, %%zmm5\n\t"     // w3_swap
-                        "vunpckhpd  %%zmm4, %%zmm4, %%zmm6\n\t"
-                        "vunpcklpd  %%zmm4, %%zmm4, %%zmm4\n\t"
-                        "vmulpd     %%zmm5, %%zmm6, %%zmm6\n\t"
-                        "vfmaddsub231pd %%zmm2, %%zmm4, %%zmm6\n\t"
-                        "vmovupd    %%zmm6, (%[dst],%[q3])\n\t"
-
-                        : : [src] "r"(sptr), [dst] "r"(dptr),
-                            [st]  "r"(stride_bytes),
-                            [st3] "r"(stride_bytes * 3),
-                            [q1]  "r"(q_bytes),
-                            [q2]  "r"(2 * q_bytes),
-                            [q3]  "r"(3 * q_bytes)
-                        : "zmm4","zmm5","zmm6","zmm7",
-                          "zmm8","zmm9","zmm10","zmm11","memory"
-                    );
+                    double *dptr = dst + (int64_t)(p + (int64_t)q * (4 * j)) * 2;
+                    int64_t qs = (int64_t)q * 2;
+                    _mm_storeu_pd(dptr,        _mm_add_pd(apc, bpd));
+                    _mm_storeu_pd(dptr + qs,   cmul128(_mm_sub_pd(amc, jbmd), w1));
+                    _mm_storeu_pd(dptr + 2*qs, cmul128(_mm_sub_pd(apc, bpd), w2));
+                    _mm_storeu_pd(dptr + 3*qs, cmul128(_mm_add_pd(amc, jbmd), w3));
                 }
-                tw += 24;  // advance past this j-group (3 ZMMs × 8 doubles)
             }
+            tw += (s / 4) * 24;  // advance past all j-groups for this pass
         }
         // Switch ping-pong buffers
         if (s == 1) { src = dst; dst = x; }
@@ -359,32 +318,34 @@ static void stockham_r4_from(int32_t ns2, const double *trig,
         s *= 4; q /= 4;
     }
 
-    // Final q=1 or q=2 pass (no twiddle multiply)
+    // Final q=1 or q=2 pass (no twiddle multiply), one j at a time.
     if (q == 1) {
         int32_t stride = s;
-        for (int32_t j = 0; j < s; j += 4) {
-            __m512d a = _mm512_loadu_pd(src + j * 2);
-            __m512d b = _mm512_loadu_pd(src + (j + stride) * 2);
-            __m512d c = _mm512_loadu_pd(src + (j + 2*stride) * 2);
-            __m512d d = _mm512_loadu_pd(src + (j + 3*stride) * 2);
-            __m512d r0, r1, r2, r3;
-            radix4_last_butterfly512<Fwd>(a, b, c, d, r0, r1, r2, r3);
-            _mm512_storeu_pd(dst + (4*j) * 2, r0);
-            _mm512_storeu_pd(dst + (4*j + 4) * 2, r1);
-            _mm512_storeu_pd(dst + (4*j + 8) * 2, r2);
-            _mm512_storeu_pd(dst + (4*j + 12) * 2, r3);
+        for (int32_t j = 0; j < s; j++) {
+            __m128d a = _mm_loadu_pd(src + j * 2);
+            __m128d b = _mm_loadu_pd(src + (j + stride) * 2);
+            __m128d c = _mm_loadu_pd(src + (j + 2*stride) * 2);
+            __m128d d = _mm_loadu_pd(src + (j + 3*stride) * 2);
+            __m128d apc = _mm_add_pd(a, c);
+            __m128d amc = _mm_sub_pd(a, c);
+            __m128d bpd = _mm_add_pd(b, d);
+            __m128d bmd = _mm_sub_pd(b, d);
+            __m128d bmd_swap = _mm_permute_pd(bmd, 1);
+            __m128d jbmd = Fwd
+                ? _mm_xor_pd(bmd_swap, _mm_set_pd(0.0, -0.0))
+                : _mm_xor_pd(bmd_swap, _mm_set_pd(-0.0, 0.0));
+            _mm_storeu_pd(dst + (4*j+0) * 2, _mm_add_pd(apc, bpd));
+            _mm_storeu_pd(dst + (4*j+1) * 2, _mm_sub_pd(amc, jbmd));
+            _mm_storeu_pd(dst + (4*j+2) * 2, _mm_sub_pd(apc, bpd));
+            _mm_storeu_pd(dst + (4*j+3) * 2, _mm_add_pd(amc, jbmd));
         }
     } else if (q == 2) {
         int32_t half = ns2 / 2;
-        for (int32_t j = 0; j < half; j += 4) {
-            __m512d a = _mm512_loadu_pd(src + j * 2);
-            __m512d b = _mm512_loadu_pd(src + (j + half) * 2);
-            __m512d sum = _mm512_add_pd(a, b);
-            __m512d diff = _mm512_sub_pd(a, b);
-            __m512d out0 = _mm512_shuffle_f64x2(sum, diff, 0x44);
-            __m512d out1 = _mm512_shuffle_f64x2(sum, diff, 0xEE);
-            _mm512_storeu_pd(dst + (2*j) * 2, out0);
-            _mm512_storeu_pd(dst + (2*j + 4) * 2, out1);
+        for (int32_t j = 0; j < half; j++) {
+            __m128d a = _mm_loadu_pd(src + j * 2);
+            __m128d b = _mm_loadu_pd(src + (j + half) * 2);
+            _mm_storeu_pd(dst + (2*j) * 2,     _mm_add_pd(a, b));
+            _mm_storeu_pd(dst + (2*j+1) * 2,   _mm_sub_pd(a, b));
         }
     }
     // Ensure result ends up in x
@@ -397,7 +358,7 @@ static void stockham_r4(int32_t ns2, const double *trig, double *x, double *y) {
     stockham_r4_from<Fwd>(ns2, trig, x, x, y);
 }
 
-#else  // AVX2
+#endif  // USE_AVX512
 
 // ── Stockham radix-4 DIF FFT (AVX2) ────────────────────────────────────────
 // Verified correct algorithm:
@@ -553,8 +514,6 @@ static void stockham_r4_avx2(int32_t ns2, const double *bf_twiddles,
     if (src != x) memcpy(x, src, ns2 * 2 * sizeof(double));
 }
 
-#endif  // USE_AVX512
-
 // ── Forward/Inverse FFT wrappers ────────────────────────────────────────────
 
 // Forward FFT: Stockham + twist.  Reads from src_in (may be != c).
@@ -564,20 +523,6 @@ static void intl_fft_from(const INTL_FFT_PRECOMP *tables, const double *src_in,
     const int32_t ns2 = tables->ns2;
     const double *trig = tables->trig_fwd;
 
-#ifdef USE_AVX512
-    stockham_r4_from<true>(ns2, trig, src_in, c, tables->scratch);
-
-    const double *tw_twist = trig;
-    for (int32_t s = 4; 4*s < ns2; s *= 4)
-        tw_twist += (s / 4) * 24;
-
-    for (int32_t j = 0; j < ns2; j += 4) {
-        double *p = c + j * 2;
-        __m512d a = _mm512_load_pd(p);
-        __m512d w = _mm512_load_pd(tw_twist + j * 2);
-        _mm512_store_pd(p, cmul512(a, w));
-    }
-#else
     // AVX2: copy input, run Stockham, then twist
     if (src_in != c) memcpy(c, src_in, ns2 * 2 * sizeof(double));
     stockham_r4_avx2<true>(ns2, trig, c, tables->scratch);
@@ -601,7 +546,6 @@ static void intl_fft_from(const INTL_FFT_PRECOMP *tables, const double *src_in,
         __m256d w = _mm256_load_pd(tw_twist + j * 2);
         _mm256_store_pd(p, cmul(a, w));
     }
-#endif
 }
 
 static void intl_fft(const INTL_FFT_PRECOMP *tables, double *c) {
@@ -613,17 +557,6 @@ static void intl_ifft(const INTL_FFT_PRECOMP *tables, double *c) {
     const double *trig = tables->trig_inv;
     const double *tw_twist = trig;
 
-#ifdef USE_AVX512
-    // Apply twist first
-    for (int32_t j = 0; j < ns2; j += 4) {
-        double *p = c + j * 2;
-        __m512d a = _mm512_load_pd(p);
-        __m512d w = _mm512_load_pd(tw_twist + j * 2);
-        _mm512_store_pd(p, cmul512(a, w));
-    }
-    const double *tw_bf = trig + ns2 * 2;
-    stockham_r4<false>(ns2, tw_bf, c, tables->scratch);
-#else
     // AVX2: Separate twist + Stockham inverse
     for (int32_t j = 0; j < ns2; j += 2) {
         double *p = c + j * 2;
@@ -634,7 +567,6 @@ static void intl_ifft(const INTL_FFT_PRECOMP *tables, double *c) {
 
     const double *tw_bf = trig + ns2 * 2;
     stockham_r4_avx2<false>(ns2, tw_bf, c, tables->scratch);
-#endif
 }
 
 // ── Table construction ──────────────────────────────────────────────────────
@@ -645,15 +577,6 @@ static void build_tables(int32_t nn, INTL_FFT_PRECOMP *reps) {
     reps->n = n;
     reps->ns2 = ns2;
 
-#ifdef USE_AVX512
-    // AVX512: twiddles packed as 4 complex (8 doubles) per ZMM.
-    // First pass (s=1) uses no twiddles.
-    // Subsequent passes (s=4,16,...): j steps by 4, s/4 groups per pass, 3 ZMMs each = 24 doubles.
-    int32_t bf_twiddle_doubles = 0;
-    for (int32_t s = 4; 4*s < ns2; s *= 4) {
-        bf_twiddle_doubles += (s / 4) * 24;
-    }
-#else
     // AVX2: paired twiddle table. For each radix-4 pass:
     //   s=1:    q/2 pairs * 12 doubles
     //   s>=4:   ceil(q/2) pairs * 12 doubles
@@ -668,7 +591,6 @@ static void build_tables(int32_t nn, INTL_FFT_PRECOMP *reps) {
             ss *= 4; qq /= 4;
         }
     }
-#endif
 
     int32_t twist_doubles = ns2 * 2;
     int32_t total_per_dir = bf_twiddle_doubles + twist_doubles;
@@ -682,71 +604,6 @@ static void build_tables(int32_t nn, INTL_FFT_PRECOMP *reps) {
     reps->scratch = ptr; ptr += nn;
     reps->data = ptr;
 
-#ifdef USE_AVX512
-    // Build forward butterfly twiddles (AVX512: 4 complex per ZMM)
-    double *fwd = reps->trig_fwd;
-    for (int32_t s = 4; 4*s < ns2; s *= 4) {
-        int32_t denom = 4 * s;
-        for (int32_t j = 0; j < s; j += 4) {
-            // w1: exp(-2πi*(j+jj)/(4s)) for jj=0..3
-            for (int32_t jj = 0; jj < 4; jj++) {
-                fwd[jj*2]   = accurate_cos(-(j+jj), denom);
-                fwd[jj*2+1] = accurate_sin(-(j+jj), denom);
-            }
-            fwd += 8;
-            // w2: exp(-2πi*2*(j+jj)/(4s))
-            for (int32_t jj = 0; jj < 4; jj++) {
-                fwd[jj*2]   = accurate_cos(-2*(j+jj), denom);
-                fwd[jj*2+1] = accurate_sin(-2*(j+jj), denom);
-            }
-            fwd += 8;
-            // w3: exp(-2πi*3*(j+jj)/(4s))
-            for (int32_t jj = 0; jj < 4; jj++) {
-                fwd[jj*2]   = accurate_cos(-3*(j+jj), denom);
-                fwd[jj*2+1] = accurate_sin(-3*(j+jj), denom);
-            }
-            fwd += 8;
-        }
-    }
-    // Forward twist with 2/N scale baked in
-    {
-        const double scale = 2.0 / nn;
-        for (int32_t k = 0; k < ns2; k++) {
-            *fwd++ = scale * accurate_cos(-k, n);
-            *fwd++ = scale * accurate_sin(-k, n);
-        }
-    }
-
-    // Build inverse twiddles
-    double *inv = reps->trig_inv;
-    // Inverse twist first
-    for (int32_t k = 0; k < ns2; k++) {
-        *inv++ = accurate_cos(k, n);
-        *inv++ = accurate_sin(k, n);
-    }
-    // Inverse butterfly twiddles (positive angles)
-    for (int32_t s = 4; 4*s < ns2; s *= 4) {
-        int32_t denom = 4 * s;
-        for (int32_t j = 0; j < s; j += 4) {
-            for (int32_t jj = 0; jj < 4; jj++) {
-                inv[jj*2]   = accurate_cos(j+jj, denom);
-                inv[jj*2+1] = accurate_sin(j+jj, denom);
-            }
-            inv += 8;
-            for (int32_t jj = 0; jj < 4; jj++) {
-                inv[jj*2]   = accurate_cos(2*(j+jj), denom);
-                inv[jj*2+1] = accurate_sin(2*(j+jj), denom);
-            }
-            inv += 8;
-            for (int32_t jj = 0; jj < 4; jj++) {
-                inv[jj*2]   = accurate_cos(3*(j+jj), denom);
-                inv[jj*2+1] = accurate_sin(3*(j+jj), denom);
-            }
-            inv += 8;
-        }
-    }
-
-#else  // AVX2
     // Build forward butterfly twiddles.
     // Correct twiddle angle: m * j * s / ns2  (in units of full turn)
     // For each pass (s, q=ns2/(4*s)), store paired twiddles for (j=2k, j=2k+1).
@@ -816,7 +673,6 @@ static void build_tables(int32_t nn, INTL_FFT_PRECOMP *reps) {
             ss *= 4; qq /= 4;
         }
     }
-#endif  // USE_AVX512
 }
 
 // ── Conversion helpers ──────────────────────────────────────────────────────
