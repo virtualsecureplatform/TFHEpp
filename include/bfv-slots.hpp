@@ -6,7 +6,9 @@
 #include <limits>
 #include <memory>
 #include <type_traits>
+#include <vector>
 
+#include "bfv++.hpp"
 #include "evalkeygens.hpp"
 #include "keyswitch.hpp"
 #include "params.hpp"
@@ -518,6 +520,209 @@ void HomomorphicInnerProduct(TRLWE<P> &res, const TRLWE<P> &ct,
             res[k][i] = -res[k][i];
     for (uint32_t i = 0; i < P::n; i++)
         res[P::k][i] = ct[P::k][i] - res[P::k][i];
+}
+
+// ---------------------------------------------------------------------------
+// Baby-step/giant-step homomorphic polynomial evaluation
+//
+// Evaluates a cleartext polynomial f(X) = Σ coeffs[i]*X^i on an encrypted
+// value x, producing Enc(f(x)).  All slots are evaluated in parallel (SIMD).
+//
+// Algorithm:
+//   1. Choose k ≈ √degree, m = ⌈log₂(degree/k)⌉
+//   2. Baby step: precompute x, x², ..., x^k  (k-1 multiplications)
+//   3. Giant step: precompute x^k, x^{2k}, ..., x^{2^{m-1}·k}  (m-1 squarings)
+//   4. Recursively evaluate using Horner-like decomposition at x^{k·2^j} boundaries
+//
+// Coefficients are unsigned integers mod t (or t²).  The constant term is
+// encoded as a BFV plaintext (scaled by Δ) and added to the body.
+// Non-constant terms are applied via scalar-ciphertext multiplication
+// (multiply each TRLWE component by the scalar coefficient).
+// ---------------------------------------------------------------------------
+
+namespace polyeval {
+
+// Find optimal baby-step size k and giant-step depth m for degree d.
+// Minimizes total non-scalar multiplications ≈ k + m + (recursive overhead).
+inline std::pair<int, int> FindBSGSParams(int d)
+{
+    if (d <= 0) return {1, 0};
+    int best_k = 1, best_m = 0, best_cost = d + 1;
+    for (int k = 1; k <= d; k++) {
+        int m = 0;
+        { int reach = k; while (reach < d) { reach *= 2; m++; } }
+        // Cost: (k-1) baby muls + (m-1 if m>0) giant squarings + m recursive muls
+        int cost = (k - 1) + (m > 0 ? m - 1 : 0) + m;
+        if (cost < best_cost) {
+            best_cost = cost; best_k = k; best_m = m;
+        }
+        if (k > 2 * best_k) break;  // prune search
+    }
+    return {best_k, best_m};
+}
+
+// Largest power of 2 ≤ n (for balanced binary splitting in baby-step sum).
+inline int FloorPow2(int n)
+{
+    int p = 1;
+    while (2 * p <= n) p *= 2;
+    return p;
+}
+
+// Recursive evaluation of coefficient vector using precomputed powers.
+// coeffs[0..len-1] are the coefficients (index 0 = lowest power).
+// baby[1..k] = x^i.  giant[0..m-1] = x^{k·2^j}.
+// level = current giant-step level (counts down from m to 0).
+// Returns TRLWE encrypting Σ coeffs[i] * x^i.
+template <class P>
+void EvalRecursive(TRLWE<P> &res,
+                   const uint64_t *coeffs, int len,
+                   const std::vector<TRLWE<P>> &baby,
+                   const std::vector<TRLWE<P>> &giant,
+                   int level, int k,
+                   const relinKeyFFT<P> &rlk)
+{
+    if (len <= 0) {
+        // Zero
+        for (int c = 0; c <= static_cast<int>(P::k); c++)
+            for (uint32_t i = 0; i < P::n; i++)
+                res[c][i] = 0;
+        return;
+    }
+
+    if (level == 0) {
+        // Baby-step inner product: res = Σ_{i=0}^{len-1} coeffs[i] * x^i
+        // coeffs[0] is the constant term (add Δ*c to body).
+        // coeffs[i>0] multiply baby[i] by the scalar.
+        bool first = true;
+        for (int i = 0; i < len; i++) {
+            if (coeffs[i] == 0) continue;
+            if (i == 0) {
+                // Constant term: trivial TRLWE(Δ*c)
+                if (first) {
+                    for (int c = 0; c <= static_cast<int>(P::k); c++)
+                        for (uint32_t j = 0; j < P::n; j++)
+                            res[c][j] = 0;
+                    constexpr typename P::T delta = P::delta_int;
+                    constexpr uint64_t r = P::Q_mod_t;
+                    constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
+                    res[P::k][0] = static_cast<typename P::T>(coeffs[0]) * delta
+                                 + static_cast<typename P::T>(coeffs[0] * r / t_val);
+                    first = false;
+                } else {
+                    constexpr typename P::T delta = P::delta_int;
+                    constexpr uint64_t r = P::Q_mod_t;
+                    constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
+                    res[P::k][0] += static_cast<typename P::T>(coeffs[0]) * delta
+                                  + static_cast<typename P::T>(coeffs[0] * r / t_val);
+                }
+            } else {
+                // Non-constant: scalar * baby[i]
+                auto c_val = static_cast<typename P::T>(coeffs[i]);
+                if (first) {
+                    for (int c = 0; c <= static_cast<int>(P::k); c++)
+                        for (uint32_t j = 0; j < P::n; j++)
+                            res[c][j] = baby[i][c][j] * c_val;
+                    first = false;
+                } else {
+                    for (int c = 0; c <= static_cast<int>(P::k); c++)
+                        for (uint32_t j = 0; j < P::n; j++)
+                            res[c][j] += baby[i][c][j] * c_val;
+                }
+            }
+        }
+        if (first) {
+            // All coefficients were zero
+            for (int c = 0; c <= static_cast<int>(P::k); c++)
+                for (uint32_t j = 0; j < P::n; j++)
+                    res[c][j] = 0;
+        }
+        return;
+    }
+
+    // Giant-step split: split at index k * 2^(level-1)
+    int split = k;
+    for (int i = 0; i < level - 1; i++) split *= 2;
+    if (split > len) split = len;
+
+    // Lower part: coeffs[0..split-1], recurse with level-1
+    TRLWE<P> lower;
+    EvalRecursive<P>(lower, coeffs, split, baby, giant, level - 1, k, rlk);
+
+    if (split >= len) {
+        // No upper part
+        res = lower;
+        return;
+    }
+
+    // Upper part: coeffs[split..len-1], recurse with level-1
+    TRLWE<P> upper;
+    EvalRecursive<P>(upper, coeffs + split, len - split, baby, giant, level - 1, k, rlk);
+
+    // res = lower + upper * giant[level-1]
+    TRLWE<P> prod;
+    TRLWEMultFullDD<P>(prod, upper, giant[level - 1], rlk);
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (uint32_t i = 0; i < P::n; i++)
+            res[c][i] = lower[c][i] + prod[c][i];
+}
+
+}  // namespace polyeval
+
+// ---------------------------------------------------------------------------
+// PolyEval<P> — Evaluate cleartext polynomial on encrypted value
+//
+//   coeffs: f(X) = coeffs[0] + coeffs[1]*X + ... + coeffs[d]*X^d
+//           Each coefficient is in [0, t) or [0, t²) (unsigned).
+//   x:      TRLWE encrypting the input value (all slots evaluated in parallel)
+//   rlk:    Relinearization key for ciphertext-ciphertext multiplication
+//   res:    TRLWE encrypting f(x)
+// ---------------------------------------------------------------------------
+
+template <class P>
+void PolyEval(TRLWE<P> &res,
+              const std::vector<uint64_t> &coeffs,
+              const TRLWE<P> &x,
+              const relinKeyFFT<P> &rlk)
+{
+    int d = static_cast<int>(coeffs.size()) - 1;
+    if (d <= 0) {
+        // Constant or empty
+        for (int c = 0; c <= static_cast<int>(P::k); c++)
+            for (uint32_t i = 0; i < P::n; i++)
+                res[c][i] = 0;
+        if (!coeffs.empty() && coeffs[0] != 0) {
+            constexpr typename P::T delta = P::delta_int;
+            constexpr uint64_t r = P::Q_mod_t;
+            constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
+            res[P::k][0] = static_cast<typename P::T>(coeffs[0]) * delta
+                         + static_cast<typename P::T>(coeffs[0] * r / t_val);
+        }
+        return;
+    }
+
+    auto [k, m] = polyeval::FindBSGSParams(d);
+
+    // Baby step: baby[i] = x^i for i=1..k
+    std::vector<TRLWE<P>> baby(k + 1);
+    baby[1] = x;
+    for (int i = 2; i <= k; i++) {
+        int a = polyeval::FloorPow2(i - 1);  // balanced split for minimal depth
+        int b = i - a;
+        TRLWEMultFullDD<P>(baby[i], baby[a], baby[b], rlk);
+    }
+
+    // Giant step: giant[j] = x^{k*2^j} for j=0..m-1
+    std::vector<TRLWE<P>> giant(m);
+    if (m > 0) {
+        giant[0] = baby[k];
+        for (int j = 1; j < m; j++)
+            TRLWEMultFullDD<P>(giant[j], giant[j - 1], giant[j - 1], rlk);
+    }
+
+    // Recursive evaluation
+    polyeval::EvalRecursive<P>(res, coeffs.data(), d + 1,
+                               baby, giant, m, k, rlk);
 }
 
 }  // namespace TFHEpp
