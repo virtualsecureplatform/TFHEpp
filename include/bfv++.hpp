@@ -183,9 +183,7 @@ struct Wide384 {
         }
     }
 
-    // Divide this 384-bit value by a 128-bit divisor, return low 128 bits of quotient.
-    // Uses the identity: the result modulo Q is just the low 128 bits.
-    __uint128_t div128(__uint128_t divisor) const
+    __uint128_t div128_unsigned(__uint128_t divisor) const
     {
         // Schoolbook long division with 128-bit "digits":
         // Treat the 384-bit value as three 128-bit limbs: [L2:L1:L0]
@@ -228,6 +226,26 @@ struct Wide384 {
         // The full quotient is (q2 * 2^256 + q1 * 2^128 + q0).
         // We only need the low 128 bits for torus arithmetic.
         return q0;
+    }
+
+    // Divide this signed 384-bit two's-complement value by a 128-bit divisor,
+    // return the quotient modulo 2^128.
+    __uint128_t div128(__uint128_t divisor) const
+    {
+        const bool negative = (w[5] >> 63) != 0;
+        if (!negative) return div128_unsigned(divisor);
+
+        Wide384 magnitude;
+        uint64_t carry = 1;
+        for (int i = 0; i < 6; i++) {
+            const uint64_t limb = ~w[i];
+            const uint64_t next = limb + carry;
+            magnitude.w[i] = next;
+            carry = (carry != 0 && next == 0) ? 1 : 0;
+        }
+
+        const __uint128_t q = magnitude.div128_unsigned(divisor);
+        return static_cast<__uint128_t>(-q);
     }
 };
 

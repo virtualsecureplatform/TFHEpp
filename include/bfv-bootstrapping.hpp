@@ -265,12 +265,6 @@ BootstrapKey<BaseP> MakeBootstrapKey(const Key<BaseP> &base_key,
     Key<BootP> boot_key;
     ConvertSecretKey<BaseP, BootP>(boot_key, base_key);
 
-    bk.base_galois = std::make_unique<GaloisKey<BaseP>>();
-    GaloisKeyGen<BaseP>(*bk.base_galois, base_key);
-
-    bk.boot_galois = std::make_unique<GaloisKey<BootP>>();
-    GaloisKeyGen<BootP>(*bk.boot_galois, boot_key);
-
     bk.relin = makeRelinKeyFFT<BootP>(boot_key);
 
     std::array<uint64_t, BootP::n> sk_plain{};
@@ -283,6 +277,12 @@ BootstrapKey<BaseP> MakeBootstrapKey(const Key<BaseP> &base_key,
             BootstrapKey<BaseP>::digit_error_bound);
 
     if (build_linear_maps) {
+        bk.base_galois = std::make_unique<GaloisKey<BaseP>>();
+        GaloisKeyGen<BaseP>(*bk.base_galois, base_key);
+
+        bk.boot_galois = std::make_unique<GaloisKey<BootP>>();
+        GaloisKeyGen<BootP>(*bk.boot_galois, boot_key);
+
         bk.stc_same =
             std::make_unique<std::vector<std::array<uint64_t, BaseP::n>>>();
         bk.stc_cross =
@@ -311,7 +311,8 @@ void BootstrapNoisySlots(TRLWE<typename BootstrapKey<BaseP>::BootP> &res,
                          const BootstrapKey<BaseP> &bk)
 {
     using BootP = typename BootstrapKey<BaseP>::BootP;
-    assert(bk.stc_same && bk.stc_cross && bk.cts_same && bk.cts_cross);
+    assert(bk.base_galois && bk.boot_galois && bk.stc_same && bk.stc_cross &&
+           bk.cts_same && bk.cts_cross);
 
     TRLWE<BaseP> coeff_ct;
     c2s::SlotToCoeff<BaseP>(coeff_ct, ct, *bk.stc_same, *bk.stc_cross,
@@ -322,6 +323,50 @@ void BootstrapNoisySlots(TRLWE<typename BootstrapKey<BaseP>::BootP> &res,
 
     c2s::CoeffToSlot<BootP>(res, noisy_coeffs, *bk.cts_same, *bk.cts_cross,
                             bk.linear_bsgs_step, *bk.boot_galois);
+}
+
+template <class BaseP>
+void ProjectToBase(TRLWE<BaseP> &res,
+                   const TRLWE<typename BootstrapKey<BaseP>::BootP> &ct)
+{
+    using BootP = typename BootstrapKey<BaseP>::BootP;
+    static_assert(std::is_same_v<typename BaseP::T, typename BootP::T>,
+                  "projection requires matching torus types");
+    static_assert(BaseP::n == BootP::n && BaseP::k == BootP::k,
+                  "projection requires matching ciphertext dimensions");
+
+    for (int c = 0; c <= static_cast<int>(BaseP::k); c++)
+        for (uint32_t i = 0; i < BaseP::n; i++)
+            res[c][i] = static_cast<typename BaseP::T>(ct[c][i]);
+}
+
+// Final online bootstrapping stage:
+//   Enc_{p^2}(p*m + e in slots) -> Enc_{p^2}(p*m) -> Enc_p(m)
+//
+// For BFV scaling, encoding p*m modulo p^2 uses the same torus phase as
+// encoding m modulo p, so the final projection is a component-wise copy.
+template <class BaseP>
+void FinalizeBootstrap(TRLWE<BaseP> &res,
+                       const TRLWE<typename BootstrapKey<BaseP>::BootP> &noisy,
+                       const BootstrapKey<BaseP> &bk)
+{
+    using BootP = typename BootstrapKey<BaseP>::BootP;
+    assert(bk.relin);
+    assert(!bk.digit_removal_polynomial.empty());
+
+    TRLWE<BootP> removed;
+    PolyEval<BootP>(removed, bk.digit_removal_polynomial, noisy, *bk.relin);
+    ProjectToBase<BaseP>(res, removed);
+}
+
+template <class BaseP>
+void Bootstrap(TRLWE<BaseP> &res, const TRLWE<BaseP> &ct,
+               const BootstrapKey<BaseP> &bk)
+{
+    using BootP = typename BootstrapKey<BaseP>::BootP;
+    TRLWE<BootP> noisy_slots;
+    BootstrapNoisySlots<BaseP>(noisy_slots, ct, bk);
+    FinalizeBootstrap<BaseP>(res, noisy_slots, bk);
 }
 
 }  // namespace bfvboot

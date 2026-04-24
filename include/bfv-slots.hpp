@@ -919,26 +919,28 @@ void EvalRecursive(TRLWE<P> &res,
     for (int i = 0; i < level - 1; i++) split *= 2;
     if (split > len) split = len;
 
-    // Lower part: coeffs[0..split-1], recurse with level-1
-    TRLWE<P> lower;
-    EvalRecursive<P>(lower, coeffs, split, baby, giant, level - 1, k, rlk);
+    // Lower part: coeffs[0..split-1], recurse with level-1.
+    // Keep recursive TRLWE temporaries off the stack for lvl3/p^2 BFV params.
+    auto lower = std::make_unique<TRLWE<P>>();
+    EvalRecursive<P>(*lower, coeffs, split, baby, giant, level - 1, k, rlk);
 
     if (split >= len) {
         // No upper part
-        res = lower;
+        res = *lower;
         return;
     }
 
     // Upper part: coeffs[split..len-1], recurse with level-1
-    TRLWE<P> upper;
-    EvalRecursive<P>(upper, coeffs + split, len - split, baby, giant, level - 1, k, rlk);
+    auto upper = std::make_unique<TRLWE<P>>();
+    EvalRecursive<P>(*upper, coeffs + split, len - split, baby, giant,
+                     level - 1, k, rlk);
 
     // res = lower + upper * giant[level-1]
-    TRLWE<P> prod;
-    TRLWEMultFullDD<P>(prod, upper, giant[level - 1], rlk);
+    auto prod = std::make_unique<TRLWE<P>>();
+    TRLWEMultFullDD<P>(*prod, *upper, giant[level - 1], rlk);
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (uint32_t i = 0; i < P::n; i++)
-            res[c][i] = lower[c][i] + prod[c][i];
+            res[c][i] = (*lower)[c][i] + (*prod)[c][i];
 }
 
 }  // namespace polyeval

@@ -347,6 +347,36 @@ inline std::vector<uint64_t> centered_range_null_poly(uint64_t B,
     return poly;
 }
 
+inline bool try_reduce_mod_p_times_monic(std::vector<uint64_t> &poly,
+                                         const std::vector<uint64_t> &monic_poly,
+                                         uint64_t p)
+{
+    const uint64_t mod = p * p;
+    const size_t degree = monic_poly.size() - 1;
+    assert(!monic_poly.empty());
+    assert(monic_poly.back() == 1);
+
+    while (poly.size() > degree) {
+        const size_t shift = poly.size() - degree - 1;
+        const uint64_t lead = poly.back();
+        poly.pop_back();
+        if (lead == 0) continue;
+
+        if (lead % p != 0) return false;
+        const uint64_t q = lead / p;
+        for (size_t i = 0; i < degree; i++) {
+            const uint64_t sub = static_cast<uint64_t>(
+                (static_cast<unsigned __int128>(q) * p * monic_poly[i]) %
+                mod);
+            poly[shift + i] = (poly[shift + i] >= sub)
+                                  ? (poly[shift + i] - sub)
+                                  : (poly[shift + i] + mod - sub);
+        }
+    }
+    trim(poly);
+    return true;
+}
+
 }  // namespace detail
 
 // Return a polynomial f modulo p^2 that removes a bounded low digit:
@@ -393,10 +423,13 @@ inline std::vector<uint64_t> GetLowestDigitRemovalPolynomialOverRange(uint64_t p
                          ? (removal[i] - result[i])
                          : (removal[i] + mod - result[i]);
     }
-    // The Magma prototype reduces once more modulo p * base_poly. That modulus
-    // is non-monic over Z/p^2Z, so a simple monic-style reducer is not valid in
-    // every range. The unreduced representative is still congruent on the whole
-    // bounded support and is what the homomorphic digit-extraction stage needs.
+    // Try the Magma-style reduction by p * base_poly.  The leading coefficient
+    // p is not invertible modulo p^2, so this is only valid when every
+    // eliminated coefficient is divisible by p; otherwise the unreduced
+    // representative is the valid bounded-support polynomial.
+    std::vector<uint64_t> reduced = removal;
+    if (detail::try_reduce_mod_p_times_monic(reduced, base_poly, p))
+        removal = std::move(reduced);
     detail::trim(removal);
     return removal;
 }
