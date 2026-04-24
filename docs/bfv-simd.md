@@ -78,7 +78,7 @@ void TRLWEMultFullDD<P>(TRLWE<P>& res,
 
 Multiplication uses the Double Decomposition (DD) approach:
 1. Decompose both ciphertexts into l̅=8 base-B̅g digits
-2. Compute all l̅² = 64 pairwise digit polynomial products (via `PolyMulNaive`)
+2. Transform the digit polynomials once and compute the l̅² pairwise digit products with FFT
 3. Accumulate into a 384-bit wide accumulator (`Wide384`) to hold the full 256-bit raw product
 4. Divide by Δ using 384-bit / 128-bit long division
 5. Relinearize using DD ExternalProduct
@@ -174,5 +174,5 @@ TFHEpp::trlweSlotDecrypt<P>(result, ct_mul, key);
 ## Limitations
 
 - **Multiplication depth**: One level only (the noise budget after one multiplication is nearly exhausted). Bootstrapping or modulus switching would be needed for deeper circuits.
-- **Performance**: The FullDD multiplication uses `PolyMulNaive` (O(n^2) per digit pair) — 64 such calls for l̅^2=64 pairs. An FFT-based approach would be faster but requires resolving the double-precision normalization for integer polynomial products.
+- **Performance**: The FullDD multiplication uses FFT-backed digit products when the digit-product bound fits safely below the `double` mantissa. The 384-bit accumulation and Δ-division are still scalar and remain the next major optimization target.
 - **AVX512**: The current build requires `USE_AVX512=OFF` due to a missing s=1 inverse twiddle table entry in the AVX512 Stockham FFT path. The AVX2 path works correctly.

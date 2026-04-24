@@ -1,5 +1,8 @@
 #pragma once
 #include <cstdint>
+#include <limits>
+#include <memory>
+#include <type_traits>
 
 #include "keyswitch.hpp"
 #include "mulfft.hpp"
@@ -242,41 +245,100 @@ void TRLWEMultWithoutRelinearizationFullDD(TRLWE3<P> &res, const TRLWE<P> &a,
 {
     constexpr int width = std::numeric_limits<typename P::T>::digits;
 
-    std::array<TRLWE<P>, P::l̅> a_dec, b_dec;
-    TRLWEBaseBbarDecompose<P>(a_dec, a);
-    TRLWEBaseBbarDecompose<P>(b_dec, b);
-
     if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
-        // 128-bit torus: 384-bit accumulation + Δ-division
-        std::array<std::array<Wide384, P::n>, 3> acc{};
+        auto a_dec = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
+        auto b_dec = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
+        TRLWEBaseBbarDecompose<P>(*a_dec, a);
+        TRLWEBaseBbarDecompose<P>(*b_dec, b);
 
-        for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                const int k = i + j;
-                const int shift = 2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
-                if (shift <= -width) continue;
+        // 128-bit torus: 384-bit accumulation + Δ-division.  Digit
+        // convolutions fit exactly in double for lvl3simd:
+        // n * (Bbar/2)^2 with a small safety margin below the 53-bit mantissa.
+        constexpr bool use_fft_digits =
+            2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
+            std::numeric_limits<double>::digits;
 
-                Polynomial<P> prod;
-                PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][0]);
-                for (uint32_t n = 0; n < P::n; n++)
-                    acc[2][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
-                PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][1]);
-                for (uint32_t n = 0; n < P::n; n++)
-                    acc[1][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
-                PolyMulNaive<P>(prod, a_dec[i][0], b_dec[j][1]);
-                for (uint32_t n = 0; n < P::n; n++)
-                    acc[0][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
-                PolyMulNaive<P>(prod, a_dec[i][1], b_dec[j][0]);
-                for (uint32_t n = 0; n < P::n; n++)
-                    acc[0][n].add_shifted(static_cast<__int128_t>(prod[n]), shift);
+        auto acc = std::make_unique<std::array<std::array<Wide384, P::n>, 3>>();
+
+        if constexpr (use_fft_digits) {
+            auto a_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+            auto b_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                    TwistIFFT<P>((*a_fd)[i][c], (*a_dec)[i][c]);
+                    TwistIFFT<P>((*b_fd)[i][c], (*b_dec)[i][c]);
+                }
+            }
+
+            alignas(64) PolynomialInFD<P> prod_fd;
+            Polynomial<P> prod;
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    const int k = i + j;
+                    const int shift =
+                        2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+                    if (shift <= -width) continue;
+
+                    MulInFD<P::n>(prod_fd, (*a_fd)[i][0], (*b_fd)[j][0]);
+                    TwistFFT<P>(prod, prod_fd);
+                    for (uint32_t n = 0; n < P::n; n++)
+                        (*acc)[2][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+
+                    MulInFD<P::n>(prod_fd, (*a_fd)[i][1], (*b_fd)[j][1]);
+                    TwistFFT<P>(prod, prod_fd);
+                    for (uint32_t n = 0; n < P::n; n++)
+                        (*acc)[1][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+
+                    MulInFD<P::n>(prod_fd, (*a_fd)[i][0], (*b_fd)[j][1]);
+                    FMAInFD<P::n>(prod_fd, (*a_fd)[i][1], (*b_fd)[j][0]);
+                    TwistFFT<P>(prod, prod_fd);
+                    for (uint32_t n = 0; n < P::n; n++)
+                        (*acc)[0][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                }
             }
         }
+        else {
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    const int k = i + j;
+                    const int shift =
+                        2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+                    if (shift <= -width) continue;
+
+                    Polynomial<P> prod;
+                    PolyMulNaive<P>(prod, (*a_dec)[i][0], (*b_dec)[j][0]);
+                    for (uint32_t n = 0; n < P::n; n++)
+                        (*acc)[2][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                    PolyMulNaive<P>(prod, (*a_dec)[i][1], (*b_dec)[j][1]);
+                    for (uint32_t n = 0; n < P::n; n++)
+                        (*acc)[1][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                    PolyMulNaive<P>(prod, (*a_dec)[i][0], (*b_dec)[j][1]);
+                    for (uint32_t n = 0; n < P::n; n++)
+                        (*acc)[0][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                    PolyMulNaive<P>(prod, (*a_dec)[i][1], (*b_dec)[j][0]);
+                    for (uint32_t n = 0; n < P::n; n++)
+                        (*acc)[0][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                }
+            }
+        }
+
         constexpr typename P::T delta = P::delta_int;
         for (int c = 0; c < 3; c++)
             for (uint32_t n = 0; n < P::n; n++)
-                res[c][n] = acc[c][n].div128(delta);
+                res[c][n] = (*acc)[c][n].div128(delta);
     }
     else {
+        std::array<TRLWE<P>, P::l̅> a_dec, b_dec;
+        TRLWEBaseBbarDecompose<P>(a_dec, a);
+        TRLWEBaseBbarDecompose<P>(b_dec, b);
+
         // 32/64-bit torus: shift-based with power-of-2 Δ cancellation
         for (int n = 0; n < static_cast<int>(P::n); n++) {
             res[0][n] = 0; res[1][n] = 0; res[2][n] = 0;
