@@ -361,6 +361,89 @@ void trlweSlotDecrypt(std::array<uint64_t, P::n> &slots, const TRLWE<P> &ct,
 }
 
 // ---------------------------------------------------------------------------
+// ModulusSwitch<P> — rescale a TRLWE from mod Q=2^128 down to mod Qp
+//
+// For each coefficient c: new_c = round(c · Qp / 2^128) mod Qp, in [0, Qp).
+// The scaling factor Δ = Q/t becomes Δ' = Qp/t, so the plaintext m (mod t)
+// is preserved modulo a small additive rounding error bounded by ~||s||·n/2.
+//
+// Qp must fit in uint64_t. Typical bootstrapping usage: Qp = p^e with p a
+// small prime and p^e comfortably below 2^63.
+//
+// After this call the ciphertext is interpreted mod Qp (not mod 2^128),
+// so subsequent operations must either reduce mod Qp explicitly or stay
+// within the range where wrap-around in 128-bit is harmless.
+// ---------------------------------------------------------------------------
+
+template <class P>
+inline typename P::T modSwitchCoeff(typename P::T c, uint64_t Qp)
+{
+    static_assert(std::is_same_v<typename P::T, __uint128_t>,
+                  "ModulusSwitch currently requires T = __uint128_t");
+    // Compute floor((c · Qp + 2^127) / 2^128) mod Qp.
+    // Follows the same structure as bfvDecodeCoeff: the low and high halves
+    // of c are each multiplied by Qp, the low product is shifted right by
+    // 64 and added into the high product, and a 2^63 rounding bias is added
+    // (which acts as 2^127 once we finally shift right by 64 more).
+    const uint64_t lo = static_cast<uint64_t>(c);
+    const uint64_t hi = static_cast<uint64_t>(c >> 64);
+    __uint128_t prod_lo = static_cast<__uint128_t>(lo) * Qp;
+    __uint128_t prod_hi = static_cast<__uint128_t>(hi) * Qp;
+    prod_hi += (prod_lo >> 64);
+    prod_hi += static_cast<__uint128_t>(1) << 63;
+    uint64_t result = static_cast<uint64_t>(prod_hi >> 64);
+    return static_cast<typename P::T>(result % Qp);
+}
+
+template <class P>
+void ModulusSwitch(TRLWE<P> &res, const TRLWE<P> &ct, uint64_t Qp)
+{
+    for (int k = 0; k <= static_cast<int>(P::k); k++)
+        for (uint32_t i = 0; i < P::n; i++)
+            res[k][i] = modSwitchCoeff<P>(ct[k][i], Qp);
+}
+
+// ---------------------------------------------------------------------------
+// trlweSlotDecryptModSwitched<P> — decrypt a TRLWE that has been mod-switched
+// to Qp (so its coefficients are in [0, Qp)).
+//
+// Computes phase = c[P::k] - Σ c[k]·s using existing 128-bit PolyMul, then
+// reinterprets each coefficient as a signed 128-bit integer (valid because
+// the true integer value is bounded by n·Qp ≪ 2^127) and reduces mod Qp.
+// Finally decodes each coefficient as round(phase·t / Qp) mod t and applies
+// the inverse slot-domain transform.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void trlweSlotDecryptModSwitched(std::array<uint64_t, P::n> &slots,
+                                 const TRLWE<P> &ct, const Key<P> &key,
+                                 uint64_t Qp)
+{
+    constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
+    Polynomial<P> phase = trlwePhase<P>(ct, key);
+
+    Polynomial<P> poly;
+    for (uint32_t i = 0; i < P::n; i++) {
+        // Reinterpret phase[i] (mod 2^128) as a signed integer. True value
+        // fits easily in 64 bits for reasonable Qp, so the high bit of the
+        // 128-bit word tells us the sign.
+        __int128_t signed_phase = static_cast<__int128_t>(phase[i]);
+        __int128_t r = signed_phase % static_cast<__int128_t>(Qp);
+        if (r < 0) r += Qp;
+        uint64_t phase_Qp = static_cast<uint64_t>(r);
+
+        // Decode: round(phase_Qp · t / Qp) mod t, computed in 128-bit
+        // intermediate to avoid overflow when phase_Qp · t exceeds 64-bit.
+        __uint128_t num = static_cast<__uint128_t>(phase_Qp) * t_val
+                        + (static_cast<__uint128_t>(Qp) >> 1);
+        uint64_t decoded = static_cast<uint64_t>(num / Qp) % t_val;
+        poly[i] = static_cast<typename P::T>(decoded);
+    }
+
+    SlotDecode<P>(slots, poly);
+}
+
+// ---------------------------------------------------------------------------
 // GaloisKey<P> — evaluation keys for all log2(n) power-of-2 slot rotations
 //                plus one conjugation key.
 //
