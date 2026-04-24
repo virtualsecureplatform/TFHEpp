@@ -238,6 +238,45 @@ void BuildCoeffToSlotKeys(std::vector<std::array<uint64_t, P::n>> &D_same,
 }
 
 // ---------------------------------------------------------------------------
+// Compute the n × n SlotDecode matrix S^{-1} where
+//   S^{-1}[i][j] = SlotDecode(e_j)[i]
+// with e_j the standard basis polynomial (coefficient 1 at position j).
+// This is the inverse of the SlotEncode matrix and the target for
+// SlotToCoeff.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void ComputeSlotDecodeMatrix(std::vector<std::array<uint64_t, P::n>> &Sinv)
+{
+    constexpr uint64_t t = static_cast<uint64_t>(P::plain_modulus);
+    Sinv.assign(P::n, std::array<uint64_t, P::n>{});
+
+    Polynomial<P> e_j{};
+    std::array<uint64_t, P::n> slots{};
+    for (uint32_t j = 0; j < P::n; j++) {
+        if (j > 0) e_j[j - 1] = 0;
+        e_j[j] = 1;
+        SlotDecode<P>(slots, e_j);
+        for (uint32_t i = 0; i < P::n; i++)
+            Sinv[i][j] = slots[i] % t;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Build both diagonal decompositions for SlotToCoeff from S^{-1}.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void BuildSlotToCoeffKeys(std::vector<std::array<uint64_t, P::n>> &D_same,
+                          std::vector<std::array<uint64_t, P::n>> &D_cross)
+{
+    auto Sinv = std::make_unique<std::vector<std::array<uint64_t, P::n>>>();
+    ComputeSlotDecodeMatrix<P>(*Sinv);
+    ExtractSameRowDiagonals<P>(D_same, *Sinv);
+    ExtractCrossRowDiagonals<P>(D_cross, *Sinv);
+}
+
+// ---------------------------------------------------------------------------
 // Homomorphic CoeffToSlot: applies S (the SlotEncode matrix) in slot domain
 // to a TRLWE ciphertext.
 //
@@ -277,6 +316,26 @@ void CoeffToSlot(TRLWE<P> &res, const TRLWE<P> &ct,
     for (int k = 0; k <= static_cast<int>(P::k); k++)
         for (uint32_t i = 0; i < P::n; i++)
             res[k][i] = res_same[k][i] + res_cross[k][i];
+}
+
+// ---------------------------------------------------------------------------
+// SlotToCoeff: applies S^{-1} (the SlotDecode matrix) in slot domain.
+//
+// Given a TRLWE ct whose user slots are (q_0, ..., q_{n-1}), produces a
+// TRLWE whose polynomial has coefficients (q_0, ..., q_{n-1}) directly —
+// i.e. the inverse of CoeffToSlot. The implementation is identical to
+// CoeffToSlot; only the precomputed diagonals differ (built from S^{-1}
+// via BuildSlotToCoeffKeys instead of BuildCoeffToSlotKeys).
+// ---------------------------------------------------------------------------
+
+template <class P>
+void SlotToCoeff(TRLWE<P> &res, const TRLWE<P> &ct,
+                 const std::vector<std::array<uint64_t, P::n>> &D_same,
+                 const std::vector<std::array<uint64_t, P::n>> &D_cross,
+                 int k_step,
+                 const GaloisKey<P> &gk)
+{
+    CoeffToSlot<P>(res, ct, D_same, D_cross, k_step, gk);
 }
 
 }  // namespace c2s
