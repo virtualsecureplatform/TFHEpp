@@ -526,6 +526,79 @@ void ConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct, const GaloisKey<P> &gk)
 }
 
 // ---------------------------------------------------------------------------
+// SlotPtxtMul<P> — slot-wise plaintext-vector × ciphertext
+//
+// Given a TRLWE ct encrypting slot vector s = (s_0, ..., s_{n-1}) mod t and a
+// plaintext slot vector v = (v_0, ..., v_{n-1}) mod t, produce a TRLWE
+// encrypting (s_0·v_0, ..., s_{n-1}·v_{n-1}) mod t.
+//
+// For power-of-2 cyclotomic with t ≡ 1 (mod 2n), pointwise slot multiplication
+// corresponds to polynomial multiplication in Z[x]/(x^n+1): if C = INTT(s) and
+// V = INTT(v), then INTT(s pointwise v) = C · V.  We multiply each component
+// of ct by the polynomial V using the existing PolyMul.
+//
+// Noise growth is proportional to ||V||, so the caller is expected to keep v
+// small (e.g. coefficients in [0, t) rather than arbitrary 128-bit values).
+// ---------------------------------------------------------------------------
+
+template <class P>
+void SlotPtxtMul(TRLWE<P> &res, const TRLWE<P> &ct,
+                 const std::array<uint64_t, P::n> &slot_vector)
+{
+    // Encode slot_vector via INTT into a plaintext polynomial V.
+    Polynomial<P> V;
+    SlotEncode<P>(V, slot_vector);
+
+    // Multiply each TRLWE component by V.  PolyMul works mod 2^{width(T)},
+    // which is what we want for BFV's phase arithmetic.
+    for (int k = 0; k <= static_cast<int>(P::k); k++)
+        PolyMul<P>(res[k], ct[k], V);
+}
+
+// ---------------------------------------------------------------------------
+// LinearTransform<P> — apply a diagonal-decomposed linear map homomorphically
+//
+// Given diagonals d_0, ..., d_{M-1} and corresponding rotation offsets
+// r_0, ..., r_{M-1}, compute
+//
+//   res = Σ_{i=0}^{M-1} d_i ∘ rotate(ct, r_i)
+//
+// where ∘ is pointwise slot multiplication and rotate uses RotateSlots
+// (intra-row rotation by r_i within each Galois row of n/2 slots).
+//
+// This is the standard "diagonals" formulation of matrix-vector
+// multiplication in the slot domain.  A user who wants a full n×n matrix M
+// decomposed as M = Σ_i diag(d_i) · ρ^{r_i} (with ρ the rotation
+// permutation) would call this with (d_i, r_i) for every non-zero diagonal.
+// Baby-step/giant-step callers precompute fewer rotations; see
+// LinearTransformBSGS<P>.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void LinearTransform(TRLWE<P> &res, const TRLWE<P> &ct,
+                     const std::vector<std::array<uint64_t, P::n>> &diagonals,
+                     const std::vector<int> &rotation_offsets,
+                     const GaloisKey<P> &gk)
+{
+    assert(diagonals.size() == rotation_offsets.size());
+    assert(!diagonals.empty());
+
+    TRLWE<P> rotated, scaled;
+    // First term — write into res directly.
+    RotateSlots<P>(rotated, ct, rotation_offsets[0], gk);
+    SlotPtxtMul<P>(res, rotated, diagonals[0]);
+
+    // Remaining terms — rotate, scale, accumulate.
+    for (size_t i = 1; i < diagonals.size(); i++) {
+        RotateSlots<P>(rotated, ct, rotation_offsets[i], gk);
+        SlotPtxtMul<P>(scaled, rotated, diagonals[i]);
+        for (int k = 0; k <= static_cast<int>(P::k); k++)
+            for (uint32_t j = 0; j < P::n; j++)
+                res[k][j] += scaled[k][j];
+    }
+}
+
+// ---------------------------------------------------------------------------
 // makeRelinKeyFFT<P> — heap-safe relinearization key generation
 //
 // For large parameter sets (e.g. lvl3simdparam) the standard relinKeyFFTgen
