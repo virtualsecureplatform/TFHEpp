@@ -233,6 +233,8 @@ struct lvl3simdparam {
     // If UINT128_MAX % t == t-1, then Q mod t = 0 (t divides 2^128), but t is odd so this won't happen.
     static constexpr uint64_t Q_mod_t =
         static_cast<uint64_t>(static_cast<T>(-1) % plain_modulus) + 1;
+    static constexpr uint64_t bfv_bootstrap_digit_error_bound = 15;
+    static constexpr int bfv_bootstrap_linear_bsgs_step = 64;
     // DD parameters — identical to lvl3param
     static constexpr std::uint32_t l̅ = 8;
     static constexpr std::uint32_t l̅ₐ = 8;

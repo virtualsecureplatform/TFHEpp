@@ -59,7 +59,13 @@ inline uint64_t powmod64(uint64_t base, uint64_t exp, uint64_t mod)
 //   N_INV    — modular inverse of n mod t  (used in INTT normalization)
 // ---------------------------------------------------------------------------
 
-template <class P> struct SIMDConstants;  // primary template intentionally undefined
+template <class P>
+struct SIMDConstants {
+    static constexpr uint64_t t       = P::simd_modulus;
+    static constexpr uint64_t PSI     = P::simd_psi;
+    static constexpr uint64_t PSI_INV = P::simd_psi_inv;
+    static constexpr uint64_t N_INV   = P::simd_n_inv;
+};
 
 template <>
 struct SIMDConstants<lvl3simdparam> {
@@ -70,6 +76,21 @@ struct SIMDConstants<lvl3simdparam> {
     static constexpr uint64_t PSI_INV = 7887;    // ψ^{-1} mod t
     static constexpr uint64_t N_INV   = 114661;  // n^{-1} mod t  (n=4096)
 };
+
+// BFV encoding: floor(m * Q / t), where Q = 2^width(T).
+// The fractional correction must be computed in 128-bit arithmetic because
+// bootstrapping uses prime-power plaintext moduli such as p^2.
+template <class P>
+inline typename P::T bfvEncodeCoeff(uint64_t m)
+{
+    constexpr typename P::T delta = P::delta_int;
+    constexpr uint64_t r = P::Q_mod_t;
+    constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
+    m %= t_val;
+    return static_cast<typename P::T>(m) * delta
+         + static_cast<typename P::T>(
+               (static_cast<unsigned __int128>(m) * r) / t_val);
+}
 
 // ---------------------------------------------------------------------------
 // Galois permutation tables for slot rotation.
@@ -298,17 +319,10 @@ void trlweSlotEncrypt(TRLWE<P> &ct, const std::array<uint64_t, P::n> &slots,
     // Decompose as: m·delta_int + floor(m·Q_mod_t / t)
     // where delta_int = floor(Q/t) and Q_mod_t = Q mod t.
     // This gives at most 1 unit of rounding error regardless of m.
-    constexpr typename P::T delta = P::delta_int;
-    constexpr uint64_t r = P::Q_mod_t;
-    constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
-
     Polynomial<P> scaled;
     for (uint32_t i = 0; i < P::n; i++) {
         uint64_t m = static_cast<uint64_t>(poly[i]);
-        // floor(m·Q/t) = m·delta_int + floor(m·r/t)
-        // m < t < 2^17, r < t < 2^17, so m*r < 2^34 — fits in uint64_t
-        scaled[i] = static_cast<typename P::T>(m) * delta
-                  + static_cast<typename P::T>(m * r / t_val);
+        scaled[i] = bfvEncodeCoeff<P>(m);
     }
 
     trlweSymEncrypt<P>(ct, scaled, key);
@@ -871,18 +885,10 @@ void EvalRecursive(TRLWE<P> &res,
                     for (int c = 0; c <= static_cast<int>(P::k); c++)
                         for (uint32_t j = 0; j < P::n; j++)
                             res[c][j] = 0;
-                    constexpr typename P::T delta = P::delta_int;
-                    constexpr uint64_t r = P::Q_mod_t;
-                    constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
-                    res[P::k][0] = static_cast<typename P::T>(coeffs[0]) * delta
-                                 + static_cast<typename P::T>(coeffs[0] * r / t_val);
+                    res[P::k][0] = bfvEncodeCoeff<P>(coeffs[0]);
                     first = false;
                 } else {
-                    constexpr typename P::T delta = P::delta_int;
-                    constexpr uint64_t r = P::Q_mod_t;
-                    constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
-                    res[P::k][0] += static_cast<typename P::T>(coeffs[0]) * delta
-                                  + static_cast<typename P::T>(coeffs[0] * r / t_val);
+                    res[P::k][0] += bfvEncodeCoeff<P>(coeffs[0]);
                 }
             } else {
                 // Non-constant: scalar * baby[i]
@@ -960,11 +966,7 @@ void PolyEval(TRLWE<P> &res,
             for (uint32_t i = 0; i < P::n; i++)
                 res[c][i] = 0;
         if (!coeffs.empty() && coeffs[0] != 0) {
-            constexpr typename P::T delta = P::delta_int;
-            constexpr uint64_t r = P::Q_mod_t;
-            constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
-            res[P::k][0] = static_cast<typename P::T>(coeffs[0]) * delta
-                         + static_cast<typename P::T>(coeffs[0] * r / t_val);
+            res[P::k][0] = bfvEncodeCoeff<P>(coeffs[0]);
         }
         return;
     }

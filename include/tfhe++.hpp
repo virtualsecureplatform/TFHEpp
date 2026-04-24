@@ -36,6 +36,7 @@
 #include "bfv-slots.hpp"
 #include "bfv-digitext.hpp"
 #include "bfv-c2s.hpp"
+#include "bfv-bootstrapping.hpp"
 
 // Application
 #include "aes.hpp"

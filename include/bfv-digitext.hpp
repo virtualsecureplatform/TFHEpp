@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -251,6 +252,153 @@ inline uint64_t plainEvalMod(const std::vector<uint64_t> &coeffs, uint64_t x, ui
         xi = (xi * x) % mod;
     }
     return static_cast<uint64_t>(result);
+}
+
+namespace detail {
+
+inline uint64_t mod_i128(__int128 value, uint64_t mod)
+{
+    value %= static_cast<__int128>(mod);
+    if (value < 0) value += mod;
+    return static_cast<uint64_t>(value);
+}
+
+inline void trim(std::vector<uint64_t> &poly)
+{
+    while (poly.size() > 1 && poly.back() == 0) poly.pop_back();
+}
+
+inline std::vector<uint64_t> poly_mul_raw(const std::vector<uint64_t> &a,
+                                          const std::vector<uint64_t> &b,
+                                          uint64_t mod)
+{
+    std::vector<uint64_t> res(a.size() + b.size() - 1, 0);
+    for (size_t i = 0; i < a.size(); i++) {
+        for (size_t j = 0; j < b.size(); j++) {
+            res[i + j] = static_cast<uint64_t>(
+                (static_cast<unsigned __int128>(res[i + j]) +
+                 static_cast<unsigned __int128>(a[i]) * b[j]) % mod);
+        }
+    }
+    trim(res);
+    return res;
+}
+
+inline void reduce_mod_monic(std::vector<uint64_t> &poly,
+                             const std::vector<uint64_t> &monic_modulus,
+                             uint64_t mod)
+{
+    const size_t degree = monic_modulus.size() - 1;
+    assert(!monic_modulus.empty());
+    assert(monic_modulus.back() == 1);
+    while (poly.size() > degree) {
+        const size_t shift = poly.size() - degree - 1;
+        const uint64_t lead = poly.back();
+        poly.pop_back();
+        if (lead == 0) continue;
+        for (size_t i = 0; i < degree; i++) {
+            const uint64_t sub = static_cast<uint64_t>(
+                (static_cast<unsigned __int128>(lead) * monic_modulus[i]) % mod);
+            poly[shift + i] = (poly[shift + i] >= sub)
+                                  ? (poly[shift + i] - sub)
+                                  : (poly[shift + i] + mod - sub);
+        }
+    }
+    trim(poly);
+}
+
+inline std::vector<uint64_t> poly_mul_mod_monic(const std::vector<uint64_t> &a,
+                                                const std::vector<uint64_t> &b,
+                                                const std::vector<uint64_t> &monic_modulus,
+                                                uint64_t mod)
+{
+    std::vector<uint64_t> res = poly_mul_raw(a, b, mod);
+    reduce_mod_monic(res, monic_modulus, mod);
+    return res;
+}
+
+inline std::vector<uint64_t> poly_pow_mod_monic(std::vector<uint64_t> base,
+                                                uint64_t exp,
+                                                const std::vector<uint64_t> &monic_modulus,
+                                                uint64_t mod)
+{
+    std::vector<uint64_t> res{1 % mod};
+    reduce_mod_monic(base, monic_modulus, mod);
+    while (exp != 0) {
+        if ((exp & 1) != 0)
+            res = poly_mul_mod_monic(res, base, monic_modulus, mod);
+        exp >>= 1;
+        if (exp != 0)
+            base = poly_mul_mod_monic(base, base, monic_modulus, mod);
+    }
+    return res;
+}
+
+inline std::vector<uint64_t> centered_range_null_poly(uint64_t B,
+                                                      uint64_t mod)
+{
+    std::vector<uint64_t> poly{1};
+    for (int64_t i = -static_cast<int64_t>(B);
+         i <= static_cast<int64_t>(B); i++) {
+        std::vector<uint64_t> factor{
+            mod_i128(-static_cast<__int128>(i), mod), 1};
+        poly = poly_mul_raw(poly, factor, mod);
+    }
+    return poly;
+}
+
+}  // namespace detail
+
+// Return a polynomial f modulo p^2 that removes a bounded low digit:
+//   f(p*m + e) = p*m mod p^2, for all e in [-B, B].
+//
+// This mirrors GetLowestDigitRemovalPolynomialOverRange from the Magma
+// prototype and is intended for the final BFV bootstrap digit-extraction step.
+inline std::vector<uint64_t> GetLowestDigitRemovalPolynomialOverRange(uint64_t p,
+                                                                      uint64_t B)
+{
+    assert(p >= 2);
+    assert(2 * B + 1 <= p);
+    const uint64_t mod = p * p;
+    std::vector<uint64_t> base_poly =
+        detail::centered_range_null_poly(B, mod);
+    std::vector<uint64_t> square_modulus =
+        detail::poly_mul_raw(base_poly, base_poly, mod);
+
+    std::vector<uint64_t> result(square_modulus.size() - 1, 0);
+    for (int64_t e = -static_cast<int64_t>(B);
+         e <= static_cast<int64_t>(B); e++) {
+        if (e == 0) continue;
+        std::vector<uint64_t> y_minus_e{
+            detail::mod_i128(-static_cast<__int128>(e), mod), 1};
+        std::vector<uint64_t> indicator =
+            detail::poly_pow_mod_monic(y_minus_e, p, square_modulus, mod);
+        indicator =
+            detail::poly_pow_mod_monic(indicator, p - 1, square_modulus, mod);
+
+        if (result.size() < indicator.size()) result.resize(indicator.size(), 0);
+        result[0] = (result[0] + detail::mod_i128(e, mod)) % mod;
+        for (size_t i = 0; i < indicator.size(); i++) {
+            const uint64_t sub = detail::mod_i128(
+                static_cast<__int128>(e) * indicator[i], mod);
+            result[i] = (result[i] >= sub) ? (result[i] - sub)
+                                           : (result[i] + mod - sub);
+        }
+    }
+
+    std::vector<uint64_t> removal(std::max<size_t>(2, result.size()), 0);
+    removal[1] = 1;
+    for (size_t i = 0; i < result.size(); i++) {
+        removal[i] = (removal[i] >= result[i])
+                         ? (removal[i] - result[i])
+                         : (removal[i] + mod - result[i]);
+    }
+    // The Magma prototype reduces once more modulo p * base_poly. That modulus
+    // is non-monic over Z/p^2Z, so a simple monic-style reducer is not valid in
+    // every range. The unreduced representative is still congruent on the whole
+    // bounded support and is what the homomorphic digit-extraction stage needs.
+    detail::trim(removal);
+    return removal;
 }
 
 }  // namespace digitext

@@ -11,6 +11,7 @@
 #include <tfhe++.hpp>
 
 using TFHEpp::digitext::GetLowestDigitRemovalPolynomial;
+using TFHEpp::digitext::GetLowestDigitRemovalPolynomialOverRange;
 using TFHEpp::digitext::GetLowestDigitRetainPolynomial;
 using TFHEpp::digitext::plainEvalMod;
 using TFHEpp::digitext::power;
@@ -64,6 +65,41 @@ static int TestRemovalRetain(uint64_t p, uint64_t e)
               << " deg(retain)=" << retain_degree
               << "  " << (failures == 0 ? "PASS" : "FAIL")
               << " (" << failures << "/" << (2*mod) << ")" << std::endl;
+    return failures;
+}
+
+static int TestBoundedRangeRemoval(uint64_t p, uint64_t B)
+{
+    const uint64_t mod = p * p;
+    auto removal = GetLowestDigitRemovalPolynomialOverRange(p, B);
+
+    int failures = 0;
+    for (uint64_t m = 0; m < p; m++) {
+        for (int64_t e = -static_cast<int64_t>(B);
+             e <= static_cast<int64_t>(B); e++) {
+            int64_t signed_x = static_cast<int64_t>(m * p) + e;
+            uint64_t x = static_cast<uint64_t>(
+                (signed_x % static_cast<int64_t>(mod) +
+                 static_cast<int64_t>(mod)) %
+                static_cast<int64_t>(mod));
+            uint64_t expected = (m * p) % mod;
+            uint64_t got = plainEvalMod(removal, x, mod);
+            if (got != expected) {
+                if (failures < 3)
+                    std::cout << "    [bounded fail] p=" << p
+                              << " B=" << B << " m=" << m
+                              << " e=" << e << " expected=" << expected
+                              << " got=" << got << std::endl;
+                failures++;
+            }
+        }
+    }
+
+    std::cout << "  bounded p=" << p << " B=" << B
+              << " deg=" << (removal.size() - 1) << "  "
+              << (failures == 0 ? "PASS" : "FAIL")
+              << " (" << failures << "/" << (p * (2 * B + 1)) << ")"
+              << std::endl;
     return failures;
 }
 
@@ -150,6 +186,8 @@ int main()
     total_failures += TestRemovalRetain(5, 3);
     total_failures += TestRemovalRetain(7, 2);
     total_failures += TestRemovalRetain(11, 2);
+    total_failures += TestBoundedRangeRemoval(17, 3);
+    total_failures += TestBoundedRangeRemoval(257, 4);
 
     if (total_failures != 0) {
         std::cout << "FAIL (" << total_failures << " mismatches)" << std::endl;
