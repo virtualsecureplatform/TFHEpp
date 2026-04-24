@@ -222,5 +222,62 @@ void PlainApplyS(std::array<uint64_t, P::n> &y,
         y[i] = (y_same[i] + y_cross[i]) % t;
 }
 
+// ---------------------------------------------------------------------------
+// Build both diagonal decompositions for CoeffToSlot from the precomputed S.
+// Convenience wrapper; allocates two heap vectors of n diagonals.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void BuildCoeffToSlotKeys(std::vector<std::array<uint64_t, P::n>> &D_same,
+                          std::vector<std::array<uint64_t, P::n>> &D_cross)
+{
+    auto S = std::make_unique<std::vector<std::array<uint64_t, P::n>>>();
+    ComputeSlotEncodeMatrix<P>(*S);
+    ExtractSameRowDiagonals<P>(D_same, *S);
+    ExtractCrossRowDiagonals<P>(D_cross, *S);
+}
+
+// ---------------------------------------------------------------------------
+// Homomorphic CoeffToSlot: applies S (the SlotEncode matrix) in slot domain
+// to a TRLWE ciphertext.
+//
+// Given TRLWE ct whose polynomial has BFV-plaintext coefficients (p_0, ...,
+// p_{n-1}) (i.e. phase ≈ Δ · P), the resulting TRLWE encrypts a polynomial
+// whose user slots are exactly (p_0, ..., p_{n-1}).
+//
+// Implementation:
+//   result = LinearTransformBSGS(ct,         D_same,  offsets=[0..n/2), k)
+//          + LinearTransformBSGS(Conj(ct),   D_cross, offsets=[0..n/2), k)
+//
+// k is the baby-step factor; k ≈ √(n/2) is near-optimal.  Caller must provide
+// the galois key; the conjugation key at index P::nbit is used for Conj.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void CoeffToSlot(TRLWE<P> &res, const TRLWE<P> &ct,
+                 const std::vector<std::array<uint64_t, P::n>> &D_same,
+                 const std::vector<std::array<uint64_t, P::n>> &D_cross,
+                 int k_step,
+                 const GaloisKey<P> &gk)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(static_cast<int>(D_same.size())  == half);
+    assert(static_cast<int>(D_cross.size()) == half);
+
+    std::vector<int> offsets(half);
+    for (int r = 0; r < half; r++) offsets[r] = r;
+
+    TRLWE<P> res_same, res_cross, ct_conj;
+
+    LinearTransformBSGS<P>(res_same, ct, D_same, offsets, k_step, gk);
+
+    ConjugateSlots<P>(ct_conj, ct, gk);
+    LinearTransformBSGS<P>(res_cross, ct_conj, D_cross, offsets, k_step, gk);
+
+    for (int k = 0; k <= static_cast<int>(P::k); k++)
+        for (uint32_t i = 0; i < P::n; i++)
+            res[k][i] = res_same[k][i] + res_cross[k][i];
+}
+
 }  // namespace c2s
 }  // namespace TFHEpp
