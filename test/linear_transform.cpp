@@ -234,6 +234,47 @@ int main()
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Test 6: LinearTransformBSGS equivalence to naive LinearTransform
+    //         Construct a matrix with several non-consecutive diagonals and
+    //         verify both implementations produce the same decrypted slots.
+    // -----------------------------------------------------------------------
+    std::cout << "  Test 6: LinearTransformBSGS vs LinearTransform... " << std::flush;
+    {
+        std::array<uint64_t, P::n> slots_in{};
+        for (auto &v : slots_in) v = small_dist(engine);
+
+        // Use 9 diagonals with offsets [0,1,2,4,7,8,16,17,20] — mix of small
+        // and medium to exercise j2 ≥ 1 in BSGS.
+        const std::vector<int> offsets = {0, 1, 2, 4, 7, 8, 16, 17, 20};
+        std::vector<std::array<uint64_t, P::n>> diagonals(offsets.size());
+        for (auto &d : diagonals)
+            for (auto &v : d) v = small_dist(engine);
+
+        TFHEpp::TRLWE<P> ct, r_naive, r_bsgs;
+        TFHEpp::trlweSlotEncrypt<P>(ct, slots_in, key);
+
+        TFHEpp::LinearTransform<P>(r_naive, ct, diagonals, offsets, *gk);
+        TFHEpp::LinearTransformBSGS<P>(r_bsgs, ct, diagonals, offsets, 4, *gk);
+
+        std::array<uint64_t, P::n> dec_naive{}, dec_bsgs{};
+        TFHEpp::trlweSlotDecrypt<P>(dec_naive, r_naive, key);
+        TFHEpp::trlweSlotDecrypt<P>(dec_bsgs,  r_bsgs,  key);
+
+        int mismatches = 0;
+        for (int i = 0; i < n; i++)
+            if (dec_naive[i] != dec_bsgs[i]) mismatches++;
+
+        std::cout << (mismatches == 0 ? "PASS" : "FAIL")
+                  << " (mismatches=" << mismatches << "/" << n << ")" << std::endl;
+        if (mismatches > 0) {
+            for (int i = 0; i < 3; i++)
+                std::cout << "    slot[" << i << "] naive=" << dec_naive[i]
+                          << " bsgs=" << dec_bsgs[i] << std::endl;
+            failures++;
+        }
+    }
+
     if (failures == 0) {
         std::cout << "PASS (all LinearTransform tests)" << std::endl;
         return 0;

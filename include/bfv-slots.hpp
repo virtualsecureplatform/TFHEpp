@@ -599,6 +599,118 @@ void LinearTransform(TRLWE<P> &res, const TRLWE<P> &ct,
 }
 
 // ---------------------------------------------------------------------------
+// Plaintext-level intra-row rotation of a slot vector
+//
+// Left cyclic shift by `steps` positions within each Galois row of n/2 slots,
+// matching the action of RotateSlots on the ciphertext side.  Used for the
+// plaintext pre-rotation of diagonals in baby-step/giant-step.
+// ---------------------------------------------------------------------------
+
+template <class P>
+inline void RotateSlotVector(std::array<uint64_t, P::n> &out,
+                             const std::array<uint64_t, P::n> &in,
+                             int steps)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    for (int i = 0; i < half; i++) {
+        out[i] = in[(i + steps) % half];
+        out[half + i] = in[half + (i + steps) % half];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// LinearTransformBSGS<P> — baby-step/giant-step diagonal-decomposition
+//
+// Splits each rotation offset r as r = k·j2 + j1 with j1 ∈ [0, k).  Precomputes
+// the k "baby" rotations once and applies the (n/k) "giant" rotations to the
+// accumulated inner sums.  Plaintext diagonals are rotated on the fly by
+// -k·j2 so that the inner multiplication lines up with the corresponding
+// baby rotation of the ciphertext.
+//
+//   Cost: k + ⌈M/k⌉ intra-row rotations (vs M for the naive LinearTransform),
+//         where M is the number of non-zero diagonals.
+//   Choose k ≈ √M for the minimum.
+//
+// Offsets must be distinct and non-negative; the implementation groups them
+// by j2 = offset / k.  Offsets ≥ n/2 are reduced modulo n/2 automatically
+// by the underlying RotateSlots call.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void LinearTransformBSGS(TRLWE<P> &res, const TRLWE<P> &ct,
+                         const std::vector<std::array<uint64_t, P::n>> &diagonals,
+                         const std::vector<int> &rotation_offsets,
+                         int k_step,
+                         const GaloisKey<P> &gk)
+{
+    assert(diagonals.size() == rotation_offsets.size());
+    assert(!diagonals.empty());
+    assert(k_step > 0);
+
+    constexpr int half = static_cast<int>(P::n) / 2;
+
+    // Precompute baby rotations σ^{j1}(ct) for j1 ∈ [0, k_step).
+    std::vector<TRLWE<P>> baby(k_step);
+    baby[0] = ct;
+    for (int j1 = 1; j1 < k_step; j1++)
+        RotateSlots<P>(baby[j1], ct, j1, gk);
+
+    // Group diagonals by j2 = offset / k_step.  For each j2, the inner sum
+    // Σ_{j1} σ^{-k·j2}(d_{k·j2+j1}) ∘ baby[j1] is computed first (no new
+    // rotations), then rotated once by k·j2 and added into res.
+    std::vector<std::vector<std::pair<int, size_t>>> groups;  // j2 → [(j1, idx)]
+    int max_j2 = 0;
+    for (size_t i = 0; i < rotation_offsets.size(); i++) {
+        int r = ((rotation_offsets[i] % half) + half) % half;
+        int j2 = r / k_step;
+        int j1 = r % k_step;
+        if (j2 >= max_j2) { max_j2 = j2; groups.resize(max_j2 + 1); }
+        groups[j2].emplace_back(j1, i);
+    }
+
+    bool res_initialized = false;
+    TRLWE<P> inner, scaled, giant_rotated;
+    std::array<uint64_t, P::n> pre_rot_d;
+    for (int j2 = 0; j2 <= max_j2; j2++) {
+        if (groups[j2].empty()) continue;
+
+        // Inner accumulator: Σ_{j1} σ^{-k·j2}(d_idx) ∘ baby[j1].
+        bool inner_initialized = false;
+        for (auto &[j1, idx] : groups[j2]) {
+            RotateSlotVector<P>(pre_rot_d, diagonals[idx], -k_step * j2);
+            if (!inner_initialized) {
+                SlotPtxtMul<P>(inner, baby[j1], pre_rot_d);
+                inner_initialized = true;
+            } else {
+                SlotPtxtMul<P>(scaled, baby[j1], pre_rot_d);
+                for (int k = 0; k <= static_cast<int>(P::k); k++)
+                    for (uint32_t m = 0; m < P::n; m++)
+                        inner[k][m] += scaled[k][m];
+            }
+        }
+
+        // Apply the giant rotation σ^{k·j2}.
+        const TRLWE<P> *to_add;
+        if (j2 == 0) {
+            to_add = &inner;
+        } else {
+            RotateSlots<P>(giant_rotated, inner, k_step * j2, gk);
+            to_add = &giant_rotated;
+        }
+
+        if (!res_initialized) {
+            res = *to_add;
+            res_initialized = true;
+        } else {
+            for (int k = 0; k <= static_cast<int>(P::k); k++)
+                for (uint32_t m = 0; m < P::n; m++)
+                    res[k][m] += (*to_add)[k][m];
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // makeRelinKeyFFT<P> — heap-safe relinearization key generation
 //
 // For large parameter sets (e.g. lvl3simdparam) the standard relinKeyFFTgen
