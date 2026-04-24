@@ -35,6 +35,7 @@
 // BFV SIMD slot operations
 #include "bfv-slots.hpp"
 #include "bfv-digitext.hpp"
+#include "bfv-c2s.hpp"
 
 // Application
 #include "aes.hpp"
