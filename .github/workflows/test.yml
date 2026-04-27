@@ -47,6 +47,29 @@ jobs:
         cd build
         ninja
         test/test.sh
+  ubuntu-2404-raintt:
+    name: ubuntu-2404-raintt
+    runs-on: Ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    steps:
+    - name: Install libraries
+      run: |
+        apt-get update
+        apt-get upgrade -y
+        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: build and test
+      run: |
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_COMPRESS=ON
+        cd build
+        ninja raintt trlwerainttenc gatebootstrappingtlwe2tlweraintt
+        ./test/raintt
+        ./test/trlwerainttenc
+        ./test/gatebootstrappingtlwe2tlweraintt
   ubuntu-2404-tutorial:
     name: ubuntu-2404-tutorial
     runs-on: Ubuntu-latest

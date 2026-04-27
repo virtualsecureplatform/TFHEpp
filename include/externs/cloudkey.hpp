@@ -19,6 +19,14 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
+#ifdef USE_COMPRESS
+#define INST(P)                                                           \
+    extern template void bkrainttgen<P>(BootstrappingKeyRAINTT<P>& bkraintt, \
+                                        const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+#endif
+
 #define INST(P) \
     extern template void ikskgen<P>(KeySwitchingKey<P> & ksk, const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
@@ -62,6 +70,12 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #define INST(P) extern template void EvalKey::emplacebkntt<P>(const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
+
+#ifdef USE_COMPRESS
+#define INST(P) extern template void EvalKey::emplacebkraintt<P>(const SecretKey& sk)
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+#endif
 
 #define INST(P) extern template void EvalKey::emplaceiksk<P>(const SecretKey& sk)
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
@@ -113,6 +127,12 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
 
+#ifdef USE_COMPRESS
+#define INST(P) extern template BootstrappingKeyRAINTT<P>& EvalKey::getbkraintt<P>() const
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+#endif
+
 #define INST(P) extern template KeySwitchingKey<P>& EvalKey::getiksk<P>() const
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
@@ -153,6 +173,12 @@ TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #define INST(P) extern template auto& EvalKey::get<BootstrappingKeyNTT<P>>()
 TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
 #undef INST
+
+#ifdef USE_COMPRESS
+#define INST(P) extern template auto& EvalKey::get<BootstrappingKeyRAINTT<P>>()
+TFHEPP_EXPLICIT_INSTANTIATION_BLIND_ROTATE(INST)
+#undef INST
+#endif
 
 #define INST(P) extern template auto& EvalKey::get<KeySwitchingKey<P>>()
 TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)

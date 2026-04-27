@@ -79,6 +79,19 @@ struct EvalKey {
         ,
         std::shared_ptr<CBswitchingKey<cbAHlvl2param>>  // 27
 #endif
+#ifdef USE_COMPRESS
+        ,
+        // BootstrappingKeyRAINTT
+        std::shared_ptr<BootstrappingKeyRAINTT<lvl01param>>,
+        std::shared_ptr<BootstrappingKeyRAINTT<lvlh1param>>,
+        std::shared_ptr<BootstrappingKeyRAINTT<lvl02param>>,
+        std::shared_ptr<BootstrappingKeyRAINTT<lvlh2param>>
+#ifdef USE_DIFFERENT_BR_PARAM
+        ,
+        std::shared_ptr<BootstrappingKeyRAINTT<cblvl02param>>,
+        std::shared_ptr<BootstrappingKeyRAINTT<cblvlh2param>>
+#endif
+#endif
         >
         keys;
 
@@ -146,6 +159,21 @@ struct EvalKey {
             std::make_unique_for_overwrite<BootstrappingKeyNTT<P>>();
         bknttgen<P>(*get<BootstrappingKeyNTT<P>>(), sk);
     }
+#ifdef USE_COMPRESS
+    template <class P>
+    void emplacebkraintt(const SecretKey& sk)
+    {
+        if (get<BootstrappingKeyRAINTT<P>>() != nullptr) {
+            std::cerr << "Warning: BootstrappingKeyRAINTT<P> already exists. "
+                         "Skipping duplicate key generation."
+                      << std::endl;
+            return;
+        }
+        get<BootstrappingKeyRAINTT<P>>() =
+            std::make_unique_for_overwrite<BootstrappingKeyRAINTT<P>>();
+        bkrainttgen<P>(*get<BootstrappingKeyRAINTT<P>>(), sk);
+    }
+#endif
     template <class P>
     void emplacebk2bkfft()
     {
@@ -317,6 +345,13 @@ struct EvalKey {
     {
         return *const_cast<EvalKey*>(this)->get<BootstrappingKeyNTT<P>>();
     }
+#ifdef USE_COMPRESS
+    template <class P>
+    BootstrappingKeyRAINTT<P>& getbkraintt() const
+    {
+        return *const_cast<EvalKey*>(this)->get<BootstrappingKeyRAINTT<P>>();
+    }
+#endif
     template <class P>
     KeySwitchingKey<P>& getiksk() const
     {

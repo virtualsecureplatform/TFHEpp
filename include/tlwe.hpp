@@ -29,7 +29,7 @@ void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const uint η,
     std::uniform_int_distribution<typename P::T> Torusdist(0, P::q - 1);
     res = {};
     res[P::k * P::n] =
-        p + CenteredBinomial<P>(η)
+        (p + CenteredBinomial<P>(η))
         << (std::numeric_limits<typename P::T>::digits - P::qbit);
     for (int k = 0; k < P::k; k++)
         for (int i = 0; i < P::n; i++) {
@@ -69,7 +69,10 @@ void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const uint η,
                        const Key<P> &key)
 {
     constexpr double Δ =
-        std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
+        2 *
+        static_cast<double>(
+            static_cast<typename P::T>(1)
+            << (std::numeric_limits<typename P::T>::digits - 1)) /
         plain_modulus;
     tlweSymEncrypt<P>(res, static_cast<typename P::T>(p * Δ), η, key);
 }

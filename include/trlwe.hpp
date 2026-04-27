@@ -23,7 +23,8 @@ template <class P>
 void trlweSymEncryptZero(TRLWE<P> &c, const uint η, const Key<P> &key)
 {
     for (typename P::T &i : c[P::k])
-        i = (CenteredBinomial<P>(η) << std::numeric_limits<P>::digits) / P::q;
+        i = CenteredBinomial<P>(η)
+            << (std::numeric_limits<typename P::T>::digits - P::qbit);
     for (int k = 0; k < P::k; k++) {
         for (typename P::T &i : c[k]) i = UniformTorusRandom<P>();
         alignas(64) std::array<typename P::T, P::n> partkey;
@@ -47,7 +48,6 @@ template <class P>
 void trlweSymEncryptZero(TRLWERAINTT<P> &c, const uint η, const Key<P> &key)
 {
     static_assert(P::q == raintt::P);
-    static_assert(P::qbit == raintt::wordbits);
     std::uniform_int_distribution<typename P::T> Torusdist(0, P::q - 1);
     constexpr uint8_t remainder = ((P::nbit - 1) % 3) + 1;
     c = {};
@@ -114,8 +114,15 @@ void trlweSymEncrypt(TRLWERAINTT<P> &c, const Polynomial<P> &p, const uint η,
 {
     trlweSymEncryptZero<P>(c, η, key);
     PolynomialRAINTT<P> pntt;
-    raintt::TwistINTT<typename P::T, P::nbit, modswitch>(
-        pntt, p, (*raintttable)[1], (*raintttwist)[1]);
+    if constexpr (!modswitch && hasq<P> && P::q == raintt::P) {
+        Polynomial<P> pmod;
+        for (int i = 0; i < P::n; i++) pmod[i] = p[i] % P::q;
+        raintt::TwistINTT<typename P::T, P::nbit, false>(
+            pntt, pmod, (*raintttable)[1], (*raintttwist)[1]);
+    }
+    else
+        raintt::TwistINTT<typename P::T, P::nbit, modswitch>(
+            pntt, p, (*raintttable)[1], (*raintttwist)[1]);
     constexpr uint8_t remainder = ((P::nbit - 1) % 3) + 1;
     for (int i = 0; i < P::n; i++)
         if ((i & ((1 << remainder) - 1)) > 1)

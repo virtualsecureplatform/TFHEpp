@@ -149,7 +149,7 @@ constexpr Word inv_mod()
 }
 
 // NTT related
-#if defined(__clang__) & defined(USE_COMPRESS)
+#ifdef USE_COMPRESS
 constexpr SWord W = PowREDC(31, K);
 #else
 constexpr SWord W = PowREDC(11, K);

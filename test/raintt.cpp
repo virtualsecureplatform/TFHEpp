@@ -182,6 +182,10 @@ int main()
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) assert(a[i] == res[i]);
     }
     std::cout << "NTT witout modswitch Passed" << std::endl;
+    constexpr uint32_t modswitch_error_bound = (1ULL << 32) / raintt::P + 1;
+    constexpr uint32_t modswitch_wordbits =
+        raintt::wordbits < raintt::min_wordbits ? raintt::wordbits
+                                                : raintt::min_wordbits;
     for (int test = 0; test < num_test; test++) {
         typename TFHEpp::lvl1param::T a = Torus32dist(engine);
         raintt::Word b =
@@ -193,8 +197,7 @@ int main()
                  ((1ULL << (32 + raintt::wordbits - 1)) / raintt::P) +
              (1ULL << (raintt::wordbits - 1 - 1))) >>
             (raintt::wordbits - 1);
-        assert(std::abs(static_cast<int>(a - c)) <=
-               ((1U << raintt::min_wordbits) / raintt::P) + 1);
+        assert(std::abs(static_cast<int>(a - c)) <= modswitch_error_bound);
     }
     std::cout << "Modswitch Passed" << std::endl;
     for (int test = 0; test < num_test; test++) {
@@ -215,7 +218,7 @@ int main()
         // 4)std::cout<<res[i]<<":"<<a[i]<<std::endl;
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             assert(std::abs(static_cast<int>(res[i] - a[i])) <=
-                   ((1U << raintt::min_wordbits) / raintt::P) + 1);
+                   modswitch_error_bound);
     }
     std::cout << "NTT with modswitch Passed" << std::endl;
 
@@ -283,7 +286,7 @@ int main()
             // (1U<<(TFHEpp::lvl1param::nbit+4)));
             assert(std::abs(static_cast<int>(naieve[i] - polymul[i])) <=
                    (1U << (TFHEpp::lvl1param::nbit +
-                           (32 - raintt::wordbits + 1) + 4)));
+                           (32 - modswitch_wordbits + 1) + 4)));
         }
     }
     std::cout << "PolyMul with modsiwtch Passed" << std::endl;
