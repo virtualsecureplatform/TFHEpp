@@ -79,6 +79,16 @@ constexpr uint64_t hensel_lift_root_to_square_modulus(uint64_t root_mod_p,
     return root_mod_p + k * p;
 }
 
+template <class T>
+constexpr double torus_delta_double(uint32_t plain_modulusbit)
+{
+    if constexpr (is_multilimb_uint_v<T>)
+        return 0.0;
+    else
+        return static_cast<double>(
+            static_cast<T>(1) << (std::numeric_limits<T>::digits - plain_modulusbit));
+}
+
 }  // namespace detail
 
 // Parameter adapter for the p^2 plaintext ring used by the first BFV
@@ -88,8 +98,8 @@ constexpr uint64_t hensel_lift_root_to_square_modulus(uint64_t root_mod_p,
 template <class BaseP>
 struct PrimePower2Param {
     using T = typename BaseP::T;
-    static_assert(std::is_same_v<T, __uint128_t>,
-                  "PrimePower2Param currently expects 128-bit BFV params");
+    static_assert(std::is_same_v<T, __uint128_t> || is_multilimb_uint_v<T>,
+                  "PrimePower2Param currently expects 128-bit or multi-limb BFV params");
 
     static constexpr int32_t key_value_max = BaseP::key_value_max;
     static constexpr int32_t key_value_min = BaseP::key_value_min;
@@ -100,8 +110,8 @@ struct PrimePower2Param {
     static constexpr std::uint32_t lₐ = BaseP::lₐ;
     static constexpr std::uint32_t Bgbit = BaseP::Bgbit;
     static constexpr std::uint32_t Bgₐbit = BaseP::Bgₐbit;
-    static constexpr uint32_t Bg = BaseP::Bg;
-    static constexpr uint32_t Bgₐ = BaseP::Bgₐ;
+    static constexpr T Bg = BaseP::Bg;
+    static constexpr T Bgₐ = BaseP::Bgₐ;
     static constexpr ErrorDistribution errordist = BaseP::errordist;
     static const inline double α = BaseP::α;
     static constexpr T μ = BaseP::μ;
@@ -123,11 +133,11 @@ struct PrimePower2Param {
     static constexpr T plain_modulus = static_cast<T>(plain_modulus_u64);
     static constexpr uint32_t plain_modulusbit =
         detail::ceil_log2(plain_modulus_u64);
-    static constexpr double Δ =
-        static_cast<double>(static_cast<T>(1) << (128 - plain_modulusbit));
-    static constexpr T delta_int = static_cast<T>(-1) / plain_modulus;
+    static constexpr double Δ = detail::torus_delta_double<T>(plain_modulusbit);
+    static constexpr T delta_int =
+        std::numeric_limits<T>::max() / plain_modulus_u64;
     static constexpr uint64_t Q_mod_t =
-        static_cast<uint64_t>(static_cast<T>(-1) % plain_modulus) + 1;
+        (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
 
     static constexpr std::uint32_t l̅ = BaseP::l̅;
     static constexpr std::uint32_t l̅ₐ = BaseP::l̅ₐ;

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 
+#include "bfv-multilimb.hpp"
 #include "cuhe++.hpp"
 #include "raintt.hpp"
 

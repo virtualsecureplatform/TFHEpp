@@ -272,6 +272,50 @@ struct lvl4param {
     static constexpr std::uint32_t B̅gₐbit = 16;
 };
 
+// lvl5param: BFV-oriented DD multi-limb torus scaffold.
+//
+// Q = 2^448 is represented as 7 little-endian 64-bit limbs.  The SIMD
+// plaintext modulus is p = 786433 = 3*2^18+1, prime and congruent to 1 mod
+// 2n for n = 2^14.  This makes the parameter usable for BFV SIMD slot
+// experiments once the remaining multi-limb FFT/key paths are wired.
+struct lvl5param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static constexpr std::uint32_t nbit = 14;
+    static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 5;
+    static constexpr std::uint32_t l = 5;
+    static constexpr std::uint32_t Bgbit = 19;
+    static constexpr std::uint32_t Bgₐbit = 19;
+    using T = MultiLimbUInt<7>;
+    static constexpr T Bg = T{1} << Bgbit;
+    static constexpr T Bgₐ = T{1} << Bgₐbit;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = std::pow(2.0, -425);
+    static constexpr T μ = T{1} << (std::numeric_limits<T>::digits - 3);
+    static constexpr uint64_t plain_modulus_u64 = 786433;
+    static constexpr uint32_t plain_modulusbit = 20;
+    static constexpr T plain_modulus = T{plain_modulus_u64};
+    static constexpr double Δ = 0.0;  // BFV code should use delta_int.
+    static constexpr T delta_int =
+        std::numeric_limits<T>::max() / plain_modulus_u64;
+    static constexpr uint64_t Q_mod_t =
+        (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
+    static constexpr uint64_t bfv_bootstrap_digit_error_bound = 15;
+    static constexpr int bfv_bootstrap_linear_bsgs_step = 128;
+    static constexpr std::uint32_t l̅ = 28;
+    static constexpr std::uint32_t l̅ₐ = 28;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
+
+    static constexpr uint64_t simd_modulus = plain_modulus_u64;
+    static constexpr uint64_t simd_psi = 585160;
+    static constexpr uint64_t simd_psi_inv = 253771;
+    static constexpr uint64_t simd_n_inv = 786385;
+};
+
 // Key Switching parameters
 struct lvl10param {
     static constexpr std::uint32_t t = 7;  // number of addition in keyswitching

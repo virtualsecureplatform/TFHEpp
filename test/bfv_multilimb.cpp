@@ -1,0 +1,121 @@
+#include <cstdint>
+#include <cstdlib>
+#include <iostream>
+#include <limits>
+#include <memory>
+
+#include <tfhe++.hpp>
+
+namespace {
+
+using U128x = TFHEpp::MultiLimbUInt<2>;
+
+struct MLTestParam {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static constexpr std::uint32_t nbit = 3;
+    static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t l = 2;
+    static constexpr std::uint32_t lₐ = 2;
+    static constexpr std::uint32_t Bgbit = 16;
+    static constexpr std::uint32_t Bgₐbit = 16;
+    using T = U128x;
+    static constexpr T Bg = T{1} << Bgbit;
+    static constexpr T Bgₐ = T{1} << Bgₐbit;
+    static constexpr TFHEpp::ErrorDistribution errordist =
+        TFHEpp::ErrorDistribution::ModularGaussian;
+    static constexpr double α = 0.0;
+    static constexpr T μ = T{1} << 125;
+    static constexpr uint64_t plain_modulus_u64 = 257;
+    static constexpr T plain_modulus = T{plain_modulus_u64};
+    static constexpr double Δ = 0.0;
+    static constexpr T delta_int =
+        std::numeric_limits<T>::max() / plain_modulus_u64;
+    static constexpr uint64_t Q_mod_t =
+        (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
+    static constexpr std::uint32_t l̅ = 8;
+    static constexpr std::uint32_t l̅ₐ = 8;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
+};
+
+constexpr uint64_t pow2_mod(unsigned bits, uint64_t mod)
+{
+    uint64_t r = 1 % mod;
+    for (unsigned i = 0; i < bits; i++)
+        r = static_cast<uint64_t>((static_cast<unsigned __int128>(r) * 2) % mod);
+    return r;
+}
+
+}  // namespace
+
+int main()
+{
+    using U = TFHEpp::MultiLimbUInt<7>;
+    static_assert(std::numeric_limits<U>::digits == 448);
+    static_assert(TFHEpp::is_multilimb_uint_v<U>);
+    static_assert(TFHEpp::lvl5param::nbit == 14);
+    static_assert(TFHEpp::lvl5param::l̅ * TFHEpp::lvl5param::B̅gbit == 448);
+    static_assert(TFHEpp::lvl5param::Q_mod_t ==
+                  pow2_mod(448, TFHEpp::lvl5param::plain_modulus_u64));
+
+    using BP = TFHEpp::bfvboot::PrimePower2Param<TFHEpp::lvl5param>;
+    static_assert(BP::base_plain_modulus == TFHEpp::lvl5param::plain_modulus_u64);
+    static_assert(BP::plain_modulus_u64 ==
+                  TFHEpp::lvl5param::plain_modulus_u64 *
+                      TFHEpp::lvl5param::plain_modulus_u64);
+    static_assert(BP::Q_mod_t == pow2_mod(448, BP::plain_modulus_u64));
+
+    U one = 1;
+    U top = one << 447;
+    auto require = [](bool ok, const char *message) {
+        if (!ok) {
+            std::cerr << "FAIL: " << message << std::endl;
+            std::exit(1);
+        }
+    };
+    require(top.bit(447), "top bit shift");
+    require(static_cast<uint64_t>(top >> 447) == 1, "top bit shift back");
+    require((U{-1} + U{1}) == U{0}, "wraparound add");
+
+    U a = (U{1} << 64) + U{3};
+    U prod = a * U{5};
+    require(prod.limb[0] == 15, "multiply low limb");
+    require(prod.limb[1] == 5, "multiply carry limb");
+
+    TFHEpp::TRLWE<MLTestParam> ct{};
+    ct[0][0] = U128x{0x1234} << 112;
+    ct[1][1] = -(U128x{0x1234} << 112);
+
+    std::array<TFHEpp::TRLWE<MLTestParam>, MLTestParam::l̅> dec{};
+    TFHEpp::TRLWEBaseBbarDecompose<MLTestParam>(dec, ct);
+    require(static_cast<uint64_t>(dec[0][0][0]) == 0x1234,
+            "positive top Bbar digit");
+    require(TFHEpp::multilimb_to_signed_i64(dec[0][1][1]) == -0x1234,
+            "negative top Bbar digit");
+    for (std::size_t j = 1; j < MLTestParam::l̅; j++) {
+        require(dec[j][0][0] == U128x{0}, "positive lower Bbar digit");
+        require(dec[j][1][1] == U128x{0}, "negative lower Bbar digit");
+    }
+
+    {
+        using P = TFHEpp::lvl5param;
+        auto slots = std::make_unique<std::array<uint64_t, P::n>>();
+        auto decoded = std::make_unique<std::array<uint64_t, P::n>>();
+        auto poly = std::make_unique<TFHEpp::Polynomial<P>>();
+        for (std::size_t i = 0; i < P::n; i++)
+            (*slots)[i] = (17 * i + 3) % P::plain_modulus_u64;
+        TFHEpp::SlotEncode<P>(*poly, *slots);
+        TFHEpp::SlotDecode<P>(*decoded, *poly);
+        for (std::size_t i = 0; i < P::n; i++)
+            require((*decoded)[i] == (*slots)[i], "lvl5 SlotEncode/SlotDecode");
+    }
+
+    std::cout << "BFV multi-limb torus scaffold test" << std::endl;
+    std::cout << "  lvl5 n=" << TFHEpp::lvl5param::n
+              << " q_bits=" << std::numeric_limits<U>::digits
+              << " p=" << TFHEpp::lvl5param::plain_modulus_u64 << std::endl;
+    std::cout << "PASS" << std::endl;
+    return 0;
+}
