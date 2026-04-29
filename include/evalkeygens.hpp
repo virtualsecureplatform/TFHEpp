@@ -333,7 +333,10 @@ relinKeyFFT<P> relinKeyFFTgen(const Key<P>& key)
     relinKeyFFT<P> relinkeyfft;
     for (int i = 0; i < P::l * P::l̅; i++)
         for (int j = 0; j <= P::k; j++)
-            TwistIFFT<P>(relinkeyfft[i][j], relinkey[i][j]);
+            if constexpr (is_multilimb_uint_v<typename P::T>)
+                TwistIFFTDigit<P>(relinkeyfft[i][j], relinkey[i][j]);
+            else
+                TwistIFFT<P>(relinkeyfft[i][j], relinkey[i][j]);
     return relinkeyfft;
 }
 }  // namespace TFHEpp

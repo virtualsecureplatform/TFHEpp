@@ -14,6 +14,8 @@
 #include <limits>
 #include <random>
 
+#include "bfv-multilimb.hpp"
+
 #ifdef __AVX2__
 #include <immintrin.h>
 #endif
@@ -45,6 +47,15 @@ inline typename P::T UniformTorusRandom()
         __uint128_t high = dist64(generator);
         __uint128_t low = dist64(generator);
         return (high << 64) | low;
+    }
+    else if constexpr (is_multilimb_uint_v<typename P::T>) {
+        std::uniform_int_distribution<uint64_t> dist64(
+            0, std::numeric_limits<uint64_t>::max());
+        using T = typename P::T;
+        T res;
+        for (std::size_t i = 0; i < T::limbs; i++)
+            res.limb[i] = dist64(generator);
+        return res;
     }
     else {
         std::uniform_int_distribution<typename P::T> dist(
@@ -172,6 +183,14 @@ inline typename P::T ModularGaussian(typename P::T center, double stdev)
         const double val = stdev * distribution(generator) * _2p64;
         const __int128_t ival = static_cast<__int128_t>(val);
         return static_cast<__uint128_t>(ival) + center;
+    }
+    else if constexpr (is_multilimb_uint_v<typename P::T>) {
+        using T = typename P::T;
+        std::normal_distribution<double> distribution(0., 1.0);
+        const double scale =
+            std::ldexp(stdev, std::numeric_limits<T>::digits);
+        const int64_t ival = static_cast<int64_t>(distribution(generator) * scale);
+        return center + T::from_signed_i64(ival);
     }
     else
         static_assert(false_v<typename P::T>, "Undefined Modular Gaussian!");

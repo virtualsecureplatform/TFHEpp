@@ -684,7 +684,10 @@ TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
     alignas(64) TRGSWFFT<P> trgswfft;
     for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
         for (int j = 0; j < (P::k + 1); j++)
-            TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
+            if constexpr (is_multilimb_uint_v<typename P::T>)
+                TwistIFFTDigit<P>(trgswfft[i][j], trgsw[i][j]);
+            else
+                TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
     return trgswfft;
 }
 
@@ -693,7 +696,10 @@ void ApplyFFT2trgsw(TRGSWFFT<P> &trgswfft, const TRGSW<P> &trgsw)
 {
     for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
         for (int j = 0; j < (P::k + 1); j++)
-            TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
+            if constexpr (is_multilimb_uint_v<typename P::T>)
+                TwistIFFTDigit<P>(trgswfft[i][j], trgsw[i][j]);
+            else
+                TwistIFFT<P>(trgswfft[i][j], trgsw[i][j]);
 }
 
 template <class P>
@@ -702,8 +708,23 @@ HalfTRGSWFFT<P> ApplyFFT2halftrgsw(const HalfTRGSW<P> &trgsw)
     alignas(64) HalfTRGSWFFT<P> halftrgswfft;
     for (int i = 0; i < P::l * P::l̅; i++)
         for (int j = 0; j < (P::k + 1); j++)
-            TwistIFFT<P>(halftrgswfft[i][j], trgsw[i][j]);
+            if constexpr (is_multilimb_uint_v<typename P::T>)
+                TwistIFFTDigit<P>(halftrgswfft[i][j], trgsw[i][j]);
+            else
+                TwistIFFT<P>(halftrgswfft[i][j], trgsw[i][j]);
     return halftrgswfft;
+}
+
+template <class P>
+void ApplyFFT2halftrgsw(HalfTRGSWFFT<P> &halftrgswfft,
+                        const HalfTRGSW<P> &trgsw)
+{
+    for (int i = 0; i < P::l * P::l̅; i++)
+        for (int j = 0; j < (P::k + 1); j++)
+            if constexpr (is_multilimb_uint_v<typename P::T>)
+                TwistIFFTDigit<P>(halftrgswfft[i][j], trgsw[i][j]);
+            else
+                TwistIFFT<P>(halftrgswfft[i][j], trgsw[i][j]);
 }
 
 template <class P>
@@ -1044,24 +1065,24 @@ void halftrgswSymEncryptImpl(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p,
     if constexpr (P::l̅ > 1) {
         // Double Decomposition path:
         // Step 1: Create ordinary HalfTRGSW with l rows
-        std::array<TRLWE<P>, P::l> ordinary_halftrgsw;
-        for (auto &trlwe : ordinary_halftrgsw)
+        auto ordinary_halftrgsw = std::make_unique<std::array<TRLWE<P>, P::l>>();
+        for (auto &trlwe : *ordinary_halftrgsw)
             trlweSymEncryptZero<P>(trlwe, noise, key);
 
         // Step 2: Add gadget values
         for (int i = 0; i < P::l; i++) {
             for (int n = 0; n < P::n; n++) {
-                ordinary_halftrgsw[i][P::k][n] +=
+                (*ordinary_halftrgsw)[i][P::k][n] +=
                     static_cast<typename P::T>(p[n]) * h[i];
             }
         }
 
         // Step 3: Apply DD to each row, expanding l rows to l*l̅ rows
         for (int i = 0; i < P::l; i++) {
-            std::array<TRLWE<P>, P::l̅> decomposed;
-            TRLWEBaseBbarDecompose<P>(decomposed, ordinary_halftrgsw[i]);
+            auto decomposed = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
+            TRLWEBaseBbarDecompose<P>(*decomposed, (*ordinary_halftrgsw)[i]);
             for (int j = 0; j < P::l̅; j++) {
-                halftrgsw[i * P::l̅ + j] = decomposed[j];
+                halftrgsw[i * P::l̅ + j] = (*decomposed)[j];
             }
         }
     }
@@ -1140,7 +1161,7 @@ void halftrgswSymEncrypt(HalfTRGSWFFT<P> &halftrgswfft, const Polynomial<P> &p,
     // Use heap allocation for large HalfTRGSW
     auto halftrgsw = std::make_unique<HalfTRGSW<P>>();
     halftrgswSymEncrypt<P>(*halftrgsw, p, α, key);
-    halftrgswfft = ApplyFFT2halftrgsw<P>(*halftrgsw);
+    ApplyFFT2halftrgsw<P>(halftrgswfft, *halftrgsw);
 }
 
 template <class P>
@@ -1150,7 +1171,7 @@ void halftrgswSymEncrypt(HalfTRGSWFFT<P> &halftrgswfft, const Polynomial<P> &p,
     // Use heap allocation for large HalfTRGSW
     auto halftrgsw = std::make_unique<HalfTRGSW<P>>();
     halftrgswSymEncrypt<P>(*halftrgsw, p, η, key);
-    halftrgswfft = ApplyFFT2halftrgsw<P>(*halftrgsw);
+    ApplyFFT2halftrgsw<P>(halftrgswfft, *halftrgsw);
 }
 
 template <class P>

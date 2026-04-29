@@ -169,6 +169,42 @@ int main()
 
     {
         using P = TFHEpp::lvl5param;
+        constexpr int target_i = 0;
+        constexpr int target_j = 0;
+        constexpr int shift =
+            std::numeric_limits<typename P::T>::digits -
+            (target_j + 1) * static_cast<int>(P::B̅gbit);
+
+        auto relinkeyfft = std::make_unique<TFHEpp::relinKeyFFT<P>>();
+        auto identity = std::make_unique<TFHEpp::Polynomial<P>>();
+        (*identity)[0] = static_cast<typename P::T>(1);
+        TFHEpp::TwistIFFTDigit<P>(
+            (*relinkeyfft)[target_i * P::l̅ + target_j][P::k], *identity);
+
+        auto poly = std::make_unique<TFHEpp::Polynomial<P>>();
+        (*poly)[0] = static_cast<typename P::T>(3)
+                     << (std::numeric_limits<typename P::T>::digits -
+                         P::Bgbit);
+        (*poly)[1] = static_cast<typename P::T>(-2)
+                     << (std::numeric_limits<typename P::T>::digits -
+                         P::Bgbit);
+
+        auto switched = std::make_unique<TFHEpp::TRLWE<P>>();
+        TFHEpp::relinKeySwitch<P>(*switched, *poly, *relinkeyfft);
+
+        auto dec = std::make_unique<TFHEpp::DecomposedPolynomial<P>>();
+        TFHEpp::Decomposition<P>(*dec, *poly);
+        for (std::size_t i = 0; i < P::n; i++) {
+            const typename P::T expected = (*dec)[target_i][i] << shift;
+            require((*switched)[P::k][i] == expected,
+                    "lvl5 relinKeySwitch body recombination");
+            require((*switched)[0][i] == static_cast<typename P::T>(0),
+                    "lvl5 relinKeySwitch mask zero");
+        }
+    }
+
+    {
+        using P = TFHEpp::lvl5param;
         auto slots = std::make_unique<std::array<uint64_t, P::n>>();
         auto decoded = std::make_unique<std::array<uint64_t, P::n>>();
         auto poly = std::make_unique<TFHEpp::Polynomial<P>>();

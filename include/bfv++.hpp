@@ -37,11 +37,43 @@ template <class P>
 inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
                            const relinKeyFFT<P> &relinkeyfft)
 {
-    alignas(64) DecomposedPolynomial<P> decvec;
-    Decomposition<P>(decvec, poly);
-    alignas(64) PolynomialInFD<P> decvecfft;
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        static_assert(P::l̅ > 1,
+                      "multi-limb relinKeySwitch currently expects DD rows");
 
-    if constexpr (P::l̅ > 1) {
+        auto decvec = std::make_unique<DecomposedPolynomial<P>>();
+        auto decvecfft = std::make_unique<PolynomialInFD<P>>();
+        Decomposition<P>(*decvec, poly);
+
+        auto resfft_dd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+        for (int j = 0; j < P::l̅; j++)
+            for (int m = 0; m <= P::k; m++)
+                for (int n = 0; n < static_cast<int>(P::n); n++)
+                    (*resfft_dd)[j][m][n] = 0.0;
+
+        for (int i = 0; i < static_cast<int>(P::l); i++) {
+            TwistIFFTDigit<P>(*decvecfft, (*decvec)[i]);
+            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                const int row_idx = i * P::l̅ + j;
+                for (int m = 0; m <= static_cast<int>(P::k); m++)
+                    FMAInFD<P::n>((*resfft_dd)[j][m], *decvecfft,
+                                  relinkeyfft[row_idx][m]);
+            }
+        }
+
+        auto results_dd = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
+        for (int j = 0; j < static_cast<int>(P::l̅); j++)
+            for (int k = 0; k <= static_cast<int>(P::k); k++)
+                TwistFFTDigitProduct<P>((*results_dd)[j][k],
+                                        (*resfft_dd)[j][k]);
+
+        RecombineTRLWEFromDD<P, false>(res, *results_dd);
+    }
+    else if constexpr (P::l̅ > 1) {
+        alignas(64) DecomposedPolynomial<P> decvec;
+        Decomposition<P>(decvec, poly);
+        alignas(64) PolynomialInFD<P> decvecfft;
+
         // Double Decomposition path: l̅ separate accumulators
         alignas(64) std::array<TRLWEInFD<P>, P::l̅> resfft_dd;
 
@@ -74,6 +106,10 @@ inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
         RecombineTRLWEFromDD<P, false>(res, results_dd);
     }
     else {
+        alignas(64) DecomposedPolynomial<P> decvec;
+        Decomposition<P>(decvec, poly);
+        alignas(64) PolynomialInFD<P> decvecfft;
+
         // Standard path
         TRLWEInFD<P> resfft;
         TwistIFFT<P>(decvecfft, decvec[0]);
