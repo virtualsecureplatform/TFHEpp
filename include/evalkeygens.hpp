@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "key.hpp"
 #include "params.hpp"
 #include "tlwe.hpp"
@@ -274,21 +276,35 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk, const SecretKey& sk)
 template <class P>
 relinKey<P> relinKeygen(const Key<P>& key)
 {
-    Polynomial<P> keysquare;
-    std::array<typename P::T, P::n> partkey;
-    for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
-    PolyMulNaive<P>(keysquare, partkey, partkey);
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        auto keysquare = std::make_unique<Polynomial<P>>();
+        auto partkey = std::make_unique<Polynomial<P>>();
+        for (int i = 0; i < P::n; i++) (*partkey)[i] = key[0 * P::n + i];
+        PolyMulDigit<P>(*keysquare, *partkey, *partkey);
 
-    // halftrgswSymEncrypt uses constexpr if internally to handle DD vs standard
-    HalfTRGSW<P> halftrgsw;
-    halftrgswSymEncrypt<P>(halftrgsw, keysquare, key);
+        auto halftrgsw = std::make_unique<HalfTRGSW<P>>();
+        halftrgswSymEncrypt<P>(*halftrgsw, *keysquare, key);
 
-    // Copy to relinKey (same structure: l * l̅ TRLWEs)
-    relinKey<P> relinkey;
-    for (int i = 0; i < P::l * P::l̅; i++)
-        relinkey[i] = halftrgsw[i];
+        auto relinkey = std::make_unique<relinKey<P>>();
+        for (int i = 0; i < P::l * P::l̅; i++) (*relinkey)[i] = (*halftrgsw)[i];
+        return *relinkey;
+    }
+    else {
+        Polynomial<P> keysquare;
+        std::array<typename P::T, P::n> partkey;
+        for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
+        PolyMulNaive<P>(keysquare, partkey, partkey);
 
-    return relinkey;
+        // halftrgswSymEncrypt uses constexpr if internally to handle DD vs standard
+        HalfTRGSW<P> halftrgsw;
+        halftrgswSymEncrypt<P>(halftrgsw, keysquare, key);
+
+        // Copy to relinKey (same structure: l * l̅ TRLWEs)
+        relinKey<P> relinkey;
+        for (int i = 0; i < P::l * P::l̅; i++) relinkey[i] = halftrgsw[i];
+
+        return relinkey;
+    }
 }
 
 template <class P>
@@ -329,14 +345,23 @@ void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
 template <class P>
 relinKeyFFT<P> relinKeyFFTgen(const Key<P>& key)
 {
-    relinKey<P> relinkey = relinKeygen<P>(key);
-    relinKeyFFT<P> relinkeyfft;
-    for (int i = 0; i < P::l * P::l̅; i++)
-        for (int j = 0; j <= P::k; j++)
-            if constexpr (is_multilimb_uint_v<typename P::T>)
-                TwistIFFTDigit<P>(relinkeyfft[i][j], relinkey[i][j]);
-            else
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        auto keysquare = std::make_unique<Polynomial<P>>();
+        auto partkey = std::make_unique<Polynomial<P>>();
+        for (int i = 0; i < P::n; i++) (*partkey)[i] = key[0 * P::n + i];
+        PolyMulDigit<P>(*keysquare, *partkey, *partkey);
+
+        auto relinkeyfft = std::make_unique<relinKeyFFT<P>>();
+        halftrgswSymEncrypt<P>(*relinkeyfft, *keysquare, key);
+        return *relinkeyfft;
+    }
+    else {
+        relinKey<P> relinkey = relinKeygen<P>(key);
+        relinKeyFFT<P> relinkeyfft;
+        for (int i = 0; i < P::l * P::l̅; i++)
+            for (int j = 0; j <= P::k; j++)
                 TwistIFFT<P>(relinkeyfft[i][j], relinkey[i][j]);
-    return relinkeyfft;
+        return relinkeyfft;
+    }
 }
 }  // namespace TFHEpp

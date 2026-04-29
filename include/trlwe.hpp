@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "key.hpp"
 #include "mulfft.hpp"
 #include "params.hpp"
@@ -11,11 +13,20 @@ void trlweSymEncryptZero(TRLWE<P> &c, const double α, const Key<P> &key)
     for (typename P::T &i : c[P::k]) i = ModularGaussian<P>(0, α);
     for (int k = 0; k < P::k; k++) {
         for (typename P::T &i : c[k]) i = UniformTorusRandom<P>();
-        std::array<typename P::T, P::n> partkey;
-        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
-        Polynomial<P> temp;
-        PolyMul<P>(temp, c[k], partkey);
-        for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
+        if constexpr (is_multilimb_uint_v<typename P::T>) {
+            auto partkey = std::make_unique<Polynomial<P>>();
+            auto temp = std::make_unique<Polynomial<P>>();
+            for (int i = 0; i < P::n; i++) (*partkey)[i] = key[k * P::n + i];
+            PolyMulTorusByDigit<P>(*temp, c[k], *partkey);
+            for (int i = 0; i < P::n; i++) c[P::k][i] += (*temp)[i];
+        }
+        else {
+            std::array<typename P::T, P::n> partkey;
+            for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+            Polynomial<P> temp;
+            PolyMul<P>(temp, c[k], partkey);
+            for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
+        }
     }
 }
 
@@ -27,11 +38,20 @@ void trlweSymEncryptZero(TRLWE<P> &c, const uint η, const Key<P> &key)
             << (std::numeric_limits<typename P::T>::digits - P::qbit);
     for (int k = 0; k < P::k; k++) {
         for (typename P::T &i : c[k]) i = UniformTorusRandom<P>();
-        alignas(64) std::array<typename P::T, P::n> partkey;
-        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
-        alignas(64) Polynomial<P> temp;
-        PolyMul<P>(temp, c[k], partkey);
-        for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
+        if constexpr (is_multilimb_uint_v<typename P::T>) {
+            auto partkey = std::make_unique<Polynomial<P>>();
+            auto temp = std::make_unique<Polynomial<P>>();
+            for (int i = 0; i < P::n; i++) (*partkey)[i] = key[k * P::n + i];
+            PolyMulTorusByDigit<P>(*temp, c[k], *partkey);
+            for (int i = 0; i < P::n; i++) c[P::k][i] += (*temp)[i];
+        }
+        else {
+            alignas(64) std::array<typename P::T, P::n> partkey;
+            for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+            alignas(64) Polynomial<P> temp;
+            PolyMul<P>(temp, c[k], partkey);
+            for (int i = 0; i < P::n; i++) c[P::k][i] += temp[i];
+        }
     }
 }
 
@@ -164,11 +184,20 @@ Polynomial<P> trlwePhase(const TRLWE<P> &c, const Key<P> &key)
 {
     Polynomial<P> phase = c[P::k];
     for (int k = 0; k < P::k; k++) {
-        Polynomial<P> mulres;
-        std::array<typename P::T, P::n> partkey;
-        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
-        PolyMul<P>(mulres, c[k], partkey);
-        for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+        if constexpr (is_multilimb_uint_v<typename P::T>) {
+            auto mulres = std::make_unique<Polynomial<P>>();
+            auto partkey = std::make_unique<Polynomial<P>>();
+            for (int i = 0; i < P::n; i++) (*partkey)[i] = key[k * P::n + i];
+            PolyMulTorusByDigit<P>(*mulres, c[k], *partkey);
+            for (int i = 0; i < P::n; i++) phase[i] -= (*mulres)[i];
+        }
+        else {
+            Polynomial<P> mulres;
+            std::array<typename P::T, P::n> partkey;
+            for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+            PolyMul<P>(mulres, c[k], partkey);
+            for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+        }
     }
     return phase;
 }
@@ -194,11 +223,20 @@ Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
 {
     Polynomial<P> phase = c[P::k];
     for (int k = 0; k < P::k; k++) {
-        Polynomial<P> mulres;
-        std::array<typename P::T, P::n> partkey;
-        for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
-        PolyMul<P>(mulres, c[k], partkey);
-        for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+        if constexpr (is_multilimb_uint_v<typename P::T>) {
+            auto mulres = std::make_unique<Polynomial<P>>();
+            auto partkey = std::make_unique<Polynomial<P>>();
+            for (int i = 0; i < P::n; i++) (*partkey)[i] = key[k * P::n + i];
+            PolyMulTorusByDigit<P>(*mulres, c[k], *partkey);
+            for (int i = 0; i < P::n; i++) phase[i] -= (*mulres)[i];
+        }
+        else {
+            Polynomial<P> mulres;
+            std::array<typename P::T, P::n> partkey;
+            for (int i = 0; i < P::n; i++) partkey[i] = key[k * P::n + i];
+            PolyMul<P>(mulres, c[k], partkey);
+            for (int i = 0; i < P::n; i++) phase[i] -= mulres[i];
+        }
     }
 
     const double Δ = std::pow(2.0, std::numeric_limits<typename P::T>::digits) /

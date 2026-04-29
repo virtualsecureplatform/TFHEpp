@@ -747,16 +747,24 @@ void LinearTransformBSGS(TRLWE<P> &res, const TRLWE<P> &ct,
 template <class P>
 std::unique_ptr<relinKeyFFT<P>> makeRelinKeyFFT(const Key<P> &key)
 {
-    // Compute s^2 (key polynomial squared) — same as in relinKeygen
-    Polynomial<P> keysquare, partkey;
-    for (int i = 0; i < static_cast<int>(P::n); i++) partkey[i] = key[i];
-    PolyMulNaive<P>(keysquare, partkey, partkey);
-
     // relinKeyFFT<P> == HalfTRGSWFFT<P> (same type alias), allocate on heap.
     // halftrgswSymEncrypt(HalfTRGSWFFT<P>&, ...) uses make_unique<HalfTRGSW<P>>
     // internally, keeping the large intermediate off the stack.
     auto relinkeyfft = std::make_unique<relinKeyFFT<P>>();
-    halftrgswSymEncrypt<P>(*relinkeyfft, keysquare, key);
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        auto keysquare = std::make_unique<Polynomial<P>>();
+        auto partkey = std::make_unique<Polynomial<P>>();
+        for (int i = 0; i < static_cast<int>(P::n); i++) (*partkey)[i] = key[i];
+        PolyMulDigit<P>(*keysquare, *partkey, *partkey);
+        halftrgswSymEncrypt<P>(*relinkeyfft, *keysquare, key);
+    }
+    else {
+        // Compute s^2 (key polynomial squared) — same as in relinKeygen
+        Polynomial<P> keysquare, partkey;
+        for (int i = 0; i < static_cast<int>(P::n); i++) partkey[i] = key[i];
+        PolyMulNaive<P>(keysquare, partkey, partkey);
+        halftrgswSymEncrypt<P>(*relinkeyfft, keysquare, key);
+    }
     return relinkeyfft;
 }
 
@@ -771,11 +779,17 @@ std::unique_ptr<relinKeyFFT<P>> makeRelinKeyFFT(const Key<P> &key)
 template <class P>
 std::unique_ptr<relinKeyFFT<P>> makeBootKeyFFT(const Key<P> &key)
 {
-    Polynomial<P> partkey;
-    for (int i = 0; i < static_cast<int>(P::n); i++) partkey[i] = key[i];
-
     auto bootkeyfft = std::make_unique<relinKeyFFT<P>>();
-    halftrgswSymEncrypt<P>(*bootkeyfft, partkey, key);
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        auto partkey = std::make_unique<Polynomial<P>>();
+        for (int i = 0; i < static_cast<int>(P::n); i++) (*partkey)[i] = key[i];
+        halftrgswSymEncrypt<P>(*bootkeyfft, *partkey, key);
+    }
+    else {
+        Polynomial<P> partkey;
+        for (int i = 0; i < static_cast<int>(P::n); i++) partkey[i] = key[i];
+        halftrgswSymEncrypt<P>(*bootkeyfft, partkey, key);
+    }
     return bootkeyfft;
 }
 

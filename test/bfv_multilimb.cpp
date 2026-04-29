@@ -72,6 +72,10 @@ int main()
                   TFHEpp::lvl5param::plain_modulus_u64 *
                       TFHEpp::lvl5param::plain_modulus_u64);
     static_assert(BP::Q_mod_t == pow2_mod(448, BP::plain_modulus_u64));
+    [[maybe_unused]] auto lvl5_make_relin =
+        &TFHEpp::makeRelinKeyFFT<TFHEpp::lvl5param>;
+    [[maybe_unused]] auto lvl5_relin_fftgen =
+        &TFHEpp::relinKeyFFTgen<TFHEpp::lvl5param>;
 
     U one = 1;
     U top = one << 447;
@@ -114,6 +118,37 @@ int main()
         require(to_u128(acc.div_to_torus<2>(U128x{257})) ==
                     static_cast<__uint128_t>(expected),
                 "wide accumulator negative division");
+    }
+
+    {
+        using P = MLTestParam;
+        TFHEpp::Polynomial<P> a{}, b{}, expected{}, actual{};
+        a[0] = U128x{3};
+        a[1] = U128x{-2};
+        a[3] = U128x{11};
+        b[0] = U128x{-1};
+        b[1] = U128x{2};
+        b[4] = U128x{1};
+        TFHEpp::PolyMulNaive<P>(expected, a, b);
+        TFHEpp::PolyMulDigit<P>(actual, a, b);
+        for (std::size_t i = 0; i < P::n; i++)
+            require(actual[i] == expected[i], "multi-limb digit PolyMul");
+    }
+
+    {
+        using P = MLTestParam;
+        TFHEpp::Polynomial<P> torus{}, digit{}, expected{}, actual{};
+        torus[0] = (U128x{0x1234} << 96) + U128x{7};
+        torus[1] = -(U128x{0x55} << 80) + U128x{5};
+        torus[3] = U128x{0xabcdef};
+        digit[0] = U128x{1};
+        digit[1] = U128x{-1};
+        digit[2] = U128x{2};
+        TFHEpp::PolyMulNaive<P>(expected, torus, digit);
+        TFHEpp::PolyMulTorusByDigit<P>(actual, torus, digit);
+        for (std::size_t i = 0; i < P::n; i++)
+            require(actual[i] == expected[i],
+                    "multi-limb torus-by-digit PolyMul");
     }
 
     const std::array<uint64_t, 4> decode_cases{
@@ -214,6 +249,17 @@ int main()
         TFHEpp::SlotDecode<P>(*decoded, *poly);
         for (std::size_t i = 0; i < P::n; i++)
             require((*decoded)[i] == (*slots)[i], "lvl5 SlotEncode/SlotDecode");
+    }
+
+    if (std::getenv("TFHEPP_BFV_LVL5_KEYGEN_TEST") != nullptr) {
+        using P = TFHEpp::lvl5param;
+        auto key = std::make_unique<TFHEpp::Key<P>>();
+        for (std::size_t i = 0; i < P::n; i++) {
+            const int v = static_cast<int>(i % 3) - 1;
+            (*key)[i] = static_cast<typename P::T>(v);
+        }
+        auto relinkey = TFHEpp::makeRelinKeyFFT<P>(*key);
+        require(relinkey != nullptr, "lvl5 makeRelinKeyFFT allocation");
     }
 
     {
