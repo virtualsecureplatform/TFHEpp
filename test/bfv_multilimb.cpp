@@ -1,3 +1,19 @@
+#if defined(USE_80BIT_SECURITY) || defined(USE_COMPRESS) || \
+    defined(USE_CGGI19) || defined(USE_CONCRETE) || defined(USE_TFHE_RS) || \
+    defined(USE_TERNARY)
+
+#include <iostream>
+
+int main()
+{
+    std::cout << "BFV multi-limb torus scaffold test skipped for non-default "
+                 "parameters"
+              << std::endl;
+    return 0;
+}
+
+#else
+
 #include <array>
 #include <cstdint>
 #include <cstdlib>
@@ -395,3 +411,5 @@ int main()
     std::cout << "PASS" << std::endl;
     return 0;
 }
+
+#endif

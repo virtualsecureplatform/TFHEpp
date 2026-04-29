@@ -44,6 +44,15 @@
 
 namespace TFHEpp {
 
+template <uint32_t N>
+inline void MulInFD(std::array<double, N> &res,
+                    const std::array<double, N> &b);
+
+template <uint32_t N>
+inline void MulInFD(std::array<double, N> &res,
+                    const std::array<double, N> &a,
+                    const std::array<double, N> &b);
+
 template <class P>
 inline constexpr bool is_lvl3_fft_compatible_v =
     std::is_same_v<P, lvl3param> || std::is_same_v<P, lvl3simdparam> ||
@@ -313,9 +322,11 @@ inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
     constexpr T half = T{1} << (P::B̅gbit - 1);
     constexpr T mask = (T{1} << P::B̅gbit) - T{1};
     constexpr T offset = [] {
+        constexpr int local_width = std::numeric_limits<T>::digits;
+        constexpr T local_half = T{1} << (P::B̅gbit - 1);
         T value = 0;
         for (int j = 0; j < static_cast<int>(P::l̅); j++)
-            value += half << (width - (j + 1) * P::B̅gbit);
+            value += local_half << (local_width - (j + 1) * P::B̅gbit);
         return value;
     }();
 
@@ -373,9 +384,11 @@ inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
     constexpr T half = T{1} << (P::B̅gbit - 1);
     constexpr T torus_mask = (T{1} << P::B̅gbit) - T{1};
     constexpr T offset = [] {
+        constexpr int local_width = std::numeric_limits<T>::digits;
+        constexpr T local_half = T{1} << (P::B̅gbit - 1);
         T value = 0;
         for (int j = 0; j < static_cast<int>(P::l̅); j++)
-            value += half << (width - (j + 1) * P::B̅gbit);
+            value += local_half << (local_width - (j + 1) * P::B̅gbit);
         return value;
     }();
 

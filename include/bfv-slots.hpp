@@ -734,9 +734,12 @@ void LinearTransformBSGS(TRLWE<P> &res, const TRLWE<P> &ct,
         constexpr T half_digit = T{1} << (P::B̅gbit - 1);
         constexpr T torus_mask = (T{1} << P::B̅gbit) - T{1};
         constexpr T offset = [] {
+            constexpr int local_width = std::numeric_limits<T>::digits;
+            constexpr T local_half_digit = T{1} << (P::B̅gbit - 1);
             T value = 0;
             for (int j = 0; j < static_cast<int>(P::l̅); j++)
-                value += half_digit << (width - (j + 1) * P::B̅gbit);
+                value += local_half_digit
+                         << (local_width - (j + 1) * P::B̅gbit);
             return value;
         }();
         constexpr int fd_margin =
