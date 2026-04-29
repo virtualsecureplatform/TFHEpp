@@ -141,6 +141,34 @@ int main()
 
     {
         using P = TFHEpp::lvl5param;
+        auto a = std::make_unique<TFHEpp::Polynomial<P>>();
+        auto b = std::make_unique<TFHEpp::Polynomial<P>>();
+        auto afd = std::make_unique<TFHEpp::PolynomialInFD<P>>();
+        auto bfd = std::make_unique<TFHEpp::PolynomialInFD<P>>();
+        auto prod_fd = std::make_unique<TFHEpp::PolynomialInFD<P>>();
+        auto prod = std::make_unique<TFHEpp::Polynomial<P>>();
+
+        (*a)[0] = static_cast<typename P::T>(3);
+        (*a)[1] = static_cast<typename P::T>(-2);
+        (*b)[0] = static_cast<typename P::T>(5);
+        (*b)[1] = static_cast<typename P::T>(7);
+        TFHEpp::TwistIFFTDigit<P>(*afd, *a);
+        TFHEpp::TwistIFFTDigit<P>(*bfd, *b);
+        TFHEpp::MulInFD<P::n>(*prod_fd, *afd, *bfd);
+        TFHEpp::TwistFFTDigitProduct<P>(*prod, *prod_fd);
+
+        const std::array<int64_t, 4> expected_digit_product{15, 11, -14, 0};
+        for (std::size_t i = 0; i < expected_digit_product.size(); i++)
+            require(TFHEpp::multilimb_to_signed_i64((*prod)[i]) ==
+                        expected_digit_product[i],
+                    "lvl5 digit FFT product");
+        for (std::size_t i = expected_digit_product.size(); i < P::n; i++)
+            require((*prod)[i] == static_cast<typename P::T>(0),
+                    "lvl5 digit FFT zero tail");
+    }
+
+    {
+        using P = TFHEpp::lvl5param;
         auto slots = std::make_unique<std::array<uint64_t, P::n>>();
         auto decoded = std::make_unique<std::array<uint64_t, P::n>>();
         auto poly = std::make_unique<TFHEpp::Polynomial<P>>();

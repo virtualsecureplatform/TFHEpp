@@ -49,3 +49,4 @@ public:
 extern thread_local FFT_Processor_Spqlios_Intl fftplvl1;
 extern thread_local FFT_Processor_Spqlios_Intl fftplvl2;
 extern thread_local FFT_Processor_Spqlios_Intl fftplvl3;
+extern thread_local FFT_Processor_Spqlios_Intl fftplvl5;

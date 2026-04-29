@@ -364,28 +364,68 @@ void TRLWEMultWithoutRelinearizationFullDD(TRLWE3<P> &res, const TRLWE<P> &a,
 
         using Acc = WideSignedLimbAccumulator<2 * Torus::limbs + 2>;
         auto acc = std::make_unique<std::array<std::array<Acc, P::n>, 3>>();
-        auto prod = std::make_unique<Polynomial<P>>();
 
-        for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                const int k = i + j;
-                const int shift =
-                    2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+        auto accumulate = [&](int comp, const Polynomial<P> &prod, int shift) {
+            for (uint32_t n = 0; n < P::n; n++)
+                (*acc)[comp][n].add_shifted_i64(
+                    multilimb_to_signed_i64(prod[n]), shift);
+        };
 
-                auto accumulate = [&](int comp) {
-                    for (uint32_t n = 0; n < P::n; n++)
-                        (*acc)[comp][n].add_shifted_i64(
-                            multilimb_to_signed_i64((*prod)[n]), shift);
-                };
+        constexpr bool use_fft_digits =
+            is_lvl5_digit_fft_compatible_v<P> &&
+            2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
+                std::numeric_limits<double>::digits;
 
-                PolyMulNaive<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][0]);
-                accumulate(2);
-                PolyMulNaive<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][1]);
-                accumulate(1);
-                PolyMulNaive<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][1]);
-                accumulate(0);
-                PolyMulNaive<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][0]);
-                accumulate(0);
+        if constexpr (use_fft_digits) {
+            auto a_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+            auto b_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                    TwistIFFTDigit<P>((*a_fd)[i][c], (*a_dec)[i][c]);
+                    TwistIFFTDigit<P>((*b_fd)[i][c], (*b_dec)[i][c]);
+                }
+            }
+
+            auto prod_fd = std::make_unique<PolynomialInFD<P>>();
+            auto prod = std::make_unique<Polynomial<P>>();
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    const int k = i + j;
+                    const int shift =
+                        2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+
+                    MulInFD<P::n>(*prod_fd, (*a_fd)[i][0], (*b_fd)[j][0]);
+                    TwistFFTDigitProduct<P>(*prod, *prod_fd);
+                    accumulate(2, *prod, shift);
+
+                    MulInFD<P::n>(*prod_fd, (*a_fd)[i][1], (*b_fd)[j][1]);
+                    TwistFFTDigitProduct<P>(*prod, *prod_fd);
+                    accumulate(1, *prod, shift);
+
+                    MulInFD<P::n>(*prod_fd, (*a_fd)[i][0], (*b_fd)[j][1]);
+                    FMAInFD<P::n>(*prod_fd, (*a_fd)[i][1], (*b_fd)[j][0]);
+                    TwistFFTDigitProduct<P>(*prod, *prod_fd);
+                    accumulate(0, *prod, shift);
+                }
+            }
+        }
+        else {
+            auto prod = std::make_unique<Polynomial<P>>();
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    const int k = i + j;
+                    const int shift =
+                        2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+
+                    PolyMulNaive<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][0]);
+                    accumulate(2, *prod, shift);
+                    PolyMulNaive<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][1]);
+                    accumulate(1, *prod, shift);
+                    PolyMulNaive<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][1]);
+                    accumulate(0, *prod, shift);
+                    PolyMulNaive<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][0]);
+                    accumulate(0, *prod, shift);
+                }
             }
         }
 

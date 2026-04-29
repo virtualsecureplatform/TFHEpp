@@ -22,6 +22,14 @@
 #else
 #include <fft_processor_spqlios.h>
 #endif
+
+#if !defined(USE_FFTW3) && !defined(USE_MKL) && \
+    !defined(USE_SPQLIOX_AARCH64) && !defined(USE_CONCRETE_FFT) && \
+    !defined(USE_SPQLIOS_ARITHMETIC)
+#define TFHEPP_HAS_LVL5_SPQLIOS_FFT 1
+#else
+#define TFHEPP_HAS_LVL5_SPQLIOS_FFT 0
+#endif
 #ifdef USE_HEXL
 #include "hexl/hexl.hpp"
 #endif
@@ -41,6 +49,10 @@ inline constexpr bool is_lvl3_fft_compatible_v =
     std::is_same_v<P, lvl3param> || std::is_same_v<P, lvl3simdparam> ||
     (std::is_same_v<typename P::T, __uint128_t> && P::n == lvl3param::n &&
      P::nbit == lvl3param::nbit);
+
+template <class P>
+inline constexpr bool is_lvl5_digit_fft_compatible_v =
+    is_multilimb_uint_v<typename P::T> && P::nbit == 14 && P::n == (1U << 14);
 
 inline const std::unique_ptr<
     const std::array<std::array<cuHEpp::INTorus, lvl1param::n>, 2>>
@@ -211,6 +223,49 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
         fftplvl2.execute_reverse_torus64(res.data(), a.data());
     else
         static_assert(false_v<typename P::T>, "Undefined TwistIFFT!");
+}
+
+template <class P>
+inline void TwistIFFTDigit(PolynomialInFD<P> &res, const Polynomial<P> &a)
+{
+    static_assert(is_multilimb_uint_v<typename P::T>,
+                  "TwistIFFTDigit is only for multi-limb digit polynomials");
+#if TFHEPP_HAS_LVL5_SPQLIOS_FFT
+    if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+        auto temp = std::make_unique<std::array<uint64_t, P::n>>();
+        for (uint32_t i = 0; i < P::n; i++)
+            (*temp)[i] = static_cast<uint64_t>(a[i]);
+        fftplvl5.execute_reverse_torus64(res.data(), temp->data());
+    }
+    else {
+        static_assert(false_v<P>, "Undefined multi-limb digit TwistIFFT!");
+    }
+#else
+    static_assert(false_v<P>,
+                  "Multi-limb digit FFT currently requires a SPQLIOS backend");
+#endif
+}
+
+template <class P>
+inline void TwistFFTDigitProduct(Polynomial<P> &res, PolynomialInFD<P> &a)
+{
+    static_assert(is_multilimb_uint_v<typename P::T>,
+                  "TwistFFTDigitProduct is only for multi-limb digit polynomials");
+#if TFHEPP_HAS_LVL5_SPQLIOS_FFT
+    if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+        auto temp = std::make_unique<std::array<uint64_t, P::n>>();
+        fftplvl5.execute_direct_torus64_rescale(temp->data(), a.data(), 1.0);
+        for (uint32_t i = 0; i < P::n; i++)
+            res[i] = static_cast<typename P::T>(
+                static_cast<int64_t>((*temp)[i]));
+    }
+    else {
+        static_assert(false_v<P>, "Undefined multi-limb digit TwistFFT!");
+    }
+#else
+    static_assert(false_v<P>,
+                  "Multi-limb digit FFT currently requires a SPQLIOS backend");
+#endif
 }
 
 template <class P>
