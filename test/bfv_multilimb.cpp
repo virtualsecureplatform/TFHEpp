@@ -260,6 +260,32 @@ int main()
         }
         auto relinkey = TFHEpp::makeRelinKeyFFT<P>(*key);
         require(relinkey != nullptr, "lvl5 makeRelinKeyFFT allocation");
+
+        auto slots_a = std::make_unique<std::array<uint64_t, P::n>>();
+        auto slots_b = std::make_unique<std::array<uint64_t, P::n>>();
+        auto decrypted = std::make_unique<std::array<uint64_t, P::n>>();
+        for (std::size_t i = 0; i < P::n; i++) {
+            (*slots_a)[i] = (5 * i + 1) % P::plain_modulus_u64;
+            (*slots_b)[i] = (7 * i + 3) % P::plain_modulus_u64;
+        }
+
+        auto ct_a = std::make_unique<TFHEpp::TRLWE<P>>();
+        auto ct_b = std::make_unique<TFHEpp::TRLWE<P>>();
+        auto ct_mul = std::make_unique<TFHEpp::TRLWE<P>>();
+        TFHEpp::trlweSlotEncrypt<P>(*ct_a, *slots_a, *key);
+        TFHEpp::trlweSlotDecrypt<P>(*decrypted, *ct_a, *key);
+        for (std::size_t i = 0; i < P::n; i++)
+            require((*decrypted)[i] == (*slots_a)[i],
+                    "lvl5 slot encrypt/decrypt");
+
+        TFHEpp::trlweSlotEncrypt<P>(*ct_b, *slots_b, *key);
+        TFHEpp::TRLWEMultFullDD<P>(*ct_mul, *ct_a, *ct_b, *relinkey);
+        TFHEpp::trlweSlotDecrypt<P>(*decrypted, *ct_mul, *key);
+        for (std::size_t i = 0; i < P::n; i++) {
+            const uint64_t expected =
+                ((*slots_a)[i] * (*slots_b)[i]) % P::plain_modulus_u64;
+            require((*decrypted)[i] == expected, "lvl5 encrypted slot multiply");
+        }
     }
 
     {
