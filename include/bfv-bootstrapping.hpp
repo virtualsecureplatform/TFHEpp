@@ -205,8 +205,12 @@ void PlainPolynomialMul(TRLWE<P> &res, const TRLWE<P> &ct,
     for (uint32_t i = 0; i < P::n; i++)
         p[i] = static_cast<typename P::T>(
             plain[i] % static_cast<uint64_t>(P::plain_modulus));
-    for (int c = 0; c <= static_cast<int>(P::k); c++)
-        PolyMul<P>(res[c], ct[c], p);
+    for (int c = 0; c <= static_cast<int>(P::k); c++) {
+        if constexpr (is_multilimb_uint_v<typename P::T>)
+            PolyMulTorusByUnsigned<P>(res[c], ct[c], plain);
+        else
+            PolyMul<P>(res[c], ct[c], p);
+    }
 }
 
 template <class InP, class BootP>

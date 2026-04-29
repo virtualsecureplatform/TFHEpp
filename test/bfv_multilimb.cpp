@@ -29,6 +29,7 @@ struct MLTestParam {
     static constexpr double α = 0.0;
     static constexpr T μ = T{1} << 125;
     static constexpr uint64_t plain_modulus_u64 = 257;
+    static constexpr uint32_t plain_modulusbit = 9;
     static constexpr T plain_modulus = T{plain_modulus_u64};
     static constexpr double Δ = 0.0;
     static constexpr T delta_int =
@@ -149,6 +150,23 @@ int main()
         for (std::size_t i = 0; i < P::n; i++)
             require(actual[i] == expected[i],
                     "multi-limb torus-by-digit PolyMul");
+    }
+
+    {
+        using P = MLTestParam;
+        TFHEpp::Polynomial<P> torus{}, plain_poly{}, expected{}, actual{};
+        std::array<uint64_t, P::n> plain{};
+        torus[0] = (U128x{0x1234} << 96) + U128x{7};
+        torus[2] = -(U128x{0x31} << 88) + U128x{11};
+        plain[0] = 257;
+        plain[1] = 129;
+        plain[5] = 42;
+        for (std::size_t i = 0; i < P::n; i++) plain_poly[i] = U128x{plain[i]};
+        TFHEpp::PolyMulNaive<P>(expected, torus, plain_poly);
+        TFHEpp::PolyMulTorusByUnsigned<P>(actual, torus, plain);
+        for (std::size_t i = 0; i < P::n; i++)
+            require(actual[i] == expected[i],
+                    "multi-limb torus-by-unsigned PolyMul");
     }
 
     const std::array<uint64_t, 4> decode_cases{
@@ -286,6 +304,18 @@ int main()
                 ((*slots_a)[i] * (*slots_b)[i]) % P::plain_modulus_u64;
             require((*decrypted)[i] == expected, "lvl5 encrypted slot multiply");
         }
+
+        using BP = TFHEpp::bfvboot::PrimePower2Param<P>;
+        auto boot_key = std::make_unique<TFHEpp::Key<BP>>();
+        TFHEpp::bfvboot::ConvertSecretKey<P, BP>(*boot_key, *key);
+        auto sk_plain = std::make_unique<std::array<uint64_t, BP::n>>();
+        TFHEpp::bfvboot::SecretKeyAsPlaintext<BP, P>(*sk_plain, *key);
+        auto enc_sk = std::make_unique<TFHEpp::TRLWE<BP>>();
+        TFHEpp::bfvboot::BfvPolyEncrypt<BP>(*enc_sk, *sk_plain, *boot_key);
+        auto noisy = std::make_unique<TFHEpp::TRLWE<BP>>();
+        TFHEpp::bfvboot::NoisyDecrypt<P, BP>(*noisy, *ct_a, *enc_sk);
+        auto noisy_plain = std::make_unique<std::array<uint64_t, BP::n>>();
+        TFHEpp::bfvboot::BfvPolyDecrypt<BP>(*noisy_plain, *noisy, *boot_key);
     }
 
     {

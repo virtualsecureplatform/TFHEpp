@@ -397,21 +397,27 @@ void trlweSlotDecrypt(std::array<uint64_t, P::n> &slots, const TRLWE<P> &ct,
 template <class P>
 inline typename P::T modSwitchCoeff(typename P::T c, uint64_t Qp)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "ModulusSwitch currently requires T = __uint128_t");
-    // Compute floor((c · Qp + 2^127) / 2^128) mod Qp.
-    // Follows the same structure as bfvDecodeCoeff: the low and high halves
-    // of c are each multiplied by Qp, the low product is shifted right by
-    // 64 and added into the high product, and a 2^63 rounding bias is added
-    // (which acts as 2^127 once we finally shift right by 64 more).
-    const uint64_t lo = static_cast<uint64_t>(c);
-    const uint64_t hi = static_cast<uint64_t>(c >> 64);
-    __uint128_t prod_lo = static_cast<__uint128_t>(lo) * Qp;
-    __uint128_t prod_hi = static_cast<__uint128_t>(hi) * Qp;
-    prod_hi += (prod_lo >> 64);
-    prod_hi += static_cast<__uint128_t>(1) << 63;
-    uint64_t result = static_cast<uint64_t>(prod_hi >> 64);
-    return static_cast<typename P::T>(result % Qp);
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        return static_cast<typename P::T>(
+            round_mul_u64_div_pow2(c, Qp) % Qp);
+    }
+    else {
+        static_assert(std::is_same_v<typename P::T, __uint128_t>,
+                      "ModulusSwitch currently requires T = __uint128_t");
+        // Compute floor((c · Qp + 2^127) / 2^128) mod Qp.
+        // Follows the same structure as bfvDecodeCoeff: the low and high halves
+        // of c are each multiplied by Qp, the low product is shifted right by
+        // 64 and added into the high product, and a 2^63 rounding bias is added
+        // (which acts as 2^127 once we finally shift right by 64 more).
+        const uint64_t lo = static_cast<uint64_t>(c);
+        const uint64_t hi = static_cast<uint64_t>(c >> 64);
+        __uint128_t prod_lo = static_cast<__uint128_t>(lo) * Qp;
+        __uint128_t prod_hi = static_cast<__uint128_t>(hi) * Qp;
+        prod_hi += (prod_lo >> 64);
+        prod_hi += static_cast<__uint128_t>(1) << 63;
+        uint64_t result = static_cast<uint64_t>(prod_hi >> 64);
+        return static_cast<typename P::T>(result % Qp);
+    }
 }
 
 template <class P>

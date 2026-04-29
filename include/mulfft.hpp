@@ -350,6 +350,87 @@ inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
 }
 
 template <class P>
+inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
+                                   const Polynomial<P> &torus,
+                                   const std::array<uint64_t, P::n> &plain)
+{
+    static_assert(is_multilimb_uint_v<typename P::T>,
+                  "PolyMulTorusByUnsigned is only for multi-limb torus types");
+    static_assert(P::l̅ * P::B̅gbit == std::numeric_limits<typename P::T>::digits,
+                  "PolyMulTorusByUnsigned expects Bbar digits to cover the torus");
+    static_assert(2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
+                      std::numeric_limits<double>::digits,
+                  "unsigned digit products must fit exactly in double");
+
+    using T = typename P::T;
+    constexpr int width = std::numeric_limits<T>::digits;
+    constexpr int plain_digits =
+        (static_cast<int>(P::plain_modulusbit) + static_cast<int>(P::B̅gbit) - 1) /
+        static_cast<int>(P::B̅gbit);
+    constexpr uint64_t plain_mask =
+        P::B̅gbit == 64 ? std::numeric_limits<uint64_t>::max()
+                        : ((uint64_t{1} << P::B̅gbit) - 1);
+    constexpr T half = T{1} << (P::B̅gbit - 1);
+    constexpr T torus_mask = (T{1} << P::B̅gbit) - T{1};
+    constexpr T offset = [] {
+        T value = 0;
+        for (int j = 0; j < static_cast<int>(P::l̅); j++)
+            value += half << (width - (j + 1) * P::B̅gbit);
+        return value;
+    }();
+
+    auto plain_digit = std::make_unique<Polynomial<P>>();
+    auto torus_digit = std::make_unique<Polynomial<P>>();
+    auto digit_prod = std::make_unique<Polynomial<P>>();
+    auto plain_fft = std::make_unique<std::array<PolynomialInFD<P>, plain_digits>>();
+    auto torus_digit_fft = std::make_unique<PolynomialInFD<P>>();
+    auto prod_fft = std::make_unique<PolynomialInFD<P>>();
+
+    for (int n = 0; n < static_cast<int>(P::n); n++) res[n] = 0;
+
+    if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+        for (int d = 0; d < plain_digits; d++) {
+            const int plain_shift = d * static_cast<int>(P::B̅gbit);
+            for (int n = 0; n < static_cast<int>(P::n); n++)
+                (*plain_digit)[n] =
+                    static_cast<T>((plain[n] >> plain_shift) & plain_mask);
+            TwistIFFTDigit<P>((*plain_fft)[d], *plain_digit);
+        }
+    }
+
+    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+        const int torus_shift = width - (j + 1) * P::B̅gbit;
+        for (int n = 0; n < static_cast<int>(P::n); n++) {
+            const T adjusted = torus[n] + offset;
+            (*torus_digit)[n] = ((adjusted >> torus_shift) & torus_mask) - half;
+        }
+
+        if constexpr (is_lvl5_digit_fft_compatible_v<P>)
+            TwistIFFTDigit<P>(*torus_digit_fft, *torus_digit);
+
+        for (int d = 0; d < plain_digits; d++) {
+            const int plain_shift = d * static_cast<int>(P::B̅gbit);
+            const int shift = torus_shift + plain_shift;
+            if (shift >= width) continue;
+
+            if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+                MulInFD<P::n>(*prod_fft, *torus_digit_fft, (*plain_fft)[d]);
+                TwistFFTDigitProduct<P>(*digit_prod, *prod_fft);
+            }
+            else {
+                for (int n = 0; n < static_cast<int>(P::n); n++)
+                    (*plain_digit)[n] = static_cast<T>(
+                        (plain[n] >> plain_shift) & plain_mask);
+                PolyMulDigit<P>(*digit_prod, *torus_digit, *plain_digit);
+            }
+
+            for (int n = 0; n < static_cast<int>(P::n); n++)
+                res[n] += (*digit_prod)[n] << shift;
+        }
+    }
+}
+
+template <class P>
 inline void TwistIFFTUInt(PolynomialInFD<P> &res, const Polynomial<P> &a)
 {
     if constexpr (std::is_same_v<P, lvl1param> ||
