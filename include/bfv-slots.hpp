@@ -528,16 +528,30 @@ void RotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
     // Binary decomposition of steps in [0, n/2):
     // bit i of steps → apply automorphism 5^{2^i} mod 2n (key gk[i]).
     // Only nbit-1 bits needed (since steps < n/2 = 2^{nbit-1}).
-    TRLWE<P> cur = ct, tmp;
     uint64_t d = 5;
-    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++) {
-        if ((steps >> i) & 1) {
-            EvalAuto<P>(tmp, cur, static_cast<uint>(d), gk[i]);
-            cur = tmp;
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        auto cur = std::make_unique<TRLWE<P>>(ct);
+        auto tmp = std::make_unique<TRLWE<P>>();
+        for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++) {
+            if ((steps >> i) & 1) {
+                EvalAuto<P>(*tmp, *cur, static_cast<uint>(d), gk[i]);
+                *cur = *tmp;
+            }
+            d = d * d % (2 * P::n);
         }
-        d = d * d % (2 * P::n);
+        res = *cur;
     }
-    res = cur;
+    else {
+        TRLWE<P> cur = ct, tmp;
+        for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++) {
+            if ((steps >> i) & 1) {
+                EvalAuto<P>(tmp, cur, static_cast<uint>(d), gk[i]);
+                cur = tmp;
+            }
+            d = d * d % (2 * P::n);
+        }
+        res = cur;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -576,8 +590,18 @@ void SlotPtxtMul(TRLWE<P> &res, const TRLWE<P> &ct,
 
     // Multiply each TRLWE component by V.  PolyMul works mod 2^{width(T)},
     // which is what we want for BFV's phase arithmetic.
-    for (int k = 0; k <= static_cast<int>(P::k); k++)
-        PolyMul<P>(res[k], ct[k], V);
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        auto V_u64 = std::make_unique<std::array<uint64_t, P::n>>();
+        for (uint32_t i = 0; i < P::n; i++)
+            (*V_u64)[i] =
+                static_cast<uint64_t>(V[i]) % static_cast<uint64_t>(P::plain_modulus);
+        for (int k = 0; k <= static_cast<int>(P::k); k++)
+            PolyMulTorusByUnsigned<P>(res[k], ct[k], *V_u64);
+    }
+    else {
+        for (int k = 0; k <= static_cast<int>(P::k); k++)
+            PolyMul<P>(res[k], ct[k], V);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -608,18 +632,19 @@ void LinearTransform(TRLWE<P> &res, const TRLWE<P> &ct,
     assert(diagonals.size() == rotation_offsets.size());
     assert(!diagonals.empty());
 
-    TRLWE<P> rotated, scaled;
+    auto rotated = std::make_unique<TRLWE<P>>();
+    auto scaled = std::make_unique<TRLWE<P>>();
     // First term — write into res directly.
-    RotateSlots<P>(rotated, ct, rotation_offsets[0], gk);
-    SlotPtxtMul<P>(res, rotated, diagonals[0]);
+    RotateSlots<P>(*rotated, ct, rotation_offsets[0], gk);
+    SlotPtxtMul<P>(res, *rotated, diagonals[0]);
 
     // Remaining terms — rotate, scale, accumulate.
     for (size_t i = 1; i < diagonals.size(); i++) {
-        RotateSlots<P>(rotated, ct, rotation_offsets[i], gk);
-        SlotPtxtMul<P>(scaled, rotated, diagonals[i]);
+        RotateSlots<P>(*rotated, ct, rotation_offsets[i], gk);
+        SlotPtxtMul<P>(*scaled, *rotated, diagonals[i]);
         for (int k = 0; k <= static_cast<int>(P::k); k++)
             for (uint32_t j = 0; j < P::n; j++)
-                res[k][j] += scaled[k][j];
+                res[k][j] += (*scaled)[k][j];
     }
 }
 
@@ -695,33 +720,35 @@ void LinearTransformBSGS(TRLWE<P> &res, const TRLWE<P> &ct,
     }
 
     bool res_initialized = false;
-    TRLWE<P> inner, scaled, giant_rotated;
-    std::array<uint64_t, P::n> pre_rot_d;
+    auto inner = std::make_unique<TRLWE<P>>();
+    auto scaled = std::make_unique<TRLWE<P>>();
+    auto giant_rotated = std::make_unique<TRLWE<P>>();
+    auto pre_rot_d = std::make_unique<std::array<uint64_t, P::n>>();
     for (int j2 = 0; j2 <= max_j2; j2++) {
         if (groups[j2].empty()) continue;
 
         // Inner accumulator: Σ_{j1} σ^{-k·j2}(d_idx) ∘ baby[j1].
         bool inner_initialized = false;
         for (auto &[j1, idx] : groups[j2]) {
-            RotateSlotVector<P>(pre_rot_d, diagonals[idx], -k_step * j2);
+            RotateSlotVector<P>(*pre_rot_d, diagonals[idx], -k_step * j2);
             if (!inner_initialized) {
-                SlotPtxtMul<P>(inner, baby[j1], pre_rot_d);
+                SlotPtxtMul<P>(*inner, baby[j1], *pre_rot_d);
                 inner_initialized = true;
             } else {
-                SlotPtxtMul<P>(scaled, baby[j1], pre_rot_d);
+                SlotPtxtMul<P>(*scaled, baby[j1], *pre_rot_d);
                 for (int k = 0; k <= static_cast<int>(P::k); k++)
                     for (uint32_t m = 0; m < P::n; m++)
-                        inner[k][m] += scaled[k][m];
+                        (*inner)[k][m] += (*scaled)[k][m];
             }
         }
 
         // Apply the giant rotation σ^{k·j2}.
         const TRLWE<P> *to_add;
         if (j2 == 0) {
-            to_add = &inner;
+            to_add = inner.get();
         } else {
-            RotateSlots<P>(giant_rotated, inner, k_step * j2, gk);
-            to_add = &giant_rotated;
+            RotateSlots<P>(*giant_rotated, *inner, k_step * j2, gk);
+            to_add = giant_rotated.get();
         }
 
         if (!res_initialized) {

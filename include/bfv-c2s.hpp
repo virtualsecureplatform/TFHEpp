@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include "bfv-slots.hpp"
@@ -306,16 +307,19 @@ void CoeffToSlot(TRLWE<P> &res, const TRLWE<P> &ct,
     std::vector<int> offsets(half);
     for (int r = 0; r < half; r++) offsets[r] = r;
 
-    TRLWE<P> res_same, res_cross, ct_conj;
+    auto res_same = std::make_unique<TRLWE<P>>();
+    auto res_cross = std::make_unique<TRLWE<P>>();
+    auto ct_conj = std::make_unique<TRLWE<P>>();
 
-    LinearTransformBSGS<P>(res_same, ct, D_same, offsets, k_step, gk);
+    LinearTransformBSGS<P>(*res_same, ct, D_same, offsets, k_step, gk);
 
-    ConjugateSlots<P>(ct_conj, ct, gk);
-    LinearTransformBSGS<P>(res_cross, ct_conj, D_cross, offsets, k_step, gk);
+    ConjugateSlots<P>(*ct_conj, ct, gk);
+    LinearTransformBSGS<P>(*res_cross, *ct_conj, D_cross, offsets, k_step, gk);
+    ct_conj.reset();
 
     for (int k = 0; k <= static_cast<int>(P::k); k++)
         for (uint32_t i = 0; i < P::n; i++)
-            res[k][i] = res_same[k][i] + res_cross[k][i];
+            res[k][i] = (*res_same)[k][i] + (*res_cross)[k][i];
 }
 
 // ---------------------------------------------------------------------------

@@ -237,14 +237,15 @@ void NoisyDecrypt(TRLWE<BootP> &res, const TRLWE<InP> &ct,
     std::array<uint64_t, BootP::n> a{}, b{};
     ModSwitchCiphertextToPlainPolys<InP, BootP>(a, b, ct);
 
-    TRLWE<BootP> prod;
-    PlainPolynomialMul<BootP>(prod, enc_sk, a);
+    auto prod = std::make_unique<TRLWE<BootP>>();
+    PlainPolynomialMul<BootP>(*prod, enc_sk, a);
 
     for (int c = 0; c < static_cast<int>(BootP::k); c++)
         for (uint32_t i = 0; i < BootP::n; i++)
-            res[c][i] = -prod[c][i];
+            res[c][i] = -(*prod)[c][i];
     for (uint32_t i = 0; i < BootP::n; i++)
-        res[BootP::k][i] = bfvEncodeCoeff<BootP>(b[i]) - prod[BootP::k][i];
+        res[BootP::k][i] =
+            bfvEncodeCoeff<BootP>(b[i]) - (*prod)[BootP::k][i];
 }
 
 template <class BaseP>
@@ -328,14 +329,15 @@ void BootstrapNoisySlots(TRLWE<typename BootstrapKey<BaseP>::BootP> &res,
     assert(bk.base_galois && bk.boot_galois && bk.stc_same && bk.stc_cross &&
            bk.cts_same && bk.cts_cross);
 
-    TRLWE<BaseP> coeff_ct;
-    c2s::SlotToCoeff<BaseP>(coeff_ct, ct, *bk.stc_same, *bk.stc_cross,
+    auto coeff_ct = std::make_unique<TRLWE<BaseP>>();
+    c2s::SlotToCoeff<BaseP>(*coeff_ct, ct, *bk.stc_same, *bk.stc_cross,
                             bk.linear_bsgs_step, *bk.base_galois);
 
-    TRLWE<BootP> noisy_coeffs;
-    NoisyDecrypt<BaseP, BootP>(noisy_coeffs, coeff_ct, *bk.enc_sk);
+    auto noisy_coeffs = std::make_unique<TRLWE<BootP>>();
+    NoisyDecrypt<BaseP, BootP>(*noisy_coeffs, *coeff_ct, *bk.enc_sk);
+    coeff_ct.reset();
 
-    c2s::CoeffToSlot<BootP>(res, noisy_coeffs, *bk.cts_same, *bk.cts_cross,
+    c2s::CoeffToSlot<BootP>(res, *noisy_coeffs, *bk.cts_same, *bk.cts_cross,
                             bk.linear_bsgs_step, *bk.boot_galois);
 }
 
@@ -368,9 +370,9 @@ void FinalizeBootstrap(TRLWE<BaseP> &res,
     assert(bk.relin);
     assert(!bk.digit_removal_polynomial.empty());
 
-    TRLWE<BootP> removed;
-    PolyEval<BootP>(removed, bk.digit_removal_polynomial, noisy, *bk.relin);
-    ProjectToBase<BaseP>(res, removed);
+    auto removed = std::make_unique<TRLWE<BootP>>();
+    PolyEval<BootP>(*removed, bk.digit_removal_polynomial, noisy, *bk.relin);
+    ProjectToBase<BaseP>(res, *removed);
 }
 
 template <class BaseP>
@@ -378,9 +380,9 @@ void Bootstrap(TRLWE<BaseP> &res, const TRLWE<BaseP> &ct,
                const BootstrapKey<BaseP> &bk)
 {
     using BootP = typename BootstrapKey<BaseP>::BootP;
-    TRLWE<BootP> noisy_slots;
-    BootstrapNoisySlots<BaseP>(noisy_slots, ct, bk);
-    FinalizeBootstrap<BaseP>(res, noisy_slots, bk);
+    auto noisy_slots = std::make_unique<TRLWE<BootP>>();
+    BootstrapNoisySlots<BaseP>(*noisy_slots, ct, bk);
+    FinalizeBootstrap<BaseP>(res, *noisy_slots, bk);
 }
 
 }  // namespace bfvboot

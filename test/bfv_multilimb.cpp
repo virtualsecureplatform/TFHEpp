@@ -316,6 +316,49 @@ int main()
         TFHEpp::bfvboot::NoisyDecrypt<P, BP>(*noisy, *ct_a, *enc_sk);
         auto noisy_plain = std::make_unique<std::array<uint64_t, BP::n>>();
         TFHEpp::bfvboot::BfvPolyDecrypt<BP>(*noisy_plain, *noisy, *boot_key);
+
+        if (std::getenv("TFHEPP_BFV_LVL5_BOOTSTRAP_TEST") != nullptr) {
+            relinkey.reset();
+            ct_b.reset();
+            ct_mul.reset();
+            sk_plain.reset();
+            enc_sk.reset();
+            noisy.reset();
+            noisy_plain.reset();
+
+            auto gk = std::make_unique<TFHEpp::GaloisKey<P>>();
+            TFHEpp::GaloisKeyGen<P>(*gk, *key);
+
+            std::vector<std::array<uint64_t, P::n>> diagonals(1);
+            diagonals[0].fill(1);
+            const std::vector<int> offsets{3};
+
+            auto transformed = std::make_unique<TFHEpp::TRLWE<P>>();
+            TFHEpp::LinearTransformBSGS<P>(*transformed, *ct_a, diagonals,
+                                           offsets, 2, *gk);
+            TFHEpp::trlweSlotDecrypt<P>(*decrypted, *transformed, *key);
+
+            auto expected = std::make_unique<std::array<uint64_t, P::n>>();
+            TFHEpp::RotateSlotVector<P>(*expected, *slots_a, offsets[0]);
+            for (std::size_t i = 0; i < P::n; i++)
+                require((*decrypted)[i] == (*expected)[i],
+                        "lvl5 BSGS linear transform rotation");
+
+            transformed.reset();
+            gk.reset();
+
+            if (std::getenv("TFHEPP_BFV_LVL5_BOOTSTRAP_FULL_TEST") != nullptr) {
+                auto bk = std::make_unique<TFHEpp::bfvboot::BootstrapKey<P>>(
+                    TFHEpp::bfvboot::MakeBootstrapKey<P>(*key, true));
+                auto noisy_slots = std::make_unique<TFHEpp::TRLWE<BP>>();
+                TFHEpp::bfvboot::BootstrapNoisySlots<P>(*noisy_slots, *ct_a,
+                                                        *bk);
+                auto full_noisy_plain =
+                    std::make_unique<std::array<uint64_t, BP::n>>();
+                TFHEpp::trlweSlotDecrypt<BP>(*full_noisy_plain, *noisy_slots,
+                                             *boot_key);
+            }
+        }
     }
 
     {

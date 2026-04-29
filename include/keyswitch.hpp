@@ -2,6 +2,7 @@
 
 #include <array>
 #include <bit>
+#include <memory>
 #include <span>
 
 #include "params.hpp"
@@ -299,11 +300,20 @@ void EvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
     Automorphism<P>(res[P::k], trlwe[P::k], d);
 
     for (int i = 0; i < P::k; i++) {
-        Polynomial<P> temppoly;
-        TRLWE<P> temptrlwe;
-        Automorphism<P>(temppoly, trlwe[i], d);
-        ExternalProduct<P>(temptrlwe, temppoly, autokey[i]);
-        TRLWESub<P>(res, res, temptrlwe);
+        if constexpr (is_multilimb_uint_v<typename P::T>) {
+            auto temppoly = std::make_unique<Polynomial<P>>();
+            auto temptrlwe = std::make_unique<TRLWE<P>>();
+            Automorphism<P>(*temppoly, trlwe[i], d);
+            ExternalProduct<P>(*temptrlwe, *temppoly, autokey[i]);
+            TRLWESub<P>(res, res, *temptrlwe);
+        }
+        else {
+            Polynomial<P> temppoly;
+            TRLWE<P> temptrlwe;
+            Automorphism<P>(temppoly, trlwe[i], d);
+            ExternalProduct<P>(temptrlwe, temppoly, autokey[i]);
+            TRLWESub<P>(res, res, temptrlwe);
+        }
     }
 }
 

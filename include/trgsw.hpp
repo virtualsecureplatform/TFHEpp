@@ -494,11 +494,43 @@ template <class P>
 void ExternalProduct(TRLWE<P> &res, const Polynomial<P> &poly,
                      const HalfTRGSWFFT<P> &halftrgswfft)
 {
-    alignas(64) DecomposedPolynomial<P> decpoly;
-    Decomposition<P>(decpoly, poly);
-    alignas(64) PolynomialInFD<P> decpolyfft;
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        static_assert(P::l̅ > 1,
+                      "multi-limb ExternalProduct currently expects DD rows");
 
-    if constexpr (P::l̅ > 1) {
+        auto decpoly = std::make_unique<DecomposedPolynomial<P>>();
+        auto decpolyfft = std::make_unique<PolynomialInFD<P>>();
+        Decomposition<P>(*decpoly, poly);
+
+        auto restrlwefft_dd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+        for (int j = 0; j < static_cast<int>(P::l̅); j++)
+            for (int m = 0; m <= static_cast<int>(P::k); m++)
+                for (int n = 0; n < static_cast<int>(P::n); n++)
+                    (*restrlwefft_dd)[j][m][n] = 0.0;
+
+        for (int i = 0; i < static_cast<int>(P::l); i++) {
+            TwistIFFTDigit<P>(*decpolyfft, (*decpoly)[i]);
+            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                const int row_idx = i * P::l̅ + j;
+                for (int m = 0; m <= static_cast<int>(P::k); m++)
+                    FMAInFD<P::n>((*restrlwefft_dd)[j][m], *decpolyfft,
+                                  halftrgswfft[row_idx][m]);
+            }
+        }
+
+        auto results_dd = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
+        for (int j = 0; j < static_cast<int>(P::l̅); j++)
+            for (int k = 0; k <= static_cast<int>(P::k); k++)
+                TwistFFTDigitProduct<P>((*results_dd)[j][k],
+                                        (*restrlwefft_dd)[j][k]);
+
+        RecombineTRLWEFromDD<P, false>(res, *results_dd);
+    }
+    else if constexpr (P::l̅ > 1) {
+        alignas(64) DecomposedPolynomial<P> decpoly;
+        Decomposition<P>(decpoly, poly);
+        alignas(64) PolynomialInFD<P> decpolyfft;
+
         // DD: use standard decomposition, accumulate l̅ results, recombine
         alignas(64) std::array<TRLWEInFD<P>, P::l̅> restrlwefft_dd;
 
@@ -531,6 +563,10 @@ void ExternalProduct(TRLWE<P> &res, const Polynomial<P> &poly,
         RecombineTRLWEFromDD<P, false>(res, results_dd);
     }
     else {
+        alignas(64) DecomposedPolynomial<P> decpoly;
+        Decomposition<P>(decpoly, poly);
+        alignas(64) PolynomialInFD<P> decpolyfft;
+
         // Standard decomposition (l̅ == 1)
         TwistIFFT<P>(decpolyfft, decpoly[0]);
         alignas(64) TRLWEInFD<P> restrlwefft;
