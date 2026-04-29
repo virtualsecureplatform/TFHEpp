@@ -329,20 +329,25 @@ int main()
             auto gk = std::make_unique<TFHEpp::GaloisKey<P>>();
             TFHEpp::GaloisKeyGen<P>(*gk, *key);
 
-            std::vector<std::array<uint64_t, P::n>> diagonals(1);
-            diagonals[0].fill(1);
-            const std::vector<int> offsets{3};
+            constexpr int transform_terms = 9;
+            std::vector<std::array<uint64_t, P::n>> diagonals(transform_terms);
+            std::vector<int> offsets(transform_terms);
+            for (int r = 0; r < transform_terms; r++) {
+                diagonals[r].fill(1);
+                offsets[r] = r;
+            }
 
             auto transformed = std::make_unique<TFHEpp::TRLWE<P>>();
             TFHEpp::LinearTransformBSGS<P>(*transformed, *ct_a, diagonals,
-                                           offsets, 2, *gk);
+                                           offsets, transform_terms, *gk);
             TFHEpp::trlweSlotDecrypt<P>(*decrypted, *transformed, *key);
 
             auto expected = std::make_unique<std::array<uint64_t, P::n>>();
-            TFHEpp::RotateSlotVector<P>(*expected, *slots_a, offsets[0]);
+            TFHEpp::c2s::PlainLinearTransform<P>(*expected, *slots_a,
+                                                 diagonals);
             for (std::size_t i = 0; i < P::n; i++)
                 require((*decrypted)[i] == (*expected)[i],
-                        "lvl5 BSGS linear transform rotation");
+                        "lvl5 fused BSGS linear transform");
 
             transformed.reset();
             gk.reset();
