@@ -342,23 +342,28 @@ template <class P>
 inline uint64_t bfvDecodeCoeff(typename P::T phase_u)
 {
     constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
-    // Compute round(phase · t / 2^128) = floor((phase · t + 2^127) / 2^128)
-    //
-    // phase · t is a 145-bit value (128 + 17 bits).
-    // We compute the upper 64 bits of this 145-bit product.
-    const uint64_t lo = static_cast<uint64_t>(phase_u);
-    const uint64_t hi = static_cast<uint64_t>(phase_u >> 64);
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        return round_mul_u64_div_pow2(phase_u, t_val) % t_val;
+    }
+    else {
+        // Compute round(phase · t / 2^128) = floor((phase · t + 2^127) / 2^128)
+        //
+        // phase · t is a 145-bit value (128 + 17 bits).
+        // We compute the upper 64 bits of this 145-bit product.
+        const uint64_t lo = static_cast<uint64_t>(phase_u);
+        const uint64_t hi = static_cast<uint64_t>(phase_u >> 64);
 
-    // phase · t = hi·t·2^64 + lo·t
-    __uint128_t prod_lo = static_cast<__uint128_t>(lo) * t_val;
-    __uint128_t prod_hi = static_cast<__uint128_t>(hi) * t_val;
-    // Combine: add carry from prod_lo into prod_hi
-    prod_hi += (prod_lo >> 64);
-    // Add rounding bias: 2^127 >> 64 = 2^63
-    prod_hi += static_cast<__uint128_t>(1) << 63;
-    // Result = top 64 bits = (phase·t + 2^127) >> 128
-    uint64_t result = static_cast<uint64_t>(prod_hi >> 64);
-    return result % t_val;
+        // phase · t = hi·t·2^64 + lo·t
+        __uint128_t prod_lo = static_cast<__uint128_t>(lo) * t_val;
+        __uint128_t prod_hi = static_cast<__uint128_t>(hi) * t_val;
+        // Combine: add carry from prod_lo into prod_hi
+        prod_hi += (prod_lo >> 64);
+        // Add rounding bias: 2^127 >> 64 = 2^63
+        prod_hi += static_cast<__uint128_t>(1) << 63;
+        // Result = top 64 bits = (phase·t + 2^127) >> 128
+        uint64_t result = static_cast<uint64_t>(prod_hi >> 64);
+        return result % t_val;
+    }
 }
 
 template <class P>

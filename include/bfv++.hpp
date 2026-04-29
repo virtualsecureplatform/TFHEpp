@@ -352,6 +352,49 @@ void TRLWEMultWithoutRelinearizationFullDD(TRLWE3<P> &res, const TRLWE<P> &a,
             for (uint32_t n = 0; n < P::n; n++)
                 res[c][n] = (*acc)[c][n].div128(delta);
     }
+    else if constexpr (is_multilimb_uint_v<typename P::T>) {
+        using Torus = typename P::T;
+        static_assert(P::l̅ * P::B̅gbit == width,
+                      "FullDD multi-limb multiply requires Bbar digits to cover T");
+
+        auto a_dec = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
+        auto b_dec = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
+        TRLWEBaseBbarDecompose<P>(*a_dec, a);
+        TRLWEBaseBbarDecompose<P>(*b_dec, b);
+
+        using Acc = WideSignedLimbAccumulator<2 * Torus::limbs + 2>;
+        auto acc = std::make_unique<std::array<std::array<Acc, P::n>, 3>>();
+        auto prod = std::make_unique<Polynomial<P>>();
+
+        for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                const int k = i + j;
+                const int shift =
+                    2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+
+                auto accumulate = [&](int comp) {
+                    for (uint32_t n = 0; n < P::n; n++)
+                        (*acc)[comp][n].add_shifted_i64(
+                            multilimb_to_signed_i64((*prod)[n]), shift);
+                };
+
+                PolyMulNaive<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][0]);
+                accumulate(2);
+                PolyMulNaive<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][1]);
+                accumulate(1);
+                PolyMulNaive<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][1]);
+                accumulate(0);
+                PolyMulNaive<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][0]);
+                accumulate(0);
+            }
+        }
+
+        constexpr Torus delta = P::delta_int;
+        for (int c = 0; c < 3; c++)
+            for (uint32_t n = 0; n < P::n; n++)
+                res[c][n] = (*acc)[c][n].template div_to_torus<Torus::limbs>(
+                    delta);
+    }
     else {
         std::array<TRLWE<P>, P::l̅> a_dec, b_dec;
         TRLWEBaseBbarDecompose<P>(a_dec, a);

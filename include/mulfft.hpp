@@ -563,6 +563,15 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
             res[i] = ri;
         }
     }
+    else if constexpr (is_multilimb_uint_v<typename P::T>) {
+        for (int i = 0; i < P::n; i++) {
+            typename P::T ri = 0;
+            for (int j = 0; j <= i; j++) ri += a[j] * b[i - j];
+            for (int j = i + 1; j < P::n; j++)
+                ri -= a[j] * b[P::n + i - j];
+            res[i] = ri;
+        }
+    }
     else {
         // Naive for other types
         for (int i = 0; i < P::n; i++) {
@@ -610,6 +619,15 @@ inline void PolyMulNaive(Polynomial<P> &res, const Polynomial<P> &a,
             for (int j = i + 1; j < P::n; j++)
                 ri -= static_cast<__int128_t>(a[j]) *
                       static_cast<__int128_t>(b[P::n + i - j]);
+            res[i] = ri;
+        }
+    }
+    else if constexpr (is_multilimb_uint_v<typename P::T>) {
+        for (int i = 0; i < P::n; i++) {
+            typename P::T ri = 0;
+            for (int j = 0; j <= i; j++) ri += a[j] * b[i - j];
+            for (int j = i + 1; j < P::n; j++)
+                ri -= a[j] * b[P::n + i - j];
             res[i] = ri;
         }
     }

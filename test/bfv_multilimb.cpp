@@ -1,3 +1,4 @@
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -48,6 +49,11 @@ constexpr uint64_t pow2_mod(unsigned bits, uint64_t mod)
     return r;
 }
 
+__uint128_t to_u128(const U128x &x)
+{
+    return (static_cast<__uint128_t>(x.limb[1]) << 64) | x.limb[0];
+}
+
 }  // namespace
 
 int main()
@@ -84,6 +90,40 @@ int main()
     require(prod.limb[0] == 15, "multiply low limb");
     require(prod.limb[1] == 5, "multiply carry limb");
 
+    {
+        TFHEpp::WideSignedLimbAccumulator<4> acc;
+        acc.add_shifted_i64(12345, 90);
+        acc.add_shifted_i64(-77, 20);
+        const __int128_t expected =
+            ((static_cast<__int128_t>(12345) << 90) -
+             (static_cast<__int128_t>(77) << 20)) /
+            257;
+        require(to_u128(acc.div_to_torus<2>(U128x{257})) ==
+                    static_cast<__uint128_t>(expected),
+                "wide accumulator positive division");
+    }
+
+    {
+        TFHEpp::WideSignedLimbAccumulator<4> acc;
+        acc.add_shifted_i64(-12345, 90);
+        acc.add_shifted_i64(77, 20);
+        const __int128_t expected =
+            (-(static_cast<__int128_t>(12345) << 90) +
+             (static_cast<__int128_t>(77) << 20)) /
+            257;
+        require(to_u128(acc.div_to_torus<2>(U128x{257})) ==
+                    static_cast<__uint128_t>(expected),
+                "wide accumulator negative division");
+    }
+
+    const std::array<uint64_t, 4> decode_cases{
+        0, 1, 42, MLTestParam::plain_modulus_u64 - 1};
+    for (uint64_t m : decode_cases) {
+        const U128x encoded = TFHEpp::bfvEncodeCoeff<MLTestParam>(m);
+        require(TFHEpp::bfvDecodeCoeff<MLTestParam>(encoded) == m,
+                "multi-limb BFV coefficient decode");
+    }
+
     TFHEpp::TRLWE<MLTestParam> ct{};
     ct[0][0] = U128x{0x1234} << 112;
     ct[1][1] = -(U128x{0x1234} << 112);
@@ -110,6 +150,28 @@ int main()
         TFHEpp::SlotDecode<P>(*decoded, *poly);
         for (std::size_t i = 0; i < P::n; i++)
             require((*decoded)[i] == (*slots)[i], "lvl5 SlotEncode/SlotDecode");
+    }
+
+    {
+        using P = MLTestParam;
+        TFHEpp::TRLWE<P> lhs{}, rhs{};
+        lhs[1][0] = TFHEpp::bfvEncodeCoeff<P>(3);
+        lhs[1][1] = TFHEpp::bfvEncodeCoeff<P>(2);
+        rhs[1][0] = TFHEpp::bfvEncodeCoeff<P>(5);
+        rhs[1][1] = TFHEpp::bfvEncodeCoeff<P>(7);
+
+        TFHEpp::TRLWE3<P> mult{};
+        TFHEpp::TRLWEMultWithoutRelinearizationFullDD<P>(mult, lhs, rhs);
+
+        const uint64_t expected[P::n] = {15, 31, 14, 0, 0, 0, 0, 0};
+        for (std::size_t i = 0; i < P::n; i++) {
+            require(TFHEpp::bfvDecodeCoeff<P>(mult[1][i]) == expected[i],
+                    "multi-limb FullDD body multiplication");
+            require(TFHEpp::bfvDecodeCoeff<P>(mult[0][i]) == 0,
+                    "multi-limb FullDD cross term zero");
+            require(TFHEpp::bfvDecodeCoeff<P>(mult[2][i]) == 0,
+                    "multi-limb FullDD square term zero");
+        }
     }
 
     std::cout << "BFV multi-limb torus scaffold test" << std::endl;
