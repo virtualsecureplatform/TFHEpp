@@ -4,15 +4,15 @@ set -eu
 
 # thanks to https://qiita.com/Hayao0819/items/0e04b39b0804a0d16020
 contains() {
+    local needle=$1
+    shift
     local i
-    for i in $2{[@]}; do
-        if [[ ${i} = ${1} ]]; then
-            echo "TRUE"
-            return
+    for i in "$@"; do
+        if [[ ${i} = ${needle} ]]; then
+            return 0
         fi
     done
-    echo "FALSE"
-    return
+    return 1
 }
 
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
@@ -21,11 +21,13 @@ cd $SCRIPT_DIR
 ./show_info.sh
 
 TEST_BINARIES=`find . -maxdepth 1 -perm -111 -type f`
-IGNORED_BINARIES=('')
+IGNORED_BINARIES=(
+    './largelut_cmux_benchmark'
+    './largelut_random_key_diagnostic'
+)
 for TEST_BINARY in $TEST_BINARIES
 do
-    RES=`contains $TEST_BINARY "${IGNORED_BINARIES[*]}"`
-    if [[ $RES == "TRUE" ]]; then
+    if contains "$TEST_BINARY" "${IGNORED_BINARIES[@]}"; then
         continue
     fi
     echo "==== Testing $TEST_BINARY ===="

@@ -19,6 +19,7 @@
 #include "io-packet.hpp"
 #include "key.hpp"
 #include "keyswitch.hpp"
+#include "largelut.hpp"
 #include "params.hpp"
 #include "tlwe.hpp"
 #include "trgsw.hpp"
