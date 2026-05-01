@@ -96,6 +96,15 @@ TFHEpp::TRLWE<targetP> LargeLUTNibbleTRLWE(const bool high_nibble)
 }
 
 template <class P>
+std::array<TFHEpp::TRLWE<P>, 16> AESInvSboxUpperNibbleTRLWEs()
+{
+    std::array<TFHEpp::TRLWE<P>, 16> tables{};
+    for (uint32_t upper = 0; upper < tables.size(); upper++)
+        tables[upper][P::k] = TFHEpp::AESInvSboxPoly<P>(upper);
+    return tables;
+}
+
+template <class P>
 uint8_t decrypt_nibble_pair(const std::array<TFHEpp::TLWE<P>, 2> &ct,
                             const TFHEpp::SecretKey &sk)
 {
@@ -197,6 +206,7 @@ int main()
 
     const auto low_table = LargeLUTNibbleTRLWE<targetP, W, K>(false);
     const auto high_table = LargeLUTNibbleTRLWE<targetP, W, K>(true);
+    const auto cmux_br_tables = AESInvSboxUpperNibbleTRLWEs<targetP>();
 
     std::array<TFHEpp::TLWE<domainP>, L> calibrated;
     TFHEpp::LargeLUTCalibrate<brP, iksP, W, K>(
@@ -280,24 +290,23 @@ int main()
     shifted_upper[domainP::k * domainP::n] +=
         1ULL << (std::numeric_limits<typename domainP::T>::digits - 6);
 
-    std::array<std::array<TFHEpp::TLWE<targetP>, 2>, 16> midtlwes;
-    for (uint32_t i = 0; i < 16; i++)
-        TFHEpp::GateBootstrappingManyLUT<brP, 2>(
-            midtlwes[i], shifted_lower, ek.getbkfft<brP>(),
-            TFHEpp::AESInvSboxPoly<targetP>(i));
+    auto cmux_select_one_br = [&] {
+        std::array<TFHEpp::TRGSWFFT<targetP>, 4> inv_upper_trgsw;
+        for (uint32_t bit = 0; bit < inv_upper_trgsw.size(); bit++) {
+            TFHEpp::TLWE<targetP> inv_bit;
+            for (uint32_t i = 0; i <= targetP::k * targetP::n; i++)
+                inv_bit[i] = typename targetP::T{} - aes_bits[4 + bit][i];
+            TFHEpp::AnnihilateCircuitBootstrapping<iksP, brP, ahP>(
+                inv_upper_trgsw[bit], inv_bit, ek);
+        }
 
-    auto cmux_one_br_stage = [&] {
-        std::array<std::array<TFHEpp::TLWE<targetP>, 16>, 2> tabletlwe;
-        for (uint32_t i = 0; i < 2; i++)
-            for (uint32_t j = 0; j < 16; j++) tabletlwe[i][j] = midtlwes[j][i];
-
-        TFHEpp::TRLWE<targetP> trlwe;
-        TFHEpp::TLWE2TablePackingManyLUT<ahP, 16, 2>(
-            trlwe, tabletlwe, ek.getahk<ahP>());
+        TFHEpp::TRLWE<targetP> selected_table;
+        TFHEpp::RAMUX<targetP, 4>(selected_table, inv_upper_trgsw,
+                                  cmux_br_tables);
 
         std::array<TFHEpp::TLWE<targetP>, 2> res;
         TFHEpp::GateBootstrappingManyLUT<brP, 2>(
-            res, shifted_upper, ek.getbkfft<brP>(), trlwe);
+            res, shifted_lower, ek.getbkfft<brP>(), selected_table);
         return res;
     };
 
@@ -306,7 +315,7 @@ int main()
     const auto r2r_check = largelut_r2r_full();
     const auto cmux_check = aes_inv_sbox();
     const auto cmux_rom_check = aes_inv_sbox_rom();
-    const auto cmux_stage_check = cmux_one_br_stage();
+    const auto cmux_stage_check = cmux_select_one_br();
     const uint8_t large_decrypted =
         decrypt_nibble_pair<targetP>(large_check, *sk);
     const uint8_t r2r_decrypted = decrypt_nibble_pair<targetP>(r2r_check, *sk);
@@ -367,7 +376,7 @@ int main()
         }));
 
         cmux_one_br_ms.push_back(time_ms([&] {
-            local = cmux_one_br_stage();
+            local = cmux_select_one_br();
             sink += checksum<targetP>(local);
         }));
     }
@@ -418,7 +427,7 @@ int main()
     std::cout << "AESInvSboxROM+CB decrypted: 0x" << std::hex
               << static_cast<uint32_t>(cmux_rom_decrypted) << std::dec
               << " (ok)\n";
-    std::cout << "CMUX+one BR decrypted: 0x" << std::hex
+    std::cout << "CB+CMUX table select+one BR decrypted: 0x" << std::hex
               << static_cast<uint32_t>(cmux_stage_decrypted) << std::dec
               << " (ok), max error/Delta: "
               << static_cast<double>(max_nibble_pair_error_units<targetP>(
@@ -440,7 +449,7 @@ int main()
               << large_r2r_calibrated << "\n";
     std::cout << "AESInvSbox full CMUX/LUT eval ms: " << aes_full << "\n";
     std::cout << "AESInvSboxROM+CB full eval ms: " << aes_rom_full << "\n";
-    std::cout << "AES-style TLWE2TablePackingManyLUT+one BR ms: " << cmux_stage
+    std::cout << "CB+CMUX table select+one BR ms: " << cmux_stage
               << "\n";
     std::cout << "AH full LargeLUT speedup vs AESInvSbox: "
               << aes_full / large_ah_full << "x\n";
@@ -450,9 +459,9 @@ int main()
               << aes_rom_full / large_ah_full << "x\n";
     std::cout << "R2R full LargeLUT speedup vs AESInvSboxROM+CB: "
               << aes_rom_full / large_r2r_full << "x\n";
-    std::cout << "AH post-calibration speedup vs CMUX+one BR stage: "
+    std::cout << "AH post-calibration speedup vs CB+CMUX+one BR stage: "
               << cmux_stage / large_ah_calibrated << "x\n";
-    std::cout << "R2R post-calibration speedup vs CMUX+one BR stage: "
+    std::cout << "R2R post-calibration speedup vs CB+CMUX+one BR stage: "
               << cmux_stage / large_r2r_calibrated << "x\n";
     std::cout << "R2R/AH full runtime ratio: "
               << large_r2r_full / large_ah_full << "x\n";
