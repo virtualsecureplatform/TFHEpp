@@ -93,6 +93,64 @@ inline typename P::T bfvEncodeCoeff(uint64_t m)
                (static_cast<unsigned __int128>(m) * r) / t_val);
 }
 
+template <class P>
+inline typename P::T bfvCenteredPlainCoeff(uint64_t c)
+{
+    constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
+    c %= t_val;
+    if (c > t_val / 2) {
+        const uint64_t magnitude = t_val - c;
+        return typename P::T{0} - typename P::T{magnitude};
+    }
+    return typename P::T{c};
+}
+
+template <class P>
+void PolyMulTorusByCenteredPlain(Polynomial<P> &res,
+                                 const Polynomial<P> &torus,
+                                 const std::array<uint64_t, P::n> &plain)
+{
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        constexpr uint64_t t_val = static_cast<uint64_t>(P::plain_modulus);
+        auto pos = std::make_unique<std::array<uint64_t, P::n>>();
+        auto neg = std::make_unique<std::array<uint64_t, P::n>>();
+        bool has_pos = false;
+        bool has_neg = false;
+        for (uint32_t i = 0; i < P::n; i++) {
+            const uint64_t c = plain[i] % t_val;
+            if (c > t_val / 2) {
+                (*pos)[i] = 0;
+                (*neg)[i] = t_val - c;
+                has_neg = (*neg)[i] != 0 || has_neg;
+            }
+            else {
+                (*pos)[i] = c;
+                (*neg)[i] = 0;
+                has_pos = c != 0 || has_pos;
+            }
+        }
+
+        if (has_pos) {
+            PolyMulTorusByUnsigned<P>(res, torus, *pos);
+        }
+        else {
+            for (uint32_t i = 0; i < P::n; i++) res[i] = 0;
+        }
+
+        if (has_neg) {
+            auto tmp = std::make_unique<Polynomial<P>>();
+            PolyMulTorusByUnsigned<P>(*tmp, torus, *neg);
+            for (uint32_t i = 0; i < P::n; i++) res[i] -= (*tmp)[i];
+        }
+    }
+    else {
+        Polynomial<P> centered;
+        for (uint32_t i = 0; i < P::n; i++)
+            centered[i] = bfvCenteredPlainCoeff<P>(plain[i]);
+        PolyMul<P>(res, torus, centered);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Galois permutation tables for slot rotation.
 //
@@ -597,9 +655,11 @@ void SlotPtxtMul(TRLWE<P> &res, const TRLWE<P> &ct,
             (*V_u64)[i] =
                 static_cast<uint64_t>(V[i]) % static_cast<uint64_t>(P::plain_modulus);
         for (int k = 0; k <= static_cast<int>(P::k); k++)
-            PolyMulTorusByUnsigned<P>(res[k], ct[k], *V_u64);
+            PolyMulTorusByCenteredPlain<P>(res[k], ct[k], *V_u64);
     }
     else {
+        for (uint32_t i = 0; i < P::n; i++)
+            V[i] = bfvCenteredPlainCoeff<P>(static_cast<uint64_t>(V[i]));
         for (int k = 0; k <= static_cast<int>(P::k); k++)
             PolyMul<P>(res[k], ct[k], V);
     }

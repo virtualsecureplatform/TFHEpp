@@ -780,8 +780,10 @@ inline void PolyMul(Polynomial<P> &res, const Polynomial<P> &a,
         for (int i = 0; i < P::n; i++) ntta[i] *= nttb[i];
         TwistNTT<P>(res, ntta);
     }
-    else if constexpr (std::is_same_v<P, lvl3simdparam>) {
-        // Naive for 128-bit types (FFT/NTT don't support 128-bit precision)
+    else if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        // Naive for 128-bit types (FFT/NTT don't support 128-bit precision).
+        // Interpret both operands as centered torus coefficients so plaintext
+        // constants represented as two's-complement negatives stay small.
         for (int i = 0; i < P::n; i++) {
             __uint128_t ri = 0;
             for (int j = 0; j <= i; j++)

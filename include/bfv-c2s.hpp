@@ -38,6 +38,192 @@
 namespace TFHEpp {
 namespace c2s {
 
+namespace detail {
+
+inline uint64_t modinv_u64(uint64_t a, uint64_t mod)
+{
+    __int128 old_r = static_cast<__int128>(a % mod);
+    __int128 r = static_cast<__int128>(mod);
+    __int128 old_s = 1;
+    __int128 s = 0;
+    while (r != 0) {
+        const __int128 q = old_r / r;
+        const __int128 next_r = old_r - q * r;
+        old_r = r;
+        r = next_r;
+        const __int128 next_s = old_s - q * s;
+        old_s = s;
+        s = next_s;
+    }
+    old_s %= static_cast<__int128>(mod);
+    if (old_s < 0) old_s += mod;
+    return static_cast<uint64_t>(old_s);
+}
+
+template <class P>
+uint64_t crt_stage_twiddle(int stage, uint32_t local_index, bool inverse_row)
+{
+    constexpr uint64_t t = static_cast<uint64_t>(P::plain_modulus);
+    constexpr uint64_t twon = 2 * P::n;
+    uint64_t exp = 1;
+    for (uint32_t i = 0; i < local_index; i++) exp = (exp * 5) % twon;
+    exp = (exp * (uint64_t{1} << stage)) % twon;
+    uint64_t tw = powmod64(SIMDConstants<P>::PSI, exp, t);
+    return inverse_row ? modinv_u64(tw, t) : tw;
+}
+
+template <class P>
+void ApplyCRTRowButterfly(TRLWE<P> &res, const TRLWE<P> &ct, int stage,
+                          bool inverse, const GaloisKey<P> &gk,
+                          bool normalize_inverse = true)
+{
+    constexpr uint64_t t = static_cast<uint64_t>(P::plain_modulus);
+    constexpr int half = static_cast<int>(P::n) / 2;
+    const int stride = half >> (stage + 1);
+    const uint64_t inv2 = modinv_u64(2, t);
+
+    auto d0 = std::make_unique<std::array<uint64_t, P::n>>();
+    auto d_plus = std::make_unique<std::array<uint64_t, P::n>>();
+    auto d_minus = std::make_unique<std::array<uint64_t, P::n>>();
+    d0->fill(0);
+    d_plus->fill(0);
+    d_minus->fill(0);
+
+    for (int row = 0; row < 2; row++) {
+        const int row_base = row * half;
+        for (int block = 0; block < half; block += 2 * stride) {
+            for (int i = 0; i < stride; i++) {
+                const uint32_t first = row_base + block + i;
+                const uint32_t second = first + stride;
+                const uint64_t tw = crt_stage_twiddle<P>(
+                    stage, static_cast<uint32_t>(i), row == 1);
+                if (!inverse) {
+                    (*d0)[first] = 1;
+                    (*d0)[second] = (t - tw) % t;
+                    (*d_plus)[first] = tw;
+                    (*d_minus)[second] = 1;
+                } else if (normalize_inverse) {
+                    const uint64_t tw_inv = modinv_u64(tw, t);
+                    (*d0)[first] = inv2;
+                    (*d0)[second] = (t - mulmod64(tw_inv, inv2, t)) % t;
+                    (*d_plus)[first] = inv2;
+                    (*d_minus)[second] = mulmod64(tw_inv, inv2, t);
+                } else {
+                    const uint64_t tw_inv = modinv_u64(tw, t);
+                    (*d0)[first] = 1;
+                    (*d0)[second] = (t - tw_inv) % t;
+                    (*d_plus)[first] = 1;
+                    (*d_minus)[second] = tw_inv;
+                }
+            }
+        }
+    }
+
+    std::vector<std::array<uint64_t, P::n>> diagonals;
+    diagonals.reserve(3);
+    diagonals.push_back(*d0);
+    diagonals.push_back(*d_plus);
+    diagonals.push_back(*d_minus);
+    const std::vector<int> offsets{0, stride, -stride};
+    LinearTransform<P>(res, ct, diagonals, offsets, gk);
+}
+
+template <class P>
+void ApplyCRTCrossButterfly(TRLWE<P> &res, const TRLWE<P> &ct, bool inverse,
+                            const GaloisKey<P> &gk,
+                            bool normalize_inverse = true)
+{
+    constexpr uint64_t t = static_cast<uint64_t>(P::plain_modulus);
+    constexpr int half = static_cast<int>(P::n) / 2;
+    const uint64_t a = powmod64(SIMDConstants<P>::PSI, half, t);
+    const uint64_t b = modinv_u64(a, t);
+
+    auto d_id = std::make_unique<std::array<uint64_t, P::n>>();
+    auto d_conj = std::make_unique<std::array<uint64_t, P::n>>();
+    if (!inverse) {
+        for (int i = 0; i < half; i++) {
+            (*d_id)[i] = 1;
+            (*d_conj)[i] = a;
+            (*d_id)[half + i] = b;
+            (*d_conj)[half + i] = 1;
+        }
+    } else if (normalize_inverse) {
+        const uint64_t det = (b + t - a) % t;
+        const uint64_t inv_det = modinv_u64(det, t);
+        const uint64_t neg_a_over_det = mulmod64((t - a) % t, inv_det, t);
+        const uint64_t neg_one_over_det = (t - inv_det) % t;
+        for (int i = 0; i < half; i++) {
+            (*d_id)[i] = mulmod64(b, inv_det, t);
+            (*d_conj)[i] = neg_a_over_det;
+            (*d_id)[half + i] = inv_det;
+            (*d_conj)[half + i] = neg_one_over_det;
+        }
+    } else {
+        for (int i = 0; i < half; i++) {
+            (*d_id)[i] = b;
+            (*d_conj)[i] = (t - a) % t;
+            (*d_id)[half + i] = 1;
+            (*d_conj)[half + i] = t - 1;
+        }
+    }
+
+    auto id_part = std::make_unique<TRLWE<P>>();
+    auto conj_ct = std::make_unique<TRLWE<P>>();
+    auto conj_part = std::make_unique<TRLWE<P>>();
+    SlotPtxtMul<P>(*id_part, ct, *d_id);
+    ConjugateSlots<P>(*conj_ct, ct, gk);
+    SlotPtxtMul<P>(*conj_part, *conj_ct, *d_conj);
+    for (int k = 0; k <= static_cast<int>(P::k); k++)
+        for (uint32_t i = 0; i < P::n; i++)
+            res[k][i] = (*id_part)[k][i] + (*conj_part)[k][i];
+}
+
+template <class P>
+void CRTSlotToCoeffProduct(TRLWE<P> &res, const TRLWE<P> &ct,
+                           const GaloisKey<P> &gk)
+{
+    auto cur = std::make_unique<TRLWE<P>>(ct);
+    auto next = std::make_unique<TRLWE<P>>();
+
+    ApplyCRTCrossButterfly<P>(*next, *cur, false, gk);
+    std::swap(cur, next);
+
+    for (int stage = static_cast<int>(P::nbit) - 2; stage >= 0; stage--) {
+        ApplyCRTRowButterfly<P>(*next, *cur, stage, false, gk);
+        std::swap(cur, next);
+    }
+    res = *cur;
+}
+
+template <class P>
+void CRTCoeffToSlotProduct(TRLWE<P> &res, const TRLWE<P> &ct,
+                           const GaloisKey<P> &gk)
+{
+    constexpr uint64_t t = static_cast<uint64_t>(P::plain_modulus);
+    constexpr int half = static_cast<int>(P::n) / 2;
+    auto cur = std::make_unique<TRLWE<P>>(ct);
+    auto next = std::make_unique<TRLWE<P>>();
+
+    for (int stage = 0; stage <= static_cast<int>(P::nbit) - 2; stage++) {
+        ApplyCRTRowButterfly<P>(*next, *cur, stage, true, gk, false);
+        std::swap(cur, next);
+    }
+    ApplyCRTCrossButterfly<P>(*next, *cur, true, gk, false);
+
+    const uint64_t a = powmod64(SIMDConstants<P>::PSI, half, t);
+    const uint64_t b = modinv_u64(a, t);
+    uint64_t scale = (b + t - a) % t;
+    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++)
+        scale = mulmod64(scale, 2, t);
+    const uint64_t scale_inv = modinv_u64(scale, t);
+
+    auto scale_slots = std::make_unique<std::array<uint64_t, P::n>>();
+    scale_slots->fill(scale_inv);
+    SlotPtxtMul<P>(res, *next, *scale_slots);
+}
+
+}  // namespace detail
+
 // ---------------------------------------------------------------------------
 // Compute the n × n SlotEncode matrix S where S[i][j] = SlotEncode(e_j)[i].
 // Entries are stored mod t (uint64_t).  Roughly n · n entries = 16M uint64 =
@@ -340,6 +526,29 @@ void SlotToCoeff(TRLWE<P> &res, const TRLWE<P> &ct,
                  const GaloisKey<P> &gk)
 {
     CoeffToSlot<P>(res, ct, D_same, D_cross, k_step, gk);
+}
+
+// ---------------------------------------------------------------------------
+// FFT-style CRT-factor transforms used by BFV bootstrapping.
+//
+// These implement the sparse power-of-two CRT factors from
+// Bootstrapping_BGV_BFV.  The product is the SlotDecode/SlotEncode map up to a
+// bit-reversal of coefficient positions inside each Galois row.  BFV
+// bootstrapping uses the forward and inverse product as a matched pair around
+// NoisyDecrypt, so that permutation cancels without paying for an additional
+// sparse permutation stage.
+// ---------------------------------------------------------------------------
+
+template <class P>
+void SlotToCoeffCRT(TRLWE<P> &res, const TRLWE<P> &ct, const GaloisKey<P> &gk)
+{
+    detail::CRTSlotToCoeffProduct<P>(res, ct, gk);
+}
+
+template <class P>
+void CoeffToSlotCRT(TRLWE<P> &res, const TRLWE<P> &ct, const GaloisKey<P> &gk)
+{
+    detail::CRTCoeffToSlotProduct<P>(res, ct, gk);
 }
 
 }  // namespace c2s

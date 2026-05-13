@@ -227,6 +227,17 @@ int main()
     if (!checkSlots<BP>(mul_got, mul_want, "p^2 transparent slot multiply"))
         return 1;
 
+    std::array<uint64_t, BP::n> neg_one{}, neg_want{}, neg_got{};
+    neg_one.fill(q - 1);
+    for (int i = 0; i < n; i++)
+        neg_want[i] = mul_a[i] == 0 ? 0 : q - mul_a[i];
+    TFHEpp::TRLWE<BP> neg_ct{};
+    TFHEpp::SlotPtxtMul<BP>(neg_ct, mul_a_ct, neg_one);
+    TFHEpp::trlweSlotDecrypt<BP>(neg_got, neg_ct, key);
+    if (!checkSlots<BP>(neg_got, neg_want,
+                        "p^2 centered negative slot plaintext multiply"))
+        return 1;
+
     std::array<uint64_t, BP::n> eval_want{}, eval_got{};
     for (int i = 0; i < n; i++)
         eval_want[i] = (3 + 2 * mul_a[i]) % q;

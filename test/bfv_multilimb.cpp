@@ -404,6 +404,20 @@ int main()
         }
     }
 
+    {
+        using P = MLTestParam;
+        TFHEpp::Polynomial<P> torus{}, got{};
+        std::array<uint64_t, P::n> neg_one{};
+        neg_one[0] = P::plain_modulus_u64 - 1;
+        torus[0] = P::T{5};
+        torus[1] = P::T{7};
+        TFHEpp::PolyMulTorusByCenteredPlain<P>(got, torus, neg_one);
+        require(got[0] == (P::T{0} - P::T{5}),
+                "multi-limb centered constant multiply coefficient 0");
+        require(got[1] == (P::T{0} - P::T{7}),
+                "multi-limb centered constant multiply coefficient 1");
+    }
+
     std::cout << "BFV multi-limb torus scaffold test" << std::endl;
     std::cout << "  lvl5 n=" << TFHEpp::lvl5param::n
               << " q_bits=" << std::numeric_limits<U>::digits

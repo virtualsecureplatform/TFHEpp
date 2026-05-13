@@ -201,15 +201,15 @@ template <class P>
 void PlainPolynomialMul(TRLWE<P> &res, const TRLWE<P> &ct,
                         const std::array<uint64_t, P::n> &plain)
 {
-    Polynomial<P> p;
-    for (uint32_t i = 0; i < P::n; i++)
-        p[i] = static_cast<typename P::T>(
-            plain[i] % static_cast<uint64_t>(P::plain_modulus));
     for (int c = 0; c <= static_cast<int>(P::k); c++) {
         if constexpr (is_multilimb_uint_v<typename P::T>)
-            PolyMulTorusByUnsigned<P>(res[c], ct[c], plain);
-        else
+            PolyMulTorusByCenteredPlain<P>(res[c], ct[c], plain);
+        else {
+            Polynomial<P> p;
+            for (uint32_t i = 0; i < P::n; i++)
+                p[i] = bfvCenteredPlainCoeff<P>(plain[i]);
             PolyMul<P>(res[c], ct[c], p);
+        }
     }
 }
 
@@ -262,6 +262,8 @@ struct BootstrapKey {
     std::unique_ptr<TRLWE<BootP>> enc_sk;
     std::vector<uint64_t> digit_removal_polynomial;
 
+    // Legacy dense linear maps.  BootstrapNoisySlots uses the FFT-style CRT
+    // factors and only requires the Galois keys above.
     std::unique_ptr<std::vector<std::array<uint64_t, BaseP::n>>> stc_same;
     std::unique_ptr<std::vector<std::array<uint64_t, BaseP::n>>> stc_cross;
     std::unique_ptr<std::vector<std::array<uint64_t, BootP::n>>> cts_same;
@@ -277,15 +279,15 @@ BootstrapKey<BaseP> MakeBootstrapKey(const Key<BaseP> &base_key,
     using BootP = typename BootstrapKey<BaseP>::BootP;
 
     BootstrapKey<BaseP> bk;
-    Key<BootP> boot_key;
-    ConvertSecretKey<BaseP, BootP>(boot_key, base_key);
+    auto boot_key = std::make_unique<Key<BootP>>();
+    ConvertSecretKey<BaseP, BootP>(*boot_key, base_key);
 
-    bk.relin = makeRelinKeyFFT<BootP>(boot_key);
+    bk.relin = makeRelinKeyFFT<BootP>(*boot_key);
 
-    std::array<uint64_t, BootP::n> sk_plain{};
-    SecretKeyAsPlaintext<BootP, BaseP>(sk_plain, base_key);
+    auto sk_plain = std::make_unique<std::array<uint64_t, BootP::n>>();
+    SecretKeyAsPlaintext<BootP, BaseP>(*sk_plain, base_key);
     bk.enc_sk = std::make_unique<TRLWE<BootP>>();
-    BfvPolyEncrypt<BootP>(*bk.enc_sk, sk_plain, boot_key);
+    BfvPolyEncrypt<BootP>(*bk.enc_sk, *sk_plain, *boot_key);
     bk.digit_removal_polynomial =
         digitext::GetLowestDigitRemovalPolynomialOverRange(
             static_cast<uint64_t>(BaseP::plain_modulus),
@@ -296,19 +298,7 @@ BootstrapKey<BaseP> MakeBootstrapKey(const Key<BaseP> &base_key,
         GaloisKeyGen<BaseP>(*bk.base_galois, base_key);
 
         bk.boot_galois = std::make_unique<GaloisKey<BootP>>();
-        GaloisKeyGen<BootP>(*bk.boot_galois, boot_key);
-
-        bk.stc_same =
-            std::make_unique<std::vector<std::array<uint64_t, BaseP::n>>>();
-        bk.stc_cross =
-            std::make_unique<std::vector<std::array<uint64_t, BaseP::n>>>();
-        c2s::BuildSlotToCoeffKeys<BaseP>(*bk.stc_same, *bk.stc_cross);
-
-        bk.cts_same =
-            std::make_unique<std::vector<std::array<uint64_t, BootP::n>>>();
-        bk.cts_cross =
-            std::make_unique<std::vector<std::array<uint64_t, BootP::n>>>();
-        c2s::BuildCoeffToSlotKeys<BootP>(*bk.cts_same, *bk.cts_cross);
+        GaloisKeyGen<BootP>(*bk.boot_galois, *boot_key);
     }
 
     return bk;
@@ -326,19 +316,16 @@ void BootstrapNoisySlots(TRLWE<typename BootstrapKey<BaseP>::BootP> &res,
                          const BootstrapKey<BaseP> &bk)
 {
     using BootP = typename BootstrapKey<BaseP>::BootP;
-    assert(bk.base_galois && bk.boot_galois && bk.stc_same && bk.stc_cross &&
-           bk.cts_same && bk.cts_cross);
+    assert(bk.base_galois && bk.boot_galois);
 
     auto coeff_ct = std::make_unique<TRLWE<BaseP>>();
-    c2s::SlotToCoeff<BaseP>(*coeff_ct, ct, *bk.stc_same, *bk.stc_cross,
-                            bk.linear_bsgs_step, *bk.base_galois);
+    c2s::SlotToCoeffCRT<BaseP>(*coeff_ct, ct, *bk.base_galois);
 
     auto noisy_coeffs = std::make_unique<TRLWE<BootP>>();
     NoisyDecrypt<BaseP, BootP>(*noisy_coeffs, *coeff_ct, *bk.enc_sk);
     coeff_ct.reset();
 
-    c2s::CoeffToSlot<BootP>(res, *noisy_coeffs, *bk.cts_same, *bk.cts_cross,
-                            bk.linear_bsgs_step, *bk.boot_galois);
+    c2s::CoeffToSlotCRT<BootP>(res, *noisy_coeffs, *bk.boot_galois);
 }
 
 template <class BaseP>
