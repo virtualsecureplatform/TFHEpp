@@ -38,6 +38,7 @@
 #include "bfv-digitext.hpp"
 #include "bfv-c2s.hpp"
 #include "bfv-bootstrapping.hpp"
+#include "bfv-gbfv.hpp"
 
 // Application
 #include "aes.hpp"
