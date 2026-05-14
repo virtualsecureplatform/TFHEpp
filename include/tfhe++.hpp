@@ -21,6 +21,7 @@
 #include "keyswitch.hpp"
 #include "largelut.hpp"
 #include "params.hpp"
+#include "params/SS2CLPX.hpp"
 #include "tlwe.hpp"
 #include "trgsw.hpp"
 #include "trlwe.hpp"

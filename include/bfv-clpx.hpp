@@ -158,27 +158,34 @@ inline Polynomial<P> trlweSymDecryptpra(const TRLWE<P> &c, const Key<P> &key)
     return trlwePhase<P>(c, key);
 }
 
-template <class iksP, class bkP, class sskP, int num_multi, int shift = 0>
+template <class iksP, class bkP, class sskP, int num_multi, int shift = 0,
+          int w = std::numeric_limits<typename bkP::targetP::T>::digits>
 void TLWES2CLPXIKS(TRLWE<typename bkP::targetP> &res,
                    const std::vector<TLWE<typename iksP::domainP>> &tlwes,
                    const AnnihilateKey<typename bkP::targetP> &ahk,
                    const EvalKey &ek)
 {
     constexpr int t = std::numeric_limits<typename bkP::targetP::T>::digits;
+    static_assert(w > 0, "TLWES2CLPXIKS requires a positive truncation width");
+    static_assert(w <= t, "TLWES2CLPXIKS truncation width exceeds torus width");
     const uint32_t tlnum = static_cast<uint32_t>(tlwes.size());
-    std::vector<TLWE<typename sskP::domainP>> temp1(tlnum + t - 1);
+    std::vector<TLWE<typename sskP::domainP>> temp1(tlnum + w - 1);
     for (auto &item : temp1) item = {};
 
-    constexpr int jcir = t / (num_multi * (shift + 1));
+    // Nagai et al. denote shift + 1 as shiftnum and use w as the
+    // Delta_b truncation width. The old default keeps the full torus width.
+    constexpr int shiftnum = shift + 1;
+    constexpr int step = num_multi * shiftnum;
+    constexpr int jcir = (w + step - 1) / step;
     std::array<Polynomial<typename bkP::targetP>, jcir> test_vectors{};
     int jpra = 0;
-    for (int j = t - 1; j >= 0; j -= num_multi * (shift + 1)) {
+    for (int j = w - 1; j >= 0; j -= step) {
         for (int k = 0; k < bkP::targetP::n; k += num_multi) {
             for (int l = 0; l < num_multi; l++) {
                 test_vectors[jpra][k + l] = static_cast<typename bkP::targetP::T>(
                     std::ldexp(1.0,
                                std::numeric_limits<typename bkP::targetP::T>::digits -
-                                   j + l * (shift + 1) - 3));
+                                   j + l * shiftnum - 3));
             }
         }
         jpra++;
@@ -189,17 +196,18 @@ void TLWES2CLPXIKS(TRLWE<typename bkP::targetP> &res,
         jpra = 0;
         TLWE<typename iksP::targetP> tlwelvl0;
         IdentityKeySwitch<iksP>(tlwelvl0, tlwes[i], ek.getiksk<iksP>());
-        for (int j = t - 1; j >= 0; j -= num_multi * (shift + 1)) {
+        for (int j = w - 1; j >= 0; j -= step) {
             GateBootstrappingManyLUT<bkP, num_multi>(
                 temps, tlwelvl0, ek.getbkfft<bkP>(), test_vectors[jpra]);
             for (int l = 0; l < num_multi; l++)
                 temps[l][bkP::targetP::n] += test_vectors[jpra][l];
 
             for (int l = 0; l < num_multi; l++) {
-                for (int m = 0; m < (shift + 1); m++) {
+                for (int m = 0; m < shiftnum; m++) {
+                    const int bit_index = j - l * shiftnum - m;
+                    if (bit_index < 0) continue;
                     for (int k = 0; k < bkP::targetP::n + 1; k++) {
-                        temp1[i + j - l * (shift + 1) - m][k] -=
-                            temps[l][k] << m;
+                        temp1[i + bit_index][k] -= temps[l][k] << m;
                     }
                 }
             }
