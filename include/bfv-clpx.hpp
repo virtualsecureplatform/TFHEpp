@@ -34,6 +34,13 @@ std::array<int, P::n> clpxSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key);
 template <class P, int validbit, int numcell>
 inline typename P::T decodeHatEncoderInt2T(const std::array<int, numcell> &p);
 
+template <class P, int validbit, int numcell>
+inline unsigned __int128 decodeHatEncoderInt2U128(
+    const std::array<int, numcell> &p);
+
+template <class P, int validbit, int numcell>
+inline __int128 decodeHatEncoderInt2I128(const std::array<int, numcell> &p);
+
 template <class P>
 inline void TwistFFTrescaleCLPX(Polynomial<P> &res,
                                   const PolynomialInFD<P> &a)
@@ -581,12 +588,27 @@ inline typename P::T decodeHatEncoderInt82T(const std::vector<uint8_t> &p)
 template <class P, int validbit, int numcell>
 inline typename P::T decodeHatEncoderInt2T(const std::array<int, numcell> &p)
 {
-    int64_t ans = 0;
+    return static_cast<typename P::T>(
+        decodeHatEncoderInt2I128<P, validbit, numcell>(p));
+}
+
+template <class P, int validbit, int numcell>
+inline unsigned __int128 decodeHatEncoderInt2U128(
+    const std::array<int, numcell> &p)
+{
+    return static_cast<unsigned __int128>(
+        decodeHatEncoderInt2I128<P, validbit, numcell>(p));
+}
+
+template <class P, int validbit, int numcell>
+inline __int128 decodeHatEncoderInt2I128(const std::array<int, numcell> &p)
+{
+    __int128 ans = 0;
     for (int i = validbit - 1; i >= 0; i--) {
         ans *= P::plain_modulus;
         ans += p[i];
     }
-    return static_cast<typename P::T>(ans);
+    return ans;
 }
 
 }  // namespace TFHEpp
