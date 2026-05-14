@@ -6,6 +6,29 @@
 #include <random>
 #include <tfhe++.hpp>
 
+template <std::size_t N>
+bool checkPolyModulo(const std::array<uint64_t, N> &got,
+                     const std::array<uint64_t, N> &want, uint64_t modulus,
+                     const char *label)
+{
+    int mismatches = 0;
+    int first_bad = -1;
+    for (int i = 0; i < static_cast<int>(N); i++) {
+        if ((got[i] % modulus) != (want[i] % modulus)) {
+            if (first_bad < 0) first_bad = i;
+            mismatches++;
+        }
+    }
+    if (mismatches == 0) return true;
+
+    std::cerr << "  FAIL " << label << " mismatches=" << mismatches
+              << " first_bad=" << first_bad
+              << " expected=" << (want[first_bad] % modulus)
+              << " got=" << (got[first_bad] % modulus)
+              << " raw_got=" << got[first_bad] << std::endl;
+    return false;
+}
+
 template <class P>
 bool checkPoly(const std::array<uint64_t, P::n> &got,
                const std::array<uint64_t, P::n> &want, const char *label)
@@ -75,6 +98,32 @@ int main()
     std::array<uint64_t, BP::n> lifted_out{};
     TFHEpp::bfvboot::BfvPolyDecrypt<BP>(lifted_out, lifted_ct, boot_key);
     if (!checkPoly<BP>(lifted_out, base_plain, "transparent p-to-p^2 scale"))
+        return 1;
+    std::cout << "." << std::flush;
+
+    TFHEpp::TRLWE<P> encrypted_base_ct{};
+    TFHEpp::bfvboot::BfvPolyEncrypt<P>(encrypted_base_ct, base_plain, key);
+
+    TFHEpp::TRLWE<BP> encrypted_lifted_ct{};
+    TFHEpp::bfvboot::gbfv::ScaleAndRoundPlainMod<P, BP>(
+        encrypted_lifted_ct, encrypted_base_ct);
+
+    std::array<uint64_t, BP::n> encrypted_lifted_out{};
+    TFHEpp::bfvboot::BfvPolyDecrypt<BP>(encrypted_lifted_out,
+                                        encrypted_lifted_ct, boot_key);
+    if (!checkPolyModulo(encrypted_lifted_out, base_plain, p,
+                         "encrypted p-to-p^2 residue lift"))
+        return 1;
+
+    TFHEpp::TRLWE<P> encrypted_roundtrip_ct{};
+    TFHEpp::bfvboot::gbfv::ScaleAndRoundPlainMod<BP, P>(
+        encrypted_roundtrip_ct, encrypted_lifted_ct);
+
+    std::array<uint64_t, P::n> encrypted_roundtrip_out{};
+    TFHEpp::bfvboot::BfvPolyDecrypt<P>(encrypted_roundtrip_out,
+                                       encrypted_roundtrip_ct, key);
+    if (!checkPoly<P>(encrypted_roundtrip_out, base_plain,
+                      "encrypted p-to-p^2-to-p roundtrip"))
         return 1;
     std::cout << "." << std::flush;
 

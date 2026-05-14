@@ -189,10 +189,11 @@ void ScaleAndRoundPlainMod(TRLWE<ToP> &res, const TRLWE<FromP> &ct)
     using T = typename ToP::T;
 
     // This mirrors the reference ScaleAndRoundCiphertext coefficient operation.
-    // The division branch is only valid when the ciphertext is in a lifted
-    // integer/transparent state where dividing torus representatives is
-    // unambiguous; arbitrary encrypted TFHE torus ciphertexts need a real
-    // modulus-lifting path instead.
+    // When increasing the plaintext modulus, an encrypted ciphertext preserves
+    // the old plaintext residue class but cannot define a canonical high
+    // p-adic digit: component wrap carries are hidden by the mask. Transparent
+    // ciphertexts get the exact representative; encrypted ciphertexts are only
+    // guaranteed to round-trip after scaling back down.
     if constexpr (old_t == new_t) {
         for (int c = 0; c <= static_cast<int>(ToP::k); c++)
             for (uint32_t i = 0; i < ToP::n; i++) res[c][i] = ct[c][i];
