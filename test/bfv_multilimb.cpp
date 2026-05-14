@@ -378,6 +378,13 @@ int main()
                     std::make_unique<std::array<uint64_t, BP::n>>();
                 TFHEpp::trlweSlotDecrypt<BP>(*full_noisy_plain, *noisy_slots,
                                              *boot_key);
+
+                auto bootstrapped = std::make_unique<TFHEpp::TRLWE<P>>();
+                TFHEpp::bfvboot::Bootstrap<P>(*bootstrapped, *ct_a, *bk);
+                TFHEpp::trlweSlotDecrypt<P>(*decrypted, *bootstrapped, *key);
+                for (std::size_t i = 0; i < P::n; i++)
+                    require((*decrypted)[i] == (*slots_a)[i],
+                            "lvl5 rounded full bootstrap");
             }
         }
     }

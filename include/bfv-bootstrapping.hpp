@@ -362,14 +362,38 @@ void FinalizeBootstrap(TRLWE<BaseP> &res,
     ProjectToBase<BaseP>(res, *removed);
 }
 
+// Online bootstrap path that removes the low p-adic digit while the ciphertext
+// is still in coefficient form.  NoisyDecrypt produces Enc_{p^2}(p*m + e).
+// Reinterpreting the same torus phase at plaintext modulus p decrypts to
+// round((p*m + e) / p), so this is exact when |e| < p/2.  Performing this
+// before CoeffToSlot avoids amplifying the low digit through the p^2 linear map.
+template <class BaseP>
+void BootstrapRounded(TRLWE<BaseP> &res, const TRLWE<BaseP> &ct,
+                      const BootstrapKey<BaseP> &bk)
+{
+    using BootP = typename BootstrapKey<BaseP>::BootP;
+    assert(bk.base_galois);
+    assert(bk.enc_sk);
+
+    auto coeff_ct = std::make_unique<TRLWE<BaseP>>();
+    c2s::SlotToCoeffCRT<BaseP>(*coeff_ct, ct, *bk.base_galois);
+
+    auto noisy_coeffs = std::make_unique<TRLWE<BootP>>();
+    NoisyDecrypt<BaseP, BootP>(*noisy_coeffs, *coeff_ct, *bk.enc_sk);
+    coeff_ct.reset();
+
+    auto rounded_coeffs = std::make_unique<TRLWE<BaseP>>();
+    ProjectToBase<BaseP>(*rounded_coeffs, *noisy_coeffs);
+    noisy_coeffs.reset();
+
+    c2s::CoeffToSlotCRT<BaseP>(res, *rounded_coeffs, *bk.base_galois);
+}
+
 template <class BaseP>
 void Bootstrap(TRLWE<BaseP> &res, const TRLWE<BaseP> &ct,
                const BootstrapKey<BaseP> &bk)
 {
-    using BootP = typename BootstrapKey<BaseP>::BootP;
-    auto noisy_slots = std::make_unique<TRLWE<BootP>>();
-    BootstrapNoisySlots<BaseP>(*noisy_slots, ct, bk);
-    FinalizeBootstrap<BaseP>(res, *noisy_slots, bk);
+    BootstrapRounded<BaseP>(res, ct, bk);
 }
 
 }  // namespace bfvboot
