@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 #include <vector>
 
 #include "gatebootstrapping.hpp"
@@ -15,6 +16,17 @@
 #include "utils.hpp"
 
 namespace TFHEpp {
+
+template <class T>
+inline T clpxSignedDoubleToTorus(const double value)
+{
+    if constexpr (std::is_same_v<T, uint32_t>)
+        return static_cast<uint32_t>(static_cast<int32_t>(std::lround(value)));
+    else if constexpr (std::is_same_v<T, uint64_t>)
+        return static_cast<uint64_t>(static_cast<int64_t>(std::llround(value)));
+    else
+        static_assert(false_v<T>, "Undefined CLPX torus conversion");
+}
 
 template <class P>
 std::array<int, P::n> clpxSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key);
@@ -43,8 +55,8 @@ inline void PolyMulRescaleUnsignedCLPX(Polynomial<P> &res,
                                          const Polynomial<P> &b)
 {
     PolynomialInFD<P> ffta, fftb;
-    TwistIFFTUInt<P>(ffta, a);
-    TwistIFFTUInt<P>(fftb, b);
+    TwistIFFT<P>(ffta, a);
+    TwistIFFT<P>(fftb, b);
     MulInFD<P::n>(ffta, fftb);
     TwistFFTrescaleCLPX<P>(res, ffta);
 }
@@ -55,11 +67,11 @@ inline void TRLWEMultWithoutRelinerizationCLPX(TRLWE3<P> &res,
                                                  const TRLWE<P> &b)
 {
     PolynomialInFD<P> ffta, fftb, fftc;
-    TwistIFFTUInt<P>(ffta, a[0]);
-    TwistIFFTUInt<P>(fftb, b[1]);
+    TwistIFFT<P>(ffta, a[0]);
+    TwistIFFT<P>(fftb, b[1]);
     MulInFD<P::n>(fftc, ffta, fftb);
-    TwistIFFTUInt<P>(ffta, a[1]);
-    TwistIFFTUInt<P>(fftb, b[0]);
+    TwistIFFT<P>(ffta, a[1]);
+    TwistIFFT<P>(fftb, b[0]);
     FMAInFD<P::n>(fftc, ffta, fftb);
     TwistFFTrescaleCLPX<P>(res[0], fftc);
 
@@ -456,21 +468,23 @@ template <class P>
 std::array<typename P::T, P::n> generateDelbM(
     const std::array<typename P::T, P::n> &p)
 {
-    std::array<typename P::T, P::n> delb{};
-    std::array<typename P::T, P::n> delbM{};
+    std::array<double, P::n> delb{};
+    std::array<double, P::n> delbM{};
+    std::array<typename P::T, P::n> res{};
     const double q = std::ldexp(1.0, std::numeric_limits<typename P::T>::digits - 1);
 
     for (int i = 0; i < P::n; i++) delb[i] = -q / std::pow(P::plain_modulus, i + 1);
     for (int i = 0; i < P::n; i++) {
         for (int j = 0; j < P::n; j++) {
             if (i + j < P::n)
-                delbM[i + j] = static_cast<typename P::T>(delbM[i + j] + delb[i] * p[j]);
+                delbM[i + j] += delb[i] * p[j];
             else
-                delbM[i + j - P::n] = static_cast<typename P::T>(
-                    delbM[i + j - P::n] - delb[i] * p[j]);
+                delbM[i + j - P::n] -= delb[i] * p[j];
         }
     }
-    return delbM;
+    for (int i = 0; i < P::n; i++)
+        res[i] = clpxSignedDoubleToTorus<typename P::T>(delbM[i]);
+    return res;
 }
 
 template <class P>

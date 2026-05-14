@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cassert>
 #include <immintrin.h>
+#include <vector>
 
 #include <params.hpp>
 #include "fft_processor_spqlios_intl.h"
@@ -981,7 +982,19 @@ void FFT_Processor_Spqlios_Intl::execute_direct_torus32_rescale(uint32_t *res, c
 
 void FFT_Processor_Spqlios_Intl::execute_direct_torus32_rescale_clpx(
     uint32_t *res, const double *a, const double q, const uint32_t plain_modulus) {
-    execute_direct_torus32(res, a);
+    auto *tables = (const INTL_FFT_PRECOMP*)tables_direct;
+    alignas(64) double tmp[N];
+    intl_fft_from(tables, a, tmp);
+    const auto coeff = [this, &tmp](const int32_t i) {
+        return i < Ns2 ? tmp[2*i] : tmp[2*(i - Ns2) + 1];
+    };
+    for (int32_t i = 0; i < N; i++) {
+        const double scaled =
+            (i == 0) ? (-coeff(N - 1) - plain_modulus * coeff(0)) / q
+                     : (coeff(i - 1) - plain_modulus * coeff(i)) / q;
+        res[i] = static_cast<uint32_t>(
+            static_cast<int32_t>(std::lround(scaled)));
+    }
 }
 
 void FFT_Processor_Spqlios_Intl::execute_direct_torus64_rescale(uint64_t *res, const double *a, const double D) {
@@ -998,7 +1011,22 @@ void FFT_Processor_Spqlios_Intl::execute_direct_torus64_rescale(uint64_t *res, c
 
 void FFT_Processor_Spqlios_Intl::execute_direct_torus64_rescale_clpx(
     uint64_t *res, const double *a, const uint32_t plain_modulus) {
-    execute_direct_torus64(res, const_cast<double*>(a));
+    auto *tables = (const INTL_FFT_PRECOMP*)tables_direct;
+    alignas(64) double tmp[N];
+    std::vector<double> scaled(N);
+    intl_fft_from(tables, a, tmp);
+    const auto coeff = [this, &tmp](const int32_t i) {
+        return i < Ns2 ? tmp[2*i] : tmp[2*(i - Ns2) + 1];
+    };
+    constexpr double q = 9223372036854775808.0;  // 2^63
+    for (int32_t i = 0; i < N; i++)
+        scaled[i] =
+            std::round((i == 0) ? (-coeff(N - 1) - plain_modulus * coeff(0)) / q
+                                : (coeff(i - 1) - plain_modulus * coeff(i)) / q);
+    for (int32_t i = 0; i < N; i += 4) {
+        const __m256d v = _mm256_loadu_pd(scaled.data() + i);
+        _mm256_storeu_si256((__m256i*)(res + i), f64_to_i64(v));
+    }
 }
 
 thread_local FFT_Processor_Spqlios_Intl fftplvl1(TFHEpp::lvl1param::n);

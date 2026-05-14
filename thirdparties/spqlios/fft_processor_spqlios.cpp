@@ -314,5 +314,13 @@ void FFT_Processor_Spqlios::execute_direct_torus64_rescale_clpx(
     for (int i = 0; i < N; i++) real_inout_direct[i] = a[i] * _2sN;
 #endif
     fft(tables_direct, real_inout_direct);
+    constexpr double q = 9223372036854775808.0;  // 2^63
+    const double last_coeff = real_inout_direct[N - 1];
+    for (int i = N - 1; i > 0; i--)
+        real_inout_direct[i] = std::round(
+            (real_inout_direct[i - 1] - plain_modulus * real_inout_direct[i]) /
+            q);
+    real_inout_direct[0] =
+        std::round((-last_coeff - plain_modulus * real_inout_direct[0]) / q);
     f64_to_i64_avx2(res, real_inout_direct, N);
 }
