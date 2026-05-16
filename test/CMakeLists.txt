@@ -13,6 +13,13 @@ foreach(test_source ${test_sources})
     else()
         target_link_libraries(${test_name} tfhe++ AES)
     endif()
+    if(test_name STREQUAL "ascon")
+        target_sources(${test_name} PRIVATE
+            ${PROJECT_SOURCE_DIR}/thirdparties/ascon-c/crypto_aead/asconaead128/ref/aead.c
+            ${PROJECT_SOURCE_DIR}/thirdparties/ascon-c/crypto_hash/asconxof128/ref/hash.c)
+        target_include_directories(${test_name} PRIVATE
+            ${PROJECT_SOURCE_DIR}/thirdparties/ascon-c/tests)
+    endif()
 endforeach(test_source ${test_sources})
 
 # For GMP used in INTorus test

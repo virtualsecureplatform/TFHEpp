@@ -22,3 +22,6 @@
 [submodule "thirdparties/AES"]
 	path = thirdparties/AES
 	url = https://github.com/SergeyBel/AES.git
+[submodule "thirdparties/ascon-c"]
+	path = thirdparties/ascon-c
+	url = https://github.com/ascon/ascon-c.git
