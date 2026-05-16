@@ -1,6 +1,7 @@
 #pragma once
 #include <AES.h>
 
+#include <memory>
 #include <ranges>
 // Transciphering by AES
 //  Based on Hippogryph
@@ -270,6 +271,36 @@ void AESInvSboxROM(std::array<TLWE<typename brP::targetP>, 8> &res,
     else {
         LROMUX<typename brP::targetP, address_bit, width_bit>(res, trgsw,
                                                               rom[0]);
+    }
+}
+
+template <class iksP, class brP, class ahP>
+void InvSubBytes(std::array<TLWE<typename brP::targetP>, 128> &state,
+                 const EvalKey &ek)
+{
+    for (int i = 0; i < 16; i++) {
+        std::array<TLWE<typename iksP::domainP>, 8> in;
+        std::array<TLWE<typename brP::targetP>, 8> out;
+        for (int j = 0; j < 8; j++) in[j] = state[i * 8 + j];
+        AESInvSboxROM<iksP, brP, ahP>(out, in, ek);
+        for (int j = 0; j < 8; j++) state[i * 8 + j] = out[j];
+    }
+}
+
+template <class iksP, class brP, class cbiksP, class cbbrP, class ahP>
+void InvSubBytes(std::array<TLWE<typename brP::targetP>, 128> &state,
+                 const EvalKey &ek)
+{
+    for (int i = 0; i < 16; i++) {
+        std::array<TLWE<typename iksP::domainP>, 8> in;
+        std::array<TLWE<typename cbbrP::targetP>, 8> temp;
+        for (int j = 0; j < 8; j++) in[j] = state[i * 8 + j];
+        AESInvSboxROM<iksP, cbbrP, ahP>(temp, in, ek);
+        for (int j = 0; j < 8; j++)
+            GateBootstrapping<
+                cbiksP, brP,
+                1ULL << (std::numeric_limits<typename brP::targetP::T>::digits -
+                         2)>(state[i * 8 + j], temp[j], ek);
     }
 }
 
@@ -672,6 +703,72 @@ void AESEnc(std::array<TLWE<typename brP::targetP>, 128> &cipher,
         for (int j = 0; j < Nb; j++)
             for (int k = 0; k < 8; k++)
                 cipher[j * 4 * 8 + i * 8 + k] = state[i * Nb * 8 + j * 8 + k];
+}
+
+template <class iksP, class brP, class ahP>
+void AESDec(std::array<TLWE<typename brP::targetP>, 128> &plain,
+            const std::array<TLWE<typename iksP::domainP>, 128> &cipher,
+            const std::array<std::array<TLWE<typename brP::targetP>, 128>,
+                             Nr + 1> &expandedkey,
+            EvalKey &ek)
+{
+    auto state =
+        std::make_unique<std::array<TLWE<typename brP::targetP>, 128>>();
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for (int k = 0; k < 8; k++)
+                (*state)[i * Nb * 8 + j * 8 + k] =
+                    cipher[j * 4 * 8 + i * 8 + k];
+
+    AddRoundKey<typename brP::targetP>(*state, expandedkey[Nr]);
+    for (int round = Nr - 1; round > 0; round--) {
+        InvShiftRows<typename brP::targetP>(*state);
+        InvSubBytes<iksP, brP, ahP>(*state, ek);
+        AddRoundKey<typename brP::targetP>(*state, expandedkey[round]);
+        InvMixColumns<typename brP::targetP>(*state);
+    }
+    InvShiftRows<typename brP::targetP>(*state);
+    InvSubBytes<iksP, brP, ahP>(*state, ek);
+    AddRoundKey<typename brP::targetP>(*state, expandedkey[0]);
+
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for (int k = 0; k < 8; k++)
+                plain[j * 4 * 8 + i * 8 + k] =
+                    (*state)[i * Nb * 8 + j * 8 + k];
+}
+
+template <class iksP, class brP, class cbiksP, class cbbrP, class ahP>
+void AESDec(std::array<TLWE<typename brP::targetP>, 128> &plain,
+            const std::array<TLWE<typename iksP::domainP>, 128> &cipher,
+            const std::array<std::array<TLWE<typename brP::targetP>, 128>,
+                             Nr + 1> &expandedkey,
+            EvalKey &ek)
+{
+    auto state =
+        std::make_unique<std::array<TLWE<typename brP::targetP>, 128>>();
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for (int k = 0; k < 8; k++)
+                (*state)[i * Nb * 8 + j * 8 + k] =
+                    cipher[j * 4 * 8 + i * 8 + k];
+
+    AddRoundKey<typename brP::targetP>(*state, expandedkey[Nr]);
+    for (int round = Nr - 1; round > 0; round--) {
+        InvShiftRows<typename brP::targetP>(*state);
+        InvSubBytes<iksP, brP, cbiksP, cbbrP, ahP>(*state, ek);
+        AddRoundKey<typename brP::targetP>(*state, expandedkey[round]);
+        InvMixColumns<typename brP::targetP>(*state);
+    }
+    InvShiftRows<typename brP::targetP>(*state);
+    InvSubBytes<iksP, brP, cbiksP, cbbrP, ahP>(*state, ek);
+    AddRoundKey<typename brP::targetP>(*state, expandedkey[0]);
+
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < Nb; j++)
+            for (int k = 0; k < 8; k++)
+                plain[j * 4 * 8 + i * 8 + k] =
+                    (*state)[i * Nb * 8 + j * 8 + k];
 }
 
 template <class iksP, class brP, class cbiksP, class cbbrP, class ahP>
