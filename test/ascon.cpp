@@ -133,6 +133,35 @@ std::vector<uint8_t> decrypt_bits_as_bytes(
     return bytes;
 }
 
+void compare_homomorphic_ascon_xof_with_ascon_c()
+{
+    using brP = TFHEpp::lvlh2param;
+    using iksP = TFHEpp::lvl2hparam;
+    using P = typename brP::targetP;
+
+    const std::vector<uint8_t> empty;
+    const auto ref_xof = ascon_c_xof(empty, TFHEpp::ascon_xof_rate_bytes);
+
+    TFHEpp::SecretKey sk;
+    TFHEpp::EvalKey ek;
+    ek.emplacebkfft<brP>(sk);
+    ek.emplaceiksk<iksP>(sk);
+    ek.emplaceahk<TFHEpp::ASCONDefaultAHParamT<brP>>(sk);
+    ek.emplacecbsk<TFHEpp::ASCONDefaultAHParamT<brP>>(sk);
+
+    auto state = std::make_unique<TFHEpp::ASCONState<P>>();
+    std::vector<TFHEpp::TLWE<P>> empty_bits;
+    std::vector<TFHEpp::TLWE<P>> cxof(TFHEpp::ascon_xof_rate_bits);
+
+    TFHEpp::ASCONXOFInitialize<iksP, brP>(*state, ek);
+    TFHEpp::ASCONXOF<iksP, brP>(*state, cxof, empty_bits, ek);
+    const auto actual_xof = decrypt_bits_as_bytes<P>(cxof, sk);
+    if (actual_xof != ref_xof)
+        std::cerr << "ASCON XOF mismatch expected=" << to_hex(ref_xof)
+                  << " actual=" << to_hex(actual_xof) << std::endl;
+    assert(actual_xof == ref_xof);
+}
+
 void compare_homomorphic_ascon_with_ascon_c()
 {
     using brP = TFHEpp::lvlh2param;
@@ -146,7 +175,6 @@ void compare_homomorphic_ascon_with_ascon_c()
     const std::vector<uint8_t> empty;
     const auto plain = from_hex("20");
     const auto ref_one = ascon_c_aead_encrypt(key, nonce, empty, plain);
-    const auto ref_xof = ascon_c_xof(empty, TFHEpp::ascon_xof_rate_bytes);
 
     TFHEpp::SecretKey sk;
     TFHEpp::EvalKey ek;
@@ -227,15 +255,6 @@ void compare_homomorphic_ascon_with_ascon_c()
                   << std::endl;
     assert(actual_plain == plain);
     assert(actual_decrypt_tag == ref_tag);
-
-    std::vector<TFHEpp::TLWE<P>> cxof(TFHEpp::ascon_xof_rate_bits);
-    TFHEpp::ASCONXOFInitialize<iksP, brP>(*state, ek);
-    TFHEpp::ASCONXOF<iksP, brP>(*state, cxof, empty_bits, ek);
-    const auto actual_xof = decrypt_bits_as_bytes<P>(cxof, sk);
-    if (actual_xof != ref_xof)
-        std::cerr << "ASCON XOF mismatch expected=" << to_hex(ref_xof)
-                  << " actual=" << to_hex(actual_xof) << std::endl;
-    assert(actual_xof == ref_xof);
 }
 
 }  // namespace
@@ -260,6 +279,7 @@ int main()
                     "AD77855A5D3B13FE6AD9E6098988373A"
                     "F7D0956D05A8F1665D2C67D1A3AD10FF"));
 
+    compare_homomorphic_ascon_xof_with_ascon_c();
     compare_homomorphic_ascon_with_ascon_c();
 
     std::cout << "Passed" << std::endl;

@@ -186,8 +186,6 @@ int main(int argc, char **argv)
     assert(ascon_ref.size() == plain.size() + TFHEpp::ascon_tag_bytes);
     const std::vector<uint8_t> ascon_cipher(ascon_ref.begin(),
                                             ascon_ref.begin() + plain.size());
-    const std::vector<uint8_t> ascon_tag(ascon_ref.begin() + plain.size(),
-                                         ascon_ref.end());
 
     TFHEpp::SecretKey sk;
     TFHEpp::EvalKey ek;
@@ -215,8 +213,6 @@ int main(int argc, char **argv)
     double ascon_total_ms = 0;
     auto caes_plain = std::make_unique<AESBlock>();
     std::vector<TFHEpp::TLWE<P>> cascon_plain(plain.size() * 8);
-    std::vector<TFHEpp::TLWE<P>> cascon_computed_tag(
-        TFHEpp::ascon_tag_bytes * 8);
     auto ascon_state = std::make_unique<TFHEpp::ASCONState<P>>();
 
     for (int i = 0; i < repetitions; i++) {
@@ -232,15 +228,11 @@ int main(int argc, char **argv)
                                                          empty_bits, ek);
             TFHEpp::ASCONDecrypt<iksP, brP>(*ascon_state, cascon_plain,
                                             cascon_cipher, ek);
-            TFHEpp::ASCONFinalize128<iksP, brP>(*ascon_state,
-                                                cascon_computed_tag,
-                                                cascon_key, ek);
         });
     }
 
     assert(decrypt_block_bits<P>(*caes_plain, sk) == plain_block);
     assert(decrypt_bits_as_bytes<P>(cascon_plain, sk) == plain);
-    assert(decrypt_bits_as_bytes<P>(cascon_computed_tag, sk) == ascon_tag);
 
     const double aes_avg_ms = aes_total_ms / repetitions;
     const double ascon_avg_ms = ascon_total_ms / repetitions;
@@ -250,7 +242,7 @@ int main(int argc, char **argv)
     std::cout << "parameters: iksP=lvl2hparam brP=lvlh2param\n";
     std::cout << "repetitions: " << repetitions << "\n";
     std::cout << "AES-128 block decrypt ms: " << aes_avg_ms << "\n";
-    std::cout << "ASCON-128 AEAD decrypt+tag ms: " << ascon_avg_ms << "\n";
+    std::cout << "ASCON-128 decrypt no-tag ms: " << ascon_avg_ms << "\n";
     std::cout << "ASCON/AES ratio: " << (ascon_avg_ms / aes_avg_ms) << "\n";
     std::cout << "Passed" << std::endl;
 }
