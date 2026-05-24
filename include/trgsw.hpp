@@ -849,7 +849,7 @@ template <class P>
 inline void halftrgswhadd(HalfTRGSW<P> &halftrgsw, const Polynomial<P> &p)
 {
     static_assert(P::l̅ == 1,
-                  "halftrgswhadd only supports standard decomposition (l̅=1). "
+                  "halftrgswhadd only supports standard decomposition (lbar=1). "
                   "Use halftrgswSymEncrypt for DD.");
     constexpr auto h = hgen<P, false>();
     for (int i = 0; i < P::l; i++) {
@@ -866,7 +866,7 @@ template <class P>
 inline void trgswhadd(TRGSW<P> &trgsw, const Polynomial<P> &p)
 {
     static_assert(P::l̅ == 1 && P::l̅ₐ == 1,
-                  "trgswhadd only supports standard decomposition (l̅=l̅ₐ=1). "
+                  "trgswhadd only supports standard decomposition (lbar=lbar_a=1). "
                   "Use trgswSymEncrypt for DD.");
     constexpr auto nonceh = hgen<P, true>();
     constexpr auto h = hgen<P, false>();
@@ -896,7 +896,7 @@ template <class P>
 inline void trgswhoneadd(TRGSW<P> &trgsw)
 {
     static_assert(P::l̅ == 1 && P::l̅ₐ == 1,
-                  "trgswhoneadd only supports standard decomposition (l̅=l̅ₐ=1). "
+                  "trgswhoneadd only supports standard decomposition (lbar=lbar_a=1). "
                   "Use trgswSymEncryptOne for DD.");
     constexpr auto nonceh = hgen<P, true>();
     constexpr auto h = hgen<P, false>();
