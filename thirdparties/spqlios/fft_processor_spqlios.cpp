@@ -100,7 +100,7 @@ void FFT_Processor_Spqlios::execute_reverse_int(double *res, const int32_t *a) {
         "0:\n"
             "vmovdqu (%1),%%ymm0\n"         // Load 8 int32_t values from `ait` into ymm0
             "vcvtdq2pd %%ymm0,%%zmm1\n"     // Convert 8 int32_t values to 8 double-precision values
-            "vmovapd %%zmm1,(%0)\n"         // Store the result (8 doubles) in `dst`
+            "vmovupd %%zmm1,(%0)\n"         // Store the result (8 doubles) in `dst`
             "addq $32,%1\n"                 // Increment `ait` by 32 bytes (8 int32_t values)
             "addq $64,%0\n"                 // Increment `dst` by 64 bytes (8 double-precision values)
             "cmpq %2,%1\n"                  // Compare `ait` with `aend`
@@ -114,7 +114,7 @@ void FFT_Processor_Spqlios::execute_reverse_int(double *res, const int32_t *a) {
         "0:\n"
                 "vmovupd (%1),%%xmm0\n"
                 "vcvtdq2pd %%xmm0,%%ymm1\n"
-                "vmovapd %%ymm1,(%0)\n"
+                "vmovupd %%ymm1,(%0)\n"
                 "addq $16,%1\n"
                 "addq $32,%0\n"
                 "cmpq %2,%1\n"
