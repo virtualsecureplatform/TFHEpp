@@ -730,9 +730,7 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
         for (int i = 0; i < P::lₐ; i++) {
             TwistFNTDigit<P>(decpolyfnt, decpoly[i]);
             for (int m = 0; m < P::k + 1; m++)
-                for (std::uint32_t chunk = 0; chunk < FNTChunkCount<P>; chunk++)
-                    FNTMulAdd<P>(restrlwefnt[m][chunk], decpolyfnt,
-                                 trgswfnt[i][m][chunk]);
+                FNTMulAdd<P>(restrlwefnt[m], decpolyfnt, trgswfnt[i][m]);
         }
         for (int k_idx = 1; k_idx < P::k; k_idx++) {
             NonceDecomposition<P>(decpoly, trlwe[k_idx]);
@@ -740,10 +738,8 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                 TwistFNTDigit<P>(decpolyfnt, decpoly[i]);
                 const int row = i + k_idx * P::lₐ;
                 for (int m = 0; m < P::k + 1; m++)
-                    for (std::uint32_t chunk = 0; chunk < FNTChunkCount<P>;
-                         chunk++)
-                        FNTMulAdd<P>(restrlwefnt[m][chunk], decpolyfnt,
-                                     trgswfnt[row][m][chunk]);
+                    FNTMulAdd<P>(restrlwefnt[m], decpolyfnt,
+                                 trgswfnt[row][m]);
             }
         }
     }
@@ -754,9 +750,7 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
         TwistFNTDigit<P>(decpolyfnt, decpoly[i]);
         const int row = i + P::k * P::lₐ;
         for (int m = 0; m < P::k + 1; m++)
-            for (std::uint32_t chunk = 0; chunk < FNTChunkCount<P>; chunk++)
-                FNTMulAdd<P>(restrlwefnt[m][chunk], decpolyfnt,
-                             trgswfnt[row][m][chunk]);
+            FNTMulAdd<P>(restrlwefnt[m], decpolyfnt, trgswfnt[row][m]);
     }
 
     for (int k = 0; k < P::k + 1; k++)

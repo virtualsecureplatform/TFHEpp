@@ -12,7 +12,7 @@
 
 int main()
 {
-    constexpr uint32_t num_test = 2;
+    constexpr uint32_t num_test = 10;
     using bkP = TFHEpp::lvl01param;
 
     std::random_device seed_gen;

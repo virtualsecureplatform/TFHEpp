@@ -130,15 +130,7 @@ template <class P>
 inline constexpr std::uint32_t FNTTransformedSize =
     1U << (P::nbit + (P::nbit / (FNTpp::Kbit + 1)));
 template <class P>
-inline constexpr std::uint32_t FNTChunkBits = 13;
-template <class P>
-inline constexpr std::uint32_t FNTChunkCount =
-    (std::numeric_limits<typename P::T>::digits + FNTChunkBits<P> - 1) /
-    FNTChunkBits<P>;
-template <class P>
 using PolynomialFNT = aligned_array<int64_t, FNTTransformedSize<P>>;
-template <class P>
-using PolynomialFNTChunks = aligned_array<PolynomialFNT<P>, FNTChunkCount<P>>;
 template <class P>
 using DecomposedPolynomial = std::array<Polynomial<P>, P::l>;
 template <class P>
@@ -167,7 +159,7 @@ using TRLWENTT = std::array<PolynomialNTT<P>, P::k + 1>;
 template <class P>
 using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
 template <class P>
-using TRLWEFNT = std::array<PolynomialFNTChunks<P>, P::k + 1>;
+using TRLWEFNT = std::array<PolynomialFNT<P>, P::k + 1>;
 
 template <class P>
 using TRGSW = std::array<TRLWE<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
