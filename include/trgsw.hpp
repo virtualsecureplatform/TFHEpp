@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "mulfft.hpp"
+#include "mulfnt.hpp"
 #include "params.hpp"
 #include "trlwe.hpp"
 
@@ -715,6 +716,54 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
 }
 
 template <class P>
+void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
+                     const TRGSWFNT<P> &trgswfnt)
+{
+    FNTSupportCheck<P>();
+
+    alignas(64) PolynomialFNT<P> decpolyfnt;
+    alignas(64) TRLWEFNT<P> restrlwefnt = {};
+
+    {
+        alignas(64) DecomposedNoncePolynomial<P> decpoly;
+        NonceDecomposition<P>(decpoly, trlwe[0]);
+        for (int i = 0; i < P::lₐ; i++) {
+            TwistFNTDigit<P>(decpolyfnt, decpoly[i]);
+            for (int m = 0; m < P::k + 1; m++)
+                for (std::uint32_t chunk = 0; chunk < FNTChunkCount<P>; chunk++)
+                    FNTMulAdd<P>(restrlwefnt[m][chunk], decpolyfnt,
+                                 trgswfnt[i][m][chunk]);
+        }
+        for (int k_idx = 1; k_idx < P::k; k_idx++) {
+            NonceDecomposition<P>(decpoly, trlwe[k_idx]);
+            for (int i = 0; i < P::lₐ; i++) {
+                TwistFNTDigit<P>(decpolyfnt, decpoly[i]);
+                const int row = i + k_idx * P::lₐ;
+                for (int m = 0; m < P::k + 1; m++)
+                    for (std::uint32_t chunk = 0; chunk < FNTChunkCount<P>;
+                         chunk++)
+                        FNTMulAdd<P>(restrlwefnt[m][chunk], decpolyfnt,
+                                     trgswfnt[row][m][chunk]);
+            }
+        }
+    }
+
+    alignas(64) DecomposedPolynomial<P> decpoly;
+    Decomposition<P>(decpoly, trlwe[P::k]);
+    for (int i = 0; i < P::l; i++) {
+        TwistFNTDigit<P>(decpolyfnt, decpoly[i]);
+        const int row = i + P::k * P::lₐ;
+        for (int m = 0; m < P::k + 1; m++)
+            for (std::uint32_t chunk = 0; chunk < FNTChunkCount<P>; chunk++)
+                FNTMulAdd<P>(restrlwefnt[m][chunk], decpolyfnt,
+                             trgswfnt[row][m][chunk]);
+    }
+
+    for (int k = 0; k < P::k + 1; k++)
+        TwistFNTToTorus<P>(res[k], restrlwefnt[k]);
+}
+
+template <class P>
 TRGSWFFT<P> ApplyFFT2trgsw(const TRGSW<P> &trgsw)
 {
     alignas(64) TRGSWFFT<P> trgswfft;
@@ -792,6 +841,28 @@ TRGSWRAINTT<P> ApplyRAINTT2trgsw(const TRGSW<P> &trgsw)
                         raintt::MulSREDC(trgswntt[i][j][k], raintt::R2);
         }
     return trgswntt;
+}
+
+template <class P>
+TRGSWFNT<P> ApplyFNT2trgsw(const TRGSW<P> &trgsw)
+{
+    FNTSupportCheck<P>();
+
+    TRGSWFNT<P> trgswfnt;
+    for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
+        for (int j = 0; j < P::k + 1; j++)
+            TwistFNTTorus<P>(trgswfnt[i][j], trgsw[i][j]);
+    return trgswfnt;
+}
+
+template <class P>
+void ApplyFNT2trgsw(TRGSWFNT<P> &trgswfnt, const TRGSW<P> &trgsw)
+{
+    FNTSupportCheck<P>();
+
+    for (int i = 0; i < P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅; i++)
+        for (int j = 0; j < P::k + 1; j++)
+            TwistFNTTorus<P>(trgswfnt[i][j], trgsw[i][j]);
 }
 
 template <class P>
@@ -1248,6 +1319,38 @@ void trgswSymEncrypt(TRGSWNTT<P> &trgswntt, const Polynomial<P> &p,
         trgswSymEncrypt<P>(trgswntt, p, P::α, key);
     else
         trgswSymEncrypt<P>(trgswntt, p, P::η, key);
+}
+
+template <class P>
+void trgswSymEncrypt(TRGSWFNT<P> &trgswfnt, const Polynomial<P> &p,
+                     const double α, const Key<P> &key)
+{
+    FNTSupportCheck<P>();
+
+    auto trgsw = std::make_unique<TRGSW<P>>();
+    trgswSymEncrypt<P>(*trgsw, p, α, key);
+    ApplyFNT2trgsw<P>(trgswfnt, *trgsw);
+}
+
+template <class P>
+void trgswSymEncrypt(TRGSWFNT<P> &trgswfnt, const Polynomial<P> &p,
+                     const uint η, const Key<P> &key)
+{
+    FNTSupportCheck<P>();
+
+    auto trgsw = std::make_unique<TRGSW<P>>();
+    trgswSymEncrypt<P>(*trgsw, p, η, key);
+    ApplyFNT2trgsw<P>(trgswfnt, *trgsw);
+}
+
+template <class P>
+void trgswSymEncrypt(TRGSWFNT<P> &trgswfnt, const Polynomial<P> &p,
+                     const Key<P> &key)
+{
+    if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
+        trgswSymEncrypt<P>(trgswfnt, p, P::α, key);
+    else
+        trgswSymEncrypt<P>(trgswfnt, p, P::η, key);
 }
 
 template <class P>

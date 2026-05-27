@@ -2,9 +2,11 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 
 #include "bfv-multilimb.hpp"
 #include "cuhe++.hpp"
+#include "fnt.hpp"
 #include "raintt.hpp"
 
 namespace TFHEpp {
@@ -125,6 +127,19 @@ using PolynomialNTT = std::array<cuHEpp::INTorus, P::n>;
 template <class P>
 using PolynomialRAINTT = std::array<raintt::DoubleSWord, P::n>;
 template <class P>
+inline constexpr std::uint32_t FNTTransformedSize =
+    1U << (P::nbit + (P::nbit / (FNTpp::Kbit + 1)));
+template <class P>
+inline constexpr std::uint32_t FNTChunkBits = 13;
+template <class P>
+inline constexpr std::uint32_t FNTChunkCount =
+    (std::numeric_limits<typename P::T>::digits + FNTChunkBits<P> - 1) /
+    FNTChunkBits<P>;
+template <class P>
+using PolynomialFNT = aligned_array<int64_t, FNTTransformedSize<P>>;
+template <class P>
+using PolynomialFNTChunks = aligned_array<PolynomialFNT<P>, FNTChunkCount<P>>;
+template <class P>
 using DecomposedPolynomial = std::array<Polynomial<P>, P::l>;
 template <class P>
 using DecomposedNoncePolynomial = std::array<Polynomial<P>, P::lₐ>;
@@ -151,6 +166,8 @@ template <class P>
 using TRLWENTT = std::array<PolynomialNTT<P>, P::k + 1>;
 template <class P>
 using TRLWERAINTT = std::array<PolynomialRAINTT<P>, P::k + 1>;
+template <class P>
+using TRLWEFNT = std::array<PolynomialFNTChunks<P>, P::k + 1>;
 
 template <class P>
 using TRGSW = std::array<TRLWE<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
@@ -164,6 +181,8 @@ template <class P>
 using TRGSWNTT = std::array<TRLWENTT<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 template <class P>
 using TRGSWRAINTT = std::array<TRLWERAINTT<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
+template <class P>
+using TRGSWFNT = aligned_array<TRLWEFNT<P>, P::k * P::lₐ * P::l̅ₐ + P::l * P::l̅>;
 
 #ifdef USE_KEY_BUNDLE
 template <class P>
@@ -195,6 +214,9 @@ using BootstrappingKeyNTT =
 template <class P>
 using BootstrappingKeyRAINTT =
     std::array<TRGSWRAINTT<typename P::targetP>, P::domainP::k * P::domainP::n>;
+template <class P>
+using BootstrappingKeyFNT =
+    std::array<TRGSWFNT<typename P::targetP>, P::domainP::k * P::domainP::n>;
 
 template <class P>
 using KeySwitchingKey = std::array<

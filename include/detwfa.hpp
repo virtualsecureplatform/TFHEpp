@@ -164,4 +164,16 @@ void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
         for (int i = 0; i < P::n; i++) acc[k][i] += temp[k][i];
 }
 
+template <class P>
+void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWFNT<P> &cs,
+                                        const typename P::T a)
+{
+    TRLWE<P> temp;
+    for (int k = 0; k < P::k + 1; k++)
+        PolynomialMulByXaiMinusOne<P>(temp[k], acc[k], a);
+    ExternalProduct<P>(temp, temp, cs);
+    for (int k = 0; k < P::k + 1; k++)
+        for (int i = 0; i < P::n; i++) acc[k][i] += temp[k][i];
+}
+
 }  // namespace TFHEpp

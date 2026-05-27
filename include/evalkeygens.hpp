@@ -118,6 +118,25 @@ void bknttgen(BootstrappingKeyNTT<P>& bkntt, const SecretKey& sk)
 }
 
 template <class P>
+void bkfntgen(BootstrappingKeyFNT<P>& bkfnt,
+              const Key<typename P::domainP>& domainkey,
+              const Key<typename P::targetP>& targetkey)
+{
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
+        Polynomial<typename P::targetP> plainpoly = {};
+        plainpoly[0] = domainkey[i];
+        trgswSymEncrypt<typename P::targetP>(bkfnt[i], plainpoly, targetkey);
+    }
+}
+
+template <class P>
+void bkfntgen(BootstrappingKeyFNT<P>& bkfnt, const SecretKey& sk)
+{
+    bkfntgen<P>(bkfnt, sk.key.get<typename P::domainP>(),
+                sk.key.get<typename P::targetP>());
+}
+
+template <class P>
 void bkrainttgen(BootstrappingKeyRAINTT<P>& bkraintt,
                  const Key<typename P::domainP>& domainkey,
                  const Key<typename P::targetP>& targetkey)
