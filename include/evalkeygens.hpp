@@ -122,6 +122,7 @@ void bkfntgen(BootstrappingKeyFNT<P>& bkfnt,
               const Key<typename P::domainP>& domainkey,
               const Key<typename P::targetP>& targetkey)
 {
+#pragma omp parallel for
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         Polynomial<typename P::targetP> plainpoly = {};
         plainpoly[0] = domainkey[i];
