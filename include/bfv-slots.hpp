@@ -781,7 +781,7 @@ void LinearTransformBSGS(TRLWE<P> &res, const TRLWE<P> &ct,
     }
 
     if constexpr (is_multilimb_uint_v<typename P::T> &&
-                  is_lvl5_digit_fft_compatible_v<P>) {
+                  use_multilimb_digit_fft_v<P>) {
         using T = typename P::T;
         constexpr int width = std::numeric_limits<T>::digits;
         constexpr int plain_digits =

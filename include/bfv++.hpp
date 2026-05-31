@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -408,11 +409,19 @@ void TRLWEMultWithoutRelinearizationFullDD(TRLWE3<P> &res, const TRLWE<P> &a,
         };
 
         constexpr bool use_fft_digits =
-            is_lvl5_digit_fft_compatible_v<P> &&
+            use_multilimb_digit_fft_v<P> &&
             2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
                 std::numeric_limits<double>::digits;
 
         if constexpr (use_fft_digits) {
+            constexpr int digit_product_bits =
+                2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3;
+            constexpr int fd_batch_slack =
+                std::numeric_limits<double>::digits - digit_product_bits;
+            static_assert(fd_batch_slack > 0);
+            constexpr int fd_batch_size =
+                std::min(static_cast<int>(P::l̅), 1 << fd_batch_slack);
+
             auto a_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
             auto b_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
             for (int i = 0; i < static_cast<int>(P::l̅); i++) {
@@ -422,26 +431,38 @@ void TRLWEMultWithoutRelinearizationFullDD(TRLWE3<P> &res, const TRLWE<P> &a,
                 }
             }
 
-            auto prod_fd = std::make_unique<PolynomialInFD<P>>();
+            auto sum_fd = std::make_unique<std::array<PolynomialInFD<P>, 3>>();
             auto prod = std::make_unique<Polynomial<P>>();
-            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                    const int k = i + j;
-                    const int shift =
-                        2 * width - (k + 2) * static_cast<int>(P::B̅gbit);
+            for (int digit_sum = 0;
+                 digit_sum <= 2 * static_cast<int>(P::l̅) - 2; digit_sum++) {
+                const int i_begin =
+                    std::max(0, digit_sum - static_cast<int>(P::l̅) + 1);
+                const int i_end =
+                    std::min(static_cast<int>(P::l̅) - 1, digit_sum);
+                const int shift =
+                    2 * width -
+                    (digit_sum + 2) * static_cast<int>(P::B̅gbit);
 
-                    MulInFD<P::n>(*prod_fd, (*a_fd)[i][0], (*b_fd)[j][0]);
-                    TwistFFTDigitProduct<P>(*prod, *prod_fd);
-                    accumulate(2, *prod, shift);
-
-                    MulInFD<P::n>(*prod_fd, (*a_fd)[i][1], (*b_fd)[j][1]);
-                    TwistFFTDigitProduct<P>(*prod, *prod_fd);
-                    accumulate(1, *prod, shift);
-
-                    MulInFD<P::n>(*prod_fd, (*a_fd)[i][0], (*b_fd)[j][1]);
-                    FMAInFD<P::n>(*prod_fd, (*a_fd)[i][1], (*b_fd)[j][0]);
-                    TwistFFTDigitProduct<P>(*prod, *prod_fd);
-                    accumulate(0, *prod, shift);
+                for (int batch_begin = i_begin; batch_begin <= i_end;
+                     batch_begin += fd_batch_size) {
+                    for (int c = 0; c < 3; c++) (*sum_fd)[c].fill(0.0);
+                    const int batch_end =
+                        std::min(i_end, batch_begin + fd_batch_size - 1);
+                    for (int i = batch_begin; i <= batch_end; i++) {
+                        const int j = digit_sum - i;
+                        FMAInFD<P::n>((*sum_fd)[2], (*a_fd)[i][0],
+                                      (*b_fd)[j][0]);
+                        FMAInFD<P::n>((*sum_fd)[1], (*a_fd)[i][1],
+                                      (*b_fd)[j][1]);
+                        FMAInFD<P::n>((*sum_fd)[0], (*a_fd)[i][0],
+                                      (*b_fd)[j][1]);
+                        FMAInFD<P::n>((*sum_fd)[0], (*a_fd)[i][1],
+                                      (*b_fd)[j][0]);
+                    }
+                    for (int c = 0; c < 3; c++) {
+                        TwistFFTDigitProduct<P>(*prod, (*sum_fd)[c]);
+                        accumulate(c, *prod, shift);
+                    }
                 }
             }
         }

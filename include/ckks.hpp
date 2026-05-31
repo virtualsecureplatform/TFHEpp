@@ -20,8 +20,8 @@ namespace TFHEpp {
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 struct CKKSCiphertext {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
     static_assert(LogQ > 0);
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
     static_assert(LogDelta < LogQ);
@@ -35,6 +35,8 @@ struct CKKSCiphertext {
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 struct CKKSPlaintext {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
     static_assert(LogQ > 0);
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
     static_assert(LogDelta < LogQ);
@@ -47,6 +49,8 @@ struct CKKSPlaintext {
 
 template <class P, std::uint32_t LogQ>
 struct CKKSRelinKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
     static_assert(LogQ > 0);
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
 
@@ -76,32 +80,57 @@ inline constexpr std::uint32_t torus_width_v =
     std::numeric_limits<typename P::T>::digits;
 
 template <class P>
+inline constexpr bool supported_torus_v =
+    std::is_same_v<typename P::T, __uint128_t> ||
+    is_multilimb_uint_v<typename P::T>;
+
+template <class P>
+inline __int128_t unsignedToI128(typename P::T value)
+{
+    using T = typename P::T;
+    if constexpr (std::is_same_v<T, __uint128_t>) {
+        return static_cast<__int128_t>(value);
+    }
+    else {
+        static_assert(is_multilimb_uint_v<T>);
+        __uint128_t low = value.limb[0];
+        if constexpr (T::limbs > 1)
+            low |= static_cast<__uint128_t>(value.limb[1]) << 64;
+        return static_cast<__int128_t>(low);
+    }
+}
+
+template <class P>
 inline __int128_t torusToSigned(typename P::T value)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
-    return static_cast<__int128_t>(value);
+    static_assert(supported_torus_v<P>);
+    if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        return static_cast<__int128_t>(value);
+    }
+    else {
+        static_assert(torus_width_v<P> <= 128,
+                      "Use levelToSigned only for <=128-bit multi-limb levels");
+        return unsignedToI128<P>(value);
+    }
 }
 
 template <class P>
 inline typename P::T signedToTorus(__int128_t value)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(supported_torus_v<P>);
     return static_cast<typename P::T>(value);
 }
 
 template <class P, std::uint32_t LogQ>
 inline constexpr typename P::T levelMask()
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(supported_torus_v<P>);
     static_assert(LogQ > 0);
     static_assert(LogQ <= torus_width_v<P>);
     if constexpr (LogQ == torus_width_v<P>)
         return std::numeric_limits<typename P::T>::max();
     else
-        return (static_cast<typename P::T>(1) << LogQ) - 1;
+        return (typename P::T{1} << LogQ) - typename P::T{1};
 }
 
 template <class P, std::uint32_t LogQ>
@@ -120,16 +149,34 @@ template <class P, std::uint32_t LogQ>
 inline __int128_t levelToSigned(typename P::T value)
 {
     value = reduceToLevel<P, LogQ>(value);
-    if constexpr (LogQ == torus_width_v<P>) {
+    if constexpr (std::is_same_v<typename P::T, __uint128_t> &&
+                  LogQ == torus_width_v<P>) {
         return torusToSigned<P>(value);
     }
     else {
-        const typename P::T sign = static_cast<typename P::T>(1) << (LogQ - 1);
-        if ((value & sign) == 0) return static_cast<__int128_t>(value);
+        static_assert(LogQ < 128,
+                      "levelToSigned returns __int128_t and cannot represent "
+                      "larger active CKKS levels");
+        const typename P::T sign = typename P::T{1} << (LogQ - 1);
+        if ((value & sign) == typename P::T{0}) return unsignedToI128<P>(value);
 
-        const typename P::T modulus = static_cast<typename P::T>(1) << LogQ;
+        const typename P::T modulus = typename P::T{1} << LogQ;
         const typename P::T magnitude = modulus - value;
-        return -static_cast<__int128_t>(magnitude);
+        return -unsignedToI128<P>(magnitude);
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline typename P::T centeredLevelToTorus(typename P::T value)
+{
+    value = reduceToLevel<P, LogQ>(value);
+    if constexpr (LogQ == torus_width_v<P>) {
+        return value;
+    }
+    else {
+        const typename P::T sign = typename P::T{1} << (LogQ - 1);
+        if ((value & sign) == typename P::T{0}) return value;
+        return value | ~levelMask<P, LogQ>();
     }
 }
 
@@ -217,7 +264,7 @@ inline void centeredTRLWEAtLevel(TRLWE<P> &out, const TRLWE<P> &in)
 {
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t n = 0; n < P::n; n++)
-            out[c][n] = signedToTorus<P>(levelToSigned<P, LogQ>(in[c][n]));
+            out[c][n] = centeredLevelToTorus<P, LogQ>(in[c][n]);
 }
 
 template <class P, std::uint32_t LogScale>
@@ -282,8 +329,7 @@ inline void encryptPolynomialAtLevel(TRLWE<P> &ct, const Polynomial<P> &poly,
                                      const Key<P> &key,
                                      CKKSNoise noise = {P::α, 0})
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(supported_torus_v<P>);
 
     for (std::uint32_t i = 0; i < P::n; i++)
         ct[P::k][i] =
@@ -310,45 +356,50 @@ inline void polyMulTorusByBbarDigit(Polynomial<P> &res,
                                     const Polynomial<P> &torus,
                                     const Polynomial<P> &digit)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
-    static_assert(P::l̅ * P::B̅gbit ==
-                      std::numeric_limits<typename P::T>::digits,
-                  "CKKS Bbar digits must cover the torus");
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        PolyMulTorusByDigit<P>(res, torus, digit);
+    }
+    else {
+        static_assert(std::is_same_v<typename P::T, __uint128_t>);
+        static_assert(P::l̅ * P::B̅gbit ==
+                          std::numeric_limits<typename P::T>::digits,
+                      "CKKS Bbar digits must cover the torus");
 
-    using T = typename P::T;
-    constexpr int width = std::numeric_limits<T>::digits;
-    constexpr T half = static_cast<T>(1) << (P::B̅gbit - 1);
-    constexpr T mask = (static_cast<T>(1) << P::B̅gbit) - 1;
-    constexpr T offset = [] {
-        constexpr int local_width = std::numeric_limits<T>::digits;
-        constexpr T local_half = static_cast<T>(1) << (P::B̅gbit - 1);
-        T value = 0;
-        for (int j = 0; j < static_cast<int>(P::l̅); j++)
-            value += local_half << (local_width - (j + 1) * P::B̅gbit);
-        return value;
-    }();
+        using T = typename P::T;
+        constexpr int width = std::numeric_limits<T>::digits;
+        constexpr T half = static_cast<T>(1) << (P::B̅gbit - 1);
+        constexpr T mask = (static_cast<T>(1) << P::B̅gbit) - 1;
+        constexpr T offset = [] {
+            constexpr int local_width = std::numeric_limits<T>::digits;
+            constexpr T local_half = static_cast<T>(1) << (P::B̅gbit - 1);
+            T value = 0;
+            for (int j = 0; j < static_cast<int>(P::l̅); j++)
+                value += local_half << (local_width - (j + 1) * P::B̅gbit);
+            return value;
+        }();
 
-    for (std::uint32_t n = 0; n < P::n; n++) res[n] = 0;
+        for (std::uint32_t n = 0; n < P::n; n++) res[n] = 0;
 
-    auto torus_digit = std::make_unique<Polynomial<P>>();
-    auto product = std::make_unique<Polynomial<P>>();
-    auto digit_fft = std::make_unique<PolynomialInFD<P>>();
-    auto torus_digit_fft = std::make_unique<PolynomialInFD<P>>();
-    auto product_fft = std::make_unique<PolynomialInFD<P>>();
-    TwistIFFT<P>(*digit_fft, digit);
+        auto torus_digit = std::make_unique<Polynomial<P>>();
+        auto product = std::make_unique<Polynomial<P>>();
+        auto digit_fft = std::make_unique<PolynomialInFD<P>>();
+        auto torus_digit_fft = std::make_unique<PolynomialInFD<P>>();
+        auto product_fft = std::make_unique<PolynomialInFD<P>>();
+        TwistIFFT<P>(*digit_fft, digit);
 
-    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-        const int shift = width - (j + 1) * static_cast<int>(P::B̅gbit);
-        for (std::uint32_t n = 0; n < P::n; n++)
-            (*torus_digit)[n] = (((torus[n] + offset) >> shift) & mask) - half;
+        for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+            const int shift = width - (j + 1) * static_cast<int>(P::B̅gbit);
+            for (std::uint32_t n = 0; n < P::n; n++)
+                (*torus_digit)[n] =
+                    (((torus[n] + offset) >> shift) & mask) - half;
 
-        TwistIFFT<P>(*torus_digit_fft, *torus_digit);
-        MulInFD<P::n>(*product_fft, *torus_digit_fft, *digit_fft);
-        TwistFFT<P>(*product, *product_fft);
+            TwistIFFT<P>(*torus_digit_fft, *torus_digit);
+            MulInFD<P::n>(*product_fft, *torus_digit_fft, *digit_fft);
+            TwistFFT<P>(*product, *product_fft);
 
-        for (std::uint32_t n = 0; n < P::n; n++)
-            res[n] += (*product)[n] << shift;
+            for (std::uint32_t n = 0; n < P::n; n++)
+                res[n] += (*product)[n] << shift;
+        }
     }
 }
 
@@ -357,8 +408,7 @@ inline void polyMulTorusByBbarDigit(Polynomial<P> &res,
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 inline typename P::T ckksEncodeCoeff(double value)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta < LogQ);
     const long double scaled =
         std::ldexp(static_cast<long double>(value), LogDelta);
@@ -369,8 +419,7 @@ inline typename P::T ckksEncodeCoeff(double value)
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 inline double ckksDecodeCoeff(typename P::T value)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta < LogQ);
     const long double decoded =
         std::ldexp(static_cast<long double>(
@@ -398,8 +447,7 @@ inline void ckksSlotEncode(
     Polynomial<P> &poly,
     const std::array<std::complex<double>, P::n / 2> &slots)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta < LogQ);
     std::array<std::complex<double>, P::n> evals{};
     ckks_detail::fillConjugateSymmetricEvaluations<LogDelta, P>(evals, slots);
@@ -430,8 +478,7 @@ inline void ckksSlotDecode(
     std::array<std::complex<double>, P::n / 2> &slots,
     const Polynomial<P> &poly)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta < LogQ);
     constexpr double pi = 3.141592653589793238462643383279502884;
     const double inv_scale = std::ldexp(1.0, -static_cast<int>(LogDelta));
@@ -505,8 +552,7 @@ template <class P, std::uint32_t LogQ>
 inline std::unique_ptr<CKKSRelinKey<P, LogQ>> makeCKKSRelinKey(
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(ckks_detail::supported_torus_v<P>);
 
     auto relinkey = std::make_unique<CKKSRelinKey<P, LogQ>>();
     auto keysquare = std::make_unique<Polynomial<P>>();
@@ -532,8 +578,7 @@ template <class P, std::uint32_t LogQ>
 inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
                                const CKKSRelinKey<P, LogQ> &relinkey)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(P::l̅ * P::B̅gbit ==
                       std::numeric_limits<typename P::T>::digits,
                   "CKKS relinearization requires full Bbar decomposition");
@@ -581,8 +626,7 @@ template <class P, std::uint32_t LhsLogQ, std::uint32_t RhsLogQ,
 inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
                                      const TRLWE<P> &b)
 {
-    static_assert(std::is_same_v<typename P::T, __uint128_t>,
-                  "CKKS v1 expects a 128-bit torus parameter set");
+    static_assert(ckks_detail::supported_torus_v<P>);
     constexpr int width = std::numeric_limits<typename P::T>::digits;
     static_assert(P::l̅ * P::B̅gbit == width,
                   "CKKS FullDD multiply requires Bbar digits to cover T");
@@ -602,87 +646,194 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
     TRLWEBaseBbarDecompose<P>(*a_dec, *a_centered);
     TRLWEBaseBbarDecompose<P>(*b_dec, *b_centered);
 
-    constexpr bool use_fft_digits =
-        2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
-        std::numeric_limits<double>::digits;
+    if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        constexpr bool use_fft_digits =
+            2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
+            std::numeric_limits<double>::digits;
 
-    auto acc = std::make_unique<std::array<std::array<Wide384, P::n>, 3>>();
+        auto acc = std::make_unique<std::array<std::array<Wide384, P::n>, 3>>();
 
-    if constexpr (use_fft_digits) {
-        auto a_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
-        auto b_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
-        for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-            for (int c = 0; c <= static_cast<int>(P::k); c++) {
-                TwistIFFT<P>((*a_fd)[i][c], (*a_dec)[i][c]);
-                TwistIFFT<P>((*b_fd)[i][c], (*b_dec)[i][c]);
+        if constexpr (use_fft_digits) {
+            auto a_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+            auto b_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                    TwistIFFT<P>((*a_fd)[i][c], (*a_dec)[i][c]);
+                    TwistIFFT<P>((*b_fd)[i][c], (*b_dec)[i][c]);
+                }
+            }
+
+            alignas(64) PolynomialInFD<P> prod_fd;
+            Polynomial<P> prod;
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    const int digit_sum = i + j;
+                    const int shift =
+                        2 * width -
+                        (digit_sum + 2) * static_cast<int>(P::B̅gbit);
+                    if (shift <= -width) continue;
+
+                    MulInFD<P::n>(prod_fd, (*a_fd)[i][0], (*b_fd)[j][0]);
+                    TwistFFT<P>(prod, prod_fd);
+                    for (std::uint32_t n = 0; n < P::n; n++)
+                        (*acc)[2][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+
+                    MulInFD<P::n>(prod_fd, (*a_fd)[i][1], (*b_fd)[j][1]);
+                    TwistFFT<P>(prod, prod_fd);
+                    for (std::uint32_t n = 0; n < P::n; n++)
+                        (*acc)[1][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+
+                    MulInFD<P::n>(prod_fd, (*a_fd)[i][0], (*b_fd)[j][1]);
+                    FMAInFD<P::n>(prod_fd, (*a_fd)[i][1], (*b_fd)[j][0]);
+                    TwistFFT<P>(prod, prod_fd);
+                    for (std::uint32_t n = 0; n < P::n; n++)
+                        (*acc)[0][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                }
+            }
+        }
+        else {
+            Polynomial<P> prod;
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    const int digit_sum = i + j;
+                    const int shift =
+                        2 * width -
+                        (digit_sum + 2) * static_cast<int>(P::B̅gbit);
+                    if (shift <= -width) continue;
+
+                    PolyMulNaive<P>(prod, (*a_dec)[i][0], (*b_dec)[j][0]);
+                    for (std::uint32_t n = 0; n < P::n; n++)
+                        (*acc)[2][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                    PolyMulNaive<P>(prod, (*a_dec)[i][1], (*b_dec)[j][1]);
+                    for (std::uint32_t n = 0; n < P::n; n++)
+                        (*acc)[1][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                    PolyMulNaive<P>(prod, (*a_dec)[i][0], (*b_dec)[j][1]);
+                    for (std::uint32_t n = 0; n < P::n; n++)
+                        (*acc)[0][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                    PolyMulNaive<P>(prod, (*a_dec)[i][1], (*b_dec)[j][0]);
+                    for (std::uint32_t n = 0; n < P::n; n++)
+                        (*acc)[0][n].add_shifted(
+                            static_cast<__int128_t>(prod[n]), shift);
+                }
             }
         }
 
-        alignas(64) PolynomialInFD<P> prod_fd;
-        Polynomial<P> prod;
-        for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                const int digit_sum = i + j;
-                const int shift =
-                    2 * width -
-                    (digit_sum + 2) * static_cast<int>(P::B̅gbit);
-                if (shift <= -width) continue;
-
-                MulInFD<P::n>(prod_fd, (*a_fd)[i][0], (*b_fd)[j][0]);
-                TwistFFT<P>(prod, prod_fd);
-                for (std::uint32_t n = 0; n < P::n; n++)
-                    (*acc)[2][n].add_shifted(
-                        static_cast<__int128_t>(prod[n]), shift);
-
-                MulInFD<P::n>(prod_fd, (*a_fd)[i][1], (*b_fd)[j][1]);
-                TwistFFT<P>(prod, prod_fd);
-                for (std::uint32_t n = 0; n < P::n; n++)
-                    (*acc)[1][n].add_shifted(
-                        static_cast<__int128_t>(prod[n]), shift);
-
-                MulInFD<P::n>(prod_fd, (*a_fd)[i][0], (*b_fd)[j][1]);
-                FMAInFD<P::n>(prod_fd, (*a_fd)[i][1], (*b_fd)[j][0]);
-                TwistFFT<P>(prod, prod_fd);
-                for (std::uint32_t n = 0; n < P::n; n++)
-                    (*acc)[0][n].add_shifted(
-                        static_cast<__int128_t>(prod[n]), shift);
-            }
-        }
+        for (int c = 0; c < 3; c++)
+            for (std::uint32_t n = 0; n < P::n; n++)
+                res[c][n] = ckks_detail::reduceToLevel<P, out_log_q>(
+                    ckks_detail::rescaleAccumulator<P, LogScale>((*acc)[c][n]));
     }
     else {
-        Polynomial<P> prod;
-        for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-            for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                const int digit_sum = i + j;
+        using Torus = typename P::T;
+        using Acc = WideSignedLimbAccumulator<2 * Torus::limbs + 2>;
+        auto acc = std::make_unique<std::array<std::array<Acc, P::n>, 3>>();
+
+        auto accumulate = [&](int component, const Polynomial<P> &prod,
+                              int shift) {
+            for (std::uint32_t n = 0; n < P::n; n++)
+                (*acc)[component][n].add_shifted_i64(
+                    multilimb_to_signed_i64(prod[n]), shift);
+        };
+
+        constexpr bool use_fft_digits =
+            use_multilimb_digit_fft_v<P> &&
+            2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
+                std::numeric_limits<double>::digits;
+
+        if constexpr (use_fft_digits) {
+            constexpr int digit_product_bits =
+                2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3;
+            constexpr int fd_batch_slack =
+                std::numeric_limits<double>::digits - digit_product_bits;
+            static_assert(fd_batch_slack > 0);
+            constexpr int fd_batch_size =
+                std::min(static_cast<int>(P::l̅), 1 << fd_batch_slack);
+
+            auto a_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+            auto b_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                    TwistIFFTDigit<P>((*a_fd)[i][c], (*a_dec)[i][c]);
+                    TwistIFFTDigit<P>((*b_fd)[i][c], (*b_dec)[i][c]);
+                }
+            }
+
+            auto sum_fd = std::make_unique<std::array<PolynomialInFD<P>, 3>>();
+            auto prod = std::make_unique<Polynomial<P>>();
+            for (int digit_sum = 0;
+                 digit_sum <= 2 * static_cast<int>(P::l̅) - 2; digit_sum++) {
+                const int i_begin =
+                    std::max(0, digit_sum - static_cast<int>(P::l̅) + 1);
+                const int i_end =
+                    std::min(static_cast<int>(P::l̅) - 1, digit_sum);
                 const int shift =
                     2 * width -
                     (digit_sum + 2) * static_cast<int>(P::B̅gbit);
-                if (shift <= -width) continue;
 
-                PolyMulNaive<P>(prod, (*a_dec)[i][0], (*b_dec)[j][0]);
-                for (std::uint32_t n = 0; n < P::n; n++)
-                    (*acc)[2][n].add_shifted(
-                        static_cast<__int128_t>(prod[n]), shift);
-                PolyMulNaive<P>(prod, (*a_dec)[i][1], (*b_dec)[j][1]);
-                for (std::uint32_t n = 0; n < P::n; n++)
-                    (*acc)[1][n].add_shifted(
-                        static_cast<__int128_t>(prod[n]), shift);
-                PolyMulNaive<P>(prod, (*a_dec)[i][0], (*b_dec)[j][1]);
-                for (std::uint32_t n = 0; n < P::n; n++)
-                    (*acc)[0][n].add_shifted(
-                        static_cast<__int128_t>(prod[n]), shift);
-                PolyMulNaive<P>(prod, (*a_dec)[i][1], (*b_dec)[j][0]);
-                for (std::uint32_t n = 0; n < P::n; n++)
-                    (*acc)[0][n].add_shifted(
-                        static_cast<__int128_t>(prod[n]), shift);
+                for (int batch_begin = i_begin; batch_begin <= i_end;
+                     batch_begin += fd_batch_size) {
+                    for (int c = 0; c < 3; c++) (*sum_fd)[c].fill(0.0);
+                    const int batch_end =
+                        std::min(i_end, batch_begin + fd_batch_size - 1);
+                    for (int i = batch_begin; i <= batch_end; i++) {
+                        const int j = digit_sum - i;
+                        FMAInFD<P::n>((*sum_fd)[2], (*a_fd)[i][0],
+                                      (*b_fd)[j][0]);
+                        FMAInFD<P::n>((*sum_fd)[1], (*a_fd)[i][1],
+                                      (*b_fd)[j][1]);
+                        FMAInFD<P::n>((*sum_fd)[0], (*a_fd)[i][0],
+                                      (*b_fd)[j][1]);
+                        FMAInFD<P::n>((*sum_fd)[0], (*a_fd)[i][1],
+                                      (*b_fd)[j][0]);
+                    }
+                    for (int c = 0; c < 3; c++) {
+                        TwistFFTDigitProduct<P>(*prod, (*sum_fd)[c]);
+                        accumulate(c, *prod, shift);
+                    }
+                }
+            }
+        }
+        else {
+            auto prod = std::make_unique<Polynomial<P>>();
+            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    const int digit_sum = i + j;
+                    const int shift =
+                        2 * width -
+                        (digit_sum + 2) * static_cast<int>(P::B̅gbit);
+
+                    PolyMulDigit<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][0]);
+                    accumulate(2, *prod, shift);
+                    PolyMulDigit<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][1]);
+                    accumulate(1, *prod, shift);
+                    PolyMulDigit<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][1]);
+                    accumulate(0, *prod, shift);
+                    PolyMulDigit<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][0]);
+                    accumulate(0, *prod, shift);
+                }
+            }
+        }
+
+        const Torus divisor =
+            LogScale == 0 ? Torus{1} : (Torus{1} << LogScale);
+        for (int c = 0; c < 3; c++) {
+            for (std::uint32_t n = 0; n < P::n; n++) {
+                if constexpr (LogScale > 0) {
+                    (*acc)[c][n].add_shifted_i64(
+                        (*acc)[c][n].is_negative() ? -1 : 1,
+                        static_cast<int>(LogScale) - 1);
+                }
+                res[c][n] = ckks_detail::reduceToLevel<P, out_log_q>(
+                    (*acc)[c][n].template div_to_torus<Torus::limbs>(divisor));
             }
         }
     }
-
-    for (int c = 0; c < 3; c++)
-        for (std::uint32_t n = 0; n < P::n; n++)
-            res[c][n] = ckks_detail::reduceToLevel<P, out_log_q>(
-                ckks_detail::rescaleAccumulator<P, LogScale>((*acc)[c][n]));
 }
 
 template <class P, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,

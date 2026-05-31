@@ -316,6 +316,50 @@ struct lvl5param {
     static constexpr uint64_t simd_n_inv = 786385;
 };
 
+// lvl6param: n = 2^15 multi-limb torus scaffold for dense CKKS bootstrap work.
+//
+// This intentionally keeps lvl5param at n = 2^14 and provides the 2^15 ring as
+// the next level.  Q = 2^896 is represented as 14 little-endian 64-bit limbs,
+// matching the ~880-bit dense bootstrapping budgets used by reference CKKS
+// libraries while staying in TFHEpp's power-of-two torus model.
+struct lvl6param {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static constexpr std::uint32_t nbit = 15;
+    static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t lₐ = 5;
+    static constexpr std::uint32_t l = 5;
+    static constexpr std::uint32_t Bgbit = 19;
+    static constexpr std::uint32_t Bgₐbit = 19;
+    using T = MultiLimbUInt<14>;
+    static constexpr T Bg = T{1} << Bgbit;
+    static constexpr T Bgₐ = T{1} << Bgₐbit;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = std::pow(2.0, -873);
+    static constexpr T μ = T{1} << (std::numeric_limits<T>::digits - 3);
+    static constexpr uint64_t plain_modulus_u64 = 786433;
+    static constexpr uint32_t plain_modulusbit = 20;
+    static constexpr T plain_modulus = T{plain_modulus_u64};
+    static constexpr double Δ = 0.0;
+    static constexpr T delta_int =
+        std::numeric_limits<T>::max() / plain_modulus_u64;
+    static constexpr uint64_t Q_mod_t =
+        (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
+    static constexpr uint64_t bfv_bootstrap_digit_error_bound = 15;
+    static constexpr int bfv_bootstrap_linear_bsgs_step = 128;
+    static constexpr std::uint32_t l̅ = 56;
+    static constexpr std::uint32_t l̅ₐ = 56;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
+
+    static constexpr uint64_t simd_modulus = plain_modulus_u64;
+    static constexpr uint64_t simd_psi = 108788;
+    static constexpr uint64_t simd_psi_inv = 295516;
+    static constexpr uint64_t simd_n_inv = 786409;
+};
+
 // Key Switching parameters
 struct lvl10param {
     static constexpr std::uint32_t t = 7;  // number of addition in keyswitching

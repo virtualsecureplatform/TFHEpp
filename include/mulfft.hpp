@@ -26,9 +26,9 @@
 #if !defined(USE_FFTW3) && !defined(USE_MKL) && \
     !defined(USE_SPQLIOX_AARCH64) && !defined(USE_CONCRETE_FFT) && \
     !defined(USE_SPQLIOS_ARITHMETIC)
-#define TFHEPP_HAS_LVL5_SPQLIOS_FFT 1
+#define TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT 1
 #else
-#define TFHEPP_HAS_LVL5_SPQLIOS_FFT 0
+#define TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT 0
 #endif
 #ifdef USE_HEXL
 #include "hexl/hexl.hpp"
@@ -60,8 +60,40 @@ inline constexpr bool is_lvl3_fft_compatible_v =
      P::nbit == lvl3param::nbit);
 
 template <class P>
+inline constexpr bool is_multilimb_digit_fft_compatible_v =
+    is_multilimb_uint_v<typename P::T> &&
+    ((P::nbit == 14 && P::n == (1U << 14)) ||
+     (P::nbit == 15 && P::n == (1U << 15)));
+
+template <class P>
 inline constexpr bool is_lvl5_digit_fft_compatible_v =
-    is_multilimb_uint_v<typename P::T> && P::nbit == 14 && P::n == (1U << 14);
+    is_multilimb_digit_fft_compatible_v<P>;
+
+inline constexpr bool has_multilimb_digit_fft_backend_v =
+#if TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT
+    true;
+#else
+    false;
+#endif
+
+template <class P>
+inline constexpr bool use_multilimb_digit_fft_v =
+    has_multilimb_digit_fft_backend_v &&
+    is_multilimb_digit_fft_compatible_v<P>;
+
+#if TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT
+template <class P>
+inline auto &MultilimbDigitFFTProcessor()
+{
+    static_assert(is_multilimb_digit_fft_compatible_v<P>);
+    if constexpr (P::nbit == 14 && P::n == (1U << 14))
+        return fftplvl5;
+    else if constexpr (P::nbit == 15 && P::n == (1U << 15))
+        return fftplvl6;
+    else
+        static_assert(false_v<P>, "Undefined multi-limb digit FFT processor");
+}
+#endif
 
 inline const std::unique_ptr<
     const std::array<std::array<cuHEpp::INTorus, lvl1param::n>, 2>>
@@ -239,12 +271,13 @@ inline void TwistIFFTDigit(PolynomialInFD<P> &res, const Polynomial<P> &a)
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "TwistIFFTDigit is only for multi-limb digit polynomials");
-#if TFHEPP_HAS_LVL5_SPQLIOS_FFT
-    if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+#if TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT
+    if constexpr (use_multilimb_digit_fft_v<P>) {
         auto temp = std::make_unique<std::array<uint64_t, P::n>>();
         for (uint32_t i = 0; i < P::n; i++)
             (*temp)[i] = static_cast<uint64_t>(a[i]);
-        fftplvl5.execute_reverse_torus64(res.data(), temp->data());
+        MultilimbDigitFFTProcessor<P>().execute_reverse_torus64(res.data(),
+                                                                temp->data());
     }
     else {
         static_assert(false_v<P>, "Undefined multi-limb digit TwistIFFT!");
@@ -260,10 +293,11 @@ inline void TwistFFTDigitProduct(Polynomial<P> &res, PolynomialInFD<P> &a)
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "TwistFFTDigitProduct is only for multi-limb digit polynomials");
-#if TFHEPP_HAS_LVL5_SPQLIOS_FFT
-    if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+#if TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT
+    if constexpr (use_multilimb_digit_fft_v<P>) {
         auto temp = std::make_unique<std::array<uint64_t, P::n>>();
-        fftplvl5.execute_direct_torus64_rescale(temp->data(), a.data(), 1.0);
+        MultilimbDigitFFTProcessor<P>().execute_direct_torus64_rescale(
+            temp->data(), a.data(), 1.0);
         for (uint32_t i = 0; i < P::n; i++)
             res[i] = static_cast<typename P::T>(
                 static_cast<int64_t>((*temp)[i]));
@@ -284,7 +318,7 @@ inline void PolyMulDigit(Polynomial<P> &res, const Polynomial<P> &a,
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "PolyMulDigit is only for multi-limb digit polynomials");
 
-    if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+    if constexpr (use_multilimb_digit_fft_v<P>) {
         auto ffta = std::make_unique<PolynomialInFD<P>>();
         auto fftb = std::make_unique<PolynomialInFD<P>>();
         auto fftres = std::make_unique<PolynomialInFD<P>>();
@@ -337,7 +371,7 @@ inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
     auto prod_fft = std::make_unique<PolynomialInFD<P>>();
 
     for (int n = 0; n < static_cast<int>(P::n); n++) res[n] = 0;
-    if constexpr (is_lvl5_digit_fft_compatible_v<P>)
+    if constexpr (use_multilimb_digit_fft_v<P>)
         TwistIFFTDigit<P>(*digit_fft, digit);
 
     for (int j = 0; j < static_cast<int>(P::l̅); j++) {
@@ -347,7 +381,7 @@ inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
             (*torus_digit)[n] = ((adjusted >> shift) & mask) - half;
         }
 
-        if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+        if constexpr (use_multilimb_digit_fft_v<P>) {
             TwistIFFTDigit<P>(*torus_digit_fft, *torus_digit);
             MulInFD<P::n>(*prod_fft, *torus_digit_fft, *digit_fft);
             TwistFFTDigitProduct<P>(*digit_prod, *prod_fft);
@@ -401,7 +435,7 @@ inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
 
     for (int n = 0; n < static_cast<int>(P::n); n++) res[n] = 0;
 
-    if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+    if constexpr (use_multilimb_digit_fft_v<P>) {
         for (int d = 0; d < plain_digits; d++) {
             const int plain_shift = d * static_cast<int>(P::B̅gbit);
             for (int n = 0; n < static_cast<int>(P::n); n++)
@@ -418,7 +452,7 @@ inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
             (*torus_digit)[n] = ((adjusted >> torus_shift) & torus_mask) - half;
         }
 
-        if constexpr (is_lvl5_digit_fft_compatible_v<P>)
+        if constexpr (use_multilimb_digit_fft_v<P>)
             TwistIFFTDigit<P>(*torus_digit_fft, *torus_digit);
 
         for (int d = 0; d < plain_digits; d++) {
@@ -426,7 +460,7 @@ inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
             const int shift = torus_shift + plain_shift;
             if (shift >= width) continue;
 
-            if constexpr (is_lvl5_digit_fft_compatible_v<P>) {
+            if constexpr (use_multilimb_digit_fft_v<P>) {
                 MulInFD<P::n>(*prod_fft, *torus_digit_fft, (*plain_fft)[d]);
                 TwistFFTDigitProduct<P>(*digit_prod, *prod_fft);
             }
