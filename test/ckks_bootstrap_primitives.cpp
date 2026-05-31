@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <complex>
 #include <iostream>
@@ -132,6 +133,63 @@ void require_close_param(const TFHEpp::CKKSSlotVector<Param> &got,
         std::exit(1);
     }
 }
+
+template <class Schedule>
+struct CountingDenseBootstrapProvider {
+    const TFHEpp::CKKSDenseBootstrapKey<Schedule> &key;
+    mutable std::array<std::size_t, Schedule::coeff_to_slot_level_count + 1>
+        coeff_to_slot_gets{};
+    mutable std::array<std::size_t, Schedule::slot_to_coeff_level_count + 1>
+        slot_to_coeff_gets{};
+    mutable std::size_t packed_conjugate_gets = 0;
+    mutable std::size_t evalmod_polynomial_gets = 0;
+    mutable std::size_t evalmod_relin_gets = 0;
+
+    explicit CountingDenseBootstrapProvider(
+        const TFHEpp::CKKSDenseBootstrapKey<Schedule> &bootstrap_key)
+        : key(bootstrap_key)
+    {}
+
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan() const
+    {
+        return key.linear_plan;
+    }
+
+    const TFHEpp::CKKSBoundedCosEvalModPolynomial &evalmod_polynomial() const
+    {
+        evalmod_polynomial_gets++;
+        return key.evalmod_polynomial;
+    }
+
+    template <std::size_t I>
+    const auto &coeff_to_slot_galois() const
+    {
+        static_assert(I <= Schedule::coeff_to_slot_level_count);
+        coeff_to_slot_gets[I]++;
+        return key.coeff_to_slot_galois.template get<I>();
+    }
+
+    const auto &packed_conjugate_galois() const
+    {
+        packed_conjugate_gets++;
+        return key.packed_conjugate_galois;
+    }
+
+    const TFHEpp::CKKSDenseEvalModBoundedCosRelinKeys<Schedule> &
+    evalmod_relin() const
+    {
+        evalmod_relin_gets++;
+        return key.evalmod_relin;
+    }
+
+    template <std::size_t I>
+    const auto &slot_to_coeff_galois() const
+    {
+        static_assert(I <= Schedule::slot_to_coeff_level_count);
+        slot_to_coeff_gets[I]++;
+        return key.slot_to_coeff_galois.template get<I>();
+    }
+};
 
 template <class Param>
 void apply_complex_linear(
@@ -512,7 +570,7 @@ void test_lvl6_factorized_stage_shape()
         std::exit(1);
     if (sparse_key_rows >= full_key_rows || sparse_key_bytes >= full_key_bytes)
         std::exit(1);
-    if (streamed_peak_rows != 672 || streamed_peak_rows >= sparse_key_rows)
+    if (streamed_peak_rows != 1272 || streamed_peak_rows >= sparse_key_rows)
         std::exit(1);
     std::cout << "CKKS lvl6 dense bootstrap rotation key indices planned/full="
               << planned_key_indices << "/" << full_key_indices
@@ -546,6 +604,8 @@ void test_dense_bootstrap_api_shape()
     static_assert(Schedule::output_log_q == 120);
 
     using BootstrapKey = TFHEpp::CKKSDenseBootstrapKey<Schedule>;
+    using InMemoryProvider =
+        TFHEpp::CKKSDenseBootstrapInMemoryKeyProvider<Schedule>;
     static_assert(std::is_same_v<
                   typename BootstrapKey::CoeffToSlotGaloisKeyChain,
                   TFHEpp::CKKSSparseGaloisKeyChain<
@@ -563,10 +623,17 @@ void test_dense_bootstrap_api_shape()
     using BootstrapFn = void (*)(typename Schedule::OutputCiphertext &,
                                  const typename Schedule::InputCiphertext &,
                                  const BootstrapKey &);
+    using ProviderBootstrapFn =
+        void (*)(typename Schedule::OutputCiphertext &,
+                 const typename Schedule::InputCiphertext &,
+                 const InMemoryProvider &);
     [[maybe_unused]] KeyGenFn keygen =
         &TFHEpp::CKKSDenseBootstrapKeyGen<Schedule>;
     [[maybe_unused]] BootstrapFn bootstrap =
         &TFHEpp::CKKSDenseBootstrap<Schedule>;
+    [[maybe_unused]] ProviderBootstrapFn provider_bootstrap =
+        &TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule,
+                                                   InMemoryProvider>;
 
     TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
     TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
@@ -891,10 +958,29 @@ void test_dense_bootstrap_e2e_smoke()
     TFHEpp::ckksSlotEncrypt<M, Schedule::input_log_q, Schedule::log_delta>(
         *input, *slots, *key, {0.0, 0});
 
+    CountingDenseBootstrapProvider<Schedule> counting_provider(*bootstrap_key);
+    auto provider_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(
+        *provider_output, *input, counting_provider);
+    if (counting_provider.coeff_to_slot_gets[0] != 1 ||
+        counting_provider.coeff_to_slot_gets[1] != 1 ||
+        counting_provider.slot_to_coeff_gets[0] != 2 ||
+        counting_provider.slot_to_coeff_gets[1] != 2 ||
+        counting_provider.packed_conjugate_gets != 2 ||
+        counting_provider.evalmod_polynomial_gets != 2 ||
+        counting_provider.evalmod_relin_gets != 2)
+        std::exit(1);
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *provider_output, *key);
+    require_close_param<M>(*decoded, *slots, 0.02,
+                           "CKKS dense encrypted provider bootstrap e2e");
+
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrap<Schedule>(*output, *input, *bootstrap_key);
 
-    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
         *decoded, *output, *key);
     require_close_param<M>(*decoded, *slots, 0.02,
