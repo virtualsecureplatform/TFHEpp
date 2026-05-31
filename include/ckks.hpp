@@ -4511,6 +4511,55 @@ inline void CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl(
     }
 }
 
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapCoeffToSlotKeyFilePathsImpl(
+    std::vector<std::filesystem::path> &paths, const std::filesystem::path &root)
+{
+    if constexpr (I <= Schedule::coeff_to_slot_level_count) {
+        paths.push_back(
+            CKKSDenseBootstrapIndexedPath(root, "coeff_to_slot_galois", I));
+        CKKSDenseBootstrapCoeffToSlotKeyFilePathsImpl<I + 1, Schedule>(paths,
+                                                                       root);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapSlotToCoeffKeyFilePathsImpl(
+    std::vector<std::filesystem::path> &paths, const std::filesystem::path &root)
+{
+    if constexpr (I <= Schedule::slot_to_coeff_level_count) {
+        paths.push_back(
+            CKKSDenseBootstrapIndexedPath(root, "slot_to_coeff_galois", I));
+        CKKSDenseBootstrapSlotToCoeffKeyFilePathsImpl<I + 1, Schedule>(paths,
+                                                                       root);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapPolynomialRelinKeyFilePathsImpl(
+    std::vector<std::filesystem::path> &paths, const std::filesystem::path &root)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+        paths.push_back(CKKSDenseBootstrapIndexedPath(root, "polynomial_relin",
+                                                      I));
+        CKKSDenseBootstrapPolynomialRelinKeyFilePathsImpl<I + 1, Schedule>(
+            paths, root);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapDoubleAngleRelinKeyFilePathsImpl(
+    std::vector<std::filesystem::path> &paths, const std::filesystem::path &root)
+{
+    if constexpr (I < Schedule::evalmod_double_angle) {
+        paths.push_back(
+            CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I));
+        CKKSDenseBootstrapDoubleAngleRelinKeyFilePathsImpl<I + 1, Schedule>(
+            paths, root);
+    }
+}
+
 template <class Schedule, class Seq>
 struct CKKSDenseBootstrapCoeffToSlotCacheTuple;
 
@@ -4554,6 +4603,56 @@ struct CKKSDenseBootstrapDoubleAngleRelinCacheTuple<Schedule,
 };
 
 }  // namespace ckks_detail
+
+template <class Schedule>
+inline std::vector<std::filesystem::path> CKKSDenseBootstrapKeyDirectoryFiles(
+    const std::filesystem::path &root)
+{
+    using EvalModTraits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    std::vector<std::filesystem::path> paths;
+    paths.reserve(6 + Schedule::coeff_to_slot_level_count +
+                  Schedule::slot_to_coeff_level_count +
+                  EvalModTraits::PolynomialTraits::power_depth +
+                  Schedule::evalmod_double_angle);
+    paths.push_back(ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                             "linear_plan"));
+    paths.push_back(ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                             "rotation_usage"));
+    paths.push_back(
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "evalmod_polynomial"));
+    ckks_detail::CKKSDenseBootstrapCoeffToSlotKeyFilePathsImpl<0, Schedule>(
+        paths, root);
+    paths.push_back(ckks_detail::CKKSDenseBootstrapNamedPath(
+        root, "packed_conjugate_galois"));
+    ckks_detail::CKKSDenseBootstrapPolynomialRelinKeyFilePathsImpl<0,
+                                                                    Schedule>(
+        paths, root);
+    ckks_detail::CKKSDenseBootstrapDoubleAngleRelinKeyFilePathsImpl<0,
+                                                                    Schedule>(
+        paths, root);
+    ckks_detail::CKKSDenseBootstrapSlotToCoeffKeyFilePathsImpl<0, Schedule>(
+        paths, root);
+    return paths;
+}
+
+template <class Schedule>
+inline std::vector<std::filesystem::path>
+CKKSDenseBootstrapMissingKeyDirectoryFiles(const std::filesystem::path &root)
+{
+    std::vector<std::filesystem::path> missing;
+    for (const std::filesystem::path &path :
+         CKKSDenseBootstrapKeyDirectoryFiles<Schedule>(root)) {
+        if (!std::filesystem::exists(path)) missing.push_back(path);
+    }
+    return missing;
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapKeyDirectoryComplete(
+    const std::filesystem::path &root)
+{
+    return CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(root).empty();
+}
 
 template <class Schedule>
 inline void CKKSDenseBootstrapKeyGenToDirectory(

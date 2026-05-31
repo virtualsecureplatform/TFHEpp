@@ -108,6 +108,28 @@ std::size_t regular_file_count(const std::filesystem::path &root)
     return count;
 }
 
+std::size_t temporary_file_count(const std::filesystem::path &root)
+{
+    if (!std::filesystem::exists(root)) return 0;
+    std::size_t count = 0;
+    for (const auto &entry : std::filesystem::directory_iterator(root)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".tmp")
+            count++;
+    }
+    return count;
+}
+
+void print_missing_key_files(
+    const std::vector<std::filesystem::path> &missing, std::size_t limit = 8)
+{
+    const std::size_t shown = std::min(limit, missing.size());
+    for (std::size_t i = 0; i < shown; i++)
+        std::cerr << "missing_key_file=" << missing[i].string() << '\n';
+    if (missing.size() > shown)
+        std::cerr << "missing_key_file_more=" << missing.size() - shown
+                  << '\n';
+}
+
 template <class Schedule>
 void print_schedule_report(const char *label,
                            const std::filesystem::path *key_dir = nullptr)
@@ -151,8 +173,15 @@ void print_schedule_report(const char *label,
               << TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>()
               << '\n';
     if (key_dir != nullptr) {
+        const auto expected =
+            TFHEpp::CKKSDenseBootstrapKeyDirectoryFiles<Schedule>(*key_dir);
+        const auto missing =
+            TFHEpp::CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(
+                *key_dir);
         std::cout << label << " key_dir=" << key_dir->string()
-                  << " files=" << regular_file_count(*key_dir)
+                  << " files=" << regular_file_count(*key_dir) << "/"
+                  << expected.size() << " missing=" << missing.size()
+                  << " tmp_files=" << temporary_file_count(*key_dir)
                   << " disk_bytes=" << directory_size_bytes(*key_dir)
                   << '\n';
     }
@@ -162,6 +191,15 @@ template <class Schedule>
 int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol)
 {
     using P = typename Schedule::Param;
+
+    const auto missing =
+        TFHEpp::CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(key_dir);
+    if (!missing.empty()) {
+        std::cerr << "key_dir_incomplete=" << key_dir.string()
+                  << " missing=" << missing.size() << '\n';
+        print_missing_key_files(missing);
+        return 2;
+    }
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_test_key<P>(*key);
