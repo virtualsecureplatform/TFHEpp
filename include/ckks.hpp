@@ -1891,13 +1891,15 @@ template <class P, std::uint32_t LogDelta = 40,
           std::uint32_t EvalModDegree = 63, std::uint32_t EvalModK = 16,
           std::uint32_t EvalModDoubleAngle = 3,
           std::uint32_t EvalModInvDegree = 0,
-          std::uint32_t EvalModLogScale = LogDelta>
+          std::uint32_t EvalModLogScale = LogDelta,
+          int LinearBSGSStep = 128>
 struct CKKSDenseBootstrapSchedule {
     static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta > 0);
     static_assert(LogMessageRatio > 0);
     static_assert(LinearPlainLogDelta > 0);
     static_assert(LinearFuseRadix > 0);
+    static_assert(LinearBSGSStep > 0);
     static_assert(EvalModK > 0);
     static_assert(EvalModDegree >= 2 * (EvalModK - 1),
                   "cos-discrete EvalMod requires degree at least 2*(K-1)");
@@ -1909,6 +1911,7 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr std::uint32_t boot_log_q = BootLogQ;
     static constexpr std::uint32_t linear_plain_log_delta = LinearPlainLogDelta;
     static constexpr std::uint32_t linear_fuse_radix = LinearFuseRadix;
+    static constexpr int linear_bsgs_step = LinearBSGSStep;
     static constexpr std::uint32_t raw_linear_stage_count = P::nbit - 1;
     static constexpr std::uint32_t coeff_to_slot_level_count =
         ckks_detail::ceil_div(raw_linear_stage_count, LinearFuseRadix);
@@ -2849,6 +2852,81 @@ inline void CKKSDenseEvalModBoundedCosNormalized(
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>(res, ct, poly,
                                                                   keys);
+}
+
+template <class Schedule>
+struct CKKSDenseBootstrapKey {
+    using P = typename Schedule::Param;
+    using CoeffToSlotGaloisKeyChain =
+        CKKSGaloisKeyChain<P, Schedule::boot_log_q,
+                           Schedule::linear_plain_log_delta,
+                           Schedule::coeff_to_slot_level_count>;
+    using SlotToCoeffGaloisKeyChain =
+        CKKSGaloisKeyChain<P, Schedule::after_evalmod_log_q,
+                           Schedule::linear_plain_log_delta,
+                           Schedule::slot_to_coeff_level_count>;
+
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan{};
+    CKKSBoundedCosEvalModPolynomial evalmod_polynomial{};
+    CoeffToSlotGaloisKeyChain coeff_to_slot_galois{};
+    CKKSDenseEvalModBoundedCosRelinKeys<Schedule> evalmod_relin{};
+    SlotToCoeffGaloisKeyChain slot_to_coeff_galois{};
+};
+
+template <class Schedule>
+inline void CKKSDenseBootstrapKeyGen(
+    CKKSDenseBootstrapKey<Schedule> &bootstrap_key,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+    static_assert(Schedule::evalmod_inv_degree == 0,
+                  "inverse EvalMod correction is not implemented yet");
+    CKKSBuildDenseBootstrapLinearPlan<Schedule>(bootstrap_key.linear_plan);
+    bootstrap_key.evalmod_polynomial =
+        CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+    CKKSGaloisKeyChainGen<P, Schedule::boot_log_q,
+                          Schedule::linear_plain_log_delta,
+                          Schedule::coeff_to_slot_level_count>(
+        bootstrap_key.coeff_to_slot_galois, key, noise);
+    CKKSDenseEvalModBoundedCosKeyGen<Schedule>(bootstrap_key.evalmod_relin, key,
+                                               noise);
+    CKKSGaloisKeyChainGen<P, Schedule::after_evalmod_log_q,
+                          Schedule::linear_plain_log_delta,
+                          Schedule::slot_to_coeff_level_count>(
+        bootstrap_key.slot_to_coeff_galois, key, noise);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrap(
+    typename Schedule::OutputCiphertext &res,
+    const typename Schedule::InputCiphertext &ct,
+    const CKKSDenseBootstrapKey<Schedule> &bootstrap_key)
+{
+    using P = typename Schedule::Param;
+    typename Schedule::BootstrapCiphertext raised;
+    CKKSModRaiseRandomized<P, Schedule::input_log_q, Schedule::boot_log_q,
+                           Schedule::log_delta>(raised, ct);
+
+    typename Schedule::CoeffToSlotCiphertext coeff_to_slot;
+    CKKSLinearTransformStagesBSGS<
+        P, Schedule::boot_log_q, Schedule::log_delta,
+        Schedule::linear_plain_log_delta,
+        Schedule::coeff_to_slot_level_count>(
+        coeff_to_slot, raised, bootstrap_key.linear_plan.coeff_to_slot_stages, 0,
+        Schedule::linear_bsgs_step, bootstrap_key.coeff_to_slot_galois);
+
+    CKKSDenseEvalModBoundedCosResult<Schedule> evalmod;
+    CKKSDenseEvalModBoundedCosNormalized<Schedule>(
+        evalmod, coeff_to_slot, bootstrap_key.evalmod_polynomial,
+        bootstrap_key.evalmod_relin);
+
+    CKKSLinearTransformStagesBSGS<
+        P, Schedule::after_evalmod_log_q, Schedule::log_delta,
+        Schedule::linear_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        res, evalmod, bootstrap_key.linear_plan.slot_to_coeff_stages, 0,
+        Schedule::linear_bsgs_step, bootstrap_key.slot_to_coeff_galois);
 }
 
 inline double CKKSPlainEvalModSineDegree5(double x)

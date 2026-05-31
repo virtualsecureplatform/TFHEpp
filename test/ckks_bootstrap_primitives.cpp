@@ -313,6 +313,7 @@ void test_lvl6_factorized_stage_shape()
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<L>;
     static_assert(Schedule::input_log_q == 48);
     static_assert(Schedule::boot_log_q == 880);
+    static_assert(Schedule::linear_bsgs_step == 128);
     static_assert(Schedule::raw_linear_stage_count == 14);
     static_assert(Schedule::coeff_to_slot_level_count == 4);
     static_assert(Schedule::slot_to_coeff_level_count == 4);
@@ -380,6 +381,43 @@ void test_lvl6_factorized_stage_shape()
               << " diagonals=" << fused_c2s_diag_count << "/"
               << fused_stc_diag_count << " output_log_q="
               << Schedule::output_log_q << std::endl;
+}
+
+void test_dense_bootstrap_api_shape()
+{
+    using M = TinyMultiLimbCKKSParam;
+    using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
+        M, 40, 8, 260, 20, 3, 3, 2, 1, 0, 40, 2>;
+    static_assert(Schedule::input_log_q == 48);
+    static_assert(Schedule::boot_log_q == 260);
+    static_assert(Schedule::linear_bsgs_step == 2);
+    static_assert(Schedule::coeff_to_slot_level_count == 1);
+    static_assert(Schedule::slot_to_coeff_level_count == 1);
+    static_assert(Schedule::after_coeff_to_slot_log_q == 240);
+    static_assert(Schedule::evalmod_polynomial_depth == 3);
+    static_assert(Schedule::evalmod_depth == 4);
+    static_assert(Schedule::after_evalmod_log_q == 80);
+    static_assert(Schedule::output_log_q == 60);
+
+    using BootstrapKey = TFHEpp::CKKSDenseBootstrapKey<Schedule>;
+    using KeyGenFn = void (*)(BootstrapKey &, const TFHEpp::Key<M> &,
+                              TFHEpp::CKKSNoise);
+    using BootstrapFn = void (*)(typename Schedule::OutputCiphertext &,
+                                 const typename Schedule::InputCiphertext &,
+                                 const BootstrapKey &);
+    [[maybe_unused]] KeyGenFn keygen =
+        &TFHEpp::CKKSDenseBootstrapKeyGen<Schedule>;
+    [[maybe_unused]] BootstrapFn bootstrap =
+        &TFHEpp::CKKSDenseBootstrap<Schedule>;
+
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    if (linear_plan.coeff_to_slot_stages.size() !=
+        Schedule::coeff_to_slot_level_count)
+        std::exit(1);
+    if (linear_plan.slot_to_coeff_stages.size() !=
+        Schedule::slot_to_coeff_level_count)
+        std::exit(1);
 }
 
 void test_bounded_cos_evalmod_plain()
@@ -705,6 +743,7 @@ int main()
     test_dense_coeff_slot_diagonals();
     test_factorized_coeff_slot_stages();
     test_lvl6_factorized_stage_shape();
+    test_dense_bootstrap_api_shape();
     test_bounded_cos_evalmod_plain();
     test_multilimb_slot_decode_high_level();
 
