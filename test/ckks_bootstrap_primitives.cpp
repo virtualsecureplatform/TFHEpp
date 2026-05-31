@@ -9,6 +9,11 @@ namespace {
 
 using P = TFHEpp::ckkslvl3param;
 
+struct SmallCKKSParam {
+    static constexpr std::uint32_t nbit = 4;
+    static constexpr std::uint32_t n = 1 << nbit;
+};
+
 void fill_key(TFHEpp::Key<P> &key)
 {
     for (std::size_t i = 0; i < P::n; i++) {
@@ -17,13 +22,20 @@ void fill_key(TFHEpp::Key<P> &key)
     }
 }
 
+template <class Param>
+double max_error(const TFHEpp::CKKSSlotVector<Param> &got,
+                 const TFHEpp::CKKSSlotVector<Param> &want)
+{
+    double err = 0.0;
+    for (std::size_t i = 0; i < Param::n / 2; i++)
+        err = std::max(err, std::abs(got[i] - want[i]));
+    return err;
+}
+
 double max_error(const TFHEpp::CKKSSlotVector<P> &got,
                  const TFHEpp::CKKSSlotVector<P> &want)
 {
-    double err = 0.0;
-    for (std::size_t i = 0; i < P::n / 2; i++)
-        err = std::max(err, std::abs(got[i] - want[i]));
-    return err;
+    return max_error<P>(got, want);
 }
 
 void require_close(const TFHEpp::CKKSSlotVector<P> &got,
@@ -38,10 +50,105 @@ void require_close(const TFHEpp::CKKSSlotVector<P> &got,
     }
 }
 
+template <class Param>
+void apply_complex_linear(
+    TFHEpp::CKKSSlotVector<Param> &out,
+    const TFHEpp::CKKSSlotVector<Param> &in,
+    const std::vector<TFHEpp::CKKSSlotVector<Param>> &diagonals,
+    const std::vector<int> &offsets)
+{
+    constexpr int half = static_cast<int>(Param::n) / 2;
+    out.fill({0.0, 0.0});
+    for (std::size_t d = 0; d < diagonals.size(); d++) {
+        const int offset = ((offsets[d] % half) + half) % half;
+        for (int i = 0; i < half; i++)
+            out[i] += diagonals[d][i] * in[(i + offset) % half];
+    }
+}
+
+template <class Param>
+void apply_real_linear(
+    TFHEpp::CKKSSlotVector<Param> &out,
+    const TFHEpp::CKKSSlotVector<Param> &in,
+    const std::vector<TFHEpp::CKKSSlotVector<Param>> &direct_diags,
+    const std::vector<int> &direct_offsets,
+    const std::vector<TFHEpp::CKKSSlotVector<Param>> &conj_diags,
+    const std::vector<int> &conj_offsets)
+{
+    auto direct = std::make_unique<TFHEpp::CKKSSlotVector<Param>>();
+    auto conj_part = std::make_unique<TFHEpp::CKKSSlotVector<Param>>();
+    auto conj_in = std::make_unique<TFHEpp::CKKSSlotVector<Param>>();
+    for (std::size_t i = 0; i < Param::n / 2; i++)
+        (*conj_in)[i] = std::conj(in[i]);
+    apply_complex_linear<Param>(*direct, in, direct_diags, direct_offsets);
+    apply_complex_linear<Param>(*conj_part, *conj_in, conj_diags,
+                                conj_offsets);
+    for (std::size_t i = 0; i < Param::n / 2; i++)
+        out[i] = (*direct)[i] + (*conj_part)[i];
+}
+
+void test_dense_coeff_slot_diagonals()
+{
+    using S = SmallCKKSParam;
+    constexpr int half = static_cast<int>(S::n) / 2;
+    constexpr long double pi =
+        3.141592653589793238462643383279502884L;
+    const auto &slot_to_eval = TFHEpp::ckks_detail::ckksSlotToEvalIndex<S>();
+
+    std::array<double, S::n> coeffs{};
+    for (std::size_t i = 0; i < S::n; i++)
+        coeffs[i] = static_cast<double>(static_cast<int>(i % 7) - 3) / 16.0;
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    auto packed = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    for (int i = 0; i < half; i++) {
+        const long double h =
+            static_cast<long double>(2 * slot_to_eval[i] + 1);
+        std::complex<long double> sum = 0.0L;
+        for (std::size_t j = 0; j < S::n; j++) {
+            const long double angle =
+                pi * h * static_cast<long double>(j) /
+                static_cast<long double>(S::n);
+            sum += static_cast<long double>(coeffs[j]) *
+                   std::complex<long double>(std::cos(angle),
+                                             std::sin(angle));
+        }
+        (*slots)[i] = static_cast<std::complex<double>>(sum);
+        (*packed)[i] = {coeffs[i], coeffs[i + half]};
+    }
+
+    std::vector<TFHEpp::CKKSSlotVector<S>> direct_diags;
+    std::vector<TFHEpp::CKKSSlotVector<S>> conj_diags;
+    std::vector<int> direct_offsets;
+    std::vector<int> conj_offsets;
+    TFHEpp::CKKSBuildCoeffToPackedSlotDiagonals<S>(
+        direct_diags, direct_offsets, conj_diags, conj_offsets);
+
+    auto got_packed = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    apply_real_linear<S>(*got_packed, *slots, direct_diags, direct_offsets,
+                         conj_diags, conj_offsets);
+    const double c2s_err = max_error<S>(*got_packed, *packed);
+    std::cout << "CKKS dense coeff-to-packed-slot max_error=" << c2s_err
+              << std::endl;
+    if (c2s_err > 1e-10) std::exit(1);
+
+    TFHEpp::CKKSBuildPackedSlotToCoeffDiagonals<S>(
+        direct_diags, direct_offsets, conj_diags, conj_offsets);
+    auto got_slots = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    apply_real_linear<S>(*got_slots, *packed, direct_diags, direct_offsets,
+                         conj_diags, conj_offsets);
+    const double stc_err = max_error<S>(*got_slots, *slots);
+    std::cout << "CKKS dense packed-slot-to-coeff max_error=" << stc_err
+              << std::endl;
+    if (stc_err > 1e-10) std::exit(1);
+}
+
 }  // namespace
 
 int main()
 {
+    test_dense_coeff_slot_diagonals();
+
     constexpr std::uint32_t low_log_q = 82;
     constexpr std::uint32_t boot_log_q = 110;
     constexpr std::uint32_t log_delta = 40;

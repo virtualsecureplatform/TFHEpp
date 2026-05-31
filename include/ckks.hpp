@@ -1184,6 +1184,132 @@ inline void CKKSRealLinearTransform(
     ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
 }
 
+template <class P>
+inline void CKKSBuildCoeffToPackedSlotDiagonals(
+    std::vector<CKKSSlotVector<P>> &direct_diagonals,
+    std::vector<int> &direct_offsets,
+    std::vector<CKKSSlotVector<P>> &conjugate_diagonals,
+    std::vector<int> &conjugate_offsets)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    constexpr long double pi =
+        3.141592653589793238462643383279502884L;
+    const auto &slot_to_eval = ckks_detail::ckksSlotToEvalIndex<P>();
+
+    direct_diagonals.assign(half, CKKSSlotVector<P>{});
+    conjugate_diagonals.assign(half, CKKSSlotVector<P>{});
+    direct_offsets.resize(half);
+    conjugate_offsets.resize(half);
+    for (int d = 0; d < half; d++) {
+        direct_offsets[d] = d;
+        conjugate_offsets[d] = d;
+        direct_diagonals[d].fill({0.0, 0.0});
+        conjugate_diagonals[d].fill({0.0, 0.0});
+    }
+
+    for (int r = 0; r < half; r++) {
+        for (int d = 0; d < half; d++) {
+            const int c = (r + d) % half;
+            const long double h =
+                static_cast<long double>(2 * slot_to_eval[c] + 1);
+            const long double theta = pi * h / static_cast<long double>(P::n);
+            const auto e0 = std::complex<long double>(
+                std::cos(theta * r), -std::sin(theta * r));
+            const auto e1 = std::complex<long double>(
+                std::cos(theta * (r + half)),
+                -std::sin(theta * (r + half)));
+            const auto f0 = std::conj(e0);
+            const auto f1 = std::conj(e1);
+            direct_diagonals[d][r] = static_cast<std::complex<double>>(
+                (e0 + std::complex<long double>(0.0L, 1.0L) * e1) /
+                static_cast<long double>(P::n));
+            conjugate_diagonals[d][r] = static_cast<std::complex<double>>(
+                (f0 + std::complex<long double>(0.0L, 1.0L) * f1) /
+                static_cast<long double>(P::n));
+        }
+    }
+}
+
+template <class P>
+inline void CKKSBuildPackedSlotToCoeffDiagonals(
+    std::vector<CKKSSlotVector<P>> &direct_diagonals,
+    std::vector<int> &direct_offsets,
+    std::vector<CKKSSlotVector<P>> &conjugate_diagonals,
+    std::vector<int> &conjugate_offsets)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    constexpr long double pi =
+        3.141592653589793238462643383279502884L;
+    const auto &slot_to_eval = ckks_detail::ckksSlotToEvalIndex<P>();
+
+    direct_diagonals.assign(half, CKKSSlotVector<P>{});
+    conjugate_diagonals.assign(half, CKKSSlotVector<P>{});
+    direct_offsets.resize(half);
+    conjugate_offsets.resize(half);
+    for (int d = 0; d < half; d++) {
+        direct_offsets[d] = d;
+        conjugate_offsets[d] = d;
+        direct_diagonals[d].fill({0.0, 0.0});
+        conjugate_diagonals[d].fill({0.0, 0.0});
+    }
+
+    for (int i = 0; i < half; i++) {
+        const long double h =
+            static_cast<long double>(2 * slot_to_eval[i] + 1);
+        const long double theta = pi * h / static_cast<long double>(P::n);
+        for (int d = 0; d < half; d++) {
+            const int c = (i + d) % half;
+            const auto e0 = std::complex<long double>(
+                std::cos(theta * c), std::sin(theta * c));
+            const auto e1 = std::complex<long double>(
+                std::cos(theta * (c + half)),
+                std::sin(theta * (c + half)));
+            direct_diagonals[d][i] = static_cast<std::complex<double>>(
+                0.5L *
+                (e0 - std::complex<long double>(0.0L, 1.0L) * e1));
+            conjugate_diagonals[d][i] = static_cast<std::complex<double>>(
+                0.5L *
+                (e0 + std::complex<long double>(0.0L, 1.0L) * e1));
+        }
+    }
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSBuildCoeffToPackedSlotPlan(
+    CKKSRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    int k_step)
+{
+    std::vector<CKKSSlotVector<P>> direct_diagonals;
+    std::vector<CKKSSlotVector<P>> conjugate_diagonals;
+    std::vector<int> direct_offsets;
+    std::vector<int> conjugate_offsets;
+    CKKSBuildCoeffToPackedSlotDiagonals<P>(
+        direct_diagonals, direct_offsets, conjugate_diagonals,
+        conjugate_offsets);
+    CKKSBuildRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        plan, direct_diagonals, direct_offsets, conjugate_diagonals,
+        conjugate_offsets, k_step);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSBuildPackedSlotToCoeffPlan(
+    CKKSRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    int k_step)
+{
+    std::vector<CKKSSlotVector<P>> direct_diagonals;
+    std::vector<CKKSSlotVector<P>> conjugate_diagonals;
+    std::vector<int> direct_offsets;
+    std::vector<int> conjugate_offsets;
+    CKKSBuildPackedSlotToCoeffDiagonals<P>(
+        direct_diagonals, direct_offsets, conjugate_diagonals,
+        conjugate_offsets);
+    CKKSBuildRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        plan, direct_diagonals, direct_offsets, conjugate_diagonals,
+        conjugate_offsets, k_step);
+}
+
 template <class P, std::uint32_t LogQ>
 inline std::unique_ptr<CKKSRelinKey<P, LogQ>> makeCKKSRelinKey(
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
