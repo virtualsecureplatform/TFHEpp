@@ -2925,16 +2925,24 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
         ckks_detail::static_min_v<LhsLogQ, RhsLogQ>;
     static_assert(base_log_q > LogScale);
     constexpr std::uint32_t out_log_q = base_log_q - LogScale;
+    constexpr std::uint32_t lhs_row_count =
+        CKKSKeySwitchRowCountForLevel<P, LhsLogQ>();
+    constexpr std::uint32_t rhs_row_count =
+        CKKSKeySwitchRowCountForLevel<P, RhsLogQ>();
+    constexpr std::uint32_t lhs_first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LhsLogQ>();
+    constexpr std::uint32_t rhs_first_row =
+        CKKSKeySwitchFirstRowForLevel<P, RhsLogQ>();
 
     auto a_centered = std::make_unique<TRLWE<P>>();
     auto b_centered = std::make_unique<TRLWE<P>>();
     ckks_detail::centeredTRLWEAtLevel<P, LhsLogQ>(*a_centered, a);
     ckks_detail::centeredTRLWEAtLevel<P, RhsLogQ>(*b_centered, b);
 
-    auto a_dec = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
-    auto b_dec = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
-    TRLWEBaseBbarDecompose<P>(*a_dec, *a_centered);
-    TRLWEBaseBbarDecompose<P>(*b_dec, *b_centered);
+    auto a_dec = std::make_unique<std::array<TRLWE<P>, lhs_row_count>>();
+    auto b_dec = std::make_unique<std::array<TRLWE<P>, rhs_row_count>>();
+    ckks_detail::baseBbarDecomposeRows<P, lhs_first_row>(*a_dec, *a_centered);
+    ckks_detail::baseBbarDecomposeRows<P, rhs_first_row>(*b_dec, *b_centered);
 
     if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
         constexpr bool use_fft_digits =
@@ -2944,20 +2952,28 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
         auto acc = std::make_unique<std::array<std::array<Wide384, P::n>, 3>>();
 
         if constexpr (use_fft_digits) {
-            auto a_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
-            auto b_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
-            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+            auto a_fd =
+                std::make_unique<std::array<TRLWEInFD<P>, lhs_row_count>>();
+            auto b_fd =
+                std::make_unique<std::array<TRLWEInFD<P>, rhs_row_count>>();
+            for (int i = 0; i < static_cast<int>(lhs_row_count); i++) {
                 for (int c = 0; c <= static_cast<int>(P::k); c++) {
                     TwistIFFT<P>((*a_fd)[i][c], (*a_dec)[i][c]);
+                }
+            }
+            for (int i = 0; i < static_cast<int>(rhs_row_count); i++) {
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
                     TwistIFFT<P>((*b_fd)[i][c], (*b_dec)[i][c]);
                 }
             }
 
             alignas(64) PolynomialInFD<P> prod_fd;
             Polynomial<P> prod;
-            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                    const int digit_sum = i + j;
+            for (int i = 0; i < static_cast<int>(lhs_row_count); i++) {
+                for (int j = 0; j < static_cast<int>(rhs_row_count); j++) {
+                    const int digit_sum =
+                        static_cast<int>(lhs_first_row + rhs_first_row) + i +
+                        j;
                     const int shift =
                         2 * width -
                         (digit_sum + 2) * static_cast<int>(P::B̅gbit);
@@ -2986,9 +3002,11 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
         }
         else {
             Polynomial<P> prod;
-            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                    const int digit_sum = i + j;
+            for (int i = 0; i < static_cast<int>(lhs_row_count); i++) {
+                for (int j = 0; j < static_cast<int>(rhs_row_count); j++) {
+                    const int digit_sum =
+                        static_cast<int>(lhs_first_row + rhs_first_row) + i +
+                        j;
                     const int shift =
                         2 * width -
                         (digit_sum + 2) * static_cast<int>(P::B̅gbit);
@@ -3043,13 +3061,21 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
                 std::numeric_limits<double>::digits - digit_product_bits;
             static_assert(fd_batch_slack > 0);
             constexpr int fd_batch_size =
-                std::min(static_cast<int>(P::l̅), 1 << fd_batch_slack);
+                std::min(static_cast<int>(ckks_detail::static_min_v<
+                             lhs_row_count, rhs_row_count>),
+                         1 << fd_batch_slack);
 
-            auto a_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
-            auto b_fd = std::make_unique<std::array<TRLWEInFD<P>, P::l̅>>();
-            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
+            auto a_fd =
+                std::make_unique<std::array<TRLWEInFD<P>, lhs_row_count>>();
+            auto b_fd =
+                std::make_unique<std::array<TRLWEInFD<P>, rhs_row_count>>();
+            for (int i = 0; i < static_cast<int>(lhs_row_count); i++) {
                 for (int c = 0; c <= static_cast<int>(P::k); c++) {
                     TwistIFFTDigit<P>((*a_fd)[i][c], (*a_dec)[i][c]);
+                }
+            }
+            for (int i = 0; i < static_cast<int>(rhs_row_count); i++) {
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
                     TwistIFFTDigit<P>((*b_fd)[i][c], (*b_dec)[i][c]);
                 }
             }
@@ -3057,14 +3083,20 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
             auto sum_fd = std::make_unique<std::array<PolynomialInFD<P>, 3>>();
             auto prod = std::make_unique<Polynomial<P>>();
             for (int digit_sum = 0;
-                 digit_sum <= 2 * static_cast<int>(P::l̅) - 2; digit_sum++) {
+                 digit_sum <= static_cast<int>(lhs_row_count + rhs_row_count) -
+                                  2;
+                 digit_sum++) {
                 const int i_begin =
-                    std::max(0, digit_sum - static_cast<int>(P::l̅) + 1);
+                    std::max(0, digit_sum -
+                                    static_cast<int>(rhs_row_count) + 1);
                 const int i_end =
-                    std::min(static_cast<int>(P::l̅) - 1, digit_sum);
+                    std::min(static_cast<int>(lhs_row_count) - 1, digit_sum);
+                const int full_digit_sum =
+                    static_cast<int>(lhs_first_row + rhs_first_row) +
+                    digit_sum;
                 const int shift =
                     2 * width -
-                    (digit_sum + 2) * static_cast<int>(P::B̅gbit);
+                    (full_digit_sum + 2) * static_cast<int>(P::B̅gbit);
 
                 for (int batch_begin = i_begin; batch_begin <= i_end;
                      batch_begin += fd_batch_size) {
@@ -3091,9 +3123,11 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
         }
         else {
             auto prod = std::make_unique<Polynomial<P>>();
-            for (int i = 0; i < static_cast<int>(P::l̅); i++) {
-                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                    const int digit_sum = i + j;
+            for (int i = 0; i < static_cast<int>(lhs_row_count); i++) {
+                for (int j = 0; j < static_cast<int>(rhs_row_count); j++) {
+                    const int digit_sum =
+                        static_cast<int>(lhs_first_row + rhs_first_row) + i +
+                        j;
                     const int shift =
                         2 * width -
                         (digit_sum + 2) * static_cast<int>(P::B̅gbit);
