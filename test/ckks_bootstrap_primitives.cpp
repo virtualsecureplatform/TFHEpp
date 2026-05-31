@@ -211,6 +211,16 @@ void test_factorized_coeff_slot_stages()
               << std::endl;
     if (c2s_err > 1e-10) std::exit(1);
 
+    TFHEpp::CKKSLinearTransformStages<S> fused_c2s_stages;
+    TFHEpp::CKKSFuseLinearTransformStages<S>(fused_c2s_stages, c2s_stages, 2);
+    if (fused_c2s_stages.size() != 2) std::exit(1);
+    auto fused_got_packed = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    apply_complex_stages<S>(*fused_got_packed, *slots, fused_c2s_stages);
+    const double fused_c2s_err = max_error<S>(*fused_got_packed, *packed_bitrev);
+    std::cout << "CKKS fused factorized coeff-to-packed-slot max_error="
+              << fused_c2s_err << std::endl;
+    if (fused_c2s_err > 1e-10) std::exit(1);
+
     auto scaled_expected = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
     auto scaled_got = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
     constexpr std::complex<double> stage_scale{0.25, -0.125};
@@ -235,11 +245,36 @@ void test_factorized_coeff_slot_stages()
     std::cout << "CKKS factorized packed-slot-to-coeff max_error=" << stc_err
               << std::endl;
     if (stc_err > 1e-10) std::exit(1);
+
+    TFHEpp::CKKSLinearTransformStages<S> fused_stc_stages;
+    TFHEpp::CKKSFuseLinearTransformStages<S>(fused_stc_stages, stc_stages, 2);
+    if (fused_stc_stages.size() != 2) std::exit(1);
+    auto fused_got_slots = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    apply_complex_stages<S>(*fused_got_slots, *packed_bitrev, fused_stc_stages);
+    const double fused_stc_err = max_error<S>(*fused_got_slots, *slots);
+    std::cout << "CKKS fused factorized packed-slot-to-coeff max_error="
+              << fused_stc_err << std::endl;
+    if (fused_stc_err > 1e-10) std::exit(1);
 }
 
 void test_lvl6_factorized_stage_shape()
 {
     using L = TFHEpp::lvl6param;
+    using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<L>;
+    static_assert(Schedule::input_log_q == 48);
+    static_assert(Schedule::boot_log_q == 880);
+    static_assert(Schedule::raw_linear_stage_count == 14);
+    static_assert(Schedule::coeff_to_slot_level_count == 4);
+    static_assert(Schedule::slot_to_coeff_level_count == 4);
+    static_assert(Schedule::evalmod_depth == 9);
+    static_assert(Schedule::after_coeff_to_slot_log_q == 800);
+    static_assert(Schedule::after_evalmod_log_q == 440);
+    static_assert(Schedule::output_log_q == 360);
+    static_assert(Schedule::message_ratio == 256.0);
+    static_assert(Schedule::coeff_to_slot_scaling_factor == 1.0 / 4096.0);
+    static_assert(Schedule::slot_to_coeff_scaling_factor == 256.0);
+    static_assert(Schedule::OutputCiphertext::log_q == Schedule::output_log_q);
+
     TFHEpp::CKKSLinearTransformStages<L> c2s_stages;
     TFHEpp::CKKSBuildCoeffToPackedSlotStages<L>(c2s_stages);
     if (c2s_stages.size() != L::nbit - 1) std::exit(1);
@@ -264,6 +299,32 @@ void test_lvl6_factorized_stage_shape()
               << c2s_stages.size() << "/" << stc_stages.size()
               << " diagonals=" << c2s_diag_count << "/" << stc_diag_count
               << std::endl;
+
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    if (linear_plan.coeff_to_slot_stages.size() !=
+        Schedule::coeff_to_slot_level_count)
+        std::exit(1);
+    if (linear_plan.slot_to_coeff_stages.size() !=
+        Schedule::slot_to_coeff_level_count)
+        std::exit(1);
+
+    std::size_t fused_c2s_diag_count = 0;
+    for (const auto &stage : linear_plan.coeff_to_slot_stages) {
+        if (stage.rotation_offsets.size() > 81) std::exit(1);
+        fused_c2s_diag_count += stage.rotation_offsets.size();
+    }
+    std::size_t fused_stc_diag_count = 0;
+    for (const auto &stage : linear_plan.slot_to_coeff_stages) {
+        if (stage.rotation_offsets.size() > 81) std::exit(1);
+        fused_stc_diag_count += stage.rotation_offsets.size();
+    }
+    std::cout << "CKKS lvl6 dense bootstrap fused C2S/STC levels="
+              << linear_plan.coeff_to_slot_stages.size() << "/"
+              << linear_plan.slot_to_coeff_stages.size()
+              << " diagonals=" << fused_c2s_diag_count << "/"
+              << fused_stc_diag_count << " output_log_q="
+              << Schedule::output_log_q << std::endl;
 }
 
 void test_multilimb_slot_decode_high_level()

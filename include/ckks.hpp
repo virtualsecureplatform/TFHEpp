@@ -100,6 +100,28 @@ inline constexpr std::uint32_t static_min_v = A < B ? A : B;
 template <std::uint32_t A, std::uint32_t B>
 inline constexpr std::uint32_t static_max_v = A < B ? B : A;
 
+constexpr std::uint32_t ceil_div(std::uint32_t num, std::uint32_t den)
+{
+    return (num + den - 1) / den;
+}
+
+constexpr std::uint32_t bit_width_u64(std::uint64_t value)
+{
+    std::uint32_t width = 0;
+    while (value != 0) {
+        width++;
+        value >>= 1;
+    }
+    return width;
+}
+
+constexpr double exp2_double(std::uint32_t exponent)
+{
+    double value = 1.0;
+    for (std::uint32_t i = 0; i < exponent; i++) value *= 2.0;
+    return value;
+}
+
 template <class P>
 inline constexpr std::uint32_t torus_width_v =
     std::numeric_limits<typename P::T>::digits;
@@ -1099,6 +1121,66 @@ template <class P>
 using CKKSLinearTransformStages = std::vector<CKKSLinearTransformStage<P>>;
 
 template <class P>
+inline void CKKSComposeLinearTransformStages(
+    CKKSLinearTransformStage<P> &out, const CKKSLinearTransformStage<P> &first,
+    const CKKSLinearTransformStage<P> &second)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(first.diagonals.size() == first.rotation_offsets.size());
+    assert(second.diagonals.size() == second.rotation_offsets.size());
+
+    CKKSLinearTransformStage<P> composed;
+    for (std::size_t b = 0; b < second.diagonals.size(); b++) {
+        const int second_offset =
+            ((second.rotation_offsets[b] % half) + half) % half;
+        for (std::size_t a = 0; a < first.diagonals.size(); a++) {
+            const int first_offset =
+                ((first.rotation_offsets[a] % half) + half) % half;
+            const int offset = (second_offset + first_offset) % half;
+            auto it = std::find(composed.rotation_offsets.begin(),
+                                composed.rotation_offsets.end(), offset);
+            if (it == composed.rotation_offsets.end()) {
+                composed.rotation_offsets.push_back(offset);
+                composed.diagonals.emplace_back();
+                composed.diagonals.back().fill({0.0, 0.0});
+                it = composed.rotation_offsets.end() - 1;
+            }
+            auto &diagonal = composed.diagonals[static_cast<std::size_t>(
+                it - composed.rotation_offsets.begin())];
+            for (int i = 0; i < half; i++) {
+                const int shifted = (i + second_offset) % half;
+                diagonal[i] += second.diagonals[b][i] *
+                               first.diagonals[a][shifted];
+            }
+        }
+    }
+    out = std::move(composed);
+}
+
+template <class P>
+inline void CKKSFuseLinearTransformStages(CKKSLinearTransformStages<P> &out,
+                                          const CKKSLinearTransformStages<P> &in,
+                                          std::size_t stages_per_fused_level)
+{
+    assert(stages_per_fused_level > 0);
+    out.clear();
+    out.reserve((in.size() + stages_per_fused_level - 1) /
+                stages_per_fused_level);
+    for (std::size_t start = 0; start < in.size();
+         start += stages_per_fused_level) {
+        CKKSLinearTransformStage<P> fused = in[start];
+        const std::size_t end =
+            std::min(in.size(), start + stages_per_fused_level);
+        for (std::size_t i = start + 1; i < end; i++) {
+            CKKSLinearTransformStage<P> next;
+            CKKSComposeLinearTransformStages<P>(next, fused, in[i]);
+            fused = std::move(next);
+        }
+        out.push_back(std::move(fused));
+    }
+}
+
+template <class P>
 inline void CKKSScaleLinearTransformStages(CKKSLinearTransformStages<P> &stages,
                                            std::complex<double> scalar)
 {
@@ -1730,6 +1812,112 @@ inline void CKKSBuildPackedSlotToCoeffPlan(
     CKKSBuildRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta>(
         plan, direct_diagonals, direct_offsets, conjugate_diagonals,
         conjugate_offsets, k_step);
+}
+
+template <class P, std::uint32_t LogDelta = 40,
+          std::uint32_t LogMessageRatio = 8, std::uint32_t BootLogQ = 880,
+          std::uint32_t LinearPlainLogDelta = 20,
+          std::uint32_t LinearFuseRadix = 4,
+          std::uint32_t EvalModDegree = 63, std::uint32_t EvalModK = 16,
+          std::uint32_t EvalModDoubleAngle = 3,
+          std::uint32_t EvalModInvDegree = 0,
+          std::uint32_t EvalModLogScale = LogDelta>
+struct CKKSDenseBootstrapSchedule {
+    static_assert(ckks_detail::supported_torus_v<P>);
+    static_assert(LogDelta > 0);
+    static_assert(LogMessageRatio > 0);
+    static_assert(LinearPlainLogDelta > 0);
+    static_assert(LinearFuseRadix > 0);
+    static_assert(EvalModK > 0);
+    static_assert(EvalModDegree >= 2 * (EvalModK - 1),
+                  "cos-discrete EvalMod requires degree at least 2*(K-1)");
+
+    using Param = P;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    static constexpr std::uint32_t log_message_ratio = LogMessageRatio;
+    static constexpr std::uint32_t input_log_q = LogDelta + LogMessageRatio;
+    static constexpr std::uint32_t boot_log_q = BootLogQ;
+    static constexpr std::uint32_t linear_plain_log_delta = LinearPlainLogDelta;
+    static constexpr std::uint32_t linear_fuse_radix = LinearFuseRadix;
+    static constexpr std::uint32_t raw_linear_stage_count = P::nbit - 1;
+    static constexpr std::uint32_t coeff_to_slot_level_count =
+        ckks_detail::ceil_div(raw_linear_stage_count, LinearFuseRadix);
+    static constexpr std::uint32_t slot_to_coeff_level_count =
+        ckks_detail::ceil_div(raw_linear_stage_count, LinearFuseRadix);
+    static constexpr std::uint32_t evalmod_degree = EvalModDegree;
+    static constexpr std::uint32_t evalmod_k = EvalModK;
+    static constexpr std::uint32_t evalmod_double_angle = EvalModDoubleAngle;
+    static constexpr std::uint32_t evalmod_inv_degree = EvalModInvDegree;
+    static constexpr std::uint32_t evalmod_log_scale = EvalModLogScale;
+    static constexpr std::uint32_t evalmod_depth =
+        ckks_detail::bit_width_u64(
+            ckks_detail::static_max_v<EvalModDegree, 2 * (EvalModK - 1)>) +
+        EvalModDoubleAngle + ckks_detail::bit_width_u64(EvalModInvDegree);
+    static constexpr double message_ratio =
+        ckks_detail::exp2_double(LogMessageRatio);
+    static constexpr double coeff_to_slot_scaling_factor =
+        1.0 / (static_cast<double>(EvalModK) * message_ratio);
+    static constexpr double slot_to_coeff_scaling_factor = message_ratio;
+
+    static constexpr std::uint32_t after_coeff_to_slot_log_q =
+        BootLogQ - coeff_to_slot_level_count * LinearPlainLogDelta;
+    static constexpr std::uint32_t after_evalmod_log_q =
+        after_coeff_to_slot_log_q - evalmod_depth * EvalModLogScale;
+    static constexpr std::uint32_t output_log_q =
+        after_evalmod_log_q - slot_to_coeff_level_count * LinearPlainLogDelta;
+
+    static_assert(input_log_q < BootLogQ);
+    static_assert(BootLogQ <= ckks_detail::torus_width_v<P>);
+    static_assert(after_coeff_to_slot_log_q > evalmod_depth * EvalModLogScale);
+    static_assert(output_log_q > LogDelta);
+
+    using InputCiphertext = CKKSCiphertext<P, input_log_q, log_delta>;
+    using BootstrapCiphertext = CKKSCiphertext<P, boot_log_q, log_delta>;
+    using CoeffToSlotCiphertext =
+        CKKSStagedPlainMulResult<P, boot_log_q, log_delta,
+                                 linear_plain_log_delta,
+                                 coeff_to_slot_level_count>;
+    using EvalModCiphertext = CKKSCiphertext<P, after_evalmod_log_q, log_delta>;
+    using OutputCiphertext =
+        CKKSStagedPlainMulResult<P, after_evalmod_log_q, log_delta,
+                                 linear_plain_log_delta,
+                                 slot_to_coeff_level_count>;
+};
+
+template <class Schedule>
+struct CKKSDenseBootstrapLinearPlan {
+    using P = typename Schedule::Param;
+    CKKSLinearTransformStages<P> coeff_to_slot_stages{};
+    CKKSLinearTransformStages<P> slot_to_coeff_stages{};
+};
+
+template <class Schedule>
+inline void CKKSBuildDenseBootstrapLinearPlan(
+    CKKSDenseBootstrapLinearPlan<Schedule> &plan)
+{
+    using P = typename Schedule::Param;
+    CKKSLinearTransformStages<P> raw_coeff_to_slot;
+    CKKSLinearTransformStages<P> raw_slot_to_coeff;
+    CKKSBuildCoeffToPackedSlotStages<P>(raw_coeff_to_slot);
+    CKKSBuildPackedSlotToCoeffStages<P>(raw_slot_to_coeff);
+
+    CKKSFuseLinearTransformStages<P>(plan.coeff_to_slot_stages,
+                                     raw_coeff_to_slot,
+                                     Schedule::linear_fuse_radix);
+    CKKSFuseLinearTransformStages<P>(plan.slot_to_coeff_stages,
+                                     raw_slot_to_coeff,
+                                     Schedule::linear_fuse_radix);
+    assert(plan.coeff_to_slot_stages.size() ==
+           Schedule::coeff_to_slot_level_count);
+    assert(plan.slot_to_coeff_stages.size() ==
+           Schedule::slot_to_coeff_level_count);
+
+    CKKSScaleLinearTransformStages<P>(
+        plan.coeff_to_slot_stages,
+        {Schedule::coeff_to_slot_scaling_factor, 0.0});
+    CKKSScaleLinearTransformStages<P>(
+        plan.slot_to_coeff_stages,
+        {Schedule::slot_to_coeff_scaling_factor, 0.0});
 }
 
 template <class P, std::uint32_t LogQ>
