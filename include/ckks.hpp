@@ -52,6 +52,24 @@ struct CKKSPlaintext {
 };
 
 template <class P, std::uint32_t LogQ>
+constexpr std::uint32_t CKKSKeySwitchRowCountForLevel()
+{
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+    constexpr std::uint32_t rows =
+        (LogQ + P::B̅gbit - 1) / P::B̅gbit;
+    static_assert(rows > 0);
+    static_assert(rows <= P::l̅);
+    return rows;
+}
+
+template <class P, std::uint32_t LogQ>
+constexpr std::uint32_t CKKSKeySwitchFirstRowForLevel()
+{
+    return P::l̅ - CKKSKeySwitchRowCountForLevel<P, LogQ>();
+}
+
+template <class P, std::uint32_t LogQ>
 struct CKKSRelinKey {
     static_assert(std::is_same_v<typename P::T, __uint128_t> ||
                   is_multilimb_uint_v<typename P::T>);
@@ -59,8 +77,11 @@ struct CKKSRelinKey {
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
 
     static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t key_switch_rows =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    using Rows = std::array<TRLWE<P>, key_switch_rows>;
 
-    std::array<TRLWE<P>, P::l̅> data{};
+    Rows data{};
 
     TRLWE<P> &operator[](std::size_t i) { return data[i]; }
     const TRLWE<P> &operator[](std::size_t i) const { return data[i]; }
@@ -74,11 +95,14 @@ struct CKKSAutoKey {
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
 
     static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t key_switch_rows =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    using Rows = std::array<TRLWE<P>, key_switch_rows>;
 
-    std::array<std::array<TRLWE<P>, P::l̅>, P::k> data{};
+    std::array<Rows, P::k> data{};
 
-    std::array<TRLWE<P>, P::l̅> &operator[](std::size_t i) { return data[i]; }
-    const std::array<TRLWE<P>, P::l̅> &operator[](std::size_t i) const
+    Rows &operator[](std::size_t i) { return data[i]; }
+    const Rows &operator[](std::size_t i) const
     {
         return data[i];
     }
@@ -93,10 +117,22 @@ constexpr std::size_t CKKSRelinKeySwitchRowCount()
     return P::l̅;
 }
 
+template <class P, std::uint32_t LogQ>
+constexpr std::size_t CKKSRelinKeySwitchRowCount()
+{
+    return CKKSKeySwitchRowCountForLevel<P, LogQ>();
+}
+
 template <class P>
 constexpr std::size_t CKKSAutoKeySwitchRowCount()
 {
     return P::k * P::l̅;
+}
+
+template <class P, std::uint32_t LogQ>
+constexpr std::size_t CKKSAutoKeySwitchRowCount()
+{
+    return P::k * CKKSKeySwitchRowCountForLevel<P, LogQ>();
 }
 
 template <class P>
@@ -756,6 +792,44 @@ inline void polyMulTorusByBbarDigit(Polynomial<P> &res,
     }
 }
 
+template <class P, std::uint32_t FirstRow, std::size_t RowCount>
+inline void baseBbarDecomposeRows(std::array<TRLWE<P>, RowCount> &result,
+                                  const TRLWE<P> &input)
+{
+    static_assert(P::l̅ * P::B̅gbit ==
+                      std::numeric_limits<typename P::T>::digits,
+                  "CKKS Bbar digits must cover the torus");
+    static_assert(RowCount > 0);
+    static_assert(FirstRow + RowCount <= P::l̅);
+
+    using T = typename P::T;
+    constexpr int width = std::numeric_limits<T>::digits;
+    constexpr T half = T{1} << (P::B̅gbit - 1);
+    constexpr T mask = (T{1} << P::B̅gbit) - T{1};
+    constexpr T offset = [] {
+        constexpr int local_width = std::numeric_limits<T>::digits;
+        constexpr T local_half = T{1} << (P::B̅gbit - 1);
+        T value = 0;
+        for (int j = 0; j < static_cast<int>(P::l̅); j++)
+            value += local_half
+                     << (local_width - (j + 1) * P::B̅gbit);
+        return value;
+    }();
+
+    for (int c = 0; c <= static_cast<int>(P::k); c++) {
+        for (std::uint32_t n = 0; n < P::n; n++) {
+            const T a = input[c][n] + offset;
+            for (std::size_t row = 0; row < RowCount; row++) {
+                const std::uint32_t full_row =
+                    FirstRow + static_cast<std::uint32_t>(row);
+                const int shift =
+                    width - (full_row + 1) * static_cast<int>(P::B̅gbit);
+                result[row][c][n] = ((a >> shift) & mask) - half;
+            }
+        }
+    }
+}
+
 }  // namespace ckks_detail
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -1159,20 +1233,26 @@ inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
     static_assert(P::l̅ * P::B̅gbit ==
                       std::numeric_limits<typename P::T>::digits,
                   "CKKS key switching requires full Bbar decomposition");
+    constexpr std::uint32_t row_count =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    constexpr std::uint32_t first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LogQ>();
+    static_assert(std::tuple_size_v<std::remove_reference_t<Rows>> ==
+                  row_count);
 
     TRLWE<P> poly_as_trlwe{};
     poly_as_trlwe[0] = poly;
     auto centered = std::make_unique<TRLWE<P>>();
     ckks_detail::centeredTRLWEAtLevel<P, LogQ>(*centered, poly_as_trlwe);
 
-    auto decomposed = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
-    TRLWEBaseBbarDecompose<P>(*decomposed, *centered);
+    auto decomposed = std::make_unique<std::array<TRLWE<P>, row_count>>();
+    ckks_detail::baseBbarDecomposeRows<P, first_row>(*decomposed, *centered);
 
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
 
     auto product = std::make_unique<Polynomial<P>>();
-    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+    for (int j = 0; j < static_cast<int>(row_count); j++) {
         const Polynomial<P> &digit = (*decomposed)[j][0];
         for (int c = 0; c <= static_cast<int>(P::k); c++) {
             ckks_detail::polyMulTorusByBbarDigit<P>(*product, rows[j][c],
@@ -1192,6 +1272,10 @@ inline void CKKSAutoKeyGen(CKKSAutoKey<P, LogQ> &autokey, const uint d,
 {
     static_assert(ckks_detail::supported_torus_v<P>);
     constexpr int width = std::numeric_limits<typename P::T>::digits;
+    constexpr std::uint32_t row_count =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    constexpr std::uint32_t first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LogQ>();
 
     for (int k = 0; k < static_cast<int>(P::k); k++) {
         Polynomial<P> partkey{};
@@ -1201,8 +1285,10 @@ inline void CKKSAutoKeyGen(CKKSAutoKey<P, LogQ> &autokey, const uint d,
         Polynomial<P> autokey_poly{};
         Automorphism<P>(autokey_poly, partkey, d);
 
-        for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-            const int shift = width - (j + 1) * static_cast<int>(P::B̅gbit);
+        for (int j = 0; j < static_cast<int>(row_count); j++) {
+            const std::uint32_t full_row = first_row + j;
+            const int shift =
+                width - (full_row + 1) * static_cast<int>(P::B̅gbit);
             Polynomial<P> gadget{};
             for (std::uint32_t n = 0; n < P::n; n++)
                 gadget[n] = ckks_detail::reduceToLevel<P, LogQ>(
@@ -2715,8 +2801,14 @@ inline std::unique_ptr<CKKSRelinKey<P, LogQ>> makeCKKSRelinKey(
     PolyMul<P>(*keysquare, partkey, partkey);
 
     constexpr int width = std::numeric_limits<typename P::T>::digits;
-    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-        const int shift = width - (j + 1) * static_cast<int>(P::B̅gbit);
+    constexpr std::uint32_t row_count =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    constexpr std::uint32_t first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LogQ>();
+    for (int j = 0; j < static_cast<int>(row_count); j++) {
+        const std::uint32_t full_row = first_row + j;
+        const int shift =
+            width - (full_row + 1) * static_cast<int>(P::B̅gbit);
         Polynomial<P> gadget{};
         for (std::uint32_t n = 0; n < P::n; n++)
             gadget[n] = ckks_detail::reduceToLevel<P, LogQ>((*keysquare)[n]
@@ -3351,6 +3443,57 @@ using CKKSDenseEvalModBoundedCosRelinKeys =
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
 
+namespace ckks_detail {
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LevelStep, std::size_t LevelCount>
+inline std::size_t CKKSRotationUsageKeySwitchRows(
+    const std::array<CKKSRotationKeyIndexSet<P>, LevelCount> &usage)
+{
+    if constexpr (I == LevelCount) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - I * LevelStep;
+        return CKKSRotationKeyIndexSetCount<P>(usage[I]) *
+                   CKKSAutoKeySwitchRowCount<P, log_q>() +
+               CKKSRotationUsageKeySwitchRows<I + 1, P, StartLogQ, LevelStep>(
+                   usage);
+    }
+}
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LevelStep, std::size_t LevelCount>
+constexpr std::size_t CKKSFullGaloisKeySwitchRows()
+{
+    if constexpr (I == LevelCount) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - I * LevelStep;
+        return (P::nbit + 1) * CKKSAutoKeySwitchRowCount<P, log_q>() +
+               CKKSFullGaloisKeySwitchRows<I + 1, P, StartLogQ, LevelStep,
+                                           LevelCount>();
+    }
+}
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::size_t Depth>
+constexpr std::size_t CKKSRelinChainKeySwitchRows()
+{
+    if constexpr (I == Depth) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - (I + 1) * LogDelta;
+        return CKKSRelinKeySwitchRowCount<P, log_q>() +
+               CKKSRelinChainKeySwitchRows<I + 1, P, StartLogQ, LogDelta,
+                                           Depth>();
+    }
+}
+
+}  // namespace ckks_detail
+
 template <class Schedule>
 constexpr std::size_t CKKSDenseBootstrapEvalModRelinKeyCount()
 {
@@ -3363,8 +3506,14 @@ template <class Schedule>
 constexpr std::size_t CKKSDenseBootstrapEvalModKeySwitchRowCount()
 {
     using P = typename Schedule::Param;
-    return CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() *
-           CKKSRelinKeySwitchRowCount<P>();
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    return ckks_detail::CKKSRelinChainKeySwitchRows<
+               0, P, Schedule::after_component_split_log_q,
+               Schedule::log_delta,
+               Traits::PolynomialTraits::power_depth>() +
+           ckks_detail::CKKSRelinChainKeySwitchRows<
+               0, P, Traits::polynomial_log_q, Schedule::log_delta,
+               Schedule::evalmod_double_angle>();
 }
 
 template <class Schedule>
@@ -3372,16 +3521,33 @@ inline std::size_t CKKSDenseBootstrapSparseGaloisKeySwitchRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     using P = typename Schedule::Param;
-    return CKKSDenseBootstrapRotationKeyUsageCount<Schedule>(usage) *
-           CKKSAutoKeySwitchRowCount<P>();
+    return ckks_detail::CKKSRotationUsageKeySwitchRows<
+               0, P, Schedule::boot_log_q,
+               Schedule::linear_plain_log_delta>(
+               usage.coeff_to_slot) +
+           CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) *
+               CKKSAutoKeySwitchRowCount<
+                   P, Schedule::after_coeff_to_slot_log_q>() +
+           ckks_detail::CKKSRotationUsageKeySwitchRows<
+               0, P, Schedule::after_evalmod_log_q,
+               Schedule::linear_plain_log_delta>(usage.slot_to_coeff);
 }
 
 template <class Schedule>
 constexpr std::size_t CKKSDenseBootstrapFullGaloisKeySwitchRowCount()
 {
     using P = typename Schedule::Param;
-    return CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>() *
-           CKKSAutoKeySwitchRowCount<P>();
+    return ckks_detail::CKKSFullGaloisKeySwitchRows<
+               0, P, Schedule::boot_log_q,
+               Schedule::linear_plain_log_delta,
+               Schedule::coeff_to_slot_level_count + 1>() +
+           (P::nbit + 1) *
+               CKKSAutoKeySwitchRowCount<
+                   P, Schedule::after_coeff_to_slot_log_q>() +
+           ckks_detail::CKKSFullGaloisKeySwitchRows<
+               0, P, Schedule::after_evalmod_log_q,
+               Schedule::linear_plain_log_delta,
+               Schedule::slot_to_coeff_level_count + 1>();
 }
 
 template <class Schedule>

@@ -459,17 +459,19 @@ void test_lvl6_factorized_stage_shape()
             rotation_usage);
     constexpr std::size_t full_key_indices =
         TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>();
-    static_assert(TFHEpp::CKKSAutoKeySwitchRowCount<L>() == 56);
-    static_assert(TFHEpp::CKKSRelinKeySwitchRowCount<L>() == 56);
+    static_assert(
+        TFHEpp::CKKSAutoKeySwitchRowCount<L, Schedule::boot_log_q>() == 55);
+    static_assert(
+        TFHEpp::CKKSRelinKeySwitchRowCount<L, Schedule::output_log_q>() == 8);
     static_assert(
         TFHEpp::CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() == 9);
     static_assert(
-        TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>() == 504);
+        TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>() == 265);
     static_assert(
         TFHEpp::CKKSDenseBootstrapFullGaloisKeySwitchRowCount<Schedule>() ==
-        9856);
+        5760);
     static_assert(
-        TFHEpp::CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>() == 10360);
+        TFHEpp::CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>() == 6025);
     if (planned_key_indices == 0 || planned_key_indices >= full_key_indices)
         std::exit(1);
     if (planned_key_indices != 71 || full_key_indices != 176)
@@ -490,7 +492,11 @@ void test_lvl6_factorized_stage_shape()
         TFHEpp::CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>();
     constexpr std::size_t full_key_bytes =
         TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>();
-    if (sparse_galois_rows != 3976 || sparse_key_rows != 4480)
+    if (sparse_galois_rows != 2340 || sparse_key_rows != 2605)
+        std::exit(1);
+    if (sparse_key_rows != sparse_galois_rows +
+                               TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<
+                                   Schedule>())
         std::exit(1);
     if (sparse_key_bytes !=
         sparse_key_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
