@@ -1584,12 +1584,13 @@ inline void CKKSExtractRealSlots(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct, const GaloisKey &gk)
 {
-    CKKSCiphertext<P, LogQ, LogDelta> conjugated;
-    CKKSConjugateSlots<P, LogQ>(conjugated.ct, ct.ct, gk);
+    auto conjugated = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+    CKKSConjugateSlots<P, LogQ>(conjugated->ct, ct.ct, gk);
 
-    CKKSCiphertext<P, LogQ, LogDelta> sum;
-    CKKSAdd<P, LogQ, LogDelta>(sum, ct, conjugated);
-    CKKSPlainMulByReal<P, LogQ, LogDelta, PlainLogDelta>(res, sum, 0.5);
+    auto sum = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+    CKKSAdd<P, LogQ, LogDelta>(*sum, ct, *conjugated);
+    conjugated.reset();
+    CKKSPlainMulByReal<P, LogQ, LogDelta, PlainLogDelta>(res, *sum, 0.5);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -1598,13 +1599,14 @@ inline void CKKSExtractImagSlots(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct, const GaloisKey &gk)
 {
-    CKKSCiphertext<P, LogQ, LogDelta> conjugated;
-    CKKSConjugateSlots<P, LogQ>(conjugated.ct, ct.ct, gk);
+    auto conjugated = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+    CKKSConjugateSlots<P, LogQ>(conjugated->ct, ct.ct, gk);
 
-    CKKSCiphertext<P, LogQ, LogDelta> diff;
-    CKKSSub<P, LogQ, LogDelta>(diff, ct, conjugated);
+    auto diff = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+    CKKSSub<P, LogQ, LogDelta>(*diff, ct, *conjugated);
+    conjugated.reset();
     CKKSPlainMulByConstant<P, LogQ, LogDelta, PlainLogDelta>(
-        res, diff, {0.0, -0.5});
+        res, *diff, {0.0, -0.5});
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
@@ -2222,9 +2224,11 @@ inline void CKKSLinearTransformStagesBSGSImpl(
         CKKSBuildLinearTransformBSGSPlan<P, log_q, LogDelta, PlainLogDelta>(
             plan, stages[first_stage + I], k_step);
 
-        CKKSPlainMulResult<P, log_q, LogDelta, PlainLogDelta> next;
+        auto next =
+            std::make_unique<CKKSPlainMulResult<P, log_q, LogDelta,
+                                                PlainLogDelta>>();
         CKKSLinearTransformBSGS<P, log_q, LogDelta, PlainLogDelta>(
-            next, ct, plan, gk_chain.template get<I>(),
+            *next, ct, plan, gk_chain.template get<I>(),
             gk_chain.template get<I + 1>());
         maybe_release_key<I>(gk_chain);
         if constexpr (I + 1 == StageCount) {
@@ -2232,7 +2236,7 @@ inline void CKKSLinearTransformStagesBSGSImpl(
         }
         CKKSLinearTransformStagesBSGSImpl<I + 1, P, StartLogQ, LogDelta,
                                           PlainLogDelta, StageCount>(
-            res, next, stages, first_stage, k_step, gk_chain);
+            res, *next, stages, first_stage, k_step, gk_chain);
     }
 }
 
@@ -3143,14 +3147,14 @@ template <class P, std::uint32_t LogQ>
 inline void CKKSRelinearization(TRLWE<P> &res, const TRLWE3<P> &mult,
                                 const CKKSRelinKey<P, LogQ> &relinkey)
 {
-    TRLWE<P> squareterm;
-    CKKSRelinKeySwitch<P, LogQ>(squareterm, mult[2], relinkey);
+    auto squareterm = std::make_unique<TRLWE<P>>();
+    CKKSRelinKeySwitch<P, LogQ>(*squareterm, mult[2], relinkey);
     for (std::uint32_t i = 0; i < P::n; i++)
         res[0][i] = ckks_detail::reduceToLevel<P, LogQ>(mult[0][i] +
-                                                        squareterm[0][i]);
+                                                        (*squareterm)[0][i]);
     for (std::uint32_t i = 0; i < P::n; i++)
         res[1][i] = ckks_detail::reduceToLevel<P, LogQ>(mult[1][i] +
-                                                        squareterm[1][i]);
+                                                        (*squareterm)[1][i]);
 }
 
 template <class P, std::uint32_t LhsLogQ, std::uint32_t RhsLogQ,
@@ -3436,10 +3440,10 @@ inline void CKKSMult(
     using Traits =
         CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
 
-    TRLWE3<P> mult;
+    auto mult = std::make_unique<TRLWE3<P>>();
     CKKSTensorProductRescale<P, LhsLogQ, RhsLogQ, Traits::log_scale>(
-        mult, lhs.ct, rhs.ct);
-    CKKSRelinearization<P, Traits::log_q>(res.ct, mult, relinkey);
+        *mult, lhs.ct, rhs.ct);
+    CKKSRelinearization<P, Traits::log_q>(res.ct, *mult, relinkey);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -3469,9 +3473,8 @@ template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
 struct CKKSPowerBasisTuple<P, StartLogQ, LogDelta, Degree,
                            std::index_sequence<Is...>> {
     using type = std::tuple<
-        CKKSCiphertext<P,
-                       StartLogQ - power_tree_depth(Is + 1) * LogDelta,
-                       LogDelta>...>;
+        std::unique_ptr<CKKSCiphertext<
+            P, StartLogQ - power_tree_depth(Is + 1) * LogDelta, LogDelta>>...>;
 };
 
 }  // namespace ckks_detail
@@ -3514,15 +3517,19 @@ inline void CKKSBuildPowerBasisImpl(
 {
     if constexpr (I <= Degree) {
         if constexpr (I == 1) {
-            std::get<0>(powers) = ct;
+            using Ct = CKKSCiphertext<P, StartLogQ, LogDelta>;
+            std::get<0>(powers) = std::make_unique<Ct>(ct);
         }
         else {
             constexpr std::size_t lhs_power = I / 2;
             constexpr std::size_t rhs_power = I - lhs_power;
             constexpr std::uint32_t depth = power_tree_depth(I);
-            CKKSMult<P>(std::get<I - 1>(powers),
-                        std::get<lhs_power - 1>(powers),
-                        std::get<rhs_power - 1>(powers),
+            using Ct = CKKSCiphertext<P, StartLogQ - depth * LogDelta,
+                                      LogDelta>;
+            auto &dst = std::get<I - 1>(powers);
+            dst = std::make_unique<Ct>();
+            CKKSMult<P>(*dst, *std::get<lhs_power - 1>(powers),
+                        *std::get<rhs_power - 1>(powers),
                         keys.template get<depth - 1>());
             if constexpr (I == Degree || power_tree_depth(I + 1) > depth) {
                 maybe_release_key<depth - 1>(keys);
@@ -3542,18 +3549,22 @@ inline void CKKSAddPowerPolynomialTermsImpl(
 {
     if constexpr (I <= Degree) {
         if (I < coeffs.size() && coeffs[I] != 0.0) {
-            using PowerCt =
+            using PowerPtr =
                 std::tuple_element_t<I - 1, typename Traits::PowerBasis>;
-            CKKSCiphertext<P, Traits::term_input_log_q, LogDelta> reduced;
+            using PowerCt = typename PowerPtr::element_type;
+            const auto &power = std::get<I - 1>(powers);
+            assert(power != nullptr);
+            auto reduced = std::make_unique<
+                CKKSCiphertext<P, Traits::term_input_log_q, LogDelta>>();
             CKKSLevelReduce<P, PowerCt::log_q, Traits::term_input_log_q,
-                            LogDelta>(reduced, std::get<I - 1>(powers));
+                            LogDelta>(*reduced, *power);
 
-            CKKSPlainMulResult<P, Traits::term_input_log_q, LogDelta,
-                               CoeffLogDelta>
-                term;
+            auto term = std::make_unique<
+                CKKSPlainMulResult<P, Traits::term_input_log_q, LogDelta,
+                                   CoeffLogDelta>>();
             CKKSPlainMulByReal<P, Traits::term_input_log_q, LogDelta,
-                               CoeffLogDelta>(term, reduced, coeffs[I]);
-            CKKSAddInPlace<P, Traits::log_q, LogDelta>(res, term);
+                               CoeffLogDelta>(*term, *reduced, coeffs[I]);
+            CKKSAddInPlace<P, Traits::log_q, LogDelta>(res, *term);
         }
         CKKSAddPowerPolynomialTermsImpl<I + 1, Traits, P, StartLogQ, LogDelta,
                                         CoeffLogDelta, Degree>(res, powers,
@@ -3681,16 +3692,16 @@ inline void CKKSBoundedCosDoubleAngleImpl(
         constexpr std::uint32_t cur_log_q = StartLogQ - I * LogDelta;
         using NextCt = CKKSMultResult<P, cur_log_q, LogDelta, cur_log_q,
                                       LogDelta>;
-        NextCt next;
-        CKKSSquare<P>(next, ct, keys.template get<I>());
+        auto next = std::make_unique<NextCt>();
+        CKKSSquare<P>(*next, ct, keys.template get<I>());
         maybe_release_key<I>(keys);
-        CKKSMulIntegerInPlace<P, NextCt::log_q, LogDelta>(next, 2);
+        CKKSMulIntegerInPlace<P, NextCt::log_q, LogDelta>(*next, 2);
 
         const double squared_coeff = sqrt_coeff * sqrt_coeff;
-        CKKSSubPlainRealInPlace<P, NextCt::log_q, LogDelta>(next,
+        CKKSSubPlainRealInPlace<P, NextCt::log_q, LogDelta>(*next,
                                                             squared_coeff);
         CKKSBoundedCosDoubleAngleImpl<I + 1, P, StartLogQ, LogDelta,
-                                      DoubleAngle>(res, next, keys,
+                                      DoubleAngle>(res, *next, keys,
                                                    squared_coeff);
     }
 }
@@ -3777,24 +3788,26 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
 
     using Traits = CKKSEvalModBoundedCosTraits<
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>;
-    CKKSCiphertext<P, StartLogQ, LogDelta> shifted = ct;
-    CKKSSubPlainRealInPlace<P, StartLogQ, LogDelta>(shifted,
+    auto shifted =
+        std::make_unique<CKKSCiphertext<P, StartLogQ, LogDelta>>(ct);
+    CKKSSubPlainRealInPlace<P, StartLogQ, LogDelta>(*shifted,
                                                     poly.domain_offset);
 
-    typename Traits::PolynomialCiphertext polynomial;
+    auto polynomial = std::make_unique<typename Traits::PolynomialCiphertext>();
     const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,
                                                                   true>
         polynomial_keys{key_provider};
     CKKSEvalPowerPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
                                            CoeffLogDelta, Degree>(
-        polynomial, shifted, poly.power_coeffs, polynomial_keys);
+        *polynomial, *shifted, poly.power_coeffs, polynomial_keys);
+    shifted.reset();
 
     const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,
                                                                   false>
         double_angle_keys{key_provider};
     ckks_detail::CKKSBoundedCosDoubleAngleImpl<
         0, P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
-        res, polynomial, double_angle_keys, poly.sqrt_coeff);
+        res, *polynomial, double_angle_keys, poly.sqrt_coeff);
 }
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
@@ -4729,7 +4742,7 @@ template <class Schedule, std::size_t... Is>
 struct CKKSDenseBootstrapCoeffToSlotCacheTuple<Schedule,
                                                std::index_sequence<Is...>> {
     using type = std::tuple<
-        std::optional<CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, Is>>...>;
+        std::unique_ptr<CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, Is>>...>;
 };
 
 template <class Schedule, class Seq>
@@ -4739,7 +4752,7 @@ template <class Schedule, std::size_t... Is>
 struct CKKSDenseBootstrapSlotToCoeffCacheTuple<Schedule,
                                                std::index_sequence<Is...>> {
     using type = std::tuple<
-        std::optional<CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, Is>>...>;
+        std::unique_ptr<CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, Is>>...>;
 };
 
 template <class Schedule, class Seq>
@@ -4749,7 +4762,7 @@ template <class Schedule, std::size_t... Is>
 struct CKKSDenseBootstrapPolynomialRelinCacheTuple<Schedule,
                                                    std::index_sequence<Is...>> {
     using type =
-        std::tuple<std::optional<
+        std::tuple<std::unique_ptr<
             CKKSDenseEvalModPolynomialRelinKey<Schedule, Is>>...>;
 };
 
@@ -4760,7 +4773,7 @@ template <class Schedule, std::size_t... Is>
 struct CKKSDenseBootstrapDoubleAngleRelinCacheTuple<Schedule,
                                                     std::index_sequence<Is...>> {
     using type =
-        std::tuple<std::optional<
+        std::tuple<std::unique_ptr<
             CKKSDenseEvalModDoubleAngleRelinKey<Schedule, Is>>...>;
 };
 
@@ -5076,7 +5089,7 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan_cache{};
     CKKSBoundedCosEvalModPolynomial evalmod_polynomial_cache{};
     mutable CoeffToSlotCache coeff_to_slot_cache{};
-    mutable std::optional<CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule>>
+    mutable std::unique_ptr<CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule>>
         packed_conjugate_cache{};
     mutable PolynomialRelinCache polynomial_relin_cache{};
     mutable DoubleAngleRelinCache double_angle_relin_cache{};
@@ -5124,7 +5137,8 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
         static_assert(I <= Schedule::coeff_to_slot_level_count);
         auto &entry = std::get<I>(coeff_to_slot_cache);
         if (!entry) {
-            entry.emplace();
+            entry = std::make_unique<
+                CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, I>>();
             CKKSLoadPortableBinary(
                 *entry,
                 ckks_detail::CKKSDenseBootstrapIndexedPath(
@@ -5143,7 +5157,9 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
     const auto &packed_conjugate_galois() const
     {
         if (!packed_conjugate_cache) {
-            packed_conjugate_cache.emplace();
+            packed_conjugate_cache =
+                std::make_unique<CKKSDenseBootstrapPackedConjugateGaloisKey<
+                    Schedule>>();
             CKKSLoadPortableBinary(
                 *packed_conjugate_cache,
                 ckks_detail::CKKSDenseBootstrapNamedPath(
@@ -5163,7 +5179,8 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
         static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
         auto &entry = std::get<I>(polynomial_relin_cache);
         if (!entry) {
-            entry.emplace();
+            entry = std::make_unique<
+                CKKSDenseEvalModPolynomialRelinKey<Schedule, I>>();
             CKKSLoadPortableBinary(
                 *entry,
                 ckks_detail::CKKSDenseBootstrapIndexedPath(
@@ -5185,7 +5202,8 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
         static_assert(I < Schedule::evalmod_double_angle);
         auto &entry = std::get<I>(double_angle_relin_cache);
         if (!entry) {
-            entry.emplace();
+            entry = std::make_unique<
+                CKKSDenseEvalModDoubleAngleRelinKey<Schedule, I>>();
             CKKSLoadPortableBinary(
                 *entry,
                 ckks_detail::CKKSDenseBootstrapIndexedPath(
@@ -5207,7 +5225,8 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
         static_assert(I <= Schedule::slot_to_coeff_level_count);
         auto &entry = std::get<I>(slot_to_coeff_cache);
         if (!entry) {
-            entry.emplace();
+            entry = std::make_unique<
+                CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, I>>();
             CKKSLoadPortableBinary(
                 *entry,
                 ckks_detail::CKKSDenseBootstrapIndexedPath(
@@ -5271,12 +5290,13 @@ inline void CKKSDenseBootstrapWithKeyProvider(
     const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
         key_provider.linear_plan();
 
-    typename Schedule::BootstrapCiphertext raised;
+    auto raised = std::make_unique<typename Schedule::BootstrapCiphertext>();
     CKKSModRaiseBoundedPhaseRandomized<
         P, Schedule::input_log_q, Schedule::boot_log_q, Schedule::log_delta,
-        Schedule::modraise_mask_bound>(raised, ct);
+        Schedule::modraise_mask_bound>(*raised, ct);
 
-    typename Schedule::CoeffToSlotCiphertext coeff_to_slot;
+    auto coeff_to_slot =
+        std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
     const ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider,
                                                                true>
         coeff_to_slot_galois{key_provider};
@@ -5284,54 +5304,64 @@ inline void CKKSDenseBootstrapWithKeyProvider(
         P, Schedule::boot_log_q, Schedule::log_delta,
         Schedule::linear_plain_log_delta,
         Schedule::coeff_to_slot_level_count>(
-        coeff_to_slot, raised, linear_plan.coeff_to_slot_stages, 0,
+        *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
         Schedule::linear_bsgs_step, coeff_to_slot_galois);
+    raised.reset();
 
-    typename Schedule::ComponentCiphertext real_component;
+    auto real_component =
+        std::make_unique<typename Schedule::ComponentCiphertext>();
     CKKSExtractRealSlots<P, Schedule::after_coeff_to_slot_log_q,
                          Schedule::log_delta,
                          Schedule::linear_plain_log_delta>(
-        real_component, coeff_to_slot,
+        *real_component, *coeff_to_slot,
         key_provider.packed_conjugate_galois());
-    typename Schedule::ComponentCiphertext imag_component;
+    auto imag_component =
+        std::make_unique<typename Schedule::ComponentCiphertext>();
     CKKSExtractImagSlots<P, Schedule::after_coeff_to_slot_log_q,
                          Schedule::log_delta,
                          Schedule::linear_plain_log_delta>(
-        imag_component, coeff_to_slot,
+        *imag_component, *coeff_to_slot,
         key_provider.packed_conjugate_galois());
+    coeff_to_slot.reset();
     if constexpr (requires { key_provider.release_packed_conjugate_galois(); }) {
         key_provider.release_packed_conjugate_galois();
     }
 
-    CKKSDenseEvalModBoundedCosResult<Schedule> real_evalmod;
+    auto real_evalmod =
+        std::make_unique<CKKSDenseEvalModBoundedCosResult<Schedule>>();
     CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
-        real_evalmod, real_component, key_provider.evalmod_polynomial(),
+        *real_evalmod, *real_component, key_provider.evalmod_polynomial(),
         key_provider);
-    CKKSDenseEvalModBoundedCosResult<Schedule> imag_evalmod;
+    real_component.reset();
+    auto imag_evalmod =
+        std::make_unique<CKKSDenseEvalModBoundedCosResult<Schedule>>();
     CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
-        imag_evalmod, imag_component, key_provider.evalmod_polynomial(),
+        *imag_evalmod, *imag_component, key_provider.evalmod_polynomial(),
         key_provider);
+    imag_component.reset();
 
     const ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider,
                                                                false>
         slot_to_coeff_galois{key_provider};
-    typename Schedule::OutputCiphertext real_out;
+    auto real_out = std::make_unique<typename Schedule::OutputCiphertext>();
     CKKSLinearTransformStagesBSGS<
         P, Schedule::after_evalmod_log_q, Schedule::log_delta,
         Schedule::linear_plain_log_delta,
         Schedule::slot_to_coeff_level_count>(
-        real_out, real_evalmod, linear_plan.slot_to_coeff_stages, 0,
+        *real_out, *real_evalmod, linear_plan.slot_to_coeff_stages, 0,
         Schedule::linear_bsgs_step, slot_to_coeff_galois);
-    typename Schedule::OutputCiphertext imag_out;
+    real_evalmod.reset();
+    auto imag_out = std::make_unique<typename Schedule::OutputCiphertext>();
     CKKSLinearTransformStagesBSGS<
         P, Schedule::after_evalmod_log_q, Schedule::log_delta,
         Schedule::linear_plain_log_delta,
         Schedule::slot_to_coeff_level_count>(
-        imag_out, imag_evalmod, linear_plan.slot_to_coeff_imag_stages, 0,
+        *imag_out, *imag_evalmod, linear_plan.slot_to_coeff_imag_stages, 0,
         Schedule::linear_bsgs_step, slot_to_coeff_galois);
+    imag_evalmod.reset();
 
-    CKKSAdd<P, Schedule::output_log_q, Schedule::log_delta>(res, real_out,
-                                                            imag_out);
+    CKKSAdd<P, Schedule::output_log_q, Schedule::log_delta>(res, *real_out,
+                                                            *imag_out);
 }
 
 template <class Schedule>
