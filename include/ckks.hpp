@@ -126,6 +126,27 @@ inline __int128_t unsignedToI128(typename P::T value)
 }
 
 template <class P>
+inline long double unsignedToLongDouble(typename P::T value)
+{
+    using T = typename P::T;
+    if constexpr (std::is_same_v<T, __uint128_t>) {
+        constexpr long double limb_scale = 18446744073709551616.0L;
+        const auto lo = static_cast<std::uint64_t>(value);
+        const auto hi = static_cast<std::uint64_t>(value >> 64);
+        return static_cast<long double>(hi) * limb_scale +
+               static_cast<long double>(lo);
+    }
+    else {
+        static_assert(is_multilimb_uint_v<T>);
+        long double out = 0.0L;
+        for (std::size_t i = T::limbs; i-- > 0;)
+            out = std::ldexp(out, 64) +
+                  static_cast<long double>(value.limb[i]);
+        return out;
+    }
+}
+
+template <class P>
 inline __int128_t torusToSigned(typename P::T value)
 {
     static_assert(supported_torus_v<P>);
@@ -189,6 +210,25 @@ inline __int128_t levelToSigned(typename P::T value)
         const typename P::T magnitude = modulus - value;
         return -unsignedToI128<P>(magnitude);
     }
+}
+
+template <class P, std::uint32_t LogQ>
+inline long double levelToLongDouble(typename P::T value)
+{
+    using T = typename P::T;
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= torus_width_v<P>);
+
+    value = reduceToLevel<P, LogQ>(value);
+    const T sign = T{1} << (LogQ - 1);
+    if ((value & sign) == T{0}) return unsignedToLongDouble<P>(value);
+
+    T magnitude;
+    if constexpr (LogQ == torus_width_v<P>)
+        magnitude = T{0} - value;
+    else
+        magnitude = (T{1} << LogQ) - value;
+    return -unsignedToLongDouble<P>(magnitude);
 }
 
 template <class P, std::uint32_t LogQ>
@@ -488,7 +528,7 @@ inline void decodeRealPolynomial(std::array<double, P::n> &coeffs,
     static_assert(LogDelta < LogQ);
     for (std::uint32_t i = 0; i < P::n; i++) {
         const long double value =
-            std::ldexp(static_cast<long double>(levelToSigned<P, LogQ>(poly[i])),
+            std::ldexp(levelToLongDouble<P, LogQ>(poly[i]),
                        -static_cast<int>(LogDelta));
         coeffs[i] = static_cast<double>(value);
     }
@@ -632,8 +672,7 @@ inline double ckksDecodeCoeff(typename P::T value)
     static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta < LogQ);
     const long double decoded =
-        std::ldexp(static_cast<long double>(
-                       ckks_detail::levelToSigned<P, LogQ>(value)),
+        std::ldexp(ckks_detail::levelToLongDouble<P, LogQ>(value),
                    -static_cast<int>(LogDelta));
     return static_cast<double>(decoded);
 }
@@ -694,8 +733,8 @@ inline void ckksSlotDecode(
     for (std::uint32_t j = 0; j < P::n; j++) {
         const long double angle =
             pi * static_cast<long double>(j) / static_cast<long double>(P::n);
-        const long double coeff = static_cast<long double>(
-            ckks_detail::levelToSigned<P, LogQ>(poly[j]));
+        const long double coeff =
+            ckks_detail::levelToLongDouble<P, LogQ>(poly[j]);
         values[j] =
             coeff * std::complex<long double>(std::cos(angle), std::sin(angle));
     }
@@ -841,6 +880,63 @@ inline void CKKSSubTRLWEInPlace(TRLWE<P> &acc, const TRLWE<P> &term)
         for (std::uint32_t i = 0; i < P::n; i++)
             acc[c][i] = ckks_detail::reduceToLevel<P, LogQ>(acc[c][i] -
                                                             term[c][i]);
+}
+
+template <class P, std::uint32_t InLogQ, std::uint32_t OutLogQ,
+          std::uint32_t LogDelta>
+inline void CKKSLevelReduce(CKKSCiphertext<P, OutLogQ, LogDelta> &res,
+                            const CKKSCiphertext<P, InLogQ, LogDelta> &ct)
+{
+    static_assert(OutLogQ <= InLogQ);
+    static_assert(LogDelta < OutLogQ);
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t i = 0; i < P::n; i++)
+            res.ct[c][i] = ckks_detail::reduceToLevel<P, OutLogQ>(ct.ct[c][i]);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSAddInPlace(CKKSCiphertext<P, LogQ, LogDelta> &acc,
+                           const CKKSCiphertext<P, LogQ, LogDelta> &term)
+{
+    CKKSAddTRLWEInPlace<P, LogQ>(acc.ct, term.ct);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSAdd(CKKSCiphertext<P, LogQ, LogDelta> &res,
+                    const CKKSCiphertext<P, LogQ, LogDelta> &lhs,
+                    const CKKSCiphertext<P, LogQ, LogDelta> &rhs)
+{
+    res = lhs;
+    CKKSAddInPlace<P, LogQ, LogDelta>(res, rhs);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSSubInPlace(CKKSCiphertext<P, LogQ, LogDelta> &acc,
+                           const CKKSCiphertext<P, LogQ, LogDelta> &term)
+{
+    CKKSSubTRLWEInPlace<P, LogQ>(acc.ct, term.ct);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSSub(CKKSCiphertext<P, LogQ, LogDelta> &res,
+                    const CKKSCiphertext<P, LogQ, LogDelta> &lhs,
+                    const CKKSCiphertext<P, LogQ, LogDelta> &rhs)
+{
+    res = lhs;
+    CKKSSubInPlace<P, LogQ, LogDelta>(res, rhs);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSPlainMulByReal(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct, double scalar)
+{
+    CKKSSlotVector<P> slots{};
+    slots.fill({scalar, 0.0});
+    CKKSPlaintext<P, LogQ, PlainLogDelta> plain;
+    ckksSlotEncode<P, LogQ, PlainLogDelta>(plain.poly, slots);
+    CKKSPlainMulRescale<P, LogQ, LogDelta, PlainLogDelta>(res, ct, plain);
 }
 
 template <class P, std::uint32_t LogQ, class Rows>
@@ -1935,6 +2031,190 @@ inline void CKKSSquare(
                                       LogDelta>::log_q> &relinkey)
 {
     CKKSMult<P>(res, ct, ct, relinkey);
+}
+
+inline double CKKSPlainEvalModSineDegree5(double x)
+{
+    constexpr double pi = 3.141592653589793238462643383279502884;
+    constexpr double two_pi = 2.0 * pi;
+    const double x2 = x * x;
+    return x * (1.0 - (two_pi * two_pi / 6.0) * x2 +
+                (two_pi * two_pi * two_pi * two_pi / 120.0) * x2 * x2);
+}
+
+inline double CKKSPlainEvalModSineDegree3(double x)
+{
+    constexpr double pi = 3.141592653589793238462643383279502884;
+    constexpr double two_pi = 2.0 * pi;
+    return x * (1.0 - (two_pi * two_pi / 6.0) * x * x);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+struct CKKSEvalModSineDegree3Traits {
+    static_assert(LogQ > 3 * LogDelta + CoeffLogDelta);
+    static constexpr std::uint32_t x2_log_q = LogQ - LogDelta;
+    static constexpr std::uint32_t x3_log_q = LogQ - 2 * LogDelta;
+    static constexpr std::uint32_t term_input_log_q = x3_log_q;
+    static constexpr std::uint32_t log_q = x3_log_q - CoeffLogDelta;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+using CKKSEvalModSineDegree3Result =
+    typename CKKSEvalModSineDegree3Traits<P, LogQ, LogDelta,
+                                          CoeffLogDelta>::Ciphertext;
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+struct CKKSEvalModSineDegree3RelinKeys {
+    using Traits =
+        CKKSEvalModSineDegree3Traits<P, LogQ, LogDelta, CoeffLogDelta>;
+
+    CKKSRelinKey<P, Traits::x2_log_q> x2{};
+    CKKSRelinKey<P, Traits::x3_log_q> x3{};
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+inline void CKKSEvalModSineDegree3KeyGen(
+    CKKSEvalModSineDegree3RelinKeys<P, LogQ, LogDelta, CoeffLogDelta> &keys,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    using Traits =
+        CKKSEvalModSineDegree3Traits<P, LogQ, LogDelta, CoeffLogDelta>;
+    keys.x2 = *makeCKKSRelinKey<P, Traits::x2_log_q>(key, noise);
+    keys.x3 = *makeCKKSRelinKey<P, Traits::x3_log_q>(key, noise);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+inline void CKKSEvalModSineDegree3(
+    CKKSEvalModSineDegree3Result<P, LogQ, LogDelta, CoeffLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSEvalModSineDegree3RelinKeys<P, LogQ, LogDelta, CoeffLogDelta>
+        &keys)
+{
+    using Traits =
+        CKKSEvalModSineDegree3Traits<P, LogQ, LogDelta, CoeffLogDelta>;
+    constexpr double pi = 3.141592653589793238462643383279502884;
+    constexpr double two_pi = 2.0 * pi;
+    constexpr double c1 = -(two_pi * two_pi / 6.0);
+
+    CKKSMultResult<P, LogQ, LogDelta, LogQ, LogDelta> x2;
+    CKKSMult<P>(x2, ct, ct, keys.x2);
+
+    CKKSMultResult<P, Traits::x2_log_q, LogDelta, LogQ, LogDelta> x3;
+    CKKSMult<P>(x3, x2, ct, keys.x3);
+
+    CKKSCiphertext<P, Traits::term_input_log_q, LogDelta> x_term_input;
+    CKKSLevelReduce<P, LogQ, Traits::term_input_log_q, LogDelta>(
+        x_term_input, ct);
+
+    CKKSPlainMulResult<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>
+        x_term;
+    CKKSPlainMulResult<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>
+        x3_term;
+    CKKSPlainMulByReal<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>(
+        x_term, x_term_input, 1.0);
+    CKKSPlainMulByReal<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>(
+        x3_term, x3, c1);
+
+    CKKSAdd<P, Traits::log_q, LogDelta>(res, x_term, x3_term);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+struct CKKSEvalModSineDegree5Traits {
+    static_assert(LogQ > 4 * LogDelta + CoeffLogDelta);
+    static constexpr std::uint32_t x2_log_q = LogQ - LogDelta;
+    static constexpr std::uint32_t x3_log_q = LogQ - 2 * LogDelta;
+    static constexpr std::uint32_t x5_log_q = LogQ - 3 * LogDelta;
+    static constexpr std::uint32_t term_input_log_q = x5_log_q;
+    static constexpr std::uint32_t log_q = x5_log_q - CoeffLogDelta;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+using CKKSEvalModSineDegree5Result =
+    typename CKKSEvalModSineDegree5Traits<P, LogQ, LogDelta,
+                                          CoeffLogDelta>::Ciphertext;
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+struct CKKSEvalModSineDegree5RelinKeys {
+    using Traits =
+        CKKSEvalModSineDegree5Traits<P, LogQ, LogDelta, CoeffLogDelta>;
+
+    CKKSRelinKey<P, Traits::x2_log_q> x2{};
+    CKKSRelinKey<P, Traits::x3_log_q> x3{};
+    CKKSRelinKey<P, Traits::x5_log_q> x5{};
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+inline void CKKSEvalModSineDegree5KeyGen(
+    CKKSEvalModSineDegree5RelinKeys<P, LogQ, LogDelta, CoeffLogDelta> &keys,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    using Traits =
+        CKKSEvalModSineDegree5Traits<P, LogQ, LogDelta, CoeffLogDelta>;
+    keys.x2 = *makeCKKSRelinKey<P, Traits::x2_log_q>(key, noise);
+    keys.x3 = *makeCKKSRelinKey<P, Traits::x3_log_q>(key, noise);
+    keys.x5 = *makeCKKSRelinKey<P, Traits::x5_log_q>(key, noise);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta>
+inline void CKKSEvalModSineDegree5(
+    CKKSEvalModSineDegree5Result<P, LogQ, LogDelta, CoeffLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSEvalModSineDegree5RelinKeys<P, LogQ, LogDelta, CoeffLogDelta>
+        &keys)
+{
+    using Traits =
+        CKKSEvalModSineDegree5Traits<P, LogQ, LogDelta, CoeffLogDelta>;
+    constexpr double pi = 3.141592653589793238462643383279502884;
+    constexpr double two_pi = 2.0 * pi;
+    constexpr double c1 = -(two_pi * two_pi / 6.0);
+    constexpr double c2 = two_pi * two_pi * two_pi * two_pi / 120.0;
+
+    CKKSMultResult<P, LogQ, LogDelta, LogQ, LogDelta> x2;
+    CKKSMult<P>(x2, ct, ct, keys.x2);
+
+    CKKSMultResult<P, Traits::x2_log_q, LogDelta, LogQ, LogDelta> x3;
+    CKKSMult<P>(x3, x2, ct, keys.x3);
+
+    CKKSMultResult<P, Traits::x3_log_q, LogDelta, Traits::x2_log_q, LogDelta>
+        x5;
+    CKKSMult<P>(x5, x3, x2, keys.x5);
+
+    CKKSCiphertext<P, Traits::term_input_log_q, LogDelta> x_term_input;
+    CKKSCiphertext<P, Traits::term_input_log_q, LogDelta> x3_term_input;
+    CKKSLevelReduce<P, LogQ, Traits::term_input_log_q, LogDelta>(
+        x_term_input, ct);
+    CKKSLevelReduce<P, Traits::x3_log_q, Traits::term_input_log_q, LogDelta>(
+        x3_term_input, x3);
+
+    CKKSPlainMulResult<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>
+        x_term;
+    CKKSPlainMulResult<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>
+        x3_term;
+    CKKSPlainMulResult<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>
+        x5_term;
+    CKKSPlainMulByReal<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>(
+        x_term, x_term_input, 1.0);
+    CKKSPlainMulByReal<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>(
+        x3_term, x3_term_input, c1);
+    CKKSPlainMulByReal<P, Traits::term_input_log_q, LogDelta, CoeffLogDelta>(
+        x5_term, x5, c2);
+
+    CKKSAdd<P, Traits::log_q, LogDelta>(res, x_term, x3_term);
+    CKKSAddInPlace<P, Traits::log_q, LogDelta>(res, x5_term);
 }
 
 }  // namespace TFHEpp

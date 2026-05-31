@@ -14,6 +14,12 @@ struct SmallCKKSParam {
     static constexpr std::uint32_t n = 1 << nbit;
 };
 
+struct SmallMultiLimbCKKSParam {
+    static constexpr std::uint32_t nbit = 4;
+    static constexpr std::uint32_t n = 1 << nbit;
+    using T = TFHEpp::MultiLimbUInt<3>;
+};
+
 void fill_key(TFHEpp::Key<P> &key)
 {
     for (std::size_t i = 0; i < P::n; i++) {
@@ -248,6 +254,116 @@ void test_lvl6_factorized_stage_shape()
               << std::endl;
 }
 
+void test_multilimb_slot_decode_high_level()
+{
+    using M = SmallMultiLimbCKKSParam;
+    constexpr std::uint32_t log_q = 160;
+    constexpr std::uint32_t log_delta = 50;
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    slots->fill({0.0, 0.0});
+    for (std::size_t i = 0; i < M::n / 2; i++) {
+        const double re =
+            static_cast<double>(static_cast<int>(i % 5) - 2) / 16.0;
+        const double im =
+            static_cast<double>(static_cast<int>(i % 3) - 1) / 32.0;
+        (*slots)[i] = {re, im};
+    }
+
+    TFHEpp::Polynomial<M> poly;
+    TFHEpp::ckksSlotEncode<M, log_q, log_delta>(poly, *slots);
+    TFHEpp::ckksSlotDecode<M, log_q, log_delta>(*decoded, poly);
+    const double err = max_error<M>(*decoded, *slots);
+    std::cout << "CKKS multi-limb high-level slot decode max_error=" << err
+              << std::endl;
+    if (err > 1e-10) std::exit(1);
+
+    const auto neg = TFHEpp::ckksEncodeCoeff<M, log_q, log_delta>(-0.125);
+    const double neg_decoded =
+        TFHEpp::ckksDecodeCoeff<M, log_q, log_delta>(neg);
+    if (std::abs(neg_decoded + 0.125) > 1e-12) std::exit(1);
+}
+
+void test_sine_evalmod(const TFHEpp::Key<P> &key)
+{
+    constexpr std::uint32_t eval_log_q = 128;
+    constexpr std::uint32_t eval_log_delta = 36;
+    constexpr std::uint32_t coeff_log_delta = 12;
+    using EvalCt = TFHEpp::CKKSCiphertext<P, eval_log_q, eval_log_delta>;
+    using EvalOut =
+        TFHEpp::CKKSEvalModSineDegree3Result<P, eval_log_q, eval_log_delta,
+                                             coeff_log_delta>;
+    static_assert(EvalOut::log_q == 44);
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    slots->fill({0.0, 0.0});
+    expected->fill({0.0, 0.0});
+    for (std::size_t i = 0; i < 64; i++) {
+        const double x =
+            static_cast<double>(static_cast<int>(i % 17) - 8) / 512.0;
+        (*slots)[i] = {x, 0.0};
+        (*expected)[i] = {TFHEpp::CKKSPlainEvalModSineDegree3(x), 0.0};
+    }
+
+    auto keys = std::make_unique<
+        TFHEpp::CKKSEvalModSineDegree3RelinKeys<P, eval_log_q,
+                                                eval_log_delta,
+                                                coeff_log_delta>>();
+    TFHEpp::CKKSEvalModSineDegree3KeyGen<P, eval_log_q, eval_log_delta,
+                                         coeff_log_delta>(*keys, key,
+                                                          {0.0, 0});
+
+    auto ct = std::make_unique<EvalCt>();
+    TFHEpp::ckksSlotEncrypt<P, eval_log_q, eval_log_delta>(*ct, *slots, key,
+                                                           {0.0, 0});
+
+    using X2 = TFHEpp::CKKSMultResult<P, eval_log_q, eval_log_delta, eval_log_q,
+                                      eval_log_delta>;
+    using X3 = TFHEpp::CKKSMultResult<P, X2::log_q, X2::log_delta, eval_log_q,
+                                      eval_log_delta>;
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto power_expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, eval_log_q, eval_log_delta>(*decoded, *ct, key);
+    require_close(*decoded, *slots, 0.01, "CKKS EvalMod fresh input");
+
+    auto plain_ct = std::make_unique<EvalCt>();
+    plain_ct->ct[0].fill(0);
+    TFHEpp::ckksSlotEncode<P, eval_log_q, eval_log_delta>(plain_ct->ct[1],
+                                                          *slots);
+
+    auto x2 = std::make_unique<X2>();
+    TFHEpp::CKKSMult<P>(*x2, *plain_ct, *plain_ct, keys->x2);
+    TFHEpp::ckksSlotDecrypt<P, X2::log_q, X2::log_delta>(*decoded, *x2, key);
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*power_expected)[i] = (*slots)[i] * (*slots)[i];
+    require_close(*decoded, *power_expected, 0.01,
+                  "CKKS EvalMod zero-mask x^2");
+
+    TFHEpp::CKKSMult<P>(*x2, *ct, *ct, keys->x2);
+    TFHEpp::ckksSlotDecrypt<P, X2::log_q, X2::log_delta>(*decoded, *x2, key);
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*power_expected)[i] = (*slots)[i] * (*slots)[i];
+    require_close(*decoded, *power_expected, 0.01, "CKKS EvalMod x^2");
+
+    auto x3 = std::make_unique<X3>();
+    TFHEpp::CKKSMult<P>(*x3, *x2, *ct, keys->x3);
+    TFHEpp::ckksSlotDecrypt<P, X3::log_q, X3::log_delta>(*decoded, *x3, key);
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*power_expected)[i] = (*slots)[i] * (*slots)[i] * (*slots)[i];
+    require_close(*decoded, *power_expected, 0.01, "CKKS EvalMod x^3");
+
+    auto out = std::make_unique<EvalOut>();
+    TFHEpp::CKKSEvalModSineDegree3<P, eval_log_q, eval_log_delta,
+                                   coeff_log_delta>(*out, *ct, *keys);
+
+    TFHEpp::ckksSlotDecrypt<P, EvalOut::log_q, EvalOut::log_delta>(
+        *decoded, *out, key);
+    require_close(*decoded, *expected, 0.01, "CKKS sine EvalMod degree-3");
+}
+
 }  // namespace
 
 int main()
@@ -255,6 +371,7 @@ int main()
     test_dense_coeff_slot_diagonals();
     test_factorized_coeff_slot_stages();
     test_lvl6_factorized_stage_shape();
+    test_multilimb_slot_decode_high_level();
 
     constexpr std::uint32_t low_log_q = 82;
     constexpr std::uint32_t boot_log_q = 110;
@@ -269,6 +386,7 @@ int main()
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_key(*key);
+    test_sine_evalmod(*key);
 
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     slots->fill({0.0, 0.0});
