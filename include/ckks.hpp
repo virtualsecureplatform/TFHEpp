@@ -271,6 +271,10 @@ inline void CKKSLoadPortableBinary(T &value, const std::filesystem::path &path)
     archive(value);
 }
 
+struct CKKSDenseBootstrapKeyDirectoryOptions {
+    bool overwrite_existing = true;
+};
+
 namespace ckks_detail {
 
 template <std::uint32_t A, std::uint32_t B>
@@ -4384,20 +4388,31 @@ inline std::filesystem::path CKKSDenseBootstrapIndexedPath(
     return root / (name + "_" + std::to_string(index) + ".bin");
 }
 
+inline bool CKKSDenseBootstrapShouldWriteKeyFile(
+    const std::filesystem::path &path,
+    const CKKSDenseBootstrapKeyDirectoryOptions &options)
+{
+    return options.overwrite_existing || !std::filesystem::exists(path);
+}
+
 template <std::size_t I, class Schedule>
 inline void CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl(
     const std::filesystem::path &root,
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage,
-    const Key<typename Schedule::Param> &key, CKKSNoise noise)
+    const Key<typename Schedule::Param> &key, CKKSNoise noise,
+    const CKKSDenseBootstrapKeyDirectoryOptions &options)
 {
     if constexpr (I <= Schedule::coeff_to_slot_level_count) {
-        CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, I> gk;
-        CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, I>(gk, usage, key,
-                                                               noise);
-        CKKSSavePortableBinary(
-            CKKSDenseBootstrapIndexedPath(root, "coeff_to_slot_galois", I), gk);
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "coeff_to_slot_galois", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, I> gk;
+            CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, I>(gk, usage, key,
+                                                                   noise);
+            CKKSSavePortableBinary(path, gk);
+        }
         CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl<I + 1, Schedule>(
-            root, usage, key, noise);
+            root, usage, key, noise, options);
     }
 }
 
@@ -4405,51 +4420,60 @@ template <std::size_t I, class Schedule>
 inline void CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl(
     const std::filesystem::path &root,
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage,
-    const Key<typename Schedule::Param> &key, CKKSNoise noise)
+    const Key<typename Schedule::Param> &key, CKKSNoise noise,
+    const CKKSDenseBootstrapKeyDirectoryOptions &options)
 {
     if constexpr (I <= Schedule::slot_to_coeff_level_count) {
-        CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, I> gk;
-        CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, I>(gk, usage, key,
-                                                               noise);
-        CKKSSavePortableBinary(
-            CKKSDenseBootstrapIndexedPath(root, "slot_to_coeff_galois", I), gk);
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "slot_to_coeff_galois", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, I> gk;
+            CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, I>(gk, usage, key,
+                                                                   noise);
+            CKKSSavePortableBinary(path, gk);
+        }
         CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl<I + 1, Schedule>(
-            root, usage, key, noise);
+            root, usage, key, noise, options);
     }
 }
 
 template <std::size_t I, class Schedule>
 inline void CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl(
     const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
-    CKKSNoise noise)
+    CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
 {
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
     if constexpr (I < Traits::PolynomialTraits::power_depth) {
-        CKKSDenseEvalModPolynomialRelinKey<Schedule, I> relinkey;
-        CKKSDenseEvalModPolynomialRelinKeyGen<Schedule, I>(relinkey, key, noise);
-        CKKSSavePortableBinary(
-            CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I),
-            relinkey);
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            CKKSDenseEvalModPolynomialRelinKey<Schedule, I> relinkey;
+            CKKSDenseEvalModPolynomialRelinKeyGen<Schedule, I>(relinkey, key,
+                                                               noise);
+            CKKSSavePortableBinary(path, relinkey);
+        }
         CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<I + 1, Schedule>(
-            root, key, noise);
+            root, key, noise, options);
     }
 }
 
 template <std::size_t I, class Schedule>
 inline void CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl(
     const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
-    CKKSNoise noise)
+    CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
 {
     if constexpr (I < Schedule::evalmod_double_angle) {
-        CKKSDenseEvalModDoubleAngleRelinKey<Schedule, I> relinkey;
-        CKKSDenseEvalModDoubleAngleRelinKeyGen<Schedule, I>(relinkey, key,
-                                                            noise);
-        CKKSSavePortableBinary(
-            CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I),
-            relinkey);
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            CKKSDenseEvalModDoubleAngleRelinKey<Schedule, I> relinkey;
+            CKKSDenseEvalModDoubleAngleRelinKeyGen<Schedule, I>(relinkey, key,
+                                                                noise);
+            CKKSSavePortableBinary(path, relinkey);
+        }
         CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl<I + 1,
                                                                 Schedule>(
-            root, key, noise);
+            root, key, noise, options);
     }
 }
 
@@ -4500,7 +4524,8 @@ struct CKKSDenseBootstrapDoubleAngleRelinCacheTuple<Schedule,
 template <class Schedule>
 inline void CKKSDenseBootstrapKeyGenToDirectory(
     const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
-    CKKSNoise noise = {Schedule::Param::α, 0})
+    CKKSNoise noise = {Schedule::Param::α, 0},
+    CKKSDenseBootstrapKeyDirectoryOptions options = {})
 {
     static_assert(Schedule::evalmod_inv_degree == 0,
                   "inverse EvalMod correction is not implemented yet");
@@ -4527,24 +4552,27 @@ inline void CKKSDenseBootstrapKeyGenToDirectory(
 
     ckks_detail::CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl<0,
                                                                     Schedule>(
-        root, rotation_usage, key, noise);
+        root, rotation_usage, key, noise, options);
 
-    CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule> packed_conjugate;
-    CKKSDenseBootstrapPackedConjugateGaloisKeyGen<Schedule>(
-        packed_conjugate, rotation_usage, key, noise);
-    CKKSSavePortableBinary(
+    const std::filesystem::path packed_path =
         ckks_detail::CKKSDenseBootstrapNamedPath(root,
-                                                 "packed_conjugate_galois"),
-        packed_conjugate);
+                                                 "packed_conjugate_galois");
+    if (ckks_detail::CKKSDenseBootstrapShouldWriteKeyFile(packed_path,
+                                                          options)) {
+        CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule> packed_conjugate;
+        CKKSDenseBootstrapPackedConjugateGaloisKeyGen<Schedule>(
+            packed_conjugate, rotation_usage, key, noise);
+        CKKSSavePortableBinary(packed_path, packed_conjugate);
+    }
 
     ckks_detail::CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<
-        0, Schedule>(root, key, noise);
+        0, Schedule>(root, key, noise, options);
     ckks_detail::CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl<
-        0, Schedule>(root, key, noise);
+        0, Schedule>(root, key, noise, options);
 
     ckks_detail::CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl<0,
                                                                     Schedule>(
-        root, rotation_usage, key, noise);
+        root, rotation_usage, key, noise, options);
 }
 
 template <class Schedule>
