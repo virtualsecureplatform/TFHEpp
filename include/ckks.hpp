@@ -1903,6 +1903,119 @@ struct CKKSDenseBootstrapSchedule {
                                  slot_to_coeff_level_count>;
 };
 
+struct CKKSBoundedCosEvalModPolynomial {
+    std::uint32_t k = 0;
+    std::uint32_t degree = 0;
+    std::uint32_t log_message_ratio = 0;
+    std::uint32_t double_angle = 0;
+    double message_ratio = 1.0;
+    double q_diff = 1.0;
+    double sqrt_coeff = 1.0;
+    double domain_offset = 0.0;
+    std::vector<double> chebyshev_coeffs{};
+};
+
+inline double CKKSEvaluateChebyshevUnit(const std::vector<double> &coeffs,
+                                        double x)
+{
+    if (coeffs.empty()) return 0.0;
+    double b_next = 0.0;
+    double b_next_next = 0.0;
+    for (std::size_t i = coeffs.size() - 1; i > 0; i--) {
+        const double b = 2.0 * x * b_next - b_next_next + coeffs[i];
+        b_next_next = b_next;
+        b_next = b;
+    }
+    return coeffs[0] + x * b_next - b_next_next;
+}
+
+inline CKKSBoundedCosEvalModPolynomial CKKSBuildBoundedCosEvalModPolynomial(
+    std::uint32_t k, std::uint32_t degree, std::uint32_t log_message_ratio,
+    std::uint32_t double_angle, double q_diff = 1.0)
+{
+    assert(k > 0);
+    constexpr long double pi =
+        3.141592653589793238462643383279502884L;
+    CKKSBoundedCosEvalModPolynomial poly;
+    poly.k = k;
+    poly.degree = degree;
+    poly.log_message_ratio = log_message_ratio;
+    poly.double_angle = double_angle;
+    poly.message_ratio =
+        ckks_detail::exp2_double(log_message_ratio);
+    poly.q_diff = q_diff;
+
+    const double shrink =
+        ckks_detail::exp2_double(double_angle);
+    poly.sqrt_coeff =
+        std::pow(q_diff / (2.0 * static_cast<double>(pi)), 1.0 / shrink);
+    poly.domain_offset =
+        1.0 / (4.0 * static_cast<double>(k) * shrink);
+
+    const std::size_t nodes = static_cast<std::size_t>(degree) + 1;
+    std::vector<long double> values(nodes);
+    for (std::size_t j = 0; j < nodes; j++) {
+        const long double theta =
+            pi * (static_cast<long double>(j) + 0.5L) /
+            static_cast<long double>(nodes);
+        const long double x = std::cos(theta);
+        const long double unnormalized =
+            static_cast<long double>(k) *
+            (x + static_cast<long double>(poly.domain_offset));
+        const long double angle =
+            2.0L * pi * (unnormalized - 0.25L) /
+            static_cast<long double>(shrink);
+        values[j] = static_cast<long double>(poly.sqrt_coeff) * std::cos(angle);
+    }
+
+    poly.chebyshev_coeffs.resize(nodes);
+    for (std::size_t i = 0; i < nodes; i++) {
+        long double acc = 0.0L;
+        for (std::size_t j = 0; j < nodes; j++) {
+            const long double theta =
+                pi * static_cast<long double>(i) *
+                (static_cast<long double>(j) + 0.5L) /
+                static_cast<long double>(nodes);
+            acc += values[j] * std::cos(theta);
+        }
+        acc *= 2.0L / static_cast<long double>(nodes);
+        if (i == 0) acc *= 0.5L;
+        poly.chebyshev_coeffs[i] = static_cast<double>(acc);
+    }
+    return poly;
+}
+
+template <class Schedule>
+inline CKKSBoundedCosEvalModPolynomial
+CKKSBuildBoundedCosEvalModPolynomial()
+{
+    return CKKSBuildBoundedCosEvalModPolynomial(
+        Schedule::evalmod_k, Schedule::evalmod_degree,
+        Schedule::log_message_ratio, Schedule::evalmod_double_angle);
+}
+
+inline double CKKSPlainEvalModBoundedCosNormalized(
+    const CKKSBoundedCosEvalModPolynomial &poly, double normalized)
+{
+    const double x = normalized - poly.domain_offset;
+    double y = CKKSEvaluateChebyshevUnit(poly.chebyshev_coeffs, x);
+    double sqrt_coeff = poly.sqrt_coeff;
+    for (std::uint32_t i = 0; i < poly.double_angle; i++) {
+        sqrt_coeff *= sqrt_coeff;
+        y = 2.0 * y * y - sqrt_coeff;
+    }
+    return poly.message_ratio * y;
+}
+
+inline double CKKSPlainEvalModBoundedCos(
+    const CKKSBoundedCosEvalModPolynomial &poly, double masked_value)
+{
+    const double normalized =
+        masked_value /
+        (static_cast<double>(poly.k) * poly.message_ratio * poly.q_diff);
+    return CKKSPlainEvalModBoundedCosNormalized(poly, normalized);
+}
+
 template <class Schedule>
 struct CKKSDenseBootstrapLinearPlan {
     using P = typename Schedule::Param;

@@ -327,6 +327,42 @@ void test_lvl6_factorized_stage_shape()
               << Schedule::output_log_q << std::endl;
 }
 
+void test_bounded_cos_evalmod_plain()
+{
+    using L = TFHEpp::lvl6param;
+    using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<L>;
+    const auto poly = TFHEpp::CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+    constexpr double pi = 3.141592653589793238462643383279502884;
+
+    if (poly.chebyshev_coeffs.size() != Schedule::evalmod_degree + 1)
+        std::exit(1);
+
+    double max_sine_err = 0.0;
+    double max_message_err = 0.0;
+    for (int mask = -static_cast<int>(Schedule::evalmod_k) + 1;
+         mask < static_cast<int>(Schedule::evalmod_k); mask++) {
+        for (const double msg : {-1.0, -0.5, 0.0, 0.5, 1.0}) {
+            const double masked =
+                static_cast<double>(mask) * Schedule::message_ratio + msg;
+            const double got =
+                TFHEpp::CKKSPlainEvalModBoundedCos(poly, masked);
+            const double want_sine =
+                Schedule::message_ratio *
+                std::sin(2.0 * pi * masked / Schedule::message_ratio) /
+                (2.0 * pi);
+            max_sine_err = std::max(max_sine_err, std::abs(got - want_sine));
+            max_message_err =
+                std::max(max_message_err, std::abs(got - msg));
+        }
+    }
+
+    std::cout << "CKKS bounded cosine EvalMod sine max_error="
+              << max_sine_err << " message max_error=" << max_message_err
+              << std::endl;
+    if (max_sine_err > 1e-8) std::exit(1);
+    if (max_message_err > 2e-4) std::exit(1);
+}
+
 void test_multilimb_slot_decode_high_level()
 {
     using M = SmallMultiLimbCKKSParam;
@@ -444,6 +480,7 @@ int main()
     test_dense_coeff_slot_diagonals();
     test_factorized_coeff_slot_stages();
     test_lvl6_factorized_stage_shape();
+    test_bounded_cos_evalmod_plain();
     test_multilimb_slot_decode_high_level();
 
     constexpr std::uint32_t low_log_q = 82;
