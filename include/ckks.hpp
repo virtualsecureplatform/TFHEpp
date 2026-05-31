@@ -309,6 +309,51 @@ struct CKKSDenseBootstrapKeyDirectoryOptions {
     bool overwrite_existing = true;
 };
 
+struct CKKSDenseBootstrapKeyDirectoryManifest {
+    static constexpr std::uint32_t current_version = 1;
+
+    std::uint32_t version = current_version;
+    std::uint32_t n = 0;
+    std::uint32_t nbit = 0;
+    std::uint32_t torus_bits = 0;
+    std::uint32_t log_delta = 0;
+    std::uint32_t log_message_ratio = 0;
+    std::uint32_t input_log_q = 0;
+    std::uint32_t boot_log_q = 0;
+    std::uint32_t output_log_q = 0;
+    std::uint32_t linear_plain_log_delta = 0;
+    std::uint32_t linear_fuse_radix = 0;
+    std::int32_t linear_bsgs_step = 0;
+    std::uint32_t coeff_to_slot_level_count = 0;
+    std::uint32_t slot_to_coeff_level_count = 0;
+    std::uint32_t evalmod_degree = 0;
+    std::uint32_t evalmod_k = 0;
+    std::uint32_t evalmod_double_angle = 0;
+    std::uint32_t evalmod_inv_degree = 0;
+    std::uint32_t evalmod_log_scale = 0;
+    std::uint32_t evalmod_depth = 0;
+    std::uint32_t modraise_mask_bound = 0;
+    std::uint64_t expected_file_count = 0;
+    std::uint64_t sparse_key_rows = 0;
+    std::uint64_t streamed_peak_key_rows = 0;
+    std::uint64_t full_key_rows = 0;
+
+    bool operator==(const CKKSDenseBootstrapKeyDirectoryManifest &) const =
+        default;
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(version, n, nbit, torus_bits, log_delta, log_message_ratio,
+                input_log_q, boot_log_q, output_log_q, linear_plain_log_delta,
+                linear_fuse_radix, linear_bsgs_step, coeff_to_slot_level_count,
+                slot_to_coeff_level_count, evalmod_degree, evalmod_k,
+                evalmod_double_angle, evalmod_inv_degree, evalmod_log_scale,
+                evalmod_depth, modraise_mask_bound, expected_file_count,
+                sparse_key_rows, streamed_peak_key_rows, full_key_rows);
+    }
+};
+
 namespace ckks_detail {
 
 template <std::uint32_t A, std::uint32_t B>
@@ -4604,6 +4649,12 @@ struct CKKSDenseBootstrapDoubleAngleRelinCacheTuple<Schedule,
 
 }  // namespace ckks_detail
 
+inline std::filesystem::path CKKSDenseBootstrapKeyDirectoryManifestFile(
+    const std::filesystem::path &root)
+{
+    return ckks_detail::CKKSDenseBootstrapNamedPath(root, "manifest");
+}
+
 template <class Schedule>
 inline std::vector<std::filesystem::path> CKKSDenseBootstrapKeyDirectoryFiles(
     const std::filesystem::path &root)
@@ -4614,6 +4665,7 @@ inline std::vector<std::filesystem::path> CKKSDenseBootstrapKeyDirectoryFiles(
                   Schedule::slot_to_coeff_level_count +
                   EvalModTraits::PolynomialTraits::power_depth +
                   Schedule::evalmod_double_angle);
+    paths.push_back(CKKSDenseBootstrapKeyDirectoryManifestFile(root));
     paths.push_back(ckks_detail::CKKSDenseBootstrapNamedPath(root,
                                                              "linear_plan"));
     paths.push_back(ckks_detail::CKKSDenseBootstrapNamedPath(root,
@@ -4655,6 +4707,74 @@ inline bool CKKSDenseBootstrapKeyDirectoryComplete(
 }
 
 template <class Schedule>
+inline CKKSDenseBootstrapKeyDirectoryManifest
+CKKSDenseBootstrapBuildKeyDirectoryManifest(const std::filesystem::path &root)
+{
+    using P = typename Schedule::Param;
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage;
+    CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(rotation_usage,
+                                                      linear_plan);
+
+    CKKSDenseBootstrapKeyDirectoryManifest manifest;
+    manifest.n = P::n;
+    manifest.nbit = P::nbit;
+    manifest.torus_bits = std::numeric_limits<typename P::T>::digits;
+    manifest.log_delta = Schedule::log_delta;
+    manifest.log_message_ratio = Schedule::log_message_ratio;
+    manifest.input_log_q = Schedule::input_log_q;
+    manifest.boot_log_q = Schedule::boot_log_q;
+    manifest.output_log_q = Schedule::output_log_q;
+    manifest.linear_plain_log_delta = Schedule::linear_plain_log_delta;
+    manifest.linear_fuse_radix = Schedule::linear_fuse_radix;
+    manifest.linear_bsgs_step = Schedule::linear_bsgs_step;
+    manifest.coeff_to_slot_level_count = Schedule::coeff_to_slot_level_count;
+    manifest.slot_to_coeff_level_count = Schedule::slot_to_coeff_level_count;
+    manifest.evalmod_degree = Schedule::evalmod_degree;
+    manifest.evalmod_k = Schedule::evalmod_k;
+    manifest.evalmod_double_angle = Schedule::evalmod_double_angle;
+    manifest.evalmod_inv_degree = Schedule::evalmod_inv_degree;
+    manifest.evalmod_log_scale = Schedule::evalmod_log_scale;
+    manifest.evalmod_depth = Schedule::evalmod_depth;
+    manifest.modraise_mask_bound = Schedule::modraise_mask_bound;
+    manifest.expected_file_count =
+        CKKSDenseBootstrapKeyDirectoryFiles<Schedule>(root).size();
+    manifest.sparse_key_rows =
+        CKKSDenseBootstrapSparseKeySwitchRowCount<Schedule>(rotation_usage);
+    manifest.streamed_peak_key_rows =
+        CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(
+            rotation_usage);
+    manifest.full_key_rows = CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>();
+    return manifest;
+}
+
+template <class Schedule>
+inline CKKSDenseBootstrapKeyDirectoryManifest
+CKKSDenseBootstrapBuildKeyDirectoryManifest()
+{
+    return CKKSDenseBootstrapBuildKeyDirectoryManifest<Schedule>(
+        std::filesystem::path{});
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapKeyDirectoryManifestMatches(
+    const CKKSDenseBootstrapKeyDirectoryManifest &manifest)
+{
+    return manifest == CKKSDenseBootstrapBuildKeyDirectoryManifest<Schedule>();
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapKeyDirectoryManifestMatches(
+    const std::filesystem::path &root)
+{
+    CKKSDenseBootstrapKeyDirectoryManifest manifest;
+    CKKSLoadPortableBinary(manifest,
+                           CKKSDenseBootstrapKeyDirectoryManifestFile(root));
+    return CKKSDenseBootstrapKeyDirectoryManifestMatches<Schedule>(manifest);
+}
+
+template <class Schedule>
 inline void CKKSDenseBootstrapKeyGenToDirectory(
     const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
     CKKSNoise noise = {Schedule::Param::α, 0},
@@ -4663,6 +4783,11 @@ inline void CKKSDenseBootstrapKeyGenToDirectory(
     static_assert(Schedule::evalmod_inv_degree == 0,
                   "inverse EvalMod correction is not implemented yet");
     std::filesystem::create_directories(root);
+
+    const CKKSDenseBootstrapKeyDirectoryManifest manifest =
+        CKKSDenseBootstrapBuildKeyDirectoryManifest<Schedule>(root);
+    CKKSSavePortableBinaryAtomic(
+        CKKSDenseBootstrapKeyDirectoryManifestFile(root), manifest);
 
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
     CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);

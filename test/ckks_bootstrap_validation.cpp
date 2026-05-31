@@ -131,6 +131,23 @@ void print_missing_key_files(
 }
 
 template <class Schedule>
+std::string manifest_status(const std::filesystem::path &root)
+{
+    const std::filesystem::path manifest_path =
+        TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestFile(root);
+    if (!std::filesystem::exists(manifest_path)) return "missing";
+    try {
+        return TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestMatches<Schedule>(
+                   root)
+                   ? "match"
+                   : "mismatch";
+    }
+    catch (...) {
+        return "unreadable";
+    }
+}
+
+template <class Schedule>
 void print_schedule_report(const char *label,
                            const std::filesystem::path *key_dir = nullptr)
 {
@@ -181,6 +198,7 @@ void print_schedule_report(const char *label,
         std::cout << label << " key_dir=" << key_dir->string()
                   << " files=" << regular_file_count(*key_dir) << "/"
                   << expected.size() << " missing=" << missing.size()
+                  << " manifest=" << manifest_status<Schedule>(*key_dir)
                   << " tmp_files=" << temporary_file_count(*key_dir)
                   << " disk_bytes=" << directory_size_bytes(*key_dir)
                   << '\n';
@@ -198,6 +216,19 @@ int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol)
         std::cerr << "key_dir_incomplete=" << key_dir.string()
                   << " missing=" << missing.size() << '\n';
         print_missing_key_files(missing);
+        return 2;
+    }
+    try {
+        if (!TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestMatches<Schedule>(
+                key_dir)) {
+            std::cerr << "key_dir_manifest_mismatch=" << key_dir.string()
+                      << '\n';
+            return 2;
+        }
+    }
+    catch (const std::exception &e) {
+        std::cerr << "key_dir_manifest_unreadable=" << key_dir.string()
+                  << " error=" << e.what() << '\n';
         return 2;
     }
 
