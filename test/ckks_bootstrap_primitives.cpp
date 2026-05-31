@@ -496,6 +496,49 @@ int main()
     }
     std::cout << "CKKS mod raise preserves low-level phase" << std::endl;
 
+    auto randomized_raised = std::make_unique<BootCt>();
+    TFHEpp::CKKSModRaiseRandomized<P, low_log_q, boot_log_q, log_delta>(
+        *randomized_raised, *low_ct);
+    auto randomized_phase = std::make_unique<TFHEpp::Polynomial<P>>(
+        TFHEpp::trlwePhase<P>(randomized_raised->ct, *key));
+    bool randomized_has_high_bits = false;
+    for (int c = 0; c <= static_cast<int>(P::k); c++) {
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            const auto low_coeff =
+                TFHEpp::ckks_detail::reduceToLevel<P, low_log_q>(
+                    low_ct->ct[c][i]);
+            const auto randomized_low =
+                TFHEpp::ckks_detail::reduceToLevel<P, low_log_q>(
+                    randomized_raised->ct[c][i]);
+            if (low_coeff != randomized_low) {
+                std::cerr << "randomized mod raise coefficient low bits mismatch"
+                          << std::endl;
+                return 1;
+            }
+            if (randomized_raised->ct[c][i] != randomized_low)
+                randomized_has_high_bits = true;
+        }
+    }
+    for (std::uint32_t i = 0; i < P::n; i++) {
+        const auto low =
+            TFHEpp::ckks_detail::reduceToLevel<P, low_log_q>((*low_phase)[i]);
+        const auto randomized_low =
+            TFHEpp::ckks_detail::reduceToLevel<P, low_log_q>(
+                (*randomized_phase)[i]);
+        if (low != randomized_low) {
+            std::cerr << "randomized mod raise phase mismatch at coeff " << i
+                      << std::endl;
+            return 1;
+        }
+    }
+    if (!randomized_has_high_bits) {
+        std::cerr << "randomized mod raise did not populate high bits"
+                  << std::endl;
+        return 1;
+    }
+    std::cout << "CKKS randomized mod raise preserves low-level phase"
+              << std::endl;
+
     auto boot_ct = std::make_unique<BootCt>();
     TFHEpp::ckksSlotEncrypt<P, boot_log_q, log_delta>(*boot_ct, *slots, *key,
                                                       {0.0, 0});

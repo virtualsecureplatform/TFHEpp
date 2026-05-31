@@ -858,6 +858,25 @@ inline void CKKSModRaise(CKKSCiphertext<P, OutLogQ, LogDelta> &res,
             res.ct[c][i] = ckks_detail::reduceToLevel<P, InLogQ>(ct.ct[c][i]);
 }
 
+template <class P, std::uint32_t InLogQ, std::uint32_t OutLogQ,
+          std::uint32_t LogDelta>
+inline void CKKSModRaiseRandomized(CKKSCiphertext<P, OutLogQ, LogDelta> &res,
+                                   const CKKSCiphertext<P, InLogQ, LogDelta> &ct)
+{
+    static_assert(InLogQ < OutLogQ);
+    static_assert(OutLogQ <= ckks_detail::torus_width_v<P>);
+    constexpr std::uint32_t high_log_q = OutLogQ - InLogQ;
+    for (int c = 0; c <= static_cast<int>(P::k); c++) {
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            const typename P::T low =
+                ckks_detail::reduceToLevel<P, InLogQ>(ct.ct[c][i]);
+            const typename P::T high =
+                ckks_detail::uniformAtLevel<P, high_log_q>() << InLogQ;
+            res.ct[c][i] = ckks_detail::reduceToLevel<P, OutLogQ>(low + high);
+        }
+    }
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
 inline void CKKSPlainMulRescaleTRLWE(TRLWE<P> &res, const TRLWE<P> &ct,
                                      const Polynomial<P> &plain)
