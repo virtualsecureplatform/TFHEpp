@@ -1110,6 +1110,80 @@ inline void CKKSLinearTransformBSGS(
         res, ct, plan, input_gk, output_gk);
 }
 
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+struct CKKSRealLinearTransformPlan {
+    static_assert(PlainLogDelta < LogQ);
+    static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    static constexpr std::uint32_t plain_log_delta = PlainLogDelta;
+    static constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+
+    bool has_direct = false;
+    bool has_conjugate = false;
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> direct{};
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> conjugate{};
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSBuildRealLinearTransformPlan(
+    CKKSRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    const std::vector<CKKSSlotVector<P>> &direct_diagonals,
+    const std::vector<int> &direct_offsets,
+    const std::vector<CKKSSlotVector<P>> &conjugate_diagonals,
+    const std::vector<int> &conjugate_offsets, int k_step)
+{
+    assert(!direct_diagonals.empty() || !conjugate_diagonals.empty());
+    plan.has_direct = !direct_diagonals.empty();
+    plan.has_conjugate = !conjugate_diagonals.empty();
+    if (plan.has_direct)
+        CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+            plan.direct, direct_diagonals, direct_offsets, k_step);
+    if (plan.has_conjugate)
+        CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+            plan.conjugate, conjugate_diagonals, conjugate_offsets, k_step);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSRealLinearTransform(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    const CKKSGaloisKey<P, LogQ> &input_gk,
+    const CKKSGaloisKey<P, LogQ - PlainLogDelta> &output_gk)
+{
+    static_assert(PlainLogDelta < LogQ);
+    constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+    assert(plan.has_direct || plan.has_conjugate);
+
+    bool initialized = false;
+    auto term = std::make_unique<CKKSPlainMulResult<P, LogQ, LogDelta,
+                                                   PlainLogDelta>>();
+    if (plan.has_direct) {
+        CKKSLinearTransformBSGS<P, LogQ, LogDelta, PlainLogDelta>(
+            *term, ct, plan.direct, input_gk, output_gk);
+        res = *term;
+        initialized = true;
+    }
+
+    if (plan.has_conjugate) {
+        auto conjugated = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+        CKKSConjugateSlots<P, LogQ>(conjugated->ct, ct.ct, input_gk);
+        CKKSLinearTransformBSGS<P, LogQ, LogDelta, PlainLogDelta>(
+            *term, *conjugated, plan.conjugate, input_gk, output_gk);
+        if (!initialized) {
+            res = *term;
+            initialized = true;
+        }
+        else {
+            CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, term->ct);
+        }
+    }
+    ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+}
+
 template <class P, std::uint32_t LogQ>
 inline std::unique_ptr<CKKSRelinKey<P, LogQ>> makeCKKSRelinKey(
     const Key<P> &key, CKKSNoise noise = {P::α, 0})

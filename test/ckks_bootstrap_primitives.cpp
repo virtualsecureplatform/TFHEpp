@@ -147,5 +147,26 @@ int main()
     }
     require_close(*decoded, *expected, tol, "CKKS precomputed BSGS");
 
+    std::vector<TFHEpp::CKKSSlotVector<P>> direct_real_diags(1);
+    std::vector<TFHEpp::CKKSSlotVector<P>> conj_real_diags(1);
+    direct_real_diags[0].fill({1.0, 0.0});
+    conj_real_diags[0].fill({1.0, 0.0});
+    const std::vector<int> zero_offset{0};
+
+    TFHEpp::CKKSRealLinearTransformPlan<P, boot_log_q, log_delta,
+                                        plain_log_delta>
+        real_plan;
+    TFHEpp::CKKSBuildRealLinearTransformPlan<P, boot_log_q, log_delta,
+                                             plain_log_delta>(
+        real_plan, direct_real_diags, zero_offset, conj_real_diags, zero_offset,
+        1);
+    auto real_part = std::make_unique<LinearOut>();
+    TFHEpp::CKKSRealLinearTransform<P, boot_log_q, log_delta, plain_log_delta>(
+        *real_part, *boot_ct, real_plan, *boot_gk, *out_gk);
+    TFHEpp::ckksSlotDecrypt<P, LinearOut::log_q, LinearOut::log_delta>(
+        *decoded, *real_part, *key);
+    for (int i = 0; i < half; i++) (*expected)[i] = {2 * (*slots)[i].real(), 0};
+    require_close(*decoded, *expected, tol, "CKKS real-linear transform");
+
     std::cout << "Passed" << std::endl;
 }
