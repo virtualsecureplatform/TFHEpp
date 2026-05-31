@@ -869,19 +869,22 @@ inline void encryptPolynomialAtLevel(TRLWE<P> &ct, const Polynomial<P> &poly,
         ct[P::k][i] =
             reduceToLevel<P, LogQ>(poly[i] + sampleNoise<P, LogQ>(noise));
 
+    auto partkey = std::make_unique<Polynomial<P>>();
+    auto mask_phase = std::make_unique<Polynomial<P>>();
     for (int k = 0; k < static_cast<int>(P::k); k++) {
         for (std::uint32_t i = 0; i < P::n; i++)
             ct[k][i] = uniformAtLevel<P, LogQ>();
 
-        Polynomial<P> partkey{};
         for (std::uint32_t i = 0; i < P::n; i++)
-            partkey[i] = key[k * P::n + i];
+            (*partkey)[i] = key[k * P::n + i];
 
-        Polynomial<P> mask_phase{};
-        PolyMul<P>(mask_phase, ct[k], partkey);
+        if constexpr (is_multilimb_uint_v<typename P::T>)
+            PolyMulTorusByDigit<P>(*mask_phase, ct[k], *partkey);
+        else
+            PolyMul<P>(*mask_phase, ct[k], *partkey);
         for (std::uint32_t i = 0; i < P::n; i++)
             ct[P::k][i] =
-                reduceToLevel<P, LogQ>(ct[P::k][i] + mask_phase[i]);
+                reduceToLevel<P, LogQ>(ct[P::k][i] + (*mask_phase)[i]);
     }
 }
 
@@ -1422,24 +1425,24 @@ inline void CKKSAutoKeyGen(CKKSAutoKey<P, LogQ> &autokey, const uint d,
     constexpr std::uint32_t first_row =
         CKKSKeySwitchFirstRowForLevel<P, LogQ>();
 
+    auto partkey = std::make_unique<Polynomial<P>>();
+    auto autokey_poly = std::make_unique<Polynomial<P>>();
+    auto gadget = std::make_unique<Polynomial<P>>();
     for (int k = 0; k < static_cast<int>(P::k); k++) {
-        Polynomial<P> partkey{};
         for (std::uint32_t i = 0; i < P::n; i++)
-            partkey[i] = key[k * P::n + i];
+            (*partkey)[i] = key[k * P::n + i];
 
-        Polynomial<P> autokey_poly{};
-        Automorphism<P>(autokey_poly, partkey, d);
+        Automorphism<P>(*autokey_poly, *partkey, d);
 
         for (int j = 0; j < static_cast<int>(row_count); j++) {
             const std::uint32_t full_row = first_row + j;
             const int shift =
                 width - (full_row + 1) * static_cast<int>(P::B̅gbit);
-            Polynomial<P> gadget{};
             for (std::uint32_t n = 0; n < P::n; n++)
-                gadget[n] = ckks_detail::reduceToLevel<P, LogQ>(
-                    autokey_poly[n] << shift);
+                (*gadget)[n] = ckks_detail::reduceToLevel<P, LogQ>(
+                    (*autokey_poly)[n] << shift);
             ckks_detail::encryptPolynomialAtLevel<P, LogQ>(
-                autokey[k][j], gadget, key, noise);
+                autokey[k][j], *gadget, key, noise);
         }
     }
 }
@@ -3010,24 +3013,27 @@ inline std::unique_ptr<CKKSRelinKey<P, LogQ>> makeCKKSRelinKey(
 
     auto relinkey = std::make_unique<CKKSRelinKey<P, LogQ>>();
     auto keysquare = std::make_unique<Polynomial<P>>();
-    Polynomial<P> partkey{};
-    for (std::uint32_t i = 0; i < P::n; i++) partkey[i] = key[i];
-    PolyMul<P>(*keysquare, partkey, partkey);
+    auto partkey = std::make_unique<Polynomial<P>>();
+    for (std::uint32_t i = 0; i < P::n; i++) (*partkey)[i] = key[i];
+    if constexpr (is_multilimb_uint_v<typename P::T>)
+        PolyMulDigit<P>(*keysquare, *partkey, *partkey);
+    else
+        PolyMul<P>(*keysquare, *partkey, *partkey);
 
     constexpr int width = std::numeric_limits<typename P::T>::digits;
     constexpr std::uint32_t row_count =
         CKKSKeySwitchRowCountForLevel<P, LogQ>();
     constexpr std::uint32_t first_row =
         CKKSKeySwitchFirstRowForLevel<P, LogQ>();
+    auto gadget = std::make_unique<Polynomial<P>>();
     for (int j = 0; j < static_cast<int>(row_count); j++) {
         const std::uint32_t full_row = first_row + j;
         const int shift =
             width - (full_row + 1) * static_cast<int>(P::B̅gbit);
-        Polynomial<P> gadget{};
         for (std::uint32_t n = 0; n < P::n; n++)
-            gadget[n] = ckks_detail::reduceToLevel<P, LogQ>((*keysquare)[n]
-                                                            << shift);
-        ckks_detail::encryptPolynomialAtLevel<P, LogQ>((*relinkey)[j], gadget,
+            (*gadget)[n] = ckks_detail::reduceToLevel<P, LogQ>((*keysquare)[n]
+                                                               << shift);
+        ckks_detail::encryptPolynomialAtLevel<P, LogQ>((*relinkey)[j], *gadget,
                                                        key, noise);
     }
 
@@ -4485,10 +4491,12 @@ inline void CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl(
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "coeff_to_slot_galois", I);
         if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
-            CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, I> gk;
-            CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, I>(gk, usage, key,
-                                                                   noise);
-            CKKSSavePortableBinaryAtomic(path, gk);
+            auto gk =
+                std::make_unique<CKKSDenseBootstrapCoeffToSlotGaloisKey<
+                    Schedule, I>>();
+            CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, I>(
+                *gk, usage, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *gk);
         }
         CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl<I + 1, Schedule>(
             root, usage, key, noise, options);
@@ -4505,10 +4513,12 @@ inline bool CKKSDenseBootstrapCoeffToSlotKeyGenNextMissingToDirectoryImpl(
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "coeff_to_slot_galois", I);
         if (!std::filesystem::exists(path)) {
-            CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, I> gk;
-            CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, I>(gk, usage, key,
-                                                                   noise);
-            CKKSSavePortableBinaryAtomic(path, gk);
+            auto gk =
+                std::make_unique<CKKSDenseBootstrapCoeffToSlotGaloisKey<
+                    Schedule, I>>();
+            CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, I>(
+                *gk, usage, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *gk);
             return true;
         }
         return CKKSDenseBootstrapCoeffToSlotKeyGenNextMissingToDirectoryImpl<
@@ -4530,10 +4540,12 @@ inline void CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl(
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "slot_to_coeff_galois", I);
         if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
-            CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, I> gk;
-            CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, I>(gk, usage, key,
-                                                                   noise);
-            CKKSSavePortableBinaryAtomic(path, gk);
+            auto gk =
+                std::make_unique<CKKSDenseBootstrapSlotToCoeffGaloisKey<
+                    Schedule, I>>();
+            CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, I>(
+                *gk, usage, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *gk);
         }
         CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl<I + 1, Schedule>(
             root, usage, key, noise, options);
@@ -4550,10 +4562,12 @@ inline bool CKKSDenseBootstrapSlotToCoeffKeyGenNextMissingToDirectoryImpl(
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "slot_to_coeff_galois", I);
         if (!std::filesystem::exists(path)) {
-            CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, I> gk;
-            CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, I>(gk, usage, key,
-                                                                   noise);
-            CKKSSavePortableBinaryAtomic(path, gk);
+            auto gk =
+                std::make_unique<CKKSDenseBootstrapSlotToCoeffGaloisKey<
+                    Schedule, I>>();
+            CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, I>(
+                *gk, usage, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *gk);
             return true;
         }
         return CKKSDenseBootstrapSlotToCoeffKeyGenNextMissingToDirectoryImpl<
@@ -4574,10 +4588,12 @@ inline void CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl(
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
         if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
-            CKKSDenseEvalModPolynomialRelinKey<Schedule, I> relinkey;
-            CKKSDenseEvalModPolynomialRelinKeyGen<Schedule, I>(relinkey, key,
+            auto relinkey =
+                std::make_unique<CKKSDenseEvalModPolynomialRelinKey<Schedule,
+                                                                    I>>();
+            CKKSDenseEvalModPolynomialRelinKeyGen<Schedule, I>(*relinkey, key,
                                                                noise);
-            CKKSSavePortableBinaryAtomic(path, relinkey);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
         }
         CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<I + 1, Schedule>(
             root, key, noise, options);
@@ -4594,10 +4610,12 @@ inline bool CKKSDenseBootstrapPolynomialRelinKeyGenNextMissingToDirectoryImpl(
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
         if (!std::filesystem::exists(path)) {
-            CKKSDenseEvalModPolynomialRelinKey<Schedule, I> relinkey;
-            CKKSDenseEvalModPolynomialRelinKeyGen<Schedule, I>(relinkey, key,
+            auto relinkey =
+                std::make_unique<CKKSDenseEvalModPolynomialRelinKey<Schedule,
+                                                                    I>>();
+            CKKSDenseEvalModPolynomialRelinKeyGen<Schedule, I>(*relinkey, key,
                                                                noise);
-            CKKSSavePortableBinaryAtomic(path, relinkey);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
             return true;
         }
         return CKKSDenseBootstrapPolynomialRelinKeyGenNextMissingToDirectoryImpl<
@@ -4617,10 +4635,12 @@ inline void CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl(
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I);
         if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
-            CKKSDenseEvalModDoubleAngleRelinKey<Schedule, I> relinkey;
-            CKKSDenseEvalModDoubleAngleRelinKeyGen<Schedule, I>(relinkey, key,
-                                                                noise);
-            CKKSSavePortableBinaryAtomic(path, relinkey);
+            auto relinkey =
+                std::make_unique<CKKSDenseEvalModDoubleAngleRelinKey<
+                    Schedule, I>>();
+            CKKSDenseEvalModDoubleAngleRelinKeyGen<Schedule, I>(
+                *relinkey, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
         }
         CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl<I + 1,
                                                                 Schedule>(
@@ -4637,10 +4657,12 @@ inline bool CKKSDenseBootstrapDoubleAngleRelinKeyGenNextMissingToDirectoryImpl(
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I);
         if (!std::filesystem::exists(path)) {
-            CKKSDenseEvalModDoubleAngleRelinKey<Schedule, I> relinkey;
-            CKKSDenseEvalModDoubleAngleRelinKeyGen<Schedule, I>(relinkey, key,
-                                                                noise);
-            CKKSSavePortableBinaryAtomic(path, relinkey);
+            auto relinkey =
+                std::make_unique<CKKSDenseEvalModDoubleAngleRelinKey<
+                    Schedule, I>>();
+            CKKSDenseEvalModDoubleAngleRelinKeyGen<Schedule, I>(
+                *relinkey, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
             return true;
         }
         return CKKSDenseBootstrapDoubleAngleRelinKeyGenNextMissingToDirectoryImpl<
@@ -4969,10 +4991,12 @@ inline bool CKKSDenseBootstrapKeyGenNextMissingToDirectory(
         ckks_detail::CKKSDenseBootstrapNamedPath(root,
                                                  "packed_conjugate_galois");
     if (!std::filesystem::exists(packed_path)) {
-        CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule> packed_conjugate;
+        auto packed_conjugate =
+            std::make_unique<CKKSDenseBootstrapPackedConjugateGaloisKey<
+                Schedule>>();
         CKKSDenseBootstrapPackedConjugateGaloisKeyGen<Schedule>(
-            packed_conjugate, rotation_usage, key, noise);
-        CKKSSavePortableBinaryAtomic(packed_path, packed_conjugate);
+            *packed_conjugate, rotation_usage, key, noise);
+        CKKSSavePortableBinaryAtomic(packed_path, *packed_conjugate);
         return true;
     }
 
@@ -5007,10 +5031,12 @@ inline void CKKSDenseBootstrapKeyGenToDirectory(
                                                  "packed_conjugate_galois");
     if (ckks_detail::CKKSDenseBootstrapShouldWriteKeyFile(packed_path,
                                                           options)) {
-        CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule> packed_conjugate;
+        auto packed_conjugate =
+            std::make_unique<CKKSDenseBootstrapPackedConjugateGaloisKey<
+                Schedule>>();
         CKKSDenseBootstrapPackedConjugateGaloisKeyGen<Schedule>(
-            packed_conjugate, rotation_usage, key, noise);
-        CKKSSavePortableBinaryAtomic(packed_path, packed_conjugate);
+            *packed_conjugate, rotation_usage, key, noise);
+        CKKSSavePortableBinaryAtomic(packed_path, *packed_conjugate);
     }
 
     ckks_detail::CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<
