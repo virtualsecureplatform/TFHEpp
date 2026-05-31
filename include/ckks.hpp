@@ -10,8 +10,10 @@
 #include <memory>
 #include <random>
 #include <type_traits>
+#include <vector>
 
 #include "bfv++.hpp"
+#include "bfv-slots.hpp"
 #include "params.hpp"
 #include "trlwe.hpp"
 #include "utils.hpp"
@@ -61,6 +63,27 @@ struct CKKSRelinKey {
     TRLWE<P> &operator[](std::size_t i) { return data[i]; }
     const TRLWE<P> &operator[](std::size_t i) const { return data[i]; }
 };
+
+template <class P, std::uint32_t LogQ>
+struct CKKSAutoKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+
+    std::array<std::array<TRLWE<P>, P::l̅>, P::k> data{};
+
+    std::array<TRLWE<P>, P::l̅> &operator[](std::size_t i) { return data[i]; }
+    const std::array<TRLWE<P>, P::l̅> &operator[](std::size_t i) const
+    {
+        return data[i];
+    }
+};
+
+template <class P, std::uint32_t LogQ>
+using CKKSGaloisKey = std::array<CKKSAutoKey<P, LogQ>, P::nbit + 1>;
 
 struct CKKSNoise {
     double modular_stdev = 0.0;
@@ -259,6 +282,128 @@ inline void reduceTRLWE3ToLevel(TRLWE3<P> &ct)
     for (int c = 0; c < 3; c++) reducePolynomialToLevel<P, LogQ>(ct[c]);
 }
 
+template <class P>
+inline bool fitsU64(typename P::T value)
+{
+    if constexpr (std::is_same_v<typename P::T, __uint128_t>) {
+        return value <= static_cast<__uint128_t>(
+                            std::numeric_limits<std::uint64_t>::max());
+    }
+    else {
+        using T = typename P::T;
+        static_assert(is_multilimb_uint_v<T>);
+        for (std::size_t i = 1; i < T::limbs; i++)
+            if (value.limb[i] != 0) return false;
+        return true;
+    }
+}
+
+template <class P>
+inline std::uint64_t lowU64(typename P::T value)
+{
+    if constexpr (std::is_same_v<typename P::T, __uint128_t>)
+        return static_cast<std::uint64_t>(value);
+    else {
+        static_assert(is_multilimb_uint_v<typename P::T>);
+        return value.limb[0];
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline std::pair<bool, std::uint64_t> smallSignedMagnitude(typename P::T value)
+{
+    using T = typename P::T;
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= torus_width_v<P>);
+
+    value = reduceToLevel<P, LogQ>(value);
+    const T sign = T{1} << (LogQ - 1);
+    const bool negative = (value & sign) != T{0};
+    T magnitude = value;
+    if (negative) {
+        if constexpr (LogQ == torus_width_v<P>)
+            magnitude = T{0} - value;
+        else
+            magnitude = (T{1} << LogQ) - value;
+    }
+
+    assert(fitsU64<P>(magnitude));
+    return {negative, lowU64<P>(magnitude)};
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t DropBits>
+inline typename P::T roundedLevelRightShift(typename P::T value)
+{
+    using T = typename P::T;
+    static_assert(DropBits > 0);
+    static_assert(DropBits < LogQ);
+    static_assert(LogQ <= torus_width_v<P>);
+    constexpr std::uint32_t out_log_q = LogQ - DropBits;
+
+    value = reduceToLevel<P, LogQ>(value);
+    const T sign = T{1} << (LogQ - 1);
+    const bool negative = (value & sign) != T{0};
+    const T half = T{1} << (DropBits - 1);
+
+    if (!negative)
+        return reduceToLevel<P, out_log_q>((value + half) >> DropBits);
+
+    T magnitude;
+    if constexpr (LogQ == torus_width_v<P>)
+        magnitude = T{0} - value;
+    else
+        magnitude = (T{1} << LogQ) - value;
+    const T rounded = (magnitude + half) >> DropBits;
+    return reduceToLevel<P, out_log_q>(T{0} - rounded);
+}
+
+template <class P, std::uint32_t PlainLogQ>
+inline void polyMulTorusBySmallSigned(Polynomial<P> &res,
+                                      const Polynomial<P> &torus,
+                                      const Polynomial<P> &plain)
+{
+    using T = typename P::T;
+    static_assert(PlainLogQ > 0);
+    static_assert(PlainLogQ <= torus_width_v<P>);
+
+    if constexpr (is_multilimb_uint_v<T>) {
+        auto pos = std::make_unique<std::array<std::uint64_t, P::n>>();
+        auto neg = std::make_unique<std::array<std::uint64_t, P::n>>();
+        bool has_pos = false;
+        bool has_neg = false;
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            const auto [negative, magnitude] =
+                smallSignedMagnitude<P, PlainLogQ>(plain[i]);
+            (*pos)[i] = negative ? 0 : magnitude;
+            (*neg)[i] = negative ? magnitude : 0;
+            has_pos = has_pos || (!negative && magnitude != 0);
+            has_neg = has_neg || (negative && magnitude != 0);
+        }
+
+        if (has_pos)
+            PolyMulTorusByUnsignedBits<P, 64>(res, torus, *pos);
+        else
+            for (std::uint32_t i = 0; i < P::n; i++) res[i] = 0;
+
+        if (has_neg) {
+            auto tmp = std::make_unique<Polynomial<P>>();
+            PolyMulTorusByUnsignedBits<P, 64>(*tmp, torus, *neg);
+            for (std::uint32_t i = 0; i < P::n; i++) res[i] -= (*tmp)[i];
+        }
+    }
+    else {
+        static_assert(std::is_same_v<T, __uint128_t>);
+        for (int i = 0; i < static_cast<int>(P::n); i++) {
+            T ri = 0;
+            for (int j = 0; j <= i; j++)
+                ri += torus[j] * plain[i - j];
+            for (int j = i + 1; j < static_cast<int>(P::n); j++)
+                ri -= torus[j] * plain[P::n + i - j];
+            res[i] = reduceToLevel<P, PlainLogQ>(ri);
+        }
+    }
+}
+
 template <class P, std::uint32_t LogQ>
 inline void centeredTRLWEAtLevel(TRLWE<P> &out, const TRLWE<P> &in)
 {
@@ -312,15 +457,33 @@ inline void decodeRealPolynomial(std::array<double, P::n> &coeffs,
     }
 }
 
+template <class P>
+inline const std::array<std::uint32_t, P::n / 2> &ckksSlotToEvalIndex()
+{
+    static const auto table = [] {
+        std::array<std::uint32_t, P::n / 2> tbl{};
+        std::uint64_t g = 1;
+        constexpr std::uint64_t twon = 2 * P::n;
+        for (std::uint32_t i = 0; i < P::n / 2; i++) {
+            tbl[i] = static_cast<std::uint32_t>((g - 1) / 2);
+            g = (g * 5) % twon;
+        }
+        return tbl;
+    }();
+    return table;
+}
+
 template <std::uint32_t LogDelta, class P>
 inline void fillConjugateSymmetricEvaluations(
     std::array<std::complex<double>, P::n> &evals,
     const std::array<std::complex<double>, P::n / 2> &slots)
 {
     const double scale = std::ldexp(1.0, LogDelta);
+    const auto &slot_to_eval = ckksSlotToEvalIndex<P>();
     for (std::uint32_t i = 0; i < P::n / 2; i++) {
-        evals[i] = slots[i] * scale;
-        evals[P::n - 1 - i] = std::conj(evals[i]);
+        const std::uint32_t eval_index = slot_to_eval[i];
+        evals[eval_index] = slots[i] * scale;
+        evals[P::n - 1 - eval_index] = std::conj(evals[eval_index]);
     }
 }
 
@@ -482,11 +645,13 @@ inline void ckksSlotDecode(
     static_assert(LogDelta < LogQ);
     constexpr double pi = 3.141592653589793238462643383279502884;
     const double inv_scale = std::ldexp(1.0, -static_cast<int>(LogDelta));
+    const auto &slot_to_eval = ckks_detail::ckksSlotToEvalIndex<P>();
     for (std::uint32_t k = 0; k < P::n / 2; k++) {
+        const std::uint32_t eval_index = slot_to_eval[k];
         std::complex<long double> value = 0.0L;
         for (std::uint32_t j = 0; j < P::n; j++) {
             const long double angle =
-                pi * static_cast<long double>((2 * k + 1) * j) /
+                pi * static_cast<long double>((2 * eval_index + 1) * j) /
                 static_cast<long double>(P::n);
             const long double coeff = static_cast<long double>(
                 ckks_detail::levelToSigned<P, LogQ>(poly[j]));
@@ -548,6 +713,277 @@ inline void ckksSlotDecrypt(
     ckksSlotDecode<P, LogQ, LogDelta>(slots, phase);
 }
 
+template <class P>
+using CKKSSlotVector = std::array<std::complex<double>, P::n / 2>;
+
+template <class P>
+inline void rotateCKKSSlotVector(CKKSSlotVector<P> &out,
+                                 const CKKSSlotVector<P> &in, int steps)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    for (int i = 0; i < half; i++) out[i] = in[(i + steps) % half];
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+struct CKKSPlainMulTraits {
+    static_assert(PlainLogDelta < LogQ);
+    static constexpr std::uint32_t log_q = LogQ - PlainLogDelta;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+using CKKSPlainMulResult =
+    typename CKKSPlainMulTraits<P, LogQ, LogDelta,
+                                PlainLogDelta>::Ciphertext;
+
+template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
+inline void CKKSPlainMulRescaleTRLWE(TRLWE<P> &res, const TRLWE<P> &ct,
+                                     const Polynomial<P> &plain)
+{
+    static_assert(PlainLogDelta < LogQ);
+    constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+    auto product = std::make_unique<Polynomial<P>>();
+    for (int c = 0; c <= static_cast<int>(P::k); c++) {
+        ckks_detail::polyMulTorusBySmallSigned<P, LogQ>(*product, ct[c], plain);
+        for (std::uint32_t i = 0; i < P::n; i++)
+            res[c][i] =
+                ckks_detail::roundedLevelRightShift<P, LogQ, PlainLogDelta>(
+                    (*product)[i]);
+    }
+    ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSPlainMulRescale(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSPlaintext<P, LogQ, PlainLogDelta> &plain)
+{
+    CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(res.ct, ct.ct,
+                                                     plain.poly);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSAddTRLWEInPlace(TRLWE<P> &acc, const TRLWE<P> &term)
+{
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t i = 0; i < P::n; i++)
+            acc[c][i] = ckks_detail::reduceToLevel<P, LogQ>(acc[c][i] +
+                                                            term[c][i]);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSSubTRLWEInPlace(TRLWE<P> &acc, const TRLWE<P> &term)
+{
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t i = 0; i < P::n; i++)
+            acc[c][i] = ckks_detail::reduceToLevel<P, LogQ>(acc[c][i] -
+                                                            term[c][i]);
+}
+
+template <class P, std::uint32_t LogQ, class Rows>
+inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
+                              const Rows &rows)
+{
+    static_assert(ckks_detail::supported_torus_v<P>);
+    static_assert(P::l̅ * P::B̅gbit ==
+                      std::numeric_limits<typename P::T>::digits,
+                  "CKKS key switching requires full Bbar decomposition");
+
+    TRLWE<P> poly_as_trlwe{};
+    poly_as_trlwe[0] = poly;
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(poly_as_trlwe);
+
+    auto decomposed = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
+    TRLWEBaseBbarDecompose<P>(*decomposed, poly_as_trlwe);
+
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
+
+    auto product = std::make_unique<Polynomial<P>>();
+    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+        const Polynomial<P> &digit = (*decomposed)[j][0];
+        for (int c = 0; c <= static_cast<int>(P::k); c++) {
+            ckks_detail::polyMulTorusByBbarDigit<P>(*product, rows[j][c],
+                                                    digit);
+            for (std::uint32_t n = 0; n < P::n; n++)
+                res[c][n] =
+                    ckks_detail::reduceToLevel<P, LogQ>(res[c][n] +
+                                                        (*product)[n]);
+        }
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSAutoKeyGen(CKKSAutoKey<P, LogQ> &autokey, const uint d,
+                           const Key<P> &key,
+                           CKKSNoise noise = {P::α, 0})
+{
+    static_assert(ckks_detail::supported_torus_v<P>);
+    constexpr int width = std::numeric_limits<typename P::T>::digits;
+
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        Polynomial<P> partkey{};
+        for (std::uint32_t i = 0; i < P::n; i++)
+            partkey[i] = key[k * P::n + i];
+
+        Polynomial<P> autokey_poly{};
+        Automorphism<P>(autokey_poly, partkey, d);
+
+        for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+            const int shift = width - (j + 1) * static_cast<int>(P::B̅gbit);
+            Polynomial<P> gadget{};
+            for (std::uint32_t n = 0; n < P::n; n++)
+                gadget[n] = ckks_detail::reduceToLevel<P, LogQ>(
+                    autokey_poly[n] << shift);
+            ckks_detail::encryptPolynomialAtLevel<P, LogQ>(
+                autokey[k][j], gadget, key, noise);
+        }
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSGaloisKeyGen(CKKSGaloisKey<P, LogQ> &gk, const Key<P> &key,
+                             CKKSNoise noise = {P::α, 0})
+{
+    std::uint64_t d = 5;
+    for (int i = 0; i < static_cast<int>(P::nbit); i++) {
+        CKKSAutoKeyGen<P, LogQ>(gk[i], static_cast<uint>(d), key, noise);
+        d = d * d % (2 * P::n);
+    }
+    CKKSAutoKeyGen<P, LogQ>(gk[P::nbit], 2 * P::n - 1, key, noise);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSEvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
+                         const CKKSAutoKey<P, LogQ> &autokey)
+{
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
+    Automorphism<P>(res[P::k], trlwe[P::k], d);
+    ckks_detail::reducePolynomialToLevel<P, LogQ>(res[P::k]);
+
+    auto temppoly = std::make_unique<Polynomial<P>>();
+    auto switched = std::make_unique<TRLWE<P>>();
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        Automorphism<P>(*temppoly, trlwe[k], d);
+        CKKSKeySwitchRows<P, LogQ>(*switched, *temppoly, autokey[k]);
+        CKKSSubTRLWEInPlace<P, LogQ>(res, *switched);
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
+                            const CKKSGaloisKey<P, LogQ> &gk)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    if (steps == 0) {
+        res = ct;
+        ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+        return;
+    }
+
+    std::uint64_t d = 5;
+    auto cur = std::make_unique<TRLWE<P>>(ct);
+    auto tmp = std::make_unique<TRLWE<P>>();
+    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++) {
+        if ((steps >> i) & 1) {
+            CKKSEvalAuto<P, LogQ>(*tmp, *cur, static_cast<int>(d), gk[i]);
+            *cur = *tmp;
+        }
+        d = d * d % (2 * P::n);
+    }
+    res = *cur;
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSLinearTransformBSGS(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const std::vector<CKKSSlotVector<P>> &diagonals,
+    const std::vector<int> &rotation_offsets, int k_step,
+    const CKKSGaloisKey<P, LogQ> &input_gk,
+    const CKKSGaloisKey<P, LogQ - PlainLogDelta> &output_gk)
+{
+    static_assert(PlainLogDelta < LogQ);
+    constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(diagonals.size() == rotation_offsets.size());
+    assert(!diagonals.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    auto baby = std::make_unique<std::vector<TRLWE<P>>>(k_step);
+    (*baby)[0] = ct.ct;
+    for (int j1 = 1; j1 < k_step; j1++)
+        CKKSRotateSlots<P, LogQ>((*baby)[j1], ct.ct, j1, input_gk);
+
+    std::vector<std::vector<std::pair<int, std::size_t>>> groups;
+    int max_j2 = 0;
+    for (std::size_t i = 0; i < rotation_offsets.size(); i++) {
+        const int r = ((rotation_offsets[i] % half) + half) % half;
+        const int j2 = r / k_step;
+        const int j1 = r % k_step;
+        if (j2 >= max_j2) {
+            max_j2 = j2;
+            groups.resize(max_j2 + 1);
+        }
+        groups[j2].emplace_back(j1, i);
+    }
+
+    bool res_initialized = false;
+    auto rotated_diag = std::make_unique<CKKSSlotVector<P>>();
+    auto plain = std::make_unique<CKKSPlaintext<P, LogQ, PlainLogDelta>>();
+    auto term = std::make_unique<TRLWE<P>>();
+    auto inner = std::make_unique<TRLWE<P>>();
+    auto giant_rotated = std::make_unique<TRLWE<P>>();
+
+    for (int j2 = 0; j2 <= max_j2; j2++) {
+        if (groups[j2].empty()) continue;
+
+        bool inner_initialized = false;
+        for (const auto &[j1, idx] : groups[j2]) {
+            rotateCKKSSlotVector<P>(*rotated_diag, diagonals[idx],
+                                    -k_step * j2);
+            ckksSlotEncode<P, LogQ, PlainLogDelta>(plain->poly, *rotated_diag);
+            CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
+                *term, (*baby)[j1], plain->poly);
+
+            if (!inner_initialized) {
+                *inner = *term;
+                inner_initialized = true;
+            }
+            else {
+                CKKSAddTRLWEInPlace<P, out_log_q>(*inner, *term);
+            }
+        }
+
+        const TRLWE<P> *to_add = inner.get();
+        if (j2 != 0) {
+            CKKSRotateSlots<P, out_log_q>(*giant_rotated, *inner, k_step * j2,
+                                          output_gk);
+            ckks_detail::reduceTRLWEToLevel<P, out_log_q>(*giant_rotated);
+            to_add = giant_rotated.get();
+        }
+
+        if (!res_initialized) {
+            res.ct = *to_add;
+            res_initialized = true;
+        }
+        else {
+            CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
+        }
+    }
+    ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+}
+
 template <class P, std::uint32_t LogQ>
 inline std::unique_ptr<CKKSRelinKey<P, LogQ>> makeCKKSRelinKey(
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
@@ -578,33 +1014,7 @@ template <class P, std::uint32_t LogQ>
 inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
                                const CKKSRelinKey<P, LogQ> &relinkey)
 {
-    static_assert(ckks_detail::supported_torus_v<P>);
-    static_assert(P::l̅ * P::B̅gbit ==
-                      std::numeric_limits<typename P::T>::digits,
-                  "CKKS relinearization requires full Bbar decomposition");
-
-    TRLWE<P> poly_as_trlwe{};
-    poly_as_trlwe[0] = poly;
-    ckks_detail::reduceTRLWEToLevel<P, LogQ>(poly_as_trlwe);
-
-    auto decomposed = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
-    TRLWEBaseBbarDecompose<P>(*decomposed, poly_as_trlwe);
-
-    for (int c = 0; c <= static_cast<int>(P::k); c++)
-        for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
-
-    auto product = std::make_unique<Polynomial<P>>();
-    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-        const Polynomial<P> &digit = (*decomposed)[j][0];
-        for (int c = 0; c <= static_cast<int>(P::k); c++) {
-            ckks_detail::polyMulTorusByBbarDigit<P>(
-                *product, relinkey[j][c], digit);
-            for (std::uint32_t n = 0; n < P::n; n++)
-                res[c][n] =
-                    ckks_detail::reduceToLevel<P, LogQ>(res[c][n] +
-                                                        (*product)[n]);
-        }
-    }
+    CKKSKeySwitchRows<P, LogQ>(res, poly, relinkey.data);
 }
 
 template <class P, std::uint32_t LogQ>

@@ -394,15 +394,16 @@ inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
     }
 }
 
-template <class P>
-inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
-                                   const Polynomial<P> &torus,
-                                   const std::array<uint64_t, P::n> &plain)
+template <class P, int PlainBits>
+inline void PolyMulTorusByUnsignedBits(Polynomial<P> &res,
+                                       const Polynomial<P> &torus,
+                                       const std::array<uint64_t, P::n> &plain)
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
-                  "PolyMulTorusByUnsigned is only for multi-limb torus types");
+                  "PolyMulTorusByUnsignedBits is only for multi-limb torus types");
+    static_assert(PlainBits > 0 && PlainBits <= 64);
     static_assert(P::l̅ * P::B̅gbit == std::numeric_limits<typename P::T>::digits,
-                  "PolyMulTorusByUnsigned expects Bbar digits to cover the torus");
+                  "PolyMulTorusByUnsignedBits expects Bbar digits to cover the torus");
     static_assert(2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
                       std::numeric_limits<double>::digits,
                   "unsigned digit products must fit exactly in double");
@@ -410,7 +411,7 @@ inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
     using T = typename P::T;
     constexpr int width = std::numeric_limits<T>::digits;
     constexpr int plain_digits =
-        (static_cast<int>(P::plain_modulusbit) + static_cast<int>(P::B̅gbit) - 1) /
+        (PlainBits + static_cast<int>(P::B̅gbit) - 1) /
         static_cast<int>(P::B̅gbit);
     constexpr uint64_t plain_mask =
         P::B̅gbit == 64 ? std::numeric_limits<uint64_t>::max()
@@ -475,6 +476,15 @@ inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
                 res[n] += (*digit_prod)[n] << shift;
         }
     }
+}
+
+template <class P>
+inline void PolyMulTorusByUnsigned(Polynomial<P> &res,
+                                   const Polynomial<P> &torus,
+                                   const std::array<uint64_t, P::n> &plain)
+{
+    PolyMulTorusByUnsignedBits<P, static_cast<int>(P::plain_modulusbit)>(
+        res, torus, plain);
 }
 
 template <class P>
