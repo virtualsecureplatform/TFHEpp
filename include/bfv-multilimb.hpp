@@ -199,6 +199,12 @@ struct MultiLimbUInt {
         }
         return rem;
     }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(limb);
+    }
 };
 
 template <class T>

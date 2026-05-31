@@ -3,12 +3,23 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/types/array.hpp>
+#include <cereal/types/complex.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/tuple.hpp>
+#include <cereal/types/vector.hpp>
 #include <cmath>
 #include <complex>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <random>
+#include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <tuple>
 #include <utility>
@@ -35,6 +46,12 @@ struct CKKSCiphertext {
     static constexpr std::uint32_t log_budget = LogQ - LogDelta;
 
     TRLWE<P> ct{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(ct);
+    }
 };
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -49,6 +66,12 @@ struct CKKSPlaintext {
     static constexpr std::uint32_t log_delta = LogDelta;
 
     Polynomial<P> poly{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(poly);
+    }
 };
 
 template <class P, std::uint32_t LogQ>
@@ -85,6 +108,12 @@ struct CKKSRelinKey {
 
     TRLWE<P> &operator[](std::size_t i) { return data[i]; }
     const TRLWE<P> &operator[](std::size_t i) const { return data[i]; }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(data);
+    }
 };
 
 template <class P, std::uint32_t LogQ>
@@ -105,6 +134,12 @@ struct CKKSAutoKey {
     const Rows &operator[](std::size_t i) const
     {
         return data[i];
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(data);
     }
 };
 
@@ -202,12 +237,39 @@ struct CKKSSparseGaloisKey {
         assert(has(i));
         return *keys[i];
     }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(available, keys);
+    }
 };
 
 struct CKKSNoise {
     double modular_stdev = 0.0;
     std::uint32_t uniform_bits = 0;
 };
+
+template <class T>
+inline void CKKSSavePortableBinary(const std::filesystem::path &path,
+                                   const T &value)
+{
+    const auto parent = path.parent_path();
+    if (!parent.empty()) std::filesystem::create_directories(parent);
+    std::ofstream ofs(path, std::ios::binary);
+    if (!ofs) throw std::runtime_error("failed to open CKKS key file for write");
+    cereal::PortableBinaryOutputArchive archive(ofs);
+    archive(value);
+}
+
+template <class T>
+inline void CKKSLoadPortableBinary(T &value, const std::filesystem::path &path)
+{
+    std::ifstream ifs(path, std::ios::binary);
+    if (!ifs) throw std::runtime_error("failed to open CKKS key file for read");
+    cereal::PortableBinaryInputArchive archive(ifs);
+    archive(value);
+}
 
 namespace ckks_detail {
 
@@ -1463,12 +1525,24 @@ template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
 struct CKKSLinearTransformTerm {
     int baby_step = 0;
     CKKSPlaintext<P, LogQ, PlainLogDelta> plain{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(baby_step, plain);
+    }
 };
 
 template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
 struct CKKSLinearTransformGiantStep {
     int giant_step = 0;
     std::vector<CKKSLinearTransformTerm<P, LogQ, PlainLogDelta>> terms{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(giant_step, terms);
+    }
 };
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -1482,6 +1556,12 @@ struct CKKSLinearTransformPlan {
 
     int k_step = 0;
     std::vector<CKKSLinearTransformGiantStep<P, LogQ, PlainLogDelta>> groups{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(k_step, groups);
+    }
 };
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -1550,6 +1630,12 @@ template <class P>
 struct CKKSLinearTransformStage {
     std::vector<CKKSSlotVector<P>> diagonals{};
     std::vector<int> rotation_offsets{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(diagonals, rotation_offsets);
+    }
 };
 
 template <class P>
@@ -1747,6 +1833,12 @@ struct CKKSGaloisKeyChain {
     {
         return std::get<I>(keys);
     }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
+    }
 };
 
 namespace ckks_detail {
@@ -1814,6 +1906,12 @@ struct CKKSSparseGaloisKeyChain {
     const auto &get() const
     {
         return std::get<I>(keys);
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
     }
 };
 
@@ -2011,6 +2109,14 @@ using CKKSStagedPlainMulResult =
 
 namespace ckks_detail {
 
+template <std::size_t I, class KeyProvider>
+inline void maybe_release_key(const KeyProvider &keys)
+{
+    if constexpr (requires { keys.template release<I>(); }) {
+        keys.template release<I>();
+    }
+}
+
 template <std::size_t I, class P, std::uint32_t StartLogQ,
           std::uint32_t LogDelta, std::uint32_t PlainLogDelta,
           std::size_t StageCount, class GaloisKeyChain>
@@ -2034,6 +2140,10 @@ inline void CKKSLinearTransformStagesBSGSImpl(
         CKKSLinearTransformBSGS<P, log_q, LogDelta, PlainLogDelta>(
             next, ct, plan, gk_chain.template get<I>(),
             gk_chain.template get<I + 1>());
+        maybe_release_key<I>(gk_chain);
+        if constexpr (I + 1 == StageCount) {
+            maybe_release_key<I + 1>(gk_chain);
+        }
         CKKSLinearTransformStagesBSGSImpl<I + 1, P, StartLogQ, LogDelta,
                                           PlainLogDelta, StageCount>(
             res, next, stages, first_stage, k_step, gk_chain);
@@ -2505,6 +2615,14 @@ struct CKKSBoundedCosEvalModPolynomial {
     double domain_offset = 0.0;
     std::vector<double> chebyshev_coeffs{};
     std::vector<double> power_coeffs{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(k, degree, log_message_ratio, double_angle, message_ratio,
+                q_diff, sqrt_coeff, domain_offset, chebyshev_coeffs,
+                power_coeffs);
+    }
 };
 
 inline double CKKSEvaluateChebyshevUnit(const std::vector<double> &coeffs,
@@ -2674,6 +2792,13 @@ struct CKKSDenseBootstrapLinearPlan {
     CKKSLinearTransformStages<P> coeff_to_slot_stages{};
     CKKSLinearTransformStages<P> slot_to_coeff_stages{};
     CKKSLinearTransformStages<P> slot_to_coeff_imag_stages{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(coeff_to_slot_stages, slot_to_coeff_stages,
+                slot_to_coeff_imag_stages);
+    }
 };
 
 template <class Schedule>
@@ -2686,6 +2811,12 @@ struct CKKSDenseBootstrapRotationKeyUsage {
     std::array<CKKSRotationKeyIndexSet<P>,
                Schedule::slot_to_coeff_level_count + 1>
         slot_to_coeff{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(coeff_to_slot, packed_conjugate, slot_to_coeff);
+    }
 };
 
 template <class P, std::size_t N>
@@ -2860,7 +2991,29 @@ struct CKKSRelinKeyChain {
         static_assert(I < Depth);
         return std::get<I>(keys);
     }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
+    }
 };
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t I>
+using CKKSRelinKeyChainElement =
+    CKKSRelinKey<P, StartLogQ - (I + 1) * LogDelta>;
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::size_t Depth>
+inline void CKKSRelinKeyChainElementGen(
+    CKKSRelinKeyChainElement<P, StartLogQ, LogDelta, I> &key_out,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    static_assert(I < Depth);
+    key_out = *makeCKKSRelinKey<
+        P, StartLogQ - (I + 1) * LogDelta>(key, noise);
+}
 
 namespace ckks_detail {
 
@@ -3282,6 +3435,9 @@ inline void CKKSBuildPowerBasisImpl(
                         std::get<lhs_power - 1>(powers),
                         std::get<rhs_power - 1>(powers),
                         keys.template get<depth - 1>());
+            if constexpr (I == Degree || power_tree_depth(I + 1) > depth) {
+                maybe_release_key<depth - 1>(keys);
+            }
         }
         CKKSBuildPowerBasisImpl<I + 1, Traits, P, StartLogQ, LogDelta,
                                 CoeffLogDelta, Degree>(powers, ct, keys);
@@ -3394,6 +3550,12 @@ struct CKKSEvalModBoundedCosRelinKeys {
 
     typename Traits::PolynomialRelinKeyChain polynomial{};
     typename Traits::DoubleAngleRelinKeyChain double_angle{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(polynomial, double_angle);
+    }
 };
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
@@ -3432,6 +3594,7 @@ inline void CKKSBoundedCosDoubleAngleImpl(
                                       LogDelta>;
         NextCt next;
         CKKSSquare<P>(next, ct, keys.template get<I>());
+        maybe_release_key<I>(keys);
         CKKSMulIntegerInPlace<P, NextCt::log_q, LogDelta>(next, 2);
 
         const double squared_coeff = sqrt_coeff * sqrt_coeff;
@@ -3486,6 +3649,25 @@ struct CKKSEvalModBoundedCosRelinKeyProviderChain {
             return provider.template polynomial_relin<I>();
         else
             return provider.template double_angle_relin<I>();
+    }
+
+    template <std::size_t I>
+    void release() const
+    {
+        if constexpr (Polynomial) {
+            if constexpr (requires {
+                              provider.template release_polynomial_relin<I>();
+                          }) {
+                provider.template release_polynomial_relin<I>();
+            }
+        }
+        else {
+            if constexpr (requires {
+                              provider.template release_double_angle_relin<I>();
+                          }) {
+                provider.template release_double_angle_relin<I>();
+            }
+        }
     }
 };
 
@@ -3569,6 +3751,19 @@ using CKKSDenseEvalModBoundedCosInMemoryKeyProvider =
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseEvalModPolynomialRelinKey =
+    CKKSRelinKeyChainElement<typename Schedule::Param,
+                             Schedule::after_component_split_log_q,
+                             Schedule::log_delta, I>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseEvalModDoubleAngleRelinKey =
+    CKKSRelinKeyChainElement<
+        typename Schedule::Param,
+        CKKSDenseEvalModBoundedCosTraits<Schedule>::polynomial_log_q,
+        Schedule::log_delta, I>;
 
 namespace ckks_detail {
 
@@ -3883,6 +4078,32 @@ inline void CKKSDenseEvalModBoundedCosKeyGen(
                                                                   noise);
 }
 
+template <class Schedule, std::size_t I>
+inline void CKKSDenseEvalModPolynomialRelinKeyGen(
+    CKKSDenseEvalModPolynomialRelinKey<Schedule, I> &relinkey,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    CKKSRelinKeyChainElementGen<
+        I, typename Schedule::Param, Schedule::after_component_split_log_q,
+        Schedule::log_delta, Traits::PolynomialTraits::power_depth>(relinkey, key,
+                                                                    noise);
+}
+
+template <class Schedule, std::size_t I>
+inline void CKKSDenseEvalModDoubleAngleRelinKeyGen(
+    CKKSDenseEvalModDoubleAngleRelinKey<Schedule, I> &relinkey,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    CKKSRelinKeyChainElementGen<I, typename Schedule::Param,
+                                Traits::polynomial_log_q, Schedule::log_delta,
+                                Schedule::evalmod_double_angle>(relinkey, key,
+                                                                noise);
+}
+
 template <class Schedule, class KeyProvider>
 inline void CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider(
     CKKSDenseEvalModBoundedCosResult<Schedule> &res,
@@ -3940,6 +4161,14 @@ struct CKKSDenseBootstrapKey {
         packed_conjugate_galois{};
     CKKSDenseEvalModBoundedCosRelinKeys<Schedule> evalmod_relin{};
     SlotToCoeffGaloisKeyChain slot_to_coeff_galois{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(linear_plan, evalmod_polynomial, coeff_to_slot_galois,
+                packed_conjugate_galois, evalmod_relin,
+                slot_to_coeff_galois);
+    }
 };
 
 template <class Schedule, std::size_t I>
@@ -4142,6 +4371,346 @@ inline void CKKSDenseBootstrapKeyGen(
 
 namespace ckks_detail {
 
+inline std::filesystem::path CKKSDenseBootstrapNamedPath(
+    const std::filesystem::path &root, const std::string &name)
+{
+    return root / (name + ".bin");
+}
+
+inline std::filesystem::path CKKSDenseBootstrapIndexedPath(
+    const std::filesystem::path &root, const std::string &name,
+    std::size_t index)
+{
+    return root / (name + "_" + std::to_string(index) + ".bin");
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl(
+    const std::filesystem::path &root,
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage,
+    const Key<typename Schedule::Param> &key, CKKSNoise noise)
+{
+    if constexpr (I <= Schedule::coeff_to_slot_level_count) {
+        CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, I> gk;
+        CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, I>(gk, usage, key,
+                                                               noise);
+        CKKSSavePortableBinary(
+            CKKSDenseBootstrapIndexedPath(root, "coeff_to_slot_galois", I), gk);
+        CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl<I + 1, Schedule>(
+            root, usage, key, noise);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl(
+    const std::filesystem::path &root,
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage,
+    const Key<typename Schedule::Param> &key, CKKSNoise noise)
+{
+    if constexpr (I <= Schedule::slot_to_coeff_level_count) {
+        CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, I> gk;
+        CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, I>(gk, usage, key,
+                                                               noise);
+        CKKSSavePortableBinary(
+            CKKSDenseBootstrapIndexedPath(root, "slot_to_coeff_galois", I), gk);
+        CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl<I + 1, Schedule>(
+            root, usage, key, noise);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+        CKKSDenseEvalModPolynomialRelinKey<Schedule, I> relinkey;
+        CKKSDenseEvalModPolynomialRelinKeyGen<Schedule, I>(relinkey, key, noise);
+        CKKSSavePortableBinary(
+            CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I),
+            relinkey);
+        CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<I + 1, Schedule>(
+            root, key, noise);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise)
+{
+    if constexpr (I < Schedule::evalmod_double_angle) {
+        CKKSDenseEvalModDoubleAngleRelinKey<Schedule, I> relinkey;
+        CKKSDenseEvalModDoubleAngleRelinKeyGen<Schedule, I>(relinkey, key,
+                                                            noise);
+        CKKSSavePortableBinary(
+            CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I),
+            relinkey);
+        CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl<I + 1,
+                                                                Schedule>(
+            root, key, noise);
+    }
+}
+
+template <class Schedule, class Seq>
+struct CKKSDenseBootstrapCoeffToSlotCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapCoeffToSlotCacheTuple<Schedule,
+                                               std::index_sequence<Is...>> {
+    using type = std::tuple<
+        std::optional<CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, Is>>...>;
+};
+
+template <class Schedule, class Seq>
+struct CKKSDenseBootstrapSlotToCoeffCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapSlotToCoeffCacheTuple<Schedule,
+                                               std::index_sequence<Is...>> {
+    using type = std::tuple<
+        std::optional<CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, Is>>...>;
+};
+
+template <class Schedule, class Seq>
+struct CKKSDenseBootstrapPolynomialRelinCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapPolynomialRelinCacheTuple<Schedule,
+                                                   std::index_sequence<Is...>> {
+    using type =
+        std::tuple<std::optional<
+            CKKSDenseEvalModPolynomialRelinKey<Schedule, Is>>...>;
+};
+
+template <class Schedule, class Seq>
+struct CKKSDenseBootstrapDoubleAngleRelinCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapDoubleAngleRelinCacheTuple<Schedule,
+                                                    std::index_sequence<Is...>> {
+    using type =
+        std::tuple<std::optional<
+            CKKSDenseEvalModDoubleAngleRelinKey<Schedule, Is>>...>;
+};
+
+}  // namespace ckks_detail
+
+template <class Schedule>
+inline void CKKSDenseBootstrapKeyGenToDirectory(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    static_assert(Schedule::evalmod_inv_degree == 0,
+                  "inverse EvalMod correction is not implemented yet");
+    std::filesystem::create_directories(root);
+
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    CKKSSavePortableBinary(
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"),
+        linear_plan);
+
+    CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage;
+    CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(rotation_usage,
+                                                      linear_plan);
+    CKKSSavePortableBinary(
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "rotation_usage"),
+        rotation_usage);
+
+    const CKKSBoundedCosEvalModPolynomial evalmod_polynomial =
+        CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+    CKKSSavePortableBinary(
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "evalmod_polynomial"),
+        evalmod_polynomial);
+
+    ckks_detail::CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl<0,
+                                                                    Schedule>(
+        root, rotation_usage, key, noise);
+
+    CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule> packed_conjugate;
+    CKKSDenseBootstrapPackedConjugateGaloisKeyGen<Schedule>(
+        packed_conjugate, rotation_usage, key, noise);
+    CKKSSavePortableBinary(
+        ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                 "packed_conjugate_galois"),
+        packed_conjugate);
+
+    ckks_detail::CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<
+        0, Schedule>(root, key, noise);
+    ckks_detail::CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl<
+        0, Schedule>(root, key, noise);
+
+    ckks_detail::CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl<0,
+                                                                    Schedule>(
+        root, rotation_usage, key, noise);
+}
+
+template <class Schedule>
+struct CKKSDenseBootstrapFilesystemKeyProvider {
+    using EvalModTraits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    using CoeffToSlotCache =
+        typename ckks_detail::CKKSDenseBootstrapCoeffToSlotCacheTuple<
+            Schedule,
+            std::make_index_sequence<Schedule::coeff_to_slot_level_count + 1>>::
+            type;
+    using SlotToCoeffCache =
+        typename ckks_detail::CKKSDenseBootstrapSlotToCoeffCacheTuple<
+            Schedule,
+            std::make_index_sequence<Schedule::slot_to_coeff_level_count + 1>>::
+            type;
+    using PolynomialRelinCache =
+        typename ckks_detail::CKKSDenseBootstrapPolynomialRelinCacheTuple<
+            Schedule,
+            std::make_index_sequence<EvalModTraits::PolynomialTraits::
+                                         power_depth>>::type;
+    using DoubleAngleRelinCache =
+        typename ckks_detail::CKKSDenseBootstrapDoubleAngleRelinCacheTuple<
+            Schedule,
+            std::make_index_sequence<Schedule::evalmod_double_angle>>::type;
+
+    std::filesystem::path root;
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan_cache{};
+    CKKSBoundedCosEvalModPolynomial evalmod_polynomial_cache{};
+    mutable CoeffToSlotCache coeff_to_slot_cache{};
+    mutable std::optional<CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule>>
+        packed_conjugate_cache{};
+    mutable PolynomialRelinCache polynomial_relin_cache{};
+    mutable DoubleAngleRelinCache double_angle_relin_cache{};
+    mutable SlotToCoeffCache slot_to_coeff_cache{};
+
+    explicit CKKSDenseBootstrapFilesystemKeyProvider(
+        std::filesystem::path root_)
+        : root(std::move(root_))
+    {
+        CKKSLoadPortableBinary(
+            linear_plan_cache,
+            ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));
+        CKKSLoadPortableBinary(
+            evalmod_polynomial_cache,
+            ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                     "evalmod_polynomial"));
+    }
+
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan() const
+    {
+        return linear_plan_cache;
+    }
+
+    const CKKSBoundedCosEvalModPolynomial &evalmod_polynomial() const
+    {
+        return evalmod_polynomial_cache;
+    }
+
+    template <std::size_t I>
+    const auto &coeff_to_slot_galois() const
+    {
+        static_assert(I <= Schedule::coeff_to_slot_level_count);
+        auto &entry = std::get<I>(coeff_to_slot_cache);
+        if (!entry) {
+            entry.emplace();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(
+                    root, "coeff_to_slot_galois", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_coeff_to_slot_galois() const
+    {
+        static_assert(I <= Schedule::coeff_to_slot_level_count);
+        std::get<I>(coeff_to_slot_cache).reset();
+    }
+
+    const auto &packed_conjugate_galois() const
+    {
+        if (!packed_conjugate_cache) {
+            packed_conjugate_cache.emplace();
+            CKKSLoadPortableBinary(
+                *packed_conjugate_cache,
+                ckks_detail::CKKSDenseBootstrapNamedPath(
+                    root, "packed_conjugate_galois"));
+        }
+        return *packed_conjugate_cache;
+    }
+
+    void release_packed_conjugate_galois() const
+    {
+        packed_conjugate_cache.reset();
+    }
+
+    template <std::size_t I>
+    const auto &polynomial_relin() const
+    {
+        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        auto &entry = std::get<I>(polynomial_relin_cache);
+        if (!entry) {
+            entry.emplace();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(
+                    root, "polynomial_relin", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_polynomial_relin() const
+    {
+        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        std::get<I>(polynomial_relin_cache).reset();
+    }
+
+    template <std::size_t I>
+    const auto &double_angle_relin() const
+    {
+        static_assert(I < Schedule::evalmod_double_angle);
+        auto &entry = std::get<I>(double_angle_relin_cache);
+        if (!entry) {
+            entry.emplace();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(
+                    root, "double_angle_relin", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_double_angle_relin() const
+    {
+        static_assert(I < Schedule::evalmod_double_angle);
+        std::get<I>(double_angle_relin_cache).reset();
+    }
+
+    template <std::size_t I>
+    const auto &slot_to_coeff_galois() const
+    {
+        static_assert(I <= Schedule::slot_to_coeff_level_count);
+        auto &entry = std::get<I>(slot_to_coeff_cache);
+        if (!entry) {
+            entry.emplace();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(
+                    root, "slot_to_coeff_galois", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_slot_to_coeff_galois() const
+    {
+        static_assert(I <= Schedule::slot_to_coeff_level_count);
+        std::get<I>(slot_to_coeff_cache).reset();
+    }
+};
+
+namespace ckks_detail {
+
 template <class KeyProvider, bool CoeffToSlot>
 struct CKKSDenseBootstrapLinearKeyProviderChain {
     const KeyProvider &provider;
@@ -4153,6 +4722,25 @@ struct CKKSDenseBootstrapLinearKeyProviderChain {
             return provider.template coeff_to_slot_galois<I>();
         else
             return provider.template slot_to_coeff_galois<I>();
+    }
+
+    template <std::size_t I>
+    void release() const
+    {
+        if constexpr (CoeffToSlot) {
+            if constexpr (requires {
+                              provider.template release_coeff_to_slot_galois<I>();
+                          }) {
+                provider.template release_coeff_to_slot_galois<I>();
+            }
+        }
+        else {
+            if constexpr (requires {
+                              provider.template release_slot_to_coeff_galois<I>();
+                          }) {
+                provider.template release_slot_to_coeff_galois<I>();
+            }
+        }
     }
 };
 
@@ -4196,6 +4784,9 @@ inline void CKKSDenseBootstrapWithKeyProvider(
                          Schedule::linear_plain_log_delta>(
         imag_component, coeff_to_slot,
         key_provider.packed_conjugate_galois());
+    if constexpr (requires { key_provider.release_packed_conjugate_galois(); }) {
+        key_provider.release_packed_conjugate_galois();
+    }
 
     CKKSDenseEvalModBoundedCosResult<Schedule> real_evalmod;
     CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(

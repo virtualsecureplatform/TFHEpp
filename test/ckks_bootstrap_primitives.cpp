@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <complex>
+#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -141,14 +142,24 @@ struct CountingDenseBootstrapProvider {
     const TFHEpp::CKKSDenseBootstrapKey<Schedule> &key;
     mutable std::array<std::size_t, Schedule::coeff_to_slot_level_count + 1>
         coeff_to_slot_gets{};
+    mutable std::array<std::size_t, Schedule::coeff_to_slot_level_count + 1>
+        coeff_to_slot_releases{};
     mutable std::array<std::size_t, Schedule::slot_to_coeff_level_count + 1>
         slot_to_coeff_gets{};
+    mutable std::array<std::size_t, Schedule::slot_to_coeff_level_count + 1>
+        slot_to_coeff_releases{};
     mutable std::array<std::size_t,
                        EvalModTraits::PolynomialTraits::power_depth>
         polynomial_relin_gets{};
+    mutable std::array<std::size_t,
+                       EvalModTraits::PolynomialTraits::power_depth>
+        polynomial_relin_releases{};
     mutable std::array<std::size_t, Schedule::evalmod_double_angle>
         double_angle_relin_gets{};
+    mutable std::array<std::size_t, Schedule::evalmod_double_angle>
+        double_angle_relin_releases{};
     mutable std::size_t packed_conjugate_gets = 0;
+    mutable std::size_t packed_conjugate_releases = 0;
     mutable std::size_t evalmod_polynomial_gets = 0;
 
     explicit CountingDenseBootstrapProvider(
@@ -175,10 +186,22 @@ struct CountingDenseBootstrapProvider {
         return key.coeff_to_slot_galois.template get<I>();
     }
 
+    template <std::size_t I>
+    void release_coeff_to_slot_galois() const
+    {
+        static_assert(I <= Schedule::coeff_to_slot_level_count);
+        coeff_to_slot_releases[I]++;
+    }
+
     const auto &packed_conjugate_galois() const
     {
         packed_conjugate_gets++;
         return key.packed_conjugate_galois;
+    }
+
+    void release_packed_conjugate_galois() const
+    {
+        packed_conjugate_releases++;
     }
 
     template <std::size_t I>
@@ -190,6 +213,13 @@ struct CountingDenseBootstrapProvider {
     }
 
     template <std::size_t I>
+    void release_polynomial_relin() const
+    {
+        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        polynomial_relin_releases[I]++;
+    }
+
+    template <std::size_t I>
     const auto &double_angle_relin() const
     {
         static_assert(I < Schedule::evalmod_double_angle);
@@ -198,11 +228,25 @@ struct CountingDenseBootstrapProvider {
     }
 
     template <std::size_t I>
+    void release_double_angle_relin() const
+    {
+        static_assert(I < Schedule::evalmod_double_angle);
+        double_angle_relin_releases[I]++;
+    }
+
+    template <std::size_t I>
     const auto &slot_to_coeff_galois() const
     {
         static_assert(I <= Schedule::slot_to_coeff_level_count);
         slot_to_coeff_gets[I]++;
         return key.slot_to_coeff_galois.template get<I>();
+    }
+
+    template <std::size_t I>
+    void release_slot_to_coeff_galois() const
+    {
+        static_assert(I <= Schedule::slot_to_coeff_level_count);
+        slot_to_coeff_releases[I]++;
     }
 };
 
@@ -1033,12 +1077,51 @@ void test_dense_bootstrap_e2e_smoke()
         counting_provider.double_angle_relin_gets[0] != 2 ||
         counting_provider.double_angle_relin_gets[1] != 2)
         std::exit(1);
+    if (counting_provider.coeff_to_slot_releases[0] != 1 ||
+        counting_provider.coeff_to_slot_releases[1] != 1 ||
+        counting_provider.slot_to_coeff_releases[0] != 2 ||
+        counting_provider.slot_to_coeff_releases[1] != 2 ||
+        counting_provider.packed_conjugate_releases != 1)
+        std::exit(1);
+    if (counting_provider.polynomial_relin_releases[0] != 2 ||
+        counting_provider.polynomial_relin_releases[1] != 2 ||
+        counting_provider.polynomial_relin_releases[2] != 2 ||
+        counting_provider.polynomial_relin_releases[3] != 2 ||
+        counting_provider.polynomial_relin_releases[4] != 2 ||
+        counting_provider.double_angle_relin_releases[0] != 2 ||
+        counting_provider.double_angle_relin_releases[1] != 2)
+        std::exit(1);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
         *decoded, *provider_output, *key);
     require_close_param<M>(*decoded, *slots, 0.02,
                            "CKKS dense encrypted provider bootstrap e2e");
+
+    const std::filesystem::path slice_dir =
+        std::filesystem::temp_directory_path() /
+        "tfhepp_ckks_dense_bootstrap_slices";
+    std::filesystem::remove_all(slice_dir);
+    TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(slice_dir, *key,
+                                                          {0.0, 0});
+    if (!std::filesystem::exists(slice_dir / "linear_plan.bin") ||
+        !std::filesystem::exists(slice_dir / "coeff_to_slot_galois_0.bin") ||
+        !std::filesystem::exists(slice_dir / "packed_conjugate_galois.bin") ||
+        !std::filesystem::exists(slice_dir / "polynomial_relin_0.bin") ||
+        !std::filesystem::exists(slice_dir / "double_angle_relin_0.bin") ||
+        !std::filesystem::exists(slice_dir / "slot_to_coeff_galois_1.bin"))
+        std::exit(1);
+    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>
+        filesystem_provider(slice_dir);
+    auto filesystem_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(
+        *filesystem_output, *input, filesystem_provider);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *filesystem_output, *key);
+    require_close_param<M>(*decoded, *slots, 0.02,
+                           "CKKS dense filesystem-slice bootstrap e2e");
+    std::filesystem::remove_all(slice_dir);
 
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrap<Schedule>(*output, *input, *bootstrap_key);
