@@ -1963,7 +1963,8 @@ template <class P, std::uint32_t LogDelta = 40,
           std::uint32_t EvalModDoubleAngle = 3,
           std::uint32_t EvalModInvDegree = 0,
           std::uint32_t EvalModLogScale = LogDelta,
-          int LinearBSGSStep = 128>
+          int LinearBSGSStep = 128,
+          std::uint32_t ModRaiseMaskBound = EvalModK - 1>
 struct CKKSDenseBootstrapSchedule {
     static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta > 0);
@@ -1972,6 +1973,7 @@ struct CKKSDenseBootstrapSchedule {
     static_assert(LinearFuseRadix > 0);
     static_assert(LinearBSGSStep > 0);
     static_assert(EvalModK > 0);
+    static_assert(ModRaiseMaskBound < EvalModK);
     static_assert(EvalModDegree >= 2 * (EvalModK - 1),
                   "cos-discrete EvalMod requires degree at least 2*(K-1)");
 
@@ -1993,6 +1995,7 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr std::uint32_t evalmod_double_angle = EvalModDoubleAngle;
     static constexpr std::uint32_t evalmod_inv_degree = EvalModInvDegree;
     static constexpr std::uint32_t evalmod_log_scale = EvalModLogScale;
+    static constexpr std::uint32_t modraise_mask_bound = ModRaiseMaskBound;
     static constexpr std::uint32_t evalmod_polynomial_depth =
         ckks_detail::bit_width_u64(
             ckks_detail::static_max_v<EvalModDegree, 2 * (EvalModK - 1)>) +
@@ -2998,7 +3001,7 @@ inline void CKKSDenseBootstrap(
     typename Schedule::BootstrapCiphertext raised;
     CKKSModRaiseBoundedPhaseRandomized<
         P, Schedule::input_log_q, Schedule::boot_log_q, Schedule::log_delta,
-        0>(raised, ct);
+        Schedule::modraise_mask_bound>(raised, ct);
 
     typename Schedule::CoeffToSlotCiphertext coeff_to_slot;
     CKKSLinearTransformStagesBSGS<

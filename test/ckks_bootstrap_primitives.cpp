@@ -368,6 +368,7 @@ void test_lvl6_factorized_stage_shape()
     static_assert(Schedule::slot_to_coeff_level_count == 4);
     static_assert(Schedule::evalmod_polynomial_depth == 7);
     static_assert(Schedule::evalmod_depth == 10);
+    static_assert(Schedule::modraise_mask_bound == 15);
     static_assert(Schedule::after_coeff_to_slot_log_q == 720);
     static_assert(Schedule::after_component_split_log_q == 680);
     static_assert(Schedule::after_evalmod_log_q == 280);
@@ -440,7 +441,7 @@ void test_dense_bootstrap_api_shape()
 {
     using M = TinyDeepMultiLimbCKKSParam;
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
-        M, 40, 8, 560, 40, 3, 15, 4, 2, 0, 40, 2>;
+        M, 40, 8, 560, 40, 3, 31, 4, 2, 0, 40, 2>;
     static_assert(Schedule::input_log_q == 48);
     static_assert(Schedule::boot_log_q == 560);
     static_assert(Schedule::linear_bsgs_step == 2);
@@ -448,10 +449,11 @@ void test_dense_bootstrap_api_shape()
     static_assert(Schedule::slot_to_coeff_level_count == 1);
     static_assert(Schedule::after_coeff_to_slot_log_q == 520);
     static_assert(Schedule::after_component_split_log_q == 480);
-    static_assert(Schedule::evalmod_polynomial_depth == 5);
-    static_assert(Schedule::evalmod_depth == 7);
-    static_assert(Schedule::after_evalmod_log_q == 200);
-    static_assert(Schedule::output_log_q == 160);
+    static_assert(Schedule::evalmod_polynomial_depth == 6);
+    static_assert(Schedule::evalmod_depth == 8);
+    static_assert(Schedule::modraise_mask_bound == 3);
+    static_assert(Schedule::after_evalmod_log_q == 160);
+    static_assert(Schedule::output_log_q == 120);
 
     using BootstrapKey = TFHEpp::CKKSDenseBootstrapKey<Schedule>;
     using KeyGenFn = void (*)(BootstrapKey &, const TFHEpp::Key<M> &,
@@ -481,7 +483,7 @@ void test_dense_bootstrap_plain_split_pipeline()
 {
     using M = TinyDeepMultiLimbCKKSParam;
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
-        M, 40, 8, 560, 40, 3, 15, 4, 2, 0, 40, 2>;
+        M, 40, 8, 560, 40, 3, 31, 4, 2, 0, 40, 2>;
     const auto poly = TFHEpp::CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
 
     std::array<double, M::n> coeffs{};
@@ -549,7 +551,7 @@ void test_dense_bootstrap_encrypted_pipeline()
 {
     using M = TinyDeepMultiLimbCKKSParam;
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
-        M, 40, 8, 560, 40, 3, 15, 4, 2, 0, 40, 2>;
+        M, 40, 8, 560, 40, 3, 31, 4, 2, 0, 40, 2>;
 
     std::array<double, M::n> coeffs{};
     std::array<double, M::n> masked_coeffs{};
@@ -735,7 +737,7 @@ void test_dense_bootstrap_e2e_smoke()
 {
     using M = TinyDeepMultiLimbCKKSParam;
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
-        M, 40, 8, 560, 40, 3, 15, 4, 2, 0, 40, 2>;
+        M, 40, 8, 560, 40, 3, 31, 4, 2, 0, 40, 2>;
 
     std::array<double, M::n> coeffs{};
     for (std::size_t i = 0; i < M::n; i++)
