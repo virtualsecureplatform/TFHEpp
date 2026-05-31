@@ -110,9 +110,32 @@ int main()
             diagonals[2][i] * (*slots)[(i - 2 + half) % half];
     }
 
+    TFHEpp::CKKSLinearTransformPlan<P, log_q, log_delta, plain_log_delta> plan;
+    TFHEpp::CKKSBuildLinearTransformBSGSPlan<P, log_q, log_delta,
+                                             plain_log_delta>(
+        plan, diagonals, offsets, 2);
+    if (TFHEpp::CKKSLinearTransformPlanBabyRotationCount<P, log_q, log_delta,
+                                                         plain_log_delta>(
+            plan) != 1)
+        std::exit(1);
+    if (TFHEpp::CKKSLinearTransformPlanGiantRotationCount<P, log_q, log_delta,
+                                                          plain_log_delta>(
+            plan) != 1)
+        std::exit(1);
+
+    TFHEpp::CKKSRotationKeyIndexSet<P> input_key_indices{};
+    TFHEpp::CKKSRotationKeyIndexSet<P> output_key_indices{};
+    TFHEpp::CKKSCollectLinearTransformPlanRotationKeyIndices<
+        P, log_q, log_delta, plain_log_delta>(input_key_indices,
+                                              output_key_indices, plan);
+    if (TFHEpp::CKKSRotationKeyIndexSetCount<P>(input_key_indices) != 1)
+        std::exit(1);
+    if (TFHEpp::CKKSRotationKeyIndexSetCount<P>(output_key_indices) == 0)
+        std::exit(1);
+
     auto transformed = std::make_unique<OutCt>();
     TFHEpp::CKKSLinearTransformBSGS<P, log_q, log_delta, plain_log_delta>(
-        *transformed, *ct, diagonals, offsets, 2, *input_gk, *output_gk);
+        *transformed, *ct, plan, *input_gk, *output_gk);
     TFHEpp::ckksSlotDecrypt<P, OutCt::log_q, OutCt::log_delta>(
         *decoded, *transformed, *key);
 

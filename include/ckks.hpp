@@ -1253,6 +1253,101 @@ struct CKKSLinearTransformPlan {
 };
 
 template <class P>
+using CKKSRotationKeyIndexSet = std::array<bool, P::nbit + 1>;
+
+template <class P>
+inline void CKKSClearRotationKeyIndexSet(CKKSRotationKeyIndexSet<P> &keys)
+{
+    keys.fill(false);
+}
+
+template <class P>
+inline void CKKSMarkRotationPowerKeyIndices(CKKSRotationKeyIndexSet<P> &keys,
+                                            int steps)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++)
+        if ((steps >> i) & 1) keys[static_cast<std::size_t>(i)] = true;
+}
+
+template <class P>
+inline void CKKSMarkConjugationKeyIndex(CKKSRotationKeyIndexSet<P> &keys)
+{
+    keys[P::nbit] = true;
+}
+
+template <class P>
+inline std::size_t
+CKKSRotationKeyIndexSetCount(const CKKSRotationKeyIndexSet<P> &keys)
+{
+    return static_cast<std::size_t>(
+        std::count(keys.begin(), keys.end(), true));
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSLinearTransformPlanUsedBabySteps(
+    std::vector<bool> &used,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan)
+{
+    assert(plan.k_step > 0);
+    used.assign(static_cast<std::size_t>(plan.k_step), false);
+    for (const auto &group : plan.groups) {
+        for (const auto &entry : group.terms) {
+            assert(entry.baby_step >= 0 && entry.baby_step < plan.k_step);
+            used[static_cast<std::size_t>(entry.baby_step)] = true;
+        }
+    }
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline std::size_t CKKSLinearTransformPlanBabyRotationCount(
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan)
+{
+    std::vector<bool> used;
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        used, plan);
+    std::size_t count = 0;
+    for (std::size_t i = 1; i < used.size(); i++)
+        if (used[i]) count++;
+    return count;
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline std::size_t CKKSLinearTransformPlanGiantRotationCount(
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan)
+{
+    std::size_t count = 0;
+    for (const auto &group : plan.groups)
+        if (group.giant_step != 0) count++;
+    return count;
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSCollectLinearTransformPlanRotationKeyIndices(
+    CKKSRotationKeyIndexSet<P> &input_keys,
+    CKKSRotationKeyIndexSet<P> &output_keys,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan)
+{
+    std::vector<bool> baby_used;
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        baby_used, plan);
+    for (int j1 = 1; j1 < plan.k_step; j1++) {
+        if (baby_used[static_cast<std::size_t>(j1)])
+            CKKSMarkRotationPowerKeyIndices<P>(input_keys, j1);
+    }
+    for (const auto &group : plan.groups) {
+        if (group.giant_step != 0)
+            CKKSMarkRotationPowerKeyIndices<P>(
+                output_keys, plan.k_step * group.giant_step);
+    }
+}
+
+template <class P>
 struct CKKSLinearTransformStage {
     std::vector<CKKSSlotVector<P>> diagonals{};
     std::vector<int> rotation_offsets{};
@@ -1260,6 +1355,89 @@ struct CKKSLinearTransformStage {
 
 template <class P>
 using CKKSLinearTransformStages = std::vector<CKKSLinearTransformStage<P>>;
+
+template <class P>
+inline void CKKSCollectLinearTransformStageRotationKeyIndices(
+    CKKSRotationKeyIndexSet<P> &input_keys,
+    CKKSRotationKeyIndexSet<P> &output_keys,
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    int max_j2 = 0;
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<bool> baby_used(static_cast<std::size_t>(k_step), false);
+    std::vector<bool> giant_used(static_cast<std::size_t>(max_j2 + 1), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        baby_used[static_cast<std::size_t>(r % k_step)] = true;
+        giant_used[static_cast<std::size_t>(r / k_step)] = true;
+    }
+
+    for (int j1 = 1; j1 < k_step; j1++) {
+        if (baby_used[static_cast<std::size_t>(j1)])
+            CKKSMarkRotationPowerKeyIndices<P>(input_keys, j1);
+    }
+    for (int j2 = 1; j2 <= max_j2; j2++) {
+        if (giant_used[static_cast<std::size_t>(j2)])
+            CKKSMarkRotationPowerKeyIndices<P>(output_keys, k_step * j2);
+    }
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStageBabyRotationCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    std::vector<bool> used(static_cast<std::size_t>(k_step), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        used[static_cast<std::size_t>(r % k_step)] = true;
+    }
+
+    std::size_t count = 0;
+    for (int j1 = 1; j1 < k_step; j1++)
+        if (used[static_cast<std::size_t>(j1)]) count++;
+    return count;
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStageGiantRotationCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    int max_j2 = 0;
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<bool> used(static_cast<std::size_t>(max_j2 + 1), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        used[static_cast<std::size_t>(r / k_step)] = true;
+    }
+
+    std::size_t count = 0;
+    for (int j2 = 1; j2 <= max_j2; j2++)
+        if (used[static_cast<std::size_t>(j2)]) count++;
+    return count;
+}
 
 template <class P>
 inline void CKKSComposeLinearTransformStages(
@@ -1478,10 +1656,16 @@ inline void CKKSLinearTransformBSGS(
     assert(plan.k_step > 0 && plan.k_step <= static_cast<int>(P::n / 2));
     assert(!plan.groups.empty());
 
+    std::vector<bool> baby_used;
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        baby_used, plan);
+
     auto baby = std::make_unique<std::vector<TRLWE<P>>>(plan.k_step);
     (*baby)[0] = ct.ct;
-    for (int j1 = 1; j1 < plan.k_step; j1++)
-        CKKSRotateSlots<P, LogQ>((*baby)[j1], ct.ct, j1, input_gk);
+    for (int j1 = 1; j1 < plan.k_step; j1++) {
+        if (baby_used[static_cast<std::size_t>(j1)])
+            CKKSRotateSlots<P, LogQ>((*baby)[j1], ct.ct, j1, input_gk);
+    }
 
     bool res_initialized = false;
     auto term = std::make_unique<TRLWE<P>>();
@@ -2222,6 +2406,81 @@ struct CKKSDenseBootstrapLinearPlan {
     CKKSLinearTransformStages<P> slot_to_coeff_stages{};
     CKKSLinearTransformStages<P> slot_to_coeff_imag_stages{};
 };
+
+template <class Schedule>
+struct CKKSDenseBootstrapRotationKeyUsage {
+    using P = typename Schedule::Param;
+    std::array<CKKSRotationKeyIndexSet<P>,
+               Schedule::coeff_to_slot_level_count + 1>
+        coeff_to_slot{};
+    CKKSRotationKeyIndexSet<P> packed_conjugate{};
+    std::array<CKKSRotationKeyIndexSet<P>,
+               Schedule::slot_to_coeff_level_count + 1>
+        slot_to_coeff{};
+};
+
+template <class P, std::size_t N>
+inline void CKKSClearRotationKeyIndexSets(
+    std::array<CKKSRotationKeyIndexSet<P>, N> &levels)
+{
+    for (auto &level : levels) CKKSClearRotationKeyIndexSet<P>(level);
+}
+
+template <class P, std::size_t N>
+inline std::size_t CKKSRotationKeyIndexSetsCount(
+    const std::array<CKKSRotationKeyIndexSet<P>, N> &levels)
+{
+    std::size_t count = 0;
+    for (const auto &level : levels)
+        count += CKKSRotationKeyIndexSetCount<P>(level);
+    return count;
+}
+
+template <class Schedule>
+inline void CKKSBuildDenseBootstrapRotationKeyUsage(
+    CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage,
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    using P = typename Schedule::Param;
+    CKKSClearRotationKeyIndexSets<P>(usage.coeff_to_slot);
+    CKKSClearRotationKeyIndexSet<P>(usage.packed_conjugate);
+    CKKSClearRotationKeyIndexSets<P>(usage.slot_to_coeff);
+
+    for (std::size_t i = 0; i < linear_plan.coeff_to_slot_stages.size(); i++) {
+        CKKSCollectLinearTransformStageRotationKeyIndices<P>(
+            usage.coeff_to_slot[i], usage.coeff_to_slot[i + 1],
+            linear_plan.coeff_to_slot_stages[i], Schedule::linear_bsgs_step);
+    }
+    CKKSMarkConjugationKeyIndex<P>(usage.packed_conjugate);
+    for (std::size_t i = 0; i < linear_plan.slot_to_coeff_stages.size(); i++) {
+        CKKSCollectLinearTransformStageRotationKeyIndices<P>(
+            usage.slot_to_coeff[i], usage.slot_to_coeff[i + 1],
+            linear_plan.slot_to_coeff_stages[i], Schedule::linear_bsgs_step);
+        CKKSCollectLinearTransformStageRotationKeyIndices<P>(
+            usage.slot_to_coeff[i], usage.slot_to_coeff[i + 1],
+            linear_plan.slot_to_coeff_imag_stages[i],
+            Schedule::linear_bsgs_step);
+    }
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapRotationKeyUsageCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSRotationKeyIndexSetsCount<P>(usage.coeff_to_slot) +
+           CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) +
+           CKKSRotationKeyIndexSetsCount<P>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapFullGaloisKeyIndexCount()
+{
+    using P = typename Schedule::Param;
+    return (Schedule::coeff_to_slot_level_count + 1 + 1 +
+            Schedule::slot_to_coeff_level_count + 1) *
+           (P::nbit + 1);
+}
 
 template <class Schedule>
 inline void CKKSBuildDenseBootstrapLinearPlan(

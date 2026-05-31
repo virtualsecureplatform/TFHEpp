@@ -435,6 +435,38 @@ void test_lvl6_factorized_stage_shape()
               << " diagonals=" << fused_c2s_diag_count << "/"
               << fused_stc_diag_count << " output_log_q="
               << Schedule::output_log_q << std::endl;
+
+    std::size_t total_c2s_baby_rotations = 0;
+    std::size_t max_c2s_baby_rotations = 0;
+    for (const auto &stage : linear_plan.coeff_to_slot_stages) {
+        const std::size_t rotations =
+            TFHEpp::CKKSLinearTransformStageBabyRotationCount<L>(
+                stage, Schedule::linear_bsgs_step);
+        total_c2s_baby_rotations += rotations;
+        max_c2s_baby_rotations = std::max(max_c2s_baby_rotations, rotations);
+    }
+    if (total_c2s_baby_rotations == 0 ||
+        max_c2s_baby_rotations >=
+            static_cast<std::size_t>(Schedule::linear_bsgs_step - 1))
+        std::exit(1);
+
+    TFHEpp::CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage;
+    TFHEpp::CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(rotation_usage,
+                                                              linear_plan);
+    const std::size_t planned_key_indices =
+        TFHEpp::CKKSDenseBootstrapRotationKeyUsageCount<Schedule>(
+            rotation_usage);
+    constexpr std::size_t full_key_indices =
+        TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>();
+    if (planned_key_indices == 0 || planned_key_indices >= full_key_indices)
+        std::exit(1);
+    if (TFHEpp::CKKSRotationKeyIndexSetCount<L>(
+            rotation_usage.packed_conjugate) != 1)
+        std::exit(1);
+    std::cout << "CKKS lvl6 dense bootstrap rotation key indices planned/full="
+              << planned_key_indices << "/" << full_key_indices
+              << " c2s_baby_rotations=" << total_c2s_baby_rotations
+              << std::endl;
 }
 
 void test_dense_bootstrap_api_shape()
@@ -476,6 +508,17 @@ void test_dense_bootstrap_api_shape()
         std::exit(1);
     if (linear_plan.slot_to_coeff_imag_stages.size() !=
         Schedule::slot_to_coeff_level_count)
+        std::exit(1);
+
+    TFHEpp::CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage;
+    TFHEpp::CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(rotation_usage,
+                                                              linear_plan);
+    const std::size_t planned_key_indices =
+        TFHEpp::CKKSDenseBootstrapRotationKeyUsageCount<Schedule>(
+            rotation_usage);
+    constexpr std::size_t full_key_indices =
+        TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>();
+    if (planned_key_indices == 0 || planned_key_indices >= full_key_indices)
         std::exit(1);
 }
 
