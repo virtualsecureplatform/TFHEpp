@@ -508,6 +508,16 @@ inline const std::array<std::uint32_t, P::n / 2> &ckksSlotToEvalIndex()
     return table;
 }
 
+inline std::uint32_t bitReverse(std::uint32_t value, std::uint32_t bits)
+{
+    std::uint32_t reversed = 0;
+    for (std::uint32_t i = 0; i < bits; i++) {
+        reversed = (reversed << 1) | (value & 1U);
+        value >>= 1;
+    }
+    return reversed;
+}
+
 template <std::uint32_t LogDelta, class P>
 inline void fillConjugateSymmetricEvaluations(
     std::array<std::complex<double>, P::n> &evals,
@@ -981,6 +991,15 @@ struct CKKSLinearTransformPlan {
     std::vector<CKKSLinearTransformGiantStep<P, LogQ, PlainLogDelta>> groups{};
 };
 
+template <class P>
+struct CKKSLinearTransformStage {
+    std::vector<CKKSSlotVector<P>> diagonals{};
+    std::vector<int> rotation_offsets{};
+};
+
+template <class P>
+using CKKSLinearTransformStages = std::vector<CKKSLinearTransformStage<P>>;
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
 inline void CKKSBuildLinearTransformBSGSPlan(
@@ -1033,6 +1052,16 @@ inline void CKKSBuildLinearTransformBSGSPlan(
         }
         if (!group.terms.empty()) plan.groups.push_back(std::move(group));
     }
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSBuildLinearTransformBSGSPlan(
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        plan, stage.diagonals, stage.rotation_offsets, k_step);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -1182,6 +1211,156 @@ inline void CKKSRealLinearTransform(
         }
     }
     ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+}
+
+namespace ckks_detail {
+
+template <class P>
+inline void addCKKSStageDiagonal(CKKSLinearTransformStage<P> &stage, int offset,
+                                 const CKKSSlotVector<P> &diag)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    offset = ((offset % half) + half) % half;
+    for (std::size_t i = 0; i < stage.rotation_offsets.size(); i++) {
+        if (stage.rotation_offsets[i] != offset) continue;
+        for (int j = 0; j < half; j++) stage.diagonals[i][j] += diag[j];
+        return;
+    }
+    stage.rotation_offsets.push_back(offset);
+    stage.diagonals.push_back(diag);
+}
+
+template <class P>
+inline std::vector<std::complex<long double>> ckksPowerOfFiveTable()
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    std::vector<std::complex<long double>> roots(4 * half + 1);
+    constexpr long double pi =
+        3.141592653589793238462643383279502884L;
+    for (int i = 0; i <= 4 * half; i++) {
+        const long double angle =
+            2.0L * pi * static_cast<long double>(i) /
+            static_cast<long double>(4 * half);
+        roots[i] = {std::cos(angle), std::sin(angle)};
+    }
+    return roots;
+}
+
+template <class P>
+inline std::vector<int> ckksPowerOfFiveExponents()
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    std::vector<int> pow5(2 * half + 1);
+    pow5[0] = 1;
+    for (int i = 1; i <= 2 * half; i++)
+        pow5[i] = (pow5[i - 1] * 5) & (4 * half - 1);
+    return pow5;
+}
+
+}  // namespace ckks_detail
+
+template <class P>
+inline std::uint32_t CKKSBitReverseSlotIndex(std::uint32_t index)
+{
+    static_assert(P::nbit > 0);
+    assert(index < P::n / 2);
+    return ckks_detail::bitReverse(index, P::nbit - 1);
+}
+
+// Maps CKKS slots to packed coefficients in bit-reversed order:
+// out[bitreverse(i)] = coeff[i] + i*coeff[i + N/2].
+template <class P>
+inline void CKKSBuildCoeffToPackedSlotStages(
+    CKKSLinearTransformStages<P> &stages)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    constexpr int log_slots = static_cast<int>(P::nbit) - 1;
+    static_assert(log_slots > 0);
+
+    stages.clear();
+    stages.reserve(log_slots);
+    const auto roots = ckks_detail::ckksPowerOfFiveTable<P>();
+    const auto pow5 = ckks_detail::ckksPowerOfFiveExponents<P>();
+    const long double stage_scale = 0.5L;
+
+    for (int m = half; m >= 2; m >>= 1) {
+        CKKSLinearTransformStage<P> stage;
+        CKKSSlotVector<P> a{};
+        CKKSSlotVector<P> b{};
+        CKKSSlotVector<P> c{};
+        a.fill({0.0, 0.0});
+        b.fill({0.0, 0.0});
+        c.fill({0.0, 0.0});
+
+        const int tt = m >> 1;
+        const int gap = half / m;
+        const int mask = (m << 2) - 1;
+        for (int i = 0; i < half; i += m) {
+            for (int j = 0; j < tt; j++) {
+                const int k = ((m << 2) - (pow5[j] & mask)) * gap;
+                const int idx1 = i + j;
+                const int idx2 = idx1 + tt;
+                a[idx1] = {static_cast<double>(stage_scale), 0.0};
+                a[idx2] = static_cast<std::complex<double>>(
+                    -stage_scale * roots[k]);
+                b[idx1] = {static_cast<double>(stage_scale), 0.0};
+                c[idx2] = static_cast<std::complex<double>>(
+                    stage_scale * roots[k]);
+            }
+        }
+
+        ckks_detail::addCKKSStageDiagonal<P>(stage, 0, a);
+        ckks_detail::addCKKSStageDiagonal<P>(stage, tt, b);
+        ckks_detail::addCKKSStageDiagonal<P>(stage, half - tt, c);
+        stages.push_back(std::move(stage));
+    }
+}
+
+// Inverse of CKKSBuildCoeffToPackedSlotStages.  The input is the same
+// bit-reversed packed coefficient layout emitted by CoeffToPackedSlot.
+template <class P>
+inline void CKKSBuildPackedSlotToCoeffStages(
+    CKKSLinearTransformStages<P> &stages)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    constexpr int log_slots = static_cast<int>(P::nbit) - 1;
+    static_assert(log_slots > 0);
+
+    stages.clear();
+    stages.reserve(log_slots);
+    const auto roots = ckks_detail::ckksPowerOfFiveTable<P>();
+    const auto pow5 = ckks_detail::ckksPowerOfFiveExponents<P>();
+
+    for (int m = 2; m <= half; m <<= 1) {
+        CKKSLinearTransformStage<P> stage;
+        CKKSSlotVector<P> a{};
+        CKKSSlotVector<P> b{};
+        CKKSSlotVector<P> c{};
+        a.fill({0.0, 0.0});
+        b.fill({0.0, 0.0});
+        c.fill({0.0, 0.0});
+
+        const int tt = m >> 1;
+        const int gap = half / m;
+        const int mask = (m << 2) - 1;
+        for (int i = 0; i < half; i += m) {
+            for (int j = 0; j < tt; j++) {
+                const int k = (pow5[j] & mask) * gap;
+                const int idx1 = i + j;
+                const int idx2 = idx1 + tt;
+                a[idx1] = {1.0, 0.0};
+                a[idx2] =
+                    static_cast<std::complex<double>>(-roots[k]);
+                b[idx1] = static_cast<std::complex<double>>(roots[k]);
+                c[idx2] = {1.0, 0.0};
+            }
+        }
+
+        ckks_detail::addCKKSStageDiagonal<P>(stage, 0, a);
+        ckks_detail::addCKKSStageDiagonal<P>(stage, tt, b);
+        ckks_detail::addCKKSStageDiagonal<P>(stage, half - tt, c);
+        stages.push_back(std::move(stage));
+    }
 }
 
 template <class P>

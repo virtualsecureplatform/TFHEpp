@@ -87,6 +87,22 @@ void apply_real_linear(
         out[i] = (*direct)[i] + (*conj_part)[i];
 }
 
+template <class Param>
+void apply_complex_stages(
+    TFHEpp::CKKSSlotVector<Param> &out,
+    const TFHEpp::CKKSSlotVector<Param> &in,
+    const TFHEpp::CKKSLinearTransformStages<Param> &stages)
+{
+    auto cur = std::make_unique<TFHEpp::CKKSSlotVector<Param>>(in);
+    auto next = std::make_unique<TFHEpp::CKKSSlotVector<Param>>();
+    for (const auto &stage : stages) {
+        apply_complex_linear<Param>(*next, *cur, stage.diagonals,
+                                    stage.rotation_offsets);
+        std::swap(cur, next);
+    }
+    out = *cur;
+}
+
 void test_dense_coeff_slot_diagonals()
 {
     using S = SmallCKKSParam;
@@ -143,11 +159,102 @@ void test_dense_coeff_slot_diagonals()
     if (stc_err > 1e-10) std::exit(1);
 }
 
+void test_factorized_coeff_slot_stages()
+{
+    using S = SmallCKKSParam;
+    constexpr int half = static_cast<int>(S::n) / 2;
+    constexpr long double pi =
+        3.141592653589793238462643383279502884L;
+    const auto &slot_to_eval = TFHEpp::ckks_detail::ckksSlotToEvalIndex<S>();
+
+    std::array<double, S::n> coeffs{};
+    for (std::size_t i = 0; i < S::n; i++)
+        coeffs[i] = static_cast<double>(static_cast<int>(i % 11) - 5) / 32.0;
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    auto packed_bitrev = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    for (int i = 0; i < half; i++) {
+        const long double h =
+            static_cast<long double>(2 * slot_to_eval[i] + 1);
+        std::complex<long double> sum = 0.0L;
+        for (std::size_t j = 0; j < S::n; j++) {
+            const long double angle =
+                pi * h * static_cast<long double>(j) /
+                static_cast<long double>(S::n);
+            sum += static_cast<long double>(coeffs[j]) *
+                   std::complex<long double>(std::cos(angle),
+                                             std::sin(angle));
+        }
+        (*slots)[i] = static_cast<std::complex<double>>(sum);
+
+        const auto br = TFHEpp::CKKSBitReverseSlotIndex<S>(
+            static_cast<std::uint32_t>(i));
+        (*packed_bitrev)[br] = {coeffs[i], coeffs[i + half]};
+    }
+
+    TFHEpp::CKKSLinearTransformStages<S> c2s_stages;
+    TFHEpp::CKKSBuildCoeffToPackedSlotStages<S>(c2s_stages);
+    if (c2s_stages.size() != S::nbit - 1) std::exit(1);
+    for (const auto &stage : c2s_stages)
+        if (stage.rotation_offsets.size() > 3) std::exit(1);
+
+    auto got_packed = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    apply_complex_stages<S>(*got_packed, *slots, c2s_stages);
+    const double c2s_err = max_error<S>(*got_packed, *packed_bitrev);
+    std::cout << "CKKS factorized coeff-to-packed-slot max_error=" << c2s_err
+              << std::endl;
+    if (c2s_err > 1e-10) std::exit(1);
+
+    TFHEpp::CKKSLinearTransformStages<S> stc_stages;
+    TFHEpp::CKKSBuildPackedSlotToCoeffStages<S>(stc_stages);
+    if (stc_stages.size() != S::nbit - 1) std::exit(1);
+    for (const auto &stage : stc_stages)
+        if (stage.rotation_offsets.size() > 3) std::exit(1);
+
+    auto got_slots = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    apply_complex_stages<S>(*got_slots, *packed_bitrev, stc_stages);
+    const double stc_err = max_error<S>(*got_slots, *slots);
+    std::cout << "CKKS factorized packed-slot-to-coeff max_error=" << stc_err
+              << std::endl;
+    if (stc_err > 1e-10) std::exit(1);
+}
+
+void test_lvl6_factorized_stage_shape()
+{
+    using L = TFHEpp::lvl6param;
+    TFHEpp::CKKSLinearTransformStages<L> c2s_stages;
+    TFHEpp::CKKSBuildCoeffToPackedSlotStages<L>(c2s_stages);
+    if (c2s_stages.size() != L::nbit - 1) std::exit(1);
+
+    std::size_t c2s_diag_count = 0;
+    for (const auto &stage : c2s_stages) {
+        if (stage.rotation_offsets.size() > 3) std::exit(1);
+        c2s_diag_count += stage.rotation_offsets.size();
+    }
+
+    TFHEpp::CKKSLinearTransformStages<L> stc_stages;
+    TFHEpp::CKKSBuildPackedSlotToCoeffStages<L>(stc_stages);
+    if (stc_stages.size() != L::nbit - 1) std::exit(1);
+
+    std::size_t stc_diag_count = 0;
+    for (const auto &stage : stc_stages) {
+        if (stage.rotation_offsets.size() > 3) std::exit(1);
+        stc_diag_count += stage.rotation_offsets.size();
+    }
+
+    std::cout << "CKKS lvl6 factorized C2S/STC stages="
+              << c2s_stages.size() << "/" << stc_stages.size()
+              << " diagonals=" << c2s_diag_count << "/" << stc_diag_count
+              << std::endl;
+}
+
 }  // namespace
 
 int main()
 {
     test_dense_coeff_slot_diagonals();
+    test_factorized_coeff_slot_stages();
+    test_lvl6_factorized_stage_shape();
 
     constexpr std::uint32_t low_log_q = 82;
     constexpr std::uint32_t boot_log_q = 110;
