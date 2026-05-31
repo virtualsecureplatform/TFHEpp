@@ -264,6 +264,39 @@ int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol)
     return err <= tol ? 0 : 1;
 }
 
+template <class Schedule>
+int check_manifest_mismatch_rejected(const std::filesystem::path &key_dir)
+{
+    const std::filesystem::path mismatch_dir =
+        key_dir.parent_path() / (key_dir.filename().string() + "_mismatch");
+    std::filesystem::remove_all(mismatch_dir);
+    std::filesystem::copy(key_dir, mismatch_dir,
+                          std::filesystem::copy_options::recursive);
+
+    auto manifest =
+        TFHEpp::CKKSDenseBootstrapBuildKeyDirectoryManifest<Schedule>(
+            mismatch_dir);
+    manifest.boot_log_q++;
+    TFHEpp::CKKSSavePortableBinaryAtomic(
+        TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestFile(mismatch_dir),
+        manifest);
+
+    bool rejected = false;
+    try {
+        TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(
+            mismatch_dir);
+    }
+    catch (const std::exception &) {
+        rejected = true;
+    }
+    std::filesystem::remove_all(mismatch_dir);
+    if (!rejected) {
+        std::cerr << "manifest_mismatch_was_accepted\n";
+        return 1;
+    }
+    return 0;
+}
+
 int run_toy_validation(bool keep_dir)
 {
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
@@ -287,6 +320,7 @@ int run_toy_validation(bool keep_dir)
 
     print_schedule_report<Schedule>("toy", &key_dir);
     std::cout << "toy keygen_ms=" << keygen_ms << '\n';
+    if (check_manifest_mismatch_rejected<Schedule>(key_dir) != 0) return 1;
     const int result = run_filesystem_bootstrap<Schedule>(key_dir, 0.02);
 
     if (!keep_dir) std::filesystem::remove_all(key_dir);

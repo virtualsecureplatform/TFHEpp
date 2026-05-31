@@ -4870,6 +4870,19 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
         std::filesystem::path root_)
         : root(std::move(root_))
     {
+        try {
+            if (!CKKSDenseBootstrapKeyDirectoryManifestMatches<Schedule>(
+                    root)) {
+                throw std::runtime_error(
+                    "CKKS bootstrap key directory manifest does not match "
+                    "schedule");
+            }
+        }
+        catch (const std::exception &e) {
+            throw std::runtime_error(
+                std::string("invalid CKKS bootstrap key directory manifest: ") +
+                e.what());
+        }
         CKKSLoadPortableBinary(
             linear_plan_cache,
             ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));
