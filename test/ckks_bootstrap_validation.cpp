@@ -130,6 +130,32 @@ void print_missing_key_files(
                   << '\n';
 }
 
+bool path_list_contains(const std::vector<std::filesystem::path> &paths,
+                        const std::filesystem::path &path)
+{
+    return std::find(paths.begin(), paths.end(), path) != paths.end();
+}
+
+void print_created_key_files(
+    const std::vector<std::filesystem::path> &before_missing,
+    const std::vector<std::filesystem::path> &after_missing,
+    std::size_t limit = 8)
+{
+    std::size_t count = 0;
+    for (const std::filesystem::path &path : before_missing) {
+        if (!path_list_contains(after_missing, path)) count++;
+    }
+    std::cout << "created_files=" << count << '\n';
+
+    std::size_t shown = 0;
+    for (const std::filesystem::path &path : before_missing) {
+        if (path_list_contains(after_missing, path)) continue;
+        if (shown < limit) std::cout << "created_file=" << path.string() << '\n';
+        shown++;
+    }
+    if (shown > limit) std::cout << "created_file_more=" << shown - limit << '\n';
+}
+
 template <class Schedule>
 std::string manifest_status(const std::filesystem::path &root)
 {
@@ -309,9 +335,12 @@ int run_toy_validation(bool keep_dir)
     auto key = std::make_unique<TFHEpp::Key<TinyDeepMultiLimbCKKSParam>>();
     fill_test_key<TinyDeepMultiLimbCKKSParam>(*key);
 
+    std::size_t generated_slices = 0;
     const double keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(key_dir, *key,
-                                                              {0.0, 0});
+        while (TFHEpp::CKKSDenseBootstrapKeyGenNextMissingToDirectory<Schedule>(
+            key_dir, *key, {0.0, 0})) {
+            generated_slices++;
+        }
     });
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions resume_options;
     resume_options.overwrite_existing = false;
@@ -320,11 +349,37 @@ int run_toy_validation(bool keep_dir)
 
     print_schedule_report<Schedule>("toy", &key_dir);
     std::cout << "toy keygen_ms=" << keygen_ms << '\n';
+    std::cout << "toy keygen_slices=" << generated_slices << '\n';
     if (check_manifest_mismatch_rejected<Schedule>(key_dir) != 0) return 1;
     const int result = run_filesystem_bootstrap<Schedule>(key_dir, 0.02);
 
     if (!keep_dir) std::filesystem::remove_all(key_dir);
     return result;
+}
+
+template <class Schedule>
+int run_keygen_next(const std::filesystem::path &key_dir)
+{
+    using P = typename Schedule::Param;
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_test_key<P>(*key);
+
+    print_schedule_report<Schedule>("keygen-next-before", &key_dir);
+    const auto before_missing =
+        TFHEpp::CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(key_dir);
+    bool generated = false;
+    const double keygen_ms = elapsed_ms([&] {
+        generated =
+            TFHEpp::CKKSDenseBootstrapKeyGenNextMissingToDirectory<Schedule>(
+                key_dir, *key, {P::α, 0});
+    });
+    const auto after_missing =
+        TFHEpp::CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(key_dir);
+    print_schedule_report<Schedule>("keygen-next-after", &key_dir);
+    std::cout << "keygen_next_generated=" << (generated ? 1 : 0) << '\n';
+    std::cout << "keygen_next_ms=" << keygen_ms << '\n';
+    print_created_key_files(before_missing, after_missing);
+    return 0;
 }
 
 template <class Schedule>
@@ -351,7 +406,8 @@ void print_usage(const char *program)
 {
     std::cerr << "Usage: " << program
               << " [--toy] [--keep] [--lvl6-plan] [--lvl6-keygen DIR]"
-                 " [--lvl6-run DIR] [--lvl6-all DIR] [--resume]\n";
+                 " [--lvl6-keygen-next DIR] [--lvl6-run DIR]"
+                 " [--lvl6-all DIR] [--resume]\n";
 }
 
 }  // namespace
@@ -381,8 +437,8 @@ int main(int argc, char **argv)
             saw_action = true;
             print_schedule_report<Lvl6Schedule>("lvl6");
         }
-        else if (arg == "--lvl6-keygen" || arg == "--lvl6-run" ||
-                 arg == "--lvl6-all") {
+        else if (arg == "--lvl6-keygen" || arg == "--lvl6-keygen-next" ||
+                 arg == "--lvl6-run" || arg == "--lvl6-all") {
             if (i + 1 >= args.size()) {
                 print_usage(argv[0]);
                 return 2;
@@ -391,6 +447,9 @@ int main(int argc, char **argv)
             const std::filesystem::path key_dir = args[++i];
             if (arg == "--lvl6-keygen") {
                 if (run_keygen<Lvl6Schedule>(key_dir, resume) != 0) return 1;
+            }
+            else if (arg == "--lvl6-keygen-next") {
+                if (run_keygen_next<Lvl6Schedule>(key_dir) != 0) return 1;
             }
             else if (arg == "--lvl6-run") {
                 print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
