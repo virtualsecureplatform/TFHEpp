@@ -519,6 +519,56 @@ void test_sine_evalmod(const TFHEpp::Key<P> &key)
     require_close(*decoded, *expected, 0.03, "CKKS sine EvalMod degree-3");
 }
 
+void test_power_polynomial_evaluator(const TFHEpp::Key<P> &key)
+{
+    constexpr std::uint32_t log_q = 128;
+    constexpr std::uint32_t log_delta = 36;
+    constexpr std::uint32_t coeff_log_delta = 12;
+    constexpr std::size_t degree = 3;
+    using EvalCt = TFHEpp::CKKSCiphertext<P, log_q, log_delta>;
+    using Traits =
+        TFHEpp::CKKSPowerPolynomialEvaluatorTraits<P, log_q, log_delta,
+                                                   coeff_log_delta, degree>;
+    using EvalOut =
+        TFHEpp::CKKSPowerPolynomialResult<P, log_q, log_delta, coeff_log_delta,
+                                          degree>;
+    static_assert(Traits::power_depth == 2);
+    static_assert(EvalOut::log_q == log_q - 2 * log_delta - coeff_log_delta);
+
+    std::vector<double> coeffs(degree + 1, 0.0);
+    coeffs[0] = 0.125;
+    coeffs[1] = 1.0;
+    coeffs[2] = -0.5;
+    coeffs[3] = 0.25;
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    slots->fill({0.0, 0.0});
+    expected->fill({0.0, 0.0});
+    for (std::size_t i = 0; i < P::n / 2; i++) {
+        const double x =
+            static_cast<double>(static_cast<int>(i % 17) - 8) / 64.0;
+        (*slots)[i] = {x, 0.0};
+        (*expected)[i] = {TFHEpp::CKKSEvaluatePowerPolynomial(coeffs, x), 0.0};
+    }
+
+    auto relin_chain = std::make_unique<typename Traits::RelinKeyChain>();
+    TFHEpp::CKKSRelinKeyChainGen<P, log_q, log_delta, Traits::power_depth>(
+        *relin_chain, key, {0.0, 0});
+
+    auto ct = std::make_unique<EvalCt>();
+    TFHEpp::ckksSlotEncrypt<P, log_q, log_delta>(*ct, *slots, key, {0.0, 0});
+
+    auto out = std::make_unique<EvalOut>();
+    TFHEpp::CKKSEvalPowerPolynomial<P, log_q, log_delta, coeff_log_delta,
+                                    degree>(*out, *ct, coeffs, *relin_chain);
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, EvalOut::log_q, EvalOut::log_delta>(
+        *decoded, *out, key);
+    require_close(*decoded, *expected, 0.05, "CKKS power polynomial degree-3");
+}
+
 }  // namespace
 
 int main()
@@ -543,6 +593,7 @@ int main()
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_key(*key);
     test_sine_evalmod(*key);
+    test_power_polynomial_evaluator(*key);
 
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     slots->fill({0.0, 0.0});

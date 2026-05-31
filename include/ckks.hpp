@@ -2528,6 +2528,136 @@ inline void CKKSSquare(
     CKKSMult<P>(res, ct, ct, relinkey);
 }
 
+namespace ckks_detail {
+
+constexpr std::uint32_t power_tree_depth(std::size_t power)
+{
+    return power <= 1 ? 0 : bit_width_u64(power - 1);
+}
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t Degree, class Seq>
+struct CKKSPowerBasisTuple;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t Degree, std::size_t... Is>
+struct CKKSPowerBasisTuple<P, StartLogQ, LogDelta, Degree,
+                           std::index_sequence<Is...>> {
+    using type = std::tuple<
+        CKKSCiphertext<P,
+                       StartLogQ - power_tree_depth(Is + 1) * LogDelta,
+                       LogDelta>...>;
+};
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree>
+struct CKKSPowerPolynomialEvaluatorTraits {
+    static_assert(Degree > 1);
+    static constexpr std::uint32_t power_depth =
+        ckks_detail::power_tree_depth(Degree);
+    static_assert(StartLogQ > power_depth * LogDelta + CoeffLogDelta);
+
+    static constexpr std::uint32_t term_input_log_q =
+        StartLogQ - power_depth * LogDelta;
+    static constexpr std::uint32_t log_q = term_input_log_q - CoeffLogDelta;
+    static constexpr std::uint32_t log_delta = LogDelta;
+
+    using PowerBasis = typename ckks_detail::CKKSPowerBasisTuple<
+        P, StartLogQ, LogDelta, Degree,
+        std::make_index_sequence<Degree>>::type;
+    using RelinKeyChain = CKKSRelinKeyChain<P, StartLogQ, LogDelta, power_depth>;
+    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+};
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree>
+using CKKSPowerPolynomialResult =
+    typename CKKSPowerPolynomialEvaluatorTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree>::Ciphertext;
+
+namespace ckks_detail {
+
+template <std::size_t I, class Traits, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t CoeffLogDelta,
+          std::size_t Degree>
+inline void CKKSBuildPowerBasisImpl(
+    typename Traits::PowerBasis &powers,
+    const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
+    const typename Traits::RelinKeyChain &keys)
+{
+    if constexpr (I <= Degree) {
+        if constexpr (I == 1) {
+            std::get<0>(powers) = ct;
+        }
+        else {
+            constexpr std::size_t lhs_power = I / 2;
+            constexpr std::size_t rhs_power = I - lhs_power;
+            constexpr std::uint32_t depth = power_tree_depth(I);
+            CKKSMult<P>(std::get<I - 1>(powers),
+                        std::get<lhs_power - 1>(powers),
+                        std::get<rhs_power - 1>(powers),
+                        keys.template get<depth - 1>());
+        }
+        CKKSBuildPowerBasisImpl<I + 1, Traits, P, StartLogQ, LogDelta,
+                                CoeffLogDelta, Degree>(powers, ct, keys);
+    }
+}
+
+template <std::size_t I, class Traits, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t CoeffLogDelta,
+          std::size_t Degree>
+inline void CKKSAddPowerPolynomialTermsImpl(
+    typename Traits::Ciphertext &res, const typename Traits::PowerBasis &powers,
+    const std::vector<double> &coeffs)
+{
+    if constexpr (I <= Degree) {
+        if (I < coeffs.size() && coeffs[I] != 0.0) {
+            using PowerCt =
+                std::tuple_element_t<I - 1, typename Traits::PowerBasis>;
+            CKKSCiphertext<P, Traits::term_input_log_q, LogDelta> reduced;
+            CKKSLevelReduce<P, PowerCt::log_q, Traits::term_input_log_q,
+                            LogDelta>(reduced, std::get<I - 1>(powers));
+
+            CKKSPlainMulResult<P, Traits::term_input_log_q, LogDelta,
+                               CoeffLogDelta>
+                term;
+            CKKSPlainMulByReal<P, Traits::term_input_log_q, LogDelta,
+                               CoeffLogDelta>(term, reduced, coeffs[I]);
+            CKKSAddInPlace<P, Traits::log_q, LogDelta>(res, term);
+        }
+        CKKSAddPowerPolynomialTermsImpl<I + 1, Traits, P, StartLogQ, LogDelta,
+                                        CoeffLogDelta, Degree>(res, powers,
+                                                               coeffs);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree>
+inline void CKKSEvalPowerPolynomial(
+    CKKSPowerPolynomialResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree>
+        &res,
+    const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
+    const std::vector<double> &coeffs,
+    const typename CKKSPowerPolynomialEvaluatorTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree>::RelinKeyChain &keys)
+{
+    using Traits = CKKSPowerPolynomialEvaluatorTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree>;
+    typename Traits::PowerBasis powers;
+    ckks_detail::CKKSBuildPowerBasisImpl<1, Traits, P, StartLogQ, LogDelta,
+                                         CoeffLogDelta, Degree>(powers, ct,
+                                                                keys);
+    CKKSSetTransparentReal<P, Traits::log_q, LogDelta>(
+        res, coeffs.empty() ? 0.0 : coeffs[0]);
+    ckks_detail::CKKSAddPowerPolynomialTermsImpl<
+        1, Traits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(res, powers,
+                                                                  coeffs);
+}
+
 inline double CKKSPlainEvalModSineDegree5(double x)
 {
     constexpr double pi = 3.141592653589793238462643383279502884;
