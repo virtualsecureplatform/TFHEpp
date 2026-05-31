@@ -488,6 +488,12 @@ void test_lvl6_factorized_stage_shape()
     const std::size_t sparse_key_bytes =
         TFHEpp::CKKSDenseBootstrapSparseKeyByteEstimate<Schedule>(
             rotation_usage);
+    const std::size_t streamed_peak_rows =
+        TFHEpp::CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(
+            rotation_usage);
+    const std::size_t streamed_peak_bytes =
+        TFHEpp::CKKSDenseBootstrapStreamedPeakKeyByteEstimate<Schedule>(
+            rotation_usage);
     constexpr std::size_t full_key_rows =
         TFHEpp::CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>();
     constexpr std::size_t full_key_bytes =
@@ -501,7 +507,12 @@ void test_lvl6_factorized_stage_shape()
     if (sparse_key_bytes !=
         sparse_key_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
         std::exit(1);
+    if (streamed_peak_bytes !=
+        streamed_peak_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
+        std::exit(1);
     if (sparse_key_rows >= full_key_rows || sparse_key_bytes >= full_key_bytes)
+        std::exit(1);
+    if (streamed_peak_rows != 672 || streamed_peak_rows >= sparse_key_rows)
         std::exit(1);
     std::cout << "CKKS lvl6 dense bootstrap rotation key indices planned/full="
               << planned_key_indices << "/" << full_key_indices
@@ -510,6 +521,9 @@ void test_lvl6_factorized_stage_shape()
     std::cout << "CKKS lvl6 dense bootstrap key rows sparse/full="
               << sparse_key_rows << "/" << full_key_rows
               << " bytes=" << sparse_key_bytes << "/" << full_key_bytes
+              << std::endl;
+    std::cout << "CKKS lvl6 dense bootstrap streamed peak rows="
+              << streamed_peak_rows << " bytes=" << streamed_peak_bytes
               << std::endl;
 }
 

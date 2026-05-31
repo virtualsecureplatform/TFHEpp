@@ -3498,6 +3498,26 @@ inline std::size_t CKKSRotationUsageKeySwitchRows(
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
           std::uint32_t LevelStep, std::size_t LevelCount>
+inline std::size_t CKKSRotationUsagePeakKeySwitchRows(
+    const std::array<CKKSRotationKeyIndexSet<P>, LevelCount> &usage)
+{
+    if constexpr (I == LevelCount) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - I * LevelStep;
+        const std::size_t here =
+            CKKSRotationKeyIndexSetCount<P>(usage[I]) *
+            CKKSAutoKeySwitchRowCount<P, log_q>();
+        const std::size_t tail =
+            CKKSRotationUsagePeakKeySwitchRows<I + 1, P, StartLogQ,
+                                               LevelStep>(usage);
+        return std::max(here, tail);
+    }
+}
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LevelStep, std::size_t LevelCount>
 constexpr std::size_t CKKSFullGaloisKeySwitchRows()
 {
     if constexpr (I == LevelCount) {
@@ -3551,20 +3571,92 @@ constexpr std::size_t CKKSDenseBootstrapEvalModKeySwitchRowCount()
 }
 
 template <class Schedule>
-inline std::size_t CKKSDenseBootstrapSparseGaloisKeySwitchRowCount(
+constexpr std::size_t CKKSDenseBootstrapEvalModPeakKeySwitchRowCount()
+{
+    return CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseCoeffToSlotKeySwitchRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     using P = typename Schedule::Param;
     return ckks_detail::CKKSRotationUsageKeySwitchRows<
-               0, P, Schedule::boot_log_q,
-               Schedule::linear_plain_log_delta>(
-               usage.coeff_to_slot) +
-           CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) *
-               CKKSAutoKeySwitchRowCount<
-                   P, Schedule::after_coeff_to_slot_log_q>() +
-           ckks_detail::CKKSRotationUsageKeySwitchRows<
-               0, P, Schedule::after_evalmod_log_q,
-               Schedule::linear_plain_log_delta>(usage.slot_to_coeff);
+        0, P, Schedule::boot_log_q, Schedule::linear_plain_log_delta>(
+        usage.coeff_to_slot);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseCoeffToSlotPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSRotationUsagePeakKeySwitchRows<
+        0, P, Schedule::boot_log_q, Schedule::linear_plain_log_delta>(
+        usage.coeff_to_slot);
+}
+
+template <class Schedule>
+constexpr std::size_t
+CKKSDenseBootstrapPackedConjugateKeySwitchRowCount()
+{
+    using P = typename Schedule::Param;
+    return CKKSAutoKeySwitchRowCount<P,
+                                     Schedule::after_coeff_to_slot_log_q>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparsePackedConjugateKeySwitchRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) *
+           CKKSDenseBootstrapPackedConjugateKeySwitchRowCount<Schedule>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffKeySwitchRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSRotationUsageKeySwitchRows<
+        0, P, Schedule::after_evalmod_log_q,
+        Schedule::linear_plain_log_delta>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSRotationUsagePeakKeySwitchRows<
+        0, P, Schedule::after_evalmod_log_q,
+        Schedule::linear_plain_log_delta>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseGaloisKeySwitchRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    return CKKSDenseBootstrapSparseCoeffToSlotKeySwitchRowCount<Schedule>(
+               usage) +
+           CKKSDenseBootstrapSparsePackedConjugateKeySwitchRowCount<Schedule>(
+               usage) +
+           CKKSDenseBootstrapSparseSlotToCoeffKeySwitchRowCount<Schedule>(
+               usage);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseGaloisPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    return std::max(
+        {CKKSDenseBootstrapSparseCoeffToSlotPeakKeySwitchRowCount<Schedule>(
+             usage),
+         CKKSDenseBootstrapSparsePackedConjugateKeySwitchRowCount<Schedule>(
+             usage),
+         CKKSDenseBootstrapSparseSlotToCoeffPeakKeySwitchRowCount<Schedule>(
+             usage)});
 }
 
 template <class Schedule>
@@ -3593,6 +3685,15 @@ inline std::size_t CKKSDenseBootstrapSparseKeySwitchRowCount(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapStreamedKeySwitchPeakRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    return std::max(
+        CKKSDenseBootstrapSparseGaloisPeakKeySwitchRowCount<Schedule>(usage),
+        CKKSDenseBootstrapEvalModPeakKeySwitchRowCount<Schedule>());
+}
+
+template <class Schedule>
 constexpr std::size_t CKKSDenseBootstrapFullKeySwitchRowCount()
 {
     return CKKSDenseBootstrapFullGaloisKeySwitchRowCount<Schedule>() +
@@ -3605,6 +3706,15 @@ inline std::size_t CKKSDenseBootstrapSparseKeyByteEstimate(
 {
     using P = typename Schedule::Param;
     return CKKSDenseBootstrapSparseKeySwitchRowCount<Schedule>(usage) *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapStreamedPeakKeyByteEstimate(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(usage) *
            CKKSKeySwitchRowByteSize<P>();
 }
 
