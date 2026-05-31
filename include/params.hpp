@@ -40,6 +40,8 @@ using cblvl2param = lvl2param;
 using cbAHlvl2param = AHlvl2param;
 #endif
 
+using ckkslvl3param = lvl3simdparam;
+
 struct lvl01param {
     using domainP = lvl0param;
     using targetP = lvl1param;

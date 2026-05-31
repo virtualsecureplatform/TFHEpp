@@ -40,6 +40,7 @@
 #include "bfv-c2s.hpp"
 #include "bfv-bootstrapping.hpp"
 #include "bfv-gbfv.hpp"
+#include "ckks.hpp"
 
 // Application
 #include "aes.hpp"
