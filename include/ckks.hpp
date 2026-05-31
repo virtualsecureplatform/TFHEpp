@@ -740,6 +740,18 @@ using CKKSPlainMulResult =
     typename CKKSPlainMulTraits<P, LogQ, LogDelta,
                                 PlainLogDelta>::Ciphertext;
 
+template <class P, std::uint32_t InLogQ, std::uint32_t OutLogQ,
+          std::uint32_t LogDelta>
+inline void CKKSModRaise(CKKSCiphertext<P, OutLogQ, LogDelta> &res,
+                         const CKKSCiphertext<P, InLogQ, LogDelta> &ct)
+{
+    static_assert(InLogQ < OutLogQ);
+    static_assert(OutLogQ <= ckks_detail::torus_width_v<P>);
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t i = 0; i < P::n; i++)
+            res.ct[c][i] = ckks_detail::reduceToLevel<P, InLogQ>(ct.ct[c][i]);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
 inline void CKKSPlainMulRescaleTRLWE(TRLWE<P> &res, const TRLWE<P> &ct,
                                      const Polynomial<P> &plain)
@@ -903,58 +915,122 @@ inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
     ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
 }
 
+template <class P, std::uint32_t LogQ>
+inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
+                               const CKKSGaloisKey<P, LogQ> &gk)
+{
+    CKKSEvalAuto<P, LogQ>(res, ct, 2 * P::n - 1, gk[P::nbit]);
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
+struct CKKSLinearTransformTerm {
+    int baby_step = 0;
+    CKKSPlaintext<P, LogQ, PlainLogDelta> plain{};
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
+struct CKKSLinearTransformGiantStep {
+    int giant_step = 0;
+    std::vector<CKKSLinearTransformTerm<P, LogQ, PlainLogDelta>> terms{};
+};
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
-inline void CKKSLinearTransformBSGS(
-    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
-    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+struct CKKSLinearTransformPlan {
+    static_assert(PlainLogDelta < LogQ);
+    static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    static constexpr std::uint32_t plain_log_delta = PlainLogDelta;
+    static constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+
+    int k_step = 0;
+    std::vector<CKKSLinearTransformGiantStep<P, LogQ, PlainLogDelta>> groups{};
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSBuildLinearTransformBSGSPlan(
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
     const std::vector<CKKSSlotVector<P>> &diagonals,
-    const std::vector<int> &rotation_offsets, int k_step,
-    const CKKSGaloisKey<P, LogQ> &input_gk,
-    const CKKSGaloisKey<P, LogQ - PlainLogDelta> &output_gk)
+    const std::vector<int> &rotation_offsets, int k_step)
 {
     static_assert(PlainLogDelta < LogQ);
-    constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
     constexpr int half = static_cast<int>(P::n) / 2;
     assert(diagonals.size() == rotation_offsets.size());
     assert(!diagonals.empty());
     assert(k_step > 0 && k_step <= half);
 
-    auto baby = std::make_unique<std::vector<TRLWE<P>>>(k_step);
-    (*baby)[0] = ct.ct;
-    for (int j1 = 1; j1 < k_step; j1++)
-        CKKSRotateSlots<P, LogQ>((*baby)[j1], ct.ct, j1, input_gk);
-
-    std::vector<std::vector<std::pair<int, std::size_t>>> groups;
     int max_j2 = 0;
+    for (const int offset : rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<std::vector<CKKSSlotVector<P>>> accumulated(
+        max_j2 + 1, std::vector<CKKSSlotVector<P>>(k_step));
+    std::vector<std::vector<bool>> used(max_j2 + 1,
+                                        std::vector<bool>(k_step, false));
+    for (auto &group : accumulated)
+        for (auto &diag : group) diag.fill({0.0, 0.0});
+
+    auto rotated = std::make_unique<CKKSSlotVector<P>>();
     for (std::size_t i = 0; i < rotation_offsets.size(); i++) {
         const int r = ((rotation_offsets[i] % half) + half) % half;
         const int j2 = r / k_step;
         const int j1 = r % k_step;
-        if (j2 >= max_j2) {
-            max_j2 = j2;
-            groups.resize(max_j2 + 1);
-        }
-        groups[j2].emplace_back(j1, i);
+        rotateCKKSSlotVector<P>(*rotated, diagonals[i], -k_step * j2);
+        for (int s = 0; s < half; s++) accumulated[j2][j1][s] += (*rotated)[s];
+        used[j2][j1] = true;
     }
 
+    plan.k_step = k_step;
+    plan.groups.clear();
+    plan.groups.reserve(max_j2 + 1);
+    for (int j2 = 0; j2 <= max_j2; j2++) {
+        CKKSLinearTransformGiantStep<P, LogQ, PlainLogDelta> group;
+        group.giant_step = j2;
+        for (int j1 = 0; j1 < k_step; j1++) {
+            if (!used[j2][j1]) continue;
+            CKKSLinearTransformTerm<P, LogQ, PlainLogDelta> term;
+            term.baby_step = j1;
+            ckksSlotEncode<P, LogQ, PlainLogDelta>(term.plain.poly,
+                                                   accumulated[j2][j1]);
+            group.terms.push_back(std::move(term));
+        }
+        if (!group.terms.empty()) plan.groups.push_back(std::move(group));
+    }
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSLinearTransformBSGS(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    const CKKSGaloisKey<P, LogQ> &input_gk,
+    const CKKSGaloisKey<P, LogQ - PlainLogDelta> &output_gk)
+{
+    static_assert(PlainLogDelta < LogQ);
+    constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+    assert(plan.k_step > 0 && plan.k_step <= static_cast<int>(P::n / 2));
+    assert(!plan.groups.empty());
+
+    auto baby = std::make_unique<std::vector<TRLWE<P>>>(plan.k_step);
+    (*baby)[0] = ct.ct;
+    for (int j1 = 1; j1 < plan.k_step; j1++)
+        CKKSRotateSlots<P, LogQ>((*baby)[j1], ct.ct, j1, input_gk);
+
     bool res_initialized = false;
-    auto rotated_diag = std::make_unique<CKKSSlotVector<P>>();
-    auto plain = std::make_unique<CKKSPlaintext<P, LogQ, PlainLogDelta>>();
     auto term = std::make_unique<TRLWE<P>>();
     auto inner = std::make_unique<TRLWE<P>>();
     auto giant_rotated = std::make_unique<TRLWE<P>>();
 
-    for (int j2 = 0; j2 <= max_j2; j2++) {
-        if (groups[j2].empty()) continue;
-
+    for (const auto &group : plan.groups) {
         bool inner_initialized = false;
-        for (const auto &[j1, idx] : groups[j2]) {
-            rotateCKKSSlotVector<P>(*rotated_diag, diagonals[idx],
-                                    -k_step * j2);
-            ckksSlotEncode<P, LogQ, PlainLogDelta>(plain->poly, *rotated_diag);
+        for (const auto &entry : group.terms) {
             CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
-                *term, (*baby)[j1], plain->poly);
+                *term, (*baby)[entry.baby_step], entry.plain.poly);
 
             if (!inner_initialized) {
                 *inner = *term;
@@ -966,10 +1042,10 @@ inline void CKKSLinearTransformBSGS(
         }
 
         const TRLWE<P> *to_add = inner.get();
-        if (j2 != 0) {
-            CKKSRotateSlots<P, out_log_q>(*giant_rotated, *inner, k_step * j2,
-                                          output_gk);
-            ckks_detail::reduceTRLWEToLevel<P, out_log_q>(*giant_rotated);
+        if (group.giant_step != 0) {
+            CKKSRotateSlots<P, out_log_q>(
+                *giant_rotated, *inner, plan.k_step * group.giant_step,
+                output_gk);
             to_add = giant_rotated.get();
         }
 
@@ -982,6 +1058,23 @@ inline void CKKSLinearTransformBSGS(
         }
     }
     ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSLinearTransformBSGS(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const std::vector<CKKSSlotVector<P>> &diagonals,
+    const std::vector<int> &rotation_offsets, int k_step,
+    const CKKSGaloisKey<P, LogQ> &input_gk,
+    const CKKSGaloisKey<P, LogQ - PlainLogDelta> &output_gk)
+{
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> plan;
+    CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        plan, diagonals, rotation_offsets, k_step);
+    CKKSLinearTransformBSGS<P, LogQ, LogDelta, PlainLogDelta>(
+        res, ct, plan, input_gk, output_gk);
 }
 
 template <class P, std::uint32_t LogQ>
