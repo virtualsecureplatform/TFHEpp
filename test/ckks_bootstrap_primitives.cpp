@@ -136,14 +136,20 @@ void require_close_param(const TFHEpp::CKKSSlotVector<Param> &got,
 
 template <class Schedule>
 struct CountingDenseBootstrapProvider {
+    using EvalModTraits = TFHEpp::CKKSDenseEvalModBoundedCosTraits<Schedule>;
+
     const TFHEpp::CKKSDenseBootstrapKey<Schedule> &key;
     mutable std::array<std::size_t, Schedule::coeff_to_slot_level_count + 1>
         coeff_to_slot_gets{};
     mutable std::array<std::size_t, Schedule::slot_to_coeff_level_count + 1>
         slot_to_coeff_gets{};
+    mutable std::array<std::size_t,
+                       EvalModTraits::PolynomialTraits::power_depth>
+        polynomial_relin_gets{};
+    mutable std::array<std::size_t, Schedule::evalmod_double_angle>
+        double_angle_relin_gets{};
     mutable std::size_t packed_conjugate_gets = 0;
     mutable std::size_t evalmod_polynomial_gets = 0;
-    mutable std::size_t evalmod_relin_gets = 0;
 
     explicit CountingDenseBootstrapProvider(
         const TFHEpp::CKKSDenseBootstrapKey<Schedule> &bootstrap_key)
@@ -175,11 +181,20 @@ struct CountingDenseBootstrapProvider {
         return key.packed_conjugate_galois;
     }
 
-    const TFHEpp::CKKSDenseEvalModBoundedCosRelinKeys<Schedule> &
-    evalmod_relin() const
+    template <std::size_t I>
+    const auto &polynomial_relin() const
     {
-        evalmod_relin_gets++;
-        return key.evalmod_relin;
+        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        polynomial_relin_gets[I]++;
+        return key.evalmod_relin.polynomial.template get<I>();
+    }
+
+    template <std::size_t I>
+    const auto &double_angle_relin() const
+    {
+        static_assert(I < Schedule::evalmod_double_angle);
+        double_angle_relin_gets[I]++;
+        return key.evalmod_relin.double_angle.template get<I>();
     }
 
     template <std::size_t I>
@@ -525,6 +540,9 @@ void test_lvl6_factorized_stage_shape()
         TFHEpp::CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() == 9);
     static_assert(
         TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>() == 265);
+    static_assert(
+        TFHEpp::CKKSDenseBootstrapEvalModPeakKeySwitchRowCount<Schedule>() ==
+        40);
     static_assert(
         TFHEpp::CKKSDenseBootstrapFullGaloisKeySwitchRowCount<Schedule>() ==
         5760);
@@ -1005,8 +1023,15 @@ void test_dense_bootstrap_e2e_smoke()
         counting_provider.slot_to_coeff_gets[0] != 2 ||
         counting_provider.slot_to_coeff_gets[1] != 2 ||
         counting_provider.packed_conjugate_gets != 2 ||
-        counting_provider.evalmod_polynomial_gets != 2 ||
-        counting_provider.evalmod_relin_gets != 2)
+        counting_provider.evalmod_polynomial_gets != 2)
+        std::exit(1);
+    if (counting_provider.polynomial_relin_gets[0] != 2 ||
+        counting_provider.polynomial_relin_gets[1] != 4 ||
+        counting_provider.polynomial_relin_gets[2] != 8 ||
+        counting_provider.polynomial_relin_gets[3] != 16 ||
+        counting_provider.polynomial_relin_gets[4] != 30 ||
+        counting_provider.double_angle_relin_gets[0] != 2 ||
+        counting_provider.double_angle_relin_gets[1] != 2)
         std::exit(1);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();

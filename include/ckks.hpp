@@ -3264,11 +3264,11 @@ namespace ckks_detail {
 
 template <std::size_t I, class Traits, class P, std::uint32_t StartLogQ,
           std::uint32_t LogDelta, std::uint32_t CoeffLogDelta,
-          std::size_t Degree>
+          std::size_t Degree, class RelinKeyProvider>
 inline void CKKSBuildPowerBasisImpl(
     typename Traits::PowerBasis &powers,
     const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
-    const typename Traits::RelinKeyChain &keys)
+    const RelinKeyProvider &keys)
 {
     if constexpr (I <= Degree) {
         if constexpr (I == 1) {
@@ -3319,14 +3319,13 @@ inline void CKKSAddPowerPolynomialTermsImpl(
 }  // namespace ckks_detail
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
-          std::uint32_t CoeffLogDelta, std::size_t Degree>
-inline void CKKSEvalPowerPolynomial(
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          class RelinKeyProvider>
+inline void CKKSEvalPowerPolynomialWithKeyProvider(
     CKKSPowerPolynomialResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree>
         &res,
     const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
-    const std::vector<double> &coeffs,
-    const typename CKKSPowerPolynomialEvaluatorTraits<
-        P, StartLogQ, LogDelta, CoeffLogDelta, Degree>::RelinKeyChain &keys)
+    const std::vector<double> &coeffs, const RelinKeyProvider &keys)
 {
     using Traits = CKKSPowerPolynomialEvaluatorTraits<
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree>;
@@ -3339,6 +3338,21 @@ inline void CKKSEvalPowerPolynomial(
     ckks_detail::CKKSAddPowerPolynomialTermsImpl<
         1, Traits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(res, powers,
                                                                   coeffs);
+}
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree>
+inline void CKKSEvalPowerPolynomial(
+    CKKSPowerPolynomialResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree>
+        &res,
+    const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
+    const std::vector<double> &coeffs,
+    const typename CKKSPowerPolynomialEvaluatorTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree>::RelinKeyChain &keys)
+{
+    CKKSEvalPowerPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
+                                           CoeffLogDelta, Degree>(
+        res, ct, coeffs, keys);
 }
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
@@ -3402,12 +3416,12 @@ inline void CKKSEvalModBoundedCosKeyGen(
 namespace ckks_detail {
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
-          std::uint32_t LogDelta, std::uint32_t DoubleAngle>
+          std::uint32_t LogDelta, std::uint32_t DoubleAngle,
+          class RelinKeyProvider>
 inline void CKKSBoundedCosDoubleAngleImpl(
     CKKSCiphertext<P, StartLogQ - DoubleAngle * LogDelta, LogDelta> &res,
     const CKKSCiphertext<P, StartLogQ - I * LogDelta, LogDelta> &ct,
-    const CKKSRelinKeyChain<P, StartLogQ, LogDelta, DoubleAngle> &keys,
-    double sqrt_coeff)
+    const RelinKeyProvider &keys, double sqrt_coeff)
 {
     if constexpr (I == DoubleAngle) {
         res = ct;
@@ -3434,14 +3448,58 @@ inline void CKKSBoundedCosDoubleAngleImpl(
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
           std::uint32_t DoubleAngle>
-inline void CKKSEvalModBoundedCosNormalized(
+struct CKKSEvalModBoundedCosInMemoryKeyProvider {
+    using RelinKeys =
+        CKKSEvalModBoundedCosRelinKeys<P, StartLogQ, LogDelta, CoeffLogDelta,
+                                       Degree, DoubleAngle>;
+    const RelinKeys *keys = nullptr;
+
+    explicit CKKSEvalModBoundedCosInMemoryKeyProvider(const RelinKeys &keys_)
+        : keys(&keys_)
+    {}
+
+    template <std::size_t I>
+    const auto &polynomial_relin() const
+    {
+        assert(keys != nullptr);
+        return keys->polynomial.template get<I>();
+    }
+
+    template <std::size_t I>
+    const auto &double_angle_relin() const
+    {
+        assert(keys != nullptr);
+        return keys->double_angle.template get<I>();
+    }
+};
+
+namespace ckks_detail {
+
+template <class KeyProvider, bool Polynomial>
+struct CKKSEvalModBoundedCosRelinKeyProviderChain {
+    const KeyProvider &provider;
+
+    template <std::size_t I>
+    decltype(auto) get() const
+    {
+        if constexpr (Polynomial)
+            return provider.template polynomial_relin<I>();
+        else
+            return provider.template double_angle_relin<I>();
+    }
+};
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          std::uint32_t DoubleAngle, class KeyProvider>
+inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
     CKKSEvalModBoundedCosResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree,
                                 DoubleAngle> &res,
     const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
     const CKKSBoundedCosEvalModPolynomial &poly,
-    const CKKSEvalModBoundedCosRelinKeys<P, StartLogQ, LogDelta,
-                                         CoeffLogDelta, Degree, DoubleAngle>
-        &keys)
+    const KeyProvider &key_provider)
 {
     assert(poly.power_coeffs.size() <= Degree + 1);
     assert(poly.double_angle == DoubleAngle);
@@ -3453,11 +3511,39 @@ inline void CKKSEvalModBoundedCosNormalized(
                                                     poly.domain_offset);
 
     typename Traits::PolynomialCiphertext polynomial;
-    CKKSEvalPowerPolynomial<P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(
-        polynomial, shifted, poly.power_coeffs, keys.polynomial);
+    const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,
+                                                                  true>
+        polynomial_keys{key_provider};
+    CKKSEvalPowerPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
+                                           CoeffLogDelta, Degree>(
+        polynomial, shifted, poly.power_coeffs, polynomial_keys);
+
+    const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,
+                                                                  false>
+        double_angle_keys{key_provider};
     ckks_detail::CKKSBoundedCosDoubleAngleImpl<
         0, P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
-        res, polynomial, keys.double_angle, poly.sqrt_coeff);
+        res, polynomial, double_angle_keys, poly.sqrt_coeff);
+}
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          std::uint32_t DoubleAngle>
+inline void CKKSEvalModBoundedCosNormalized(
+    CKKSEvalModBoundedCosResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree,
+                                DoubleAngle> &res,
+    const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
+    const CKKSBoundedCosEvalModPolynomial &poly,
+    const CKKSEvalModBoundedCosRelinKeys<P, StartLogQ, LogDelta,
+                                         CoeffLogDelta, Degree, DoubleAngle>
+        &keys)
+{
+    const CKKSEvalModBoundedCosInMemoryKeyProvider<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>
+        key_provider(keys);
+    CKKSEvalModBoundedCosNormalizedWithKeyProvider<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>(
+        res, ct, poly, key_provider);
 }
 
 template <class Schedule>
@@ -3473,6 +3559,13 @@ using CKKSDenseEvalModBoundedCosResult =
 template <class Schedule>
 using CKKSDenseEvalModBoundedCosRelinKeys =
     CKKSEvalModBoundedCosRelinKeys<
+        typename Schedule::Param, Schedule::after_component_split_log_q,
+        Schedule::log_delta, Schedule::evalmod_log_scale,
+        Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
+
+template <class Schedule>
+using CKKSDenseEvalModBoundedCosInMemoryKeyProvider =
+    CKKSEvalModBoundedCosInMemoryKeyProvider<
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
@@ -3570,6 +3663,21 @@ constexpr std::size_t CKKSRelinChainKeySwitchRows()
     }
 }
 
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::size_t Depth>
+constexpr std::size_t CKKSRelinChainPeakKeySwitchRows()
+{
+    if constexpr (I == Depth) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - (I + 1) * LogDelta;
+        return std::max(CKKSRelinKeySwitchRowCount<P, log_q>(),
+                        CKKSRelinChainPeakKeySwitchRows<
+                            I + 1, P, StartLogQ, LogDelta, Depth>());
+    }
+}
+
 }  // namespace ckks_detail
 
 template <class Schedule>
@@ -3597,7 +3705,15 @@ constexpr std::size_t CKKSDenseBootstrapEvalModKeySwitchRowCount()
 template <class Schedule>
 constexpr std::size_t CKKSDenseBootstrapEvalModPeakKeySwitchRowCount()
 {
-    return CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>();
+    using P = typename Schedule::Param;
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    return std::max(
+        ckks_detail::CKKSRelinChainPeakKeySwitchRows<
+            0, P, Schedule::after_component_split_log_q,
+            Schedule::log_delta, Traits::PolynomialTraits::power_depth>(),
+        ckks_detail::CKKSRelinChainPeakKeySwitchRows<
+            0, P, Traits::polynomial_log_q, Schedule::log_delta,
+            Schedule::evalmod_double_angle>());
 }
 
 template <class Schedule>
@@ -3767,6 +3883,13 @@ inline void CKKSDenseEvalModBoundedCosKeyGen(
                                                                   noise);
 }
 
+template <class Schedule, class KeyProvider>
+inline void CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider(
+    CKKSDenseEvalModBoundedCosResult<Schedule> &res,
+    const typename Schedule::ComponentCiphertext &ct,
+    const CKKSBoundedCosEvalModPolynomial &poly,
+    const KeyProvider &key_provider);
+
 template <class Schedule>
 inline void CKKSDenseEvalModBoundedCosNormalized(
     CKKSDenseEvalModBoundedCosResult<Schedule> &res,
@@ -3774,15 +3897,28 @@ inline void CKKSDenseEvalModBoundedCosNormalized(
     const CKKSBoundedCosEvalModPolynomial &poly,
     const CKKSDenseEvalModBoundedCosRelinKeys<Schedule> &keys)
 {
+    const CKKSDenseEvalModBoundedCosInMemoryKeyProvider<Schedule> key_provider(
+        keys);
+    CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+        res, ct, poly, key_provider);
+}
+
+template <class Schedule, class KeyProvider>
+inline void CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider(
+    CKKSDenseEvalModBoundedCosResult<Schedule> &res,
+    const typename Schedule::ComponentCiphertext &ct,
+    const CKKSBoundedCosEvalModPolynomial &poly,
+    const KeyProvider &key_provider)
+{
     static_assert(Schedule::evalmod_inv_degree == 0,
                   "inverse EvalMod correction is not implemented yet");
     static_assert(CKKSDenseEvalModBoundedCosTraits<Schedule>::log_q ==
                   Schedule::after_evalmod_log_q);
-    CKKSEvalModBoundedCosNormalized<
+    CKKSEvalModBoundedCosNormalizedWithKeyProvider<
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>(res, ct, poly,
-                                                                  keys);
+                                                                  key_provider);
 }
 
 template <class Schedule>
@@ -3959,6 +4095,20 @@ struct CKKSDenseBootstrapInMemoryKeyProvider {
     }
 
     template <std::size_t I>
+    const auto &polynomial_relin() const
+    {
+        assert(key != nullptr);
+        return key->evalmod_relin.polynomial.template get<I>();
+    }
+
+    template <std::size_t I>
+    const auto &double_angle_relin() const
+    {
+        assert(key != nullptr);
+        return key->evalmod_relin.double_angle.template get<I>();
+    }
+
+    template <std::size_t I>
     const auto &slot_to_coeff_galois() const
     {
         assert(key != nullptr);
@@ -4048,13 +4198,13 @@ inline void CKKSDenseBootstrapWithKeyProvider(
         key_provider.packed_conjugate_galois());
 
     CKKSDenseEvalModBoundedCosResult<Schedule> real_evalmod;
-    CKKSDenseEvalModBoundedCosNormalized<Schedule>(
+    CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
         real_evalmod, real_component, key_provider.evalmod_polynomial(),
-        key_provider.evalmod_relin());
+        key_provider);
     CKKSDenseEvalModBoundedCosResult<Schedule> imag_evalmod;
-    CKKSDenseEvalModBoundedCosNormalized<Schedule>(
+    CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
         imag_evalmod, imag_component, key_provider.evalmod_polynomial(),
-        key_provider.evalmod_relin());
+        key_provider);
 
     const ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider,
                                                                false>
