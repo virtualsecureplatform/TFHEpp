@@ -980,6 +980,38 @@ inline void CKKSPlainMulByReal(
     CKKSPlainMulRescale<P, LogQ, LogDelta, PlainLogDelta>(res, ct, plain);
 }
 
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSSetTransparentReal(CKKSCiphertext<P, LogQ, LogDelta> &res,
+                                   double value)
+{
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t i = 0; i < P::n; i++) res.ct[c][i] = 0;
+
+    CKKSSlotVector<P> slots{};
+    slots.fill({value, 0.0});
+    ckksSlotEncode<P, LogQ, LogDelta>(res.ct[P::k], slots);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSAddPlainRealInPlace(CKKSCiphertext<P, LogQ, LogDelta> &acc,
+                                    double value)
+{
+    CKKSSlotVector<P> slots{};
+    slots.fill({value, 0.0});
+    Polynomial<P> plain;
+    ckksSlotEncode<P, LogQ, LogDelta>(plain, slots);
+    for (std::uint32_t i = 0; i < P::n; i++)
+        acc.ct[P::k][i] =
+            ckks_detail::reduceToLevel<P, LogQ>(acc.ct[P::k][i] + plain[i]);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSSubPlainRealInPlace(CKKSCiphertext<P, LogQ, LogDelta> &acc,
+                                    double value)
+{
+    CKKSAddPlainRealInPlace<P, LogQ, LogDelta>(acc, -value);
+}
+
 template <class P, std::uint32_t LogQ, class Rows>
 inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
                               const Rows &rows)
@@ -2137,6 +2169,76 @@ inline std::unique_ptr<CKKSRelinKey<P, LogQ>> makeCKKSRelinKey(
     }
 
     return relinkey;
+}
+
+namespace ckks_detail {
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          class Seq>
+struct CKKSRelinKeyChainTuple;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t... Is>
+struct CKKSRelinKeyChainTuple<P, StartLogQ, LogDelta,
+                              std::index_sequence<Is...>> {
+    using type =
+        std::tuple<CKKSRelinKey<P, StartLogQ - (Is + 1) * LogDelta>...>;
+};
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t Depth>
+struct CKKSRelinKeyChain {
+    static_assert(Depth > 0);
+    static_assert(StartLogQ > Depth * LogDelta);
+
+    using Tuple = typename ckks_detail::CKKSRelinKeyChainTuple<
+        P, StartLogQ, LogDelta, std::make_index_sequence<Depth>>::type;
+
+    Tuple keys{};
+
+    template <std::size_t I>
+    auto &get()
+    {
+        static_assert(I < Depth);
+        return std::get<I>(keys);
+    }
+
+    template <std::size_t I>
+    const auto &get() const
+    {
+        static_assert(I < Depth);
+        return std::get<I>(keys);
+    }
+};
+
+namespace ckks_detail {
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::size_t Depth>
+inline void CKKSRelinKeyChainGenImpl(
+    CKKSRelinKeyChain<P, StartLogQ, LogDelta, Depth> &chain,
+    const Key<P> &key, CKKSNoise noise)
+{
+    if constexpr (I < Depth) {
+        constexpr std::uint32_t log_q = StartLogQ - (I + 1) * LogDelta;
+        chain.template get<I>() = *makeCKKSRelinKey<P, log_q>(key, noise);
+        CKKSRelinKeyChainGenImpl<I + 1, P, StartLogQ, LogDelta, Depth>(
+            chain, key, noise);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t Depth>
+inline void CKKSRelinKeyChainGen(
+    CKKSRelinKeyChain<P, StartLogQ, LogDelta, Depth> &chain,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    ckks_detail::CKKSRelinKeyChainGenImpl<0, P, StartLogQ, LogDelta, Depth>(
+        chain, key, noise);
 }
 
 template <class P, std::uint32_t LogQ>

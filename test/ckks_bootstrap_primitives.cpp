@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <tfhe++.hpp>
+#include <tuple>
 
 namespace {
 
@@ -442,6 +443,12 @@ void test_sine_evalmod(const TFHEpp::Key<P> &key)
     TFHEpp::CKKSEvalModSineDegree3KeyGen<P, eval_log_q, eval_log_delta,
                                          coeff_log_delta>(*keys, key,
                                                           {0.0, 0});
+    using EvalRelinChain =
+        TFHEpp::CKKSRelinKeyChain<P, eval_log_q, eval_log_delta, 2>;
+    static_assert(std::tuple_size<typename EvalRelinChain::Tuple>::value == 2);
+    auto relin_chain = std::make_unique<EvalRelinChain>();
+    TFHEpp::CKKSRelinKeyChainGen<P, eval_log_q, eval_log_delta, 2>(
+        *relin_chain, key, {0.0, 0});
 
     auto ct = std::make_unique<EvalCt>();
     TFHEpp::ckksSlotEncrypt<P, eval_log_q, eval_log_delta>(*ct, *slots, key,
@@ -457,27 +464,47 @@ void test_sine_evalmod(const TFHEpp::Key<P> &key)
     TFHEpp::ckksSlotDecrypt<P, eval_log_q, eval_log_delta>(*decoded, *ct, key);
     require_close(*decoded, *slots, 0.01, "CKKS EvalMod fresh input");
 
+    auto transparent = std::make_unique<EvalCt>();
+    TFHEpp::CKKSSetTransparentReal<P, eval_log_q, eval_log_delta>(*transparent,
+                                                                  -0.125);
+    TFHEpp::ckksSlotDecrypt<P, eval_log_q, eval_log_delta>(*decoded,
+                                                           *transparent, key);
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*power_expected)[i] = {-0.125, 0.0};
+    require_close(*decoded, *power_expected, 1e-9, "CKKS transparent real");
+
+    auto shifted = std::make_unique<EvalCt>(*ct);
+    TFHEpp::CKKSAddPlainRealInPlace<P, eval_log_q, eval_log_delta>(*shifted,
+                                                                   0.25);
+    TFHEpp::CKKSSubPlainRealInPlace<P, eval_log_q, eval_log_delta>(*shifted,
+                                                                   0.125);
+    TFHEpp::ckksSlotDecrypt<P, eval_log_q, eval_log_delta>(*decoded, *shifted,
+                                                           key);
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*power_expected)[i] = (*slots)[i] + std::complex<double>{0.125, 0.0};
+    require_close(*decoded, *power_expected, 0.01, "CKKS add/sub plain real");
+
     auto plain_ct = std::make_unique<EvalCt>();
     plain_ct->ct[0].fill(0);
     TFHEpp::ckksSlotEncode<P, eval_log_q, eval_log_delta>(plain_ct->ct[1],
                                                           *slots);
 
     auto x2 = std::make_unique<X2>();
-    TFHEpp::CKKSMult<P>(*x2, *plain_ct, *plain_ct, keys->x2);
+    TFHEpp::CKKSMult<P>(*x2, *plain_ct, *plain_ct, relin_chain->get<0>());
     TFHEpp::ckksSlotDecrypt<P, X2::log_q, X2::log_delta>(*decoded, *x2, key);
     for (std::size_t i = 0; i < P::n / 2; i++)
         (*power_expected)[i] = (*slots)[i] * (*slots)[i];
     require_close(*decoded, *power_expected, 0.01,
                   "CKKS EvalMod zero-mask x^2");
 
-    TFHEpp::CKKSMult<P>(*x2, *ct, *ct, keys->x2);
+    TFHEpp::CKKSMult<P>(*x2, *ct, *ct, relin_chain->get<0>());
     TFHEpp::ckksSlotDecrypt<P, X2::log_q, X2::log_delta>(*decoded, *x2, key);
     for (std::size_t i = 0; i < P::n / 2; i++)
         (*power_expected)[i] = (*slots)[i] * (*slots)[i];
     require_close(*decoded, *power_expected, 0.01, "CKKS EvalMod x^2");
 
     auto x3 = std::make_unique<X3>();
-    TFHEpp::CKKSMult<P>(*x3, *x2, *ct, keys->x3);
+    TFHEpp::CKKSMult<P>(*x3, *x2, *ct, relin_chain->get<1>());
     TFHEpp::ckksSlotDecrypt<P, X3::log_q, X3::log_delta>(*decoded, *x3, key);
     for (std::size_t i = 0; i < P::n / 2; i++)
         (*power_expected)[i] = (*slots)[i] * (*slots)[i] * (*slots)[i];
