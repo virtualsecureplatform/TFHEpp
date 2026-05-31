@@ -618,6 +618,23 @@ void test_dense_bootstrap_api_shape()
                       M, Schedule::after_evalmod_log_q,
                       Schedule::linear_plain_log_delta,
                       Schedule::slot_to_coeff_level_count>>);
+    static_assert(std::is_same_v<
+                  TFHEpp::CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, 0>,
+                  TFHEpp::CKKSSparseGaloisKey<M, Schedule::boot_log_q>>);
+    static_assert(std::is_same_v<
+                  TFHEpp::CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, 1>,
+                  TFHEpp::CKKSSparseGaloisKey<
+                      M, Schedule::boot_log_q -
+                             Schedule::linear_plain_log_delta>>);
+    static_assert(std::is_same_v<
+                  TFHEpp::CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule>,
+                  TFHEpp::CKKSSparseGaloisKey<
+                      M, Schedule::after_coeff_to_slot_log_q>>);
+    static_assert(std::is_same_v<
+                  TFHEpp::CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, 1>,
+                  TFHEpp::CKKSSparseGaloisKey<
+                      M, Schedule::after_evalmod_log_q -
+                             Schedule::linear_plain_log_delta>>);
     using KeyGenFn = void (*)(BootstrapKey &, const TFHEpp::Key<M> &,
                               TFHEpp::CKKSNoise);
     using BootstrapFn = void (*)(typename Schedule::OutputCiphertext &,
@@ -952,6 +969,26 @@ void test_dense_bootstrap_e2e_smoke()
     if (!bootstrap_key->packed_conjugate_galois.has(M::nbit) ||
         TFHEpp::CKKSRotationKeyIndexSetCount<M>(
             bootstrap_key->packed_conjugate_galois.available) != 1)
+        std::exit(1);
+
+    TFHEpp::CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, 0>
+        streamed_c2s0;
+    TFHEpp::CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, 0>(
+        streamed_c2s0, expected_usage, *key, {0.0, 0});
+    if (streamed_c2s0.available != expected_usage.coeff_to_slot[0])
+        std::exit(1);
+    TFHEpp::CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule>
+        streamed_packed;
+    TFHEpp::CKKSDenseBootstrapPackedConjugateGaloisKeyGen<Schedule>(
+        streamed_packed, expected_usage, *key, {0.0, 0});
+    if (streamed_packed.available != expected_usage.packed_conjugate ||
+        !streamed_packed.has(M::nbit))
+        std::exit(1);
+    TFHEpp::CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, 1>
+        streamed_stc1;
+    TFHEpp::CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, 1>(
+        streamed_stc1, expected_usage, *key, {0.0, 0});
+    if (streamed_stc1.available != expected_usage.slot_to_coeff[1])
         std::exit(1);
 
     auto input = std::make_unique<typename Schedule::InputCiphertext>();
