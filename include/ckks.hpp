@@ -88,6 +88,24 @@ template <class P, std::uint32_t LogQ>
 using CKKSGaloisKey = std::array<CKKSAutoKey<P, LogQ>, P::nbit + 1>;
 
 template <class P>
+constexpr std::size_t CKKSRelinKeySwitchRowCount()
+{
+    return P::l̅;
+}
+
+template <class P>
+constexpr std::size_t CKKSAutoKeySwitchRowCount()
+{
+    return P::k * P::l̅;
+}
+
+template <class P>
+constexpr std::size_t CKKSKeySwitchRowByteSize()
+{
+    return sizeof(TRLWE<P>);
+}
+
+template <class P>
 using CKKSRotationKeyIndexSet = std::array<bool, P::nbit + 1>;
 
 template <class P>
@@ -3332,6 +3350,71 @@ using CKKSDenseEvalModBoundedCosRelinKeys =
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
+
+template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapEvalModRelinKeyCount()
+{
+    return CKKSDenseEvalModBoundedCosTraits<
+               Schedule>::PolynomialTraits::power_depth +
+           Schedule::evalmod_double_angle;
+}
+
+template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapEvalModKeySwitchRowCount()
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() *
+           CKKSRelinKeySwitchRowCount<P>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseGaloisKeySwitchRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapRotationKeyUsageCount<Schedule>(usage) *
+           CKKSAutoKeySwitchRowCount<P>();
+}
+
+template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapFullGaloisKeySwitchRowCount()
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>() *
+           CKKSAutoKeySwitchRowCount<P>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseKeySwitchRowCount(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    return CKKSDenseBootstrapSparseGaloisKeySwitchRowCount<Schedule>(usage) +
+           CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>();
+}
+
+template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapFullKeySwitchRowCount()
+{
+    return CKKSDenseBootstrapFullGaloisKeySwitchRowCount<Schedule>() +
+           CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseKeyByteEstimate(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapSparseKeySwitchRowCount<Schedule>(usage) *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapFullKeyByteEstimate()
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>() *
+           CKKSKeySwitchRowByteSize<P>();
+}
 
 template <class Schedule>
 inline void CKKSDenseEvalModBoundedCosKeyGen(

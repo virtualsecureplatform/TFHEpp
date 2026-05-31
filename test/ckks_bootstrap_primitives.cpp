@@ -459,14 +459,51 @@ void test_lvl6_factorized_stage_shape()
             rotation_usage);
     constexpr std::size_t full_key_indices =
         TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>();
+    static_assert(TFHEpp::CKKSAutoKeySwitchRowCount<L>() == 56);
+    static_assert(TFHEpp::CKKSRelinKeySwitchRowCount<L>() == 56);
+    static_assert(
+        TFHEpp::CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() == 9);
+    static_assert(
+        TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>() == 504);
+    static_assert(
+        TFHEpp::CKKSDenseBootstrapFullGaloisKeySwitchRowCount<Schedule>() ==
+        9856);
+    static_assert(
+        TFHEpp::CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>() == 10360);
     if (planned_key_indices == 0 || planned_key_indices >= full_key_indices)
+        std::exit(1);
+    if (planned_key_indices != 71 || full_key_indices != 176)
         std::exit(1);
     if (TFHEpp::CKKSRotationKeyIndexSetCount<L>(
             rotation_usage.packed_conjugate) != 1)
         std::exit(1);
+    const std::size_t sparse_galois_rows =
+        TFHEpp::CKKSDenseBootstrapSparseGaloisKeySwitchRowCount<Schedule>(
+            rotation_usage);
+    const std::size_t sparse_key_rows =
+        TFHEpp::CKKSDenseBootstrapSparseKeySwitchRowCount<Schedule>(
+            rotation_usage);
+    const std::size_t sparse_key_bytes =
+        TFHEpp::CKKSDenseBootstrapSparseKeyByteEstimate<Schedule>(
+            rotation_usage);
+    constexpr std::size_t full_key_rows =
+        TFHEpp::CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>();
+    constexpr std::size_t full_key_bytes =
+        TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>();
+    if (sparse_galois_rows != 3976 || sparse_key_rows != 4480)
+        std::exit(1);
+    if (sparse_key_bytes !=
+        sparse_key_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
+        std::exit(1);
+    if (sparse_key_rows >= full_key_rows || sparse_key_bytes >= full_key_bytes)
+        std::exit(1);
     std::cout << "CKKS lvl6 dense bootstrap rotation key indices planned/full="
               << planned_key_indices << "/" << full_key_indices
               << " c2s_baby_rotations=" << total_c2s_baby_rotations
+              << std::endl;
+    std::cout << "CKKS lvl6 dense bootstrap key rows sparse/full="
+              << sparse_key_rows << "/" << full_key_rows
+              << " bytes=" << sparse_key_bytes << "/" << full_key_bytes
               << std::endl;
 }
 
