@@ -318,6 +318,37 @@ int main()
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     {
+        constexpr std::size_t stage_count = 2;
+        constexpr int stage_k_step = 4;
+        using StageOut =
+            TFHEpp::CKKSStagedPlainMulResult<P, boot_log_q, log_delta,
+                                             plain_log_delta, stage_count>;
+
+        TFHEpp::CKKSLinearTransformStages<P> c2s_stages;
+        TFHEpp::CKKSBuildCoeffToPackedSlotStages<P>(c2s_stages);
+
+        auto stage_gks = std::make_unique<
+            TFHEpp::CKKSGaloisKeyChain<P, boot_log_q, plain_log_delta,
+                                       stage_count>>();
+        TFHEpp::CKKSGaloisKeyChainGen<P, boot_log_q, plain_log_delta,
+                                      stage_count>(*stage_gks, *key,
+                                                   {0.0, 0});
+
+        auto staged = std::make_unique<StageOut>();
+        TFHEpp::CKKSLinearTransformStagesBSGS<P, boot_log_q, log_delta,
+                                              plain_log_delta, stage_count>(
+            *staged, *boot_ct, c2s_stages, 0, stage_k_step, *stage_gks);
+        TFHEpp::ckksSlotDecrypt<P, StageOut::log_q, StageOut::log_delta>(
+            *decoded, *staged, *key);
+
+        TFHEpp::CKKSLinearTransformStages<P> prefix_stages(
+            c2s_stages.begin(), c2s_stages.begin() + stage_count);
+        apply_complex_stages<P>(*expected, *slots, prefix_stages);
+        require_close(*decoded, *expected, tol,
+                      "CKKS homomorphic factorized C2S prefix");
+    }
+
+    {
         auto conjugated = std::make_unique<BootCt>();
         TFHEpp::CKKSConjugateSlots<P, boot_log_q>(conjugated->ct, boot_ct->ct,
                                                   *boot_gk);

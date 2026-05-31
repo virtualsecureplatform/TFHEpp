@@ -10,6 +10,8 @@
 #include <memory>
 #include <random>
 #include <type_traits>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "bfv++.hpp"
@@ -1000,6 +1002,73 @@ struct CKKSLinearTransformStage {
 template <class P>
 using CKKSLinearTransformStages = std::vector<CKKSLinearTransformStage<P>>;
 
+namespace ckks_detail {
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          class IndexSequence>
+struct CKKSGaloisKeyChainTuple;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t... Is>
+struct CKKSGaloisKeyChainTuple<P, StartLogQ, PlainLogDelta,
+                               std::index_sequence<Is...>> {
+    using type = std::tuple<CKKSGaloisKey<P, StartLogQ - Is * PlainLogDelta>...>;
+};
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+struct CKKSGaloisKeyChain {
+    static_assert(StartLogQ > StageCount * PlainLogDelta);
+
+    using Tuple = typename ckks_detail::CKKSGaloisKeyChainTuple<
+        P, StartLogQ, PlainLogDelta,
+        std::make_index_sequence<StageCount + 1>>::type;
+
+    Tuple keys{};
+
+    template <std::size_t I>
+    auto &get()
+    {
+        return std::get<I>(keys);
+    }
+
+    template <std::size_t I>
+    const auto &get() const
+    {
+        return std::get<I>(keys);
+    }
+};
+
+namespace ckks_detail {
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t PlainLogDelta, std::size_t StageCount>
+inline void CKKSGaloisKeyChainGenImpl(
+    CKKSGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount> &chain,
+    const Key<P> &key, CKKSNoise noise)
+{
+    if constexpr (I <= StageCount) {
+        constexpr std::uint32_t log_q = StartLogQ - I * PlainLogDelta;
+        CKKSGaloisKeyGen<P, log_q>(chain.template get<I>(), key, noise);
+        CKKSGaloisKeyChainGenImpl<I + 1, P, StartLogQ, PlainLogDelta,
+                                  StageCount>(chain, key, noise);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+inline void CKKSGaloisKeyChainGen(
+    CKKSGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount> &chain,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    ckks_detail::CKKSGaloisKeyChainGenImpl<0, P, StartLogQ, PlainLogDelta,
+                                           StageCount>(chain, key, noise);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
 inline void CKKSBuildLinearTransformBSGSPlan(
@@ -1137,6 +1206,72 @@ inline void CKKSLinearTransformBSGS(
         plan, diagonals, rotation_offsets, k_step);
     CKKSLinearTransformBSGS<P, LogQ, LogDelta, PlainLogDelta>(
         res, ct, plan, input_gk, output_gk);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount>
+struct CKKSStagedPlainMulTraits {
+    static_assert(LogQ > StageCount * PlainLogDelta);
+    static constexpr std::uint32_t log_q = LogQ - StageCount * PlainLogDelta;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount>
+using CKKSStagedPlainMulResult =
+    typename CKKSStagedPlainMulTraits<P, LogQ, LogDelta, PlainLogDelta,
+                                      StageCount>::Ciphertext;
+
+namespace ckks_detail {
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+inline void CKKSLinearTransformStagesBSGSImpl(
+    CKKSStagedPlainMulResult<P, StartLogQ, LogDelta, PlainLogDelta,
+                             StageCount> &res,
+    const CKKSCiphertext<P, StartLogQ - I * PlainLogDelta, LogDelta> &ct,
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    int k_step,
+    const CKKSGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount>
+        &gk_chain)
+{
+    if constexpr (I == StageCount) {
+        res = ct;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - I * PlainLogDelta;
+        CKKSLinearTransformPlan<P, log_q, LogDelta, PlainLogDelta> plan;
+        CKKSBuildLinearTransformBSGSPlan<P, log_q, LogDelta, PlainLogDelta>(
+            plan, stages[first_stage + I], k_step);
+
+        CKKSPlainMulResult<P, log_q, LogDelta, PlainLogDelta> next;
+        CKKSLinearTransformBSGS<P, log_q, LogDelta, PlainLogDelta>(
+            next, ct, plan, gk_chain.template get<I>(),
+            gk_chain.template get<I + 1>());
+        CKKSLinearTransformStagesBSGSImpl<I + 1, P, StartLogQ, LogDelta,
+                                          PlainLogDelta, StageCount>(
+            res, next, stages, first_stage, k_step, gk_chain);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount>
+inline void CKKSLinearTransformStagesBSGS(
+    CKKSStagedPlainMulResult<P, LogQ, LogDelta, PlainLogDelta, StageCount>
+        &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    int k_step,
+    const CKKSGaloisKeyChain<P, LogQ, PlainLogDelta, StageCount> &gk_chain)
+{
+    assert(first_stage + StageCount <= stages.size());
+    ckks_detail::CKKSLinearTransformStagesBSGSImpl<0, P, LogQ, LogDelta,
+                                                   PlainLogDelta, StageCount>(
+        res, ct, stages, first_stage, k_step, gk_chain);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
