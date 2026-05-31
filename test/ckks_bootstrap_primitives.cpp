@@ -6,6 +6,7 @@
 #include <memory>
 #include <tfhe++.hpp>
 #include <tuple>
+#include <type_traits>
 
 namespace {
 
@@ -488,6 +489,18 @@ void test_dense_bootstrap_api_shape()
     static_assert(Schedule::output_log_q == 120);
 
     using BootstrapKey = TFHEpp::CKKSDenseBootstrapKey<Schedule>;
+    static_assert(std::is_same_v<
+                  typename BootstrapKey::CoeffToSlotGaloisKeyChain,
+                  TFHEpp::CKKSSparseGaloisKeyChain<
+                      M, Schedule::boot_log_q,
+                      Schedule::linear_plain_log_delta,
+                      Schedule::coeff_to_slot_level_count>>);
+    static_assert(std::is_same_v<
+                  typename BootstrapKey::SlotToCoeffGaloisKeyChain,
+                  TFHEpp::CKKSSparseGaloisKeyChain<
+                      M, Schedule::after_evalmod_log_q,
+                      Schedule::linear_plain_log_delta,
+                      Schedule::slot_to_coeff_level_count>>);
     using KeyGenFn = void (*)(BootstrapKey &, const TFHEpp::Key<M> &,
                               TFHEpp::CKKSNoise);
     using BootstrapFn = void (*)(typename Schedule::OutputCiphertext &,
@@ -797,6 +810,25 @@ void test_dense_bootstrap_e2e_smoke()
         std::make_unique<TFHEpp::CKKSDenseBootstrapKey<Schedule>>();
     TFHEpp::CKKSDenseBootstrapKeyGen<Schedule>(*bootstrap_key, *key,
                                                {0.0, 0});
+    TFHEpp::CKKSDenseBootstrapRotationKeyUsage<Schedule> expected_usage;
+    TFHEpp::CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(
+        expected_usage, bootstrap_key->linear_plan);
+    if (bootstrap_key->coeff_to_slot_galois.template get<0>().available !=
+        expected_usage.coeff_to_slot[0])
+        std::exit(1);
+    if (bootstrap_key->coeff_to_slot_galois.template get<1>().available !=
+        expected_usage.coeff_to_slot[1])
+        std::exit(1);
+    if (bootstrap_key->slot_to_coeff_galois.template get<0>().available !=
+        expected_usage.slot_to_coeff[0])
+        std::exit(1);
+    if (bootstrap_key->slot_to_coeff_galois.template get<1>().available !=
+        expected_usage.slot_to_coeff[1])
+        std::exit(1);
+    if (!bootstrap_key->packed_conjugate_galois.has(M::nbit) ||
+        TFHEpp::CKKSRotationKeyIndexSetCount<M>(
+            bootstrap_key->packed_conjugate_galois.available) != 1)
+        std::exit(1);
 
     auto input = std::make_unique<typename Schedule::InputCiphertext>();
     TFHEpp::ckksSlotEncrypt<M, Schedule::input_log_q, Schedule::log_delta>(

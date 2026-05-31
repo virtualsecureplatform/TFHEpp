@@ -87,6 +87,69 @@ struct CKKSAutoKey {
 template <class P, std::uint32_t LogQ>
 using CKKSGaloisKey = std::array<CKKSAutoKey<P, LogQ>, P::nbit + 1>;
 
+template <class P>
+using CKKSRotationKeyIndexSet = std::array<bool, P::nbit + 1>;
+
+template <class P>
+inline void CKKSClearRotationKeyIndexSet(CKKSRotationKeyIndexSet<P> &keys)
+{
+    keys.fill(false);
+}
+
+template <class P>
+inline void CKKSMarkRotationPowerKeyIndices(CKKSRotationKeyIndexSet<P> &keys,
+                                            int steps)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++)
+        if ((steps >> i) & 1) keys[static_cast<std::size_t>(i)] = true;
+}
+
+template <class P>
+inline void CKKSMarkConjugationKeyIndex(CKKSRotationKeyIndexSet<P> &keys)
+{
+    keys[P::nbit] = true;
+}
+
+template <class P>
+inline std::size_t
+CKKSRotationKeyIndexSetCount(const CKKSRotationKeyIndexSet<P> &keys)
+{
+    return static_cast<std::size_t>(
+        std::count(keys.begin(), keys.end(), true));
+}
+
+template <class P, std::uint32_t LogQ>
+struct CKKSSparseGaloisKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+
+    CKKSRotationKeyIndexSet<P> available{};
+    std::array<std::unique_ptr<CKKSAutoKey<P, LogQ>>, P::nbit + 1> keys{};
+
+    bool has(std::size_t i) const
+    {
+        return i < keys.size() && available[i] && keys[i] != nullptr;
+    }
+
+    CKKSAutoKey<P, LogQ> &get(std::size_t i)
+    {
+        assert(has(i));
+        return *keys[i];
+    }
+
+    const CKKSAutoKey<P, LogQ> &get(std::size_t i) const
+    {
+        assert(has(i));
+        return *keys[i];
+    }
+};
+
 struct CKKSNoise {
     double modular_stdev = 0.0;
     std::uint32_t uniform_bits = 0;
@@ -1145,6 +1208,38 @@ inline void CKKSGaloisKeyGen(CKKSGaloisKey<P, LogQ> &gk, const Key<P> &key,
 }
 
 template <class P, std::uint32_t LogQ>
+inline void CKKSSparseGaloisKeyGen(CKKSSparseGaloisKey<P, LogQ> &gk,
+                                   const Key<P> &key,
+                                   const CKKSRotationKeyIndexSet<P> &indices,
+                                   CKKSNoise noise = {P::α, 0})
+{
+    gk.available = indices;
+    std::uint64_t d = 5;
+    for (int i = 0; i < static_cast<int>(P::nbit); i++) {
+        if (indices[static_cast<std::size_t>(i)]) {
+            gk.keys[static_cast<std::size_t>(i)] =
+                std::make_unique<CKKSAutoKey<P, LogQ>>();
+            CKKSAutoKeyGen<P, LogQ>(
+                *gk.keys[static_cast<std::size_t>(i)], static_cast<uint>(d),
+                key, noise);
+        }
+        else {
+            gk.keys[static_cast<std::size_t>(i)].reset();
+        }
+        d = d * d % (2 * P::n);
+    }
+
+    if (indices[P::nbit]) {
+        gk.keys[P::nbit] = std::make_unique<CKKSAutoKey<P, LogQ>>();
+        CKKSAutoKeyGen<P, LogQ>(*gk.keys[P::nbit], 2 * P::n - 1, key,
+                                noise);
+    }
+    else {
+        gk.keys[P::nbit].reset();
+    }
+}
+
+template <class P, std::uint32_t LogQ>
 inline void CKKSEvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
                          const CKKSAutoKey<P, LogQ> &autokey)
 {
@@ -1189,6 +1284,33 @@ inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
 }
 
 template <class P, std::uint32_t LogQ>
+inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
+                            const CKKSSparseGaloisKey<P, LogQ> &gk)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    if (steps == 0) {
+        res = ct;
+        ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+        return;
+    }
+
+    std::uint64_t d = 5;
+    auto cur = std::make_unique<TRLWE<P>>(ct);
+    auto tmp = std::make_unique<TRLWE<P>>();
+    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++) {
+        if ((steps >> i) & 1) {
+            CKKSEvalAuto<P, LogQ>(*tmp, *cur, static_cast<int>(d),
+                                  gk.get(static_cast<std::size_t>(i)));
+            *cur = *tmp;
+        }
+        d = d * d % (2 * P::n);
+    }
+    res = *cur;
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ>
 inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
                                const CKKSGaloisKey<P, LogQ> &gk)
 {
@@ -1196,12 +1318,19 @@ inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
     ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
 }
 
+template <class P, std::uint32_t LogQ>
+inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
+                               const CKKSSparseGaloisKey<P, LogQ> &gk)
+{
+    CKKSEvalAuto<P, LogQ>(res, ct, 2 * P::n - 1, gk.get(P::nbit));
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
-          std::uint32_t PlainLogDelta>
+          std::uint32_t PlainLogDelta, class GaloisKey>
 inline void CKKSExtractRealSlots(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
-    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
-    const CKKSGaloisKey<P, LogQ> &gk)
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct, const GaloisKey &gk)
 {
     CKKSCiphertext<P, LogQ, LogDelta> conjugated;
     CKKSConjugateSlots<P, LogQ>(conjugated.ct, ct.ct, gk);
@@ -1212,11 +1341,10 @@ inline void CKKSExtractRealSlots(
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
-          std::uint32_t PlainLogDelta>
+          std::uint32_t PlainLogDelta, class GaloisKey>
 inline void CKKSExtractImagSlots(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
-    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
-    const CKKSGaloisKey<P, LogQ> &gk)
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct, const GaloisKey &gk)
 {
     CKKSCiphertext<P, LogQ, LogDelta> conjugated;
     CKKSConjugateSlots<P, LogQ>(conjugated.ct, ct.ct, gk);
@@ -1251,39 +1379,6 @@ struct CKKSLinearTransformPlan {
     int k_step = 0;
     std::vector<CKKSLinearTransformGiantStep<P, LogQ, PlainLogDelta>> groups{};
 };
-
-template <class P>
-using CKKSRotationKeyIndexSet = std::array<bool, P::nbit + 1>;
-
-template <class P>
-inline void CKKSClearRotationKeyIndexSet(CKKSRotationKeyIndexSet<P> &keys)
-{
-    keys.fill(false);
-}
-
-template <class P>
-inline void CKKSMarkRotationPowerKeyIndices(CKKSRotationKeyIndexSet<P> &keys,
-                                            int steps)
-{
-    constexpr int half = static_cast<int>(P::n) / 2;
-    steps = ((steps % half) + half) % half;
-    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++)
-        if ((steps >> i) & 1) keys[static_cast<std::size_t>(i)] = true;
-}
-
-template <class P>
-inline void CKKSMarkConjugationKeyIndex(CKKSRotationKeyIndexSet<P> &keys)
-{
-    keys[P::nbit] = true;
-}
-
-template <class P>
-inline std::size_t
-CKKSRotationKeyIndexSetCount(const CKKSRotationKeyIndexSet<P> &keys)
-{
-    return static_cast<std::size_t>(
-        std::count(keys.begin(), keys.end(), true));
-}
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
@@ -1578,6 +1673,78 @@ inline void CKKSGaloisKeyChainGen(
                                            StageCount>(chain, key, noise);
 }
 
+namespace ckks_detail {
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          class IndexSequence>
+struct CKKSSparseGaloisKeyChainTuple;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t... Is>
+struct CKKSSparseGaloisKeyChainTuple<P, StartLogQ, PlainLogDelta,
+                                     std::index_sequence<Is...>> {
+    using type = std::tuple<
+        CKKSSparseGaloisKey<P, StartLogQ - Is * PlainLogDelta>...>;
+};
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+struct CKKSSparseGaloisKeyChain {
+    static_assert(StartLogQ > StageCount * PlainLogDelta);
+
+    using Tuple = typename ckks_detail::CKKSSparseGaloisKeyChainTuple<
+        P, StartLogQ, PlainLogDelta,
+        std::make_index_sequence<StageCount + 1>>::type;
+
+    Tuple keys{};
+
+    template <std::size_t I>
+    auto &get()
+    {
+        return std::get<I>(keys);
+    }
+
+    template <std::size_t I>
+    const auto &get() const
+    {
+        return std::get<I>(keys);
+    }
+};
+
+namespace ckks_detail {
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t PlainLogDelta, std::size_t StageCount>
+inline void CKKSSparseGaloisKeyChainGenImpl(
+    CKKSSparseGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount> &chain,
+    const std::array<CKKSRotationKeyIndexSet<P>, StageCount + 1> &usage,
+    const Key<P> &key, CKKSNoise noise)
+{
+    if constexpr (I <= StageCount) {
+        constexpr std::uint32_t log_q = StartLogQ - I * PlainLogDelta;
+        CKKSSparseGaloisKeyGen<P, log_q>(chain.template get<I>(), key,
+                                         usage[I], noise);
+        CKKSSparseGaloisKeyChainGenImpl<I + 1, P, StartLogQ, PlainLogDelta,
+                                        StageCount>(chain, usage, key, noise);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+inline void CKKSSparseGaloisKeyChainGen(
+    CKKSSparseGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount> &chain,
+    const std::array<CKKSRotationKeyIndexSet<P>, StageCount + 1> &usage,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    ckks_detail::CKKSSparseGaloisKeyChainGenImpl<0, P, StartLogQ,
+                                                 PlainLogDelta, StageCount>(
+        chain, usage, key, noise);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
 inline void CKKSBuildLinearTransformBSGSPlan(
@@ -1643,13 +1810,13 @@ inline void CKKSBuildLinearTransformBSGSPlan(
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
-          std::uint32_t PlainLogDelta>
+          std::uint32_t PlainLogDelta, class InputGaloisKey,
+          class OutputGaloisKey>
 inline void CKKSLinearTransformBSGS(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
     const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
-    const CKKSGaloisKey<P, LogQ> &input_gk,
-    const CKKSGaloisKey<P, LogQ - PlainLogDelta> &output_gk)
+    const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
 {
     static_assert(PlainLogDelta < LogQ);
     constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
@@ -1707,14 +1874,14 @@ inline void CKKSLinearTransformBSGS(
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
-          std::uint32_t PlainLogDelta>
+          std::uint32_t PlainLogDelta, class InputGaloisKey,
+          class OutputGaloisKey>
 inline void CKKSLinearTransformBSGS(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
     const std::vector<CKKSSlotVector<P>> &diagonals,
     const std::vector<int> &rotation_offsets, int k_step,
-    const CKKSGaloisKey<P, LogQ> &input_gk,
-    const CKKSGaloisKey<P, LogQ - PlainLogDelta> &output_gk)
+    const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
 {
     CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> plan;
     CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
@@ -1742,15 +1909,13 @@ namespace ckks_detail {
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
           std::uint32_t LogDelta, std::uint32_t PlainLogDelta,
-          std::size_t StageCount>
+          std::size_t StageCount, class GaloisKeyChain>
 inline void CKKSLinearTransformStagesBSGSImpl(
     CKKSStagedPlainMulResult<P, StartLogQ, LogDelta, PlainLogDelta,
                              StageCount> &res,
     const CKKSCiphertext<P, StartLogQ - I * PlainLogDelta, LogDelta> &ct,
     const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
-    int k_step,
-    const CKKSGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount>
-        &gk_chain)
+    int k_step, const GaloisKeyChain &gk_chain)
 {
     if constexpr (I == StageCount) {
         res = ct;
@@ -1774,14 +1939,14 @@ inline void CKKSLinearTransformStagesBSGSImpl(
 }  // namespace ckks_detail
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
-          std::uint32_t PlainLogDelta, std::size_t StageCount>
+          std::uint32_t PlainLogDelta, std::size_t StageCount,
+          class GaloisKeyChain>
 inline void CKKSLinearTransformStagesBSGS(
     CKKSStagedPlainMulResult<P, LogQ, LogDelta, PlainLogDelta, StageCount>
         &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
     const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
-    int k_step,
-    const CKKSGaloisKeyChain<P, LogQ, PlainLogDelta, StageCount> &gk_chain)
+    int k_step, const GaloisKeyChain &gk_chain)
 {
     assert(first_stage + StageCount <= stages.size());
     ckks_detail::CKKSLinearTransformStagesBSGSImpl<0, P, LogQ, LogDelta,
@@ -1825,13 +1990,13 @@ inline void CKKSBuildRealLinearTransformPlan(
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
-          std::uint32_t PlainLogDelta>
+          std::uint32_t PlainLogDelta, class InputGaloisKey,
+          class OutputGaloisKey>
 inline void CKKSRealLinearTransform(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
     const CKKSRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
-    const CKKSGaloisKey<P, LogQ> &input_gk,
-    const CKKSGaloisKey<P, LogQ - PlainLogDelta> &output_gk)
+    const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
 {
     static_assert(PlainLogDelta < LogQ);
     constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
@@ -3207,18 +3372,18 @@ template <class Schedule>
 struct CKKSDenseBootstrapKey {
     using P = typename Schedule::Param;
     using CoeffToSlotGaloisKeyChain =
-        CKKSGaloisKeyChain<P, Schedule::boot_log_q,
-                           Schedule::linear_plain_log_delta,
-                           Schedule::coeff_to_slot_level_count>;
+        CKKSSparseGaloisKeyChain<P, Schedule::boot_log_q,
+                                 Schedule::linear_plain_log_delta,
+                                 Schedule::coeff_to_slot_level_count>;
     using SlotToCoeffGaloisKeyChain =
-        CKKSGaloisKeyChain<P, Schedule::after_evalmod_log_q,
-                           Schedule::linear_plain_log_delta,
-                           Schedule::slot_to_coeff_level_count>;
+        CKKSSparseGaloisKeyChain<P, Schedule::after_evalmod_log_q,
+                                 Schedule::linear_plain_log_delta,
+                                 Schedule::slot_to_coeff_level_count>;
 
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan{};
     CKKSBoundedCosEvalModPolynomial evalmod_polynomial{};
     CoeffToSlotGaloisKeyChain coeff_to_slot_galois{};
-    CKKSGaloisKey<P, Schedule::after_coeff_to_slot_log_q>
+    CKKSSparseGaloisKey<P, Schedule::after_coeff_to_slot_log_q>
         packed_conjugate_galois{};
     CKKSDenseEvalModBoundedCosRelinKeys<Schedule> evalmod_relin{};
     SlotToCoeffGaloisKeyChain slot_to_coeff_galois{};
@@ -3234,20 +3399,26 @@ inline void CKKSDenseBootstrapKeyGen(
     static_assert(Schedule::evalmod_inv_degree == 0,
                   "inverse EvalMod correction is not implemented yet");
     CKKSBuildDenseBootstrapLinearPlan<Schedule>(bootstrap_key.linear_plan);
+    CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage;
+    CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(
+        rotation_usage, bootstrap_key.linear_plan);
     bootstrap_key.evalmod_polynomial =
         CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
-    CKKSGaloisKeyChainGen<P, Schedule::boot_log_q,
-                          Schedule::linear_plain_log_delta,
-                          Schedule::coeff_to_slot_level_count>(
-        bootstrap_key.coeff_to_slot_galois, key, noise);
-    CKKSGaloisKeyGen<P, Schedule::after_coeff_to_slot_log_q>(
-        bootstrap_key.packed_conjugate_galois, key, noise);
+    CKKSSparseGaloisKeyChainGen<P, Schedule::boot_log_q,
+                                Schedule::linear_plain_log_delta,
+                                Schedule::coeff_to_slot_level_count>(
+        bootstrap_key.coeff_to_slot_galois, rotation_usage.coeff_to_slot, key,
+        noise);
+    CKKSSparseGaloisKeyGen<P, Schedule::after_coeff_to_slot_log_q>(
+        bootstrap_key.packed_conjugate_galois, key,
+        rotation_usage.packed_conjugate, noise);
     CKKSDenseEvalModBoundedCosKeyGen<Schedule>(bootstrap_key.evalmod_relin, key,
                                                noise);
-    CKKSGaloisKeyChainGen<P, Schedule::after_evalmod_log_q,
-                          Schedule::linear_plain_log_delta,
-                          Schedule::slot_to_coeff_level_count>(
-        bootstrap_key.slot_to_coeff_galois, key, noise);
+    CKKSSparseGaloisKeyChainGen<P, Schedule::after_evalmod_log_q,
+                                Schedule::linear_plain_log_delta,
+                                Schedule::slot_to_coeff_level_count>(
+        bootstrap_key.slot_to_coeff_galois, rotation_usage.slot_to_coeff, key,
+        noise);
 }
 
 template <class Schedule>
