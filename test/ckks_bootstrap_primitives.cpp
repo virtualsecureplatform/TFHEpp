@@ -486,7 +486,7 @@ void test_lvl6_factorized_stage_shape()
     static_assert(Schedule::slot_to_coeff_level_count == 4);
     static_assert(Schedule::evalmod_polynomial_depth == 7);
     static_assert(Schedule::evalmod_depth == 10);
-    static_assert(Schedule::modraise_mask_bound == 15);
+    static_assert(Schedule::modraise_mask_bound == 0);
     static_assert(Schedule::after_coeff_to_slot_log_q == 720);
     static_assert(Schedule::after_component_split_log_q == 680);
     static_assert(Schedule::after_evalmod_log_q == 280);
@@ -661,7 +661,7 @@ void test_dense_bootstrap_api_shape()
     static_assert(Schedule::after_component_split_log_q == 480);
     static_assert(Schedule::evalmod_polynomial_depth == 6);
     static_assert(Schedule::evalmod_depth == 8);
-    static_assert(Schedule::modraise_mask_bound == 3);
+    static_assert(Schedule::modraise_mask_bound == 0);
     static_assert(Schedule::after_evalmod_log_q == 160);
     static_assert(Schedule::output_log_q == 120);
 

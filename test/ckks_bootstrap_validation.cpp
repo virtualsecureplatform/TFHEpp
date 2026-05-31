@@ -2,6 +2,7 @@
 #include <chrono>
 #include <complex>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -58,6 +59,29 @@ void fill_test_key(TFHEpp::Key<Param> &key)
 }
 
 template <class Param>
+void fill_sparse_test_key(TFHEpp::Key<Param> &key, std::size_t weight)
+{
+    key.fill(typename Param::T{0});
+    if (weight == 0) return;
+
+    constexpr std::size_t stride = 7919;
+    for (std::size_t i = 0; i < weight; i++) {
+        const std::size_t index = (i * stride) % Param::n;
+        const int sign = (i % 2 == 0) ? 1 : -1;
+        key[index] = static_cast<typename Param::T>(sign);
+    }
+}
+
+template <class Param>
+void fill_bootstrap_test_key(TFHEpp::Key<Param> &key, std::size_t sparse_weight)
+{
+    if (sparse_weight == 0)
+        fill_test_key<Param>(key);
+    else
+        fill_sparse_test_key<Param>(key, sparse_weight);
+}
+
+template <class Param>
 void fill_test_slots(TFHEpp::CKKSSlotVector<Param> &slots)
 {
     for (std::size_t i = 0; i < Param::n / 2; i++) {
@@ -77,6 +101,103 @@ double max_error(const TFHEpp::CKKSSlotVector<Param> &got,
     for (std::size_t i = 0; i < Param::n / 2; i++)
         err = std::max(err, std::abs(got[i] - want[i]));
     return err;
+}
+
+template <class Param>
+double max_abs(const TFHEpp::CKKSSlotVector<Param> &slots)
+{
+    double value = 0.0;
+    for (const auto &slot : slots) value = std::max(value, std::abs(slot));
+    return value;
+}
+
+template <class Param>
+void print_slot_diagnostic(const char *label,
+                           const TFHEpp::CKKSSlotVector<Param> &got,
+                           const TFHEpp::CKKSSlotVector<Param> *want = nullptr)
+{
+    std::cout << std::setprecision(17);
+    std::cout << label << "_max_abs=" << max_abs<Param>(got);
+    if (want != nullptr)
+        std::cout << " " << label
+                  << "_max_error=" << max_error<Param>(got, *want)
+                  << " " << label << "_want_max_abs=" << max_abs<Param>(*want);
+    std::cout << " " << label << "_slot0=(" << got[0].real() << ","
+              << got[0].imag() << ")";
+    if (want != nullptr)
+        std::cout << " " << label << "_want0=(" << (*want)[0].real() << ","
+                  << (*want)[0].imag() << ")";
+    std::cout << '\n';
+}
+
+template <class Schedule, std::uint32_t LogQ>
+void print_phase_coefficient_diagnostic(
+    const char *label,
+    const TFHEpp::CKKSCiphertext<typename Schedule::Param, LogQ,
+                                 Schedule::log_delta> &ct,
+    const TFHEpp::Key<typename Schedule::Param> &key)
+{
+    using P = typename Schedule::Param;
+    TFHEpp::Polynomial<P> phase = TFHEpp::trlwePhase<P>(ct.ct, key);
+    TFHEpp::ckks_detail::reducePolynomialToLevel<P, LogQ>(phase);
+
+    double max_coeff = 0.0;
+    double max_normalized = 0.0;
+    double coeff0 = 0.0;
+    double normalized0 = 0.0;
+    for (std::uint32_t i = 0; i < P::n; i++) {
+        const long double coeff = std::ldexp(
+            TFHEpp::ckks_detail::levelToLongDouble<P, LogQ>(phase[i]),
+            -static_cast<int>(Schedule::log_delta));
+        const double coeff_double = static_cast<double>(coeff);
+        const double normalized =
+            coeff_double /
+            (static_cast<double>(Schedule::evalmod_k) *
+             Schedule::message_ratio);
+        if (i == 0) {
+            coeff0 = coeff_double;
+            normalized0 = normalized;
+        }
+        max_coeff = std::max(max_coeff, std::abs(coeff_double));
+        max_normalized = std::max(max_normalized, std::abs(normalized));
+    }
+    std::cout << std::setprecision(17);
+    std::cout << label << "_phase_coeff_max_abs=" << max_coeff << " "
+              << label << "_phase_normalized_max_abs=" << max_normalized
+              << " " << label << "_phase_coeff0=" << coeff0 << " " << label
+              << "_phase_normalized0=" << normalized0 << '\n';
+}
+
+template <class Param>
+void apply_complex_linear(
+    TFHEpp::CKKSSlotVector<Param> &out,
+    const TFHEpp::CKKSSlotVector<Param> &in,
+    const std::vector<TFHEpp::CKKSSlotVector<Param>> &diagonals,
+    const std::vector<int> &offsets)
+{
+    constexpr int half = static_cast<int>(Param::n) / 2;
+    out.fill({0.0, 0.0});
+    for (std::size_t d = 0; d < diagonals.size(); d++) {
+        const int offset = ((offsets[d] % half) + half) % half;
+        for (int i = 0; i < half; i++)
+            out[i] += diagonals[d][i] * in[(i + offset) % half];
+    }
+}
+
+template <class Param>
+void apply_complex_stages(
+    TFHEpp::CKKSSlotVector<Param> &out,
+    const TFHEpp::CKKSSlotVector<Param> &in,
+    const TFHEpp::CKKSLinearTransformStages<Param> &stages)
+{
+    auto cur = std::make_unique<TFHEpp::CKKSSlotVector<Param>>(in);
+    auto next = std::make_unique<TFHEpp::CKKSSlotVector<Param>>();
+    for (const auto &stage : stages) {
+        apply_complex_linear<Param>(*next, *cur, stage.diagonals,
+                                    stage.rotation_offsets);
+        std::swap(cur, next);
+    }
+    out = *cur;
 }
 
 template <class F>
@@ -232,10 +353,8 @@ void print_schedule_report(const char *label,
 }
 
 template <class Schedule>
-int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol)
+int validate_filesystem_key_dir(const std::filesystem::path &key_dir)
 {
-    using P = typename Schedule::Param;
-
     const auto missing =
         TFHEpp::CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(key_dir);
     if (!missing.empty()) {
@@ -257,9 +376,22 @@ int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol)
                   << " error=" << e.what() << '\n';
         return 2;
     }
+    return 0;
+}
+
+template <class Schedule>
+int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol,
+                             std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+
+    if (const int status = validate_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
-    fill_test_key<P>(*key);
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+    std::cout << "key_sparse_weight=" << sparse_weight << '\n';
 
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     fill_test_slots<P>(*slots);
@@ -288,6 +420,267 @@ int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol)
     std::cout << "decrypt_ms=" << decrypt_ms << '\n';
     std::cout << "max_error=" << err << '\n';
     return err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
+int run_modraise_plain_diagnostics(std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+    std::cout << "diag_key_sparse_weight=" << sparse_weight << '\n';
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*slots);
+
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    TFHEpp::ckksSlotEncrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *input, *slots, *key);
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *decoded, *input, *key);
+    print_slot_diagnostic<P>("diag_input", *decoded, slots.get());
+    print_phase_coefficient_diagnostic<Schedule, Schedule::input_log_q>(
+        "diag_input", *input, *key);
+
+    auto raised = std::make_unique<typename Schedule::BootstrapCiphertext>();
+    TFHEpp::CKKSModRaiseBoundedPhaseRandomized<
+        P, Schedule::input_log_q, Schedule::boot_log_q, Schedule::log_delta,
+        Schedule::modraise_mask_bound>(*raised, *input);
+    auto raised_slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::boot_log_q, Schedule::log_delta>(
+        *raised_slots, *raised, *key);
+    print_slot_diagnostic<P>("diag_raised", *raised_slots);
+    print_phase_coefficient_diagnostic<Schedule, Schedule::boot_log_q>(
+        "diag_raised", *raised, *key);
+
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    auto expected_c2s = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    apply_complex_stages<P>(*expected_c2s, *raised_slots,
+                            linear_plan.coeff_to_slot_stages);
+    print_slot_diagnostic<P>("diag_plain_c2s", *expected_c2s);
+    return 0;
+}
+
+template <class Schedule>
+int run_filesystem_bootstrap_diagnostics(const std::filesystem::path &key_dir,
+                                         bool full_pipeline,
+                                         std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+
+    if (const int status = validate_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+    std::cout << "diag_key_sparse_weight=" << sparse_weight << '\n';
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*slots);
+
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, Schedule::input_log_q,
+                                Schedule::log_delta>(*input, *slots, *key);
+    });
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *decoded, *input, *key);
+    print_slot_diagnostic<P>("diag_input", *decoded, slots.get());
+    print_phase_coefficient_diagnostic<Schedule, Schedule::input_log_q>(
+        "diag_input", *input, *key);
+
+    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
+        provider.linear_plan();
+
+    auto raised = std::make_unique<typename Schedule::BootstrapCiphertext>();
+    const double modraise_ms = elapsed_ms([&] {
+        TFHEpp::CKKSModRaiseBoundedPhaseRandomized<
+            P, Schedule::input_log_q, Schedule::boot_log_q,
+            Schedule::log_delta, Schedule::modraise_mask_bound>(*raised, *input);
+    });
+    auto raised_slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::boot_log_q, Schedule::log_delta>(
+        *raised_slots, *raised, *key);
+    print_slot_diagnostic<P>("diag_raised", *raised_slots);
+    print_phase_coefficient_diagnostic<Schedule, Schedule::boot_log_q>(
+        "diag_raised", *raised, *key);
+
+    auto expected_c2s = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    apply_complex_stages<P>(*expected_c2s, *raised_slots,
+                            linear_plan.coeff_to_slot_stages);
+
+    auto coeff_to_slot =
+        std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
+    const double c2s_ms = elapsed_ms([&] {
+        const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
+            TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>, true>
+            coeff_to_slot_galois{provider};
+        TFHEpp::CKKSLinearTransformStagesBSGS<
+            P, Schedule::boot_log_q, Schedule::log_delta,
+            Schedule::linear_plain_log_delta,
+            Schedule::coeff_to_slot_level_count>(
+            *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
+            Schedule::linear_bsgs_step, coeff_to_slot_galois);
+    });
+    raised.reset();
+    raised_slots.reset();
+
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_coeff_to_slot_log_q,
+                            Schedule::log_delta>(*decoded, *coeff_to_slot, *key);
+    print_slot_diagnostic<P>("diag_c2s", *decoded, expected_c2s.get());
+
+    std::cout << "diag_encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "diag_modraise_ms=" << modraise_ms << '\n';
+    std::cout << "diag_c2s_ms=" << c2s_ms << '\n';
+    if (!full_pipeline)
+        return max_error<P>(*decoded, *expected_c2s) <= 0.1 ? 0 : 1;
+
+    auto expected_real = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_imag = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    for (std::size_t i = 0; i < P::n / 2; i++) {
+        (*expected_real)[i] = {(*expected_c2s)[i].real(), 0.0};
+        (*expected_imag)[i] = {(*expected_c2s)[i].imag(), 0.0};
+    }
+
+    auto real_component =
+        std::make_unique<typename Schedule::ComponentCiphertext>();
+    auto imag_component =
+        std::make_unique<typename Schedule::ComponentCiphertext>();
+    const double split_ms = elapsed_ms([&] {
+        TFHEpp::CKKSExtractRealSlots<P, Schedule::after_coeff_to_slot_log_q,
+                                     Schedule::log_delta,
+                                     Schedule::linear_plain_log_delta>(
+            *real_component, *coeff_to_slot,
+            provider.packed_conjugate_galois());
+        TFHEpp::CKKSExtractImagSlots<P, Schedule::after_coeff_to_slot_log_q,
+                                     Schedule::log_delta,
+                                     Schedule::linear_plain_log_delta>(
+            *imag_component, *coeff_to_slot,
+            provider.packed_conjugate_galois());
+    });
+    coeff_to_slot.reset();
+    if constexpr (requires { provider.release_packed_conjugate_galois(); }) {
+        provider.release_packed_conjugate_galois();
+    }
+
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_component_split_log_q,
+                            Schedule::log_delta>(*decoded, *real_component,
+                                                 *key);
+    print_slot_diagnostic<P>("diag_real_split", *decoded, expected_real.get());
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_component_split_log_q,
+                            Schedule::log_delta>(*decoded, *imag_component,
+                                                 *key);
+    print_slot_diagnostic<P>("diag_imag_split", *decoded, expected_imag.get());
+    expected_c2s.reset();
+
+    const TFHEpp::CKKSBoundedCosEvalModPolynomial &poly =
+        provider.evalmod_polynomial();
+    auto expected_real_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_imag_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    for (std::size_t i = 0; i < P::n / 2; i++) {
+        (*expected_real_eval)[i] =
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                 poly, (*expected_real)[i].real()) /
+                 Schedule::message_ratio,
+             0.0};
+        (*expected_imag_eval)[i] =
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                 poly, (*expected_imag)[i].real()) /
+                 Schedule::message_ratio,
+             0.0};
+    }
+    expected_real.reset();
+    expected_imag.reset();
+
+    auto real_evalmod =
+        std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    const double real_evalmod_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+            *real_evalmod, *real_component, poly, provider);
+    });
+    real_component.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_evalmod_log_q,
+                            Schedule::log_delta>(*decoded, *real_evalmod, *key);
+    print_slot_diagnostic<P>("diag_real_evalmod", *decoded,
+                             expected_real_eval.get());
+
+    auto imag_evalmod =
+        std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    const double imag_evalmod_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+            *imag_evalmod, *imag_component, poly, provider);
+    });
+    imag_component.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_evalmod_log_q,
+                            Schedule::log_delta>(*decoded, *imag_evalmod, *key);
+    print_slot_diagnostic<P>("diag_imag_evalmod", *decoded,
+                             expected_imag_eval.get());
+
+    auto expected_real_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_imag_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_pipeline = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    apply_complex_stages<P>(*expected_real_out, *expected_real_eval,
+                            linear_plan.slot_to_coeff_stages);
+    apply_complex_stages<P>(*expected_imag_out, *expected_imag_eval,
+                            linear_plan.slot_to_coeff_imag_stages);
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*expected_pipeline)[i] =
+            (*expected_real_out)[i] + (*expected_imag_out)[i];
+    expected_real_eval.reset();
+    expected_imag_eval.reset();
+    expected_real_out.reset();
+    expected_imag_out.reset();
+
+    const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
+        TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>, false>
+        slot_to_coeff_galois{provider};
+    auto real_out = std::make_unique<typename Schedule::OutputCiphertext>();
+    const double real_stc_ms = elapsed_ms([&] {
+        TFHEpp::CKKSLinearTransformStagesBSGS<
+            P, Schedule::after_evalmod_log_q, Schedule::log_delta,
+            Schedule::linear_plain_log_delta,
+            Schedule::slot_to_coeff_level_count>(
+            *real_out, *real_evalmod, linear_plan.slot_to_coeff_stages, 0,
+            Schedule::linear_bsgs_step, slot_to_coeff_galois);
+    });
+    real_evalmod.reset();
+    auto imag_out = std::make_unique<typename Schedule::OutputCiphertext>();
+    const double imag_stc_ms = elapsed_ms([&] {
+        TFHEpp::CKKSLinearTransformStagesBSGS<
+            P, Schedule::after_evalmod_log_q, Schedule::log_delta,
+            Schedule::linear_plain_log_delta,
+            Schedule::slot_to_coeff_level_count>(
+            *imag_out, *imag_evalmod, linear_plan.slot_to_coeff_imag_stages, 0,
+            Schedule::linear_bsgs_step, slot_to_coeff_galois);
+    });
+    imag_evalmod.reset();
+
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSAdd<P, Schedule::output_log_q, Schedule::log_delta>(
+        *output, *real_out, *imag_out);
+    real_out.reset();
+    imag_out.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *output, *key);
+    print_slot_diagnostic<P>("diag_output_vs_pipeline", *decoded,
+                             expected_pipeline.get());
+    print_slot_diagnostic<P>("diag_output_vs_message", *decoded, slots.get());
+    print_slot_diagnostic<P>("diag_pipeline_vs_message", *expected_pipeline,
+                             slots.get());
+
+    std::cout << "diag_split_ms=" << split_ms << '\n';
+    std::cout << "diag_real_evalmod_ms=" << real_evalmod_ms << '\n';
+    std::cout << "diag_imag_evalmod_ms=" << imag_evalmod_ms << '\n';
+    std::cout << "diag_real_stc_ms=" << real_stc_ms << '\n';
+    std::cout << "diag_imag_stc_ms=" << imag_stc_ms << '\n';
+    return max_error<P>(*decoded, *slots) <= 0.1 ? 0 : 1;
 }
 
 template <class Schedule>
@@ -358,13 +751,15 @@ int run_toy_validation(bool keep_dir)
 }
 
 template <class Schedule>
-int run_keygen_next(const std::filesystem::path &key_dir)
+int run_keygen_next(const std::filesystem::path &key_dir,
+                    std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
     auto key = std::make_unique<TFHEpp::Key<P>>();
-    fill_test_key<P>(*key);
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
 
     print_schedule_report<Schedule>("keygen-next-before", &key_dir);
+    std::cout << "keygen_next_sparse_weight=" << sparse_weight << '\n';
     const auto before_missing =
         TFHEpp::CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(key_dir);
     bool generated = false;
@@ -383,15 +778,17 @@ int run_keygen_next(const std::filesystem::path &key_dir)
 }
 
 template <class Schedule>
-int run_keygen(const std::filesystem::path &key_dir, bool resume)
+int run_keygen(const std::filesystem::path &key_dir, bool resume,
+               std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
     auto key = std::make_unique<TFHEpp::Key<P>>();
-    fill_test_key<P>(*key);
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
 
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions options;
     options.overwrite_existing = !resume;
     print_schedule_report<Schedule>("keygen-before", &key_dir);
+    std::cout << "keygen_sparse_weight=" << sparse_weight << '\n';
     const double keygen_ms = elapsed_ms([&] {
         TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(key_dir, *key,
                                                               {P::α, 0},
@@ -405,8 +802,12 @@ int run_keygen(const std::filesystem::path &key_dir, bool resume)
 void print_usage(const char *program)
 {
     std::cerr << "Usage: " << program
-              << " [--toy] [--keep] [--lvl6-plan] [--lvl6-keygen DIR]"
+              << " [--toy] [--keep] [--lvl6-sparse-key H|--lvl6-dense-key]"
+                 " [--lvl6-plan] [--lvl6-keygen DIR]"
                  " [--lvl6-keygen-next DIR] [--lvl6-run DIR]"
+                 " [--lvl6-debug-modraise]"
+                 " [--lvl6-debug-modraise-sparse H]"
+                 " [--lvl6-debug-c2s DIR] [--lvl6-debug DIR]"
                  " [--lvl6-all DIR] [--resume]\n";
 }
 
@@ -415,10 +816,12 @@ void print_usage(const char *program)
 int main(int argc, char **argv)
 {
     using Lvl6Schedule = TFHEpp::CKKSDenseBootstrapSchedule<TFHEpp::lvl6param>;
+    constexpr std::size_t default_lvl6_sparse_weight = 192;
 
     bool saw_action = false;
     bool keep = false;
     bool resume = false;
+    std::size_t lvl6_sparse_weight = default_lvl6_sparse_weight;
     std::vector<std::string> args(argv + 1, argv + argc);
 
     for (std::size_t i = 0; i < args.size(); i++) {
@@ -429,6 +832,17 @@ int main(int argc, char **argv)
         else if (arg == "--resume") {
             resume = true;
         }
+        else if (arg == "--lvl6-dense-key") {
+            lvl6_sparse_weight = 0;
+        }
+        else if (arg == "--lvl6-sparse-key") {
+            if (i + 1 >= args.size()) {
+                print_usage(argv[0]);
+                return 2;
+            }
+            lvl6_sparse_weight =
+                static_cast<std::size_t>(std::stoull(args[++i]));
+        }
         else if (arg == "--toy") {
             saw_action = true;
             if (run_toy_validation(keep) != 0) return 1;
@@ -437,8 +851,28 @@ int main(int argc, char **argv)
             saw_action = true;
             print_schedule_report<Lvl6Schedule>("lvl6");
         }
+        else if (arg == "--lvl6-debug-modraise") {
+            saw_action = true;
+            print_schedule_report<Lvl6Schedule>("lvl6");
+            if (run_modraise_plain_diagnostics<Lvl6Schedule>(
+                    lvl6_sparse_weight) != 0)
+                return 1;
+        }
+        else if (arg == "--lvl6-debug-modraise-sparse") {
+            if (i + 1 >= args.size()) {
+                print_usage(argv[0]);
+                return 2;
+            }
+            saw_action = true;
+            const std::size_t sparse_weight =
+                static_cast<std::size_t>(std::stoull(args[++i]));
+            print_schedule_report<Lvl6Schedule>("lvl6");
+            if (run_modraise_plain_diagnostics<Lvl6Schedule>(sparse_weight) != 0)
+                return 1;
+        }
         else if (arg == "--lvl6-keygen" || arg == "--lvl6-keygen-next" ||
-                 arg == "--lvl6-run" || arg == "--lvl6-all") {
+                 arg == "--lvl6-run" || arg == "--lvl6-debug-c2s" ||
+                 arg == "--lvl6-debug" || arg == "--lvl6-all") {
             if (i + 1 >= args.size()) {
                 print_usage(argv[0]);
                 return 2;
@@ -446,19 +880,39 @@ int main(int argc, char **argv)
             saw_action = true;
             const std::filesystem::path key_dir = args[++i];
             if (arg == "--lvl6-keygen") {
-                if (run_keygen<Lvl6Schedule>(key_dir, resume) != 0) return 1;
+                if (run_keygen<Lvl6Schedule>(key_dir, resume,
+                                             lvl6_sparse_weight) != 0)
+                    return 1;
             }
             else if (arg == "--lvl6-keygen-next") {
-                if (run_keygen_next<Lvl6Schedule>(key_dir) != 0) return 1;
+                if (run_keygen_next<Lvl6Schedule>(key_dir,
+                                                  lvl6_sparse_weight) != 0)
+                    return 1;
             }
             else if (arg == "--lvl6-run") {
                 print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
-                if (run_filesystem_bootstrap<Lvl6Schedule>(key_dir, 0.1) != 0)
+                if (run_filesystem_bootstrap<Lvl6Schedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-debug-c2s") {
+                print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
+                if (run_filesystem_bootstrap_diagnostics<Lvl6Schedule>(
+                        key_dir, false, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-debug") {
+                print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
+                if (run_filesystem_bootstrap_diagnostics<Lvl6Schedule>(
+                        key_dir, true, lvl6_sparse_weight) != 0)
                     return 1;
             }
             else {
-                if (run_keygen<Lvl6Schedule>(key_dir, resume) != 0) return 1;
-                if (run_filesystem_bootstrap<Lvl6Schedule>(key_dir, 0.1) != 0)
+                if (run_keygen<Lvl6Schedule>(key_dir, resume,
+                                             lvl6_sparse_weight) != 0)
+                    return 1;
+                if (run_filesystem_bootstrap<Lvl6Schedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
                     return 1;
             }
         }

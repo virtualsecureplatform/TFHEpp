@@ -2616,8 +2616,7 @@ template <class P, std::uint32_t LogDelta = 40,
           std::uint32_t EvalModDoubleAngle = 3,
           std::uint32_t EvalModInvDegree = 0,
           std::uint32_t EvalModLogScale = LogDelta,
-          int LinearBSGSStep = 128,
-          std::uint32_t ModRaiseMaskBound = EvalModK - 1>
+          int LinearBSGSStep = 128, std::uint32_t ModRaiseMaskBound = 0>
 struct CKKSDenseBootstrapSchedule {
     static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta > 0);
@@ -2658,6 +2657,9 @@ struct CKKSDenseBootstrapSchedule {
         ckks_detail::bit_width_u64(EvalModInvDegree);
     static constexpr double message_ratio =
         ckks_detail::exp2_double(LogMessageRatio);
+    // Modulus raising already introduces key-dependent multiples of the input
+    // level.  Any extra explicit phase mask must fit in the remaining EvalMod
+    // interval, so it is opt-in rather than tied to EvalModK by default.
     static constexpr double coeff_to_slot_scaling_factor =
         1.0 / (static_cast<double>(EvalModK) * message_ratio);
     static constexpr double slot_to_coeff_scaling_factor = message_ratio;
