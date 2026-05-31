@@ -20,6 +20,7 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <type_traits>
 #include <tuple>
 #include <utility>
@@ -260,6 +261,39 @@ inline void CKKSSavePortableBinary(const std::filesystem::path &path,
     if (!ofs) throw std::runtime_error("failed to open CKKS key file for write");
     cereal::PortableBinaryOutputArchive archive(ofs);
     archive(value);
+}
+
+template <class T>
+inline void CKKSSavePortableBinaryAtomic(const std::filesystem::path &path,
+                                         const T &value)
+{
+    const auto parent = path.parent_path();
+    if (!parent.empty()) std::filesystem::create_directories(parent);
+    std::filesystem::path tmp = path;
+    tmp += ".tmp";
+
+    try {
+        {
+            std::ofstream ofs(tmp, std::ios::binary | std::ios::trunc);
+            if (!ofs) {
+                throw std::runtime_error(
+                    "failed to open temporary CKKS key file for write");
+            }
+            cereal::PortableBinaryOutputArchive archive(ofs);
+            archive(value);
+            ofs.flush();
+            if (!ofs) {
+                throw std::runtime_error(
+                    "failed to flush temporary CKKS key file");
+            }
+        }
+        std::filesystem::rename(tmp, path);
+    }
+    catch (...) {
+        std::error_code ec;
+        std::filesystem::remove(tmp, ec);
+        throw;
+    }
 }
 
 template <class T>
@@ -4409,7 +4443,7 @@ inline void CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl(
             CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, I> gk;
             CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, I>(gk, usage, key,
                                                                    noise);
-            CKKSSavePortableBinary(path, gk);
+            CKKSSavePortableBinaryAtomic(path, gk);
         }
         CKKSDenseBootstrapCoeffToSlotKeyGenToDirectoryImpl<I + 1, Schedule>(
             root, usage, key, noise, options);
@@ -4430,7 +4464,7 @@ inline void CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl(
             CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, I> gk;
             CKKSDenseBootstrapSlotToCoeffGaloisKeyGen<Schedule, I>(gk, usage, key,
                                                                    noise);
-            CKKSSavePortableBinary(path, gk);
+            CKKSSavePortableBinaryAtomic(path, gk);
         }
         CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl<I + 1, Schedule>(
             root, usage, key, noise, options);
@@ -4450,7 +4484,7 @@ inline void CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl(
             CKKSDenseEvalModPolynomialRelinKey<Schedule, I> relinkey;
             CKKSDenseEvalModPolynomialRelinKeyGen<Schedule, I>(relinkey, key,
                                                                noise);
-            CKKSSavePortableBinary(path, relinkey);
+            CKKSSavePortableBinaryAtomic(path, relinkey);
         }
         CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<I + 1, Schedule>(
             root, key, noise, options);
@@ -4469,7 +4503,7 @@ inline void CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl(
             CKKSDenseEvalModDoubleAngleRelinKey<Schedule, I> relinkey;
             CKKSDenseEvalModDoubleAngleRelinKeyGen<Schedule, I>(relinkey, key,
                                                                 noise);
-            CKKSSavePortableBinary(path, relinkey);
+            CKKSSavePortableBinaryAtomic(path, relinkey);
         }
         CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl<I + 1,
                                                                 Schedule>(
@@ -4533,20 +4567,20 @@ inline void CKKSDenseBootstrapKeyGenToDirectory(
 
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
     CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
-    CKKSSavePortableBinary(
+    CKKSSavePortableBinaryAtomic(
         ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"),
         linear_plan);
 
     CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage;
     CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(rotation_usage,
                                                       linear_plan);
-    CKKSSavePortableBinary(
+    CKKSSavePortableBinaryAtomic(
         ckks_detail::CKKSDenseBootstrapNamedPath(root, "rotation_usage"),
         rotation_usage);
 
     const CKKSBoundedCosEvalModPolynomial evalmod_polynomial =
         CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
-    CKKSSavePortableBinary(
+    CKKSSavePortableBinaryAtomic(
         ckks_detail::CKKSDenseBootstrapNamedPath(root, "evalmod_polynomial"),
         evalmod_polynomial);
 
@@ -4562,7 +4596,7 @@ inline void CKKSDenseBootstrapKeyGenToDirectory(
         CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule> packed_conjugate;
         CKKSDenseBootstrapPackedConjugateGaloisKeyGen<Schedule>(
             packed_conjugate, rotation_usage, key, noise);
-        CKKSSavePortableBinary(packed_path, packed_conjugate);
+        CKKSSavePortableBinaryAtomic(packed_path, packed_conjugate);
     }
 
     ckks_detail::CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<
