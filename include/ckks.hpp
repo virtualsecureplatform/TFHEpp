@@ -2608,11 +2608,11 @@ inline void CKKSBuildPackedSlotToCoeffPlan(
         conjugate_offsets, k_step);
 }
 
-template <class P, std::uint32_t LogDelta = 40,
+template <class P, std::uint32_t LogDelta = 50,
           std::uint32_t LogMessageRatio = 8, std::uint32_t BootLogQ = 880,
-          std::uint32_t LinearPlainLogDelta = 40,
-          std::uint32_t LinearFuseRadix = 4,
-          std::uint32_t EvalModDegree = 63, std::uint32_t EvalModK = 16,
+          std::uint32_t LinearPlainLogDelta = 50,
+          std::uint32_t LinearFuseRadix = 7,
+          std::uint32_t EvalModDegree = 30, std::uint32_t EvalModK = 16,
           std::uint32_t EvalModDoubleAngle = 3,
           std::uint32_t EvalModInvDegree = 0,
           std::uint32_t EvalModLogScale = LogDelta,
