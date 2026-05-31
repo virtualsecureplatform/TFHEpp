@@ -336,9 +336,22 @@ void test_bounded_cos_evalmod_plain()
 
     if (poly.chebyshev_coeffs.size() != Schedule::evalmod_degree + 1)
         std::exit(1);
+    if (poly.power_coeffs.size() != Schedule::evalmod_degree + 1)
+        std::exit(1);
+
+    double max_basis_err = 0.0;
+    for (int i = -32; i <= 32; i++) {
+        const double x = static_cast<double>(i) / 32.0;
+        const double cheb =
+            TFHEpp::CKKSEvaluateChebyshevUnit(poly.chebyshev_coeffs, x);
+        const double power =
+            TFHEpp::CKKSEvaluatePowerPolynomial(poly.power_coeffs, x);
+        max_basis_err = std::max(max_basis_err, std::abs(cheb - power));
+    }
 
     double max_sine_err = 0.0;
     double max_message_err = 0.0;
+    double max_power_err = 0.0;
     for (int mask = -static_cast<int>(Schedule::evalmod_k) + 1;
          mask < static_cast<int>(Schedule::evalmod_k); mask++) {
         for (const double msg : {-1.0, -0.5, 0.0, 0.5, 1.0}) {
@@ -346,10 +359,13 @@ void test_bounded_cos_evalmod_plain()
                 static_cast<double>(mask) * Schedule::message_ratio + msg;
             const double got =
                 TFHEpp::CKKSPlainEvalModBoundedCos(poly, masked);
+            const double got_power =
+                TFHEpp::CKKSPlainEvalModBoundedCosPower(poly, masked);
             const double want_sine =
                 Schedule::message_ratio *
                 std::sin(2.0 * pi * masked / Schedule::message_ratio) /
                 (2.0 * pi);
+            max_power_err = std::max(max_power_err, std::abs(got - got_power));
             max_sine_err = std::max(max_sine_err, std::abs(got - want_sine));
             max_message_err =
                 std::max(max_message_err, std::abs(got - msg));
@@ -358,7 +374,10 @@ void test_bounded_cos_evalmod_plain()
 
     std::cout << "CKKS bounded cosine EvalMod sine max_error="
               << max_sine_err << " message max_error=" << max_message_err
-              << std::endl;
+              << " basis max_error=" << max_basis_err
+              << " power max_error=" << max_power_err << std::endl;
+    if (max_basis_err > 1e-8) std::exit(1);
+    if (max_power_err > 1e-8) std::exit(1);
     if (max_sine_err > 1e-8) std::exit(1);
     if (max_message_err > 2e-4) std::exit(1);
 }

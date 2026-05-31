@@ -1913,6 +1913,7 @@ struct CKKSBoundedCosEvalModPolynomial {
     double sqrt_coeff = 1.0;
     double domain_offset = 0.0;
     std::vector<double> chebyshev_coeffs{};
+    std::vector<double> power_coeffs{};
 };
 
 inline double CKKSEvaluateChebyshevUnit(const std::vector<double> &coeffs,
@@ -1927,6 +1928,42 @@ inline double CKKSEvaluateChebyshevUnit(const std::vector<double> &coeffs,
         b_next = b;
     }
     return coeffs[0] + x * b_next - b_next_next;
+}
+
+inline double CKKSEvaluatePowerPolynomial(const std::vector<double> &coeffs,
+                                          double x)
+{
+    double y = 0.0;
+    for (std::size_t i = coeffs.size(); i-- > 0;)
+        y = y * x + coeffs[i];
+    return y;
+}
+
+inline std::vector<double> CKKSChebyshevToPowerCoefficients(
+    const std::vector<double> &chebyshev_coeffs)
+{
+    const std::size_t degree = chebyshev_coeffs.empty()
+                                   ? 0
+                                   : chebyshev_coeffs.size() - 1;
+    std::vector<double> power_coeffs(degree + 1, 0.0);
+    if (chebyshev_coeffs.empty()) return {};
+
+    std::vector<double> prev{1.0};
+    power_coeffs[0] += chebyshev_coeffs[0];
+    if (chebyshev_coeffs.size() == 1) return power_coeffs;
+
+    std::vector<double> cur{0.0, 1.0};
+    power_coeffs[1] += chebyshev_coeffs[1];
+    for (std::size_t i = 2; i < chebyshev_coeffs.size(); i++) {
+        std::vector<double> next(i + 1, 0.0);
+        for (std::size_t j = 0; j < cur.size(); j++) next[j + 1] += 2.0 * cur[j];
+        for (std::size_t j = 0; j < prev.size(); j++) next[j] -= prev[j];
+        for (std::size_t j = 0; j < next.size(); j++)
+            power_coeffs[j] += chebyshev_coeffs[i] * next[j];
+        prev = std::move(cur);
+        cur = std::move(next);
+    }
+    return power_coeffs;
 }
 
 inline CKKSBoundedCosEvalModPolynomial CKKSBuildBoundedCosEvalModPolynomial(
@@ -1982,6 +2019,8 @@ inline CKKSBoundedCosEvalModPolynomial CKKSBuildBoundedCosEvalModPolynomial(
         if (i == 0) acc *= 0.5L;
         poly.chebyshev_coeffs[i] = static_cast<double>(acc);
     }
+    poly.power_coeffs =
+        CKKSChebyshevToPowerCoefficients(poly.chebyshev_coeffs);
     return poly;
 }
 
@@ -2007,6 +2046,19 @@ inline double CKKSPlainEvalModBoundedCosNormalized(
     return poly.message_ratio * y;
 }
 
+inline double CKKSPlainEvalModBoundedCosNormalizedPower(
+    const CKKSBoundedCosEvalModPolynomial &poly, double normalized)
+{
+    const double x = normalized - poly.domain_offset;
+    double y = CKKSEvaluatePowerPolynomial(poly.power_coeffs, x);
+    double sqrt_coeff = poly.sqrt_coeff;
+    for (std::uint32_t i = 0; i < poly.double_angle; i++) {
+        sqrt_coeff *= sqrt_coeff;
+        y = 2.0 * y * y - sqrt_coeff;
+    }
+    return poly.message_ratio * y;
+}
+
 inline double CKKSPlainEvalModBoundedCos(
     const CKKSBoundedCosEvalModPolynomial &poly, double masked_value)
 {
@@ -2014,6 +2066,15 @@ inline double CKKSPlainEvalModBoundedCos(
         masked_value /
         (static_cast<double>(poly.k) * poly.message_ratio * poly.q_diff);
     return CKKSPlainEvalModBoundedCosNormalized(poly, normalized);
+}
+
+inline double CKKSPlainEvalModBoundedCosPower(
+    const CKKSBoundedCosEvalModPolynomial &poly, double masked_value)
+{
+    const double normalized =
+        masked_value /
+        (static_cast<double>(poly.k) * poly.message_ratio * poly.q_diff);
+    return CKKSPlainEvalModBoundedCosNormalizedPower(poly, normalized);
 }
 
 template <class Schedule>
