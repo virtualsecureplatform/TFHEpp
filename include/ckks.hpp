@@ -967,6 +967,25 @@ inline void CKKSSub(CKKSCiphertext<P, LogQ, LogDelta> &res,
     CKKSSubInPlace<P, LogQ, LogDelta>(res, rhs);
 }
 
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSMulIntegerInPlace(CKKSCiphertext<P, LogQ, LogDelta> &ct,
+                                  std::int64_t scalar)
+{
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t i = 0; i < P::n; i++)
+            ct.ct[c][i] =
+                ckks_detail::reduceToLevel<P, LogQ>(ct.ct[c][i] * scalar);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSMulInteger(CKKSCiphertext<P, LogQ, LogDelta> &res,
+                           const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+                           std::int64_t scalar)
+{
+    res = ct;
+    CKKSMulIntegerInPlace<P, LogQ, LogDelta>(res, scalar);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
 inline void CKKSPlainMulByReal(
@@ -2659,6 +2678,177 @@ inline void CKKSEvalPowerPolynomial(
     ckks_detail::CKKSAddPowerPolynomialTermsImpl<
         1, Traits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(res, powers,
                                                                   coeffs);
+}
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          std::uint32_t DoubleAngle>
+struct CKKSEvalModBoundedCosTraits {
+    static_assert(DoubleAngle > 0);
+    using PolynomialTraits =
+        CKKSPowerPolynomialEvaluatorTraits<P, StartLogQ, LogDelta,
+                                           CoeffLogDelta, Degree>;
+    static constexpr std::uint32_t polynomial_log_q =
+        PolynomialTraits::log_q;
+    static_assert(polynomial_log_q > DoubleAngle * LogDelta);
+    static constexpr std::uint32_t log_q =
+        polynomial_log_q - DoubleAngle * LogDelta;
+    static constexpr std::uint32_t log_delta = LogDelta;
+
+    using PolynomialCiphertext = typename PolynomialTraits::Ciphertext;
+    using PolynomialRelinKeyChain = typename PolynomialTraits::RelinKeyChain;
+    using DoubleAngleRelinKeyChain =
+        CKKSRelinKeyChain<P, polynomial_log_q, LogDelta, DoubleAngle>;
+    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+};
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          std::uint32_t DoubleAngle>
+using CKKSEvalModBoundedCosResult =
+    typename CKKSEvalModBoundedCosTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree,
+        DoubleAngle>::Ciphertext;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          std::uint32_t DoubleAngle>
+struct CKKSEvalModBoundedCosRelinKeys {
+    using Traits = CKKSEvalModBoundedCosTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>;
+
+    typename Traits::PolynomialRelinKeyChain polynomial{};
+    typename Traits::DoubleAngleRelinKeyChain double_angle{};
+};
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          std::uint32_t DoubleAngle>
+inline void CKKSEvalModBoundedCosKeyGen(
+    CKKSEvalModBoundedCosRelinKeys<P, StartLogQ, LogDelta, CoeffLogDelta,
+                                   Degree, DoubleAngle> &keys,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    using Traits = CKKSEvalModBoundedCosTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>;
+    CKKSRelinKeyChainGen<P, StartLogQ, LogDelta,
+                         Traits::PolynomialTraits::power_depth>(
+        keys.polynomial, key, noise);
+    CKKSRelinKeyChainGen<P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
+        keys.double_angle, key, noise);
+}
+
+namespace ckks_detail {
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t DoubleAngle>
+inline void CKKSBoundedCosDoubleAngleImpl(
+    CKKSCiphertext<P, StartLogQ - DoubleAngle * LogDelta, LogDelta> &res,
+    const CKKSCiphertext<P, StartLogQ - I * LogDelta, LogDelta> &ct,
+    const CKKSRelinKeyChain<P, StartLogQ, LogDelta, DoubleAngle> &keys,
+    double sqrt_coeff)
+{
+    if constexpr (I == DoubleAngle) {
+        res = ct;
+    }
+    else {
+        constexpr std::uint32_t cur_log_q = StartLogQ - I * LogDelta;
+        using NextCt = CKKSMultResult<P, cur_log_q, LogDelta, cur_log_q,
+                                      LogDelta>;
+        NextCt next;
+        CKKSSquare<P>(next, ct, keys.template get<I>());
+        CKKSMulIntegerInPlace<P, NextCt::log_q, LogDelta>(next, 2);
+
+        const double squared_coeff = sqrt_coeff * sqrt_coeff;
+        CKKSSubPlainRealInPlace<P, NextCt::log_q, LogDelta>(next,
+                                                            squared_coeff);
+        CKKSBoundedCosDoubleAngleImpl<I + 1, P, StartLogQ, LogDelta,
+                                      DoubleAngle>(res, next, keys,
+                                                   squared_coeff);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          std::uint32_t DoubleAngle>
+inline void CKKSEvalModBoundedCosNormalized(
+    CKKSEvalModBoundedCosResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree,
+                                DoubleAngle> &res,
+    const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
+    const CKKSBoundedCosEvalModPolynomial &poly,
+    const CKKSEvalModBoundedCosRelinKeys<P, StartLogQ, LogDelta,
+                                         CoeffLogDelta, Degree, DoubleAngle>
+        &keys)
+{
+    assert(poly.power_coeffs.size() <= Degree + 1);
+    assert(poly.double_angle == DoubleAngle);
+
+    using Traits = CKKSEvalModBoundedCosTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>;
+    CKKSCiphertext<P, StartLogQ, LogDelta> shifted = ct;
+    CKKSSubPlainRealInPlace<P, StartLogQ, LogDelta>(shifted,
+                                                    poly.domain_offset);
+
+    typename Traits::PolynomialCiphertext polynomial;
+    CKKSEvalPowerPolynomial<P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(
+        polynomial, shifted, poly.power_coeffs, keys.polynomial);
+    ckks_detail::CKKSBoundedCosDoubleAngleImpl<
+        0, P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
+        res, polynomial, keys.double_angle, poly.sqrt_coeff);
+}
+
+template <class Schedule>
+using CKKSDenseEvalModBoundedCosTraits = CKKSEvalModBoundedCosTraits<
+    typename Schedule::Param, Schedule::after_coeff_to_slot_log_q,
+    Schedule::log_delta, Schedule::evalmod_log_scale, Schedule::evalmod_degree,
+    Schedule::evalmod_double_angle>;
+
+template <class Schedule>
+using CKKSDenseEvalModBoundedCosResult =
+    typename CKKSDenseEvalModBoundedCosTraits<Schedule>::Ciphertext;
+
+template <class Schedule>
+using CKKSDenseEvalModBoundedCosRelinKeys =
+    CKKSEvalModBoundedCosRelinKeys<
+        typename Schedule::Param, Schedule::after_coeff_to_slot_log_q,
+        Schedule::log_delta, Schedule::evalmod_log_scale,
+        Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
+
+template <class Schedule>
+inline void CKKSDenseEvalModBoundedCosKeyGen(
+    CKKSDenseEvalModBoundedCosRelinKeys<Schedule> &keys,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    static_assert(Schedule::evalmod_inv_degree == 0,
+                  "inverse EvalMod correction is not implemented yet");
+    static_assert(CKKSDenseEvalModBoundedCosTraits<Schedule>::log_q ==
+                  Schedule::after_evalmod_log_q);
+    CKKSEvalModBoundedCosKeyGen<
+        typename Schedule::Param, Schedule::after_coeff_to_slot_log_q,
+        Schedule::log_delta, Schedule::evalmod_log_scale,
+        Schedule::evalmod_degree, Schedule::evalmod_double_angle>(keys, key,
+                                                                  noise);
+}
+
+template <class Schedule>
+inline void CKKSDenseEvalModBoundedCosNormalized(
+    CKKSDenseEvalModBoundedCosResult<Schedule> &res,
+    const typename Schedule::CoeffToSlotCiphertext &ct,
+    const CKKSBoundedCosEvalModPolynomial &poly,
+    const CKKSDenseEvalModBoundedCosRelinKeys<Schedule> &keys)
+{
+    static_assert(Schedule::evalmod_inv_degree == 0,
+                  "inverse EvalMod correction is not implemented yet");
+    static_assert(CKKSDenseEvalModBoundedCosTraits<Schedule>::log_q ==
+                  Schedule::after_evalmod_log_q);
+    CKKSEvalModBoundedCosNormalized<
+        typename Schedule::Param, Schedule::after_coeff_to_slot_log_q,
+        Schedule::log_delta, Schedule::evalmod_log_scale,
+        Schedule::evalmod_degree, Schedule::evalmod_double_angle>(res, ct, poly,
+                                                                  keys);
 }
 
 inline double CKKSPlainEvalModSineDegree5(double x)

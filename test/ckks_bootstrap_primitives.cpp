@@ -2,6 +2,7 @@
 #include <cmath>
 #include <complex>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <tfhe++.hpp>
 #include <tuple>
@@ -21,11 +22,46 @@ struct SmallMultiLimbCKKSParam {
     using T = TFHEpp::MultiLimbUInt<3>;
 };
 
+struct TinyMultiLimbCKKSParam {
+    static constexpr int32_t key_value_max = 1;
+    static constexpr int32_t key_value_min = -1;
+    static constexpr std::uint32_t nbit = 4;
+    static constexpr std::uint32_t n = 1 << nbit;
+    static constexpr std::uint32_t k = 1;
+    static constexpr std::uint32_t l = 1;
+    static constexpr std::uint32_t lₐ = 1;
+    static constexpr std::uint32_t Bgbit = 16;
+    static constexpr std::uint32_t Bgₐbit = 16;
+    using T = TFHEpp::MultiLimbUInt<5>;
+    static constexpr T Bg = T{1} << Bgbit;
+    static constexpr T Bgₐ = T{1} << Bgₐbit;
+    static constexpr TFHEpp::ErrorDistribution errordist =
+        TFHEpp::ErrorDistribution::ModularGaussian;
+    static const inline double α = 0.0;
+    static constexpr T μ = T{1} << (std::numeric_limits<T>::digits - 3);
+    static constexpr uint32_t plain_modulusbit = 20;
+    static constexpr T plain_modulus = T{786433};
+    static constexpr double Δ = 0.0;
+    static constexpr std::uint32_t l̅ = 20;
+    static constexpr std::uint32_t l̅ₐ = 20;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
+};
+
 void fill_key(TFHEpp::Key<P> &key)
 {
     for (std::size_t i = 0; i < P::n; i++) {
         const int v = static_cast<int>(i % 3) - 1;
         key[i] = static_cast<typename P::T>(v);
+    }
+}
+
+template <class Param>
+void fill_test_key(TFHEpp::Key<Param> &key)
+{
+    for (std::size_t i = 0; i < Param::n; i++) {
+        const int v = static_cast<int>(i % 3) - 1;
+        key[i] = static_cast<typename Param::T>(v);
     }
 }
 
@@ -50,6 +86,19 @@ void require_close(const TFHEpp::CKKSSlotVector<P> &got,
                    const char *label)
 {
     const double err = max_error(got, want);
+    std::cout << label << " max_error=" << err << std::endl;
+    if (err > tol) {
+        std::cerr << label << " exceeded tolerance " << tol << std::endl;
+        std::exit(1);
+    }
+}
+
+template <class Param>
+void require_close_param(const TFHEpp::CKKSSlotVector<Param> &got,
+                         const TFHEpp::CKKSSlotVector<Param> &want, double tol,
+                         const char *label)
+{
+    const double err = max_error<Param>(got, want);
     std::cout << label << " max_error=" << err << std::endl;
     if (err > tol) {
         std::cerr << label << " exceeded tolerance " << tol << std::endl;
@@ -276,6 +325,10 @@ void test_lvl6_factorized_stage_shape()
     static_assert(Schedule::coeff_to_slot_scaling_factor == 1.0 / 4096.0);
     static_assert(Schedule::slot_to_coeff_scaling_factor == 256.0);
     static_assert(Schedule::OutputCiphertext::log_q == Schedule::output_log_q);
+    using DenseEvalTraits = TFHEpp::CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    using DenseEvalOut = TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>;
+    static_assert(DenseEvalTraits::polynomial_log_q == 520);
+    static_assert(DenseEvalOut::log_q == Schedule::after_evalmod_log_q);
 
     TFHEpp::CKKSLinearTransformStages<L> c2s_stages;
     TFHEpp::CKKSBuildCoeffToPackedSlotStages<L>(c2s_stages);
@@ -570,6 +623,81 @@ void test_power_polynomial_evaluator(const TFHEpp::Key<P> &key)
     require_close(*decoded, *expected, 0.05, "CKKS power polynomial degree-3");
 }
 
+void test_bounded_cos_evalmod_homomorphic()
+{
+    using M = TinyMultiLimbCKKSParam;
+    constexpr std::uint32_t log_q = 300;
+    constexpr std::uint32_t log_delta = 40;
+    constexpr std::uint32_t coeff_log_delta = 20;
+    constexpr std::size_t degree = 7;
+    constexpr std::uint32_t k = 2;
+    constexpr std::uint32_t log_message_ratio = 8;
+    constexpr std::uint32_t double_angle = 2;
+    using EvalCt = TFHEpp::CKKSCiphertext<M, log_q, log_delta>;
+    using Traits =
+        TFHEpp::CKKSEvalModBoundedCosTraits<M, log_q, log_delta,
+                                            coeff_log_delta, degree,
+                                            double_angle>;
+    using EvalOut =
+        TFHEpp::CKKSEvalModBoundedCosResult<M, log_q, log_delta,
+                                            coeff_log_delta, degree,
+                                            double_angle>;
+    static_assert(Traits::polynomial_log_q ==
+                  log_q - Traits::PolynomialTraits::power_depth * log_delta -
+                      coeff_log_delta);
+    static_assert(EvalOut::log_q ==
+                  log_q - Traits::PolynomialTraits::power_depth * log_delta -
+                      coeff_log_delta - double_angle * log_delta);
+
+    const auto poly = TFHEpp::CKKSBuildBoundedCosEvalModPolynomial(
+        k, degree, log_message_ratio, double_angle);
+    const double normalizer =
+        static_cast<double>(k) * poly.message_ratio * poly.q_diff;
+
+    auto key = std::make_unique<TFHEpp::Key<M>>();
+    fill_test_key<M>(*key);
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    slots->fill({0.0, 0.0});
+    expected->fill({0.0, 0.0});
+    for (std::size_t i = 0; i < M::n / 2; i++) {
+        const int mask = static_cast<int>(i % (2 * k - 1)) -
+                         static_cast<int>(k) + 1;
+        const double msg =
+            static_cast<double>(static_cast<int>(i % 5) - 2) / 4.0;
+        const double masked = static_cast<double>(mask) * poly.message_ratio + msg;
+        (*slots)[i] = {masked / normalizer, 0.0};
+        (*expected)[i] =
+            {TFHEpp::CKKSPlainEvalModBoundedCosPower(poly, masked) /
+                 poly.message_ratio,
+             0.0};
+    }
+
+    auto keys = std::make_unique<
+        TFHEpp::CKKSEvalModBoundedCosRelinKeys<M, log_q, log_delta,
+                                               coeff_log_delta, degree,
+                                               double_angle>>();
+    TFHEpp::CKKSEvalModBoundedCosKeyGen<M, log_q, log_delta, coeff_log_delta,
+                                        degree, double_angle>(*keys, *key,
+                                                              {0.0, 0});
+
+    auto ct = std::make_unique<EvalCt>();
+    TFHEpp::ckksSlotEncrypt<M, log_q, log_delta>(*ct, *slots, *key, {0.0, 0});
+
+    auto out = std::make_unique<EvalOut>();
+    TFHEpp::CKKSEvalModBoundedCosNormalized<M, log_q, log_delta,
+                                            coeff_log_delta, degree,
+                                            double_angle>(*out, *ct, poly,
+                                                          *keys);
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, EvalOut::log_q, EvalOut::log_delta>(
+        *decoded, *out, *key);
+    require_close_param<M>(*decoded, *expected, 0.03,
+                           "CKKS bounded cosine EvalMod homomorphic");
+}
+
 }  // namespace
 
 int main()
@@ -595,6 +723,7 @@ int main()
     fill_key(*key);
     test_sine_evalmod(*key);
     test_power_polynomial_evaluator(*key);
+    test_bounded_cos_evalmod_homomorphic();
 
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     slots->fill({0.0, 0.0});
