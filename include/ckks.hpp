@@ -243,6 +243,41 @@ inline __int128_t randomSignedBits(std::uint32_t bits)
            static_cast<__int128_t>(static_cast<__uint128_t>(1) << bits);
 }
 
+inline void fftInPlace(std::vector<std::complex<long double>> &a, bool inverse)
+{
+    const std::size_t n = a.size();
+    assert(n != 0 && (n & (n - 1)) == 0);
+
+    for (std::size_t i = 1, j = 0; i < n; i++) {
+        std::size_t bit = n >> 1;
+        for (; (j & bit) != 0; bit >>= 1) j ^= bit;
+        j ^= bit;
+        if (i < j) std::swap(a[i], a[j]);
+    }
+
+    constexpr long double pi =
+        3.141592653589793238462643383279502884L;
+    for (std::size_t len = 2; len <= n; len <<= 1) {
+        const long double angle =
+            (inverse ? 2.0L : -2.0L) * pi / static_cast<long double>(len);
+        const std::complex<long double> wlen(std::cos(angle),
+                                             std::sin(angle));
+        for (std::size_t i = 0; i < n; i += len) {
+            std::complex<long double> w = 1.0L;
+            for (std::size_t j = 0; j < len / 2; j++) {
+                const std::complex<long double> u = a[i + j];
+                const std::complex<long double> v = a[i + j + len / 2] * w;
+                a[i + j] = u + v;
+                a[i + j + len / 2] = u - v;
+                w *= wlen;
+            }
+        }
+    }
+
+    if (inverse)
+        for (auto &x : a) x /= static_cast<long double>(n);
+}
+
 template <class P, std::uint32_t LogQ>
 inline typename P::T sampleNoise(const CKKSNoise &noise)
 {
@@ -616,24 +651,21 @@ inline void ckksSlotEncode(
     ckks_detail::fillConjugateSymmetricEvaluations<LogDelta, P>(evals, slots);
 
     constexpr double pi = 3.141592653589793238462643383279502884;
-    std::array<double, P::n> coeffs{};
-    for (std::uint32_t j = 0; j < P::n; j++) {
-        std::complex<long double> sum = 0.0L;
-        for (std::uint32_t k = 0; k < P::n; k++) {
-            const long double angle =
-                -pi * static_cast<long double>((2 * k + 1) * j) /
-                static_cast<long double>(P::n);
-            sum += static_cast<std::complex<long double>>(evals[k]) *
-                   std::complex<long double>(std::cos(angle),
-                                             std::sin(angle));
-        }
-        coeffs[j] = static_cast<double>(sum.real() /
-                                        static_cast<long double>(P::n));
-    }
+    std::vector<std::complex<long double>> spectrum(P::n);
+    for (std::uint32_t k = 0; k < P::n; k++)
+        spectrum[k] = static_cast<std::complex<long double>>(evals[k]);
+    ckks_detail::fftInPlace(spectrum, false);
 
-    for (std::uint32_t i = 0; i < P::n; i++)
-        poly[i] = ckks_detail::signedToLevel<P, LogQ>(
-            static_cast<__int128_t>(std::round(coeffs[i])));
+    for (std::uint32_t j = 0; j < P::n; j++) {
+        const long double angle =
+            -pi * static_cast<long double>(j) / static_cast<long double>(P::n);
+        const auto coeff =
+            spectrum[j] *
+            std::complex<long double>(std::cos(angle), std::sin(angle)) /
+            static_cast<long double>(P::n);
+        poly[j] = ckks_detail::signedToLevel<P, LogQ>(
+            static_cast<__int128_t>(std::round(coeff.real())));
+    }
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -646,19 +678,20 @@ inline void ckksSlotDecode(
     constexpr double pi = 3.141592653589793238462643383279502884;
     const double inv_scale = std::ldexp(1.0, -static_cast<int>(LogDelta));
     const auto &slot_to_eval = ckks_detail::ckksSlotToEvalIndex<P>();
+    std::vector<std::complex<long double>> values(P::n);
+    for (std::uint32_t j = 0; j < P::n; j++) {
+        const long double angle =
+            pi * static_cast<long double>(j) / static_cast<long double>(P::n);
+        const long double coeff = static_cast<long double>(
+            ckks_detail::levelToSigned<P, LogQ>(poly[j]));
+        values[j] =
+            coeff * std::complex<long double>(std::cos(angle), std::sin(angle));
+    }
+    ckks_detail::fftInPlace(values, true);
+
     for (std::uint32_t k = 0; k < P::n / 2; k++) {
         const std::uint32_t eval_index = slot_to_eval[k];
-        std::complex<long double> value = 0.0L;
-        for (std::uint32_t j = 0; j < P::n; j++) {
-            const long double angle =
-                pi * static_cast<long double>((2 * eval_index + 1) * j) /
-                static_cast<long double>(P::n);
-            const long double coeff = static_cast<long double>(
-                ckks_detail::levelToSigned<P, LogQ>(poly[j]));
-            value += coeff *
-                     std::complex<long double>(std::cos(angle),
-                                               std::sin(angle));
-        }
+        const auto value = values[eval_index] * static_cast<long double>(P::n);
         slots[k] = static_cast<std::complex<double>>(value) * inv_scale;
     }
 }
