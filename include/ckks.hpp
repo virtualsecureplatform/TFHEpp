@@ -855,7 +855,8 @@ inline void CKKSModRaise(CKKSCiphertext<P, OutLogQ, LogDelta> &res,
     static_assert(OutLogQ <= ckks_detail::torus_width_v<P>);
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t i = 0; i < P::n; i++)
-            res.ct[c][i] = ckks_detail::reduceToLevel<P, InLogQ>(ct.ct[c][i]);
+            res.ct[c][i] = ckks_detail::reduceToLevel<P, OutLogQ>(
+                ckks_detail::centeredLevelToTorus<P, InLogQ>(ct.ct[c][i]));
 }
 
 template <class P, std::uint32_t InLogQ, std::uint32_t OutLogQ,
@@ -869,10 +870,37 @@ inline void CKKSModRaiseRandomized(CKKSCiphertext<P, OutLogQ, LogDelta> &res,
     for (int c = 0; c <= static_cast<int>(P::k); c++) {
         for (std::uint32_t i = 0; i < P::n; i++) {
             const typename P::T low =
-                ckks_detail::reduceToLevel<P, InLogQ>(ct.ct[c][i]);
+                ckks_detail::centeredLevelToTorus<P, InLogQ>(ct.ct[c][i]);
             const typename P::T high =
                 ckks_detail::uniformAtLevel<P, high_log_q>() << InLogQ;
             res.ct[c][i] = ckks_detail::reduceToLevel<P, OutLogQ>(low + high);
+        }
+    }
+}
+
+template <class P, std::uint32_t InLogQ, std::uint32_t OutLogQ,
+          std::uint32_t LogDelta, std::uint32_t MaskBound>
+inline void CKKSModRaiseBoundedPhaseRandomized(
+    CKKSCiphertext<P, OutLogQ, LogDelta> &res,
+    const CKKSCiphertext<P, InLogQ, LogDelta> &ct)
+{
+    static_assert(InLogQ < OutLogQ);
+    static_assert(OutLogQ <= ckks_detail::torus_width_v<P>);
+    CKKSModRaise<P, InLogQ, OutLogQ, LogDelta>(res, ct);
+
+    if constexpr (MaskBound > 0) {
+        std::uniform_int_distribution<std::int64_t> dist(
+            -static_cast<std::int64_t>(MaskBound),
+            static_cast<std::int64_t>(MaskBound));
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            const std::int64_t mask = dist(generator);
+            const typename P::T high_mask =
+                ckks_detail::reduceToLevel<P, OutLogQ>(
+                    ckks_detail::signedToLevel<P, OutLogQ>(
+                        static_cast<__int128_t>(mask))
+                    << InLogQ);
+            res.ct[P::k][i] = ckks_detail::reduceToLevel<P, OutLogQ>(
+                res.ct[P::k][i] + high_mask);
         }
     }
 }
@@ -988,15 +1016,26 @@ inline void CKKSMulInteger(CKKSCiphertext<P, LogQ, LogDelta> &res,
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
+inline void CKKSPlainMulByConstant(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    std::complex<double> scalar)
+{
+    CKKSSlotVector<P> slots{};
+    slots.fill(scalar);
+    CKKSPlaintext<P, LogQ, PlainLogDelta> plain;
+    ckksSlotEncode<P, LogQ, PlainLogDelta>(plain.poly, slots);
+    CKKSPlainMulRescale<P, LogQ, LogDelta, PlainLogDelta>(res, ct, plain);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
 inline void CKKSPlainMulByReal(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct, double scalar)
 {
-    CKKSSlotVector<P> slots{};
-    slots.fill({scalar, 0.0});
-    CKKSPlaintext<P, LogQ, PlainLogDelta> plain;
-    ckksSlotEncode<P, LogQ, PlainLogDelta>(plain.poly, slots);
-    CKKSPlainMulRescale<P, LogQ, LogDelta, PlainLogDelta>(res, ct, plain);
+    CKKSPlainMulByConstant<P, LogQ, LogDelta, PlainLogDelta>(
+        res, ct, {scalar, 0.0});
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -1042,10 +1081,11 @@ inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
 
     TRLWE<P> poly_as_trlwe{};
     poly_as_trlwe[0] = poly;
-    ckks_detail::reduceTRLWEToLevel<P, LogQ>(poly_as_trlwe);
+    auto centered = std::make_unique<TRLWE<P>>();
+    ckks_detail::centeredTRLWEAtLevel<P, LogQ>(*centered, poly_as_trlwe);
 
     auto decomposed = std::make_unique<std::array<TRLWE<P>, P::l̅>>();
-    TRLWEBaseBbarDecompose<P>(*decomposed, poly_as_trlwe);
+    TRLWEBaseBbarDecompose<P>(*decomposed, *centered);
 
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
@@ -1154,6 +1194,37 @@ inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
 {
     CKKSEvalAuto<P, LogQ>(res, ct, 2 * P::n - 1, gk[P::nbit]);
     ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSExtractRealSlots(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSGaloisKey<P, LogQ> &gk)
+{
+    CKKSCiphertext<P, LogQ, LogDelta> conjugated;
+    CKKSConjugateSlots<P, LogQ>(conjugated.ct, ct.ct, gk);
+
+    CKKSCiphertext<P, LogQ, LogDelta> sum;
+    CKKSAdd<P, LogQ, LogDelta>(sum, ct, conjugated);
+    CKKSPlainMulByReal<P, LogQ, LogDelta, PlainLogDelta>(res, sum, 0.5);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSExtractImagSlots(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSGaloisKey<P, LogQ> &gk)
+{
+    CKKSCiphertext<P, LogQ, LogDelta> conjugated;
+    CKKSConjugateSlots<P, LogQ>(conjugated.ct, ct.ct, gk);
+
+    CKKSCiphertext<P, LogQ, LogDelta> diff;
+    CKKSSub<P, LogQ, LogDelta>(diff, ct, conjugated);
+    CKKSPlainMulByConstant<P, LogQ, LogDelta, PlainLogDelta>(
+        res, diff, {0.0, -0.5});
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
@@ -1937,14 +2008,18 @@ struct CKKSDenseBootstrapSchedule {
 
     static constexpr std::uint32_t after_coeff_to_slot_log_q =
         BootLogQ - coeff_to_slot_level_count * LinearPlainLogDelta;
+    static constexpr std::uint32_t after_component_split_log_q =
+        after_coeff_to_slot_log_q - LinearPlainLogDelta;
     static constexpr std::uint32_t after_evalmod_log_q =
-        after_coeff_to_slot_log_q - evalmod_depth * EvalModLogScale;
+        after_component_split_log_q - evalmod_depth * EvalModLogScale;
     static constexpr std::uint32_t output_log_q =
         after_evalmod_log_q - slot_to_coeff_level_count * LinearPlainLogDelta;
 
     static_assert(input_log_q < BootLogQ);
     static_assert(BootLogQ <= ckks_detail::torus_width_v<P>);
-    static_assert(after_coeff_to_slot_log_q > evalmod_depth * EvalModLogScale);
+    static_assert(after_coeff_to_slot_log_q > LinearPlainLogDelta);
+    static_assert(after_component_split_log_q >
+                  evalmod_depth * EvalModLogScale);
     static_assert(output_log_q > LogDelta);
 
     using InputCiphertext = CKKSCiphertext<P, input_log_q, log_delta>;
@@ -1953,6 +2028,9 @@ struct CKKSDenseBootstrapSchedule {
         CKKSStagedPlainMulResult<P, boot_log_q, log_delta,
                                  linear_plain_log_delta,
                                  coeff_to_slot_level_count>;
+    using ComponentCiphertext =
+        CKKSPlainMulResult<P, after_coeff_to_slot_log_q, log_delta,
+                           linear_plain_log_delta>;
     using EvalModCiphertext = CKKSCiphertext<P, after_evalmod_log_q, log_delta>;
     using OutputCiphertext =
         CKKSStagedPlainMulResult<P, after_evalmod_log_q, log_delta,
@@ -2139,6 +2217,7 @@ struct CKKSDenseBootstrapLinearPlan {
     using P = typename Schedule::Param;
     CKKSLinearTransformStages<P> coeff_to_slot_stages{};
     CKKSLinearTransformStages<P> slot_to_coeff_stages{};
+    CKKSLinearTransformStages<P> slot_to_coeff_imag_stages{};
 };
 
 template <class Schedule>
@@ -2157,9 +2236,14 @@ inline void CKKSBuildDenseBootstrapLinearPlan(
     CKKSFuseLinearTransformStages<P>(plan.slot_to_coeff_stages,
                                      raw_slot_to_coeff,
                                      Schedule::linear_fuse_radix);
+    CKKSFuseLinearTransformStages<P>(plan.slot_to_coeff_imag_stages,
+                                     raw_slot_to_coeff,
+                                     Schedule::linear_fuse_radix);
     assert(plan.coeff_to_slot_stages.size() ==
            Schedule::coeff_to_slot_level_count);
     assert(plan.slot_to_coeff_stages.size() ==
+           Schedule::slot_to_coeff_level_count);
+    assert(plan.slot_to_coeff_imag_stages.size() ==
            Schedule::slot_to_coeff_level_count);
 
     CKKSScaleLinearTransformStages<P>(
@@ -2168,6 +2252,9 @@ inline void CKKSBuildDenseBootstrapLinearPlan(
     CKKSScaleLinearTransformStages<P>(
         plan.slot_to_coeff_stages,
         {Schedule::slot_to_coeff_scaling_factor, 0.0});
+    CKKSScaleLinearTransformStages<P>(
+        plan.slot_to_coeff_imag_stages,
+        {0.0, Schedule::slot_to_coeff_scaling_factor});
 }
 
 template <class P, std::uint32_t LogQ>
@@ -2804,7 +2891,7 @@ inline void CKKSEvalModBoundedCosNormalized(
 
 template <class Schedule>
 using CKKSDenseEvalModBoundedCosTraits = CKKSEvalModBoundedCosTraits<
-    typename Schedule::Param, Schedule::after_coeff_to_slot_log_q,
+    typename Schedule::Param, Schedule::after_component_split_log_q,
     Schedule::log_delta, Schedule::evalmod_log_scale, Schedule::evalmod_degree,
     Schedule::evalmod_double_angle>;
 
@@ -2815,7 +2902,7 @@ using CKKSDenseEvalModBoundedCosResult =
 template <class Schedule>
 using CKKSDenseEvalModBoundedCosRelinKeys =
     CKKSEvalModBoundedCosRelinKeys<
-        typename Schedule::Param, Schedule::after_coeff_to_slot_log_q,
+        typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
 
@@ -2830,7 +2917,7 @@ inline void CKKSDenseEvalModBoundedCosKeyGen(
     static_assert(CKKSDenseEvalModBoundedCosTraits<Schedule>::log_q ==
                   Schedule::after_evalmod_log_q);
     CKKSEvalModBoundedCosKeyGen<
-        typename Schedule::Param, Schedule::after_coeff_to_slot_log_q,
+        typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>(keys, key,
                                                                   noise);
@@ -2839,7 +2926,7 @@ inline void CKKSDenseEvalModBoundedCosKeyGen(
 template <class Schedule>
 inline void CKKSDenseEvalModBoundedCosNormalized(
     CKKSDenseEvalModBoundedCosResult<Schedule> &res,
-    const typename Schedule::CoeffToSlotCiphertext &ct,
+    const typename Schedule::ComponentCiphertext &ct,
     const CKKSBoundedCosEvalModPolynomial &poly,
     const CKKSDenseEvalModBoundedCosRelinKeys<Schedule> &keys)
 {
@@ -2848,7 +2935,7 @@ inline void CKKSDenseEvalModBoundedCosNormalized(
     static_assert(CKKSDenseEvalModBoundedCosTraits<Schedule>::log_q ==
                   Schedule::after_evalmod_log_q);
     CKKSEvalModBoundedCosNormalized<
-        typename Schedule::Param, Schedule::after_coeff_to_slot_log_q,
+        typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle>(res, ct, poly,
                                                                   keys);
@@ -2869,6 +2956,8 @@ struct CKKSDenseBootstrapKey {
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan{};
     CKKSBoundedCosEvalModPolynomial evalmod_polynomial{};
     CoeffToSlotGaloisKeyChain coeff_to_slot_galois{};
+    CKKSGaloisKey<P, Schedule::after_coeff_to_slot_log_q>
+        packed_conjugate_galois{};
     CKKSDenseEvalModBoundedCosRelinKeys<Schedule> evalmod_relin{};
     SlotToCoeffGaloisKeyChain slot_to_coeff_galois{};
 };
@@ -2889,6 +2978,8 @@ inline void CKKSDenseBootstrapKeyGen(
                           Schedule::linear_plain_log_delta,
                           Schedule::coeff_to_slot_level_count>(
         bootstrap_key.coeff_to_slot_galois, key, noise);
+    CKKSGaloisKeyGen<P, Schedule::after_coeff_to_slot_log_q>(
+        bootstrap_key.packed_conjugate_galois, key, noise);
     CKKSDenseEvalModBoundedCosKeyGen<Schedule>(bootstrap_key.evalmod_relin, key,
                                                noise);
     CKKSGaloisKeyChainGen<P, Schedule::after_evalmod_log_q,
@@ -2905,8 +2996,9 @@ inline void CKKSDenseBootstrap(
 {
     using P = typename Schedule::Param;
     typename Schedule::BootstrapCiphertext raised;
-    CKKSModRaiseRandomized<P, Schedule::input_log_q, Schedule::boot_log_q,
-                           Schedule::log_delta>(raised, ct);
+    CKKSModRaiseBoundedPhaseRandomized<
+        P, Schedule::input_log_q, Schedule::boot_log_q, Schedule::log_delta,
+        0>(raised, ct);
 
     typename Schedule::CoeffToSlotCiphertext coeff_to_slot;
     CKKSLinearTransformStagesBSGS<
@@ -2916,17 +3008,46 @@ inline void CKKSDenseBootstrap(
         coeff_to_slot, raised, bootstrap_key.linear_plan.coeff_to_slot_stages, 0,
         Schedule::linear_bsgs_step, bootstrap_key.coeff_to_slot_galois);
 
-    CKKSDenseEvalModBoundedCosResult<Schedule> evalmod;
+    typename Schedule::ComponentCiphertext real_component;
+    CKKSExtractRealSlots<P, Schedule::after_coeff_to_slot_log_q,
+                         Schedule::log_delta,
+                         Schedule::linear_plain_log_delta>(
+        real_component, coeff_to_slot,
+        bootstrap_key.packed_conjugate_galois);
+    typename Schedule::ComponentCiphertext imag_component;
+    CKKSExtractImagSlots<P, Schedule::after_coeff_to_slot_log_q,
+                         Schedule::log_delta,
+                         Schedule::linear_plain_log_delta>(
+        imag_component, coeff_to_slot,
+        bootstrap_key.packed_conjugate_galois);
+
+    CKKSDenseEvalModBoundedCosResult<Schedule> real_evalmod;
     CKKSDenseEvalModBoundedCosNormalized<Schedule>(
-        evalmod, coeff_to_slot, bootstrap_key.evalmod_polynomial,
+        real_evalmod, real_component, bootstrap_key.evalmod_polynomial,
+        bootstrap_key.evalmod_relin);
+    CKKSDenseEvalModBoundedCosResult<Schedule> imag_evalmod;
+    CKKSDenseEvalModBoundedCosNormalized<Schedule>(
+        imag_evalmod, imag_component, bootstrap_key.evalmod_polynomial,
         bootstrap_key.evalmod_relin);
 
+    typename Schedule::OutputCiphertext real_out;
     CKKSLinearTransformStagesBSGS<
         P, Schedule::after_evalmod_log_q, Schedule::log_delta,
         Schedule::linear_plain_log_delta,
         Schedule::slot_to_coeff_level_count>(
-        res, evalmod, bootstrap_key.linear_plan.slot_to_coeff_stages, 0,
+        real_out, real_evalmod, bootstrap_key.linear_plan.slot_to_coeff_stages, 0,
         Schedule::linear_bsgs_step, bootstrap_key.slot_to_coeff_galois);
+    typename Schedule::OutputCiphertext imag_out;
+    CKKSLinearTransformStagesBSGS<
+        P, Schedule::after_evalmod_log_q, Schedule::log_delta,
+        Schedule::linear_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        imag_out, imag_evalmod,
+        bootstrap_key.linear_plan.slot_to_coeff_imag_stages, 0,
+        Schedule::linear_bsgs_step, bootstrap_key.slot_to_coeff_galois);
+
+    CKKSAdd<P, Schedule::output_log_q, Schedule::log_delta>(res, real_out,
+                                                            imag_out);
 }
 
 inline double CKKSPlainEvalModSineDegree5(double x)
