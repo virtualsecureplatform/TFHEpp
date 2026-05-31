@@ -1900,10 +1900,13 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr std::uint32_t evalmod_double_angle = EvalModDoubleAngle;
     static constexpr std::uint32_t evalmod_inv_degree = EvalModInvDegree;
     static constexpr std::uint32_t evalmod_log_scale = EvalModLogScale;
-    static constexpr std::uint32_t evalmod_depth =
+    static constexpr std::uint32_t evalmod_polynomial_depth =
         ckks_detail::bit_width_u64(
             ckks_detail::static_max_v<EvalModDegree, 2 * (EvalModK - 1)>) +
-        EvalModDoubleAngle + ckks_detail::bit_width_u64(EvalModInvDegree);
+        1;
+    static constexpr std::uint32_t evalmod_depth =
+        evalmod_polynomial_depth + EvalModDoubleAngle +
+        ckks_detail::bit_width_u64(EvalModInvDegree);
     static constexpr double message_ratio =
         ckks_detail::exp2_double(LogMessageRatio);
     static constexpr double coeff_to_slot_scaling_factor =

@@ -267,10 +267,11 @@ void test_lvl6_factorized_stage_shape()
     static_assert(Schedule::raw_linear_stage_count == 14);
     static_assert(Schedule::coeff_to_slot_level_count == 4);
     static_assert(Schedule::slot_to_coeff_level_count == 4);
-    static_assert(Schedule::evalmod_depth == 9);
+    static_assert(Schedule::evalmod_polynomial_depth == 7);
+    static_assert(Schedule::evalmod_depth == 10);
     static_assert(Schedule::after_coeff_to_slot_log_q == 800);
-    static_assert(Schedule::after_evalmod_log_q == 440);
-    static_assert(Schedule::output_log_q == 360);
+    static_assert(Schedule::after_evalmod_log_q == 400);
+    static_assert(Schedule::output_log_q == 320);
     static_assert(Schedule::message_ratio == 256.0);
     static_assert(Schedule::coeff_to_slot_scaling_factor == 1.0 / 4096.0);
     static_assert(Schedule::slot_to_coeff_scaling_factor == 256.0);
