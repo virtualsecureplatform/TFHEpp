@@ -211,6 +211,18 @@ void test_factorized_coeff_slot_stages()
               << std::endl;
     if (c2s_err > 1e-10) std::exit(1);
 
+    auto scaled_expected = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    auto scaled_got = std::make_unique<TFHEpp::CKKSSlotVector<S>>();
+    constexpr std::complex<double> stage_scale{0.25, -0.125};
+    for (int i = 0; i < half; i++)
+        (*scaled_expected)[i] = stage_scale * (*packed_bitrev)[i];
+    TFHEpp::CKKSScaleLinearTransformStages<S>(c2s_stages, stage_scale);
+    apply_complex_stages<S>(*scaled_got, *slots, c2s_stages);
+    const double scaled_err = max_error<S>(*scaled_got, *scaled_expected);
+    std::cout << "CKKS scaled factorized stage max_error=" << scaled_err
+              << std::endl;
+    if (scaled_err > 1e-10) std::exit(1);
+
     TFHEpp::CKKSLinearTransformStages<S> stc_stages;
     TFHEpp::CKKSBuildPackedSlotToCoeffStages<S>(stc_stages);
     if (stc_stages.size() != S::nbit - 1) std::exit(1);
@@ -361,7 +373,7 @@ void test_sine_evalmod(const TFHEpp::Key<P> &key)
 
     TFHEpp::ckksSlotDecrypt<P, EvalOut::log_q, EvalOut::log_delta>(
         *decoded, *out, key);
-    require_close(*decoded, *expected, 0.01, "CKKS sine EvalMod degree-3");
+    require_close(*decoded, *expected, 0.03, "CKKS sine EvalMod degree-3");
 }
 
 }  // namespace

@@ -1098,6 +1098,18 @@ struct CKKSLinearTransformStage {
 template <class P>
 using CKKSLinearTransformStages = std::vector<CKKSLinearTransformStage<P>>;
 
+template <class P>
+inline void CKKSScaleLinearTransformStages(CKKSLinearTransformStages<P> &stages,
+                                           std::complex<double> scalar)
+{
+    for (auto &stage : stages) {
+        if (stage.diagonals.empty()) continue;
+        for (auto &diagonal : stage.diagonals)
+            for (auto &entry : diagonal) entry *= scalar;
+        return;
+    }
+}
+
 namespace ckks_detail {
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
