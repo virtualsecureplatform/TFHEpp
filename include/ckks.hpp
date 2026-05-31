@@ -3574,6 +3574,55 @@ inline void CKKSAddPowerPolynomialTermsImpl(
     }
 }
 
+template <std::size_t I, class Traits, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t CoeffLogDelta,
+          std::size_t Degree, class RelinKeyProvider>
+inline void CKKSBuildChebyshevBasisImpl(
+    typename Traits::PowerBasis &powers,
+    const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
+    const RelinKeyProvider &keys)
+{
+    if constexpr (I <= Degree) {
+        if constexpr (I == 1) {
+            using Ct = CKKSCiphertext<P, StartLogQ, LogDelta>;
+            std::get<0>(powers) = std::make_unique<Ct>(ct);
+        }
+        else {
+            constexpr std::size_t lhs_power = I / 2;
+            constexpr std::size_t rhs_power = I - lhs_power;
+            constexpr std::size_t correction_power =
+                rhs_power - lhs_power;
+            constexpr std::uint32_t depth = power_tree_depth(I);
+            using Ct = CKKSCiphertext<P, StartLogQ - depth * LogDelta,
+                                      LogDelta>;
+            auto &dst = std::get<I - 1>(powers);
+            dst = std::make_unique<Ct>();
+            CKKSMult<P>(*dst, *std::get<lhs_power - 1>(powers),
+                        *std::get<rhs_power - 1>(powers),
+                        keys.template get<depth - 1>());
+            CKKSMulIntegerInPlace<P, Ct::log_q, LogDelta>(*dst, 2);
+            if constexpr (correction_power == 0) {
+                CKKSSubPlainRealInPlace<P, Ct::log_q, LogDelta>(*dst, 1.0);
+            }
+            else {
+                using CorrectionPtr = std::tuple_element_t<
+                    correction_power - 1, typename Traits::PowerBasis>;
+                using CorrectionCt = typename CorrectionPtr::element_type;
+                auto correction =
+                    std::make_unique<CKKSCiphertext<P, Ct::log_q, LogDelta>>();
+                CKKSLevelReduce<P, CorrectionCt::log_q, Ct::log_q, LogDelta>(
+                    *correction, *std::get<correction_power - 1>(powers));
+                CKKSSubInPlace<P, Ct::log_q, LogDelta>(*dst, *correction);
+            }
+            if constexpr (I == Degree || power_tree_depth(I + 1) > depth) {
+                maybe_release_key<depth - 1>(keys);
+            }
+        }
+        CKKSBuildChebyshevBasisImpl<I + 1, Traits, P, StartLogQ, LogDelta,
+                                    CoeffLogDelta, Degree>(powers, ct, keys);
+    }
+}
+
 }  // namespace ckks_detail
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
@@ -3611,6 +3660,28 @@ inline void CKKSEvalPowerPolynomial(
     CKKSEvalPowerPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
                                            CoeffLogDelta, Degree>(
         res, ct, coeffs, keys);
+}
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree,
+          class RelinKeyProvider>
+inline void CKKSEvalChebyshevPolynomialWithKeyProvider(
+    CKKSPowerPolynomialResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree>
+        &res,
+    const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
+    const std::vector<double> &coeffs, const RelinKeyProvider &keys)
+{
+    using Traits = CKKSPowerPolynomialEvaluatorTraits<
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree>;
+    typename Traits::PowerBasis powers;
+    ckks_detail::CKKSBuildChebyshevBasisImpl<
+        1, Traits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(powers, ct,
+                                                                  keys);
+    CKKSSetTransparentReal<P, Traits::log_q, LogDelta>(
+        res, coeffs.empty() ? 0.0 : coeffs[0]);
+    ckks_detail::CKKSAddPowerPolynomialTermsImpl<
+        1, Traits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(res, powers,
+                                                                  coeffs);
 }
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
@@ -3785,7 +3856,7 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
     const CKKSBoundedCosEvalModPolynomial &poly,
     const KeyProvider &key_provider)
 {
-    assert(poly.power_coeffs.size() <= Degree + 1);
+    assert(poly.chebyshev_coeffs.size() <= Degree + 1);
     assert(poly.double_angle == DoubleAngle);
 
     using Traits = CKKSEvalModBoundedCosTraits<
@@ -3799,9 +3870,9 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
     const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,
                                                                   true>
         polynomial_keys{key_provider};
-    CKKSEvalPowerPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
-                                           CoeffLogDelta, Degree>(
-        *polynomial, *shifted, poly.power_coeffs, polynomial_keys);
+    CKKSEvalChebyshevPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
+                                               CoeffLogDelta, Degree>(
+        *polynomial, *shifted, poly.chebyshev_coeffs, polynomial_keys);
     shifted.reset();
 
     const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,

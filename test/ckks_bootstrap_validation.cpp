@@ -684,6 +684,68 @@ int run_filesystem_bootstrap_diagnostics(const std::filesystem::path &key_dir,
 }
 
 template <class Schedule>
+int run_filesystem_evalmod_diagnostics(const std::filesystem::path &key_dir,
+                                       std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+
+    if (const int status = validate_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+    std::cout << "diag_key_sparse_weight=" << sparse_weight << '\n';
+
+    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    const TFHEpp::CKKSBoundedCosEvalModPolynomial &poly =
+        provider.evalmod_polynomial();
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    constexpr int k = static_cast<int>(Schedule::evalmod_k);
+    for (std::size_t i = 0; i < P::n / 2; i++) {
+        const int mask = static_cast<int>(i % (2 * k + 3)) - k - 1;
+        const double message =
+            static_cast<double>(static_cast<int>(i % 17) - 8) / 256.0;
+        const double normalized =
+            (static_cast<double>(mask) * Schedule::message_ratio + message) /
+            (static_cast<double>(Schedule::evalmod_k) *
+             Schedule::message_ratio);
+        (*slots)[i] = {normalized, 0.0};
+        (*expected)[i] =
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(poly,
+                                                               normalized) /
+                 Schedule::message_ratio,
+             0.0};
+    }
+    print_slot_diagnostic<P>("diag_evalmod_direct_input", *slots);
+    print_slot_diagnostic<P>("diag_evalmod_direct_expected", *expected);
+
+    auto input = std::make_unique<typename Schedule::ComponentCiphertext>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, Schedule::after_component_split_log_q,
+                                Schedule::log_delta>(*input, *slots, *key);
+    });
+
+    auto output =
+        std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    const double evalmod_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+            *output, *input, poly, provider);
+    });
+    input.reset();
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_evalmod_log_q,
+                            Schedule::log_delta>(*decoded, *output, *key);
+    print_slot_diagnostic<P>("diag_evalmod_direct", *decoded, expected.get());
+    std::cout << "diag_encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "diag_evalmod_ms=" << evalmod_ms << '\n';
+    return max_error<P>(*decoded, *expected) <= 0.01 ? 0 : 1;
+}
+
+template <class Schedule>
 int check_manifest_mismatch_rejected(const std::filesystem::path &key_dir)
 {
     const std::filesystem::path mismatch_dir =
@@ -807,7 +869,8 @@ void print_usage(const char *program)
                  " [--lvl6-keygen-next DIR] [--lvl6-run DIR]"
                  " [--lvl6-debug-modraise]"
                  " [--lvl6-debug-modraise-sparse H]"
-                 " [--lvl6-debug-c2s DIR] [--lvl6-debug DIR]"
+                 " [--lvl6-debug-c2s DIR] [--lvl6-debug-evalmod DIR]"
+                 " [--lvl6-debug DIR]"
                  " [--lvl6-all DIR] [--resume]\n";
 }
 
@@ -872,7 +935,8 @@ int main(int argc, char **argv)
         }
         else if (arg == "--lvl6-keygen" || arg == "--lvl6-keygen-next" ||
                  arg == "--lvl6-run" || arg == "--lvl6-debug-c2s" ||
-                 arg == "--lvl6-debug" || arg == "--lvl6-all") {
+                 arg == "--lvl6-debug-evalmod" || arg == "--lvl6-debug" ||
+                 arg == "--lvl6-all") {
             if (i + 1 >= args.size()) {
                 print_usage(argv[0]);
                 return 2;
@@ -899,6 +963,12 @@ int main(int argc, char **argv)
                 print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
                 if (run_filesystem_bootstrap_diagnostics<Lvl6Schedule>(
                         key_dir, false, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-debug-evalmod") {
+                print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
+                if (run_filesystem_evalmod_diagnostics<Lvl6Schedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg == "--lvl6-debug") {
