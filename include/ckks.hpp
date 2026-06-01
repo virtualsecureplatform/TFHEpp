@@ -148,6 +148,9 @@ struct CKKSAutoKey {
 template <class P, std::uint32_t LogQ>
 using CKKSGaloisKey = std::array<CKKSAutoKey<P, LogQ>, P::nbit + 1>;
 
+template <class P, std::uint32_t LogQ>
+using CKKSSecretKeySwitchKey = CKKSAutoKey<P, LogQ>;
+
 template <class P>
 constexpr std::size_t CKKSRelinKeySwitchRowCount()
 {
@@ -431,17 +434,20 @@ struct CKKSDenseBootstrapKeyDirectoryOptions {
 
 struct CKKSDenseBootstrapTimings {
     double normalize_ms = 0.0;
+    double input_secret_switch_ms = 0.0;
     double modraise_ms = 0.0;
     double coeff_to_slot_ms = 0.0;
     double split_ms = 0.0;
     double real_evalmod_ms = 0.0;
     double imag_evalmod_ms = 0.0;
     double slot_to_coeff_ms = 0.0;
+    double output_secret_switch_ms = 0.0;
 
     double total_ms() const
     {
-        return normalize_ms + modraise_ms + coeff_to_slot_ms + split_ms +
-               real_evalmod_ms + imag_evalmod_ms + slot_to_coeff_ms;
+        return normalize_ms + input_secret_switch_ms + modraise_ms +
+               coeff_to_slot_ms + split_ms + real_evalmod_ms +
+               imag_evalmod_ms + slot_to_coeff_ms + output_secret_switch_ms;
     }
 };
 
@@ -1607,6 +1613,61 @@ inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
                                                         (*product)[n]);
         }
     }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSSecretKeySwitchKeyGen(CKKSSecretKeySwitchKey<P, LogQ> &switch_key,
+                                      const Key<P> &source_key,
+                                      const Key<P> &target_key,
+                                      CKKSNoise noise = {P::α, 0})
+{
+    static_assert(ckks_detail::supported_torus_v<P>);
+    constexpr int width = std::numeric_limits<typename P::T>::digits;
+    constexpr std::uint32_t row_count =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    constexpr std::uint32_t first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LogQ>();
+
+    auto partkey = std::make_unique<Polynomial<P>>();
+    auto gadget = std::make_unique<Polynomial<P>>();
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        for (std::uint32_t i = 0; i < P::n; i++)
+            (*partkey)[i] = source_key[k * P::n + i];
+
+        for (int j = 0; j < static_cast<int>(row_count); j++) {
+            const std::uint32_t full_row = first_row + j;
+            const int shift =
+                width - (full_row + 1) * static_cast<int>(P::B̅gbit);
+            for (std::uint32_t n = 0; n < P::n; n++)
+                (*gadget)[n] =
+                    ckks_detail::reduceToLevel<P, LogQ>((*partkey)[n] << shift);
+            ckks_detail::encryptPolynomialAtLevel<P, LogQ>(
+                switch_key[static_cast<std::size_t>(k)]
+                          [static_cast<std::size_t>(j)],
+                *gadget, target_key, noise);
+        }
+    }
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSSecretKeySwitch(
+    CKKSCiphertext<P, LogQ, LogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSSecretKeySwitchKey<P, LogQ> &switch_key)
+{
+    auto switched = std::make_unique<TRLWE<P>>();
+    TRLWE<P> out{};
+    for (std::uint32_t n = 0; n < P::n; n++)
+        out[P::k][n] = ckks_detail::reduceToLevel<P, LogQ>(ct.ct[P::k][n]);
+
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        CKKSKeySwitchRows<P, LogQ>(
+            *switched, ct.ct[static_cast<std::size_t>(k)],
+            switch_key[static_cast<std::size_t>(k)]);
+        CKKSSubTRLWEInPlace<P, LogQ>(out, *switched);
+    }
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(out);
+    res.ct = out;
 }
 
 template <class P, std::uint32_t LogQ>
@@ -6514,6 +6575,36 @@ struct CKKSDenseBootstrapHybridGiantKey {
     }
 };
 
+template <class Schedule>
+struct CKKSDenseBootstrapEncapsulationKey {
+    using P = typename Schedule::Param;
+
+    CKKSSecretKeySwitchKey<P, Schedule::input_log_q> input_to_bootstrap{};
+    CKKSSecretKeySwitchKey<P, Schedule::output_log_q> bootstrap_to_output{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(input_to_bootstrap, bootstrap_to_output);
+    }
+};
+
+template <class Schedule>
+inline void CKKSDenseBootstrapEncapsulationKeyGen(
+    CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
+    const Key<typename Schedule::Param> &input_output_key,
+    const Key<typename Schedule::Param> &bootstrap_key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+    CKKSSecretKeySwitchKeyGen<P, Schedule::input_log_q>(
+        encapsulation_key.input_to_bootstrap, input_output_key, bootstrap_key,
+        noise);
+    CKKSSecretKeySwitchKeyGen<P, Schedule::output_log_q>(
+        encapsulation_key.bootstrap_to_output, bootstrap_key, input_output_key,
+        noise);
+}
+
 template <class Schedule, std::size_t I>
 using CKKSDenseBootstrapCoeffToSlotGaloisKey = CKKSSparseGaloisKey<
     typename Schedule::Param,
@@ -8468,6 +8559,66 @@ inline void CKKSDenseBootstrapFromLevelWithKeyProviderTimed(
     });
     ckks_detail::CKKSDenseBootstrapWithKeyProviderImpl<Schedule>(
         res, *normalized, key_provider, &timings);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
+          class KeyProvider>
+inline void CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const KeyProvider &bootstrap_key_provider,
+    const CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key)
+{
+    auto normalized = std::make_unique<typename Schedule::InputCiphertext>();
+    CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct);
+
+    auto bootstrap_input = std::make_unique<typename Schedule::InputCiphertext>();
+    CKKSSecretKeySwitch<typename Schedule::Param, Schedule::input_log_q,
+                        Schedule::log_delta>(
+        *bootstrap_input, *normalized, encapsulation_key.input_to_bootstrap);
+
+    auto bootstrap_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    CKKSDenseBootstrapWithKeyProvider<Schedule>(
+        *bootstrap_output, *bootstrap_input, bootstrap_key_provider);
+
+    CKKSSecretKeySwitch<typename Schedule::Param, Schedule::output_log_q,
+                        Schedule::log_delta>(
+        res, *bootstrap_output, encapsulation_key.bootstrap_to_output);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
+          class KeyProvider>
+inline void CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const KeyProvider &bootstrap_key_provider,
+    const CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
+    CKKSDenseBootstrapTimings &timings)
+{
+    timings = {};
+    auto normalized = std::make_unique<typename Schedule::InputCiphertext>();
+    ckks_detail::CKKSTimeBootstrapStage(&timings.normalize_ms, [&] {
+        CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct);
+    });
+
+    auto bootstrap_input = std::make_unique<typename Schedule::InputCiphertext>();
+    ckks_detail::CKKSTimeBootstrapStage(&timings.input_secret_switch_ms, [&] {
+        CKKSSecretKeySwitch<typename Schedule::Param, Schedule::input_log_q,
+                            Schedule::log_delta>(
+            *bootstrap_input, *normalized, encapsulation_key.input_to_bootstrap);
+    });
+
+    auto bootstrap_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    ckks_detail::CKKSDenseBootstrapWithKeyProviderImpl<Schedule>(
+        *bootstrap_output, *bootstrap_input, bootstrap_key_provider, &timings);
+
+    ckks_detail::CKKSTimeBootstrapStage(&timings.output_secret_switch_ms, [&] {
+        CKKSSecretKeySwitch<typename Schedule::Param, Schedule::output_log_q,
+                            Schedule::log_delta>(
+            res, *bootstrap_output, encapsulation_key.bootstrap_to_output);
+    });
 }
 
 template <class Schedule>

@@ -290,6 +290,8 @@ double elapsed_ms(F &&fn)
 void print_bootstrap_timings(const TFHEpp::CKKSDenseBootstrapTimings &timings)
 {
     std::cout << "bootstrap_normalize_ms=" << timings.normalize_ms << '\n';
+    std::cout << "bootstrap_input_secret_switch_ms="
+              << timings.input_secret_switch_ms << '\n';
     std::cout << "bootstrap_modraise_ms=" << timings.modraise_ms << '\n';
     std::cout << "bootstrap_coeff_to_slot_ms=" << timings.coeff_to_slot_ms
               << '\n';
@@ -300,6 +302,8 @@ void print_bootstrap_timings(const TFHEpp::CKKSDenseBootstrapTimings &timings)
               << '\n';
     std::cout << "bootstrap_slot_to_coeff_ms=" << timings.slot_to_coeff_ms
               << '\n';
+    std::cout << "bootstrap_output_secret_switch_ms="
+              << timings.output_secret_switch_ms << '\n';
     std::cout << "bootstrap_timed_total_ms=" << timings.total_ms() << '\n';
 }
 
@@ -1824,6 +1828,77 @@ int run_toy_schedule_product_bootstrap_validation(
     return err <= tol ? 0 : 1;
 }
 
+template <class Schedule>
+int run_toy_schedule_encapsulated_product_bootstrap_validation(
+    bool keep_dir, const char *label, const char *directory_name, double tol)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    static_assert(ProductCt::log_q > Schedule::input_log_q);
+
+    const std::filesystem::path key_dir =
+        std::filesystem::temp_directory_path() / directory_name;
+    std::filesystem::remove_all(key_dir);
+
+    auto external_key = std::make_unique<TFHEpp::Key<P>>();
+    auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
+    fill_test_key<P>(*external_key);
+    fill_sparse_test_key<P>(*bootstrap_key, 2);
+
+    TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(
+        key_dir, *bootstrap_key, {0.0, 0});
+    auto encapsulation_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    TFHEpp::CKKSDenseBootstrapEncapsulationKeyGen<Schedule>(
+        *encapsulation_key, *external_key, *bootstrap_key, {0.0, 0});
+
+    auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*lhs);
+    fill_alternate_test_slots<P>(*rhs);
+    multiply_slots<P>(*expected, *lhs, *rhs);
+
+    auto lhs_ct = std::make_unique<FreshCt>();
+    auto rhs_ct = std::make_unique<FreshCt>();
+    TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+        *lhs_ct, *lhs, *external_key, {0.0, 0});
+    TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+        *rhs_ct, *rhs, *external_key, {0.0, 0});
+
+    auto relin =
+        TFHEpp::makeCKKSRelinKey<P, ProductCt::log_q>(*external_key, {0.0, 0});
+    auto product = std::make_unique<ProductCt>();
+    TFHEpp::CKKSMult<P>(*product, *lhs_ct, *rhs_ct, *relin);
+
+    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings timings;
+    TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<
+        Schedule>(*output, *product, provider, *encapsulation_key, timings);
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *output, *external_key);
+    const double err = max_error<P>(*decoded, *expected);
+
+    print_schedule_report<Schedule>(label, &key_dir);
+    std::cout << label << " product_fresh_logQ=" << FreshCt::log_q
+              << " product_logQ=" << ProductCt::log_q
+              << " normalized_logQ=" << Schedule::input_log_q
+              << " bootstrap_sparse_weight=2\n";
+    print_bootstrap_timings(timings);
+    std::cout << label << "_max_error=" << err << '\n';
+
+    if (!keep_dir) std::filesystem::remove_all(key_dir);
+    return err <= tol ? 0 : 1;
+}
+
 int run_toy_validation(bool keep_dir)
 {
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
@@ -1841,9 +1916,14 @@ int run_toy_inverse_validation(bool keep_dir)
             keep_dir, "toy-inverse",
             "tfhepp_ckks_bootstrap_validation_toy_inverse", 0.05) != 0)
         return 1;
-    return run_toy_schedule_product_bootstrap_validation<Schedule>(
-        keep_dir, "toy-inverse-product",
-        "tfhepp_ckks_bootstrap_validation_toy_inverse_product", 0.05);
+    if (run_toy_schedule_product_bootstrap_validation<Schedule>(
+            keep_dir, "toy-inverse-product",
+            "tfhepp_ckks_bootstrap_validation_toy_inverse_product", 0.05) != 0)
+        return 1;
+    return run_toy_schedule_encapsulated_product_bootstrap_validation<Schedule>(
+        keep_dir, "toy-inverse-encapsulated-product",
+        "tfhepp_ckks_bootstrap_validation_toy_inverse_encapsulated_product",
+        0.05);
 }
 
 template <class Schedule>
