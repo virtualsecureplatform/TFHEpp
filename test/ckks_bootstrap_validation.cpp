@@ -850,6 +850,120 @@ void print_evalmod_approximation_report(const char *label)
 }
 
 template <class Schedule>
+int print_practical_readiness_report(const char *label,
+                                     std::size_t bootstrap_sparse_weight)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    using PostBootstrapProductCt = TFHEpp::CKKSMultResult<
+        P, Schedule::output_log_q, Schedule::log_delta,
+        Schedule::output_log_q, Schedule::log_delta>;
+
+    const EvalModApproximationMetrics evalmod_metrics =
+        measure_evalmod_approximation(Schedule::evalmod_k,
+                                      Schedule::evalmod_degree,
+                                      Schedule::log_message_ratio,
+                                      Schedule::evalmod_double_angle,
+                                      Schedule::evalmod_inv_degree);
+    const std::uintmax_t seeded_bootstrap_bytes =
+        seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>();
+    const std::uintmax_t seeded_encap_bytes =
+        TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
+            Schedule>();
+    const std::uintmax_t seeded_product_relin_bytes =
+        TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>();
+    const std::uintmax_t seeded_post_product_relin_bytes =
+        TFHEpp::CKKSSeededRelinKeyByteEstimate<
+            P, PostBootstrapProductCt::log_q>();
+    const std::uintmax_t seeded_artifact_bytes =
+        seeded_bootstrap_bytes + seeded_encap_bytes +
+        seeded_product_relin_bytes + seeded_post_product_relin_bytes;
+    const std::uintmax_t estimated_disk_need =
+        seeded_artifact_bytes + keygen_disk_reserve_bytes;
+
+    std::uintmax_t available_bytes = 0;
+    const bool have_space =
+        available_space_bytes(std::filesystem::path{"."}, available_bytes);
+    const bool disk_advisory_ready =
+        have_space && available_bytes >= estimated_disk_need;
+
+    const bool ring_ready = P::n == (1U << 15);
+    const bool torus_ready =
+        std::numeric_limits<typename P::T>::digits >= Schedule::boot_log_q;
+    const bool post_product_ready =
+        Schedule::supports_post_bootstrap_product &&
+        PostBootstrapProductCt::log_q == Schedule::post_bootstrap_product_log_q;
+    const bool sparse_weight_ready =
+        sparse_weight_fits_bounded_modraise<Schedule>(
+            bootstrap_sparse_weight);
+    const bool evalmod_ready = evalmod_metrics.message_bits >= 30.0;
+    const bool output_margin_ready =
+        Schedule::output_log_q >= Schedule::log_delta + 64;
+
+    std::cout << label << " readiness_ring_n=" << P::n
+              << " ring_is_2p15=" << (ring_ready ? 1 : 0) << '\n';
+    std::cout << label << " readiness_torus_bits="
+              << std::numeric_limits<typename P::T>::digits
+              << " boot_logQ=" << Schedule::boot_log_q
+              << " torus_capacity_ready=" << (torus_ready ? 1 : 0) << '\n';
+    std::cout << label << " readiness_input_logQ="
+              << Schedule::input_log_q << " output_logQ="
+              << Schedule::output_log_q << " log_delta="
+              << Schedule::log_delta << " output_margin_bits="
+              << (Schedule::output_log_q - Schedule::log_delta)
+              << " output_margin_ready=" << (output_margin_ready ? 1 : 0)
+              << '\n';
+    std::cout << label << " readiness_product_logQ=" << ProductCt::log_q
+              << " post_bootstrap_product_logQ="
+              << PostBootstrapProductCt::log_q
+              << " product_bootstrap_slack="
+              << Schedule::post_bootstrap_product_slack
+              << " post_product_ready=" << (post_product_ready ? 1 : 0)
+              << '\n';
+    std::cout << label << " readiness_evalmod_message_bits="
+              << evalmod_metrics.message_bits
+              << " evalmod_basis_bits=" << evalmod_metrics.basis_bits
+              << " evalmod_ready=" << (evalmod_ready ? 1 : 0) << '\n';
+    std::cout << label << " readiness_bootstrap_sparse_weight="
+              << bootstrap_sparse_weight
+              << " bounded_sparse_weight_max="
+              << bounded_modraise_sparse_weight_max<Schedule>()
+              << " sparse_weight_ready=" << (sparse_weight_ready ? 1 : 0)
+              << '\n';
+    std::cout << label << " readiness_seeded_hybrid_key_bytes="
+              << seeded_bootstrap_bytes
+              << " seeded_encapsulation_key_bytes=" << seeded_encap_bytes
+              << " seeded_product_relin_key_bytes="
+              << seeded_product_relin_bytes
+              << " seeded_post_product_relin_key_bytes="
+              << seeded_post_product_relin_bytes
+              << " seeded_artifact_bytes=" << seeded_artifact_bytes << '\n';
+    if (have_space)
+        std::cout << label << " readiness_disk_available_bytes="
+                  << available_bytes << '\n';
+    else
+        std::cout << label << " readiness_disk_available_bytes=unknown\n";
+    std::cout << label << " readiness_disk_required_with_reserve_bytes="
+              << estimated_disk_need
+              << " disk_advisory_ready=" << (disk_advisory_ready ? 1 : 0)
+              << '\n';
+    std::cout << label
+              << " readiness_next_keygen=--lvl6-tuned-seeded-hybrid-keygen-next DIR\n";
+    std::cout << label
+              << " readiness_next_run=--lvl6-tuned-seeded-hybrid-run-chained-product-encap DIR\n";
+
+    return ring_ready && torus_ready && post_product_ready &&
+                   sparse_weight_ready && evalmod_ready && output_margin_ready
+               ? 0
+               : 1;
+}
+
+template <class Schedule>
 void print_schedule_report(const char *label,
                            const std::filesystem::path *key_dir = nullptr)
 {
@@ -3472,6 +3586,7 @@ void print_usage(const char *program)
                  " [--lvl6-hybrid-run-product-encap DIR]"
                  " [--lvl6-robust-plan]"
                  " [--lvl6-tuned-plan]"
+                 " [--lvl6-tuned-readiness]"
                  " [--lvl6-tuned-hybrid-keygen DIR]"
                  " [--lvl6-tuned-hybrid-keygen-next DIR]"
                  " [--lvl6-tuned-hybrid-run DIR]"
@@ -3601,6 +3716,13 @@ int main(int argc, char **argv)
         else if (arg == "--lvl6-tuned-plan") {
             saw_action = true;
             print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
+        }
+        else if (arg == "--lvl6-tuned-readiness") {
+            saw_action = true;
+            print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
+            if (print_practical_readiness_report<Lvl6TunedSchedule>(
+                    "lvl6-tuned", lvl6_sparse_weight) != 0)
+                return 1;
         }
         else if (arg == "--lvl6-inverse-plan") {
             saw_action = true;
