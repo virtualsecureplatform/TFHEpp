@@ -312,6 +312,11 @@ std::string manifest_status(const std::filesystem::path &root)
     }
 }
 
+template <int HybridThreshold>
+using Lvl6HybridThresholdSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
+    TFHEpp::lvl6param, 50, 8, 880, 50, 5, 30, 16, 3, 0, 50, 128, 0, 50, 50,
+    35, 5, 5, HybridThreshold>;
+
 template <class Schedule>
 void print_schedule_report(const char *label,
                            const std::filesystem::path *key_dir = nullptr)
@@ -379,7 +384,8 @@ void print_schedule_report(const char *label,
         TFHEpp::CKKSLinearTransformStagesHybridGiantRotationEvalAutoCount<P>(
             linear_plan.coeff_to_slot_stages, 0,
             linear_plan.coeff_to_slot_stages.size(),
-            Schedule::linear_bsgs_step);
+            Schedule::linear_bsgs_step,
+            Schedule::hybrid_giant_direct_popcount_threshold);
     const std::size_t stc_current_evalautos =
         TFHEpp::CKKSLinearTransformStagesDualInputSharedTailRotationEvalAutoCount<
             P>(linear_plan.slot_to_coeff_stages, 0,
@@ -396,7 +402,8 @@ void print_schedule_report(const char *label,
             CKKSLinearTransformStagesDualInputSharedTailHybridGiantRotationEvalAutoCount<
                 P>(linear_plan.slot_to_coeff_stages, 0,
                    linear_plan.slot_to_coeff_stages.size(),
-                   Schedule::linear_bsgs_step);
+                   Schedule::linear_bsgs_step,
+                   Schedule::hybrid_giant_direct_popcount_threshold);
 
     std::cout << label << " n=" << P::n << " logQ="
               << Schedule::boot_log_q << " input_logQ="
@@ -437,6 +444,8 @@ void print_schedule_report(const char *label,
               << stc_direct_evalautos << '\n';
     std::cout << label << " rotation_evalautos hybrid c2s="
               << c2s_hybrid_evalautos << " stc=" << stc_hybrid_evalautos
+              << " direct_popcount_threshold="
+              << Schedule::hybrid_giant_direct_popcount_threshold
               << '\n';
     std::cout << label << " sparse_key_bytes=" << sparse_bytes
               << " streamed_peak_bytes=" << streamed_peak_bytes
@@ -462,6 +471,15 @@ void print_schedule_report(const char *label,
                   << " disk_bytes=" << directory_size_bytes(*key_dir)
                   << '\n';
     }
+}
+
+void print_lvl6_hybrid_threshold_reports()
+{
+    print_schedule_report<Lvl6HybridThresholdSchedule<1>>("lvl6-hybrid-th1");
+    print_schedule_report<Lvl6HybridThresholdSchedule<2>>("lvl6-hybrid-th2");
+    print_schedule_report<Lvl6HybridThresholdSchedule<3>>("lvl6-hybrid-th3");
+    print_schedule_report<Lvl6HybridThresholdSchedule<4>>("lvl6-hybrid-th4");
+    print_schedule_report<Lvl6HybridThresholdSchedule<5>>("lvl6-hybrid-th5");
 }
 
 template <class Schedule>
@@ -1306,10 +1324,14 @@ void print_usage(const char *program)
     std::cerr << "Usage: " << program
               << " [--toy] [--keep] [--lvl6-sparse-key H|--lvl6-dense-key]"
                  " [--lvl6-plan] [--lvl6-keygen DIR]"
+                 " [--lvl6-hybrid-thresholds-plan]"
                  " [--lvl6-keygen-next DIR] [--lvl6-run DIR]"
                  " [--lvl6-hybrid-keygen DIR]"
                  " [--lvl6-hybrid-keygen-next DIR]"
                  " [--lvl6-hybrid-run DIR]"
+                 " [--lvl6-hybrid-th3-keygen DIR]"
+                 " [--lvl6-hybrid-th3-keygen-next DIR]"
+                 " [--lvl6-hybrid-th3-run DIR]"
                  " [--lvl6-debug-modraise]"
                  " [--lvl6-debug-modraise-sparse H]"
                  " [--lvl6-debug-c2s DIR] [--lvl6-debug-evalmod DIR]"
@@ -1325,7 +1347,8 @@ void print_usage(const char *program)
 
 int main(int argc, char **argv)
 {
-    using Lvl6Schedule = TFHEpp::CKKSDenseBootstrapSchedule<TFHEpp::lvl6param>;
+    using Lvl6Schedule = Lvl6HybridThresholdSchedule<4>;
+    using Lvl6HybridTh3Schedule = Lvl6HybridThresholdSchedule<3>;
     constexpr std::size_t default_lvl6_sparse_weight = 192;
 
     bool saw_action = false;
@@ -1361,6 +1384,10 @@ int main(int argc, char **argv)
             saw_action = true;
             print_schedule_report<Lvl6Schedule>("lvl6");
         }
+        else if (arg == "--lvl6-hybrid-thresholds-plan") {
+            saw_action = true;
+            print_lvl6_hybrid_threshold_reports();
+        }
         else if (arg == "--lvl6-debug-modraise") {
             saw_action = true;
             print_schedule_report<Lvl6Schedule>("lvl6");
@@ -1385,6 +1412,9 @@ int main(int argc, char **argv)
                  arg == "--lvl6-hybrid-keygen" ||
                  arg == "--lvl6-hybrid-keygen-next" ||
                  arg == "--lvl6-hybrid-run" ||
+                 arg == "--lvl6-hybrid-th3-keygen" ||
+                 arg == "--lvl6-hybrid-th3-keygen-next" ||
+                 arg == "--lvl6-hybrid-th3-run" ||
                  arg == "--lvl6-hybrid-debug-c2s" ||
                  arg == "--lvl6-hybrid-debug-evalmod" ||
                  arg == "--lvl6-hybrid-debug-stc" ||
@@ -1427,6 +1457,23 @@ int main(int argc, char **argv)
             else if (arg == "--lvl6-hybrid-run") {
                 print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
                 if (run_hybrid_filesystem_bootstrap<Lvl6Schedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-th3-keygen") {
+                if (run_hybrid_keygen<Lvl6HybridTh3Schedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-th3-keygen-next") {
+                if (run_hybrid_keygen_next<Lvl6HybridTh3Schedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-th3-run") {
+                print_schedule_report<Lvl6HybridTh3Schedule>("lvl6-th3",
+                                                             &key_dir);
+                if (run_hybrid_filesystem_bootstrap<Lvl6HybridTh3Schedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
                     return 1;
             }

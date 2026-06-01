@@ -487,6 +487,7 @@ void test_lvl6_factorized_stage_shape()
     static_assert(Schedule::coeff_to_slot_fuse_radix == 5);
     static_assert(Schedule::slot_to_coeff_fuse_radix == 5);
     static_assert(Schedule::linear_bsgs_step == 128);
+    static_assert(Schedule::hybrid_giant_direct_popcount_threshold == 4);
     static_assert(Schedule::raw_linear_stage_count == 14);
     static_assert(Schedule::coeff_to_slot_level_count == 3);
     static_assert(Schedule::slot_to_coeff_level_count == 3);
@@ -576,7 +577,8 @@ void test_lvl6_factorized_stage_shape()
                 stage, Schedule::linear_bsgs_step);
         c2s_hybrid_evalautos +=
             TFHEpp::CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<L>(
-                stage, Schedule::linear_bsgs_step);
+                stage, Schedule::linear_bsgs_step,
+                Schedule::hybrid_giant_direct_popcount_threshold);
         c2s_direct_evalautos +=
             TFHEpp::CKKSLinearTransformStageDirectRotationEvalAutoCount<L>(
                 stage, Schedule::linear_bsgs_step);
@@ -601,7 +603,8 @@ void test_lvl6_factorized_stage_shape()
             CKKSLinearTransformStagesDualInputSharedTailHybridGiantRotationEvalAutoCount<
                 L>(linear_plan.slot_to_coeff_stages, 0,
                    linear_plan.slot_to_coeff_stages.size(),
-                   Schedule::linear_bsgs_step);
+                   Schedule::linear_bsgs_step,
+                   Schedule::hybrid_giant_direct_popcount_threshold);
     if (c2s_direct_evalautos == 0 ||
         c2s_direct_evalautos >= c2s_current_evalautos)
         std::exit(1);
@@ -735,7 +738,10 @@ void test_lvl6_factorized_stage_shape()
               << "/" << stc_direct_evalautos << std::endl;
     std::cout << "CKKS lvl6 dense bootstrap rotation evalautos hybrid "
               << "c2s=" << c2s_hybrid_evalautos
-              << " stc=" << stc_hybrid_evalautos << std::endl;
+              << " stc=" << stc_hybrid_evalautos
+              << " direct_popcount_threshold="
+              << Schedule::hybrid_giant_direct_popcount_threshold
+              << std::endl;
     std::cout << "CKKS lvl6 dense bootstrap key rows sparse/full="
               << sparse_key_rows << "/" << full_key_rows
               << " bytes=" << sparse_key_bytes << "/" << full_key_bytes

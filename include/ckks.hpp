@@ -448,6 +448,7 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     static constexpr std::uint32_t current_version = 3;
     static constexpr std::uint32_t sparse_format = 0;
     static constexpr std::uint32_t hybrid_giant_format = 1;
+    static constexpr std::uint32_t hybrid_giant_tuned_format_base = 1000;
 
     std::uint32_t version = current_version;
     std::uint32_t key_format = sparse_format;
@@ -4043,7 +4044,8 @@ template <
     std::uint32_t SlotToCoeffPlainLogDelta =
         (LinearPlainLogDelta == 50 ? 35 : LinearPlainLogDelta),
     std::uint32_t CoeffToSlotFuseRadix = LinearFuseRadix,
-    std::uint32_t SlotToCoeffFuseRadix = LinearFuseRadix>
+    std::uint32_t SlotToCoeffFuseRadix = LinearFuseRadix,
+    int HybridGiantDirectPopcountThreshold = 4>
 struct CKKSDenseBootstrapSchedule {
     static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta > 0);
@@ -4056,6 +4058,7 @@ struct CKKSDenseBootstrapSchedule {
     static_assert(CoeffToSlotFuseRadix > 0);
     static_assert(SlotToCoeffFuseRadix > 0);
     static_assert(LinearBSGSStep > 0);
+    static_assert(HybridGiantDirectPopcountThreshold > 0);
     static_assert(EvalModK > 0);
     static_assert(ModRaiseMaskBound < EvalModK);
     static_assert(EvalModDegree >= 2 * (EvalModK - 1),
@@ -4079,6 +4082,8 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr std::uint32_t slot_to_coeff_fuse_radix =
         SlotToCoeffFuseRadix;
     static constexpr int linear_bsgs_step = LinearBSGSStep;
+    static constexpr int hybrid_giant_direct_popcount_threshold =
+        HybridGiantDirectPopcountThreshold;
     static constexpr std::uint32_t raw_linear_stage_count = P::nbit - 1;
     static constexpr std::uint32_t coeff_to_slot_level_count =
         ckks_detail::ceil_div(raw_linear_stage_count, CoeffToSlotFuseRadix);
@@ -4501,19 +4506,22 @@ inline void CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage(
         CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
             usage.coeff_to_slot_binary[i], usage.coeff_to_slot_binary[i + 1],
             usage.coeff_to_slot_direct[i + 1],
-            linear_plan.coeff_to_slot_stages[i], Schedule::linear_bsgs_step);
+            linear_plan.coeff_to_slot_stages[i], Schedule::linear_bsgs_step,
+            Schedule::hybrid_giant_direct_popcount_threshold);
     }
     CKKSMarkConjugationKeyIndex<P>(usage.packed_conjugate);
     for (std::size_t i = 0; i < linear_plan.slot_to_coeff_stages.size(); i++) {
         CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
             usage.slot_to_coeff_binary[i], usage.slot_to_coeff_binary[i + 1],
             usage.slot_to_coeff_direct[i + 1],
-            linear_plan.slot_to_coeff_stages[i], Schedule::linear_bsgs_step);
+            linear_plan.slot_to_coeff_stages[i], Schedule::linear_bsgs_step,
+            Schedule::hybrid_giant_direct_popcount_threshold);
         CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
             usage.slot_to_coeff_binary[i], usage.slot_to_coeff_binary[i + 1],
             usage.slot_to_coeff_direct[i + 1],
             linear_plan.slot_to_coeff_imag_stages[i],
-            Schedule::linear_bsgs_step);
+            Schedule::linear_bsgs_step,
+            Schedule::hybrid_giant_direct_popcount_threshold);
     }
 }
 
@@ -7158,8 +7166,17 @@ CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest(
     CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> rotation_usage;
     CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
         rotation_usage, linear_plan);
-    manifest.key_format =
-        CKKSDenseBootstrapKeyDirectoryManifest::hybrid_giant_format;
+    if constexpr (Schedule::hybrid_giant_direct_popcount_threshold == 4) {
+        manifest.key_format =
+            CKKSDenseBootstrapKeyDirectoryManifest::hybrid_giant_format;
+    }
+    else {
+        manifest.key_format =
+            CKKSDenseBootstrapKeyDirectoryManifest::
+                hybrid_giant_tuned_format_base +
+            static_cast<std::uint32_t>(
+                Schedule::hybrid_giant_direct_popcount_threshold);
+    }
     manifest.sparse_key_rows = 0;
     manifest.streamed_peak_key_rows = 0;
     manifest.hybrid_key_rows =
