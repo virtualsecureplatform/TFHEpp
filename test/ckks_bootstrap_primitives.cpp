@@ -763,6 +763,68 @@ void test_lvl6_factorized_stage_shape()
               << std::endl;
 }
 
+void test_popcount3_direct_rotation()
+{
+    using M = TinyDeepMultiLimbCKKSParam;
+    constexpr std::uint32_t log_q = 520;
+    constexpr std::uint32_t log_delta = 40;
+    constexpr int steps = 7;
+
+    auto key = std::make_unique<TFHEpp::Key<M>>();
+    fill_test_key<M>(*key);
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    for (std::size_t i = 0; i < M::n / 2; i++) {
+        (*slots)[i] = {
+            static_cast<double>(static_cast<int>(i % 17) - 8) / 512.0,
+            static_cast<double>(static_cast<int>((3 * i) % 19) - 9) / 1024.0};
+    }
+
+    auto ct = std::make_unique<TFHEpp::CKKSCiphertext<M, log_q, log_delta>>();
+    TFHEpp::ckksSlotEncrypt<M, log_q, log_delta>(*ct, *slots, *key, {0.0, 0});
+
+    TFHEpp::CKKSRotationKeyIndexSet<M> binary_indices{};
+    TFHEpp::CKKSDirectRotationKeyIndexSet<M> direct_indices{};
+    TFHEpp::CKKSClearRotationKeyIndexSet<M>(binary_indices);
+    TFHEpp::CKKSClearDirectRotationKeyIndexSet<M>(direct_indices);
+    TFHEpp::CKKSMarkRotationPowerKeyIndices<M>(binary_indices, steps);
+    TFHEpp::CKKSMarkDirectRotationKeyIndex<M>(direct_indices, steps);
+
+    auto binary_gk =
+        std::make_unique<TFHEpp::CKKSSparseGaloisKey<M, log_q>>();
+    auto direct_gk =
+        std::make_unique<TFHEpp::CKKSDirectSparseGaloisKey<M, log_q>>();
+    TFHEpp::CKKSSparseGaloisKeyGen<M, log_q>(*binary_gk, *key,
+                                             binary_indices, {M::α, 0});
+    TFHEpp::CKKSDirectSparseGaloisKeyGen<M, log_q>(*direct_gk, *key,
+                                                   direct_indices, {M::α, 0});
+
+    auto binary_rotated =
+        std::make_unique<TFHEpp::CKKSCiphertext<M, log_q, log_delta>>();
+    auto direct_rotated =
+        std::make_unique<TFHEpp::CKKSCiphertext<M, log_q, log_delta>>();
+    TFHEpp::CKKSRotateSlots<M, log_q>(binary_rotated->ct, ct->ct, steps,
+                                      *binary_gk);
+    TFHEpp::CKKSRotateSlots<M, log_q>(direct_rotated->ct, ct->ct, steps,
+                                      *direct_gk);
+
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto binary_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto direct_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::rotateCKKSSlotVector<M>(*expected, *slots, steps);
+    TFHEpp::ckksSlotDecrypt<M, log_q, log_delta>(*binary_decoded,
+                                                 *binary_rotated, *key);
+    TFHEpp::ckksSlotDecrypt<M, log_q, log_delta>(*direct_decoded,
+                                                 *direct_rotated, *key);
+
+    require_close_param<M>(*binary_decoded, *expected, 1e-6,
+                           "CKKS popcount-3 binary rotation");
+    require_close_param<M>(*direct_decoded, *expected, 1e-6,
+                           "CKKS popcount-3 direct rotation");
+    require_close_param<M>(*direct_decoded, *binary_decoded, 1e-6,
+                           "CKKS popcount-3 direct/binary rotation");
+}
+
 void test_dense_bootstrap_api_shape()
 {
     using M = TinyDeepMultiLimbCKKSParam;
@@ -1988,6 +2050,7 @@ int main()
     test_dense_coeff_slot_diagonals();
     test_factorized_coeff_slot_stages();
     test_lvl6_factorized_stage_shape();
+    test_popcount3_direct_rotation();
     test_dense_bootstrap_api_shape();
     test_dense_bootstrap_plain_split_pipeline();
     test_dense_bootstrap_encrypted_pipeline();
