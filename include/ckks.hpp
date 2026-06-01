@@ -8109,6 +8109,30 @@ inline void CKKSDenseBootstrapHybridGiant(
     CKKSDenseBootstrapWithKeyProvider<Schedule>(res, ct, key_provider);
 }
 
+using lvl6CKKSDenseBootstrapInput =
+    typename lvl6CKKSDenseBootstrapSchedule::InputCiphertext;
+using lvl6CKKSDenseBootstrapOutput =
+    typename lvl6CKKSDenseBootstrapSchedule::OutputCiphertext;
+using lvl6CKKSDenseBootstrapSparseKey =
+    CKKSDenseBootstrapKey<lvl6CKKSDenseBootstrapSchedule>;
+using lvl6CKKSDenseBootstrapHybridGiantKey =
+    CKKSDenseBootstrapHybridGiantKey<lvl6CKKSDenseBootstrapSchedule>;
+using lvl6CKKSDenseBootstrapSparseFilesystemKeyProvider =
+    CKKSDenseBootstrapFilesystemKeyProvider<lvl6CKKSDenseBootstrapSchedule>;
+using lvl6CKKSDenseBootstrapHybridGiantFilesystemKeyProvider =
+    CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
+        lvl6CKKSDenseBootstrapSchedule>;
+using lvl6CKKSDenseBootstrapFastHybridGiantKey =
+    CKKSDenseBootstrapHybridGiantKey<lvl6CKKSDenseBootstrapFastSchedule>;
+using lvl6CKKSDenseBootstrapCompactHybridGiantKey =
+    CKKSDenseBootstrapHybridGiantKey<lvl6CKKSDenseBootstrapCompactSchedule>;
+using lvl6CKKSDenseBootstrapFastHybridGiantFilesystemKeyProvider =
+    CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
+        lvl6CKKSDenseBootstrapFastSchedule>;
+using lvl6CKKSDenseBootstrapCompactHybridGiantFilesystemKeyProvider =
+    CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
+        lvl6CKKSDenseBootstrapCompactSchedule>;
+
 inline double CKKSPlainEvalModSineDegree5(double x)
 {
     constexpr double pi = 3.141592653589793238462643383279502884;

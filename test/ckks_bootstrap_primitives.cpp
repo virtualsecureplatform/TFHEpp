@@ -856,6 +856,49 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6FastSchedule::hybrid_giant_direct_popcount_threshold == 3);
     static_assert(Lvl6CompactSchedule::hybrid_giant_direct_popcount_threshold ==
                   4);
+    using Lvl6SparseKey = TFHEpp::CKKSDenseBootstrapKey<Lvl6FastSchedule>;
+    using Lvl6HybridKey =
+        TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6FastSchedule>;
+    using Lvl6CompactHybridKey =
+        TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6CompactSchedule>;
+    using Lvl6SparseFilesystemProvider =
+        TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Lvl6FastSchedule>;
+    using Lvl6HybridFilesystemProvider =
+        TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
+            Lvl6FastSchedule>;
+    using Lvl6CompactHybridFilesystemProvider =
+        TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
+            Lvl6CompactSchedule>;
+    static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapInput,
+                                 typename Lvl6FastSchedule::InputCiphertext>);
+    static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapOutput,
+                                 typename Lvl6FastSchedule::OutputCiphertext>);
+    static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapSparseKey,
+                                 Lvl6SparseKey>);
+    static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapHybridGiantKey,
+                                 TFHEpp::lvl6CKKSDenseBootstrapFastHybridGiantKey>);
+    static_assert(std::is_same_v<
+                  TFHEpp::lvl6CKKSDenseBootstrapHybridGiantKey, Lvl6HybridKey>);
+    static_assert(std::is_same_v<
+                  TFHEpp::lvl6CKKSDenseBootstrapCompactHybridGiantKey,
+                  Lvl6CompactHybridKey>);
+    static_assert(std::is_same_v<
+                  TFHEpp::
+                      lvl6CKKSDenseBootstrapSparseFilesystemKeyProvider,
+                  Lvl6SparseFilesystemProvider>);
+    static_assert(std::is_same_v<
+                  TFHEpp::
+                      lvl6CKKSDenseBootstrapHybridGiantFilesystemKeyProvider,
+                  TFHEpp::
+                      lvl6CKKSDenseBootstrapFastHybridGiantFilesystemKeyProvider>);
+    static_assert(std::is_same_v<
+                  TFHEpp::
+                      lvl6CKKSDenseBootstrapFastHybridGiantFilesystemKeyProvider,
+                  Lvl6HybridFilesystemProvider>);
+    static_assert(std::is_same_v<
+                  TFHEpp::
+                      lvl6CKKSDenseBootstrapCompactHybridGiantFilesystemKeyProvider,
+                  Lvl6CompactHybridFilesystemProvider>);
 
     using BootstrapKey = TFHEpp::CKKSDenseBootstrapKey<Schedule>;
     using HybridBootstrapKey =
