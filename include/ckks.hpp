@@ -181,6 +181,13 @@ constexpr std::size_t CKKSKeySwitchRowByteSize()
     return sizeof(TRLWE<P>);
 }
 
+template <class P, std::uint32_t LogQ>
+constexpr std::size_t CKKSRelinKeyByteEstimate()
+{
+    return CKKSRelinKeySwitchRowCount<P, LogQ>() *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
 template <class P>
 using CKKSRotationKeyIndexSet = std::array<bool, P::nbit + 1>;
 
@@ -7418,6 +7425,57 @@ inline std::filesystem::path CKKSDenseBootstrapEncapsulationKeyFile(
     const std::filesystem::path &root)
 {
     return ckks_detail::CKKSDenseBootstrapNamedPath(root, "encapsulation_key");
+}
+
+inline std::filesystem::path CKKSRelinKeyFile(const std::filesystem::path &root,
+                                              const std::string &name =
+                                                  "relin_key")
+{
+    return ckks_detail::CKKSDenseBootstrapNamedPath(root, name);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSRelinKeyGenToFile(
+    const std::filesystem::path &path, const Key<P> &key,
+    CKKSNoise noise = {P::α, 0},
+    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+{
+    if (!options.overwrite_existing && std::filesystem::exists(path)) return;
+
+    auto relinkey = makeCKKSRelinKey<P, LogQ>(key, noise);
+    CKKSSavePortableBinaryAtomic(path, *relinkey);
+}
+
+template <class P, std::uint32_t LogQ>
+inline bool CKKSRelinKeyGenNextMissingToFile(
+    const std::filesystem::path &path, const Key<P> &key,
+    CKKSNoise noise = {P::α, 0})
+{
+    if (std::filesystem::exists(path)) return false;
+    CKKSRelinKeyGenToFile<P, LogQ>(path, key, noise);
+    return true;
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSLoadRelinKeyFromFile(CKKSRelinKey<P, LogQ> &relinkey,
+                                     const std::filesystem::path &path)
+{
+    CKKSLoadPortableBinary(relinkey, path);
+}
+
+template <class P, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta>
+inline void CKKSMultWithRelinKeyFile(
+    CKKSMultResult<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta> &res,
+    const CKKSCiphertext<P, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<P, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &relin_key_file)
+{
+    using Traits =
+        CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
+    auto relinkey = std::make_unique<CKKSRelinKey<P, Traits::log_q>>();
+    CKKSLoadRelinKeyFromFile<P, Traits::log_q>(*relinkey, relin_key_file);
+    CKKSMult<P>(res, lhs, rhs, *relinkey);
 }
 
 template <class Schedule>

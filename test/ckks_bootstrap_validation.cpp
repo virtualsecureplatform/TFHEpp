@@ -465,6 +465,23 @@ void print_created_key_files(
     if (shown > limit) std::cout << "created_file_more=" << shown - limit << '\n';
 }
 
+template <class P, std::uint32_t LogQ>
+int generate_resume_checked_relin_key(const std::filesystem::path &path,
+                                      const TFHEpp::Key<P> &key,
+                                      TFHEpp::CKKSNoise noise,
+                                      const char *label)
+{
+    const bool generated =
+        TFHEpp::CKKSRelinKeyGenNextMissingToFile<P, LogQ>(path, key, noise);
+    const bool regenerated =
+        TFHEpp::CKKSRelinKeyGenNextMissingToFile<P, LogQ>(path, key, noise);
+    if (!generated || regenerated) {
+        std::cerr << label << "_relin_key_resume_failed\n";
+        return 1;
+    }
+    return 0;
+}
+
 template <class Schedule>
 std::string manifest_status(const std::filesystem::path &root)
 {
@@ -1954,12 +1971,24 @@ int run_toy_schedule_product_bootstrap_validation(
 
     const std::filesystem::path key_dir =
         std::filesystem::temp_directory_path() / directory_name;
+    const std::filesystem::path relin_key_file =
+        std::filesystem::temp_directory_path() /
+        (std::string(directory_name) + "_relin_key.bin");
     std::filesystem::remove_all(key_dir);
+    std::filesystem::remove(relin_key_file);
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_test_key<P>(*key);
     TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(key_dir, *key,
                                                           {0.0, 0});
+    if (generate_resume_checked_relin_key<P, ProductCt::log_q>(
+            relin_key_file, *key, {0.0, 0}, label) != 0) {
+        if (!keep_dir) {
+            std::filesystem::remove_all(key_dir);
+            std::filesystem::remove(relin_key_file);
+        }
+        return 1;
+    }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -1975,9 +2004,9 @@ int run_toy_schedule_product_bootstrap_validation(
     TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
         *rhs_ct, *rhs, *key, {0.0, 0});
 
-    auto relin = TFHEpp::makeCKKSRelinKey<P, ProductCt::log_q>(*key, {0.0, 0});
     auto product = std::make_unique<ProductCt>();
-    TFHEpp::CKKSMult<P>(*product, *lhs_ct, *rhs_ct, *relin);
+    TFHEpp::CKKSMultWithRelinKeyFile<P>(*product, *lhs_ct, *rhs_ct,
+                                         relin_key_file);
 
     TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
@@ -1994,10 +2023,19 @@ int run_toy_schedule_product_bootstrap_validation(
     std::cout << label << " product_fresh_logQ=" << FreshCt::log_q
               << " product_logQ=" << ProductCt::log_q
               << " normalized_logQ=" << Schedule::input_log_q << '\n';
+    std::cout << label << " relin_key_file=" << relin_key_file.string()
+              << " relin_key_bytes="
+              << std::filesystem::file_size(relin_key_file)
+              << " estimated_relin_key_bytes="
+              << TFHEpp::CKKSRelinKeyByteEstimate<P, ProductCt::log_q>()
+              << '\n';
     print_bootstrap_timings(timings);
     std::cout << label << "_max_error=" << err << '\n';
 
-    if (!keep_dir) std::filesystem::remove_all(key_dir);
+    if (!keep_dir) {
+        std::filesystem::remove_all(key_dir);
+        std::filesystem::remove(relin_key_file);
+    }
     return err <= tol ? 0 : 1;
 }
 
@@ -2019,8 +2057,12 @@ int run_toy_schedule_encapsulated_product_bootstrap_validation(
     const std::filesystem::path encapsulation_key_file =
         std::filesystem::temp_directory_path() /
         (std::string(directory_name) + "_encapsulation_key.bin");
+    const std::filesystem::path relin_key_file =
+        std::filesystem::temp_directory_path() /
+        (std::string(directory_name) + "_relin_key.bin");
     std::filesystem::remove_all(key_dir);
     std::filesystem::remove(encapsulation_key_file);
+    std::filesystem::remove(relin_key_file);
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
@@ -2042,6 +2084,16 @@ int run_toy_schedule_encapsulated_product_bootstrap_validation(
         if (!keep_dir) {
             std::filesystem::remove_all(key_dir);
             std::filesystem::remove(encapsulation_key_file);
+            std::filesystem::remove(relin_key_file);
+        }
+        return 1;
+    }
+    if (generate_resume_checked_relin_key<P, ProductCt::log_q>(
+            relin_key_file, *external_key, {0.0, 0}, label) != 0) {
+        if (!keep_dir) {
+            std::filesystem::remove_all(key_dir);
+            std::filesystem::remove(encapsulation_key_file);
+            std::filesystem::remove(relin_key_file);
         }
         return 1;
     }
@@ -2060,10 +2112,9 @@ int run_toy_schedule_encapsulated_product_bootstrap_validation(
     TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
         *rhs_ct, *rhs, *external_key, {0.0, 0});
 
-    auto relin =
-        TFHEpp::makeCKKSRelinKey<P, ProductCt::log_q>(*external_key, {0.0, 0});
     auto product = std::make_unique<ProductCt>();
-    TFHEpp::CKKSMult<P>(*product, *lhs_ct, *rhs_ct, *relin);
+    TFHEpp::CKKSMultWithRelinKeyFile<P>(*product, *lhs_ct, *rhs_ct,
+                                         relin_key_file);
 
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapTimings timings;
@@ -2088,12 +2139,19 @@ int run_toy_schedule_encapsulated_product_bootstrap_validation(
               << TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<
                      Schedule>()
               << '\n';
+    std::cout << label << " relin_key_file=" << relin_key_file.string()
+              << " relin_key_bytes="
+              << std::filesystem::file_size(relin_key_file)
+              << " estimated_relin_key_bytes="
+              << TFHEpp::CKKSRelinKeyByteEstimate<P, ProductCt::log_q>()
+              << '\n';
     print_bootstrap_timings(timings);
     std::cout << label << "_max_error=" << err << '\n';
 
     if (!keep_dir) {
         std::filesystem::remove_all(key_dir);
         std::filesystem::remove(encapsulation_key_file);
+        std::filesystem::remove(relin_key_file);
     }
     return err <= tol ? 0 : 1;
 }
