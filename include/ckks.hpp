@@ -169,6 +169,67 @@ struct CKKSSeededKeySwitchRow {
     }
 };
 
+template <class P, std::uint32_t LogQ>
+struct CKKSSeededRelinKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t key_switch_rows =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    using Rows = std::array<CKKSSeededKeySwitchRow<P, LogQ>, key_switch_rows>;
+
+    Rows data{};
+
+    CKKSSeededKeySwitchRow<P, LogQ> &operator[](std::size_t i)
+    {
+        return data[i];
+    }
+    const CKKSSeededKeySwitchRow<P, LogQ> &operator[](std::size_t i) const
+    {
+        return data[i];
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(data);
+    }
+};
+
+template <class P, std::uint32_t LogQ>
+struct CKKSSeededAutoKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t key_switch_rows =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    using Rows = std::array<CKKSSeededKeySwitchRow<P, LogQ>, key_switch_rows>;
+
+    std::array<Rows, P::k> data{};
+
+    Rows &operator[](std::size_t i) { return data[i]; }
+    const Rows &operator[](std::size_t i) const { return data[i]; }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(data);
+    }
+};
+
+template <class P, std::uint32_t LogQ>
+using CKKSSeededSecretKeySwitchKey = CKKSSeededAutoKey<P, LogQ>;
+
+template <class P, std::uint32_t LogQ>
+using CKKSSeededGaloisKey =
+    std::array<CKKSSeededAutoKey<P, LogQ>, P::nbit + 1>;
+
 namespace ckks_detail {
 
 template <class T>
@@ -418,6 +479,132 @@ struct CKKSHybridSparseGaloisKey {
     }
 };
 
+template <class P, std::uint32_t LogQ>
+struct CKKSSeededSparseGaloisKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+
+    CKKSRotationKeyIndexSet<P> available{};
+    std::array<std::unique_ptr<CKKSSeededAutoKey<P, LogQ>>, P::nbit + 1>
+        keys{};
+
+    bool has(std::size_t i) const
+    {
+        return i < keys.size() && available[i] && keys[i] != nullptr;
+    }
+
+    CKKSSeededAutoKey<P, LogQ> &get(std::size_t i)
+    {
+        assert(has(i));
+        return *keys[i];
+    }
+
+    const CKKSSeededAutoKey<P, LogQ> &get(std::size_t i) const
+    {
+        assert(has(i));
+        return *keys[i];
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(available, keys);
+    }
+};
+
+template <class P, std::uint32_t LogQ>
+struct CKKSSeededDirectSparseGaloisKeyEntry {
+    int steps = 0;
+    CKKSSeededAutoKey<P, LogQ> key{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(steps, key);
+    }
+};
+
+template <class P, std::uint32_t LogQ>
+struct CKKSSeededDirectSparseGaloisKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+
+    std::vector<CKKSSeededDirectSparseGaloisKeyEntry<P, LogQ>> keys{};
+
+    static constexpr int normalize_steps(int steps)
+    {
+        constexpr int half = static_cast<int>(P::n) / 2;
+        return ((steps % half) + half) % half;
+    }
+
+    bool has(int steps) const
+    {
+        steps = normalize_steps(steps);
+        if (steps == 0) return true;
+        return std::any_of(keys.begin(), keys.end(), [&](const auto &entry) {
+            return entry.steps == steps;
+        });
+    }
+
+    CKKSSeededAutoKey<P, LogQ> &get(int steps)
+    {
+        steps = normalize_steps(steps);
+        assert(steps != 0);
+        auto it = std::find_if(keys.begin(), keys.end(), [&](auto &entry) {
+            return entry.steps == steps;
+        });
+        assert(it != keys.end());
+        return it->key;
+    }
+
+    const CKKSSeededAutoKey<P, LogQ> &get(int steps) const
+    {
+        steps = normalize_steps(steps);
+        assert(steps != 0);
+        auto it =
+            std::find_if(keys.begin(), keys.end(), [&](const auto &entry) {
+                return entry.steps == steps;
+            });
+        assert(it != keys.end());
+        return it->key;
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
+    }
+};
+
+template <class P, std::uint32_t LogQ>
+struct CKKSSeededHybridSparseGaloisKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+
+    CKKSSeededSparseGaloisKey<P, LogQ> binary{};
+    CKKSSeededDirectSparseGaloisKey<P, LogQ> direct{};
+
+    bool has(int steps) const { return direct.has(steps) || binary.has(steps); }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(binary, direct);
+    }
+};
+
 struct CKKSNoise {
     double modular_stdev = 0.0;
     std::uint32_t uniform_bits = 0;
@@ -511,7 +698,9 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     static constexpr std::uint32_t current_version = 3;
     static constexpr std::uint32_t sparse_format = 0;
     static constexpr std::uint32_t hybrid_giant_format = 1;
+    static constexpr std::uint32_t seeded_hybrid_giant_format = 2;
     static constexpr std::uint32_t hybrid_giant_tuned_format_base = 1000;
+    static constexpr std::uint32_t seeded_hybrid_giant_tuned_format_base = 2000;
 
     std::uint32_t version = current_version;
     std::uint32_t key_format = sparse_format;
@@ -1883,11 +2072,66 @@ inline void CKKSSecretKeySwitchKeyGen(CKKSSecretKeySwitchKey<P, LogQ> &switch_ke
     }
 }
 
+template <class P, std::uint32_t LogQ>
+inline void CKKSSecretKeySwitchKeyGen(
+    CKKSSeededSecretKeySwitchKey<P, LogQ> &switch_key,
+    const Key<P> &source_key, const Key<P> &target_key,
+    CKKSNoise noise = {P::α, 0})
+{
+    static_assert(ckks_detail::supported_torus_v<P>);
+    constexpr int width = std::numeric_limits<typename P::T>::digits;
+    constexpr std::uint32_t row_count =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    constexpr std::uint32_t first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LogQ>();
+
+    auto partkey = std::make_unique<Polynomial<P>>();
+    auto gadget = std::make_unique<Polynomial<P>>();
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        for (std::uint32_t i = 0; i < P::n; i++)
+            (*partkey)[i] = source_key[k * P::n + i];
+
+        for (int j = 0; j < static_cast<int>(row_count); j++) {
+            const std::uint32_t full_row = first_row + j;
+            const int shift =
+                width - (full_row + 1) * static_cast<int>(P::B̅gbit);
+            for (std::uint32_t n = 0; n < P::n; n++)
+                (*gadget)[n] =
+                    ckks_detail::reduceToLevel<P, LogQ>((*partkey)[n] << shift);
+            ckks_detail::encryptPolynomialAtLevel<P, LogQ>(
+                switch_key[static_cast<std::size_t>(k)]
+                          [static_cast<std::size_t>(j)],
+                *gadget, target_key, noise);
+        }
+    }
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 inline void CKKSSecretKeySwitch(
     CKKSCiphertext<P, LogQ, LogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
     const CKKSSecretKeySwitchKey<P, LogQ> &switch_key)
+{
+    auto switched = std::make_unique<TRLWE<P>>();
+    TRLWE<P> out{};
+    for (std::uint32_t n = 0; n < P::n; n++)
+        out[P::k][n] = ckks_detail::reduceToLevel<P, LogQ>(ct.ct[P::k][n]);
+
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        CKKSKeySwitchRows<P, LogQ>(
+            *switched, ct.ct[static_cast<std::size_t>(k)],
+            switch_key[static_cast<std::size_t>(k)]);
+        CKKSSubTRLWEInPlace<P, LogQ>(out, *switched);
+    }
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(out);
+    res.ct = out;
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSSecretKeySwitch(
+    CKKSCiphertext<P, LogQ, LogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSSeededSecretKeySwitchKey<P, LogQ> &switch_key)
 {
     auto switched = std::make_unique<TRLWE<P>>();
     TRLWE<P> out{};
@@ -1939,8 +2183,55 @@ inline void CKKSAutoKeyGen(CKKSAutoKey<P, LogQ> &autokey, const uint d,
 }
 
 template <class P, std::uint32_t LogQ>
+inline void CKKSAutoKeyGen(CKKSSeededAutoKey<P, LogQ> &autokey, const uint d,
+                           const Key<P> &key,
+                           CKKSNoise noise = {P::α, 0})
+{
+    static_assert(ckks_detail::supported_torus_v<P>);
+    constexpr int width = std::numeric_limits<typename P::T>::digits;
+    constexpr std::uint32_t row_count =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    constexpr std::uint32_t first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LogQ>();
+
+    auto partkey = std::make_unique<Polynomial<P>>();
+    auto autokey_poly = std::make_unique<Polynomial<P>>();
+    auto gadget = std::make_unique<Polynomial<P>>();
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        for (std::uint32_t i = 0; i < P::n; i++)
+            (*partkey)[i] = key[k * P::n + i];
+
+        Automorphism<P>(*autokey_poly, *partkey, d);
+
+        for (int j = 0; j < static_cast<int>(row_count); j++) {
+            const std::uint32_t full_row = first_row + j;
+            const int shift =
+                width - (full_row + 1) * static_cast<int>(P::B̅gbit);
+            for (std::uint32_t n = 0; n < P::n; n++)
+                (*gadget)[n] = ckks_detail::reduceToLevel<P, LogQ>(
+                    (*autokey_poly)[n] << shift);
+            ckks_detail::encryptPolynomialAtLevel<P, LogQ>(
+                autokey[k][j], *gadget, key, noise);
+        }
+    }
+}
+
+template <class P, std::uint32_t LogQ>
 inline void CKKSGaloisKeyGen(CKKSGaloisKey<P, LogQ> &gk, const Key<P> &key,
                              CKKSNoise noise = {P::α, 0})
+{
+    std::uint64_t d = 5;
+    for (int i = 0; i < static_cast<int>(P::nbit); i++) {
+        CKKSAutoKeyGen<P, LogQ>(gk[i], static_cast<uint>(d), key, noise);
+        d = d * d % (2 * P::n);
+    }
+    CKKSAutoKeyGen<P, LogQ>(gk[P::nbit], 2 * P::n - 1, key, noise);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSSeededGaloisKeyGen(CKKSSeededGaloisKey<P, LogQ> &gk,
+                                   const Key<P> &key,
+                                   CKKSNoise noise = {P::α, 0})
 {
     std::uint64_t d = 5;
     for (int i = 0; i < static_cast<int>(P::nbit); i++) {
@@ -2034,8 +2325,87 @@ inline void CKKSHybridSparseGaloisKeyGen(
 }
 
 template <class P, std::uint32_t LogQ>
+inline void CKKSSparseGaloisKeyGen(
+    CKKSSeededSparseGaloisKey<P, LogQ> &gk, const Key<P> &key,
+    const CKKSRotationKeyIndexSet<P> &indices, CKKSNoise noise = {P::α, 0})
+{
+    gk.available = indices;
+    std::uint64_t d = 5;
+    for (int i = 0; i < static_cast<int>(P::nbit); i++) {
+        if (indices[static_cast<std::size_t>(i)]) {
+            gk.keys[static_cast<std::size_t>(i)] =
+                std::make_unique<CKKSSeededAutoKey<P, LogQ>>();
+            CKKSAutoKeyGen<P, LogQ>(
+                *gk.keys[static_cast<std::size_t>(i)], static_cast<uint>(d),
+                key, noise);
+        }
+        else {
+            gk.keys[static_cast<std::size_t>(i)].reset();
+        }
+        d = d * d % (2 * P::n);
+    }
+
+    if (indices[P::nbit]) {
+        gk.keys[P::nbit] = std::make_unique<CKKSSeededAutoKey<P, LogQ>>();
+        CKKSAutoKeyGen<P, LogQ>(*gk.keys[P::nbit], 2 * P::n - 1, key,
+                                noise);
+    }
+    else {
+        gk.keys[P::nbit].reset();
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSDirectSparseGaloisKeyGen(
+    CKKSSeededDirectSparseGaloisKey<P, LogQ> &gk, const Key<P> &key,
+    const CKKSDirectRotationKeyIndexSet<P> &indices,
+    CKKSNoise noise = {P::α, 0})
+{
+    gk.keys.clear();
+    gk.keys.reserve(CKKSDirectRotationKeyIndexSetCount<P>(indices));
+    for (int steps = 1; steps < static_cast<int>(P::n / 2); steps++) {
+        if (!indices[static_cast<std::size_t>(steps)]) continue;
+        auto &entry = gk.keys.emplace_back();
+        entry.steps = steps;
+        CKKSAutoKeyGen<P, LogQ>(
+            entry.key, ckks_detail::rotationAutomorphismForSteps<P>(steps),
+            key, noise);
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSHybridSparseGaloisKeyGen(
+    CKKSSeededHybridSparseGaloisKey<P, LogQ> &gk, const Key<P> &key,
+    const CKKSRotationKeyIndexSet<P> &binary_indices,
+    const CKKSDirectRotationKeyIndexSet<P> &direct_indices,
+    CKKSNoise noise = {P::α, 0})
+{
+    CKKSSparseGaloisKeyGen<P, LogQ>(gk.binary, key, binary_indices, noise);
+    CKKSDirectSparseGaloisKeyGen<P, LogQ>(gk.direct, key, direct_indices,
+                                          noise);
+}
+
+template <class P, std::uint32_t LogQ>
 inline void CKKSEvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
                          const CKKSAutoKey<P, LogQ> &autokey)
+{
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
+    Automorphism<P>(res[P::k], trlwe[P::k], d);
+    ckks_detail::reducePolynomialToLevel<P, LogQ>(res[P::k]);
+
+    auto temppoly = std::make_unique<Polynomial<P>>();
+    auto switched = std::make_unique<TRLWE<P>>();
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        Automorphism<P>(*temppoly, trlwe[k], d);
+        CKKSKeySwitchRows<P, LogQ>(*switched, *temppoly, autokey[k]);
+        CKKSSubTRLWEInPlace<P, LogQ>(res, *switched);
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSEvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
+                         const CKKSSeededAutoKey<P, LogQ> &autokey)
 {
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
@@ -2108,7 +2478,36 @@ inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
 
 template <class P, std::uint32_t LogQ>
 inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
+                            const CKKSSeededSparseGaloisKey<P, LogQ> &gk)
+{
+    ckks_detail::CKKSRotateSlotsBinaryChain<P, LogQ>(
+        res, ct, steps,
+        [&](std::size_t i) -> const CKKSSeededAutoKey<P, LogQ> & {
+            return gk.get(i);
+        });
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
                             const CKKSDirectSparseGaloisKey<P, LogQ> &gk)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    if (steps == 0) {
+        res = ct;
+        ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+        return;
+    }
+
+    CKKSEvalAuto<P, LogQ>(
+        res, ct, ckks_detail::rotationAutomorphismForSteps<P>(steps),
+        gk.get(steps));
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
+                            const CKKSSeededDirectSparseGaloisKey<P, LogQ> &gk)
 {
     constexpr int half = static_cast<int>(P::n) / 2;
     steps = ((steps % half) + half) % half;
@@ -2138,8 +2537,29 @@ inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
 }
 
 template <class P, std::uint32_t LogQ>
+inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
+                            const CKKSSeededHybridSparseGaloisKey<P, LogQ> &gk)
+{
+    if (gk.direct.has(steps) &&
+        CKKSSeededDirectSparseGaloisKey<P, LogQ>::normalize_steps(steps) != 0) {
+        CKKSRotateSlots<P, LogQ>(res, ct, steps, gk.direct);
+    }
+    else {
+        CKKSRotateSlots<P, LogQ>(res, ct, steps, gk.binary);
+    }
+}
+
+template <class P, std::uint32_t LogQ>
 inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
                                const CKKSGaloisKey<P, LogQ> &gk)
+{
+    CKKSEvalAuto<P, LogQ>(res, ct, 2 * P::n - 1, gk[P::nbit]);
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
+                               const CKKSSeededGaloisKey<P, LogQ> &gk)
 {
     CKKSEvalAuto<P, LogQ>(res, ct, 2 * P::n - 1, gk[P::nbit]);
     ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
@@ -2155,7 +2575,22 @@ inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
 
 template <class P, std::uint32_t LogQ>
 inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
+                               const CKKSSeededSparseGaloisKey<P, LogQ> &gk)
+{
+    CKKSEvalAuto<P, LogQ>(res, ct, 2 * P::n - 1, gk.get(P::nbit));
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
                                const CKKSHybridSparseGaloisKey<P, LogQ> &gk)
+{
+    CKKSConjugateSlots<P, LogQ>(res, ct, gk.binary);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
+                               const CKKSSeededHybridSparseGaloisKey<P, LogQ> &gk)
 {
     CKKSConjugateSlots<P, LogQ>(res, ct, gk.binary);
 }
@@ -5017,6 +5452,41 @@ inline std::unique_ptr<CKKSRelinKey<P, LogQ>> makeCKKSRelinKey(
     return relinkey;
 }
 
+template <class P, std::uint32_t LogQ>
+inline std::unique_ptr<CKKSSeededRelinKey<P, LogQ>> makeCKKSSeededRelinKey(
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    static_assert(ckks_detail::supported_torus_v<P>);
+
+    auto relinkey = std::make_unique<CKKSSeededRelinKey<P, LogQ>>();
+    auto keysquare = std::make_unique<Polynomial<P>>();
+    auto partkey = std::make_unique<Polynomial<P>>();
+    for (std::uint32_t i = 0; i < P::n; i++) (*partkey)[i] = key[i];
+    if constexpr (is_multilimb_uint_v<typename P::T>)
+        PolyMulDigit<P>(*keysquare, *partkey, *partkey);
+    else
+        PolyMul<P>(*keysquare, *partkey, *partkey);
+
+    constexpr int width = std::numeric_limits<typename P::T>::digits;
+    constexpr std::uint32_t row_count =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    constexpr std::uint32_t first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LogQ>();
+    auto gadget = std::make_unique<Polynomial<P>>();
+    for (int j = 0; j < static_cast<int>(row_count); j++) {
+        const std::uint32_t full_row = first_row + j;
+        const int shift =
+            width - (full_row + 1) * static_cast<int>(P::B̅gbit);
+        for (std::uint32_t n = 0; n < P::n; n++)
+            (*gadget)[n] = ckks_detail::reduceToLevel<P, LogQ>((*keysquare)[n]
+                                                               << shift);
+        ckks_detail::encryptPolynomialAtLevel<P, LogQ>((*relinkey)[j], *gadget,
+                                                       key, noise);
+    }
+
+    return relinkey;
+}
+
 namespace ckks_detail {
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
@@ -5081,6 +5551,17 @@ inline void CKKSRelinKeyChainElementGen(
         P, StartLogQ - (I + 1) * LogDelta>(key, noise);
 }
 
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::size_t Depth>
+inline void CKKSSeededRelinKeyChainElementGen(
+    CKKSSeededRelinKey<P, StartLogQ - (I + 1) * LogDelta> &key_out,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    static_assert(I < Depth);
+    key_out = *makeCKKSSeededRelinKey<
+        P, StartLogQ - (I + 1) * LogDelta>(key, noise);
+}
+
 namespace ckks_detail {
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
@@ -5109,16 +5590,18 @@ inline void CKKSRelinKeyChainGen(
         chain, key, noise);
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ, class RelinKey>
+    requires(RelinKey::log_q == LogQ)
 inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
-                               const CKKSRelinKey<P, LogQ> &relinkey)
+                               const RelinKey &relinkey)
 {
     CKKSKeySwitchRows<P, LogQ>(res, poly, relinkey.data);
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ, class RelinKey>
+    requires(RelinKey::log_q == LogQ)
 inline void CKKSRelinearization(TRLWE<P> &res, const TRLWE3<P> &mult,
-                                const CKKSRelinKey<P, LogQ> &relinkey)
+                                const RelinKey &relinkey)
 {
     auto squareterm = std::make_unique<TRLWE<P>>();
     CKKSRelinKeySwitch<P, LogQ>(*squareterm, mult[2], relinkey);
@@ -5402,13 +5885,15 @@ using CKKSMultResult =
                             RhsLogDelta>::Ciphertext;
 
 template <class P, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
-          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta>
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta, class RelinKey>
+    requires(RelinKey::log_q ==
+             CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ,
+                            RhsLogDelta>::log_q)
 inline void CKKSMult(
     CKKSMultResult<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta> &res,
     const CKKSCiphertext<P, LhsLogQ, LhsLogDelta> &lhs,
     const CKKSCiphertext<P, RhsLogQ, RhsLogDelta> &rhs,
-    const CKKSRelinKey<P, CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ,
-                                        RhsLogDelta>::log_q> &relinkey)
+    const RelinKey &relinkey)
 {
     using Traits =
         CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
@@ -5419,13 +5904,12 @@ inline void CKKSMult(
     CKKSRelinearization<P, Traits::log_q>(res.ct, *mult, relinkey);
 }
 
-template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta, class RelinKey>
+    requires(RelinKey::log_q ==
+             CKKSMultTraits<P, LogQ, LogDelta, LogQ, LogDelta>::log_q)
 inline void CKKSSquare(
     CKKSMultResult<P, LogQ, LogDelta, LogQ, LogDelta> &res,
-    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
-    const CKKSRelinKey<P,
-                       CKKSMultTraits<P, LogQ, LogDelta, LogQ,
-                                      LogDelta>::log_q> &relinkey)
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct, const RelinKey &relinkey)
 {
     CKKSMult<P>(res, ct, ct, relinkey);
 }
@@ -6033,6 +6517,26 @@ using CKKSDenseEvalModInverseRelinKey =
         typename Schedule::Param,
         CKKSDenseEvalModBoundedCosTraits<Schedule>::after_double_angle_log_q,
         Schedule::log_delta, I>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseSeededEvalModPolynomialRelinKey =
+    CKKSSeededRelinKey<typename Schedule::Param,
+                       Schedule::after_component_split_log_q -
+                           (I + 1) * Schedule::log_delta>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseSeededEvalModDoubleAngleRelinKey =
+    CKKSSeededRelinKey<
+        typename Schedule::Param,
+        CKKSDenseEvalModBoundedCosTraits<Schedule>::polynomial_log_q -
+            (I + 1) * Schedule::log_delta>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseSeededEvalModInverseRelinKey =
+    CKKSSeededRelinKey<
+        typename Schedule::Param,
+        CKKSDenseEvalModBoundedCosTraits<Schedule>::after_double_angle_log_q -
+            (I + 1) * Schedule::log_delta>;
 
 namespace ckks_detail {
 
@@ -6812,7 +7316,46 @@ inline void CKKSDenseEvalModInverseRelinKeyGen(
                                 Traits::after_double_angle_log_q,
                                 Schedule::log_delta,
                                 Traits::InverseTraits::power_depth>(relinkey,
-                                                                    key, noise);
+                                                                        key, noise);
+}
+
+template <class Schedule, std::size_t I>
+inline void CKKSDenseSeededEvalModPolynomialRelinKeyGen(
+    CKKSDenseSeededEvalModPolynomialRelinKey<Schedule, I> &relinkey,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    CKKSSeededRelinKeyChainElementGen<
+        I, typename Schedule::Param, Schedule::after_component_split_log_q,
+        Schedule::log_delta, Traits::PolynomialTraits::power_depth>(relinkey, key,
+                                                                    noise);
+}
+
+template <class Schedule, std::size_t I>
+inline void CKKSDenseSeededEvalModDoubleAngleRelinKeyGen(
+    CKKSDenseSeededEvalModDoubleAngleRelinKey<Schedule, I> &relinkey,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    CKKSSeededRelinKeyChainElementGen<
+        I, typename Schedule::Param, Traits::polynomial_log_q,
+        Schedule::log_delta, Schedule::evalmod_double_angle>(relinkey, key,
+                                                             noise);
+}
+
+template <class Schedule, std::size_t I>
+inline void CKKSDenseSeededEvalModInverseRelinKeyGen(
+    CKKSDenseSeededEvalModInverseRelinKey<Schedule, I> &relinkey,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    CKKSSeededRelinKeyChainElementGen<
+        I, typename Schedule::Param, Traits::after_double_angle_log_q,
+        Schedule::log_delta, Traits::InverseTraits::power_depth>(relinkey, key,
+                                                                 noise);
 }
 
 template <class Schedule, class KeyProvider>
@@ -6950,10 +7493,21 @@ using CKKSDenseBootstrapHybridGiantCoeffToSlotGaloisKey =
         typename Schedule::Param,
         Schedule::boot_log_q - I * Schedule::coeff_to_slot_plain_log_delta>;
 
+template <class Schedule, std::size_t I>
+using CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKey =
+    CKKSSeededHybridSparseGaloisKey<
+        typename Schedule::Param,
+        Schedule::boot_log_q - I * Schedule::coeff_to_slot_plain_log_delta>;
+
 template <class Schedule>
 using CKKSDenseBootstrapPackedConjugateGaloisKey =
     CKKSSparseGaloisKey<typename Schedule::Param,
                         Schedule::after_coeff_to_slot_log_q>;
+
+template <class Schedule>
+using CKKSDenseBootstrapSeededPackedConjugateGaloisKey =
+    CKKSSeededSparseGaloisKey<typename Schedule::Param,
+                              Schedule::after_coeff_to_slot_log_q>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseBootstrapSlotToCoeffGaloisKey = CKKSSparseGaloisKey<
@@ -6964,6 +7518,13 @@ using CKKSDenseBootstrapSlotToCoeffGaloisKey = CKKSSparseGaloisKey<
 template <class Schedule, std::size_t I>
 using CKKSDenseBootstrapHybridGiantSlotToCoeffGaloisKey =
     CKKSHybridSparseGaloisKey<
+        typename Schedule::Param,
+        Schedule::after_evalmod_log_q -
+            I * Schedule::slot_to_coeff_plain_log_delta>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKey =
+    CKKSSeededHybridSparseGaloisKey<
         typename Schedule::Param,
         Schedule::after_evalmod_log_q -
             I * Schedule::slot_to_coeff_plain_log_delta>;
@@ -7028,8 +7589,41 @@ inline void CKKSDenseBootstrapHybridGiantCoeffToSlotGaloisKeyGen(
 }
 
 template <class Schedule, std::size_t I>
+inline void CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKeyGen(
+    CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKey<Schedule, I> &gk,
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+    static_assert(I <= Schedule::coeff_to_slot_level_count);
+    constexpr std::uint32_t log_q =
+        Schedule::boot_log_q - I * Schedule::coeff_to_slot_plain_log_delta;
+    CKKSHybridSparseGaloisKeyGen<P, log_q>(
+        gk, key, usage.coeff_to_slot_binary[I],
+        usage.coeff_to_slot_direct[I], noise);
+}
+
+template <class Schedule, std::size_t I>
 inline void CKKSDenseBootstrapHybridGiantSlotToCoeffGaloisKeyGen(
     CKKSDenseBootstrapHybridGiantSlotToCoeffGaloisKey<Schedule, I> &gk,
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+    static_assert(I <= Schedule::slot_to_coeff_level_count);
+    constexpr std::uint32_t log_q =
+        Schedule::after_evalmod_log_q -
+        I * Schedule::slot_to_coeff_plain_log_delta;
+    CKKSHybridSparseGaloisKeyGen<P, log_q>(
+        gk, key, usage.slot_to_coeff_binary[I],
+        usage.slot_to_coeff_direct[I], noise);
+}
+
+template <class Schedule, std::size_t I>
+inline void CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKeyGen(
+    CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKey<Schedule, I> &gk,
     const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage,
     const Key<typename Schedule::Param> &key,
     CKKSNoise noise = {Schedule::Param::α, 0})
@@ -7447,6 +8041,108 @@ CKKSDenseBootstrapHybridGiantSlotToCoeffKeyGenNextMissingToDirectoryImpl(
 }
 
 template <std::size_t I, class Schedule>
+inline void
+CKKSDenseBootstrapSeededHybridGiantCoeffToSlotKeyGenToDirectoryImpl(
+    const std::filesystem::path &root,
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage,
+    const Key<typename Schedule::Param> &key, CKKSNoise noise,
+    const CKKSDenseBootstrapKeyDirectoryOptions &options)
+{
+    if constexpr (I <= Schedule::coeff_to_slot_level_count) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "coeff_to_slot_galois", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            auto gk = std::make_unique<
+                CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKey<
+                    Schedule, I>>();
+            CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKeyGen<
+                Schedule, I>(*gk, usage, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *gk);
+        }
+        CKKSDenseBootstrapSeededHybridGiantCoeffToSlotKeyGenToDirectoryImpl<
+            I + 1, Schedule>(root, usage, key, noise, options);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline bool
+CKKSDenseBootstrapSeededHybridGiantCoeffToSlotKeyGenNextMissingToDirectoryImpl(
+    const std::filesystem::path &root,
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage,
+    const Key<typename Schedule::Param> &key, CKKSNoise noise)
+{
+    if constexpr (I <= Schedule::coeff_to_slot_level_count) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "coeff_to_slot_galois", I);
+        if (!std::filesystem::exists(path)) {
+            auto gk = std::make_unique<
+                CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKey<
+                    Schedule, I>>();
+            CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKeyGen<
+                Schedule, I>(*gk, usage, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *gk);
+            return true;
+        }
+        return CKKSDenseBootstrapSeededHybridGiantCoeffToSlotKeyGenNextMissingToDirectoryImpl<
+            I + 1, Schedule>(root, usage, key, noise);
+    }
+    else {
+        return false;
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void
+CKKSDenseBootstrapSeededHybridGiantSlotToCoeffKeyGenToDirectoryImpl(
+    const std::filesystem::path &root,
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage,
+    const Key<typename Schedule::Param> &key, CKKSNoise noise,
+    const CKKSDenseBootstrapKeyDirectoryOptions &options)
+{
+    if constexpr (I <= Schedule::slot_to_coeff_level_count) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "slot_to_coeff_galois", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            auto gk = std::make_unique<
+                CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKey<
+                    Schedule, I>>();
+            CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKeyGen<
+                Schedule, I>(*gk, usage, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *gk);
+        }
+        CKKSDenseBootstrapSeededHybridGiantSlotToCoeffKeyGenToDirectoryImpl<
+            I + 1, Schedule>(root, usage, key, noise, options);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline bool
+CKKSDenseBootstrapSeededHybridGiantSlotToCoeffKeyGenNextMissingToDirectoryImpl(
+    const std::filesystem::path &root,
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage,
+    const Key<typename Schedule::Param> &key, CKKSNoise noise)
+{
+    if constexpr (I <= Schedule::slot_to_coeff_level_count) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "slot_to_coeff_galois", I);
+        if (!std::filesystem::exists(path)) {
+            auto gk = std::make_unique<
+                CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKey<
+                    Schedule, I>>();
+            CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKeyGen<
+                Schedule, I>(*gk, usage, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *gk);
+            return true;
+        }
+        return CKKSDenseBootstrapSeededHybridGiantSlotToCoeffKeyGenNextMissingToDirectoryImpl<
+            I + 1, Schedule>(root, usage, key, noise);
+    }
+    else {
+        return false;
+    }
+}
+
+template <std::size_t I, class Schedule>
 inline void CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl(
     const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
     CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
@@ -7487,6 +8183,53 @@ inline bool CKKSDenseBootstrapPolynomialRelinKeyGenNextMissingToDirectoryImpl(
             return true;
         }
         return CKKSDenseBootstrapPolynomialRelinKeyGenNextMissingToDirectoryImpl<
+            I + 1, Schedule>(root, key, noise);
+    }
+    else {
+        return false;
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapSeededPolynomialRelinKeyGenToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            auto relinkey = std::make_unique<
+                CKKSDenseSeededEvalModPolynomialRelinKey<Schedule, I>>();
+            CKKSDenseSeededEvalModPolynomialRelinKeyGen<Schedule, I>(
+                *relinkey, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
+        }
+        CKKSDenseBootstrapSeededPolynomialRelinKeyGenToDirectoryImpl<
+            I + 1, Schedule>(root, key, noise, options);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline bool
+CKKSDenseBootstrapSeededPolynomialRelinKeyGenNextMissingToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
+        if (!std::filesystem::exists(path)) {
+            auto relinkey = std::make_unique<
+                CKKSDenseSeededEvalModPolynomialRelinKey<Schedule, I>>();
+            CKKSDenseSeededEvalModPolynomialRelinKeyGen<Schedule, I>(
+                *relinkey, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
+            return true;
+        }
+        return CKKSDenseBootstrapSeededPolynomialRelinKeyGenNextMissingToDirectoryImpl<
             I + 1, Schedule>(root, key, noise);
     }
     else {
@@ -7542,6 +8285,51 @@ inline bool CKKSDenseBootstrapDoubleAngleRelinKeyGenNextMissingToDirectoryImpl(
 }
 
 template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapSeededDoubleAngleRelinKeyGenToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
+{
+    if constexpr (I < Schedule::evalmod_double_angle) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            auto relinkey = std::make_unique<
+                CKKSDenseSeededEvalModDoubleAngleRelinKey<Schedule, I>>();
+            CKKSDenseSeededEvalModDoubleAngleRelinKeyGen<Schedule, I>(
+                *relinkey, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
+        }
+        CKKSDenseBootstrapSeededDoubleAngleRelinKeyGenToDirectoryImpl<
+            I + 1, Schedule>(root, key, noise, options);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline bool
+CKKSDenseBootstrapSeededDoubleAngleRelinKeyGenNextMissingToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise)
+{
+    if constexpr (I < Schedule::evalmod_double_angle) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I);
+        if (!std::filesystem::exists(path)) {
+            auto relinkey = std::make_unique<
+                CKKSDenseSeededEvalModDoubleAngleRelinKey<Schedule, I>>();
+            CKKSDenseSeededEvalModDoubleAngleRelinKeyGen<Schedule, I>(
+                *relinkey, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
+            return true;
+        }
+        return CKKSDenseBootstrapSeededDoubleAngleRelinKeyGenNextMissingToDirectoryImpl<
+            I + 1, Schedule>(root, key, noise);
+    }
+    else {
+        return false;
+    }
+}
+
+template <std::size_t I, class Schedule>
 inline void CKKSDenseBootstrapInverseRelinKeyGenToDirectoryImpl(
     const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
     CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
@@ -7582,6 +8370,52 @@ inline bool CKKSDenseBootstrapInverseRelinKeyGenNextMissingToDirectoryImpl(
             return true;
         }
         return CKKSDenseBootstrapInverseRelinKeyGenNextMissingToDirectoryImpl<
+            I + 1, Schedule>(root, key, noise);
+    }
+    else {
+        return false;
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapSeededInverseRelinKeyGenToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::InverseTraits::power_depth) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "inverse_relin", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            auto relinkey = std::make_unique<
+                CKKSDenseSeededEvalModInverseRelinKey<Schedule, I>>();
+            CKKSDenseSeededEvalModInverseRelinKeyGen<Schedule, I>(
+                *relinkey, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
+        }
+        CKKSDenseBootstrapSeededInverseRelinKeyGenToDirectoryImpl<
+            I + 1, Schedule>(root, key, noise, options);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline bool CKKSDenseBootstrapSeededInverseRelinKeyGenNextMissingToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::InverseTraits::power_depth) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "inverse_relin", I);
+        if (!std::filesystem::exists(path)) {
+            auto relinkey = std::make_unique<
+                CKKSDenseSeededEvalModInverseRelinKey<Schedule, I>>();
+            CKKSDenseSeededEvalModInverseRelinKeyGen<Schedule, I>(
+                *relinkey, key, noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
+            return true;
+        }
+        return CKKSDenseBootstrapSeededInverseRelinKeyGenNextMissingToDirectoryImpl<
             I + 1, Schedule>(root, key, noise);
     }
     else {
@@ -7672,6 +8506,17 @@ struct CKKSDenseBootstrapHybridGiantCoeffToSlotCacheTuple<
 };
 
 template <class Schedule, class Seq>
+struct CKKSDenseBootstrapSeededHybridGiantCoeffToSlotCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapSeededHybridGiantCoeffToSlotCacheTuple<
+    Schedule, std::index_sequence<Is...>> {
+    using type = std::tuple<std::unique_ptr<
+        CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKey<Schedule,
+                                                               Is>>...>;
+};
+
+template <class Schedule, class Seq>
 struct CKKSDenseBootstrapSlotToCoeffCacheTuple;
 
 template <class Schedule, std::size_t... Is>
@@ -7692,6 +8537,17 @@ struct CKKSDenseBootstrapHybridGiantSlotToCoeffCacheTuple<
 };
 
 template <class Schedule, class Seq>
+struct CKKSDenseBootstrapSeededHybridGiantSlotToCoeffCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapSeededHybridGiantSlotToCoeffCacheTuple<
+    Schedule, std::index_sequence<Is...>> {
+    using type = std::tuple<std::unique_ptr<
+        CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKey<Schedule,
+                                                               Is>>...>;
+};
+
+template <class Schedule, class Seq>
 struct CKKSDenseBootstrapPolynomialRelinCacheTuple;
 
 template <class Schedule, std::size_t... Is>
@@ -7700,6 +8556,17 @@ struct CKKSDenseBootstrapPolynomialRelinCacheTuple<Schedule,
     using type =
         std::tuple<std::unique_ptr<
             CKKSDenseEvalModPolynomialRelinKey<Schedule, Is>>...>;
+};
+
+template <class Schedule, class Seq>
+struct CKKSDenseBootstrapSeededPolynomialRelinCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapSeededPolynomialRelinCacheTuple<
+    Schedule, std::index_sequence<Is...>> {
+    using type =
+        std::tuple<std::unique_ptr<
+            CKKSDenseSeededEvalModPolynomialRelinKey<Schedule, Is>>...>;
 };
 
 template <class Schedule, class Seq>
@@ -7714,6 +8581,17 @@ struct CKKSDenseBootstrapDoubleAngleRelinCacheTuple<Schedule,
 };
 
 template <class Schedule, class Seq>
+struct CKKSDenseBootstrapSeededDoubleAngleRelinCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapSeededDoubleAngleRelinCacheTuple<
+    Schedule, std::index_sequence<Is...>> {
+    using type =
+        std::tuple<std::unique_ptr<
+            CKKSDenseSeededEvalModDoubleAngleRelinKey<Schedule, Is>>...>;
+};
+
+template <class Schedule, class Seq>
 struct CKKSDenseBootstrapInverseRelinCacheTuple;
 
 template <class Schedule, std::size_t... Is>
@@ -7722,6 +8600,17 @@ struct CKKSDenseBootstrapInverseRelinCacheTuple<Schedule,
     using type =
         std::tuple<std::unique_ptr<
             CKKSDenseEvalModInverseRelinKey<Schedule, Is>>...>;
+};
+
+template <class Schedule, class Seq>
+struct CKKSDenseBootstrapSeededInverseRelinCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapSeededInverseRelinCacheTuple<
+    Schedule, std::index_sequence<Is...>> {
+    using type =
+        std::tuple<std::unique_ptr<
+            CKKSDenseSeededEvalModInverseRelinKey<Schedule, Is>>...>;
 };
 
 }  // namespace ckks_detail
@@ -7907,6 +8796,32 @@ inline bool CKKSDenseBootstrapHybridGiantKeyDirectoryComplete(
 }
 
 template <class Schedule>
+inline std::vector<std::filesystem::path>
+CKKSDenseBootstrapSeededHybridGiantKeyDirectoryFiles(
+    const std::filesystem::path &root)
+{
+    return CKKSDenseBootstrapHybridGiantKeyDirectoryFiles<Schedule>(root);
+}
+
+template <class Schedule>
+inline std::vector<std::filesystem::path>
+CKKSDenseBootstrapSeededHybridGiantMissingKeyDirectoryFiles(
+    const std::filesystem::path &root)
+{
+    return CKKSDenseBootstrapHybridGiantMissingKeyDirectoryFiles<Schedule>(
+        root);
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapSeededHybridGiantKeyDirectoryComplete(
+    const std::filesystem::path &root)
+{
+    return CKKSDenseBootstrapSeededHybridGiantMissingKeyDirectoryFiles<
+               Schedule>(root)
+        .empty();
+}
+
+template <class Schedule>
 inline CKKSDenseBootstrapKeyDirectoryManifest
 CKKSDenseBootstrapBuildKeyDirectoryManifest(const std::filesystem::path &root)
 {
@@ -8012,6 +8927,35 @@ CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest()
 }
 
 template <class Schedule>
+inline CKKSDenseBootstrapKeyDirectoryManifest
+CKKSDenseBootstrapBuildSeededHybridGiantKeyDirectoryManifest(
+    const std::filesystem::path &root)
+{
+    CKKSDenseBootstrapKeyDirectoryManifest manifest =
+        CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest<Schedule>(root);
+    if constexpr (Schedule::hybrid_giant_direct_popcount_threshold == 4) {
+        manifest.key_format =
+            CKKSDenseBootstrapKeyDirectoryManifest::seeded_hybrid_giant_format;
+    }
+    else {
+        manifest.key_format =
+            CKKSDenseBootstrapKeyDirectoryManifest::
+                seeded_hybrid_giant_tuned_format_base +
+            static_cast<std::uint32_t>(
+                Schedule::hybrid_giant_direct_popcount_threshold);
+    }
+    return manifest;
+}
+
+template <class Schedule>
+inline CKKSDenseBootstrapKeyDirectoryManifest
+CKKSDenseBootstrapBuildSeededHybridGiantKeyDirectoryManifest()
+{
+    return CKKSDenseBootstrapBuildSeededHybridGiantKeyDirectoryManifest<
+        Schedule>(std::filesystem::path{});
+}
+
+template <class Schedule>
 inline bool CKKSDenseBootstrapKeyDirectoryManifestMatches(
     const CKKSDenseBootstrapKeyDirectoryManifest &manifest)
 {
@@ -8024,6 +8968,15 @@ inline bool CKKSDenseBootstrapHybridGiantKeyDirectoryManifestMatches(
 {
     return manifest ==
            CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest<Schedule>();
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapSeededHybridGiantKeyDirectoryManifestMatches(
+    const CKKSDenseBootstrapKeyDirectoryManifest &manifest)
+{
+    return manifest ==
+           CKKSDenseBootstrapBuildSeededHybridGiantKeyDirectoryManifest<
+               Schedule>();
 }
 
 template <class Schedule>
@@ -8045,6 +8998,17 @@ inline bool CKKSDenseBootstrapHybridGiantKeyDirectoryManifestMatches(
                            CKKSDenseBootstrapKeyDirectoryManifestFile(root));
     return CKKSDenseBootstrapHybridGiantKeyDirectoryManifestMatches<Schedule>(
         manifest);
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapSeededHybridGiantKeyDirectoryManifestMatches(
+    const std::filesystem::path &root)
+{
+    CKKSDenseBootstrapKeyDirectoryManifest manifest;
+    CKKSLoadPortableBinary(manifest,
+                           CKKSDenseBootstrapKeyDirectoryManifestFile(root));
+    return CKKSDenseBootstrapSeededHybridGiantKeyDirectoryManifestMatches<
+        Schedule>(manifest);
 }
 
 template <class Schedule>
@@ -8102,6 +9066,38 @@ inline void CKKSDenseBootstrapHybridGiantCheckKeyDirectoryManifestForWrite(
         throw std::runtime_error(
             "CKKS hybrid bootstrap key directory manifest does not match "
             "schedule; regenerate with overwrite enabled");
+    }
+}
+
+template <class Schedule>
+inline void
+CKKSDenseBootstrapSeededHybridGiantCheckKeyDirectoryManifestForWrite(
+    const std::filesystem::path &root, bool overwrite_existing)
+{
+    const std::filesystem::path manifest_path =
+        CKKSDenseBootstrapKeyDirectoryManifestFile(root);
+    if (!std::filesystem::exists(manifest_path)) {
+        if (!overwrite_existing) {
+            for (const std::filesystem::path &path :
+                 CKKSDenseBootstrapHybridGiantKeyDirectoryFiles<Schedule>(
+                     root)) {
+                if (path != manifest_path && std::filesystem::exists(path)) {
+                    throw std::runtime_error(
+                        "CKKS seeded hybrid bootstrap key directory has key "
+                        "material but no manifest; regenerate with overwrite "
+                        "enabled");
+                }
+            }
+        }
+        return;
+    }
+
+    if (!CKKSDenseBootstrapSeededHybridGiantKeyDirectoryManifestMatches<
+            Schedule>(root) &&
+        !overwrite_existing) {
+        throw std::runtime_error(
+            "CKKS seeded hybrid bootstrap key directory manifest does not "
+            "match schedule; regenerate with overwrite enabled");
     }
 }
 
@@ -8172,6 +9168,46 @@ CKKSDenseBootstrapHybridGiantWriteKeyDirectoryMetadata(
 
     const CKKSDenseBootstrapKeyDirectoryManifest manifest =
         CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest<Schedule>(root);
+    CKKSSavePortableBinaryAtomic(
+        CKKSDenseBootstrapKeyDirectoryManifestFile(root), manifest);
+
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    CKKSSavePortableBinaryAtomic(
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"),
+        linear_plan);
+
+    CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> rotation_usage;
+    CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        rotation_usage, linear_plan);
+    CKKSSavePortableBinaryAtomic(
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "rotation_usage"),
+        rotation_usage);
+
+    const CKKSBoundedCosEvalModPolynomial evalmod_polynomial =
+        CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+    CKKSSavePortableBinaryAtomic(
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "evalmod_polynomial"),
+        evalmod_polynomial);
+
+    return rotation_usage;
+}
+
+template <class Schedule>
+inline CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
+CKKSDenseBootstrapSeededHybridGiantWriteKeyDirectoryMetadata(
+    const std::filesystem::path &root, bool overwrite_existing)
+{
+    std::filesystem::create_directories(root);
+    if (overwrite_existing)
+        CKKSDenseBootstrapRemoveKeyDirectoryFiles<Schedule>(root);
+    else
+        CKKSDenseBootstrapSeededHybridGiantCheckKeyDirectoryManifestForWrite<
+            Schedule>(root, overwrite_existing);
+
+    const CKKSDenseBootstrapKeyDirectoryManifest manifest =
+        CKKSDenseBootstrapBuildSeededHybridGiantKeyDirectoryManifest<Schedule>(
+            root);
     CKKSSavePortableBinaryAtomic(
         CKKSDenseBootstrapKeyDirectoryManifestFile(root), manifest);
 
@@ -8355,6 +9391,93 @@ inline void CKKSDenseBootstrapHybridGiantKeyGenToDirectory(
 
     ckks_detail::CKKSDenseBootstrapHybridGiantSlotToCoeffKeyGenToDirectoryImpl<
         0, Schedule>(root, rotation_usage, key, noise, options);
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapSeededHybridGiantKeyGenNextMissingToDirectory(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
+        rotation_usage =
+            CKKSDenseBootstrapSeededHybridGiantWriteKeyDirectoryMetadata<
+                Schedule>(root, false);
+
+    if (ckks_detail::
+            CKKSDenseBootstrapSeededHybridGiantCoeffToSlotKeyGenNextMissingToDirectoryImpl<
+                0, Schedule>(root, rotation_usage, key, noise))
+        return true;
+
+    const std::filesystem::path packed_path =
+        ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                 "packed_conjugate_galois");
+    if (!std::filesystem::exists(packed_path)) {
+        auto packed_conjugate =
+            std::make_unique<CKKSDenseBootstrapSeededPackedConjugateGaloisKey<
+                Schedule>>();
+        CKKSSparseGaloisKeyGen<P, Schedule::after_coeff_to_slot_log_q>(
+            *packed_conjugate, key, rotation_usage.packed_conjugate, noise);
+        CKKSSavePortableBinaryAtomic(packed_path, *packed_conjugate);
+        return true;
+    }
+
+    if (ckks_detail::
+            CKKSDenseBootstrapSeededPolynomialRelinKeyGenNextMissingToDirectoryImpl<
+                0, Schedule>(root, key, noise))
+        return true;
+    if (ckks_detail::
+            CKKSDenseBootstrapSeededDoubleAngleRelinKeyGenNextMissingToDirectoryImpl<
+                0, Schedule>(root, key, noise))
+        return true;
+    if (ckks_detail::
+            CKKSDenseBootstrapSeededInverseRelinKeyGenNextMissingToDirectoryImpl<
+                0, Schedule>(root, key, noise))
+        return true;
+    return ckks_detail::
+        CKKSDenseBootstrapSeededHybridGiantSlotToCoeffKeyGenNextMissingToDirectoryImpl<
+            0, Schedule>(root, rotation_usage, key, noise);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapSeededHybridGiantKeyGenToDirectory(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0},
+    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+{
+    using P = typename Schedule::Param;
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
+        rotation_usage =
+            CKKSDenseBootstrapSeededHybridGiantWriteKeyDirectoryMetadata<
+                Schedule>(root, options.overwrite_existing);
+
+    ckks_detail::
+        CKKSDenseBootstrapSeededHybridGiantCoeffToSlotKeyGenToDirectoryImpl<
+            0, Schedule>(root, rotation_usage, key, noise, options);
+
+    const std::filesystem::path packed_path =
+        ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                 "packed_conjugate_galois");
+    if (ckks_detail::CKKSDenseBootstrapShouldWriteKeyFile(packed_path,
+                                                          options)) {
+        auto packed_conjugate =
+            std::make_unique<CKKSDenseBootstrapSeededPackedConjugateGaloisKey<
+                Schedule>>();
+        CKKSSparseGaloisKeyGen<P, Schedule::after_coeff_to_slot_log_q>(
+            *packed_conjugate, key, rotation_usage.packed_conjugate, noise);
+        CKKSSavePortableBinaryAtomic(packed_path, *packed_conjugate);
+    }
+
+    ckks_detail::CKKSDenseBootstrapSeededPolynomialRelinKeyGenToDirectoryImpl<
+        0, Schedule>(root, key, noise, options);
+    ckks_detail::CKKSDenseBootstrapSeededDoubleAngleRelinKeyGenToDirectoryImpl<
+        0, Schedule>(root, key, noise, options);
+    ckks_detail::CKKSDenseBootstrapSeededInverseRelinKeyGenToDirectoryImpl<
+        0, Schedule>(root, key, noise, options);
+
+    ckks_detail::
+        CKKSDenseBootstrapSeededHybridGiantSlotToCoeffKeyGenToDirectoryImpl<
+            0, Schedule>(root, rotation_usage, key, noise, options);
 }
 
 template <class Schedule>
@@ -8782,6 +9905,223 @@ struct CKKSDenseBootstrapHybridGiantFilesystemKeyProvider {
     }
 };
 
+template <class Schedule>
+struct CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider {
+    using EvalModTraits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    using CoeffToSlotCache =
+        typename ckks_detail::
+            CKKSDenseBootstrapSeededHybridGiantCoeffToSlotCacheTuple<
+                Schedule,
+                std::make_index_sequence<
+                    Schedule::coeff_to_slot_level_count + 1>>::type;
+    using SlotToCoeffCache =
+        typename ckks_detail::
+            CKKSDenseBootstrapSeededHybridGiantSlotToCoeffCacheTuple<
+                Schedule,
+                std::make_index_sequence<
+                    Schedule::slot_to_coeff_level_count + 1>>::type;
+    using PolynomialRelinCache =
+        typename ckks_detail::
+            CKKSDenseBootstrapSeededPolynomialRelinCacheTuple<
+                Schedule,
+                std::make_index_sequence<EvalModTraits::PolynomialTraits::
+                                             power_depth>>::type;
+    using DoubleAngleRelinCache =
+        typename ckks_detail::
+            CKKSDenseBootstrapSeededDoubleAngleRelinCacheTuple<
+                Schedule,
+                std::make_index_sequence<Schedule::evalmod_double_angle>>::type;
+    using InverseRelinCache =
+        typename ckks_detail::CKKSDenseBootstrapSeededInverseRelinCacheTuple<
+            Schedule,
+            std::make_index_sequence<EvalModTraits::InverseTraits::
+                                         power_depth>>::type;
+
+    std::filesystem::path root;
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan_cache{};
+    CKKSBoundedCosEvalModPolynomial evalmod_polynomial_cache{};
+    mutable CoeffToSlotCache coeff_to_slot_cache{};
+    mutable std::unique_ptr<
+        CKKSDenseBootstrapSeededPackedConjugateGaloisKey<Schedule>>
+        packed_conjugate_cache{};
+    mutable PolynomialRelinCache polynomial_relin_cache{};
+    mutable DoubleAngleRelinCache double_angle_relin_cache{};
+    mutable InverseRelinCache inverse_relin_cache{};
+    mutable SlotToCoeffCache slot_to_coeff_cache{};
+
+    explicit CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider(
+        std::filesystem::path root_)
+        : root(std::move(root_))
+    {
+        try {
+            if (!CKKSDenseBootstrapSeededHybridGiantKeyDirectoryManifestMatches<
+                    Schedule>(root)) {
+                throw std::runtime_error(
+                    "CKKS seeded hybrid bootstrap key directory manifest does "
+                    "not match schedule");
+            }
+        }
+        catch (const std::exception &e) {
+            throw std::runtime_error(
+                std::string("invalid CKKS seeded hybrid bootstrap key "
+                            "directory manifest: ") +
+                e.what());
+        }
+        CKKSLoadPortableBinary(
+            linear_plan_cache,
+            ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));
+        CKKSLoadPortableBinary(
+            evalmod_polynomial_cache,
+            ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                     "evalmod_polynomial"));
+    }
+
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan() const
+    {
+        return linear_plan_cache;
+    }
+
+    const CKKSBoundedCosEvalModPolynomial &evalmod_polynomial() const
+    {
+        return evalmod_polynomial_cache;
+    }
+
+    template <std::size_t I>
+    const auto &coeff_to_slot_galois() const
+    {
+        static_assert(I <= Schedule::coeff_to_slot_level_count);
+        auto &entry = std::get<I>(coeff_to_slot_cache);
+        if (!entry) {
+            entry = std::make_unique<
+                CKKSDenseBootstrapSeededHybridGiantCoeffToSlotGaloisKey<
+                    Schedule, I>>();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(
+                    root, "coeff_to_slot_galois", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_coeff_to_slot_galois() const
+    {
+        static_assert(I <= Schedule::coeff_to_slot_level_count);
+        std::get<I>(coeff_to_slot_cache).reset();
+    }
+
+    const auto &packed_conjugate_galois() const
+    {
+        if (!packed_conjugate_cache) {
+            packed_conjugate_cache = std::make_unique<
+                CKKSDenseBootstrapSeededPackedConjugateGaloisKey<Schedule>>();
+            CKKSLoadPortableBinary(
+                *packed_conjugate_cache,
+                ckks_detail::CKKSDenseBootstrapNamedPath(
+                    root, "packed_conjugate_galois"));
+        }
+        return *packed_conjugate_cache;
+    }
+
+    void release_packed_conjugate_galois() const
+    {
+        packed_conjugate_cache.reset();
+    }
+
+    template <std::size_t I>
+    const auto &polynomial_relin() const
+    {
+        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        auto &entry = std::get<I>(polynomial_relin_cache);
+        if (!entry) {
+            entry = std::make_unique<
+                CKKSDenseSeededEvalModPolynomialRelinKey<Schedule, I>>();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(
+                    root, "polynomial_relin", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_polynomial_relin() const
+    {
+        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        std::get<I>(polynomial_relin_cache).reset();
+    }
+
+    template <std::size_t I>
+    const auto &double_angle_relin() const
+    {
+        static_assert(I < Schedule::evalmod_double_angle);
+        auto &entry = std::get<I>(double_angle_relin_cache);
+        if (!entry) {
+            entry = std::make_unique<
+                CKKSDenseSeededEvalModDoubleAngleRelinKey<Schedule, I>>();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(
+                    root, "double_angle_relin", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_double_angle_relin() const
+    {
+        static_assert(I < Schedule::evalmod_double_angle);
+        std::get<I>(double_angle_relin_cache).reset();
+    }
+
+    template <std::size_t I>
+    const auto &inverse_relin() const
+    {
+        static_assert(I < EvalModTraits::InverseTraits::power_depth);
+        auto &entry = std::get<I>(inverse_relin_cache);
+        if (!entry) {
+            entry = std::make_unique<
+                CKKSDenseSeededEvalModInverseRelinKey<Schedule, I>>();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(root,
+                                                           "inverse_relin", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_inverse_relin() const
+    {
+        static_assert(I < EvalModTraits::InverseTraits::power_depth);
+        std::get<I>(inverse_relin_cache).reset();
+    }
+
+    template <std::size_t I>
+    const auto &slot_to_coeff_galois() const
+    {
+        static_assert(I <= Schedule::slot_to_coeff_level_count);
+        auto &entry = std::get<I>(slot_to_coeff_cache);
+        if (!entry) {
+            entry = std::make_unique<
+                CKKSDenseBootstrapSeededHybridGiantSlotToCoeffGaloisKey<
+                    Schedule, I>>();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(
+                    root, "slot_to_coeff_galois", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_slot_to_coeff_galois() const
+    {
+        static_assert(I <= Schedule::slot_to_coeff_level_count);
+        std::get<I>(slot_to_coeff_cache).reset();
+    }
+};
+
 namespace ckks_detail {
 
 template <class KeyProvider, bool CoeffToSlot>
@@ -9131,6 +10471,66 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed(
         res, ct, provider, *encapsulation_key, timings);
 }
 
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapFromLevelWithSeededHybridGiantFilesystemKey(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    CKKSDenseBootstrapFromLevelWithKeyProvider<Schedule>(res, ct, provider);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapFromLevelWithSeededHybridGiantFilesystemKeyTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir, CKKSDenseBootstrapTimings &timings)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    CKKSDenseBootstrapFromLevelWithKeyProviderTimed<Schedule>(
+        res, ct, provider, timings);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void
+CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemKey(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider<Schedule>(
+        res, ct, provider, *encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void
+CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemKeyTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    CKKSDenseBootstrapTimings &timings)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
+        res, ct, provider, *encapsulation_key, timings);
+}
+
 template <class Schedule, std::uint32_t LhsLogQ,
           std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
           std::uint32_t RhsLogDelta>
@@ -9286,6 +10686,49 @@ inline void CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed(
         res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings);
 }
 
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemKey(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    const std::filesystem::path &relin_key_file)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProvider<Schedule>(
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemKeyTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    const std::filesystem::path &relin_key_file,
+    CKKSDenseBootstrapProductTimings &timings)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed<Schedule>(
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings);
+}
+
 template <class Schedule>
 inline void CKKSDenseBootstrap(
     typename Schedule::OutputCiphertext &res,
@@ -9399,6 +10842,9 @@ using lvl6CKKSDenseBootstrapSparseFilesystemKeyProvider =
 using lvl6CKKSDenseBootstrapHybridGiantFilesystemKeyProvider =
     CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
         lvl6CKKSDenseBootstrapSchedule>;
+using lvl6CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider =
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<
+        lvl6CKKSDenseBootstrapSchedule>;
 using lvl6CKKSDenseBootstrapFastHybridGiantKey =
     CKKSDenseBootstrapHybridGiantKey<lvl6CKKSDenseBootstrapFastSchedule>;
 using lvl6CKKSDenseBootstrapCompactHybridGiantKey =
@@ -9418,10 +10864,16 @@ using lvl6CKKSDenseBootstrapInverseHybridGiantKey =
 using lvl6CKKSDenseBootstrapInverseHybridGiantFilesystemKeyProvider =
     CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
         lvl6CKKSDenseBootstrapInverseSchedule>;
+using lvl6CKKSDenseBootstrapInverseSeededHybridGiantFilesystemKeyProvider =
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<
+        lvl6CKKSDenseBootstrapInverseSchedule>;
 using lvl6CKKSDenseBootstrapTunedHybridGiantKey =
     CKKSDenseBootstrapHybridGiantKey<lvl6CKKSDenseBootstrapTunedSchedule>;
 using lvl6CKKSDenseBootstrapTunedHybridGiantFilesystemKeyProvider =
     CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
+        lvl6CKKSDenseBootstrapTunedSchedule>;
+using lvl6CKKSDenseBootstrapTunedSeededHybridGiantFilesystemKeyProvider =
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<
         lvl6CKKSDenseBootstrapTunedSchedule>;
 
 inline double CKKSPlainEvalModSineDegree5(double x)
