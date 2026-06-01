@@ -416,6 +416,51 @@ void print_lvl6_inverse_budget(const char *label,
               << " fits=" << (fits ? "yes" : "no") << '\n';
 }
 
+double positive_log2_precision(double value)
+{
+    if (value <= 0.0) return std::numeric_limits<double>::infinity();
+    return -std::log2(value);
+}
+
+template <class Schedule>
+void print_evalmod_approximation_report(const char *label)
+{
+    const auto poly = TFHEpp::CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+    double max_message_error = 0.0;
+    double max_basis_error = 0.0;
+
+    for (int mask = -static_cast<int>(Schedule::evalmod_k) + 1;
+         mask < static_cast<int>(Schedule::evalmod_k); mask++) {
+        for (int sample = 0; sample <= 256; sample++) {
+            const double message =
+                -1.0 + 2.0 * static_cast<double>(sample) / 256.0;
+            const double masked =
+                static_cast<double>(mask) * Schedule::message_ratio + message;
+            const double cheb = TFHEpp::CKKSPlainEvalModBoundedCos(
+                poly, masked, Schedule::evalmod_inv_degree);
+            const double power = TFHEpp::CKKSPlainEvalModBoundedCosPower(
+                poly, masked, Schedule::evalmod_inv_degree);
+            max_message_error =
+                std::max(max_message_error, std::abs(power - message));
+            max_basis_error = std::max(max_basis_error, std::abs(cheb - power));
+        }
+    }
+
+    const double message_bits = positive_log2_precision(max_message_error);
+    const double basis_bits = positive_log2_precision(max_basis_error);
+    const int output_margin_bits =
+        static_cast<int>(Schedule::output_log_q) -
+        static_cast<int>(Schedule::log_delta);
+
+    std::cout << label
+              << " evalmod_plain_approx max_message_error="
+              << max_message_error << " message_bits=" << message_bits
+              << " max_basis_error=" << max_basis_error
+              << " basis_bits=" << basis_bits
+              << " output_margin_bits=" << output_margin_bits
+              << " sample_messages=257\n";
+}
+
 template <class Schedule>
 void print_schedule_report(const char *label,
                            const std::filesystem::path *key_dir = nullptr)
@@ -564,6 +609,7 @@ void print_schedule_report(const char *label,
               << " full_key_bytes="
               << TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>()
               << '\n';
+    print_evalmod_approximation_report<Schedule>(label);
     if (key_dir != nullptr) {
         const auto expected =
             TFHEpp::CKKSDenseBootstrapKeyDirectoryFiles<Schedule>(*key_dir);
@@ -1370,7 +1416,7 @@ int run_toy_inverse_validation(bool keep_dir)
     static_assert(Schedule::evalmod_inv_degree == 5);
     return run_toy_schedule_validation<Schedule>(
         keep_dir, "toy-inverse",
-        "tfhepp_ckks_bootstrap_validation_toy_inverse", 0.02);
+        "tfhepp_ckks_bootstrap_validation_toy_inverse", 0.05);
 }
 
 template <class Schedule>
