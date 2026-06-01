@@ -636,16 +636,12 @@ int run_modraise_plain_diagnostics(std::size_t sparse_weight = 0)
     return 0;
 }
 
-template <class Schedule>
-int run_filesystem_bootstrap_diagnostics(const std::filesystem::path &key_dir,
-                                         bool full_pipeline,
-                                         std::size_t sparse_weight = 0)
+template <class Schedule, class KeyProvider>
+int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
+                                           bool full_pipeline,
+                                           std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
-
-    if (const int status = validate_filesystem_key_dir<Schedule>(key_dir);
-        status != 0)
-        return status;
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
@@ -666,7 +662,7 @@ int run_filesystem_bootstrap_diagnostics(const std::filesystem::path &key_dir,
     print_phase_coefficient_diagnostic<Schedule, Schedule::input_log_q>(
         "diag_input", *input, *key);
 
-    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    KeyProvider provider(key_dir);
     const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
         provider.linear_plan();
 
@@ -691,7 +687,7 @@ int run_filesystem_bootstrap_diagnostics(const std::filesystem::path &key_dir,
         std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
     const double c2s_ms = elapsed_ms([&] {
         const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
-            TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>, true>
+            KeyProvider, true>
             coeff_to_slot_galois{provider};
         TFHEpp::CKKSLinearTransformStagesBSGS<
             P, Schedule::boot_log_q, Schedule::log_delta,
@@ -831,7 +827,7 @@ int run_filesystem_bootstrap_diagnostics(const std::filesystem::path &key_dir,
     actual_imag_out.reset();
 
     const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
-        TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>, false>
+        KeyProvider, false>
         slot_to_coeff_galois{provider};
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     const double stc_ms = elapsed_ms([&] {
@@ -865,20 +861,44 @@ int run_filesystem_bootstrap_diagnostics(const std::filesystem::path &key_dir,
 }
 
 template <class Schedule>
-int run_filesystem_evalmod_diagnostics(const std::filesystem::path &key_dir,
-                                       std::size_t sparse_weight = 0)
+int run_filesystem_bootstrap_diagnostics(const std::filesystem::path &key_dir,
+                                         bool full_pipeline,
+                                         std::size_t sparse_weight = 0)
 {
-    using P = typename Schedule::Param;
-
     if (const int status = validate_filesystem_key_dir<Schedule>(key_dir);
         status != 0)
         return status;
+    return run_key_provider_bootstrap_diagnostics<
+        Schedule, TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>>(
+        key_dir, full_pipeline, sparse_weight);
+}
+
+template <class Schedule>
+int run_hybrid_filesystem_bootstrap_diagnostics(
+    const std::filesystem::path &key_dir, bool full_pipeline,
+    std::size_t sparse_weight = 0)
+{
+    if (const int status =
+            validate_hybrid_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+    return run_key_provider_bootstrap_diagnostics<
+        Schedule,
+        TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>>(
+        key_dir, full_pipeline, sparse_weight);
+}
+
+template <class Schedule, class KeyProvider>
+int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
+                                         std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
     std::cout << "diag_key_sparse_weight=" << sparse_weight << '\n';
 
-    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    KeyProvider provider(key_dir);
     const TFHEpp::CKKSBoundedCosEvalModPolynomial &poly =
         provider.evalmod_polynomial();
 
@@ -927,20 +947,42 @@ int run_filesystem_evalmod_diagnostics(const std::filesystem::path &key_dir,
 }
 
 template <class Schedule>
-int run_filesystem_stc_diagnostics(const std::filesystem::path &key_dir,
-                                   std::size_t sparse_weight = 0)
+int run_filesystem_evalmod_diagnostics(const std::filesystem::path &key_dir,
+                                       std::size_t sparse_weight = 0)
 {
-    using P = typename Schedule::Param;
-
     if (const int status = validate_filesystem_key_dir<Schedule>(key_dir);
         status != 0)
         return status;
+    return run_key_provider_evalmod_diagnostics<
+        Schedule, TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>>(
+        key_dir, sparse_weight);
+}
+
+template <class Schedule>
+int run_hybrid_filesystem_evalmod_diagnostics(
+    const std::filesystem::path &key_dir, std::size_t sparse_weight = 0)
+{
+    if (const int status =
+            validate_hybrid_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+    return run_key_provider_evalmod_diagnostics<
+        Schedule,
+        TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>>(
+        key_dir, sparse_weight);
+}
+
+template <class Schedule, class KeyProvider>
+int run_key_provider_stc_diagnostics(const std::filesystem::path &key_dir,
+                                     std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
     std::cout << "diag_key_sparse_weight=" << sparse_weight << '\n';
 
-    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    KeyProvider provider(key_dir);
     const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
         provider.linear_plan();
 
@@ -1019,7 +1061,7 @@ int run_filesystem_stc_diagnostics(const std::filesystem::path &key_dir,
     imag_eval.reset();
 
     const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
-        TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>, false>
+        KeyProvider, false>
         slot_to_coeff_galois{provider};
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     const double stc_ms = elapsed_ms([&] {
@@ -1046,6 +1088,32 @@ int run_filesystem_stc_diagnostics(const std::filesystem::path &key_dir,
     std::cout << "diag_eval_encrypt_ms=" << eval_encrypt_ms << '\n';
     std::cout << "diag_stc_ms=" << stc_ms << '\n';
     return max_error<P>(*decoded, *expected) <= 0.01 ? 0 : 1;
+}
+
+template <class Schedule>
+int run_filesystem_stc_diagnostics(const std::filesystem::path &key_dir,
+                                   std::size_t sparse_weight = 0)
+{
+    if (const int status = validate_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+    return run_key_provider_stc_diagnostics<
+        Schedule, TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>>(
+        key_dir, sparse_weight);
+}
+
+template <class Schedule>
+int run_hybrid_filesystem_stc_diagnostics(
+    const std::filesystem::path &key_dir, std::size_t sparse_weight = 0)
+{
+    if (const int status =
+            validate_hybrid_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+    return run_key_provider_stc_diagnostics<
+        Schedule,
+        TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>>(
+        key_dir, sparse_weight);
 }
 
 template <class Schedule>
@@ -1226,8 +1294,11 @@ void print_usage(const char *program)
                  " [--lvl6-debug-modraise]"
                  " [--lvl6-debug-modraise-sparse H]"
                  " [--lvl6-debug-c2s DIR] [--lvl6-debug-evalmod DIR]"
-                 " [--lvl6-debug-stc DIR]"
-                 " [--lvl6-debug DIR]"
+                 " [--lvl6-debug-stc DIR] [--lvl6-debug DIR]"
+                 " [--lvl6-hybrid-debug-c2s DIR]"
+                 " [--lvl6-hybrid-debug-evalmod DIR]"
+                 " [--lvl6-hybrid-debug-stc DIR]"
+                 " [--lvl6-hybrid-debug DIR]"
                  " [--lvl6-all DIR] [--resume]\n";
 }
 
@@ -1295,6 +1366,10 @@ int main(int argc, char **argv)
                  arg == "--lvl6-hybrid-keygen" ||
                  arg == "--lvl6-hybrid-keygen-next" ||
                  arg == "--lvl6-hybrid-run" ||
+                 arg == "--lvl6-hybrid-debug-c2s" ||
+                 arg == "--lvl6-hybrid-debug-evalmod" ||
+                 arg == "--lvl6-hybrid-debug-stc" ||
+                 arg == "--lvl6-hybrid-debug" ||
                  arg == "--lvl6-debug-evalmod" || arg == "--lvl6-debug-stc" ||
                  arg == "--lvl6-debug" ||
                  arg == "--lvl6-all") {
@@ -1334,6 +1409,30 @@ int main(int argc, char **argv)
                 print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
                 if (run_hybrid_filesystem_bootstrap<Lvl6Schedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-debug-c2s") {
+                print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
+                if (run_hybrid_filesystem_bootstrap_diagnostics<Lvl6Schedule>(
+                        key_dir, false, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-debug-evalmod") {
+                print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
+                if (run_hybrid_filesystem_evalmod_diagnostics<Lvl6Schedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-debug-stc") {
+                print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
+                if (run_hybrid_filesystem_stc_diagnostics<Lvl6Schedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-debug") {
+                print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
+                if (run_hybrid_filesystem_bootstrap_diagnostics<Lvl6Schedule>(
+                        key_dir, true, lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg == "--lvl6-debug-c2s") {
