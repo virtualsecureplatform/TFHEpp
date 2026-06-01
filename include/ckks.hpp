@@ -781,6 +781,14 @@ inline void centeredTRLWEAtLevel(TRLWE<P> &out, const TRLWE<P> &in)
             out[c][n] = centeredLevelToTorus<P, LogQ>(in[c][n]);
 }
 
+template <class P, std::uint32_t LogQ>
+inline void centeredPolynomialAtLevel(Polynomial<P> &out,
+                                      const Polynomial<P> &in)
+{
+    for (std::uint32_t n = 0; n < P::n; n++)
+        out[n] = centeredLevelToTorus<P, LogQ>(in[n]);
+}
+
 template <class P, std::uint32_t LogScale>
 inline typename P::T rescaleAccumulator(Wide384 acc)
 {
@@ -982,6 +990,42 @@ inline void baseBbarDecomposeRows(std::array<TRLWE<P>, RowCount> &result,
                     width - (full_row + 1) * static_cast<int>(P::B̅gbit);
                 result[row][c][n] = ((a >> shift) & mask) - half;
             }
+        }
+    }
+}
+
+template <class P, std::uint32_t FirstRow, std::size_t RowCount>
+inline void baseBbarDecomposePolynomialRows(
+    std::array<Polynomial<P>, RowCount> &result, const Polynomial<P> &input)
+{
+    static_assert(P::l̅ * P::B̅gbit ==
+                      std::numeric_limits<typename P::T>::digits,
+                  "CKKS Bbar digits must cover the torus");
+    static_assert(RowCount > 0);
+    static_assert(FirstRow + RowCount <= P::l̅);
+
+    using T = typename P::T;
+    constexpr int width = std::numeric_limits<T>::digits;
+    constexpr T half = T{1} << (P::B̅gbit - 1);
+    constexpr T mask = (T{1} << P::B̅gbit) - T{1};
+    constexpr T offset = [] {
+        constexpr int local_width = std::numeric_limits<T>::digits;
+        constexpr T local_half = T{1} << (P::B̅gbit - 1);
+        T value = 0;
+        for (int j = 0; j < static_cast<int>(P::l̅); j++)
+            value += local_half
+                     << (local_width - (j + 1) * P::B̅gbit);
+        return value;
+    }();
+
+    for (std::uint32_t n = 0; n < P::n; n++) {
+        const T a = input[n] + offset;
+        for (std::size_t row = 0; row < RowCount; row++) {
+            const std::uint32_t full_row =
+                FirstRow + static_cast<std::uint32_t>(row);
+            const int shift =
+                width - (full_row + 1) * static_cast<int>(P::B̅gbit);
+            result[row][n] = ((a >> shift) & mask) - half;
         }
     }
 }
@@ -1396,20 +1440,19 @@ inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
     static_assert(std::tuple_size_v<std::remove_reference_t<Rows>> ==
                   row_count);
 
-    TRLWE<P> poly_as_trlwe{};
-    poly_as_trlwe[0] = poly;
-    auto centered = std::make_unique<TRLWE<P>>();
-    ckks_detail::centeredTRLWEAtLevel<P, LogQ>(*centered, poly_as_trlwe);
+    auto centered = std::make_unique<Polynomial<P>>();
+    ckks_detail::centeredPolynomialAtLevel<P, LogQ>(*centered, poly);
 
-    auto decomposed = std::make_unique<std::array<TRLWE<P>, row_count>>();
-    ckks_detail::baseBbarDecomposeRows<P, first_row>(*decomposed, *centered);
+    auto decomposed = std::make_unique<std::array<Polynomial<P>, row_count>>();
+    ckks_detail::baseBbarDecomposePolynomialRows<P, first_row>(*decomposed,
+                                                               *centered);
 
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
 
     auto product = std::make_unique<Polynomial<P>>();
     for (int j = 0; j < static_cast<int>(row_count); j++) {
-        const Polynomial<P> &digit = (*decomposed)[j][0];
+        const Polynomial<P> &digit = (*decomposed)[j];
         for (int c = 0; c <= static_cast<int>(P::k); c++) {
             ckks_detail::polyMulTorusByBbarDigit<P>(*product, rows[j][c],
                                                     digit);
