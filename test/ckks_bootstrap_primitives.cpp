@@ -843,6 +843,20 @@ void test_dense_bootstrap_api_shape()
     static_assert(Schedule::after_evalmod_log_q == 160);
     static_assert(Schedule::output_log_q == 120);
 
+    using Lvl6FastSchedule = TFHEpp::lvl6CKKSDenseBootstrapFastSchedule;
+    using Lvl6CompactSchedule = TFHEpp::lvl6CKKSDenseBootstrapCompactSchedule;
+    static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapSchedule,
+                                 Lvl6FastSchedule>);
+    static_assert(std::is_same_v<typename Lvl6FastSchedule::Param,
+                                 TFHEpp::lvl6param>);
+    static_assert(Lvl6FastSchedule::evalmod_k == 18);
+    static_assert(Lvl6FastSchedule::evalmod_degree == 34);
+    static_assert(Lvl6FastSchedule::slot_to_coeff_plain_log_delta == 25);
+    static_assert(Lvl6FastSchedule::output_log_q == 105);
+    static_assert(Lvl6FastSchedule::hybrid_giant_direct_popcount_threshold == 3);
+    static_assert(Lvl6CompactSchedule::hybrid_giant_direct_popcount_threshold ==
+                  4);
+
     using BootstrapKey = TFHEpp::CKKSDenseBootstrapKey<Schedule>;
     using HybridBootstrapKey =
         TFHEpp::CKKSDenseBootstrapHybridGiantKey<Schedule>;

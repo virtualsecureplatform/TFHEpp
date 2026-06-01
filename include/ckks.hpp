@@ -4149,8 +4149,12 @@ using lvl6CKKSDenseBootstrapRobustHybridSchedule =
                                128, 0, 50, 50, 25, 5, 5,
                                HybridGiantDirectPopcountThreshold>;
 
+using lvl6CKKSDenseBootstrapFastSchedule =
+    lvl6CKKSDenseBootstrapRobustHybridSchedule<3>;
+using lvl6CKKSDenseBootstrapCompactSchedule =
+    lvl6CKKSDenseBootstrapRobustHybridSchedule<4>;
 using lvl6CKKSDenseBootstrapSchedule =
-    lvl6CKKSDenseBootstrapRobustHybridSchedule<>;
+    lvl6CKKSDenseBootstrapFastSchedule;
 
 struct CKKSBoundedCosEvalModPolynomial {
     std::uint32_t k = 0;
