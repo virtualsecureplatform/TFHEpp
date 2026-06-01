@@ -1323,19 +1323,11 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
         TFHEpp::CKKSRelinKeyGenToFile<P, ProductCt::log_q>(
             relin_key_file, *external_key, {P::α, 0}, eval_key_options);
     });
-    auto product = std::make_unique<ProductCt>();
-    const double multiply_ms = elapsed_ms([&] {
-        TFHEpp::CKKSMultWithRelinKeyFile<P>(*product, *lhs_ct, *rhs_ct,
-                                             relin_key_file);
-    });
-
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
-    TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
-    const double bootstrap_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed<
-            Schedule>(*output, *product, key_dir, encapsulation_key_file,
-                      bootstrap_timings);
-    });
+    TFHEpp::CKKSDenseBootstrapProductTimings product_timings;
+    TFHEpp::CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<
+        Schedule>(*output, *lhs_ct, *rhs_ct, key_dir, encapsulation_key_file,
+                  relin_key_file, product_timings);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     const double decrypt_ms = elapsed_ms([&] {
@@ -1360,9 +1352,10 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
               << TFHEpp::CKKSRelinKeyByteEstimate<P, ProductCt::log_q>()
               << '\n';
     std::cout << "encrypt_ms=" << encrypt_ms << '\n';
-    std::cout << "multiply_ms=" << multiply_ms << '\n';
-    std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
-    print_bootstrap_timings(bootstrap_timings);
+    std::cout << "multiply_ms=" << product_timings.multiply_ms << '\n';
+    std::cout << "bootstrap_ms=" << product_timings.bootstrap.total_ms()
+              << '\n';
+    print_bootstrap_timings(product_timings.bootstrap);
     std::cout << "decrypt_ms=" << decrypt_ms << '\n';
     std::cout << "max_error=" << err << '\n';
     return err <= tol ? 0 : 1;
@@ -1464,20 +1457,13 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
             *rhs_ct, *rhs, *external_key);
     });
 
-    auto product = std::make_unique<ProductCt>();
-    const double multiply_ms = elapsed_ms([&] {
-        TFHEpp::CKKSMultWithRelinKeyFile<P>(*product, *lhs_ct, *rhs_ct,
-                                             product_relin_key_file);
-    });
-
     auto first_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
-    TFHEpp::CKKSDenseBootstrapTimings first_bootstrap_timings;
-    const double first_bootstrap_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed<
-            Schedule>(*first_output, *product, key_dir, encapsulation_key_file,
-                      first_bootstrap_timings);
-    });
+    TFHEpp::CKKSDenseBootstrapProductTimings first_product_timings;
+    TFHEpp::CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<
+        Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
+                  encapsulation_key_file, product_relin_key_file,
+                  first_product_timings);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     const double first_decrypt_ms = elapsed_ms([&] {
@@ -1487,21 +1473,13 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     });
     const double first_err = max_error<P>(*decoded, *expected);
 
-    auto chained_product = std::make_unique<PostBootstrapProductCt>();
-    const double chained_multiply_ms = elapsed_ms([&] {
-        TFHEpp::CKKSMultWithRelinKeyFile<P>(
-            *chained_product, *first_output, *first_output,
-            post_bootstrap_relin_key_file);
-    });
-
     auto chained_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
-    TFHEpp::CKKSDenseBootstrapTimings chained_bootstrap_timings;
-    const double chained_bootstrap_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed<
-            Schedule>(*chained_output, *chained_product, key_dir,
-                      encapsulation_key_file, chained_bootstrap_timings);
-    });
+    TFHEpp::CKKSDenseBootstrapProductTimings chained_product_timings;
+    TFHEpp::CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<
+        Schedule>(*chained_output, *first_output, *first_output, key_dir,
+                  encapsulation_key_file, post_bootstrap_relin_key_file,
+                  chained_product_timings);
 
     const double chained_decrypt_ms = elapsed_ms([&] {
         TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
@@ -1539,14 +1517,17 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
                      P, PostBootstrapProductCt::log_q>()
               << '\n';
     std::cout << "encrypt_ms=" << encrypt_ms << '\n';
-    std::cout << "multiply_ms=" << multiply_ms << '\n';
-    std::cout << "first_bootstrap_ms=" << first_bootstrap_ms << '\n';
-    print_bootstrap_timings(first_bootstrap_timings);
+    std::cout << "multiply_ms=" << first_product_timings.multiply_ms << '\n';
+    std::cout << "first_bootstrap_ms="
+              << first_product_timings.bootstrap.total_ms() << '\n';
+    print_bootstrap_timings(first_product_timings.bootstrap);
     std::cout << "first_decrypt_ms=" << first_decrypt_ms << '\n';
     std::cout << "first_max_error=" << first_err << '\n';
-    std::cout << "chained_multiply_ms=" << chained_multiply_ms << '\n';
-    std::cout << "chained_bootstrap_ms=" << chained_bootstrap_ms << '\n';
-    print_bootstrap_timings(chained_bootstrap_timings);
+    std::cout << "chained_multiply_ms="
+              << chained_product_timings.multiply_ms << '\n';
+    std::cout << "chained_bootstrap_ms="
+              << chained_product_timings.bootstrap.total_ms() << '\n';
+    print_bootstrap_timings(chained_product_timings.bootstrap);
     std::cout << "chained_decrypt_ms=" << chained_decrypt_ms << '\n';
     std::cout << "chained_max_error=" << chained_err << '\n';
     return first_err <= tol && chained_err <= tol ? 0 : 1;
