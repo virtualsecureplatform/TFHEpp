@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <chrono>
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/array.hpp>
 #include <cereal/types/complex.hpp>
@@ -426,6 +427,21 @@ inline void CKKSLoadPortableBinary(T &value, const std::filesystem::path &path)
 
 struct CKKSDenseBootstrapKeyDirectoryOptions {
     bool overwrite_existing = true;
+};
+
+struct CKKSDenseBootstrapTimings {
+    double modraise_ms = 0.0;
+    double coeff_to_slot_ms = 0.0;
+    double split_ms = 0.0;
+    double real_evalmod_ms = 0.0;
+    double imag_evalmod_ms = 0.0;
+    double slot_to_coeff_ms = 0.0;
+
+    double total_ms() const
+    {
+        return modraise_ms + coeff_to_slot_ms + split_ms + real_evalmod_ms +
+               imag_evalmod_ms + slot_to_coeff_ms;
+    }
 };
 
 struct CKKSDenseBootstrapKeyDirectoryManifest {
@@ -7757,6 +7773,114 @@ struct CKKSDenseBootstrapLinearKeyProviderChain {
     }
 };
 
+template <class F>
+inline void CKKSTimeBootstrapStage(double *duration_ms, F &&stage)
+{
+    if (duration_ms == nullptr) {
+        std::forward<F>(stage)();
+        return;
+    }
+    const auto start = std::chrono::steady_clock::now();
+    std::forward<F>(stage)();
+    const auto stop = std::chrono::steady_clock::now();
+    *duration_ms =
+        std::chrono::duration<double, std::milli>(stop - start).count();
+}
+
+template <class Schedule, class KeyProvider>
+inline void CKKSDenseBootstrapWithKeyProviderImpl(
+    typename Schedule::OutputCiphertext &res,
+    const typename Schedule::InputCiphertext &ct,
+    const KeyProvider &key_provider, CKKSDenseBootstrapTimings *timings)
+{
+    using P = typename Schedule::Param;
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
+        key_provider.linear_plan();
+
+    auto raised = std::make_unique<typename Schedule::BootstrapCiphertext>();
+    CKKSTimeBootstrapStage(timings == nullptr ? nullptr : &timings->modraise_ms,
+                           [&] {
+                               CKKSModRaiseBoundedPhaseRandomized<
+                                   P, Schedule::input_log_q,
+                                   Schedule::boot_log_q, Schedule::log_delta,
+                                   Schedule::modraise_mask_bound>(*raised, ct);
+                           });
+
+    auto coeff_to_slot =
+        std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
+    const CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider, true>
+        coeff_to_slot_galois{key_provider};
+    CKKSTimeBootstrapStage(
+        timings == nullptr ? nullptr : &timings->coeff_to_slot_ms, [&] {
+            CKKSLinearTransformStagesBSGS<
+                P, Schedule::boot_log_q, Schedule::log_delta,
+                Schedule::coeff_to_slot_plain_log_delta,
+                Schedule::coeff_to_slot_level_count>(
+                *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
+                Schedule::linear_bsgs_step, coeff_to_slot_galois);
+        });
+    raised.reset();
+
+    auto real_component =
+        std::make_unique<typename Schedule::ComponentCiphertext>();
+    auto imag_component =
+        std::make_unique<typename Schedule::ComponentCiphertext>();
+    CKKSTimeBootstrapStage(timings == nullptr ? nullptr : &timings->split_ms,
+                           [&] {
+                               CKKSExtractRealSlots<
+                                   P, Schedule::after_coeff_to_slot_log_q,
+                                   Schedule::log_delta,
+                                   Schedule::component_split_plain_log_delta>(
+                                   *real_component, *coeff_to_slot,
+                                   key_provider.packed_conjugate_galois());
+                               CKKSExtractImagSlots<
+                                   P, Schedule::after_coeff_to_slot_log_q,
+                                   Schedule::log_delta,
+                                   Schedule::component_split_plain_log_delta>(
+                                   *imag_component, *coeff_to_slot,
+                                   key_provider.packed_conjugate_galois());
+                           });
+    coeff_to_slot.reset();
+    if constexpr (requires { key_provider.release_packed_conjugate_galois(); }) {
+        key_provider.release_packed_conjugate_galois();
+    }
+
+    auto real_evalmod =
+        std::make_unique<CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    CKKSTimeBootstrapStage(
+        timings == nullptr ? nullptr : &timings->real_evalmod_ms, [&] {
+            CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+                *real_evalmod, *real_component, key_provider.evalmod_polynomial(),
+                key_provider);
+        });
+    real_component.reset();
+    auto imag_evalmod =
+        std::make_unique<CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    CKKSTimeBootstrapStage(
+        timings == nullptr ? nullptr : &timings->imag_evalmod_ms, [&] {
+            CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+                *imag_evalmod, *imag_component, key_provider.evalmod_polynomial(),
+                key_provider);
+        });
+    imag_component.reset();
+
+    const CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider, false>
+        slot_to_coeff_galois{key_provider};
+    CKKSTimeBootstrapStage(
+        timings == nullptr ? nullptr : &timings->slot_to_coeff_ms, [&] {
+            CKKSLinearTransformStagesBSGSDualInputSharedTail<
+                P, Schedule::after_evalmod_log_q, Schedule::log_delta,
+                Schedule::slot_to_coeff_plain_log_delta,
+                Schedule::slot_to_coeff_level_count>(
+                res, *real_evalmod, *imag_evalmod,
+                linear_plan.slot_to_coeff_stages,
+                linear_plan.slot_to_coeff_imag_stages, 0,
+                Schedule::linear_bsgs_step, slot_to_coeff_galois);
+        });
+    real_evalmod.reset();
+    imag_evalmod.reset();
+}
+
 }  // namespace ckks_detail
 
 template <class Schedule, class KeyProvider>
@@ -7765,72 +7889,19 @@ inline void CKKSDenseBootstrapWithKeyProvider(
     const typename Schedule::InputCiphertext &ct,
     const KeyProvider &key_provider)
 {
-    using P = typename Schedule::Param;
-    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
-        key_provider.linear_plan();
+    ckks_detail::CKKSDenseBootstrapWithKeyProviderImpl<Schedule>(
+        res, ct, key_provider, nullptr);
+}
 
-    auto raised = std::make_unique<typename Schedule::BootstrapCiphertext>();
-    CKKSModRaiseBoundedPhaseRandomized<
-        P, Schedule::input_log_q, Schedule::boot_log_q, Schedule::log_delta,
-        Schedule::modraise_mask_bound>(*raised, ct);
-
-    auto coeff_to_slot =
-        std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
-    const ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider,
-                                                               true>
-        coeff_to_slot_galois{key_provider};
-    CKKSLinearTransformStagesBSGS<
-        P, Schedule::boot_log_q, Schedule::log_delta,
-        Schedule::coeff_to_slot_plain_log_delta,
-        Schedule::coeff_to_slot_level_count>(
-        *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
-        Schedule::linear_bsgs_step, coeff_to_slot_galois);
-    raised.reset();
-
-    auto real_component =
-        std::make_unique<typename Schedule::ComponentCiphertext>();
-    CKKSExtractRealSlots<P, Schedule::after_coeff_to_slot_log_q,
-                         Schedule::log_delta,
-                         Schedule::component_split_plain_log_delta>(
-        *real_component, *coeff_to_slot,
-        key_provider.packed_conjugate_galois());
-    auto imag_component =
-        std::make_unique<typename Schedule::ComponentCiphertext>();
-    CKKSExtractImagSlots<P, Schedule::after_coeff_to_slot_log_q,
-                         Schedule::log_delta,
-                         Schedule::component_split_plain_log_delta>(
-        *imag_component, *coeff_to_slot,
-        key_provider.packed_conjugate_galois());
-    coeff_to_slot.reset();
-    if constexpr (requires { key_provider.release_packed_conjugate_galois(); }) {
-        key_provider.release_packed_conjugate_galois();
-    }
-
-    auto real_evalmod =
-        std::make_unique<CKKSDenseEvalModBoundedCosResult<Schedule>>();
-    CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
-        *real_evalmod, *real_component, key_provider.evalmod_polynomial(),
-        key_provider);
-    real_component.reset();
-    auto imag_evalmod =
-        std::make_unique<CKKSDenseEvalModBoundedCosResult<Schedule>>();
-    CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
-        *imag_evalmod, *imag_component, key_provider.evalmod_polynomial(),
-        key_provider);
-    imag_component.reset();
-
-    const ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider,
-                                                               false>
-        slot_to_coeff_galois{key_provider};
-    CKKSLinearTransformStagesBSGSDualInputSharedTail<
-        P, Schedule::after_evalmod_log_q, Schedule::log_delta,
-        Schedule::slot_to_coeff_plain_log_delta,
-        Schedule::slot_to_coeff_level_count>(
-        res, *real_evalmod, *imag_evalmod, linear_plan.slot_to_coeff_stages,
-        linear_plan.slot_to_coeff_imag_stages, 0, Schedule::linear_bsgs_step,
-        slot_to_coeff_galois);
-    real_evalmod.reset();
-    imag_evalmod.reset();
+template <class Schedule, class KeyProvider>
+inline void CKKSDenseBootstrapWithKeyProviderTimed(
+    typename Schedule::OutputCiphertext &res,
+    const typename Schedule::InputCiphertext &ct,
+    const KeyProvider &key_provider, CKKSDenseBootstrapTimings &timings)
+{
+    timings = {};
+    ckks_detail::CKKSDenseBootstrapWithKeyProviderImpl<Schedule>(
+        res, ct, key_provider, &timings);
 }
 
 template <class Schedule>

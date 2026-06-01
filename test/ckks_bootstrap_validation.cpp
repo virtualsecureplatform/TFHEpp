@@ -209,6 +209,21 @@ double elapsed_ms(F &&fn)
     return std::chrono::duration<double, std::milli>(end - begin).count();
 }
 
+void print_bootstrap_timings(const TFHEpp::CKKSDenseBootstrapTimings &timings)
+{
+    std::cout << "bootstrap_modraise_ms=" << timings.modraise_ms << '\n';
+    std::cout << "bootstrap_coeff_to_slot_ms=" << timings.coeff_to_slot_ms
+              << '\n';
+    std::cout << "bootstrap_split_ms=" << timings.split_ms << '\n';
+    std::cout << "bootstrap_real_evalmod_ms=" << timings.real_evalmod_ms
+              << '\n';
+    std::cout << "bootstrap_imag_evalmod_ms=" << timings.imag_evalmod_ms
+              << '\n';
+    std::cout << "bootstrap_slot_to_coeff_ms=" << timings.slot_to_coeff_ms
+              << '\n';
+    std::cout << "bootstrap_timed_total_ms=" << timings.total_ms() << '\n';
+}
+
 std::uintmax_t directory_size_bytes(const std::filesystem::path &root)
 {
     if (!std::filesystem::exists(root)) return 0;
@@ -501,9 +516,10 @@ int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol,
 
     TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
     const double bootstrap_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(*output, *input,
-                                                            provider);
+        TFHEpp::CKKSDenseBootstrapWithKeyProviderTimed<Schedule>(
+            *output, *input, provider, bootstrap_timings);
     });
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -514,6 +530,7 @@ int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol,
     const double err = max_error<P>(*decoded, *slots);
     std::cout << "encrypt_ms=" << encrypt_ms << '\n';
     std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
+    print_bootstrap_timings(bootstrap_timings);
     std::cout << "decrypt_ms=" << decrypt_ms << '\n';
     std::cout << "max_error=" << err << '\n';
     return err <= tol ? 0 : 1;
@@ -575,9 +592,10 @@ int run_hybrid_filesystem_bootstrap(const std::filesystem::path &key_dir,
     TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>
         provider(key_dir);
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
     const double bootstrap_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(*output, *input,
-                                                            provider);
+        TFHEpp::CKKSDenseBootstrapWithKeyProviderTimed<Schedule>(
+            *output, *input, provider, bootstrap_timings);
     });
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -588,6 +606,7 @@ int run_hybrid_filesystem_bootstrap(const std::filesystem::path &key_dir,
     const double err = max_error<P>(*decoded, *slots);
     std::cout << "encrypt_ms=" << encrypt_ms << '\n';
     std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
+    print_bootstrap_timings(bootstrap_timings);
     std::cout << "decrypt_ms=" << decrypt_ms << '\n';
     std::cout << "max_error=" << err << '\n';
     return err <= tol ? 0 : 1;
