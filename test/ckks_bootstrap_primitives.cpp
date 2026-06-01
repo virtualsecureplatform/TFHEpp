@@ -1862,6 +1862,42 @@ void test_bounded_cos_evalmod_plain()
     if (max_message_err > 2e-4) std::exit(1);
 }
 
+void test_bounded_cos_evalmod_inverse_plain()
+{
+    using L = TinyDeepMultiLimbCKKSParam;
+    using Schedule =
+        TFHEpp::CKKSDenseBootstrapSchedule<L, 25, 8, 500, 25, 5, 34, 18, 3, 5>;
+    const auto poly = TFHEpp::CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+
+    if (poly.sqrt_coeff != 1.0) std::exit(1);
+    if (TFHEpp::CKKSBuildEvalModInversePowerCoefficients(
+            poly, Schedule::evalmod_inv_degree)
+            .size() != Schedule::evalmod_inv_degree + 1)
+        std::exit(1);
+
+    double max_message_err = 0.0;
+    double max_power_err = 0.0;
+    for (int mask = -static_cast<int>(Schedule::evalmod_k) + 1;
+         mask < static_cast<int>(Schedule::evalmod_k); mask++) {
+        for (const double msg : {-1.0, -0.5, 0.0, 0.5, 1.0}) {
+            const double masked =
+                static_cast<double>(mask) * Schedule::message_ratio + msg;
+            const double got = TFHEpp::CKKSPlainEvalModBoundedCos(
+                poly, masked, Schedule::evalmod_inv_degree);
+            const double got_power = TFHEpp::CKKSPlainEvalModBoundedCosPower(
+                poly, masked, Schedule::evalmod_inv_degree);
+            max_power_err = std::max(max_power_err, std::abs(got - got_power));
+            max_message_err = std::max(max_message_err, std::abs(got - msg));
+        }
+    }
+
+    std::cout << "CKKS inverse EvalMod plain message max_error="
+              << max_message_err << " power max_error=" << max_power_err
+              << std::endl;
+    if (max_power_err > 1e-7) std::exit(1);
+    if (max_message_err > 1e-7) std::exit(1);
+}
+
 void test_multilimb_slot_decode_high_level()
 {
     using M = SmallMultiLimbCKKSParam;
@@ -2123,6 +2159,84 @@ void test_bounded_cos_evalmod_homomorphic()
                            "CKKS bounded cosine EvalMod homomorphic");
 }
 
+void test_bounded_cos_evalmod_inverse_homomorphic()
+{
+    using M = TinyMultiLimbCKKSParam;
+    constexpr std::uint32_t log_q = 300;
+    constexpr std::uint32_t log_delta = 25;
+    constexpr std::uint32_t coeff_log_delta = 15;
+    constexpr std::size_t degree = 7;
+    constexpr std::uint32_t k = 2;
+    constexpr std::uint32_t log_message_ratio = 8;
+    constexpr std::uint32_t double_angle = 2;
+    constexpr std::size_t inverse_degree = 5;
+    using EvalCt = TFHEpp::CKKSCiphertext<M, log_q, log_delta>;
+    using Traits =
+        TFHEpp::CKKSEvalModBoundedCosTraits<M, log_q, log_delta,
+                                            coeff_log_delta, degree,
+                                            double_angle, inverse_degree>;
+    using EvalOut =
+        TFHEpp::CKKSEvalModBoundedCosResult<M, log_q, log_delta,
+                                            coeff_log_delta, degree,
+                                            double_angle, inverse_degree>;
+    static_assert(Traits::inverse_enabled);
+    static_assert(Traits::InverseTraits::power_depth == 3);
+    static_assert(EvalOut::log_q ==
+                  Traits::after_double_angle_log_q -
+                      Traits::InverseTraits::power_depth * log_delta -
+                      coeff_log_delta);
+
+    const auto poly = TFHEpp::CKKSBuildBoundedCosEvalModPolynomial(
+        k, degree, log_message_ratio, double_angle, 1.0, true);
+    const double normalizer =
+        static_cast<double>(k) * poly.message_ratio * poly.q_diff;
+
+    auto key = std::make_unique<TFHEpp::Key<M>>();
+    fill_test_key<M>(*key);
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    slots->fill({0.0, 0.0});
+    expected->fill({0.0, 0.0});
+    for (std::size_t i = 0; i < M::n / 2; i++) {
+        const int mask =
+            static_cast<int>(i % (2 * k - 1)) - static_cast<int>(k) + 1;
+        const double msg =
+            static_cast<double>(static_cast<int>(i % 5) - 2) / 4.0;
+        const double masked =
+            static_cast<double>(mask) * poly.message_ratio + msg;
+        (*slots)[i] = {masked / normalizer, 0.0};
+        (*expected)[i] =
+            {TFHEpp::CKKSPlainEvalModBoundedCosPower(poly, masked,
+                                                     inverse_degree) /
+                 poly.message_ratio,
+             0.0};
+    }
+
+    auto keys = std::make_unique<
+        TFHEpp::CKKSEvalModBoundedCosRelinKeys<M, log_q, log_delta,
+                                               coeff_log_delta, degree,
+                                               double_angle, inverse_degree>>();
+    TFHEpp::CKKSEvalModBoundedCosKeyGen<M, log_q, log_delta, coeff_log_delta,
+                                        degree, double_angle, inverse_degree>(
+        *keys, *key, {0.0, 0});
+
+    auto ct = std::make_unique<EvalCt>();
+    TFHEpp::ckksSlotEncrypt<M, log_q, log_delta>(*ct, *slots, *key, {0.0, 0});
+
+    auto out = std::make_unique<EvalOut>();
+    TFHEpp::CKKSEvalModBoundedCosNormalized<M, log_q, log_delta,
+                                            coeff_log_delta, degree,
+                                            double_angle, inverse_degree>(
+        *out, *ct, poly, *keys);
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, EvalOut::log_q, EvalOut::log_delta>(
+        *decoded, *out, *key);
+    require_close_param<M>(*decoded, *expected, 0.05,
+                           "CKKS bounded cosine inverse EvalMod homomorphic");
+}
+
 }  // namespace
 
 int main()
@@ -2137,6 +2251,7 @@ int main()
     test_dense_bootstrap_fused_stc_shared_tail();
     test_dense_bootstrap_e2e_smoke();
     test_bounded_cos_evalmod_plain();
+    test_bounded_cos_evalmod_inverse_plain();
     test_multilimb_slot_decode_high_level();
 
     constexpr std::uint32_t low_log_q = 82;
@@ -2155,6 +2270,7 @@ int main()
     test_sine_evalmod(*key);
     test_power_polynomial_evaluator(*key);
     test_bounded_cos_evalmod_homomorphic();
+    test_bounded_cos_evalmod_inverse_homomorphic();
 
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     slots->fill({0.0, 0.0});

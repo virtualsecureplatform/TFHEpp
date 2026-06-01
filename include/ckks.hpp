@@ -4061,6 +4061,7 @@ struct CKKSDenseBootstrapSchedule {
     static_assert(HybridGiantDirectPopcountThreshold > 0);
     static_assert(EvalModK > 0);
     static_assert(ModRaiseMaskBound < EvalModK);
+    static_assert(EvalModInvDegree == 0 || EvalModInvDegree > 1);
     static_assert(EvalModDegree >= 2 * (EvalModK - 1),
                   "cos-discrete EvalMod requires degree at least 2*(K-1)");
 
@@ -4099,9 +4100,12 @@ struct CKKSDenseBootstrapSchedule {
         ckks_detail::bit_width_u64(
             ckks_detail::static_max_v<EvalModDegree, 2 * (EvalModK - 1)>) +
         1;
+    static constexpr std::uint32_t evalmod_inv_depth =
+        EvalModInvDegree == 0
+            ? 0
+            : ckks_detail::bit_width_u64(EvalModInvDegree - 1) + 1;
     static constexpr std::uint32_t evalmod_depth =
-        evalmod_polynomial_depth + EvalModDoubleAngle +
-        ckks_detail::bit_width_u64(EvalModInvDegree);
+        evalmod_polynomial_depth + EvalModDoubleAngle + evalmod_inv_depth;
     static constexpr double message_ratio =
         ckks_detail::exp2_double(LogMessageRatio);
     // Modulus raising already introduces key-dependent multiples of the input
@@ -4229,7 +4233,8 @@ inline std::vector<double> CKKSChebyshevToPowerCoefficients(
 
 inline CKKSBoundedCosEvalModPolynomial CKKSBuildBoundedCosEvalModPolynomial(
     std::uint32_t k, std::uint32_t degree, std::uint32_t log_message_ratio,
-    std::uint32_t double_angle, double q_diff = 1.0)
+    std::uint32_t double_angle, double q_diff = 1.0,
+    bool use_inverse_correction = false)
 {
     assert(k > 0);
     constexpr long double pi =
@@ -4246,7 +4251,9 @@ inline CKKSBoundedCosEvalModPolynomial CKKSBuildBoundedCosEvalModPolynomial(
     const double shrink =
         ckks_detail::exp2_double(double_angle);
     poly.sqrt_coeff =
-        std::pow(q_diff / (2.0 * static_cast<double>(pi)), 1.0 / shrink);
+        use_inverse_correction
+            ? 1.0
+            : std::pow(q_diff / (2.0 * static_cast<double>(pi)), 1.0 / shrink);
     poly.domain_offset =
         1.0 / (4.0 * static_cast<double>(k) * shrink);
 
@@ -4291,11 +4298,38 @@ CKKSBuildBoundedCosEvalModPolynomial()
 {
     return CKKSBuildBoundedCosEvalModPolynomial(
         Schedule::evalmod_k, Schedule::evalmod_degree,
-        Schedule::log_message_ratio, Schedule::evalmod_double_angle);
+        Schedule::log_message_ratio, Schedule::evalmod_double_angle, 1.0,
+        Schedule::evalmod_inv_degree != 0);
+}
+
+inline std::vector<double> CKKSBuildEvalModInversePowerCoefficients(
+    const CKKSBoundedCosEvalModPolynomial &poly, std::uint32_t degree)
+{
+    if (degree == 0) return {};
+    constexpr double pi = 3.141592653589793238462643383279502884;
+    std::vector<double> coeffs(static_cast<std::size_t>(degree) + 1, 0.0);
+    coeffs[1] = poly.q_diff / (2.0 * pi);
+    for (std::uint32_t i = 3; i <= degree; i += 2) {
+        const double numerator =
+            static_cast<double>(i * i - 4 * i + 4);
+        const double denominator = static_cast<double>(i * i - i);
+        coeffs[i] = coeffs[i - 2] * numerator / denominator;
+    }
+    return coeffs;
+}
+
+inline double CKKSApplyEvalModInverseCorrection(
+    const CKKSBoundedCosEvalModPolynomial &poly, double value,
+    std::uint32_t degree)
+{
+    if (degree == 0) return value;
+    return CKKSEvaluatePowerPolynomial(
+        CKKSBuildEvalModInversePowerCoefficients(poly, degree), value);
 }
 
 inline double CKKSPlainEvalModBoundedCosNormalized(
-    const CKKSBoundedCosEvalModPolynomial &poly, double normalized)
+    const CKKSBoundedCosEvalModPolynomial &poly, double normalized,
+    std::uint32_t inverse_degree = 0)
 {
     const double x = normalized - poly.domain_offset;
     double y = CKKSEvaluateChebyshevUnit(poly.chebyshev_coeffs, x);
@@ -4304,11 +4338,13 @@ inline double CKKSPlainEvalModBoundedCosNormalized(
         sqrt_coeff *= sqrt_coeff;
         y = 2.0 * y * y - sqrt_coeff;
     }
+    y = CKKSApplyEvalModInverseCorrection(poly, y, inverse_degree);
     return poly.message_ratio * y;
 }
 
 inline double CKKSPlainEvalModBoundedCosNormalizedPower(
-    const CKKSBoundedCosEvalModPolynomial &poly, double normalized)
+    const CKKSBoundedCosEvalModPolynomial &poly, double normalized,
+    std::uint32_t inverse_degree = 0)
 {
     const double x = normalized - poly.domain_offset;
     double y = CKKSEvaluatePowerPolynomial(poly.power_coeffs, x);
@@ -4317,25 +4353,30 @@ inline double CKKSPlainEvalModBoundedCosNormalizedPower(
         sqrt_coeff *= sqrt_coeff;
         y = 2.0 * y * y - sqrt_coeff;
     }
+    y = CKKSApplyEvalModInverseCorrection(poly, y, inverse_degree);
     return poly.message_ratio * y;
 }
 
 inline double CKKSPlainEvalModBoundedCos(
-    const CKKSBoundedCosEvalModPolynomial &poly, double masked_value)
+    const CKKSBoundedCosEvalModPolynomial &poly, double masked_value,
+    std::uint32_t inverse_degree = 0)
 {
     const double normalized =
         masked_value /
         (static_cast<double>(poly.k) * poly.message_ratio * poly.q_diff);
-    return CKKSPlainEvalModBoundedCosNormalized(poly, normalized);
+    return CKKSPlainEvalModBoundedCosNormalized(poly, normalized,
+                                                inverse_degree);
 }
 
 inline double CKKSPlainEvalModBoundedCosPower(
-    const CKKSBoundedCosEvalModPolynomial &poly, double masked_value)
+    const CKKSBoundedCosEvalModPolynomial &poly, double masked_value,
+    std::uint32_t inverse_degree = 0)
 {
     const double normalized =
         masked_value /
         (static_cast<double>(poly.k) * poly.message_ratio * poly.q_diff);
-    return CKKSPlainEvalModBoundedCosNormalizedPower(poly, normalized);
+    return CKKSPlainEvalModBoundedCosNormalizedPower(poly, normalized,
+                                                     inverse_degree);
 }
 
 template <class Schedule>
@@ -5289,68 +5330,133 @@ inline void CKKSEvalChebyshevPolynomialWithKeyProvider(
                                                                   coeffs);
 }
 
+namespace ckks_detail {
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t InvDegree,
+          bool Enabled>
+struct CKKSEvalModInverseCorrectionTraitsImpl;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t InvDegree>
+struct CKKSEvalModInverseCorrectionTraitsImpl<
+    P, StartLogQ, LogDelta, CoeffLogDelta, InvDegree, false> {
+    static constexpr bool enabled = false;
+    static constexpr std::uint32_t power_depth = 0;
+    static constexpr std::uint32_t log_q = StartLogQ;
+    static constexpr std::uint32_t log_delta = LogDelta;
+
+    using RelinKeyChain = std::tuple<>;
+    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+};
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t InvDegree>
+struct CKKSEvalModInverseCorrectionTraitsImpl<
+    P, StartLogQ, LogDelta, CoeffLogDelta, InvDegree, true> {
+    static_assert(InvDegree > 1);
+    using PolynomialTraits =
+        CKKSPowerPolynomialEvaluatorTraits<P, StartLogQ, LogDelta,
+                                           CoeffLogDelta, InvDegree>;
+    static constexpr bool enabled = true;
+    static constexpr std::uint32_t power_depth =
+        PolynomialTraits::power_depth;
+    static constexpr std::uint32_t log_q = PolynomialTraits::log_q;
+    static constexpr std::uint32_t log_delta = LogDelta;
+
+    using RelinKeyChain = typename PolynomialTraits::RelinKeyChain;
+    using Ciphertext = typename PolynomialTraits::Ciphertext;
+};
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t InvDegree>
+using CKKSEvalModInverseCorrectionTraits =
+    CKKSEvalModInverseCorrectionTraitsImpl<
+        P, StartLogQ, LogDelta, CoeffLogDelta, InvDegree, InvDegree != 0>;
+
+}  // namespace ckks_detail
+
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
 struct CKKSEvalModBoundedCosTraits {
     static_assert(DoubleAngle > 0);
+    static_assert(InvDegree == 0 || InvDegree > 1);
     using PolynomialTraits =
         CKKSPowerPolynomialEvaluatorTraits<P, StartLogQ, LogDelta,
                                            CoeffLogDelta, Degree>;
     static constexpr std::uint32_t polynomial_log_q =
         PolynomialTraits::log_q;
     static_assert(polynomial_log_q > DoubleAngle * LogDelta);
-    static constexpr std::uint32_t log_q =
+    static constexpr std::uint32_t after_double_angle_log_q =
         polynomial_log_q - DoubleAngle * LogDelta;
+    using InverseTraits = ckks_detail::CKKSEvalModInverseCorrectionTraits<
+        P, after_double_angle_log_q, LogDelta, CoeffLogDelta, InvDegree>;
+    static constexpr bool inverse_enabled = InverseTraits::enabled;
+    static constexpr std::uint32_t log_q = InverseTraits::log_q;
     static constexpr std::uint32_t log_delta = LogDelta;
 
     using PolynomialCiphertext = typename PolynomialTraits::Ciphertext;
+    using DoubleAngleCiphertext =
+        CKKSCiphertext<P, after_double_angle_log_q, log_delta>;
     using PolynomialRelinKeyChain = typename PolynomialTraits::RelinKeyChain;
     using DoubleAngleRelinKeyChain =
         CKKSRelinKeyChain<P, polynomial_log_q, LogDelta, DoubleAngle>;
-    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+    using InverseRelinKeyChain = typename InverseTraits::RelinKeyChain;
+    using Ciphertext = typename InverseTraits::Ciphertext;
 };
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
 using CKKSEvalModBoundedCosResult =
     typename CKKSEvalModBoundedCosTraits<
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree,
-        DoubleAngle>::Ciphertext;
+        DoubleAngle, InvDegree>::Ciphertext;
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
 struct CKKSEvalModBoundedCosRelinKeys {
     using Traits = CKKSEvalModBoundedCosTraits<
-        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>;
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
+        InvDegree>;
 
     typename Traits::PolynomialRelinKeyChain polynomial{};
     typename Traits::DoubleAngleRelinKeyChain double_angle{};
+    typename Traits::InverseRelinKeyChain inverse{};
 
     template <class Archive>
     void serialize(Archive &archive)
     {
-        archive(polynomial, double_angle);
+        if constexpr (Traits::inverse_enabled)
+            archive(polynomial, double_angle, inverse);
+        else
+            archive(polynomial, double_angle);
     }
 };
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
 inline void CKKSEvalModBoundedCosKeyGen(
     CKKSEvalModBoundedCosRelinKeys<P, StartLogQ, LogDelta, CoeffLogDelta,
-                                   Degree, DoubleAngle> &keys,
+                                   Degree, DoubleAngle, InvDegree> &keys,
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
 {
     using Traits = CKKSEvalModBoundedCosTraits<
-        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>;
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
+        InvDegree>;
     CKKSRelinKeyChainGen<P, StartLogQ, LogDelta,
                          Traits::PolynomialTraits::power_depth>(
         keys.polynomial, key, noise);
     CKKSRelinKeyChainGen<P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
         keys.double_angle, key, noise);
+    if constexpr (Traits::inverse_enabled) {
+        CKKSRelinKeyChainGen<P, Traits::after_double_angle_log_q, LogDelta,
+                             Traits::InverseTraits::power_depth>(
+            keys.inverse, key, noise);
+    }
 }
 
 namespace ckks_detail {
@@ -5388,11 +5494,11 @@ inline void CKKSBoundedCosDoubleAngleImpl(
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
 struct CKKSEvalModBoundedCosInMemoryKeyProvider {
     using RelinKeys =
         CKKSEvalModBoundedCosRelinKeys<P, StartLogQ, LogDelta, CoeffLogDelta,
-                                       Degree, DoubleAngle>;
+                                       Degree, DoubleAngle, InvDegree>;
     const RelinKeys *keys = nullptr;
 
     explicit CKKSEvalModBoundedCosInMemoryKeyProvider(const RelinKeys &keys_)
@@ -5411,6 +5517,13 @@ struct CKKSEvalModBoundedCosInMemoryKeyProvider {
     {
         assert(keys != nullptr);
         return keys->double_angle.template get<I>();
+    }
+
+    template <std::size_t I>
+    const auto &inverse_relin() const
+    {
+        assert(keys != nullptr);
+        return keys->inverse.template get<I>();
     }
 };
 
@@ -5449,14 +5562,34 @@ struct CKKSEvalModBoundedCosRelinKeyProviderChain {
     }
 };
 
+template <class KeyProvider>
+struct CKKSEvalModBoundedCosInverseRelinKeyProviderChain {
+    const KeyProvider &provider;
+
+    template <std::size_t I>
+    decltype(auto) get() const
+    {
+        return provider.template inverse_relin<I>();
+    }
+
+    template <std::size_t I>
+    void release() const
+    {
+        if constexpr (requires { provider.template release_inverse_relin<I>(); }) {
+            provider.template release_inverse_relin<I>();
+        }
+    }
+};
+
 }  // namespace ckks_detail
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle, class KeyProvider>
+          std::uint32_t DoubleAngle, class KeyProvider,
+          std::size_t InvDegree = 0>
 inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
     CKKSEvalModBoundedCosResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree,
-                                DoubleAngle> &res,
+                                DoubleAngle, InvDegree> &res,
     const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
     const CKKSBoundedCosEvalModPolynomial &poly,
     const KeyProvider &key_provider)
@@ -5465,7 +5598,8 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
     assert(poly.double_angle == DoubleAngle);
 
     using Traits = CKKSEvalModBoundedCosTraits<
-        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>;
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
+        InvDegree>;
     auto shifted =
         std::make_unique<CKKSCiphertext<P, StartLogQ, LogDelta>>(ct);
     CKKSSubPlainRealInPlace<P, StartLogQ, LogDelta>(*shifted,
@@ -5483,28 +5617,49 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
     const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,
                                                                   false>
         double_angle_keys{key_provider};
-    ckks_detail::CKKSBoundedCosDoubleAngleImpl<
-        0, P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
-        res, *polynomial, double_angle_keys, poly.sqrt_coeff);
+    if constexpr (Traits::inverse_enabled) {
+        auto double_angle =
+            std::make_unique<typename Traits::DoubleAngleCiphertext>();
+        ckks_detail::CKKSBoundedCosDoubleAngleImpl<
+            0, P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
+            *double_angle, *polynomial, double_angle_keys, poly.sqrt_coeff);
+        polynomial.reset();
+
+        const ckks_detail::CKKSEvalModBoundedCosInverseRelinKeyProviderChain<
+            KeyProvider>
+            inverse_keys{key_provider};
+        CKKSEvalPowerPolynomialWithKeyProvider<
+            P, Traits::after_double_angle_log_q, LogDelta, CoeffLogDelta,
+            InvDegree>(res, *double_angle,
+                       CKKSBuildEvalModInversePowerCoefficients(poly, InvDegree),
+                       inverse_keys);
+    }
+    else {
+        ckks_detail::CKKSBoundedCosDoubleAngleImpl<
+            0, P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
+            res, *polynomial, double_angle_keys, poly.sqrt_coeff);
+    }
 }
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
 inline void CKKSEvalModBoundedCosNormalized(
     CKKSEvalModBoundedCosResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree,
-                                DoubleAngle> &res,
+                                DoubleAngle, InvDegree> &res,
     const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
     const CKKSBoundedCosEvalModPolynomial &poly,
     const CKKSEvalModBoundedCosRelinKeys<P, StartLogQ, LogDelta,
-                                         CoeffLogDelta, Degree, DoubleAngle>
+                                         CoeffLogDelta, Degree, DoubleAngle,
+                                         InvDegree>
         &keys)
 {
     const CKKSEvalModBoundedCosInMemoryKeyProvider<
-        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle, InvDegree>
         key_provider(keys);
     CKKSEvalModBoundedCosNormalizedWithKeyProvider<
-        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle>(
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
+        decltype(key_provider), InvDegree>(
         res, ct, poly, key_provider);
 }
 
@@ -5512,7 +5667,7 @@ template <class Schedule>
 using CKKSDenseEvalModBoundedCosTraits = CKKSEvalModBoundedCosTraits<
     typename Schedule::Param, Schedule::after_component_split_log_q,
     Schedule::log_delta, Schedule::evalmod_log_scale, Schedule::evalmod_degree,
-    Schedule::evalmod_double_angle>;
+    Schedule::evalmod_double_angle, Schedule::evalmod_inv_degree>;
 
 template <class Schedule>
 using CKKSDenseEvalModBoundedCosResult =
@@ -5523,14 +5678,16 @@ using CKKSDenseEvalModBoundedCosRelinKeys =
     CKKSEvalModBoundedCosRelinKeys<
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
-        Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
+        Schedule::evalmod_degree, Schedule::evalmod_double_angle,
+        Schedule::evalmod_inv_degree>;
 
 template <class Schedule>
 using CKKSDenseEvalModBoundedCosInMemoryKeyProvider =
     CKKSEvalModBoundedCosInMemoryKeyProvider<
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
-        Schedule::evalmod_degree, Schedule::evalmod_double_angle>;
+        Schedule::evalmod_degree, Schedule::evalmod_double_angle,
+        Schedule::evalmod_inv_degree>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseEvalModPolynomialRelinKey =
@@ -5543,6 +5700,13 @@ using CKKSDenseEvalModDoubleAngleRelinKey =
     CKKSRelinKeyChainElement<
         typename Schedule::Param,
         CKKSDenseEvalModBoundedCosTraits<Schedule>::polynomial_log_q,
+        Schedule::log_delta, I>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseEvalModInverseRelinKey =
+    CKKSRelinKeyChainElement<
+        typename Schedule::Param,
+        CKKSDenseEvalModBoundedCosTraits<Schedule>::after_double_angle_log_q,
         Schedule::log_delta, I>;
 
 namespace ckks_detail {
@@ -5751,7 +5915,9 @@ constexpr std::size_t CKKSDenseBootstrapEvalModRelinKeyCount()
 {
     return CKKSDenseEvalModBoundedCosTraits<
                Schedule>::PolynomialTraits::power_depth +
-           Schedule::evalmod_double_angle;
+           Schedule::evalmod_double_angle +
+           CKKSDenseEvalModBoundedCosTraits<
+               Schedule>::InverseTraits::power_depth;
 }
 
 template <class Schedule>
@@ -5765,7 +5931,10 @@ constexpr std::size_t CKKSDenseBootstrapEvalModKeySwitchRowCount()
                Traits::PolynomialTraits::power_depth>() +
            ckks_detail::CKKSRelinChainKeySwitchRows<
                0, P, Traits::polynomial_log_q, Schedule::log_delta,
-               Schedule::evalmod_double_angle>();
+               Schedule::evalmod_double_angle>() +
+           ckks_detail::CKKSRelinChainKeySwitchRows<
+               0, P, Traits::after_double_angle_log_q, Schedule::log_delta,
+               Traits::InverseTraits::power_depth>();
 }
 
 template <class Schedule>
@@ -5773,13 +5942,19 @@ constexpr std::size_t CKKSDenseBootstrapEvalModPeakKeySwitchRowCount()
 {
     using P = typename Schedule::Param;
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
-    return std::max(
+    const std::size_t polynomial_peak =
         ckks_detail::CKKSRelinChainPeakKeySwitchRows<
             0, P, Schedule::after_component_split_log_q,
-            Schedule::log_delta, Traits::PolynomialTraits::power_depth>(),
+            Schedule::log_delta, Traits::PolynomialTraits::power_depth>();
+    const std::size_t double_angle_peak =
         ckks_detail::CKKSRelinChainPeakKeySwitchRows<
             0, P, Traits::polynomial_log_q, Schedule::log_delta,
-            Schedule::evalmod_double_angle>());
+            Schedule::evalmod_double_angle>();
+    const std::size_t inverse_peak =
+        ckks_detail::CKKSRelinChainPeakKeySwitchRows<
+            0, P, Traits::after_double_angle_log_q, Schedule::log_delta,
+            Traits::InverseTraits::power_depth>();
+    return std::max(std::max(polynomial_peak, double_angle_peak), inverse_peak);
 }
 
 template <class Schedule>
@@ -6177,15 +6352,13 @@ inline void CKKSDenseEvalModBoundedCosKeyGen(
     const Key<typename Schedule::Param> &key,
     CKKSNoise noise = {Schedule::Param::α, 0})
 {
-    static_assert(Schedule::evalmod_inv_degree == 0,
-                  "inverse EvalMod correction is not implemented yet");
     static_assert(CKKSDenseEvalModBoundedCosTraits<Schedule>::log_q ==
                   Schedule::after_evalmod_log_q);
     CKKSEvalModBoundedCosKeyGen<
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
-        Schedule::evalmod_degree, Schedule::evalmod_double_angle>(keys, key,
-                                                                  noise);
+        Schedule::evalmod_degree, Schedule::evalmod_double_angle,
+        Schedule::evalmod_inv_degree>(keys, key, noise);
 }
 
 template <class Schedule, std::size_t I>
@@ -6212,6 +6385,20 @@ inline void CKKSDenseEvalModDoubleAngleRelinKeyGen(
                                 Traits::polynomial_log_q, Schedule::log_delta,
                                 Schedule::evalmod_double_angle>(relinkey, key,
                                                                 noise);
+}
+
+template <class Schedule, std::size_t I>
+inline void CKKSDenseEvalModInverseRelinKeyGen(
+    CKKSDenseEvalModInverseRelinKey<Schedule, I> &relinkey,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    CKKSRelinKeyChainElementGen<I, typename Schedule::Param,
+                                Traits::after_double_angle_log_q,
+                                Schedule::log_delta,
+                                Traits::InverseTraits::power_depth>(relinkey,
+                                                                    key, noise);
 }
 
 template <class Schedule, class KeyProvider>
@@ -6241,15 +6428,13 @@ inline void CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider(
     const CKKSBoundedCosEvalModPolynomial &poly,
     const KeyProvider &key_provider)
 {
-    static_assert(Schedule::evalmod_inv_degree == 0,
-                  "inverse EvalMod correction is not implemented yet");
     static_assert(CKKSDenseEvalModBoundedCosTraits<Schedule>::log_q ==
                   Schedule::after_evalmod_log_q);
     CKKSEvalModBoundedCosNormalizedWithKeyProvider<
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
-        Schedule::evalmod_degree, Schedule::evalmod_double_angle>(res, ct, poly,
-                                                                  key_provider);
+        Schedule::evalmod_degree, Schedule::evalmod_double_angle, KeyProvider,
+        Schedule::evalmod_inv_degree>(res, ct, poly, key_provider);
 }
 
 template <class Schedule>
@@ -6524,6 +6709,13 @@ struct CKKSDenseBootstrapInMemoryKeyProvider {
     }
 
     template <std::size_t I>
+    const auto &inverse_relin() const
+    {
+        assert(key != nullptr);
+        return key->evalmod_relin.inverse.template get<I>();
+    }
+
+    template <std::size_t I>
     const auto &slot_to_coeff_galois() const
     {
         assert(key != nullptr);
@@ -6537,8 +6729,6 @@ inline void CKKSDenseBootstrapKeyGen(
     const Key<typename Schedule::Param> &key,
     CKKSNoise noise = {Schedule::Param::α, 0})
 {
-    static_assert(Schedule::evalmod_inv_degree == 0,
-                  "inverse EvalMod correction is not implemented yet");
     CKKSBuildDenseBootstrapLinearPlan<Schedule>(bootstrap_key.linear_plan);
     CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage;
     CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(
@@ -6562,8 +6752,6 @@ inline void CKKSDenseBootstrapHybridGiantKeyGen(
     CKKSNoise noise = {Schedule::Param::α, 0})
 {
     using P = typename Schedule::Param;
-    static_assert(Schedule::evalmod_inv_degree == 0,
-                  "inverse EvalMod correction is not implemented yet");
     CKKSBuildDenseBootstrapLinearPlan<Schedule>(bootstrap_key.linear_plan);
     CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> rotation_usage;
     CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
@@ -6910,6 +7098,54 @@ inline bool CKKSDenseBootstrapDoubleAngleRelinKeyGenNextMissingToDirectoryImpl(
 }
 
 template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapInverseRelinKeyGenToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::InverseTraits::power_depth) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "inverse_relin", I);
+        if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
+            auto relinkey =
+                std::make_unique<CKKSDenseEvalModInverseRelinKey<Schedule,
+                                                                 I>>();
+            CKKSDenseEvalModInverseRelinKeyGen<Schedule, I>(*relinkey, key,
+                                                            noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
+        }
+        CKKSDenseBootstrapInverseRelinKeyGenToDirectoryImpl<I + 1, Schedule>(
+            root, key, noise, options);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline bool CKKSDenseBootstrapInverseRelinKeyGenNextMissingToDirectoryImpl(
+    const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
+    CKKSNoise noise)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::InverseTraits::power_depth) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "inverse_relin", I);
+        if (!std::filesystem::exists(path)) {
+            auto relinkey =
+                std::make_unique<CKKSDenseEvalModInverseRelinKey<Schedule,
+                                                                 I>>();
+            CKKSDenseEvalModInverseRelinKeyGen<Schedule, I>(*relinkey, key,
+                                                            noise);
+            CKKSSavePortableBinaryAtomic(path, *relinkey);
+            return true;
+        }
+        return CKKSDenseBootstrapInverseRelinKeyGenNextMissingToDirectoryImpl<
+            I + 1, Schedule>(root, key, noise);
+    }
+    else {
+        return false;
+    }
+}
+
+template <std::size_t I, class Schedule>
 inline void CKKSDenseBootstrapCoeffToSlotKeyFilePathsImpl(
     std::vector<std::filesystem::path> &paths, const std::filesystem::path &root)
 {
@@ -6954,6 +7190,19 @@ inline void CKKSDenseBootstrapDoubleAngleRelinKeyFilePathsImpl(
         paths.push_back(
             CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I));
         CKKSDenseBootstrapDoubleAngleRelinKeyFilePathsImpl<I + 1, Schedule>(
+            paths, root);
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline void CKKSDenseBootstrapInverseRelinKeyFilePathsImpl(
+    std::vector<std::filesystem::path> &paths, const std::filesystem::path &root)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::InverseTraits::power_depth) {
+        paths.push_back(
+            CKKSDenseBootstrapIndexedPath(root, "inverse_relin", I));
+        CKKSDenseBootstrapInverseRelinKeyFilePathsImpl<I + 1, Schedule>(
             paths, root);
     }
 }
@@ -7020,6 +7269,17 @@ struct CKKSDenseBootstrapDoubleAngleRelinCacheTuple<Schedule,
             CKKSDenseEvalModDoubleAngleRelinKey<Schedule, Is>>...>;
 };
 
+template <class Schedule, class Seq>
+struct CKKSDenseBootstrapInverseRelinCacheTuple;
+
+template <class Schedule, std::size_t... Is>
+struct CKKSDenseBootstrapInverseRelinCacheTuple<Schedule,
+                                                std::index_sequence<Is...>> {
+    using type =
+        std::tuple<std::unique_ptr<
+            CKKSDenseEvalModInverseRelinKey<Schedule, Is>>...>;
+};
+
 }  // namespace ckks_detail
 
 inline std::filesystem::path CKKSDenseBootstrapKeyDirectoryManifestFile(
@@ -7037,7 +7297,8 @@ inline std::vector<std::filesystem::path> CKKSDenseBootstrapKeyDirectoryFiles(
     paths.reserve(6 + Schedule::coeff_to_slot_level_count +
                   Schedule::slot_to_coeff_level_count +
                   EvalModTraits::PolynomialTraits::power_depth +
-                  Schedule::evalmod_double_angle);
+                  Schedule::evalmod_double_angle +
+                  EvalModTraits::InverseTraits::power_depth);
     paths.push_back(CKKSDenseBootstrapKeyDirectoryManifestFile(root));
     paths.push_back(ckks_detail::CKKSDenseBootstrapNamedPath(root,
                                                              "linear_plan"));
@@ -7054,6 +7315,8 @@ inline std::vector<std::filesystem::path> CKKSDenseBootstrapKeyDirectoryFiles(
         paths, root);
     ckks_detail::CKKSDenseBootstrapDoubleAngleRelinKeyFilePathsImpl<0,
                                                                     Schedule>(
+        paths, root);
+    ckks_detail::CKKSDenseBootstrapInverseRelinKeyFilePathsImpl<0, Schedule>(
         paths, root);
     ckks_detail::CKKSDenseBootstrapSlotToCoeffKeyFilePathsImpl<0, Schedule>(
         paths, root);
@@ -7400,8 +7663,6 @@ inline bool CKKSDenseBootstrapKeyGenNextMissingToDirectory(
     const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
     CKKSNoise noise = {Schedule::Param::α, 0})
 {
-    static_assert(Schedule::evalmod_inv_degree == 0,
-                  "inverse EvalMod correction is not implemented yet");
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage =
         CKKSDenseBootstrapWriteKeyDirectoryMetadata<Schedule>(
             root, false);
@@ -7429,6 +7690,9 @@ inline bool CKKSDenseBootstrapKeyGenNextMissingToDirectory(
     if (ckks_detail::CKKSDenseBootstrapDoubleAngleRelinKeyGenNextMissingToDirectoryImpl<
             0, Schedule>(root, key, noise))
         return true;
+    if (ckks_detail::CKKSDenseBootstrapInverseRelinKeyGenNextMissingToDirectoryImpl<
+            0, Schedule>(root, key, noise))
+        return true;
     return ckks_detail::CKKSDenseBootstrapSlotToCoeffKeyGenNextMissingToDirectoryImpl<
         0, Schedule>(root, rotation_usage, key, noise);
 }
@@ -7439,8 +7703,6 @@ inline void CKKSDenseBootstrapKeyGenToDirectory(
     CKKSNoise noise = {Schedule::Param::α, 0},
     CKKSDenseBootstrapKeyDirectoryOptions options = {})
 {
-    static_assert(Schedule::evalmod_inv_degree == 0,
-                  "inverse EvalMod correction is not implemented yet");
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage =
         CKKSDenseBootstrapWriteKeyDirectoryMetadata<Schedule>(
             root, options.overwrite_existing);
@@ -7466,6 +7728,8 @@ inline void CKKSDenseBootstrapKeyGenToDirectory(
         0, Schedule>(root, key, noise, options);
     ckks_detail::CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl<
         0, Schedule>(root, key, noise, options);
+    ckks_detail::CKKSDenseBootstrapInverseRelinKeyGenToDirectoryImpl<
+        0, Schedule>(root, key, noise, options);
 
     ckks_detail::CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl<0,
                                                                     Schedule>(
@@ -7478,8 +7742,6 @@ inline bool CKKSDenseBootstrapHybridGiantKeyGenNextMissingToDirectory(
     CKKSNoise noise = {Schedule::Param::α, 0})
 {
     using P = typename Schedule::Param;
-    static_assert(Schedule::evalmod_inv_degree == 0,
-                  "inverse EvalMod correction is not implemented yet");
     const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
         rotation_usage =
             CKKSDenseBootstrapHybridGiantWriteKeyDirectoryMetadata<Schedule>(
@@ -7509,6 +7771,9 @@ inline bool CKKSDenseBootstrapHybridGiantKeyGenNextMissingToDirectory(
     if (ckks_detail::CKKSDenseBootstrapDoubleAngleRelinKeyGenNextMissingToDirectoryImpl<
             0, Schedule>(root, key, noise))
         return true;
+    if (ckks_detail::CKKSDenseBootstrapInverseRelinKeyGenNextMissingToDirectoryImpl<
+            0, Schedule>(root, key, noise))
+        return true;
     return ckks_detail::
         CKKSDenseBootstrapHybridGiantSlotToCoeffKeyGenNextMissingToDirectoryImpl<
             0, Schedule>(root, rotation_usage, key, noise);
@@ -7521,8 +7786,6 @@ inline void CKKSDenseBootstrapHybridGiantKeyGenToDirectory(
     CKKSDenseBootstrapKeyDirectoryOptions options = {})
 {
     using P = typename Schedule::Param;
-    static_assert(Schedule::evalmod_inv_degree == 0,
-                  "inverse EvalMod correction is not implemented yet");
     const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
         rotation_usage =
             CKKSDenseBootstrapHybridGiantWriteKeyDirectoryMetadata<Schedule>(
@@ -7547,6 +7810,8 @@ inline void CKKSDenseBootstrapHybridGiantKeyGenToDirectory(
     ckks_detail::CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl<
         0, Schedule>(root, key, noise, options);
     ckks_detail::CKKSDenseBootstrapDoubleAngleRelinKeyGenToDirectoryImpl<
+        0, Schedule>(root, key, noise, options);
+    ckks_detail::CKKSDenseBootstrapInverseRelinKeyGenToDirectoryImpl<
         0, Schedule>(root, key, noise, options);
 
     ckks_detail::CKKSDenseBootstrapHybridGiantSlotToCoeffKeyGenToDirectoryImpl<
@@ -7575,6 +7840,11 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
         typename ckks_detail::CKKSDenseBootstrapDoubleAngleRelinCacheTuple<
             Schedule,
             std::make_index_sequence<Schedule::evalmod_double_angle>>::type;
+    using InverseRelinCache =
+        typename ckks_detail::CKKSDenseBootstrapInverseRelinCacheTuple<
+            Schedule,
+            std::make_index_sequence<EvalModTraits::InverseTraits::
+                                         power_depth>>::type;
 
     std::filesystem::path root;
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan_cache{};
@@ -7584,6 +7854,7 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
         packed_conjugate_cache{};
     mutable PolynomialRelinCache polynomial_relin_cache{};
     mutable DoubleAngleRelinCache double_angle_relin_cache{};
+    mutable InverseRelinCache inverse_relin_cache{};
     mutable SlotToCoeffCache slot_to_coeff_cache{};
 
     explicit CKKSDenseBootstrapFilesystemKeyProvider(
@@ -7711,6 +7982,29 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
     }
 
     template <std::size_t I>
+    const auto &inverse_relin() const
+    {
+        static_assert(I < EvalModTraits::InverseTraits::power_depth);
+        auto &entry = std::get<I>(inverse_relin_cache);
+        if (!entry) {
+            entry = std::make_unique<
+                CKKSDenseEvalModInverseRelinKey<Schedule, I>>();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(root,
+                                                           "inverse_relin", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_inverse_relin() const
+    {
+        static_assert(I < EvalModTraits::InverseTraits::power_depth);
+        std::get<I>(inverse_relin_cache).reset();
+    }
+
+    template <std::size_t I>
     const auto &slot_to_coeff_galois() const
     {
         static_assert(I <= Schedule::slot_to_coeff_level_count);
@@ -7758,6 +8052,11 @@ struct CKKSDenseBootstrapHybridGiantFilesystemKeyProvider {
         typename ckks_detail::CKKSDenseBootstrapDoubleAngleRelinCacheTuple<
             Schedule,
             std::make_index_sequence<Schedule::evalmod_double_angle>>::type;
+    using InverseRelinCache =
+        typename ckks_detail::CKKSDenseBootstrapInverseRelinCacheTuple<
+            Schedule,
+            std::make_index_sequence<EvalModTraits::InverseTraits::
+                                         power_depth>>::type;
 
     std::filesystem::path root;
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan_cache{};
@@ -7767,6 +8066,7 @@ struct CKKSDenseBootstrapHybridGiantFilesystemKeyProvider {
         packed_conjugate_cache{};
     mutable PolynomialRelinCache polynomial_relin_cache{};
     mutable DoubleAngleRelinCache double_angle_relin_cache{};
+    mutable InverseRelinCache inverse_relin_cache{};
     mutable SlotToCoeffCache slot_to_coeff_cache{};
 
     explicit CKKSDenseBootstrapHybridGiantFilesystemKeyProvider(
@@ -7893,6 +8193,29 @@ struct CKKSDenseBootstrapHybridGiantFilesystemKeyProvider {
     {
         static_assert(I < Schedule::evalmod_double_angle);
         std::get<I>(double_angle_relin_cache).reset();
+    }
+
+    template <std::size_t I>
+    const auto &inverse_relin() const
+    {
+        static_assert(I < EvalModTraits::InverseTraits::power_depth);
+        auto &entry = std::get<I>(inverse_relin_cache);
+        if (!entry) {
+            entry = std::make_unique<
+                CKKSDenseEvalModInverseRelinKey<Schedule, I>>();
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(root,
+                                                           "inverse_relin", I));
+        }
+        return *entry;
+    }
+
+    template <std::size_t I>
+    void release_inverse_relin() const
+    {
+        static_assert(I < EvalModTraits::InverseTraits::power_depth);
+        std::get<I>(inverse_relin_cache).reset();
     }
 
     template <std::size_t I>
