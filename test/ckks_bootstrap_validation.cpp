@@ -470,9 +470,9 @@ using Lvl6RobustHybridThresholdSchedule =
     TFHEpp::lvl6CKKSDenseBootstrapRobustHybridSchedule<HybridThreshold>;
 
 using Lvl6InverseSchedule = TFHEpp::lvl6CKKSDenseBootstrapInverseSchedule;
-static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 7);
-static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 540);
-static_assert(Lvl6InverseSchedule::output_log_q == 121);
+static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
+static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
+static_assert(Lvl6InverseSchedule::output_log_q == 60);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;
@@ -857,14 +857,14 @@ void print_lvl6_inverse_reports()
                               current_with_inverse);
 
     Lvl6InverseBudgetParams selected;
-    selected.log_delta = 36;
-    selected.coeff_to_slot_plain_log_delta = 36;
-    selected.component_split_plain_log_delta = 36;
-    selected.slot_to_coeff_plain_log_delta = 25;
+    selected.log_delta = 40;
+    selected.coeff_to_slot_plain_log_delta = 50;
+    selected.component_split_plain_log_delta = 50;
+    selected.slot_to_coeff_plain_log_delta = 20;
     selected.evalmod_degree = 52;
     selected.evalmod_double_angle = 4;
-    selected.evalmod_inv_degree = 7;
-    selected.evalmod_log_scale = 36;
+    selected.evalmod_inv_degree = 3;
+    selected.evalmod_log_scale = 40;
     print_lvl6_inverse_budget("lvl6-inverse-selected-budget", selected);
     print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse-selected");
 }

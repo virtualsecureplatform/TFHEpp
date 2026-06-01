@@ -881,11 +881,14 @@ void test_dense_bootstrap_api_shape()
                   4);
     static_assert(std::is_same_v<typename Lvl6InverseSchedule::Param,
                                  TFHEpp::lvl6param>);
-    static_assert(Lvl6InverseSchedule::log_delta == 36);
+    static_assert(Lvl6InverseSchedule::log_delta == 40);
     static_assert(Lvl6InverseSchedule::evalmod_degree == 52);
-    static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 7);
-    static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 540);
-    static_assert(Lvl6InverseSchedule::output_log_q == 121);
+    static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
+    static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
+    static_assert(Lvl6InverseSchedule::coeff_to_slot_plain_log_delta == 50);
+    static_assert(Lvl6InverseSchedule::component_split_plain_log_delta == 50);
+    static_assert(Lvl6InverseSchedule::slot_to_coeff_plain_log_delta == 20);
+    static_assert(Lvl6InverseSchedule::output_log_q == 60);
     using Lvl6SparseKey = TFHEpp::CKKSDenseBootstrapKey<Lvl6FastSchedule>;
     using Lvl6HybridKey =
         TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6FastSchedule>;
