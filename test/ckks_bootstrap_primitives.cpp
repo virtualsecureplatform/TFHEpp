@@ -964,6 +964,10 @@ void test_dense_bootstrap_api_shape()
     using BootstrapFn = void (*)(typename Schedule::OutputCiphertext &,
                                  const typename Schedule::InputCiphertext &,
                                  const BootstrapKey &);
+    using TimedBootstrapFn = void (*)(
+        typename Schedule::OutputCiphertext &,
+        const typename Schedule::InputCiphertext &, const BootstrapKey &,
+        TFHEpp::CKKSDenseBootstrapTimings &);
     using HybridKeyGenFn = void (*)(HybridBootstrapKey &,
                                     const TFHEpp::Key<M> &,
                                     TFHEpp::CKKSNoise);
@@ -971,6 +975,10 @@ void test_dense_bootstrap_api_shape()
         void (*)(typename Schedule::OutputCiphertext &,
                  const typename Schedule::InputCiphertext &,
                  const HybridBootstrapKey &);
+    using TimedHybridBootstrapFn = void (*)(
+        typename Schedule::OutputCiphertext &,
+        const typename Schedule::InputCiphertext &, const HybridBootstrapKey &,
+        TFHEpp::CKKSDenseBootstrapTimings &);
     using ProviderBootstrapFn =
         void (*)(typename Schedule::OutputCiphertext &,
                  const typename Schedule::InputCiphertext &,
@@ -983,10 +991,14 @@ void test_dense_bootstrap_api_shape()
         &TFHEpp::CKKSDenseBootstrapKeyGen<Schedule>;
     [[maybe_unused]] BootstrapFn bootstrap =
         &TFHEpp::CKKSDenseBootstrap<Schedule>;
+    [[maybe_unused]] TimedBootstrapFn timed_bootstrap =
+        &TFHEpp::CKKSDenseBootstrapTimed<Schedule>;
     [[maybe_unused]] HybridKeyGenFn hybrid_keygen =
         &TFHEpp::CKKSDenseBootstrapHybridGiantKeyGen<Schedule>;
     [[maybe_unused]] HybridBootstrapFn hybrid_bootstrap =
         &TFHEpp::CKKSDenseBootstrapHybridGiant<Schedule>;
+    [[maybe_unused]] TimedHybridBootstrapFn timed_hybrid_bootstrap =
+        &TFHEpp::CKKSDenseBootstrapHybridGiantTimed<Schedule>;
     [[maybe_unused]] ProviderBootstrapFn provider_bootstrap =
         &TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule,
                                                    InMemoryProvider>;
@@ -1709,8 +1721,14 @@ void test_dense_bootstrap_e2e_smoke()
 
     auto hybrid_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
-    TFHEpp::CKKSDenseBootstrapHybridGiant<Schedule>(
-        *hybrid_output, *input, *hybrid_bootstrap_key);
+    TFHEpp::CKKSDenseBootstrapTimings hybrid_timings;
+    TFHEpp::CKKSDenseBootstrapHybridGiantTimed<Schedule>(
+        *hybrid_output, *input, *hybrid_bootstrap_key, hybrid_timings);
+    if (hybrid_timings.total_ms() <= 0.0 ||
+        hybrid_timings.coeff_to_slot_ms <= 0.0 ||
+        hybrid_timings.real_evalmod_ms <= 0.0 ||
+        hybrid_timings.slot_to_coeff_ms <= 0.0)
+        std::exit(1);
     TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
         *decoded, *hybrid_output, *key);
     require_close_param<M>(*decoded, *slots, 0.02,
@@ -1776,7 +1794,12 @@ void test_dense_bootstrap_e2e_smoke()
     std::filesystem::remove_all(slice_dir);
 
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
-    TFHEpp::CKKSDenseBootstrap<Schedule>(*output, *input, *bootstrap_key);
+    TFHEpp::CKKSDenseBootstrapTimings timings;
+    TFHEpp::CKKSDenseBootstrapTimed<Schedule>(*output, *input, *bootstrap_key,
+                                              timings);
+    if (timings.total_ms() <= 0.0 || timings.coeff_to_slot_ms <= 0.0 ||
+        timings.real_evalmod_ms <= 0.0 || timings.slot_to_coeff_ms <= 0.0)
+        std::exit(1);
 
     TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
         *decoded, *output, *key);

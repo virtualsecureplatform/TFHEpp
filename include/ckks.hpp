@@ -8098,6 +8098,19 @@ inline void CKKSDenseBootstrap(
 }
 
 template <class Schedule>
+inline void CKKSDenseBootstrapTimed(
+    typename Schedule::OutputCiphertext &res,
+    const typename Schedule::InputCiphertext &ct,
+    const CKKSDenseBootstrapKey<Schedule> &bootstrap_key,
+    CKKSDenseBootstrapTimings &timings)
+{
+    const CKKSDenseBootstrapInMemoryKeyProvider<Schedule> key_provider(
+        bootstrap_key);
+    CKKSDenseBootstrapWithKeyProviderTimed<Schedule>(res, ct, key_provider,
+                                                     timings);
+}
+
+template <class Schedule>
 inline void CKKSDenseBootstrapHybridGiant(
     typename Schedule::OutputCiphertext &res,
     const typename Schedule::InputCiphertext &ct,
@@ -8107,6 +8120,20 @@ inline void CKKSDenseBootstrapHybridGiant(
         Schedule, CKKSDenseBootstrapHybridGiantKey<Schedule>>
         key_provider(bootstrap_key);
     CKKSDenseBootstrapWithKeyProvider<Schedule>(res, ct, key_provider);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapHybridGiantTimed(
+    typename Schedule::OutputCiphertext &res,
+    const typename Schedule::InputCiphertext &ct,
+    const CKKSDenseBootstrapHybridGiantKey<Schedule> &bootstrap_key,
+    CKKSDenseBootstrapTimings &timings)
+{
+    const CKKSDenseBootstrapInMemoryKeyProvider<
+        Schedule, CKKSDenseBootstrapHybridGiantKey<Schedule>>
+        key_provider(bootstrap_key);
+    CKKSDenseBootstrapWithKeyProviderTimed<Schedule>(res, ct, key_provider,
+                                                     timings);
 }
 
 using lvl6CKKSDenseBootstrapInput =
