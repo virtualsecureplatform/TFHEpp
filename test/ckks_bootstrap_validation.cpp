@@ -8,6 +8,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <system_error>
 #include <tfhe++.hpp>
 #include <vector>
 
@@ -17,6 +18,10 @@ using Clock = std::chrono::steady_clock;
 
 constexpr const char *validation_test_key_metadata_filename =
     ".ckks_bootstrap_validation_key";
+constexpr std::uintmax_t keygen_disk_reserve_bytes =
+    std::uintmax_t{1024} * 1024 * 1024;
+
+bool allow_low_disk_keygen = false;
 
 struct TinyDeepMultiLimbCKKSParam {
     static constexpr int32_t key_value_max = 1;
@@ -351,6 +356,103 @@ std::uintmax_t directory_size_bytes(const std::filesystem::path &root)
         if (entry.is_regular_file()) total += entry.file_size();
     }
     return total;
+}
+
+std::filesystem::path existing_space_probe_path(std::filesystem::path path)
+{
+    std::error_code ec;
+    if (path.empty()) path = std::filesystem::current_path(ec);
+    if (path.empty()) path = ".";
+
+    while (!path.empty()) {
+        if (std::filesystem::exists(path, ec) && !ec) return path;
+        ec.clear();
+        const auto parent = path.parent_path();
+        if (parent.empty() || parent == path) break;
+        path = parent;
+    }
+
+    auto current = std::filesystem::current_path(ec);
+    if (ec || current.empty()) return ".";
+    return current;
+}
+
+bool available_space_bytes(const std::filesystem::path &target,
+                           std::uintmax_t &available)
+{
+    std::error_code ec;
+    const auto probe = existing_space_probe_path(target);
+    const auto info = std::filesystem::space(probe, ec);
+    if (ec) return false;
+    available = info.available;
+    return true;
+}
+
+template <class Schedule>
+std::uintmax_t sparse_bootstrap_key_estimate_bytes()
+{
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    TFHEpp::CKKSDenseBootstrapRotationKeyUsage<Schedule> usage;
+    TFHEpp::CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(usage,
+                                                              linear_plan);
+    return TFHEpp::CKKSDenseBootstrapSparseKeyByteEstimate<Schedule>(usage);
+}
+
+template <class Schedule>
+std::uintmax_t hybrid_bootstrap_key_estimate_bytes()
+{
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        usage, linear_plan);
+    return TFHEpp::CKKSDenseBootstrapHybridGiantKeyByteEstimate<Schedule>(
+        usage);
+}
+
+int validate_keygen_disk_budget(const std::filesystem::path &key_dir,
+                                std::uintmax_t estimated_key_bytes,
+                                const char *label)
+{
+    const std::uintmax_t existing_bytes = directory_size_bytes(key_dir);
+    const std::uintmax_t remaining_bytes =
+        estimated_key_bytes > existing_bytes ? estimated_key_bytes - existing_bytes
+                                             : 0;
+
+    std::uintmax_t available_bytes = 0;
+    const bool have_space_info = available_space_bytes(key_dir, available_bytes);
+
+    std::cout << label << "_disk_estimated_key_bytes=" << estimated_key_bytes
+              << '\n';
+    std::cout << label << "_disk_existing_bytes=" << existing_bytes << '\n';
+    std::cout << label << "_disk_estimated_remaining_bytes="
+              << remaining_bytes << '\n';
+    if (have_space_info)
+        std::cout << label << "_disk_available_bytes=" << available_bytes
+                  << '\n';
+    else
+        std::cout << label << "_disk_available_bytes=unknown\n";
+
+    if (remaining_bytes == 0) return 0;
+
+    const bool enough_space =
+        have_space_info && available_bytes > keygen_disk_reserve_bytes &&
+        remaining_bytes <= available_bytes - keygen_disk_reserve_bytes;
+    if (enough_space) return 0;
+
+    if (allow_low_disk_keygen) {
+        std::cerr << label
+                  << "_disk_warning=1 allow_low_disk_keygen=1 reserve_bytes="
+                  << keygen_disk_reserve_bytes << '\n';
+        return 0;
+    }
+
+    std::cerr << label
+              << "_disk_insufficient=1 reserve_bytes="
+              << keygen_disk_reserve_bytes
+              << " allow_override=--allow-low-disk-keygen\n";
+    return 2;
 }
 
 std::size_t regular_file_count(const std::filesystem::path &root)
@@ -2507,6 +2609,11 @@ int run_keygen_next(const std::filesystem::path &key_dir,
             Schedule>(key_dir, sparse_weight, true);
         status != 0)
         return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir, sparse_bootstrap_key_estimate_bytes<Schedule>(),
+            "keygen-next");
+        status != 0)
+        return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
 
@@ -2543,6 +2650,11 @@ int run_keygen(const std::filesystem::path &key_dir, bool resume,
             Schedule>(key_dir, sparse_weight, true);
         status != 0)
         return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir, sparse_bootstrap_key_estimate_bytes<Schedule>(),
+            "keygen");
+        status != 0)
+        return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
 
@@ -2572,6 +2684,11 @@ int run_hybrid_keygen_next(const std::filesystem::path &key_dir,
         return status;
     if (const int status = validate_or_create_validation_test_key_metadata<
             Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir, hybrid_bootstrap_key_estimate_bytes<Schedule>(),
+            "hybrid-keygen-next");
         status != 0)
         return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
@@ -2610,6 +2727,11 @@ int run_hybrid_keygen(const std::filesystem::path &key_dir, bool resume,
         return status;
     if (const int status = validate_or_create_validation_test_key_metadata<
             Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir, hybrid_bootstrap_key_estimate_bytes<Schedule>(),
+            "hybrid-keygen");
         status != 0)
         return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
@@ -2706,7 +2828,8 @@ void print_usage(const char *program)
                  " [--lvl6-hybrid-debug-evalmod DIR]"
                  " [--lvl6-hybrid-debug-stc DIR]"
                  " [--lvl6-hybrid-debug DIR]"
-                 " [--lvl6-all DIR] [--resume]\n";
+                 " [--lvl6-all DIR] [--resume]"
+                 " [--allow-low-disk-keygen]\n";
 }
 
 }  // namespace
@@ -2740,6 +2863,9 @@ int main(int argc, char **argv)
         }
         else if (arg == "--resume") {
             resume = true;
+        }
+        else if (arg == "--allow-low-disk-keygen") {
+            allow_low_disk_keygen = true;
         }
         else if (arg == "--lvl6-dense-key") {
             lvl6_sparse_weight = 0;
