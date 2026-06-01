@@ -1342,6 +1342,9 @@ void print_usage(const char *program)
                  " [--lvl6-hybrid-keygen-next DIR]"
                  " [--lvl6-hybrid-run DIR]"
                  " [--lvl6-robust-plan]"
+                 " [--lvl6-fast-hybrid-keygen DIR]"
+                 " [--lvl6-fast-hybrid-keygen-next DIR]"
+                 " [--lvl6-fast-hybrid-run DIR]"
                  " [--lvl6-robust-hybrid-th3-keygen DIR]"
                  " [--lvl6-robust-hybrid-th3-keygen-next DIR]"
                  " [--lvl6-robust-hybrid-th3-run DIR]"
@@ -1349,6 +1352,16 @@ void print_usage(const char *program)
                  " [--lvl6-robust-hybrid-th3-debug-evalmod DIR]"
                  " [--lvl6-robust-hybrid-th3-debug-stc DIR]"
                  " [--lvl6-robust-hybrid-th3-debug DIR]"
+                 " [--lvl6-compact-hybrid-keygen DIR]"
+                 " [--lvl6-compact-hybrid-keygen-next DIR]"
+                 " [--lvl6-compact-hybrid-run DIR]"
+                 " [--lvl6-compact-hybrid-debug-c2s DIR]"
+                 " [--lvl6-compact-hybrid-debug-evalmod DIR]"
+                 " [--lvl6-compact-hybrid-debug-stc DIR]"
+                 " [--lvl6-compact-hybrid-debug DIR]"
+                 " [--lvl6-robust-hybrid-th4-keygen DIR]"
+                 " [--lvl6-robust-hybrid-th4-keygen-next DIR]"
+                 " [--lvl6-robust-hybrid-th4-run DIR]"
                  " [--lvl6-hybrid-th3-keygen DIR]"
                  " [--lvl6-hybrid-th3-keygen-next DIR]"
                  " [--lvl6-hybrid-th3-run DIR]"
@@ -1373,8 +1386,10 @@ int main(int argc, char **argv)
 {
     using Lvl6Schedule = Lvl6HybridThresholdSchedule<4>;
     using Lvl6HybridTh3Schedule = Lvl6HybridThresholdSchedule<3>;
-    using Lvl6RobustHybridTh3Schedule =
-        Lvl6RobustHybridThresholdSchedule<3>;
+    using Lvl6FastSchedule = TFHEpp::lvl6CKKSDenseBootstrapFastSchedule;
+    using Lvl6CompactSchedule = TFHEpp::lvl6CKKSDenseBootstrapCompactSchedule;
+    using Lvl6RobustHybridTh3Schedule = Lvl6FastSchedule;
+    using Lvl6RobustHybridTh4Schedule = Lvl6CompactSchedule;
     constexpr std::size_t default_lvl6_sparse_weight = 192;
 
     bool saw_action = false;
@@ -1442,6 +1457,9 @@ int main(int argc, char **argv)
                  arg == "--lvl6-hybrid-keygen" ||
                  arg == "--lvl6-hybrid-keygen-next" ||
                  arg == "--lvl6-hybrid-run" ||
+                 arg == "--lvl6-fast-hybrid-keygen" ||
+                 arg == "--lvl6-fast-hybrid-keygen-next" ||
+                 arg == "--lvl6-fast-hybrid-run" ||
                  arg == "--lvl6-robust-hybrid-th3-keygen" ||
                  arg == "--lvl6-robust-hybrid-th3-keygen-next" ||
                  arg == "--lvl6-robust-hybrid-th3-run" ||
@@ -1449,6 +1467,16 @@ int main(int argc, char **argv)
                  arg == "--lvl6-robust-hybrid-th3-debug-evalmod" ||
                  arg == "--lvl6-robust-hybrid-th3-debug-stc" ||
                  arg == "--lvl6-robust-hybrid-th3-debug" ||
+                 arg == "--lvl6-compact-hybrid-keygen" ||
+                 arg == "--lvl6-compact-hybrid-keygen-next" ||
+                 arg == "--lvl6-compact-hybrid-run" ||
+                 arg == "--lvl6-compact-hybrid-debug-c2s" ||
+                 arg == "--lvl6-compact-hybrid-debug-evalmod" ||
+                 arg == "--lvl6-compact-hybrid-debug-stc" ||
+                 arg == "--lvl6-compact-hybrid-debug" ||
+                 arg == "--lvl6-robust-hybrid-th4-keygen" ||
+                 arg == "--lvl6-robust-hybrid-th4-keygen-next" ||
+                 arg == "--lvl6-robust-hybrid-th4-run" ||
                  arg == "--lvl6-hybrid-th3-keygen" ||
                  arg == "--lvl6-hybrid-th3-keygen-next" ||
                  arg == "--lvl6-hybrid-th3-run" ||
@@ -1501,17 +1529,20 @@ int main(int argc, char **argv)
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
                     return 1;
             }
-            else if (arg == "--lvl6-robust-hybrid-th3-keygen") {
+            else if (arg == "--lvl6-fast-hybrid-keygen" ||
+                     arg == "--lvl6-robust-hybrid-th3-keygen") {
                 if (run_hybrid_keygen<Lvl6RobustHybridTh3Schedule>(
                         key_dir, resume, lvl6_sparse_weight) != 0)
                     return 1;
             }
-            else if (arg == "--lvl6-robust-hybrid-th3-keygen-next") {
+            else if (arg == "--lvl6-fast-hybrid-keygen-next" ||
+                     arg == "--lvl6-robust-hybrid-th3-keygen-next") {
                 if (run_hybrid_keygen_next<Lvl6RobustHybridTh3Schedule>(
                         key_dir, lvl6_sparse_weight) != 0)
                     return 1;
             }
-            else if (arg == "--lvl6-robust-hybrid-th3-run") {
+            else if (arg == "--lvl6-fast-hybrid-run" ||
+                     arg == "--lvl6-robust-hybrid-th3-run") {
                 print_schedule_report<Lvl6RobustHybridTh3Schedule>(
                     "lvl6-robust-th3", &key_dir);
                 if (run_hybrid_filesystem_bootstrap<
@@ -1548,6 +1579,59 @@ int main(int argc, char **argv)
                     "lvl6-robust-th3", &key_dir);
                 if (run_hybrid_filesystem_bootstrap_diagnostics<
                         Lvl6RobustHybridTh3Schedule>(
+                        key_dir, true, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-compact-hybrid-keygen" ||
+                     arg == "--lvl6-robust-hybrid-th4-keygen") {
+                if (run_hybrid_keygen<Lvl6RobustHybridTh4Schedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-compact-hybrid-keygen-next" ||
+                     arg == "--lvl6-robust-hybrid-th4-keygen-next") {
+                if (run_hybrid_keygen_next<Lvl6RobustHybridTh4Schedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-compact-hybrid-run" ||
+                     arg == "--lvl6-robust-hybrid-th4-run") {
+                print_schedule_report<Lvl6RobustHybridTh4Schedule>(
+                    "lvl6-robust-th4", &key_dir);
+                if (run_hybrid_filesystem_bootstrap<
+                        Lvl6RobustHybridTh4Schedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-compact-hybrid-debug-c2s") {
+                print_schedule_report<Lvl6RobustHybridTh4Schedule>(
+                    "lvl6-robust-th4", &key_dir);
+                if (run_hybrid_filesystem_bootstrap_diagnostics<
+                        Lvl6RobustHybridTh4Schedule>(
+                        key_dir, false, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-compact-hybrid-debug-evalmod") {
+                print_schedule_report<Lvl6RobustHybridTh4Schedule>(
+                    "lvl6-robust-th4", &key_dir);
+                if (run_hybrid_filesystem_evalmod_diagnostics<
+                        Lvl6RobustHybridTh4Schedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-compact-hybrid-debug-stc") {
+                print_schedule_report<Lvl6RobustHybridTh4Schedule>(
+                    "lvl6-robust-th4", &key_dir);
+                if (run_hybrid_filesystem_stc_diagnostics<
+                        Lvl6RobustHybridTh4Schedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-compact-hybrid-debug") {
+                print_schedule_report<Lvl6RobustHybridTh4Schedule>(
+                    "lvl6-robust-th4", &key_dir);
+                if (run_hybrid_filesystem_bootstrap_diagnostics<
+                        Lvl6RobustHybridTh4Schedule>(
                         key_dir, true, lvl6_sparse_weight) != 0)
                     return 1;
             }
