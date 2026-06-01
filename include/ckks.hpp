@@ -4170,8 +4170,8 @@ using lvl6CKKSDenseBootstrapCompactSchedule =
 using lvl6CKKSDenseBootstrapSchedule =
     lvl6CKKSDenseBootstrapFastSchedule;
 using lvl6CKKSDenseBootstrapInverseSchedule =
-    CKKSDenseBootstrapSchedule<lvl6param, 40, 8, 880, 40, 5, 34, 18, 3, 5, 40,
-                               128, 0, 40, 40, 25, 5, 5, 3>;
+    CKKSDenseBootstrapSchedule<lvl6param, 36, 8, 880, 36, 5, 52, 18, 4, 7, 36,
+                               128, 0, 36, 36, 25, 5, 5, 3>;
 
 struct CKKSBoundedCosEvalModPolynomial {
     std::uint32_t k = 0;

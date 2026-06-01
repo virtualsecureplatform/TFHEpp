@@ -322,9 +322,9 @@ using Lvl6RobustHybridThresholdSchedule =
     TFHEpp::lvl6CKKSDenseBootstrapRobustHybridSchedule<HybridThreshold>;
 
 using Lvl6InverseSchedule = TFHEpp::lvl6CKKSDenseBootstrapInverseSchedule;
-static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 5);
-static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
-static_assert(Lvl6InverseSchedule::output_log_q == 85);
+static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 7);
+static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 540);
+static_assert(Lvl6InverseSchedule::output_log_q == 121);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;
@@ -342,6 +342,29 @@ struct Lvl6InverseBudgetParams {
     std::uint32_t evalmod_log_scale = 50;
 };
 
+struct Lvl6InverseBudgetResult {
+    std::uint32_t c2s_levels = 0;
+    std::uint32_t stc_levels = 0;
+    std::uint32_t polynomial_power_depth = 0;
+    std::uint32_t inverse_power_depth = 0;
+    std::uint32_t coeff_rescale_count = 0;
+    std::int64_t input_log_q = 0;
+    std::int64_t after_c2s_log_q = 0;
+    std::int64_t after_split_log_q = 0;
+    std::int64_t evalmod_log_q_loss = 0;
+    std::int64_t after_evalmod_log_q = 0;
+    std::int64_t output_log_q = 0;
+    std::int64_t output_margin_bits = 0;
+    bool fits = false;
+};
+
+struct EvalModApproximationMetrics {
+    double max_message_error = 0.0;
+    double max_basis_error = 0.0;
+    double message_bits = 0.0;
+    double basis_bits = 0.0;
+};
+
 std::uint32_t budget_ceil_div(std::uint32_t value, std::uint32_t divisor)
 {
     return (value + divisor - 1) / divisor;
@@ -357,106 +380,137 @@ std::uint32_t budget_bit_width(std::uint32_t value)
     return width;
 }
 
-void print_lvl6_inverse_budget(const char *label,
-                               const Lvl6InverseBudgetParams &params)
-{
-    using P = TFHEpp::lvl6param;
-    const std::uint32_t raw_linear_stage_count = P::nbit - 1;
-    const std::uint32_t c2s_levels =
-        budget_ceil_div(raw_linear_stage_count,
-                        params.coeff_to_slot_fuse_radix);
-    const std::uint32_t stc_levels =
-        budget_ceil_div(raw_linear_stage_count,
-                        params.slot_to_coeff_fuse_radix);
-    const std::uint32_t evalmod_degree_bound = std::max(
-        params.evalmod_degree, 2 * (params.evalmod_k - 1));
-    const std::uint32_t polynomial_power_depth =
-        budget_bit_width(evalmod_degree_bound);
-    const std::uint32_t inverse_power_depth =
-        params.evalmod_inv_degree == 0
-            ? 0
-            : budget_bit_width(params.evalmod_inv_degree - 1);
-    const std::uint32_t coeff_rescale_count =
-        1 + (params.evalmod_inv_degree == 0 ? 0 : 1);
-    const std::int64_t input_log_q =
-        params.log_delta + params.log_message_ratio;
-    const std::int64_t after_c2s =
-        static_cast<std::int64_t>(params.boot_log_q) -
-        static_cast<std::int64_t>(c2s_levels) *
-            params.coeff_to_slot_plain_log_delta;
-    const std::int64_t after_split =
-        after_c2s - params.component_split_plain_log_delta;
-    const std::int64_t evalmod_log_q_loss =
-        static_cast<std::int64_t>(polynomial_power_depth +
-                                  params.evalmod_double_angle +
-                                  inverse_power_depth) *
-            params.log_delta +
-        static_cast<std::int64_t>(coeff_rescale_count) *
-            params.evalmod_log_scale;
-    const std::int64_t after_evalmod =
-        after_split - evalmod_log_q_loss;
-    const std::int64_t output_log_q =
-        after_evalmod -
-        static_cast<std::int64_t>(stc_levels) *
-            params.slot_to_coeff_plain_log_delta;
-    const bool fits =
-        input_log_q < params.boot_log_q &&
-        params.boot_log_q <=
-            static_cast<std::uint32_t>(
-                std::numeric_limits<typename P::T>::digits) &&
-        after_c2s > params.component_split_plain_log_delta &&
-        after_split > evalmod_log_q_loss && output_log_q > params.log_delta;
-
-    std::cout << label << " budget log_delta=" << params.log_delta
-              << " evalmod_log_scale=" << params.evalmod_log_scale
-              << " evalmod_inv_degree=" << params.evalmod_inv_degree
-              << " after_split_logQ=" << after_split
-              << " evalmod_log_q_loss=" << evalmod_log_q_loss
-              << " output_logQ=" << output_log_q
-              << " fits=" << (fits ? "yes" : "no") << '\n';
-}
-
 double positive_log2_precision(double value)
 {
     if (value <= 0.0) return std::numeric_limits<double>::infinity();
     return -std::log2(value);
 }
 
-template <class Schedule>
-void print_evalmod_approximation_report(const char *label)
+Lvl6InverseBudgetResult compute_lvl6_inverse_budget(
+    const Lvl6InverseBudgetParams &params)
 {
-    const auto poly = TFHEpp::CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
-    double max_message_error = 0.0;
-    double max_basis_error = 0.0;
+    using P = TFHEpp::lvl6param;
+    Lvl6InverseBudgetResult result;
+    const std::uint32_t raw_linear_stage_count = P::nbit - 1;
+    result.c2s_levels =
+        budget_ceil_div(raw_linear_stage_count,
+                        params.coeff_to_slot_fuse_radix);
+    result.stc_levels =
+        budget_ceil_div(raw_linear_stage_count,
+                        params.slot_to_coeff_fuse_radix);
+    const std::uint32_t evalmod_degree_bound = std::max(
+        params.evalmod_degree, 2 * (params.evalmod_k - 1));
+    result.polynomial_power_depth =
+        budget_bit_width(evalmod_degree_bound);
+    result.inverse_power_depth =
+        params.evalmod_inv_degree == 0
+            ? 0
+            : budget_bit_width(params.evalmod_inv_degree - 1);
+    result.coeff_rescale_count =
+        1 + (params.evalmod_inv_degree == 0 ? 0 : 1);
+    result.input_log_q =
+        params.log_delta + params.log_message_ratio;
+    result.after_c2s_log_q =
+        static_cast<std::int64_t>(params.boot_log_q) -
+        static_cast<std::int64_t>(result.c2s_levels) *
+            params.coeff_to_slot_plain_log_delta;
+    result.after_split_log_q =
+        result.after_c2s_log_q - params.component_split_plain_log_delta;
+    result.evalmod_log_q_loss =
+        static_cast<std::int64_t>(result.polynomial_power_depth +
+                                  params.evalmod_double_angle +
+                                  result.inverse_power_depth) *
+            params.log_delta +
+        static_cast<std::int64_t>(result.coeff_rescale_count) *
+            params.evalmod_log_scale;
+    result.after_evalmod_log_q =
+        result.after_split_log_q - result.evalmod_log_q_loss;
+    result.output_log_q =
+        result.after_evalmod_log_q -
+        static_cast<std::int64_t>(result.stc_levels) *
+            params.slot_to_coeff_plain_log_delta;
+    result.output_margin_bits =
+        result.output_log_q - static_cast<std::int64_t>(params.log_delta);
+    result.fits =
+        result.input_log_q < params.boot_log_q &&
+        params.boot_log_q <=
+            static_cast<std::uint32_t>(
+                std::numeric_limits<typename P::T>::digits) &&
+        result.after_c2s_log_q > params.component_split_plain_log_delta &&
+        result.after_split_log_q > result.evalmod_log_q_loss &&
+        result.output_log_q > params.log_delta;
+    return result;
+}
 
-    for (int mask = -static_cast<int>(Schedule::evalmod_k) + 1;
-         mask < static_cast<int>(Schedule::evalmod_k); mask++) {
+EvalModApproximationMetrics measure_evalmod_approximation(
+    std::uint32_t k, std::uint32_t degree, std::uint32_t log_message_ratio,
+    std::uint32_t double_angle, std::uint32_t inverse_degree)
+{
+    const auto poly = TFHEpp::CKKSBuildBoundedCosEvalModPolynomial(
+        k, degree, log_message_ratio, double_angle, 1.0,
+        inverse_degree != 0);
+    EvalModApproximationMetrics metrics;
+
+    for (int mask = -static_cast<int>(k) + 1; mask < static_cast<int>(k);
+         mask++) {
         for (int sample = 0; sample <= 256; sample++) {
             const double message =
                 -1.0 + 2.0 * static_cast<double>(sample) / 256.0;
             const double masked =
-                static_cast<double>(mask) * Schedule::message_ratio + message;
-            const double cheb = TFHEpp::CKKSPlainEvalModBoundedCos(
-                poly, masked, Schedule::evalmod_inv_degree);
-            const double power = TFHEpp::CKKSPlainEvalModBoundedCosPower(
-                poly, masked, Schedule::evalmod_inv_degree);
-            max_message_error =
-                std::max(max_message_error, std::abs(power - message));
-            max_basis_error = std::max(max_basis_error, std::abs(cheb - power));
+                static_cast<double>(mask) * poly.message_ratio + message;
+            const double cheb =
+                TFHEpp::CKKSPlainEvalModBoundedCos(poly, masked,
+                                                   inverse_degree);
+            const double power =
+                TFHEpp::CKKSPlainEvalModBoundedCosPower(poly, masked,
+                                                        inverse_degree);
+            metrics.max_message_error =
+                std::max(metrics.max_message_error, std::abs(power - message));
+            metrics.max_basis_error =
+                std::max(metrics.max_basis_error, std::abs(cheb - power));
         }
     }
 
-    const double message_bits = positive_log2_precision(max_message_error);
-    const double basis_bits = positive_log2_precision(max_basis_error);
+    metrics.message_bits =
+        positive_log2_precision(metrics.max_message_error);
+    metrics.basis_bits = positive_log2_precision(metrics.max_basis_error);
+    return metrics;
+}
+
+void print_lvl6_inverse_budget(const char *label,
+                               const Lvl6InverseBudgetParams &params)
+{
+    const Lvl6InverseBudgetResult result =
+        compute_lvl6_inverse_budget(params);
+
+    std::cout << label << " budget log_delta=" << params.log_delta
+              << " evalmod_log_scale=" << params.evalmod_log_scale
+              << " evalmod_inv_degree=" << params.evalmod_inv_degree
+              << " after_split_logQ=" << result.after_split_log_q
+              << " evalmod_log_q_loss=" << result.evalmod_log_q_loss
+              << " output_logQ=" << result.output_log_q
+              << " fits=" << (result.fits ? "yes" : "no") << '\n';
+}
+
+template <class Schedule>
+void print_evalmod_approximation_report(const char *label)
+{
+    const EvalModApproximationMetrics metrics =
+        measure_evalmod_approximation(Schedule::evalmod_k,
+                                      Schedule::evalmod_degree,
+                                      Schedule::log_message_ratio,
+                                      Schedule::evalmod_double_angle,
+                                      Schedule::evalmod_inv_degree);
     const int output_margin_bits =
         static_cast<int>(Schedule::output_log_q) -
         static_cast<int>(Schedule::log_delta);
 
     std::cout << label
               << " evalmod_plain_approx max_message_error="
-              << max_message_error << " message_bits=" << message_bits
-              << " max_basis_error=" << max_basis_error
-              << " basis_bits=" << basis_bits
+              << metrics.max_message_error
+              << " message_bits=" << metrics.message_bits
+              << " max_basis_error=" << metrics.max_basis_error
+              << " basis_bits=" << metrics.basis_bits
               << " output_margin_bits=" << output_margin_bits
               << " sample_messages=257\n";
 }
@@ -650,13 +704,91 @@ void print_lvl6_inverse_reports()
                               current_with_inverse);
 
     Lvl6InverseBudgetParams selected;
-    selected.log_delta = 40;
-    selected.coeff_to_slot_plain_log_delta = 40;
-    selected.component_split_plain_log_delta = 40;
+    selected.log_delta = 36;
+    selected.coeff_to_slot_plain_log_delta = 36;
+    selected.component_split_plain_log_delta = 36;
     selected.slot_to_coeff_plain_log_delta = 25;
-    selected.evalmod_log_scale = 40;
+    selected.evalmod_degree = 52;
+    selected.evalmod_double_angle = 4;
+    selected.evalmod_inv_degree = 7;
+    selected.evalmod_log_scale = 36;
     print_lvl6_inverse_budget("lvl6-inverse-selected-budget", selected);
     print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse-selected");
+}
+
+struct Lvl6InverseSearchResult {
+    Lvl6InverseBudgetParams params{};
+    Lvl6InverseBudgetResult budget{};
+    EvalModApproximationMetrics approx{};
+};
+
+void print_lvl6_inverse_search_report()
+{
+    std::vector<Lvl6InverseSearchResult> results;
+
+    for (const std::uint32_t log_delta : {36U, 38U, 40U, 42U, 44U}) {
+        for (const std::uint32_t degree : {34U, 40U, 46U, 52U, 58U, 63U}) {
+            for (const std::uint32_t double_angle : {2U, 3U, 4U}) {
+                for (const std::uint32_t inverse_degree : {3U, 5U, 7U, 9U}) {
+                    Lvl6InverseBudgetParams params;
+                    params.log_delta = log_delta;
+                    params.coeff_to_slot_plain_log_delta = log_delta;
+                    params.component_split_plain_log_delta = log_delta;
+                    params.slot_to_coeff_plain_log_delta = 25;
+                    params.evalmod_degree = degree;
+                    params.evalmod_double_angle = double_angle;
+                    params.evalmod_inv_degree = inverse_degree;
+                    params.evalmod_log_scale = log_delta;
+
+                    const Lvl6InverseBudgetResult budget =
+                        compute_lvl6_inverse_budget(params);
+                    if (!budget.fits || budget.output_margin_bits < 30)
+                        continue;
+
+                    const EvalModApproximationMetrics approx =
+                        measure_evalmod_approximation(
+                            params.evalmod_k, params.evalmod_degree,
+                            params.log_message_ratio,
+                            params.evalmod_double_angle,
+                            params.evalmod_inv_degree);
+                    if (approx.message_bits < 18.0) continue;
+
+                    results.push_back({params, budget, approx});
+                }
+            }
+        }
+    }
+
+    std::sort(results.begin(), results.end(),
+              [](const Lvl6InverseSearchResult &lhs,
+                 const Lvl6InverseSearchResult &rhs) {
+                  if (lhs.approx.message_bits != rhs.approx.message_bits)
+                      return lhs.approx.message_bits > rhs.approx.message_bits;
+                  if (lhs.budget.output_margin_bits !=
+                      rhs.budget.output_margin_bits)
+                      return lhs.budget.output_margin_bits >
+                             rhs.budget.output_margin_bits;
+                  return lhs.params.log_delta > rhs.params.log_delta;
+              });
+
+    std::cout << "lvl6-inverse-search candidates=" << results.size()
+              << " shown=" << std::min<std::size_t>(results.size(), 12)
+              << '\n';
+    for (std::size_t i = 0; i < std::min<std::size_t>(results.size(), 12);
+         i++) {
+        const Lvl6InverseSearchResult &r = results[i];
+        std::cout << "lvl6-inverse-search rank=" << (i + 1)
+                  << " log_delta=" << r.params.log_delta
+                  << " degree=" << r.params.evalmod_degree
+                  << " double_angle=" << r.params.evalmod_double_angle
+                  << " inv_degree=" << r.params.evalmod_inv_degree
+                  << " output_logQ=" << r.budget.output_log_q
+                  << " output_margin_bits=" << r.budget.output_margin_bits
+                  << " evalmod_log_q_loss=" << r.budget.evalmod_log_q_loss
+                  << " message_bits=" << r.approx.message_bits
+                  << " max_message_error=" << r.approx.max_message_error
+                  << " basis_bits=" << r.approx.basis_bits << '\n';
+    }
 }
 
 template <class Schedule>
@@ -1526,6 +1658,7 @@ void print_usage(const char *program)
                  " [--lvl6-plan] [--lvl6-keygen DIR]"
                  " [--lvl6-hybrid-thresholds-plan]"
                  " [--lvl6-inverse-plan]"
+                 " [--lvl6-inverse-search]"
                  " [--lvl6-inverse-hybrid-keygen DIR]"
                  " [--lvl6-inverse-hybrid-keygen-next DIR]"
                  " [--lvl6-inverse-hybrid-run DIR]"
@@ -1636,6 +1769,10 @@ int main(int argc, char **argv)
         else if (arg == "--lvl6-inverse-plan") {
             saw_action = true;
             print_lvl6_inverse_reports();
+        }
+        else if (arg == "--lvl6-inverse-search") {
+            saw_action = true;
+            print_lvl6_inverse_search_report();
         }
         else if (arg == "--lvl6-debug-modraise") {
             saw_action = true;
