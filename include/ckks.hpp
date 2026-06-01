@@ -181,7 +181,17 @@ template <class P>
 using CKKSRotationKeyIndexSet = std::array<bool, P::nbit + 1>;
 
 template <class P>
+using CKKSDirectRotationKeyIndexSet = std::array<bool, P::n / 2>;
+
+template <class P>
 inline void CKKSClearRotationKeyIndexSet(CKKSRotationKeyIndexSet<P> &keys)
+{
+    keys.fill(false);
+}
+
+template <class P>
+inline void CKKSClearDirectRotationKeyIndexSet(
+    CKKSDirectRotationKeyIndexSet<P> &keys)
 {
     keys.fill(false);
 }
@@ -197,6 +207,15 @@ inline void CKKSMarkRotationPowerKeyIndices(CKKSRotationKeyIndexSet<P> &keys,
 }
 
 template <class P>
+inline void CKKSMarkDirectRotationKeyIndex(
+    CKKSDirectRotationKeyIndexSet<P> &keys, int steps)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    if (steps != 0) keys[static_cast<std::size_t>(steps)] = true;
+}
+
+template <class P>
 inline void CKKSMarkConjugationKeyIndex(CKKSRotationKeyIndexSet<P> &keys)
 {
     keys[P::nbit] = true;
@@ -205,6 +224,14 @@ inline void CKKSMarkConjugationKeyIndex(CKKSRotationKeyIndexSet<P> &keys)
 template <class P>
 inline std::size_t
 CKKSRotationKeyIndexSetCount(const CKKSRotationKeyIndexSet<P> &keys)
+{
+    return static_cast<std::size_t>(
+        std::count(keys.begin(), keys.end(), true));
+}
+
+template <class P>
+inline std::size_t CKKSDirectRotationKeyIndexSetCount(
+    const CKKSDirectRotationKeyIndexSet<P> &keys)
 {
     return static_cast<std::size_t>(
         std::count(keys.begin(), keys.end(), true));
@@ -243,6 +270,74 @@ struct CKKSSparseGaloisKey {
     void serialize(Archive &archive)
     {
         archive(available, keys);
+    }
+};
+
+template <class P, std::uint32_t LogQ>
+struct CKKSDirectSparseGaloisKeyEntry {
+    int steps = 0;
+    CKKSAutoKey<P, LogQ> key{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(steps, key);
+    }
+};
+
+template <class P, std::uint32_t LogQ>
+struct CKKSDirectSparseGaloisKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+
+    std::vector<CKKSDirectSparseGaloisKeyEntry<P, LogQ>> keys{};
+
+    static constexpr int normalize_steps(int steps)
+    {
+        constexpr int half = static_cast<int>(P::n) / 2;
+        return ((steps % half) + half) % half;
+    }
+
+    bool has(int steps) const
+    {
+        steps = normalize_steps(steps);
+        if (steps == 0) return true;
+        return std::any_of(keys.begin(), keys.end(), [&](const auto &entry) {
+            return entry.steps == steps;
+        });
+    }
+
+    CKKSAutoKey<P, LogQ> &get(int steps)
+    {
+        steps = normalize_steps(steps);
+        assert(steps != 0);
+        auto it = std::find_if(keys.begin(), keys.end(), [&](auto &entry) {
+            return entry.steps == steps;
+        });
+        assert(it != keys.end());
+        return it->key;
+    }
+
+    const CKKSAutoKey<P, LogQ> &get(int steps) const
+    {
+        steps = normalize_steps(steps);
+        assert(steps != 0);
+        auto it =
+            std::find_if(keys.begin(), keys.end(), [&](const auto &entry) {
+                return entry.steps == steps;
+            });
+        assert(it != keys.end());
+        return it->key;
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
     }
 };
 
@@ -1510,6 +1605,27 @@ inline void CKKSGaloisKeyGen(CKKSGaloisKey<P, LogQ> &gk, const Key<P> &key,
     CKKSAutoKeyGen<P, LogQ>(gk[P::nbit], 2 * P::n - 1, key, noise);
 }
 
+namespace ckks_detail {
+
+template <class P>
+inline int rotationAutomorphismForSteps(int steps)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    constexpr std::uint64_t mod = 2 * static_cast<std::uint64_t>(P::n);
+    std::uint64_t d = 1;
+    std::uint64_t base = 5;
+    std::uint64_t exp = static_cast<std::uint64_t>(steps);
+    while (exp != 0) {
+        if ((exp & 1U) != 0) d = (d * base) % mod;
+        base = (base * base) % mod;
+        exp >>= 1U;
+    }
+    return static_cast<int>(d);
+}
+
+}  // namespace ckks_detail
+
 template <class P, std::uint32_t LogQ>
 inline void CKKSSparseGaloisKeyGen(CKKSSparseGaloisKey<P, LogQ> &gk,
                                    const Key<P> &key,
@@ -1539,6 +1655,24 @@ inline void CKKSSparseGaloisKeyGen(CKKSSparseGaloisKey<P, LogQ> &gk,
     }
     else {
         gk.keys[P::nbit].reset();
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSDirectSparseGaloisKeyGen(
+    CKKSDirectSparseGaloisKey<P, LogQ> &gk, const Key<P> &key,
+    const CKKSDirectRotationKeyIndexSet<P> &indices,
+    CKKSNoise noise = {P::α, 0})
+{
+    gk.keys.clear();
+    gk.keys.reserve(CKKSDirectRotationKeyIndexSetCount<P>(indices));
+    for (int steps = 1; steps < static_cast<int>(P::n / 2); steps++) {
+        if (!indices[static_cast<std::size_t>(steps)]) continue;
+        auto &entry = gk.keys.emplace_back();
+        entry.steps = steps;
+        CKKSAutoKeyGen<P, LogQ>(
+            entry.key, ckks_detail::rotationAutomorphismForSteps<P>(steps),
+            key, noise);
     }
 }
 
@@ -1610,6 +1744,24 @@ inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
         d = d * d % (2 * P::n);
     }
     res = *cur;
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
+                            const CKKSDirectSparseGaloisKey<P, LogQ> &gk)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    steps = ((steps % half) + half) % half;
+    if (steps == 0) {
+        res = ct;
+        ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+        return;
+    }
+
+    CKKSEvalAuto<P, LogQ>(
+        res, ct, ckks_detail::rotationAutomorphismForSteps<P>(steps),
+        gk.get(steps));
     ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
 }
 
@@ -1687,6 +1839,21 @@ inline void CKKSBuildBabyStepRotationTable(
                 baby[static_cast<std::size_t>(parent)], bit, gk);
             ready[static_cast<std::size_t>(current)] = true;
         }
+    }
+}
+
+template <class P, std::uint32_t LogQ, class GaloisKey>
+inline void CKKSBuildDirectBabyStepRotationTable(
+    std::vector<TRLWE<P>> &baby, const TRLWE<P> &ct,
+    const std::vector<bool> &baby_used, const GaloisKey &gk)
+{
+    assert(!baby.empty());
+    assert(baby.size() == baby_used.size());
+    baby[0] = ct;
+    for (int j1 = 1; j1 < static_cast<int>(baby_used.size()); j1++) {
+        if (baby_used[static_cast<std::size_t>(j1)])
+            CKKSRotateSlots<P, LogQ>(baby[static_cast<std::size_t>(j1)], ct,
+                                     j1, gk);
     }
 }
 
@@ -1875,6 +2042,41 @@ inline void CKKSCollectLinearTransformStageRotationKeyIndices(
     for (int j2 = 1; j2 <= max_j2; j2++) {
         if (giant_used[static_cast<std::size_t>(j2)])
             CKKSMarkRotationPowerKeyIndices<P>(output_keys, k_step * j2);
+    }
+}
+
+template <class P>
+inline void CKKSCollectLinearTransformStageDirectRotationKeyIndices(
+    CKKSDirectRotationKeyIndexSet<P> &input_keys,
+    CKKSDirectRotationKeyIndexSet<P> &output_keys,
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    int max_j2 = 0;
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<bool> baby_used(static_cast<std::size_t>(k_step), false);
+    std::vector<bool> giant_used(static_cast<std::size_t>(max_j2 + 1), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        baby_used[static_cast<std::size_t>(r % k_step)] = true;
+        giant_used[static_cast<std::size_t>(r / k_step)] = true;
+    }
+
+    for (int j1 = 1; j1 < k_step; j1++) {
+        if (baby_used[static_cast<std::size_t>(j1)])
+            CKKSMarkDirectRotationKeyIndex<P>(input_keys, j1);
+    }
+    for (int j2 = 1; j2 <= max_j2; j2++) {
+        if (giant_used[static_cast<std::size_t>(j2)])
+            CKKSMarkDirectRotationKeyIndex<P>(output_keys, k_step * j2);
     }
 }
 
@@ -2322,6 +2524,86 @@ inline void CKKSSparseGaloisKeyChainGen(
         chain, usage, key, noise);
 }
 
+namespace ckks_detail {
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          class IndexSequence>
+struct CKKSDirectSparseGaloisKeyChainTuple;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t... Is>
+struct CKKSDirectSparseGaloisKeyChainTuple<P, StartLogQ, PlainLogDelta,
+                                           std::index_sequence<Is...>> {
+    using type = std::tuple<
+        CKKSDirectSparseGaloisKey<P, StartLogQ - Is * PlainLogDelta>...>;
+};
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+struct CKKSDirectSparseGaloisKeyChain {
+    static_assert(StartLogQ > StageCount * PlainLogDelta);
+
+    using Tuple = typename ckks_detail::CKKSDirectSparseGaloisKeyChainTuple<
+        P, StartLogQ, PlainLogDelta,
+        std::make_index_sequence<StageCount + 1>>::type;
+
+    Tuple keys{};
+
+    template <std::size_t I>
+    auto &get()
+    {
+        return std::get<I>(keys);
+    }
+
+    template <std::size_t I>
+    const auto &get() const
+    {
+        return std::get<I>(keys);
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
+    }
+};
+
+namespace ckks_detail {
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t PlainLogDelta, std::size_t StageCount>
+inline void CKKSDirectSparseGaloisKeyChainGenImpl(
+    CKKSDirectSparseGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount>
+        &chain,
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, StageCount + 1> &usage,
+    const Key<P> &key, CKKSNoise noise)
+{
+    if constexpr (I <= StageCount) {
+        constexpr std::uint32_t log_q = StartLogQ - I * PlainLogDelta;
+        CKKSDirectSparseGaloisKeyGen<P, log_q>(chain.template get<I>(), key,
+                                               usage[I], noise);
+        CKKSDirectSparseGaloisKeyChainGenImpl<I + 1, P, StartLogQ,
+                                              PlainLogDelta, StageCount>(
+            chain, usage, key, noise);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+inline void CKKSDirectSparseGaloisKeyChainGen(
+    CKKSDirectSparseGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount>
+        &chain,
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, StageCount + 1> &usage,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    ckks_detail::CKKSDirectSparseGaloisKeyChainGenImpl<
+        0, P, StartLogQ, PlainLogDelta, StageCount>(chain, usage, key, noise);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
 inline void CKKSBuildLinearTransformBSGSPlan(
@@ -2407,6 +2689,67 @@ inline void CKKSLinearTransformBSGS(
     auto baby = std::make_unique<std::vector<TRLWE<P>>>(plan.k_step);
     ckks_detail::CKKSBuildBabyStepRotationTable<P, LogQ>(*baby, ct.ct,
                                                          baby_used, input_gk);
+
+    bool res_initialized = false;
+    auto term = std::make_unique<TRLWE<P>>();
+    auto inner = std::make_unique<TRLWE<P>>();
+    auto giant_rotated = std::make_unique<TRLWE<P>>();
+
+    for (const auto &group : plan.groups) {
+        bool inner_initialized = false;
+        for (const auto &entry : group.terms) {
+            CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
+                *term, (*baby)[entry.baby_step], entry.plain.poly);
+
+            if (!inner_initialized) {
+                *inner = *term;
+                inner_initialized = true;
+            }
+            else {
+                CKKSAddTRLWEInPlace<P, out_log_q>(*inner, *term);
+            }
+        }
+
+        const TRLWE<P> *to_add = inner.get();
+        if (group.giant_step != 0) {
+            CKKSRotateSlots<P, out_log_q>(
+                *giant_rotated, *inner, plan.k_step * group.giant_step,
+                output_gk);
+            to_add = giant_rotated.get();
+        }
+
+        if (!res_initialized) {
+            res.ct = *to_add;
+            res_initialized = true;
+        }
+        else {
+            CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
+        }
+    }
+    ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, class InputGaloisKey,
+          class OutputGaloisKey>
+inline void CKKSLinearTransformBSGSDirect(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
+{
+    static_assert(PlainLogDelta < LogQ);
+    constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+    assert(plan.k_step > 0 && plan.k_step <= static_cast<int>(P::n / 2));
+    assert(!plan.groups.empty());
+
+    std::vector<bool> baby_used;
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        baby_used, plan);
+
+    auto baby = std::make_unique<std::vector<TRLWE<P>>>(plan.k_step);
+    ckks_detail::CKKSBuildDirectBabyStepRotationTable<P, LogQ>(
+        *baby, ct.ct, baby_used, input_gk);
 
     bool res_initialized = false;
     auto term = std::make_unique<TRLWE<P>>();
@@ -2543,6 +2886,99 @@ inline void CKKSLinearTransformBSGSDualInput(
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta, class InputGaloisKey,
           class OutputGaloisKey>
+inline void CKKSLinearTransformBSGSDualInputDirect(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &lhs,
+    const CKKSCiphertext<P, LogQ, LogDelta> &rhs,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &lhs_plan,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &rhs_plan,
+    const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
+{
+    static_assert(PlainLogDelta < LogQ);
+    constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+    assert(lhs_plan.k_step > 0 &&
+           lhs_plan.k_step <= static_cast<int>(P::n / 2));
+    assert(rhs_plan.k_step == lhs_plan.k_step);
+    assert(!lhs_plan.groups.empty());
+    assert(lhs_plan.groups.size() == rhs_plan.groups.size());
+
+    std::vector<bool> lhs_baby_used;
+    std::vector<bool> rhs_baby_used;
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        lhs_baby_used, lhs_plan);
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        rhs_baby_used, rhs_plan);
+    for (std::size_t i = 0; i < lhs_baby_used.size(); i++)
+        lhs_baby_used[i] = lhs_baby_used[i] || rhs_baby_used[i];
+
+    auto lhs_baby =
+        std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
+    auto rhs_baby =
+        std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
+    ckks_detail::CKKSBuildDirectBabyStepRotationTable<P, LogQ>(
+        *lhs_baby, lhs.ct, lhs_baby_used, input_gk);
+    ckks_detail::CKKSBuildDirectBabyStepRotationTable<P, LogQ>(
+        *rhs_baby, rhs.ct, lhs_baby_used, input_gk);
+
+    bool res_initialized = false;
+    auto term = std::make_unique<TRLWE<P>>();
+    auto inner = std::make_unique<TRLWE<P>>();
+    auto giant_rotated = std::make_unique<TRLWE<P>>();
+
+    for (std::size_t group_index = 0; group_index < lhs_plan.groups.size();
+         group_index++) {
+        const auto &lhs_group = lhs_plan.groups[group_index];
+        const auto &rhs_group = rhs_plan.groups[group_index];
+        assert(lhs_group.giant_step == rhs_group.giant_step);
+
+        bool inner_initialized = false;
+        for (const auto &entry : lhs_group.terms) {
+            CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
+                *term, (*lhs_baby)[entry.baby_step], entry.plain.poly);
+
+            if (!inner_initialized) {
+                *inner = *term;
+                inner_initialized = true;
+            }
+            else {
+                CKKSAddTRLWEInPlace<P, out_log_q>(*inner, *term);
+            }
+        }
+        for (const auto &entry : rhs_group.terms) {
+            CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
+                *term, (*rhs_baby)[entry.baby_step], entry.plain.poly);
+
+            if (!inner_initialized) {
+                *inner = *term;
+                inner_initialized = true;
+            }
+            else {
+                CKKSAddTRLWEInPlace<P, out_log_q>(*inner, *term);
+            }
+        }
+
+        const TRLWE<P> *to_add = inner.get();
+        if (lhs_group.giant_step != 0) {
+            CKKSRotateSlots<P, out_log_q>(
+                *giant_rotated, *inner, lhs_plan.k_step * lhs_group.giant_step,
+                output_gk);
+            to_add = giant_rotated.get();
+        }
+
+        if (!res_initialized) {
+            res.ct = *to_add;
+            res_initialized = true;
+        }
+        else {
+            CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
+        }
+    }
+    ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, class InputGaloisKey,
+          class OutputGaloisKey>
 inline void CKKSLinearTransformBSGS(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
@@ -2554,6 +2990,23 @@ inline void CKKSLinearTransformBSGS(
     CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
         plan, diagonals, rotation_offsets, k_step);
     CKKSLinearTransformBSGS<P, LogQ, LogDelta, PlainLogDelta>(
+        res, ct, plan, input_gk, output_gk);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, class InputGaloisKey,
+          class OutputGaloisKey>
+inline void CKKSLinearTransformBSGSDirect(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const std::vector<CKKSSlotVector<P>> &diagonals,
+    const std::vector<int> &rotation_offsets, int k_step,
+    const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
+{
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> plan;
+    CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        plan, diagonals, rotation_offsets, k_step);
+    CKKSLinearTransformBSGSDirect<P, LogQ, LogDelta, PlainLogDelta>(
         res, ct, plan, input_gk, output_gk);
 }
 
@@ -2618,6 +3071,42 @@ inline void CKKSLinearTransformStagesBSGSImpl(
     }
 }
 
+template <std::size_t KeyOffset, std::size_t I, class P,
+          std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t PlainLogDelta,
+          std::size_t StageCount, class GaloisKeyChain>
+inline void CKKSLinearTransformStagesBSGSDirectImpl(
+    CKKSStagedPlainMulResult<P, StartLogQ, LogDelta, PlainLogDelta,
+                             StageCount> &res,
+    const CKKSCiphertext<P, StartLogQ - I * PlainLogDelta, LogDelta> &ct,
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    int k_step, const GaloisKeyChain &gk_chain)
+{
+    if constexpr (I == StageCount) {
+        res = ct;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - I * PlainLogDelta;
+        CKKSLinearTransformPlan<P, log_q, LogDelta, PlainLogDelta> plan;
+        CKKSBuildLinearTransformBSGSPlan<P, log_q, LogDelta, PlainLogDelta>(
+            plan, stages[first_stage + I], k_step);
+
+        auto next =
+            std::make_unique<CKKSPlainMulResult<P, log_q, LogDelta,
+                                                PlainLogDelta>>();
+        CKKSLinearTransformBSGSDirect<P, log_q, LogDelta, PlainLogDelta>(
+            *next, ct, plan, gk_chain.template get<KeyOffset + I>(),
+            gk_chain.template get<KeyOffset + I + 1>());
+        maybe_release_key<KeyOffset + I>(gk_chain);
+        if constexpr (I + 1 == StageCount) {
+            maybe_release_key<KeyOffset + I + 1>(gk_chain);
+        }
+        CKKSLinearTransformStagesBSGSDirectImpl<
+            KeyOffset, I + 1, P, StartLogQ, LogDelta, PlainLogDelta,
+            StageCount>(res, *next, stages, first_stage, k_step, gk_chain);
+    }
+}
+
 }  // namespace ckks_detail
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -2633,6 +3122,22 @@ inline void CKKSLinearTransformStagesBSGS(
     assert(first_stage + StageCount <= stages.size());
     ckks_detail::CKKSLinearTransformStagesBSGSImpl<0, 0, P, LogQ, LogDelta,
                                                    PlainLogDelta, StageCount>(
+        res, ct, stages, first_stage, k_step, gk_chain);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount,
+          class GaloisKeyChain>
+inline void CKKSLinearTransformStagesBSGSDirect(
+    CKKSStagedPlainMulResult<P, LogQ, LogDelta, PlainLogDelta, StageCount>
+        &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    int k_step, const GaloisKeyChain &gk_chain)
+{
+    assert(first_stage + StageCount <= stages.size());
+    ckks_detail::CKKSLinearTransformStagesBSGSDirectImpl<
+        0, 0, P, LogQ, LogDelta, PlainLogDelta, StageCount>(
         res, ct, stages, first_stage, k_step, gk_chain);
 }
 
@@ -2680,6 +3185,55 @@ inline void CKKSLinearTransformStagesBSGSDualInputSharedTail(
     else {
         constexpr std::uint32_t tail_log_q = LogQ - PlainLogDelta;
         ckks_detail::CKKSLinearTransformStagesBSGSImpl<
+            1, 0, P, tail_log_q, LogDelta, PlainLogDelta, StageCount - 1>(
+            res, *next, lhs_stages, first_stage + 1, k_step, gk_chain);
+    }
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount,
+          class GaloisKeyChain>
+inline void CKKSLinearTransformStagesBSGSDualInputSharedTailDirect(
+    CKKSStagedPlainMulResult<P, LogQ, LogDelta, PlainLogDelta, StageCount>
+        &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &lhs,
+    const CKKSCiphertext<P, LogQ, LogDelta> &rhs,
+    const CKKSLinearTransformStages<P> &lhs_stages,
+    const CKKSLinearTransformStages<P> &rhs_stages, std::size_t first_stage,
+    int k_step, const GaloisKeyChain &gk_chain)
+{
+    static_assert(StageCount > 0);
+    assert(first_stage + StageCount <= lhs_stages.size());
+    assert(first_stage + StageCount <= rhs_stages.size());
+#ifndef NDEBUG
+    for (std::size_t i = first_stage + 1; i < first_stage + StageCount; i++) {
+        assert(lhs_stages[i].rotation_offsets == rhs_stages[i].rotation_offsets);
+        assert(lhs_stages[i].diagonals == rhs_stages[i].diagonals);
+    }
+#endif
+
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> lhs_plan;
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> rhs_plan;
+    CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        lhs_plan, lhs_stages[first_stage], k_step);
+    CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        rhs_plan, rhs_stages[first_stage], k_step);
+
+    auto next =
+        std::make_unique<CKKSPlainMulResult<P, LogQ, LogDelta,
+                                            PlainLogDelta>>();
+    CKKSLinearTransformBSGSDualInputDirect<P, LogQ, LogDelta, PlainLogDelta>(
+        *next, lhs, rhs, lhs_plan, rhs_plan, gk_chain.template get<0>(),
+        gk_chain.template get<1>());
+    ckks_detail::maybe_release_key<0>(gk_chain);
+
+    if constexpr (StageCount == 1) {
+        res = *next;
+        ckks_detail::maybe_release_key<1>(gk_chain);
+    }
+    else {
+        constexpr std::uint32_t tail_log_q = LogQ - PlainLogDelta;
+        ckks_detail::CKKSLinearTransformStagesBSGSDirectImpl<
             1, 0, P, tail_log_q, LogDelta, PlainLogDelta, StageCount - 1>(
             res, *next, lhs_stages, first_stage + 1, k_step, gk_chain);
     }
@@ -3359,11 +3913,36 @@ struct CKKSDenseBootstrapRotationKeyUsage {
     }
 };
 
+template <class Schedule>
+struct CKKSDenseBootstrapDirectRotationKeyUsage {
+    using P = typename Schedule::Param;
+    std::array<CKKSDirectRotationKeyIndexSet<P>,
+               Schedule::coeff_to_slot_level_count + 1>
+        coeff_to_slot{};
+    CKKSRotationKeyIndexSet<P> packed_conjugate{};
+    std::array<CKKSDirectRotationKeyIndexSet<P>,
+               Schedule::slot_to_coeff_level_count + 1>
+        slot_to_coeff{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(coeff_to_slot, packed_conjugate, slot_to_coeff);
+    }
+};
+
 template <class P, std::size_t N>
 inline void CKKSClearRotationKeyIndexSets(
     std::array<CKKSRotationKeyIndexSet<P>, N> &levels)
 {
     for (auto &level : levels) CKKSClearRotationKeyIndexSet<P>(level);
+}
+
+template <class P, std::size_t N>
+inline void CKKSClearDirectRotationKeyIndexSets(
+    std::array<CKKSDirectRotationKeyIndexSet<P>, N> &levels)
+{
+    for (auto &level : levels) CKKSClearDirectRotationKeyIndexSet<P>(level);
 }
 
 template <class P, std::size_t N>
@@ -3373,6 +3952,16 @@ inline std::size_t CKKSRotationKeyIndexSetsCount(
     std::size_t count = 0;
     for (const auto &level : levels)
         count += CKKSRotationKeyIndexSetCount<P>(level);
+    return count;
+}
+
+template <class P, std::size_t N>
+inline std::size_t CKKSDirectRotationKeyIndexSetsCount(
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, N> &levels)
+{
+    std::size_t count = 0;
+    for (const auto &level : levels)
+        count += CKKSDirectRotationKeyIndexSetCount<P>(level);
     return count;
 }
 
@@ -3404,6 +3993,33 @@ inline void CKKSBuildDenseBootstrapRotationKeyUsage(
 }
 
 template <class Schedule>
+inline void CKKSBuildDenseBootstrapDirectRotationKeyUsage(
+    CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage,
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    using P = typename Schedule::Param;
+    CKKSClearDirectRotationKeyIndexSets<P>(usage.coeff_to_slot);
+    CKKSClearRotationKeyIndexSet<P>(usage.packed_conjugate);
+    CKKSClearDirectRotationKeyIndexSets<P>(usage.slot_to_coeff);
+
+    for (std::size_t i = 0; i < linear_plan.coeff_to_slot_stages.size(); i++) {
+        CKKSCollectLinearTransformStageDirectRotationKeyIndices<P>(
+            usage.coeff_to_slot[i], usage.coeff_to_slot[i + 1],
+            linear_plan.coeff_to_slot_stages[i], Schedule::linear_bsgs_step);
+    }
+    CKKSMarkConjugationKeyIndex<P>(usage.packed_conjugate);
+    for (std::size_t i = 0; i < linear_plan.slot_to_coeff_stages.size(); i++) {
+        CKKSCollectLinearTransformStageDirectRotationKeyIndices<P>(
+            usage.slot_to_coeff[i], usage.slot_to_coeff[i + 1],
+            linear_plan.slot_to_coeff_stages[i], Schedule::linear_bsgs_step);
+        CKKSCollectLinearTransformStageDirectRotationKeyIndices<P>(
+            usage.slot_to_coeff[i], usage.slot_to_coeff[i + 1],
+            linear_plan.slot_to_coeff_imag_stages[i],
+            Schedule::linear_bsgs_step);
+    }
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapRotationKeyUsageCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
@@ -3411,6 +4027,16 @@ inline std::size_t CKKSDenseBootstrapRotationKeyUsageCount(
     return CKKSRotationKeyIndexSetsCount<P>(usage.coeff_to_slot) +
            CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) +
            CKKSRotationKeyIndexSetsCount<P>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectRotationKeyUsageCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDirectRotationKeyIndexSetsCount<P>(usage.coeff_to_slot) +
+           CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) +
+           CKKSDirectRotationKeyIndexSetsCount<P>(usage.slot_to_coeff);
 }
 
 template <class Schedule>
@@ -4409,6 +5035,23 @@ inline std::size_t CKKSRotationUsageKeySwitchRows(
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
           std::uint32_t LevelStep, std::size_t LevelCount>
+inline std::size_t CKKSDirectRotationUsageKeySwitchRows(
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, LevelCount> &usage)
+{
+    if constexpr (I == LevelCount) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - I * LevelStep;
+        return CKKSDirectRotationKeyIndexSetCount<P>(usage[I]) *
+                   CKKSAutoKeySwitchRowCount<P, log_q>() +
+               CKKSDirectRotationUsageKeySwitchRows<I + 1, P, StartLogQ,
+                                                    LevelStep>(usage);
+    }
+}
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LevelStep, std::size_t LevelCount>
 inline std::size_t CKKSRotationUsagePeakKeySwitchRows(
     const std::array<CKKSRotationKeyIndexSet<P>, LevelCount> &usage)
 {
@@ -4423,6 +5066,26 @@ inline std::size_t CKKSRotationUsagePeakKeySwitchRows(
         const std::size_t tail =
             CKKSRotationUsagePeakKeySwitchRows<I + 1, P, StartLogQ,
                                                LevelStep>(usage);
+        return std::max(here, tail);
+    }
+}
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LevelStep, std::size_t LevelCount>
+inline std::size_t CKKSDirectRotationUsagePeakKeySwitchRows(
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, LevelCount> &usage)
+{
+    if constexpr (I == LevelCount) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - I * LevelStep;
+        const std::size_t here =
+            CKKSDirectRotationKeyIndexSetCount<P>(usage[I]) *
+            CKKSAutoKeySwitchRowCount<P, log_q>();
+        const std::size_t tail =
+            CKKSDirectRotationUsagePeakKeySwitchRows<I + 1, P, StartLogQ,
+                                                     LevelStep>(usage);
         return std::max(here, tail);
     }
 }
@@ -4447,6 +5110,30 @@ inline std::size_t CKKSRotationUsageAdjacentPeakKeySwitchRows(
         const std::size_t tail =
             CKKSRotationUsageAdjacentPeakKeySwitchRows<I + 1, P, StartLogQ,
                                                        LevelStep>(usage);
+        return std::max(here, tail);
+    }
+}
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LevelStep, std::size_t LevelCount>
+inline std::size_t CKKSDirectRotationUsageAdjacentPeakKeySwitchRows(
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, LevelCount> &usage)
+{
+    if constexpr (I + 1 >= LevelCount) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t input_log_q = StartLogQ - I * LevelStep;
+        constexpr std::uint32_t output_log_q =
+            StartLogQ - (I + 1) * LevelStep;
+        const std::size_t here =
+            CKKSDirectRotationKeyIndexSetCount<P>(usage[I]) *
+                CKKSAutoKeySwitchRowCount<P, input_log_q>() +
+            CKKSDirectRotationKeyIndexSetCount<P>(usage[I + 1]) *
+                CKKSAutoKeySwitchRowCount<P, output_log_q>();
+        const std::size_t tail =
+            CKKSDirectRotationUsageAdjacentPeakKeySwitchRows<
+                I + 1, P, StartLogQ, LevelStep>(usage);
         return std::max(here, tail);
     }
 }
@@ -4546,11 +5233,33 @@ inline std::size_t CKKSDenseBootstrapSparseCoeffToSlotKeySwitchRowCount(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectCoeffToSlotKeySwitchRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSDirectRotationUsageKeySwitchRows<
+        0, P, Schedule::boot_log_q,
+        Schedule::coeff_to_slot_plain_log_delta>(
+        usage.coeff_to_slot);
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapSparseCoeffToSlotPeakKeySwitchRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     using P = typename Schedule::Param;
     return ckks_detail::CKKSRotationUsageAdjacentPeakKeySwitchRows<
+        0, P, Schedule::boot_log_q,
+        Schedule::coeff_to_slot_plain_log_delta>(
+        usage.coeff_to_slot);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectCoeffToSlotPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSDirectRotationUsageAdjacentPeakKeySwitchRows<
         0, P, Schedule::boot_log_q,
         Schedule::coeff_to_slot_plain_log_delta>(
         usage.coeff_to_slot);
@@ -4575,11 +5284,30 @@ inline std::size_t CKKSDenseBootstrapSparsePackedConjugateKeySwitchRowCount(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectPackedConjugateKeySwitchRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) *
+           CKKSDenseBootstrapPackedConjugateKeySwitchRowCount<Schedule>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffKeySwitchRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     using P = typename Schedule::Param;
     return ckks_detail::CKKSRotationUsageKeySwitchRows<
+        0, P, Schedule::after_evalmod_log_q,
+        Schedule::slot_to_coeff_plain_log_delta>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectSlotToCoeffKeySwitchRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSDirectRotationUsageKeySwitchRows<
         0, P, Schedule::after_evalmod_log_q,
         Schedule::slot_to_coeff_plain_log_delta>(usage.slot_to_coeff);
 }
@@ -4595,6 +5323,16 @@ inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffPeakKeySwitchRowCount(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectSlotToCoeffPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSDirectRotationUsageAdjacentPeakKeySwitchRows<
+        0, P, Schedule::after_evalmod_log_q,
+        Schedule::slot_to_coeff_plain_log_delta>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapSparseGaloisKeySwitchRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
@@ -4603,6 +5341,18 @@ inline std::size_t CKKSDenseBootstrapSparseGaloisKeySwitchRowCount(
            CKKSDenseBootstrapSparsePackedConjugateKeySwitchRowCount<Schedule>(
                usage) +
            CKKSDenseBootstrapSparseSlotToCoeffKeySwitchRowCount<Schedule>(
+           usage);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectGaloisKeySwitchRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    return CKKSDenseBootstrapDirectCoeffToSlotKeySwitchRowCount<Schedule>(
+               usage) +
+           CKKSDenseBootstrapDirectPackedConjugateKeySwitchRowCount<Schedule>(
+               usage) +
+           CKKSDenseBootstrapDirectSlotToCoeffKeySwitchRowCount<Schedule>(
                usage);
 }
 
@@ -4616,6 +5366,19 @@ inline std::size_t CKKSDenseBootstrapSparseGaloisPeakKeySwitchRowCount(
          CKKSDenseBootstrapSparsePackedConjugateKeySwitchRowCount<Schedule>(
              usage),
          CKKSDenseBootstrapSparseSlotToCoeffPeakKeySwitchRowCount<Schedule>(
+             usage)});
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectGaloisPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    return std::max(
+        {CKKSDenseBootstrapDirectCoeffToSlotPeakKeySwitchRowCount<Schedule>(
+             usage),
+         CKKSDenseBootstrapDirectPackedConjugateKeySwitchRowCount<Schedule>(
+             usage),
+         CKKSDenseBootstrapDirectSlotToCoeffPeakKeySwitchRowCount<Schedule>(
              usage)});
 }
 
@@ -4645,11 +5408,28 @@ inline std::size_t CKKSDenseBootstrapSparseKeySwitchRowCount(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectKeySwitchRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    return CKKSDenseBootstrapDirectGaloisKeySwitchRowCount<Schedule>(usage) +
+           CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapStreamedKeySwitchPeakRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     return std::max(
         CKKSDenseBootstrapSparseGaloisPeakKeySwitchRowCount<Schedule>(usage),
+        CKKSDenseBootstrapEvalModPeakKeySwitchRowCount<Schedule>());
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectStreamedKeySwitchPeakRowCount(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    return std::max(
+        CKKSDenseBootstrapDirectGaloisPeakKeySwitchRowCount<Schedule>(usage),
         CKKSDenseBootstrapEvalModPeakKeySwitchRowCount<Schedule>());
 }
 
@@ -4670,11 +5450,30 @@ inline std::size_t CKKSDenseBootstrapSparseKeyByteEstimate(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectKeyByteEstimate(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapDirectKeySwitchRowCount<Schedule>(usage) *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapStreamedPeakKeyByteEstimate(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     using P = typename Schedule::Param;
     return CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(usage) *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectStreamedPeakKeyByteEstimate(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapDirectStreamedKeySwitchPeakRowCount<Schedule>(
+               usage) *
            CKKSKeySwitchRowByteSize<P>();
 }
 

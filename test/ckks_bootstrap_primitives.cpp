@@ -629,6 +629,25 @@ void test_lvl6_factorized_stage_shape()
     const std::size_t sparse_key_bytes =
         TFHEpp::CKKSDenseBootstrapSparseKeyByteEstimate<Schedule>(
             rotation_usage);
+    TFHEpp::CKKSDenseBootstrapDirectRotationKeyUsage<Schedule>
+        direct_rotation_usage;
+    TFHEpp::CKKSBuildDenseBootstrapDirectRotationKeyUsage<Schedule>(
+        direct_rotation_usage, linear_plan);
+    const std::size_t direct_key_indices =
+        TFHEpp::CKKSDenseBootstrapDirectRotationKeyUsageCount<Schedule>(
+            direct_rotation_usage);
+    const std::size_t direct_key_rows =
+        TFHEpp::CKKSDenseBootstrapDirectKeySwitchRowCount<Schedule>(
+            direct_rotation_usage);
+    const std::size_t direct_key_bytes =
+        TFHEpp::CKKSDenseBootstrapDirectKeyByteEstimate<Schedule>(
+            direct_rotation_usage);
+    const std::size_t direct_streamed_peak_rows =
+        TFHEpp::CKKSDenseBootstrapDirectStreamedKeySwitchPeakRowCount<
+            Schedule>(direct_rotation_usage);
+    const std::size_t direct_streamed_peak_bytes =
+        TFHEpp::CKKSDenseBootstrapDirectStreamedPeakKeyByteEstimate<Schedule>(
+            direct_rotation_usage);
     const std::size_t streamed_peak_rows =
         TFHEpp::CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(
             rotation_usage);
@@ -653,6 +672,14 @@ void test_lvl6_factorized_stage_shape()
         std::exit(1);
     if (streamed_peak_rows == 0 || streamed_peak_rows >= sparse_key_rows)
         std::exit(1);
+    if (direct_key_indices <= planned_key_indices ||
+        direct_key_rows <= sparse_key_rows ||
+        direct_key_bytes <= sparse_key_bytes)
+        std::exit(1);
+    if (direct_streamed_peak_rows == 0 ||
+        direct_streamed_peak_bytes !=
+            direct_streamed_peak_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
+        std::exit(1);
     std::cout << "CKKS lvl6 dense bootstrap rotation key indices planned/full="
               << planned_key_indices << "/" << full_key_indices
               << " c2s_baby_rotations=" << total_c2s_baby_rotations
@@ -667,6 +694,12 @@ void test_lvl6_factorized_stage_shape()
               << std::endl;
     std::cout << "CKKS lvl6 dense bootstrap streamed peak rows="
               << streamed_peak_rows << " bytes=" << streamed_peak_bytes
+              << std::endl;
+    std::cout << "CKKS lvl6 dense bootstrap direct key indices/rows="
+              << direct_key_indices << "/" << direct_key_rows
+              << " bytes=" << direct_key_bytes
+              << " streamed_peak_rows=" << direct_streamed_peak_rows
+              << " streamed_peak_bytes=" << direct_streamed_peak_bytes
               << std::endl;
 }
 
@@ -888,6 +921,37 @@ void test_dense_bootstrap_encrypted_pipeline()
     require_close_param<M>(*decoded, *expected, 1e-6,
                            "CKKS dense encrypted C2S");
 
+    std::array<TFHEpp::CKKSDirectRotationKeyIndexSet<M>,
+               Schedule::coeff_to_slot_level_count + 1>
+        direct_c2s_usage{};
+    TFHEpp::CKKSClearDirectRotationKeyIndexSets<M>(direct_c2s_usage);
+    for (std::size_t i = 0; i < linear_plan.coeff_to_slot_stages.size(); i++)
+        TFHEpp::CKKSCollectLinearTransformStageDirectRotationKeyIndices<M>(
+            direct_c2s_usage[i], direct_c2s_usage[i + 1],
+            linear_plan.coeff_to_slot_stages[i],
+            Schedule::linear_bsgs_step);
+    auto direct_c2s_gks =
+        std::make_unique<TFHEpp::CKKSDirectSparseGaloisKeyChain<
+            M, Schedule::boot_log_q, Schedule::coeff_to_slot_plain_log_delta,
+            Schedule::coeff_to_slot_level_count>>();
+    TFHEpp::CKKSDirectSparseGaloisKeyChainGen<
+        M, Schedule::boot_log_q, Schedule::coeff_to_slot_plain_log_delta,
+        Schedule::coeff_to_slot_level_count>(*direct_c2s_gks,
+                                             direct_c2s_usage, *key,
+                                             {0.0, 0});
+    auto direct_out =
+        std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
+    TFHEpp::CKKSLinearTransformStagesBSGSDirect<
+        M, Schedule::boot_log_q, Schedule::log_delta,
+        Schedule::coeff_to_slot_plain_log_delta,
+        Schedule::coeff_to_slot_level_count>(
+        *direct_out, *ct, linear_plan.coeff_to_slot_stages, 0,
+        Schedule::linear_bsgs_step, *direct_c2s_gks);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::after_coeff_to_slot_log_q,
+                            Schedule::log_delta>(*decoded, *direct_out, *key);
+    require_close_param<M>(*decoded, *expected, 1e-6,
+                           "CKKS dense encrypted direct C2S");
+
     auto conjugate_gk =
         std::make_unique<TFHEpp::CKKSGaloisKey<
             M, Schedule::after_coeff_to_slot_log_q>>();
@@ -1101,6 +1165,41 @@ void test_dense_bootstrap_fused_stc_shared_tail()
         linear_plan.slot_to_coeff_imag_stages, 0,
         Schedule::linear_bsgs_step, *slot_to_coeff_gks);
 
+    std::array<TFHEpp::CKKSDirectRotationKeyIndexSet<M>,
+               Schedule::slot_to_coeff_level_count + 1>
+        direct_stc_usage{};
+    TFHEpp::CKKSClearDirectRotationKeyIndexSets<M>(direct_stc_usage);
+    for (std::size_t i = 0; i < linear_plan.slot_to_coeff_stages.size(); i++) {
+        TFHEpp::CKKSCollectLinearTransformStageDirectRotationKeyIndices<M>(
+            direct_stc_usage[i], direct_stc_usage[i + 1],
+            linear_plan.slot_to_coeff_stages[i],
+            Schedule::linear_bsgs_step);
+        TFHEpp::CKKSCollectLinearTransformStageDirectRotationKeyIndices<M>(
+            direct_stc_usage[i], direct_stc_usage[i + 1],
+            linear_plan.slot_to_coeff_imag_stages[i],
+            Schedule::linear_bsgs_step);
+    }
+    auto direct_slot_to_coeff_gks =
+        std::make_unique<TFHEpp::CKKSDirectSparseGaloisKeyChain<
+            M, Schedule::after_evalmod_log_q,
+            Schedule::slot_to_coeff_plain_log_delta,
+            Schedule::slot_to_coeff_level_count>>();
+    TFHEpp::CKKSDirectSparseGaloisKeyChainGen<
+        M, Schedule::after_evalmod_log_q,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(*direct_slot_to_coeff_gks,
+                                             direct_stc_usage, *key,
+                                             {0.0, 0});
+    auto direct_fused_out =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSLinearTransformStagesBSGSDualInputSharedTailDirect<
+        M, Schedule::after_evalmod_log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        *direct_fused_out, *real_ct, *imag_ct,
+        linear_plan.slot_to_coeff_stages, linear_plan.slot_to_coeff_imag_stages,
+        0, Schedule::linear_bsgs_step, *direct_slot_to_coeff_gks);
+
     auto expected_real = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     auto expected_imag = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     auto expected = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
@@ -1113,16 +1212,24 @@ void test_dense_bootstrap_fused_stc_shared_tail()
 
     auto split_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     auto fused_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto direct_fused_decoded =
+        std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
         *split_decoded, *split_out, *key);
     TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
         *fused_decoded, *fused_out, *key);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *direct_fused_decoded, *direct_fused_out, *key);
     require_close_param<M>(*split_decoded, *expected, 1e-3,
                            "CKKS dense encrypted split STC shared tail");
     require_close_param<M>(*fused_decoded, *expected, 1e-3,
                            "CKKS dense encrypted fused STC shared tail");
+    require_close_param<M>(*direct_fused_decoded, *expected, 1e-3,
+                           "CKKS dense encrypted direct fused STC shared tail");
     require_close_param<M>(*fused_decoded, *split_decoded, 1e-3,
                            "CKKS dense encrypted fused/split shared tail");
+    require_close_param<M>(*direct_fused_decoded, *fused_decoded, 1e-3,
+                           "CKKS dense encrypted direct/current shared tail");
 }
 
 void test_dense_bootstrap_e2e_smoke()

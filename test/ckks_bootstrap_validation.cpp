@@ -304,6 +304,9 @@ void print_schedule_report(const char *label,
     TFHEpp::CKKSDenseBootstrapRotationKeyUsage<Schedule> usage;
     TFHEpp::CKKSBuildDenseBootstrapRotationKeyUsage<Schedule>(usage,
                                                               linear_plan);
+    TFHEpp::CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> direct_usage;
+    TFHEpp::CKKSBuildDenseBootstrapDirectRotationKeyUsage<Schedule>(
+        direct_usage, linear_plan);
 
     const std::size_t sparse_rows =
         TFHEpp::CKKSDenseBootstrapSparseKeySwitchRowCount<Schedule>(usage);
@@ -315,6 +318,18 @@ void print_schedule_report(const char *label,
     const std::size_t streamed_peak_bytes =
         TFHEpp::CKKSDenseBootstrapStreamedPeakKeyByteEstimate<Schedule>(
             usage);
+    const std::size_t direct_rows =
+        TFHEpp::CKKSDenseBootstrapDirectKeySwitchRowCount<Schedule>(
+            direct_usage);
+    const std::size_t direct_bytes =
+        TFHEpp::CKKSDenseBootstrapDirectKeyByteEstimate<Schedule>(
+            direct_usage);
+    const std::size_t direct_streamed_peak_rows =
+        TFHEpp::CKKSDenseBootstrapDirectStreamedKeySwitchPeakRowCount<
+            Schedule>(direct_usage);
+    const std::size_t direct_streamed_peak_bytes =
+        TFHEpp::CKKSDenseBootstrapDirectStreamedPeakKeyByteEstimate<Schedule>(
+            direct_usage);
     const std::size_t c2s_current_evalautos =
         TFHEpp::CKKSLinearTransformStagesRotationEvalAutoCount<P>(
             linear_plan.coeff_to_slot_stages, 0,
@@ -358,12 +373,20 @@ void print_schedule_report(const char *label,
               << TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>()
               << " sparse_rows=" << sparse_rows
               << " streamed_peak_rows=" << streamed_peak_rows << '\n';
+    std::cout << label << " direct_rotation_indices="
+              << TFHEpp::CKKSDenseBootstrapDirectRotationKeyUsageCount<
+                     Schedule>(direct_usage)
+              << " direct_rows=" << direct_rows
+              << " direct_streamed_peak_rows=" << direct_streamed_peak_rows
+              << '\n';
     std::cout << label << " rotation_evalautos current/direct c2s="
               << c2s_current_evalautos << "/" << c2s_direct_evalautos
               << " stc=" << stc_current_evalautos << "/"
               << stc_direct_evalautos << '\n';
     std::cout << label << " sparse_key_bytes=" << sparse_bytes
               << " streamed_peak_bytes=" << streamed_peak_bytes
+              << " direct_key_bytes=" << direct_bytes
+              << " direct_streamed_peak_bytes=" << direct_streamed_peak_bytes
               << " full_key_bytes="
               << TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>()
               << '\n';
