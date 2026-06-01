@@ -2978,6 +2978,156 @@ inline void CKKSLinearTransformBSGS(
     ckks_detail::CKKSBuildBabyStepRotationTable<P, LogQ>(*baby, ct.ct,
                                                          baby_used, input_gk);
 
+    if constexpr (is_multilimb_uint_v<typename P::T> &&
+                  use_multilimb_digit_fft_v<P>) {
+        using T = typename P::T;
+        constexpr int width = std::numeric_limits<T>::digits;
+        constexpr int plain_digits =
+            (64 + static_cast<int>(P::B̅gbit) - 1) /
+            static_cast<int>(P::B̅gbit);
+        constexpr uint64_t plain_mask =
+            P::B̅gbit == 64 ? std::numeric_limits<uint64_t>::max()
+                            : ((uint64_t{1} << P::B̅gbit) - 1);
+        constexpr T half_digit = T{1} << (P::B̅gbit - 1);
+        constexpr T torus_mask = (T{1} << P::B̅gbit) - T{1};
+        constexpr T offset = [] {
+            constexpr int local_width = std::numeric_limits<T>::digits;
+            constexpr T local_half_digit = T{1} << (P::B̅gbit - 1);
+            T value = 0;
+            for (int j = 0; j < static_cast<int>(P::l̅); j++)
+                value += local_half_digit
+                         << (local_width - (j + 1) * P::B̅gbit);
+            return value;
+        }();
+        constexpr int fd_margin =
+            std::numeric_limits<double>::digits -
+            (2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3);
+        static_assert(fd_margin > 0,
+                      "fused CKKS BSGS digit products must fit in double");
+        constexpr int max_fused_terms = 1 << (fd_margin - 1);
+
+        using BabyComponentFFT = std::array<PolynomialInFD<P>, P::l̅>;
+        using BabyFFT = std::array<BabyComponentFFT, P::k + 1>;
+        auto baby_fft =
+            std::make_unique<std::vector<std::unique_ptr<BabyFFT>>>(
+                plan.k_step);
+        auto torus_digit = std::make_unique<Polynomial<P>>();
+        for (int j1 = 0; j1 < static_cast<int>(baby_used.size()); j1++) {
+            if (!baby_used[static_cast<std::size_t>(j1)]) continue;
+            (*baby_fft)[static_cast<std::size_t>(j1)] =
+                std::make_unique<BabyFFT>();
+            for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    const int torus_shift =
+                        width - (j + 1) * static_cast<int>(P::B̅gbit);
+                    for (uint32_t n = 0; n < P::n; n++) {
+                        const T adjusted =
+                            (*baby)[static_cast<std::size_t>(j1)][c][n] +
+                            offset;
+                        (*torus_digit)[n] =
+                            ((adjusted >> torus_shift) & torus_mask) -
+                            half_digit;
+                    }
+                    TwistIFFTDigit<P>(
+                        (*(*baby_fft)[static_cast<std::size_t>(j1)])[c][j],
+                        *torus_digit);
+                }
+            }
+        }
+        std::vector<TRLWE<P>>().swap(*baby);
+
+        bool res_initialized = false;
+        auto inner = std::make_unique<TRLWE<P>>();
+        auto giant_rotated = std::make_unique<TRLWE<P>>();
+        auto plain_digit = std::make_unique<Polynomial<P>>();
+        auto product_acc = std::make_unique<PolynomialInFD<P>>();
+        auto digit_prod = std::make_unique<Polynomial<P>>();
+
+        for (const auto &group : plan.groups) {
+            using PlainTermFFT = std::array<PolynomialInFD<P>, plain_digits>;
+            auto plain_fft =
+                std::make_unique<std::vector<PlainTermFFT>>(group.terms.size());
+            for (std::size_t t = 0; t < group.terms.size(); t++) {
+                const auto &plain = group.terms[t].plain.poly;
+                for (int d = 0; d < plain_digits; d++) {
+                    const int plain_shift = d * static_cast<int>(P::B̅gbit);
+                    for (uint32_t n = 0; n < P::n; n++) {
+                        const auto [negative, magnitude] =
+                            ckks_detail::smallSignedMagnitude<P, LogQ>(
+                                plain[n]);
+                        const uint64_t digit =
+                            (magnitude >> plain_shift) & plain_mask;
+                        const T digit_value{digit};
+                        (*plain_digit)[n] =
+                            negative ? T{0} - digit_value : digit_value;
+                    }
+                    TwistIFFTDigit<P>((*plain_fft)[t][d], *plain_digit);
+                }
+            }
+
+            for (int c = 0; c <= static_cast<int>(P::k); c++)
+                for (uint32_t n = 0; n < P::n; n++) (*inner)[c][n] = 0;
+
+            for (std::size_t batch_begin = 0;
+                 batch_begin < group.terms.size();
+                 batch_begin += max_fused_terms) {
+                const std::size_t batch_end = std::min<std::size_t>(
+                    group.terms.size(), batch_begin + max_fused_terms);
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                        const int torus_shift =
+                            width - (j + 1) * static_cast<int>(P::B̅gbit);
+                        for (int d = 0; d < plain_digits; d++) {
+                            const int plain_shift =
+                                d * static_cast<int>(P::B̅gbit);
+                            const int shift = torus_shift + plain_shift;
+                            if (shift >= width) continue;
+
+                            for (double &v : *product_acc) v = 0.0;
+                            for (std::size_t t = batch_begin; t < batch_end;
+                                 t++) {
+                                const int j1 = group.terms[t].baby_step;
+                                assert(j1 >= 0 && j1 < plan.k_step);
+                                const auto &fft =
+                                    *(*baby_fft)[static_cast<std::size_t>(j1)];
+                                FMAInFD<P::n>(*product_acc, fft[c][j],
+                                              (*plain_fft)[t][d]);
+                            }
+                            TwistFFTDigitProduct<P>(*digit_prod, *product_acc);
+                            for (uint32_t n = 0; n < P::n; n++)
+                                (*inner)[c][n] += (*digit_prod)[n] << shift;
+                        }
+                    }
+                }
+            }
+
+            for (int c = 0; c <= static_cast<int>(P::k); c++)
+                for (uint32_t n = 0; n < P::n; n++)
+                    (*inner)[c][n] =
+                        ckks_detail::roundedLevelRightShift<
+                            P, LogQ, PlainLogDelta>((*inner)[c][n]);
+            ckks_detail::reduceTRLWEToLevel<P, out_log_q>(*inner);
+
+            const TRLWE<P> *to_add = inner.get();
+            if (group.giant_step != 0) {
+                CKKSRotateSlots<P, out_log_q>(
+                    *giant_rotated, *inner, plan.k_step * group.giant_step,
+                    output_gk);
+                to_add = giant_rotated.get();
+            }
+
+            if (!res_initialized) {
+                res.ct = *to_add;
+                res_initialized = true;
+            }
+            else {
+                CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
+            }
+        }
+        ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+        return;
+    }
+
     bool res_initialized = false;
     auto term = std::make_unique<TRLWE<P>>();
     auto inner = std::make_unique<TRLWE<P>>();
