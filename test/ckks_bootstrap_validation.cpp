@@ -797,6 +797,13 @@ void print_schedule_report(const char *label,
               << Schedule::boot_log_q << " input_logQ="
               << Schedule::input_log_q << " output_logQ="
               << Schedule::output_log_q << '\n';
+    std::cout << label << " post_bootstrap_product_logQ="
+              << Schedule::post_bootstrap_product_log_q
+              << " product_bootstrap_slack="
+              << Schedule::post_bootstrap_product_slack
+              << " product_bootstrap_ready="
+              << (Schedule::supports_post_bootstrap_product ? 1 : 0)
+              << '\n';
     std::cout << label << " c2s_levels="
               << Schedule::coeff_to_slot_level_count << " stc_levels="
               << Schedule::slot_to_coeff_level_count << " evalmod_depth="

@@ -647,6 +647,7 @@ void test_lvl6_factorized_stage_shape()
             rotation_usage);
     constexpr std::size_t full_key_indices =
         TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>();
+    static_assert(Schedule::supports_post_bootstrap_product);
     static_assert(
         TFHEpp::CKKSAutoKeySwitchRowCount<L, Schedule::boot_log_q>() == 55);
     static_assert(
@@ -874,8 +875,11 @@ void test_dense_bootstrap_api_shape()
                                  TFHEpp::lvl6param>);
     static_assert(Lvl6FastSchedule::evalmod_k == 18);
     static_assert(Lvl6FastSchedule::evalmod_degree == 34);
+    static_assert(Lvl6FastSchedule::boot_log_q == 888);
     static_assert(Lvl6FastSchedule::slot_to_coeff_plain_log_delta == 25);
-    static_assert(Lvl6FastSchedule::output_log_q == 105);
+    static_assert(Lvl6FastSchedule::output_log_q == 113);
+    static_assert(Lvl6FastSchedule::supports_post_bootstrap_product);
+    static_assert(Lvl6FastSchedule::post_bootstrap_product_slack == 5);
     static_assert(Lvl6FastSchedule::hybrid_giant_direct_popcount_threshold == 3);
     static_assert(Lvl6CompactSchedule::hybrid_giant_direct_popcount_threshold ==
                   4);

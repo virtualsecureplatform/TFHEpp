@@ -4238,6 +4238,14 @@ struct CKKSDenseBootstrapSchedule {
         after_component_split_log_q - evalmod_log_q_consumption;
     static constexpr std::uint32_t output_log_q =
         after_evalmod_log_q - slot_to_coeff_level_count * SlotToCoeffPlainLogDelta;
+    static constexpr std::uint32_t post_bootstrap_product_log_q =
+        output_log_q - LogDelta;
+    static constexpr bool supports_post_bootstrap_product =
+        post_bootstrap_product_log_q >= input_log_q;
+    static constexpr std::uint32_t post_bootstrap_product_slack =
+        supports_post_bootstrap_product
+            ? post_bootstrap_product_log_q - input_log_q
+            : 0;
 
     static_assert(input_log_q < BootLogQ);
     static_assert(BootLogQ <= ckks_detail::torus_width_v<P>);
@@ -4263,7 +4271,7 @@ struct CKKSDenseBootstrapSchedule {
 
 template <int HybridGiantDirectPopcountThreshold = 3>
 using lvl6CKKSDenseBootstrapRobustHybridSchedule =
-    CKKSDenseBootstrapSchedule<lvl6param, 50, 8, 880, 50, 5, 34, 18, 3, 0, 50,
+    CKKSDenseBootstrapSchedule<lvl6param, 50, 8, 888, 50, 5, 34, 18, 3, 0, 50,
                                128, 0, 50, 50, 25, 5, 5,
                                HybridGiantDirectPopcountThreshold>;
 

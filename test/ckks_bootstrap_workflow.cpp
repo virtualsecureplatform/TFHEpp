@@ -105,6 +105,12 @@ int main()
     using ProductCt =
         TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
                                FreshCt::log_q, FreshCt::log_delta>;
+    using PostBootstrapProductCt = TFHEpp::CKKSMultResult<
+        P, Schedule::output_log_q, Schedule::log_delta,
+        Schedule::output_log_q, Schedule::log_delta>;
+    static_assert(Schedule::supports_post_bootstrap_product);
+    static_assert(PostBootstrapProductCt::log_q ==
+                  Schedule::post_bootstrap_product_log_q);
 
     const std::filesystem::path root =
         std::filesystem::temp_directory_path() /
@@ -115,6 +121,8 @@ int main()
         TFHEpp::CKKSDenseBootstrapEncapsulationKeyFile(eval_key_dir);
     const std::filesystem::path relin_key_file =
         TFHEpp::CKKSRelinKeyFile(eval_key_dir, "product_relin_key");
+    const std::filesystem::path post_bootstrap_relin_key_file =
+        TFHEpp::CKKSRelinKeyFile(eval_key_dir, "post_bootstrap_relin_key");
     std::filesystem::remove_all(root);
     std::filesystem::create_directories(eval_key_dir);
 
@@ -129,14 +137,19 @@ int main()
         encapsulation_key_file, *external_key, *bootstrap_key, {0.0, 0});
     TFHEpp::CKKSRelinKeyGenToFile<P, ProductCt::log_q>(
         relin_key_file, *external_key, {0.0, 0});
+    TFHEpp::CKKSRelinKeyGenToFile<P, PostBootstrapProductCt::log_q>(
+        post_bootstrap_relin_key_file, *external_key, {0.0, 0});
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto chained_expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     fill_lhs_slots<P>(*lhs);
     fill_rhs_slots<P>(*rhs);
     for (std::size_t i = 0; i < P::n / 2; i++)
         (*expected)[i] = (*lhs)[i] * (*rhs)[i];
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*chained_expected)[i] = (*expected)[i] * (*expected)[i];
 
     auto lhs_ct = std::make_unique<FreshCt>();
     auto rhs_ct = std::make_unique<FreshCt>();
@@ -160,14 +173,36 @@ int main()
         *decoded, *bootstrapped, *external_key);
 
     const double err = max_error<P>(*decoded, *expected);
+
+    auto chained_product = std::make_unique<PostBootstrapProductCt>();
+    TFHEpp::CKKSMultWithRelinKeyFile<P>(*chained_product, *bootstrapped,
+                                         *bootstrapped,
+                                         post_bootstrap_relin_key_file);
+    auto chained_bootstrapped =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings chained_timings;
+    TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithFilesystemKeyTimed<
+        Schedule>(*chained_bootstrapped, *chained_product, bootstrap_key_dir,
+                  encapsulation_key_file, chained_timings);
+    TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *chained_bootstrapped, *external_key);
+    const double chained_err = max_error<P>(*decoded, *chained_expected);
+
     std::cout << "workflow product_logQ=" << ProductCt::log_q
               << " normalized_logQ=" << Schedule::input_log_q
               << " output_logQ=" << Schedule::output_log_q << '\n';
+    std::cout << "workflow post_bootstrap_product_logQ="
+              << PostBootstrapProductCt::log_q
+              << " product_bootstrap_slack="
+              << Schedule::post_bootstrap_product_slack << '\n';
     std::cout << "workflow bootstrap_key_dir=" << bootstrap_key_dir.string()
               << " encapsulation_key_bytes="
               << std::filesystem::file_size(encapsulation_key_file)
               << " relin_key_bytes="
-              << std::filesystem::file_size(relin_key_file) << '\n';
+              << std::filesystem::file_size(relin_key_file)
+              << " post_bootstrap_relin_key_bytes="
+              << std::filesystem::file_size(post_bootstrap_relin_key_file)
+              << '\n';
     std::cout << "workflow bootstrap_ms="
               << timings.normalize_ms + timings.input_secret_switch_ms +
                      timings.modraise_ms + timings.coeff_to_slot_ms +
@@ -175,7 +210,18 @@ int main()
                      timings.imag_evalmod_ms + timings.slot_to_coeff_ms +
                      timings.output_secret_switch_ms
               << " max_error=" << err << '\n';
+    std::cout << "workflow chained_bootstrap_ms="
+              << chained_timings.normalize_ms +
+                     chained_timings.input_secret_switch_ms +
+                     chained_timings.modraise_ms +
+                     chained_timings.coeff_to_slot_ms +
+                     chained_timings.split_ms +
+                     chained_timings.real_evalmod_ms +
+                     chained_timings.imag_evalmod_ms +
+                     chained_timings.slot_to_coeff_ms +
+                     chained_timings.output_secret_switch_ms
+              << " chained_max_error=" << chained_err << '\n';
 
     std::filesystem::remove_all(root);
-    return err <= 0.05 ? 0 : 1;
+    return err <= 0.05 && chained_err <= 0.05 ? 0 : 1;
 }
