@@ -341,6 +341,30 @@ struct CKKSDirectSparseGaloisKey {
     }
 };
 
+template <class P, std::uint32_t LogQ>
+struct CKKSHybridSparseGaloisKey {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+
+    CKKSSparseGaloisKey<P, LogQ> binary{};
+    CKKSDirectSparseGaloisKey<P, LogQ> direct{};
+
+    bool has(int steps) const
+    {
+        return direct.has(steps) || binary.has(steps);
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(binary, direct);
+    }
+};
+
 struct CKKSNoise {
     double modular_stdev = 0.0;
     std::uint32_t uniform_bits = 0;
@@ -1677,6 +1701,18 @@ inline void CKKSDirectSparseGaloisKeyGen(
 }
 
 template <class P, std::uint32_t LogQ>
+inline void CKKSHybridSparseGaloisKeyGen(
+    CKKSHybridSparseGaloisKey<P, LogQ> &gk, const Key<P> &key,
+    const CKKSRotationKeyIndexSet<P> &binary_indices,
+    const CKKSDirectRotationKeyIndexSet<P> &direct_indices,
+    CKKSNoise noise = {P::α, 0})
+{
+    CKKSSparseGaloisKeyGen<P, LogQ>(gk.binary, key, binary_indices, noise);
+    CKKSDirectSparseGaloisKeyGen<P, LogQ>(gk.direct, key, direct_indices,
+                                          noise);
+}
+
+template <class P, std::uint32_t LogQ>
 inline void CKKSEvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
                          const CKKSAutoKey<P, LogQ> &autokey)
 {
@@ -1766,6 +1802,19 @@ inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
 }
 
 template <class P, std::uint32_t LogQ>
+inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
+                            const CKKSHybridSparseGaloisKey<P, LogQ> &gk)
+{
+    if (gk.direct.has(steps) &&
+        CKKSDirectSparseGaloisKey<P, LogQ>::normalize_steps(steps) != 0) {
+        CKKSRotateSlots<P, LogQ>(res, ct, steps, gk.direct);
+    }
+    else {
+        CKKSRotateSlots<P, LogQ>(res, ct, steps, gk.binary);
+    }
+}
+
+template <class P, std::uint32_t LogQ>
 inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
                                const CKKSGaloisKey<P, LogQ> &gk)
 {
@@ -1779,6 +1828,13 @@ inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
 {
     CKKSEvalAuto<P, LogQ>(res, ct, 2 * P::n - 1, gk.get(P::nbit));
     ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
+                               const CKKSHybridSparseGaloisKey<P, LogQ> &gk)
+{
+    CKKSConjugateSlots<P, LogQ>(res, ct, gk.binary);
 }
 
 namespace ckks_detail {
@@ -2081,6 +2137,48 @@ inline void CKKSCollectLinearTransformStageDirectRotationKeyIndices(
 }
 
 template <class P>
+inline void CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices(
+    CKKSRotationKeyIndexSet<P> &input_binary_keys,
+    CKKSRotationKeyIndexSet<P> &output_binary_keys,
+    CKKSDirectRotationKeyIndexSet<P> &output_direct_keys,
+    const CKKSLinearTransformStage<P> &stage, int k_step,
+    int direct_giant_popcount_threshold = 4)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    int max_j2 = 0;
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<bool> baby_used(static_cast<std::size_t>(k_step), false);
+    std::vector<bool> giant_used(static_cast<std::size_t>(max_j2 + 1), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        baby_used[static_cast<std::size_t>(r % k_step)] = true;
+        giant_used[static_cast<std::size_t>(r / k_step)] = true;
+    }
+
+    for (int j1 = 1; j1 < k_step; j1++) {
+        if (baby_used[static_cast<std::size_t>(j1)])
+            CKKSMarkRotationPowerKeyIndices<P>(input_binary_keys, j1);
+    }
+    for (int j2 = 1; j2 <= max_j2; j2++) {
+        if (!giant_used[static_cast<std::size_t>(j2)]) continue;
+        const int steps = k_step * j2;
+        if (ckks_detail::popcountNonnegativeInt(steps) >=
+            static_cast<std::size_t>(direct_giant_popcount_threshold))
+            CKKSMarkDirectRotationKeyIndex<P>(output_direct_keys, steps);
+        else
+            CKKSMarkRotationPowerKeyIndices<P>(output_binary_keys, steps);
+    }
+}
+
+template <class P>
 inline std::size_t CKKSLinearTransformStageBabyRotationCount(
     const CKKSLinearTransformStage<P> &stage, int k_step)
 {
@@ -2238,6 +2336,46 @@ inline std::size_t CKKSLinearTransformStageDirectRotationEvalAutoCount(
 }
 
 template <class P>
+inline std::size_t CKKSLinearTransformStageHybridGiantRotationEvalAutoCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step,
+    int direct_giant_popcount_threshold = 4)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    int max_j2 = 0;
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<bool> giant_used(static_cast<std::size_t>(max_j2 + 1), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        giant_used[static_cast<std::size_t>(r / k_step)] = true;
+    }
+
+    std::size_t giant_evalautos = 0;
+    for (int j2 = 1; j2 <= max_j2; j2++) {
+        if (!giant_used[static_cast<std::size_t>(j2)]) continue;
+        const int steps = k_step * j2;
+        const std::size_t binary_evalautos =
+            ckks_detail::popcountNonnegativeInt(steps);
+        giant_evalautos +=
+            binary_evalautos >=
+                    static_cast<std::size_t>(direct_giant_popcount_threshold)
+                ? 1
+                : binary_evalautos;
+    }
+
+    return CKKSLinearTransformStageBabyRotationTableEvalAutoCount<P>(
+               stage, k_step) +
+           giant_evalautos;
+}
+
+template <class P>
 inline std::size_t CKKSLinearTransformStagesRotationEvalAutoCount(
     const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
     std::size_t stage_count, int k_step)
@@ -2260,6 +2398,21 @@ inline std::size_t CKKSLinearTransformStagesDirectRotationEvalAutoCount(
     for (std::size_t i = 0; i < stage_count; i++)
         count += CKKSLinearTransformStageDirectRotationEvalAutoCount<P>(
             stages[first_stage + i], k_step);
+    return count;
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStagesHybridGiantRotationEvalAutoCount(
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    std::size_t stage_count, int k_step,
+    int direct_giant_popcount_threshold = 4)
+{
+    assert(first_stage + stage_count <= stages.size());
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < stage_count; i++)
+        count += CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+            stages[first_stage + i], k_step,
+            direct_giant_popcount_threshold);
     return count;
 }
 
@@ -2298,6 +2451,29 @@ CKKSLinearTransformStagesDualInputSharedTailDirectRotationEvalAutoCount(
     for (std::size_t i = 1; i < stage_count; i++)
         count += CKKSLinearTransformStageDirectRotationEvalAutoCount<P>(
             stages[first_stage + i], k_step);
+    return count;
+}
+
+template <class P>
+inline std::size_t
+CKKSLinearTransformStagesDualInputSharedTailHybridGiantRotationEvalAutoCount(
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    std::size_t stage_count, int k_step,
+    int direct_giant_popcount_threshold = 4)
+{
+    assert(stage_count > 0);
+    assert(first_stage + stage_count <= stages.size());
+    std::size_t count =
+        2 * CKKSLinearTransformStageBabyRotationTableEvalAutoCount<P>(
+                stages[first_stage], k_step) +
+        (CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+             stages[first_stage], k_step, direct_giant_popcount_threshold) -
+         CKKSLinearTransformStageBabyRotationTableEvalAutoCount<P>(
+             stages[first_stage], k_step));
+    for (std::size_t i = 1; i < stage_count; i++)
+        count += CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+            stages[first_stage + i], k_step,
+            direct_giant_popcount_threshold);
     return count;
 }
 
@@ -2602,6 +2778,94 @@ inline void CKKSDirectSparseGaloisKeyChainGen(
 {
     ckks_detail::CKKSDirectSparseGaloisKeyChainGenImpl<
         0, P, StartLogQ, PlainLogDelta, StageCount>(chain, usage, key, noise);
+}
+
+namespace ckks_detail {
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          class IndexSequence>
+struct CKKSHybridSparseGaloisKeyChainTuple;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t... Is>
+struct CKKSHybridSparseGaloisKeyChainTuple<P, StartLogQ, PlainLogDelta,
+                                           std::index_sequence<Is...>> {
+    using type = std::tuple<
+        CKKSHybridSparseGaloisKey<P, StartLogQ - Is * PlainLogDelta>...>;
+};
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+struct CKKSHybridSparseGaloisKeyChain {
+    static_assert(StartLogQ > StageCount * PlainLogDelta);
+
+    using Tuple = typename ckks_detail::CKKSHybridSparseGaloisKeyChainTuple<
+        P, StartLogQ, PlainLogDelta,
+        std::make_index_sequence<StageCount + 1>>::type;
+
+    Tuple keys{};
+
+    template <std::size_t I>
+    auto &get()
+    {
+        return std::get<I>(keys);
+    }
+
+    template <std::size_t I>
+    const auto &get() const
+    {
+        return std::get<I>(keys);
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
+    }
+};
+
+namespace ckks_detail {
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t PlainLogDelta, std::size_t StageCount>
+inline void CKKSHybridSparseGaloisKeyChainGenImpl(
+    CKKSHybridSparseGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount>
+        &chain,
+    const std::array<CKKSRotationKeyIndexSet<P>, StageCount + 1>
+        &binary_usage,
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, StageCount + 1>
+        &direct_usage,
+    const Key<P> &key, CKKSNoise noise)
+{
+    if constexpr (I <= StageCount) {
+        constexpr std::uint32_t log_q = StartLogQ - I * PlainLogDelta;
+        CKKSHybridSparseGaloisKeyGen<P, log_q>(
+            chain.template get<I>(), key, binary_usage[I], direct_usage[I],
+            noise);
+        CKKSHybridSparseGaloisKeyChainGenImpl<I + 1, P, StartLogQ,
+                                              PlainLogDelta, StageCount>(
+            chain, binary_usage, direct_usage, key, noise);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t PlainLogDelta,
+          std::size_t StageCount>
+inline void CKKSHybridSparseGaloisKeyChainGen(
+    CKKSHybridSparseGaloisKeyChain<P, StartLogQ, PlainLogDelta, StageCount>
+        &chain,
+    const std::array<CKKSRotationKeyIndexSet<P>, StageCount + 1>
+        &binary_usage,
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, StageCount + 1>
+        &direct_usage,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    ckks_detail::CKKSHybridSparseGaloisKeyChainGenImpl<
+        0, P, StartLogQ, PlainLogDelta, StageCount>(
+        chain, binary_usage, direct_usage, key, noise);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -3931,6 +4195,32 @@ struct CKKSDenseBootstrapDirectRotationKeyUsage {
     }
 };
 
+template <class Schedule>
+struct CKKSDenseBootstrapHybridGiantRotationKeyUsage {
+    using P = typename Schedule::Param;
+    std::array<CKKSRotationKeyIndexSet<P>,
+               Schedule::coeff_to_slot_level_count + 1>
+        coeff_to_slot_binary{};
+    std::array<CKKSDirectRotationKeyIndexSet<P>,
+               Schedule::coeff_to_slot_level_count + 1>
+        coeff_to_slot_direct{};
+    CKKSRotationKeyIndexSet<P> packed_conjugate{};
+    std::array<CKKSRotationKeyIndexSet<P>,
+               Schedule::slot_to_coeff_level_count + 1>
+        slot_to_coeff_binary{};
+    std::array<CKKSDirectRotationKeyIndexSet<P>,
+               Schedule::slot_to_coeff_level_count + 1>
+        slot_to_coeff_direct{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(coeff_to_slot_binary, coeff_to_slot_direct,
+                packed_conjugate, slot_to_coeff_binary,
+                slot_to_coeff_direct);
+    }
+};
+
 template <class P, std::size_t N>
 inline void CKKSClearRotationKeyIndexSets(
     std::array<CKKSRotationKeyIndexSet<P>, N> &levels)
@@ -4020,6 +4310,38 @@ inline void CKKSBuildDenseBootstrapDirectRotationKeyUsage(
 }
 
 template <class Schedule>
+inline void CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage(
+    CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage,
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    using P = typename Schedule::Param;
+    CKKSClearRotationKeyIndexSets<P>(usage.coeff_to_slot_binary);
+    CKKSClearDirectRotationKeyIndexSets<P>(usage.coeff_to_slot_direct);
+    CKKSClearRotationKeyIndexSet<P>(usage.packed_conjugate);
+    CKKSClearRotationKeyIndexSets<P>(usage.slot_to_coeff_binary);
+    CKKSClearDirectRotationKeyIndexSets<P>(usage.slot_to_coeff_direct);
+
+    for (std::size_t i = 0; i < linear_plan.coeff_to_slot_stages.size(); i++) {
+        CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
+            usage.coeff_to_slot_binary[i], usage.coeff_to_slot_binary[i + 1],
+            usage.coeff_to_slot_direct[i + 1],
+            linear_plan.coeff_to_slot_stages[i], Schedule::linear_bsgs_step);
+    }
+    CKKSMarkConjugationKeyIndex<P>(usage.packed_conjugate);
+    for (std::size_t i = 0; i < linear_plan.slot_to_coeff_stages.size(); i++) {
+        CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
+            usage.slot_to_coeff_binary[i], usage.slot_to_coeff_binary[i + 1],
+            usage.slot_to_coeff_direct[i + 1],
+            linear_plan.slot_to_coeff_stages[i], Schedule::linear_bsgs_step);
+        CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
+            usage.slot_to_coeff_binary[i], usage.slot_to_coeff_binary[i + 1],
+            usage.slot_to_coeff_direct[i + 1],
+            linear_plan.slot_to_coeff_imag_stages[i],
+            Schedule::linear_bsgs_step);
+    }
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapRotationKeyUsageCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
@@ -4037,6 +4359,18 @@ inline std::size_t CKKSDenseBootstrapDirectRotationKeyUsageCount(
     return CKKSDirectRotationKeyIndexSetsCount<P>(usage.coeff_to_slot) +
            CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) +
            CKKSDirectRotationKeyIndexSetsCount<P>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantRotationKeyUsageCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSRotationKeyIndexSetsCount<P>(usage.coeff_to_slot_binary) +
+           CKKSDirectRotationKeyIndexSetsCount<P>(usage.coeff_to_slot_direct) +
+           CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) +
+           CKKSRotationKeyIndexSetsCount<P>(usage.slot_to_coeff_binary) +
+           CKKSDirectRotationKeyIndexSetsCount<P>(usage.slot_to_coeff_direct);
 }
 
 template <class Schedule>
@@ -5140,6 +5474,36 @@ inline std::size_t CKKSDirectRotationUsageAdjacentPeakKeySwitchRows(
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
           std::uint32_t LevelStep, std::size_t LevelCount>
+inline std::size_t CKKSHybridRotationUsageAdjacentPeakKeySwitchRows(
+    const std::array<CKKSRotationKeyIndexSet<P>, LevelCount> &binary_usage,
+    const std::array<CKKSDirectRotationKeyIndexSet<P>, LevelCount>
+        &direct_usage)
+{
+    if constexpr (I + 1 >= LevelCount) {
+        return 0;
+    }
+    else {
+        constexpr std::uint32_t input_log_q = StartLogQ - I * LevelStep;
+        constexpr std::uint32_t output_log_q =
+            StartLogQ - (I + 1) * LevelStep;
+        const std::size_t input_count =
+            CKKSRotationKeyIndexSetCount<P>(binary_usage[I]) +
+            CKKSDirectRotationKeyIndexSetCount<P>(direct_usage[I]);
+        const std::size_t output_count =
+            CKKSRotationKeyIndexSetCount<P>(binary_usage[I + 1]) +
+            CKKSDirectRotationKeyIndexSetCount<P>(direct_usage[I + 1]);
+        const std::size_t here =
+            input_count * CKKSAutoKeySwitchRowCount<P, input_log_q>() +
+            output_count * CKKSAutoKeySwitchRowCount<P, output_log_q>();
+        const std::size_t tail =
+            CKKSHybridRotationUsageAdjacentPeakKeySwitchRows<
+                I + 1, P, StartLogQ, LevelStep>(binary_usage, direct_usage);
+        return std::max(here, tail);
+    }
+}
+
+template <std::size_t I, class P, std::uint32_t StartLogQ,
+          std::uint32_t LevelStep, std::size_t LevelCount>
 constexpr std::size_t CKKSFullGaloisKeySwitchRows()
 {
     if constexpr (I == LevelCount) {
@@ -5244,6 +5608,21 @@ inline std::size_t CKKSDenseBootstrapDirectCoeffToSlotKeySwitchRowCount(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantCoeffToSlotKeySwitchRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSRotationUsageKeySwitchRows<
+               0, P, Schedule::boot_log_q,
+               Schedule::coeff_to_slot_plain_log_delta>(
+               usage.coeff_to_slot_binary) +
+           ckks_detail::CKKSDirectRotationUsageKeySwitchRows<
+               0, P, Schedule::boot_log_q,
+               Schedule::coeff_to_slot_plain_log_delta>(
+               usage.coeff_to_slot_direct);
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapSparseCoeffToSlotPeakKeySwitchRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
@@ -5252,6 +5631,17 @@ inline std::size_t CKKSDenseBootstrapSparseCoeffToSlotPeakKeySwitchRowCount(
         0, P, Schedule::boot_log_q,
         Schedule::coeff_to_slot_plain_log_delta>(
         usage.coeff_to_slot);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantCoeffToSlotPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSHybridRotationUsageAdjacentPeakKeySwitchRows<
+        0, P, Schedule::boot_log_q,
+        Schedule::coeff_to_slot_plain_log_delta>(
+        usage.coeff_to_slot_binary, usage.coeff_to_slot_direct);
 }
 
 template <class Schedule>
@@ -5293,6 +5683,16 @@ inline std::size_t CKKSDenseBootstrapDirectPackedConjugateKeySwitchRowCount(
 }
 
 template <class Schedule>
+inline std::size_t
+CKKSDenseBootstrapHybridGiantPackedConjugateKeySwitchRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSRotationKeyIndexSetCount<P>(usage.packed_conjugate) *
+           CKKSDenseBootstrapPackedConjugateKeySwitchRowCount<Schedule>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffKeySwitchRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
@@ -5300,6 +5700,21 @@ inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffKeySwitchRowCount(
     return ckks_detail::CKKSRotationUsageKeySwitchRows<
         0, P, Schedule::after_evalmod_log_q,
         Schedule::slot_to_coeff_plain_log_delta>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantSlotToCoeffKeySwitchRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSRotationUsageKeySwitchRows<
+               0, P, Schedule::after_evalmod_log_q,
+               Schedule::slot_to_coeff_plain_log_delta>(
+               usage.slot_to_coeff_binary) +
+           ckks_detail::CKKSDirectRotationUsageKeySwitchRows<
+               0, P, Schedule::after_evalmod_log_q,
+               Schedule::slot_to_coeff_plain_log_delta>(
+               usage.slot_to_coeff_direct);
 }
 
 template <class Schedule>
@@ -5320,6 +5735,17 @@ inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffPeakKeySwitchRowCount(
     return ckks_detail::CKKSRotationUsageAdjacentPeakKeySwitchRows<
         0, P, Schedule::after_evalmod_log_q,
         Schedule::slot_to_coeff_plain_log_delta>(usage.slot_to_coeff);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantSlotToCoeffPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return ckks_detail::CKKSHybridRotationUsageAdjacentPeakKeySwitchRows<
+        0, P, Schedule::after_evalmod_log_q,
+        Schedule::slot_to_coeff_plain_log_delta>(
+        usage.slot_to_coeff_binary, usage.slot_to_coeff_direct);
 }
 
 template <class Schedule>
@@ -5353,7 +5779,19 @@ inline std::size_t CKKSDenseBootstrapDirectGaloisKeySwitchRowCount(
            CKKSDenseBootstrapDirectPackedConjugateKeySwitchRowCount<Schedule>(
                usage) +
            CKKSDenseBootstrapDirectSlotToCoeffKeySwitchRowCount<Schedule>(
-               usage);
+           usage);
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantGaloisKeySwitchRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    return CKKSDenseBootstrapHybridGiantCoeffToSlotKeySwitchRowCount<
+               Schedule>(usage) +
+           CKKSDenseBootstrapHybridGiantPackedConjugateKeySwitchRowCount<
+               Schedule>(usage) +
+           CKKSDenseBootstrapHybridGiantSlotToCoeffKeySwitchRowCount<
+               Schedule>(usage);
 }
 
 template <class Schedule>
@@ -5367,6 +5805,19 @@ inline std::size_t CKKSDenseBootstrapSparseGaloisPeakKeySwitchRowCount(
              usage),
          CKKSDenseBootstrapSparseSlotToCoeffPeakKeySwitchRowCount<Schedule>(
              usage)});
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantGaloisPeakKeySwitchRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    return std::max(
+        {CKKSDenseBootstrapHybridGiantCoeffToSlotPeakKeySwitchRowCount<
+             Schedule>(usage),
+         CKKSDenseBootstrapHybridGiantPackedConjugateKeySwitchRowCount<
+             Schedule>(usage),
+         CKKSDenseBootstrapHybridGiantSlotToCoeffPeakKeySwitchRowCount<
+             Schedule>(usage)});
 }
 
 template <class Schedule>
@@ -5416,11 +5867,30 @@ inline std::size_t CKKSDenseBootstrapDirectKeySwitchRowCount(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantKeySwitchRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    return CKKSDenseBootstrapHybridGiantGaloisKeySwitchRowCount<Schedule>(
+               usage) +
+           CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapStreamedKeySwitchPeakRowCount(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     return std::max(
         CKKSDenseBootstrapSparseGaloisPeakKeySwitchRowCount<Schedule>(usage),
+        CKKSDenseBootstrapEvalModPeakKeySwitchRowCount<Schedule>());
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantStreamedKeySwitchPeakRowCount(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    return std::max(
+        CKKSDenseBootstrapHybridGiantGaloisPeakKeySwitchRowCount<Schedule>(
+            usage),
         CKKSDenseBootstrapEvalModPeakKeySwitchRowCount<Schedule>());
 }
 
@@ -5459,11 +5929,30 @@ inline std::size_t CKKSDenseBootstrapDirectKeyByteEstimate(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantKeyByteEstimate(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapHybridGiantKeySwitchRowCount<Schedule>(usage) *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapStreamedPeakKeyByteEstimate(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     using P = typename Schedule::Param;
     return CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(usage) *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantStreamedPeakKeyByteEstimate(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapHybridGiantStreamedKeySwitchPeakRowCount<
+               Schedule>(usage) *
            CKKSKeySwitchRowByteSize<P>();
 }
 

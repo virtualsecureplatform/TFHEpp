@@ -307,6 +307,10 @@ void print_schedule_report(const char *label,
     TFHEpp::CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> direct_usage;
     TFHEpp::CKKSBuildDenseBootstrapDirectRotationKeyUsage<Schedule>(
         direct_usage, linear_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
+        hybrid_usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        hybrid_usage, linear_plan);
 
     const std::size_t sparse_rows =
         TFHEpp::CKKSDenseBootstrapSparseKeySwitchRowCount<Schedule>(usage);
@@ -330,6 +334,19 @@ void print_schedule_report(const char *label,
     const std::size_t direct_streamed_peak_bytes =
         TFHEpp::CKKSDenseBootstrapDirectStreamedPeakKeyByteEstimate<Schedule>(
             direct_usage);
+    const std::size_t hybrid_rows =
+        TFHEpp::CKKSDenseBootstrapHybridGiantKeySwitchRowCount<Schedule>(
+            hybrid_usage);
+    const std::size_t hybrid_bytes =
+        TFHEpp::CKKSDenseBootstrapHybridGiantKeyByteEstimate<Schedule>(
+            hybrid_usage);
+    const std::size_t hybrid_streamed_peak_rows =
+        TFHEpp::CKKSDenseBootstrapHybridGiantStreamedKeySwitchPeakRowCount<
+            Schedule>(hybrid_usage);
+    const std::size_t hybrid_streamed_peak_bytes =
+        TFHEpp::
+            CKKSDenseBootstrapHybridGiantStreamedPeakKeyByteEstimate<Schedule>(
+                hybrid_usage);
     const std::size_t c2s_current_evalautos =
         TFHEpp::CKKSLinearTransformStagesRotationEvalAutoCount<P>(
             linear_plan.coeff_to_slot_stages, 0,
@@ -337,6 +354,11 @@ void print_schedule_report(const char *label,
             Schedule::linear_bsgs_step);
     const std::size_t c2s_direct_evalautos =
         TFHEpp::CKKSLinearTransformStagesDirectRotationEvalAutoCount<P>(
+            linear_plan.coeff_to_slot_stages, 0,
+            linear_plan.coeff_to_slot_stages.size(),
+            Schedule::linear_bsgs_step);
+    const std::size_t c2s_hybrid_evalautos =
+        TFHEpp::CKKSLinearTransformStagesHybridGiantRotationEvalAutoCount<P>(
             linear_plan.coeff_to_slot_stages, 0,
             linear_plan.coeff_to_slot_stages.size(),
             Schedule::linear_bsgs_step);
@@ -348,6 +370,12 @@ void print_schedule_report(const char *label,
     const std::size_t stc_direct_evalautos =
         TFHEpp::
             CKKSLinearTransformStagesDualInputSharedTailDirectRotationEvalAutoCount<
+                P>(linear_plan.slot_to_coeff_stages, 0,
+                   linear_plan.slot_to_coeff_stages.size(),
+                   Schedule::linear_bsgs_step);
+    const std::size_t stc_hybrid_evalautos =
+        TFHEpp::
+            CKKSLinearTransformStagesDualInputSharedTailHybridGiantRotationEvalAutoCount<
                 P>(linear_plan.slot_to_coeff_stages, 0,
                    linear_plan.slot_to_coeff_stages.size(),
                    Schedule::linear_bsgs_step);
@@ -379,14 +407,26 @@ void print_schedule_report(const char *label,
               << " direct_rows=" << direct_rows
               << " direct_streamed_peak_rows=" << direct_streamed_peak_rows
               << '\n';
+    std::cout << label << " hybrid_rotation_indices="
+              << TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsageCount<
+                     Schedule>(hybrid_usage)
+              << " hybrid_rows=" << hybrid_rows
+              << " hybrid_streamed_peak_rows=" << hybrid_streamed_peak_rows
+              << '\n';
     std::cout << label << " rotation_evalautos current/direct c2s="
               << c2s_current_evalautos << "/" << c2s_direct_evalautos
               << " stc=" << stc_current_evalautos << "/"
               << stc_direct_evalautos << '\n';
+    std::cout << label << " rotation_evalautos hybrid c2s="
+              << c2s_hybrid_evalautos << " stc=" << stc_hybrid_evalautos
+              << '\n';
     std::cout << label << " sparse_key_bytes=" << sparse_bytes
               << " streamed_peak_bytes=" << streamed_peak_bytes
               << " direct_key_bytes=" << direct_bytes
               << " direct_streamed_peak_bytes=" << direct_streamed_peak_bytes
+              << " hybrid_key_bytes=" << hybrid_bytes
+              << " hybrid_streamed_peak_bytes="
+              << hybrid_streamed_peak_bytes
               << " full_key_bytes="
               << TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>()
               << '\n';
