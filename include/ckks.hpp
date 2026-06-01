@@ -1586,6 +1586,57 @@ inline void CKKSConjugateSlots(TRLWE<P> &res, const TRLWE<P> &ct,
     ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
 }
 
+namespace ckks_detail {
+
+inline int highestPowerOfTwoLE(int value)
+{
+    assert(value > 0);
+    int bit = 1;
+    while ((bit << 1) <= value) bit <<= 1;
+    return bit;
+}
+
+template <class P, std::uint32_t LogQ, class GaloisKey>
+inline void CKKSBuildBabyStepRotationTable(
+    std::vector<TRLWE<P>> &baby, const TRLWE<P> &ct,
+    const std::vector<bool> &baby_used, const GaloisKey &gk)
+{
+    assert(!baby.empty());
+    assert(baby.size() == baby_used.size());
+    baby[0] = ct;
+
+    std::vector<bool> ready(baby.size(), false);
+    ready[0] = true;
+    std::vector<int> stack;
+
+    for (int target = 1; target < static_cast<int>(baby_used.size());
+         target++) {
+        if (!baby_used[static_cast<std::size_t>(target)]) continue;
+
+        stack.clear();
+        int step = target;
+        while (!ready[static_cast<std::size_t>(step)]) {
+            stack.push_back(step);
+            step -= highestPowerOfTwoLE(step);
+        }
+
+        while (!stack.empty()) {
+            const int current = stack.back();
+            stack.pop_back();
+            if (ready[static_cast<std::size_t>(current)]) continue;
+            const int bit = highestPowerOfTwoLE(current);
+            const int parent = current - bit;
+            assert(ready[static_cast<std::size_t>(parent)]);
+            CKKSRotateSlots<P, LogQ>(
+                baby[static_cast<std::size_t>(current)],
+                baby[static_cast<std::size_t>(parent)], bit, gk);
+            ready[static_cast<std::size_t>(current)] = true;
+        }
+    }
+}
+
+}  // namespace ckks_detail
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta, class GaloisKey>
 inline void CKKSExtractRealSlots(
@@ -2126,11 +2177,8 @@ inline void CKKSLinearTransformBSGS(
         baby_used, plan);
 
     auto baby = std::make_unique<std::vector<TRLWE<P>>>(plan.k_step);
-    (*baby)[0] = ct.ct;
-    for (int j1 = 1; j1 < plan.k_step; j1++) {
-        if (baby_used[static_cast<std::size_t>(j1)])
-            CKKSRotateSlots<P, LogQ>((*baby)[j1], ct.ct, j1, input_gk);
-    }
+    ckks_detail::CKKSBuildBabyStepRotationTable<P, LogQ>(*baby, ct.ct,
+                                                         baby_used, input_gk);
 
     bool res_initialized = false;
     auto term = std::make_unique<TRLWE<P>>();
@@ -2203,13 +2251,10 @@ inline void CKKSLinearTransformBSGSDualInput(
         std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
     auto rhs_baby =
         std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
-    (*lhs_baby)[0] = lhs.ct;
-    (*rhs_baby)[0] = rhs.ct;
-    for (int j1 = 1; j1 < lhs_plan.k_step; j1++) {
-        if (!lhs_baby_used[static_cast<std::size_t>(j1)]) continue;
-        CKKSRotateSlots<P, LogQ>((*lhs_baby)[j1], lhs.ct, j1, input_gk);
-        CKKSRotateSlots<P, LogQ>((*rhs_baby)[j1], rhs.ct, j1, input_gk);
-    }
+    ckks_detail::CKKSBuildBabyStepRotationTable<P, LogQ>(
+        *lhs_baby, lhs.ct, lhs_baby_used, input_gk);
+    ckks_detail::CKKSBuildBabyStepRotationTable<P, LogQ>(
+        *rhs_baby, rhs.ct, lhs_baby_used, input_gk);
 
     bool res_initialized = false;
     auto term = std::make_unique<TRLWE<P>>();
