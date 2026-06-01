@@ -430,6 +430,7 @@ struct CKKSDenseBootstrapKeyDirectoryOptions {
 };
 
 struct CKKSDenseBootstrapTimings {
+    double normalize_ms = 0.0;
     double modraise_ms = 0.0;
     double coeff_to_slot_ms = 0.0;
     double split_ms = 0.0;
@@ -439,8 +440,8 @@ struct CKKSDenseBootstrapTimings {
 
     double total_ms() const
     {
-        return modraise_ms + coeff_to_slot_ms + split_ms + real_evalmod_ms +
-               imag_evalmod_ms + slot_to_coeff_ms;
+        return normalize_ms + modraise_ms + coeff_to_slot_ms + split_ms +
+               real_evalmod_ms + imag_evalmod_ms + slot_to_coeff_ms;
     }
 };
 
@@ -8427,6 +8428,48 @@ inline void CKKSDenseBootstrapWithKeyProviderTimed(
         res, ct, key_provider, &timings);
 }
 
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapNormalizeInput(
+    typename Schedule::InputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct)
+{
+    static_assert(InLogDelta == Schedule::log_delta,
+                  "CKKS bootstrap input normalization expects the schedule scale");
+    static_assert(InLogQ >= Schedule::input_log_q,
+                  "CKKS bootstrap input normalization cannot raise a residual "
+                  "ciphertext level");
+    CKKSLevelReduce<typename Schedule::Param, InLogQ, Schedule::input_log_q,
+                    Schedule::log_delta>(res, ct);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
+          class KeyProvider>
+inline void CKKSDenseBootstrapFromLevelWithKeyProvider(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const KeyProvider &key_provider)
+{
+    auto normalized = std::make_unique<typename Schedule::InputCiphertext>();
+    CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct);
+    CKKSDenseBootstrapWithKeyProvider<Schedule>(res, *normalized, key_provider);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
+          class KeyProvider>
+inline void CKKSDenseBootstrapFromLevelWithKeyProviderTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const KeyProvider &key_provider, CKKSDenseBootstrapTimings &timings)
+{
+    timings = {};
+    auto normalized = std::make_unique<typename Schedule::InputCiphertext>();
+    ckks_detail::CKKSTimeBootstrapStage(&timings.normalize_ms, [&] {
+        CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct);
+    });
+    ckks_detail::CKKSDenseBootstrapWithKeyProviderImpl<Schedule>(
+        res, *normalized, key_provider, &timings);
+}
+
 template <class Schedule>
 inline void CKKSDenseBootstrap(
     typename Schedule::OutputCiphertext &res,
@@ -8449,6 +8492,30 @@ inline void CKKSDenseBootstrapTimed(
         bootstrap_key);
     CKKSDenseBootstrapWithKeyProviderTimed<Schedule>(res, ct, key_provider,
                                                      timings);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapFromLevel(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const CKKSDenseBootstrapKey<Schedule> &bootstrap_key)
+{
+    const CKKSDenseBootstrapInMemoryKeyProvider<Schedule> key_provider(
+        bootstrap_key);
+    CKKSDenseBootstrapFromLevelWithKeyProvider<Schedule>(res, ct, key_provider);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapFromLevelTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const CKKSDenseBootstrapKey<Schedule> &bootstrap_key,
+    CKKSDenseBootstrapTimings &timings)
+{
+    const CKKSDenseBootstrapInMemoryKeyProvider<Schedule> key_provider(
+        bootstrap_key);
+    CKKSDenseBootstrapFromLevelWithKeyProviderTimed<Schedule>(
+        res, ct, key_provider, timings);
 }
 
 template <class Schedule>
@@ -8475,6 +8542,32 @@ inline void CKKSDenseBootstrapHybridGiantTimed(
         key_provider(bootstrap_key);
     CKKSDenseBootstrapWithKeyProviderTimed<Schedule>(res, ct, key_provider,
                                                      timings);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapHybridGiantFromLevel(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const CKKSDenseBootstrapHybridGiantKey<Schedule> &bootstrap_key)
+{
+    const CKKSDenseBootstrapInMemoryKeyProvider<
+        Schedule, CKKSDenseBootstrapHybridGiantKey<Schedule>>
+        key_provider(bootstrap_key);
+    CKKSDenseBootstrapFromLevelWithKeyProvider<Schedule>(res, ct, key_provider);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapHybridGiantFromLevelTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const CKKSDenseBootstrapHybridGiantKey<Schedule> &bootstrap_key,
+    CKKSDenseBootstrapTimings &timings)
+{
+    const CKKSDenseBootstrapInMemoryKeyProvider<
+        Schedule, CKKSDenseBootstrapHybridGiantKey<Schedule>>
+        key_provider(bootstrap_key);
+    CKKSDenseBootstrapFromLevelWithKeyProviderTimed<Schedule>(
+        res, ct, key_provider, timings);
 }
 
 using lvl6CKKSDenseBootstrapInput =
