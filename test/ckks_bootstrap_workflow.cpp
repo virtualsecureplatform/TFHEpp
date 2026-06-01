@@ -94,6 +94,28 @@ double max_error(const TFHEpp::CKKSSlotVector<P> &got,
     return err;
 }
 
+std::uintmax_t directory_bytes(const std::filesystem::path &root)
+{
+    std::uintmax_t bytes = 0;
+    for (const auto &entry :
+         std::filesystem::recursive_directory_iterator(root)) {
+        if (entry.is_regular_file()) bytes += entry.file_size();
+    }
+    return bytes;
+}
+
+template <class ScheduleT>
+std::size_t seeded_hybrid_bootstrap_key_estimate_bytes()
+{
+    TFHEpp::CKKSDenseBootstrapLinearPlan<ScheduleT> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<ScheduleT>(linear_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<ScheduleT> usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<ScheduleT>(
+        usage, linear_plan);
+    return TFHEpp::CKKSDenseBootstrapHybridGiantSeededKeyByteEstimate<
+        ScheduleT>(usage);
+}
+
 }  // namespace
 
 int main()
@@ -116,29 +138,69 @@ int main()
         std::filesystem::temp_directory_path() /
         "tfhepp_ckks_bootstrap_workflow";
     const std::filesystem::path bootstrap_key_dir = root / "bootstrap_key";
-    const std::filesystem::path eval_key_dir = root / "external_eval_key";
+    const std::filesystem::path eval_key_dir = root / "seeded_external_eval_key";
     const std::filesystem::path encapsulation_key_file =
-        TFHEpp::CKKSDenseBootstrapEncapsulationKeyFile(eval_key_dir);
+        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(eval_key_dir);
     const std::filesystem::path relin_key_file =
-        TFHEpp::CKKSRelinKeyFile(eval_key_dir, "product_relin_key");
+        TFHEpp::CKKSRelinKeyFile(eval_key_dir, "seeded_product_relin_key");
     const std::filesystem::path post_bootstrap_relin_key_file =
-        TFHEpp::CKKSRelinKeyFile(eval_key_dir, "post_bootstrap_relin_key");
+        TFHEpp::CKKSRelinKeyFile(eval_key_dir,
+                                 "seeded_post_bootstrap_relin_key");
     std::filesystem::remove_all(root);
-    std::filesystem::create_directories(eval_key_dir);
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
     fill_dense_key<P>(*external_key);
     fill_sparse_key<P>(*bootstrap_key, 2);
 
-    TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(
-        bootstrap_key_dir, *bootstrap_key, {0.0, 0});
-    TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
-        encapsulation_key_file, *external_key, *bootstrap_key, {0.0, 0});
-    TFHEpp::CKKSRelinKeyGenToFile<P, ProductCt::log_q>(
-        relin_key_file, *external_key, {0.0, 0});
-    TFHEpp::CKKSRelinKeyGenToFile<P, PostBootstrapProductCt::log_q>(
-        post_bootstrap_relin_key_file, *external_key, {0.0, 0});
+    std::size_t generated_slices = 0;
+    while (
+        TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyGenNextMissingToDirectory<
+            Schedule>(bootstrap_key_dir, *bootstrap_key, {0.0, 0})) {
+        generated_slices++;
+    }
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions resume_options;
+    resume_options.overwrite_existing = false;
+    TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyGenToDirectory<Schedule>(
+        bootstrap_key_dir, *bootstrap_key, {0.0, 0}, resume_options);
+    if (!TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyDirectoryComplete<
+            Schedule>(bootstrap_key_dir) ||
+        !TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyDirectoryManifestMatches<
+            Schedule>(bootstrap_key_dir)) {
+        std::cerr << "workflow seeded bootstrap key directory invalid\n";
+        std::filesystem::remove_all(root);
+        return 1;
+    }
+
+    const bool encap_generated =
+        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenNextMissingToFile<
+            Schedule>(encapsulation_key_file, *external_key, *bootstrap_key,
+                      {0.0, 0});
+    const bool encap_regenerated =
+        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenNextMissingToFile<
+            Schedule>(encapsulation_key_file, *external_key, *bootstrap_key,
+                      {0.0, 0});
+    const bool relin_generated =
+        TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<P, ProductCt::log_q>(
+            relin_key_file, *external_key, {0.0, 0});
+    const bool relin_regenerated =
+        TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<P, ProductCt::log_q>(
+            relin_key_file, *external_key, {0.0, 0});
+    const bool post_relin_generated =
+        TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<
+            P, PostBootstrapProductCt::log_q>(
+            post_bootstrap_relin_key_file, *external_key, {0.0, 0});
+    const bool post_relin_regenerated =
+        TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<
+            P, PostBootstrapProductCt::log_q>(
+            post_bootstrap_relin_key_file, *external_key, {0.0, 0});
+    if (!encap_generated || encap_regenerated || !relin_generated ||
+        relin_regenerated || !post_relin_generated ||
+        post_relin_regenerated) {
+        std::cerr << "workflow seeded eval key resume check failed\n";
+        std::filesystem::remove_all(root);
+        return 1;
+    }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -160,7 +222,9 @@ int main()
 
     auto bootstrapped = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings timings;
-    TFHEpp::CKKSDenseBootstrapProductWithFilesystemKeyTimed<Schedule>(
+    TFHEpp::
+        CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+            Schedule>(
         *bootstrapped, *lhs_ct, *rhs_ct, bootstrap_key_dir,
         encapsulation_key_file, relin_key_file, timings);
 
@@ -173,7 +237,9 @@ int main()
     auto chained_bootstrapped =
         std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings chained_timings;
-    TFHEpp::CKKSDenseBootstrapProductWithFilesystemKeyTimed<Schedule>(
+    TFHEpp::
+        CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+            Schedule>(
         *chained_bootstrapped, *bootstrapped, *bootstrapped, bootstrap_key_dir,
         encapsulation_key_file, post_bootstrap_relin_key_file,
         chained_timings);
@@ -188,13 +254,28 @@ int main()
               << PostBootstrapProductCt::log_q
               << " product_bootstrap_slack="
               << Schedule::post_bootstrap_product_slack << '\n';
-    std::cout << "workflow bootstrap_key_dir=" << bootstrap_key_dir.string()
-              << " encapsulation_key_bytes="
+    std::cout << "workflow seeded_bootstrap_key_dir="
+              << bootstrap_key_dir.string()
+              << " generated_slices=" << generated_slices
+              << " bootstrap_key_bytes=" << directory_bytes(bootstrap_key_dir)
+              << " estimated_seeded_hybrid_key_bytes="
+              << seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>()
+              << '\n';
+    std::cout << "workflow seeded_eval_key_dir=" << eval_key_dir.string()
+              << " seeded_encapsulation_key_bytes="
               << std::filesystem::file_size(encapsulation_key_file)
-              << " relin_key_bytes="
+              << " estimated_seeded_encapsulation_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
+                     Schedule>()
+              << " seeded_relin_key_bytes="
               << std::filesystem::file_size(relin_key_file)
-              << " post_bootstrap_relin_key_bytes="
+              << " estimated_seeded_relin_key_bytes="
+              << TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>()
+              << " seeded_post_bootstrap_relin_key_bytes="
               << std::filesystem::file_size(post_bootstrap_relin_key_file)
+              << " estimated_seeded_post_bootstrap_relin_key_bytes="
+              << TFHEpp::CKKSSeededRelinKeyByteEstimate<
+                     P, PostBootstrapProductCt::log_q>()
               << '\n';
     std::cout << "workflow multiply_ms=" << timings.multiply_ms
               << " bootstrap_ms=" << timings.bootstrap.total_ms()
