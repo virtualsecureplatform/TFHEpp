@@ -1639,6 +1639,18 @@ inline int highestPowerOfTwoLE(int value)
     return bit;
 }
 
+inline std::size_t popcountNonnegativeInt(int value)
+{
+    assert(value >= 0);
+    std::size_t count = 0;
+    auto bits = static_cast<unsigned int>(value);
+    while (bits != 0) {
+        count += bits & 1U;
+        bits >>= 1;
+    }
+    return count;
+}
+
 template <class P, std::uint32_t LogQ, class GaloisKey>
 inline void CKKSBuildBabyStepRotationTable(
     std::vector<TRLWE<P>> &baby, const TRLWE<P> &ct,
@@ -1888,6 +1900,68 @@ inline std::size_t CKKSLinearTransformStageBabyRotationCount(
 }
 
 template <class P>
+inline std::size_t CKKSLinearTransformStageBabyRotationTableEvalAutoCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    std::vector<bool> used(static_cast<std::size_t>(k_step), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        used[static_cast<std::size_t>(r % k_step)] = true;
+    }
+
+    std::vector<bool> ready(static_cast<std::size_t>(k_step), false);
+    ready[0] = true;
+    std::vector<int> stack;
+    std::size_t count = 0;
+    for (int target = 1; target < k_step; target++) {
+        if (!used[static_cast<std::size_t>(target)]) continue;
+
+        stack.clear();
+        int step = target;
+        while (!ready[static_cast<std::size_t>(step)]) {
+            stack.push_back(step);
+            step -= ckks_detail::highestPowerOfTwoLE(step);
+        }
+
+        while (!stack.empty()) {
+            const int current = stack.back();
+            stack.pop_back();
+            if (ready[static_cast<std::size_t>(current)]) continue;
+            ready[static_cast<std::size_t>(current)] = true;
+            count++;
+        }
+    }
+    return count;
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStageBabyRotationBinaryEvalAutoCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    std::vector<bool> used(static_cast<std::size_t>(k_step), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        used[static_cast<std::size_t>(r % k_step)] = true;
+    }
+
+    std::size_t count = 0;
+    for (int j1 = 1; j1 < k_step; j1++)
+        if (used[static_cast<std::size_t>(j1)])
+            count += ckks_detail::popcountNonnegativeInt(j1);
+    return count;
+}
+
+template <class P>
 inline std::size_t CKKSLinearTransformStageGiantRotationCount(
     const CKKSLinearTransformStage<P> &stage, int k_step)
 {
@@ -1911,6 +1985,117 @@ inline std::size_t CKKSLinearTransformStageGiantRotationCount(
     std::size_t count = 0;
     for (int j2 = 1; j2 <= max_j2; j2++)
         if (used[static_cast<std::size_t>(j2)]) count++;
+    return count;
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStageGiantRotationBinaryEvalAutoCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    int max_j2 = 0;
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<bool> used(static_cast<std::size_t>(max_j2 + 1), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        used[static_cast<std::size_t>(r / k_step)] = true;
+    }
+
+    std::size_t count = 0;
+    for (int j2 = 1; j2 <= max_j2; j2++) {
+        if (used[static_cast<std::size_t>(j2)])
+            count += ckks_detail::popcountNonnegativeInt(k_step * j2);
+    }
+    return count;
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStageRotationEvalAutoCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    return CKKSLinearTransformStageBabyRotationTableEvalAutoCount<P>(
+               stage, k_step) +
+           CKKSLinearTransformStageGiantRotationBinaryEvalAutoCount<P>(
+               stage, k_step);
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStageDirectRotationEvalAutoCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step)
+{
+    return CKKSLinearTransformStageBabyRotationCount<P>(stage, k_step) +
+           CKKSLinearTransformStageGiantRotationCount<P>(stage, k_step);
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStagesRotationEvalAutoCount(
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    std::size_t stage_count, int k_step)
+{
+    assert(first_stage + stage_count <= stages.size());
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < stage_count; i++)
+        count += CKKSLinearTransformStageRotationEvalAutoCount<P>(
+            stages[first_stage + i], k_step);
+    return count;
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStagesDirectRotationEvalAutoCount(
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    std::size_t stage_count, int k_step)
+{
+    assert(first_stage + stage_count <= stages.size());
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < stage_count; i++)
+        count += CKKSLinearTransformStageDirectRotationEvalAutoCount<P>(
+            stages[first_stage + i], k_step);
+    return count;
+}
+
+template <class P>
+inline std::size_t
+CKKSLinearTransformStagesDualInputSharedTailRotationEvalAutoCount(
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    std::size_t stage_count, int k_step)
+{
+    assert(stage_count > 0);
+    assert(first_stage + stage_count <= stages.size());
+    std::size_t count =
+        2 * CKKSLinearTransformStageBabyRotationTableEvalAutoCount<P>(
+                stages[first_stage], k_step) +
+        CKKSLinearTransformStageGiantRotationBinaryEvalAutoCount<P>(
+            stages[first_stage], k_step);
+    for (std::size_t i = 1; i < stage_count; i++)
+        count += CKKSLinearTransformStageRotationEvalAutoCount<P>(
+            stages[first_stage + i], k_step);
+    return count;
+}
+
+template <class P>
+inline std::size_t
+CKKSLinearTransformStagesDualInputSharedTailDirectRotationEvalAutoCount(
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    std::size_t stage_count, int k_step)
+{
+    assert(stage_count > 0);
+    assert(first_stage + stage_count <= stages.size());
+    std::size_t count =
+        2 * CKKSLinearTransformStageBabyRotationCount<P>(
+                stages[first_stage], k_step) +
+        CKKSLinearTransformStageGiantRotationCount<P>(stages[first_stage],
+                                                     k_step);
+    for (std::size_t i = 1; i < stage_count; i++)
+        count += CKKSLinearTransformStageDirectRotationEvalAutoCount<P>(
+            stages[first_stage + i], k_step);
     return count;
 }
 

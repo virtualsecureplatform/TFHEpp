@@ -315,6 +315,27 @@ void print_schedule_report(const char *label,
     const std::size_t streamed_peak_bytes =
         TFHEpp::CKKSDenseBootstrapStreamedPeakKeyByteEstimate<Schedule>(
             usage);
+    const std::size_t c2s_current_evalautos =
+        TFHEpp::CKKSLinearTransformStagesRotationEvalAutoCount<P>(
+            linear_plan.coeff_to_slot_stages, 0,
+            linear_plan.coeff_to_slot_stages.size(),
+            Schedule::linear_bsgs_step);
+    const std::size_t c2s_direct_evalautos =
+        TFHEpp::CKKSLinearTransformStagesDirectRotationEvalAutoCount<P>(
+            linear_plan.coeff_to_slot_stages, 0,
+            linear_plan.coeff_to_slot_stages.size(),
+            Schedule::linear_bsgs_step);
+    const std::size_t stc_current_evalautos =
+        TFHEpp::CKKSLinearTransformStagesDualInputSharedTailRotationEvalAutoCount<
+            P>(linear_plan.slot_to_coeff_stages, 0,
+               linear_plan.slot_to_coeff_stages.size(),
+               Schedule::linear_bsgs_step);
+    const std::size_t stc_direct_evalautos =
+        TFHEpp::
+            CKKSLinearTransformStagesDualInputSharedTailDirectRotationEvalAutoCount<
+                P>(linear_plan.slot_to_coeff_stages, 0,
+                   linear_plan.slot_to_coeff_stages.size(),
+                   Schedule::linear_bsgs_step);
 
     std::cout << label << " n=" << P::n << " logQ="
               << Schedule::boot_log_q << " input_logQ="
@@ -337,6 +358,10 @@ void print_schedule_report(const char *label,
               << TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>()
               << " sparse_rows=" << sparse_rows
               << " streamed_peak_rows=" << streamed_peak_rows << '\n';
+    std::cout << label << " rotation_evalautos current/direct c2s="
+              << c2s_current_evalautos << "/" << c2s_direct_evalautos
+              << " stc=" << stc_current_evalautos << "/"
+              << stc_direct_evalautos << '\n';
     std::cout << label << " sparse_key_bytes=" << sparse_bytes
               << " streamed_peak_bytes=" << streamed_peak_bytes
               << " full_key_bytes="

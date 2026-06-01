@@ -562,16 +562,41 @@ void test_lvl6_factorized_stage_shape()
 
     std::size_t total_c2s_baby_rotations = 0;
     std::size_t max_c2s_baby_rotations = 0;
+    std::size_t c2s_current_evalautos = 0;
+    std::size_t c2s_direct_evalautos = 0;
     for (const auto &stage : linear_plan.coeff_to_slot_stages) {
         const std::size_t rotations =
             TFHEpp::CKKSLinearTransformStageBabyRotationCount<L>(
                 stage, Schedule::linear_bsgs_step);
         total_c2s_baby_rotations += rotations;
         max_c2s_baby_rotations = std::max(max_c2s_baby_rotations, rotations);
+        c2s_current_evalautos +=
+            TFHEpp::CKKSLinearTransformStageRotationEvalAutoCount<L>(
+                stage, Schedule::linear_bsgs_step);
+        c2s_direct_evalautos +=
+            TFHEpp::CKKSLinearTransformStageDirectRotationEvalAutoCount<L>(
+                stage, Schedule::linear_bsgs_step);
     }
     if (total_c2s_baby_rotations == 0 ||
         max_c2s_baby_rotations >=
             static_cast<std::size_t>(Schedule::linear_bsgs_step))
+        std::exit(1);
+    const std::size_t stc_current_evalautos =
+        TFHEpp::CKKSLinearTransformStagesDualInputSharedTailRotationEvalAutoCount<
+            L>(linear_plan.slot_to_coeff_stages, 0,
+               linear_plan.slot_to_coeff_stages.size(),
+               Schedule::linear_bsgs_step);
+    const std::size_t stc_direct_evalautos =
+        TFHEpp::
+            CKKSLinearTransformStagesDualInputSharedTailDirectRotationEvalAutoCount<
+                L>(linear_plan.slot_to_coeff_stages, 0,
+                   linear_plan.slot_to_coeff_stages.size(),
+                   Schedule::linear_bsgs_step);
+    if (c2s_direct_evalautos == 0 ||
+        c2s_direct_evalautos >= c2s_current_evalautos)
+        std::exit(1);
+    if (stc_direct_evalautos == 0 ||
+        stc_direct_evalautos >= stc_current_evalautos)
         std::exit(1);
 
     TFHEpp::CKKSDenseBootstrapRotationKeyUsage<Schedule> rotation_usage;
@@ -632,6 +657,10 @@ void test_lvl6_factorized_stage_shape()
               << planned_key_indices << "/" << full_key_indices
               << " c2s_baby_rotations=" << total_c2s_baby_rotations
               << std::endl;
+    std::cout << "CKKS lvl6 dense bootstrap rotation evalautos current/direct "
+              << "c2s=" << c2s_current_evalautos << "/"
+              << c2s_direct_evalautos << " stc=" << stc_current_evalautos
+              << "/" << stc_direct_evalautos << std::endl;
     std::cout << "CKKS lvl6 dense bootstrap key rows sparse/full="
               << sparse_key_rows << "/" << full_key_rows
               << " bytes=" << sparse_key_bytes << "/" << full_key_bytes
