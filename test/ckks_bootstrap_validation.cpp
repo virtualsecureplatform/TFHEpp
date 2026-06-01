@@ -2,6 +2,7 @@
 #include <chrono>
 #include <complex>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -13,6 +14,9 @@
 namespace {
 
 using Clock = std::chrono::steady_clock;
+
+constexpr const char *validation_test_key_metadata_filename =
+    ".ckks_bootstrap_validation_key";
 
 struct TinyDeepMultiLimbCKKSParam {
     static constexpr int32_t key_value_max = 1;
@@ -79,6 +83,60 @@ void fill_bootstrap_test_key(TFHEpp::Key<Param> &key, std::size_t sparse_weight)
         fill_test_key<Param>(key);
     else
         fill_sparse_test_key<Param>(key, sparse_weight);
+}
+
+template <class Schedule>
+constexpr bool requires_bounded_modraise_test_key()
+{
+    using P = typename Schedule::Param;
+    return P::n >= (1U << 15);
+}
+
+template <class Schedule>
+constexpr std::size_t bounded_modraise_sparse_weight_max()
+{
+    return Schedule::bounded_sparse_secret_key_weight;
+}
+
+template <class Schedule>
+bool sparse_weight_fits_bounded_modraise(std::size_t sparse_weight)
+{
+    return sparse_weight != 0 &&
+           sparse_weight <= bounded_modraise_sparse_weight_max<Schedule>();
+}
+
+template <class Schedule>
+int validate_bounded_modraise_test_key(std::size_t sparse_weight,
+                                       const char *label)
+{
+    if constexpr (!requires_bounded_modraise_test_key<Schedule>()) {
+        return 0;
+    }
+    else {
+        constexpr std::size_t max_weight =
+            bounded_modraise_sparse_weight_max<Schedule>();
+        if (sparse_weight == 0) {
+            std::cerr << label
+                      << "_dense_key_unbounded_for_evalmod=1 evalmod_k="
+                      << Schedule::evalmod_k
+                      << " modraise_mask_bound="
+                      << Schedule::modraise_mask_bound
+                      << " bounded_sparse_weight_max=" << max_weight << '\n';
+            return 2;
+        }
+        if (sparse_weight > max_weight) {
+            std::cerr << label
+                      << "_sparse_weight_out_of_evalmod_range sparse_weight="
+                      << sparse_weight << " evalmod_k=" << Schedule::evalmod_k
+                      << " evalmod_mask_bound="
+                      << Schedule::evalmod_mask_bound
+                      << " modraise_mask_bound="
+                      << Schedule::modraise_mask_bound
+                      << " bounded_sparse_weight_max=" << max_weight << '\n';
+            return 2;
+        }
+        return 0;
+    }
 }
 
 template <class Param>
@@ -224,6 +282,42 @@ void print_bootstrap_timings(const TFHEpp::CKKSDenseBootstrapTimings &timings)
     std::cout << "bootstrap_timed_total_ms=" << timings.total_ms() << '\n';
 }
 
+std::filesystem::path
+validation_test_key_metadata_file(const std::filesystem::path &key_dir)
+{
+    return key_dir / validation_test_key_metadata_filename;
+}
+
+bool is_validation_test_key_metadata_file(const std::filesystem::path &path)
+{
+    return path.filename() == validation_test_key_metadata_filename;
+}
+
+bool read_validation_test_key_sparse_weight(
+    const std::filesystem::path &key_dir, std::size_t &sparse_weight)
+{
+    std::ifstream input(validation_test_key_metadata_file(key_dir));
+    std::string name;
+    return static_cast<bool>(input >> name >> sparse_weight) &&
+           name == "sparse_weight";
+}
+
+int write_validation_test_key_sparse_weight(
+    const std::filesystem::path &key_dir, std::size_t sparse_weight)
+{
+    std::filesystem::create_directories(key_dir);
+    std::ofstream output(validation_test_key_metadata_file(key_dir),
+                         std::ios::trunc);
+    if (!output) {
+        std::cerr << "test_key_metadata_write_failed="
+                  << validation_test_key_metadata_file(key_dir).string()
+                  << '\n';
+        return 2;
+    }
+    output << "sparse_weight " << sparse_weight << '\n';
+    return output ? 0 : 2;
+}
+
 std::uintmax_t directory_size_bytes(const std::filesystem::path &root)
 {
     if (!std::filesystem::exists(root)) return 0;
@@ -239,7 +333,9 @@ std::size_t regular_file_count(const std::filesystem::path &root)
     if (!std::filesystem::exists(root)) return 0;
     std::size_t count = 0;
     for (const auto &entry : std::filesystem::directory_iterator(root)) {
-        if (entry.is_regular_file()) count++;
+        if (entry.is_regular_file() &&
+            !is_validation_test_key_metadata_file(entry.path()))
+            count++;
     }
     return count;
 }
@@ -253,6 +349,58 @@ std::size_t temporary_file_count(const std::filesystem::path &root)
             count++;
     }
     return count;
+}
+
+template <class Schedule>
+int validate_or_create_validation_test_key_metadata(
+    const std::filesystem::path &key_dir, std::size_t sparse_weight,
+    bool allow_create)
+{
+    if constexpr (!requires_bounded_modraise_test_key<Schedule>()) {
+        (void)key_dir;
+        (void)sparse_weight;
+        (void)allow_create;
+        return 0;
+    }
+    else {
+        const std::filesystem::path metadata =
+            validation_test_key_metadata_file(key_dir);
+        if (std::filesystem::exists(metadata)) {
+            std::size_t stored_sparse_weight = 0;
+            if (!read_validation_test_key_sparse_weight(
+                    key_dir, stored_sparse_weight)) {
+                std::cerr << "test_key_metadata_unreadable="
+                          << metadata.string() << '\n';
+                return 2;
+            }
+            if (stored_sparse_weight != sparse_weight) {
+                std::cerr << "test_key_metadata_sparse_weight_mismatch="
+                          << metadata.string()
+                          << " stored_sparse_weight=" << stored_sparse_weight
+                          << " requested_sparse_weight=" << sparse_weight
+                          << '\n';
+                return 2;
+            }
+            return 0;
+        }
+
+        if (!allow_create) {
+            std::cerr << "test_key_metadata_missing=" << metadata.string()
+                      << " requested_sparse_weight=" << sparse_weight
+                      << '\n';
+            return 2;
+        }
+
+        const std::size_t existing_files = regular_file_count(key_dir);
+        if (existing_files != 0) {
+            std::cerr << "test_key_metadata_missing=" << metadata.string()
+                      << " existing_key_files=" << existing_files
+                      << " requested_sparse_weight=" << sparse_weight << '\n';
+            return 2;
+        }
+
+        return write_validation_test_key_sparse_weight(key_dir, sparse_weight);
+    }
 }
 
 void print_missing_key_files(
@@ -619,6 +767,11 @@ void print_schedule_report(const char *label,
               << " log_q_loss=" << Schedule::evalmod_log_q_consumption
               << " after_evalmod_logQ=" << Schedule::after_evalmod_log_q
               << '\n';
+    std::cout << label << " modraise_mask_bound="
+              << Schedule::modraise_mask_bound
+              << " evalmod_mask_bound=" << Schedule::evalmod_mask_bound
+              << " bounded_sparse_weight_max="
+              << bounded_modraise_sparse_weight_max<Schedule>() << '\n';
     std::cout << label << " linear_plain_log_delta c2s/split/stc="
               << Schedule::coeff_to_slot_plain_log_delta << "/"
               << Schedule::component_split_plain_log_delta << "/"
@@ -824,6 +977,15 @@ int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol,
 {
     using P = typename Schedule::Param;
 
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "bootstrap");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, false);
+        status != 0)
+        return status;
     if (const int status = validate_filesystem_key_dir<Schedule>(key_dir);
         status != 0)
         return status;
@@ -899,6 +1061,15 @@ int run_hybrid_filesystem_bootstrap(const std::filesystem::path &key_dir,
     using P = typename Schedule::Param;
 
     if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "bootstrap");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, false);
+        status != 0)
+        return status;
+    if (const int status =
             validate_hybrid_filesystem_key_dir<Schedule>(key_dir);
         status != 0)
         return status;
@@ -947,6 +1118,13 @@ int run_modraise_plain_diagnostics(std::size_t sparse_weight = 0)
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
     std::cout << "diag_key_sparse_weight=" << sparse_weight << '\n';
+    std::cout << "diag_modraise_bounded_sparse_weight_max="
+              << bounded_modraise_sparse_weight_max<Schedule>()
+              << " diag_modraise_sparse_weight_valid="
+              << (sparse_weight_fits_bounded_modraise<Schedule>(sparse_weight)
+                      ? 1
+                      : 0)
+              << '\n';
 
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     fill_test_slots<P>(*slots);
@@ -988,6 +1166,16 @@ int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
                                            std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
+
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "diagnostic");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, false);
+        status != 0)
+        return status;
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
@@ -1242,6 +1430,16 @@ int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
 {
     using P = typename Schedule::Param;
 
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "diagnostic");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, false);
+        status != 0)
+        return status;
+
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
     std::cout << "diag_key_sparse_weight=" << sparse_weight << '\n';
@@ -1325,6 +1523,16 @@ int run_key_provider_stc_diagnostics(const std::filesystem::path &key_dir,
                                      std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
+
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "diagnostic");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, false);
+        status != 0)
+        return status;
 
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
@@ -1556,6 +1764,15 @@ int run_keygen_next(const std::filesystem::path &key_dir,
                     std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "keygen");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
 
@@ -1583,6 +1800,15 @@ int run_keygen(const std::filesystem::path &key_dir, bool resume,
                std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "keygen");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
 
@@ -1605,6 +1831,15 @@ int run_hybrid_keygen_next(const std::filesystem::path &key_dir,
                            std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "keygen");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
 
@@ -1634,6 +1869,15 @@ int run_hybrid_keygen(const std::filesystem::path &key_dir, bool resume,
                       std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "keygen");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
     fill_bootstrap_test_key<P>(*key, sparse_weight);
 
@@ -1659,6 +1903,8 @@ void print_usage(const char *program)
                  " [--lvl6-hybrid-thresholds-plan]"
                  " [--lvl6-inverse-plan]"
                  " [--lvl6-inverse-search]"
+                 " [--lvl6-inverse-debug-modraise]"
+                 " [--lvl6-inverse-debug-modraise-sparse H]"
                  " [--lvl6-inverse-hybrid-keygen DIR]"
                  " [--lvl6-inverse-hybrid-keygen-next DIR]"
                  " [--lvl6-inverse-hybrid-run DIR]"
@@ -1719,7 +1965,11 @@ int main(int argc, char **argv)
     using Lvl6CompactSchedule = TFHEpp::lvl6CKKSDenseBootstrapCompactSchedule;
     using Lvl6RobustHybridTh3Schedule = Lvl6FastSchedule;
     using Lvl6RobustHybridTh4Schedule = Lvl6CompactSchedule;
-    constexpr std::size_t default_lvl6_sparse_weight = 192;
+    constexpr std::size_t default_lvl6_sparse_weight =
+        Lvl6Schedule::bounded_sparse_secret_key_weight;
+    static_assert(default_lvl6_sparse_weight == 16);
+    static_assert(Lvl6InverseSchedule::bounded_sparse_secret_key_weight ==
+                  default_lvl6_sparse_weight);
 
     bool saw_action = false;
     bool keep = false;
@@ -1773,6 +2023,26 @@ int main(int argc, char **argv)
         else if (arg == "--lvl6-inverse-search") {
             saw_action = true;
             print_lvl6_inverse_search_report();
+        }
+        else if (arg == "--lvl6-inverse-debug-modraise") {
+            saw_action = true;
+            print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse");
+            if (run_modraise_plain_diagnostics<Lvl6InverseSchedule>(
+                    lvl6_sparse_weight) != 0)
+                return 1;
+        }
+        else if (arg == "--lvl6-inverse-debug-modraise-sparse") {
+            if (i + 1 >= args.size()) {
+                print_usage(argv[0]);
+                return 2;
+            }
+            saw_action = true;
+            const std::size_t sparse_weight =
+                static_cast<std::size_t>(std::stoull(args[++i]));
+            print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse");
+            if (run_modraise_plain_diagnostics<Lvl6InverseSchedule>(
+                    sparse_weight) != 0)
+                return 1;
         }
         else if (arg == "--lvl6-debug-modraise") {
             saw_action = true;

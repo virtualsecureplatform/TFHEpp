@@ -4122,6 +4122,11 @@ struct CKKSDenseBootstrapSchedule {
     // Modulus raising already introduces key-dependent multiples of the input
     // level.  Any extra explicit phase mask must fit in the remaining EvalMod
     // interval, so it is opt-in rather than tied to EvalModK by default.
+    static constexpr std::uint32_t evalmod_mask_bound =
+        EvalModK == 0 ? 0 : EvalModK - 1;
+    static constexpr std::uint32_t bounded_sparse_secret_key_weight =
+        EvalModK > ModRaiseMaskBound + 2 ? EvalModK - ModRaiseMaskBound - 2
+                                         : 0;
     static constexpr double coeff_to_slot_scaling_factor =
         1.0 / (static_cast<double>(EvalModK) * message_ratio);
     static constexpr double slot_to_coeff_scaling_factor = message_ratio;
