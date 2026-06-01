@@ -1384,7 +1384,7 @@ void print_usage(const char *program)
 
 int main(int argc, char **argv)
 {
-    using Lvl6Schedule = Lvl6HybridThresholdSchedule<4>;
+    using Lvl6Schedule = TFHEpp::lvl6CKKSDenseBootstrapSchedule;
     using Lvl6HybridTh3Schedule = Lvl6HybridThresholdSchedule<3>;
     using Lvl6FastSchedule = TFHEpp::lvl6CKKSDenseBootstrapFastSchedule;
     using Lvl6CompactSchedule = TFHEpp::lvl6CKKSDenseBootstrapCompactSchedule;
