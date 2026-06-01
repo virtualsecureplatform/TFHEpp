@@ -158,6 +158,12 @@ struct CountingDenseBootstrapProvider {
         double_angle_relin_gets{};
     mutable std::array<std::size_t, Schedule::evalmod_double_angle>
         double_angle_relin_releases{};
+    mutable std::array<std::size_t,
+                       EvalModTraits::InverseTraits::power_depth>
+        inverse_relin_gets{};
+    mutable std::array<std::size_t,
+                       EvalModTraits::InverseTraits::power_depth>
+        inverse_relin_releases{};
     mutable std::size_t packed_conjugate_gets = 0;
     mutable std::size_t packed_conjugate_releases = 0;
     mutable std::size_t evalmod_polynomial_gets = 0;
@@ -232,6 +238,21 @@ struct CountingDenseBootstrapProvider {
     {
         static_assert(I < Schedule::evalmod_double_angle);
         double_angle_relin_releases[I]++;
+    }
+
+    template <std::size_t I>
+    const auto &inverse_relin() const
+    {
+        static_assert(I < EvalModTraits::InverseTraits::power_depth);
+        inverse_relin_gets[I]++;
+        return key.evalmod_relin.inverse.template get<I>();
+    }
+
+    template <std::size_t I>
+    void release_inverse_relin() const
+    {
+        static_assert(I < EvalModTraits::InverseTraits::power_depth);
+        inverse_relin_releases[I]++;
     }
 
     template <std::size_t I>
@@ -845,6 +866,8 @@ void test_dense_bootstrap_api_shape()
 
     using Lvl6FastSchedule = TFHEpp::lvl6CKKSDenseBootstrapFastSchedule;
     using Lvl6CompactSchedule = TFHEpp::lvl6CKKSDenseBootstrapCompactSchedule;
+    using Lvl6InverseSchedule =
+        TFHEpp::lvl6CKKSDenseBootstrapInverseSchedule;
     static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapSchedule,
                                  Lvl6FastSchedule>);
     static_assert(std::is_same_v<typename Lvl6FastSchedule::Param,
@@ -856,11 +879,20 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6FastSchedule::hybrid_giant_direct_popcount_threshold == 3);
     static_assert(Lvl6CompactSchedule::hybrid_giant_direct_popcount_threshold ==
                   4);
+    static_assert(std::is_same_v<typename Lvl6InverseSchedule::Param,
+                                 TFHEpp::lvl6param>);
+    static_assert(Lvl6InverseSchedule::log_delta == 36);
+    static_assert(Lvl6InverseSchedule::evalmod_degree == 52);
+    static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 7);
+    static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 540);
+    static_assert(Lvl6InverseSchedule::output_log_q == 121);
     using Lvl6SparseKey = TFHEpp::CKKSDenseBootstrapKey<Lvl6FastSchedule>;
     using Lvl6HybridKey =
         TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6FastSchedule>;
     using Lvl6CompactHybridKey =
         TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6CompactSchedule>;
+    using Lvl6InverseHybridKey =
+        TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6InverseSchedule>;
     using Lvl6SparseFilesystemProvider =
         TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Lvl6FastSchedule>;
     using Lvl6HybridFilesystemProvider =
@@ -869,6 +901,9 @@ void test_dense_bootstrap_api_shape()
     using Lvl6CompactHybridFilesystemProvider =
         TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
             Lvl6CompactSchedule>;
+    using Lvl6InverseHybridFilesystemProvider =
+        TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
+            Lvl6InverseSchedule>;
     static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapInput,
                                  typename Lvl6FastSchedule::InputCiphertext>);
     static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapOutput,
@@ -899,6 +934,17 @@ void test_dense_bootstrap_api_shape()
                   TFHEpp::
                       lvl6CKKSDenseBootstrapCompactHybridGiantFilesystemKeyProvider,
                   Lvl6CompactHybridFilesystemProvider>);
+    static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapInverseInput,
+                                 typename Lvl6InverseSchedule::InputCiphertext>);
+    static_assert(std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapInverseOutput,
+                                 typename Lvl6InverseSchedule::OutputCiphertext>);
+    static_assert(
+        std::is_same_v<TFHEpp::lvl6CKKSDenseBootstrapInverseHybridGiantKey,
+                       Lvl6InverseHybridKey>);
+    static_assert(std::is_same_v<
+                  TFHEpp::
+                      lvl6CKKSDenseBootstrapInverseHybridGiantFilesystemKeyProvider,
+                  Lvl6InverseHybridFilesystemProvider>);
 
     using BootstrapKey = TFHEpp::CKKSDenseBootstrapKey<Schedule>;
     using HybridBootstrapKey =
@@ -1807,6 +1853,83 @@ void test_dense_bootstrap_e2e_smoke()
                            "CKKS dense encrypted bootstrap e2e");
 }
 
+void test_dense_bootstrap_inverse_e2e_smoke()
+{
+    using M = TinyDeepMultiLimbCKKSParam;
+    using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
+        M, 30, 8, 560, 30, 3, 31, 4, 2, 5, 30, 2>;
+    static_assert(Schedule::evalmod_inv_degree == 5);
+    static_assert(Schedule::evalmod_depth == 12);
+    static_assert(Schedule::output_log_q == 110);
+
+    std::array<double, M::n> coeffs{};
+    for (std::size_t i = 0; i < M::n; i++)
+        coeffs[i] =
+            static_cast<double>(static_cast<int>(i % 5) - 2) / 64.0;
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    coeffs_to_slots<M>(*slots, coeffs);
+
+    auto key = std::make_unique<TFHEpp::Key<M>>();
+    fill_test_key<M>(*key);
+
+    auto bootstrap_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapKey<Schedule>>();
+    TFHEpp::CKKSDenseBootstrapKeyGen<Schedule>(*bootstrap_key, *key,
+                                               {0.0, 0});
+
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    TFHEpp::ckksSlotEncrypt<M, Schedule::input_log_q, Schedule::log_delta>(
+        *input, *slots, *key, {0.0, 0});
+
+    CountingDenseBootstrapProvider<Schedule> counting_provider(*bootstrap_key);
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(
+        *output, *input, counting_provider);
+
+    if (counting_provider.coeff_to_slot_gets[0] != 1 ||
+        counting_provider.coeff_to_slot_gets[1] != 1 ||
+        counting_provider.slot_to_coeff_gets[0] != 1 ||
+        counting_provider.slot_to_coeff_gets[1] != 1 ||
+        counting_provider.packed_conjugate_gets != 2 ||
+        counting_provider.evalmod_polynomial_gets != 2)
+        std::exit(1);
+    if (counting_provider.polynomial_relin_gets[0] != 2 ||
+        counting_provider.polynomial_relin_gets[1] != 4 ||
+        counting_provider.polynomial_relin_gets[2] != 8 ||
+        counting_provider.polynomial_relin_gets[3] != 16 ||
+        counting_provider.polynomial_relin_gets[4] != 30 ||
+        counting_provider.double_angle_relin_gets[0] != 2 ||
+        counting_provider.double_angle_relin_gets[1] != 2 ||
+        counting_provider.inverse_relin_gets[0] != 2 ||
+        counting_provider.inverse_relin_gets[1] != 4 ||
+        counting_provider.inverse_relin_gets[2] != 2)
+        std::exit(1);
+    if (counting_provider.coeff_to_slot_releases[0] != 1 ||
+        counting_provider.coeff_to_slot_releases[1] != 1 ||
+        counting_provider.slot_to_coeff_releases[0] != 1 ||
+        counting_provider.slot_to_coeff_releases[1] != 1 ||
+        counting_provider.packed_conjugate_releases != 1)
+        std::exit(1);
+    if (counting_provider.polynomial_relin_releases[0] != 2 ||
+        counting_provider.polynomial_relin_releases[1] != 2 ||
+        counting_provider.polynomial_relin_releases[2] != 2 ||
+        counting_provider.polynomial_relin_releases[3] != 2 ||
+        counting_provider.polynomial_relin_releases[4] != 2 ||
+        counting_provider.double_angle_relin_releases[0] != 2 ||
+        counting_provider.double_angle_relin_releases[1] != 2 ||
+        counting_provider.inverse_relin_releases[0] != 2 ||
+        counting_provider.inverse_relin_releases[1] != 2 ||
+        counting_provider.inverse_relin_releases[2] != 2)
+        std::exit(1);
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *output, *key);
+    require_close_param<M>(*decoded, *slots, 0.05,
+                           "CKKS dense inverse encrypted bootstrap e2e");
+}
+
 void test_bounded_cos_evalmod_plain()
 {
     using L = TFHEpp::lvl6param;
@@ -2250,6 +2373,7 @@ int main()
     test_dense_bootstrap_encrypted_pipeline();
     test_dense_bootstrap_fused_stc_shared_tail();
     test_dense_bootstrap_e2e_smoke();
+    test_dense_bootstrap_inverse_e2e_smoke();
     test_bounded_cos_evalmod_plain();
     test_bounded_cos_evalmod_inverse_plain();
     test_multilimb_slot_decode_high_level();
