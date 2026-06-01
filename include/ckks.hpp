@@ -6363,6 +6363,14 @@ constexpr std::size_t CKKSDenseBootstrapFullKeySwitchRowCount()
 }
 
 template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapEncapsulationKeySwitchRowCount()
+{
+    using P = typename Schedule::Param;
+    return CKKSAutoKeySwitchRowCount<P, Schedule::input_log_q>() +
+           CKKSAutoKeySwitchRowCount<P, Schedule::output_log_q>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapSparseKeyByteEstimate(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
@@ -6423,6 +6431,14 @@ constexpr std::size_t CKKSDenseBootstrapFullKeyByteEstimate()
 {
     using P = typename Schedule::Param;
     return CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>() *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapEncapsulationKeyByteEstimate()
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapEncapsulationKeySwitchRowCount<Schedule>() *
            CKKSKeySwitchRowByteSize<P>();
 }
 
@@ -7396,6 +7412,50 @@ inline std::filesystem::path CKKSDenseBootstrapKeyDirectoryManifestFile(
     const std::filesystem::path &root)
 {
     return ckks_detail::CKKSDenseBootstrapNamedPath(root, "manifest");
+}
+
+inline std::filesystem::path CKKSDenseBootstrapEncapsulationKeyFile(
+    const std::filesystem::path &root)
+{
+    return ckks_detail::CKKSDenseBootstrapNamedPath(root, "encapsulation_key");
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapEncapsulationKeyGenToFile(
+    const std::filesystem::path &path,
+    const Key<typename Schedule::Param> &input_output_key,
+    const Key<typename Schedule::Param> &bootstrap_key,
+    CKKSNoise noise = {Schedule::Param::α, 0},
+    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+{
+    if (!options.overwrite_existing && std::filesystem::exists(path)) return;
+
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapEncapsulationKeyGen<Schedule>(
+        *encapsulation_key, input_output_key, bootstrap_key, noise);
+    CKKSSavePortableBinaryAtomic(path, *encapsulation_key);
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapEncapsulationKeyGenNextMissingToFile(
+    const std::filesystem::path &path,
+    const Key<typename Schedule::Param> &input_output_key,
+    const Key<typename Schedule::Param> &bootstrap_key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    if (std::filesystem::exists(path)) return false;
+    CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
+        path, input_output_key, bootstrap_key, noise);
+    return true;
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapLoadEncapsulationKeyFromFile(
+    CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
+    const std::filesystem::path &path)
+{
+    CKKSLoadPortableBinary(encapsulation_key, path);
 }
 
 template <class Schedule>
@@ -8619,6 +8679,75 @@ inline void CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed(
                             Schedule::log_delta>(
             res, *bootstrap_output, encapsulation_key.bootstrap_to_output);
     });
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapEncapsulatedFromLevelWithFilesystemKey(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file)
+{
+    CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider<Schedule>(
+        res, ct, provider, *encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapEncapsulatedFromLevelWithFilesystemKeyTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    CKKSDenseBootstrapTimings &timings)
+{
+    CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
+        res, ct, provider, *encapsulation_key, timings);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKey(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file)
+{
+    CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider<Schedule>(
+        res, ct, provider, *encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void
+CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    CKKSDenseBootstrapTimings &timings)
+{
+    CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
+        res, ct, provider, *encapsulation_key, timings);
 }
 
 template <class Schedule>

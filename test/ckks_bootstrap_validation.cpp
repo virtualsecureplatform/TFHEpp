@@ -841,6 +841,13 @@ void print_schedule_report(const char *label,
               << " full_key_bytes="
               << TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>()
               << '\n';
+    std::cout << label << " encapsulation_key_rows="
+              << TFHEpp::CKKSDenseBootstrapEncapsulationKeySwitchRowCount<
+                     Schedule>()
+              << " encapsulation_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<
+                     Schedule>()
+              << '\n';
     print_evalmod_approximation_report<Schedule>(label);
     if (key_dir != nullptr) {
         const auto expected =
@@ -2009,7 +2016,11 @@ int run_toy_schedule_encapsulated_product_bootstrap_validation(
 
     const std::filesystem::path key_dir =
         std::filesystem::temp_directory_path() / directory_name;
+    const std::filesystem::path encapsulation_key_file =
+        std::filesystem::temp_directory_path() /
+        (std::string(directory_name) + "_encapsulation_key.bin");
     std::filesystem::remove_all(key_dir);
+    std::filesystem::remove(encapsulation_key_file);
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
@@ -2018,10 +2029,22 @@ int run_toy_schedule_encapsulated_product_bootstrap_validation(
 
     TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(
         key_dir, *bootstrap_key, {0.0, 0});
-    auto encapsulation_key =
-        std::make_unique<TFHEpp::CKKSDenseBootstrapEncapsulationKey<Schedule>>();
-    TFHEpp::CKKSDenseBootstrapEncapsulationKeyGen<Schedule>(
-        *encapsulation_key, *external_key, *bootstrap_key, {0.0, 0});
+    const bool generated_encapsulation_key =
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenNextMissingToFile<
+            Schedule>(encapsulation_key_file, *external_key, *bootstrap_key,
+                      {0.0, 0});
+    const bool regenerated_encapsulation_key =
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenNextMissingToFile<
+            Schedule>(encapsulation_key_file, *external_key, *bootstrap_key,
+                      {0.0, 0});
+    if (!generated_encapsulation_key || regenerated_encapsulation_key) {
+        std::cerr << label << "_encapsulation_key_resume_failed\n";
+        if (!keep_dir) {
+            std::filesystem::remove_all(key_dir);
+            std::filesystem::remove(encapsulation_key_file);
+        }
+        return 1;
+    }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -2042,11 +2065,10 @@ int run_toy_schedule_encapsulated_product_bootstrap_validation(
     auto product = std::make_unique<ProductCt>();
     TFHEpp::CKKSMult<P>(*product, *lhs_ct, *rhs_ct, *relin);
 
-    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapTimings timings;
-    TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<
-        Schedule>(*output, *product, provider, *encapsulation_key, timings);
+    TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithFilesystemKeyTimed<
+        Schedule>(*output, *product, key_dir, encapsulation_key_file, timings);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
@@ -2058,10 +2080,21 @@ int run_toy_schedule_encapsulated_product_bootstrap_validation(
               << " product_logQ=" << ProductCt::log_q
               << " normalized_logQ=" << Schedule::input_log_q
               << " bootstrap_sparse_weight=2\n";
+    std::cout << label
+              << " encapsulation_key_file=" << encapsulation_key_file.string()
+              << " encapsulation_key_bytes="
+              << std::filesystem::file_size(encapsulation_key_file)
+              << " estimated_encapsulation_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<
+                     Schedule>()
+              << '\n';
     print_bootstrap_timings(timings);
     std::cout << label << "_max_error=" << err << '\n';
 
-    if (!keep_dir) std::filesystem::remove_all(key_dir);
+    if (!keep_dir) {
+        std::filesystem::remove_all(key_dir);
+        std::filesystem::remove(encapsulation_key_file);
+    }
     return err <= tol ? 0 : 1;
 }
 
