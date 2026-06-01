@@ -2076,6 +2076,96 @@ int run_toy_schedule_product_bootstrap_validation(
 }
 
 template <class Schedule>
+int run_toy_schedule_scaled_product_bootstrap_validation(
+    bool keep_dir, const char *label, const char *directory_name, double tol)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t extra_scale_bits = 5;
+    constexpr std::uint32_t input_log_delta =
+        Schedule::log_delta + extra_scale_bits;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, input_log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    static_assert(ProductCt::log_q >=
+                  Schedule::input_log_q + extra_scale_bits);
+    static_assert(ProductCt::log_delta == input_log_delta);
+
+    const std::filesystem::path key_dir =
+        std::filesystem::temp_directory_path() / directory_name;
+    const std::filesystem::path relin_key_file =
+        std::filesystem::temp_directory_path() /
+        (std::string(directory_name) + "_relin_key.bin");
+    std::filesystem::remove_all(key_dir);
+    std::filesystem::remove(relin_key_file);
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_test_key<P>(*key);
+    TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(key_dir, *key,
+                                                          {0.0, 0});
+    if (generate_resume_checked_relin_key<P, ProductCt::log_q>(
+            relin_key_file, *key, {0.0, 0}, label) != 0) {
+        if (!keep_dir) {
+            std::filesystem::remove_all(key_dir);
+            std::filesystem::remove(relin_key_file);
+        }
+        return 1;
+    }
+
+    auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*lhs);
+    fill_alternate_test_slots<P>(*rhs);
+    multiply_slots<P>(*expected, *lhs, *rhs);
+
+    auto lhs_ct = std::make_unique<FreshCt>();
+    auto rhs_ct = std::make_unique<FreshCt>();
+    TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+        *lhs_ct, *lhs, *key, {0.0, 0});
+    TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+        *rhs_ct, *rhs, *key, {0.0, 0});
+
+    auto product = std::make_unique<ProductCt>();
+    TFHEpp::CKKSMultWithRelinKeyFile<P>(*product, *lhs_ct, *rhs_ct,
+                                         relin_key_file);
+
+    TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings timings;
+    TFHEpp::CKKSDenseBootstrapFromLevelWithKeyProviderTimed<Schedule>(
+        *output, *product, provider, timings);
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *output, *key);
+    const double err = max_error<P>(*decoded, *expected);
+
+    print_schedule_report<Schedule>(label, &key_dir);
+    std::cout << label << " product_fresh_logQ=" << FreshCt::log_q
+              << " product_logQ=" << ProductCt::log_q
+              << " product_logDelta=" << ProductCt::log_delta
+              << " normalized_logQ=" << Schedule::input_log_q
+              << " normalized_logDelta=" << Schedule::log_delta << '\n';
+    std::cout << label << " relin_key_file=" << relin_key_file.string()
+              << " relin_key_bytes="
+              << std::filesystem::file_size(relin_key_file)
+              << " estimated_relin_key_bytes="
+              << TFHEpp::CKKSRelinKeyByteEstimate<P, ProductCt::log_q>()
+              << '\n';
+    print_bootstrap_timings(timings);
+    std::cout << label << "_max_error=" << err << '\n';
+
+    if (!keep_dir) {
+        std::filesystem::remove_all(key_dir);
+        std::filesystem::remove(relin_key_file);
+    }
+    return err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
 int run_toy_schedule_encapsulated_product_bootstrap_validation(
     bool keep_dir, const char *label, const char *directory_name, double tol)
 {
@@ -2212,6 +2302,11 @@ int run_toy_inverse_validation(bool keep_dir)
     if (run_toy_schedule_product_bootstrap_validation<Schedule>(
             keep_dir, "toy-inverse-product",
             "tfhepp_ckks_bootstrap_validation_toy_inverse_product", 0.05) != 0)
+        return 1;
+    if (run_toy_schedule_scaled_product_bootstrap_validation<Schedule>(
+            keep_dir, "toy-inverse-scaled-product",
+            "tfhepp_ckks_bootstrap_validation_toy_inverse_scaled_product",
+            0.05) != 0)
         return 1;
     return run_toy_schedule_encapsulated_product_bootstrap_validation<Schedule>(
         keep_dir, "toy-inverse-encapsulated-product",

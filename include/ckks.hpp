@@ -1476,6 +1476,36 @@ inline void CKKSLevelReduce(CKKSCiphertext<P, OutLogQ, LogDelta> &res,
             res.ct[c][i] = ckks_detail::reduceToLevel<P, OutLogQ>(ct.ct[c][i]);
 }
 
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t DropBits>
+struct CKKSScaleDownTraits {
+    static_assert(DropBits > 0);
+    static_assert(DropBits < LogQ);
+    static_assert(DropBits <= LogDelta);
+    static constexpr std::uint32_t log_q = LogQ - DropBits;
+    static constexpr std::uint32_t log_delta = LogDelta - DropBits;
+    using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
+};
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t DropBits>
+using CKKSScaleDownResult =
+    typename CKKSScaleDownTraits<P, LogQ, LogDelta, DropBits>::Ciphertext;
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t DropBits>
+inline void CKKSScaleDown(
+    CKKSScaleDownResult<P, LogQ, LogDelta, DropBits> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct)
+{
+    static_assert(DropBits > 0);
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t i = 0; i < P::n; i++)
+            res.ct[c][i] =
+                ckks_detail::roundedLevelRightShift<P, LogQ, DropBits>(
+                    ct.ct[c][i]);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 inline void CKKSAddInPlace(CKKSCiphertext<P, LogQ, LogDelta> &acc,
                            const CKKSCiphertext<P, LogQ, LogDelta> &term)
@@ -8642,13 +8672,25 @@ inline void CKKSDenseBootstrapNormalizeInput(
     typename Schedule::InputCiphertext &res,
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct)
 {
-    static_assert(InLogDelta == Schedule::log_delta,
-                  "CKKS bootstrap input normalization expects the schedule scale");
-    static_assert(InLogQ >= Schedule::input_log_q,
+    using P = typename Schedule::Param;
+    static_assert(InLogDelta >= Schedule::log_delta,
+                  "CKKS bootstrap input normalization cannot raise scale");
+    constexpr std::uint32_t scale_drop = InLogDelta - Schedule::log_delta;
+    static_assert(InLogQ >= Schedule::input_log_q + scale_drop,
                   "CKKS bootstrap input normalization cannot raise a residual "
-                  "ciphertext level");
-    CKKSLevelReduce<typename Schedule::Param, InLogQ, Schedule::input_log_q,
-                    Schedule::log_delta>(res, ct);
+                  "ciphertext level after scale-down");
+    if constexpr (scale_drop == 0) {
+        CKKSLevelReduce<P, InLogQ, Schedule::input_log_q,
+                        Schedule::log_delta>(res, ct);
+    }
+    else {
+        using ScaledCt =
+            CKKSScaleDownResult<P, InLogQ, InLogDelta, scale_drop>;
+        auto scaled = std::make_unique<ScaledCt>();
+        CKKSScaleDown<P, InLogQ, InLogDelta, scale_drop>(*scaled, ct);
+        CKKSLevelReduce<P, ScaledCt::log_q, Schedule::input_log_q,
+                        Schedule::log_delta>(res, *scaled);
+    }
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
