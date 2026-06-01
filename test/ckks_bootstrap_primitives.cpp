@@ -776,6 +776,8 @@ void test_dense_bootstrap_api_shape()
     static_assert(Schedule::output_log_q == 120);
 
     using BootstrapKey = TFHEpp::CKKSDenseBootstrapKey<Schedule>;
+    using HybridBootstrapKey =
+        TFHEpp::CKKSDenseBootstrapHybridGiantKey<Schedule>;
     using InMemoryProvider =
         TFHEpp::CKKSDenseBootstrapInMemoryKeyProvider<Schedule>;
     static_assert(std::is_same_v<
@@ -807,11 +809,41 @@ void test_dense_bootstrap_api_shape()
                   TFHEpp::CKKSSparseGaloisKey<
                       M, Schedule::after_evalmod_log_q -
                              Schedule::slot_to_coeff_plain_log_delta>>);
+    static_assert(std::is_same_v<
+                  typename HybridBootstrapKey::CoeffToSlotGaloisKeyChain,
+                  TFHEpp::CKKSHybridSparseGaloisKeyChain<
+                      M, Schedule::boot_log_q,
+                      Schedule::coeff_to_slot_plain_log_delta,
+                      Schedule::coeff_to_slot_level_count>>);
+    static_assert(std::is_same_v<
+                  typename HybridBootstrapKey::SlotToCoeffGaloisKeyChain,
+                  TFHEpp::CKKSHybridSparseGaloisKeyChain<
+                      M, Schedule::after_evalmod_log_q,
+                      Schedule::slot_to_coeff_plain_log_delta,
+                      Schedule::slot_to_coeff_level_count>>);
+    static_assert(std::is_same_v<
+                  TFHEpp::CKKSDenseBootstrapHybridGiantCoeffToSlotGaloisKey<
+                      Schedule, 0>,
+                  TFHEpp::CKKSHybridSparseGaloisKey<M,
+                                                    Schedule::boot_log_q>>);
+    static_assert(std::is_same_v<
+                  TFHEpp::CKKSDenseBootstrapHybridGiantSlotToCoeffGaloisKey<
+                      Schedule, 1>,
+                  TFHEpp::CKKSHybridSparseGaloisKey<
+                      M, Schedule::after_evalmod_log_q -
+                             Schedule::slot_to_coeff_plain_log_delta>>);
     using KeyGenFn = void (*)(BootstrapKey &, const TFHEpp::Key<M> &,
                               TFHEpp::CKKSNoise);
     using BootstrapFn = void (*)(typename Schedule::OutputCiphertext &,
                                  const typename Schedule::InputCiphertext &,
                                  const BootstrapKey &);
+    using HybridKeyGenFn = void (*)(HybridBootstrapKey &,
+                                    const TFHEpp::Key<M> &,
+                                    TFHEpp::CKKSNoise);
+    using HybridBootstrapFn =
+        void (*)(typename Schedule::OutputCiphertext &,
+                 const typename Schedule::InputCiphertext &,
+                 const HybridBootstrapKey &);
     using ProviderBootstrapFn =
         void (*)(typename Schedule::OutputCiphertext &,
                  const typename Schedule::InputCiphertext &,
@@ -820,6 +852,10 @@ void test_dense_bootstrap_api_shape()
         &TFHEpp::CKKSDenseBootstrapKeyGen<Schedule>;
     [[maybe_unused]] BootstrapFn bootstrap =
         &TFHEpp::CKKSDenseBootstrap<Schedule>;
+    [[maybe_unused]] HybridKeyGenFn hybrid_keygen =
+        &TFHEpp::CKKSDenseBootstrapHybridGiantKeyGen<Schedule>;
+    [[maybe_unused]] HybridBootstrapFn hybrid_bootstrap =
+        &TFHEpp::CKKSDenseBootstrapHybridGiant<Schedule>;
     [[maybe_unused]] ProviderBootstrapFn provider_bootstrap =
         &TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule,
                                                    InMemoryProvider>;
@@ -845,6 +881,15 @@ void test_dense_bootstrap_api_shape()
     constexpr std::size_t full_key_indices =
         TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>();
     if (planned_key_indices == 0 || planned_key_indices >= full_key_indices)
+        std::exit(1);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
+        hybrid_usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        hybrid_usage, linear_plan);
+    const std::size_t hybrid_key_indices =
+        TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsageCount<Schedule>(
+            hybrid_usage);
+    if (hybrid_key_indices == 0 || hybrid_key_indices >= full_key_indices)
         std::exit(1);
 }
 
@@ -1417,6 +1462,51 @@ void test_dense_bootstrap_e2e_smoke()
             bootstrap_key->packed_conjugate_galois.available) != 1)
         std::exit(1);
 
+    auto hybrid_bootstrap_key = std::make_unique<
+        TFHEpp::CKKSDenseBootstrapHybridGiantKey<Schedule>>();
+    TFHEpp::CKKSDenseBootstrapHybridGiantKeyGen<Schedule>(
+        *hybrid_bootstrap_key, *key, {0.0, 0});
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
+        expected_hybrid_usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        expected_hybrid_usage, hybrid_bootstrap_key->linear_plan);
+    if (hybrid_bootstrap_key->coeff_to_slot_galois.template get<0>()
+            .binary.available != expected_hybrid_usage.coeff_to_slot_binary[0])
+        std::exit(1);
+    if (hybrid_bootstrap_key->coeff_to_slot_galois.template get<1>()
+            .binary.available != expected_hybrid_usage.coeff_to_slot_binary[1])
+        std::exit(1);
+    if (hybrid_bootstrap_key->coeff_to_slot_galois.template get<0>()
+            .direct.keys.size() !=
+        TFHEpp::CKKSDirectRotationKeyIndexSetCount<M>(
+            expected_hybrid_usage.coeff_to_slot_direct[0]))
+        std::exit(1);
+    if (hybrid_bootstrap_key->coeff_to_slot_galois.template get<1>()
+            .direct.keys.size() !=
+        TFHEpp::CKKSDirectRotationKeyIndexSetCount<M>(
+            expected_hybrid_usage.coeff_to_slot_direct[1]))
+        std::exit(1);
+    if (hybrid_bootstrap_key->slot_to_coeff_galois.template get<0>()
+            .binary.available != expected_hybrid_usage.slot_to_coeff_binary[0])
+        std::exit(1);
+    if (hybrid_bootstrap_key->slot_to_coeff_galois.template get<1>()
+            .binary.available != expected_hybrid_usage.slot_to_coeff_binary[1])
+        std::exit(1);
+    if (hybrid_bootstrap_key->slot_to_coeff_galois.template get<0>()
+            .direct.keys.size() !=
+        TFHEpp::CKKSDirectRotationKeyIndexSetCount<M>(
+            expected_hybrid_usage.slot_to_coeff_direct[0]))
+        std::exit(1);
+    if (hybrid_bootstrap_key->slot_to_coeff_galois.template get<1>()
+            .direct.keys.size() !=
+        TFHEpp::CKKSDirectRotationKeyIndexSetCount<M>(
+            expected_hybrid_usage.slot_to_coeff_direct[1]))
+        std::exit(1);
+    if (hybrid_bootstrap_key->packed_conjugate_galois.available !=
+            expected_hybrid_usage.packed_conjugate ||
+        !hybrid_bootstrap_key->packed_conjugate_galois.has(M::nbit))
+        std::exit(1);
+
     TFHEpp::CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, 0>
         streamed_c2s0;
     TFHEpp::CKKSDenseBootstrapCoeffToSlotGaloisKeyGen<Schedule, 0>(
@@ -1481,6 +1571,15 @@ void test_dense_bootstrap_e2e_smoke()
         *decoded, *provider_output, *key);
     require_close_param<M>(*decoded, *slots, 0.02,
                            "CKKS dense encrypted provider bootstrap e2e");
+
+    auto hybrid_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapHybridGiant<Schedule>(
+        *hybrid_output, *input, *hybrid_bootstrap_key);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *hybrid_output, *key);
+    require_close_param<M>(*decoded, *slots, 0.02,
+                           "CKKS dense encrypted hybrid bootstrap e2e");
 
     const std::filesystem::path slice_dir =
         std::filesystem::temp_directory_path() /

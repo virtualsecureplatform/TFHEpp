@@ -6084,10 +6084,45 @@ struct CKKSDenseBootstrapKey {
     }
 };
 
+template <class Schedule>
+struct CKKSDenseBootstrapHybridGiantKey {
+    using P = typename Schedule::Param;
+    using CoeffToSlotGaloisKeyChain =
+        CKKSHybridSparseGaloisKeyChain<P, Schedule::boot_log_q,
+                                       Schedule::coeff_to_slot_plain_log_delta,
+                                       Schedule::coeff_to_slot_level_count>;
+    using SlotToCoeffGaloisKeyChain =
+        CKKSHybridSparseGaloisKeyChain<P, Schedule::after_evalmod_log_q,
+                                       Schedule::slot_to_coeff_plain_log_delta,
+                                       Schedule::slot_to_coeff_level_count>;
+
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan{};
+    CKKSBoundedCosEvalModPolynomial evalmod_polynomial{};
+    CoeffToSlotGaloisKeyChain coeff_to_slot_galois{};
+    CKKSSparseGaloisKey<P, Schedule::after_coeff_to_slot_log_q>
+        packed_conjugate_galois{};
+    CKKSDenseEvalModBoundedCosRelinKeys<Schedule> evalmod_relin{};
+    SlotToCoeffGaloisKeyChain slot_to_coeff_galois{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(linear_plan, evalmod_polynomial, coeff_to_slot_galois,
+                packed_conjugate_galois, evalmod_relin,
+                slot_to_coeff_galois);
+    }
+};
+
 template <class Schedule, std::size_t I>
 using CKKSDenseBootstrapCoeffToSlotGaloisKey = CKKSSparseGaloisKey<
     typename Schedule::Param,
     Schedule::boot_log_q - I * Schedule::coeff_to_slot_plain_log_delta>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseBootstrapHybridGiantCoeffToSlotGaloisKey =
+    CKKSHybridSparseGaloisKey<
+        typename Schedule::Param,
+        Schedule::boot_log_q - I * Schedule::coeff_to_slot_plain_log_delta>;
 
 template <class Schedule>
 using CKKSDenseBootstrapPackedConjugateGaloisKey =
@@ -6099,6 +6134,13 @@ using CKKSDenseBootstrapSlotToCoeffGaloisKey = CKKSSparseGaloisKey<
     typename Schedule::Param,
     Schedule::after_evalmod_log_q -
         I * Schedule::slot_to_coeff_plain_log_delta>;
+
+template <class Schedule, std::size_t I>
+using CKKSDenseBootstrapHybridGiantSlotToCoeffGaloisKey =
+    CKKSHybridSparseGaloisKey<
+        typename Schedule::Param,
+        Schedule::after_evalmod_log_q -
+            I * Schedule::slot_to_coeff_plain_log_delta>;
 
 template <class Schedule, std::size_t I>
 inline void CKKSDenseBootstrapCoeffToSlotGaloisKeyGen(
@@ -6197,12 +6239,12 @@ inline void CKKSDenseBootstrapSlotToCoeffGaloisKeyChainGen(
         0, Schedule>(chain, usage, key, noise);
 }
 
-template <class Schedule>
+template <class Schedule, class BootstrapKey = CKKSDenseBootstrapKey<Schedule>>
 struct CKKSDenseBootstrapInMemoryKeyProvider {
-    const CKKSDenseBootstrapKey<Schedule> *key = nullptr;
+    const BootstrapKey *key = nullptr;
 
     explicit CKKSDenseBootstrapInMemoryKeyProvider(
-        const CKKSDenseBootstrapKey<Schedule> &bootstrap_key)
+        const BootstrapKey &bootstrap_key)
         : key(&bootstrap_key)
     {}
 
@@ -6281,6 +6323,41 @@ inline void CKKSDenseBootstrapKeyGen(
                                                noise);
     CKKSDenseBootstrapSlotToCoeffGaloisKeyChainGen<Schedule>(
         bootstrap_key.slot_to_coeff_galois, rotation_usage, key, noise);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapHybridGiantKeyGen(
+    CKKSDenseBootstrapHybridGiantKey<Schedule> &bootstrap_key,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+    static_assert(Schedule::evalmod_inv_degree == 0,
+                  "inverse EvalMod correction is not implemented yet");
+    CKKSBuildDenseBootstrapLinearPlan<Schedule>(bootstrap_key.linear_plan);
+    CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> rotation_usage;
+    CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        rotation_usage, bootstrap_key.linear_plan);
+    bootstrap_key.evalmod_polynomial =
+        CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+    CKKSHybridSparseGaloisKeyChainGen<
+        P, Schedule::boot_log_q, Schedule::coeff_to_slot_plain_log_delta,
+        Schedule::coeff_to_slot_level_count>(
+        bootstrap_key.coeff_to_slot_galois,
+        rotation_usage.coeff_to_slot_binary,
+        rotation_usage.coeff_to_slot_direct, key, noise);
+    CKKSSparseGaloisKeyGen<P, Schedule::after_coeff_to_slot_log_q>(
+        bootstrap_key.packed_conjugate_galois, key,
+        rotation_usage.packed_conjugate, noise);
+    CKKSDenseEvalModBoundedCosKeyGen<Schedule>(bootstrap_key.evalmod_relin, key,
+                                               noise);
+    CKKSHybridSparseGaloisKeyChainGen<
+        P, Schedule::after_evalmod_log_q,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        bootstrap_key.slot_to_coeff_galois,
+        rotation_usage.slot_to_coeff_binary,
+        rotation_usage.slot_to_coeff_direct, key, noise);
 }
 
 namespace ckks_detail {
@@ -7182,6 +7259,18 @@ inline void CKKSDenseBootstrap(
 {
     const CKKSDenseBootstrapInMemoryKeyProvider<Schedule> key_provider(
         bootstrap_key);
+    CKKSDenseBootstrapWithKeyProvider<Schedule>(res, ct, key_provider);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapHybridGiant(
+    typename Schedule::OutputCiphertext &res,
+    const typename Schedule::InputCiphertext &ct,
+    const CKKSDenseBootstrapHybridGiantKey<Schedule> &bootstrap_key)
+{
+    const CKKSDenseBootstrapInMemoryKeyProvider<
+        Schedule, CKKSDenseBootstrapHybridGiantKey<Schedule>>
+        key_provider(bootstrap_key);
     CKKSDenseBootstrapWithKeyProvider<Schedule>(res, ct, key_provider);
 }
 
