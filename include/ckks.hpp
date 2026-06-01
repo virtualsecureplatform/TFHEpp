@@ -310,7 +310,7 @@ struct CKKSDenseBootstrapKeyDirectoryOptions {
 };
 
 struct CKKSDenseBootstrapKeyDirectoryManifest {
-    static constexpr std::uint32_t current_version = 1;
+    static constexpr std::uint32_t current_version = 2;
 
     std::uint32_t version = current_version;
     std::uint32_t n = 0;
@@ -323,6 +323,11 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     std::uint32_t output_log_q = 0;
     std::uint32_t linear_plain_log_delta = 0;
     std::uint32_t linear_fuse_radix = 0;
+    std::uint32_t coeff_to_slot_plain_log_delta = 0;
+    std::uint32_t component_split_plain_log_delta = 0;
+    std::uint32_t slot_to_coeff_plain_log_delta = 0;
+    std::uint32_t coeff_to_slot_fuse_radix = 0;
+    std::uint32_t slot_to_coeff_fuse_radix = 0;
     std::int32_t linear_bsgs_step = 0;
     std::uint32_t coeff_to_slot_level_count = 0;
     std::uint32_t slot_to_coeff_level_count = 0;
@@ -346,7 +351,10 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     {
         archive(version, n, nbit, torus_bits, log_delta, log_message_ratio,
                 input_log_q, boot_log_q, output_log_q, linear_plain_log_delta,
-                linear_fuse_radix, linear_bsgs_step, coeff_to_slot_level_count,
+                linear_fuse_radix, coeff_to_slot_plain_log_delta,
+                component_split_plain_log_delta, slot_to_coeff_plain_log_delta,
+                coeff_to_slot_fuse_radix, slot_to_coeff_fuse_radix,
+                linear_bsgs_step, coeff_to_slot_level_count,
                 slot_to_coeff_level_count, evalmod_degree, evalmod_k,
                 evalmod_double_angle, evalmod_inv_degree, evalmod_log_scale,
                 evalmod_depth, modraise_mask_bound, expected_file_count,
@@ -2608,21 +2616,32 @@ inline void CKKSBuildPackedSlotToCoeffPlan(
         conjugate_offsets, k_step);
 }
 
-template <class P, std::uint32_t LogDelta = 50,
-          std::uint32_t LogMessageRatio = 8, std::uint32_t BootLogQ = 880,
-          std::uint32_t LinearPlainLogDelta = 50,
-          std::uint32_t LinearFuseRadix = 7,
-          std::uint32_t EvalModDegree = 30, std::uint32_t EvalModK = 16,
-          std::uint32_t EvalModDoubleAngle = 3,
-          std::uint32_t EvalModInvDegree = 0,
-          std::uint32_t EvalModLogScale = LogDelta,
-          int LinearBSGSStep = 128, std::uint32_t ModRaiseMaskBound = 0>
+template <
+    class P, std::uint32_t LogDelta = 50,
+    std::uint32_t LogMessageRatio = 8, std::uint32_t BootLogQ = 880,
+    std::uint32_t LinearPlainLogDelta = 50,
+    std::uint32_t LinearFuseRadix = 5, std::uint32_t EvalModDegree = 30,
+    std::uint32_t EvalModK = 16, std::uint32_t EvalModDoubleAngle = 3,
+    std::uint32_t EvalModInvDegree = 0,
+    std::uint32_t EvalModLogScale = LogDelta, int LinearBSGSStep = 128,
+    std::uint32_t ModRaiseMaskBound = 0,
+    std::uint32_t CoeffToSlotPlainLogDelta = LinearPlainLogDelta,
+    std::uint32_t ComponentSplitPlainLogDelta = CoeffToSlotPlainLogDelta,
+    std::uint32_t SlotToCoeffPlainLogDelta =
+        (LinearPlainLogDelta == 50 ? 35 : LinearPlainLogDelta),
+    std::uint32_t CoeffToSlotFuseRadix = LinearFuseRadix,
+    std::uint32_t SlotToCoeffFuseRadix = LinearFuseRadix>
 struct CKKSDenseBootstrapSchedule {
     static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta > 0);
     static_assert(LogMessageRatio > 0);
     static_assert(LinearPlainLogDelta > 0);
     static_assert(LinearFuseRadix > 0);
+    static_assert(CoeffToSlotPlainLogDelta > 0);
+    static_assert(ComponentSplitPlainLogDelta > 0);
+    static_assert(SlotToCoeffPlainLogDelta > 0);
+    static_assert(CoeffToSlotFuseRadix > 0);
+    static_assert(SlotToCoeffFuseRadix > 0);
     static_assert(LinearBSGSStep > 0);
     static_assert(EvalModK > 0);
     static_assert(ModRaiseMaskBound < EvalModK);
@@ -2636,12 +2655,22 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr std::uint32_t boot_log_q = BootLogQ;
     static constexpr std::uint32_t linear_plain_log_delta = LinearPlainLogDelta;
     static constexpr std::uint32_t linear_fuse_radix = LinearFuseRadix;
+    static constexpr std::uint32_t coeff_to_slot_plain_log_delta =
+        CoeffToSlotPlainLogDelta;
+    static constexpr std::uint32_t component_split_plain_log_delta =
+        ComponentSplitPlainLogDelta;
+    static constexpr std::uint32_t slot_to_coeff_plain_log_delta =
+        SlotToCoeffPlainLogDelta;
+    static constexpr std::uint32_t coeff_to_slot_fuse_radix =
+        CoeffToSlotFuseRadix;
+    static constexpr std::uint32_t slot_to_coeff_fuse_radix =
+        SlotToCoeffFuseRadix;
     static constexpr int linear_bsgs_step = LinearBSGSStep;
     static constexpr std::uint32_t raw_linear_stage_count = P::nbit - 1;
     static constexpr std::uint32_t coeff_to_slot_level_count =
-        ckks_detail::ceil_div(raw_linear_stage_count, LinearFuseRadix);
+        ckks_detail::ceil_div(raw_linear_stage_count, CoeffToSlotFuseRadix);
     static constexpr std::uint32_t slot_to_coeff_level_count =
-        ckks_detail::ceil_div(raw_linear_stage_count, LinearFuseRadix);
+        ckks_detail::ceil_div(raw_linear_stage_count, SlotToCoeffFuseRadix);
     static constexpr std::uint32_t evalmod_degree = EvalModDegree;
     static constexpr std::uint32_t evalmod_k = EvalModK;
     static constexpr std::uint32_t evalmod_double_angle = EvalModDoubleAngle;
@@ -2665,17 +2694,17 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr double slot_to_coeff_scaling_factor = message_ratio;
 
     static constexpr std::uint32_t after_coeff_to_slot_log_q =
-        BootLogQ - coeff_to_slot_level_count * LinearPlainLogDelta;
+        BootLogQ - coeff_to_slot_level_count * CoeffToSlotPlainLogDelta;
     static constexpr std::uint32_t after_component_split_log_q =
-        after_coeff_to_slot_log_q - LinearPlainLogDelta;
+        after_coeff_to_slot_log_q - ComponentSplitPlainLogDelta;
     static constexpr std::uint32_t after_evalmod_log_q =
         after_component_split_log_q - evalmod_depth * EvalModLogScale;
     static constexpr std::uint32_t output_log_q =
-        after_evalmod_log_q - slot_to_coeff_level_count * LinearPlainLogDelta;
+        after_evalmod_log_q - slot_to_coeff_level_count * SlotToCoeffPlainLogDelta;
 
     static_assert(input_log_q < BootLogQ);
     static_assert(BootLogQ <= ckks_detail::torus_width_v<P>);
-    static_assert(after_coeff_to_slot_log_q > LinearPlainLogDelta);
+    static_assert(after_coeff_to_slot_log_q > ComponentSplitPlainLogDelta);
     static_assert(after_component_split_log_q >
                   evalmod_depth * EvalModLogScale);
     static_assert(output_log_q > LogDelta);
@@ -2684,15 +2713,15 @@ struct CKKSDenseBootstrapSchedule {
     using BootstrapCiphertext = CKKSCiphertext<P, boot_log_q, log_delta>;
     using CoeffToSlotCiphertext =
         CKKSStagedPlainMulResult<P, boot_log_q, log_delta,
-                                 linear_plain_log_delta,
+                                 coeff_to_slot_plain_log_delta,
                                  coeff_to_slot_level_count>;
     using ComponentCiphertext =
         CKKSPlainMulResult<P, after_coeff_to_slot_log_q, log_delta,
-                           linear_plain_log_delta>;
+                           component_split_plain_log_delta>;
     using EvalModCiphertext = CKKSCiphertext<P, after_evalmod_log_q, log_delta>;
     using OutputCiphertext =
         CKKSStagedPlainMulResult<P, after_evalmod_log_q, log_delta,
-                                 linear_plain_log_delta,
+                                 slot_to_coeff_plain_log_delta,
                                  slot_to_coeff_level_count>;
 };
 
@@ -2986,13 +3015,13 @@ inline void CKKSBuildDenseBootstrapLinearPlan(
 
     CKKSFuseLinearTransformStages<P>(plan.coeff_to_slot_stages,
                                      raw_coeff_to_slot,
-                                     Schedule::linear_fuse_radix);
+                                     Schedule::coeff_to_slot_fuse_radix);
     CKKSFuseLinearTransformStages<P>(plan.slot_to_coeff_stages,
                                      raw_slot_to_coeff,
-                                     Schedule::linear_fuse_radix);
+                                     Schedule::slot_to_coeff_fuse_radix);
     CKKSFuseLinearTransformStages<P>(plan.slot_to_coeff_imag_stages,
                                      raw_slot_to_coeff,
-                                     Schedule::linear_fuse_radix);
+                                     Schedule::slot_to_coeff_fuse_radix);
     assert(plan.coeff_to_slot_stages.size() ==
            Schedule::coeff_to_slot_level_count);
     assert(plan.slot_to_coeff_stages.size() ==
@@ -4092,7 +4121,8 @@ inline std::size_t CKKSDenseBootstrapSparseCoeffToSlotKeySwitchRowCount(
 {
     using P = typename Schedule::Param;
     return ckks_detail::CKKSRotationUsageKeySwitchRows<
-        0, P, Schedule::boot_log_q, Schedule::linear_plain_log_delta>(
+        0, P, Schedule::boot_log_q,
+        Schedule::coeff_to_slot_plain_log_delta>(
         usage.coeff_to_slot);
 }
 
@@ -4102,7 +4132,8 @@ inline std::size_t CKKSDenseBootstrapSparseCoeffToSlotPeakKeySwitchRowCount(
 {
     using P = typename Schedule::Param;
     return ckks_detail::CKKSRotationUsageAdjacentPeakKeySwitchRows<
-        0, P, Schedule::boot_log_q, Schedule::linear_plain_log_delta>(
+        0, P, Schedule::boot_log_q,
+        Schedule::coeff_to_slot_plain_log_delta>(
         usage.coeff_to_slot);
 }
 
@@ -4131,7 +4162,7 @@ inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffKeySwitchRowCount(
     using P = typename Schedule::Param;
     return ckks_detail::CKKSRotationUsageKeySwitchRows<
         0, P, Schedule::after_evalmod_log_q,
-        Schedule::linear_plain_log_delta>(usage.slot_to_coeff);
+        Schedule::slot_to_coeff_plain_log_delta>(usage.slot_to_coeff);
 }
 
 template <class Schedule>
@@ -4141,7 +4172,7 @@ inline std::size_t CKKSDenseBootstrapSparseSlotToCoeffPeakKeySwitchRowCount(
     using P = typename Schedule::Param;
     return ckks_detail::CKKSRotationUsageAdjacentPeakKeySwitchRows<
         0, P, Schedule::after_evalmod_log_q,
-        Schedule::linear_plain_log_delta>(usage.slot_to_coeff);
+        Schedule::slot_to_coeff_plain_log_delta>(usage.slot_to_coeff);
 }
 
 template <class Schedule>
@@ -4175,14 +4206,14 @@ constexpr std::size_t CKKSDenseBootstrapFullGaloisKeySwitchRowCount()
     using P = typename Schedule::Param;
     return ckks_detail::CKKSFullGaloisKeySwitchRows<
                0, P, Schedule::boot_log_q,
-               Schedule::linear_plain_log_delta,
+               Schedule::coeff_to_slot_plain_log_delta,
                Schedule::coeff_to_slot_level_count + 1>() +
            (P::nbit + 1) *
                CKKSAutoKeySwitchRowCount<
                    P, Schedule::after_coeff_to_slot_log_q>() +
            ckks_detail::CKKSFullGaloisKeySwitchRows<
                0, P, Schedule::after_evalmod_log_q,
-               Schedule::linear_plain_log_delta,
+               Schedule::slot_to_coeff_plain_log_delta,
                Schedule::slot_to_coeff_level_count + 1>();
 }
 
@@ -4322,11 +4353,11 @@ struct CKKSDenseBootstrapKey {
     using P = typename Schedule::Param;
     using CoeffToSlotGaloisKeyChain =
         CKKSSparseGaloisKeyChain<P, Schedule::boot_log_q,
-                                 Schedule::linear_plain_log_delta,
+                                 Schedule::coeff_to_slot_plain_log_delta,
                                  Schedule::coeff_to_slot_level_count>;
     using SlotToCoeffGaloisKeyChain =
         CKKSSparseGaloisKeyChain<P, Schedule::after_evalmod_log_q,
-                                 Schedule::linear_plain_log_delta,
+                                 Schedule::slot_to_coeff_plain_log_delta,
                                  Schedule::slot_to_coeff_level_count>;
 
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan{};
@@ -4349,7 +4380,7 @@ struct CKKSDenseBootstrapKey {
 template <class Schedule, std::size_t I>
 using CKKSDenseBootstrapCoeffToSlotGaloisKey = CKKSSparseGaloisKey<
     typename Schedule::Param,
-    Schedule::boot_log_q - I * Schedule::linear_plain_log_delta>;
+    Schedule::boot_log_q - I * Schedule::coeff_to_slot_plain_log_delta>;
 
 template <class Schedule>
 using CKKSDenseBootstrapPackedConjugateGaloisKey =
@@ -4359,7 +4390,8 @@ using CKKSDenseBootstrapPackedConjugateGaloisKey =
 template <class Schedule, std::size_t I>
 using CKKSDenseBootstrapSlotToCoeffGaloisKey = CKKSSparseGaloisKey<
     typename Schedule::Param,
-    Schedule::after_evalmod_log_q - I * Schedule::linear_plain_log_delta>;
+    Schedule::after_evalmod_log_q -
+        I * Schedule::slot_to_coeff_plain_log_delta>;
 
 template <class Schedule, std::size_t I>
 inline void CKKSDenseBootstrapCoeffToSlotGaloisKeyGen(
@@ -4371,7 +4403,7 @@ inline void CKKSDenseBootstrapCoeffToSlotGaloisKeyGen(
     using P = typename Schedule::Param;
     static_assert(I <= Schedule::coeff_to_slot_level_count);
     constexpr std::uint32_t log_q =
-        Schedule::boot_log_q - I * Schedule::linear_plain_log_delta;
+        Schedule::boot_log_q - I * Schedule::coeff_to_slot_plain_log_delta;
     CKKSSparseGaloisKeyGen<P, log_q>(gk, key, usage.coeff_to_slot[I],
                                      noise);
 }
@@ -4399,7 +4431,7 @@ inline void CKKSDenseBootstrapSlotToCoeffGaloisKeyGen(
     static_assert(I <= Schedule::slot_to_coeff_level_count);
     constexpr std::uint32_t log_q =
         Schedule::after_evalmod_log_q -
-        I * Schedule::linear_plain_log_delta;
+        I * Schedule::slot_to_coeff_plain_log_delta;
     CKKSSparseGaloisKeyGen<P, log_q>(gk, key, usage.slot_to_coeff[I],
                                      noise);
 }
@@ -4931,6 +4963,14 @@ CKKSDenseBootstrapBuildKeyDirectoryManifest(const std::filesystem::path &root)
     manifest.output_log_q = Schedule::output_log_q;
     manifest.linear_plain_log_delta = Schedule::linear_plain_log_delta;
     manifest.linear_fuse_radix = Schedule::linear_fuse_radix;
+    manifest.coeff_to_slot_plain_log_delta =
+        Schedule::coeff_to_slot_plain_log_delta;
+    manifest.component_split_plain_log_delta =
+        Schedule::component_split_plain_log_delta;
+    manifest.slot_to_coeff_plain_log_delta =
+        Schedule::slot_to_coeff_plain_log_delta;
+    manifest.coeff_to_slot_fuse_radix = Schedule::coeff_to_slot_fuse_radix;
+    manifest.slot_to_coeff_fuse_radix = Schedule::slot_to_coeff_fuse_radix;
     manifest.linear_bsgs_step = Schedule::linear_bsgs_step;
     manifest.coeff_to_slot_level_count = Schedule::coeff_to_slot_level_count;
     manifest.slot_to_coeff_level_count = Schedule::slot_to_coeff_level_count;
@@ -5375,7 +5415,7 @@ inline void CKKSDenseBootstrapWithKeyProvider(
         coeff_to_slot_galois{key_provider};
     CKKSLinearTransformStagesBSGS<
         P, Schedule::boot_log_q, Schedule::log_delta,
-        Schedule::linear_plain_log_delta,
+        Schedule::coeff_to_slot_plain_log_delta,
         Schedule::coeff_to_slot_level_count>(
         *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
         Schedule::linear_bsgs_step, coeff_to_slot_galois);
@@ -5385,14 +5425,14 @@ inline void CKKSDenseBootstrapWithKeyProvider(
         std::make_unique<typename Schedule::ComponentCiphertext>();
     CKKSExtractRealSlots<P, Schedule::after_coeff_to_slot_log_q,
                          Schedule::log_delta,
-                         Schedule::linear_plain_log_delta>(
+                         Schedule::component_split_plain_log_delta>(
         *real_component, *coeff_to_slot,
         key_provider.packed_conjugate_galois());
     auto imag_component =
         std::make_unique<typename Schedule::ComponentCiphertext>();
     CKKSExtractImagSlots<P, Schedule::after_coeff_to_slot_log_q,
                          Schedule::log_delta,
-                         Schedule::linear_plain_log_delta>(
+                         Schedule::component_split_plain_log_delta>(
         *imag_component, *coeff_to_slot,
         key_provider.packed_conjugate_galois());
     coeff_to_slot.reset();
@@ -5419,7 +5459,7 @@ inline void CKKSDenseBootstrapWithKeyProvider(
     auto real_out = std::make_unique<typename Schedule::OutputCiphertext>();
     CKKSLinearTransformStagesBSGS<
         P, Schedule::after_evalmod_log_q, Schedule::log_delta,
-        Schedule::linear_plain_log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
         Schedule::slot_to_coeff_level_count>(
         *real_out, *real_evalmod, linear_plan.slot_to_coeff_stages, 0,
         Schedule::linear_bsgs_step, slot_to_coeff_galois);
@@ -5427,7 +5467,7 @@ inline void CKKSDenseBootstrapWithKeyProvider(
     auto imag_out = std::make_unique<typename Schedule::OutputCiphertext>();
     CKKSLinearTransformStagesBSGS<
         P, Schedule::after_evalmod_log_q, Schedule::log_delta,
-        Schedule::linear_plain_log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
         Schedule::slot_to_coeff_level_count>(
         *imag_out, *imag_evalmod, linear_plan.slot_to_coeff_imag_stages, 0,
         Schedule::linear_bsgs_step, slot_to_coeff_galois);

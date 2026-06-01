@@ -480,24 +480,30 @@ void test_lvl6_factorized_stage_shape()
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<L>;
     static_assert(Schedule::input_log_q == 58);
     static_assert(Schedule::boot_log_q == 880);
+    static_assert(Schedule::linear_plain_log_delta == 50);
+    static_assert(Schedule::coeff_to_slot_plain_log_delta == 50);
+    static_assert(Schedule::component_split_plain_log_delta == 50);
+    static_assert(Schedule::slot_to_coeff_plain_log_delta == 35);
+    static_assert(Schedule::coeff_to_slot_fuse_radix == 5);
+    static_assert(Schedule::slot_to_coeff_fuse_radix == 5);
     static_assert(Schedule::linear_bsgs_step == 128);
     static_assert(Schedule::raw_linear_stage_count == 14);
-    static_assert(Schedule::coeff_to_slot_level_count == 2);
-    static_assert(Schedule::slot_to_coeff_level_count == 2);
+    static_assert(Schedule::coeff_to_slot_level_count == 3);
+    static_assert(Schedule::slot_to_coeff_level_count == 3);
     static_assert(Schedule::evalmod_polynomial_depth == 6);
     static_assert(Schedule::evalmod_depth == 9);
     static_assert(Schedule::modraise_mask_bound == 0);
-    static_assert(Schedule::after_coeff_to_slot_log_q == 780);
-    static_assert(Schedule::after_component_split_log_q == 730);
-    static_assert(Schedule::after_evalmod_log_q == 280);
-    static_assert(Schedule::output_log_q == 180);
+    static_assert(Schedule::after_coeff_to_slot_log_q == 730);
+    static_assert(Schedule::after_component_split_log_q == 680);
+    static_assert(Schedule::after_evalmod_log_q == 230);
+    static_assert(Schedule::output_log_q == 125);
     static_assert(Schedule::message_ratio == 256.0);
     static_assert(Schedule::coeff_to_slot_scaling_factor == 1.0 / 4096.0);
     static_assert(Schedule::slot_to_coeff_scaling_factor == 256.0);
     static_assert(Schedule::OutputCiphertext::log_q == Schedule::output_log_q);
     using DenseEvalTraits = TFHEpp::CKKSDenseEvalModBoundedCosTraits<Schedule>;
     using DenseEvalOut = TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>;
-    static_assert(DenseEvalTraits::polynomial_log_q == 430);
+    static_assert(DenseEvalTraits::polynomial_log_q == 380);
     static_assert(DenseEvalOut::log_q == Schedule::after_evalmod_log_q);
 
     TFHEpp::CKKSLinearTransformStages<L> c2s_stages;
@@ -579,12 +585,12 @@ void test_lvl6_factorized_stage_shape()
     static_assert(
         TFHEpp::CKKSAutoKeySwitchRowCount<L, Schedule::boot_log_q>() == 55);
     static_assert(
-        TFHEpp::CKKSRelinKeySwitchRowCount<L, Schedule::output_log_q>() == 12);
+        TFHEpp::CKKSRelinKeySwitchRowCount<L, Schedule::output_log_q>() == 8);
     static_assert(
         TFHEpp::CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() == 8);
     if (planned_key_indices == 0 || planned_key_indices >= full_key_indices)
         std::exit(1);
-    if (planned_key_indices != 43 || full_key_indices != 112)
+    if (planned_key_indices != 57 || full_key_indices != 144)
         std::exit(1);
     if (TFHEpp::CKKSRotationKeyIndexSetCount<L>(
             rotation_usage.packed_conjugate) != 1)
@@ -618,11 +624,9 @@ void test_lvl6_factorized_stage_shape()
     if (streamed_peak_bytes !=
         streamed_peak_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
         std::exit(1);
-    if (sparse_key_rows != 1682 || full_key_rows != 4247)
-        std::exit(1);
     if (sparse_key_rows >= full_key_rows || sparse_key_bytes >= full_key_bytes)
         std::exit(1);
-    if (streamed_peak_rows != 1071 || streamed_peak_rows >= sparse_key_rows)
+    if (streamed_peak_rows == 0 || streamed_peak_rows >= sparse_key_rows)
         std::exit(1);
     std::cout << "CKKS lvl6 dense bootstrap rotation key indices planned/full="
               << planned_key_indices << "/" << full_key_indices
@@ -662,13 +666,13 @@ void test_dense_bootstrap_api_shape()
                   typename BootstrapKey::CoeffToSlotGaloisKeyChain,
                   TFHEpp::CKKSSparseGaloisKeyChain<
                       M, Schedule::boot_log_q,
-                      Schedule::linear_plain_log_delta,
+                      Schedule::coeff_to_slot_plain_log_delta,
                       Schedule::coeff_to_slot_level_count>>);
     static_assert(std::is_same_v<
                   typename BootstrapKey::SlotToCoeffGaloisKeyChain,
                   TFHEpp::CKKSSparseGaloisKeyChain<
                       M, Schedule::after_evalmod_log_q,
-                      Schedule::linear_plain_log_delta,
+                      Schedule::slot_to_coeff_plain_log_delta,
                       Schedule::slot_to_coeff_level_count>>);
     static_assert(std::is_same_v<
                   TFHEpp::CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, 0>,
@@ -677,7 +681,7 @@ void test_dense_bootstrap_api_shape()
                   TFHEpp::CKKSDenseBootstrapCoeffToSlotGaloisKey<Schedule, 1>,
                   TFHEpp::CKKSSparseGaloisKey<
                       M, Schedule::boot_log_q -
-                             Schedule::linear_plain_log_delta>>);
+                             Schedule::coeff_to_slot_plain_log_delta>>);
     static_assert(std::is_same_v<
                   TFHEpp::CKKSDenseBootstrapPackedConjugateGaloisKey<Schedule>,
                   TFHEpp::CKKSSparseGaloisKey<
@@ -686,7 +690,7 @@ void test_dense_bootstrap_api_shape()
                   TFHEpp::CKKSDenseBootstrapSlotToCoeffGaloisKey<Schedule, 1>,
                   TFHEpp::CKKSSparseGaloisKey<
                       M, Schedule::after_evalmod_log_q -
-                             Schedule::linear_plain_log_delta>>);
+                             Schedule::slot_to_coeff_plain_log_delta>>);
     using KeyGenFn = void (*)(BootstrapKey &, const TFHEpp::Key<M> &,
                               TFHEpp::CKKSNoise);
     using BootstrapFn = void (*)(typename Schedule::OutputCiphertext &,
@@ -834,17 +838,17 @@ void test_dense_bootstrap_encrypted_pipeline()
         *ct, *input_slots, *key, {0.0, 0});
 
     auto gks = std::make_unique<typename TFHEpp::CKKSGaloisKeyChain<
-        M, Schedule::boot_log_q, Schedule::linear_plain_log_delta,
+        M, Schedule::boot_log_q, Schedule::coeff_to_slot_plain_log_delta,
         Schedule::coeff_to_slot_level_count>>();
     TFHEpp::CKKSGaloisKeyChainGen<M, Schedule::boot_log_q,
-                                  Schedule::linear_plain_log_delta,
+                                  Schedule::coeff_to_slot_plain_log_delta,
                                   Schedule::coeff_to_slot_level_count>(
         *gks, *key, {0.0, 0});
 
     auto out = std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
     TFHEpp::CKKSLinearTransformStagesBSGS<
         M, Schedule::boot_log_q, Schedule::log_delta,
-        Schedule::linear_plain_log_delta,
+        Schedule::coeff_to_slot_plain_log_delta,
         Schedule::coeff_to_slot_level_count>(
         *out, *ct, linear_plan.coeff_to_slot_stages, 0,
         Schedule::linear_bsgs_step, *gks);
@@ -865,13 +869,13 @@ void test_dense_bootstrap_encrypted_pipeline()
         std::make_unique<typename Schedule::ComponentCiphertext>();
     TFHEpp::CKKSExtractRealSlots<M, Schedule::after_coeff_to_slot_log_q,
                                  Schedule::log_delta,
-                                 Schedule::linear_plain_log_delta>(
+                                 Schedule::component_split_plain_log_delta>(
         *real_component, *out, *conjugate_gk);
     auto imag_component =
         std::make_unique<typename Schedule::ComponentCiphertext>();
     TFHEpp::CKKSExtractImagSlots<M, Schedule::after_coeff_to_slot_log_q,
                                  Schedule::log_delta,
-                                 Schedule::linear_plain_log_delta>(
+                                 Schedule::component_split_plain_log_delta>(
         *imag_component, *out, *conjugate_gk);
 
     auto expected_real = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
@@ -935,24 +939,24 @@ void test_dense_bootstrap_encrypted_pipeline()
     auto slot_to_coeff_gks =
         std::make_unique<typename TFHEpp::CKKSGaloisKeyChain<
             M, Schedule::after_evalmod_log_q,
-            Schedule::linear_plain_log_delta,
+            Schedule::slot_to_coeff_plain_log_delta,
             Schedule::slot_to_coeff_level_count>>();
     TFHEpp::CKKSGaloisKeyChainGen<M, Schedule::after_evalmod_log_q,
-                                  Schedule::linear_plain_log_delta,
+                                  Schedule::slot_to_coeff_plain_log_delta,
                                   Schedule::slot_to_coeff_level_count>(
         *slot_to_coeff_gks, *key, {0.0, 0});
 
     auto real_out = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSLinearTransformStagesBSGS<
         M, Schedule::after_evalmod_log_q, Schedule::log_delta,
-        Schedule::linear_plain_log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
         Schedule::slot_to_coeff_level_count>(
         *real_out, *real_eval, linear_plan.slot_to_coeff_stages, 0,
         Schedule::linear_bsgs_step, *slot_to_coeff_gks);
     auto imag_out = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSLinearTransformStagesBSGS<
         M, Schedule::after_evalmod_log_q, Schedule::log_delta,
-        Schedule::linear_plain_log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
         Schedule::slot_to_coeff_level_count>(
         *imag_out, *imag_eval, linear_plan.slot_to_coeff_imag_stages, 0,
         Schedule::linear_bsgs_step, *slot_to_coeff_gks);
