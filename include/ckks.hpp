@@ -4100,12 +4100,23 @@ struct CKKSDenseBootstrapSchedule {
         ckks_detail::bit_width_u64(
             ckks_detail::static_max_v<EvalModDegree, 2 * (EvalModK - 1)>) +
         1;
+    static constexpr std::uint32_t evalmod_polynomial_power_depth =
+        evalmod_polynomial_depth - 1;
     static constexpr std::uint32_t evalmod_inv_depth =
         EvalModInvDegree == 0
             ? 0
             : ckks_detail::bit_width_u64(EvalModInvDegree - 1) + 1;
+    static constexpr std::uint32_t evalmod_inv_power_depth =
+        evalmod_inv_depth == 0 ? 0 : evalmod_inv_depth - 1;
     static constexpr std::uint32_t evalmod_depth =
         evalmod_polynomial_depth + EvalModDoubleAngle + evalmod_inv_depth;
+    static constexpr std::uint32_t evalmod_coeff_rescale_count =
+        1 + (EvalModInvDegree == 0 ? 0 : 1);
+    static constexpr std::uint32_t evalmod_log_q_consumption =
+        (evalmod_polynomial_power_depth + EvalModDoubleAngle +
+         evalmod_inv_power_depth) *
+            LogDelta +
+        evalmod_coeff_rescale_count * EvalModLogScale;
     static constexpr double message_ratio =
         ckks_detail::exp2_double(LogMessageRatio);
     // Modulus raising already introduces key-dependent multiples of the input
@@ -4120,15 +4131,14 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr std::uint32_t after_component_split_log_q =
         after_coeff_to_slot_log_q - ComponentSplitPlainLogDelta;
     static constexpr std::uint32_t after_evalmod_log_q =
-        after_component_split_log_q - evalmod_depth * EvalModLogScale;
+        after_component_split_log_q - evalmod_log_q_consumption;
     static constexpr std::uint32_t output_log_q =
         after_evalmod_log_q - slot_to_coeff_level_count * SlotToCoeffPlainLogDelta;
 
     static_assert(input_log_q < BootLogQ);
     static_assert(BootLogQ <= ckks_detail::torus_width_v<P>);
     static_assert(after_coeff_to_slot_log_q > ComponentSplitPlainLogDelta);
-    static_assert(after_component_split_log_q >
-                  evalmod_depth * EvalModLogScale);
+    static_assert(after_component_split_log_q > evalmod_log_q_consumption);
     static_assert(output_log_q > LogDelta);
 
     using InputCiphertext = CKKSCiphertext<P, input_log_q, log_delta>;
@@ -4159,6 +4169,9 @@ using lvl6CKKSDenseBootstrapCompactSchedule =
     lvl6CKKSDenseBootstrapRobustHybridSchedule<4>;
 using lvl6CKKSDenseBootstrapSchedule =
     lvl6CKKSDenseBootstrapFastSchedule;
+using lvl6CKKSDenseBootstrapInverseSchedule =
+    CKKSDenseBootstrapSchedule<lvl6param, 40, 8, 880, 40, 5, 34, 18, 3, 5, 40,
+                               128, 0, 40, 40, 25, 5, 5, 3>;
 
 struct CKKSBoundedCosEvalModPolynomial {
     std::uint32_t k = 0;
@@ -8482,6 +8495,15 @@ using lvl6CKKSDenseBootstrapFastHybridGiantFilesystemKeyProvider =
 using lvl6CKKSDenseBootstrapCompactHybridGiantFilesystemKeyProvider =
     CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
         lvl6CKKSDenseBootstrapCompactSchedule>;
+using lvl6CKKSDenseBootstrapInverseInput =
+    typename lvl6CKKSDenseBootstrapInverseSchedule::InputCiphertext;
+using lvl6CKKSDenseBootstrapInverseOutput =
+    typename lvl6CKKSDenseBootstrapInverseSchedule::OutputCiphertext;
+using lvl6CKKSDenseBootstrapInverseHybridGiantKey =
+    CKKSDenseBootstrapHybridGiantKey<lvl6CKKSDenseBootstrapInverseSchedule>;
+using lvl6CKKSDenseBootstrapInverseHybridGiantFilesystemKeyProvider =
+    CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<
+        lvl6CKKSDenseBootstrapInverseSchedule>;
 
 inline double CKKSPlainEvalModSineDegree5(double x)
 {

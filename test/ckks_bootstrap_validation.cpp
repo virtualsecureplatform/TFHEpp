@@ -321,6 +321,101 @@ template <int HybridThreshold>
 using Lvl6RobustHybridThresholdSchedule =
     TFHEpp::lvl6CKKSDenseBootstrapRobustHybridSchedule<HybridThreshold>;
 
+using Lvl6InverseSchedule = TFHEpp::lvl6CKKSDenseBootstrapInverseSchedule;
+static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 5);
+static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
+static_assert(Lvl6InverseSchedule::output_log_q == 85);
+
+struct Lvl6InverseBudgetParams {
+    std::uint32_t log_delta = 50;
+    std::uint32_t log_message_ratio = 8;
+    std::uint32_t boot_log_q = 880;
+    std::uint32_t coeff_to_slot_plain_log_delta = 50;
+    std::uint32_t component_split_plain_log_delta = 50;
+    std::uint32_t slot_to_coeff_plain_log_delta = 25;
+    std::uint32_t coeff_to_slot_fuse_radix = 5;
+    std::uint32_t slot_to_coeff_fuse_radix = 5;
+    std::uint32_t evalmod_degree = 34;
+    std::uint32_t evalmod_k = 18;
+    std::uint32_t evalmod_double_angle = 3;
+    std::uint32_t evalmod_inv_degree = 5;
+    std::uint32_t evalmod_log_scale = 50;
+};
+
+std::uint32_t budget_ceil_div(std::uint32_t value, std::uint32_t divisor)
+{
+    return (value + divisor - 1) / divisor;
+}
+
+std::uint32_t budget_bit_width(std::uint32_t value)
+{
+    std::uint32_t width = 0;
+    while (value != 0) {
+        width++;
+        value >>= 1;
+    }
+    return width;
+}
+
+void print_lvl6_inverse_budget(const char *label,
+                               const Lvl6InverseBudgetParams &params)
+{
+    using P = TFHEpp::lvl6param;
+    const std::uint32_t raw_linear_stage_count = P::nbit - 1;
+    const std::uint32_t c2s_levels =
+        budget_ceil_div(raw_linear_stage_count,
+                        params.coeff_to_slot_fuse_radix);
+    const std::uint32_t stc_levels =
+        budget_ceil_div(raw_linear_stage_count,
+                        params.slot_to_coeff_fuse_radix);
+    const std::uint32_t evalmod_degree_bound = std::max(
+        params.evalmod_degree, 2 * (params.evalmod_k - 1));
+    const std::uint32_t polynomial_power_depth =
+        budget_bit_width(evalmod_degree_bound);
+    const std::uint32_t inverse_power_depth =
+        params.evalmod_inv_degree == 0
+            ? 0
+            : budget_bit_width(params.evalmod_inv_degree - 1);
+    const std::uint32_t coeff_rescale_count =
+        1 + (params.evalmod_inv_degree == 0 ? 0 : 1);
+    const std::int64_t input_log_q =
+        params.log_delta + params.log_message_ratio;
+    const std::int64_t after_c2s =
+        static_cast<std::int64_t>(params.boot_log_q) -
+        static_cast<std::int64_t>(c2s_levels) *
+            params.coeff_to_slot_plain_log_delta;
+    const std::int64_t after_split =
+        after_c2s - params.component_split_plain_log_delta;
+    const std::int64_t evalmod_log_q_loss =
+        static_cast<std::int64_t>(polynomial_power_depth +
+                                  params.evalmod_double_angle +
+                                  inverse_power_depth) *
+            params.log_delta +
+        static_cast<std::int64_t>(coeff_rescale_count) *
+            params.evalmod_log_scale;
+    const std::int64_t after_evalmod =
+        after_split - evalmod_log_q_loss;
+    const std::int64_t output_log_q =
+        after_evalmod -
+        static_cast<std::int64_t>(stc_levels) *
+            params.slot_to_coeff_plain_log_delta;
+    const bool fits =
+        input_log_q < params.boot_log_q &&
+        params.boot_log_q <=
+            static_cast<std::uint32_t>(
+                std::numeric_limits<typename P::T>::digits) &&
+        after_c2s > params.component_split_plain_log_delta &&
+        after_split > evalmod_log_q_loss && output_log_q > params.log_delta;
+
+    std::cout << label << " budget log_delta=" << params.log_delta
+              << " evalmod_log_scale=" << params.evalmod_log_scale
+              << " evalmod_inv_degree=" << params.evalmod_inv_degree
+              << " after_split_logQ=" << after_split
+              << " evalmod_log_q_loss=" << evalmod_log_q_loss
+              << " output_logQ=" << output_log_q
+              << " fits=" << (fits ? "yes" : "no") << '\n';
+}
+
 template <class Schedule>
 void print_schedule_report(const char *label,
                            const std::filesystem::path *key_dir = nullptr)
@@ -417,6 +512,14 @@ void print_schedule_report(const char *label,
               << Schedule::coeff_to_slot_level_count << " stc_levels="
               << Schedule::slot_to_coeff_level_count << " evalmod_depth="
               << Schedule::evalmod_depth << '\n';
+    std::cout << label << " evalmod degree/k/double_angle/inv/log_scale="
+              << Schedule::evalmod_degree << "/" << Schedule::evalmod_k << "/"
+              << Schedule::evalmod_double_angle << "/"
+              << Schedule::evalmod_inv_degree << "/"
+              << Schedule::evalmod_log_scale
+              << " log_q_loss=" << Schedule::evalmod_log_q_consumption
+              << " after_evalmod_logQ=" << Schedule::after_evalmod_log_q
+              << '\n';
     std::cout << label << " linear_plain_log_delta c2s/split/stc="
               << Schedule::coeff_to_slot_plain_log_delta << "/"
               << Schedule::component_split_plain_log_delta << "/"
@@ -492,6 +595,22 @@ void print_lvl6_robust_reports()
         "lvl6-robust-th3");
     print_schedule_report<Lvl6RobustHybridThresholdSchedule<4>>(
         "lvl6-robust-th4");
+}
+
+void print_lvl6_inverse_reports()
+{
+    Lvl6InverseBudgetParams current_with_inverse;
+    print_lvl6_inverse_budget("lvl6-inverse-current-log50",
+                              current_with_inverse);
+
+    Lvl6InverseBudgetParams selected;
+    selected.log_delta = 40;
+    selected.coeff_to_slot_plain_log_delta = 40;
+    selected.component_split_plain_log_delta = 40;
+    selected.slot_to_coeff_plain_log_delta = 25;
+    selected.evalmod_log_scale = 40;
+    print_lvl6_inverse_budget("lvl6-inverse-selected-budget", selected);
+    print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse-selected");
 }
 
 template <class Schedule>
@@ -1337,6 +1456,7 @@ void print_usage(const char *program)
               << " [--toy] [--keep] [--lvl6-sparse-key H|--lvl6-dense-key]"
                  " [--lvl6-plan] [--lvl6-keygen DIR]"
                  " [--lvl6-hybrid-thresholds-plan]"
+                 " [--lvl6-inverse-plan]"
                  " [--lvl6-keygen-next DIR] [--lvl6-run DIR]"
                  " [--lvl6-hybrid-keygen DIR]"
                  " [--lvl6-hybrid-keygen-next DIR]"
@@ -1432,6 +1552,10 @@ int main(int argc, char **argv)
         else if (arg == "--lvl6-robust-plan") {
             saw_action = true;
             print_lvl6_robust_reports();
+        }
+        else if (arg == "--lvl6-inverse-plan") {
+            saw_action = true;
+            print_lvl6_inverse_reports();
         }
         else if (arg == "--lvl6-debug-modraise") {
             saw_action = true;
