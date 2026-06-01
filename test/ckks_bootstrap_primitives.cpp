@@ -95,6 +95,76 @@ void fill_test_key(TFHEpp::Key<Param> &key)
 }
 
 template <class Param>
+bool trlwe_equal(const TFHEpp::TRLWE<Param> &lhs,
+                 const TFHEpp::TRLWE<Param> &rhs)
+{
+    for (int c = 0; c <= static_cast<int>(Param::k); c++)
+        for (std::uint32_t i = 0; i < Param::n; i++)
+            if (lhs[static_cast<std::size_t>(c)][i] !=
+                rhs[static_cast<std::size_t>(c)][i])
+                return false;
+    return true;
+}
+
+void test_seeded_key_switch_rows()
+{
+    using Param = TinyDeepMultiLimbCKKSParam;
+    constexpr std::uint32_t log_q = 95;
+    constexpr std::uint32_t row_count =
+        TFHEpp::CKKSKeySwitchRowCountForLevel<Param, log_q>();
+    static_assert(row_count > 1);
+    static_assert(TFHEpp::CKKSSeededKeySwitchRowByteSize<Param>() <
+                  TFHEpp::CKKSKeySwitchRowByteSize<Param>());
+
+    auto key = std::make_unique<TFHEpp::Key<Param>>();
+    fill_test_key<Param>(*key);
+
+    using SeededRow = TFHEpp::CKKSSeededKeySwitchRow<Param, log_q>;
+    std::array<SeededRow, row_count> seeded_rows{};
+    std::array<TFHEpp::TRLWE<Param>, row_count> expanded_rows{};
+
+    for (std::uint32_t j = 0; j < row_count; j++) {
+        TFHEpp::Polynomial<Param> gadget{};
+        for (std::uint32_t i = 0; i < Param::n; i++) {
+            const auto value = static_cast<__int128_t>((j + 3) * (i + 5)) - 41;
+            gadget[i] = TFHEpp::ckks_detail::signedToLevel<Param, log_q>(value);
+        }
+        TFHEpp::ckks_detail::encryptPolynomialAtLevel<Param, log_q>(
+            seeded_rows[j], gadget, *key, {0.0, 0});
+        TFHEpp::ckks_detail::expandSeededKeySwitchRow<Param, log_q>(
+            expanded_rows[j], seeded_rows[j]);
+
+        TFHEpp::TRLWE<Param> expanded_again{};
+        TFHEpp::ckks_detail::expandSeededKeySwitchRow<Param, log_q>(
+            expanded_again, seeded_rows[j]);
+        if (!trlwe_equal<Param>(expanded_rows[j], expanded_again)) {
+            std::cerr << "seeded key-switch row expansion is not deterministic"
+                      << std::endl;
+            std::exit(1);
+        }
+    }
+
+    TFHEpp::Polynomial<Param> input{};
+    for (std::uint32_t i = 0; i < Param::n; i++) {
+        const auto value = static_cast<__int128_t>(
+            static_cast<int>(i % 7) - 3);
+        input[i] = TFHEpp::ckks_detail::signedToLevel<Param, log_q>(value);
+    }
+
+    TFHEpp::TRLWE<Param> expanded_out{};
+    TFHEpp::TRLWE<Param> seeded_out{};
+    TFHEpp::CKKSKeySwitchRows<Param, log_q>(expanded_out, input,
+                                            expanded_rows);
+    TFHEpp::CKKSKeySwitchRows<Param, log_q>(seeded_out, input, seeded_rows);
+    if (!trlwe_equal<Param>(expanded_out, seeded_out)) {
+        std::cerr << "seeded key-switch rows differ from expanded rows"
+                  << std::endl;
+        std::exit(1);
+    }
+    std::cout << "CKKS seeded key-switch rows match expanded rows" << std::endl;
+}
+
+template <class Param>
 double max_error(const TFHEpp::CKKSSlotVector<Param> &got,
                  const TFHEpp::CKKSSlotVector<Param> &want)
 {
@@ -2448,6 +2518,7 @@ void test_bounded_cos_evalmod_inverse_homomorphic()
 
 int main()
 {
+    test_seeded_key_switch_rows();
     test_dense_coeff_slot_diagonals();
     test_factorized_coeff_slot_stages();
     test_lvl6_factorized_stage_shape();

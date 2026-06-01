@@ -148,6 +148,42 @@ struct CKKSAutoKey {
 template <class P, std::uint32_t LogQ>
 using CKKSGaloisKey = std::array<CKKSAutoKey<P, LogQ>, P::nbit + 1>;
 
+using CKKSSeed = std::array<std::uint64_t, 4>;
+
+template <class P, std::uint32_t LogQ>
+struct CKKSSeededKeySwitchRow {
+    static_assert(std::is_same_v<typename P::T, __uint128_t> ||
+                  is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+
+    static constexpr std::uint32_t log_q = LogQ;
+
+    std::array<CKKSSeed, P::k> mask_seeds{};
+    Polynomial<P> body{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(mask_seeds, body);
+    }
+};
+
+namespace ckks_detail {
+
+template <class T>
+struct is_seeded_key_switch_row_array : std::false_type {};
+
+template <class P, std::uint32_t LogQ, std::size_t N>
+struct is_seeded_key_switch_row_array<
+    std::array<CKKSSeededKeySwitchRow<P, LogQ>, N>> : std::true_type {};
+
+template <class T>
+inline constexpr bool is_seeded_key_switch_row_array_v =
+    is_seeded_key_switch_row_array<std::remove_cvref_t<T>>::value;
+
+}  // namespace ckks_detail
+
 template <class P, std::uint32_t LogQ>
 using CKKSSecretKeySwitchKey = CKKSAutoKey<P, LogQ>;
 
@@ -179,6 +215,12 @@ template <class P>
 constexpr std::size_t CKKSKeySwitchRowByteSize()
 {
     return sizeof(TRLWE<P>);
+}
+
+template <class P>
+constexpr std::size_t CKKSSeededKeySwitchRowByteSize()
+{
+    return sizeof(Polynomial<P>) + P::k * sizeof(CKKSSeed);
 }
 
 template <class P, std::uint32_t LogQ>
@@ -566,6 +608,38 @@ inline constexpr bool supported_torus_v =
     std::is_same_v<typename P::T, __uint128_t> ||
     is_multilimb_uint_v<typename P::T>;
 
+inline std::uint64_t splitmix64Scramble(std::uint64_t x)
+{
+    x = (x ^ (x >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
+    x = (x ^ (x >> 27)) * UINT64_C(0x94d049bb133111eb);
+    return x ^ (x >> 31);
+}
+
+struct CKKSSeedStream {
+    std::uint64_t state = UINT64_C(0x6a09e667f3bcc909);
+
+    explicit CKKSSeedStream(const CKKSSeed &seed)
+    {
+        for (std::uint64_t limb : seed)
+            state = splitmix64Scramble(state ^ limb);
+    }
+
+    std::uint64_t next()
+    {
+        state += UINT64_C(0x9e3779b97f4a7c15);
+        return splitmix64Scramble(state);
+    }
+};
+
+inline CKKSSeed randomSeed()
+{
+    std::uniform_int_distribution<std::uint64_t> dist64(
+        0, std::numeric_limits<std::uint64_t>::max());
+    CKKSSeed seed{};
+    for (auto &word : seed) word = dist64(generator);
+    return seed;
+}
+
 template <class P>
 inline __int128_t unsignedToI128(typename P::T value)
 {
@@ -719,6 +793,29 @@ inline typename P::T uniformAtLevel()
         }
         return reduceToLevel<P, LogQ>(value);
     }
+}
+
+template <class P, std::uint32_t LogQ>
+inline typename P::T seededUniformAtLevel(CKKSSeedStream &stream)
+{
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= torus_width_v<P>);
+    typename P::T value = 0;
+    std::uint32_t generated = 0;
+    while (generated < LogQ) {
+        value |= static_cast<typename P::T>(stream.next()) << generated;
+        generated += 64;
+    }
+    return reduceToLevel<P, LogQ>(value);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void fillSeededUniformPolynomialAtLevel(Polynomial<P> &poly,
+                                               const CKKSSeed &seed)
+{
+    CKKSSeedStream stream(seed);
+    for (std::uint32_t i = 0; i < P::n; i++)
+        poly[i] = seededUniformAtLevel<P, LogQ>(stream);
 }
 
 inline __int128_t randomSignedBits(std::uint32_t bits)
@@ -1066,6 +1163,51 @@ inline void encryptPolynomialAtLevel(TRLWE<P> &ct, const Polynomial<P> &poly,
         for (std::uint32_t i = 0; i < P::n; i++)
             ct[P::k][i] =
                 reduceToLevel<P, LogQ>(ct[P::k][i] + (*mask_phase)[i]);
+    }
+}
+
+template <class P, std::uint32_t LogQ>
+inline void expandSeededKeySwitchRow(
+    TRLWE<P> &ct, const CKKSSeededKeySwitchRow<P, LogQ> &row)
+{
+    static_assert(supported_torus_v<P>);
+    for (int k = 0; k < static_cast<int>(P::k); k++)
+        fillSeededUniformPolynomialAtLevel<P, LogQ>(
+            ct[static_cast<std::size_t>(k)],
+            row.mask_seeds[static_cast<std::size_t>(k)]);
+    ct[P::k] = row.body;
+}
+
+template <class P, std::uint32_t LogQ>
+inline void encryptPolynomialAtLevel(CKKSSeededKeySwitchRow<P, LogQ> &row,
+                                     const Polynomial<P> &poly,
+                                     const Key<P> &key,
+                                     CKKSNoise noise = {P::α, 0})
+{
+    static_assert(supported_torus_v<P>);
+
+    for (std::uint32_t i = 0; i < P::n; i++)
+        row.body[i] =
+            reduceToLevel<P, LogQ>(poly[i] + sampleNoise<P, LogQ>(noise));
+
+    auto partkey = std::make_unique<Polynomial<P>>();
+    auto mask = std::make_unique<Polynomial<P>>();
+    auto mask_phase = std::make_unique<Polynomial<P>>();
+    for (int k = 0; k < static_cast<int>(P::k); k++) {
+        row.mask_seeds[static_cast<std::size_t>(k)] = randomSeed();
+        fillSeededUniformPolynomialAtLevel<P, LogQ>(
+            *mask, row.mask_seeds[static_cast<std::size_t>(k)]);
+
+        for (std::uint32_t i = 0; i < P::n; i++)
+            (*partkey)[i] = key[k * P::n + i];
+
+        if constexpr (is_multilimb_uint_v<typename P::T>)
+            PolyMulTorusByDigit<P>(*mask_phase, *mask, *partkey);
+        else
+            PolyMul<P>(*mask_phase, *mask, *partkey);
+        for (std::uint32_t i = 0; i < P::n; i++)
+            row.body[i] =
+                reduceToLevel<P, LogQ>(row.body[i] + (*mask_phase)[i]);
     }
 }
 
@@ -1621,6 +1763,7 @@ inline void CKKSSubPlainRealInPlace(CKKSCiphertext<P, LogQ, LogDelta> &acc,
 }
 
 template <class P, std::uint32_t LogQ, class Rows>
+    requires(!ckks_detail::is_seeded_key_switch_row_array_v<Rows>)
 inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
                               const Rows &rows)
 {
@@ -1656,6 +1799,53 @@ inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
                     ckks_detail::reduceToLevel<P, LogQ>(res[c][n] +
                                                         (*product)[n]);
         }
+    }
+}
+
+template <class P, std::uint32_t LogQ, std::size_t RowCount>
+inline void CKKSKeySwitchRows(
+    TRLWE<P> &res, const Polynomial<P> &poly,
+    const std::array<CKKSSeededKeySwitchRow<P, LogQ>, RowCount> &rows)
+{
+    static_assert(ckks_detail::supported_torus_v<P>);
+    static_assert(P::l̅ * P::B̅gbit ==
+                      std::numeric_limits<typename P::T>::digits,
+                  "CKKS key switching requires full Bbar decomposition");
+    constexpr std::uint32_t row_count =
+        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    constexpr std::uint32_t first_row =
+        CKKSKeySwitchFirstRowForLevel<P, LogQ>();
+    static_assert(RowCount == row_count);
+
+    auto centered = std::make_unique<Polynomial<P>>();
+    ckks_detail::centeredPolynomialAtLevel<P, LogQ>(*centered, poly);
+
+    auto decomposed = std::make_unique<std::array<Polynomial<P>, row_count>>();
+    ckks_detail::baseBbarDecomposePolynomialRows<P, first_row>(*decomposed,
+                                                               *centered);
+
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
+
+    auto mask = std::make_unique<Polynomial<P>>();
+    auto product = std::make_unique<Polynomial<P>>();
+    for (int j = 0; j < static_cast<int>(row_count); j++) {
+        const Polynomial<P> &digit = (*decomposed)[j];
+        const auto &row = rows[static_cast<std::size_t>(j)];
+        for (int c = 0; c < static_cast<int>(P::k); c++) {
+            ckks_detail::fillSeededUniformPolynomialAtLevel<P, LogQ>(
+                *mask, row.mask_seeds[static_cast<std::size_t>(c)]);
+            ckks_detail::polyMulTorusByBbarDigit<P>(*product, *mask, digit);
+            for (std::uint32_t n = 0; n < P::n; n++)
+                res[c][n] =
+                    ckks_detail::reduceToLevel<P, LogQ>(res[c][n] +
+                                                        (*product)[n]);
+        }
+        ckks_detail::polyMulTorusByBbarDigit<P>(*product, row.body, digit);
+        for (std::uint32_t n = 0; n < P::n; n++)
+            res[P::k][n] =
+                ckks_detail::reduceToLevel<P, LogQ>(res[P::k][n] +
+                                                    (*product)[n]);
     }
 }
 
@@ -6435,12 +6625,30 @@ inline std::size_t CKKSDenseBootstrapSparseKeyByteEstimate(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapSparseSeededKeyByteEstimate(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapSparseKeySwitchRowCount<Schedule>(usage) *
+           CKKSSeededKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapDirectKeyByteEstimate(
     const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
 {
     using P = typename Schedule::Param;
     return CKKSDenseBootstrapDirectKeySwitchRowCount<Schedule>(usage) *
            CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectSeededKeyByteEstimate(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapDirectKeySwitchRowCount<Schedule>(usage) *
+           CKKSSeededKeySwitchRowByteSize<P>();
 }
 
 template <class Schedule>
@@ -6453,12 +6661,30 @@ inline std::size_t CKKSDenseBootstrapHybridGiantKeyByteEstimate(
 }
 
 template <class Schedule>
+inline std::size_t CKKSDenseBootstrapHybridGiantSeededKeyByteEstimate(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapHybridGiantKeySwitchRowCount<Schedule>(usage) *
+           CKKSSeededKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapStreamedPeakKeyByteEstimate(
     const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
 {
     using P = typename Schedule::Param;
     return CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(usage) *
            CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapStreamedPeakSeededKeyByteEstimate(
+    const CKKSDenseBootstrapRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(usage) *
+           CKKSSeededKeySwitchRowByteSize<P>();
 }
 
 template <class Schedule>
@@ -6472,6 +6698,17 @@ inline std::size_t CKKSDenseBootstrapHybridGiantStreamedPeakKeyByteEstimate(
 }
 
 template <class Schedule>
+inline std::size_t
+CKKSDenseBootstrapHybridGiantStreamedPeakSeededKeyByteEstimate(
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapHybridGiantStreamedKeySwitchPeakRowCount<
+               Schedule>(usage) *
+           CKKSSeededKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
 inline std::size_t CKKSDenseBootstrapDirectStreamedPeakKeyByteEstimate(
     const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
 {
@@ -6479,6 +6716,16 @@ inline std::size_t CKKSDenseBootstrapDirectStreamedPeakKeyByteEstimate(
     return CKKSDenseBootstrapDirectStreamedKeySwitchPeakRowCount<Schedule>(
                usage) *
            CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+inline std::size_t CKKSDenseBootstrapDirectStreamedPeakSeededKeyByteEstimate(
+    const CKKSDenseBootstrapDirectRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapDirectStreamedKeySwitchPeakRowCount<Schedule>(
+               usage) *
+           CKKSSeededKeySwitchRowByteSize<P>();
 }
 
 template <class Schedule>
@@ -6490,11 +6737,27 @@ constexpr std::size_t CKKSDenseBootstrapFullKeyByteEstimate()
 }
 
 template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapFullSeededKeyByteEstimate()
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>() *
+           CKKSSeededKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
 constexpr std::size_t CKKSDenseBootstrapEncapsulationKeyByteEstimate()
 {
     using P = typename Schedule::Param;
     return CKKSDenseBootstrapEncapsulationKeySwitchRowCount<Schedule>() *
            CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class Schedule>
+constexpr std::size_t CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate()
+{
+    using P = typename Schedule::Param;
+    return CKKSDenseBootstrapEncapsulationKeySwitchRowCount<Schedule>() *
+           CKKSSeededKeySwitchRowByteSize<P>();
 }
 
 template <class Schedule>

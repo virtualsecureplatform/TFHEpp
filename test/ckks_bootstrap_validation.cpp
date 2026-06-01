@@ -836,11 +836,16 @@ void print_schedule_report(const char *label,
         TFHEpp::CKKSDenseBootstrapSparseKeySwitchRowCount<Schedule>(usage);
     const std::size_t sparse_bytes =
         TFHEpp::CKKSDenseBootstrapSparseKeyByteEstimate<Schedule>(usage);
+    const std::size_t sparse_seeded_bytes =
+        TFHEpp::CKKSDenseBootstrapSparseSeededKeyByteEstimate<Schedule>(usage);
     const std::size_t streamed_peak_rows =
         TFHEpp::CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(
             usage);
     const std::size_t streamed_peak_bytes =
         TFHEpp::CKKSDenseBootstrapStreamedPeakKeyByteEstimate<Schedule>(
+            usage);
+    const std::size_t streamed_peak_seeded_bytes =
+        TFHEpp::CKKSDenseBootstrapStreamedPeakSeededKeyByteEstimate<Schedule>(
             usage);
     const std::size_t direct_rows =
         TFHEpp::CKKSDenseBootstrapDirectKeySwitchRowCount<Schedule>(
@@ -848,17 +853,27 @@ void print_schedule_report(const char *label,
     const std::size_t direct_bytes =
         TFHEpp::CKKSDenseBootstrapDirectKeyByteEstimate<Schedule>(
             direct_usage);
+    const std::size_t direct_seeded_bytes =
+        TFHEpp::CKKSDenseBootstrapDirectSeededKeyByteEstimate<Schedule>(
+            direct_usage);
     const std::size_t direct_streamed_peak_rows =
         TFHEpp::CKKSDenseBootstrapDirectStreamedKeySwitchPeakRowCount<
             Schedule>(direct_usage);
     const std::size_t direct_streamed_peak_bytes =
         TFHEpp::CKKSDenseBootstrapDirectStreamedPeakKeyByteEstimate<Schedule>(
             direct_usage);
+    const std::size_t direct_streamed_peak_seeded_bytes =
+        TFHEpp::
+            CKKSDenseBootstrapDirectStreamedPeakSeededKeyByteEstimate<Schedule>(
+                direct_usage);
     const std::size_t hybrid_rows =
         TFHEpp::CKKSDenseBootstrapHybridGiantKeySwitchRowCount<Schedule>(
             hybrid_usage);
     const std::size_t hybrid_bytes =
         TFHEpp::CKKSDenseBootstrapHybridGiantKeyByteEstimate<Schedule>(
+            hybrid_usage);
+    const std::size_t hybrid_seeded_bytes =
+        TFHEpp::CKKSDenseBootstrapHybridGiantSeededKeyByteEstimate<Schedule>(
             hybrid_usage);
     const std::size_t hybrid_streamed_peak_rows =
         TFHEpp::CKKSDenseBootstrapHybridGiantStreamedKeySwitchPeakRowCount<
@@ -867,6 +882,10 @@ void print_schedule_report(const char *label,
         TFHEpp::
             CKKSDenseBootstrapHybridGiantStreamedPeakKeyByteEstimate<Schedule>(
                 hybrid_usage);
+    const std::size_t hybrid_streamed_peak_seeded_bytes =
+        TFHEpp::
+            CKKSDenseBootstrapHybridGiantStreamedPeakSeededKeyByteEstimate<
+                Schedule>(hybrid_usage);
     const std::size_t c2s_current_evalautos =
         TFHEpp::CKKSLinearTransformStagesRotationEvalAutoCount<P>(
             linear_plan.coeff_to_slot_stages, 0,
@@ -974,11 +993,25 @@ void print_schedule_report(const char *label,
               << " full_key_bytes="
               << TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>()
               << '\n';
+    std::cout << label << " seeded_sparse_key_bytes=" << sparse_seeded_bytes
+              << " seeded_streamed_peak_bytes=" << streamed_peak_seeded_bytes
+              << " seeded_direct_key_bytes=" << direct_seeded_bytes
+              << " seeded_direct_streamed_peak_bytes="
+              << direct_streamed_peak_seeded_bytes
+              << " seeded_hybrid_key_bytes=" << hybrid_seeded_bytes
+              << " seeded_hybrid_streamed_peak_bytes="
+              << hybrid_streamed_peak_seeded_bytes
+              << " seeded_full_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapFullSeededKeyByteEstimate<Schedule>()
+              << '\n';
     std::cout << label << " encapsulation_key_rows="
               << TFHEpp::CKKSDenseBootstrapEncapsulationKeySwitchRowCount<
                      Schedule>()
               << " encapsulation_key_bytes="
               << TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<
+                     Schedule>()
+              << " seeded_encapsulation_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
                      Schedule>()
               << '\n';
     print_evalmod_approximation_report<Schedule>(label);
