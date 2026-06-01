@@ -922,12 +922,14 @@ int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
     for (std::size_t i = 0; i < P::n / 2; i++) {
         (*expected_real_eval)[i] =
             {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
-                 poly, (*expected_real)[i].real()) /
+                 poly, (*expected_real)[i].real(),
+                 Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
         (*expected_imag_eval)[i] =
             {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
-                 poly, (*expected_imag)[i].real()) /
+                 poly, (*expected_imag)[i].real(),
+                 Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
     }
@@ -1083,8 +1085,8 @@ int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
              Schedule::message_ratio);
         (*slots)[i] = {normalized, 0.0};
         (*expected)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(poly,
-                                                               normalized) /
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                 poly, normalized, Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
     }
@@ -1191,12 +1193,14 @@ int run_key_provider_stc_diagnostics(const std::filesystem::path &key_dir,
     for (std::size_t i = 0; i < P::n / 2; i++) {
         (*real_eval)[i] =
             {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
-                 poly, (*coeff_to_slot)[i].real()) /
+                 poly, (*coeff_to_slot)[i].real(),
+                 Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
         (*imag_eval)[i] =
             {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
-                 poly, (*coeff_to_slot)[i].imag()) /
+                 poly, (*coeff_to_slot)[i].imag(),
+                 Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
     }
@@ -1317,17 +1321,17 @@ int check_manifest_mismatch_rejected(const std::filesystem::path &key_dir)
     return 0;
 }
 
-int run_toy_validation(bool keep_dir)
+template <class Schedule>
+int run_toy_schedule_validation(bool keep_dir, const char *label,
+                                const char *directory_name, double tol)
 {
-    using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
-        TinyDeepMultiLimbCKKSParam, 40, 8, 560, 40, 3, 31, 4, 2, 0, 40, 2>;
+    using P = typename Schedule::Param;
     const std::filesystem::path key_dir =
-        std::filesystem::temp_directory_path() /
-        "tfhepp_ckks_bootstrap_validation_toy";
+        std::filesystem::temp_directory_path() / directory_name;
     std::filesystem::remove_all(key_dir);
 
-    auto key = std::make_unique<TFHEpp::Key<TinyDeepMultiLimbCKKSParam>>();
-    fill_test_key<TinyDeepMultiLimbCKKSParam>(*key);
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_test_key<P>(*key);
 
     std::size_t generated_slices = 0;
     const double keygen_ms = elapsed_ms([&] {
@@ -1341,14 +1345,32 @@ int run_toy_validation(bool keep_dir)
     TFHEpp::CKKSDenseBootstrapKeyGenToDirectory<Schedule>(
         key_dir, *key, {0.0, 0}, resume_options);
 
-    print_schedule_report<Schedule>("toy", &key_dir);
-    std::cout << "toy keygen_ms=" << keygen_ms << '\n';
-    std::cout << "toy keygen_slices=" << generated_slices << '\n';
+    print_schedule_report<Schedule>(label, &key_dir);
+    std::cout << label << " keygen_ms=" << keygen_ms << '\n';
+    std::cout << label << " keygen_slices=" << generated_slices << '\n';
     if (check_manifest_mismatch_rejected<Schedule>(key_dir) != 0) return 1;
-    const int result = run_filesystem_bootstrap<Schedule>(key_dir, 0.02);
+    const int result = run_filesystem_bootstrap<Schedule>(key_dir, tol);
 
     if (!keep_dir) std::filesystem::remove_all(key_dir);
     return result;
+}
+
+int run_toy_validation(bool keep_dir)
+{
+    using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
+        TinyDeepMultiLimbCKKSParam, 40, 8, 560, 40, 3, 31, 4, 2, 0, 40, 2>;
+    return run_toy_schedule_validation<Schedule>(
+        keep_dir, "toy", "tfhepp_ckks_bootstrap_validation_toy", 0.02);
+}
+
+int run_toy_inverse_validation(bool keep_dir)
+{
+    using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
+        TinyDeepMultiLimbCKKSParam, 30, 8, 560, 30, 3, 31, 4, 2, 5, 30, 2>;
+    static_assert(Schedule::evalmod_inv_degree == 5);
+    return run_toy_schedule_validation<Schedule>(
+        keep_dir, "toy-inverse",
+        "tfhepp_ckks_bootstrap_validation_toy_inverse", 0.02);
 }
 
 template <class Schedule>
@@ -1453,10 +1475,18 @@ int run_hybrid_keygen(const std::filesystem::path &key_dir, bool resume,
 void print_usage(const char *program)
 {
     std::cerr << "Usage: " << program
-              << " [--toy] [--keep] [--lvl6-sparse-key H|--lvl6-dense-key]"
+              << " [--toy] [--toy-inverse] [--keep]"
+                 " [--lvl6-sparse-key H|--lvl6-dense-key]"
                  " [--lvl6-plan] [--lvl6-keygen DIR]"
                  " [--lvl6-hybrid-thresholds-plan]"
                  " [--lvl6-inverse-plan]"
+                 " [--lvl6-inverse-hybrid-keygen DIR]"
+                 " [--lvl6-inverse-hybrid-keygen-next DIR]"
+                 " [--lvl6-inverse-hybrid-run DIR]"
+                 " [--lvl6-inverse-hybrid-debug-c2s DIR]"
+                 " [--lvl6-inverse-hybrid-debug-evalmod DIR]"
+                 " [--lvl6-inverse-hybrid-debug-stc DIR]"
+                 " [--lvl6-inverse-hybrid-debug DIR]"
                  " [--lvl6-keygen-next DIR] [--lvl6-run DIR]"
                  " [--lvl6-hybrid-keygen DIR]"
                  " [--lvl6-hybrid-keygen-next DIR]"
@@ -1541,6 +1571,10 @@ int main(int argc, char **argv)
             saw_action = true;
             if (run_toy_validation(keep) != 0) return 1;
         }
+        else if (arg == "--toy-inverse") {
+            saw_action = true;
+            if (run_toy_inverse_validation(keep) != 0) return 1;
+        }
         else if (arg == "--lvl6-plan") {
             saw_action = true;
             print_schedule_report<Lvl6Schedule>("lvl6");
@@ -1581,6 +1615,13 @@ int main(int argc, char **argv)
                  arg == "--lvl6-hybrid-keygen" ||
                  arg == "--lvl6-hybrid-keygen-next" ||
                  arg == "--lvl6-hybrid-run" ||
+                 arg == "--lvl6-inverse-hybrid-keygen" ||
+                 arg == "--lvl6-inverse-hybrid-keygen-next" ||
+                 arg == "--lvl6-inverse-hybrid-run" ||
+                 arg == "--lvl6-inverse-hybrid-debug-c2s" ||
+                 arg == "--lvl6-inverse-hybrid-debug-evalmod" ||
+                 arg == "--lvl6-inverse-hybrid-debug-stc" ||
+                 arg == "--lvl6-inverse-hybrid-debug" ||
                  arg == "--lvl6-fast-hybrid-keygen" ||
                  arg == "--lvl6-fast-hybrid-keygen-next" ||
                  arg == "--lvl6-fast-hybrid-run" ||
@@ -1651,6 +1692,55 @@ int main(int argc, char **argv)
                 print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
                 if (run_hybrid_filesystem_bootstrap<Lvl6Schedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-keygen") {
+                if (run_hybrid_keygen<Lvl6InverseSchedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-keygen-next") {
+                if (run_hybrid_keygen_next<Lvl6InverseSchedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-run") {
+                print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse",
+                                                           &key_dir);
+                if (run_hybrid_filesystem_bootstrap<Lvl6InverseSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-debug-c2s") {
+                print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse",
+                                                           &key_dir);
+                if (run_hybrid_filesystem_bootstrap_diagnostics<
+                        Lvl6InverseSchedule>(
+                        key_dir, false, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-debug-evalmod") {
+                print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse",
+                                                           &key_dir);
+                if (run_hybrid_filesystem_evalmod_diagnostics<
+                        Lvl6InverseSchedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-debug-stc") {
+                print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse",
+                                                           &key_dir);
+                if (run_hybrid_filesystem_stc_diagnostics<
+                        Lvl6InverseSchedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-debug") {
+                print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse",
+                                                           &key_dir);
+                if (run_hybrid_filesystem_bootstrap_diagnostics<
+                        Lvl6InverseSchedule>(
+                        key_dir, true, lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg == "--lvl6-fast-hybrid-keygen" ||
