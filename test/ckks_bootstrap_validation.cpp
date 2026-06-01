@@ -1183,15 +1183,22 @@ int run_hybrid_filesystem_encapsulated_bootstrap(
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
     fill_test_key<P>(*external_key);
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
+    const std::filesystem::path external_eval_key_dir =
+        key_dir / "external_eval_key";
+    const std::filesystem::path encapsulation_key_file =
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyFile(external_eval_key_dir);
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
+    eval_key_options.overwrite_existing = false;
     std::cout << "external_key=dense\n";
     std::cout << "bootstrap_key_sparse_weight=" << bootstrap_sparse_weight
               << '\n';
+    std::cout << "external_eval_key_dir="
+              << external_eval_key_dir.string() << '\n';
 
-    auto encapsulation_key =
-        std::make_unique<TFHEpp::CKKSDenseBootstrapEncapsulationKey<Schedule>>();
     const double encap_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGen<Schedule>(
-            *encapsulation_key, *external_key, *bootstrap_key, {P::α, 0});
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
+            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
+            eval_key_options);
     });
 
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -1204,13 +1211,11 @@ int run_hybrid_filesystem_encapsulated_bootstrap(
                                                      *external_key);
     });
 
-    TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>
-        provider(key_dir);
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
     const double bootstrap_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<
-            Schedule>(*output, *input, provider, *encapsulation_key,
+        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed<
+            Schedule>(*output, *input, key_dir, encapsulation_key_file,
                       bootstrap_timings);
     });
 
@@ -1222,6 +1227,13 @@ int run_hybrid_filesystem_encapsulated_bootstrap(
     });
     const double err = max_error<P>(*decoded, *slots);
     std::cout << "encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
+    std::cout << "encapsulation_key_file=" << encapsulation_key_file.string()
+              << " encapsulation_key_bytes="
+              << std::filesystem::file_size(encapsulation_key_file)
+              << " estimated_encapsulation_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<
+                     Schedule>()
+              << '\n';
     std::cout << "encrypt_ms=" << encrypt_ms << '\n';
     std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
     print_bootstrap_timings(bootstrap_timings);
@@ -1261,18 +1273,27 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
     fill_test_key<P>(*external_key);
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
+    const std::filesystem::path external_eval_key_dir =
+        key_dir / "external_eval_key";
+    const std::filesystem::path encapsulation_key_file =
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyFile(external_eval_key_dir);
+    const std::filesystem::path relin_key_file =
+        TFHEpp::CKKSRelinKeyFile(external_eval_key_dir, "product_relin_key");
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
+    eval_key_options.overwrite_existing = false;
     std::cout << "external_key=dense\n";
     std::cout << "bootstrap_key_sparse_weight=" << bootstrap_sparse_weight
               << '\n';
+    std::cout << "external_eval_key_dir="
+              << external_eval_key_dir.string() << '\n';
     std::cout << "product_fresh_logQ=" << FreshCt::log_q
               << " product_logQ=" << ProductCt::log_q
               << " normalized_logQ=" << Schedule::input_log_q << '\n';
 
-    auto encapsulation_key =
-        std::make_unique<TFHEpp::CKKSDenseBootstrapEncapsulationKey<Schedule>>();
     const double encap_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGen<Schedule>(
-            *encapsulation_key, *external_key, *bootstrap_key, {P::α, 0});
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
+            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
+            eval_key_options);
     });
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -1291,20 +1312,21 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
             *rhs_ct, *rhs, *external_key);
     });
 
-    auto relin = TFHEpp::makeCKKSRelinKey<P, ProductCt::log_q>(*external_key,
-                                                               {P::α, 0});
+    const double relin_keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSRelinKeyGenToFile<P, ProductCt::log_q>(
+            relin_key_file, *external_key, {P::α, 0}, eval_key_options);
+    });
     auto product = std::make_unique<ProductCt>();
     const double multiply_ms = elapsed_ms([&] {
-        TFHEpp::CKKSMult<P>(*product, *lhs_ct, *rhs_ct, *relin);
+        TFHEpp::CKKSMultWithRelinKeyFile<P>(*product, *lhs_ct, *rhs_ct,
+                                             relin_key_file);
     });
 
-    TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>
-        provider(key_dir);
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
     const double bootstrap_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<
-            Schedule>(*output, *product, provider, *encapsulation_key,
+        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed<
+            Schedule>(*output, *product, key_dir, encapsulation_key_file,
                       bootstrap_timings);
     });
 
@@ -1316,6 +1338,20 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
     });
     const double err = max_error<P>(*decoded, *expected);
     std::cout << "encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
+    std::cout << "encapsulation_key_file=" << encapsulation_key_file.string()
+              << " encapsulation_key_bytes="
+              << std::filesystem::file_size(encapsulation_key_file)
+              << " estimated_encapsulation_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<
+                     Schedule>()
+              << '\n';
+    std::cout << "relin_keygen_ms=" << relin_keygen_ms << '\n';
+    std::cout << "relin_key_file=" << relin_key_file.string()
+              << " relin_key_bytes="
+              << std::filesystem::file_size(relin_key_file)
+              << " estimated_relin_key_bytes="
+              << TFHEpp::CKKSRelinKeyByteEstimate<P, ProductCt::log_q>()
+              << '\n';
     std::cout << "encrypt_ms=" << encrypt_ms << '\n';
     std::cout << "multiply_ms=" << multiply_ms << '\n';
     std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
