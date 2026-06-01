@@ -1754,57 +1754,59 @@ inline void CKKSEvalAuto(TRLWE<P> &res, const TRLWE<P> &trlwe, const int d,
     }
 }
 
-template <class P, std::uint32_t LogQ>
-inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
-                            const CKKSGaloisKey<P, LogQ> &gk)
+namespace ckks_detail {
+
+template <class P, std::uint32_t LogQ, class KeyForBit>
+inline void CKKSRotateSlotsBinaryChain(TRLWE<P> &res, const TRLWE<P> &ct,
+                                       int steps, KeyForBit &&key_for_bit)
 {
     constexpr int half = static_cast<int>(P::n) / 2;
     steps = ((steps % half) + half) % half;
     if (steps == 0) {
         res = ct;
-        ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+        reduceTRLWEToLevel<P, LogQ>(res);
         return;
     }
 
+    auto first = std::make_unique<TRLWE<P>>();
+    auto second = std::make_unique<TRLWE<P>>();
+    const TRLWE<P> *cur = &ct;
+    TRLWE<P> *next = first.get();
+
     std::uint64_t d = 5;
-    auto cur = std::make_unique<TRLWE<P>>(ct);
-    auto tmp = std::make_unique<TRLWE<P>>();
     for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++) {
         if ((steps >> i) & 1) {
-            CKKSEvalAuto<P, LogQ>(*tmp, *cur, static_cast<int>(d), gk[i]);
-            *cur = *tmp;
+            CKKSEvalAuto<P, LogQ>(
+                *next, *cur, static_cast<int>(d),
+                key_for_bit(static_cast<std::size_t>(i)));
+            cur = next;
+            next = next == first.get() ? second.get() : first.get();
         }
         d = d * d % (2 * P::n);
     }
     res = *cur;
-    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+    reduceTRLWEToLevel<P, LogQ>(res);
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
+                            const CKKSGaloisKey<P, LogQ> &gk)
+{
+    ckks_detail::CKKSRotateSlotsBinaryChain<P, LogQ>(
+        res, ct, steps,
+        [&](std::size_t i) -> const CKKSAutoKey<P, LogQ> & { return gk[i]; });
 }
 
 template <class P, std::uint32_t LogQ>
 inline void CKKSRotateSlots(TRLWE<P> &res, const TRLWE<P> &ct, int steps,
                             const CKKSSparseGaloisKey<P, LogQ> &gk)
 {
-    constexpr int half = static_cast<int>(P::n) / 2;
-    steps = ((steps % half) + half) % half;
-    if (steps == 0) {
-        res = ct;
-        ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
-        return;
-    }
-
-    std::uint64_t d = 5;
-    auto cur = std::make_unique<TRLWE<P>>(ct);
-    auto tmp = std::make_unique<TRLWE<P>>();
-    for (int i = 0; i < static_cast<int>(P::nbit) - 1; i++) {
-        if ((steps >> i) & 1) {
-            CKKSEvalAuto<P, LogQ>(*tmp, *cur, static_cast<int>(d),
-                                  gk.get(static_cast<std::size_t>(i)));
-            *cur = *tmp;
-        }
-        d = d * d % (2 * P::n);
-    }
-    res = *cur;
-    ckks_detail::reduceTRLWEToLevel<P, LogQ>(res);
+    ckks_detail::CKKSRotateSlotsBinaryChain<P, LogQ>(
+        res, ct, steps, [&](std::size_t i) -> const CKKSAutoKey<P, LogQ> & {
+            return gk.get(i);
+        });
 }
 
 template <class P, std::uint32_t LogQ>
