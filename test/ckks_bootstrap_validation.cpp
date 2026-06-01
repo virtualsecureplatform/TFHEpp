@@ -515,6 +515,13 @@ using Lvl6InverseSchedule = TFHEpp::lvl6CKKSDenseBootstrapInverseSchedule;
 static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
 static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
+using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
+static_assert(Lvl6TunedSchedule::log_delta == 36);
+static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
+static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 540);
+static_assert(Lvl6TunedSchedule::output_log_q == 121);
+static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
+static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 41);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;
@@ -2647,6 +2654,16 @@ void print_usage(const char *program)
                  " [--lvl6-hybrid-run DIR]"
                  " [--lvl6-hybrid-run-product-encap DIR]"
                  " [--lvl6-robust-plan]"
+                 " [--lvl6-tuned-plan]"
+                 " [--lvl6-tuned-hybrid-keygen DIR]"
+                 " [--lvl6-tuned-hybrid-keygen-next DIR]"
+                 " [--lvl6-tuned-hybrid-run DIR]"
+                 " [--lvl6-tuned-hybrid-run-product-encap DIR]"
+                 " [--lvl6-tuned-hybrid-run-chained-product-encap DIR]"
+                 " [--lvl6-tuned-hybrid-debug-c2s DIR]"
+                 " [--lvl6-tuned-hybrid-debug-evalmod DIR]"
+                 " [--lvl6-tuned-hybrid-debug-stc DIR]"
+                 " [--lvl6-tuned-hybrid-debug DIR]"
                  " [--lvl6-fast-hybrid-keygen DIR]"
                  " [--lvl6-fast-hybrid-keygen-next DIR]"
                  " [--lvl6-fast-hybrid-run DIR]"
@@ -2707,6 +2724,8 @@ int main(int argc, char **argv)
     static_assert(default_lvl6_sparse_weight == 16);
     static_assert(Lvl6InverseSchedule::bounded_sparse_secret_key_weight ==
                   default_lvl6_sparse_weight);
+    static_assert(Lvl6TunedSchedule::bounded_sparse_secret_key_weight ==
+                  default_lvl6_sparse_weight);
 
     bool saw_action = false;
     bool keep = false;
@@ -2752,6 +2771,10 @@ int main(int argc, char **argv)
         else if (arg == "--lvl6-robust-plan") {
             saw_action = true;
             print_lvl6_robust_reports();
+        }
+        else if (arg == "--lvl6-tuned-plan") {
+            saw_action = true;
+            print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
         }
         else if (arg == "--lvl6-inverse-plan") {
             saw_action = true;
@@ -2815,6 +2838,15 @@ int main(int argc, char **argv)
                  arg == "--lvl6-inverse-hybrid-debug-evalmod" ||
                  arg == "--lvl6-inverse-hybrid-debug-stc" ||
                  arg == "--lvl6-inverse-hybrid-debug" ||
+                 arg == "--lvl6-tuned-hybrid-keygen" ||
+                 arg == "--lvl6-tuned-hybrid-keygen-next" ||
+                 arg == "--lvl6-tuned-hybrid-run" ||
+                 arg == "--lvl6-tuned-hybrid-run-product-encap" ||
+                 arg == "--lvl6-tuned-hybrid-run-chained-product-encap" ||
+                 arg == "--lvl6-tuned-hybrid-debug-c2s" ||
+                 arg == "--lvl6-tuned-hybrid-debug-evalmod" ||
+                 arg == "--lvl6-tuned-hybrid-debug-stc" ||
+                 arg == "--lvl6-tuned-hybrid-debug" ||
                  arg == "--lvl6-fast-hybrid-keygen" ||
                  arg == "--lvl6-fast-hybrid-keygen-next" ||
                  arg == "--lvl6-fast-hybrid-run" ||
@@ -2964,6 +2996,71 @@ int main(int argc, char **argv)
                                                            &key_dir);
                 if (run_hybrid_filesystem_bootstrap_diagnostics<
                         Lvl6InverseSchedule>(
+                        key_dir, true, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-keygen") {
+                if (run_hybrid_keygen<Lvl6TunedSchedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-keygen-next") {
+                if (run_hybrid_keygen_next<Lvl6TunedSchedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-run") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_hybrid_filesystem_bootstrap<Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-run-product-encap") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_hybrid_filesystem_encapsulated_product_bootstrap<
+                        Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg ==
+                     "--lvl6-tuned-hybrid-run-chained-product-encap") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_hybrid_filesystem_encapsulated_chained_product_bootstrap<
+                        Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-debug-c2s") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_hybrid_filesystem_bootstrap_diagnostics<
+                        Lvl6TunedSchedule>(
+                        key_dir, false, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-debug-evalmod") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_hybrid_filesystem_evalmod_diagnostics<
+                        Lvl6TunedSchedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-debug-stc") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_hybrid_filesystem_stc_diagnostics<Lvl6TunedSchedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-debug") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_hybrid_filesystem_bootstrap_diagnostics<
+                        Lvl6TunedSchedule>(
                         key_dir, true, lvl6_sparse_weight) != 0)
                     return 1;
             }
