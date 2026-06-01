@@ -966,6 +966,15 @@ void test_dense_bootstrap_encrypted_pipeline()
     TFHEpp::CKKSAdd<M, Schedule::output_log_q, Schedule::log_delta>(
         *combined_out, *real_out, *imag_out);
 
+    auto fused_out = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSLinearTransformStagesBSGSDualInputSharedTail<
+        M, Schedule::after_evalmod_log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        *fused_out, *real_eval, *imag_eval, linear_plan.slot_to_coeff_stages,
+        linear_plan.slot_to_coeff_imag_stages, 0,
+        Schedule::linear_bsgs_step, *slot_to_coeff_gks);
+
     auto expected_real_out = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     auto expected_imag_out = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     auto expected_combined_out =
@@ -982,8 +991,109 @@ void test_dense_bootstrap_encrypted_pipeline()
         *decoded, *combined_out, *key);
     require_close_param<M>(*decoded, *expected_combined_out, 1e-3,
                            "CKKS dense encrypted STC recombination");
-    require_close_param<M>(*decoded, *wanted_slots, 0.02,
+
+    auto fused_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *fused_decoded, *fused_out, *key);
+    require_close_param<M>(*fused_decoded, *expected_combined_out, 1e-3,
+                           "CKKS dense encrypted fused STC recombination");
+    require_close_param<M>(*fused_decoded, *decoded, 1e-3,
+                           "CKKS dense encrypted fused STC matches split STC");
+    require_close_param<M>(*fused_decoded, *wanted_slots, 0.02,
                            "CKKS dense encrypted bootstrap without modraise");
+}
+
+void test_dense_bootstrap_fused_stc_shared_tail()
+{
+    using M = TinyDeepMultiLimbCKKSParam;
+    using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
+        M, 30, 8, 540, 30, 1, 31, 4, 2, 0, 30, 2>;
+    static_assert(Schedule::slot_to_coeff_level_count == 3);
+    static_assert(Schedule::after_evalmod_log_q == 180);
+    static_assert(Schedule::output_log_q == 90);
+
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+
+    auto real_slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto imag_slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    for (std::size_t i = 0; i < M::n / 2; i++) {
+        (*real_slots)[i] =
+            {static_cast<double>(static_cast<int>(i) - 3) / 128.0, 0.0};
+        (*imag_slots)[i] =
+            {static_cast<double>(4 - static_cast<int>(i)) / 160.0, 0.0};
+    }
+
+    auto key = std::make_unique<TFHEpp::Key<M>>();
+    fill_test_key<M>(*key);
+    auto real_ct = std::make_unique<typename Schedule::EvalModCiphertext>();
+    auto imag_ct = std::make_unique<typename Schedule::EvalModCiphertext>();
+    TFHEpp::ckksSlotEncrypt<M, Schedule::after_evalmod_log_q,
+                            Schedule::log_delta>(*real_ct, *real_slots, *key,
+                                                 {0.0, 0});
+    TFHEpp::ckksSlotEncrypt<M, Schedule::after_evalmod_log_q,
+                            Schedule::log_delta>(*imag_ct, *imag_slots, *key,
+                                                 {0.0, 0});
+
+    auto slot_to_coeff_gks =
+        std::make_unique<typename TFHEpp::CKKSGaloisKeyChain<
+            M, Schedule::after_evalmod_log_q,
+            Schedule::slot_to_coeff_plain_log_delta,
+            Schedule::slot_to_coeff_level_count>>();
+    TFHEpp::CKKSGaloisKeyChainGen<M, Schedule::after_evalmod_log_q,
+                                  Schedule::slot_to_coeff_plain_log_delta,
+                                  Schedule::slot_to_coeff_level_count>(
+        *slot_to_coeff_gks, *key, {0.0, 0});
+
+    auto real_out = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSLinearTransformStagesBSGS<
+        M, Schedule::after_evalmod_log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        *real_out, *real_ct, linear_plan.slot_to_coeff_stages, 0,
+        Schedule::linear_bsgs_step, *slot_to_coeff_gks);
+    auto imag_out = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSLinearTransformStagesBSGS<
+        M, Schedule::after_evalmod_log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        *imag_out, *imag_ct, linear_plan.slot_to_coeff_imag_stages, 0,
+        Schedule::linear_bsgs_step, *slot_to_coeff_gks);
+    auto split_out = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSAdd<M, Schedule::output_log_q, Schedule::log_delta>(
+        *split_out, *real_out, *imag_out);
+
+    auto fused_out = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSLinearTransformStagesBSGSDualInputSharedTail<
+        M, Schedule::after_evalmod_log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        *fused_out, *real_ct, *imag_ct, linear_plan.slot_to_coeff_stages,
+        linear_plan.slot_to_coeff_imag_stages, 0,
+        Schedule::linear_bsgs_step, *slot_to_coeff_gks);
+
+    auto expected_real = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto expected_imag = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    apply_complex_stages<M>(*expected_real, *real_slots,
+                            linear_plan.slot_to_coeff_stages);
+    apply_complex_stages<M>(*expected_imag, *imag_slots,
+                            linear_plan.slot_to_coeff_imag_stages);
+    for (std::size_t i = 0; i < M::n / 2; i++)
+        (*expected)[i] = (*expected_real)[i] + (*expected_imag)[i];
+
+    auto split_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto fused_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *split_decoded, *split_out, *key);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *fused_decoded, *fused_out, *key);
+    require_close_param<M>(*split_decoded, *expected, 1e-3,
+                           "CKKS dense encrypted split STC shared tail");
+    require_close_param<M>(*fused_decoded, *expected, 1e-3,
+                           "CKKS dense encrypted fused STC shared tail");
+    require_close_param<M>(*fused_decoded, *split_decoded, 1e-3,
+                           "CKKS dense encrypted fused/split shared tail");
 }
 
 void test_dense_bootstrap_e2e_smoke()
@@ -1058,8 +1168,8 @@ void test_dense_bootstrap_e2e_smoke()
         *provider_output, *input, counting_provider);
     if (counting_provider.coeff_to_slot_gets[0] != 1 ||
         counting_provider.coeff_to_slot_gets[1] != 1 ||
-        counting_provider.slot_to_coeff_gets[0] != 2 ||
-        counting_provider.slot_to_coeff_gets[1] != 2 ||
+        counting_provider.slot_to_coeff_gets[0] != 1 ||
+        counting_provider.slot_to_coeff_gets[1] != 1 ||
         counting_provider.packed_conjugate_gets != 2 ||
         counting_provider.evalmod_polynomial_gets != 2)
         std::exit(1);
@@ -1073,8 +1183,8 @@ void test_dense_bootstrap_e2e_smoke()
         std::exit(1);
     if (counting_provider.coeff_to_slot_releases[0] != 1 ||
         counting_provider.coeff_to_slot_releases[1] != 1 ||
-        counting_provider.slot_to_coeff_releases[0] != 2 ||
-        counting_provider.slot_to_coeff_releases[1] != 2 ||
+        counting_provider.slot_to_coeff_releases[0] != 1 ||
+        counting_provider.slot_to_coeff_releases[1] != 1 ||
         counting_provider.packed_conjugate_releases != 1)
         std::exit(1);
     if (counting_provider.polynomial_relin_releases[0] != 2 ||
@@ -1452,6 +1562,7 @@ int main()
     test_dense_bootstrap_api_shape();
     test_dense_bootstrap_plain_split_pipeline();
     test_dense_bootstrap_encrypted_pipeline();
+    test_dense_bootstrap_fused_stc_shared_tail();
     test_dense_bootstrap_e2e_smoke();
     test_bounded_cos_evalmod_plain();
     test_multilimb_slot_decode_high_level();

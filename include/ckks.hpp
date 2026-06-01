@@ -2174,6 +2174,102 @@ inline void CKKSLinearTransformBSGS(
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta, class InputGaloisKey,
           class OutputGaloisKey>
+inline void CKKSLinearTransformBSGSDualInput(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &lhs,
+    const CKKSCiphertext<P, LogQ, LogDelta> &rhs,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &lhs_plan,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &rhs_plan,
+    const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
+{
+    static_assert(PlainLogDelta < LogQ);
+    constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
+    assert(lhs_plan.k_step > 0 &&
+           lhs_plan.k_step <= static_cast<int>(P::n / 2));
+    assert(rhs_plan.k_step == lhs_plan.k_step);
+    assert(!lhs_plan.groups.empty());
+    assert(lhs_plan.groups.size() == rhs_plan.groups.size());
+
+    std::vector<bool> lhs_baby_used;
+    std::vector<bool> rhs_baby_used;
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        lhs_baby_used, lhs_plan);
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        rhs_baby_used, rhs_plan);
+    for (std::size_t i = 0; i < lhs_baby_used.size(); i++)
+        lhs_baby_used[i] = lhs_baby_used[i] || rhs_baby_used[i];
+
+    auto lhs_baby =
+        std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
+    auto rhs_baby =
+        std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
+    (*lhs_baby)[0] = lhs.ct;
+    (*rhs_baby)[0] = rhs.ct;
+    for (int j1 = 1; j1 < lhs_plan.k_step; j1++) {
+        if (!lhs_baby_used[static_cast<std::size_t>(j1)]) continue;
+        CKKSRotateSlots<P, LogQ>((*lhs_baby)[j1], lhs.ct, j1, input_gk);
+        CKKSRotateSlots<P, LogQ>((*rhs_baby)[j1], rhs.ct, j1, input_gk);
+    }
+
+    bool res_initialized = false;
+    auto term = std::make_unique<TRLWE<P>>();
+    auto inner = std::make_unique<TRLWE<P>>();
+    auto giant_rotated = std::make_unique<TRLWE<P>>();
+
+    for (std::size_t group_index = 0; group_index < lhs_plan.groups.size();
+         group_index++) {
+        const auto &lhs_group = lhs_plan.groups[group_index];
+        const auto &rhs_group = rhs_plan.groups[group_index];
+        assert(lhs_group.giant_step == rhs_group.giant_step);
+
+        bool inner_initialized = false;
+        for (const auto &entry : lhs_group.terms) {
+            CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
+                *term, (*lhs_baby)[entry.baby_step], entry.plain.poly);
+
+            if (!inner_initialized) {
+                *inner = *term;
+                inner_initialized = true;
+            }
+            else {
+                CKKSAddTRLWEInPlace<P, out_log_q>(*inner, *term);
+            }
+        }
+        for (const auto &entry : rhs_group.terms) {
+            CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
+                *term, (*rhs_baby)[entry.baby_step], entry.plain.poly);
+
+            if (!inner_initialized) {
+                *inner = *term;
+                inner_initialized = true;
+            }
+            else {
+                CKKSAddTRLWEInPlace<P, out_log_q>(*inner, *term);
+            }
+        }
+
+        const TRLWE<P> *to_add = inner.get();
+        if (lhs_group.giant_step != 0) {
+            CKKSRotateSlots<P, out_log_q>(
+                *giant_rotated, *inner, lhs_plan.k_step * lhs_group.giant_step,
+                output_gk);
+            to_add = giant_rotated.get();
+        }
+
+        if (!res_initialized) {
+            res.ct = *to_add;
+            res_initialized = true;
+        }
+        else {
+            CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
+        }
+    }
+    ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, class InputGaloisKey,
+          class OutputGaloisKey>
 inline void CKKSLinearTransformBSGS(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
@@ -2213,7 +2309,8 @@ inline void maybe_release_key(const KeyProvider &keys)
     }
 }
 
-template <std::size_t I, class P, std::uint32_t StartLogQ,
+template <std::size_t KeyOffset, std::size_t I, class P,
+          std::uint32_t StartLogQ,
           std::uint32_t LogDelta, std::uint32_t PlainLogDelta,
           std::size_t StageCount, class GaloisKeyChain>
 inline void CKKSLinearTransformStagesBSGSImpl(
@@ -2236,14 +2333,14 @@ inline void CKKSLinearTransformStagesBSGSImpl(
             std::make_unique<CKKSPlainMulResult<P, log_q, LogDelta,
                                                 PlainLogDelta>>();
         CKKSLinearTransformBSGS<P, log_q, LogDelta, PlainLogDelta>(
-            *next, ct, plan, gk_chain.template get<I>(),
-            gk_chain.template get<I + 1>());
-        maybe_release_key<I>(gk_chain);
+            *next, ct, plan, gk_chain.template get<KeyOffset + I>(),
+            gk_chain.template get<KeyOffset + I + 1>());
+        maybe_release_key<KeyOffset + I>(gk_chain);
         if constexpr (I + 1 == StageCount) {
-            maybe_release_key<I + 1>(gk_chain);
+            maybe_release_key<KeyOffset + I + 1>(gk_chain);
         }
-        CKKSLinearTransformStagesBSGSImpl<I + 1, P, StartLogQ, LogDelta,
-                                          PlainLogDelta, StageCount>(
+        CKKSLinearTransformStagesBSGSImpl<KeyOffset, I + 1, P, StartLogQ,
+                                          LogDelta, PlainLogDelta, StageCount>(
             res, *next, stages, first_stage, k_step, gk_chain);
     }
 }
@@ -2261,9 +2358,58 @@ inline void CKKSLinearTransformStagesBSGS(
     int k_step, const GaloisKeyChain &gk_chain)
 {
     assert(first_stage + StageCount <= stages.size());
-    ckks_detail::CKKSLinearTransformStagesBSGSImpl<0, P, LogQ, LogDelta,
+    ckks_detail::CKKSLinearTransformStagesBSGSImpl<0, 0, P, LogQ, LogDelta,
                                                    PlainLogDelta, StageCount>(
         res, ct, stages, first_stage, k_step, gk_chain);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount,
+          class GaloisKeyChain>
+inline void CKKSLinearTransformStagesBSGSDualInputSharedTail(
+    CKKSStagedPlainMulResult<P, LogQ, LogDelta, PlainLogDelta, StageCount>
+        &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &lhs,
+    const CKKSCiphertext<P, LogQ, LogDelta> &rhs,
+    const CKKSLinearTransformStages<P> &lhs_stages,
+    const CKKSLinearTransformStages<P> &rhs_stages, std::size_t first_stage,
+    int k_step, const GaloisKeyChain &gk_chain)
+{
+    static_assert(StageCount > 0);
+    assert(first_stage + StageCount <= lhs_stages.size());
+    assert(first_stage + StageCount <= rhs_stages.size());
+#ifndef NDEBUG
+    for (std::size_t i = first_stage + 1; i < first_stage + StageCount; i++) {
+        assert(lhs_stages[i].rotation_offsets == rhs_stages[i].rotation_offsets);
+        assert(lhs_stages[i].diagonals == rhs_stages[i].diagonals);
+    }
+#endif
+
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> lhs_plan;
+    CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> rhs_plan;
+    CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        lhs_plan, lhs_stages[first_stage], k_step);
+    CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta, PlainLogDelta>(
+        rhs_plan, rhs_stages[first_stage], k_step);
+
+    auto next =
+        std::make_unique<CKKSPlainMulResult<P, LogQ, LogDelta,
+                                            PlainLogDelta>>();
+    CKKSLinearTransformBSGSDualInput<P, LogQ, LogDelta, PlainLogDelta>(
+        *next, lhs, rhs, lhs_plan, rhs_plan, gk_chain.template get<0>(),
+        gk_chain.template get<1>());
+    ckks_detail::maybe_release_key<0>(gk_chain);
+
+    if constexpr (StageCount == 1) {
+        res = *next;
+        ckks_detail::maybe_release_key<1>(gk_chain);
+    }
+    else {
+        constexpr std::uint32_t tail_log_q = LogQ - PlainLogDelta;
+        ckks_detail::CKKSLinearTransformStagesBSGSImpl<
+            1, 0, P, tail_log_q, LogDelta, PlainLogDelta, StageCount - 1>(
+            res, *next, lhs_stages, first_stage + 1, k_step, gk_chain);
+    }
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -5456,25 +5602,15 @@ inline void CKKSDenseBootstrapWithKeyProvider(
     const ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider,
                                                                false>
         slot_to_coeff_galois{key_provider};
-    auto real_out = std::make_unique<typename Schedule::OutputCiphertext>();
-    CKKSLinearTransformStagesBSGS<
+    CKKSLinearTransformStagesBSGSDualInputSharedTail<
         P, Schedule::after_evalmod_log_q, Schedule::log_delta,
         Schedule::slot_to_coeff_plain_log_delta,
         Schedule::slot_to_coeff_level_count>(
-        *real_out, *real_evalmod, linear_plan.slot_to_coeff_stages, 0,
-        Schedule::linear_bsgs_step, slot_to_coeff_galois);
+        res, *real_evalmod, *imag_evalmod, linear_plan.slot_to_coeff_stages,
+        linear_plan.slot_to_coeff_imag_stages, 0, Schedule::linear_bsgs_step,
+        slot_to_coeff_galois);
     real_evalmod.reset();
-    auto imag_out = std::make_unique<typename Schedule::OutputCiphertext>();
-    CKKSLinearTransformStagesBSGS<
-        P, Schedule::after_evalmod_log_q, Schedule::log_delta,
-        Schedule::slot_to_coeff_plain_log_delta,
-        Schedule::slot_to_coeff_level_count>(
-        *imag_out, *imag_evalmod, linear_plan.slot_to_coeff_imag_stages, 0,
-        Schedule::linear_bsgs_step, slot_to_coeff_galois);
     imag_evalmod.reset();
-
-    CKKSAdd<P, Schedule::output_log_q, Schedule::log_delta>(res, *real_out,
-                                                            *imag_out);
 }
 
 template <class Schedule>
