@@ -1136,6 +1136,172 @@ int run_hybrid_filesystem_bootstrap(const std::filesystem::path &key_dir,
 }
 
 template <class Schedule>
+int run_hybrid_filesystem_encapsulated_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t bootstrap_sparse_weight)
+{
+    using P = typename Schedule::Param;
+
+    if (const int status = validate_bounded_modraise_test_key<Schedule>(
+            bootstrap_sparse_weight, "bootstrap");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, bootstrap_sparse_weight, false);
+        status != 0)
+        return status;
+    if (const int status =
+            validate_hybrid_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+
+    auto external_key = std::make_unique<TFHEpp::Key<P>>();
+    auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
+    fill_test_key<P>(*external_key);
+    fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
+    std::cout << "external_key=dense\n";
+    std::cout << "bootstrap_key_sparse_weight=" << bootstrap_sparse_weight
+              << '\n';
+
+    auto encapsulation_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    const double encap_keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGen<Schedule>(
+            *encapsulation_key, *external_key, *bootstrap_key, {P::α, 0});
+    });
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*slots);
+
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, Schedule::input_log_q,
+                                Schedule::log_delta>(*input, *slots,
+                                                     *external_key);
+    });
+
+    TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>
+        provider(key_dir);
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
+    const double bootstrap_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<
+            Schedule>(*output, *input, provider, *encapsulation_key,
+                      bootstrap_timings);
+    });
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double decrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
+                                Schedule::log_delta>(*decoded, *output,
+                                                     *external_key);
+    });
+    const double err = max_error<P>(*decoded, *slots);
+    std::cout << "encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
+    std::cout << "encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
+    print_bootstrap_timings(bootstrap_timings);
+    std::cout << "decrypt_ms=" << decrypt_ms << '\n';
+    std::cout << "max_error=" << err << '\n';
+    return err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
+int run_hybrid_filesystem_encapsulated_product_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t bootstrap_sparse_weight)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    static_assert(ProductCt::log_q > Schedule::input_log_q);
+
+    if (const int status = validate_bounded_modraise_test_key<Schedule>(
+            bootstrap_sparse_weight, "bootstrap");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, bootstrap_sparse_weight, false);
+        status != 0)
+        return status;
+    if (const int status =
+            validate_hybrid_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+
+    auto external_key = std::make_unique<TFHEpp::Key<P>>();
+    auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
+    fill_test_key<P>(*external_key);
+    fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
+    std::cout << "external_key=dense\n";
+    std::cout << "bootstrap_key_sparse_weight=" << bootstrap_sparse_weight
+              << '\n';
+    std::cout << "product_fresh_logQ=" << FreshCt::log_q
+              << " product_logQ=" << ProductCt::log_q
+              << " normalized_logQ=" << Schedule::input_log_q << '\n';
+
+    auto encapsulation_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    const double encap_keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGen<Schedule>(
+            *encapsulation_key, *external_key, *bootstrap_key, {P::α, 0});
+    });
+
+    auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*lhs);
+    fill_alternate_test_slots<P>(*rhs);
+    multiply_slots<P>(*expected, *lhs, *rhs);
+
+    auto lhs_ct = std::make_unique<FreshCt>();
+    auto rhs_ct = std::make_unique<FreshCt>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+            *lhs_ct, *lhs, *external_key);
+        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+            *rhs_ct, *rhs, *external_key);
+    });
+
+    auto relin = TFHEpp::makeCKKSRelinKey<P, ProductCt::log_q>(*external_key,
+                                                               {P::α, 0});
+    auto product = std::make_unique<ProductCt>();
+    const double multiply_ms = elapsed_ms([&] {
+        TFHEpp::CKKSMult<P>(*product, *lhs_ct, *rhs_ct, *relin);
+    });
+
+    TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>
+        provider(key_dir);
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
+    const double bootstrap_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<
+            Schedule>(*output, *product, provider, *encapsulation_key,
+                      bootstrap_timings);
+    });
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double decrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
+                                Schedule::log_delta>(*decoded, *output,
+                                                     *external_key);
+    });
+    const double err = max_error<P>(*decoded, *expected);
+    std::cout << "encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
+    std::cout << "encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "multiply_ms=" << multiply_ms << '\n';
+    std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
+    print_bootstrap_timings(bootstrap_timings);
+    std::cout << "decrypt_ms=" << decrypt_ms << '\n';
+    std::cout << "max_error=" << err << '\n';
+    return err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
 int run_modraise_plain_diagnostics(std::size_t sparse_weight = 0)
 {
     using P = typename Schedule::Param;
@@ -2075,6 +2241,8 @@ void print_usage(const char *program)
                  " [--lvl6-inverse-hybrid-keygen DIR]"
                  " [--lvl6-inverse-hybrid-keygen-next DIR]"
                  " [--lvl6-inverse-hybrid-run DIR]"
+                 " [--lvl6-inverse-hybrid-run-encap DIR]"
+                 " [--lvl6-inverse-hybrid-run-product-encap DIR]"
                  " [--lvl6-inverse-hybrid-debug-c2s DIR]"
                  " [--lvl6-inverse-hybrid-debug-evalmod DIR]"
                  " [--lvl6-inverse-hybrid-debug-stc DIR]"
@@ -2238,6 +2406,8 @@ int main(int argc, char **argv)
                  arg == "--lvl6-inverse-hybrid-keygen" ||
                  arg == "--lvl6-inverse-hybrid-keygen-next" ||
                  arg == "--lvl6-inverse-hybrid-run" ||
+                 arg == "--lvl6-inverse-hybrid-run-encap" ||
+                 arg == "--lvl6-inverse-hybrid-run-product-encap" ||
                  arg == "--lvl6-inverse-hybrid-debug-c2s" ||
                  arg == "--lvl6-inverse-hybrid-debug-evalmod" ||
                  arg == "--lvl6-inverse-hybrid-debug-stc" ||
@@ -2328,6 +2498,22 @@ int main(int argc, char **argv)
                 print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse",
                                                            &key_dir);
                 if (run_hybrid_filesystem_bootstrap<Lvl6InverseSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-run-encap") {
+                print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse",
+                                                           &key_dir);
+                if (run_hybrid_filesystem_encapsulated_bootstrap<
+                        Lvl6InverseSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-inverse-hybrid-run-product-encap") {
+                print_schedule_report<Lvl6InverseSchedule>("lvl6-inverse",
+                                                           &key_dir);
+                if (run_hybrid_filesystem_encapsulated_product_bootstrap<
+                        Lvl6InverseSchedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
                     return 1;
             }
