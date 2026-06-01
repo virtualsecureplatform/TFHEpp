@@ -4143,6 +4143,15 @@ struct CKKSDenseBootstrapSchedule {
                                  slot_to_coeff_level_count>;
 };
 
+template <int HybridGiantDirectPopcountThreshold = 3>
+using lvl6CKKSDenseBootstrapRobustHybridSchedule =
+    CKKSDenseBootstrapSchedule<lvl6param, 50, 8, 880, 50, 5, 34, 18, 3, 0, 50,
+                               128, 0, 50, 50, 25, 5, 5,
+                               HybridGiantDirectPopcountThreshold>;
+
+using lvl6CKKSDenseBootstrapSchedule =
+    lvl6CKKSDenseBootstrapRobustHybridSchedule<>;
+
 struct CKKSBoundedCosEvalModPolynomial {
     std::uint32_t k = 0;
     std::uint32_t degree = 0;

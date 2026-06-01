@@ -318,9 +318,8 @@ using Lvl6HybridThresholdSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
     35, 5, 5, HybridThreshold>;
 
 template <int HybridThreshold>
-using Lvl6RobustHybridThresholdSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
-    TFHEpp::lvl6param, 50, 8, 880, 50, 5, 34, 18, 3, 0, 50, 128, 0, 50, 50,
-    20, 5, 5, HybridThreshold>;
+using Lvl6RobustHybridThresholdSchedule =
+    TFHEpp::lvl6CKKSDenseBootstrapRobustHybridSchedule<HybridThreshold>;
 
 template <class Schedule>
 void print_schedule_report(const char *label,
