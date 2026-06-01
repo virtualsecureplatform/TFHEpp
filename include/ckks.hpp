@@ -291,6 +291,13 @@ constexpr std::size_t CKKSRelinKeyByteEstimate()
            CKKSKeySwitchRowByteSize<P>();
 }
 
+template <class P, std::uint32_t LogQ>
+constexpr std::size_t CKKSSeededRelinKeyByteEstimate()
+{
+    return CKKSRelinKeySwitchRowCount<P, LogQ>() *
+           CKKSSeededKeySwitchRowByteSize<P>();
+}
+
 template <class P>
 using CKKSRotationKeyIndexSet = std::array<bool, P::nbit + 1>;
 
@@ -7467,8 +7474,40 @@ struct CKKSDenseBootstrapEncapsulationKey {
 };
 
 template <class Schedule>
+struct CKKSDenseBootstrapSeededEncapsulationKey {
+    using P = typename Schedule::Param;
+
+    CKKSSeededSecretKeySwitchKey<P, Schedule::input_log_q>
+        input_to_bootstrap{};
+    CKKSSeededSecretKeySwitchKey<P, Schedule::output_log_q>
+        bootstrap_to_output{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(input_to_bootstrap, bootstrap_to_output);
+    }
+};
+
+template <class Schedule>
 inline void CKKSDenseBootstrapEncapsulationKeyGen(
     CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
+    const Key<typename Schedule::Param> &input_output_key,
+    const Key<typename Schedule::Param> &bootstrap_key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+    CKKSSecretKeySwitchKeyGen<P, Schedule::input_log_q>(
+        encapsulation_key.input_to_bootstrap, input_output_key, bootstrap_key,
+        noise);
+    CKKSSecretKeySwitchKeyGen<P, Schedule::output_log_q>(
+        encapsulation_key.bootstrap_to_output, bootstrap_key, input_output_key,
+        noise);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapSeededEncapsulationKeyGen(
+    CKKSDenseBootstrapSeededEncapsulationKey<Schedule> &encapsulation_key,
     const Key<typename Schedule::Param> &input_output_key,
     const Key<typename Schedule::Param> &bootstrap_key,
     CKKSNoise noise = {Schedule::Param::α, 0})
@@ -8627,6 +8666,13 @@ inline std::filesystem::path CKKSDenseBootstrapEncapsulationKeyFile(
     return ckks_detail::CKKSDenseBootstrapNamedPath(root, "encapsulation_key");
 }
 
+inline std::filesystem::path CKKSDenseBootstrapSeededEncapsulationKeyFile(
+    const std::filesystem::path &root)
+{
+    return ckks_detail::CKKSDenseBootstrapNamedPath(
+        root, "seeded_encapsulation_key");
+}
+
 inline std::filesystem::path CKKSRelinKeyFile(const std::filesystem::path &root,
                                               const std::string &name =
                                                   "relin_key")
@@ -8647,6 +8693,18 @@ inline void CKKSRelinKeyGenToFile(
 }
 
 template <class P, std::uint32_t LogQ>
+inline void CKKSSeededRelinKeyGenToFile(
+    const std::filesystem::path &path, const Key<P> &key,
+    CKKSNoise noise = {P::α, 0},
+    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+{
+    if (!options.overwrite_existing && std::filesystem::exists(path)) return;
+
+    auto relinkey = makeCKKSSeededRelinKey<P, LogQ>(key, noise);
+    CKKSSavePortableBinaryAtomic(path, *relinkey);
+}
+
+template <class P, std::uint32_t LogQ>
 inline bool CKKSRelinKeyGenNextMissingToFile(
     const std::filesystem::path &path, const Key<P> &key,
     CKKSNoise noise = {P::α, 0})
@@ -8657,8 +8715,26 @@ inline bool CKKSRelinKeyGenNextMissingToFile(
 }
 
 template <class P, std::uint32_t LogQ>
+inline bool CKKSSeededRelinKeyGenNextMissingToFile(
+    const std::filesystem::path &path, const Key<P> &key,
+    CKKSNoise noise = {P::α, 0})
+{
+    if (std::filesystem::exists(path)) return false;
+    CKKSSeededRelinKeyGenToFile<P, LogQ>(path, key, noise);
+    return true;
+}
+
+template <class P, std::uint32_t LogQ>
 inline void CKKSLoadRelinKeyFromFile(CKKSRelinKey<P, LogQ> &relinkey,
                                      const std::filesystem::path &path)
+{
+    CKKSLoadPortableBinary(relinkey, path);
+}
+
+template <class P, std::uint32_t LogQ>
+inline void CKKSLoadSeededRelinKeyFromFile(
+    CKKSSeededRelinKey<P, LogQ> &relinkey,
+    const std::filesystem::path &path)
 {
     CKKSLoadPortableBinary(relinkey, path);
 }
@@ -8675,6 +8751,22 @@ inline void CKKSMultWithRelinKeyFile(
         CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
     auto relinkey = std::make_unique<CKKSRelinKey<P, Traits::log_q>>();
     CKKSLoadRelinKeyFromFile<P, Traits::log_q>(*relinkey, relin_key_file);
+    CKKSMult<P>(res, lhs, rhs, *relinkey);
+}
+
+template <class P, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta>
+inline void CKKSMultWithSeededRelinKeyFile(
+    CKKSMultResult<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta> &res,
+    const CKKSCiphertext<P, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<P, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &relin_key_file)
+{
+    using Traits =
+        CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
+    auto relinkey = std::make_unique<CKKSSeededRelinKey<P, Traits::log_q>>();
+    CKKSLoadSeededRelinKeyFromFile<P, Traits::log_q>(*relinkey,
+                                                     relin_key_file);
     CKKSMult<P>(res, lhs, rhs, *relinkey);
 }
 
@@ -8696,6 +8788,23 @@ inline void CKKSDenseBootstrapEncapsulationKeyGenToFile(
 }
 
 template <class Schedule>
+inline void CKKSDenseBootstrapSeededEncapsulationKeyGenToFile(
+    const std::filesystem::path &path,
+    const Key<typename Schedule::Param> &input_output_key,
+    const Key<typename Schedule::Param> &bootstrap_key,
+    CKKSNoise noise = {Schedule::Param::α, 0},
+    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+{
+    if (!options.overwrite_existing && std::filesystem::exists(path)) return;
+
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapSeededEncapsulationKeyGen<Schedule>(
+        *encapsulation_key, input_output_key, bootstrap_key, noise);
+    CKKSSavePortableBinaryAtomic(path, *encapsulation_key);
+}
+
+template <class Schedule>
 inline bool CKKSDenseBootstrapEncapsulationKeyGenNextMissingToFile(
     const std::filesystem::path &path,
     const Key<typename Schedule::Param> &input_output_key,
@@ -8709,8 +8818,29 @@ inline bool CKKSDenseBootstrapEncapsulationKeyGenNextMissingToFile(
 }
 
 template <class Schedule>
+inline bool CKKSDenseBootstrapSeededEncapsulationKeyGenNextMissingToFile(
+    const std::filesystem::path &path,
+    const Key<typename Schedule::Param> &input_output_key,
+    const Key<typename Schedule::Param> &bootstrap_key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    if (std::filesystem::exists(path)) return false;
+    CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
+        path, input_output_key, bootstrap_key, noise);
+    return true;
+}
+
+template <class Schedule>
 inline void CKKSDenseBootstrapLoadEncapsulationKeyFromFile(
     CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
+    const std::filesystem::path &path)
+{
+    CKKSLoadPortableBinary(encapsulation_key, path);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile(
+    CKKSDenseBootstrapSeededEncapsulationKey<Schedule> &encapsulation_key,
     const std::filesystem::path &path)
 {
     CKKSLoadPortableBinary(encapsulation_key, path);
@@ -10343,12 +10473,12 @@ inline void CKKSDenseBootstrapFromLevelWithKeyProviderTimed(
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
-          class KeyProvider>
+          class KeyProvider, class EncapsulationKey>
 inline void CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider(
     typename Schedule::OutputCiphertext &res,
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
     const KeyProvider &bootstrap_key_provider,
-    const CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key)
+    const EncapsulationKey &encapsulation_key)
 {
     auto normalized = std::make_unique<typename Schedule::InputCiphertext>();
     CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct);
@@ -10369,12 +10499,12 @@ inline void CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider(
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
-          class KeyProvider>
+          class KeyProvider, class EncapsulationKey>
 inline void CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed(
     typename Schedule::OutputCiphertext &res,
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
     const KeyProvider &bootstrap_key_provider,
-    const CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
+    const EncapsulationKey &encapsulation_key,
     CKKSDenseBootstrapTimings &timings)
 {
     timings = {};
@@ -10531,6 +10661,43 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemKeyTimed(
         res, ct, provider, *encapsulation_key, timings);
 }
 
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void
+CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemSeededKeys(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider<Schedule>(
+        res, ct, provider, *encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
+inline void
+CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemSeededKeysTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    CKKSDenseBootstrapTimings &timings)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
+        res, ct, provider, *encapsulation_key, timings);
+}
+
 template <class Schedule, std::uint32_t LhsLogQ,
           std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
           std::uint32_t RhsLogDelta>
@@ -10595,6 +10762,53 @@ inline void CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed(
     auto product = std::make_unique<typename Traits::ProductCiphertext>();
     ckks_detail::CKKSTimeBootstrapStage(&timings.multiply_ms, [&] {
         CKKSMultWithRelinKeyFile<typename Schedule::Param>(
+            *product, lhs, rhs, relin_key_file);
+    });
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
+        res, *product, bootstrap_key_provider, encapsulation_key,
+        timings.bootstrap);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta, class KeyProvider, class EncapsulationKey>
+inline void CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProvider(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &relin_key_file,
+    const KeyProvider &bootstrap_key_provider,
+    const EncapsulationKey &encapsulation_key)
+{
+    using Traits =
+        CKKSDenseBootstrapProductTraits<Schedule, LhsLogQ, LhsLogDelta,
+                                        RhsLogQ, RhsLogDelta>;
+    auto product = std::make_unique<typename Traits::ProductCiphertext>();
+    CKKSMultWithSeededRelinKeyFile<typename Schedule::Param>(
+        *product, lhs, rhs, relin_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider<Schedule>(
+        res, *product, bootstrap_key_provider, encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta, class KeyProvider, class EncapsulationKey>
+inline void CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProviderTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &relin_key_file,
+    const KeyProvider &bootstrap_key_provider,
+    const EncapsulationKey &encapsulation_key,
+    CKKSDenseBootstrapProductTimings &timings)
+{
+    using Traits =
+        CKKSDenseBootstrapProductTraits<Schedule, LhsLogQ, LhsLogDelta,
+                                        RhsLogQ, RhsLogDelta>;
+    timings = {};
+    auto product = std::make_unique<typename Traits::ProductCiphertext>();
+    ckks_detail::CKKSTimeBootstrapStage(&timings.multiply_ms, [&] {
+        CKKSMultWithSeededRelinKeyFile<typename Schedule::Param>(
             *product, lhs, rhs, relin_key_file);
     });
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
@@ -10727,6 +10941,52 @@ inline void CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemKeyTimed(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed<Schedule>(
         res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeys(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    const std::filesystem::path &relin_key_file)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProvider<Schedule>(
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    const std::filesystem::path &relin_key_file,
+    CKKSDenseBootstrapProductTimings &timings)
+{
+    CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProviderTimed<
+        Schedule>(res, lhs, rhs, relin_key_file, provider, *encapsulation_key,
+                  timings);
 }
 
 template <class Schedule>
