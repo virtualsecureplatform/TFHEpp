@@ -458,6 +458,13 @@ struct CKKSDenseBootstrapTimings {
     }
 };
 
+struct CKKSDenseBootstrapProductTimings {
+    double multiply_ms = 0.0;
+    CKKSDenseBootstrapTimings bootstrap{};
+
+    double total_ms() const { return multiply_ms + bootstrap.total_ms(); }
+};
+
 struct CKKSDenseBootstrapKeyDirectoryManifest {
     static constexpr std::uint32_t current_version = 3;
     static constexpr std::uint32_t sparse_format = 0;
@@ -8856,6 +8863,161 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
         res, ct, provider, *encapsulation_key, timings);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+struct CKKSDenseBootstrapProductTraits {
+    using P = typename Schedule::Param;
+    using ProductCiphertext =
+        CKKSMultResult<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
+
+    static constexpr std::uint32_t scale_drop =
+        ProductCiphertext::log_delta >= Schedule::log_delta
+            ? ProductCiphertext::log_delta - Schedule::log_delta
+            : 0;
+    static constexpr bool product_scale_compatible =
+        ProductCiphertext::log_delta >= Schedule::log_delta;
+    static constexpr bool product_level_compatible =
+        ProductCiphertext::log_q >= Schedule::input_log_q + scale_drop;
+
+    static_assert(product_scale_compatible,
+                  "CKKS product bootstrap cannot raise product scale");
+    static_assert(product_level_compatible,
+                  "CKKS product bootstrap needs enough product level for "
+                  "bootstrap input normalization");
+};
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta, class KeyProvider>
+inline void CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProvider(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &relin_key_file,
+    const KeyProvider &bootstrap_key_provider,
+    const CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key)
+{
+    using Traits =
+        CKKSDenseBootstrapProductTraits<Schedule, LhsLogQ, LhsLogDelta,
+                                        RhsLogQ, RhsLogDelta>;
+    auto product = std::make_unique<typename Traits::ProductCiphertext>();
+    CKKSMultWithRelinKeyFile<typename Schedule::Param>(
+        *product, lhs, rhs, relin_key_file);
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider<Schedule>(
+        res, *product, bootstrap_key_provider, encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta, class KeyProvider>
+inline void CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &relin_key_file,
+    const KeyProvider &bootstrap_key_provider,
+    const CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
+    CKKSDenseBootstrapProductTimings &timings)
+{
+    using Traits =
+        CKKSDenseBootstrapProductTraits<Schedule, LhsLogQ, LhsLogDelta,
+                                        RhsLogQ, RhsLogDelta>;
+    timings = {};
+    auto product = std::make_unique<typename Traits::ProductCiphertext>();
+    ckks_detail::CKKSTimeBootstrapStage(&timings.multiply_ms, [&] {
+        CKKSMultWithRelinKeyFile<typename Schedule::Param>(
+            *product, lhs, rhs, relin_key_file);
+    });
+    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
+        res, *product, bootstrap_key_provider, encapsulation_key,
+        timings.bootstrap);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void CKKSDenseBootstrapProductWithFilesystemKey(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    const std::filesystem::path &relin_key_file)
+{
+    CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProvider<Schedule>(
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void CKKSDenseBootstrapProductWithFilesystemKeyTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    const std::filesystem::path &relin_key_file,
+    CKKSDenseBootstrapProductTimings &timings)
+{
+    CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed<Schedule>(
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void CKKSDenseBootstrapProductWithHybridGiantFilesystemKey(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    const std::filesystem::path &relin_key_file)
+{
+    CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProvider<Schedule>(
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &encapsulation_key_file,
+    const std::filesystem::path &relin_key_file,
+    CKKSDenseBootstrapProductTimings &timings)
+{
+    CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule> provider(
+        key_dir);
+    auto encapsulation_key =
+        std::make_unique<CKKSDenseBootstrapEncapsulationKey<Schedule>>();
+    CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+    CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed<Schedule>(
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings);
 }
 
 template <class Schedule>

@@ -865,6 +865,22 @@ void test_dense_bootstrap_api_shape()
     static_assert(Schedule::after_evalmod_log_q == 160);
     static_assert(Schedule::output_log_q == 120);
 
+    using FreshProductTraits = TFHEpp::CKKSDenseBootstrapProductTraits<
+        Schedule, Schedule::input_log_q + 2 * Schedule::log_delta,
+        Schedule::log_delta,
+        Schedule::input_log_q + 2 * Schedule::log_delta,
+        Schedule::log_delta>;
+    using PostBootstrapProductTraits =
+        TFHEpp::CKKSDenseBootstrapProductTraits<
+            Schedule, Schedule::output_log_q, Schedule::log_delta,
+            Schedule::output_log_q, Schedule::log_delta>;
+    static_assert(FreshProductTraits::ProductCiphertext::log_q ==
+                  Schedule::input_log_q + Schedule::log_delta);
+    static_assert(PostBootstrapProductTraits::ProductCiphertext::log_q ==
+                  Schedule::post_bootstrap_product_log_q);
+    static_assert(FreshProductTraits::product_level_compatible);
+    static_assert(PostBootstrapProductTraits::product_level_compatible);
+
     using Lvl6FastSchedule = TFHEpp::lvl6CKKSDenseBootstrapFastSchedule;
     using Lvl6CompactSchedule = TFHEpp::lvl6CKKSDenseBootstrapCompactSchedule;
     using Lvl6InverseSchedule =
@@ -883,6 +899,16 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6FastSchedule::hybrid_giant_direct_popcount_threshold == 3);
     static_assert(Lvl6CompactSchedule::hybrid_giant_direct_popcount_threshold ==
                   4);
+    using Lvl6PostBootstrapProductTraits =
+        TFHEpp::CKKSDenseBootstrapProductTraits<
+            Lvl6FastSchedule, Lvl6FastSchedule::output_log_q,
+            Lvl6FastSchedule::log_delta, Lvl6FastSchedule::output_log_q,
+            Lvl6FastSchedule::log_delta>;
+    static_assert(
+        Lvl6PostBootstrapProductTraits::ProductCiphertext::log_q ==
+        Lvl6FastSchedule::post_bootstrap_product_log_q);
+    static_assert(Lvl6PostBootstrapProductTraits::scale_drop == 0);
+    static_assert(Lvl6PostBootstrapProductTraits::product_level_compatible);
     static_assert(std::is_same_v<typename Lvl6InverseSchedule::Param,
                                  TFHEpp::lvl6param>);
     static_assert(Lvl6InverseSchedule::log_delta == 40);

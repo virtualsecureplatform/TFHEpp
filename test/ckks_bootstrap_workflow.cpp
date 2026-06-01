@@ -158,15 +158,11 @@ int main()
     TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
         *rhs_ct, *rhs, *external_key, {0.0, 0});
 
-    auto product = std::make_unique<ProductCt>();
-    TFHEpp::CKKSMultWithRelinKeyFile<P>(*product, *lhs_ct, *rhs_ct,
-                                         relin_key_file);
-
     auto bootstrapped = std::make_unique<typename Schedule::OutputCiphertext>();
-    TFHEpp::CKKSDenseBootstrapTimings timings;
-    TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithFilesystemKeyTimed<
-        Schedule>(*bootstrapped, *product, bootstrap_key_dir,
-                  encapsulation_key_file, timings);
+    TFHEpp::CKKSDenseBootstrapProductTimings timings;
+    TFHEpp::CKKSDenseBootstrapProductWithFilesystemKeyTimed<Schedule>(
+        *bootstrapped, *lhs_ct, *rhs_ct, bootstrap_key_dir,
+        encapsulation_key_file, relin_key_file, timings);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
@@ -174,16 +170,13 @@ int main()
 
     const double err = max_error<P>(*decoded, *expected);
 
-    auto chained_product = std::make_unique<PostBootstrapProductCt>();
-    TFHEpp::CKKSMultWithRelinKeyFile<P>(*chained_product, *bootstrapped,
-                                         *bootstrapped,
-                                         post_bootstrap_relin_key_file);
     auto chained_bootstrapped =
         std::make_unique<typename Schedule::OutputCiphertext>();
-    TFHEpp::CKKSDenseBootstrapTimings chained_timings;
-    TFHEpp::CKKSDenseBootstrapEncapsulatedFromLevelWithFilesystemKeyTimed<
-        Schedule>(*chained_bootstrapped, *chained_product, bootstrap_key_dir,
-                  encapsulation_key_file, chained_timings);
+    TFHEpp::CKKSDenseBootstrapProductTimings chained_timings;
+    TFHEpp::CKKSDenseBootstrapProductWithFilesystemKeyTimed<Schedule>(
+        *chained_bootstrapped, *bootstrapped, *bootstrapped, bootstrap_key_dir,
+        encapsulation_key_file, post_bootstrap_relin_key_file,
+        chained_timings);
     TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
         *decoded, *chained_bootstrapped, *external_key);
     const double chained_err = max_error<P>(*decoded, *chained_expected);
@@ -203,23 +196,13 @@ int main()
               << " post_bootstrap_relin_key_bytes="
               << std::filesystem::file_size(post_bootstrap_relin_key_file)
               << '\n';
-    std::cout << "workflow bootstrap_ms="
-              << timings.normalize_ms + timings.input_secret_switch_ms +
-                     timings.modraise_ms + timings.coeff_to_slot_ms +
-                     timings.split_ms + timings.real_evalmod_ms +
-                     timings.imag_evalmod_ms + timings.slot_to_coeff_ms +
-                     timings.output_secret_switch_ms
+    std::cout << "workflow multiply_ms=" << timings.multiply_ms
+              << " bootstrap_ms=" << timings.bootstrap.total_ms()
               << " max_error=" << err << '\n';
-    std::cout << "workflow chained_bootstrap_ms="
-              << chained_timings.normalize_ms +
-                     chained_timings.input_secret_switch_ms +
-                     chained_timings.modraise_ms +
-                     chained_timings.coeff_to_slot_ms +
-                     chained_timings.split_ms +
-                     chained_timings.real_evalmod_ms +
-                     chained_timings.imag_evalmod_ms +
-                     chained_timings.slot_to_coeff_ms +
-                     chained_timings.output_secret_switch_ms
+    std::cout << "workflow chained_multiply_ms="
+              << chained_timings.multiply_ms
+              << " chained_bootstrap_ms="
+              << chained_timings.bootstrap.total_ms()
               << " chained_max_error=" << chained_err << '\n';
 
     std::filesystem::remove_all(root);
