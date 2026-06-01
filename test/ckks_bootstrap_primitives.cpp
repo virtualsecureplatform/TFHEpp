@@ -780,6 +780,8 @@ void test_dense_bootstrap_api_shape()
         TFHEpp::CKKSDenseBootstrapHybridGiantKey<Schedule>;
     using InMemoryProvider =
         TFHEpp::CKKSDenseBootstrapInMemoryKeyProvider<Schedule>;
+    using HybridFilesystemProvider =
+        TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>;
     static_assert(std::is_same_v<
                   typename BootstrapKey::CoeffToSlotGaloisKeyChain,
                   TFHEpp::CKKSSparseGaloisKeyChain<
@@ -848,6 +850,10 @@ void test_dense_bootstrap_api_shape()
         void (*)(typename Schedule::OutputCiphertext &,
                  const typename Schedule::InputCiphertext &,
                  const InMemoryProvider &);
+    using HybridFilesystemBootstrapFn =
+        void (*)(typename Schedule::OutputCiphertext &,
+                 const typename Schedule::InputCiphertext &,
+                 const HybridFilesystemProvider &);
     [[maybe_unused]] KeyGenFn keygen =
         &TFHEpp::CKKSDenseBootstrapKeyGen<Schedule>;
     [[maybe_unused]] BootstrapFn bootstrap =
@@ -859,6 +865,10 @@ void test_dense_bootstrap_api_shape()
     [[maybe_unused]] ProviderBootstrapFn provider_bootstrap =
         &TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule,
                                                    InMemoryProvider>;
+    [[maybe_unused]] HybridFilesystemBootstrapFn
+        hybrid_filesystem_bootstrap =
+            &TFHEpp::CKKSDenseBootstrapWithKeyProvider<
+                Schedule, HybridFilesystemProvider>;
 
     TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
     TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
@@ -1580,6 +1590,40 @@ void test_dense_bootstrap_e2e_smoke()
         *decoded, *hybrid_output, *key);
     require_close_param<M>(*decoded, *slots, 0.02,
                            "CKKS dense encrypted hybrid bootstrap e2e");
+
+    const std::filesystem::path hybrid_slice_dir =
+        std::filesystem::temp_directory_path() /
+        "tfhepp_ckks_dense_bootstrap_hybrid_slices";
+    std::filesystem::remove_all(hybrid_slice_dir);
+    std::size_t generated_hybrid_slices = 0;
+    while (
+        TFHEpp::CKKSDenseBootstrapHybridGiantKeyGenNextMissingToDirectory<
+            Schedule>(hybrid_slice_dir, *key, {0.0, 0})) {
+        generated_hybrid_slices++;
+    }
+    if (generated_hybrid_slices == 0 ||
+        !TFHEpp::CKKSDenseBootstrapHybridGiantKeyDirectoryComplete<Schedule>(
+            hybrid_slice_dir) ||
+        !TFHEpp::CKKSDenseBootstrapHybridGiantKeyDirectoryManifestMatches<
+            Schedule>(hybrid_slice_dir) ||
+        TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestMatches<Schedule>(
+            hybrid_slice_dir))
+        std::exit(1);
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions hybrid_resume_options;
+    hybrid_resume_options.overwrite_existing = false;
+    TFHEpp::CKKSDenseBootstrapHybridGiantKeyGenToDirectory<Schedule>(
+        hybrid_slice_dir, *key, {0.0, 0}, hybrid_resume_options);
+    TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>
+        hybrid_filesystem_provider(hybrid_slice_dir);
+    auto hybrid_filesystem_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(
+        *hybrid_filesystem_output, *input, hybrid_filesystem_provider);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *hybrid_filesystem_output, *key);
+    require_close_param<M>(*decoded, *slots, 0.02,
+                           "CKKS dense hybrid filesystem bootstrap e2e");
+    std::filesystem::remove_all(hybrid_slice_dir);
 
     const std::filesystem::path slice_dir =
         std::filesystem::temp_directory_path() /

@@ -284,10 +284,13 @@ std::string manifest_status(const std::filesystem::path &root)
         TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestFile(root);
     if (!std::filesystem::exists(manifest_path)) return "missing";
     try {
-        return TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestMatches<Schedule>(
-                   root)
-                   ? "match"
-                   : "mismatch";
+        if (TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestMatches<Schedule>(
+                root))
+            return "sparse-match";
+        if (TFHEpp::CKKSDenseBootstrapHybridGiantKeyDirectoryManifestMatches<
+                Schedule>(root))
+            return "hybrid-match";
+        return "mismatch";
     }
     catch (...) {
         return "unreadable";
@@ -497,6 +500,80 @@ int run_filesystem_bootstrap(const std::filesystem::path &key_dir, double tol,
     });
 
     TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    const double bootstrap_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(*output, *input,
+                                                            provider);
+    });
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double decrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
+                                Schedule::log_delta>(*decoded, *output, *key);
+    });
+    const double err = max_error<P>(*decoded, *slots);
+    std::cout << "encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
+    std::cout << "decrypt_ms=" << decrypt_ms << '\n';
+    std::cout << "max_error=" << err << '\n';
+    return err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
+int validate_hybrid_filesystem_key_dir(const std::filesystem::path &key_dir)
+{
+    const auto missing =
+        TFHEpp::CKKSDenseBootstrapHybridGiantMissingKeyDirectoryFiles<
+            Schedule>(key_dir);
+    if (!missing.empty()) {
+        std::cerr << "hybrid_key_dir_incomplete=" << key_dir.string()
+                  << " missing=" << missing.size() << '\n';
+        print_missing_key_files(missing);
+        return 2;
+    }
+    try {
+        if (!TFHEpp::CKKSDenseBootstrapHybridGiantKeyDirectoryManifestMatches<
+                Schedule>(key_dir)) {
+            std::cerr << "hybrid_key_dir_manifest_mismatch="
+                      << key_dir.string() << '\n';
+            return 2;
+        }
+    }
+    catch (const std::exception &e) {
+        std::cerr << "hybrid_key_dir_manifest_unreadable="
+                  << key_dir.string() << " error=" << e.what() << '\n';
+        return 2;
+    }
+    return 0;
+}
+
+template <class Schedule>
+int run_hybrid_filesystem_bootstrap(const std::filesystem::path &key_dir,
+                                    double tol,
+                                    std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+
+    if (const int status =
+            validate_hybrid_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+    std::cout << "key_sparse_weight=" << sparse_weight << '\n';
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*slots);
+
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, Schedule::input_log_q,
+                                Schedule::log_delta>(*input, *slots, *key);
+    });
+
+    TFHEpp::CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>
+        provider(key_dir);
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     const double bootstrap_ms = elapsed_ms([&] {
         TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(*output, *input,
@@ -1087,12 +1164,65 @@ int run_keygen(const std::filesystem::path &key_dir, bool resume,
     return 0;
 }
 
+template <class Schedule>
+int run_hybrid_keygen_next(const std::filesystem::path &key_dir,
+                           std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+
+    print_schedule_report<Schedule>("hybrid-keygen-next-before", &key_dir);
+    std::cout << "keygen_next_sparse_weight=" << sparse_weight << '\n';
+    const auto before_missing =
+        TFHEpp::CKKSDenseBootstrapHybridGiantMissingKeyDirectoryFiles<
+            Schedule>(key_dir);
+    bool generated = false;
+    const double keygen_ms = elapsed_ms([&] {
+        generated =
+            TFHEpp::CKKSDenseBootstrapHybridGiantKeyGenNextMissingToDirectory<
+                Schedule>(key_dir, *key, {P::α, 0});
+    });
+    const auto after_missing =
+        TFHEpp::CKKSDenseBootstrapHybridGiantMissingKeyDirectoryFiles<
+            Schedule>(key_dir);
+    print_schedule_report<Schedule>("hybrid-keygen-next-after", &key_dir);
+    std::cout << "keygen_next_generated=" << (generated ? 1 : 0) << '\n';
+    std::cout << "keygen_next_ms=" << keygen_ms << '\n';
+    print_created_key_files(before_missing, after_missing);
+    return 0;
+}
+
+template <class Schedule>
+int run_hybrid_keygen(const std::filesystem::path &key_dir, bool resume,
+                      std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions options;
+    options.overwrite_existing = !resume;
+    print_schedule_report<Schedule>("hybrid-keygen-before", &key_dir);
+    std::cout << "keygen_sparse_weight=" << sparse_weight << '\n';
+    const double keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapHybridGiantKeyGenToDirectory<Schedule>(
+            key_dir, *key, {P::α, 0}, options);
+    });
+    print_schedule_report<Schedule>("hybrid-keygen-after", &key_dir);
+    std::cout << "keygen_ms=" << keygen_ms << '\n';
+    return 0;
+}
+
 void print_usage(const char *program)
 {
     std::cerr << "Usage: " << program
               << " [--toy] [--keep] [--lvl6-sparse-key H|--lvl6-dense-key]"
                  " [--lvl6-plan] [--lvl6-keygen DIR]"
                  " [--lvl6-keygen-next DIR] [--lvl6-run DIR]"
+                 " [--lvl6-hybrid-keygen DIR]"
+                 " [--lvl6-hybrid-keygen-next DIR]"
+                 " [--lvl6-hybrid-run DIR]"
                  " [--lvl6-debug-modraise]"
                  " [--lvl6-debug-modraise-sparse H]"
                  " [--lvl6-debug-c2s DIR] [--lvl6-debug-evalmod DIR]"
@@ -1162,6 +1292,9 @@ int main(int argc, char **argv)
         }
         else if (arg == "--lvl6-keygen" || arg == "--lvl6-keygen-next" ||
                  arg == "--lvl6-run" || arg == "--lvl6-debug-c2s" ||
+                 arg == "--lvl6-hybrid-keygen" ||
+                 arg == "--lvl6-hybrid-keygen-next" ||
+                 arg == "--lvl6-hybrid-run" ||
                  arg == "--lvl6-debug-evalmod" || arg == "--lvl6-debug-stc" ||
                  arg == "--lvl6-debug" ||
                  arg == "--lvl6-all") {
@@ -1184,6 +1317,22 @@ int main(int argc, char **argv)
             else if (arg == "--lvl6-run") {
                 print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
                 if (run_filesystem_bootstrap<Lvl6Schedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-keygen") {
+                if (run_hybrid_keygen<Lvl6Schedule>(key_dir, resume,
+                                                    lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-keygen-next") {
+                if (run_hybrid_keygen_next<Lvl6Schedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-hybrid-run") {
+                print_schedule_report<Lvl6Schedule>("lvl6", &key_dir);
+                if (run_hybrid_filesystem_bootstrap<Lvl6Schedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
                     return 1;
             }
