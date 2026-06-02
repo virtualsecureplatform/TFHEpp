@@ -2045,16 +2045,32 @@ inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
 
-    auto product = std::make_unique<Polynomial<P>>();
-    for (int j = 0; j < static_cast<int>(row_count); j++) {
-        const Polynomial<P> &digit = (*decomposed)[j];
-        for (int c = 0; c <= static_cast<int>(P::k); c++) {
-            ckks_detail::polyMulTorusByBbarDigit<P>(*product, rows[j][c],
-                                                    digit);
-            for (std::uint32_t n = 0; n < P::n; n++)
-                res[c][n] =
-                    ckks_detail::reduceToLevel<P, LogQ>(res[c][n] +
-                                                        (*product)[n]);
+#pragma omp parallel
+    {
+        auto local = std::make_unique<TRLWE<P>>();
+        auto product = std::make_unique<Polynomial<P>>();
+
+        for (int c = 0; c <= static_cast<int>(P::k); c++)
+            for (std::uint32_t n = 0; n < P::n; n++) (*local)[c][n] = 0;
+
+#pragma omp for schedule(dynamic)
+        for (int j = 0; j < static_cast<int>(row_count); j++) {
+            const Polynomial<P> &digit = (*decomposed)[j];
+            for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                ckks_detail::polyMulTorusByBbarDigit<P>(*product, rows[j][c],
+                                                        digit);
+                for (std::uint32_t n = 0; n < P::n; n++)
+                    (*local)[c][n] += (*product)[n];
+            }
+        }
+
+#pragma omp critical
+        {
+            for (int c = 0; c <= static_cast<int>(P::k); c++)
+                for (std::uint32_t n = 0; n < P::n; n++)
+                    res[c][n] =
+                        ckks_detail::reduceToLevel<P, LogQ>(res[c][n] +
+                                                            (*local)[c][n]);
         }
     }
 }
@@ -2084,25 +2100,40 @@ inline void CKKSKeySwitchRows(
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t n = 0; n < P::n; n++) res[c][n] = 0;
 
-    auto mask = std::make_unique<Polynomial<P>>();
-    auto product = std::make_unique<Polynomial<P>>();
-    for (int j = 0; j < static_cast<int>(row_count); j++) {
-        const Polynomial<P> &digit = (*decomposed)[j];
-        const auto &row = rows[static_cast<std::size_t>(j)];
-        for (int c = 0; c < static_cast<int>(P::k); c++) {
-            ckks_detail::fillSeededUniformPolynomialAtLevel<P, LogQ>(
-                *mask, row.mask_seeds[static_cast<std::size_t>(c)]);
-            ckks_detail::polyMulTorusByBbarDigit<P>(*product, *mask, digit);
+#pragma omp parallel
+    {
+        auto local = std::make_unique<TRLWE<P>>();
+        auto mask = std::make_unique<Polynomial<P>>();
+        auto product = std::make_unique<Polynomial<P>>();
+
+        for (int c = 0; c <= static_cast<int>(P::k); c++)
+            for (std::uint32_t n = 0; n < P::n; n++) (*local)[c][n] = 0;
+
+#pragma omp for schedule(dynamic)
+        for (int j = 0; j < static_cast<int>(row_count); j++) {
+            const Polynomial<P> &digit = (*decomposed)[j];
+            const auto &row = rows[static_cast<std::size_t>(j)];
+            for (int c = 0; c < static_cast<int>(P::k); c++) {
+                ckks_detail::fillSeededUniformPolynomialAtLevel<P, LogQ>(
+                    *mask, row.mask_seeds[static_cast<std::size_t>(c)]);
+                ckks_detail::polyMulTorusByBbarDigit<P>(*product, *mask,
+                                                        digit);
+                for (std::uint32_t n = 0; n < P::n; n++)
+                    (*local)[c][n] += (*product)[n];
+            }
+            ckks_detail::polyMulTorusByBbarDigit<P>(*product, row.body, digit);
             for (std::uint32_t n = 0; n < P::n; n++)
-                res[c][n] =
-                    ckks_detail::reduceToLevel<P, LogQ>(res[c][n] +
-                                                        (*product)[n]);
+                (*local)[P::k][n] += (*product)[n];
         }
-        ckks_detail::polyMulTorusByBbarDigit<P>(*product, row.body, digit);
-        for (std::uint32_t n = 0; n < P::n; n++)
-            res[P::k][n] =
-                ckks_detail::reduceToLevel<P, LogQ>(res[P::k][n] +
-                                                    (*product)[n]);
+
+#pragma omp critical
+        {
+            for (int c = 0; c <= static_cast<int>(P::k); c++)
+                for (std::uint32_t n = 0; n < P::n; n++)
+                    res[c][n] =
+                        ckks_detail::reduceToLevel<P, LogQ>(res[c][n] +
+                                                            (*local)[c][n]);
+        }
     }
 }
 
@@ -2723,7 +2754,6 @@ inline void CKKSBuildSparseBabyStepRotationTable(
         if (needed[i]) CKKSEnsureSparseBabyStep<P>(baby, i);
 
     for (int depth = 1; depth <= static_cast<int>(P::nbit); depth++) {
-#pragma omp parallel for schedule(dynamic)
         for (int current = 1; current < static_cast<int>(needed.size());
              current++) {
             if (!needed[static_cast<std::size_t>(current)] ||
