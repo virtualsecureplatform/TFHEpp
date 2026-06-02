@@ -2222,6 +2222,225 @@ int run_seeded_hybrid_encapsulation_product_diagnostics(
 }
 
 template <class Schedule>
+int run_seeded_hybrid_product_plain_pipeline_diagnostics(
+    const std::filesystem::path &key_dir, std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    static_assert(ProductCt::log_q > Schedule::input_log_q);
+
+    constexpr double tol = 0.01;
+    if (const int status = validate_bounded_modraise_test_key<Schedule>(
+            bootstrap_sparse_weight, "diagnostic");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, bootstrap_sparse_weight, false);
+        status != 0)
+        return status;
+    if (const int status =
+            validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+
+    auto external_key = std::make_unique<TFHEpp::Key<P>>();
+    auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
+    fill_external_test_key<P>(*external_key, external_sparse_weight);
+    fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
+
+    const std::filesystem::path external_eval_key_dir =
+        seeded_external_eval_key_directory(key_dir, external_sparse_weight);
+    const std::filesystem::path encapsulation_key_file =
+        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
+            external_eval_key_dir);
+    const std::filesystem::path product_relin_key_file =
+        TFHEpp::CKKSRelinKeyFile(external_eval_key_dir,
+                                 "seeded_product_relin_key");
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
+    eval_key_options.overwrite_existing = false;
+
+    const double encap_keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
+            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
+            eval_key_options);
+    });
+    const double product_relin_keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
+            product_relin_key_file, *external_key, {P::α, 0},
+            eval_key_options);
+    });
+    auto encapsulation_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapSeededEncapsulationKey<
+            Schedule>>();
+    TFHEpp::CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+
+    TFHEpp::CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule>
+        provider(key_dir);
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
+        provider.linear_plan();
+    const TFHEpp::CKKSBoundedCosEvalModPolynomial &poly =
+        provider.evalmod_polynomial();
+
+    auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*lhs);
+    fill_alternate_test_slots<P>(*rhs);
+    multiply_slots<P>(*expected, *lhs, *rhs);
+    print_slot_diagnostic<P>("diag_plain_product_message", *expected);
+
+    auto lhs_ct = std::make_unique<FreshCt>();
+    auto rhs_ct = std::make_unique<FreshCt>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+            *lhs_ct, *lhs, *external_key);
+        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+            *rhs_ct, *rhs, *external_key);
+    });
+    lhs.reset();
+    rhs.reset();
+
+    auto product = std::make_unique<ProductCt>();
+    const double multiply_ms = elapsed_ms([&] {
+        TFHEpp::CKKSMultWithSeededRelinKeyFile<P>(
+            *product, *lhs_ct, *rhs_ct, product_relin_key_file);
+    });
+    lhs_ct.reset();
+    rhs_ct.reset();
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, ProductCt::log_q, ProductCt::log_delta>(
+        *decoded, *product, *external_key);
+    print_slot_diagnostic<P>("diag_plain_product_raw", *decoded,
+                             expected.get());
+
+    auto normalized_product =
+        std::make_unique<typename Schedule::InputCiphertext>();
+    const double normalize_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapNormalizeInput<Schedule>(
+            *normalized_product, *product);
+    });
+    product.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *decoded, *normalized_product, *external_key);
+    print_slot_diagnostic<P>("diag_plain_product_normalized", *decoded,
+                             expected.get());
+    print_phase_coefficient_diagnostic<Schedule, Schedule::input_log_q>(
+        "diag_plain_product_normalized", *normalized_product, *external_key);
+
+    auto bootstrap_input =
+        std::make_unique<typename Schedule::InputCiphertext>();
+    const double input_switch_ms = elapsed_ms([&] {
+        TFHEpp::CKKSSecretKeySwitch<P, Schedule::input_log_q,
+                                    Schedule::log_delta>(
+            *bootstrap_input, *normalized_product,
+            encapsulation_key->input_to_bootstrap);
+    });
+    normalized_product.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *decoded, *bootstrap_input, *bootstrap_key);
+    print_slot_diagnostic<P>("diag_plain_product_input_switch", *decoded,
+                             expected.get());
+    print_phase_coefficient_diagnostic<Schedule, Schedule::input_log_q>(
+        "diag_plain_product_input_switch", *bootstrap_input, *bootstrap_key);
+
+    auto raised = std::make_unique<typename Schedule::BootstrapCiphertext>();
+    const double modraise_ms = elapsed_ms([&] {
+        TFHEpp::CKKSModRaiseBoundedPhaseRandomized<
+            P, Schedule::input_log_q, Schedule::boot_log_q,
+            Schedule::log_delta, Schedule::modraise_mask_bound>(*raised,
+                                                                *bootstrap_input);
+    });
+    bootstrap_input.reset();
+    auto raised_slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::boot_log_q, Schedule::log_delta>(
+        *raised_slots, *raised, *bootstrap_key);
+    print_slot_diagnostic<P>("diag_plain_product_raised", *raised_slots);
+    print_phase_coefficient_diagnostic<Schedule, Schedule::boot_log_q>(
+        "diag_plain_product_raised", *raised, *bootstrap_key);
+    raised.reset();
+
+    auto coeff_to_slot = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double plain_c2s_ms = elapsed_ms([&] {
+        apply_complex_stages<P>(*coeff_to_slot, *raised_slots,
+                                linear_plan.coeff_to_slot_stages);
+    });
+    raised_slots.reset();
+    print_slot_diagnostic<P>("diag_plain_product_c2s", *coeff_to_slot);
+
+    auto real_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto imag_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double plain_evalmod_ms = elapsed_ms([&] {
+        for (std::size_t i = 0; i < P::n / 2; i++) {
+            (*real_eval)[i] =
+                {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                     poly, (*coeff_to_slot)[i].real(),
+                     Schedule::evalmod_inv_degree) /
+                     Schedule::message_ratio,
+                 0.0};
+            (*imag_eval)[i] =
+                {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                     poly, (*coeff_to_slot)[i].imag(),
+                     Schedule::evalmod_inv_degree) /
+                     Schedule::message_ratio,
+                 0.0};
+        }
+    });
+    coeff_to_slot.reset();
+    print_slot_diagnostic<P>("diag_plain_product_real_evalmod", *real_eval);
+    print_slot_diagnostic<P>("diag_plain_product_imag_evalmod", *imag_eval);
+
+    auto expected_real_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_imag_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto pipeline_output = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double plain_stc_ms = elapsed_ms([&] {
+        apply_complex_stages<P>(*expected_real_out, *real_eval,
+                                linear_plan.slot_to_coeff_stages);
+        apply_complex_stages<P>(*expected_imag_out, *imag_eval,
+                                linear_plan.slot_to_coeff_imag_stages);
+        for (std::size_t i = 0; i < P::n / 2; i++)
+            (*pipeline_output)[i] =
+                (*expected_real_out)[i] + (*expected_imag_out)[i];
+    });
+    real_eval.reset();
+    imag_eval.reset();
+    expected_real_out.reset();
+    expected_imag_out.reset();
+    print_slot_diagnostic<P>("diag_plain_product_pipeline_output",
+                             *pipeline_output, expected.get());
+    const double pipeline_error = max_error<P>(*pipeline_output, *expected);
+
+    std::cout << "diag_plain_product_external_key="
+              << sparse_key_label(external_sparse_weight) << '\n';
+    std::cout << "diag_plain_product_bootstrap_key_sparse_weight="
+              << bootstrap_sparse_weight << '\n';
+    std::cout << "diag_plain_product_encap_keygen_ms=" << encap_keygen_ms
+              << '\n';
+    std::cout << "diag_plain_product_relin_keygen_ms="
+              << product_relin_keygen_ms << '\n';
+    std::cout << "diag_plain_product_encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "diag_plain_product_multiply_ms=" << multiply_ms << '\n';
+    std::cout << "diag_plain_product_normalize_ms=" << normalize_ms << '\n';
+    std::cout << "diag_plain_product_input_switch_ms=" << input_switch_ms
+              << '\n';
+    std::cout << "diag_plain_product_modraise_ms=" << modraise_ms << '\n';
+    std::cout << "diag_plain_product_plain_c2s_ms=" << plain_c2s_ms << '\n';
+    std::cout << "diag_plain_product_plain_evalmod_ms="
+              << plain_evalmod_ms << '\n';
+    std::cout << "diag_plain_product_plain_stc_ms=" << plain_stc_ms << '\n';
+    std::cout << "diag_plain_product_pipeline_error=" << pipeline_error
+              << '\n';
+    return pipeline_error <= tol ? 0 : 1;
+}
+
+template <class Schedule>
 int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight)
@@ -4037,6 +4256,7 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-debug-stc DIR]"
                  " [--lvl6-tuned-seeded-hybrid-debug-evalkeys DIR]"
                  " [--lvl6-tuned-seeded-hybrid-debug-practical-evalkeys DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-debug-practical-plain-product DIR]"
                  " [--lvl6-tuned-seeded-hybrid-debug DIR]"
                  " [--lvl6-tuned-hybrid-run-product-encap DIR]"
                  " [--lvl6-tuned-hybrid-run-chained-product-encap DIR]"
@@ -4245,6 +4465,8 @@ int main(int argc, char **argv)
                  arg == "--lvl6-tuned-seeded-hybrid-debug-evalkeys" ||
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-debug-practical-evalkeys" ||
+                 arg ==
+                     "--lvl6-tuned-seeded-hybrid-debug-practical-plain-product" ||
                  arg == "--lvl6-tuned-seeded-hybrid-debug" ||
                  arg == "--lvl6-tuned-hybrid-run-product-encap" ||
                  arg == "--lvl6-tuned-hybrid-run-chained-product-encap" ||
@@ -4496,8 +4718,17 @@ int main(int argc, char **argv)
             else if (arg ==
                      "--lvl6-tuned-seeded-hybrid-debug-practical-evalkeys") {
                 print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
-                                                         &key_dir);
+                                                          &key_dir);
                 if (run_seeded_hybrid_encapsulation_product_diagnostics<
+                        Lvl6TunedSchedule>(
+                        key_dir, lvl6_sparse_weight, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg ==
+                     "--lvl6-tuned-seeded-hybrid-debug-practical-plain-product") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                          &key_dir);
+                if (run_seeded_hybrid_product_plain_pipeline_diagnostics<
                         Lvl6TunedSchedule>(
                         key_dir, lvl6_sparse_weight, lvl6_sparse_weight) != 0)
                     return 1;
