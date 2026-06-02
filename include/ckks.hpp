@@ -11656,6 +11656,54 @@ CKKSDenseBootstrapSeededHybridGiantStreamedWriteKeyDirectoryMetadata(
     return rotation_usage;
 }
 
+namespace ckks_detail {
+
+template <std::size_t I, std::size_t LevelCount, class Chain>
+inline void CKKSDenseBootstrapLoadIndexedKeyChainFromDirectoryImpl(
+    Chain &chain, const std::filesystem::path &root, const char *name)
+{
+    if constexpr (I <= LevelCount) {
+        CKKSLoadPortableBinary(
+            chain.template get<I>(),
+            CKKSDenseBootstrapIndexedPath(root, name, I));
+        CKKSDenseBootstrapLoadIndexedKeyChainFromDirectoryImpl<I + 1,
+                                                               LevelCount>(
+            chain, root, name);
+    }
+}
+
+template <std::size_t I, std::size_t Depth, class Chain>
+inline void CKKSDenseBootstrapLoadIndexedRelinChainFromDirectoryImpl(
+    Chain &chain, const std::filesystem::path &root, const char *name)
+{
+    if constexpr (I < Depth) {
+        CKKSLoadPortableBinary(
+            chain.template get<I>(),
+            CKKSDenseBootstrapIndexedPath(root, name, I));
+        CKKSDenseBootstrapLoadIndexedRelinChainFromDirectoryImpl<I + 1, Depth>(
+            chain, root, name);
+    }
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapLoadEvalModRelinKeysFromDirectory(
+    CKKSDenseEvalModBoundedCosRelinKeys<Schedule> &keys,
+    const std::filesystem::path &root)
+{
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    CKKSDenseBootstrapLoadIndexedRelinChainFromDirectoryImpl<
+        0, Traits::PolynomialTraits::relin_depth>(keys.polynomial, root,
+                                                  "polynomial_relin");
+    CKKSDenseBootstrapLoadIndexedRelinChainFromDirectoryImpl<
+        0, Schedule::evalmod_double_angle>(keys.double_angle, root,
+                                           "double_angle_relin");
+    CKKSDenseBootstrapLoadIndexedRelinChainFromDirectoryImpl<
+        0, Traits::InverseTraits::power_depth>(keys.inverse, root,
+                                               "inverse_relin");
+}
+
+}  // namespace ckks_detail
+
 template <class Schedule>
 inline bool CKKSDenseBootstrapKeyGenNextMissingToDirectory(
     const std::filesystem::path &root, const Key<typename Schedule::Param> &key,
@@ -11732,6 +11780,43 @@ inline void CKKSDenseBootstrapKeyGenToDirectory(
     ckks_detail::CKKSDenseBootstrapSlotToCoeffKeyGenToDirectoryImpl<0,
                                                                     Schedule>(
         root, rotation_usage, key, noise, options);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapLoadKeyFromDirectory(
+    CKKSDenseBootstrapKey<Schedule> &bootstrap_key,
+    const std::filesystem::path &root)
+{
+    try {
+        if (!CKKSDenseBootstrapKeyDirectoryManifestMatches<Schedule>(root)) {
+            throw std::runtime_error(
+                "CKKS bootstrap key directory manifest does not match schedule");
+        }
+    }
+    catch (const std::exception &e) {
+        throw std::runtime_error(
+            std::string("invalid CKKS bootstrap key directory manifest: ") +
+            e.what());
+    }
+    CKKSDenseBootstrapRequireKeyDirectoryComplete<Schedule>(root);
+    CKKSLoadPortableBinary(
+        bootstrap_key.linear_plan,
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));
+    CKKSLoadPortableBinary(
+        bootstrap_key.evalmod_polynomial,
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "evalmod_polynomial"));
+    ckks_detail::CKKSDenseBootstrapLoadIndexedKeyChainFromDirectoryImpl<
+        0, Schedule::coeff_to_slot_level_count>(
+        bootstrap_key.coeff_to_slot_galois, root, "coeff_to_slot_galois");
+    CKKSLoadPortableBinary(
+        bootstrap_key.packed_conjugate_galois,
+        ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                 "packed_conjugate_galois"));
+    ckks_detail::CKKSDenseBootstrapLoadEvalModRelinKeysFromDirectory<Schedule>(
+        bootstrap_key.evalmod_relin, root);
+    ckks_detail::CKKSDenseBootstrapLoadIndexedKeyChainFromDirectoryImpl<
+        0, Schedule::slot_to_coeff_level_count>(
+        bootstrap_key.slot_to_coeff_galois, root, "slot_to_coeff_galois");
 }
 
 template <class Schedule>
@@ -11814,6 +11899,45 @@ inline void CKKSDenseBootstrapHybridGiantKeyGenToDirectory(
 
     ckks_detail::CKKSDenseBootstrapHybridGiantSlotToCoeffKeyGenToDirectoryImpl<
         0, Schedule>(root, rotation_usage, key, noise, options);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapLoadHybridGiantKeyFromDirectory(
+    CKKSDenseBootstrapHybridGiantKey<Schedule> &bootstrap_key,
+    const std::filesystem::path &root)
+{
+    try {
+        if (!CKKSDenseBootstrapHybridGiantKeyDirectoryManifestMatches<Schedule>(
+                root)) {
+            throw std::runtime_error(
+                "CKKS hybrid bootstrap key directory manifest does not match "
+                "schedule");
+        }
+    }
+    catch (const std::exception &e) {
+        throw std::runtime_error(
+            std::string("invalid CKKS hybrid bootstrap key directory manifest: ") +
+            e.what());
+    }
+    CKKSDenseBootstrapHybridGiantRequireKeyDirectoryComplete<Schedule>(root);
+    CKKSLoadPortableBinary(
+        bootstrap_key.linear_plan,
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));
+    CKKSLoadPortableBinary(
+        bootstrap_key.evalmod_polynomial,
+        ckks_detail::CKKSDenseBootstrapNamedPath(root, "evalmod_polynomial"));
+    ckks_detail::CKKSDenseBootstrapLoadIndexedKeyChainFromDirectoryImpl<
+        0, Schedule::coeff_to_slot_level_count>(
+        bootstrap_key.coeff_to_slot_galois, root, "coeff_to_slot_galois");
+    CKKSLoadPortableBinary(
+        bootstrap_key.packed_conjugate_galois,
+        ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                 "packed_conjugate_galois"));
+    ckks_detail::CKKSDenseBootstrapLoadEvalModRelinKeysFromDirectory<Schedule>(
+        bootstrap_key.evalmod_relin, root);
+    ckks_detail::CKKSDenseBootstrapLoadIndexedKeyChainFromDirectoryImpl<
+        0, Schedule::slot_to_coeff_level_count>(
+        bootstrap_key.slot_to_coeff_galois, root, "slot_to_coeff_galois");
 }
 
 template <class Schedule>

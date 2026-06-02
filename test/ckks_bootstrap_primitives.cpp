@@ -2082,6 +2082,19 @@ void test_dense_bootstrap_e2e_smoke()
         *decoded, *hybrid_filesystem_output, *key);
     require_close_param<M>(*decoded, *slots, 0.02,
                            "CKKS dense hybrid filesystem bootstrap e2e");
+
+    auto loaded_hybrid_bootstrap_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapHybridGiantKey<Schedule>>();
+    TFHEpp::CKKSDenseBootstrapLoadHybridGiantKeyFromDirectory<Schedule>(
+        *loaded_hybrid_bootstrap_key, hybrid_slice_dir);
+    auto loaded_hybrid_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapHybridGiant<Schedule>(
+        *loaded_hybrid_output, *input, *loaded_hybrid_bootstrap_key);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *loaded_hybrid_output, *key);
+    require_close_param<M>(*decoded, *slots, 0.02,
+                           "CKKS dense loaded hybrid bootstrap e2e");
     std::filesystem::remove_all(hybrid_slice_dir);
 
     const std::filesystem::path slice_dir =
@@ -2107,6 +2120,18 @@ void test_dense_bootstrap_e2e_smoke()
         *decoded, *filesystem_output, *key);
     require_close_param<M>(*decoded, *slots, 0.02,
                            "CKKS dense filesystem-slice bootstrap e2e");
+
+    auto loaded_bootstrap_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapKey<Schedule>>();
+    TFHEpp::CKKSDenseBootstrapLoadKeyFromDirectory<Schedule>(
+        *loaded_bootstrap_key, slice_dir);
+    auto loaded_output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrap<Schedule>(*loaded_output, *input,
+                                         *loaded_bootstrap_key);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *loaded_output, *key);
+    require_close_param<M>(*decoded, *slots, 0.02,
+                           "CKKS dense loaded slice bootstrap e2e");
     std::filesystem::remove_all(slice_dir);
 
     const std::filesystem::path incomplete_root =
@@ -2127,6 +2152,14 @@ void test_dense_bootstrap_e2e_smoke()
                 sparse_incomplete_dir);
         },
         "CKKS sparse");
+    require_incomplete_provider_rejected(
+        [&] {
+            TFHEpp::CKKSDenseBootstrapKey<Schedule> key;
+            TFHEpp::CKKSDenseBootstrapLoadKeyFromDirectory<Schedule>(
+                key, sparse_incomplete_dir);
+            return true;
+        },
+        "CKKS sparse loader");
 
     const std::filesystem::path hybrid_incomplete_dir =
         incomplete_root / "hybrid";
@@ -2142,6 +2175,14 @@ void test_dense_bootstrap_e2e_smoke()
                     hybrid_incomplete_dir);
         },
         "CKKS hybrid");
+    require_incomplete_provider_rejected(
+        [&] {
+            TFHEpp::CKKSDenseBootstrapHybridGiantKey<Schedule> key;
+            TFHEpp::CKKSDenseBootstrapLoadHybridGiantKeyFromDirectory<Schedule>(
+                key, hybrid_incomplete_dir);
+            return true;
+        },
+        "CKKS hybrid loader");
 
     const std::filesystem::path seeded_incomplete_dir =
         incomplete_root / "seeded-hybrid";
