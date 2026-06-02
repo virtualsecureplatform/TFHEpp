@@ -1040,7 +1040,7 @@ void test_dense_bootstrap_api_shape()
     static_assert(
         Lvl6CompactSchedule::hybrid_baby_direct_popcount_threshold == 0);
     static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold ==
-                  5);
+                  2);
     static_assert(Lvl6TunedSchedule::hybrid_baby_direct_popcount_threshold ==
                   1);
     static_assert(

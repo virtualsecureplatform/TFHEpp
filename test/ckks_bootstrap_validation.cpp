@@ -1605,13 +1605,13 @@ struct Lvl6TunedHybridThresholdSchedule
 template <int LinearBSGSStep>
 using Lvl6TunedBSGSStepSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
     TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5, 52,
-    LinearBSGSStep, 0, 52, 52, 30, 7, 7, 5, 1>;
+    LinearBSGSStep, 0, 52, 52, 30, 7, 7, 2, 1>;
 
 template <int C2S0, int C2S1, int STC0, int STC1>
 struct Lvl6TunedStageBSGSSchedule
     : TFHEpp::CKKSDenseBootstrapSchedule<
           TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
-          52, 30, 7, 7, 5, 1> {
+          52, 30, 7, 7, 2, 1> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
@@ -1637,7 +1637,7 @@ static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
 static_assert(Lvl6TunedSchedule::log_delta == 52);
-static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 5);
+static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 2);
 static_assert(Lvl6TunedSchedule::hybrid_baby_direct_popcount_threshold == 1);
 static_assert(Lvl6TunedSchedule::evalmod_degree == 34);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 5);
