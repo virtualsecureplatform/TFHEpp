@@ -742,6 +742,18 @@ struct CKKSDenseBootstrapProductTimings {
     double total_ms() const { return multiply_ms + bootstrap.total_ms(); }
 };
 
+struct CKKSDenseBootstrapProductEvalKeyGenTimings {
+    double encapsulation_keygen_ms = 0.0;
+    double product_relin_keygen_ms = 0.0;
+    double post_bootstrap_product_relin_keygen_ms = 0.0;
+
+    double total_ms() const
+    {
+        return encapsulation_keygen_ms + product_relin_keygen_ms +
+               post_bootstrap_product_relin_keygen_ms;
+    }
+};
+
 struct CKKSDenseBootstrapProgress {
     void (*stage_begin)(const char *stage, const void *context) = nullptr;
     void (*stage_end)(const char *stage, double elapsed_ms,
@@ -11158,7 +11170,9 @@ inline void CKKSDenseBootstrapProductEvalKeyGenToDirectory(
     const Key<typename Schedule::Param> &bootstrap_key,
     bool include_post_bootstrap_product = true,
     CKKSNoise noise = {Schedule::Param::α, 0},
-    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+    CKKSDenseBootstrapKeyDirectoryOptions options = {},
+    CKKSDenseBootstrapProductEvalKeyGenTimings *timings = nullptr,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     using P = typename Schedule::Param;
     constexpr std::uint32_t fresh_log_q =
@@ -11169,6 +11183,20 @@ inline void CKKSDenseBootstrapProductEvalKeyGenToDirectory(
         CKKSDenseBootstrapProductEvalKeyFilesInDirectory(root);
     const std::filesystem::path manifest_file =
         CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root);
+    if (timings != nullptr) *timings = {};
+
+    auto run_stage = [&](const char *stage, double *elapsed_ms, auto &&fn) {
+        if (progress != nullptr && progress->stage_begin != nullptr)
+            progress->stage_begin(stage, progress->context);
+        const auto start = std::chrono::steady_clock::now();
+        std::forward<decltype(fn)>(fn)();
+        const auto stop = std::chrono::steady_clock::now();
+        const double elapsed =
+            std::chrono::duration<double, std::milli>(stop - start).count();
+        if (elapsed_ms != nullptr) *elapsed_ms = elapsed;
+        if (progress != nullptr && progress->stage_end != nullptr)
+            progress->stage_end(stage, elapsed, progress->context);
+    };
 
     if constexpr (!Schedule::supports_post_bootstrap_product) {
         if (include_post_bootstrap_product)
@@ -11200,17 +11228,38 @@ inline void CKKSDenseBootstrapProductEvalKeyGenToDirectory(
                 root.string());
         }
     }
+    if constexpr (!Schedule::supports_post_bootstrap_product) {
+        if (include_post_bootstrap_product)
+            throw std::runtime_error(
+                "CKKS schedule does not support post-bootstrap product keys");
+    }
 
-    CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
-        files.encapsulation_key, input_output_key, bootstrap_key, noise,
-        options);
-    CKKSRelinKeyGenToFile<P, product_log_q>(files.product_relin_key,
-                                            input_output_key, noise, options);
+    run_stage("encapsulation",
+              timings != nullptr ? &timings->encapsulation_keygen_ms : nullptr,
+              [&] {
+                  CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
+                      files.encapsulation_key, input_output_key, bootstrap_key,
+                      noise, options);
+              });
+    run_stage("product_relin",
+              timings != nullptr ? &timings->product_relin_keygen_ms : nullptr,
+              [&] {
+                  CKKSRelinKeyGenToFile<P, product_log_q>(
+                      files.product_relin_key, input_output_key, noise,
+                      options);
+              });
     if constexpr (Schedule::supports_post_bootstrap_product) {
         if (include_post_bootstrap_product)
-            CKKSRelinKeyGenToFile<P, Schedule::post_bootstrap_product_log_q>(
-                files.post_bootstrap_product_relin_key, input_output_key, noise,
-                options);
+            run_stage("post_bootstrap_product_relin",
+                      timings != nullptr
+                          ? &timings->post_bootstrap_product_relin_keygen_ms
+                          : nullptr,
+                      [&] {
+                          CKKSRelinKeyGenToFile<
+                              P, Schedule::post_bootstrap_product_log_q>(
+                              files.post_bootstrap_product_relin_key,
+                              input_output_key, noise, options);
+                      });
     }
     CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest<Schedule>(
         root, include_post_bootstrap_product);
@@ -11223,7 +11272,9 @@ inline void CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory(
     const Key<typename Schedule::Param> &bootstrap_key,
     bool include_post_bootstrap_product = true,
     CKKSNoise noise = {Schedule::Param::α, 0},
-    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+    CKKSDenseBootstrapKeyDirectoryOptions options = {},
+    CKKSDenseBootstrapProductEvalKeyGenTimings *timings = nullptr,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     using P = typename Schedule::Param;
     constexpr std::uint32_t fresh_log_q =
@@ -11234,6 +11285,20 @@ inline void CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory(
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(root);
     const std::filesystem::path manifest_file =
         CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root);
+    if (timings != nullptr) *timings = {};
+
+    auto run_stage = [&](const char *stage, double *elapsed_ms, auto &&fn) {
+        if (progress != nullptr && progress->stage_begin != nullptr)
+            progress->stage_begin(stage, progress->context);
+        const auto start = std::chrono::steady_clock::now();
+        std::forward<decltype(fn)>(fn)();
+        const auto stop = std::chrono::steady_clock::now();
+        const double elapsed =
+            std::chrono::duration<double, std::milli>(stop - start).count();
+        if (elapsed_ms != nullptr) *elapsed_ms = elapsed;
+        if (progress != nullptr && progress->stage_end != nullptr)
+            progress->stage_end(stage, elapsed, progress->context);
+    };
 
     if constexpr (!Schedule::supports_post_bootstrap_product) {
         if (include_post_bootstrap_product)
@@ -11265,18 +11330,38 @@ inline void CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory(
                 root.string());
         }
     }
+    if constexpr (!Schedule::supports_post_bootstrap_product) {
+        if (include_post_bootstrap_product)
+            throw std::runtime_error(
+                "CKKS schedule does not support post-bootstrap product keys");
+    }
 
-    CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
-        files.encapsulation_key, input_output_key, bootstrap_key, noise,
-        options);
-    CKKSSeededRelinKeyGenToFile<P, product_log_q>(
-        files.product_relin_key, input_output_key, noise, options);
+    run_stage("encapsulation",
+              timings != nullptr ? &timings->encapsulation_keygen_ms : nullptr,
+              [&] {
+                  CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
+                      files.encapsulation_key, input_output_key, bootstrap_key,
+                      noise, options);
+              });
+    run_stage("product_relin",
+              timings != nullptr ? &timings->product_relin_keygen_ms : nullptr,
+              [&] {
+                  CKKSSeededRelinKeyGenToFile<P, product_log_q>(
+                      files.product_relin_key, input_output_key, noise,
+                      options);
+              });
     if constexpr (Schedule::supports_post_bootstrap_product) {
         if (include_post_bootstrap_product)
-            CKKSSeededRelinKeyGenToFile<
-                P, Schedule::post_bootstrap_product_log_q>(
-                files.post_bootstrap_product_relin_key, input_output_key, noise,
-                options);
+            run_stage("post_bootstrap_product_relin",
+                      timings != nullptr
+                          ? &timings->post_bootstrap_product_relin_keygen_ms
+                          : nullptr,
+                      [&] {
+                          CKKSSeededRelinKeyGenToFile<
+                              P, Schedule::post_bootstrap_product_log_q>(
+                              files.post_bootstrap_product_relin_key,
+                              input_output_key, noise, options);
+                      });
     }
     CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<Schedule>(
         root, include_post_bootstrap_product);

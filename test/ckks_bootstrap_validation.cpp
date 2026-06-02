@@ -3496,25 +3496,17 @@ int run_hybrid_external_eval_keygen(const std::filesystem::path &key_dir,
               << '\n';
     std::cout << "external_eval_key_dir=" << files.root.string() << '\n';
 
-    const double encap_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
-            files.encapsulation_key, *external_key, *bootstrap_key, {P::α, 0},
-            eval_key_options);
-    });
-    const double product_relin_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSRelinKeyGenToFile<P, ProductCt::log_q>(
-            files.product_relin_key, *external_key, {P::α, 0},
-            eval_key_options);
-    });
-    double post_relin_keygen_ms = 0.0;
-    if (include_post_bootstrap_product) {
-        post_relin_keygen_ms = elapsed_ms([&] {
-            TFHEpp::CKKSRelinKeyGenToFile<P,
-                                          PostBootstrapProductCt::log_q>(
-                files.post_bootstrap_product_relin_key, *external_key,
-                {P::α, 0}, eval_key_options);
-        });
-    }
+    TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+    TFHEpp::CKKSDenseBootstrapProductEvalKeyGenToDirectory<Schedule>(
+        files.root, *external_key, *bootstrap_key,
+        metadata_includes_post_bootstrap_product, {P::α, 0}, eval_key_options,
+        &eval_key_timings);
+    const double encap_keygen_ms =
+        eval_key_timings.encapsulation_keygen_ms;
+    const double product_relin_keygen_ms =
+        eval_key_timings.product_relin_keygen_ms;
+    const double post_relin_keygen_ms =
+        eval_key_timings.post_bootstrap_product_relin_keygen_ms;
 
     std::cout << "encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
     std::cout << "encapsulation_key_file="
@@ -3547,8 +3539,6 @@ int run_hybrid_external_eval_keygen(const std::filesystem::path &key_dir,
                          P, PostBootstrapProductCt::log_q>()
                   << '\n';
     }
-    TFHEpp::CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest<Schedule>(
-        files.root, metadata_includes_post_bootstrap_product);
     return write_external_eval_key_metadata(
         files.root, build_external_eval_key_metadata<Schedule>(
                         "hybrid", bootstrap_sparse_weight, 0,
@@ -3610,16 +3600,13 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
                     metadata_includes_post_bootstrap_product);
             status != 0)
             return status;
-        encap_keygen_ms = elapsed_ms([&] {
-            TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
-                eval_key_files.encapsulation_key, *external_key,
-                *bootstrap_key, {P::α, 0}, eval_key_options);
-        });
-        relin_keygen_ms = elapsed_ms([&] {
-            TFHEpp::CKKSRelinKeyGenToFile<P, ProductCt::log_q>(
-                eval_key_files.product_relin_key, *external_key, {P::α, 0},
-                eval_key_options);
-        });
+        TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+        TFHEpp::CKKSDenseBootstrapProductEvalKeyGenToDirectory<Schedule>(
+            eval_key_files.root, *external_key, *bootstrap_key,
+            metadata_includes_post_bootstrap_product, {P::α, 0},
+            eval_key_options, &eval_key_timings);
+        encap_keygen_ms = eval_key_timings.encapsulation_keygen_ms;
+        relin_keygen_ms = eval_key_timings.product_relin_keygen_ms;
     }
     else if (const int status = validate_hybrid_external_eval_key_files<
                  Schedule>(eval_key_files, bootstrap_sparse_weight, false);
@@ -3627,9 +3614,6 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
         return status;
     }
     if (generate_eval_keys) {
-        TFHEpp::CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest<
-            Schedule>(eval_key_files.root,
-                      metadata_includes_post_bootstrap_product);
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(
@@ -3769,28 +3753,20 @@ int run_seeded_hybrid_external_eval_keygen(
     std::cout << "seeded_external_eval_key_dir=" << files.root.string()
               << '\n';
 
+    const BootstrapProgressPrinter progress_printer{"seeded_eval_keygen"};
+    const TFHEpp::CKKSDenseBootstrapProgress progress{
+        bootstrap_progress_begin, bootstrap_progress_end, &progress_printer};
+    TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+    TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+        files.root, *external_key, *bootstrap_key,
+        metadata_includes_post_bootstrap_product, {P::α, 0}, eval_key_options,
+        &eval_key_timings, &progress);
     const double encap_keygen_ms =
-        elapsed_ms_with_progress("seeded_eval_keygen", "encapsulation", [&] {
-            TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
-                Schedule>(files.encapsulation_key, *external_key,
-                          *bootstrap_key, {P::α, 0}, eval_key_options);
-        });
+        eval_key_timings.encapsulation_keygen_ms;
     const double product_relin_keygen_ms =
-        elapsed_ms_with_progress("seeded_eval_keygen", "product_relin", [&] {
-            TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-                files.product_relin_key, *external_key, {P::α, 0},
-                eval_key_options);
-        });
-    double post_relin_keygen_ms = 0.0;
-    if (include_post_bootstrap_product) {
-        post_relin_keygen_ms = elapsed_ms_with_progress(
-            "seeded_eval_keygen", "post_bootstrap_product_relin", [&] {
-                TFHEpp::CKKSSeededRelinKeyGenToFile<
-                    P, PostBootstrapProductCt::log_q>(
-                    files.post_bootstrap_product_relin_key, *external_key,
-                    {P::α, 0}, eval_key_options);
-            });
-    }
+        eval_key_timings.product_relin_keygen_ms;
+    const double post_relin_keygen_ms =
+        eval_key_timings.post_bootstrap_product_relin_keygen_ms;
 
     std::cout << "seeded_encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
     std::cout << "seeded_encapsulation_key_file="
@@ -3823,8 +3799,6 @@ int run_seeded_hybrid_external_eval_keygen(
                          P, PostBootstrapProductCt::log_q>()
                   << '\n';
     }
-    TFHEpp::CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<
-        Schedule>(files.root, metadata_includes_post_bootstrap_product);
     return write_external_eval_key_metadata(
         files.root, build_external_eval_key_metadata<Schedule>(
                         "seeded", bootstrap_sparse_weight,
@@ -3902,22 +3876,17 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
                     metadata_includes_post_bootstrap_product);
             status != 0)
             return status;
-        encap_keygen_ms =
-            elapsed_ms_with_progress("seeded_product", "encapsulation_keygen",
-                                     [&] {
-                                         TFHEpp::
-                                             CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
-                                                 Schedule>(
-                                                 eval_key_files.encapsulation_key,
-                                                 *external_key, *bootstrap_key,
-                                                 {P::α, 0}, eval_key_options);
-                                     });
-        relin_keygen_ms =
-            elapsed_ms_with_progress("seeded_product", "relin_keygen", [&] {
-                TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-                    eval_key_files.product_relin_key, *external_key, {P::α, 0},
-                    eval_key_options);
-            });
+        const BootstrapProgressPrinter progress_printer{"seeded_product"};
+        const TFHEpp::CKKSDenseBootstrapProgress progress{
+            bootstrap_progress_begin, bootstrap_progress_end,
+            &progress_printer};
+        TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+        TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+            eval_key_files.root, *external_key, *bootstrap_key,
+            metadata_includes_post_bootstrap_product, {P::α, 0},
+            eval_key_options, &eval_key_timings, &progress);
+        encap_keygen_ms = eval_key_timings.encapsulation_keygen_ms;
+        relin_keygen_ms = eval_key_timings.product_relin_keygen_ms;
     }
     else if (const int status = validate_seeded_external_eval_key_files<
                  Schedule>(eval_key_files, bootstrap_sparse_weight,
@@ -3926,9 +3895,6 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
         return status;
     }
     if (generate_eval_keys) {
-        TFHEpp::CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<
-            Schedule>(eval_key_files.root,
-                      metadata_includes_post_bootstrap_product);
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(
@@ -4098,25 +4064,17 @@ int run_seeded_hybrid_encapsulation_product_diagnostics(
               << " diag_post_product_logQ=" << PostBootstrapProductCt::log_q
               << '\n';
 
-    const double encap_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
-            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
-            eval_key_options);
-    });
-    const double product_relin_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-            product_relin_key_file, *external_key, {P::α, 0},
-            eval_key_options);
-    });
-    double post_relin_keygen_ms = 0.0;
-    if constexpr (Schedule::supports_post_bootstrap_product) {
-        post_relin_keygen_ms = elapsed_ms([&] {
-            TFHEpp::CKKSSeededRelinKeyGenToFile<
-                P, PostBootstrapProductCt::log_q>(
-                post_bootstrap_relin_key_file, *external_key, {P::α, 0},
-                eval_key_options);
-        });
-    }
+    TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+    TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+        external_eval_key_dir, *external_key, *bootstrap_key,
+        Schedule::supports_post_bootstrap_product, {P::α, 0},
+        eval_key_options, &eval_key_timings);
+    const double encap_keygen_ms =
+        eval_key_timings.encapsulation_keygen_ms;
+    const double product_relin_keygen_ms =
+        eval_key_timings.product_relin_keygen_ms;
+    const double post_relin_keygen_ms =
+        eval_key_timings.post_bootstrap_product_relin_keygen_ms;
 
     auto encapsulation_key =
         std::make_unique<TFHEpp::CKKSDenseBootstrapSeededEncapsulationKey<
@@ -4392,16 +4350,14 @@ int run_seeded_hybrid_product_plain_pipeline_diagnostics(
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
     eval_key_options.overwrite_existing = false;
 
-    const double encap_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
-            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
-            eval_key_options);
-    });
-    const double product_relin_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-            product_relin_key_file, *external_key, {P::α, 0},
-            eval_key_options);
-    });
+    TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+    TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+        external_eval_key_dir, *external_key, *bootstrap_key, false, {P::α, 0},
+        eval_key_options, &eval_key_timings);
+    const double encap_keygen_ms =
+        eval_key_timings.encapsulation_keygen_ms;
+    const double product_relin_keygen_ms =
+        eval_key_timings.product_relin_keygen_ms;
     auto encapsulation_key =
         std::make_unique<TFHEpp::CKKSDenseBootstrapSeededEncapsulationKey<
             Schedule>>();
@@ -4613,16 +4569,14 @@ int run_seeded_hybrid_product_stage_diagnostics(
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
     eval_key_options.overwrite_existing = false;
 
-    const double encap_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
-            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
-            eval_key_options);
-    });
-    const double product_relin_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-            product_relin_key_file, *external_key, {P::α, 0},
-            eval_key_options);
-    });
+    TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+    TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+        external_eval_key_dir, *external_key, *bootstrap_key, false, {P::α, 0},
+        eval_key_options, &eval_key_timings);
+    const double encap_keygen_ms =
+        eval_key_timings.encapsulation_keygen_ms;
+    const double product_relin_keygen_ms =
+        eval_key_timings.product_relin_keygen_ms;
     auto encapsulation_key =
         std::make_unique<TFHEpp::CKKSDenseBootstrapSeededEncapsulationKey<
             Schedule>>();
@@ -4995,22 +4949,15 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
                     metadata_includes_post_bootstrap_product);
             status != 0)
             return status;
-        encap_keygen_ms = elapsed_ms([&] {
-            TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
-                eval_key_files.encapsulation_key, *external_key,
-                *bootstrap_key, {P::α, 0}, eval_key_options);
-        });
-        product_relin_keygen_ms = elapsed_ms([&] {
-            TFHEpp::CKKSRelinKeyGenToFile<P, ProductCt::log_q>(
-                eval_key_files.product_relin_key, *external_key, {P::α, 0},
-                eval_key_options);
-        });
-        post_relin_keygen_ms = elapsed_ms([&] {
-            TFHEpp::CKKSRelinKeyGenToFile<P,
-                                          PostBootstrapProductCt::log_q>(
-                eval_key_files.post_bootstrap_product_relin_key,
-                *external_key, {P::α, 0}, eval_key_options);
-            });
+        TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+        TFHEpp::CKKSDenseBootstrapProductEvalKeyGenToDirectory<Schedule>(
+            eval_key_files.root, *external_key, *bootstrap_key,
+            metadata_includes_post_bootstrap_product, {P::α, 0},
+            eval_key_options, &eval_key_timings);
+        encap_keygen_ms = eval_key_timings.encapsulation_keygen_ms;
+        product_relin_keygen_ms = eval_key_timings.product_relin_keygen_ms;
+        post_relin_keygen_ms =
+            eval_key_timings.post_bootstrap_product_relin_keygen_ms;
     }
     else if (const int status = validate_hybrid_external_eval_key_files<
                  Schedule>(eval_key_files, bootstrap_sparse_weight, true);
@@ -5018,9 +4965,6 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
         return status;
     }
     if (generate_eval_keys) {
-        TFHEpp::CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest<
-            Schedule>(eval_key_files.root,
-                      metadata_includes_post_bootstrap_product);
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(
@@ -5208,33 +5152,19 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
                     metadata_includes_post_bootstrap_product);
             status != 0)
             return status;
-        encap_keygen_ms =
-            elapsed_ms_with_progress("seeded_eval_keygen", "encapsulation",
-                                     [&] {
-                                         TFHEpp::
-                                             CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
-                                                 Schedule>(
-                                                 eval_key_files.encapsulation_key,
-                                                 *external_key, *bootstrap_key,
-                                                 {P::α, 0}, eval_key_options);
-                                     });
-        product_relin_keygen_ms =
-            elapsed_ms_with_progress("seeded_eval_keygen", "product_relin",
-                                     [&] {
-                                         TFHEpp::
-                                             CKKSSeededRelinKeyGenToFile<
-                                                 P, ProductCt::log_q>(
-                                                 eval_key_files.product_relin_key,
-                                                 *external_key, {P::α, 0},
-                                                 eval_key_options);
-                                     });
-        post_relin_keygen_ms = elapsed_ms_with_progress(
-            "seeded_eval_keygen", "post_bootstrap_product_relin", [&] {
-                TFHEpp::CKKSSeededRelinKeyGenToFile<
-                    P, PostBootstrapProductCt::log_q>(
-                    eval_key_files.post_bootstrap_product_relin_key,
-                    *external_key, {P::α, 0}, eval_key_options);
-            });
+        const BootstrapProgressPrinter progress_printer{"seeded_eval_keygen"};
+        const TFHEpp::CKKSDenseBootstrapProgress progress{
+            bootstrap_progress_begin, bootstrap_progress_end,
+            &progress_printer};
+        TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
+        TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+            eval_key_files.root, *external_key, *bootstrap_key,
+            metadata_includes_post_bootstrap_product, {P::α, 0},
+            eval_key_options, &eval_key_timings, &progress);
+        encap_keygen_ms = eval_key_timings.encapsulation_keygen_ms;
+        product_relin_keygen_ms = eval_key_timings.product_relin_keygen_ms;
+        post_relin_keygen_ms =
+            eval_key_timings.post_bootstrap_product_relin_keygen_ms;
     }
     else if (const int status = validate_seeded_external_eval_key_files<
                  Schedule>(eval_key_files, bootstrap_sparse_weight,
@@ -5243,9 +5173,6 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
         return status;
     }
     if (generate_eval_keys) {
-        TFHEpp::CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<
-            Schedule>(eval_key_files.root,
-                      metadata_includes_post_bootstrap_product);
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(
