@@ -139,13 +139,15 @@ int main()
         "tfhepp_ckks_bootstrap_workflow";
     const std::filesystem::path bootstrap_key_dir = root / "bootstrap_key";
     const std::filesystem::path eval_key_dir = root / "seeded_external_eval_key";
+    const auto eval_key_files =
+        TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(
+            eval_key_dir);
     const std::filesystem::path encapsulation_key_file =
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(eval_key_dir);
+        eval_key_files.encapsulation_key;
     const std::filesystem::path relin_key_file =
-        TFHEpp::CKKSRelinKeyFile(eval_key_dir, "seeded_product_relin_key");
+        eval_key_files.product_relin_key;
     const std::filesystem::path post_bootstrap_relin_key_file =
-        TFHEpp::CKKSRelinKeyFile(eval_key_dir,
-                                 "seeded_post_bootstrap_relin_key");
+        eval_key_files.post_bootstrap_product_relin_key;
     std::filesystem::remove_all(root);
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
@@ -166,6 +168,12 @@ int main()
             CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryManifestMatches<
                 Schedule>(bootstrap_key_dir)) {
         std::cerr << "workflow streamed seeded bootstrap key directory invalid\n";
+        std::filesystem::remove_all(root);
+        return 1;
+    }
+    if (TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyDirectoryComplete(
+            eval_key_dir)) {
+        std::cerr << "workflow incomplete seeded eval key directory accepted\n";
         std::filesystem::remove_all(root);
         return 1;
     }
@@ -196,6 +204,12 @@ int main()
         relin_regenerated || !post_relin_generated ||
         post_relin_regenerated) {
         std::cerr << "workflow seeded eval key resume check failed\n";
+        std::filesystem::remove_all(root);
+        return 1;
+    }
+    if (!TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyDirectoryComplete(
+            eval_key_dir)) {
+        std::cerr << "workflow seeded eval key directory incomplete\n";
         std::filesystem::remove_all(root);
         return 1;
     }

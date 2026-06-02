@@ -10639,6 +10639,93 @@ inline std::filesystem::path CKKSRelinKeyFile(const std::filesystem::path &root,
     return ckks_detail::CKKSDenseBootstrapNamedPath(root, name);
 }
 
+struct CKKSDenseBootstrapProductEvalKeyFiles {
+    std::filesystem::path encapsulation_key;
+    std::filesystem::path product_relin_key;
+    std::filesystem::path post_bootstrap_product_relin_key;
+};
+
+inline CKKSDenseBootstrapProductEvalKeyFiles
+CKKSDenseBootstrapProductEvalKeyFilesInDirectory(
+    const std::filesystem::path &root)
+{
+    return {CKKSDenseBootstrapEncapsulationKeyFile(root),
+            CKKSRelinKeyFile(root, "product_relin_key"),
+            CKKSRelinKeyFile(root, "post_bootstrap_product_relin_key")};
+}
+
+inline CKKSDenseBootstrapProductEvalKeyFiles
+CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(
+    const std::filesystem::path &root)
+{
+    return {CKKSDenseBootstrapSeededEncapsulationKeyFile(root),
+            CKKSRelinKeyFile(root, "seeded_product_relin_key"),
+            CKKSRelinKeyFile(root, "seeded_post_bootstrap_product_relin_key")};
+}
+
+inline bool CKKSDenseBootstrapProductEvalKeyDirectoryComplete(
+    const CKKSDenseBootstrapProductEvalKeyFiles &files,
+    bool require_post_bootstrap_product = true)
+{
+    return std::filesystem::exists(files.encapsulation_key) &&
+           std::filesystem::exists(files.product_relin_key) &&
+           (!require_post_bootstrap_product ||
+            std::filesystem::exists(files.post_bootstrap_product_relin_key));
+}
+
+inline bool CKKSDenseBootstrapProductEvalKeyDirectoryComplete(
+    const std::filesystem::path &root,
+    bool require_post_bootstrap_product = true)
+{
+    return CKKSDenseBootstrapProductEvalKeyDirectoryComplete(
+        CKKSDenseBootstrapProductEvalKeyFilesInDirectory(root),
+        require_post_bootstrap_product);
+}
+
+inline bool CKKSDenseBootstrapSeededProductEvalKeyDirectoryComplete(
+    const std::filesystem::path &root,
+    bool require_post_bootstrap_product = true)
+{
+    return CKKSDenseBootstrapProductEvalKeyDirectoryComplete(
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(root),
+        require_post_bootstrap_product);
+}
+
+inline void CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(
+    const CKKSDenseBootstrapProductEvalKeyFiles &files,
+    bool require_post_bootstrap_product = true)
+{
+    if (!std::filesystem::exists(files.encapsulation_key))
+        throw std::runtime_error("missing CKKS bootstrap encapsulation key: " +
+                                 files.encapsulation_key.string());
+    if (!std::filesystem::exists(files.product_relin_key))
+        throw std::runtime_error("missing CKKS product relinearization key: " +
+                                 files.product_relin_key.string());
+    if (require_post_bootstrap_product &&
+        !std::filesystem::exists(files.post_bootstrap_product_relin_key))
+        throw std::runtime_error(
+            "missing CKKS post-bootstrap product relinearization key: " +
+            files.post_bootstrap_product_relin_key.string());
+}
+
+inline void CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(
+    const std::filesystem::path &root,
+    bool require_post_bootstrap_product = true)
+{
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(
+        CKKSDenseBootstrapProductEvalKeyFilesInDirectory(root),
+        require_post_bootstrap_product);
+}
+
+inline void CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryComplete(
+    const std::filesystem::path &root,
+    bool require_post_bootstrap_product = true)
+{
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(root),
+        require_post_bootstrap_product);
+}
+
 template <class P, std::uint32_t LogQ>
 inline void CKKSRelinKeyGenToFile(
     const std::filesystem::path &path, const Key<P> &key,
