@@ -1537,7 +1537,7 @@ struct Lvl6TunedHybridThresholdSchedule
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
-        return I == 0 ? 2048 : 64;
+        return I == 0 ? 2048 : 32;
     }
 
     template <std::size_t I>
@@ -1593,7 +1593,7 @@ static_assert(
         0, Lvl6TunedSchedule>() == 2048);
 static_assert(
     TFHEpp::ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStep<
-        1, Lvl6TunedSchedule>() == 64);
+        1, Lvl6TunedSchedule>() == 32);
 static_assert(
     TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
         0, Lvl6TunedSchedule>() == 64);
@@ -2279,6 +2279,15 @@ void print_lvl6_tuned_stage_bsgs_reports()
     print_schedule_tuning_summary<
         Lvl6TunedStageBSGSSchedule<2048, 64, 64, 1024>>(
         "lvl6-tuned-stage-c2048-64-s64-1024");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<2048, 32, 64, 1024>>(
+        "lvl6-tuned-stage-c2048-32-s64-1024");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<2048, 16, 64, 1024>>(
+        "lvl6-tuned-stage-c2048-16-s64-1024");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<2048, 128, 64, 1024>>(
+        "lvl6-tuned-stage-c2048-128-s64-1024");
     print_schedule_tuning_summary<
         Lvl6TunedStageBSGSSchedule<4096, 64, 64, 1024>>(
         "lvl6-tuned-stage-c4096-64-s64-1024");
