@@ -12,9 +12,11 @@
 #include <cereal/types/vector.hpp>
 #include <cmath>
 #include <complex>
+#include <cstdlib>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -795,6 +797,36 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
 };
 
 namespace ckks_detail {
+
+inline bool ckks_linear_trace_enabled()
+{
+    static const bool enabled =
+        std::getenv("TFHEPP_CKKS_TRACE_LINEAR") != nullptr;
+    return enabled;
+}
+
+inline double ckks_trace_elapsed_ms(
+    const std::chrono::steady_clock::time_point &start)
+{
+    return std::chrono::duration<double, std::milli>(
+               std::chrono::steady_clock::now() - start)
+        .count();
+}
+
+inline void ckks_trace_linear_event(const char *name, double elapsed_ms)
+{
+    if (!ckks_linear_trace_enabled()) return;
+    std::cerr << "ckks_linear_trace name=" << name << " ms=" << elapsed_ms
+              << '\n';
+}
+
+inline void ckks_trace_linear_group_event(const char *name, std::size_t group,
+                                          double elapsed_ms)
+{
+    if (!ckks_linear_trace_enabled()) return;
+    std::cerr << "ckks_linear_trace name=" << name << " group=" << group
+              << " ms=" << elapsed_ms << '\n';
+}
 
 template <std::uint32_t A, std::uint32_t B>
 inline constexpr std::uint32_t static_min_v = A < B ? A : B;
@@ -2674,34 +2706,36 @@ inline void CKKSBuildSparseBabyStepRotationTable(
     assert(baby.size() == baby_used.size());
     CKKSEnsureSparseBabyStep<P>(baby, 0) = ct;
 
-    std::vector<bool> ready(baby.size(), false);
-    ready[0] = true;
-    std::vector<int> stack;
-
+    std::vector<bool> needed(baby.size(), false);
+    needed[0] = true;
     for (int target = 1; target < static_cast<int>(baby_used.size());
          target++) {
         if (!baby_used[static_cast<std::size_t>(target)]) continue;
 
-        stack.clear();
         int step = target;
-        while (!ready[static_cast<std::size_t>(step)]) {
-            stack.push_back(step);
+        while (step != 0) {
+            needed[static_cast<std::size_t>(step)] = true;
             step -= highestPowerOfTwoLE(step);
         }
+    }
 
-        while (!stack.empty()) {
-            const int current = stack.back();
-            stack.pop_back();
-            if (ready[static_cast<std::size_t>(current)]) continue;
+    for (std::size_t i = 1; i < needed.size(); i++)
+        if (needed[i]) CKKSEnsureSparseBabyStep<P>(baby, i);
+
+    for (int depth = 1; depth <= static_cast<int>(P::nbit); depth++) {
+#pragma omp parallel for schedule(dynamic)
+        for (int current = 1; current < static_cast<int>(needed.size());
+             current++) {
+            if (!needed[static_cast<std::size_t>(current)] ||
+                static_cast<int>(popcountNonnegativeInt(current)) != depth)
+                continue;
             const int bit = highestPowerOfTwoLE(current);
             const int parent = current - bit;
-            assert(ready[static_cast<std::size_t>(parent)]);
             assert(baby[static_cast<std::size_t>(parent)]);
+            assert(baby[static_cast<std::size_t>(current)]);
             CKKSRotateSlots<P, LogQ>(
-                CKKSEnsureSparseBabyStep<P>(
-                    baby, static_cast<std::size_t>(current)),
+                *baby[static_cast<std::size_t>(current)],
                 *baby[static_cast<std::size_t>(parent)], bit, gk);
-            ready[static_cast<std::size_t>(current)] = true;
         }
     }
 }
@@ -3767,6 +3801,9 @@ inline void CKKSLinearTransformBSGS(
     constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
     assert(plan.k_step > 0 && plan.k_step <= static_cast<int>(P::n / 2));
     assert(!plan.groups.empty());
+    const bool trace_linear = ckks_detail::ckks_linear_trace_enabled();
+    const auto trace_total_start = std::chrono::steady_clock::now();
+    auto trace_section_start = trace_total_start;
 
     std::vector<bool> baby_used;
     CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
@@ -3777,6 +3814,12 @@ inline void CKKSLinearTransformBSGS(
     ckks_detail::CKKSBuildSparseBabyStepRotationTable<P, LogQ>(
         *baby, ct.ct, baby_used, input_gk);
     ckks_detail::maybe_clear_cached_keys(input_gk);
+    if (trace_linear) {
+        ckks_detail::ckks_trace_linear_event(
+            "baby_rotation_table",
+            ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+        trace_section_start = std::chrono::steady_clock::now();
+    }
 
     if constexpr (is_multilimb_uint_v<typename P::T> &&
                   use_multilimb_digit_fft_v<P>) {
@@ -3811,101 +3854,159 @@ inline void CKKSLinearTransformBSGS(
         auto baby_fft =
             std::make_unique<std::vector<std::unique_ptr<BabyFFT>>>(
                 plan.k_step);
-        auto torus_digit = std::make_unique<Polynomial<P>>();
         for (int j1 = 0; j1 < static_cast<int>(baby_used.size()); j1++) {
             if (!baby_used[static_cast<std::size_t>(j1)]) continue;
             (*baby_fft)[static_cast<std::size_t>(j1)] =
                 std::make_unique<BabyFFT>();
-            for (int c = 0; c <= static_cast<int>(P::k); c++) {
-                for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                    const int torus_shift =
-                        width - (j + 1) * static_cast<int>(P::B̅gbit);
-                    const auto &baby_ct =
-                        *(*baby)[static_cast<std::size_t>(j1)];
-                    for (uint32_t n = 0; n < P::n; n++) {
-                        const T adjusted = baby_ct[c][n] + offset;
-                        (*torus_digit)[n] =
-                            ((adjusted >> torus_shift) & torus_mask) -
-                            half_digit;
+        }
+#pragma omp parallel
+        {
+            auto torus_digit = std::make_unique<Polynomial<P>>();
+#pragma omp for schedule(dynamic)
+            for (int j1 = 0; j1 < static_cast<int>(baby_used.size()); j1++) {
+                if (!baby_used[static_cast<std::size_t>(j1)]) continue;
+                const auto &baby_ct =
+                    *(*baby)[static_cast<std::size_t>(j1)];
+                auto &baby_out =
+                    *(*baby_fft)[static_cast<std::size_t>(j1)];
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                        const int torus_shift =
+                            width - (j + 1) * static_cast<int>(P::B̅gbit);
+                        for (uint32_t n = 0; n < P::n; n++) {
+                            const T adjusted = baby_ct[c][n] + offset;
+                            (*torus_digit)[n] =
+                                ((adjusted >> torus_shift) & torus_mask) -
+                                half_digit;
+                        }
+                        TwistIFFTDigit<P>(baby_out[c][j], *torus_digit);
                     }
-                    TwistIFFTDigit<P>(
-                        (*(*baby_fft)[static_cast<std::size_t>(j1)])[c][j],
-                        *torus_digit);
                 }
             }
         }
         baby.reset();
+        if (trace_linear) {
+            ckks_detail::ckks_trace_linear_event(
+                "baby_digit_fft",
+                ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+            trace_section_start = std::chrono::steady_clock::now();
+        }
 
         bool res_initialized = false;
         auto inner = std::make_unique<TRLWE<P>>();
         auto giant_rotated = std::make_unique<TRLWE<P>>();
-        auto plain_digit = std::make_unique<Polynomial<P>>();
-        auto product_acc = std::make_unique<PolynomialInFD<P>>();
-        auto digit_prod = std::make_unique<Polynomial<P>>();
 
+        std::size_t group_index = 0;
         for (const auto &group : plan.groups) {
             using PlainTermFFT = std::array<PolynomialInFD<P>, plain_digits>;
             auto plain_fft =
                 std::make_unique<std::vector<PlainTermFFT>>(group.terms.size());
-            for (std::size_t t = 0; t < group.terms.size(); t++) {
-                const auto &plain = group.terms[t].plain.poly;
-                for (int d = 0; d < plain_digits; d++) {
-                    const int plain_shift = d * static_cast<int>(P::B̅gbit);
-                    for (uint32_t n = 0; n < P::n; n++) {
-                        const auto [negative, magnitude] =
-                            ckks_detail::smallSignedMagnitude<P, LogQ>(
-                                plain[n]);
-                        const uint64_t digit =
-                            (magnitude >> plain_shift) & plain_mask;
-                        const T digit_value{digit};
-                        (*plain_digit)[n] =
-                            negative ? T{0} - digit_value : digit_value;
+            const int term_count = static_cast<int>(group.terms.size());
+#pragma omp parallel
+            {
+                auto plain_digit = std::make_unique<Polynomial<P>>();
+#pragma omp for collapse(2) schedule(dynamic)
+                for (int t = 0; t < term_count; t++) {
+                    for (int d = 0; d < plain_digits; d++) {
+                        const auto &plain =
+                            group.terms[static_cast<std::size_t>(t)]
+                                .plain.poly;
+                        const int plain_shift =
+                            d * static_cast<int>(P::B̅gbit);
+                        for (uint32_t n = 0; n < P::n; n++) {
+                            const auto [negative, magnitude] =
+                                ckks_detail::smallSignedMagnitude<P, LogQ>(
+                                    plain[n]);
+                            const uint64_t digit =
+                                (magnitude >> plain_shift) & plain_mask;
+                            const T digit_value{digit};
+                            (*plain_digit)[n] =
+                                negative ? T{0} - digit_value : digit_value;
+                        }
+                        TwistIFFTDigit<P>(
+                            (*plain_fft)[static_cast<std::size_t>(t)][d],
+                            *plain_digit);
                     }
-                    TwistIFFTDigit<P>((*plain_fft)[t][d], *plain_digit);
                 }
+            }
+            if (trace_linear) {
+                ckks_detail::ckks_trace_linear_group_event(
+                    "plain_digit_fft", group_index,
+                    ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+                trace_section_start = std::chrono::steady_clock::now();
             }
 
             for (int c = 0; c <= static_cast<int>(P::k); c++)
                 for (uint32_t n = 0; n < P::n; n++) (*inner)[c][n] = 0;
 
-            for (std::size_t batch_begin = 0;
-                 batch_begin < group.terms.size();
-                 batch_begin += max_fused_terms) {
-                const std::size_t batch_end = std::min<std::size_t>(
-                    group.terms.size(), batch_begin + max_fused_terms);
-                for (int c = 0; c <= static_cast<int>(P::k); c++) {
-                    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-                        const int torus_shift =
-                            width - (j + 1) * static_cast<int>(P::B̅gbit);
+            const int component_count = static_cast<int>(P::k) + 1;
+            const int aux_row_count = static_cast<int>(P::l̅);
+#pragma omp parallel
+            {
+                auto local_inner = std::make_unique<TRLWE<P>>();
+                auto product_acc = std::make_unique<PolynomialInFD<P>>();
+                auto digit_prod = std::make_unique<Polynomial<P>>();
+
+#pragma omp for collapse(3) schedule(dynamic)
+                for (int c = 0; c < component_count; c++) {
+                    for (int j = 0; j < aux_row_count; j++) {
                         for (int d = 0; d < plain_digits; d++) {
+                            const int torus_shift =
+                                width -
+                                (j + 1) * static_cast<int>(P::B̅gbit);
                             const int plain_shift =
                                 d * static_cast<int>(P::B̅gbit);
                             const int shift = torus_shift + plain_shift;
                             if (shift >= width) continue;
 
-                            const int first_j1 =
-                                group.terms[batch_begin].baby_step;
-                            assert(first_j1 >= 0 && first_j1 < plan.k_step);
-                            const auto &first_fft =
-                                *(*baby_fft)[static_cast<std::size_t>(
-                                    first_j1)];
-                            MulInFD<P::n>(*product_acc, first_fft[c][j],
-                                           (*plain_fft)[batch_begin][d]);
-                            for (std::size_t t = batch_begin + 1;
-                                 t < batch_end; t++) {
-                                const int j1 = group.terms[t].baby_step;
-                                assert(j1 >= 0 && j1 < plan.k_step);
-                                const auto &fft =
-                                    *(*baby_fft)[static_cast<std::size_t>(j1)];
-                                FMAInFD<P::n>(*product_acc, fft[c][j],
-                                              (*plain_fft)[t][d]);
+                            for (std::size_t batch_begin = 0;
+                                 batch_begin < group.terms.size();
+                                 batch_begin += max_fused_terms) {
+                                const std::size_t batch_end =
+                                    std::min<std::size_t>(
+                                        group.terms.size(),
+                                        batch_begin + max_fused_terms);
+                                const int first_j1 =
+                                    group.terms[batch_begin].baby_step;
+                                assert(first_j1 >= 0 &&
+                                       first_j1 < plan.k_step);
+                                const auto &first_fft =
+                                    *(*baby_fft)[static_cast<std::size_t>(
+                                        first_j1)];
+                                MulInFD<P::n>(
+                                    *product_acc, first_fft[c][j],
+                                    (*plain_fft)[batch_begin][d]);
+                                for (std::size_t t = batch_begin + 1;
+                                     t < batch_end; t++) {
+                                    const int j1 = group.terms[t].baby_step;
+                                    assert(j1 >= 0 && j1 < plan.k_step);
+                                    const auto &fft =
+                                        *(*baby_fft)[static_cast<std::size_t>(
+                                            j1)];
+                                    FMAInFD<P::n>(*product_acc, fft[c][j],
+                                                  (*plain_fft)[t][d]);
+                                }
+                                TwistFFTDigitProduct<P>(*digit_prod,
+                                                        *product_acc);
+                                for (uint32_t n = 0; n < P::n; n++)
+                                    (*local_inner)[c][n] +=
+                                        (*digit_prod)[n] << shift;
                             }
-                            TwistFFTDigitProduct<P>(*digit_prod, *product_acc);
-                            for (uint32_t n = 0; n < P::n; n++)
-                                (*inner)[c][n] += (*digit_prod)[n] << shift;
                         }
                     }
                 }
+#pragma omp critical
+                {
+                    for (int c = 0; c < component_count; c++)
+                        for (uint32_t n = 0; n < P::n; n++)
+                            (*inner)[c][n] += (*local_inner)[c][n];
+                }
+            }
+            if (trace_linear) {
+                ckks_detail::ckks_trace_linear_group_event(
+                    "fused_digit_products", group_index,
+                    ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+                trace_section_start = std::chrono::steady_clock::now();
             }
 
             for (int c = 0; c <= static_cast<int>(P::k); c++)
@@ -3930,8 +4031,19 @@ inline void CKKSLinearTransformBSGS(
             else {
                 CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
             }
+            if (trace_linear) {
+                ckks_detail::ckks_trace_linear_group_event(
+                    "group_finalize", group_index,
+                    ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+                trace_section_start = std::chrono::steady_clock::now();
+            }
+            group_index++;
         }
         ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+        if (trace_linear)
+            ckks_detail::ckks_trace_linear_event(
+                "linear_transform_total",
+                ckks_detail::ckks_trace_elapsed_ms(trace_total_start));
         return;
     }
 
@@ -5029,7 +5141,7 @@ struct lvl6CKKSDenseBootstrapTunedSchedule
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
-        return I == 0 ? 1024 : 64;
+        return I == 0 ? 2048 : 64;
     }
 
     template <std::size_t I>

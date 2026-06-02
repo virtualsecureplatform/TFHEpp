@@ -995,7 +995,7 @@ void test_dense_bootstrap_api_shape()
                   5);
     static_assert(
         TFHEpp::ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStep<
-            0, Lvl6TunedSchedule>() == 1024);
+            0, Lvl6TunedSchedule>() == 2048);
     static_assert(
         TFHEpp::ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStep<
             1, Lvl6TunedSchedule>() == 64);
