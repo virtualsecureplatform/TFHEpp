@@ -1500,16 +1500,13 @@ void test_dense_bootstrap_encrypted_pipeline()
 
     auto real_component =
         std::make_unique<typename Schedule::ComponentCiphertext>();
-    TFHEpp::CKKSExtractRealSlots<M, Schedule::after_coeff_to_slot_log_q,
-                                 Schedule::log_delta,
-                                 Schedule::component_split_plain_log_delta>(
-        *real_component, *out, *conjugate_gk);
     auto imag_component =
         std::make_unique<typename Schedule::ComponentCiphertext>();
-    TFHEpp::CKKSExtractImagSlots<M, Schedule::after_coeff_to_slot_log_q,
-                                 Schedule::log_delta,
-                                 Schedule::component_split_plain_log_delta>(
-        *imag_component, *out, *conjugate_gk);
+    TFHEpp::CKKSExtractRealImagSlots<
+        M, Schedule::after_coeff_to_slot_log_q, Schedule::log_delta,
+        Schedule::component_split_plain_log_delta>(*real_component,
+                                                   *imag_component, *out,
+                                                   *conjugate_gk);
 
     auto expected_real = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     auto expected_imag = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
@@ -1943,7 +1940,7 @@ void test_dense_bootstrap_e2e_smoke()
         counting_provider.coeff_to_slot_gets[1] != 1 ||
         counting_provider.slot_to_coeff_gets[0] != 1 ||
         counting_provider.slot_to_coeff_gets[1] != 1 ||
-        counting_provider.packed_conjugate_gets != 2 ||
+        counting_provider.packed_conjugate_gets != 1 ||
         counting_provider.evalmod_polynomial_gets != 2)
         std::exit(1);
     if (counting_provider.polynomial_relin_gets[0] != 2 ||
@@ -2103,7 +2100,7 @@ void test_dense_bootstrap_inverse_e2e_smoke()
         counting_provider.coeff_to_slot_gets[1] != 1 ||
         counting_provider.slot_to_coeff_gets[0] != 1 ||
         counting_provider.slot_to_coeff_gets[1] != 1 ||
-        counting_provider.packed_conjugate_gets != 2 ||
+        counting_provider.packed_conjugate_gets != 1 ||
         counting_provider.evalmod_polynomial_gets != 2)
         std::exit(1);
     if (counting_provider.polynomial_relin_gets[0] != 2 ||

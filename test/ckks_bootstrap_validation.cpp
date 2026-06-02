@@ -3836,15 +3836,10 @@ int run_seeded_hybrid_product_stage_diagnostics(
     auto imag_component =
         std::make_unique<typename Schedule::ComponentCiphertext>();
     const double split_ms = elapsed_ms([&] {
-        TFHEpp::CKKSExtractRealSlots<P, Schedule::after_coeff_to_slot_log_q,
-                                     Schedule::log_delta,
-                                     Schedule::component_split_plain_log_delta>(
-            *real_component, *coeff_to_slot,
-            provider.packed_conjugate_galois());
-        TFHEpp::CKKSExtractImagSlots<P, Schedule::after_coeff_to_slot_log_q,
-                                     Schedule::log_delta,
-                                     Schedule::component_split_plain_log_delta>(
-            *imag_component, *coeff_to_slot,
+        TFHEpp::CKKSExtractRealImagSlots<
+            P, Schedule::after_coeff_to_slot_log_q, Schedule::log_delta,
+            Schedule::component_split_plain_log_delta>(
+            *real_component, *imag_component, *coeff_to_slot,
             provider.packed_conjugate_galois());
     });
     coeff_to_slot.reset();
@@ -4571,15 +4566,10 @@ int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
     auto imag_component =
         std::make_unique<typename Schedule::ComponentCiphertext>();
     const double split_ms = elapsed_ms([&] {
-        TFHEpp::CKKSExtractRealSlots<P, Schedule::after_coeff_to_slot_log_q,
-                                     Schedule::log_delta,
-                                     Schedule::component_split_plain_log_delta>(
-            *real_component, *coeff_to_slot,
-            provider.packed_conjugate_galois());
-        TFHEpp::CKKSExtractImagSlots<P, Schedule::after_coeff_to_slot_log_q,
-                                     Schedule::log_delta,
-                                     Schedule::component_split_plain_log_delta>(
-            *imag_component, *coeff_to_slot,
+        TFHEpp::CKKSExtractRealImagSlots<
+            P, Schedule::after_coeff_to_slot_log_q, Schedule::log_delta,
+            Schedule::component_split_plain_log_delta>(
+            *real_component, *imag_component, *coeff_to_slot,
             provider.packed_conjugate_galois());
     });
     coeff_to_slot.reset();

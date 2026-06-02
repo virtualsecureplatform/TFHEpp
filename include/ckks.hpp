@@ -2855,6 +2855,28 @@ inline void CKKSExtractImagSlots(
         res, *diff, {0.0, -0.5});
 }
 
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, class GaloisKey>
+inline void CKKSExtractRealImagSlots(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &real,
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &imag,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct, const GaloisKey &gk)
+{
+    auto conjugated = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+    CKKSConjugateSlots<P, LogQ>(conjugated->ct, ct.ct, gk);
+
+    auto sum = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+    CKKSAdd<P, LogQ, LogDelta>(*sum, ct, *conjugated);
+    CKKSPlainMulByReal<P, LogQ, LogDelta, PlainLogDelta>(real, *sum, 0.5);
+    sum.reset();
+
+    auto diff = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+    CKKSSub<P, LogQ, LogDelta>(*diff, ct, *conjugated);
+    conjugated.reset();
+    CKKSPlainMulByConstant<P, LogQ, LogDelta, PlainLogDelta>(
+        imag, *diff, {0.0, -0.5});
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t PlainLogDelta>
 struct CKKSLinearTransformTerm {
     int baby_step = 0;
@@ -12800,17 +12822,12 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
         std::make_unique<typename Schedule::ComponentCiphertext>();
     CKKSTimeBootstrapStage(timings == nullptr ? nullptr : &timings->split_ms,
                            [&] {
-                               CKKSExtractRealSlots<
+                               CKKSExtractRealImagSlots<
                                    P, Schedule::after_coeff_to_slot_log_q,
                                    Schedule::log_delta,
                                    Schedule::component_split_plain_log_delta>(
-                                   *real_component, *coeff_to_slot,
-                                   key_provider.packed_conjugate_galois());
-                               CKKSExtractImagSlots<
-                                   P, Schedule::after_coeff_to_slot_log_q,
-                                   Schedule::log_delta,
-                                   Schedule::component_split_plain_log_delta>(
-                                   *imag_component, *coeff_to_slot,
+                                   *real_component, *imag_component,
+                                   *coeff_to_slot,
                                    key_provider.packed_conjugate_galois());
                            },
                            progress, "split");
