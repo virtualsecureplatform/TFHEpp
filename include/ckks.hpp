@@ -298,6 +298,20 @@ constexpr std::size_t CKKSSeededRelinKeyByteEstimate()
            CKKSSeededKeySwitchRowByteSize<P>();
 }
 
+template <class P, std::uint32_t LogQ>
+constexpr std::size_t CKKSAutoKeyByteEstimate()
+{
+    return CKKSAutoKeySwitchRowCount<P, LogQ>() *
+           CKKSKeySwitchRowByteSize<P>();
+}
+
+template <class P, std::uint32_t LogQ>
+constexpr std::size_t CKKSSeededAutoKeyByteEstimate()
+{
+    return CKKSAutoKeySwitchRowCount<P, LogQ>() *
+           CKKSSeededKeySwitchRowByteSize<P>();
+}
+
 template <class P>
 using CKKSRotationKeyIndexSet = std::array<bool, P::nbit + 1>;
 
@@ -673,6 +687,11 @@ inline void CKKSLoadPortableBinary(T &value, const std::filesystem::path &path)
 
 struct CKKSDenseBootstrapKeyDirectoryOptions {
     bool overwrite_existing = true;
+};
+
+struct CKKSDenseBootstrapKeyFileByteEstimate {
+    std::filesystem::path path{};
+    std::size_t estimated_bytes = 0;
 };
 
 struct CKKSDenseBootstrapTimings {
@@ -9218,6 +9237,185 @@ inline void CKKSDenseBootstrapInverseRelinKeyFilePathsImpl(
     }
 }
 
+template <class P, std::uint32_t LogQ>
+inline std::optional<CKKSDenseBootstrapKeyFileByteEstimate>
+CKKSSeededSparseGaloisKeyNextMissingFileByteEstimate(
+    const std::filesystem::path &root, const std::string &prefix,
+    const CKKSRotationKeyIndexSet<P> &indices)
+{
+    for (std::size_t i = 0; i < P::nbit; i++) {
+        if (!indices[i]) continue;
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, prefix, i);
+        if (!std::filesystem::exists(path))
+            return CKKSDenseBootstrapKeyFileByteEstimate{
+                path, CKKSSeededAutoKeyByteEstimate<P, LogQ>()};
+    }
+
+    if (indices[P::nbit]) {
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, prefix, P::nbit);
+        if (!std::filesystem::exists(path))
+            return CKKSDenseBootstrapKeyFileByteEstimate{
+                path, CKKSSeededAutoKeyByteEstimate<P, LogQ>()};
+    }
+    return std::nullopt;
+}
+
+template <class P, std::uint32_t LogQ>
+inline std::optional<CKKSDenseBootstrapKeyFileByteEstimate>
+CKKSSeededDirectSparseGaloisKeyNextMissingFileByteEstimate(
+    const std::filesystem::path &root, const std::string &prefix,
+    const CKKSDirectRotationKeyIndexSet<P> &indices)
+{
+    for (std::size_t steps = 1; steps < P::n / 2; steps++) {
+        if (!indices[steps]) continue;
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, prefix, steps);
+        if (!std::filesystem::exists(path))
+            return CKKSDenseBootstrapKeyFileByteEstimate{
+                path, CKKSSeededAutoKeyByteEstimate<P, LogQ>()};
+    }
+    return std::nullopt;
+}
+
+template <std::size_t I, class Schedule>
+inline std::optional<CKKSDenseBootstrapKeyFileByteEstimate>
+CKKSDenseBootstrapSeededHybridGiantStreamedCoeffToSlotNextMissingFileByteEstimateImpl(
+    const std::filesystem::path &root,
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    if constexpr (I <= Schedule::coeff_to_slot_level_count) {
+        constexpr std::uint32_t log_q =
+            Schedule::boot_log_q - I * Schedule::coeff_to_slot_plain_log_delta;
+        if (auto next =
+                CKKSSeededSparseGaloisKeyNextMissingFileByteEstimate<P, log_q>(
+                    root,
+                    CKKSDenseBootstrapLeveledKeyPrefix("coeff_to_slot_galois",
+                                                       I, "binary"),
+                    usage.coeff_to_slot_binary[I]))
+            return next;
+        if (auto next =
+                CKKSSeededDirectSparseGaloisKeyNextMissingFileByteEstimate<
+                    P, log_q>(
+                    root,
+                    CKKSDenseBootstrapLeveledKeyPrefix("coeff_to_slot_galois",
+                                                       I, "direct"),
+                    usage.coeff_to_slot_direct[I]))
+            return next;
+        return CKKSDenseBootstrapSeededHybridGiantStreamedCoeffToSlotNextMissingFileByteEstimateImpl<
+            I + 1, Schedule>(root, usage);
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline std::optional<CKKSDenseBootstrapKeyFileByteEstimate>
+CKKSDenseBootstrapSeededHybridGiantStreamedSlotToCoeffNextMissingFileByteEstimateImpl(
+    const std::filesystem::path &root,
+    const CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> &usage)
+{
+    using P = typename Schedule::Param;
+    if constexpr (I <= Schedule::slot_to_coeff_level_count) {
+        constexpr std::uint32_t log_q =
+            Schedule::after_evalmod_log_q -
+            I * Schedule::slot_to_coeff_plain_log_delta;
+        if (auto next =
+                CKKSSeededSparseGaloisKeyNextMissingFileByteEstimate<P, log_q>(
+                    root,
+                    CKKSDenseBootstrapLeveledKeyPrefix("slot_to_coeff_galois",
+                                                       I, "binary"),
+                    usage.slot_to_coeff_binary[I]))
+            return next;
+        if (auto next =
+                CKKSSeededDirectSparseGaloisKeyNextMissingFileByteEstimate<
+                    P, log_q>(
+                    root,
+                    CKKSDenseBootstrapLeveledKeyPrefix("slot_to_coeff_galois",
+                                                       I, "direct"),
+                    usage.slot_to_coeff_direct[I]))
+            return next;
+        return CKKSDenseBootstrapSeededHybridGiantStreamedSlotToCoeffNextMissingFileByteEstimateImpl<
+            I + 1, Schedule>(root, usage);
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline std::optional<CKKSDenseBootstrapKeyFileByteEstimate>
+CKKSDenseBootstrapSeededPolynomialRelinNextMissingFileByteEstimateImpl(
+    const std::filesystem::path &root)
+{
+    using P = typename Schedule::Param;
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+        constexpr std::uint32_t log_q =
+            Schedule::after_component_split_log_q -
+            (I + 1) * Schedule::log_delta;
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
+        if (!std::filesystem::exists(path))
+            return CKKSDenseBootstrapKeyFileByteEstimate{
+                path, CKKSSeededRelinKeyByteEstimate<P, log_q>()};
+        return CKKSDenseBootstrapSeededPolynomialRelinNextMissingFileByteEstimateImpl<
+            I + 1, Schedule>(root);
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline std::optional<CKKSDenseBootstrapKeyFileByteEstimate>
+CKKSDenseBootstrapSeededDoubleAngleRelinNextMissingFileByteEstimateImpl(
+    const std::filesystem::path &root)
+{
+    using P = typename Schedule::Param;
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Schedule::evalmod_double_angle) {
+        constexpr std::uint32_t log_q = Traits::polynomial_log_q -
+                                        (I + 1) * Schedule::log_delta;
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I);
+        if (!std::filesystem::exists(path))
+            return CKKSDenseBootstrapKeyFileByteEstimate{
+                path, CKKSSeededRelinKeyByteEstimate<P, log_q>()};
+        return CKKSDenseBootstrapSeededDoubleAngleRelinNextMissingFileByteEstimateImpl<
+            I + 1, Schedule>(root);
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
+template <std::size_t I, class Schedule>
+inline std::optional<CKKSDenseBootstrapKeyFileByteEstimate>
+CKKSDenseBootstrapSeededInverseRelinNextMissingFileByteEstimateImpl(
+    const std::filesystem::path &root)
+{
+    using P = typename Schedule::Param;
+    using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
+    if constexpr (I < Traits::InverseTraits::power_depth) {
+        constexpr std::uint32_t log_q = Traits::after_double_angle_log_q -
+                                        (I + 1) * Schedule::log_delta;
+        const std::filesystem::path path =
+            CKKSDenseBootstrapIndexedPath(root, "inverse_relin", I);
+        if (!std::filesystem::exists(path))
+            return CKKSDenseBootstrapKeyFileByteEstimate{
+                path, CKKSSeededRelinKeyByteEstimate<P, log_q>()};
+        return CKKSDenseBootstrapSeededInverseRelinNextMissingFileByteEstimateImpl<
+            I + 1, Schedule>(root);
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
 template <class Schedule, class Seq>
 struct CKKSDenseBootstrapCoeffToSlotCacheTuple;
 
@@ -9740,6 +9938,51 @@ inline bool CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryComplete(
     return CKKSDenseBootstrapSeededHybridGiantStreamedMissingKeyDirectoryFiles<
                Schedule>(root)
         .empty();
+}
+
+template <class Schedule>
+inline std::optional<CKKSDenseBootstrapKeyFileByteEstimate>
+CKKSDenseBootstrapSeededHybridGiantStreamedNextMissingGeneratedKeyFileEstimate(
+    const std::filesystem::path &root)
+{
+    using P = typename Schedule::Param;
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> rotation_usage;
+    CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(rotation_usage,
+                                                                 linear_plan);
+
+    if (auto next = ckks_detail::
+            CKKSDenseBootstrapSeededHybridGiantStreamedCoeffToSlotNextMissingFileByteEstimateImpl<
+                0, Schedule>(root, rotation_usage))
+        return next;
+
+    const std::filesystem::path packed_path =
+        ckks_detail::CKKSDenseBootstrapNamedPath(root,
+                                                 "packed_conjugate_galois");
+    if (!std::filesystem::exists(packed_path)) {
+        return CKKSDenseBootstrapKeyFileByteEstimate{
+            packed_path,
+            CKKSDenseBootstrapHybridGiantPackedConjugateKeySwitchRowCount<
+                Schedule>(rotation_usage) *
+                CKKSSeededKeySwitchRowByteSize<P>()};
+    }
+
+    if (auto next = ckks_detail::
+            CKKSDenseBootstrapSeededPolynomialRelinNextMissingFileByteEstimateImpl<
+                0, Schedule>(root))
+        return next;
+    if (auto next = ckks_detail::
+            CKKSDenseBootstrapSeededDoubleAngleRelinNextMissingFileByteEstimateImpl<
+                0, Schedule>(root))
+        return next;
+    if (auto next = ckks_detail::
+            CKKSDenseBootstrapSeededInverseRelinNextMissingFileByteEstimateImpl<
+                0, Schedule>(root))
+        return next;
+    return ckks_detail::
+        CKKSDenseBootstrapSeededHybridGiantStreamedSlotToCoeffNextMissingFileByteEstimateImpl<
+            0, Schedule>(root, rotation_usage);
 }
 
 template <class Schedule>

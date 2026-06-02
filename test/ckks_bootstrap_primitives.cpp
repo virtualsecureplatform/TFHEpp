@@ -6,6 +6,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <string>
 #include <tfhe++.hpp>
 #include <tuple>
 #include <type_traits>
@@ -1037,6 +1038,27 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6TunedSchedule::output_log_q == 156);
     static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
     static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 44);
+    const std::filesystem::path estimate_root =
+        "__tfhepp_nonexistent_ckks_key_estimate_probe__";
+    if (std::filesystem::exists(estimate_root)) std::exit(1);
+    const auto next_streamed_key_estimate =
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedNextMissingGeneratedKeyFileEstimate<
+                Lvl6TunedSchedule>(estimate_root);
+    if (!next_streamed_key_estimate) std::exit(1);
+    if (next_streamed_key_estimate->path.parent_path() != estimate_root)
+        std::exit(1);
+    if (next_streamed_key_estimate->estimated_bytes !=
+        TFHEpp::CKKSSeededAutoKeyByteEstimate<
+            TFHEpp::lvl6param, Lvl6TunedSchedule::boot_log_q>())
+        std::exit(1);
+    const std::string next_streamed_key_name =
+        next_streamed_key_estimate->path.filename().string();
+    if (next_streamed_key_name.find("coeff_to_slot_galois_0_") != 0)
+        std::exit(1);
+    std::cout << "CKKS lvl6 tuned streamed next key estimate bytes="
+              << next_streamed_key_estimate->estimated_bytes
+              << " file=" << next_streamed_key_name << std::endl;
     using Lvl6SparseKey = TFHEpp::CKKSDenseBootstrapKey<Lvl6FastSchedule>;
     using Lvl6HybridKey =
         TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6FastSchedule>;

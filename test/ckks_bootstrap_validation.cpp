@@ -21,6 +21,8 @@ constexpr const char *validation_test_key_metadata_filename =
     ".ckks_bootstrap_validation_key";
 constexpr std::uintmax_t keygen_disk_reserve_bytes =
     std::uintmax_t{1024} * 1024 * 1024;
+constexpr std::uintmax_t keygen_next_metadata_write_estimate_bytes =
+    std::uintmax_t{1024} * 1024;
 
 bool allow_low_disk_keygen = false;
 
@@ -1240,6 +1242,79 @@ int validate_keygen_disk_budget(const std::filesystem::path &key_dir,
               << keygen_disk_reserve_bytes
               << " allow_override=--allow-low-disk-keygen\n";
     return 2;
+}
+
+int validate_keygen_next_disk_budget(const std::filesystem::path &key_dir,
+                                     std::uintmax_t estimated_generated_bytes,
+                                     const char *label)
+{
+    const std::uintmax_t existing_bytes = directory_size_bytes(key_dir);
+
+    std::uintmax_t available_bytes = 0;
+    const bool have_space_info = available_space_bytes(key_dir, available_bytes);
+
+    std::cout << label << "_disk_estimated_next_generated_bytes="
+              << estimated_generated_bytes << '\n';
+    std::cout << label << "_disk_existing_bytes=" << existing_bytes << '\n';
+    if (have_space_info)
+        std::cout << label << "_disk_available_bytes=" << available_bytes
+                  << '\n';
+    else
+        std::cout << label << "_disk_available_bytes=unknown\n";
+
+    if (estimated_generated_bytes == 0) return 0;
+
+    const bool enough_space =
+        have_space_info && available_bytes > keygen_disk_reserve_bytes &&
+        estimated_generated_bytes <=
+            available_bytes - keygen_disk_reserve_bytes;
+    if (enough_space) return 0;
+
+    if (allow_low_disk_keygen) {
+        std::cerr << label
+                  << "_disk_warning=1 allow_low_disk_keygen=1 reserve_bytes="
+                  << keygen_disk_reserve_bytes << '\n';
+        return 0;
+    }
+
+    std::cerr << label
+              << "_disk_insufficient=1 reserve_bytes="
+              << keygen_disk_reserve_bytes
+              << " allow_override=--allow-low-disk-keygen\n";
+    return 2;
+}
+
+template <class Schedule>
+std::uintmax_t seeded_hybrid_streamed_keygen_next_generated_estimate_bytes(
+    const std::filesystem::path &key_dir, const char *label)
+{
+    std::uintmax_t estimated = keygen_next_metadata_write_estimate_bytes;
+    const auto next =
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedNextMissingGeneratedKeyFileEstimate<
+                Schedule>(key_dir);
+
+    std::cout << label << "_disk_metadata_write_estimated_bytes="
+              << keygen_next_metadata_write_estimate_bytes << '\n';
+    if (!next) {
+        std::cout << label << "_disk_next_key_file=none\n";
+        std::cout << label << "_disk_next_key_file_estimated_bytes=0\n";
+        return 0;
+    }
+
+    std::cout << label << "_disk_next_key_file=" << next->path.string()
+              << '\n';
+    std::cout << label
+              << "_disk_next_key_file_estimated_bytes="
+              << next->estimated_bytes << '\n';
+
+    const std::uintmax_t next_bytes =
+        static_cast<std::uintmax_t>(next->estimated_bytes);
+    if (next_bytes >
+        std::numeric_limits<std::uintmax_t>::max() - estimated)
+        return std::numeric_limits<std::uintmax_t>::max();
+    estimated += next_bytes;
+    return estimated;
 }
 
 std::size_t regular_file_count(const std::filesystem::path &root)
@@ -5910,9 +5985,12 @@ int run_seeded_hybrid_streamed_keygen_next(
             Schedule>(key_dir, sparse_weight, true);
         status != 0)
         return status;
-    if (const int status = validate_keygen_disk_budget(
-            key_dir, seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>(),
-            "seeded-hybrid-streamed-keygen-next");
+    constexpr const char *label = "seeded-hybrid-streamed-keygen-next";
+    const std::uintmax_t estimated_generated_bytes =
+        seeded_hybrid_streamed_keygen_next_generated_estimate_bytes<Schedule>(
+            key_dir, label);
+    if (const int status = validate_keygen_next_disk_budget(
+            key_dir, estimated_generated_bytes, label);
         status != 0)
         return status;
     auto key = std::make_unique<TFHEpp::Key<P>>();
