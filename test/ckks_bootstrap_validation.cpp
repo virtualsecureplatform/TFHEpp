@@ -1179,6 +1179,52 @@ std::uintmax_t seeded_hybrid_streamed_low_cache_peak_key_estimate_bytes()
 }
 
 template <class Schedule>
+std::uintmax_t hybrid_streamed_peak_key_estimate_bytes()
+{
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        usage, linear_plan);
+    return TFHEpp::CKKSDenseBootstrapHybridGiantStreamedPeakKeyByteEstimate<
+        Schedule>(usage);
+}
+
+template <class Schedule>
+std::uintmax_t hybrid_streamed_low_cache_peak_key_estimate_bytes()
+{
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        usage, linear_plan);
+    return TFHEpp::
+        CKKSDenseBootstrapHybridGiantStreamedLowCachePeakKeyByteEstimate<
+            Schedule>(usage);
+}
+
+template <class Schedule>
+std::uintmax_t hybrid_practical_artifact_estimate_bytes()
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    using PostBootstrapProductCt = TFHEpp::CKKSMultResult<
+        P, Schedule::output_log_q, Schedule::log_delta,
+        Schedule::output_log_q, Schedule::log_delta>;
+
+    return hybrid_bootstrap_key_estimate_bytes<Schedule>() +
+           TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<Schedule>() +
+           TFHEpp::CKKSRelinKeyByteEstimate<P, ProductCt::log_q>() +
+           TFHEpp::CKKSRelinKeyByteEstimate<
+               P, PostBootstrapProductCt::log_q>();
+}
+
+template <class Schedule>
 std::uintmax_t seeded_hybrid_practical_artifact_estimate_bytes()
 {
     using P = typename Schedule::Param;
@@ -1823,6 +1869,18 @@ int print_practical_readiness_report(const char *label,
         seeded_hybrid_streamed_peak_key_estimate_bytes<Schedule>();
     const std::uintmax_t seeded_streamed_low_cache_peak_bytes =
         seeded_hybrid_streamed_low_cache_peak_key_estimate_bytes<Schedule>();
+    const std::uintmax_t hybrid_bootstrap_bytes =
+        hybrid_bootstrap_key_estimate_bytes<Schedule>();
+    const std::uintmax_t hybrid_streamed_peak_bytes =
+        hybrid_streamed_peak_key_estimate_bytes<Schedule>();
+    const std::uintmax_t hybrid_streamed_low_cache_peak_bytes =
+        hybrid_streamed_low_cache_peak_key_estimate_bytes<Schedule>();
+    const std::uintmax_t hybrid_encap_bytes =
+        TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<Schedule>();
+    const std::uintmax_t hybrid_product_relin_bytes =
+        TFHEpp::CKKSRelinKeyByteEstimate<P, ProductCt::log_q>();
+    const std::uintmax_t hybrid_post_product_relin_bytes =
+        TFHEpp::CKKSRelinKeyByteEstimate<P, PostBootstrapProductCt::log_q>();
     const std::uintmax_t seeded_encap_bytes =
         TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
             Schedule>();
@@ -1833,13 +1891,19 @@ int print_practical_readiness_report(const char *label,
             P, PostBootstrapProductCt::log_q>();
     const std::uintmax_t seeded_artifact_bytes =
         seeded_hybrid_practical_artifact_estimate_bytes<Schedule>();
-    const std::uintmax_t estimated_disk_need =
+    const std::uintmax_t hybrid_artifact_bytes =
+        hybrid_practical_artifact_estimate_bytes<Schedule>();
+    const std::uintmax_t seeded_estimated_disk_need =
         seeded_artifact_bytes + keygen_disk_reserve_bytes;
+    const std::uintmax_t hybrid_estimated_disk_need =
+        hybrid_artifact_bytes + keygen_disk_reserve_bytes;
 
     std::uintmax_t available_bytes = 0;
     const bool have_space = available_space_bytes(disk_path, available_bytes);
     const bool disk_advisory_ready =
-        have_space && available_bytes >= estimated_disk_need;
+        have_space && available_bytes >= seeded_estimated_disk_need;
+    const bool hybrid_disk_advisory_ready =
+        have_space && available_bytes >= hybrid_estimated_disk_need;
 
     const bool ring_ready = P::n == (1U << 15);
     const bool torus_ready =
@@ -1905,6 +1969,17 @@ int print_practical_readiness_report(const char *label,
               << " seeded_artifact_bytes=" << seeded_artifact_bytes
               << " readiness_seeded_hybrid_streamed_artifact_bytes="
               << seeded_artifact_bytes << '\n';
+    std::cout << label << " readiness_hybrid_key_bytes="
+              << hybrid_bootstrap_bytes
+              << " readiness_hybrid_streamed_peak_key_bytes="
+              << hybrid_streamed_peak_bytes
+              << " readiness_hybrid_streamed_low_cache_peak_key_bytes="
+              << hybrid_streamed_low_cache_peak_bytes
+              << " encapsulation_key_bytes=" << hybrid_encap_bytes
+              << " product_relin_key_bytes=" << hybrid_product_relin_bytes
+              << " post_product_relin_key_bytes="
+              << hybrid_post_product_relin_bytes
+              << " hybrid_artifact_bytes=" << hybrid_artifact_bytes << '\n';
     if (have_space)
         std::cout << label << " readiness_disk_path=" << disk_path.string()
                   << " readiness_disk_available_bytes=" << available_bytes
@@ -1913,9 +1988,20 @@ int print_practical_readiness_report(const char *label,
         std::cout << label << " readiness_disk_path=" << disk_path.string()
                   << " readiness_disk_available_bytes=unknown\n";
     std::cout << label << " readiness_disk_required_with_reserve_bytes="
-              << estimated_disk_need
+              << seeded_estimated_disk_need
               << " disk_advisory_ready=" << (disk_advisory_ready ? 1 : 0)
               << '\n';
+    std::cout << label
+              << " readiness_hybrid_disk_required_with_reserve_bytes="
+              << hybrid_estimated_disk_need
+              << " hybrid_disk_advisory_ready="
+              << (hybrid_disk_advisory_ready ? 1 : 0) << '\n';
+    std::cout << label
+              << " readiness_recommended_keygen=--lvl6-tuned-hybrid-keygen DIR\n";
+    std::cout << label
+              << " readiness_recommended_run=--lvl6-tuned-hybrid-run-chained-product-encap DIR\n";
+    std::cout << label
+              << " readiness_recommended_all=--lvl6-tuned-hybrid-all DIR\n";
     std::cout << label
               << " readiness_next_keygen=--lvl6-tuned-seeded-hybrid-streamed-keygen-next DIR\n";
     std::cout << label
@@ -6087,6 +6173,28 @@ int run_seeded_hybrid_streamed_keygen(const std::filesystem::path &key_dir,
 }
 
 template <class Schedule>
+int run_hybrid_practical_all(const std::filesystem::path &key_dir, bool resume,
+                             std::size_t sparse_weight = 0)
+{
+    print_schedule_report<Schedule>("hybrid-practical-all", &key_dir);
+    if (const int status = print_practical_readiness_report<Schedule>(
+            "hybrid-practical-all", sparse_weight, key_dir);
+        status != 0)
+        return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir, hybrid_practical_artifact_estimate_bytes<Schedule>(),
+            "hybrid-practical-all");
+        status != 0)
+        return status;
+    if (const int status =
+            run_hybrid_keygen<Schedule>(key_dir, resume, sparse_weight);
+        status != 0)
+        return status;
+    return run_hybrid_filesystem_encapsulated_chained_product_bootstrap<
+        Schedule>(key_dir, 0.1, sparse_weight);
+}
+
+template <class Schedule>
 int run_seeded_hybrid_practical_all(const std::filesystem::path &key_dir,
                                     bool resume,
                                     std::size_t sparse_weight = 0)
@@ -6191,6 +6299,7 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-debug DIR]"
                  " [--lvl6-tuned-hybrid-run-product-encap DIR]"
                  " [--lvl6-tuned-hybrid-run-chained-product-encap DIR]"
+                 " [--lvl6-tuned-hybrid-all DIR]"
                  " [--lvl6-tuned-hybrid-debug-c2s DIR]"
                  " [--lvl6-tuned-hybrid-debug-evalmod DIR]"
                  " [--lvl6-tuned-hybrid-debug-stc DIR]"
@@ -6428,6 +6537,7 @@ int main(int argc, char **argv)
                  arg == "--lvl6-tuned-seeded-hybrid-debug" ||
                  arg == "--lvl6-tuned-hybrid-run-product-encap" ||
                  arg == "--lvl6-tuned-hybrid-run-chained-product-encap" ||
+                 arg == "--lvl6-tuned-hybrid-all" ||
                  arg == "--lvl6-tuned-hybrid-debug-c2s" ||
                  arg == "--lvl6-tuned-hybrid-debug-evalmod" ||
                  arg == "--lvl6-tuned-hybrid-debug-stc" ||
@@ -6789,6 +6899,11 @@ int main(int argc, char **argv)
                 if (run_hybrid_filesystem_encapsulated_chained_product_bootstrap<
                         Lvl6TunedSchedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-hybrid-all") {
+                if (run_hybrid_practical_all<Lvl6TunedSchedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg == "--lvl6-tuned-hybrid-debug-c2s") {
