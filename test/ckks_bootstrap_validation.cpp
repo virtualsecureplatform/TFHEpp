@@ -2441,6 +2441,378 @@ int run_seeded_hybrid_product_plain_pipeline_diagnostics(
 }
 
 template <class Schedule>
+int run_seeded_hybrid_product_stage_diagnostics(
+    const std::filesystem::path &key_dir, bool full_pipeline,
+    std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    static_assert(ProductCt::log_q > Schedule::input_log_q);
+
+    constexpr double tol = 0.1;
+    if (const int status = validate_bounded_modraise_test_key<Schedule>(
+            bootstrap_sparse_weight, "diagnostic");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, bootstrap_sparse_weight, false);
+        status != 0)
+        return status;
+    if (const int status =
+            validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
+        status != 0)
+        return status;
+
+    auto external_key = std::make_unique<TFHEpp::Key<P>>();
+    auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
+    fill_external_test_key<P>(*external_key, external_sparse_weight);
+    fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
+
+    const std::filesystem::path external_eval_key_dir =
+        seeded_external_eval_key_directory(key_dir, external_sparse_weight);
+    const std::filesystem::path encapsulation_key_file =
+        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
+            external_eval_key_dir);
+    const std::filesystem::path product_relin_key_file =
+        TFHEpp::CKKSRelinKeyFile(external_eval_key_dir,
+                                 "seeded_product_relin_key");
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
+    eval_key_options.overwrite_existing = false;
+
+    const double encap_keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
+            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
+            eval_key_options);
+    });
+    const double product_relin_keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
+            product_relin_key_file, *external_key, {P::α, 0},
+            eval_key_options);
+    });
+    auto encapsulation_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapSeededEncapsulationKey<
+            Schedule>>();
+    TFHEpp::CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
+        *encapsulation_key, encapsulation_key_file);
+
+    TFHEpp::CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule>
+        provider(key_dir);
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
+        provider.linear_plan();
+
+    auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_product = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*lhs);
+    fill_alternate_test_slots<P>(*rhs);
+    multiply_slots<P>(*expected_product, *lhs, *rhs);
+    print_slot_diagnostic<P>("diag_product_stage_message", *expected_product);
+
+    auto lhs_ct = std::make_unique<FreshCt>();
+    auto rhs_ct = std::make_unique<FreshCt>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+            *lhs_ct, *lhs, *external_key);
+        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+            *rhs_ct, *rhs, *external_key);
+    });
+    lhs.reset();
+    rhs.reset();
+
+    auto product = std::make_unique<ProductCt>();
+    const double multiply_ms = elapsed_ms([&] {
+        TFHEpp::CKKSMultWithSeededRelinKeyFile<P>(
+            *product, *lhs_ct, *rhs_ct, product_relin_key_file);
+    });
+    lhs_ct.reset();
+    rhs_ct.reset();
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, ProductCt::log_q, ProductCt::log_delta>(
+        *decoded, *product, *external_key);
+    print_slot_diagnostic<P>("diag_product_stage_raw", *decoded,
+                             expected_product.get());
+
+    auto normalized_product =
+        std::make_unique<typename Schedule::InputCiphertext>();
+    const double normalize_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseBootstrapNormalizeInput<Schedule>(
+            *normalized_product, *product);
+    });
+    product.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *decoded, *normalized_product, *external_key);
+    print_slot_diagnostic<P>("diag_product_stage_normalized", *decoded,
+                             expected_product.get());
+
+    auto bootstrap_input =
+        std::make_unique<typename Schedule::InputCiphertext>();
+    const double input_switch_ms = elapsed_ms([&] {
+        TFHEpp::CKKSSecretKeySwitch<P, Schedule::input_log_q,
+                                    Schedule::log_delta>(
+            *bootstrap_input, *normalized_product,
+            encapsulation_key->input_to_bootstrap);
+    });
+    normalized_product.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *decoded, *bootstrap_input, *bootstrap_key);
+    print_slot_diagnostic<P>("diag_product_stage_input_switch", *decoded,
+                             expected_product.get());
+
+    auto raised = std::make_unique<typename Schedule::BootstrapCiphertext>();
+    const double modraise_ms = elapsed_ms([&] {
+        TFHEpp::CKKSModRaiseBoundedPhaseRandomized<
+            P, Schedule::input_log_q, Schedule::boot_log_q,
+            Schedule::log_delta, Schedule::modraise_mask_bound>(*raised,
+                                                                *bootstrap_input);
+    });
+    bootstrap_input.reset();
+    auto raised_slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::boot_log_q, Schedule::log_delta>(
+        *raised_slots, *raised, *bootstrap_key);
+    print_slot_diagnostic<P>("diag_product_stage_raised", *raised_slots);
+
+    auto expected_c2s = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    apply_complex_stages<P>(*expected_c2s, *raised_slots,
+                            linear_plan.coeff_to_slot_stages);
+    print_slot_diagnostic<P>("diag_product_stage_expected_c2s",
+                             *expected_c2s);
+    raised_slots.reset();
+
+    auto coeff_to_slot =
+        std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
+    const double c2s_ms = elapsed_ms([&] {
+        const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
+            decltype(provider), true>
+            coeff_to_slot_galois{provider};
+        TFHEpp::CKKSLinearTransformStagesBSGS<
+            P, Schedule::boot_log_q, Schedule::log_delta,
+            Schedule::coeff_to_slot_plain_log_delta,
+            Schedule::coeff_to_slot_level_count>(
+            *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
+            Schedule::linear_bsgs_step, coeff_to_slot_galois);
+    });
+    raised.reset();
+
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_coeff_to_slot_log_q,
+                            Schedule::log_delta>(*decoded, *coeff_to_slot,
+                                                 *bootstrap_key);
+    const double c2s_error = max_error<P>(*decoded, *expected_c2s);
+    print_slot_diagnostic<P>("diag_product_stage_c2s", *decoded,
+                             expected_c2s.get());
+
+    std::cout << "diag_product_stage_external_key="
+              << sparse_key_label(external_sparse_weight) << '\n';
+    std::cout << "diag_product_stage_bootstrap_key_sparse_weight="
+              << bootstrap_sparse_weight << '\n';
+    std::cout << "diag_product_stage_encap_keygen_ms=" << encap_keygen_ms
+              << '\n';
+    std::cout << "diag_product_stage_relin_keygen_ms="
+              << product_relin_keygen_ms << '\n';
+    std::cout << "diag_product_stage_encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "diag_product_stage_multiply_ms=" << multiply_ms << '\n';
+    std::cout << "diag_product_stage_normalize_ms=" << normalize_ms << '\n';
+    std::cout << "diag_product_stage_input_switch_ms=" << input_switch_ms
+              << '\n';
+    std::cout << "diag_product_stage_modraise_ms=" << modraise_ms << '\n';
+    std::cout << "diag_product_stage_c2s_ms=" << c2s_ms << '\n';
+    std::cout << "diag_product_stage_c2s_error=" << c2s_error << '\n';
+    if (!full_pipeline) return c2s_error <= tol ? 0 : 1;
+
+    auto expected_real = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_imag = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    for (std::size_t i = 0; i < P::n / 2; i++) {
+        (*expected_real)[i] = {(*expected_c2s)[i].real(), 0.0};
+        (*expected_imag)[i] = {(*expected_c2s)[i].imag(), 0.0};
+    }
+
+    auto real_component =
+        std::make_unique<typename Schedule::ComponentCiphertext>();
+    auto imag_component =
+        std::make_unique<typename Schedule::ComponentCiphertext>();
+    const double split_ms = elapsed_ms([&] {
+        TFHEpp::CKKSExtractRealSlots<P, Schedule::after_coeff_to_slot_log_q,
+                                     Schedule::log_delta,
+                                     Schedule::component_split_plain_log_delta>(
+            *real_component, *coeff_to_slot,
+            provider.packed_conjugate_galois());
+        TFHEpp::CKKSExtractImagSlots<P, Schedule::after_coeff_to_slot_log_q,
+                                     Schedule::log_delta,
+                                     Schedule::component_split_plain_log_delta>(
+            *imag_component, *coeff_to_slot,
+            provider.packed_conjugate_galois());
+    });
+    coeff_to_slot.reset();
+    if constexpr (requires { provider.release_packed_conjugate_galois(); }) {
+        provider.release_packed_conjugate_galois();
+    }
+
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_component_split_log_q,
+                            Schedule::log_delta>(*decoded, *real_component,
+                                                 *bootstrap_key);
+    const double real_split_error = max_error<P>(*decoded, *expected_real);
+    print_slot_diagnostic<P>("diag_product_stage_real_split", *decoded,
+                             expected_real.get());
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_component_split_log_q,
+                            Schedule::log_delta>(*decoded, *imag_component,
+                                                 *bootstrap_key);
+    const double imag_split_error = max_error<P>(*decoded, *expected_imag);
+    print_slot_diagnostic<P>("diag_product_stage_imag_split", *decoded,
+                             expected_imag.get());
+    expected_c2s.reset();
+
+    const TFHEpp::CKKSBoundedCosEvalModPolynomial &poly =
+        provider.evalmod_polynomial();
+    auto expected_real_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_imag_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    for (std::size_t i = 0; i < P::n / 2; i++) {
+        (*expected_real_eval)[i] =
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                 poly, (*expected_real)[i].real(),
+                 Schedule::evalmod_inv_degree) /
+                 Schedule::message_ratio,
+             0.0};
+        (*expected_imag_eval)[i] =
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                 poly, (*expected_imag)[i].real(),
+                 Schedule::evalmod_inv_degree) /
+                 Schedule::message_ratio,
+             0.0};
+    }
+    expected_real.reset();
+    expected_imag.reset();
+
+    auto real_evalmod =
+        std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    const double real_evalmod_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+            *real_evalmod, *real_component, poly, provider);
+    });
+    real_component.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_evalmod_log_q,
+                            Schedule::log_delta>(*decoded, *real_evalmod,
+                                                 *bootstrap_key);
+    const double real_evalmod_error =
+        max_error<P>(*decoded, *expected_real_eval);
+    print_slot_diagnostic<P>("diag_product_stage_real_evalmod", *decoded,
+                             expected_real_eval.get());
+    auto actual_real_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    *actual_real_eval = *decoded;
+
+    auto imag_evalmod =
+        std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    const double imag_evalmod_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+            *imag_evalmod, *imag_component, poly, provider);
+    });
+    imag_component.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_evalmod_log_q,
+                            Schedule::log_delta>(*decoded, *imag_evalmod,
+                                                 *bootstrap_key);
+    const double imag_evalmod_error =
+        max_error<P>(*decoded, *expected_imag_eval);
+    print_slot_diagnostic<P>("diag_product_stage_imag_evalmod", *decoded,
+                             expected_imag_eval.get());
+    auto actual_imag_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    *actual_imag_eval = *decoded;
+
+    auto expected_real_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_imag_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_pipeline = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto actual_real_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto actual_imag_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto actual_pipeline = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    apply_complex_stages<P>(*expected_real_out, *expected_real_eval,
+                            linear_plan.slot_to_coeff_stages);
+    apply_complex_stages<P>(*expected_imag_out, *expected_imag_eval,
+                            linear_plan.slot_to_coeff_imag_stages);
+    apply_complex_stages<P>(*actual_real_out, *actual_real_eval,
+                            linear_plan.slot_to_coeff_stages);
+    apply_complex_stages<P>(*actual_imag_out, *actual_imag_eval,
+                            linear_plan.slot_to_coeff_imag_stages);
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*expected_pipeline)[i] =
+            (*expected_real_out)[i] + (*expected_imag_out)[i];
+    for (std::size_t i = 0; i < P::n / 2; i++)
+        (*actual_pipeline)[i] =
+            (*actual_real_out)[i] + (*actual_imag_out)[i];
+    expected_real_eval.reset();
+    expected_imag_eval.reset();
+    expected_real_out.reset();
+    expected_imag_out.reset();
+    actual_real_eval.reset();
+    actual_imag_eval.reset();
+    actual_real_out.reset();
+    actual_imag_out.reset();
+
+    const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
+        decltype(provider), false>
+        slot_to_coeff_galois{provider};
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    const double stc_ms = elapsed_ms([&] {
+        TFHEpp::CKKSLinearTransformStagesBSGSDualInputSharedTail<
+            P, Schedule::after_evalmod_log_q, Schedule::log_delta,
+            Schedule::slot_to_coeff_plain_log_delta,
+            Schedule::slot_to_coeff_level_count>(
+            *output, *real_evalmod, *imag_evalmod,
+            linear_plan.slot_to_coeff_stages,
+            linear_plan.slot_to_coeff_imag_stages, 0,
+            Schedule::linear_bsgs_step, slot_to_coeff_galois);
+    });
+    real_evalmod.reset();
+    imag_evalmod.reset();
+
+    TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *output, *bootstrap_key);
+    const double output_pipeline_error =
+        max_error<P>(*decoded, *expected_pipeline);
+    const double output_actual_pipeline_error =
+        max_error<P>(*decoded, *actual_pipeline);
+    const double output_product_error =
+        max_error<P>(*decoded, *expected_product);
+    print_slot_diagnostic<P>("diag_product_stage_output_vs_actual_pipeline",
+                             *decoded, actual_pipeline.get());
+    print_slot_diagnostic<P>("diag_product_stage_output_vs_pipeline",
+                             *decoded, expected_pipeline.get());
+    print_slot_diagnostic<P>("diag_product_stage_output_vs_product",
+                             *decoded, expected_product.get());
+    print_slot_diagnostic<P>("diag_product_stage_actual_pipeline_vs_pipeline",
+                             *actual_pipeline, expected_pipeline.get());
+    print_slot_diagnostic<P>("diag_product_stage_actual_pipeline_vs_product",
+                             *actual_pipeline, expected_product.get());
+    print_slot_diagnostic<P>("diag_product_stage_pipeline_vs_product",
+                             *expected_pipeline, expected_product.get());
+
+    std::cout << "diag_product_stage_split_ms=" << split_ms << '\n';
+    std::cout << "diag_product_stage_real_evalmod_ms="
+              << real_evalmod_ms << '\n';
+    std::cout << "diag_product_stage_imag_evalmod_ms="
+              << imag_evalmod_ms << '\n';
+    std::cout << "diag_product_stage_stc_ms=" << stc_ms << '\n';
+    std::cout << "diag_product_stage_real_split_error="
+              << real_split_error << '\n';
+    std::cout << "diag_product_stage_imag_split_error="
+              << imag_split_error << '\n';
+    std::cout << "diag_product_stage_real_evalmod_error="
+              << real_evalmod_error << '\n';
+    std::cout << "diag_product_stage_imag_evalmod_error="
+              << imag_evalmod_error << '\n';
+    std::cout << "diag_product_stage_output_pipeline_error="
+              << output_pipeline_error << '\n';
+    std::cout << "diag_product_stage_output_actual_pipeline_error="
+              << output_actual_pipeline_error << '\n';
+    std::cout << "diag_product_stage_output_product_error="
+              << output_product_error << '\n';
+    return output_product_error <= tol ? 0 : 1;
+}
+
+template <class Schedule>
 int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight)
@@ -4257,6 +4629,8 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-debug-evalkeys DIR]"
                  " [--lvl6-tuned-seeded-hybrid-debug-practical-evalkeys DIR]"
                  " [--lvl6-tuned-seeded-hybrid-debug-practical-plain-product DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-debug-practical-product-c2s DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-debug-practical-product-stages DIR]"
                  " [--lvl6-tuned-seeded-hybrid-debug DIR]"
                  " [--lvl6-tuned-hybrid-run-product-encap DIR]"
                  " [--lvl6-tuned-hybrid-run-chained-product-encap DIR]"
@@ -4467,6 +4841,10 @@ int main(int argc, char **argv)
                      "--lvl6-tuned-seeded-hybrid-debug-practical-evalkeys" ||
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-debug-practical-plain-product" ||
+                 arg ==
+                     "--lvl6-tuned-seeded-hybrid-debug-practical-product-c2s" ||
+                 arg ==
+                     "--lvl6-tuned-seeded-hybrid-debug-practical-product-stages" ||
                  arg == "--lvl6-tuned-seeded-hybrid-debug" ||
                  arg == "--lvl6-tuned-hybrid-run-product-encap" ||
                  arg == "--lvl6-tuned-hybrid-run-chained-product-encap" ||
@@ -4731,6 +5109,26 @@ int main(int argc, char **argv)
                 if (run_seeded_hybrid_product_plain_pipeline_diagnostics<
                         Lvl6TunedSchedule>(
                         key_dir, lvl6_sparse_weight, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg ==
+                     "--lvl6-tuned-seeded-hybrid-debug-practical-product-c2s") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                          &key_dir);
+                if (run_seeded_hybrid_product_stage_diagnostics<
+                        Lvl6TunedSchedule>(
+                        key_dir, false, lvl6_sparse_weight,
+                        lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg ==
+                     "--lvl6-tuned-seeded-hybrid-debug-practical-product-stages") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                          &key_dir);
+                if (run_seeded_hybrid_product_stage_diagnostics<
+                        Lvl6TunedSchedule>(
+                        key_dir, true, lvl6_sparse_weight,
+                        lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg == "--lvl6-tuned-seeded-hybrid-debug") {
