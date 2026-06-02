@@ -2639,8 +2639,8 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
     return err <= tol ? 0 : 1;
 }
 
-template <class Schedule>
-int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
+template <class Schedule, bool Streamed>
+int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
     std::size_t external_sparse_weight = 0)
@@ -2662,10 +2662,19 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
             Schedule>(key_dir, bootstrap_sparse_weight, false);
         status != 0)
         return status;
-    if (const int status =
-            validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
-        status != 0)
-        return status;
+    if constexpr (Streamed) {
+        if (const int status =
+                validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
+                    key_dir);
+            status != 0)
+            return status;
+    }
+    else {
+        if (const int status =
+                validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
+            status != 0)
+            return status;
+    }
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
@@ -2729,11 +2738,20 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
     const BootstrapProgressPrinter progress_printer{"seeded_product"};
     const TFHEpp::CKKSDenseBootstrapProgress progress{
         bootstrap_progress_begin, bootstrap_progress_end, &progress_printer};
-    TFHEpp::
-        CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
-            Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
-                      encapsulation_key_file, relin_key_file, product_timings,
-                      &progress);
+    if constexpr (Streamed) {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+                Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
+                          encapsulation_key_file, relin_key_file,
+                          product_timings, &progress);
+    }
+    else {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+                Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
+                          encapsulation_key_file, relin_key_file,
+                          product_timings, &progress);
+    }
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     const double decrypt_ms =
@@ -2767,6 +2785,28 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
     std::cout << "decrypt_ms=" << decrypt_ms << '\n';
     std::cout << "max_error=" << err << '\n';
     return err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
+int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0)
+{
+    return run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl<
+        Schedule, false>(key_dir, tol, bootstrap_sparse_weight,
+                         external_sparse_weight);
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_filesystem_encapsulated_product_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0)
+{
+    return run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl<
+        Schedule, true>(key_dir, tol, bootstrap_sparse_weight,
+                        external_sparse_weight);
 }
 
 template <class Schedule>
@@ -3844,8 +3884,8 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     return first_err <= tol && chained_err <= tol ? 0 : 1;
 }
 
-template <class Schedule>
-int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
+template <class Schedule, bool Streamed>
+int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
     std::size_t external_sparse_weight = 0)
@@ -3874,10 +3914,19 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
             Schedule>(key_dir, bootstrap_sparse_weight, false);
         status != 0)
         return status;
-    if (const int status =
-            validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
-        status != 0)
-        return status;
+    if constexpr (Streamed) {
+        if (const int status =
+                validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
+                    key_dir);
+            status != 0)
+            return status;
+    }
+    else {
+        if (const int status =
+                validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
+            status != 0)
+            return status;
+    }
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
@@ -3961,11 +4010,20 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     const TFHEpp::CKKSDenseBootstrapProgress first_progress{
         bootstrap_progress_begin, bootstrap_progress_end,
         &first_progress_printer};
-    TFHEpp::
-        CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
-            Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
-                      encapsulation_key_file, product_relin_key_file,
-                      first_product_timings, &first_progress);
+    if constexpr (Streamed) {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+                Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
+                          encapsulation_key_file, product_relin_key_file,
+                          first_product_timings, &first_progress);
+    }
+    else {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+                Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
+                          encapsulation_key_file, product_relin_key_file,
+                          first_product_timings, &first_progress);
+    }
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     const double first_decrypt_ms = elapsed_ms_with_progress(
@@ -3984,11 +4042,22 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     const TFHEpp::CKKSDenseBootstrapProgress chained_progress{
         bootstrap_progress_begin, bootstrap_progress_end,
         &chained_progress_printer};
-    TFHEpp::
-        CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
-            Schedule>(*chained_output, *first_output, *first_output, key_dir,
-                      encapsulation_key_file, post_bootstrap_relin_key_file,
-                      chained_product_timings, &chained_progress);
+    if constexpr (Streamed) {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+                Schedule>(*chained_output, *first_output, *first_output,
+                          key_dir, encapsulation_key_file,
+                          post_bootstrap_relin_key_file,
+                          chained_product_timings, &chained_progress);
+    }
+    else {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+                Schedule>(*chained_output, *first_output, *first_output,
+                          key_dir, encapsulation_key_file,
+                          post_bootstrap_relin_key_file,
+                          chained_product_timings, &chained_progress);
+    }
 
     const double chained_decrypt_ms = elapsed_ms_with_progress(
         "chained_product", "decrypt", [&] {
@@ -4041,6 +4110,28 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     std::cout << "chained_decrypt_ms=" << chained_decrypt_ms << '\n';
     std::cout << "chained_max_error=" << chained_err << '\n';
     return first_err <= tol && chained_err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
+int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0)
+{
+    return run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl<
+        Schedule, false>(key_dir, tol, bootstrap_sparse_weight,
+                         external_sparse_weight);
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0)
+{
+    return run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl<
+        Schedule, true>(key_dir, tol, bootstrap_sparse_weight,
+                        external_sparse_weight);
 }
 
 template <class Schedule>
@@ -5580,6 +5671,30 @@ int run_seeded_hybrid_practical_all(const std::filesystem::path &key_dir,
         Schedule>(key_dir, 0.1, sparse_weight, sparse_weight);
 }
 
+template <class Schedule>
+int run_seeded_hybrid_streamed_practical_all(
+    const std::filesystem::path &key_dir, bool resume,
+    std::size_t sparse_weight = 0)
+{
+    print_schedule_report<Schedule>("seeded-hybrid-streamed-practical-all",
+                                    &key_dir);
+    if (const int status = print_practical_readiness_report<Schedule>(
+            "seeded-hybrid-streamed-practical-all", sparse_weight, key_dir);
+        status != 0)
+        return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir, seeded_hybrid_practical_artifact_estimate_bytes<Schedule>(),
+            "seeded-hybrid-streamed-practical-all");
+        status != 0)
+        return status;
+    if (const int status = run_seeded_hybrid_streamed_keygen<Schedule>(
+            key_dir, resume, sparse_weight);
+        status != 0)
+        return status;
+    return run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap<
+        Schedule>(key_dir, 0.1, sparse_weight, sparse_weight);
+}
+
 void print_usage(const char *program)
 {
     std::cerr << "Usage: " << program
@@ -5619,6 +5734,9 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-streamed-keygen DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-keygen-next DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-run DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-run-product-encap DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-all DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-chained-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-all DIR]"
@@ -5840,6 +5958,11 @@ int main(int argc, char **argv)
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-streamed-keygen-next" ||
                  arg == "--lvl6-tuned-seeded-hybrid-streamed-run" ||
+                 arg ==
+                     "--lvl6-tuned-seeded-hybrid-streamed-run-product-encap" ||
+                 arg ==
+                     "--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap" ||
+                 arg == "--lvl6-tuned-seeded-hybrid-streamed-all" ||
                  arg == "--lvl6-tuned-seeded-hybrid-run-product-encap" ||
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-run-chained-product-encap" ||
@@ -6069,6 +6192,31 @@ int main(int argc, char **argv)
                 if (run_seeded_hybrid_streamed_filesystem_bootstrap<
                         Lvl6TunedSchedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg ==
+                     "--lvl6-tuned-seeded-hybrid-streamed-run-product-encap") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_filesystem_encapsulated_product_bootstrap<
+                        Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap<
+                        Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-seeded-hybrid-streamed-all") {
+                if (run_seeded_hybrid_streamed_practical_all<
+                        Lvl6TunedSchedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg ==
