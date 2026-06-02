@@ -10614,6 +10614,32 @@ inline bool CKKSDenseBootstrapKeyDirectoryComplete(
     return CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(root).empty();
 }
 
+namespace ckks_detail {
+
+inline void CKKSDenseBootstrapRequireCompleteKeyDirectoryImpl(
+    const std::filesystem::path &root,
+    const std::vector<std::filesystem::path> &missing, const char *label)
+{
+    if (missing.empty()) return;
+    std::string message = std::string("incomplete ") + label +
+                          " CKKS bootstrap key directory: " + root.string() +
+                          " missing=" + std::to_string(missing.size());
+    if (!missing.front().empty())
+        message += " first_missing=" + missing.front().string();
+    throw std::runtime_error(message);
+}
+
+}  // namespace ckks_detail
+
+template <class Schedule>
+inline void CKKSDenseBootstrapRequireKeyDirectoryComplete(
+    const std::filesystem::path &root)
+{
+    ckks_detail::CKKSDenseBootstrapRequireCompleteKeyDirectoryImpl(
+        root, CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(root),
+        "sparse");
+}
+
 template <class Schedule>
 inline std::vector<std::filesystem::path>
 CKKSDenseBootstrapHybridGiantKeyDirectoryFiles(
@@ -10640,6 +10666,16 @@ inline bool CKKSDenseBootstrapHybridGiantKeyDirectoryComplete(
 }
 
 template <class Schedule>
+inline void CKKSDenseBootstrapHybridGiantRequireKeyDirectoryComplete(
+    const std::filesystem::path &root)
+{
+    ckks_detail::CKKSDenseBootstrapRequireCompleteKeyDirectoryImpl(
+        root,
+        CKKSDenseBootstrapHybridGiantMissingKeyDirectoryFiles<Schedule>(root),
+        "hybrid");
+}
+
+template <class Schedule>
 inline std::vector<std::filesystem::path>
 CKKSDenseBootstrapSeededHybridGiantKeyDirectoryFiles(
     const std::filesystem::path &root)
@@ -10663,6 +10699,17 @@ inline bool CKKSDenseBootstrapSeededHybridGiantKeyDirectoryComplete(
     return CKKSDenseBootstrapSeededHybridGiantMissingKeyDirectoryFiles<
                Schedule>(root)
         .empty();
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapSeededHybridGiantRequireKeyDirectoryComplete(
+    const std::filesystem::path &root)
+{
+    ckks_detail::CKKSDenseBootstrapRequireCompleteKeyDirectoryImpl(
+        root,
+        CKKSDenseBootstrapSeededHybridGiantMissingKeyDirectoryFiles<Schedule>(
+            root),
+        "seeded hybrid");
 }
 
 template <class Schedule>
@@ -10734,6 +10781,18 @@ inline bool CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryComplete(
     return CKKSDenseBootstrapSeededHybridGiantStreamedMissingKeyDirectoryFiles<
                Schedule>(root)
         .empty();
+}
+
+template <class Schedule>
+inline void
+CKKSDenseBootstrapSeededHybridGiantStreamedRequireKeyDirectoryComplete(
+    const std::filesystem::path &root)
+{
+    ckks_detail::CKKSDenseBootstrapRequireCompleteKeyDirectoryImpl(
+        root,
+        CKKSDenseBootstrapSeededHybridGiantStreamedMissingKeyDirectoryFiles<
+            Schedule>(root),
+        "streamed seeded hybrid");
 }
 
 template <class Schedule>
@@ -11728,6 +11787,7 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
                 std::string("invalid CKKS bootstrap key directory manifest: ") +
                 e.what());
         }
+        CKKSDenseBootstrapRequireKeyDirectoryComplete<Schedule>(root);
         CKKSLoadPortableBinary(
             linear_plan_cache,
             ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));
@@ -11941,6 +12001,8 @@ struct CKKSDenseBootstrapHybridGiantFilesystemKeyProvider {
                     "invalid CKKS hybrid bootstrap key directory manifest: ") +
                 e.what());
         }
+        CKKSDenseBootstrapHybridGiantRequireKeyDirectoryComplete<Schedule>(
+            root);
         CKKSLoadPortableBinary(
             linear_plan_cache,
             ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));
@@ -12159,6 +12221,8 @@ struct CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider {
                             "directory manifest: ") +
                 e.what());
         }
+        CKKSDenseBootstrapSeededHybridGiantRequireKeyDirectoryComplete<
+            Schedule>(root);
         CKKSLoadPortableBinary(
             linear_plan_cache,
             ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));
@@ -12379,6 +12443,8 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
                             "directory manifest: ") +
                 e.what());
         }
+        CKKSDenseBootstrapSeededHybridGiantStreamedRequireKeyDirectoryComplete<
+            Schedule>(root);
         CKKSLoadPortableBinary(
             linear_plan_cache,
             ckks_detail::CKKSDenseBootstrapNamedPath(root, "linear_plan"));

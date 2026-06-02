@@ -206,6 +206,27 @@ void require_close_param(const TFHEpp::CKKSSlotVector<Param> &got,
     }
 }
 
+template <class MakeProvider>
+void require_incomplete_provider_rejected(MakeProvider &&make_provider,
+                                          const char *label)
+{
+    bool rejected = false;
+    try {
+        [[maybe_unused]] auto provider = make_provider();
+    }
+    catch (const std::runtime_error &e) {
+        const std::string message = e.what();
+        rejected = message.find("incomplete") != std::string::npos &&
+                   message.find("missing=") != std::string::npos;
+    }
+    if (!rejected) {
+        std::cerr << label
+                  << " filesystem key provider accepted incomplete directory"
+                  << std::endl;
+        std::exit(1);
+    }
+}
+
 template <class Schedule>
 struct CountingDenseBootstrapProvider {
     using EvalModTraits = TFHEpp::CKKSDenseEvalModBoundedCosTraits<Schedule>;
@@ -2047,6 +2068,75 @@ void test_dense_bootstrap_e2e_smoke()
     require_close_param<M>(*decoded, *slots, 0.02,
                            "CKKS dense filesystem-slice bootstrap e2e");
     std::filesystem::remove_all(slice_dir);
+
+    const std::filesystem::path incomplete_root =
+        std::filesystem::temp_directory_path() /
+        "tfhepp_ckks_dense_bootstrap_incomplete";
+    std::filesystem::remove_all(incomplete_root);
+
+    const std::filesystem::path sparse_incomplete_dir =
+        incomplete_root / "sparse";
+    TFHEpp::CKKSSavePortableBinary(
+        TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestFile(
+            sparse_incomplete_dir),
+        TFHEpp::CKKSDenseBootstrapBuildKeyDirectoryManifest<Schedule>(
+            sparse_incomplete_dir));
+    require_incomplete_provider_rejected(
+        [&] {
+            return TFHEpp::CKKSDenseBootstrapFilesystemKeyProvider<Schedule>(
+                sparse_incomplete_dir);
+        },
+        "CKKS sparse");
+
+    const std::filesystem::path hybrid_incomplete_dir =
+        incomplete_root / "hybrid";
+    TFHEpp::CKKSSavePortableBinary(
+        TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestFile(
+            hybrid_incomplete_dir),
+        TFHEpp::CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest<
+            Schedule>(hybrid_incomplete_dir));
+    require_incomplete_provider_rejected(
+        [&] {
+            return TFHEpp::
+                CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule>(
+                    hybrid_incomplete_dir);
+        },
+        "CKKS hybrid");
+
+    const std::filesystem::path seeded_incomplete_dir =
+        incomplete_root / "seeded-hybrid";
+    TFHEpp::CKKSSavePortableBinary(
+        TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestFile(
+            seeded_incomplete_dir),
+        TFHEpp::CKKSDenseBootstrapBuildSeededHybridGiantKeyDirectoryManifest<
+            Schedule>(seeded_incomplete_dir));
+    require_incomplete_provider_rejected(
+        [&] {
+            return TFHEpp::
+                CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<
+                    Schedule>(seeded_incomplete_dir);
+        },
+        "CKKS seeded hybrid");
+
+    const std::filesystem::path streamed_incomplete_dir =
+        incomplete_root / "seeded-hybrid-streamed";
+    TFHEpp::CKKSSavePortableBinary(
+        TFHEpp::CKKSDenseBootstrapKeyDirectoryManifestFile(
+            streamed_incomplete_dir),
+        TFHEpp::
+            CKKSDenseBootstrapBuildSeededHybridGiantStreamedKeyDirectoryManifest<
+                Schedule>(streamed_incomplete_dir));
+    require_incomplete_provider_rejected(
+        [&] {
+            return TFHEpp::
+                CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<
+                    Schedule>(streamed_incomplete_dir);
+        },
+        "CKKS streamed seeded hybrid");
+    std::filesystem::remove_all(incomplete_root);
+    std::cout
+        << "CKKS filesystem key providers reject incomplete directories"
+        << std::endl;
 
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapTimings timings;
