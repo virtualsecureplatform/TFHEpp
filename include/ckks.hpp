@@ -2624,14 +2624,26 @@ inline std::size_t popcountNonnegativeInt(int value)
     return count;
 }
 
+template <class P>
+using CKKSSparseBabyStepTable = std::vector<std::unique_ptr<TRLWE<P>>>;
+
+template <class P>
+inline TRLWE<P> &CKKSEnsureSparseBabyStep(
+    CKKSSparseBabyStepTable<P> &baby, std::size_t index)
+{
+    assert(index < baby.size());
+    if (!baby[index]) baby[index] = std::make_unique<TRLWE<P>>();
+    return *baby[index];
+}
+
 template <class P, std::uint32_t LogQ, class GaloisKey>
-inline void CKKSBuildBabyStepRotationTable(
-    std::vector<TRLWE<P>> &baby, const TRLWE<P> &ct,
+inline void CKKSBuildSparseBabyStepRotationTable(
+    CKKSSparseBabyStepTable<P> &baby, const TRLWE<P> &ct,
     const std::vector<bool> &baby_used, const GaloisKey &gk)
 {
     assert(!baby.empty());
     assert(baby.size() == baby_used.size());
-    baby[0] = ct;
+    CKKSEnsureSparseBabyStep<P>(baby, 0) = ct;
 
     std::vector<bool> ready(baby.size(), false);
     ready[0] = true;
@@ -2655,26 +2667,30 @@ inline void CKKSBuildBabyStepRotationTable(
             const int bit = highestPowerOfTwoLE(current);
             const int parent = current - bit;
             assert(ready[static_cast<std::size_t>(parent)]);
+            assert(baby[static_cast<std::size_t>(parent)]);
             CKKSRotateSlots<P, LogQ>(
-                baby[static_cast<std::size_t>(current)],
-                baby[static_cast<std::size_t>(parent)], bit, gk);
+                CKKSEnsureSparseBabyStep<P>(
+                    baby, static_cast<std::size_t>(current)),
+                *baby[static_cast<std::size_t>(parent)], bit, gk);
             ready[static_cast<std::size_t>(current)] = true;
         }
     }
 }
 
 template <class P, std::uint32_t LogQ, class GaloisKey>
-inline void CKKSBuildDirectBabyStepRotationTable(
-    std::vector<TRLWE<P>> &baby, const TRLWE<P> &ct,
+inline void CKKSBuildSparseDirectBabyStepRotationTable(
+    CKKSSparseBabyStepTable<P> &baby, const TRLWE<P> &ct,
     const std::vector<bool> &baby_used, const GaloisKey &gk)
 {
     assert(!baby.empty());
     assert(baby.size() == baby_used.size());
-    baby[0] = ct;
+    CKKSEnsureSparseBabyStep<P>(baby, 0) = ct;
     for (int j1 = 1; j1 < static_cast<int>(baby_used.size()); j1++) {
         if (baby_used[static_cast<std::size_t>(j1)])
-            CKKSRotateSlots<P, LogQ>(baby[static_cast<std::size_t>(j1)], ct,
-                                     j1, gk);
+            CKKSRotateSlots<P, LogQ>(
+                CKKSEnsureSparseBabyStep<P>(
+                    baby, static_cast<std::size_t>(j1)),
+                ct, j1, gk);
     }
 }
 
@@ -3715,9 +3731,10 @@ inline void CKKSLinearTransformBSGS(
     CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
         baby_used, plan);
 
-    auto baby = std::make_unique<std::vector<TRLWE<P>>>(plan.k_step);
-    ckks_detail::CKKSBuildBabyStepRotationTable<P, LogQ>(*baby, ct.ct,
-                                                         baby_used, input_gk);
+    auto baby =
+        std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(plan.k_step);
+    ckks_detail::CKKSBuildSparseBabyStepRotationTable<P, LogQ>(
+        *baby, ct.ct, baby_used, input_gk);
 
     if constexpr (is_multilimb_uint_v<typename P::T> &&
                   use_multilimb_digit_fft_v<P>) {
@@ -3761,10 +3778,10 @@ inline void CKKSLinearTransformBSGS(
                 for (int j = 0; j < static_cast<int>(P::l̅); j++) {
                     const int torus_shift =
                         width - (j + 1) * static_cast<int>(P::B̅gbit);
+                    const auto &baby_ct =
+                        *(*baby)[static_cast<std::size_t>(j1)];
                     for (uint32_t n = 0; n < P::n; n++) {
-                        const T adjusted =
-                            (*baby)[static_cast<std::size_t>(j1)][c][n] +
-                            offset;
+                        const T adjusted = baby_ct[c][n] + offset;
                         (*torus_digit)[n] =
                             ((adjusted >> torus_shift) & torus_mask) -
                             half_digit;
@@ -3775,7 +3792,7 @@ inline void CKKSLinearTransformBSGS(
                 }
             }
         }
-        std::vector<TRLWE<P>>().swap(*baby);
+        baby.reset();
 
         bool res_initialized = false;
         auto inner = std::make_unique<TRLWE<P>>();
@@ -3884,8 +3901,10 @@ inline void CKKSLinearTransformBSGS(
     for (const auto &group : plan.groups) {
         bool inner_initialized = false;
         for (const auto &entry : group.terms) {
+            assert((*baby)[static_cast<std::size_t>(entry.baby_step)]);
             CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
-                *term, (*baby)[entry.baby_step], entry.plain.poly);
+                *term, *(*baby)[static_cast<std::size_t>(entry.baby_step)],
+                entry.plain.poly);
 
             if (!inner_initialized) {
                 *inner = *term;
@@ -3933,8 +3952,9 @@ inline void CKKSLinearTransformBSGSDirect(
     CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
         baby_used, plan);
 
-    auto baby = std::make_unique<std::vector<TRLWE<P>>>(plan.k_step);
-    ckks_detail::CKKSBuildDirectBabyStepRotationTable<P, LogQ>(
+    auto baby =
+        std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(plan.k_step);
+    ckks_detail::CKKSBuildSparseDirectBabyStepRotationTable<P, LogQ>(
         *baby, ct.ct, baby_used, input_gk);
 
     bool res_initialized = false;
@@ -3945,8 +3965,10 @@ inline void CKKSLinearTransformBSGSDirect(
     for (const auto &group : plan.groups) {
         bool inner_initialized = false;
         for (const auto &entry : group.terms) {
+            assert((*baby)[static_cast<std::size_t>(entry.baby_step)]);
             CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
-                *term, (*baby)[entry.baby_step], entry.plain.poly);
+                *term, *(*baby)[static_cast<std::size_t>(entry.baby_step)],
+                entry.plain.poly);
 
             if (!inner_initialized) {
                 *inner = *term;
@@ -4005,12 +4027,14 @@ inline void CKKSLinearTransformBSGSDualInput(
         lhs_baby_used[i] = lhs_baby_used[i] || rhs_baby_used[i];
 
     auto lhs_baby =
-        std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
+        std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(
+            lhs_plan.k_step);
     auto rhs_baby =
-        std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
-    ckks_detail::CKKSBuildBabyStepRotationTable<P, LogQ>(
+        std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(
+            lhs_plan.k_step);
+    ckks_detail::CKKSBuildSparseBabyStepRotationTable<P, LogQ>(
         *lhs_baby, lhs.ct, lhs_baby_used, input_gk);
-    ckks_detail::CKKSBuildBabyStepRotationTable<P, LogQ>(
+    ckks_detail::CKKSBuildSparseBabyStepRotationTable<P, LogQ>(
         *rhs_baby, rhs.ct, lhs_baby_used, input_gk);
 
     bool res_initialized = false;
@@ -4026,8 +4050,11 @@ inline void CKKSLinearTransformBSGSDualInput(
 
         bool inner_initialized = false;
         for (const auto &entry : lhs_group.terms) {
+            assert((*lhs_baby)[static_cast<std::size_t>(entry.baby_step)]);
             CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
-                *term, (*lhs_baby)[entry.baby_step], entry.plain.poly);
+                *term,
+                *(*lhs_baby)[static_cast<std::size_t>(entry.baby_step)],
+                entry.plain.poly);
 
             if (!inner_initialized) {
                 *inner = *term;
@@ -4038,8 +4065,11 @@ inline void CKKSLinearTransformBSGSDualInput(
             }
         }
         for (const auto &entry : rhs_group.terms) {
+            assert((*rhs_baby)[static_cast<std::size_t>(entry.baby_step)]);
             CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
-                *term, (*rhs_baby)[entry.baby_step], entry.plain.poly);
+                *term,
+                *(*rhs_baby)[static_cast<std::size_t>(entry.baby_step)],
+                entry.plain.poly);
 
             if (!inner_initialized) {
                 *inner = *term;
@@ -4098,12 +4128,14 @@ inline void CKKSLinearTransformBSGSDualInputDirect(
         lhs_baby_used[i] = lhs_baby_used[i] || rhs_baby_used[i];
 
     auto lhs_baby =
-        std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
+        std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(
+            lhs_plan.k_step);
     auto rhs_baby =
-        std::make_unique<std::vector<TRLWE<P>>>(lhs_plan.k_step);
-    ckks_detail::CKKSBuildDirectBabyStepRotationTable<P, LogQ>(
+        std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(
+            lhs_plan.k_step);
+    ckks_detail::CKKSBuildSparseDirectBabyStepRotationTable<P, LogQ>(
         *lhs_baby, lhs.ct, lhs_baby_used, input_gk);
-    ckks_detail::CKKSBuildDirectBabyStepRotationTable<P, LogQ>(
+    ckks_detail::CKKSBuildSparseDirectBabyStepRotationTable<P, LogQ>(
         *rhs_baby, rhs.ct, lhs_baby_used, input_gk);
 
     bool res_initialized = false;
@@ -4119,8 +4151,11 @@ inline void CKKSLinearTransformBSGSDualInputDirect(
 
         bool inner_initialized = false;
         for (const auto &entry : lhs_group.terms) {
+            assert((*lhs_baby)[static_cast<std::size_t>(entry.baby_step)]);
             CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
-                *term, (*lhs_baby)[entry.baby_step], entry.plain.poly);
+                *term,
+                *(*lhs_baby)[static_cast<std::size_t>(entry.baby_step)],
+                entry.plain.poly);
 
             if (!inner_initialized) {
                 *inner = *term;
@@ -4131,8 +4166,11 @@ inline void CKKSLinearTransformBSGSDualInputDirect(
             }
         }
         for (const auto &entry : rhs_group.terms) {
+            assert((*rhs_baby)[static_cast<std::size_t>(entry.baby_step)]);
             CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
-                *term, (*rhs_baby)[entry.baby_step], entry.plain.poly);
+                *term,
+                *(*rhs_baby)[static_cast<std::size_t>(entry.baby_step)],
+                entry.plain.poly);
 
             if (!inner_initialized) {
                 *inner = *term;
