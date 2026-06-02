@@ -1381,11 +1381,42 @@ std::string manifest_status(const std::filesystem::path &root)
                 CKKSDenseBootstrapSeededHybridGiantKeyDirectoryManifestMatches<
                     Schedule>(root))
             return "seeded-hybrid-match";
+        if (TFHEpp::
+                CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryManifestMatches<
+                    Schedule>(root))
+            return "seeded-hybrid-streamed-match";
         return "mismatch";
     }
     catch (...) {
         return "unreadable";
     }
+}
+
+template <class Schedule>
+std::vector<std::filesystem::path> key_directory_files_for_manifest(
+    const std::filesystem::path &root, const std::string &manifest)
+{
+    if (manifest == "seeded-hybrid-streamed-match")
+        return TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryFiles<
+                Schedule>(root);
+    if (manifest == "seeded-hybrid-match")
+        return TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyDirectoryFiles<
+            Schedule>(root);
+    if (manifest == "hybrid-match")
+        return TFHEpp::CKKSDenseBootstrapHybridGiantKeyDirectoryFiles<
+            Schedule>(root);
+    return TFHEpp::CKKSDenseBootstrapKeyDirectoryFiles<Schedule>(root);
+}
+
+inline std::size_t missing_key_directory_file_count(
+    const std::vector<std::filesystem::path> &paths)
+{
+    return static_cast<std::size_t>(std::count_if(
+        paths.begin(), paths.end(),
+        [](const std::filesystem::path &path) {
+            return !std::filesystem::exists(path);
+        }));
 }
 
 template <int HybridThreshold>
@@ -1917,15 +1948,15 @@ void print_schedule_report(const char *label,
               << '\n';
     print_evalmod_approximation_report<Schedule>(label);
     if (key_dir != nullptr) {
+        const std::string manifest = manifest_status<Schedule>(*key_dir);
         const auto expected =
-            TFHEpp::CKKSDenseBootstrapKeyDirectoryFiles<Schedule>(*key_dir);
-        const auto missing =
-            TFHEpp::CKKSDenseBootstrapMissingKeyDirectoryFiles<Schedule>(
-                *key_dir);
+            key_directory_files_for_manifest<Schedule>(*key_dir, manifest);
+        const std::size_t missing =
+            missing_key_directory_file_count(expected);
         std::cout << label << " key_dir=" << key_dir->string()
                   << " files=" << regular_file_count(*key_dir) << "/"
-                  << expected.size() << " missing=" << missing.size()
-                  << " manifest=" << manifest_status<Schedule>(*key_dir)
+                  << expected.size() << " missing=" << missing
+                  << " manifest=" << manifest
                   << " tmp_files=" << temporary_file_count(*key_dir)
                   << " disk_bytes=" << directory_size_bytes(*key_dir)
                   << '\n';
@@ -2211,6 +2242,38 @@ int validate_seeded_hybrid_filesystem_key_dir(
 }
 
 template <class Schedule>
+int validate_seeded_hybrid_streamed_filesystem_key_dir(
+    const std::filesystem::path &key_dir)
+{
+    const auto missing =
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedMissingKeyDirectoryFiles<
+                Schedule>(key_dir);
+    if (!missing.empty()) {
+        std::cerr << "seeded_hybrid_streamed_key_dir_incomplete="
+                  << key_dir.string() << " missing=" << missing.size()
+                  << '\n';
+        print_missing_key_files(missing);
+        return 2;
+    }
+    try {
+        if (!TFHEpp::
+                CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryManifestMatches<
+                    Schedule>(key_dir)) {
+            std::cerr << "seeded_hybrid_streamed_key_dir_manifest_mismatch="
+                      << key_dir.string() << '\n';
+            return 2;
+        }
+    }
+    catch (const std::exception &e) {
+        std::cerr << "seeded_hybrid_streamed_key_dir_manifest_unreadable="
+                  << key_dir.string() << " error=" << e.what() << '\n';
+        return 2;
+    }
+    return 0;
+}
+
+template <class Schedule>
 int run_hybrid_filesystem_bootstrap(const std::filesystem::path &key_dir,
                                     double tol,
                                     std::size_t sparse_weight = 0)
@@ -2308,6 +2371,63 @@ int run_seeded_hybrid_filesystem_bootstrap(
     const double bootstrap_ms = elapsed_ms([&] {
         TFHEpp::CKKSDenseBootstrapWithKeyProviderTimed<Schedule>(
             *output, *input, provider, bootstrap_timings);
+    });
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double decrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
+                                Schedule::log_delta>(*decoded, *output, *key);
+    });
+    const double err = max_error<P>(*decoded, *slots);
+    std::cout << "encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
+    print_bootstrap_timings(bootstrap_timings);
+    std::cout << "decrypt_ms=" << decrypt_ms << '\n';
+    std::cout << "max_error=" << err << '\n';
+    return err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_filesystem_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "bootstrap");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, false);
+        status != 0)
+        return status;
+    if (const int status =
+            validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
+                key_dir);
+        status != 0)
+        return status;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+    std::cout << "key_sparse_weight=" << sparse_weight << '\n';
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*slots);
+
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, Schedule::input_log_q,
+                                Schedule::log_delta>(*input, *slots, *key);
+    });
+
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
+    const double bootstrap_ms = elapsed_ms([&] {
+        TFHEpp::
+            CKKSDenseBootstrapWithSeededHybridGiantStreamedFilesystemKeyTimed<
+                Schedule>(*output, *input, key_dir, bootstrap_timings);
     });
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -4620,6 +4740,44 @@ int run_toy_schedule_seeded_hybrid_validation(
 }
 
 template <class Schedule>
+int run_toy_schedule_seeded_hybrid_streamed_validation(
+    bool keep_dir, const char *label, const char *directory_name, double tol)
+{
+    using P = typename Schedule::Param;
+    const std::filesystem::path key_dir =
+        std::filesystem::temp_directory_path() / directory_name;
+    std::filesystem::remove_all(key_dir);
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_test_key<P>(*key);
+
+    std::size_t generated_slices = 0;
+    const double keygen_ms = elapsed_ms([&] {
+        while (TFHEpp::
+                   CKKSDenseBootstrapSeededHybridGiantStreamedKeyGenNextMissingToDirectory<
+                       Schedule>(key_dir, *key, {0.0, 0})) {
+            generated_slices++;
+        }
+    });
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions resume_options;
+    resume_options.overwrite_existing = false;
+    TFHEpp::CKKSDenseBootstrapSeededHybridGiantStreamedKeyGenToDirectory<
+        Schedule>(key_dir, *key, {0.0, 0}, resume_options);
+
+    print_schedule_report<Schedule>(label, &key_dir);
+    std::cout << label << " streamed_seeded_keygen_ms=" << keygen_ms << '\n';
+    std::cout << label
+              << " streamed_seeded_keygen_slices=" << generated_slices
+              << '\n';
+    const int result =
+        run_seeded_hybrid_streamed_filesystem_bootstrap<Schedule>(key_dir,
+                                                                  tol);
+
+    if (!keep_dir) std::filesystem::remove_all(key_dir);
+    return result;
+}
+
+template <class Schedule>
 int run_toy_schedule_product_bootstrap_validation(
     bool keep_dir, const char *label, const char *directory_name, double tol)
 {
@@ -5048,6 +5206,11 @@ int run_toy_inverse_validation(bool keep_dir)
             "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid",
             0.05) != 0)
         return 1;
+    if (run_toy_schedule_seeded_hybrid_streamed_validation<Schedule>(
+            keep_dir, "toy-inverse-seeded-hybrid-streamed",
+            "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_streamed",
+            0.05) != 0)
+        return 1;
     if (run_toy_schedule_product_bootstrap_validation<Schedule>(
             keep_dir, "toy-inverse-product",
             "tfhepp_ckks_bootstrap_validation_toy_inverse_product", 0.05) != 0)
@@ -5308,6 +5471,93 @@ int run_seeded_hybrid_keygen(const std::filesystem::path &key_dir, bool resume,
 }
 
 template <class Schedule>
+int run_seeded_hybrid_streamed_keygen_next(
+    const std::filesystem::path &key_dir, std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "keygen");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir, seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>(),
+            "seeded-hybrid-streamed-keygen-next");
+        status != 0)
+        return status;
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+
+    print_schedule_report<Schedule>(
+        "seeded-hybrid-streamed-keygen-next-before", &key_dir);
+    std::cout << "keygen_next_sparse_weight=" << sparse_weight << '\n';
+    const auto before_missing =
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedMissingKeyDirectoryFiles<
+                Schedule>(key_dir);
+    bool generated = false;
+    const double keygen_ms = elapsed_ms([&] {
+        generated =
+            TFHEpp::
+                CKKSDenseBootstrapSeededHybridGiantStreamedKeyGenNextMissingToDirectory<
+                    Schedule>(key_dir, *key, {P::α, 0});
+    });
+    const auto after_missing =
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedMissingKeyDirectoryFiles<
+                Schedule>(key_dir);
+    print_schedule_report<Schedule>(
+        "seeded-hybrid-streamed-keygen-next-after", &key_dir);
+    std::cout << "keygen_next_generated=" << (generated ? 1 : 0) << '\n';
+    std::cout << "keygen_next_ms=" << keygen_ms << '\n';
+    print_created_key_files(before_missing, after_missing);
+    return 0;
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_keygen(const std::filesystem::path &key_dir,
+                                      bool resume,
+                                      std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "keygen");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir, seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>(),
+            "seeded-hybrid-streamed-keygen");
+        status != 0)
+        return status;
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions options;
+    options.overwrite_existing = !resume;
+    print_schedule_report<Schedule>("seeded-hybrid-streamed-keygen-before",
+                                    &key_dir);
+    std::cout << "keygen_sparse_weight=" << sparse_weight << '\n';
+    const double keygen_ms = elapsed_ms([&] {
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedKeyGenToDirectory<
+                Schedule>(key_dir, *key, {P::α, 0}, options);
+    });
+    print_schedule_report<Schedule>("seeded-hybrid-streamed-keygen-after",
+                                    &key_dir);
+    std::cout << "keygen_ms=" << keygen_ms << '\n';
+    return 0;
+}
+
+template <class Schedule>
 int run_seeded_hybrid_practical_all(const std::filesystem::path &key_dir,
                                     bool resume,
                                     std::size_t sparse_weight = 0)
@@ -5366,6 +5616,9 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-keygen DIR]"
                  " [--lvl6-tuned-seeded-hybrid-keygen-next DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-keygen DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-keygen-next DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-run DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-chained-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-all DIR]"
@@ -5583,6 +5836,10 @@ int main(int argc, char **argv)
                  arg == "--lvl6-tuned-seeded-hybrid-keygen" ||
                  arg == "--lvl6-tuned-seeded-hybrid-keygen-next" ||
                  arg == "--lvl6-tuned-seeded-hybrid-run" ||
+                 arg == "--lvl6-tuned-seeded-hybrid-streamed-keygen" ||
+                 arg ==
+                     "--lvl6-tuned-seeded-hybrid-streamed-keygen-next" ||
+                 arg == "--lvl6-tuned-seeded-hybrid-streamed-run" ||
                  arg == "--lvl6-tuned-seeded-hybrid-run-product-encap" ||
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-run-chained-product-encap" ||
@@ -5789,6 +6046,27 @@ int main(int argc, char **argv)
                 print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
                                                          &key_dir);
                 if (run_seeded_hybrid_filesystem_bootstrap<
+                        Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg ==
+                     "--lvl6-tuned-seeded-hybrid-streamed-keygen") {
+                if (run_seeded_hybrid_streamed_keygen<Lvl6TunedSchedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg ==
+                     "--lvl6-tuned-seeded-hybrid-streamed-keygen-next") {
+                if (run_seeded_hybrid_streamed_keygen_next<
+                        Lvl6TunedSchedule>(
+                        key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (arg == "--lvl6-tuned-seeded-hybrid-streamed-run") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_filesystem_bootstrap<
                         Lvl6TunedSchedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
                     return 1;
