@@ -759,6 +759,11 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     static constexpr std::uint32_t seeded_hybrid_giant_streamed_format = 3;
     static constexpr std::uint32_t seeded_hybrid_giant_streamed_tuned_format_base =
         3000;
+    static constexpr std::uint32_t hybrid_direct_baby_format_base = 10000;
+    static constexpr std::uint32_t seeded_hybrid_direct_baby_format_base =
+        20000;
+    static constexpr std::uint32_t seeded_hybrid_direct_baby_streamed_format_base =
+        30000;
 
     std::uint32_t version = current_version;
     std::uint32_t key_format = sparse_format;
@@ -2771,6 +2776,19 @@ inline std::size_t popcountNonnegativeInt(int value)
     return count;
 }
 
+template <class GaloisKey>
+inline bool CKKSHasDirectRotationKeyForSteps(const GaloisKey &gk, int steps)
+{
+    if constexpr (requires { gk.direct.has(steps); }) {
+        return steps != 0 && gk.direct.has(steps);
+    }
+    else {
+        (void)gk;
+        (void)steps;
+        return false;
+    }
+}
+
 template <class P>
 using CKKSSparseBabyStepTable = std::vector<std::unique_ptr<TRLWE<P>>>;
 
@@ -2801,6 +2819,7 @@ inline void CKKSBuildSparseBabyStepRotationTable(
         int step = target;
         while (step != 0) {
             needed[static_cast<std::size_t>(step)] = true;
+            if (CKKSHasDirectRotationKeyForSteps(gk, step)) break;
             step -= highestPowerOfTwoLE(step);
         }
     }
@@ -2818,9 +2837,16 @@ inline void CKKSBuildSparseBabyStepRotationTable(
             const int parent = current - bit;
             assert(baby[static_cast<std::size_t>(parent)]);
             assert(baby[static_cast<std::size_t>(current)]);
-            CKKSRotateSlots<P, LogQ>(
-                *baby[static_cast<std::size_t>(current)],
-                *baby[static_cast<std::size_t>(parent)], bit, gk);
+            if (CKKSHasDirectRotationKeyForSteps(gk, current)) {
+                CKKSRotateSlots<P, LogQ>(
+                    *baby[static_cast<std::size_t>(current)], ct, current,
+                    gk);
+            }
+            else {
+                CKKSRotateSlots<P, LogQ>(
+                    *baby[static_cast<std::size_t>(current)],
+                    *baby[static_cast<std::size_t>(parent)], bit, gk);
+            }
         }
     }
 }
@@ -3130,6 +3156,58 @@ inline void CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices(
 }
 
 template <class P>
+inline void CKKSCollectLinearTransformStageHybridRotationKeyIndices(
+    CKKSRotationKeyIndexSet<P> &input_binary_keys,
+    CKKSDirectRotationKeyIndexSet<P> &input_direct_keys,
+    CKKSRotationKeyIndexSet<P> &output_binary_keys,
+    CKKSDirectRotationKeyIndexSet<P> &output_direct_keys,
+    const CKKSLinearTransformStage<P> &stage, int k_step,
+    int direct_baby_popcount_threshold = 0,
+    int direct_giant_popcount_threshold = 4)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+    assert(direct_baby_popcount_threshold >= 0);
+
+    int max_j2 = 0;
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<bool> baby_used(static_cast<std::size_t>(k_step), false);
+    std::vector<bool> giant_used(static_cast<std::size_t>(max_j2 + 1), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        baby_used[static_cast<std::size_t>(r % k_step)] = true;
+        giant_used[static_cast<std::size_t>(r / k_step)] = true;
+    }
+
+    for (int j1 = 1; j1 < k_step; j1++) {
+        if (!baby_used[static_cast<std::size_t>(j1)]) continue;
+        if (direct_baby_popcount_threshold > 0 &&
+            ckks_detail::popcountNonnegativeInt(j1) >=
+                static_cast<std::size_t>(direct_baby_popcount_threshold)) {
+            CKKSMarkDirectRotationKeyIndex<P>(input_direct_keys, j1);
+        }
+        else {
+            CKKSMarkRotationPowerKeyIndices<P>(input_binary_keys, j1);
+        }
+    }
+    for (int j2 = 1; j2 <= max_j2; j2++) {
+        if (!giant_used[static_cast<std::size_t>(j2)]) continue;
+        const int steps = k_step * j2;
+        if (ckks_detail::popcountNonnegativeInt(steps) >=
+            static_cast<std::size_t>(direct_giant_popcount_threshold))
+            CKKSMarkDirectRotationKeyIndex<P>(output_direct_keys, steps);
+        else
+            CKKSMarkRotationPowerKeyIndices<P>(output_binary_keys, steps);
+    }
+}
+
+template <class P>
 inline std::size_t CKKSLinearTransformStageBabyRotationCount(
     const CKKSLinearTransformStage<P> &stage, int k_step)
 {
@@ -3209,6 +3287,60 @@ inline std::size_t CKKSLinearTransformStageBabyRotationBinaryEvalAutoCount(
     for (int j1 = 1; j1 < k_step; j1++)
         if (used[static_cast<std::size_t>(j1)])
             count += ckks_detail::popcountNonnegativeInt(j1);
+    return count;
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStageBabyRotationHybridEvalAutoCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step,
+    int direct_baby_popcount_threshold = 0)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+    assert(direct_baby_popcount_threshold >= 0);
+
+    std::vector<bool> used(static_cast<std::size_t>(k_step), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        used[static_cast<std::size_t>(r % k_step)] = true;
+    }
+
+    std::vector<bool> direct(static_cast<std::size_t>(k_step), false);
+    if (direct_baby_popcount_threshold > 0) {
+        for (int j1 = 1; j1 < k_step; j1++) {
+            direct[static_cast<std::size_t>(j1)] =
+                used[static_cast<std::size_t>(j1)] &&
+                ckks_detail::popcountNonnegativeInt(j1) >=
+                    static_cast<std::size_t>(
+                        direct_baby_popcount_threshold);
+        }
+    }
+
+    std::vector<bool> ready(static_cast<std::size_t>(k_step), false);
+    ready[0] = true;
+    std::vector<int> stack;
+    std::size_t count = 0;
+    for (int target = 1; target < k_step; target++) {
+        if (!used[static_cast<std::size_t>(target)]) continue;
+
+        stack.clear();
+        int step = target;
+        while (!ready[static_cast<std::size_t>(step)]) {
+            stack.push_back(step);
+            if (direct[static_cast<std::size_t>(step)]) break;
+            step -= ckks_detail::highestPowerOfTwoLE(step);
+        }
+
+        while (!stack.empty()) {
+            const int current = stack.back();
+            stack.pop_back();
+            if (ready[static_cast<std::size_t>(current)]) continue;
+            ready[static_cast<std::size_t>(current)] = true;
+            count++;
+        }
+    }
     return count;
 }
 
@@ -3327,6 +3459,47 @@ inline std::size_t CKKSLinearTransformStageHybridGiantRotationEvalAutoCount(
 }
 
 template <class P>
+inline std::size_t CKKSLinearTransformStageHybridRotationEvalAutoCount(
+    const CKKSLinearTransformStage<P> &stage, int k_step,
+    int direct_baby_popcount_threshold = 0,
+    int direct_giant_popcount_threshold = 4)
+{
+    constexpr int half = static_cast<int>(P::n) / 2;
+    assert(stage.diagonals.size() == stage.rotation_offsets.size());
+    assert(!stage.rotation_offsets.empty());
+    assert(k_step > 0 && k_step <= half);
+
+    int max_j2 = 0;
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        max_j2 = std::max(max_j2, r / k_step);
+    }
+
+    std::vector<bool> giant_used(static_cast<std::size_t>(max_j2 + 1), false);
+    for (const int offset : stage.rotation_offsets) {
+        const int r = ((offset % half) + half) % half;
+        giant_used[static_cast<std::size_t>(r / k_step)] = true;
+    }
+
+    std::size_t giant_evalautos = 0;
+    for (int j2 = 1; j2 <= max_j2; j2++) {
+        if (!giant_used[static_cast<std::size_t>(j2)]) continue;
+        const int steps = k_step * j2;
+        const std::size_t binary_evalautos =
+            ckks_detail::popcountNonnegativeInt(steps);
+        giant_evalautos +=
+            binary_evalautos >=
+                    static_cast<std::size_t>(direct_giant_popcount_threshold)
+                ? 1
+                : binary_evalautos;
+    }
+
+    return CKKSLinearTransformStageBabyRotationHybridEvalAutoCount<P>(
+               stage, k_step, direct_baby_popcount_threshold) +
+           giant_evalautos;
+}
+
+template <class P>
 inline std::size_t CKKSLinearTransformStagesRotationEvalAutoCount(
     const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
     std::size_t stage_count, int k_step)
@@ -3364,6 +3537,22 @@ inline std::size_t CKKSLinearTransformStagesHybridGiantRotationEvalAutoCount(
         count += CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
             stages[first_stage + i], k_step,
             direct_giant_popcount_threshold);
+    return count;
+}
+
+template <class P>
+inline std::size_t CKKSLinearTransformStagesHybridRotationEvalAutoCount(
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    std::size_t stage_count, int k_step,
+    int direct_baby_popcount_threshold = 0,
+    int direct_giant_popcount_threshold = 4)
+{
+    assert(first_stage + stage_count <= stages.size());
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < stage_count; i++)
+        count += CKKSLinearTransformStageHybridRotationEvalAutoCount<P>(
+            stages[first_stage + i], k_step,
+            direct_baby_popcount_threshold, direct_giant_popcount_threshold);
     return count;
 }
 
@@ -3425,6 +3614,32 @@ CKKSLinearTransformStagesDualInputSharedTailHybridGiantRotationEvalAutoCount(
         count += CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
             stages[first_stage + i], k_step,
             direct_giant_popcount_threshold);
+    return count;
+}
+
+template <class P>
+inline std::size_t
+CKKSLinearTransformStagesDualInputSharedTailHybridRotationEvalAutoCount(
+    const CKKSLinearTransformStages<P> &stages, std::size_t first_stage,
+    std::size_t stage_count, int k_step,
+    int direct_baby_popcount_threshold = 0,
+    int direct_giant_popcount_threshold = 4)
+{
+    assert(stage_count > 0);
+    assert(first_stage + stage_count <= stages.size());
+    const std::size_t first_baby =
+        CKKSLinearTransformStageBabyRotationHybridEvalAutoCount<P>(
+            stages[first_stage], k_step, direct_baby_popcount_threshold);
+    std::size_t count =
+        2 * first_baby +
+        (CKKSLinearTransformStageHybridRotationEvalAutoCount<P>(
+             stages[first_stage], k_step, direct_baby_popcount_threshold,
+             direct_giant_popcount_threshold) -
+         first_baby);
+    for (std::size_t i = 1; i < stage_count; i++)
+        count += CKKSLinearTransformStageHybridRotationEvalAutoCount<P>(
+            stages[first_stage + i], k_step,
+            direct_baby_popcount_threshold, direct_giant_popcount_threshold);
     return count;
 }
 
@@ -5386,7 +5601,8 @@ template <
         (LinearPlainLogDelta == 50 ? 35 : LinearPlainLogDelta),
     std::uint32_t CoeffToSlotFuseRadix = LinearFuseRadix,
     std::uint32_t SlotToCoeffFuseRadix = LinearFuseRadix,
-    int HybridGiantDirectPopcountThreshold = 4>
+    int HybridGiantDirectPopcountThreshold = 4,
+    int HybridBabyDirectPopcountThreshold = 0>
 struct CKKSDenseBootstrapSchedule {
     static_assert(ckks_detail::supported_torus_v<P>);
     static_assert(LogDelta > 0);
@@ -5400,6 +5616,7 @@ struct CKKSDenseBootstrapSchedule {
     static_assert(SlotToCoeffFuseRadix > 0);
     static_assert(LinearBSGSStep > 0);
     static_assert(HybridGiantDirectPopcountThreshold > 0);
+    static_assert(HybridBabyDirectPopcountThreshold >= 0);
     static_assert(EvalModK > 0);
     static_assert(ModRaiseMaskBound < EvalModK);
     static_assert(EvalModInvDegree == 0 || EvalModInvDegree > 1);
@@ -5426,6 +5643,8 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr int linear_bsgs_step = LinearBSGSStep;
     static constexpr int hybrid_giant_direct_popcount_threshold =
         HybridGiantDirectPopcountThreshold;
+    static constexpr int hybrid_baby_direct_popcount_threshold =
+        HybridBabyDirectPopcountThreshold;
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
@@ -5538,7 +5757,7 @@ using lvl6CKKSDenseBootstrapInverseSchedule =
                                128, 0, 50, 50, 20, 5, 5, 3>;
 struct lvl6CKKSDenseBootstrapTunedSchedule
     : CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5,
-                                 52, 128, 0, 52, 52, 30, 7, 7, 5> {
+                                 52, 128, 0, 52, 52, 30, 7, 7, 5, 1> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
@@ -6009,26 +6228,32 @@ inline void CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage(
     CKKSClearDirectRotationKeyIndexSets<P>(usage.slot_to_coeff_direct);
 
     for (std::size_t i = 0; i < linear_plan.coeff_to_slot_stages.size(); i++) {
-        CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
-            usage.coeff_to_slot_binary[i], usage.coeff_to_slot_binary[i + 1],
+        CKKSCollectLinearTransformStageHybridRotationKeyIndices<P>(
+            usage.coeff_to_slot_binary[i], usage.coeff_to_slot_direct[i],
+            usage.coeff_to_slot_binary[i + 1],
             usage.coeff_to_slot_direct[i + 1],
             linear_plan.coeff_to_slot_stages[i],
             ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStepAt<Schedule>(i),
+            Schedule::hybrid_baby_direct_popcount_threshold,
             Schedule::hybrid_giant_direct_popcount_threshold);
     }
     CKKSMarkConjugationKeyIndex<P>(usage.packed_conjugate);
     for (std::size_t i = 0; i < linear_plan.slot_to_coeff_stages.size(); i++) {
-        CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
-            usage.slot_to_coeff_binary[i], usage.slot_to_coeff_binary[i + 1],
+        CKKSCollectLinearTransformStageHybridRotationKeyIndices<P>(
+            usage.slot_to_coeff_binary[i], usage.slot_to_coeff_direct[i],
+            usage.slot_to_coeff_binary[i + 1],
             usage.slot_to_coeff_direct[i + 1],
             linear_plan.slot_to_coeff_stages[i],
             ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule>(i),
+            Schedule::hybrid_baby_direct_popcount_threshold,
             Schedule::hybrid_giant_direct_popcount_threshold);
-        CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
-            usage.slot_to_coeff_binary[i], usage.slot_to_coeff_binary[i + 1],
+        CKKSCollectLinearTransformStageHybridRotationKeyIndices<P>(
+            usage.slot_to_coeff_binary[i], usage.slot_to_coeff_direct[i],
+            usage.slot_to_coeff_binary[i + 1],
             usage.slot_to_coeff_direct[i + 1],
             linear_plan.slot_to_coeff_imag_stages[i],
             ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule>(i),
+            Schedule::hybrid_baby_direct_popcount_threshold,
             Schedule::hybrid_giant_direct_popcount_threshold);
     }
 }
@@ -10927,6 +11152,31 @@ CKKSDenseBootstrapBuildKeyDirectoryManifest()
         std::filesystem::path{});
 }
 
+namespace ckks_detail {
+
+template <class Schedule>
+consteval std::uint32_t CKKSDenseBootstrapHybridKeyFormat(
+    std::uint32_t default_format, std::uint32_t tuned_format_base,
+    std::uint32_t direct_baby_format_base)
+{
+    if constexpr (Schedule::hybrid_baby_direct_popcount_threshold > 0) {
+        return direct_baby_format_base +
+               static_cast<std::uint32_t>(
+                   100 * Schedule::hybrid_baby_direct_popcount_threshold +
+                   Schedule::hybrid_giant_direct_popcount_threshold);
+    }
+    else if constexpr (Schedule::hybrid_giant_direct_popcount_threshold == 4) {
+        return default_format;
+    }
+    else {
+        return tuned_format_base +
+               static_cast<std::uint32_t>(
+                   Schedule::hybrid_giant_direct_popcount_threshold);
+    }
+}
+
+}  // namespace ckks_detail
+
 template <class Schedule>
 inline CKKSDenseBootstrapKeyDirectoryManifest
 CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest(
@@ -10939,17 +11189,11 @@ CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest(
     CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> rotation_usage;
     CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
         rotation_usage, linear_plan);
-    if constexpr (Schedule::hybrid_giant_direct_popcount_threshold == 4) {
-        manifest.key_format =
-            CKKSDenseBootstrapKeyDirectoryManifest::hybrid_giant_format;
-    }
-    else {
-        manifest.key_format =
-            CKKSDenseBootstrapKeyDirectoryManifest::
-                hybrid_giant_tuned_format_base +
-            static_cast<std::uint32_t>(
-                Schedule::hybrid_giant_direct_popcount_threshold);
-    }
+    manifest.key_format = ckks_detail::CKKSDenseBootstrapHybridKeyFormat<
+        Schedule>(
+        CKKSDenseBootstrapKeyDirectoryManifest::hybrid_giant_format,
+        CKKSDenseBootstrapKeyDirectoryManifest::hybrid_giant_tuned_format_base,
+        CKKSDenseBootstrapKeyDirectoryManifest::hybrid_direct_baby_format_base);
     manifest.sparse_key_rows = 0;
     manifest.streamed_peak_key_rows = 0;
     manifest.hybrid_key_rows =
@@ -10976,17 +11220,13 @@ CKKSDenseBootstrapBuildSeededHybridGiantKeyDirectoryManifest(
 {
     CKKSDenseBootstrapKeyDirectoryManifest manifest =
         CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest<Schedule>(root);
-    if constexpr (Schedule::hybrid_giant_direct_popcount_threshold == 4) {
-        manifest.key_format =
-            CKKSDenseBootstrapKeyDirectoryManifest::seeded_hybrid_giant_format;
-    }
-    else {
-        manifest.key_format =
-            CKKSDenseBootstrapKeyDirectoryManifest::
-                seeded_hybrid_giant_tuned_format_base +
-            static_cast<std::uint32_t>(
-                Schedule::hybrid_giant_direct_popcount_threshold);
-    }
+    manifest.key_format = ckks_detail::CKKSDenseBootstrapHybridKeyFormat<
+        Schedule>(
+        CKKSDenseBootstrapKeyDirectoryManifest::seeded_hybrid_giant_format,
+        CKKSDenseBootstrapKeyDirectoryManifest::
+            seeded_hybrid_giant_tuned_format_base,
+        CKKSDenseBootstrapKeyDirectoryManifest::
+            seeded_hybrid_direct_baby_format_base);
     return manifest;
 }
 
@@ -11005,18 +11245,14 @@ CKKSDenseBootstrapBuildSeededHybridGiantStreamedKeyDirectoryManifest(
 {
     CKKSDenseBootstrapKeyDirectoryManifest manifest =
         CKKSDenseBootstrapBuildHybridGiantKeyDirectoryManifest<Schedule>(root);
-    if constexpr (Schedule::hybrid_giant_direct_popcount_threshold == 4) {
-        manifest.key_format =
-            CKKSDenseBootstrapKeyDirectoryManifest::
-                seeded_hybrid_giant_streamed_format;
-    }
-    else {
-        manifest.key_format =
-            CKKSDenseBootstrapKeyDirectoryManifest::
-                seeded_hybrid_giant_streamed_tuned_format_base +
-            static_cast<std::uint32_t>(
-                Schedule::hybrid_giant_direct_popcount_threshold);
-    }
+    manifest.key_format = ckks_detail::CKKSDenseBootstrapHybridKeyFormat<
+        Schedule>(
+        CKKSDenseBootstrapKeyDirectoryManifest::
+            seeded_hybrid_giant_streamed_format,
+        CKKSDenseBootstrapKeyDirectoryManifest::
+            seeded_hybrid_giant_streamed_tuned_format_base,
+        CKKSDenseBootstrapKeyDirectoryManifest::
+            seeded_hybrid_direct_baby_streamed_format_base);
     manifest.expected_file_count =
         CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryFiles<Schedule>(
             root)

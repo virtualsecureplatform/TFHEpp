@@ -620,6 +620,7 @@ void test_lvl6_factorized_stage_shape()
     static_assert(Schedule::slot_to_coeff_fuse_radix == 5);
     static_assert(Schedule::linear_bsgs_step == 128);
     static_assert(Schedule::hybrid_giant_direct_popcount_threshold == 4);
+    static_assert(Schedule::hybrid_baby_direct_popcount_threshold == 0);
     static_assert(Schedule::raw_linear_stage_count == 14);
     static_assert(Schedule::coeff_to_slot_level_count == 3);
     static_assert(Schedule::slot_to_coeff_level_count == 3);
@@ -708,8 +709,9 @@ void test_lvl6_factorized_stage_shape()
             TFHEpp::CKKSLinearTransformStageRotationEvalAutoCount<L>(
                 stage, Schedule::linear_bsgs_step);
         c2s_hybrid_evalautos +=
-            TFHEpp::CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<L>(
+            TFHEpp::CKKSLinearTransformStageHybridRotationEvalAutoCount<L>(
                 stage, Schedule::linear_bsgs_step,
+                Schedule::hybrid_baby_direct_popcount_threshold,
                 Schedule::hybrid_giant_direct_popcount_threshold);
         c2s_direct_evalautos +=
             TFHEpp::CKKSLinearTransformStageDirectRotationEvalAutoCount<L>(
@@ -732,10 +734,11 @@ void test_lvl6_factorized_stage_shape()
                    Schedule::linear_bsgs_step);
     const std::size_t stc_hybrid_evalautos =
         TFHEpp::
-            CKKSLinearTransformStagesDualInputSharedTailHybridGiantRotationEvalAutoCount<
+            CKKSLinearTransformStagesDualInputSharedTailHybridRotationEvalAutoCount<
                 L>(linear_plan.slot_to_coeff_stages, 0,
                    linear_plan.slot_to_coeff_stages.size(),
                    Schedule::linear_bsgs_step,
+                   Schedule::hybrid_baby_direct_popcount_threshold,
                    Schedule::hybrid_giant_direct_popcount_threshold);
     if (c2s_direct_evalautos == 0 ||
         c2s_direct_evalautos >= c2s_current_evalautos)
@@ -888,7 +891,9 @@ void test_lvl6_factorized_stage_shape()
     std::cout << "CKKS lvl6 dense bootstrap rotation evalautos hybrid "
               << "c2s=" << c2s_hybrid_evalautos
               << " stc=" << stc_hybrid_evalautos
-              << " direct_popcount_threshold="
+              << " direct_baby_popcount_threshold="
+              << Schedule::hybrid_baby_direct_popcount_threshold
+              << " direct_giant_popcount_threshold="
               << Schedule::hybrid_giant_direct_popcount_threshold
               << std::endl;
     std::cout << "CKKS lvl6 dense bootstrap key rows sparse/full="
@@ -1029,10 +1034,15 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6FastSchedule::supports_post_bootstrap_product);
     static_assert(Lvl6FastSchedule::post_bootstrap_product_slack == 5);
     static_assert(Lvl6FastSchedule::hybrid_giant_direct_popcount_threshold == 3);
+    static_assert(Lvl6FastSchedule::hybrid_baby_direct_popcount_threshold == 0);
     static_assert(Lvl6CompactSchedule::hybrid_giant_direct_popcount_threshold ==
                   4);
+    static_assert(
+        Lvl6CompactSchedule::hybrid_baby_direct_popcount_threshold == 0);
     static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold ==
                   5);
+    static_assert(Lvl6TunedSchedule::hybrid_baby_direct_popcount_threshold ==
+                  1);
     static_assert(
         TFHEpp::ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStep<
             0, Lvl6TunedSchedule>() == 2048);
@@ -1101,6 +1111,17 @@ void test_dense_bootstrap_api_shape()
     std::cout << "CKKS lvl6 tuned streamed next key estimate bytes="
               << next_streamed_key_estimate->estimated_bytes
               << " file=" << next_streamed_key_name << std::endl;
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Lvl6TunedSchedule> tuned_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Lvl6TunedSchedule>(tuned_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Lvl6TunedSchedule>
+        tuned_hybrid_usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<
+        Lvl6TunedSchedule>(tuned_hybrid_usage, tuned_plan);
+    if (TFHEpp::CKKSDirectRotationKeyIndexSetCount<TFHEpp::lvl6param>(
+            tuned_hybrid_usage.coeff_to_slot_direct[0]) == 0 ||
+        TFHEpp::CKKSDirectRotationKeyIndexSetCount<TFHEpp::lvl6param>(
+            tuned_hybrid_usage.slot_to_coeff_direct[0]) == 0)
+        std::exit(1);
     using Lvl6SparseKey = TFHEpp::CKKSDenseBootstrapKey<Lvl6FastSchedule>;
     using Lvl6HybridKey =
         TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6FastSchedule>;

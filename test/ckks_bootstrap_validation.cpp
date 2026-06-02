@@ -445,7 +445,8 @@ template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
 void print_linear_stage_shape(const char *label, const char *prefix,
                               std::size_t stage_index,
                               const TFHEpp::CKKSLinearTransformStage<P> &stage,
-                              int k_step, int hybrid_threshold)
+                              int k_step, int hybrid_baby_threshold,
+                              int hybrid_giant_threshold)
 {
     TFHEpp::CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> plan;
     TFHEpp::CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta,
@@ -480,8 +481,9 @@ void print_linear_stage_shape(const char *label, const char *prefix,
                      stage, k_step)
               << " rotation_evalautos_hybrid="
               << TFHEpp::
-                     CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<
-                         P>(stage, k_step, hybrid_threshold)
+                     CKKSLinearTransformStageHybridRotationEvalAutoCount<P>(
+                         stage, k_step, hybrid_baby_threshold,
+                         hybrid_giant_threshold)
               << " fd_batches=" << fd_batches
               << " fd_digit_products=" << fd_products << '\n';
 }
@@ -501,6 +503,7 @@ void print_coeff_to_slot_stage_shapes(
             label, "c2s", I, linear_plan.coeff_to_slot_stages[I],
             TFHEpp::ckks_detail::
                 CKKSDenseBootstrapCoeffToSlotBSGSStep<I, Schedule>(),
+            Schedule::hybrid_baby_direct_popcount_threshold,
             Schedule::hybrid_giant_direct_popcount_threshold);
         print_coeff_to_slot_stage_shapes<I + 1, Schedule>(label, linear_plan);
     }
@@ -521,12 +524,14 @@ void print_slot_to_coeff_stage_shapes(
             label, "stc_real", I, linear_plan.slot_to_coeff_stages[I],
             TFHEpp::ckks_detail::
                 CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>(),
+            Schedule::hybrid_baby_direct_popcount_threshold,
             Schedule::hybrid_giant_direct_popcount_threshold);
         print_linear_stage_shape<P, log_q, Schedule::log_delta,
                                  Schedule::slot_to_coeff_plain_log_delta>(
             label, "stc_imag", I, linear_plan.slot_to_coeff_imag_stages[I],
             TFHEpp::ckks_detail::
                 CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>(),
+            Schedule::hybrid_baby_direct_popcount_threshold,
             Schedule::hybrid_giant_direct_popcount_threshold);
         print_slot_to_coeff_stage_shapes<I + 1, Schedule>(label, linear_plan);
     }
@@ -578,11 +583,12 @@ std::size_t coeff_to_slot_hybrid_rotation_evalautos(
     else {
         using P = typename Schedule::Param;
         return TFHEpp::
-                   CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+                   CKKSLinearTransformStageHybridRotationEvalAutoCount<P>(
                        linear_plan.coeff_to_slot_stages[I],
                        TFHEpp::ckks_detail::
                            CKKSDenseBootstrapCoeffToSlotBSGSStep<I,
                                                                   Schedule>(),
+                       Schedule::hybrid_baby_direct_popcount_threshold,
                        Schedule::hybrid_giant_direct_popcount_threshold) +
                coeff_to_slot_hybrid_rotation_evalautos<I + 1, Schedule>(
                    linear_plan);
@@ -635,11 +641,12 @@ std::size_t slot_to_coeff_tail_hybrid_rotation_evalautos(
     else {
         using P = typename Schedule::Param;
         return TFHEpp::
-                   CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+                   CKKSLinearTransformStageHybridRotationEvalAutoCount<P>(
                        linear_plan.slot_to_coeff_stages[I],
                        TFHEpp::ckks_detail::
                            CKKSDenseBootstrapSlotToCoeffBSGSStep<I,
                                                                   Schedule>(),
+                       Schedule::hybrid_baby_direct_popcount_threshold,
                        Schedule::hybrid_giant_direct_popcount_threshold) +
                slot_to_coeff_tail_hybrid_rotation_evalautos<I + 1, Schedule>(
                    linear_plan);
@@ -686,12 +693,14 @@ std::size_t slot_to_coeff_shared_tail_hybrid_rotation_evalautos(
         TFHEpp::ckks_detail::
             CKKSDenseBootstrapSlotToCoeffBSGSStep<0, Schedule>();
     const std::size_t baby =
-        TFHEpp::CKKSLinearTransformStageBabyRotationTableEvalAutoCount<P>(
-            linear_plan.slot_to_coeff_stages[0], k_step);
+        TFHEpp::CKKSLinearTransformStageBabyRotationHybridEvalAutoCount<P>(
+            linear_plan.slot_to_coeff_stages[0], k_step,
+            Schedule::hybrid_baby_direct_popcount_threshold);
     return 2 * baby +
            (TFHEpp::
-                CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+                CKKSLinearTransformStageHybridRotationEvalAutoCount<P>(
                     linear_plan.slot_to_coeff_stages[0], k_step,
+                    Schedule::hybrid_baby_direct_popcount_threshold,
                     Schedule::hybrid_giant_direct_popcount_threshold) -
             baby) +
            slot_to_coeff_tail_hybrid_rotation_evalautos<1, Schedule>(
@@ -1629,6 +1638,7 @@ static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
 static_assert(Lvl6TunedSchedule::log_delta == 52);
 static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 5);
+static_assert(Lvl6TunedSchedule::hybrid_baby_direct_popcount_threshold == 1);
 static_assert(Lvl6TunedSchedule::evalmod_degree == 34);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 5);
 static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
@@ -2175,7 +2185,9 @@ void print_schedule_report(const char *label,
               << stc_direct_evalautos << '\n';
     std::cout << label << " rotation_evalautos hybrid c2s="
               << c2s_hybrid_evalautos << " stc=" << stc_hybrid_evalautos
-              << " direct_popcount_threshold="
+              << " direct_baby_popcount_threshold="
+              << Schedule::hybrid_baby_direct_popcount_threshold
+              << " direct_giant_popcount_threshold="
               << Schedule::hybrid_giant_direct_popcount_threshold
               << '\n';
     print_coeff_to_slot_stage_shapes<0, Schedule>(label, linear_plan);
@@ -2254,8 +2266,10 @@ void print_schedule_tuning_summary(const char *label)
               << " stc_bsgs1="
               << TFHEpp::ckks_detail::
                      CKKSDenseBootstrapSlotToCoeffBSGSStep<1, Schedule>()
-              << " threshold="
-              << Schedule::hybrid_giant_direct_popcount_threshold << '\n';
+              << " giant_threshold="
+              << Schedule::hybrid_giant_direct_popcount_threshold
+              << " baby_threshold="
+              << Schedule::hybrid_baby_direct_popcount_threshold << '\n';
     std::cout << label << " hybrid_rotation_indices="
               << TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsageCount<
                      Schedule>(hybrid_usage)
