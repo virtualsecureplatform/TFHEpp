@@ -992,19 +992,19 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6InverseSchedule::output_log_q == 60);
     static_assert(std::is_same_v<typename Lvl6TunedSchedule::Param,
                                  TFHEpp::lvl6param>);
-    static_assert(Lvl6TunedSchedule::log_delta == 42);
-    static_assert(Lvl6TunedSchedule::input_log_q == 50);
+    static_assert(Lvl6TunedSchedule::log_delta == 52);
+    static_assert(Lvl6TunedSchedule::input_log_q == 60);
     static_assert(Lvl6TunedSchedule::evalmod_degree == 52);
     static_assert(Lvl6TunedSchedule::evalmod_double_angle == 4);
     static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
-    static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 630);
+    static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
     static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
-    static_assert(Lvl6TunedSchedule::component_split_plain_log_delta == 42);
-    static_assert(Lvl6TunedSchedule::slot_to_coeff_plain_log_delta == 25);
-    static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 184);
-    static_assert(Lvl6TunedSchedule::output_log_q == 134);
+    static_assert(Lvl6TunedSchedule::component_split_plain_log_delta == 52);
+    static_assert(Lvl6TunedSchedule::slot_to_coeff_plain_log_delta == 30);
+    static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 216);
+    static_assert(Lvl6TunedSchedule::output_log_q == 156);
     static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-    static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 42);
+    static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 44);
     using Lvl6SparseKey = TFHEpp::CKKSDenseBootstrapKey<Lvl6FastSchedule>;
     using Lvl6HybridKey =
         TFHEpp::CKKSDenseBootstrapHybridGiantKey<Lvl6FastSchedule>;

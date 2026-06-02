@@ -320,6 +320,142 @@ double elapsed_ms(F &&fn)
     return std::chrono::duration<double, std::milli>(end - begin).count();
 }
 
+template <class Plan>
+std::size_t linear_plan_term_count(const Plan &plan)
+{
+    std::size_t terms = 0;
+    for (const auto &group : plan.groups) terms += group.terms.size();
+    return terms;
+}
+
+template <std::size_t KeyOffset, std::size_t I, class P,
+          std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount,
+          class GaloisKeyChain>
+void timed_linear_transform_stages_bsgs(
+    TFHEpp::CKKSStagedPlainMulResult<P, StartLogQ, LogDelta, PlainLogDelta,
+                                     StageCount> &res,
+    const TFHEpp::CKKSCiphertext<P, StartLogQ - I * PlainLogDelta, LogDelta>
+        &ct,
+    const TFHEpp::CKKSLinearTransformStages<P> &stages,
+    std::size_t first_stage, int k_step, const GaloisKeyChain &gk_chain,
+    const char *label)
+{
+    if constexpr (I == StageCount) {
+        res = ct;
+    }
+    else {
+        constexpr std::uint32_t log_q = StartLogQ - I * PlainLogDelta;
+        TFHEpp::CKKSLinearTransformPlan<P, log_q, LogDelta, PlainLogDelta>
+            plan;
+        TFHEpp::CKKSBuildLinearTransformBSGSPlan<P, log_q, LogDelta,
+                                                 PlainLogDelta>(
+            plan, stages[first_stage + I], k_step);
+
+        std::cout << label << "_stage_begin index=" << (first_stage + I)
+                  << " logQ=" << log_q << " groups=" << plan.groups.size()
+                  << " terms=" << linear_plan_term_count(plan) << '\n';
+        std::cout.flush();
+
+        auto next =
+            std::make_unique<TFHEpp::CKKSPlainMulResult<P, log_q, LogDelta,
+                                                        PlainLogDelta>>();
+        const double stage_ms = elapsed_ms([&] {
+            TFHEpp::CKKSLinearTransformBSGS<P, log_q, LogDelta,
+                                            PlainLogDelta>(
+                *next, ct, plan, gk_chain.template get<KeyOffset + I>(),
+                gk_chain.template get<KeyOffset + I + 1>());
+        });
+        std::cout << label << "_stage_done index=" << (first_stage + I)
+                  << " ms=" << stage_ms << '\n';
+        std::cout.flush();
+
+        TFHEpp::ckks_detail::maybe_release_key<KeyOffset + I>(gk_chain);
+        if constexpr (I + 1 == StageCount) {
+            TFHEpp::ckks_detail::maybe_release_key<KeyOffset + I + 1>(
+                gk_chain);
+        }
+        timed_linear_transform_stages_bsgs<KeyOffset, I + 1, P, StartLogQ,
+                                           LogDelta, PlainLogDelta,
+                                           StageCount>(
+            res, *next, stages, first_stage, k_step, gk_chain, label);
+    }
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount,
+          class GaloisKeyChain>
+void timed_linear_transform_stages_bsgs(
+    TFHEpp::CKKSStagedPlainMulResult<P, LogQ, LogDelta, PlainLogDelta,
+                                     StageCount> &res,
+    const TFHEpp::CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const TFHEpp::CKKSLinearTransformStages<P> &stages,
+    std::size_t first_stage, int k_step, const GaloisKeyChain &gk_chain,
+    const char *label)
+{
+    timed_linear_transform_stages_bsgs<0, 0, P, LogQ, LogDelta, PlainLogDelta,
+                                       StageCount>(
+        res, ct, stages, first_stage, k_step, gk_chain, label);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, std::size_t StageCount,
+          class GaloisKeyChain>
+void timed_linear_transform_stages_bsgs_dual_input_shared_tail(
+    TFHEpp::CKKSStagedPlainMulResult<P, LogQ, LogDelta, PlainLogDelta,
+                                     StageCount> &res,
+    const TFHEpp::CKKSCiphertext<P, LogQ, LogDelta> &lhs,
+    const TFHEpp::CKKSCiphertext<P, LogQ, LogDelta> &rhs,
+    const TFHEpp::CKKSLinearTransformStages<P> &lhs_stages,
+    const TFHEpp::CKKSLinearTransformStages<P> &rhs_stages,
+    std::size_t first_stage, int k_step, const GaloisKeyChain &gk_chain,
+    const char *label)
+{
+    static_assert(StageCount > 0);
+
+    TFHEpp::CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> lhs_plan;
+    TFHEpp::CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> rhs_plan;
+    TFHEpp::CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta,
+                                             PlainLogDelta>(
+        lhs_plan, lhs_stages[first_stage], k_step);
+    TFHEpp::CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta,
+                                             PlainLogDelta>(
+        rhs_plan, rhs_stages[first_stage], k_step);
+
+    std::cout << label << "_stage_begin index=" << first_stage
+              << " logQ=" << LogQ << " lhs_groups="
+              << lhs_plan.groups.size() << " lhs_terms="
+              << linear_plan_term_count(lhs_plan) << " rhs_groups="
+              << rhs_plan.groups.size() << " rhs_terms="
+              << linear_plan_term_count(rhs_plan) << '\n';
+    std::cout.flush();
+
+    auto next =
+        std::make_unique<TFHEpp::CKKSPlainMulResult<P, LogQ, LogDelta,
+                                                    PlainLogDelta>>();
+    const double stage_ms = elapsed_ms([&] {
+        TFHEpp::CKKSLinearTransformBSGSDualInput<P, LogQ, LogDelta,
+                                                 PlainLogDelta>(
+            *next, lhs, rhs, lhs_plan, rhs_plan, gk_chain.template get<0>(),
+            gk_chain.template get<1>());
+    });
+    std::cout << label << "_stage_done index=" << first_stage
+              << " ms=" << stage_ms << '\n';
+    std::cout.flush();
+
+    TFHEpp::ckks_detail::maybe_release_key<0>(gk_chain);
+    if constexpr (StageCount == 1) {
+        res = *next;
+        TFHEpp::ckks_detail::maybe_release_key<1>(gk_chain);
+    }
+    else {
+        constexpr std::uint32_t tail_log_q = LogQ - PlainLogDelta;
+        timed_linear_transform_stages_bsgs<1, 0, P, tail_log_q, LogDelta,
+                                           PlainLogDelta, StageCount - 1>(
+            res, *next, lhs_stages, first_stage + 1, k_step, gk_chain, label);
+    }
+}
+
 void print_bootstrap_timings(const TFHEpp::CKKSDenseBootstrapTimings &timings)
 {
     std::cout << "bootstrap_normalize_ms=" << timings.normalize_ms << '\n';
@@ -703,15 +839,15 @@ static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
 static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
-static_assert(Lvl6TunedSchedule::log_delta == 42);
+static_assert(Lvl6TunedSchedule::log_delta == 52);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
-static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 630);
+static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_level_count == 2);
 static_assert(Lvl6TunedSchedule::slot_to_coeff_level_count == 2);
-static_assert(Lvl6TunedSchedule::output_log_q == 134);
+static_assert(Lvl6TunedSchedule::output_log_q == 156);
 static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 42);
+static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 44);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;
@@ -2609,12 +2745,13 @@ int run_seeded_hybrid_product_stage_diagnostics(
         const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
             decltype(provider), true>
             coeff_to_slot_galois{provider};
-        TFHEpp::CKKSLinearTransformStagesBSGS<
+        timed_linear_transform_stages_bsgs<
             P, Schedule::boot_log_q, Schedule::log_delta,
             Schedule::coeff_to_slot_plain_log_delta,
             Schedule::coeff_to_slot_level_count>(
             *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
-            Schedule::linear_bsgs_step, coeff_to_slot_galois);
+            Schedule::linear_bsgs_step, coeff_to_slot_galois,
+            "diag_product_stage_c2s");
     });
     raised.reset();
 
@@ -2774,14 +2911,15 @@ int run_seeded_hybrid_product_stage_diagnostics(
         slot_to_coeff_galois{provider};
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     const double stc_ms = elapsed_ms([&] {
-        TFHEpp::CKKSLinearTransformStagesBSGSDualInputSharedTail<
+        timed_linear_transform_stages_bsgs_dual_input_shared_tail<
             P, Schedule::after_evalmod_log_q, Schedule::log_delta,
             Schedule::slot_to_coeff_plain_log_delta,
             Schedule::slot_to_coeff_level_count>(
             *output, *real_evalmod, *imag_evalmod,
             linear_plan.slot_to_coeff_stages,
             linear_plan.slot_to_coeff_imag_stages, 0,
-            Schedule::linear_bsgs_step, slot_to_coeff_galois);
+            Schedule::linear_bsgs_step, slot_to_coeff_galois,
+            "diag_product_stage_stc");
     });
     real_evalmod.reset();
     imag_evalmod.reset();
@@ -3298,12 +3436,12 @@ int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
         const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
             KeyProvider, true>
             coeff_to_slot_galois{provider};
-        TFHEpp::CKKSLinearTransformStagesBSGS<
+        timed_linear_transform_stages_bsgs<
             P, Schedule::boot_log_q, Schedule::log_delta,
             Schedule::coeff_to_slot_plain_log_delta,
             Schedule::coeff_to_slot_level_count>(
             *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
-            Schedule::linear_bsgs_step, coeff_to_slot_galois);
+            Schedule::linear_bsgs_step, coeff_to_slot_galois, "diag_c2s");
     });
     raised.reset();
     raised_slots.reset();
@@ -3442,14 +3580,14 @@ int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
         slot_to_coeff_galois{provider};
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     const double stc_ms = elapsed_ms([&] {
-        TFHEpp::CKKSLinearTransformStagesBSGSDualInputSharedTail<
+        timed_linear_transform_stages_bsgs_dual_input_shared_tail<
             P, Schedule::after_evalmod_log_q, Schedule::log_delta,
             Schedule::slot_to_coeff_plain_log_delta,
             Schedule::slot_to_coeff_level_count>(
             *output, *real_evalmod, *imag_evalmod,
             linear_plan.slot_to_coeff_stages,
             linear_plan.slot_to_coeff_imag_stages, 0,
-            Schedule::linear_bsgs_step, slot_to_coeff_galois);
+            Schedule::linear_bsgs_step, slot_to_coeff_galois, "diag_stc");
     });
     real_evalmod.reset();
     imag_evalmod.reset();

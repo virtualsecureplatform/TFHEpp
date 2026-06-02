@@ -319,8 +319,8 @@ struct lvl5param {
 // lvl6param: n = 2^15 multi-limb torus scaffold for dense CKKS bootstrap work.
 //
 // This intentionally keeps lvl5param at n = 2^14 and provides the 2^15 ring as
-// the next level.  Q = 2^960 is represented as 15 little-endian 64-bit limbs.
-// The extra limb gives dense CKKS bootstrapping enough room for a practical
+// the next level.  Q = 2^1152 is represented as 18 little-endian 64-bit limbs.
+// The extra limbs give dense CKKS bootstrapping enough room for a practical
 // EvalMod scale and a post-bootstrap product in TFHEpp's power-of-two torus
 // model.
 struct lvl6param {
@@ -333,12 +333,12 @@ struct lvl6param {
     static constexpr std::uint32_t l = 5;
     static constexpr std::uint32_t Bgbit = 19;
     static constexpr std::uint32_t Bgₐbit = 19;
-    using T = MultiLimbUInt<15>;
+    using T = MultiLimbUInt<18>;
     static constexpr T Bg = T{1} << Bgbit;
     static constexpr T Bgₐ = T{1} << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -937);
+    static const inline double α = std::pow(2.0, -1129);
     static constexpr T μ = T{1} << (std::numeric_limits<T>::digits - 3);
     static constexpr uint64_t plain_modulus_u64 = 786433;
     static constexpr uint32_t plain_modulusbit = 20;
@@ -350,8 +350,8 @@ struct lvl6param {
         (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
     static constexpr uint64_t bfv_bootstrap_digit_error_bound = 15;
     static constexpr int bfv_bootstrap_linear_bsgs_step = 128;
-    static constexpr std::uint32_t l̅ = 60;
-    static constexpr std::uint32_t l̅ₐ = 60;
+    static constexpr std::uint32_t l̅ = 72;
+    static constexpr std::uint32_t l̅ₐ = 72;
     static constexpr std::uint32_t B̅gbit = 16;
     static constexpr std::uint32_t B̅gₐbit = 16;
 

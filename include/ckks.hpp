@@ -2120,18 +2120,18 @@ inline void CKKSSecretKeySwitch(
     const CKKSSecretKeySwitchKey<P, LogQ> &switch_key)
 {
     auto switched = std::make_unique<TRLWE<P>>();
-    TRLWE<P> out{};
+    auto out = std::make_unique<TRLWE<P>>();
     for (std::uint32_t n = 0; n < P::n; n++)
-        out[P::k][n] = ckks_detail::reduceToLevel<P, LogQ>(ct.ct[P::k][n]);
+        (*out)[P::k][n] = ckks_detail::reduceToLevel<P, LogQ>(ct.ct[P::k][n]);
 
     for (int k = 0; k < static_cast<int>(P::k); k++) {
         CKKSKeySwitchRows<P, LogQ>(
             *switched, ct.ct[static_cast<std::size_t>(k)],
             switch_key[static_cast<std::size_t>(k)]);
-        CKKSSubTRLWEInPlace<P, LogQ>(out, *switched);
+        CKKSSubTRLWEInPlace<P, LogQ>(*out, *switched);
     }
-    ckks_detail::reduceTRLWEToLevel<P, LogQ>(out);
-    res.ct = out;
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(*out);
+    res.ct = *out;
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -2141,18 +2141,18 @@ inline void CKKSSecretKeySwitch(
     const CKKSSeededSecretKeySwitchKey<P, LogQ> &switch_key)
 {
     auto switched = std::make_unique<TRLWE<P>>();
-    TRLWE<P> out{};
+    auto out = std::make_unique<TRLWE<P>>();
     for (std::uint32_t n = 0; n < P::n; n++)
-        out[P::k][n] = ckks_detail::reduceToLevel<P, LogQ>(ct.ct[P::k][n]);
+        (*out)[P::k][n] = ckks_detail::reduceToLevel<P, LogQ>(ct.ct[P::k][n]);
 
     for (int k = 0; k < static_cast<int>(P::k); k++) {
         CKKSKeySwitchRows<P, LogQ>(
             *switched, ct.ct[static_cast<std::size_t>(k)],
             switch_key[static_cast<std::size_t>(k)]);
-        CKKSSubTRLWEInPlace<P, LogQ>(out, *switched);
+        CKKSSubTRLWEInPlace<P, LogQ>(*out, *switched);
     }
-    ckks_detail::reduceTRLWEToLevel<P, LogQ>(out);
-    res.ct = out;
+    ckks_detail::reduceTRLWEToLevel<P, LogQ>(*out);
+    res.ct = *out;
 }
 
 template <class P, std::uint32_t LogQ>
@@ -4924,8 +4924,8 @@ using lvl6CKKSDenseBootstrapInverseSchedule =
     CKKSDenseBootstrapSchedule<lvl6param, 40, 8, 880, 40, 5, 52, 18, 4, 3, 40,
                                128, 0, 50, 50, 20, 5, 5, 3>;
 using lvl6CKKSDenseBootstrapTunedSchedule =
-    CKKSDenseBootstrapSchedule<lvl6param, 42, 8, 960, 42, 7, 52, 18, 4, 7, 42,
-                               128, 0, 52, 42, 25, 7, 7, 3>;
+    CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7,
+                               52, 128, 0, 52, 52, 30, 7, 7, 3>;
 
 struct CKKSBoundedCosEvalModPolynomial {
     std::uint32_t k = 0;
