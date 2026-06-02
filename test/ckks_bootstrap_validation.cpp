@@ -103,13 +103,19 @@ std::string sparse_key_label(std::size_t sparse_weight)
     return "sparse_h" + std::to_string(sparse_weight);
 }
 
+template <class Schedule>
 std::filesystem::path
 seeded_external_eval_key_directory(const std::filesystem::path &key_dir,
                                    std::size_t external_sparse_weight)
 {
-    if (external_sparse_weight == 0) return key_dir / "seeded_external_eval_key";
+    const std::string schedule_suffix =
+        "_outq" + std::to_string(Schedule::output_log_q) + "_c2s" +
+        std::to_string(Schedule::coeff_to_slot_plain_log_delta);
+    if (external_sparse_weight == 0)
+        return key_dir / ("seeded_external_eval_key" + schedule_suffix);
     return key_dir / ("seeded_external_eval_key_" +
-                      sparse_key_label(external_sparse_weight));
+                      sparse_key_label(external_sparse_weight) +
+                      schedule_suffix);
 }
 
 template <class Schedule>
@@ -700,9 +706,10 @@ using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
 static_assert(Lvl6TunedSchedule::log_delta == 36);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
 static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 540);
-static_assert(Lvl6TunedSchedule::output_log_q == 121);
+static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 49);
+static_assert(Lvl6TunedSchedule::output_log_q == 82);
 static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 41);
+static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 2);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;
@@ -946,8 +953,11 @@ int print_practical_readiness_report(const char *label,
         sparse_weight_fits_bounded_modraise<Schedule>(
             bootstrap_sparse_weight);
     const bool evalmod_ready = evalmod_metrics.message_bits >= 30.0;
+    constexpr std::uint32_t practical_output_margin_bits =
+        Schedule::log_message_ratio + 32;
     const bool output_margin_ready =
-        Schedule::output_log_q >= Schedule::log_delta + 64;
+        Schedule::output_log_q >=
+        Schedule::log_delta + practical_output_margin_bits;
 
     std::cout << label << " readiness_ring_n=" << P::n
               << " ring_is_2p15=" << (ring_ready ? 1 : 0) << '\n';
@@ -960,6 +970,8 @@ int print_practical_readiness_report(const char *label,
               << Schedule::output_log_q << " log_delta="
               << Schedule::log_delta << " output_margin_bits="
               << (Schedule::output_log_q - Schedule::log_delta)
+              << " output_margin_threshold_bits="
+              << practical_output_margin_bits
               << " output_margin_ready=" << (output_margin_ready ? 1 : 0)
               << '\n';
     std::cout << label << " readiness_product_logQ=" << ProductCt::log_q
@@ -1818,7 +1830,8 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
     fill_external_test_key<P>(*external_key, external_sparse_weight);
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
     const std::filesystem::path external_eval_key_dir =
-        seeded_external_eval_key_directory(key_dir, external_sparse_weight);
+        seeded_external_eval_key_directory<Schedule>(key_dir,
+                                                     external_sparse_weight);
     const std::filesystem::path encapsulation_key_file =
         TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
             external_eval_key_dir);
@@ -1944,7 +1957,8 @@ int run_seeded_hybrid_encapsulation_product_diagnostics(
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
 
     const std::filesystem::path external_eval_key_dir =
-        seeded_external_eval_key_directory(key_dir, external_sparse_weight);
+        seeded_external_eval_key_directory<Schedule>(key_dir,
+                                                     external_sparse_weight);
     const std::filesystem::path encapsulation_key_file =
         TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
             external_eval_key_dir);
@@ -2255,7 +2269,8 @@ int run_seeded_hybrid_product_plain_pipeline_diagnostics(
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
 
     const std::filesystem::path external_eval_key_dir =
-        seeded_external_eval_key_directory(key_dir, external_sparse_weight);
+        seeded_external_eval_key_directory<Schedule>(key_dir,
+                                                     external_sparse_weight);
     const std::filesystem::path encapsulation_key_file =
         TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
             external_eval_key_dir);
@@ -2475,7 +2490,8 @@ int run_seeded_hybrid_product_stage_diagnostics(
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
 
     const std::filesystem::path external_eval_key_dir =
-        seeded_external_eval_key_directory(key_dir, external_sparse_weight);
+        seeded_external_eval_key_directory<Schedule>(key_dir,
+                                                     external_sparse_weight);
     const std::filesystem::path encapsulation_key_file =
         TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
             external_eval_key_dir);
@@ -3024,7 +3040,8 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     fill_external_test_key<P>(*external_key, external_sparse_weight);
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
     const std::filesystem::path external_eval_key_dir =
-        seeded_external_eval_key_directory(key_dir, external_sparse_weight);
+        seeded_external_eval_key_directory<Schedule>(key_dir,
+                                                     external_sparse_weight);
     const std::filesystem::path encapsulation_key_file =
         TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
             external_eval_key_dir);
