@@ -5760,14 +5760,15 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
 
         constexpr bool use_fft_digits =
             use_multilimb_digit_fft_v<P> &&
-            2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
+            2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 4 <
                 std::numeric_limits<double>::digits;
 
         if constexpr (use_fft_digits) {
             constexpr int digit_product_bits =
                 2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3;
+            constexpr int cross_term_product_bits = digit_product_bits + 1;
             constexpr int fd_batch_slack =
-                std::numeric_limits<double>::digits - digit_product_bits;
+                std::numeric_limits<double>::digits - cross_term_product_bits;
             static_assert(fd_batch_slack > 0);
             constexpr int fd_batch_size =
                 std::min(static_cast<int>(ckks_detail::static_min_v<
