@@ -121,6 +121,29 @@ seeded_external_eval_key_directory(const std::filesystem::path &key_dir,
                       schedule_suffix);
 }
 
+struct SeededExternalEvalKeyFiles {
+    std::filesystem::path root;
+    std::filesystem::path encapsulation_key;
+    std::filesystem::path product_relin_key;
+    std::filesystem::path post_bootstrap_product_relin_key;
+};
+
+template <class Schedule>
+SeededExternalEvalKeyFiles seeded_external_eval_key_files(
+    const std::filesystem::path &key_dir, std::size_t external_sparse_weight)
+{
+    SeededExternalEvalKeyFiles files;
+    files.root = seeded_external_eval_key_directory<Schedule>(
+        key_dir, external_sparse_weight);
+    files.encapsulation_key =
+        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(files.root);
+    files.product_relin_key =
+        TFHEpp::CKKSRelinKeyFile(files.root, "seeded_product_relin_key");
+    files.post_bootstrap_product_relin_key = TFHEpp::CKKSRelinKeyFile(
+        files.root, "seeded_post_bootstrap_product_relin_key");
+    return files;
+}
+
 template <class Schedule>
 constexpr bool requires_bounded_modraise_test_key()
 {
@@ -1255,6 +1278,27 @@ std::uintmax_t seeded_hybrid_practical_artifact_estimate_bytes()
                P, PostBootstrapProductCt::log_q>();
 }
 
+template <class Schedule>
+std::uintmax_t seeded_external_eval_key_estimate_bytes()
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    using PostBootstrapProductCt = TFHEpp::CKKSMultResult<
+        P, Schedule::output_log_q, Schedule::log_delta,
+        Schedule::output_log_q, Schedule::log_delta>;
+
+    return TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
+               Schedule>() +
+           TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>() +
+           TFHEpp::CKKSSeededRelinKeyByteEstimate<
+               P, PostBootstrapProductCt::log_q>();
+}
+
 int validate_keygen_disk_budget(const std::filesystem::path &key_dir,
                                 std::uintmax_t estimated_key_bytes,
                                 const char *label)
@@ -1482,6 +1526,28 @@ void print_created_key_files(
         shown++;
     }
     if (shown > limit) std::cout << "created_file_more=" << shown - limit << '\n';
+}
+
+int validate_seeded_external_eval_key_files(
+    const SeededExternalEvalKeyFiles &files, bool require_post_bootstrap_product)
+{
+    std::vector<std::filesystem::path> missing;
+    if (!std::filesystem::exists(files.encapsulation_key))
+        missing.push_back(files.encapsulation_key);
+    if (!std::filesystem::exists(files.product_relin_key))
+        missing.push_back(files.product_relin_key);
+    if (require_post_bootstrap_product &&
+        !std::filesystem::exists(files.post_bootstrap_product_relin_key))
+        missing.push_back(files.post_bootstrap_product_relin_key);
+
+    if (missing.empty()) return 0;
+
+    std::cerr << "seeded_external_eval_key_incomplete=" << files.root.string()
+              << " missing=" << missing.size() << '\n';
+    for (const std::filesystem::path &path : missing)
+        std::cerr << "missing_seeded_external_eval_key_file=" << path.string()
+                  << '\n';
+    return 2;
 }
 
 template <class P, std::uint32_t LogQ>
@@ -2016,17 +2082,19 @@ int print_practical_readiness_report(const char *label,
               << " readiness_runtime_keygen=0 readiness_runtime_key_polling=0"
               << '\n';
     std::cout << label
-              << " readiness_recommended_keygen=--lvl6-tuned-hybrid-keygen DIR\n";
+              << " readiness_recommended_keygen=--lvl6-tuned-seeded-hybrid-streamed-keygen DIR\n";
     std::cout << label
-              << " readiness_recommended_run=--lvl6-tuned-hybrid-run-chained-product-encap DIR\n";
+              << " readiness_recommended_evalkeygen=--lvl6-tuned-seeded-hybrid-streamed-evalkeygen DIR\n";
     std::cout << label
-              << " readiness_recommended_all=--lvl6-tuned-hybrid-all DIR\n";
+              << " readiness_recommended_run=--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR\n";
     std::cout << label
-              << " readiness_seeded_streamed_dev_keygen=--lvl6-tuned-seeded-hybrid-streamed-keygen DIR\n";
+              << " readiness_recommended_all=--lvl6-tuned-seeded-hybrid-streamed-all DIR\n";
     std::cout << label
-              << " readiness_seeded_streamed_dev_run=--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR\n";
+              << " readiness_hybrid_keygen=--lvl6-tuned-hybrid-keygen DIR\n";
     std::cout << label
-              << " readiness_seeded_streamed_dev_all=--lvl6-tuned-seeded-hybrid-streamed-all DIR\n";
+              << " readiness_hybrid_run=--lvl6-tuned-hybrid-run-chained-product-encap DIR\n";
+    std::cout << label
+              << " readiness_hybrid_all=--lvl6-tuned-hybrid-all DIR\n";
 
     return ring_ready && torus_ready && post_product_ready &&
                    sparse_weight_ready && evalmod_ready && output_margin_ready
@@ -3044,10 +3112,131 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
 }
 
 template <class Schedule, bool Streamed>
+int run_seeded_hybrid_external_eval_keygen(
+    const std::filesystem::path &key_dir, std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0,
+    bool include_post_bootstrap_product = true)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    using PostBootstrapProductCt = TFHEpp::CKKSMultResult<
+        P, Schedule::output_log_q, Schedule::log_delta,
+        Schedule::output_log_q, Schedule::log_delta>;
+
+    if (const int status = validate_bounded_modraise_test_key<Schedule>(
+            bootstrap_sparse_weight, "seeded-eval-keygen");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, bootstrap_sparse_weight, false);
+        status != 0)
+        return status;
+    if constexpr (Streamed) {
+        if (const int status =
+                validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
+                    key_dir);
+            status != 0)
+            return status;
+    }
+    else {
+        if (const int status =
+                validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
+            status != 0)
+            return status;
+    }
+
+    const SeededExternalEvalKeyFiles files =
+        seeded_external_eval_key_files<Schedule>(key_dir,
+                                                 external_sparse_weight);
+    if (const int status = validate_keygen_disk_budget(
+            files.root, seeded_external_eval_key_estimate_bytes<Schedule>(),
+            "seeded-external-eval-keygen");
+        status != 0)
+        return status;
+
+    auto external_key = std::make_unique<TFHEpp::Key<P>>();
+    auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
+    fill_external_test_key<P>(*external_key, external_sparse_weight);
+    fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
+
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
+    eval_key_options.overwrite_existing = false;
+    std::cout << "external_key=" << sparse_key_label(external_sparse_weight)
+              << '\n';
+    std::cout << "external_key_sparse_weight=" << external_sparse_weight
+              << '\n';
+    std::cout << "bootstrap_key_sparse_weight=" << bootstrap_sparse_weight
+              << '\n';
+    std::cout << "seeded_external_eval_key_dir=" << files.root.string()
+              << '\n';
+
+    const double encap_keygen_ms =
+        elapsed_ms_with_progress("seeded_eval_keygen", "encapsulation", [&] {
+            TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
+                Schedule>(files.encapsulation_key, *external_key,
+                          *bootstrap_key, {P::α, 0}, eval_key_options);
+        });
+    const double product_relin_keygen_ms =
+        elapsed_ms_with_progress("seeded_eval_keygen", "product_relin", [&] {
+            TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
+                files.product_relin_key, *external_key, {P::α, 0},
+                eval_key_options);
+        });
+    double post_relin_keygen_ms = 0.0;
+    if (include_post_bootstrap_product) {
+        post_relin_keygen_ms = elapsed_ms_with_progress(
+            "seeded_eval_keygen", "post_bootstrap_product_relin", [&] {
+                TFHEpp::CKKSSeededRelinKeyGenToFile<
+                    P, PostBootstrapProductCt::log_q>(
+                    files.post_bootstrap_product_relin_key, *external_key,
+                    {P::α, 0}, eval_key_options);
+            });
+    }
+
+    std::cout << "seeded_encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
+    std::cout << "seeded_encapsulation_key_file="
+              << files.encapsulation_key.string()
+              << " seeded_encapsulation_key_bytes="
+              << std::filesystem::file_size(files.encapsulation_key)
+              << " estimated_seeded_encapsulation_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
+                     Schedule>()
+              << '\n';
+    std::cout << "seeded_product_relin_keygen_ms="
+              << product_relin_keygen_ms << '\n';
+    std::cout << "seeded_product_relin_key_file="
+              << files.product_relin_key.string()
+              << " seeded_product_relin_key_bytes="
+              << std::filesystem::file_size(files.product_relin_key)
+              << " estimated_seeded_product_relin_key_bytes="
+              << TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>()
+              << '\n';
+    if (include_post_bootstrap_product) {
+        std::cout << "seeded_post_bootstrap_relin_keygen_ms="
+                  << post_relin_keygen_ms << '\n';
+        std::cout << "seeded_post_bootstrap_relin_key_file="
+                  << files.post_bootstrap_product_relin_key.string()
+                  << " seeded_post_bootstrap_relin_key_bytes="
+                  << std::filesystem::file_size(
+                         files.post_bootstrap_product_relin_key)
+                  << " estimated_seeded_post_bootstrap_relin_key_bytes="
+                  << TFHEpp::CKKSSeededRelinKeyByteEstimate<
+                         P, PostBootstrapProductCt::log_q>()
+                  << '\n';
+    }
+    return 0;
+}
+
+template <class Schedule, bool Streamed>
 int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
-    std::size_t external_sparse_weight = 0)
+    std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
 {
     using P = typename Schedule::Param;
     constexpr std::uint32_t fresh_log_q =
@@ -3084,15 +3273,9 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
     fill_external_test_key<P>(*external_key, external_sparse_weight);
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
-    const std::filesystem::path external_eval_key_dir =
-        seeded_external_eval_key_directory<Schedule>(key_dir,
-                                                     external_sparse_weight);
-    const std::filesystem::path encapsulation_key_file =
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
-            external_eval_key_dir);
-    const std::filesystem::path relin_key_file =
-        TFHEpp::CKKSRelinKeyFile(external_eval_key_dir,
-                                 "seeded_product_relin_key");
+    const SeededExternalEvalKeyFiles eval_key_files =
+        seeded_external_eval_key_files<Schedule>(key_dir,
+                                                 external_sparse_weight);
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
     eval_key_options.overwrite_existing = false;
     std::cout << "external_key=" << sparse_key_label(external_sparse_weight)
@@ -3102,23 +3285,37 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     std::cout << "bootstrap_key_sparse_weight=" << bootstrap_sparse_weight
               << '\n';
     std::cout << "seeded_external_eval_key_dir="
-              << external_eval_key_dir.string() << '\n';
+              << eval_key_files.root.string() << '\n';
     std::cout << "product_fresh_logQ=" << FreshCt::log_q
               << " product_logQ=" << ProductCt::log_q
               << " normalized_logQ=" << Schedule::input_log_q << '\n';
     std::cout.flush();
 
-    const double encap_keygen_ms =
-        elapsed_ms_with_progress("seeded_product", "encapsulation_keygen", [&] {
-            TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
-                Schedule>(encapsulation_key_file, *external_key,
-                          *bootstrap_key, {P::α, 0}, eval_key_options);
-        });
-    const double relin_keygen_ms =
-        elapsed_ms_with_progress("seeded_product", "relin_keygen", [&] {
-            TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-                relin_key_file, *external_key, {P::α, 0}, eval_key_options);
-        });
+    double encap_keygen_ms = 0.0;
+    double relin_keygen_ms = 0.0;
+    if (generate_eval_keys) {
+        encap_keygen_ms =
+            elapsed_ms_with_progress("seeded_product", "encapsulation_keygen",
+                                     [&] {
+                                         TFHEpp::
+                                             CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
+                                                 Schedule>(
+                                                 eval_key_files.encapsulation_key,
+                                                 *external_key, *bootstrap_key,
+                                                 {P::α, 0}, eval_key_options);
+                                     });
+        relin_keygen_ms =
+            elapsed_ms_with_progress("seeded_product", "relin_keygen", [&] {
+                TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
+                    eval_key_files.product_relin_key, *external_key, {P::α, 0},
+                    eval_key_options);
+            });
+    }
+    else if (const int status = validate_seeded_external_eval_key_files(
+                 eval_key_files, false);
+             status != 0) {
+        return status;
+    }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -3146,14 +3343,16 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
         TFHEpp::
             CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
                 Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
-                          encapsulation_key_file, relin_key_file,
+                          eval_key_files.encapsulation_key,
+                          eval_key_files.product_relin_key,
                           product_timings, &progress);
     }
     else {
         TFHEpp::
             CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
                 Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
-                          encapsulation_key_file, relin_key_file,
+                          eval_key_files.encapsulation_key,
+                          eval_key_files.product_relin_key,
                           product_timings, &progress);
     }
 
@@ -3167,17 +3366,18 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     const double err = max_error<P>(*decoded, *expected);
     std::cout << "seeded_encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
     std::cout << "seeded_encapsulation_key_file="
-              << encapsulation_key_file.string()
+              << eval_key_files.encapsulation_key.string()
               << " seeded_encapsulation_key_bytes="
-              << std::filesystem::file_size(encapsulation_key_file)
+              << std::filesystem::file_size(eval_key_files.encapsulation_key)
               << " estimated_seeded_encapsulation_key_bytes="
               << TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
                      Schedule>()
               << '\n';
     std::cout << "seeded_relin_keygen_ms=" << relin_keygen_ms << '\n';
-    std::cout << "seeded_relin_key_file=" << relin_key_file.string()
+    std::cout << "seeded_relin_key_file="
+              << eval_key_files.product_relin_key.string()
               << " seeded_relin_key_bytes="
-              << std::filesystem::file_size(relin_key_file)
+              << std::filesystem::file_size(eval_key_files.product_relin_key)
               << " estimated_seeded_relin_key_bytes="
               << TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>()
               << '\n';
@@ -3195,22 +3395,22 @@ template <class Schedule>
 int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
-    std::size_t external_sparse_weight = 0)
+    std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
 {
     return run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl<
         Schedule, false>(key_dir, tol, bootstrap_sparse_weight,
-                         external_sparse_weight);
+                         external_sparse_weight, generate_eval_keys);
 }
 
 template <class Schedule>
 int run_seeded_hybrid_streamed_filesystem_encapsulated_product_bootstrap(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
-    std::size_t external_sparse_weight = 0)
+    std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
 {
     return run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl<
         Schedule, true>(key_dir, tol, bootstrap_sparse_weight,
-                        external_sparse_weight);
+                        external_sparse_weight, generate_eval_keys);
 }
 
 template <class Schedule>
@@ -4287,7 +4487,7 @@ template <class Schedule, bool Streamed>
 int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
-    std::size_t external_sparse_weight = 0)
+    std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
 {
     using P = typename Schedule::Param;
     static_assert(Schedule::supports_post_bootstrap_product);
@@ -4331,18 +4531,9 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
     fill_external_test_key<P>(*external_key, external_sparse_weight);
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
-    const std::filesystem::path external_eval_key_dir =
-        seeded_external_eval_key_directory<Schedule>(key_dir,
-                                                     external_sparse_weight);
-    const std::filesystem::path encapsulation_key_file =
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
-            external_eval_key_dir);
-    const std::filesystem::path product_relin_key_file =
-        TFHEpp::CKKSRelinKeyFile(external_eval_key_dir,
-                                 "seeded_product_relin_key");
-    const std::filesystem::path post_bootstrap_relin_key_file =
-        TFHEpp::CKKSRelinKeyFile(external_eval_key_dir,
-                                 "seeded_post_bootstrap_product_relin_key");
+    const SeededExternalEvalKeyFiles eval_key_files =
+        seeded_external_eval_key_files<Schedule>(key_dir,
+                                                 external_sparse_weight);
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
     eval_key_options.overwrite_existing = false;
     std::cout << "external_key=" << sparse_key_label(external_sparse_weight)
@@ -4352,7 +4543,7 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     std::cout << "bootstrap_key_sparse_weight=" << bootstrap_sparse_weight
               << '\n';
     std::cout << "seeded_external_eval_key_dir="
-              << external_eval_key_dir.string() << '\n';
+              << eval_key_files.root.string() << '\n';
     std::cout << "product_fresh_logQ=" << FreshCt::log_q
               << " product_logQ=" << ProductCt::log_q
               << " first_normalized_logQ=" << Schedule::input_log_q
@@ -4362,25 +4553,43 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
               << '\n';
     std::cout.flush();
 
-    const double encap_keygen_ms =
-        elapsed_ms_with_progress("seeded_eval_keygen", "encapsulation", [&] {
-            TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
-                Schedule>(encapsulation_key_file, *external_key,
-                          *bootstrap_key, {P::α, 0}, eval_key_options);
-        });
-    const double product_relin_keygen_ms =
-        elapsed_ms_with_progress("seeded_eval_keygen", "product_relin", [&] {
-            TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-                product_relin_key_file, *external_key, {P::α, 0},
-                eval_key_options);
-        });
-    const double post_relin_keygen_ms = elapsed_ms_with_progress(
-        "seeded_eval_keygen", "post_bootstrap_product_relin", [&] {
-            TFHEpp::CKKSSeededRelinKeyGenToFile<
-                P, PostBootstrapProductCt::log_q>(
-                post_bootstrap_relin_key_file, *external_key, {P::α, 0},
-                eval_key_options);
-        });
+    double encap_keygen_ms = 0.0;
+    double product_relin_keygen_ms = 0.0;
+    double post_relin_keygen_ms = 0.0;
+    if (generate_eval_keys) {
+        encap_keygen_ms =
+            elapsed_ms_with_progress("seeded_eval_keygen", "encapsulation",
+                                     [&] {
+                                         TFHEpp::
+                                             CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
+                                                 Schedule>(
+                                                 eval_key_files.encapsulation_key,
+                                                 *external_key, *bootstrap_key,
+                                                 {P::α, 0}, eval_key_options);
+                                     });
+        product_relin_keygen_ms =
+            elapsed_ms_with_progress("seeded_eval_keygen", "product_relin",
+                                     [&] {
+                                         TFHEpp::
+                                             CKKSSeededRelinKeyGenToFile<
+                                                 P, ProductCt::log_q>(
+                                                 eval_key_files.product_relin_key,
+                                                 *external_key, {P::α, 0},
+                                                 eval_key_options);
+                                     });
+        post_relin_keygen_ms = elapsed_ms_with_progress(
+            "seeded_eval_keygen", "post_bootstrap_product_relin", [&] {
+                TFHEpp::CKKSSeededRelinKeyGenToFile<
+                    P, PostBootstrapProductCt::log_q>(
+                    eval_key_files.post_bootstrap_product_relin_key,
+                    *external_key, {P::α, 0}, eval_key_options);
+            });
+    }
+    else if (const int status = validate_seeded_external_eval_key_files(
+                 eval_key_files, true);
+             status != 0) {
+        return status;
+    }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -4413,14 +4622,16 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
         TFHEpp::
             CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
                 Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
-                          encapsulation_key_file, product_relin_key_file,
+                          eval_key_files.encapsulation_key,
+                          eval_key_files.product_relin_key,
                           first_product_timings, &first_progress);
     }
     else {
         TFHEpp::
             CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
                 Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
-                          encapsulation_key_file, product_relin_key_file,
+                          eval_key_files.encapsulation_key,
+                          eval_key_files.product_relin_key,
                           first_product_timings, &first_progress);
     }
 
@@ -4445,16 +4656,16 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
         TFHEpp::
             CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
                 Schedule>(*chained_output, *first_output, *first_output,
-                          key_dir, encapsulation_key_file,
-                          post_bootstrap_relin_key_file,
+                          key_dir, eval_key_files.encapsulation_key,
+                          eval_key_files.post_bootstrap_product_relin_key,
                           chained_product_timings, &chained_progress);
     }
     else {
         TFHEpp::
             CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
                 Schedule>(*chained_output, *first_output, *first_output,
-                          key_dir, encapsulation_key_file,
-                          post_bootstrap_relin_key_file,
+                          key_dir, eval_key_files.encapsulation_key,
+                          eval_key_files.post_bootstrap_product_relin_key,
                           chained_product_timings, &chained_progress);
     }
 
@@ -4468,9 +4679,9 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
 
     std::cout << "seeded_encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
     std::cout << "seeded_encapsulation_key_file="
-              << encapsulation_key_file.string()
+              << eval_key_files.encapsulation_key.string()
               << " seeded_encapsulation_key_bytes="
-              << std::filesystem::file_size(encapsulation_key_file)
+              << std::filesystem::file_size(eval_key_files.encapsulation_key)
               << " estimated_seeded_encapsulation_key_bytes="
               << TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
                      Schedule>()
@@ -4478,18 +4689,19 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     std::cout << "seeded_product_relin_keygen_ms="
               << product_relin_keygen_ms << '\n';
     std::cout << "seeded_product_relin_key_file="
-              << product_relin_key_file.string()
+              << eval_key_files.product_relin_key.string()
               << " seeded_product_relin_key_bytes="
-              << std::filesystem::file_size(product_relin_key_file)
+              << std::filesystem::file_size(eval_key_files.product_relin_key)
               << " estimated_seeded_product_relin_key_bytes="
               << TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>()
               << '\n';
     std::cout << "seeded_post_bootstrap_relin_keygen_ms="
               << post_relin_keygen_ms << '\n';
     std::cout << "seeded_post_bootstrap_relin_key_file="
-              << post_bootstrap_relin_key_file.string()
+              << eval_key_files.post_bootstrap_product_relin_key.string()
               << " seeded_post_bootstrap_relin_key_bytes="
-              << std::filesystem::file_size(post_bootstrap_relin_key_file)
+              << std::filesystem::file_size(
+                     eval_key_files.post_bootstrap_product_relin_key)
               << " estimated_seeded_post_bootstrap_relin_key_bytes="
               << TFHEpp::CKKSSeededRelinKeyByteEstimate<
                      P, PostBootstrapProductCt::log_q>()
@@ -4515,22 +4727,22 @@ template <class Schedule>
 int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
-    std::size_t external_sparse_weight = 0)
+    std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
 {
     return run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl<
         Schedule, false>(key_dir, tol, bootstrap_sparse_weight,
-                         external_sparse_weight);
+                         external_sparse_weight, generate_eval_keys);
 }
 
 template <class Schedule>
 int run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
-    std::size_t external_sparse_weight = 0)
+    std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
 {
     return run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl<
         Schedule, true>(key_dir, tol, bootstrap_sparse_weight,
-                        external_sparse_weight);
+                        external_sparse_weight, generate_eval_keys);
 }
 
 template <class Schedule>
@@ -5813,6 +6025,55 @@ int run_toy_schedule_seeded_hybrid_streamed_encapsulated_product_bootstrap_valid
     return err <= tol ? 0 : 1;
 }
 
+template <class Schedule>
+int run_toy_schedule_seeded_hybrid_streamed_prebuilt_product_validation(
+    bool keep_dir, const char *label, const char *directory_name, double tol)
+{
+    const std::filesystem::path key_dir =
+        std::filesystem::temp_directory_path() / directory_name;
+    std::filesystem::remove_all(key_dir);
+
+    constexpr std::size_t bootstrap_sparse_weight = 2;
+    constexpr std::size_t external_sparse_weight = 0;
+    auto bootstrap_key = std::make_unique<TFHEpp::Key<typename Schedule::Param>>();
+    fill_sparse_test_key<typename Schedule::Param>(*bootstrap_key,
+                                                   bootstrap_sparse_weight);
+    TFHEpp::CKKSDenseBootstrapSeededHybridGiantStreamedKeyGenToDirectory<
+        Schedule>(key_dir, *bootstrap_key, {0.0, 0});
+    if (const int status =
+            validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
+                key_dir);
+        status != 0) {
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return status;
+    }
+
+    const int missing_eval_key_status =
+        run_seeded_hybrid_streamed_filesystem_encapsulated_product_bootstrap<
+            Schedule>(key_dir, tol, bootstrap_sparse_weight,
+                      external_sparse_weight, false);
+    if (missing_eval_key_status == 0) {
+        std::cerr << label
+                  << "_prebuilt_run_accepted_missing_eval_keys\n";
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+
+    if (run_seeded_hybrid_external_eval_keygen<Schedule, true>(
+            key_dir, bootstrap_sparse_weight, external_sparse_weight,
+            false) != 0) {
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+
+    const int status =
+        run_seeded_hybrid_streamed_filesystem_encapsulated_product_bootstrap<
+            Schedule>(key_dir, tol, bootstrap_sparse_weight,
+                      external_sparse_weight, false);
+    if (!keep_dir) std::filesystem::remove_all(key_dir);
+    return status;
+}
+
 int run_toy_validation(bool keep_dir)
 {
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
@@ -5860,10 +6121,17 @@ int run_toy_inverse_validation(bool keep_dir)
             "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_encapsulated_product",
             0.05) != 0)
         return 1;
-    return run_toy_schedule_seeded_hybrid_streamed_encapsulated_product_bootstrap_validation<
+    if (run_toy_schedule_seeded_hybrid_streamed_encapsulated_product_bootstrap_validation<
+            Schedule>(
+            keep_dir,
+            "toy-inverse-seeded-hybrid-streamed-encapsulated-product",
+            "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_streamed_encapsulated_product",
+            0.05) != 0)
+        return 1;
+    return run_toy_schedule_seeded_hybrid_streamed_prebuilt_product_validation<
         Schedule>(
-        keep_dir, "toy-inverse-seeded-hybrid-streamed-encapsulated-product",
-        "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_streamed_encapsulated_product",
+        keep_dir, "toy-inverse-seeded-hybrid-streamed-prebuilt-product",
+        "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_streamed_prebuilt_product",
         0.05);
 }
 
@@ -6236,8 +6504,13 @@ int run_seeded_hybrid_practical_all(const std::filesystem::path &key_dir,
             run_seeded_hybrid_keygen<Schedule>(key_dir, resume, sparse_weight);
         status != 0)
         return status;
+    if (const int status =
+            run_seeded_hybrid_external_eval_keygen<Schedule, false>(
+                key_dir, sparse_weight, sparse_weight);
+        status != 0)
+        return status;
     return run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap<
-        Schedule>(key_dir, 0.1, sparse_weight, sparse_weight);
+        Schedule>(key_dir, 0.1, sparse_weight, sparse_weight, false);
 }
 
 template <class Schedule>
@@ -6260,8 +6533,13 @@ int run_seeded_hybrid_streamed_practical_all(
             key_dir, resume, sparse_weight);
         status != 0)
         return status;
+    if (const int status =
+            run_seeded_hybrid_external_eval_keygen<Schedule, true>(
+                key_dir, sparse_weight, sparse_weight);
+        status != 0)
+        return status;
     return run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap<
-        Schedule>(key_dir, 0.1, sparse_weight, sparse_weight);
+        Schedule>(key_dir, 0.1, sparse_weight, sparse_weight, false);
 }
 
 void print_usage(const char *program)
@@ -6303,6 +6581,7 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-run DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-keygen DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-keygen-next DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-evalkeygen DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-run DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-run-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR]"
@@ -6533,6 +6812,8 @@ int main(int argc, char **argv)
                  arg == "--lvl6-tuned-seeded-hybrid-streamed-keygen" ||
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-streamed-keygen-next" ||
+                 arg ==
+                     "--lvl6-tuned-seeded-hybrid-streamed-evalkeygen" ||
                  arg == "--lvl6-tuned-seeded-hybrid-streamed-run" ||
                 arg ==
                     "--lvl6-tuned-seeded-hybrid-streamed-run-product-encap" ||
@@ -6765,6 +7046,14 @@ int main(int argc, char **argv)
                         key_dir, lvl6_sparse_weight) != 0)
                     return 1;
             }
+            else if (arg ==
+                     "--lvl6-tuned-seeded-hybrid-streamed-evalkeygen") {
+                if (run_seeded_hybrid_external_eval_keygen<
+                        Lvl6TunedSchedule, true>(
+                        key_dir, lvl6_sparse_weight,
+                        lvl6_sparse_weight) != 0)
+                    return 1;
+            }
             else if (arg == "--lvl6-tuned-seeded-hybrid-streamed-run") {
                 print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
                                                          &key_dir);
@@ -6779,7 +7068,8 @@ int main(int argc, char **argv)
                                                          &key_dir);
                 if (run_seeded_hybrid_streamed_filesystem_encapsulated_product_bootstrap<
                         Lvl6TunedSchedule>(
-                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                        key_dir, 0.1, lvl6_sparse_weight,
+                        lvl6_sparse_weight, false) != 0)
                     return 1;
             }
             else if (
@@ -6789,7 +7079,8 @@ int main(int argc, char **argv)
                                                          &key_dir);
                 if (run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap<
                         Lvl6TunedSchedule>(
-                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                        key_dir, 0.1, lvl6_sparse_weight,
+                        lvl6_sparse_weight, false) != 0)
                     return 1;
             }
             else if (
