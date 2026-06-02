@@ -682,9 +682,29 @@ template <class T>
 inline void CKKSLoadPortableBinary(T &value, const std::filesystem::path &path)
 {
     std::ifstream ifs(path, std::ios::binary);
-    if (!ifs) throw std::runtime_error("failed to open CKKS key file for read");
+    if (!ifs) {
+        throw std::runtime_error("failed to open CKKS key file for read: " +
+                                 path.string());
+    }
     cereal::PortableBinaryInputArchive archive(ifs);
     archive(value);
+}
+
+inline void CKKSRequireKeyFileReadable(const std::filesystem::path &path,
+                                       const char *label)
+{
+    std::error_code ec;
+    const bool exists = std::filesystem::exists(path, ec);
+    if (ec || !exists) {
+        throw std::runtime_error(std::string(label) +
+                                 " CKKS key file missing: " + path.string());
+    }
+    const bool regular = std::filesystem::is_regular_file(path, ec);
+    if (ec || !regular) {
+        throw std::runtime_error(std::string(label) +
+                                 " CKKS key file is not a regular file: " +
+                                 path.string());
+    }
 }
 
 struct CKKSDenseBootstrapKeyDirectoryOptions {
@@ -10442,6 +10462,7 @@ template <class P, std::uint32_t LogQ>
 inline void CKKSLoadRelinKeyFromFile(CKKSRelinKey<P, LogQ> &relinkey,
                                      const std::filesystem::path &path)
 {
+    CKKSRequireKeyFileReadable(path, "relinearization");
     CKKSLoadPortableBinary(relinkey, path);
 }
 
@@ -10450,6 +10471,7 @@ inline void CKKSLoadSeededRelinKeyFromFile(
     CKKSSeededRelinKey<P, LogQ> &relinkey,
     const std::filesystem::path &path)
 {
+    CKKSRequireKeyFileReadable(path, "seeded relinearization");
     CKKSLoadPortableBinary(relinkey, path);
 }
 
@@ -10549,6 +10571,7 @@ inline void CKKSDenseBootstrapLoadEncapsulationKeyFromFile(
     CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
     const std::filesystem::path &path)
 {
+    CKKSRequireKeyFileReadable(path, "encapsulation");
     CKKSLoadPortableBinary(encapsulation_key, path);
 }
 
@@ -10557,6 +10580,7 @@ inline void CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile(
     CKKSDenseBootstrapSeededEncapsulationKey<Schedule> &encapsulation_key,
     const std::filesystem::path &path)
 {
+    CKKSRequireKeyFileReadable(path, "seeded encapsulation");
     CKKSLoadPortableBinary(encapsulation_key, path);
 }
 

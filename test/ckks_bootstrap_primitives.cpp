@@ -6,6 +6,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <tfhe++.hpp>
 #include <tuple>
@@ -223,6 +224,24 @@ void require_incomplete_provider_rejected(MakeProvider &&make_provider,
         std::cerr << label
                   << " filesystem key provider accepted incomplete directory"
                   << std::endl;
+        std::exit(1);
+    }
+}
+
+template <class LoadKey>
+void require_missing_key_file_rejected(LoadKey &&load_key, const char *label)
+{
+    bool rejected = false;
+    try {
+        load_key();
+    }
+    catch (const std::runtime_error &e) {
+        const std::string message = e.what();
+        rejected = message.find("missing") != std::string::npos &&
+                   message.find("CKKS key file") != std::string::npos;
+    }
+    if (!rejected) {
+        std::cerr << label << " loader accepted missing key file" << std::endl;
         std::exit(1);
     }
 }
@@ -2137,6 +2156,44 @@ void test_dense_bootstrap_e2e_smoke()
     std::cout
         << "CKKS filesystem key providers reject incomplete directories"
         << std::endl;
+
+    const std::filesystem::path missing_key_root =
+        std::filesystem::temp_directory_path() /
+        "tfhepp_ckks_dense_bootstrap_missing_external_keys";
+    std::filesystem::remove_all(missing_key_root);
+
+    require_missing_key_file_rejected(
+        [&] {
+            TFHEpp::CKKSDenseBootstrapEncapsulationKey<Schedule> key;
+            TFHEpp::CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
+                key, missing_key_root / "encapsulation_key.bin");
+        },
+        "CKKS encapsulation");
+    require_missing_key_file_rejected(
+        [&] {
+            TFHEpp::CKKSDenseBootstrapSeededEncapsulationKey<Schedule> key;
+            TFHEpp::
+                CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
+                    key, missing_key_root / "seeded_encapsulation_key.bin");
+        },
+        "CKKS seeded encapsulation");
+    require_missing_key_file_rejected(
+        [&] {
+            TFHEpp::CKKSRelinKey<M, Schedule::input_log_q> key;
+            TFHEpp::CKKSLoadRelinKeyFromFile<M, Schedule::input_log_q>(
+                key, missing_key_root / "relin_key.bin");
+        },
+        "CKKS relin");
+    require_missing_key_file_rejected(
+        [&] {
+            TFHEpp::CKKSSeededRelinKey<M, Schedule::input_log_q> key;
+            TFHEpp::CKKSLoadSeededRelinKeyFromFile<M,
+                                                   Schedule::input_log_q>(
+                key, missing_key_root / "seeded_relin_key.bin");
+        },
+        "CKKS seeded relin");
+    std::cout << "CKKS external key loaders reject missing files"
+              << std::endl;
 
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapTimings timings;
