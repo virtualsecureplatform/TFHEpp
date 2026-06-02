@@ -2003,11 +2003,11 @@ int print_practical_readiness_report(const char *label,
     std::cout << label
               << " readiness_recommended_all=--lvl6-tuned-hybrid-all DIR\n";
     std::cout << label
-              << " readiness_next_keygen=--lvl6-tuned-seeded-hybrid-streamed-keygen-next DIR\n";
+              << " readiness_low_disk_keygen=--lvl6-tuned-seeded-hybrid-streamed-keygen DIR\n";
     std::cout << label
-              << " readiness_next_run=--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR\n";
+              << " readiness_low_disk_run=--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR\n";
     std::cout << label
-              << " readiness_next_all=--lvl6-tuned-seeded-hybrid-streamed-all DIR\n";
+              << " readiness_low_disk_all=--lvl6-tuned-seeded-hybrid-streamed-all DIR\n";
 
     return ring_ready && torus_ready && post_product_ready &&
                    sparse_weight_ready && evalmod_ready && output_margin_ready
