@@ -11152,6 +11152,137 @@ inline bool CKKSDenseBootstrapSeededEncapsulationKeyGenNextMissingToFile(
 }
 
 template <class Schedule>
+inline void CKKSDenseBootstrapProductEvalKeyGenToDirectory(
+    const std::filesystem::path &root,
+    const Key<typename Schedule::Param> &input_output_key,
+    const Key<typename Schedule::Param> &bootstrap_key,
+    bool include_post_bootstrap_product = true,
+    CKKSNoise noise = {Schedule::Param::α, 0},
+    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    constexpr std::uint32_t product_log_q =
+        fresh_log_q - Schedule::log_delta;
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapProductEvalKeyFilesInDirectory(root);
+    const std::filesystem::path manifest_file =
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root);
+
+    if constexpr (!Schedule::supports_post_bootstrap_product) {
+        if (include_post_bootstrap_product)
+            throw std::runtime_error(
+                "CKKS schedule does not support post-bootstrap product keys");
+    }
+
+    if (!options.overwrite_existing) {
+        if (std::filesystem::exists(manifest_file)) {
+            if (!CKKSDenseBootstrapProductEvalKeyDirectoryManifestMatches<
+                    Schedule>(root, false))
+                throw std::runtime_error(
+                    "existing CKKS product eval key directory manifest does "
+                    "not match schedule: " +
+                    manifest_file.string());
+            CKKSDenseBootstrapProductEvalKeyDirectoryManifest manifest;
+            CKKSLoadPortableBinary(manifest, manifest_file);
+            include_post_bootstrap_product =
+                include_post_bootstrap_product ||
+                manifest.includes_post_bootstrap_product != 0;
+        }
+        else if (std::filesystem::exists(files.encapsulation_key) ||
+                 std::filesystem::exists(files.product_relin_key) ||
+                 std::filesystem::exists(
+                     files.post_bootstrap_product_relin_key)) {
+            throw std::runtime_error(
+                "CKKS product eval key directory has key files but no "
+                "manifest: " +
+                root.string());
+        }
+    }
+
+    CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
+        files.encapsulation_key, input_output_key, bootstrap_key, noise,
+        options);
+    CKKSRelinKeyGenToFile<P, product_log_q>(files.product_relin_key,
+                                            input_output_key, noise, options);
+    if constexpr (Schedule::supports_post_bootstrap_product) {
+        if (include_post_bootstrap_product)
+            CKKSRelinKeyGenToFile<P, Schedule::post_bootstrap_product_log_q>(
+                files.post_bootstrap_product_relin_key, input_output_key, noise,
+                options);
+    }
+    CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest<Schedule>(
+        root, include_post_bootstrap_product);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory(
+    const std::filesystem::path &root,
+    const Key<typename Schedule::Param> &input_output_key,
+    const Key<typename Schedule::Param> &bootstrap_key,
+    bool include_post_bootstrap_product = true,
+    CKKSNoise noise = {Schedule::Param::α, 0},
+    CKKSDenseBootstrapKeyDirectoryOptions options = {})
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    constexpr std::uint32_t product_log_q =
+        fresh_log_q - Schedule::log_delta;
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(root);
+    const std::filesystem::path manifest_file =
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root);
+
+    if constexpr (!Schedule::supports_post_bootstrap_product) {
+        if (include_post_bootstrap_product)
+            throw std::runtime_error(
+                "CKKS schedule does not support post-bootstrap product keys");
+    }
+
+    if (!options.overwrite_existing) {
+        if (std::filesystem::exists(manifest_file)) {
+            if (!CKKSDenseBootstrapSeededProductEvalKeyDirectoryManifestMatches<
+                    Schedule>(root, false))
+                throw std::runtime_error(
+                    "existing CKKS seeded product eval key directory manifest "
+                    "does not match schedule: " +
+                    manifest_file.string());
+            CKKSDenseBootstrapProductEvalKeyDirectoryManifest manifest;
+            CKKSLoadPortableBinary(manifest, manifest_file);
+            include_post_bootstrap_product =
+                include_post_bootstrap_product ||
+                manifest.includes_post_bootstrap_product != 0;
+        }
+        else if (std::filesystem::exists(files.encapsulation_key) ||
+                 std::filesystem::exists(files.product_relin_key) ||
+                 std::filesystem::exists(
+                     files.post_bootstrap_product_relin_key)) {
+            throw std::runtime_error(
+                "CKKS seeded product eval key directory has key files but no "
+                "manifest: " +
+                root.string());
+        }
+    }
+
+    CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
+        files.encapsulation_key, input_output_key, bootstrap_key, noise,
+        options);
+    CKKSSeededRelinKeyGenToFile<P, product_log_q>(
+        files.product_relin_key, input_output_key, noise, options);
+    if constexpr (Schedule::supports_post_bootstrap_product) {
+        if (include_post_bootstrap_product)
+            CKKSSeededRelinKeyGenToFile<
+                P, Schedule::post_bootstrap_product_log_q>(
+                files.post_bootstrap_product_relin_key, input_output_key, noise,
+                options);
+    }
+    CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<Schedule>(
+        root, include_post_bootstrap_product);
+}
+
+template <class Schedule>
 inline void CKKSDenseBootstrapLoadEncapsulationKeyFromFile(
     CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
     const std::filesystem::path &path)

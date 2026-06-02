@@ -178,37 +178,14 @@ int main()
         return 1;
     }
 
-    const bool encap_generated =
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenNextMissingToFile<
-            Schedule>(encapsulation_key_file, *external_key, *bootstrap_key,
-                      {0.0, 0});
-    const bool encap_regenerated =
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenNextMissingToFile<
-            Schedule>(encapsulation_key_file, *external_key, *bootstrap_key,
-                      {0.0, 0});
-    const bool relin_generated =
-        TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<P, ProductCt::log_q>(
-            relin_key_file, *external_key, {0.0, 0});
-    const bool relin_regenerated =
-        TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<P, ProductCt::log_q>(
-            relin_key_file, *external_key, {0.0, 0});
-    const bool post_relin_generated =
-        TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<
-            P, PostBootstrapProductCt::log_q>(
-            post_bootstrap_relin_key_file, *external_key, {0.0, 0});
-    const bool post_relin_regenerated =
-        TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<
-            P, PostBootstrapProductCt::log_q>(
-            post_bootstrap_relin_key_file, *external_key, {0.0, 0});
-    TFHEpp::CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<
-        Schedule>(eval_key_dir, true);
-    if (!encap_generated || encap_regenerated || !relin_generated ||
-        relin_regenerated || !post_relin_generated ||
-        post_relin_regenerated) {
-        std::cerr << "workflow seeded eval key resume check failed\n";
-        std::filesystem::remove_all(root);
-        return 1;
-    }
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
+    eval_key_options.overwrite_existing = false;
+    TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+        eval_key_dir, *external_key, *bootstrap_key, true, {0.0, 0},
+        eval_key_options);
+    TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+        eval_key_dir, *external_key, *bootstrap_key, true, {0.0, 0},
+        eval_key_options);
     if (!TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyDirectoryComplete(
             eval_key_dir)) {
         std::cerr << "workflow seeded eval key directory incomplete\n";
