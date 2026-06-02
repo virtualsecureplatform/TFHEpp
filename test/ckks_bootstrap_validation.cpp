@@ -1910,9 +1910,9 @@ int print_practical_readiness_report(const char *label,
 
     std::uintmax_t available_bytes = 0;
     const bool have_space = available_space_bytes(disk_path, available_bytes);
-    const bool disk_advisory_ready =
+    const bool seeded_hybrid_disk_advisory_ready =
         have_space && available_bytes >= seeded_estimated_disk_need;
-    const bool hybrid_disk_advisory_ready =
+    const bool disk_advisory_ready =
         have_space && available_bytes >= hybrid_estimated_disk_need;
 
     const bool ring_ready = P::n == (1U << 15);
@@ -1997,15 +1997,24 @@ int print_practical_readiness_report(const char *label,
     else
         std::cout << label << " readiness_disk_path=" << disk_path.string()
                   << " readiness_disk_available_bytes=unknown\n";
-    std::cout << label << " readiness_disk_required_with_reserve_bytes="
+    std::cout << label
+              << " readiness_seeded_hybrid_disk_required_with_reserve_bytes="
               << seeded_estimated_disk_need
+              << " seeded_hybrid_disk_advisory_ready="
+              << (seeded_hybrid_disk_advisory_ready ? 1 : 0) << '\n';
+    std::cout << label << " readiness_disk_required_with_reserve_bytes="
+              << hybrid_estimated_disk_need
               << " disk_advisory_ready=" << (disk_advisory_ready ? 1 : 0)
               << '\n';
     std::cout << label
               << " readiness_hybrid_disk_required_with_reserve_bytes="
               << hybrid_estimated_disk_need
               << " hybrid_disk_advisory_ready="
-              << (hybrid_disk_advisory_ready ? 1 : 0) << '\n';
+              << (disk_advisory_ready ? 1 : 0) << '\n';
+    std::cout << label
+              << " readiness_complete_key_directory_required=1"
+              << " readiness_runtime_keygen=0 readiness_runtime_key_polling=0"
+              << '\n';
     std::cout << label
               << " readiness_recommended_keygen=--lvl6-tuned-hybrid-keygen DIR\n";
     std::cout << label
@@ -2013,11 +2022,11 @@ int print_practical_readiness_report(const char *label,
     std::cout << label
               << " readiness_recommended_all=--lvl6-tuned-hybrid-all DIR\n";
     std::cout << label
-              << " readiness_low_disk_keygen=--lvl6-tuned-seeded-hybrid-streamed-keygen DIR\n";
+              << " readiness_seeded_streamed_dev_keygen=--lvl6-tuned-seeded-hybrid-streamed-keygen DIR\n";
     std::cout << label
-              << " readiness_low_disk_run=--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR\n";
+              << " readiness_seeded_streamed_dev_run=--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR\n";
     std::cout << label
-              << " readiness_low_disk_all=--lvl6-tuned-seeded-hybrid-streamed-all DIR\n";
+              << " readiness_seeded_streamed_dev_all=--lvl6-tuned-seeded-hybrid-streamed-all DIR\n";
 
     return ring_ready && torus_ready && post_product_ready &&
                    sparse_weight_ready && evalmod_ready && output_margin_ready
