@@ -1413,7 +1413,7 @@ static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
 static_assert(Lvl6TunedSchedule::log_delta == 52);
-static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 2);
+static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 5);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
 static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
