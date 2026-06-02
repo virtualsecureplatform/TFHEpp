@@ -1164,6 +1164,19 @@ std::uintmax_t seeded_hybrid_streamed_peak_key_estimate_bytes()
 }
 
 template <class Schedule>
+std::uintmax_t seeded_hybrid_streamed_low_cache_peak_key_estimate_bytes()
+{
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        usage, linear_plan);
+    return TFHEpp::
+        CKKSDenseBootstrapHybridGiantStreamedLowCachePeakSeededKeyByteEstimate<
+            Schedule>(usage);
+}
+
+template <class Schedule>
 std::uintmax_t seeded_hybrid_practical_artifact_estimate_bytes()
 {
     using P = typename Schedule::Param;
@@ -1683,6 +1696,8 @@ int print_practical_readiness_report(const char *label,
         seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>();
     const std::uintmax_t seeded_streamed_peak_bytes =
         seeded_hybrid_streamed_peak_key_estimate_bytes<Schedule>();
+    const std::uintmax_t seeded_streamed_low_cache_peak_bytes =
+        seeded_hybrid_streamed_low_cache_peak_key_estimate_bytes<Schedule>();
     const std::uintmax_t seeded_encap_bytes =
         TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
             Schedule>();
@@ -1755,6 +1770,8 @@ int print_practical_readiness_report(const char *label,
               << seeded_bootstrap_bytes
               << " readiness_seeded_hybrid_streamed_peak_key_bytes="
               << seeded_streamed_peak_bytes
+              << " readiness_seeded_hybrid_streamed_low_cache_peak_key_bytes="
+              << seeded_streamed_low_cache_peak_bytes
               << " seeded_encapsulation_key_bytes=" << seeded_encap_bytes
               << " seeded_product_relin_key_bytes="
               << seeded_product_relin_bytes
@@ -1859,6 +1876,18 @@ void print_schedule_report(const char *label,
         TFHEpp::
             CKKSDenseBootstrapHybridGiantStreamedPeakSeededKeyByteEstimate<
                 Schedule>(hybrid_usage);
+    const std::size_t hybrid_streamed_low_cache_peak_rows =
+        TFHEpp::
+            CKKSDenseBootstrapHybridGiantStreamedLowCacheKeySwitchPeakRowCount<
+                Schedule>(hybrid_usage);
+    const std::size_t hybrid_streamed_low_cache_peak_bytes =
+        TFHEpp::
+            CKKSDenseBootstrapHybridGiantStreamedLowCachePeakKeyByteEstimate<
+                Schedule>(hybrid_usage);
+    const std::size_t hybrid_streamed_low_cache_peak_seeded_bytes =
+        TFHEpp::
+            CKKSDenseBootstrapHybridGiantStreamedLowCachePeakSeededKeyByteEstimate<
+                Schedule>(hybrid_usage);
     const std::size_t c2s_current_evalautos =
         coeff_to_slot_rotation_evalautos<0, Schedule>(linear_plan);
     const std::size_t c2s_direct_evalautos =
@@ -1926,6 +1955,8 @@ void print_schedule_report(const char *label,
                      Schedule>(hybrid_usage)
               << " hybrid_rows=" << hybrid_rows
               << " hybrid_streamed_peak_rows=" << hybrid_streamed_peak_rows
+              << " hybrid_streamed_low_cache_peak_rows="
+              << hybrid_streamed_low_cache_peak_rows
               << '\n';
     std::cout << label << " rotation_evalautos current/direct c2s="
               << c2s_current_evalautos << "/" << c2s_direct_evalautos
@@ -1945,6 +1976,8 @@ void print_schedule_report(const char *label,
               << " hybrid_key_bytes=" << hybrid_bytes
               << " hybrid_streamed_peak_bytes="
               << hybrid_streamed_peak_bytes
+              << " hybrid_streamed_low_cache_peak_bytes="
+              << hybrid_streamed_low_cache_peak_bytes
               << " full_key_bytes="
               << TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>()
               << '\n';
@@ -1956,6 +1989,8 @@ void print_schedule_report(const char *label,
               << " seeded_hybrid_key_bytes=" << hybrid_seeded_bytes
               << " seeded_hybrid_streamed_peak_bytes="
               << hybrid_streamed_peak_seeded_bytes
+              << " seeded_hybrid_streamed_low_cache_peak_bytes="
+              << hybrid_streamed_low_cache_peak_seeded_bytes
               << " seeded_full_key_bytes="
               << TFHEpp::CKKSDenseBootstrapFullSeededKeyByteEstimate<Schedule>()
               << '\n';

@@ -772,12 +772,20 @@ void test_lvl6_factorized_stage_shape()
     const std::size_t hybrid_streamed_peak_rows =
         TFHEpp::CKKSDenseBootstrapHybridGiantStreamedKeySwitchPeakRowCount<
             Schedule>(hybrid_rotation_usage);
+    const std::size_t hybrid_streamed_low_cache_peak_rows =
+        TFHEpp::
+            CKKSDenseBootstrapHybridGiantStreamedLowCacheKeySwitchPeakRowCount<
+                Schedule>(hybrid_rotation_usage);
     const std::size_t direct_streamed_peak_bytes =
         TFHEpp::CKKSDenseBootstrapDirectStreamedPeakKeyByteEstimate<Schedule>(
             direct_rotation_usage);
     const std::size_t hybrid_streamed_peak_bytes =
         TFHEpp::CKKSDenseBootstrapHybridGiantStreamedPeakKeyByteEstimate<
             Schedule>(hybrid_rotation_usage);
+    const std::size_t hybrid_streamed_low_cache_peak_bytes =
+        TFHEpp::
+            CKKSDenseBootstrapHybridGiantStreamedLowCachePeakKeyByteEstimate<
+                Schedule>(hybrid_rotation_usage);
     const std::size_t streamed_peak_rows =
         TFHEpp::CKKSDenseBootstrapStreamedKeySwitchPeakRowCount<Schedule>(
             rotation_usage);
@@ -820,6 +828,12 @@ void test_lvl6_factorized_stage_shape()
         hybrid_streamed_peak_bytes !=
             hybrid_streamed_peak_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
         std::exit(1);
+    if (hybrid_streamed_low_cache_peak_rows == 0 ||
+        hybrid_streamed_low_cache_peak_rows > hybrid_streamed_peak_rows ||
+        hybrid_streamed_low_cache_peak_bytes !=
+            hybrid_streamed_low_cache_peak_rows *
+                TFHEpp::CKKSKeySwitchRowByteSize<L>())
+        std::exit(1);
     std::cout << "CKKS lvl6 dense bootstrap rotation key indices planned/full="
               << planned_key_indices << "/" << full_key_indices
               << " c2s_baby_rotations=" << total_c2s_baby_rotations
@@ -852,6 +866,10 @@ void test_lvl6_factorized_stage_shape()
               << " bytes=" << hybrid_key_bytes
               << " streamed_peak_rows=" << hybrid_streamed_peak_rows
               << " streamed_peak_bytes=" << hybrid_streamed_peak_bytes
+              << " streamed_low_cache_peak_rows="
+              << hybrid_streamed_low_cache_peak_rows
+              << " streamed_low_cache_peak_bytes="
+              << hybrid_streamed_low_cache_peak_bytes
               << std::endl;
 }
 
