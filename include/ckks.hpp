@@ -5761,7 +5761,7 @@ struct lvl6CKKSDenseBootstrapTunedSchedule
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
-        return I == 0 ? 2048 : 32;
+        return I == 0 ? 2048 : 16;
     }
 
     template <std::size_t I>
