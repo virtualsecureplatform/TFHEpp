@@ -105,7 +105,7 @@ std::uintmax_t directory_bytes(const std::filesystem::path &root)
 }
 
 template <class ScheduleT>
-std::size_t seeded_hybrid_bootstrap_key_estimate_bytes()
+std::size_t seeded_hybrid_streamed_bootstrap_key_estimate_bytes()
 {
     TFHEpp::CKKSDenseBootstrapLinearPlan<ScheduleT> linear_plan;
     TFHEpp::CKKSBuildDenseBootstrapLinearPlan<ScheduleT>(linear_plan);
@@ -153,21 +153,19 @@ int main()
     fill_dense_key<P>(*external_key);
     fill_sparse_key<P>(*bootstrap_key, 2);
 
-    std::size_t generated_slices = 0;
-    while (
-        TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyGenNextMissingToDirectory<
-            Schedule>(bootstrap_key_dir, *bootstrap_key, {0.0, 0})) {
-        generated_slices++;
-    }
+    TFHEpp::CKKSDenseBootstrapSeededHybridGiantStreamedKeyGenToDirectory<
+        Schedule>(bootstrap_key_dir, *bootstrap_key, {0.0, 0});
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions resume_options;
     resume_options.overwrite_existing = false;
-    TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyGenToDirectory<Schedule>(
-        bootstrap_key_dir, *bootstrap_key, {0.0, 0}, resume_options);
-    if (!TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyDirectoryComplete<
-            Schedule>(bootstrap_key_dir) ||
-        !TFHEpp::CKKSDenseBootstrapSeededHybridGiantKeyDirectoryManifestMatches<
-            Schedule>(bootstrap_key_dir)) {
-        std::cerr << "workflow seeded bootstrap key directory invalid\n";
+    TFHEpp::CKKSDenseBootstrapSeededHybridGiantStreamedKeyGenToDirectory<
+        Schedule>(bootstrap_key_dir, *bootstrap_key, {0.0, 0}, resume_options);
+    if (!TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryComplete<
+                Schedule>(bootstrap_key_dir) ||
+        !TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryManifestMatches<
+                Schedule>(bootstrap_key_dir)) {
+        std::cerr << "workflow streamed seeded bootstrap key directory invalid\n";
         std::filesystem::remove_all(root);
         return 1;
     }
@@ -223,7 +221,7 @@ int main()
     auto bootstrapped = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings timings;
     TFHEpp::
-        CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+        CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
             Schedule>(
         *bootstrapped, *lhs_ct, *rhs_ct, bootstrap_key_dir,
         encapsulation_key_file, relin_key_file, timings);
@@ -238,7 +236,7 @@ int main()
         std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings chained_timings;
     TFHEpp::
-        CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+        CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
             Schedule>(
         *chained_bootstrapped, *bootstrapped, *bootstrapped, bootstrap_key_dir,
         encapsulation_key_file, post_bootstrap_relin_key_file,
@@ -254,12 +252,12 @@ int main()
               << PostBootstrapProductCt::log_q
               << " product_bootstrap_slack="
               << Schedule::post_bootstrap_product_slack << '\n';
-    std::cout << "workflow seeded_bootstrap_key_dir="
+    std::cout << "workflow streamed_seeded_bootstrap_key_dir="
               << bootstrap_key_dir.string()
-              << " generated_slices=" << generated_slices
               << " bootstrap_key_bytes=" << directory_bytes(bootstrap_key_dir)
-              << " estimated_seeded_hybrid_key_bytes="
-              << seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>()
+              << " estimated_streamed_seeded_hybrid_key_bytes="
+              << seeded_hybrid_streamed_bootstrap_key_estimate_bytes<
+                     Schedule>()
               << '\n';
     std::cout << "workflow seeded_eval_key_dir=" << eval_key_dir.string()
               << " seeded_encapsulation_key_bytes="
