@@ -720,9 +720,11 @@ void test_lvl6_factorized_stage_shape()
         TFHEpp::CKKSDenseBootstrapFullGaloisKeyIndexCount<Schedule>();
     static_assert(Schedule::supports_post_bootstrap_product);
     static_assert(
-        TFHEpp::CKKSAutoKeySwitchRowCount<L, Schedule::boot_log_q>() == 55);
+        TFHEpp::CKKSAutoKeySwitchRowCount<L, Schedule::boot_log_q>() ==
+        L::k * ((Schedule::boot_log_q + L::B̅gbit - 1) / L::B̅gbit));
     static_assert(
-        TFHEpp::CKKSRelinKeySwitchRowCount<L, Schedule::output_log_q>() == 8);
+        TFHEpp::CKKSRelinKeySwitchRowCount<L, Schedule::output_log_q>() ==
+        ((Schedule::output_log_q + L::B̅gbit - 1) / L::B̅gbit));
     static_assert(
         TFHEpp::CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() == 8);
     if (planned_key_indices == 0 || planned_key_indices >= full_key_indices)

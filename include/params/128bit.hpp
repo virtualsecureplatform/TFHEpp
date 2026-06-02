@@ -350,10 +350,10 @@ struct lvl6param {
         (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
     static constexpr uint64_t bfv_bootstrap_digit_error_bound = 15;
     static constexpr int bfv_bootstrap_linear_bsgs_step = 128;
-    static constexpr std::uint32_t l̅ = 72;
-    static constexpr std::uint32_t l̅ₐ = 72;
-    static constexpr std::uint32_t B̅gbit = 16;
-    static constexpr std::uint32_t B̅gₐbit = 16;
+    static constexpr std::uint32_t l̅ = 96;
+    static constexpr std::uint32_t l̅ₐ = 96;
+    static constexpr std::uint32_t B̅gbit = 12;
+    static constexpr std::uint32_t B̅gₐbit = 12;
 
     static constexpr uint64_t simd_modulus = plain_modulus_u64;
     static constexpr uint64_t simd_psi = 108788;
