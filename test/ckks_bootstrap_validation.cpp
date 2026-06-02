@@ -10,6 +10,7 @@
 #include <string>
 #include <system_error>
 #include <tfhe++.hpp>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -318,6 +319,48 @@ double elapsed_ms(F &&fn)
     fn();
     const auto end = Clock::now();
     return std::chrono::duration<double, std::milli>(end - begin).count();
+}
+
+struct BootstrapProgressPrinter {
+    const char *label;
+};
+
+void print_progress_begin(const char *label, const char *stage)
+{
+    std::cout << label << "_stage_begin name=" << stage << '\n';
+    std::cout.flush();
+}
+
+void print_progress_done(const char *label, const char *stage,
+                         double elapsed)
+{
+    std::cout << label << "_stage_done name=" << stage << " ms=" << elapsed
+              << '\n';
+    std::cout.flush();
+}
+
+void bootstrap_progress_begin(const char *stage, const void *context)
+{
+    const auto *printer =
+        static_cast<const BootstrapProgressPrinter *>(context);
+    print_progress_begin(printer->label, stage);
+}
+
+void bootstrap_progress_end(const char *stage, double elapsed,
+                            const void *context)
+{
+    const auto *printer =
+        static_cast<const BootstrapProgressPrinter *>(context);
+    print_progress_done(printer->label, stage, elapsed);
+}
+
+template <class F>
+double elapsed_ms_with_progress(const char *label, const char *stage, F &&fn)
+{
+    print_progress_begin(label, stage);
+    const double elapsed = elapsed_ms(std::forward<F>(fn));
+    print_progress_done(label, stage, elapsed);
+    return elapsed;
 }
 
 template <class Plan>
@@ -2530,16 +2573,19 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
     std::cout << "product_fresh_logQ=" << FreshCt::log_q
               << " product_logQ=" << ProductCt::log_q
               << " normalized_logQ=" << Schedule::input_log_q << '\n';
+    std::cout.flush();
 
-    const double encap_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
-            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
-            eval_key_options);
-    });
-    const double relin_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-            relin_key_file, *external_key, {P::α, 0}, eval_key_options);
-    });
+    const double encap_keygen_ms =
+        elapsed_ms_with_progress("seeded_product", "encapsulation_keygen", [&] {
+            TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
+                Schedule>(encapsulation_key_file, *external_key,
+                          *bootstrap_key, {P::α, 0}, eval_key_options);
+        });
+    const double relin_keygen_ms =
+        elapsed_ms_with_progress("seeded_product", "relin_keygen", [&] {
+            TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
+                relin_key_file, *external_key, {P::α, 0}, eval_key_options);
+        });
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -2550,26 +2596,32 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap(
 
     auto lhs_ct = std::make_unique<FreshCt>();
     auto rhs_ct = std::make_unique<FreshCt>();
-    const double encrypt_ms = elapsed_ms([&] {
-        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
-            *lhs_ct, *lhs, *external_key);
-        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
-            *rhs_ct, *rhs, *external_key);
-    });
+    const double encrypt_ms =
+        elapsed_ms_with_progress("seeded_product", "encrypt", [&] {
+            TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+                *lhs_ct, *lhs, *external_key);
+            TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+                *rhs_ct, *rhs, *external_key);
+        });
 
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings product_timings;
+    const BootstrapProgressPrinter progress_printer{"seeded_product"};
+    const TFHEpp::CKKSDenseBootstrapProgress progress{
+        bootstrap_progress_begin, bootstrap_progress_end, &progress_printer};
     TFHEpp::
         CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
             Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
-                      encapsulation_key_file, relin_key_file, product_timings);
+                      encapsulation_key_file, relin_key_file, product_timings,
+                      &progress);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
-    const double decrypt_ms = elapsed_ms([&] {
-        TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
-                                Schedule::log_delta>(*decoded, *output,
-                                                     *external_key);
-    });
+    const double decrypt_ms =
+        elapsed_ms_with_progress("seeded_product", "decrypt", [&] {
+            TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
+                                    Schedule::log_delta>(
+                *decoded, *output, *external_key);
+        });
     const double err = max_error<P>(*decoded, *expected);
     std::cout << "seeded_encapsulation_keygen_ms=" << encap_keygen_ms << '\n';
     std::cout << "seeded_encapsulation_key_file="
@@ -3740,23 +3792,27 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
               << " chained_product_logQ=" << PostBootstrapProductCt::log_q
               << " chained_normalized_logQ=" << Schedule::input_log_q
               << '\n';
+    std::cout.flush();
 
-    const double encap_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<Schedule>(
-            encapsulation_key_file, *external_key, *bootstrap_key, {P::α, 0},
-            eval_key_options);
-    });
-    const double product_relin_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
-            product_relin_key_file, *external_key, {P::α, 0},
-            eval_key_options);
-    });
-    const double post_relin_keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSSeededRelinKeyGenToFile<
-            P, PostBootstrapProductCt::log_q>(
-            post_bootstrap_relin_key_file, *external_key, {P::α, 0},
-            eval_key_options);
-    });
+    const double encap_keygen_ms =
+        elapsed_ms_with_progress("seeded_eval_keygen", "encapsulation", [&] {
+            TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenToFile<
+                Schedule>(encapsulation_key_file, *external_key,
+                          *bootstrap_key, {P::α, 0}, eval_key_options);
+        });
+    const double product_relin_keygen_ms =
+        elapsed_ms_with_progress("seeded_eval_keygen", "product_relin", [&] {
+            TFHEpp::CKKSSeededRelinKeyGenToFile<P, ProductCt::log_q>(
+                product_relin_key_file, *external_key, {P::α, 0},
+                eval_key_options);
+        });
+    const double post_relin_keygen_ms = elapsed_ms_with_progress(
+        "seeded_eval_keygen", "post_bootstrap_product_relin", [&] {
+            TFHEpp::CKKSSeededRelinKeyGenToFile<
+                P, PostBootstrapProductCt::log_q>(
+                post_bootstrap_relin_key_file, *external_key, {P::α, 0},
+                eval_key_options);
+        });
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -3769,45 +3825,57 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap(
 
     auto lhs_ct = std::make_unique<FreshCt>();
     auto rhs_ct = std::make_unique<FreshCt>();
-    const double encrypt_ms = elapsed_ms([&] {
-        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
-            *lhs_ct, *lhs, *external_key);
-        TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
-            *rhs_ct, *rhs, *external_key);
-    });
+    const double encrypt_ms =
+        elapsed_ms_with_progress("seeded_chained_product", "encrypt", [&] {
+            TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+                *lhs_ct, *lhs, *external_key);
+            TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
+                *rhs_ct, *rhs, *external_key);
+        });
 
     auto first_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings first_product_timings;
+    const BootstrapProgressPrinter first_progress_printer{
+        "first_product"};
+    const TFHEpp::CKKSDenseBootstrapProgress first_progress{
+        bootstrap_progress_begin, bootstrap_progress_end,
+        &first_progress_printer};
     TFHEpp::
         CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
             Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
                       encapsulation_key_file, product_relin_key_file,
-                      first_product_timings);
+                      first_product_timings, &first_progress);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
-    const double first_decrypt_ms = elapsed_ms([&] {
-        TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
-                                Schedule::log_delta>(*decoded, *first_output,
-                                                     *external_key);
-    });
+    const double first_decrypt_ms = elapsed_ms_with_progress(
+        "first_product", "decrypt", [&] {
+            TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
+                                    Schedule::log_delta>(
+                *decoded, *first_output, *external_key);
+        });
     const double first_err = max_error<P>(*decoded, *expected);
 
     auto chained_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings chained_product_timings;
+    const BootstrapProgressPrinter chained_progress_printer{
+        "chained_product"};
+    const TFHEpp::CKKSDenseBootstrapProgress chained_progress{
+        bootstrap_progress_begin, bootstrap_progress_end,
+        &chained_progress_printer};
     TFHEpp::
         CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
             Schedule>(*chained_output, *first_output, *first_output, key_dir,
                       encapsulation_key_file, post_bootstrap_relin_key_file,
-                      chained_product_timings);
+                      chained_product_timings, &chained_progress);
 
-    const double chained_decrypt_ms = elapsed_ms([&] {
-        TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
-                                Schedule::log_delta>(*decoded,
-                                                     *chained_output,
-                                                     *external_key);
-    });
+    const double chained_decrypt_ms = elapsed_ms_with_progress(
+        "chained_product", "decrypt", [&] {
+            TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
+                                    Schedule::log_delta>(
+                *decoded, *chained_output, *external_key);
+        });
     const double chained_err = max_error<P>(*decoded, *chained_expected);
 
     std::cout << "seeded_encapsulation_keygen_ms=" << encap_keygen_ms << '\n';

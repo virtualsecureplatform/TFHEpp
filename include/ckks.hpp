@@ -701,6 +701,13 @@ struct CKKSDenseBootstrapProductTimings {
     double total_ms() const { return multiply_ms + bootstrap.total_ms(); }
 };
 
+struct CKKSDenseBootstrapProgress {
+    void (*stage_begin)(const char *stage, const void *context) = nullptr;
+    void (*stage_end)(const char *stage, double elapsed_ms,
+                      const void *context) = nullptr;
+    const void *context = nullptr;
+};
+
 struct CKKSDenseBootstrapKeyDirectoryManifest {
     static constexpr std::uint32_t current_version = 3;
     static constexpr std::uint32_t sparse_format = 0;
@@ -10417,18 +10424,41 @@ struct CKKSDenseBootstrapLinearKeyProviderChain {
     }
 };
 
-template <class F>
-inline void CKKSTimeBootstrapStage(double *duration_ms, F &&stage)
+inline void CKKSDenseBootstrapProgressBegin(
+    const CKKSDenseBootstrapProgress *progress, const char *stage)
 {
-    if (duration_ms == nullptr) {
-        std::forward<F>(stage)();
-        return;
-    }
+    if (progress != nullptr && progress->stage_begin != nullptr)
+        progress->stage_begin(stage, progress->context);
+}
+
+inline void CKKSDenseBootstrapProgressEnd(
+    const CKKSDenseBootstrapProgress *progress, const char *stage,
+    double elapsed_ms)
+{
+    if (progress != nullptr && progress->stage_end != nullptr)
+        progress->stage_end(stage, elapsed_ms, progress->context);
+}
+
+template <class F>
+inline void CKKSTimeBootstrapStage(
+    double *duration_ms, F &&stage,
+    const CKKSDenseBootstrapProgress *progress, const char *stage_name)
+{
+    CKKSDenseBootstrapProgressBegin(progress, stage_name);
     const auto start = std::chrono::steady_clock::now();
     std::forward<F>(stage)();
     const auto stop = std::chrono::steady_clock::now();
-    *duration_ms =
+    const double elapsed_ms =
         std::chrono::duration<double, std::milli>(stop - start).count();
+    if (duration_ms != nullptr) *duration_ms = elapsed_ms;
+    CKKSDenseBootstrapProgressEnd(progress, stage_name, elapsed_ms);
+}
+
+template <class F>
+inline void CKKSTimeBootstrapStage(double *duration_ms, F &&stage)
+{
+    CKKSTimeBootstrapStage(duration_ms, std::forward<F>(stage), nullptr,
+                           nullptr);
 }
 
 template <std::size_t I, class Schedule, class GaloisKeyChain>
@@ -10587,7 +10617,8 @@ template <class Schedule, class KeyProvider>
 inline void CKKSDenseBootstrapWithKeyProviderImpl(
     typename Schedule::OutputCiphertext &res,
     const typename Schedule::InputCiphertext &ct,
-    const KeyProvider &key_provider, CKKSDenseBootstrapTimings *timings)
+    const KeyProvider &key_provider, CKKSDenseBootstrapTimings *timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     using P = typename Schedule::Param;
     const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
@@ -10600,7 +10631,8 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
                                    P, Schedule::input_log_q,
                                    Schedule::boot_log_q, Schedule::log_delta,
                                    Schedule::modraise_mask_bound>(*raised, ct);
-                           });
+                           },
+                           progress, "modraise");
 
     auto coeff_to_slot =
         std::make_unique<typename Schedule::CoeffToSlotCiphertext>();
@@ -10610,7 +10642,8 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
         timings == nullptr ? nullptr : &timings->coeff_to_slot_ms, [&] {
             CKKSDenseBootstrapCoeffToSlotStagesBSGS<Schedule>(
                 *coeff_to_slot, *raised, linear_plan, coeff_to_slot_galois);
-        });
+        },
+        progress, "coeff_to_slot");
     raised.reset();
 
     auto real_component =
@@ -10631,7 +10664,8 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
                                    Schedule::component_split_plain_log_delta>(
                                    *imag_component, *coeff_to_slot,
                                    key_provider.packed_conjugate_galois());
-                           });
+                           },
+                           progress, "split");
     coeff_to_slot.reset();
     if constexpr (requires { key_provider.release_packed_conjugate_galois(); }) {
         key_provider.release_packed_conjugate_galois();
@@ -10644,7 +10678,8 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
             CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
                 *real_evalmod, *real_component, key_provider.evalmod_polynomial(),
                 key_provider);
-        });
+        },
+        progress, "real_evalmod");
     real_component.reset();
     auto imag_evalmod =
         std::make_unique<CKKSDenseEvalModBoundedCosResult<Schedule>>();
@@ -10653,7 +10688,8 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
             CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
                 *imag_evalmod, *imag_component, key_provider.evalmod_polynomial(),
                 key_provider);
-        });
+        },
+        progress, "imag_evalmod");
     imag_component.reset();
 
     const CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider, false>
@@ -10663,7 +10699,8 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
             CKKSDenseBootstrapSlotToCoeffStagesBSGSDualInputSharedTail<
                 Schedule>(res, *real_evalmod, *imag_evalmod, linear_plan,
                           slot_to_coeff_galois);
-        });
+        },
+        progress, "slot_to_coeff");
     real_evalmod.reset();
     imag_evalmod.reset();
 }
@@ -10684,11 +10721,12 @@ template <class Schedule, class KeyProvider>
 inline void CKKSDenseBootstrapWithKeyProviderTimed(
     typename Schedule::OutputCiphertext &res,
     const typename Schedule::InputCiphertext &ct,
-    const KeyProvider &key_provider, CKKSDenseBootstrapTimings &timings)
+    const KeyProvider &key_provider, CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     timings = {};
     ckks_detail::CKKSDenseBootstrapWithKeyProviderImpl<Schedule>(
-        res, ct, key_provider, &timings);
+        res, ct, key_provider, &timings, progress);
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
@@ -10734,15 +10772,17 @@ template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
 inline void CKKSDenseBootstrapFromLevelWithKeyProviderTimed(
     typename Schedule::OutputCiphertext &res,
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
-    const KeyProvider &key_provider, CKKSDenseBootstrapTimings &timings)
+    const KeyProvider &key_provider, CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     timings = {};
     auto normalized = std::make_unique<typename Schedule::InputCiphertext>();
-    ckks_detail::CKKSTimeBootstrapStage(&timings.normalize_ms, [&] {
-        CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct);
-    });
+    ckks_detail::CKKSTimeBootstrapStage(
+        &timings.normalize_ms,
+        [&] { CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct); },
+        progress, "normalize");
     ckks_detail::CKKSDenseBootstrapWithKeyProviderImpl<Schedule>(
-        res, *normalized, key_provider, &timings);
+        res, *normalized, key_provider, &timings, progress);
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta,
@@ -10778,31 +10818,36 @@ inline void CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed(
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
     const KeyProvider &bootstrap_key_provider,
     const EncapsulationKey &encapsulation_key,
-    CKKSDenseBootstrapTimings &timings)
+    CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     timings = {};
     auto normalized = std::make_unique<typename Schedule::InputCiphertext>();
-    ckks_detail::CKKSTimeBootstrapStage(&timings.normalize_ms, [&] {
-        CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct);
-    });
+    ckks_detail::CKKSTimeBootstrapStage(
+        &timings.normalize_ms,
+        [&] { CKKSDenseBootstrapNormalizeInput<Schedule>(*normalized, ct); },
+        progress, "normalize");
 
     auto bootstrap_input = std::make_unique<typename Schedule::InputCiphertext>();
     ckks_detail::CKKSTimeBootstrapStage(&timings.input_secret_switch_ms, [&] {
         CKKSSecretKeySwitch<typename Schedule::Param, Schedule::input_log_q,
                             Schedule::log_delta>(
             *bootstrap_input, *normalized, encapsulation_key.input_to_bootstrap);
-    });
+    },
+                                        progress, "input_secret_switch");
 
     auto bootstrap_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
     ckks_detail::CKKSDenseBootstrapWithKeyProviderImpl<Schedule>(
-        *bootstrap_output, *bootstrap_input, bootstrap_key_provider, &timings);
+        *bootstrap_output, *bootstrap_input, bootstrap_key_provider, &timings,
+        progress);
 
     ckks_detail::CKKSTimeBootstrapStage(&timings.output_secret_switch_ms, [&] {
         CKKSSecretKeySwitch<typename Schedule::Param, Schedule::output_log_q,
                             Schedule::log_delta>(
             res, *bootstrap_output, encapsulation_key.bootstrap_to_output);
-    });
+    },
+                                        progress, "output_secret_switch");
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
@@ -10827,7 +10872,8 @@ inline void CKKSDenseBootstrapEncapsulatedFromLevelWithFilesystemKeyTimed(
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
     const std::filesystem::path &key_dir,
     const std::filesystem::path &encapsulation_key_file,
-    CKKSDenseBootstrapTimings &timings)
+    CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
     auto encapsulation_key =
@@ -10835,7 +10881,7 @@ inline void CKKSDenseBootstrapEncapsulatedFromLevelWithFilesystemKeyTimed(
     CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
-        res, ct, provider, *encapsulation_key, timings);
+        res, ct, provider, *encapsulation_key, timings, progress);
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
@@ -10862,7 +10908,8 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed(
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
     const std::filesystem::path &key_dir,
     const std::filesystem::path &encapsulation_key_file,
-    CKKSDenseBootstrapTimings &timings)
+    CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule> provider(
         key_dir);
@@ -10871,7 +10918,7 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithHybridGiantFilesystemKeyTimed(
     CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
-        res, ct, provider, *encapsulation_key, timings);
+        res, ct, provider, *encapsulation_key, timings, progress);
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
@@ -10889,12 +10936,13 @@ template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
 inline void CKKSDenseBootstrapFromLevelWithSeededHybridGiantFilesystemKeyTimed(
     typename Schedule::OutputCiphertext &res,
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
-    const std::filesystem::path &key_dir, CKKSDenseBootstrapTimings &timings)
+    const std::filesystem::path &key_dir, CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
         key_dir);
     CKKSDenseBootstrapFromLevelWithKeyProviderTimed<Schedule>(
-        res, ct, provider, timings);
+        res, ct, provider, timings, progress);
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
@@ -10922,7 +10970,8 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemKeyTimed(
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
     const std::filesystem::path &key_dir,
     const std::filesystem::path &encapsulation_key_file,
-    CKKSDenseBootstrapTimings &timings)
+    CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
         key_dir);
@@ -10931,7 +10980,7 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemKeyTimed(
     CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
-        res, ct, provider, *encapsulation_key, timings);
+        res, ct, provider, *encapsulation_key, timings, progress);
 }
 
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
@@ -10959,7 +11008,8 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemSeededKeys
     const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
     const std::filesystem::path &key_dir,
     const std::filesystem::path &encapsulation_key_file,
-    CKKSDenseBootstrapTimings &timings)
+    CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
         key_dir);
@@ -10968,7 +11018,7 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantFilesystemSeededKeys
     CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
-        res, ct, provider, *encapsulation_key, timings);
+        res, ct, provider, *encapsulation_key, timings, progress);
 }
 
 template <class Schedule, std::uint32_t LhsLogQ,
@@ -11026,7 +11076,8 @@ inline void CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed(
     const std::filesystem::path &relin_key_file,
     const KeyProvider &bootstrap_key_provider,
     const CKKSDenseBootstrapEncapsulationKey<Schedule> &encapsulation_key,
-    CKKSDenseBootstrapProductTimings &timings)
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     using Traits =
         CKKSDenseBootstrapProductTraits<Schedule, LhsLogQ, LhsLogDelta,
@@ -11036,10 +11087,11 @@ inline void CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed(
     ckks_detail::CKKSTimeBootstrapStage(&timings.multiply_ms, [&] {
         CKKSMultWithRelinKeyFile<typename Schedule::Param>(
             *product, lhs, rhs, relin_key_file);
-    });
+    },
+                                        progress, "multiply");
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
         res, *product, bootstrap_key_provider, encapsulation_key,
-        timings.bootstrap);
+        timings.bootstrap, progress);
 }
 
 template <class Schedule, std::uint32_t LhsLogQ,
@@ -11073,7 +11125,8 @@ inline void CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProviderTimed(
     const std::filesystem::path &relin_key_file,
     const KeyProvider &bootstrap_key_provider,
     const EncapsulationKey &encapsulation_key,
-    CKKSDenseBootstrapProductTimings &timings)
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     using Traits =
         CKKSDenseBootstrapProductTraits<Schedule, LhsLogQ, LhsLogDelta,
@@ -11083,10 +11136,11 @@ inline void CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProviderTimed(
     ckks_detail::CKKSTimeBootstrapStage(&timings.multiply_ms, [&] {
         CKKSMultWithSeededRelinKeyFile<typename Schedule::Param>(
             *product, lhs, rhs, relin_key_file);
-    });
+    },
+                                        progress, "multiply");
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
         res, *product, bootstrap_key_provider, encapsulation_key,
-        timings.bootstrap);
+        timings.bootstrap, progress);
 }
 
 template <class Schedule, std::uint32_t LhsLogQ,
@@ -11119,7 +11173,8 @@ inline void CKKSDenseBootstrapProductWithFilesystemKeyTimed(
     const std::filesystem::path &key_dir,
     const std::filesystem::path &encapsulation_key_file,
     const std::filesystem::path &relin_key_file,
-    CKKSDenseBootstrapProductTimings &timings)
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapFilesystemKeyProvider<Schedule> provider(key_dir);
     auto encapsulation_key =
@@ -11127,7 +11182,8 @@ inline void CKKSDenseBootstrapProductWithFilesystemKeyTimed(
     CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed<Schedule>(
-        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings);
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings,
+        progress);
 }
 
 template <class Schedule, std::uint32_t LhsLogQ,
@@ -11161,7 +11217,8 @@ inline void CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed(
     const std::filesystem::path &key_dir,
     const std::filesystem::path &encapsulation_key_file,
     const std::filesystem::path &relin_key_file,
-    CKKSDenseBootstrapProductTimings &timings)
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapHybridGiantFilesystemKeyProvider<Schedule> provider(
         key_dir);
@@ -11170,7 +11227,8 @@ inline void CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed(
     CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed<Schedule>(
-        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings);
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings,
+        progress);
 }
 
 template <class Schedule, std::uint32_t LhsLogQ,
@@ -11204,7 +11262,8 @@ inline void CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemKeyTimed(
     const std::filesystem::path &key_dir,
     const std::filesystem::path &encapsulation_key_file,
     const std::filesystem::path &relin_key_file,
-    CKKSDenseBootstrapProductTimings &timings)
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
         key_dir);
@@ -11213,7 +11272,8 @@ inline void CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemKeyTimed(
     CKKSDenseBootstrapLoadEncapsulationKeyFromFile<Schedule>(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapProductWithRelinKeyFileAndKeyProviderTimed<Schedule>(
-        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings);
+        res, lhs, rhs, relin_key_file, provider, *encapsulation_key, timings,
+        progress);
 }
 
 template <class Schedule, std::uint32_t LhsLogQ,
@@ -11249,7 +11309,8 @@ CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed(
     const std::filesystem::path &key_dir,
     const std::filesystem::path &encapsulation_key_file,
     const std::filesystem::path &relin_key_file,
-    CKKSDenseBootstrapProductTimings &timings)
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule> provider(
         key_dir);
@@ -11259,7 +11320,7 @@ CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed(
         *encapsulation_key, encapsulation_key_file);
     CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProviderTimed<
         Schedule>(res, lhs, rhs, relin_key_file, provider, *encapsulation_key,
-                  timings);
+                  timings, progress);
 }
 
 template <class Schedule>
