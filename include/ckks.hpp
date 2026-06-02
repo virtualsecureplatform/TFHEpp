@@ -6102,12 +6102,21 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
         using Acc = WideSignedLimbAccumulator<2 * Torus::limbs + 2>;
         auto acc = std::make_unique<std::array<std::array<Acc, P::n>, 3>>();
 
-        auto accumulate = [&](int component, const Polynomial<P> &prod,
-                              int shift) {
+        auto accumulate = [](std::array<std::array<Acc, P::n>, 3> &accum,
+                             int component, const Polynomial<P> &prod,
+                             int shift) {
             for (std::uint32_t n = 0; n < P::n; n++)
-                (*acc)[component][n].add_shifted_i64(
+                accum[component][n].add_shifted_i64(
                     multilimb_to_signed_i64(prod[n]), shift);
         };
+
+        auto merge_accumulator =
+            [](std::array<std::array<Acc, P::n>, 3> &dst,
+               const std::array<std::array<Acc, P::n>, 3> &src) {
+                for (int c = 0; c < 3; c++)
+                    for (std::uint32_t n = 0; n < P::n; n++)
+                        dst[c][n].add(src[c][n]);
+            };
 
         constexpr bool use_fft_digits =
             use_multilimb_digit_fft_v<P> &&
@@ -6141,67 +6150,89 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
                 }
             }
 
-            auto sum_fd = std::make_unique<std::array<PolynomialInFD<P>, 3>>();
-            auto prod = std::make_unique<Polynomial<P>>();
-            for (int digit_sum = 0;
-                 digit_sum <= static_cast<int>(lhs_row_count + rhs_row_count) -
-                                  2;
-                 digit_sum++) {
-                const int i_begin =
-                    std::max(0, digit_sum -
-                                    static_cast<int>(rhs_row_count) + 1);
-                const int i_end =
-                    std::min(static_cast<int>(lhs_row_count) - 1, digit_sum);
-                const int full_digit_sum =
-                    static_cast<int>(lhs_first_row + rhs_first_row) +
-                    digit_sum;
-                const int shift =
-                    2 * width -
-                    (full_digit_sum + 2) * static_cast<int>(P::B̅gbit);
+#pragma omp parallel
+            {
+                auto local_acc =
+                    std::make_unique<std::array<std::array<Acc, P::n>, 3>>();
+                auto sum_fd =
+                    std::make_unique<std::array<PolynomialInFD<P>, 3>>();
+                auto prod = std::make_unique<Polynomial<P>>();
+#pragma omp for schedule(dynamic)
+                for (int digit_sum = 0;
+                     digit_sum <=
+                         static_cast<int>(lhs_row_count + rhs_row_count) - 2;
+                     digit_sum++) {
+                    const int i_begin = std::max(
+                        0,
+                        digit_sum - static_cast<int>(rhs_row_count) + 1);
+                    const int i_end =
+                        std::min(static_cast<int>(lhs_row_count) - 1,
+                                 digit_sum);
+                    const int full_digit_sum =
+                        static_cast<int>(lhs_first_row + rhs_first_row) +
+                        digit_sum;
+                    const int shift =
+                        2 * width -
+                        (full_digit_sum + 2) * static_cast<int>(P::B̅gbit);
 
-                for (int batch_begin = i_begin; batch_begin <= i_end;
-                     batch_begin += fd_batch_size) {
-                    for (int c = 0; c < 3; c++) (*sum_fd)[c].fill(0.0);
-                    const int batch_end =
-                        std::min(i_end, batch_begin + fd_batch_size - 1);
-                    for (int i = batch_begin; i <= batch_end; i++) {
-                        const int j = digit_sum - i;
-                        FMAInFD<P::n>((*sum_fd)[2], (*a_fd)[i][0],
-                                      (*b_fd)[j][0]);
-                        FMAInFD<P::n>((*sum_fd)[1], (*a_fd)[i][1],
-                                      (*b_fd)[j][1]);
-                        FMAInFD<P::n>((*sum_fd)[0], (*a_fd)[i][0],
-                                      (*b_fd)[j][1]);
-                        FMAInFD<P::n>((*sum_fd)[0], (*a_fd)[i][1],
-                                      (*b_fd)[j][0]);
-                    }
-                    for (int c = 0; c < 3; c++) {
-                        TwistFFTDigitProduct<P>(*prod, (*sum_fd)[c]);
-                        accumulate(c, *prod, shift);
+                    for (int batch_begin = i_begin; batch_begin <= i_end;
+                         batch_begin += fd_batch_size) {
+                        for (int c = 0; c < 3; c++) (*sum_fd)[c].fill(0.0);
+                        const int batch_end =
+                            std::min(i_end, batch_begin + fd_batch_size - 1);
+                        for (int i = batch_begin; i <= batch_end; i++) {
+                            const int j = digit_sum - i;
+                            FMAInFD<P::n>((*sum_fd)[2], (*a_fd)[i][0],
+                                          (*b_fd)[j][0]);
+                            FMAInFD<P::n>((*sum_fd)[1], (*a_fd)[i][1],
+                                          (*b_fd)[j][1]);
+                            FMAInFD<P::n>((*sum_fd)[0], (*a_fd)[i][0],
+                                          (*b_fd)[j][1]);
+                            FMAInFD<P::n>((*sum_fd)[0], (*a_fd)[i][1],
+                                          (*b_fd)[j][0]);
+                        }
+                        for (int c = 0; c < 3; c++) {
+                            TwistFFTDigitProduct<P>(*prod, (*sum_fd)[c]);
+                            accumulate(*local_acc, c, *prod, shift);
+                        }
                     }
                 }
+#pragma omp critical
+                { merge_accumulator(*acc, *local_acc); }
             }
         }
         else {
-            auto prod = std::make_unique<Polynomial<P>>();
-            for (int i = 0; i < static_cast<int>(lhs_row_count); i++) {
-                for (int j = 0; j < static_cast<int>(rhs_row_count); j++) {
-                    const int digit_sum =
-                        static_cast<int>(lhs_first_row + rhs_first_row) + i +
-                        j;
-                    const int shift =
-                        2 * width -
-                        (digit_sum + 2) * static_cast<int>(P::B̅gbit);
+#pragma omp parallel
+            {
+                auto local_acc =
+                    std::make_unique<std::array<std::array<Acc, P::n>, 3>>();
+                auto prod = std::make_unique<Polynomial<P>>();
+#pragma omp for collapse(2) schedule(dynamic)
+                for (int i = 0; i < static_cast<int>(lhs_row_count); i++) {
+                    for (int j = 0; j < static_cast<int>(rhs_row_count); j++) {
+                        const int digit_sum =
+                            static_cast<int>(lhs_first_row + rhs_first_row) +
+                            i + j;
+                        const int shift =
+                            2 * width -
+                            (digit_sum + 2) * static_cast<int>(P::B̅gbit);
 
-                    PolyMulDigit<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][0]);
-                    accumulate(2, *prod, shift);
-                    PolyMulDigit<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][1]);
-                    accumulate(1, *prod, shift);
-                    PolyMulDigit<P>(*prod, (*a_dec)[i][0], (*b_dec)[j][1]);
-                    accumulate(0, *prod, shift);
-                    PolyMulDigit<P>(*prod, (*a_dec)[i][1], (*b_dec)[j][0]);
-                    accumulate(0, *prod, shift);
+                        PolyMulDigit<P>(*prod, (*a_dec)[i][0],
+                                        (*b_dec)[j][0]);
+                        accumulate(*local_acc, 2, *prod, shift);
+                        PolyMulDigit<P>(*prod, (*a_dec)[i][1],
+                                        (*b_dec)[j][1]);
+                        accumulate(*local_acc, 1, *prod, shift);
+                        PolyMulDigit<P>(*prod, (*a_dec)[i][0],
+                                        (*b_dec)[j][1]);
+                        accumulate(*local_acc, 0, *prod, shift);
+                        PolyMulDigit<P>(*prod, (*a_dec)[i][1],
+                                        (*b_dec)[j][0]);
+                        accumulate(*local_acc, 0, *prod, shift);
+                    }
                 }
+#pragma omp critical
+                { merge_accumulator(*acc, *local_acc); }
             }
         }
 

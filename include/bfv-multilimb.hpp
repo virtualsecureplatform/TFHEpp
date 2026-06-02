@@ -316,6 +316,12 @@ struct WideSignedLimbAccumulator {
 
     constexpr bool is_negative() const { return (limb[Limbs - 1] >> 63) != 0; }
 
+    constexpr void add(const WideSignedLimbAccumulator &rhs)
+    {
+        for (std::size_t i = 0; i < Limbs; i++)
+            detail::add_limb_at(limb, i, rhs.limb[i]);
+    }
+
     constexpr void add_shifted_u64(uint64_t value, int shift)
     {
         if (value == 0) return;
