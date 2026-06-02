@@ -1455,9 +1455,22 @@ using Lvl6RobustHybridThresholdSchedule =
     TFHEpp::lvl6CKKSDenseBootstrapRobustHybridSchedule<HybridThreshold>;
 
 template <int HybridThreshold>
-using Lvl6TunedHybridThresholdSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
-    TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52, 128, 0, 52, 52,
-    30, 7, 7, HybridThreshold>;
+struct Lvl6TunedHybridThresholdSchedule
+    : TFHEpp::CKKSDenseBootstrapSchedule<
+          TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52, 128, 0, 52,
+          52, 30, 7, 7, HybridThreshold> {
+    template <std::size_t I>
+    static consteval int coeff_to_slot_bsgs_step()
+    {
+        return I == 0 ? 512 : 64;
+    }
+
+    template <std::size_t I>
+    static consteval int slot_to_coeff_bsgs_step()
+    {
+        return I == 1 ? 512 : 64;
+    }
+};
 
 template <int LinearBSGSStep>
 using Lvl6TunedBSGSStepSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
@@ -1470,7 +1483,7 @@ static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
 static_assert(Lvl6TunedSchedule::log_delta == 52);
-static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 5);
+static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 6);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
 static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
@@ -2050,6 +2063,12 @@ void print_lvl6_tuned_hybrid_threshold_reports()
         "lvl6-tuned-th4");
     print_schedule_report<Lvl6TunedHybridThresholdSchedule<5>>(
         "lvl6-tuned-th5");
+    print_schedule_report<Lvl6TunedHybridThresholdSchedule<6>>(
+        "lvl6-tuned-th6");
+    print_schedule_report<Lvl6TunedHybridThresholdSchedule<7>>(
+        "lvl6-tuned-th7");
+    print_schedule_report<Lvl6TunedHybridThresholdSchedule<8>>(
+        "lvl6-tuned-th8");
 }
 
 void print_lvl6_tuned_bsgs_step_reports()
