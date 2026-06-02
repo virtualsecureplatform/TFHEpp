@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include <complex>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -19,6 +20,8 @@ using Clock = std::chrono::steady_clock;
 
 constexpr const char *validation_test_key_metadata_filename =
     ".ckks_bootstrap_validation_key";
+constexpr const char *external_eval_key_metadata_filename =
+    ".ckks_bootstrap_validation_external_eval_key";
 constexpr std::uintmax_t keygen_disk_reserve_bytes =
     std::uintmax_t{1024} * 1024 * 1024;
 constexpr std::uintmax_t keygen_next_metadata_write_estimate_bytes =
@@ -1130,6 +1133,373 @@ int write_validation_test_key_sparse_weight(
     return output ? 0 : 2;
 }
 
+std::filesystem::path
+external_eval_key_metadata_file(const std::filesystem::path &root)
+{
+    return root / external_eval_key_metadata_filename;
+}
+
+bool is_external_eval_key_metadata_file(const std::filesystem::path &path)
+{
+    return path.filename() == external_eval_key_metadata_filename;
+}
+
+struct ExternalEvalKeyMetadata {
+    std::uint64_t version = 1;
+    std::string key_kind;
+    std::uint64_t n = 0;
+    std::uint64_t nbit = 0;
+    std::uint64_t torus_bits = 0;
+    std::uint64_t log_delta = 0;
+    std::uint64_t input_log_q = 0;
+    std::uint64_t boot_log_q = 0;
+    std::uint64_t output_log_q = 0;
+    std::uint64_t coeff_to_slot_plain_log_delta = 0;
+    std::uint64_t slot_to_coeff_plain_log_delta = 0;
+    std::uint64_t evalmod_k = 0;
+    std::uint64_t evalmod_double_angle = 0;
+    std::uint64_t evalmod_inv_degree = 0;
+    std::uint64_t evalmod_log_scale = 0;
+    std::uint64_t bootstrap_sparse_weight = 0;
+    std::uint64_t external_sparse_weight = 0;
+    std::uint64_t product_fresh_log_q = 0;
+    std::uint64_t product_log_q = 0;
+    std::uint64_t post_bootstrap_product_log_q = 0;
+    std::uint64_t includes_post_bootstrap_product = 0;
+};
+
+template <class T>
+bool read_metadata_field(std::istream &input, const char *expected_name,
+                         T &value)
+{
+    std::string name;
+    return static_cast<bool>(input >> name >> value) &&
+           name == expected_name;
+}
+
+bool read_external_eval_key_metadata(const std::filesystem::path &root,
+                                     ExternalEvalKeyMetadata &metadata)
+{
+    std::ifstream input(external_eval_key_metadata_file(root));
+    if (!input) return false;
+
+    if (!read_metadata_field(input, "version", metadata.version)) return false;
+    if (!read_metadata_field(input, "key_kind", metadata.key_kind))
+        return false;
+    if (!read_metadata_field(input, "n", metadata.n)) return false;
+    if (!read_metadata_field(input, "nbit", metadata.nbit)) return false;
+    if (!read_metadata_field(input, "torus_bits", metadata.torus_bits))
+        return false;
+    if (!read_metadata_field(input, "log_delta", metadata.log_delta))
+        return false;
+    if (!read_metadata_field(input, "input_log_q", metadata.input_log_q))
+        return false;
+    if (!read_metadata_field(input, "boot_log_q", metadata.boot_log_q))
+        return false;
+    if (!read_metadata_field(input, "output_log_q", metadata.output_log_q))
+        return false;
+    if (!read_metadata_field(input, "coeff_to_slot_plain_log_delta",
+                             metadata.coeff_to_slot_plain_log_delta))
+        return false;
+    if (!read_metadata_field(input, "slot_to_coeff_plain_log_delta",
+                             metadata.slot_to_coeff_plain_log_delta))
+        return false;
+    if (!read_metadata_field(input, "evalmod_k", metadata.evalmod_k))
+        return false;
+    if (!read_metadata_field(input, "evalmod_double_angle",
+                             metadata.evalmod_double_angle))
+        return false;
+    if (!read_metadata_field(input, "evalmod_inv_degree",
+                             metadata.evalmod_inv_degree))
+        return false;
+    if (!read_metadata_field(input, "evalmod_log_scale",
+                             metadata.evalmod_log_scale))
+        return false;
+    if (!read_metadata_field(input, "bootstrap_sparse_weight",
+                             metadata.bootstrap_sparse_weight))
+        return false;
+    if (!read_metadata_field(input, "external_sparse_weight",
+                             metadata.external_sparse_weight))
+        return false;
+    if (!read_metadata_field(input, "product_fresh_log_q",
+                             metadata.product_fresh_log_q))
+        return false;
+    if (!read_metadata_field(input, "product_log_q", metadata.product_log_q))
+        return false;
+    if (!read_metadata_field(input, "post_bootstrap_product_log_q",
+                             metadata.post_bootstrap_product_log_q))
+        return false;
+    if (!read_metadata_field(input, "includes_post_bootstrap_product",
+                             metadata.includes_post_bootstrap_product))
+        return false;
+
+    std::string extra;
+    return !(input >> extra);
+}
+
+int write_external_eval_key_metadata(
+    const std::filesystem::path &root,
+    const ExternalEvalKeyMetadata &metadata)
+{
+    std::filesystem::create_directories(root);
+    std::ofstream output(external_eval_key_metadata_file(root),
+                         std::ios::trunc);
+    if (!output) {
+        std::cerr << "external_eval_key_metadata_write_failed="
+                  << external_eval_key_metadata_file(root).string() << '\n';
+        return 2;
+    }
+
+    output << "version " << metadata.version << '\n';
+    output << "key_kind " << metadata.key_kind << '\n';
+    output << "n " << metadata.n << '\n';
+    output << "nbit " << metadata.nbit << '\n';
+    output << "torus_bits " << metadata.torus_bits << '\n';
+    output << "log_delta " << metadata.log_delta << '\n';
+    output << "input_log_q " << metadata.input_log_q << '\n';
+    output << "boot_log_q " << metadata.boot_log_q << '\n';
+    output << "output_log_q " << metadata.output_log_q << '\n';
+    output << "coeff_to_slot_plain_log_delta "
+           << metadata.coeff_to_slot_plain_log_delta << '\n';
+    output << "slot_to_coeff_plain_log_delta "
+           << metadata.slot_to_coeff_plain_log_delta << '\n';
+    output << "evalmod_k " << metadata.evalmod_k << '\n';
+    output << "evalmod_double_angle " << metadata.evalmod_double_angle << '\n';
+    output << "evalmod_inv_degree " << metadata.evalmod_inv_degree << '\n';
+    output << "evalmod_log_scale " << metadata.evalmod_log_scale << '\n';
+    output << "bootstrap_sparse_weight "
+           << metadata.bootstrap_sparse_weight << '\n';
+    output << "external_sparse_weight " << metadata.external_sparse_weight
+           << '\n';
+    output << "product_fresh_log_q " << metadata.product_fresh_log_q << '\n';
+    output << "product_log_q " << metadata.product_log_q << '\n';
+    output << "post_bootstrap_product_log_q "
+           << metadata.post_bootstrap_product_log_q << '\n';
+    output << "includes_post_bootstrap_product "
+           << metadata.includes_post_bootstrap_product << '\n';
+    return output ? 0 : 2;
+}
+
+template <class Schedule>
+ExternalEvalKeyMetadata build_external_eval_key_metadata(
+    const char *key_kind, std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight, bool includes_post_bootstrap_product)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    constexpr std::uint32_t product_log_q =
+        fresh_log_q - Schedule::log_delta;
+
+    ExternalEvalKeyMetadata metadata;
+    metadata.key_kind = key_kind;
+    metadata.n = P::n;
+    metadata.nbit = P::nbit;
+    metadata.torus_bits = std::numeric_limits<typename P::T>::digits;
+    metadata.log_delta = Schedule::log_delta;
+    metadata.input_log_q = Schedule::input_log_q;
+    metadata.boot_log_q = Schedule::boot_log_q;
+    metadata.output_log_q = Schedule::output_log_q;
+    metadata.coeff_to_slot_plain_log_delta =
+        Schedule::coeff_to_slot_plain_log_delta;
+    metadata.slot_to_coeff_plain_log_delta =
+        Schedule::slot_to_coeff_plain_log_delta;
+    metadata.evalmod_k = Schedule::evalmod_k;
+    metadata.evalmod_double_angle = Schedule::evalmod_double_angle;
+    metadata.evalmod_inv_degree = Schedule::evalmod_inv_degree;
+    metadata.evalmod_log_scale = Schedule::evalmod_log_scale;
+    metadata.bootstrap_sparse_weight = bootstrap_sparse_weight;
+    metadata.external_sparse_weight = external_sparse_weight;
+    metadata.product_fresh_log_q = fresh_log_q;
+    metadata.product_log_q = product_log_q;
+    metadata.post_bootstrap_product_log_q =
+        Schedule::post_bootstrap_product_log_q;
+    metadata.includes_post_bootstrap_product =
+        includes_post_bootstrap_product ? 1 : 0;
+    return metadata;
+}
+
+void note_external_eval_key_metadata_mismatch(
+    std::vector<std::string> &mismatches, const char *field)
+{
+    mismatches.emplace_back(field);
+}
+
+bool external_eval_key_metadata_core_matches(
+    const ExternalEvalKeyMetadata &stored,
+    const ExternalEvalKeyMetadata &expected,
+    bool require_post_bootstrap_product,
+    std::vector<std::string> &mismatches)
+{
+    if (stored.version != expected.version)
+        note_external_eval_key_metadata_mismatch(mismatches, "version");
+    if (stored.key_kind != expected.key_kind)
+        note_external_eval_key_metadata_mismatch(mismatches, "key_kind");
+    if (stored.n != expected.n)
+        note_external_eval_key_metadata_mismatch(mismatches, "n");
+    if (stored.nbit != expected.nbit)
+        note_external_eval_key_metadata_mismatch(mismatches, "nbit");
+    if (stored.torus_bits != expected.torus_bits)
+        note_external_eval_key_metadata_mismatch(mismatches, "torus_bits");
+    if (stored.log_delta != expected.log_delta)
+        note_external_eval_key_metadata_mismatch(mismatches, "log_delta");
+    if (stored.input_log_q != expected.input_log_q)
+        note_external_eval_key_metadata_mismatch(mismatches, "input_log_q");
+    if (stored.boot_log_q != expected.boot_log_q)
+        note_external_eval_key_metadata_mismatch(mismatches, "boot_log_q");
+    if (stored.output_log_q != expected.output_log_q)
+        note_external_eval_key_metadata_mismatch(mismatches, "output_log_q");
+    if (stored.coeff_to_slot_plain_log_delta !=
+        expected.coeff_to_slot_plain_log_delta)
+        note_external_eval_key_metadata_mismatch(
+            mismatches, "coeff_to_slot_plain_log_delta");
+    if (stored.slot_to_coeff_plain_log_delta !=
+        expected.slot_to_coeff_plain_log_delta)
+        note_external_eval_key_metadata_mismatch(
+            mismatches, "slot_to_coeff_plain_log_delta");
+    if (stored.evalmod_k != expected.evalmod_k)
+        note_external_eval_key_metadata_mismatch(mismatches, "evalmod_k");
+    if (stored.evalmod_double_angle != expected.evalmod_double_angle)
+        note_external_eval_key_metadata_mismatch(mismatches,
+                                                "evalmod_double_angle");
+    if (stored.evalmod_inv_degree != expected.evalmod_inv_degree)
+        note_external_eval_key_metadata_mismatch(mismatches,
+                                                "evalmod_inv_degree");
+    if (stored.evalmod_log_scale != expected.evalmod_log_scale)
+        note_external_eval_key_metadata_mismatch(mismatches,
+                                                "evalmod_log_scale");
+    if (stored.bootstrap_sparse_weight != expected.bootstrap_sparse_weight)
+        note_external_eval_key_metadata_mismatch(mismatches,
+                                                "bootstrap_sparse_weight");
+    if (stored.external_sparse_weight != expected.external_sparse_weight)
+        note_external_eval_key_metadata_mismatch(mismatches,
+                                                "external_sparse_weight");
+    if (stored.product_fresh_log_q != expected.product_fresh_log_q)
+        note_external_eval_key_metadata_mismatch(mismatches,
+                                                "product_fresh_log_q");
+    if (stored.product_log_q != expected.product_log_q)
+        note_external_eval_key_metadata_mismatch(mismatches, "product_log_q");
+    if (stored.post_bootstrap_product_log_q !=
+        expected.post_bootstrap_product_log_q)
+        note_external_eval_key_metadata_mismatch(
+            mismatches, "post_bootstrap_product_log_q");
+    if (stored.includes_post_bootstrap_product > 1)
+        note_external_eval_key_metadata_mismatch(
+            mismatches, "includes_post_bootstrap_product");
+    if (require_post_bootstrap_product &&
+        stored.includes_post_bootstrap_product == 0)
+        note_external_eval_key_metadata_mismatch(
+            mismatches, "missing_post_bootstrap_product_metadata");
+    return mismatches.empty();
+}
+
+void print_external_eval_key_metadata_mismatches(
+    const char *label, const std::filesystem::path &metadata_path,
+    const std::vector<std::string> &mismatches)
+{
+    std::cerr << label << "_metadata_mismatch=" << metadata_path.string()
+              << " fields=" << mismatches.size() << '\n';
+    for (const std::string &field : mismatches)
+        std::cerr << label << "_metadata_mismatch_field=" << field << '\n';
+}
+
+template <class Schedule>
+int validate_external_eval_key_metadata(
+    const std::filesystem::path &root, const char *label, const char *key_kind,
+    std::size_t bootstrap_sparse_weight, std::size_t external_sparse_weight,
+    bool require_post_bootstrap_product)
+{
+    const std::filesystem::path metadata_path =
+        external_eval_key_metadata_file(root);
+    if (!std::filesystem::exists(metadata_path)) {
+        std::cerr << label << "_metadata_missing="
+                  << metadata_path.string() << '\n';
+        return 2;
+    }
+
+    ExternalEvalKeyMetadata stored;
+    if (!read_external_eval_key_metadata(root, stored)) {
+        std::cerr << label << "_metadata_unreadable="
+                  << metadata_path.string() << '\n';
+        return 2;
+    }
+
+    const ExternalEvalKeyMetadata expected =
+        build_external_eval_key_metadata<Schedule>(
+            key_kind, bootstrap_sparse_weight, external_sparse_weight,
+            require_post_bootstrap_product);
+    std::vector<std::string> mismatches;
+    if (!external_eval_key_metadata_core_matches(
+            stored, expected, require_post_bootstrap_product, mismatches)) {
+        print_external_eval_key_metadata_mismatches(label, metadata_path,
+                                                    mismatches);
+        return 2;
+    }
+    return 0;
+}
+
+std::size_t external_eval_key_regular_file_count(
+    const std::filesystem::path &root)
+{
+    if (!std::filesystem::exists(root)) return 0;
+    std::size_t count = 0;
+    for (const auto &entry : std::filesystem::directory_iterator(root)) {
+        if (entry.is_regular_file() &&
+            !is_external_eval_key_metadata_file(entry.path()))
+            count++;
+    }
+    return count;
+}
+
+template <class Schedule>
+int validate_external_eval_key_metadata_for_write(
+    const std::filesystem::path &root, const char *label, const char *key_kind,
+    std::size_t bootstrap_sparse_weight, std::size_t external_sparse_weight,
+    bool include_post_bootstrap_product,
+    bool &metadata_includes_post_bootstrap_product)
+{
+    const std::filesystem::path metadata_path =
+        external_eval_key_metadata_file(root);
+    metadata_includes_post_bootstrap_product =
+        include_post_bootstrap_product;
+
+    if (!std::filesystem::exists(metadata_path)) {
+        const std::size_t existing_files =
+            external_eval_key_regular_file_count(root);
+        if (existing_files != 0) {
+            std::cerr << label << "_metadata_missing="
+                      << metadata_path.string()
+                      << " existing_eval_key_files=" << existing_files
+                      << '\n';
+            return 2;
+        }
+        return 0;
+    }
+
+    ExternalEvalKeyMetadata stored;
+    if (!read_external_eval_key_metadata(root, stored)) {
+        std::cerr << label << "_metadata_unreadable="
+                  << metadata_path.string() << '\n';
+        return 2;
+    }
+
+    const ExternalEvalKeyMetadata expected =
+        build_external_eval_key_metadata<Schedule>(
+            key_kind, bootstrap_sparse_weight, external_sparse_weight, false);
+    std::vector<std::string> mismatches;
+    if (!external_eval_key_metadata_core_matches(stored, expected, false,
+                                                 mismatches)) {
+        print_external_eval_key_metadata_mismatches(label, metadata_path,
+                                                    mismatches);
+        return 2;
+    }
+
+    metadata_includes_post_bootstrap_product =
+        include_post_bootstrap_product ||
+        stored.includes_post_bootstrap_product != 0;
+    return 0;
+}
+
 std::uintmax_t directory_size_bytes(const std::filesystem::path &root)
 {
     if (!std::filesystem::exists(root)) return 0;
@@ -1570,8 +1940,10 @@ void print_created_key_files(
     if (shown > limit) std::cout << "created_file_more=" << shown - limit << '\n';
 }
 
+template <class Schedule>
 int validate_hybrid_external_eval_key_files(
-    const HybridExternalEvalKeyFiles &files, bool require_post_bootstrap_product)
+    const HybridExternalEvalKeyFiles &files, std::size_t bootstrap_sparse_weight,
+    bool require_post_bootstrap_product)
 {
     std::vector<std::filesystem::path> missing;
     if (!std::filesystem::exists(files.encapsulation_key))
@@ -1582,18 +1954,25 @@ int validate_hybrid_external_eval_key_files(
         !std::filesystem::exists(files.post_bootstrap_product_relin_key))
         missing.push_back(files.post_bootstrap_product_relin_key);
 
-    if (missing.empty()) return 0;
-
-    std::cerr << "hybrid_external_eval_key_incomplete=" << files.root.string()
-              << " missing=" << missing.size() << '\n';
-    for (const std::filesystem::path &path : missing)
-        std::cerr << "missing_hybrid_external_eval_key_file=" << path.string()
+    if (!missing.empty()) {
+        std::cerr << "hybrid_external_eval_key_incomplete="
+                  << files.root.string() << " missing=" << missing.size()
                   << '\n';
-    return 2;
+        for (const std::filesystem::path &path : missing)
+            std::cerr << "missing_hybrid_external_eval_key_file="
+                      << path.string() << '\n';
+        return 2;
+    }
+
+    return validate_external_eval_key_metadata<Schedule>(
+        files.root, "hybrid_external_eval_key", "hybrid",
+        bootstrap_sparse_weight, 0, require_post_bootstrap_product);
 }
 
+template <class Schedule>
 int validate_seeded_external_eval_key_files(
-    const SeededExternalEvalKeyFiles &files, bool require_post_bootstrap_product)
+    const SeededExternalEvalKeyFiles &files, std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight, bool require_post_bootstrap_product)
 {
     std::vector<std::filesystem::path> missing;
     if (!std::filesystem::exists(files.encapsulation_key))
@@ -1604,14 +1983,20 @@ int validate_seeded_external_eval_key_files(
         !std::filesystem::exists(files.post_bootstrap_product_relin_key))
         missing.push_back(files.post_bootstrap_product_relin_key);
 
-    if (missing.empty()) return 0;
-
-    std::cerr << "seeded_external_eval_key_incomplete=" << files.root.string()
-              << " missing=" << missing.size() << '\n';
-    for (const std::filesystem::path &path : missing)
-        std::cerr << "missing_seeded_external_eval_key_file=" << path.string()
+    if (!missing.empty()) {
+        std::cerr << "seeded_external_eval_key_incomplete="
+                  << files.root.string() << " missing=" << missing.size()
                   << '\n';
-    return 2;
+        for (const std::filesystem::path &path : missing)
+            std::cerr << "missing_seeded_external_eval_key_file="
+                      << path.string() << '\n';
+        return 2;
+    }
+
+    return validate_external_eval_key_metadata<Schedule>(
+        files.root, "seeded_external_eval_key", "seeded",
+        bootstrap_sparse_weight, external_sparse_weight,
+        require_post_bootstrap_product);
 }
 
 template <class P, std::uint32_t LogQ>
@@ -3101,6 +3486,14 @@ int run_hybrid_external_eval_keygen(const std::filesystem::path &key_dir,
             "hybrid-external-eval-keygen");
         status != 0)
         return status;
+    bool metadata_includes_post_bootstrap_product = false;
+    if (const int status = validate_external_eval_key_metadata_for_write<
+            Schedule>(
+            files.root, "hybrid_external_eval_key", "hybrid",
+            bootstrap_sparse_weight, 0, include_post_bootstrap_product,
+            metadata_includes_post_bootstrap_product);
+        status != 0)
+        return status;
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
@@ -3165,7 +3558,10 @@ int run_hybrid_external_eval_keygen(const std::filesystem::path &key_dir,
                          P, PostBootstrapProductCt::log_q>()
                   << '\n';
     }
-    return 0;
+    return write_external_eval_key_metadata(
+        files.root, build_external_eval_key_metadata<Schedule>(
+                        "hybrid", bootstrap_sparse_weight, 0,
+                        metadata_includes_post_bootstrap_product));
 }
 
 template <class Schedule>
@@ -3214,7 +3610,15 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
 
     double encap_keygen_ms = 0.0;
     double relin_keygen_ms = 0.0;
+    bool metadata_includes_post_bootstrap_product = false;
     if (generate_eval_keys) {
+        if (const int status =
+                validate_external_eval_key_metadata_for_write<Schedule>(
+                    eval_key_files.root, "hybrid_external_eval_key", "hybrid",
+                    bootstrap_sparse_weight, 0, false,
+                    metadata_includes_post_bootstrap_product);
+            status != 0)
+            return status;
         encap_keygen_ms = elapsed_ms([&] {
             TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
                 eval_key_files.encapsulation_key, *external_key,
@@ -3226,10 +3630,19 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
                 eval_key_options);
         });
     }
-    else if (const int status = validate_hybrid_external_eval_key_files(
-                 eval_key_files, false);
+    else if (const int status = validate_hybrid_external_eval_key_files<
+                 Schedule>(eval_key_files, bootstrap_sparse_weight, false);
              status != 0) {
         return status;
+    }
+    if (generate_eval_keys) {
+        if (const int status = write_external_eval_key_metadata(
+                eval_key_files.root,
+                build_external_eval_key_metadata<Schedule>(
+                    "hybrid", bootstrap_sparse_weight, 0,
+                    metadata_includes_post_bootstrap_product));
+            status != 0)
+            return status;
     }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -3336,6 +3749,15 @@ int run_seeded_hybrid_external_eval_keygen(
             "seeded-external-eval-keygen");
         status != 0)
         return status;
+    bool metadata_includes_post_bootstrap_product = false;
+    if (const int status = validate_external_eval_key_metadata_for_write<
+            Schedule>(
+            files.root, "seeded_external_eval_key", "seeded",
+            bootstrap_sparse_weight, external_sparse_weight,
+            include_post_bootstrap_product,
+            metadata_includes_post_bootstrap_product);
+        status != 0)
+        return status;
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
@@ -3407,7 +3829,11 @@ int run_seeded_hybrid_external_eval_keygen(
                          P, PostBootstrapProductCt::log_q>()
                   << '\n';
     }
-    return 0;
+    return write_external_eval_key_metadata(
+        files.root, build_external_eval_key_metadata<Schedule>(
+                        "seeded", bootstrap_sparse_weight,
+                        external_sparse_weight,
+                        metadata_includes_post_bootstrap_product));
 }
 
 template <class Schedule, bool Streamed>
@@ -3471,7 +3897,15 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
 
     double encap_keygen_ms = 0.0;
     double relin_keygen_ms = 0.0;
+    bool metadata_includes_post_bootstrap_product = false;
     if (generate_eval_keys) {
+        if (const int status =
+                validate_external_eval_key_metadata_for_write<Schedule>(
+                    eval_key_files.root, "seeded_external_eval_key", "seeded",
+                    bootstrap_sparse_weight, external_sparse_weight, false,
+                    metadata_includes_post_bootstrap_product);
+            status != 0)
+            return status;
         encap_keygen_ms =
             elapsed_ms_with_progress("seeded_product", "encapsulation_keygen",
                                      [&] {
@@ -3489,10 +3923,20 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
                     eval_key_options);
             });
     }
-    else if (const int status = validate_seeded_external_eval_key_files(
-                 eval_key_files, false);
+    else if (const int status = validate_seeded_external_eval_key_files<
+                 Schedule>(eval_key_files, bootstrap_sparse_weight,
+                            external_sparse_weight, false);
              status != 0) {
         return status;
+    }
+    if (generate_eval_keys) {
+        if (const int status = write_external_eval_key_metadata(
+                eval_key_files.root,
+                build_external_eval_key_metadata<Schedule>(
+                    "seeded", bootstrap_sparse_weight, external_sparse_weight,
+                    metadata_includes_post_bootstrap_product));
+            status != 0)
+            return status;
     }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -4547,7 +4991,15 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     double encap_keygen_ms = 0.0;
     double product_relin_keygen_ms = 0.0;
     double post_relin_keygen_ms = 0.0;
+    bool metadata_includes_post_bootstrap_product = false;
     if (generate_eval_keys) {
+        if (const int status =
+                validate_external_eval_key_metadata_for_write<Schedule>(
+                    eval_key_files.root, "hybrid_external_eval_key", "hybrid",
+                    bootstrap_sparse_weight, 0, true,
+                    metadata_includes_post_bootstrap_product);
+            status != 0)
+            return status;
         encap_keygen_ms = elapsed_ms([&] {
             TFHEpp::CKKSDenseBootstrapEncapsulationKeyGenToFile<Schedule>(
                 eval_key_files.encapsulation_key, *external_key,
@@ -4563,12 +5015,21 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
                                           PostBootstrapProductCt::log_q>(
                 eval_key_files.post_bootstrap_product_relin_key,
                 *external_key, {P::α, 0}, eval_key_options);
-        });
+            });
     }
-    else if (const int status = validate_hybrid_external_eval_key_files(
-                 eval_key_files, true);
+    else if (const int status = validate_hybrid_external_eval_key_files<
+                 Schedule>(eval_key_files, bootstrap_sparse_weight, true);
              status != 0) {
         return status;
+    }
+    if (generate_eval_keys) {
+        if (const int status = write_external_eval_key_metadata(
+                eval_key_files.root,
+                build_external_eval_key_metadata<Schedule>(
+                    "hybrid", bootstrap_sparse_weight, 0,
+                    metadata_includes_post_bootstrap_product));
+            status != 0)
+            return status;
     }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -4742,7 +5203,15 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     double encap_keygen_ms = 0.0;
     double product_relin_keygen_ms = 0.0;
     double post_relin_keygen_ms = 0.0;
+    bool metadata_includes_post_bootstrap_product = false;
     if (generate_eval_keys) {
+        if (const int status =
+                validate_external_eval_key_metadata_for_write<Schedule>(
+                    eval_key_files.root, "seeded_external_eval_key", "seeded",
+                    bootstrap_sparse_weight, external_sparse_weight, true,
+                    metadata_includes_post_bootstrap_product);
+            status != 0)
+            return status;
         encap_keygen_ms =
             elapsed_ms_with_progress("seeded_eval_keygen", "encapsulation",
                                      [&] {
@@ -4771,10 +5240,20 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
                     *external_key, {P::α, 0}, eval_key_options);
             });
     }
-    else if (const int status = validate_seeded_external_eval_key_files(
-                 eval_key_files, true);
+    else if (const int status = validate_seeded_external_eval_key_files<
+                 Schedule>(eval_key_files, bootstrap_sparse_weight,
+                            external_sparse_weight, true);
              status != 0) {
         return status;
+    }
+    if (generate_eval_keys) {
+        if (const int status = write_external_eval_key_metadata(
+                eval_key_files.root,
+                build_external_eval_key_metadata<Schedule>(
+                    "seeded", bootstrap_sparse_weight, external_sparse_weight,
+                    metadata_includes_post_bootstrap_product));
+            status != 0)
+            return status;
     }
 
     auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -6211,6 +6690,38 @@ int run_toy_schedule_seeded_hybrid_streamed_encapsulated_product_bootstrap_valid
     return err <= tol ? 0 : 1;
 }
 
+int write_unmanaged_external_eval_key_marker(
+    const std::filesystem::path &root, const char *label)
+{
+    std::filesystem::create_directories(root);
+    const std::filesystem::path marker = root / "unmanaged_eval_key.bin";
+    std::ofstream output(marker, std::ios::trunc);
+    output << "unmanaged\n";
+    if (output) return 0;
+    std::cerr << label << "_unmanaged_eval_key_marker_write_failed="
+              << marker.string() << '\n';
+    return 1;
+}
+
+int corrupt_external_eval_key_metadata(
+    const std::filesystem::path &root, const char *label,
+    bool corrupt_external_sparse_weight)
+{
+    ExternalEvalKeyMetadata metadata;
+    if (!read_external_eval_key_metadata(root, metadata)) {
+        std::cerr << label << "_metadata_read_failed="
+                  << external_eval_key_metadata_file(root).string() << '\n';
+        return 1;
+    }
+
+    if (corrupt_external_sparse_weight)
+        metadata.external_sparse_weight++;
+    else
+        metadata.bootstrap_sparse_weight++;
+
+    return write_external_eval_key_metadata(root, metadata) == 0 ? 0 : 1;
+}
+
 template <class Schedule>
 int run_toy_schedule_hybrid_prebuilt_product_validation(
     bool keep_dir, const char *label, const char *directory_name, double tol)
@@ -6241,6 +6752,43 @@ int run_toy_schedule_hybrid_prebuilt_product_validation(
         if (!keep_dir) std::filesystem::remove_all(key_dir);
         return 1;
     }
+
+    const HybridExternalEvalKeyFiles eval_key_files =
+        hybrid_external_eval_key_files(key_dir);
+    if (write_unmanaged_external_eval_key_marker(eval_key_files.root, label) !=
+        0) {
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+    if (run_hybrid_external_eval_keygen<Schedule>(
+            key_dir, bootstrap_sparse_weight, false) == 0) {
+        std::cerr << label
+                  << "_evalkeygen_accepted_unmanaged_eval_key_files\n";
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+    std::filesystem::remove_all(eval_key_files.root);
+
+    if (run_hybrid_external_eval_keygen<Schedule>(
+            key_dir, bootstrap_sparse_weight, false) != 0) {
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+
+    if (corrupt_external_eval_key_metadata(eval_key_files.root, label,
+                                           false) != 0) {
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+    const int mismatched_metadata_status =
+        run_hybrid_filesystem_encapsulated_product_bootstrap<Schedule>(
+            key_dir, tol, bootstrap_sparse_weight, false);
+    if (mismatched_metadata_status == 0) {
+        std::cerr << label << "_prebuilt_run_accepted_metadata_mismatch\n";
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+    std::filesystem::remove_all(eval_key_files.root);
 
     if (run_hybrid_external_eval_keygen<Schedule>(
             key_dir, bootstrap_sparse_weight, false) != 0) {
@@ -6288,6 +6836,47 @@ int run_toy_schedule_seeded_hybrid_streamed_prebuilt_product_validation(
         if (!keep_dir) std::filesystem::remove_all(key_dir);
         return 1;
     }
+
+    const SeededExternalEvalKeyFiles eval_key_files =
+        seeded_external_eval_key_files<Schedule>(key_dir,
+                                                 external_sparse_weight);
+    if (write_unmanaged_external_eval_key_marker(eval_key_files.root, label) !=
+        0) {
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+    if (run_seeded_hybrid_external_eval_keygen<Schedule, true>(
+            key_dir, bootstrap_sparse_weight, external_sparse_weight,
+            false) == 0) {
+        std::cerr << label
+                  << "_evalkeygen_accepted_unmanaged_eval_key_files\n";
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+    std::filesystem::remove_all(eval_key_files.root);
+
+    if (run_seeded_hybrid_external_eval_keygen<Schedule, true>(
+            key_dir, bootstrap_sparse_weight, external_sparse_weight,
+            false) != 0) {
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+
+    if (corrupt_external_eval_key_metadata(eval_key_files.root, label,
+                                           true) != 0) {
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+    const int mismatched_metadata_status =
+        run_seeded_hybrid_streamed_filesystem_encapsulated_product_bootstrap<
+            Schedule>(key_dir, tol, bootstrap_sparse_weight,
+                      external_sparse_weight, false);
+    if (mismatched_metadata_status == 0) {
+        std::cerr << label << "_prebuilt_run_accepted_metadata_mismatch\n";
+        if (!keep_dir) std::filesystem::remove_all(key_dir);
+        return 1;
+    }
+    std::filesystem::remove_all(eval_key_files.root);
 
     if (run_seeded_hybrid_external_eval_keygen<Schedule, true>(
             key_dir, bootstrap_sparse_weight, external_sparse_weight,
