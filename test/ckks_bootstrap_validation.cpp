@@ -3648,10 +3648,10 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
 
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings product_timings;
-    TFHEpp::CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<
-        Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
-                  eval_key_files.encapsulation_key,
-                  eval_key_files.product_relin_key, product_timings);
+    TFHEpp::
+        CKKSDenseBootstrapProductWithHybridGiantFilesystemEvalKeyDirectoryTimed<
+            Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
+                      eval_key_files.root, product_timings);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     const double decrypt_ms = elapsed_ms([&] {
@@ -3948,19 +3948,15 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
         bootstrap_progress_begin, bootstrap_progress_end, &progress_printer};
     if constexpr (Streamed) {
         TFHEpp::
-            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
-                          eval_key_files.encapsulation_key,
-                          eval_key_files.product_relin_key,
-                          product_timings, &progress);
+                          eval_key_files.root, product_timings, &progress);
     }
     else {
         TFHEpp::
-            CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+            CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
-                          eval_key_files.encapsulation_key,
-                          eval_key_files.product_relin_key,
-                          product_timings, &progress);
+                          eval_key_files.root, product_timings, &progress);
     }
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -5038,11 +5034,10 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     auto first_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings first_product_timings;
-    TFHEpp::CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<
-        Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
-                  eval_key_files.encapsulation_key,
-                  eval_key_files.product_relin_key,
-                  first_product_timings);
+    TFHEpp::
+        CKKSDenseBootstrapProductWithHybridGiantFilesystemEvalKeyDirectoryTimed<
+            Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
+                      eval_key_files.root, first_product_timings);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     const double first_decrypt_ms = elapsed_ms([&] {
@@ -5055,11 +5050,10 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     auto chained_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings chained_product_timings;
-    TFHEpp::CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<
-        Schedule>(*chained_output, *first_output, *first_output, key_dir,
-                  eval_key_files.encapsulation_key,
-                  eval_key_files.post_bootstrap_product_relin_key,
-                  chained_product_timings);
+    TFHEpp::
+        CKKSDenseBootstrapPostBootstrapProductWithHybridGiantFilesystemEvalKeyDirectoryTimed<
+            Schedule>(*chained_output, *first_output, *first_output, key_dir,
+                      eval_key_files.root, chained_product_timings);
 
     const double chained_decrypt_ms = elapsed_ms([&] {
         TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
@@ -5270,19 +5264,17 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
         &first_progress_printer};
     if constexpr (Streamed) {
         TFHEpp::
-            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
-                          eval_key_files.encapsulation_key,
-                          eval_key_files.product_relin_key,
-                          first_product_timings, &first_progress);
+                          eval_key_files.root, first_product_timings,
+                          &first_progress);
     }
     else {
         TFHEpp::
-            CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+            CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
-                          eval_key_files.encapsulation_key,
-                          eval_key_files.product_relin_key,
-                          first_product_timings, &first_progress);
+                          eval_key_files.root, first_product_timings,
+                          &first_progress);
     }
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -5304,18 +5296,16 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
         &chained_progress_printer};
     if constexpr (Streamed) {
         TFHEpp::
-            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+            CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*chained_output, *first_output, *first_output,
-                          key_dir, eval_key_files.encapsulation_key,
-                          eval_key_files.post_bootstrap_product_relin_key,
+                          key_dir, eval_key_files.root,
                           chained_product_timings, &chained_progress);
     }
     else {
         TFHEpp::
-            CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+            CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*chained_output, *first_output, *first_output,
-                          key_dir, eval_key_files.encapsulation_key,
-                          eval_key_files.post_bootstrap_product_relin_key,
+                          key_dir, eval_key_files.root,
                           chained_product_timings, &chained_progress);
     }
 
