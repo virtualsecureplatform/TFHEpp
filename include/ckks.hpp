@@ -14099,6 +14099,85 @@ inline void CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed(
 template <class Schedule, std::uint32_t LhsLogQ,
           std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
           std::uint32_t RhsLogDelta>
+inline void CKKSDenseBootstrapProductWithHybridGiantFilesystemEvalKeyDirectory(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
+    CKKSDenseBootstrapProductWithHybridGiantFilesystemKey<Schedule>(
+        res, lhs, rhs, key_dir, files.encapsulation_key,
+        files.product_relin_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapProductWithHybridGiantFilesystemEvalKeyDirectoryTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir,
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
+    CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<Schedule>(
+        res, lhs, rhs, key_dir, files.encapsulation_key,
+        files.product_relin_key, timings, progress);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapPostBootstrapProductWithHybridGiantFilesystemEvalKeyDirectory(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
+    CKKSDenseBootstrapProductWithHybridGiantFilesystemKey<Schedule>(
+        res, lhs, rhs, key_dir, files.encapsulation_key,
+        files.post_bootstrap_product_relin_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapPostBootstrapProductWithHybridGiantFilesystemEvalKeyDirectoryTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir,
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
+    CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<Schedule>(
+        res, lhs, rhs, key_dir, files.encapsulation_key,
+        files.post_bootstrap_product_relin_key, timings, progress);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
 inline void CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemKey(
     typename Schedule::OutputCiphertext &res,
     const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
@@ -14186,6 +14265,86 @@ CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed(
     CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProviderTimed<
         Schedule>(res, lhs, rhs, relin_key_file, provider, *encapsulation_key,
                   timings, progress);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectory(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
+    CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeys<
+        Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
+                  files.product_relin_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectoryTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir,
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
+    CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+        Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
+                  files.product_relin_key, timings, progress);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectory(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
+    CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeys<
+        Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
+                  files.post_bootstrap_product_relin_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectoryTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir,
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
+    CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
+        Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
+                  files.post_bootstrap_product_relin_key, timings, progress);
 }
 
 template <class Schedule, std::uint32_t LhsLogQ,
@@ -14279,6 +14438,86 @@ CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed(
     CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProviderTimed<
         Schedule>(res, lhs, rhs, relin_key_file, provider, *encapsulation_key,
                   timings, progress);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectory(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
+    CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeys<
+        Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
+                  files.product_relin_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir,
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
+    CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+        Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
+                  files.product_relin_key, timings, progress);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectory(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
+    CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeys<
+        Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
+                  files.post_bootstrap_product_relin_key);
+}
+
+template <class Schedule, std::uint32_t LhsLogQ,
+          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
+          std::uint32_t RhsLogDelta>
+inline void
+CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
+    const std::filesystem::path &key_dir,
+    const std::filesystem::path &eval_key_dir,
+    CKKSDenseBootstrapProductTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
+{
+    const CKKSDenseBootstrapProductEvalKeyFiles files =
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
+    CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+        Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
+                  files.post_bootstrap_product_relin_key, timings, progress);
 }
 
 template <class Schedule>

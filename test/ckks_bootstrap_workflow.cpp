@@ -235,10 +235,10 @@ int main()
     auto bootstrapped = std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings timings;
     TFHEpp::
-        CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+        CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
             Schedule>(
-        *bootstrapped, *lhs_ct, *rhs_ct, bootstrap_key_dir,
-        encapsulation_key_file, relin_key_file, timings);
+        *bootstrapped, *lhs_ct, *rhs_ct, bootstrap_key_dir, eval_key_dir,
+        timings);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
@@ -250,11 +250,10 @@ int main()
         std::make_unique<typename Schedule::OutputCiphertext>();
     TFHEpp::CKKSDenseBootstrapProductTimings chained_timings;
     TFHEpp::
-        CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
+        CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
             Schedule>(
         *chained_bootstrapped, *bootstrapped, *bootstrapped, bootstrap_key_dir,
-        encapsulation_key_file, post_bootstrap_relin_key_file,
-        chained_timings);
+        eval_key_dir, chained_timings);
     TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
         *decoded, *chained_bootstrapped, *external_key);
     const double chained_err = max_error<P>(*decoded, *chained_expected);
