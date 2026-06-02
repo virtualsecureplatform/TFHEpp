@@ -4868,6 +4868,16 @@ struct CKKSDenseBootstrapSchedule {
     static constexpr int linear_bsgs_step = LinearBSGSStep;
     static constexpr int hybrid_giant_direct_popcount_threshold =
         HybridGiantDirectPopcountThreshold;
+    template <std::size_t I>
+    static consteval int coeff_to_slot_bsgs_step()
+    {
+        return LinearBSGSStep;
+    }
+    template <std::size_t I>
+    static consteval int slot_to_coeff_bsgs_step()
+    {
+        return LinearBSGSStep;
+    }
     static constexpr std::uint32_t raw_linear_stage_count = P::nbit - 1;
     static constexpr std::uint32_t coeff_to_slot_level_count =
         ckks_detail::ceil_div(raw_linear_stage_count, CoeffToSlotFuseRadix);
@@ -4968,9 +4978,21 @@ using lvl6CKKSDenseBootstrapSchedule =
 using lvl6CKKSDenseBootstrapInverseSchedule =
     CKKSDenseBootstrapSchedule<lvl6param, 40, 8, 880, 40, 5, 52, 18, 4, 3, 40,
                                128, 0, 50, 50, 20, 5, 5, 3>;
-using lvl6CKKSDenseBootstrapTunedSchedule =
-    CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7,
-                               52, 128, 0, 52, 52, 30, 7, 7, 2>;
+struct lvl6CKKSDenseBootstrapTunedSchedule
+    : CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7,
+                                 52, 128, 0, 52, 52, 30, 7, 7, 2> {
+    template <std::size_t I>
+    static consteval int coeff_to_slot_bsgs_step()
+    {
+        return I == 0 ? 512 : 64;
+    }
+
+    template <std::size_t I>
+    static consteval int slot_to_coeff_bsgs_step()
+    {
+        return I + 1 == slot_to_coeff_level_count ? 512 : 64;
+    }
+};
 
 struct CKKSBoundedCosEvalModPolynomial {
     std::uint32_t k = 0;
@@ -5206,6 +5228,56 @@ struct CKKSDenseBootstrapLinearPlan {
     }
 };
 
+namespace ckks_detail {
+
+template <std::size_t I, class Schedule>
+consteval int CKKSDenseBootstrapCoeffToSlotBSGSStep()
+{
+    if constexpr (requires { Schedule::template coeff_to_slot_bsgs_step<I>(); })
+        return Schedule::template coeff_to_slot_bsgs_step<I>();
+    else
+        return Schedule::linear_bsgs_step;
+}
+
+template <std::size_t I, class Schedule>
+consteval int CKKSDenseBootstrapSlotToCoeffBSGSStep()
+{
+    if constexpr (requires { Schedule::template slot_to_coeff_bsgs_step<I>(); })
+        return Schedule::template slot_to_coeff_bsgs_step<I>();
+    else
+        return Schedule::linear_bsgs_step;
+}
+
+template <class Schedule, std::size_t I = 0>
+constexpr int CKKSDenseBootstrapCoeffToSlotBSGSStepAt(std::size_t index)
+{
+    if constexpr (I >= Schedule::coeff_to_slot_level_count) {
+        return Schedule::linear_bsgs_step;
+    }
+    else {
+        return index == I
+                   ? CKKSDenseBootstrapCoeffToSlotBSGSStep<I, Schedule>()
+                   : CKKSDenseBootstrapCoeffToSlotBSGSStepAt<Schedule, I + 1>(
+                         index);
+    }
+}
+
+template <class Schedule, std::size_t I = 0>
+constexpr int CKKSDenseBootstrapSlotToCoeffBSGSStepAt(std::size_t index)
+{
+    if constexpr (I >= Schedule::slot_to_coeff_level_count) {
+        return Schedule::linear_bsgs_step;
+    }
+    else {
+        return index == I
+                   ? CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>()
+                   : CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule, I + 1>(
+                         index);
+    }
+}
+
+}  // namespace ckks_detail
+
 template <class Schedule>
 struct CKKSDenseBootstrapRotationKeyUsage {
     using P = typename Schedule::Param;
@@ -5315,17 +5387,22 @@ inline void CKKSBuildDenseBootstrapRotationKeyUsage(
     for (std::size_t i = 0; i < linear_plan.coeff_to_slot_stages.size(); i++) {
         CKKSCollectLinearTransformStageRotationKeyIndices<P>(
             usage.coeff_to_slot[i], usage.coeff_to_slot[i + 1],
-            linear_plan.coeff_to_slot_stages[i], Schedule::linear_bsgs_step);
+            linear_plan.coeff_to_slot_stages[i],
+            ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStepAt<Schedule>(
+                i));
     }
     CKKSMarkConjugationKeyIndex<P>(usage.packed_conjugate);
     for (std::size_t i = 0; i < linear_plan.slot_to_coeff_stages.size(); i++) {
         CKKSCollectLinearTransformStageRotationKeyIndices<P>(
             usage.slot_to_coeff[i], usage.slot_to_coeff[i + 1],
-            linear_plan.slot_to_coeff_stages[i], Schedule::linear_bsgs_step);
+            linear_plan.slot_to_coeff_stages[i],
+            ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule>(
+                i));
         CKKSCollectLinearTransformStageRotationKeyIndices<P>(
             usage.slot_to_coeff[i], usage.slot_to_coeff[i + 1],
             linear_plan.slot_to_coeff_imag_stages[i],
-            Schedule::linear_bsgs_step);
+            ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule>(
+                i));
     }
 }
 
@@ -5342,17 +5419,22 @@ inline void CKKSBuildDenseBootstrapDirectRotationKeyUsage(
     for (std::size_t i = 0; i < linear_plan.coeff_to_slot_stages.size(); i++) {
         CKKSCollectLinearTransformStageDirectRotationKeyIndices<P>(
             usage.coeff_to_slot[i], usage.coeff_to_slot[i + 1],
-            linear_plan.coeff_to_slot_stages[i], Schedule::linear_bsgs_step);
+            linear_plan.coeff_to_slot_stages[i],
+            ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStepAt<Schedule>(
+                i));
     }
     CKKSMarkConjugationKeyIndex<P>(usage.packed_conjugate);
     for (std::size_t i = 0; i < linear_plan.slot_to_coeff_stages.size(); i++) {
         CKKSCollectLinearTransformStageDirectRotationKeyIndices<P>(
             usage.slot_to_coeff[i], usage.slot_to_coeff[i + 1],
-            linear_plan.slot_to_coeff_stages[i], Schedule::linear_bsgs_step);
+            linear_plan.slot_to_coeff_stages[i],
+            ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule>(
+                i));
         CKKSCollectLinearTransformStageDirectRotationKeyIndices<P>(
             usage.slot_to_coeff[i], usage.slot_to_coeff[i + 1],
             linear_plan.slot_to_coeff_imag_stages[i],
-            Schedule::linear_bsgs_step);
+            ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule>(
+                i));
     }
 }
 
@@ -5372,7 +5454,8 @@ inline void CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage(
         CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
             usage.coeff_to_slot_binary[i], usage.coeff_to_slot_binary[i + 1],
             usage.coeff_to_slot_direct[i + 1],
-            linear_plan.coeff_to_slot_stages[i], Schedule::linear_bsgs_step,
+            linear_plan.coeff_to_slot_stages[i],
+            ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStepAt<Schedule>(i),
             Schedule::hybrid_giant_direct_popcount_threshold);
     }
     CKKSMarkConjugationKeyIndex<P>(usage.packed_conjugate);
@@ -5380,13 +5463,14 @@ inline void CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage(
         CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
             usage.slot_to_coeff_binary[i], usage.slot_to_coeff_binary[i + 1],
             usage.slot_to_coeff_direct[i + 1],
-            linear_plan.slot_to_coeff_stages[i], Schedule::linear_bsgs_step,
+            linear_plan.slot_to_coeff_stages[i],
+            ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule>(i),
             Schedule::hybrid_giant_direct_popcount_threshold);
         CKKSCollectLinearTransformStageHybridGiantRotationKeyIndices<P>(
             usage.slot_to_coeff_binary[i], usage.slot_to_coeff_binary[i + 1],
             usage.slot_to_coeff_direct[i + 1],
             linear_plan.slot_to_coeff_imag_stages[i],
-            Schedule::linear_bsgs_step,
+            ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStepAt<Schedule>(i),
             Schedule::hybrid_giant_direct_popcount_threshold);
     }
 }
@@ -10347,6 +10431,158 @@ inline void CKKSTimeBootstrapStage(double *duration_ms, F &&stage)
         std::chrono::duration<double, std::milli>(stop - start).count();
 }
 
+template <std::size_t I, class Schedule, class GaloisKeyChain>
+inline void CKKSDenseBootstrapCoeffToSlotStagesBSGSImpl(
+    typename Schedule::CoeffToSlotCiphertext &res,
+    const CKKSCiphertext<
+        typename Schedule::Param,
+        Schedule::boot_log_q -
+            I * Schedule::coeff_to_slot_plain_log_delta,
+        Schedule::log_delta> &ct,
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
+    const GaloisKeyChain &gk_chain)
+{
+    using P = typename Schedule::Param;
+    if constexpr (I == Schedule::coeff_to_slot_level_count) {
+        res = ct;
+    }
+    else {
+        constexpr std::uint32_t log_q =
+            Schedule::boot_log_q -
+            I * Schedule::coeff_to_slot_plain_log_delta;
+        constexpr int k_step =
+            CKKSDenseBootstrapCoeffToSlotBSGSStep<I, Schedule>();
+        CKKSLinearTransformPlan<P, log_q, Schedule::log_delta,
+                                Schedule::coeff_to_slot_plain_log_delta>
+            plan;
+        CKKSBuildLinearTransformBSGSPlan<
+            P, log_q, Schedule::log_delta,
+            Schedule::coeff_to_slot_plain_log_delta>(
+            plan, linear_plan.coeff_to_slot_stages[I], k_step);
+
+        auto next = std::make_unique<CKKSPlainMulResult<
+            P, log_q, Schedule::log_delta,
+            Schedule::coeff_to_slot_plain_log_delta>>();
+        CKKSLinearTransformBSGS<
+            P, log_q, Schedule::log_delta,
+            Schedule::coeff_to_slot_plain_log_delta>(
+            *next, ct, plan, gk_chain.template get<I>(),
+            gk_chain.template get<I + 1>());
+        maybe_release_key<I>(gk_chain);
+        if constexpr (I + 1 == Schedule::coeff_to_slot_level_count) {
+            maybe_release_key<I + 1>(gk_chain);
+        }
+        CKKSDenseBootstrapCoeffToSlotStagesBSGSImpl<I + 1, Schedule>(
+            res, *next, linear_plan, gk_chain);
+    }
+}
+
+template <class Schedule, class GaloisKeyChain>
+inline void CKKSDenseBootstrapCoeffToSlotStagesBSGS(
+    typename Schedule::CoeffToSlotCiphertext &res,
+    const typename Schedule::BootstrapCiphertext &ct,
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
+    const GaloisKeyChain &gk_chain)
+{
+    CKKSDenseBootstrapCoeffToSlotStagesBSGSImpl<0, Schedule>(
+        res, ct, linear_plan, gk_chain);
+}
+
+template <std::size_t I, class Schedule, class GaloisKeyChain>
+inline void CKKSDenseBootstrapSlotToCoeffTailStagesBSGSImpl(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSCiphertext<
+        typename Schedule::Param,
+        Schedule::after_evalmod_log_q -
+            I * Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::log_delta> &ct,
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
+    const GaloisKeyChain &gk_chain)
+{
+    using P = typename Schedule::Param;
+    if constexpr (I == Schedule::slot_to_coeff_level_count) {
+        res = ct;
+    }
+    else {
+        constexpr std::uint32_t log_q =
+            Schedule::after_evalmod_log_q -
+            I * Schedule::slot_to_coeff_plain_log_delta;
+        constexpr int k_step =
+            CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>();
+        CKKSLinearTransformPlan<P, log_q, Schedule::log_delta,
+                                Schedule::slot_to_coeff_plain_log_delta>
+            plan;
+        CKKSBuildLinearTransformBSGSPlan<
+            P, log_q, Schedule::log_delta,
+            Schedule::slot_to_coeff_plain_log_delta>(
+            plan, linear_plan.slot_to_coeff_stages[I], k_step);
+
+        auto next = std::make_unique<CKKSPlainMulResult<
+            P, log_q, Schedule::log_delta,
+            Schedule::slot_to_coeff_plain_log_delta>>();
+        CKKSLinearTransformBSGS<
+            P, log_q, Schedule::log_delta,
+            Schedule::slot_to_coeff_plain_log_delta>(
+            *next, ct, plan, gk_chain.template get<I>(),
+            gk_chain.template get<I + 1>());
+        maybe_release_key<I>(gk_chain);
+        if constexpr (I + 1 == Schedule::slot_to_coeff_level_count) {
+            maybe_release_key<I + 1>(gk_chain);
+        }
+        CKKSDenseBootstrapSlotToCoeffTailStagesBSGSImpl<I + 1, Schedule>(
+            res, *next, linear_plan, gk_chain);
+    }
+}
+
+template <class Schedule, class GaloisKeyChain>
+inline void CKKSDenseBootstrapSlotToCoeffStagesBSGSDualInputSharedTail(
+    typename Schedule::OutputCiphertext &res,
+    const CKKSDenseEvalModBoundedCosResult<Schedule> &real_evalmod,
+    const CKKSDenseEvalModBoundedCosResult<Schedule> &imag_evalmod,
+    const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
+    const GaloisKeyChain &gk_chain)
+{
+    using P = typename Schedule::Param;
+    static_assert(Schedule::slot_to_coeff_level_count > 0);
+    constexpr std::uint32_t log_q = Schedule::after_evalmod_log_q;
+    constexpr int k_step =
+        CKKSDenseBootstrapSlotToCoeffBSGSStep<0, Schedule>();
+
+    CKKSLinearTransformPlan<P, log_q, Schedule::log_delta,
+                            Schedule::slot_to_coeff_plain_log_delta>
+        real_plan;
+    CKKSLinearTransformPlan<P, log_q, Schedule::log_delta,
+                            Schedule::slot_to_coeff_plain_log_delta>
+        imag_plan;
+    CKKSBuildLinearTransformBSGSPlan<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>(
+        real_plan, linear_plan.slot_to_coeff_stages[0], k_step);
+    CKKSBuildLinearTransformBSGSPlan<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>(
+        imag_plan, linear_plan.slot_to_coeff_imag_stages[0], k_step);
+
+    auto next = std::make_unique<CKKSPlainMulResult<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>>();
+    CKKSLinearTransformBSGSDualInput<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>(
+        *next, real_evalmod, imag_evalmod, real_plan, imag_plan,
+        gk_chain.template get<0>(), gk_chain.template get<1>());
+    maybe_release_key<0>(gk_chain);
+
+    if constexpr (Schedule::slot_to_coeff_level_count == 1) {
+        res = *next;
+        maybe_release_key<1>(gk_chain);
+    }
+    else {
+        CKKSDenseBootstrapSlotToCoeffTailStagesBSGSImpl<1, Schedule>(
+            res, *next, linear_plan, gk_chain);
+    }
+}
+
 template <class Schedule, class KeyProvider>
 inline void CKKSDenseBootstrapWithKeyProviderImpl(
     typename Schedule::OutputCiphertext &res,
@@ -10372,12 +10608,8 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
         coeff_to_slot_galois{key_provider};
     CKKSTimeBootstrapStage(
         timings == nullptr ? nullptr : &timings->coeff_to_slot_ms, [&] {
-            CKKSLinearTransformStagesBSGS<
-                P, Schedule::boot_log_q, Schedule::log_delta,
-                Schedule::coeff_to_slot_plain_log_delta,
-                Schedule::coeff_to_slot_level_count>(
-                *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
-                Schedule::linear_bsgs_step, coeff_to_slot_galois);
+            CKKSDenseBootstrapCoeffToSlotStagesBSGS<Schedule>(
+                *coeff_to_slot, *raised, linear_plan, coeff_to_slot_galois);
         });
     raised.reset();
 
@@ -10428,14 +10660,9 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
         slot_to_coeff_galois{key_provider};
     CKKSTimeBootstrapStage(
         timings == nullptr ? nullptr : &timings->slot_to_coeff_ms, [&] {
-            CKKSLinearTransformStagesBSGSDualInputSharedTail<
-                P, Schedule::after_evalmod_log_q, Schedule::log_delta,
-                Schedule::slot_to_coeff_plain_log_delta,
-                Schedule::slot_to_coeff_level_count>(
-                res, *real_evalmod, *imag_evalmod,
-                linear_plan.slot_to_coeff_stages,
-                linear_plan.slot_to_coeff_imag_stages, 0,
-                Schedule::linear_bsgs_step, slot_to_coeff_galois);
+            CKKSDenseBootstrapSlotToCoeffStagesBSGSDualInputSharedTail<
+                Schedule>(res, *real_evalmod, *imag_evalmod, linear_plan,
+                          slot_to_coeff_galois);
         });
     real_evalmod.reset();
     imag_evalmod.reset();

@@ -420,7 +420,8 @@ void print_linear_stage_shape(const char *label, const char *prefix,
         fd_batches * linear_transform_fd_products_per_batch<P>();
 
     std::cout << label << ' ' << prefix << "_stage index=" << stage_index
-              << " logQ=" << LogQ << " groups=" << plan.groups.size()
+              << " logQ=" << LogQ << " bsgs_step=" << k_step
+              << " groups=" << plan.groups.size()
               << " terms=" << linear_plan_term_count(plan)
               << " single_term_groups="
               << linear_plan_single_term_group_count(plan)
@@ -453,7 +454,8 @@ void print_coeff_to_slot_stage_shapes(
         print_linear_stage_shape<P, log_q, Schedule::log_delta,
                                  Schedule::coeff_to_slot_plain_log_delta>(
             label, "c2s", I, linear_plan.coeff_to_slot_stages[I],
-            Schedule::linear_bsgs_step,
+            TFHEpp::ckks_detail::
+                CKKSDenseBootstrapCoeffToSlotBSGSStep<I, Schedule>(),
             Schedule::hybrid_giant_direct_popcount_threshold);
         print_coeff_to_slot_stage_shapes<I + 1, Schedule>(label, linear_plan);
     }
@@ -472,15 +474,183 @@ void print_slot_to_coeff_stage_shapes(
         print_linear_stage_shape<P, log_q, Schedule::log_delta,
                                  Schedule::slot_to_coeff_plain_log_delta>(
             label, "stc_real", I, linear_plan.slot_to_coeff_stages[I],
-            Schedule::linear_bsgs_step,
+            TFHEpp::ckks_detail::
+                CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>(),
             Schedule::hybrid_giant_direct_popcount_threshold);
         print_linear_stage_shape<P, log_q, Schedule::log_delta,
                                  Schedule::slot_to_coeff_plain_log_delta>(
             label, "stc_imag", I, linear_plan.slot_to_coeff_imag_stages[I],
-            Schedule::linear_bsgs_step,
+            TFHEpp::ckks_detail::
+                CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>(),
             Schedule::hybrid_giant_direct_popcount_threshold);
         print_slot_to_coeff_stage_shapes<I + 1, Schedule>(label, linear_plan);
     }
+}
+
+template <std::size_t I, class Schedule>
+std::size_t coeff_to_slot_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    if constexpr (I >= Schedule::coeff_to_slot_level_count) {
+        return 0;
+    }
+    else {
+        using P = typename Schedule::Param;
+        return TFHEpp::CKKSLinearTransformStageRotationEvalAutoCount<P>(
+                   linear_plan.coeff_to_slot_stages[I],
+                   TFHEpp::ckks_detail::
+                       CKKSDenseBootstrapCoeffToSlotBSGSStep<I, Schedule>()) +
+               coeff_to_slot_rotation_evalautos<I + 1, Schedule>(
+                   linear_plan);
+    }
+}
+
+template <std::size_t I, class Schedule>
+std::size_t coeff_to_slot_direct_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    if constexpr (I >= Schedule::coeff_to_slot_level_count) {
+        return 0;
+    }
+    else {
+        using P = typename Schedule::Param;
+        return TFHEpp::CKKSLinearTransformStageDirectRotationEvalAutoCount<P>(
+                   linear_plan.coeff_to_slot_stages[I],
+                   TFHEpp::ckks_detail::
+                       CKKSDenseBootstrapCoeffToSlotBSGSStep<I, Schedule>()) +
+               coeff_to_slot_direct_rotation_evalautos<I + 1, Schedule>(
+                   linear_plan);
+    }
+}
+
+template <std::size_t I, class Schedule>
+std::size_t coeff_to_slot_hybrid_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    if constexpr (I >= Schedule::coeff_to_slot_level_count) {
+        return 0;
+    }
+    else {
+        using P = typename Schedule::Param;
+        return TFHEpp::
+                   CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+                       linear_plan.coeff_to_slot_stages[I],
+                       TFHEpp::ckks_detail::
+                           CKKSDenseBootstrapCoeffToSlotBSGSStep<I,
+                                                                  Schedule>(),
+                       Schedule::hybrid_giant_direct_popcount_threshold) +
+               coeff_to_slot_hybrid_rotation_evalautos<I + 1, Schedule>(
+                   linear_plan);
+    }
+}
+
+template <std::size_t I, class Schedule>
+std::size_t slot_to_coeff_tail_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    if constexpr (I >= Schedule::slot_to_coeff_level_count) {
+        return 0;
+    }
+    else {
+        using P = typename Schedule::Param;
+        return TFHEpp::CKKSLinearTransformStageRotationEvalAutoCount<P>(
+                   linear_plan.slot_to_coeff_stages[I],
+                   TFHEpp::ckks_detail::
+                       CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>()) +
+               slot_to_coeff_tail_rotation_evalautos<I + 1, Schedule>(
+                   linear_plan);
+    }
+}
+
+template <std::size_t I, class Schedule>
+std::size_t slot_to_coeff_tail_direct_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    if constexpr (I >= Schedule::slot_to_coeff_level_count) {
+        return 0;
+    }
+    else {
+        using P = typename Schedule::Param;
+        return TFHEpp::CKKSLinearTransformStageDirectRotationEvalAutoCount<P>(
+                   linear_plan.slot_to_coeff_stages[I],
+                   TFHEpp::ckks_detail::
+                       CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>()) +
+               slot_to_coeff_tail_direct_rotation_evalautos<I + 1, Schedule>(
+                   linear_plan);
+    }
+}
+
+template <std::size_t I, class Schedule>
+std::size_t slot_to_coeff_tail_hybrid_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    if constexpr (I >= Schedule::slot_to_coeff_level_count) {
+        return 0;
+    }
+    else {
+        using P = typename Schedule::Param;
+        return TFHEpp::
+                   CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+                       linear_plan.slot_to_coeff_stages[I],
+                       TFHEpp::ckks_detail::
+                           CKKSDenseBootstrapSlotToCoeffBSGSStep<I,
+                                                                  Schedule>(),
+                       Schedule::hybrid_giant_direct_popcount_threshold) +
+               slot_to_coeff_tail_hybrid_rotation_evalautos<I + 1, Schedule>(
+                   linear_plan);
+    }
+}
+
+template <class Schedule>
+std::size_t slot_to_coeff_shared_tail_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    using P = typename Schedule::Param;
+    constexpr int k_step =
+        TFHEpp::ckks_detail::
+            CKKSDenseBootstrapSlotToCoeffBSGSStep<0, Schedule>();
+    return 2 * TFHEpp::CKKSLinearTransformStageBabyRotationTableEvalAutoCount<
+                   P>(linear_plan.slot_to_coeff_stages[0], k_step) +
+           TFHEpp::CKKSLinearTransformStageGiantRotationBinaryEvalAutoCount<P>(
+               linear_plan.slot_to_coeff_stages[0], k_step) +
+           slot_to_coeff_tail_rotation_evalautos<1, Schedule>(linear_plan);
+}
+
+template <class Schedule>
+std::size_t slot_to_coeff_shared_tail_direct_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    using P = typename Schedule::Param;
+    constexpr int k_step =
+        TFHEpp::ckks_detail::
+            CKKSDenseBootstrapSlotToCoeffBSGSStep<0, Schedule>();
+    return 2 * TFHEpp::CKKSLinearTransformStageBabyRotationCount<P>(
+                   linear_plan.slot_to_coeff_stages[0], k_step) +
+           TFHEpp::CKKSLinearTransformStageGiantRotationCount<P>(
+               linear_plan.slot_to_coeff_stages[0], k_step) +
+           slot_to_coeff_tail_direct_rotation_evalautos<1, Schedule>(
+               linear_plan);
+}
+
+template <class Schedule>
+std::size_t slot_to_coeff_shared_tail_hybrid_rotation_evalautos(
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    using P = typename Schedule::Param;
+    constexpr int k_step =
+        TFHEpp::ckks_detail::
+            CKKSDenseBootstrapSlotToCoeffBSGSStep<0, Schedule>();
+    const std::size_t baby =
+        TFHEpp::CKKSLinearTransformStageBabyRotationTableEvalAutoCount<P>(
+            linear_plan.slot_to_coeff_stages[0], k_step);
+    return 2 * baby +
+           (TFHEpp::
+                CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<P>(
+                    linear_plan.slot_to_coeff_stages[0], k_step,
+                    Schedule::hybrid_giant_direct_popcount_threshold) -
+            baby) +
+           slot_to_coeff_tail_hybrid_rotation_evalautos<1, Schedule>(
+               linear_plan);
 }
 
 template <std::size_t KeyOffset, std::size_t I, class P,
@@ -608,6 +778,201 @@ void timed_linear_transform_stages_bsgs_dual_input_shared_tail(
         timed_linear_transform_stages_bsgs<1, 0, P, tail_log_q, LogDelta,
                                            PlainLogDelta, StageCount - 1>(
             res, *next, lhs_stages, first_stage + 1, k_step, gk_chain, label);
+    }
+}
+
+template <std::size_t I, class Schedule, class GaloisKeyChain>
+void timed_dense_bootstrap_coeff_to_slot_stages_bsgs_impl(
+    typename Schedule::CoeffToSlotCiphertext &res,
+    const TFHEpp::CKKSCiphertext<
+        typename Schedule::Param,
+        Schedule::boot_log_q -
+            I * Schedule::coeff_to_slot_plain_log_delta,
+        Schedule::log_delta> &ct,
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
+    const GaloisKeyChain &gk_chain, const char *label)
+{
+    using P = typename Schedule::Param;
+    if constexpr (I == Schedule::coeff_to_slot_level_count) {
+        res = ct;
+    }
+    else {
+        constexpr std::uint32_t log_q =
+            Schedule::boot_log_q -
+            I * Schedule::coeff_to_slot_plain_log_delta;
+        constexpr int k_step = TFHEpp::ckks_detail::
+            CKKSDenseBootstrapCoeffToSlotBSGSStep<I, Schedule>();
+        TFHEpp::CKKSLinearTransformPlan<
+            P, log_q, Schedule::log_delta,
+            Schedule::coeff_to_slot_plain_log_delta>
+            plan;
+        TFHEpp::CKKSBuildLinearTransformBSGSPlan<
+            P, log_q, Schedule::log_delta,
+            Schedule::coeff_to_slot_plain_log_delta>(
+            plan, linear_plan.coeff_to_slot_stages[I], k_step);
+
+        std::cout << label << "_stage_begin index=" << I
+                  << " logQ=" << log_q << " bsgs_step=" << k_step
+                  << " groups=" << plan.groups.size()
+                  << " terms=" << linear_plan_term_count(plan) << '\n';
+        std::cout.flush();
+
+        auto next = std::make_unique<TFHEpp::CKKSPlainMulResult<
+            P, log_q, Schedule::log_delta,
+            Schedule::coeff_to_slot_plain_log_delta>>();
+        const double stage_ms = elapsed_ms([&] {
+            TFHEpp::CKKSLinearTransformBSGS<
+                P, log_q, Schedule::log_delta,
+                Schedule::coeff_to_slot_plain_log_delta>(
+                *next, ct, plan, gk_chain.template get<I>(),
+                gk_chain.template get<I + 1>());
+        });
+        std::cout << label << "_stage_done index=" << I
+                  << " ms=" << stage_ms << '\n';
+        std::cout.flush();
+
+        TFHEpp::ckks_detail::maybe_release_key<I>(gk_chain);
+        if constexpr (I + 1 == Schedule::coeff_to_slot_level_count) {
+            TFHEpp::ckks_detail::maybe_release_key<I + 1>(gk_chain);
+        }
+        timed_dense_bootstrap_coeff_to_slot_stages_bsgs_impl<I + 1, Schedule>(
+            res, *next, linear_plan, gk_chain, label);
+    }
+}
+
+template <class Schedule, class GaloisKeyChain>
+void timed_dense_bootstrap_coeff_to_slot_stages_bsgs(
+    typename Schedule::CoeffToSlotCiphertext &res,
+    const typename Schedule::BootstrapCiphertext &ct,
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
+    const GaloisKeyChain &gk_chain, const char *label)
+{
+    timed_dense_bootstrap_coeff_to_slot_stages_bsgs_impl<0, Schedule>(
+        res, ct, linear_plan, gk_chain, label);
+}
+
+template <std::size_t I, class Schedule, class GaloisKeyChain>
+void timed_dense_bootstrap_slot_to_coeff_tail_stages_bsgs_impl(
+    typename Schedule::OutputCiphertext &res,
+    const TFHEpp::CKKSCiphertext<
+        typename Schedule::Param,
+        Schedule::after_evalmod_log_q -
+            I * Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::log_delta> &ct,
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
+    const GaloisKeyChain &gk_chain, const char *label)
+{
+    using P = typename Schedule::Param;
+    if constexpr (I == Schedule::slot_to_coeff_level_count) {
+        res = ct;
+    }
+    else {
+        constexpr std::uint32_t log_q =
+            Schedule::after_evalmod_log_q -
+            I * Schedule::slot_to_coeff_plain_log_delta;
+        constexpr int k_step = TFHEpp::ckks_detail::
+            CKKSDenseBootstrapSlotToCoeffBSGSStep<I, Schedule>();
+        TFHEpp::CKKSLinearTransformPlan<
+            P, log_q, Schedule::log_delta,
+            Schedule::slot_to_coeff_plain_log_delta>
+            plan;
+        TFHEpp::CKKSBuildLinearTransformBSGSPlan<
+            P, log_q, Schedule::log_delta,
+            Schedule::slot_to_coeff_plain_log_delta>(
+            plan, linear_plan.slot_to_coeff_stages[I], k_step);
+
+        std::cout << label << "_stage_begin index=" << I
+                  << " logQ=" << log_q << " bsgs_step=" << k_step
+                  << " groups=" << plan.groups.size()
+                  << " terms=" << linear_plan_term_count(plan) << '\n';
+        std::cout.flush();
+
+        auto next = std::make_unique<TFHEpp::CKKSPlainMulResult<
+            P, log_q, Schedule::log_delta,
+            Schedule::slot_to_coeff_plain_log_delta>>();
+        const double stage_ms = elapsed_ms([&] {
+            TFHEpp::CKKSLinearTransformBSGS<
+                P, log_q, Schedule::log_delta,
+                Schedule::slot_to_coeff_plain_log_delta>(
+                *next, ct, plan, gk_chain.template get<I>(),
+                gk_chain.template get<I + 1>());
+        });
+        std::cout << label << "_stage_done index=" << I
+                  << " ms=" << stage_ms << '\n';
+        std::cout.flush();
+
+        TFHEpp::ckks_detail::maybe_release_key<I>(gk_chain);
+        if constexpr (I + 1 == Schedule::slot_to_coeff_level_count) {
+            TFHEpp::ckks_detail::maybe_release_key<I + 1>(gk_chain);
+        }
+        timed_dense_bootstrap_slot_to_coeff_tail_stages_bsgs_impl<
+            I + 1, Schedule>(res, *next, linear_plan, gk_chain, label);
+    }
+}
+
+template <class Schedule, class GaloisKeyChain>
+void timed_dense_bootstrap_slot_to_coeff_stages_bsgs_dual_input_shared_tail(
+    typename Schedule::OutputCiphertext &res,
+    const TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule> &real_evalmod,
+    const TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule> &imag_evalmod,
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
+    const GaloisKeyChain &gk_chain, const char *label)
+{
+    using P = typename Schedule::Param;
+    static_assert(Schedule::slot_to_coeff_level_count > 0);
+
+    constexpr std::uint32_t log_q = Schedule::after_evalmod_log_q;
+    constexpr int k_step =
+        TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
+            0, Schedule>();
+    TFHEpp::CKKSLinearTransformPlan<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>
+        real_plan;
+    TFHEpp::CKKSLinearTransformPlan<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>
+        imag_plan;
+    TFHEpp::CKKSBuildLinearTransformBSGSPlan<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>(
+        real_plan, linear_plan.slot_to_coeff_stages[0], k_step);
+    TFHEpp::CKKSBuildLinearTransformBSGSPlan<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>(
+        imag_plan, linear_plan.slot_to_coeff_imag_stages[0], k_step);
+
+    std::cout << label << "_stage_begin index=0"
+              << " logQ=" << log_q << " bsgs_step=" << k_step
+              << " lhs_groups=" << real_plan.groups.size()
+              << " lhs_terms=" << linear_plan_term_count(real_plan)
+              << " rhs_groups=" << imag_plan.groups.size()
+              << " rhs_terms=" << linear_plan_term_count(imag_plan) << '\n';
+    std::cout.flush();
+
+    auto next = std::make_unique<TFHEpp::CKKSPlainMulResult<
+        P, log_q, Schedule::log_delta,
+        Schedule::slot_to_coeff_plain_log_delta>>();
+    const double stage_ms = elapsed_ms([&] {
+        TFHEpp::CKKSLinearTransformBSGSDualInput<
+            P, log_q, Schedule::log_delta,
+            Schedule::slot_to_coeff_plain_log_delta>(
+            *next, real_evalmod, imag_evalmod, real_plan, imag_plan,
+            gk_chain.template get<0>(), gk_chain.template get<1>());
+    });
+    std::cout << label << "_stage_done index=0"
+              << " ms=" << stage_ms << '\n';
+    std::cout.flush();
+
+    TFHEpp::ckks_detail::maybe_release_key<0>(gk_chain);
+    if constexpr (Schedule::slot_to_coeff_level_count == 1) {
+        res = *next;
+        TFHEpp::ckks_detail::maybe_release_key<1>(gk_chain);
+    }
+    else {
+        timed_dense_bootstrap_slot_to_coeff_tail_stages_bsgs_impl<1,
+                                                                  Schedule>(
+            res, *next, linear_plan, gk_chain, label);
     }
 }
 
@@ -993,6 +1358,11 @@ template <int HybridThreshold>
 using Lvl6TunedHybridThresholdSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
     TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52, 128, 0, 52, 52,
     30, 7, 7, HybridThreshold>;
+
+template <int LinearBSGSStep>
+using Lvl6TunedBSGSStepSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
+    TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52,
+    LinearBSGSStep, 0, 52, 52, 30, 7, 7, 2>;
 
 using Lvl6InverseSchedule = TFHEpp::lvl6CKKSDenseBootstrapInverseSchedule;
 static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
@@ -1393,39 +1763,19 @@ void print_schedule_report(const char *label,
             CKKSDenseBootstrapHybridGiantStreamedPeakSeededKeyByteEstimate<
                 Schedule>(hybrid_usage);
     const std::size_t c2s_current_evalautos =
-        TFHEpp::CKKSLinearTransformStagesRotationEvalAutoCount<P>(
-            linear_plan.coeff_to_slot_stages, 0,
-            linear_plan.coeff_to_slot_stages.size(),
-            Schedule::linear_bsgs_step);
+        coeff_to_slot_rotation_evalautos<0, Schedule>(linear_plan);
     const std::size_t c2s_direct_evalautos =
-        TFHEpp::CKKSLinearTransformStagesDirectRotationEvalAutoCount<P>(
-            linear_plan.coeff_to_slot_stages, 0,
-            linear_plan.coeff_to_slot_stages.size(),
-            Schedule::linear_bsgs_step);
+        coeff_to_slot_direct_rotation_evalautos<0, Schedule>(linear_plan);
     const std::size_t c2s_hybrid_evalautos =
-        TFHEpp::CKKSLinearTransformStagesHybridGiantRotationEvalAutoCount<P>(
-            linear_plan.coeff_to_slot_stages, 0,
-            linear_plan.coeff_to_slot_stages.size(),
-            Schedule::linear_bsgs_step,
-            Schedule::hybrid_giant_direct_popcount_threshold);
+        coeff_to_slot_hybrid_rotation_evalautos<0, Schedule>(linear_plan);
     const std::size_t stc_current_evalautos =
-        TFHEpp::CKKSLinearTransformStagesDualInputSharedTailRotationEvalAutoCount<
-            P>(linear_plan.slot_to_coeff_stages, 0,
-               linear_plan.slot_to_coeff_stages.size(),
-               Schedule::linear_bsgs_step);
+        slot_to_coeff_shared_tail_rotation_evalautos<Schedule>(linear_plan);
     const std::size_t stc_direct_evalautos =
-        TFHEpp::
-            CKKSLinearTransformStagesDualInputSharedTailDirectRotationEvalAutoCount<
-                P>(linear_plan.slot_to_coeff_stages, 0,
-                   linear_plan.slot_to_coeff_stages.size(),
-                   Schedule::linear_bsgs_step);
+        slot_to_coeff_shared_tail_direct_rotation_evalautos<Schedule>(
+            linear_plan);
     const std::size_t stc_hybrid_evalautos =
-        TFHEpp::
-            CKKSLinearTransformStagesDualInputSharedTailHybridGiantRotationEvalAutoCount<
-                P>(linear_plan.slot_to_coeff_stages, 0,
-                   linear_plan.slot_to_coeff_stages.size(),
-                   Schedule::linear_bsgs_step,
-                   Schedule::hybrid_giant_direct_popcount_threshold);
+        slot_to_coeff_shared_tail_hybrid_rotation_evalautos<Schedule>(
+            linear_plan);
 
     std::cout << label << " n=" << P::n << " logQ="
               << Schedule::boot_log_q << " input_logQ="
@@ -1568,6 +1918,20 @@ void print_lvl6_tuned_hybrid_threshold_reports()
         "lvl6-tuned-th4");
     print_schedule_report<Lvl6TunedHybridThresholdSchedule<5>>(
         "lvl6-tuned-th5");
+}
+
+void print_lvl6_tuned_bsgs_step_reports()
+{
+    print_schedule_report<Lvl6TunedBSGSStepSchedule<64>>(
+        "lvl6-tuned-bsgs64");
+    print_schedule_report<Lvl6TunedBSGSStepSchedule<128>>(
+        "lvl6-tuned-bsgs128");
+    print_schedule_report<Lvl6TunedBSGSStepSchedule<256>>(
+        "lvl6-tuned-bsgs256");
+    print_schedule_report<Lvl6TunedBSGSStepSchedule<512>>(
+        "lvl6-tuned-bsgs512");
+    print_schedule_report<Lvl6TunedBSGSStepSchedule<1024>>(
+        "lvl6-tuned-bsgs1024");
 }
 
 void print_lvl6_inverse_reports()
@@ -2922,12 +3286,8 @@ int run_seeded_hybrid_product_stage_diagnostics(
         const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
             decltype(provider), true>
             coeff_to_slot_galois{provider};
-        timed_linear_transform_stages_bsgs<
-            P, Schedule::boot_log_q, Schedule::log_delta,
-            Schedule::coeff_to_slot_plain_log_delta,
-            Schedule::coeff_to_slot_level_count>(
-            *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
-            Schedule::linear_bsgs_step, coeff_to_slot_galois,
+        timed_dense_bootstrap_coeff_to_slot_stages_bsgs<Schedule>(
+            *coeff_to_slot, *raised, linear_plan, coeff_to_slot_galois,
             "diag_product_stage_c2s");
     });
     raised.reset();
@@ -3088,14 +3448,9 @@ int run_seeded_hybrid_product_stage_diagnostics(
         slot_to_coeff_galois{provider};
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     const double stc_ms = elapsed_ms([&] {
-        timed_linear_transform_stages_bsgs_dual_input_shared_tail<
-            P, Schedule::after_evalmod_log_q, Schedule::log_delta,
-            Schedule::slot_to_coeff_plain_log_delta,
-            Schedule::slot_to_coeff_level_count>(
-            *output, *real_evalmod, *imag_evalmod,
-            linear_plan.slot_to_coeff_stages,
-            linear_plan.slot_to_coeff_imag_stages, 0,
-            Schedule::linear_bsgs_step, slot_to_coeff_galois,
+        timed_dense_bootstrap_slot_to_coeff_stages_bsgs_dual_input_shared_tail<
+            Schedule>(*output, *real_evalmod, *imag_evalmod, linear_plan,
+                      slot_to_coeff_galois,
             "diag_product_stage_stc");
     });
     real_evalmod.reset();
@@ -3613,12 +3968,9 @@ int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
         const TFHEpp::ckks_detail::CKKSDenseBootstrapLinearKeyProviderChain<
             KeyProvider, true>
             coeff_to_slot_galois{provider};
-        timed_linear_transform_stages_bsgs<
-            P, Schedule::boot_log_q, Schedule::log_delta,
-            Schedule::coeff_to_slot_plain_log_delta,
-            Schedule::coeff_to_slot_level_count>(
-            *coeff_to_slot, *raised, linear_plan.coeff_to_slot_stages, 0,
-            Schedule::linear_bsgs_step, coeff_to_slot_galois, "diag_c2s");
+        timed_dense_bootstrap_coeff_to_slot_stages_bsgs<Schedule>(
+            *coeff_to_slot, *raised, linear_plan, coeff_to_slot_galois,
+            "diag_c2s");
     });
     raised.reset();
     raised_slots.reset();
@@ -3757,14 +4109,9 @@ int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
         slot_to_coeff_galois{provider};
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     const double stc_ms = elapsed_ms([&] {
-        timed_linear_transform_stages_bsgs_dual_input_shared_tail<
-            P, Schedule::after_evalmod_log_q, Schedule::log_delta,
-            Schedule::slot_to_coeff_plain_log_delta,
-            Schedule::slot_to_coeff_level_count>(
-            *output, *real_evalmod, *imag_evalmod,
-            linear_plan.slot_to_coeff_stages,
-            linear_plan.slot_to_coeff_imag_stages, 0,
-            Schedule::linear_bsgs_step, slot_to_coeff_galois, "diag_stc");
+        timed_dense_bootstrap_slot_to_coeff_stages_bsgs_dual_input_shared_tail<
+            Schedule>(*output, *real_evalmod, *imag_evalmod, linear_plan,
+                      slot_to_coeff_galois, "diag_stc");
     });
     real_evalmod.reset();
     imag_evalmod.reset();
@@ -4042,14 +4389,9 @@ int run_key_provider_stc_diagnostics(const std::filesystem::path &key_dir,
         slot_to_coeff_galois{provider};
     auto output = std::make_unique<typename Schedule::OutputCiphertext>();
     const double stc_ms = elapsed_ms([&] {
-        TFHEpp::CKKSLinearTransformStagesBSGSDualInputSharedTail<
-            P, Schedule::after_evalmod_log_q, Schedule::log_delta,
-            Schedule::slot_to_coeff_plain_log_delta,
-            Schedule::slot_to_coeff_level_count>(
-            *output, *real_input, *imag_input,
-            linear_plan.slot_to_coeff_stages,
-            linear_plan.slot_to_coeff_imag_stages, 0,
-            Schedule::linear_bsgs_step, slot_to_coeff_galois);
+        timed_dense_bootstrap_slot_to_coeff_stages_bsgs_dual_input_shared_tail<
+            Schedule>(*output, *real_input, *imag_input, linear_plan,
+                      slot_to_coeff_galois, "diag_stc");
     });
     real_input.reset();
     imag_input.reset();
@@ -4948,6 +5290,7 @@ void print_usage(const char *program)
                  " [--lvl6-robust-plan]"
                  " [--lvl6-tuned-plan]"
                  " [--lvl6-tuned-hybrid-thresholds-plan]"
+                 " [--lvl6-tuned-bsgs-steps-plan]"
                  " [--lvl6-tuned-readiness]"
                  " [--lvl6-tuned-hybrid-keygen DIR]"
                  " [--lvl6-tuned-hybrid-keygen-next DIR]"
@@ -5092,6 +5435,10 @@ int main(int argc, char **argv)
         else if (arg == "--lvl6-tuned-hybrid-thresholds-plan") {
             saw_action = true;
             print_lvl6_tuned_hybrid_threshold_reports();
+        }
+        else if (arg == "--lvl6-tuned-bsgs-steps-plan") {
+            saw_action = true;
+            print_lvl6_tuned_bsgs_step_reports();
         }
         else if (arg == "--lvl6-tuned-readiness") {
             saw_action = true;
