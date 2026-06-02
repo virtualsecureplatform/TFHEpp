@@ -220,10 +220,10 @@ struct CountingDenseBootstrapProvider {
     mutable std::array<std::size_t, Schedule::slot_to_coeff_level_count + 1>
         slot_to_coeff_releases{};
     mutable std::array<std::size_t,
-                       EvalModTraits::PolynomialTraits::power_depth>
+                       EvalModTraits::PolynomialTraits::relin_depth>
         polynomial_relin_gets{};
     mutable std::array<std::size_t,
-                       EvalModTraits::PolynomialTraits::power_depth>
+                       EvalModTraits::PolynomialTraits::relin_depth>
         polynomial_relin_releases{};
     mutable std::array<std::size_t, Schedule::evalmod_double_angle>
         double_angle_relin_gets{};
@@ -284,7 +284,7 @@ struct CountingDenseBootstrapProvider {
     template <std::size_t I>
     const auto &polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         polynomial_relin_gets[I]++;
         return key.evalmod_relin.polynomial.template get<I>();
     }
@@ -292,7 +292,7 @@ struct CountingDenseBootstrapProvider {
     template <std::size_t I>
     void release_polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         polynomial_relin_releases[I]++;
     }
 
@@ -726,7 +726,7 @@ void test_lvl6_factorized_stage_shape()
         TFHEpp::CKKSRelinKeySwitchRowCount<L, Schedule::output_log_q>() ==
         ((Schedule::output_log_q + L::B̅gbit - 1) / L::B̅gbit));
     static_assert(
-        TFHEpp::CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() == 8);
+        TFHEpp::CKKSDenseBootstrapEvalModRelinKeyCount<Schedule>() == 9);
     if (planned_key_indices == 0 || planned_key_indices >= full_key_indices)
         std::exit(1);
     if (planned_key_indices != 57 || full_key_indices != 144)
@@ -1950,7 +1950,8 @@ void test_dense_bootstrap_e2e_smoke()
         counting_provider.polynomial_relin_gets[1] != 4 ||
         counting_provider.polynomial_relin_gets[2] != 8 ||
         counting_provider.polynomial_relin_gets[3] != 16 ||
-        counting_provider.polynomial_relin_gets[4] != 30 ||
+        counting_provider.polynomial_relin_gets[4] != 0 ||
+        counting_provider.polynomial_relin_gets[5] != 2 ||
         counting_provider.double_angle_relin_gets[0] != 2 ||
         counting_provider.double_angle_relin_gets[1] != 2)
         std::exit(1);
@@ -1964,7 +1965,8 @@ void test_dense_bootstrap_e2e_smoke()
         counting_provider.polynomial_relin_releases[1] != 2 ||
         counting_provider.polynomial_relin_releases[2] != 2 ||
         counting_provider.polynomial_relin_releases[3] != 2 ||
-        counting_provider.polynomial_relin_releases[4] != 2 ||
+        counting_provider.polynomial_relin_releases[4] != 0 ||
+        counting_provider.polynomial_relin_releases[5] != 2 ||
         counting_provider.double_angle_relin_releases[0] != 2 ||
         counting_provider.double_angle_relin_releases[1] != 2)
         std::exit(1);
@@ -2401,7 +2403,7 @@ void test_power_polynomial_evaluator(const TFHEpp::Key<P> &key)
     }
 
     auto relin_chain = std::make_unique<typename Traits::RelinKeyChain>();
-    TFHEpp::CKKSRelinKeyChainGen<P, log_q, log_delta, Traits::power_depth>(
+    TFHEpp::CKKSRelinKeyChainGen<P, log_q, log_delta, Traits::relin_depth>(
         *relin_chain, key, {0.0, 0});
 
     auto ct = std::make_unique<EvalCt>();

@@ -6332,6 +6332,30 @@ constexpr std::uint32_t power_tree_depth(std::size_t power)
     return power <= 1 ? 0 : bit_width_u64(power - 1);
 }
 
+constexpr std::size_t choose_power_bsgs_baby_step(std::size_t degree)
+{
+    if (degree < 16) return 0;
+
+    const std::uint32_t total_depth = power_tree_depth(degree);
+    std::size_t best_step = 0;
+    std::size_t best_cost = degree - 1;
+    for (std::size_t step = 2; step < degree; step <<= 1) {
+        const std::size_t giant_steps = degree / step;
+        if (giant_steps == 0 || giant_steps > total_depth) continue;
+
+        const std::uint32_t block_input_depth =
+            total_depth - static_cast<std::uint32_t>(giant_steps);
+        if (power_tree_depth(step - 1) > block_input_depth) continue;
+
+        const std::size_t cost = (step - 1) + giant_steps;
+        if (cost < best_cost) {
+            best_step = step;
+            best_cost = cost;
+        }
+    }
+    return best_step;
+}
+
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::size_t Degree, class Seq>
 struct CKKSPowerBasisTuple;
@@ -6353,6 +6377,13 @@ struct CKKSPowerPolynomialEvaluatorTraits {
     static_assert(Degree > 1);
     static constexpr std::uint32_t power_depth =
         ckks_detail::power_tree_depth(Degree);
+    static constexpr std::size_t bsgs_baby_step =
+        CoeffLogDelta == LogDelta
+            ? ckks_detail::choose_power_bsgs_baby_step(Degree)
+            : 0;
+    static constexpr bool bsgs_enabled = bsgs_baby_step != 0;
+    static constexpr std::uint32_t relin_depth =
+        power_depth + (bsgs_enabled ? 1 : 0);
     static_assert(StartLogQ > power_depth * LogDelta + CoeffLogDelta);
 
     static constexpr std::uint32_t term_input_log_q =
@@ -6363,7 +6394,7 @@ struct CKKSPowerPolynomialEvaluatorTraits {
     using PowerBasis = typename ckks_detail::CKKSPowerBasisTuple<
         P, StartLogQ, LogDelta, Degree,
         std::make_index_sequence<Degree>>::type;
-    using RelinKeyChain = CKKSRelinKeyChain<P, StartLogQ, LogDelta, power_depth>;
+    using RelinKeyChain = CKKSRelinKeyChain<P, StartLogQ, LogDelta, relin_depth>;
     using Ciphertext = CKKSCiphertext<P, log_q, log_delta>;
 };
 
@@ -6447,6 +6478,160 @@ inline void CKKSAddPowerPolynomialTermsImpl(
     }
 }
 
+template <class EvalTraits, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t CoeffLogDelta,
+          std::size_t Degree>
+struct CKKSPowerPolynomialBSGSTraits {
+    static_assert(EvalTraits::bsgs_enabled);
+    static_assert(CoeffLogDelta == LogDelta);
+    static constexpr std::size_t baby_step = EvalTraits::bsgs_baby_step;
+    static constexpr std::size_t giant_steps = Degree / baby_step;
+    static_assert(giant_steps > 0);
+    static constexpr std::uint32_t block_input_depth =
+        EvalTraits::power_depth - static_cast<std::uint32_t>(giant_steps);
+    static_assert(power_tree_depth(baby_step - 1) <= block_input_depth);
+
+    static constexpr std::uint32_t block_input_log_q =
+        StartLogQ - block_input_depth * LogDelta;
+    static constexpr std::uint32_t block_log_q =
+        block_input_log_q - CoeffLogDelta;
+
+    using PowerBasis = typename CKKSPowerBasisTuple<
+        P, StartLogQ, LogDelta, baby_step,
+        std::make_index_sequence<baby_step>>::type;
+    using BlockCiphertext = CKKSCiphertext<P, block_log_q, LogDelta>;
+    using GiantPtr = std::tuple_element_t<baby_step - 1, PowerBasis>;
+    using GiantCiphertext = typename GiantPtr::element_type;
+    using FinalCiphertext = typename EvalTraits::Ciphertext;
+};
+
+template <std::size_t Block, std::size_t I, class BSGS, class P,
+          std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree>
+inline void CKKSAddPowerPolynomialBSGSBlockTermsImpl(
+    typename BSGS::BlockCiphertext &res,
+    const typename BSGS::PowerBasis &powers, const std::vector<double> &coeffs)
+{
+    if constexpr (I < BSGS::baby_step) {
+        constexpr std::size_t coeff_index = Block * BSGS::baby_step + I;
+        if constexpr (coeff_index <= Degree) {
+            if (coeff_index < coeffs.size() && coeffs[coeff_index] != 0.0) {
+                using PowerPtr =
+                    std::tuple_element_t<I - 1, typename BSGS::PowerBasis>;
+                using PowerCt = typename PowerPtr::element_type;
+                static_assert(BSGS::block_input_log_q <= PowerCt::log_q);
+                const auto &power = std::get<I - 1>(powers);
+                assert(power != nullptr);
+                auto reduced = std::make_unique<
+                    CKKSCiphertext<P, BSGS::block_input_log_q, LogDelta>>();
+                CKKSLevelReduce<P, PowerCt::log_q, BSGS::block_input_log_q,
+                                LogDelta>(*reduced, *power);
+
+                auto term = std::make_unique<CKKSPlainMulResult<
+                    P, BSGS::block_input_log_q, LogDelta, CoeffLogDelta>>();
+                CKKSPlainMulByReal<P, BSGS::block_input_log_q, LogDelta,
+                                   CoeffLogDelta>(*term, *reduced,
+                                                  coeffs[coeff_index]);
+                CKKSAddInPlace<P, BSGS::block_log_q, LogDelta>(res, *term);
+            }
+        }
+        CKKSAddPowerPolynomialBSGSBlockTermsImpl<
+            Block, I + 1, BSGS, P, StartLogQ, LogDelta, CoeffLogDelta,
+            Degree>(res, powers, coeffs);
+    }
+}
+
+template <std::size_t Block, class BSGS, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t CoeffLogDelta,
+          std::size_t Degree>
+inline void CKKSEvalPowerPolynomialBSGSBlock(
+    typename BSGS::BlockCiphertext &res,
+    const typename BSGS::PowerBasis &powers, const std::vector<double> &coeffs)
+{
+    constexpr std::size_t constant_index = Block * BSGS::baby_step;
+    CKKSSetTransparentReal<P, BSGS::block_log_q, LogDelta>(
+        res, constant_index < coeffs.size() ? coeffs[constant_index] : 0.0);
+    CKKSAddPowerPolynomialBSGSBlockTermsImpl<
+        Block, 1, BSGS, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(
+        res, powers, coeffs);
+}
+
+template <std::size_t Remaining, class EvalTraits, class BSGS, class P,
+          std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t CoeffLogDelta, std::size_t Degree, class CurrentCt,
+          class RelinKeyProvider>
+inline void CKKSPowerPolynomialBSGSHornerImpl(
+    typename BSGS::FinalCiphertext &res, const CurrentCt &current,
+    const typename BSGS::GiantCiphertext &giant,
+    const typename BSGS::PowerBasis &powers, const std::vector<double> &coeffs,
+    const RelinKeyProvider &keys)
+{
+    if constexpr (Remaining == 0) {
+        static_assert(CurrentCt::log_q == BSGS::FinalCiphertext::log_q);
+        res = current;
+    }
+    else {
+        using ProductCt =
+            CKKSMultResult<P, CurrentCt::log_q, LogDelta,
+                           BSGS::GiantCiphertext::log_q, LogDelta>;
+        constexpr std::uint32_t consumed = StartLogQ - ProductCt::log_q;
+        static_assert(consumed % LogDelta == 0);
+        constexpr std::size_t key_index = consumed / LogDelta - 1;
+        static_assert(key_index < EvalTraits::relin_depth);
+
+        auto product = std::make_unique<ProductCt>();
+        const bool trace_evalmod = ckks_evalmod_trace_enabled();
+        std::chrono::steady_clock::time_point trace_start{};
+        if (trace_evalmod) trace_start = std::chrono::steady_clock::now();
+        CKKSMult<P>(*product, current, giant, keys.template get<key_index>());
+        if (trace_evalmod)
+            ckks_trace_evalmod_power_event(
+                "power_bsgs_giant_mult",
+                (BSGS::giant_steps - Remaining + 1) * BSGS::baby_step,
+                consumed / LogDelta, ckks_trace_elapsed_ms(trace_start));
+        maybe_release_key<key_index>(keys);
+
+        constexpr std::size_t block_index = Remaining - 1;
+        auto block = std::make_unique<typename BSGS::BlockCiphertext>();
+        CKKSEvalPowerPolynomialBSGSBlock<
+            block_index, BSGS, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(
+            *block, powers, coeffs);
+        auto reduced = std::make_unique<ProductCt>();
+        CKKSLevelReduce<P, BSGS::block_log_q, ProductCt::log_q, LogDelta>(
+            *reduced, *block);
+        CKKSAddInPlace<P, ProductCt::log_q, LogDelta>(*product, *reduced);
+
+        CKKSPowerPolynomialBSGSHornerImpl<
+            Remaining - 1, EvalTraits, BSGS, P, StartLogQ, LogDelta,
+            CoeffLogDelta, Degree>(res, *product, giant, powers, coeffs, keys);
+    }
+}
+
+template <class EvalTraits, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::uint32_t CoeffLogDelta,
+          std::size_t Degree, class RelinKeyProvider>
+inline void CKKSEvalPowerPolynomialBSGSWithKeyProvider(
+    typename EvalTraits::Ciphertext &res,
+    const CKKSCiphertext<P, StartLogQ, LogDelta> &ct,
+    const std::vector<double> &coeffs, const RelinKeyProvider &keys)
+{
+    using BSGS = CKKSPowerPolynomialBSGSTraits<
+        EvalTraits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>;
+    typename BSGS::PowerBasis powers;
+    CKKSBuildPowerBasisImpl<1, BSGS, P, StartLogQ, LogDelta, CoeffLogDelta,
+                            BSGS::baby_step>(powers, ct, keys);
+
+    auto current = std::make_unique<typename BSGS::BlockCiphertext>();
+    CKKSEvalPowerPolynomialBSGSBlock<
+        BSGS::giant_steps, BSGS, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(
+        *current, powers, coeffs);
+    const auto &giant = std::get<BSGS::baby_step - 1>(powers);
+    assert(giant != nullptr);
+    CKKSPowerPolynomialBSGSHornerImpl<
+        BSGS::giant_steps, EvalTraits, BSGS, P, StartLogQ, LogDelta,
+        CoeffLogDelta, Degree>(res, *current, *giant, powers, coeffs, keys);
+}
+
 template <std::size_t I, class Traits, class P, std::uint32_t StartLogQ,
           std::uint32_t LogDelta, std::uint32_t CoeffLogDelta,
           std::size_t Degree, class RelinKeyProvider>
@@ -6516,15 +6701,22 @@ inline void CKKSEvalPowerPolynomialWithKeyProvider(
 {
     using Traits = CKKSPowerPolynomialEvaluatorTraits<
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree>;
-    typename Traits::PowerBasis powers;
-    ckks_detail::CKKSBuildPowerBasisImpl<1, Traits, P, StartLogQ, LogDelta,
-                                         CoeffLogDelta, Degree>(powers, ct,
-                                                                keys);
-    CKKSSetTransparentReal<P, Traits::log_q, LogDelta>(
-        res, coeffs.empty() ? 0.0 : coeffs[0]);
-    ckks_detail::CKKSAddPowerPolynomialTermsImpl<
-        1, Traits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(res, powers,
-                                                                  coeffs);
+    if constexpr (Traits::bsgs_enabled) {
+        ckks_detail::CKKSEvalPowerPolynomialBSGSWithKeyProvider<
+            Traits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(
+            res, ct, coeffs, keys);
+    }
+    else {
+        typename Traits::PowerBasis powers;
+        ckks_detail::CKKSBuildPowerBasisImpl<1, Traits, P, StartLogQ, LogDelta,
+                                             CoeffLogDelta, Degree>(powers, ct,
+                                                                    keys);
+        CKKSSetTransparentReal<P, Traits::log_q, LogDelta>(
+            res, coeffs.empty() ? 0.0 : coeffs[0]);
+        ckks_detail::CKKSAddPowerPolynomialTermsImpl<
+            1, Traits, P, StartLogQ, LogDelta, CoeffLogDelta, Degree>(
+            res, powers, coeffs);
+    }
 }
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
@@ -6682,7 +6874,7 @@ inline void CKKSEvalModBoundedCosKeyGen(
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
         InvDegree>;
     CKKSRelinKeyChainGen<P, StartLogQ, LogDelta,
-                         Traits::PolynomialTraits::power_depth>(
+                         Traits::PolynomialTraits::relin_depth>(
         keys.polynomial, key, noise);
     CKKSRelinKeyChainGen<P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
         keys.double_angle, key, noise);
@@ -6850,13 +7042,23 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
     const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,
                                                                   true>
         polynomial_keys{key_provider};
-    CKKSEvalChebyshevPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
+    if constexpr (Traits::PolynomialTraits::bsgs_enabled) {
+        assert(poly.power_coeffs.size() <= Degree + 1);
+        CKKSEvalPowerPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
                                                CoeffLogDelta, Degree>(
-        *polynomial, *shifted, poly.chebyshev_coeffs, polynomial_keys);
+            *polynomial, *shifted, poly.power_coeffs, polynomial_keys);
+    }
+    else {
+        CKKSEvalChebyshevPolynomialWithKeyProvider<P, StartLogQ, LogDelta,
+                                                   CoeffLogDelta, Degree>(
+            *polynomial, *shifted, poly.chebyshev_coeffs, polynomial_keys);
+    }
     shifted.reset();
     if (trace_evalmod) {
         ckks_detail::ckks_trace_evalmod_event(
-            "evalmod_chebyshev_polynomial",
+            Traits::PolynomialTraits::bsgs_enabled
+                ? "evalmod_power_bsgs_polynomial"
+                : "evalmod_chebyshev_polynomial",
             ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
         trace_section_start = std::chrono::steady_clock::now();
     }
@@ -7226,7 +7428,7 @@ template <class Schedule>
 constexpr std::size_t CKKSDenseBootstrapEvalModRelinKeyCount()
 {
     return CKKSDenseEvalModBoundedCosTraits<
-               Schedule>::PolynomialTraits::power_depth +
+               Schedule>::PolynomialTraits::relin_depth +
            Schedule::evalmod_double_angle +
            CKKSDenseEvalModBoundedCosTraits<
                Schedule>::InverseTraits::power_depth;
@@ -7240,7 +7442,7 @@ constexpr std::size_t CKKSDenseBootstrapEvalModKeySwitchRowCount()
     return ckks_detail::CKKSRelinChainKeySwitchRows<
                0, P, Schedule::after_component_split_log_q,
                Schedule::log_delta,
-               Traits::PolynomialTraits::power_depth>() +
+               Traits::PolynomialTraits::relin_depth>() +
            ckks_detail::CKKSRelinChainKeySwitchRows<
                0, P, Traits::polynomial_log_q, Schedule::log_delta,
                Schedule::evalmod_double_angle>() +
@@ -7257,7 +7459,7 @@ constexpr std::size_t CKKSDenseBootstrapEvalModPeakKeySwitchRowCount()
     const std::size_t polynomial_peak =
         ckks_detail::CKKSRelinChainPeakKeySwitchRows<
             0, P, Schedule::after_component_split_log_q,
-            Schedule::log_delta, Traits::PolynomialTraits::power_depth>();
+            Schedule::log_delta, Traits::PolynomialTraits::relin_depth>();
     const std::size_t double_angle_peak =
         ckks_detail::CKKSRelinChainPeakKeySwitchRows<
             0, P, Traits::polynomial_log_q, Schedule::log_delta,
@@ -7842,7 +8044,7 @@ inline void CKKSDenseEvalModPolynomialRelinKeyGen(
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
     CKKSRelinKeyChainElementGen<
         I, typename Schedule::Param, Schedule::after_component_split_log_q,
-        Schedule::log_delta, Traits::PolynomialTraits::power_depth>(relinkey, key,
+        Schedule::log_delta, Traits::PolynomialTraits::relin_depth>(relinkey, key,
                                                                     noise);
 }
 
@@ -7882,7 +8084,7 @@ inline void CKKSDenseSeededEvalModPolynomialRelinKeyGen(
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
     CKKSSeededRelinKeyChainElementGen<
         I, typename Schedule::Param, Schedule::after_component_split_log_q,
-        Schedule::log_delta, Traits::PolynomialTraits::power_depth>(relinkey, key,
+        Schedule::log_delta, Traits::PolynomialTraits::relin_depth>(relinkey, key,
                                                                     noise);
 }
 
@@ -9178,7 +9380,7 @@ inline void CKKSDenseBootstrapPolynomialRelinKeyGenToDirectoryImpl(
     CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
 {
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
-    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+    if constexpr (I < Traits::PolynomialTraits::relin_depth) {
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
         if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
@@ -9200,7 +9402,7 @@ inline bool CKKSDenseBootstrapPolynomialRelinKeyGenNextMissingToDirectoryImpl(
     CKKSNoise noise)
 {
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
-    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+    if constexpr (I < Traits::PolynomialTraits::relin_depth) {
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
         if (!std::filesystem::exists(path)) {
@@ -9226,7 +9428,7 @@ inline void CKKSDenseBootstrapSeededPolynomialRelinKeyGenToDirectoryImpl(
     CKKSNoise noise, const CKKSDenseBootstrapKeyDirectoryOptions &options)
 {
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
-    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+    if constexpr (I < Traits::PolynomialTraits::relin_depth) {
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
         if (CKKSDenseBootstrapShouldWriteKeyFile(path, options)) {
@@ -9248,7 +9450,7 @@ CKKSDenseBootstrapSeededPolynomialRelinKeyGenNextMissingToDirectoryImpl(
     CKKSNoise noise)
 {
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
-    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+    if constexpr (I < Traits::PolynomialTraits::relin_depth) {
         const std::filesystem::path path =
             CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
         if (!std::filesystem::exists(path)) {
@@ -9482,7 +9684,7 @@ inline void CKKSDenseBootstrapPolynomialRelinKeyFilePathsImpl(
     std::vector<std::filesystem::path> &paths, const std::filesystem::path &root)
 {
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
-    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+    if constexpr (I < Traits::PolynomialTraits::relin_depth) {
         paths.push_back(CKKSDenseBootstrapIndexedPath(root, "polynomial_relin",
                                                       I));
         CKKSDenseBootstrapPolynomialRelinKeyFilePathsImpl<I + 1, Schedule>(
@@ -9631,7 +9833,7 @@ CKKSDenseBootstrapSeededPolynomialRelinNextMissingFileByteEstimateImpl(
 {
     using P = typename Schedule::Param;
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
-    if constexpr (I < Traits::PolynomialTraits::power_depth) {
+    if constexpr (I < Traits::PolynomialTraits::relin_depth) {
         constexpr std::uint32_t log_q =
             Schedule::after_component_split_log_q -
             (I + 1) * Schedule::log_delta;
@@ -10050,7 +10252,7 @@ inline std::vector<std::filesystem::path> CKKSDenseBootstrapKeyDirectoryFiles(
     std::vector<std::filesystem::path> paths;
     paths.reserve(6 + Schedule::coeff_to_slot_level_count +
                   Schedule::slot_to_coeff_level_count +
-                  EvalModTraits::PolynomialTraits::power_depth +
+                  EvalModTraits::PolynomialTraits::relin_depth +
                   Schedule::evalmod_double_angle +
                   EvalModTraits::InverseTraits::power_depth);
     paths.push_back(CKKSDenseBootstrapKeyDirectoryManifestFile(root));
@@ -10159,7 +10361,7 @@ CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryFiles(
                           (P::nbit + 1) +
                   Schedule::slot_to_coeff_level_count *
                       (P::nbit + 1) +
-                  EvalModTraits::PolynomialTraits::power_depth +
+                  EvalModTraits::PolynomialTraits::relin_depth +
                   Schedule::evalmod_double_angle +
                   EvalModTraits::InverseTraits::power_depth);
     paths.push_back(CKKSDenseBootstrapKeyDirectoryManifestFile(root));
@@ -11171,7 +11373,7 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
         typename ckks_detail::CKKSDenseBootstrapPolynomialRelinCacheTuple<
             Schedule,
             std::make_index_sequence<EvalModTraits::PolynomialTraits::
-                                         power_depth>>::type;
+                                         relin_depth>>::type;
     using DoubleAngleRelinCache =
         typename ckks_detail::CKKSDenseBootstrapDoubleAngleRelinCacheTuple<
             Schedule,
@@ -11274,7 +11476,7 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
     template <std::size_t I>
     const auto &polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         auto &entry = std::get<I>(polynomial_relin_cache);
         if (!entry) {
             entry = std::make_unique<
@@ -11290,7 +11492,7 @@ struct CKKSDenseBootstrapFilesystemKeyProvider {
     template <std::size_t I>
     void release_polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         std::get<I>(polynomial_relin_cache).reset();
     }
 
@@ -11383,7 +11585,7 @@ struct CKKSDenseBootstrapHybridGiantFilesystemKeyProvider {
         typename ckks_detail::CKKSDenseBootstrapPolynomialRelinCacheTuple<
             Schedule,
             std::make_index_sequence<EvalModTraits::PolynomialTraits::
-                                         power_depth>>::type;
+                                         relin_depth>>::type;
     using DoubleAngleRelinCache =
         typename ckks_detail::CKKSDenseBootstrapDoubleAngleRelinCacheTuple<
             Schedule,
@@ -11488,7 +11690,7 @@ struct CKKSDenseBootstrapHybridGiantFilesystemKeyProvider {
     template <std::size_t I>
     const auto &polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         auto &entry = std::get<I>(polynomial_relin_cache);
         if (!entry) {
             entry = std::make_unique<
@@ -11504,7 +11706,7 @@ struct CKKSDenseBootstrapHybridGiantFilesystemKeyProvider {
     template <std::size_t I>
     void release_polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         std::get<I>(polynomial_relin_cache).reset();
     }
 
@@ -11599,7 +11801,7 @@ struct CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider {
             CKKSDenseBootstrapSeededPolynomialRelinCacheTuple<
                 Schedule,
                 std::make_index_sequence<EvalModTraits::PolynomialTraits::
-                                             power_depth>>::type;
+                                             relin_depth>>::type;
     using DoubleAngleRelinCache =
         typename ckks_detail::
             CKKSDenseBootstrapSeededDoubleAngleRelinCacheTuple<
@@ -11705,7 +11907,7 @@ struct CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider {
     template <std::size_t I>
     const auto &polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         auto &entry = std::get<I>(polynomial_relin_cache);
         if (!entry) {
             entry = std::make_unique<
@@ -11721,7 +11923,7 @@ struct CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider {
     template <std::size_t I>
     void release_polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         std::get<I>(polynomial_relin_cache).reset();
     }
 
@@ -11817,7 +12019,7 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
             CKKSDenseBootstrapSeededPolynomialRelinCacheTuple<
                 Schedule,
                 std::make_index_sequence<EvalModTraits::PolynomialTraits::
-                                             power_depth>>::type;
+                                             relin_depth>>::type;
     using DoubleAngleRelinCache =
         typename ckks_detail::
             CKKSDenseBootstrapSeededDoubleAngleRelinCacheTuple<
@@ -11939,7 +12141,7 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
     template <std::size_t I>
     const auto &polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         auto &entry = std::get<I>(polynomial_relin_cache);
         if (!entry) {
             entry = std::make_unique<
@@ -11955,7 +12157,7 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
     template <std::size_t I>
     void release_polynomial_relin() const
     {
-        static_assert(I < EvalModTraits::PolynomialTraits::power_depth);
+        static_assert(I < EvalModTraits::PolynomialTraits::relin_depth);
         std::get<I>(polynomial_relin_cache).reset();
     }
 
