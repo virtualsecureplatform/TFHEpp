@@ -5006,17 +5006,17 @@ using lvl6CKKSDenseBootstrapInverseSchedule =
                                128, 0, 50, 50, 20, 5, 5, 3>;
 struct lvl6CKKSDenseBootstrapTunedSchedule
     : CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7,
-                                 52, 128, 0, 52, 52, 30, 7, 7, 6> {
+                                 52, 128, 0, 52, 52, 30, 7, 7, 5> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
-        return I == 0 ? 512 : 64;
+        return I == 0 ? 1024 : 64;
     }
 
     template <std::size_t I>
     static consteval int slot_to_coeff_bsgs_step()
     {
-        return I + 1 == slot_to_coeff_level_count ? 512 : 64;
+        return I + 1 == slot_to_coeff_level_count ? 1024 : 64;
     }
 };
 

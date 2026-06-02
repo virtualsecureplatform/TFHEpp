@@ -989,7 +989,19 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6CompactSchedule::hybrid_giant_direct_popcount_threshold ==
                   4);
     static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold ==
-                  6);
+                  5);
+    static_assert(
+        TFHEpp::ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStep<
+            0, Lvl6TunedSchedule>() == 1024);
+    static_assert(
+        TFHEpp::ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStep<
+            1, Lvl6TunedSchedule>() == 64);
+    static_assert(
+        TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
+            0, Lvl6TunedSchedule>() == 64);
+    static_assert(
+        TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
+            1, Lvl6TunedSchedule>() == 1024);
     using Lvl6PostBootstrapProductTraits =
         TFHEpp::CKKSDenseBootstrapProductTraits<
             Lvl6FastSchedule, Lvl6FastSchedule::output_log_q,

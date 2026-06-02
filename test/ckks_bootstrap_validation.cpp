@@ -1462,20 +1462,44 @@ struct Lvl6TunedHybridThresholdSchedule
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
-        return I == 0 ? 512 : 64;
+        return I == 0 ? 1024 : 64;
     }
 
     template <std::size_t I>
     static consteval int slot_to_coeff_bsgs_step()
     {
-        return I == 1 ? 512 : 64;
+        return I == 1 ? 1024 : 64;
     }
 };
 
 template <int LinearBSGSStep>
 using Lvl6TunedBSGSStepSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
     TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52,
-    LinearBSGSStep, 0, 52, 52, 30, 7, 7, 2>;
+    LinearBSGSStep, 0, 52, 52, 30, 7, 7, 5>;
+
+template <int C2S0, int C2S1, int STC0, int STC1>
+struct Lvl6TunedStageBSGSSchedule
+    : TFHEpp::CKKSDenseBootstrapSchedule<
+          TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52, 128, 0, 52,
+          52, 30, 7, 7, 5> {
+    template <std::size_t I>
+    static consteval int coeff_to_slot_bsgs_step()
+    {
+        if constexpr (I == 0)
+            return C2S0;
+        else
+            return C2S1;
+    }
+
+    template <std::size_t I>
+    static consteval int slot_to_coeff_bsgs_step()
+    {
+        if constexpr (I == 0)
+            return STC0;
+        else
+            return STC1;
+    }
+};
 
 using Lvl6InverseSchedule = TFHEpp::lvl6CKKSDenseBootstrapInverseSchedule;
 static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
@@ -1483,12 +1507,24 @@ static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
 static_assert(Lvl6TunedSchedule::log_delta == 52);
-static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 6);
+static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 5);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
 static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_level_count == 2);
 static_assert(Lvl6TunedSchedule::slot_to_coeff_level_count == 2);
+static_assert(
+    TFHEpp::ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStep<
+        0, Lvl6TunedSchedule>() == 1024);
+static_assert(
+    TFHEpp::ckks_detail::CKKSDenseBootstrapCoeffToSlotBSGSStep<
+        1, Lvl6TunedSchedule>() == 64);
+static_assert(
+    TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
+        0, Lvl6TunedSchedule>() == 64);
+static_assert(
+    TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
+        1, Lvl6TunedSchedule>() == 1024);
 static_assert(Lvl6TunedSchedule::output_log_q == 156);
 static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
 static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 44);
@@ -2034,6 +2070,66 @@ void print_schedule_report(const char *label,
     }
 }
 
+template <class Schedule>
+void print_schedule_tuning_summary(const char *label)
+{
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
+        hybrid_usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        hybrid_usage, linear_plan);
+
+    std::cout << label << " c2s_bsgs0="
+              << TFHEpp::ckks_detail::
+                     CKKSDenseBootstrapCoeffToSlotBSGSStep<0, Schedule>()
+              << " c2s_bsgs1="
+              << TFHEpp::ckks_detail::
+                     CKKSDenseBootstrapCoeffToSlotBSGSStep<1, Schedule>()
+              << " stc_bsgs0="
+              << TFHEpp::ckks_detail::
+                     CKKSDenseBootstrapSlotToCoeffBSGSStep<0, Schedule>()
+              << " stc_bsgs1="
+              << TFHEpp::ckks_detail::
+                     CKKSDenseBootstrapSlotToCoeffBSGSStep<1, Schedule>()
+              << " threshold="
+              << Schedule::hybrid_giant_direct_popcount_threshold << '\n';
+    std::cout << label << " hybrid_rotation_indices="
+              << TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsageCount<
+                     Schedule>(hybrid_usage)
+              << " hybrid_rows="
+              << TFHEpp::CKKSDenseBootstrapHybridGiantKeySwitchRowCount<
+                     Schedule>(hybrid_usage)
+              << " hybrid_streamed_peak_rows="
+              << TFHEpp::
+                     CKKSDenseBootstrapHybridGiantStreamedKeySwitchPeakRowCount<
+                         Schedule>(hybrid_usage)
+              << " hybrid_streamed_low_cache_peak_rows="
+              << TFHEpp::
+                     CKKSDenseBootstrapHybridGiantStreamedLowCacheKeySwitchPeakRowCount<
+                         Schedule>(hybrid_usage)
+              << '\n';
+    std::cout << label << " rotation_evalautos hybrid c2s="
+              << coeff_to_slot_hybrid_rotation_evalautos<0, Schedule>(
+                     linear_plan)
+              << " stc="
+              << slot_to_coeff_shared_tail_hybrid_rotation_evalautos<Schedule>(
+                     linear_plan)
+              << '\n';
+    std::cout << label << " seeded_hybrid_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapHybridGiantSeededKeyByteEstimate<
+                     Schedule>(hybrid_usage)
+              << " seeded_hybrid_streamed_peak_bytes="
+              << TFHEpp::
+                     CKKSDenseBootstrapHybridGiantStreamedPeakSeededKeyByteEstimate<
+                         Schedule>(hybrid_usage)
+              << " seeded_hybrid_streamed_low_cache_peak_bytes="
+              << TFHEpp::
+                     CKKSDenseBootstrapHybridGiantStreamedLowCachePeakSeededKeyByteEstimate<
+                         Schedule>(hybrid_usage)
+              << '\n';
+}
+
 void print_lvl6_hybrid_threshold_reports()
 {
     print_schedule_report<Lvl6HybridThresholdSchedule<1>>("lvl6-hybrid-th1");
@@ -2053,21 +2149,21 @@ void print_lvl6_robust_reports()
 
 void print_lvl6_tuned_hybrid_threshold_reports()
 {
-    print_schedule_report<Lvl6TunedHybridThresholdSchedule<1>>(
+    print_schedule_tuning_summary<Lvl6TunedHybridThresholdSchedule<1>>(
         "lvl6-tuned-th1");
-    print_schedule_report<Lvl6TunedHybridThresholdSchedule<2>>(
+    print_schedule_tuning_summary<Lvl6TunedHybridThresholdSchedule<2>>(
         "lvl6-tuned-th2");
-    print_schedule_report<Lvl6TunedHybridThresholdSchedule<3>>(
+    print_schedule_tuning_summary<Lvl6TunedHybridThresholdSchedule<3>>(
         "lvl6-tuned-th3");
-    print_schedule_report<Lvl6TunedHybridThresholdSchedule<4>>(
+    print_schedule_tuning_summary<Lvl6TunedHybridThresholdSchedule<4>>(
         "lvl6-tuned-th4");
-    print_schedule_report<Lvl6TunedHybridThresholdSchedule<5>>(
+    print_schedule_tuning_summary<Lvl6TunedHybridThresholdSchedule<5>>(
         "lvl6-tuned-th5");
-    print_schedule_report<Lvl6TunedHybridThresholdSchedule<6>>(
+    print_schedule_tuning_summary<Lvl6TunedHybridThresholdSchedule<6>>(
         "lvl6-tuned-th6");
-    print_schedule_report<Lvl6TunedHybridThresholdSchedule<7>>(
+    print_schedule_tuning_summary<Lvl6TunedHybridThresholdSchedule<7>>(
         "lvl6-tuned-th7");
-    print_schedule_report<Lvl6TunedHybridThresholdSchedule<8>>(
+    print_schedule_tuning_summary<Lvl6TunedHybridThresholdSchedule<8>>(
         "lvl6-tuned-th8");
 }
 
@@ -2083,6 +2179,34 @@ void print_lvl6_tuned_bsgs_step_reports()
         "lvl6-tuned-bsgs512");
     print_schedule_report<Lvl6TunedBSGSStepSchedule<1024>>(
         "lvl6-tuned-bsgs1024");
+}
+
+void print_lvl6_tuned_stage_bsgs_reports()
+{
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<512, 64, 64, 512>>(
+        "lvl6-tuned-stage-c512-64-s64-512");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<256, 64, 64, 256>>(
+        "lvl6-tuned-stage-c256-64-s64-256");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<512, 128, 128, 512>>(
+        "lvl6-tuned-stage-c512-128-s128-512");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<256, 128, 128, 256>>(
+        "lvl6-tuned-stage-c256-128-s128-256");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<1024, 64, 64, 1024>>(
+        "lvl6-tuned-stage-c1024-64-s64-1024");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<1024, 128, 128, 1024>>(
+        "lvl6-tuned-stage-c1024-128-s128-1024");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<512, 256, 256, 512>>(
+        "lvl6-tuned-stage-c512-256-s256-512");
+    print_schedule_tuning_summary<
+        Lvl6TunedStageBSGSSchedule<256, 256, 256, 256>>(
+        "lvl6-tuned-stage-c256-256-s256-256");
 }
 
 void print_lvl6_inverse_reports()
@@ -5935,6 +6059,7 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-plan]"
                  " [--lvl6-tuned-hybrid-thresholds-plan]"
                  " [--lvl6-tuned-bsgs-steps-plan]"
+                 " [--lvl6-tuned-stage-bsgs-plan]"
                  " [--lvl6-tuned-readiness]"
                  " [--lvl6-tuned-hybrid-keygen DIR]"
                  " [--lvl6-tuned-hybrid-keygen-next DIR]"
@@ -6089,6 +6214,10 @@ int main(int argc, char **argv)
         else if (arg == "--lvl6-tuned-bsgs-steps-plan") {
             saw_action = true;
             print_lvl6_tuned_bsgs_step_reports();
+        }
+        else if (arg == "--lvl6-tuned-stage-bsgs-plan") {
+            saw_action = true;
+            print_lvl6_tuned_stage_bsgs_reports();
         }
         else if (arg == "--lvl6-tuned-readiness") {
             saw_action = true;
