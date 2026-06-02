@@ -1029,9 +1029,9 @@ void test_dense_bootstrap_api_shape()
                                  TFHEpp::lvl6param>);
     static_assert(Lvl6TunedSchedule::log_delta == 52);
     static_assert(Lvl6TunedSchedule::input_log_q == 60);
-    static_assert(Lvl6TunedSchedule::evalmod_degree == 52);
+    static_assert(Lvl6TunedSchedule::evalmod_degree == 34);
     static_assert(Lvl6TunedSchedule::evalmod_double_angle == 4);
-    static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
+    static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 5);
     static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
     static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
     static_assert(Lvl6TunedSchedule::component_split_plain_log_delta == 52);

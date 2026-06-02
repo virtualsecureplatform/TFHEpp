@@ -1532,7 +1532,7 @@ using Lvl6RobustHybridThresholdSchedule =
 template <int HybridThreshold>
 struct Lvl6TunedHybridThresholdSchedule
     : TFHEpp::CKKSDenseBootstrapSchedule<
-          TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52, 128, 0, 52,
+          TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
           52, 30, 7, 7, HybridThreshold> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
@@ -1549,13 +1549,13 @@ struct Lvl6TunedHybridThresholdSchedule
 
 template <int LinearBSGSStep>
 using Lvl6TunedBSGSStepSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
-    TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52,
+    TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5, 52,
     LinearBSGSStep, 0, 52, 52, 30, 7, 7, 5>;
 
 template <int C2S0, int C2S1, int STC0, int STC1>
 struct Lvl6TunedStageBSGSSchedule
     : TFHEpp::CKKSDenseBootstrapSchedule<
-          TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52, 128, 0, 52,
+          TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
           52, 30, 7, 7, 5> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
@@ -1583,7 +1583,8 @@ static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
 static_assert(Lvl6TunedSchedule::log_delta == 52);
 static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 5);
-static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
+static_assert(Lvl6TunedSchedule::evalmod_degree == 34);
+static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 5);
 static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_level_count == 2);
@@ -4857,6 +4858,22 @@ int run_seeded_hybrid_filesystem_evalmod_diagnostics(
             Schedule>>(key_dir, sparse_weight);
 }
 
+template <class Schedule>
+int run_seeded_hybrid_streamed_filesystem_evalmod_diagnostics(
+    const std::filesystem::path &key_dir, std::size_t sparse_weight = 0)
+{
+    if (const int status =
+            validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
+                key_dir);
+        status != 0)
+        return status;
+    return run_key_provider_evalmod_diagnostics<
+        Schedule,
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<
+                Schedule>>(key_dir, sparse_weight);
+}
+
 template <class Schedule, class KeyProvider>
 int run_key_provider_stc_diagnostics(const std::filesystem::path &key_dir,
                                      std::size_t sparse_weight = 0)
@@ -6168,6 +6185,7 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-streamed-run DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-run-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-debug-evalmod DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-all DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-chained-product-encap DIR]"
@@ -6394,11 +6412,13 @@ int main(int argc, char **argv)
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-streamed-keygen-next" ||
                  arg == "--lvl6-tuned-seeded-hybrid-streamed-run" ||
-                 arg ==
-                     "--lvl6-tuned-seeded-hybrid-streamed-run-product-encap" ||
-                 arg ==
-                     "--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap" ||
-                 arg == "--lvl6-tuned-seeded-hybrid-streamed-all" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-run-product-encap" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-debug-evalmod" ||
+                arg == "--lvl6-tuned-seeded-hybrid-streamed-all" ||
                  arg == "--lvl6-tuned-seeded-hybrid-run-product-encap" ||
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-run-chained-product-encap" ||
@@ -6647,6 +6667,15 @@ int main(int argc, char **argv)
                 if (run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap<
                         Lvl6TunedSchedule>(
                         key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-debug-evalmod") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_filesystem_evalmod_diagnostics<
+                        Lvl6TunedSchedule>(key_dir, lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg == "--lvl6-tuned-seeded-hybrid-streamed-all") {

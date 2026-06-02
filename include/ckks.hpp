@@ -805,6 +805,13 @@ inline bool ckks_linear_trace_enabled()
     return enabled;
 }
 
+inline bool ckks_evalmod_trace_enabled()
+{
+    static const bool enabled =
+        std::getenv("TFHEPP_CKKS_TRACE_EVALMOD") != nullptr;
+    return enabled;
+}
+
 inline double ckks_trace_elapsed_ms(
     const std::chrono::steady_clock::time_point &start)
 {
@@ -826,6 +833,34 @@ inline void ckks_trace_linear_group_event(const char *name, std::size_t group,
     if (!ckks_linear_trace_enabled()) return;
     std::cerr << "ckks_linear_trace name=" << name << " group=" << group
               << " ms=" << elapsed_ms << '\n';
+}
+
+inline void ckks_trace_evalmod_event(const char *name, double elapsed_ms)
+{
+    if (!ckks_evalmod_trace_enabled()) return;
+    std::cerr << "ckks_evalmod_trace name=" << name << " ms=" << elapsed_ms
+              << '\n';
+}
+
+inline void ckks_trace_evalmod_power_event(const char *name, std::size_t power,
+                                           std::uint32_t depth,
+                                           double elapsed_ms)
+{
+    if (!ckks_evalmod_trace_enabled()) return;
+    std::cerr << "ckks_evalmod_trace name=" << name << " power=" << power
+              << " depth=" << depth << " ms=" << elapsed_ms << '\n';
+}
+
+inline void ckks_trace_evalmod_mult_event(const char *name,
+                                          std::uint32_t lhs_log_q,
+                                          std::uint32_t rhs_log_q,
+                                          std::uint32_t out_log_q,
+                                          double elapsed_ms)
+{
+    if (!ckks_evalmod_trace_enabled()) return;
+    std::cerr << "ckks_evalmod_trace name=" << name
+              << " lhs_logQ=" << lhs_log_q << " rhs_logQ=" << rhs_log_q
+              << " out_logQ=" << out_log_q << " ms=" << elapsed_ms << '\n';
 }
 
 template <std::uint32_t A, std::uint32_t B>
@@ -5166,7 +5201,7 @@ using lvl6CKKSDenseBootstrapInverseSchedule =
     CKKSDenseBootstrapSchedule<lvl6param, 40, 8, 880, 40, 5, 52, 18, 4, 3, 40,
                                128, 0, 50, 50, 20, 5, 5, 3>;
 struct lvl6CKKSDenseBootstrapTunedSchedule
-    : CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7,
+    : CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5,
                                  52, 128, 0, 52, 52, 30, 7, 7, 5> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
@@ -6221,11 +6256,32 @@ inline void CKKSMult(
 {
     using Traits =
         CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
+    const bool trace_evalmod = ckks_detail::ckks_evalmod_trace_enabled();
+    std::chrono::steady_clock::time_point trace_total_start{};
+    std::chrono::steady_clock::time_point trace_section_start{};
+    if (trace_evalmod) {
+        trace_total_start = std::chrono::steady_clock::now();
+        trace_section_start = trace_total_start;
+    }
 
     auto mult = std::make_unique<TRLWE3<P>>();
     CKKSTensorProductRescale<P, LhsLogQ, RhsLogQ, Traits::log_scale>(
         *mult, lhs.ct, rhs.ct);
+    if (trace_evalmod) {
+        ckks_detail::ckks_trace_evalmod_mult_event(
+            "mult_tensor_product", LhsLogQ, RhsLogQ, Traits::log_q,
+            ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+        trace_section_start = std::chrono::steady_clock::now();
+    }
     CKKSRelinearization<P, Traits::log_q>(res.ct, *mult, relinkey);
+    if (trace_evalmod) {
+        ckks_detail::ckks_trace_evalmod_mult_event(
+            "mult_relinearization", LhsLogQ, RhsLogQ, Traits::log_q,
+            ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+        ckks_detail::ckks_trace_evalmod_mult_event(
+            "mult_total", LhsLogQ, RhsLogQ, Traits::log_q,
+            ckks_detail::ckks_trace_elapsed_ms(trace_total_start));
+    }
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta, class RelinKey>
@@ -6309,9 +6365,16 @@ inline void CKKSBuildPowerBasisImpl(
                                       LogDelta>;
             auto &dst = std::get<I - 1>(powers);
             dst = std::make_unique<Ct>();
+            const bool trace_evalmod = ckks_evalmod_trace_enabled();
+            std::chrono::steady_clock::time_point trace_start{};
+            if (trace_evalmod) trace_start = std::chrono::steady_clock::now();
             CKKSMult<P>(*dst, *std::get<lhs_power - 1>(powers),
                         *std::get<rhs_power - 1>(powers),
                         keys.template get<depth - 1>());
+            if (trace_evalmod)
+                ckks_trace_evalmod_power_event(
+                    "power_basis_mult", I, depth,
+                    ckks_trace_elapsed_ms(trace_start));
             if constexpr (I == Degree || power_tree_depth(I + 1) > depth) {
                 maybe_release_key<depth - 1>(keys);
             }
@@ -6376,9 +6439,16 @@ inline void CKKSBuildChebyshevBasisImpl(
                                       LogDelta>;
             auto &dst = std::get<I - 1>(powers);
             dst = std::make_unique<Ct>();
+            const bool trace_evalmod = ckks_evalmod_trace_enabled();
+            std::chrono::steady_clock::time_point trace_start{};
+            if (trace_evalmod) trace_start = std::chrono::steady_clock::now();
             CKKSMult<P>(*dst, *std::get<lhs_power - 1>(powers),
                         *std::get<rhs_power - 1>(powers),
                         keys.template get<depth - 1>());
+            if (trace_evalmod)
+                ckks_trace_evalmod_power_event(
+                    "chebyshev_basis_mult", I, depth,
+                    ckks_trace_elapsed_ms(trace_start));
             CKKSMulIntegerInPlace<P, Ct::log_q, LogDelta>(*dst, 2);
             if constexpr (correction_power == 0) {
                 CKKSSubPlainRealInPlace<P, Ct::log_q, LogDelta>(*dst, 1.0);
@@ -6733,6 +6803,13 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
     using Traits = CKKSEvalModBoundedCosTraits<
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
         InvDegree>;
+    const bool trace_evalmod = ckks_detail::ckks_evalmod_trace_enabled();
+    std::chrono::steady_clock::time_point trace_total_start{};
+    std::chrono::steady_clock::time_point trace_section_start{};
+    if (trace_evalmod) {
+        trace_total_start = std::chrono::steady_clock::now();
+        trace_section_start = trace_total_start;
+    }
     auto shifted =
         std::make_unique<CKKSCiphertext<P, StartLogQ, LogDelta>>(ct);
     CKKSSubPlainRealInPlace<P, StartLogQ, LogDelta>(*shifted,
@@ -6746,6 +6823,12 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
                                                CoeffLogDelta, Degree>(
         *polynomial, *shifted, poly.chebyshev_coeffs, polynomial_keys);
     shifted.reset();
+    if (trace_evalmod) {
+        ckks_detail::ckks_trace_evalmod_event(
+            "evalmod_chebyshev_polynomial",
+            ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+        trace_section_start = std::chrono::steady_clock::now();
+    }
 
     const ckks_detail::CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider,
                                                                   false>
@@ -6757,6 +6840,12 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
             0, P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
             *double_angle, *polynomial, double_angle_keys, poly.sqrt_coeff);
         polynomial.reset();
+        if (trace_evalmod) {
+            ckks_detail::ckks_trace_evalmod_event(
+                "evalmod_double_angle",
+                ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+            trace_section_start = std::chrono::steady_clock::now();
+        }
 
         const ckks_detail::CKKSEvalModBoundedCosInverseRelinKeyProviderChain<
             KeyProvider>
@@ -6766,11 +6855,27 @@ inline void CKKSEvalModBoundedCosNormalizedWithKeyProvider(
             InvDegree>(res, *double_angle,
                        CKKSBuildEvalModInversePowerCoefficients(poly, InvDegree),
                        inverse_keys);
+        if (trace_evalmod) {
+            ckks_detail::ckks_trace_evalmod_event(
+                "evalmod_inverse_correction",
+                ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+            ckks_detail::ckks_trace_evalmod_event(
+                "evalmod_total",
+                ckks_detail::ckks_trace_elapsed_ms(trace_total_start));
+        }
     }
     else {
         ckks_detail::CKKSBoundedCosDoubleAngleImpl<
             0, P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
             res, *polynomial, double_angle_keys, poly.sqrt_coeff);
+        if (trace_evalmod) {
+            ckks_detail::ckks_trace_evalmod_event(
+                "evalmod_double_angle",
+                ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+            ckks_detail::ckks_trace_evalmod_event(
+                "evalmod_total",
+                ckks_detail::ckks_trace_elapsed_ms(trace_total_start));
+        }
     }
 }
 
