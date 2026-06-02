@@ -8157,8 +8157,6 @@ struct CKKSSeededSparseGaloisKeyFileView {
     std::filesystem::path root{};
     std::string prefix{};
     CKKSRotationKeyIndexSet<P> available{};
-    const Key<P> *generator_key = nullptr;
-    CKKSNoise generator_noise = {P::α, 0};
     mutable std::array<std::unique_ptr<CKKSSeededAutoKey<P, LogQ>>,
                        P::nbit + 1>
         keys{};
@@ -8174,18 +8172,9 @@ struct CKKSSeededSparseGaloisKeyFileView {
         auto &entry = keys[i];
         if (!entry) {
             entry = std::make_unique<CKKSSeededAutoKey<P, LogQ>>();
-            const std::filesystem::path path =
-                CKKSDenseBootstrapIndexedPath(root, prefix, i);
-            if (!std::filesystem::exists(path) && generator_key != nullptr) {
-                std::uint64_t d = 5;
-                for (std::size_t j = 0; j < i; j++) d = d * d % (2 * P::n);
-                if (i == P::nbit) d = 2 * P::n - 1;
-                CKKSAutoKeyGen<P, LogQ>(*entry, static_cast<uint>(d),
-                                         *generator_key, generator_noise);
-            }
-            else {
-                CKKSLoadPortableBinary(*entry, path);
-            }
+            CKKSLoadPortableBinary(*entry,
+                                   CKKSDenseBootstrapIndexedPath(root, prefix,
+                                                                 i));
         }
         return *entry;
     }
@@ -8201,8 +8190,6 @@ struct CKKSSeededDirectSparseGaloisKeyFileView {
     std::filesystem::path root{};
     std::string prefix{};
     CKKSDirectRotationKeyIndexSet<P> available{};
-    const Key<P> *generator_key = nullptr;
-    CKKSNoise generator_noise = {P::α, 0};
     mutable std::vector<CKKSSeededDirectSparseGaloisKeyEntry<P, LogQ>> keys{};
 
     static constexpr int normalize_steps(int steps)
@@ -8229,17 +8216,10 @@ struct CKKSSeededDirectSparseGaloisKeyFileView {
         if (it == keys.end()) {
             auto &entry = keys.emplace_back();
             entry.steps = steps;
-            const std::filesystem::path path =
-                CKKSDenseBootstrapIndexedPath(root, prefix,
-                                              static_cast<std::size_t>(steps));
-            if (!std::filesystem::exists(path) && generator_key != nullptr) {
-                CKKSAutoKeyGen<P, LogQ>(
-                    entry.key, rotationAutomorphismForSteps<P>(steps),
-                    *generator_key, generator_noise);
-            }
-            else {
-                CKKSLoadPortableBinary(entry.key, path);
-            }
+            CKKSLoadPortableBinary(entry.key,
+                                   CKKSDenseBootstrapIndexedPath(
+                                       root, prefix,
+                                       static_cast<std::size_t>(steps)));
             return entry.key;
         }
         return it->key;
@@ -11572,8 +11552,6 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
                                          power_depth>>::type;
 
     std::filesystem::path root;
-    const Key<P> *generator_key = nullptr;
-    CKKSNoise generator_noise = {P::α, 0};
     CKKSDenseBootstrapLinearPlan<Schedule> linear_plan_cache{};
     CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>
         rotation_usage_cache{};
@@ -11617,29 +11595,6 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
                                                      "evalmod_polynomial"));
     }
 
-    CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider(
-        std::filesystem::path root_, const Key<P> &generator_key_,
-        CKKSNoise generator_noise_ = {P::α, 0})
-        : root(std::move(root_)),
-          generator_key(&generator_key_),
-          generator_noise(generator_noise_)
-    {
-        try {
-            rotation_usage_cache =
-                CKKSDenseBootstrapSeededHybridGiantStreamedWriteKeyDirectoryMetadata<
-                    Schedule>(root, false);
-        }
-        catch (const std::exception &e) {
-            throw std::runtime_error(
-                std::string("invalid CKKS streamed seeded hybrid bootstrap key "
-                            "directory manifest for generation: ") +
-                e.what());
-        }
-        CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan_cache);
-        evalmod_polynomial_cache =
-            CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
-    }
-
     const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan() const
     {
         return linear_plan_cache;
@@ -11668,16 +11623,12 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
                     "coeff_to_slot_galois", I, "binary");
             entry->binary.available =
                 rotation_usage_cache.coeff_to_slot_binary[I];
-            entry->binary.generator_key = generator_key;
-            entry->binary.generator_noise = generator_noise;
             entry->direct.root = root;
             entry->direct.prefix =
                 ckks_detail::CKKSDenseBootstrapLeveledKeyPrefix(
                     "coeff_to_slot_galois", I, "direct");
             entry->direct.available =
                 rotation_usage_cache.coeff_to_slot_direct[I];
-            entry->direct.generator_key = generator_key;
-            entry->direct.generator_noise = generator_noise;
         }
         return *entry;
     }
@@ -11694,17 +11645,10 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
         if (!packed_conjugate_cache) {
             packed_conjugate_cache = std::make_unique<
                 CKKSDenseBootstrapSeededPackedConjugateGaloisKey<Schedule>>();
-            const std::filesystem::path path =
+            CKKSLoadPortableBinary(
+                *packed_conjugate_cache,
                 ckks_detail::CKKSDenseBootstrapNamedPath(
-                    root, "packed_conjugate_galois");
-            if (!std::filesystem::exists(path) && generator_key != nullptr) {
-                CKKSSparseGaloisKeyGen<P, Schedule::after_coeff_to_slot_log_q>(
-                    *packed_conjugate_cache, *generator_key,
-                    rotation_usage_cache.packed_conjugate, generator_noise);
-            }
-            else {
-                CKKSLoadPortableBinary(*packed_conjugate_cache, path);
-            }
+                    root, "packed_conjugate_galois"));
         }
         return *packed_conjugate_cache;
     }
@@ -11722,14 +11666,10 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
         if (!entry) {
             entry = std::make_unique<
                 CKKSDenseSeededEvalModPolynomialRelinKey<Schedule, I>>();
-            const std::filesystem::path path =
+            CKKSLoadPortableBinary(
+                *entry,
                 ckks_detail::CKKSDenseBootstrapIndexedPath(
-                    root, "polynomial_relin", I);
-            if (!std::filesystem::exists(path) && generator_key != nullptr)
-                CKKSDenseSeededEvalModPolynomialRelinKeyGen<Schedule, I>(
-                    *entry, *generator_key, generator_noise);
-            else
-                CKKSLoadPortableBinary(*entry, path);
+                    root, "polynomial_relin", I));
         }
         return *entry;
     }
@@ -11749,14 +11689,10 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
         if (!entry) {
             entry = std::make_unique<
                 CKKSDenseSeededEvalModDoubleAngleRelinKey<Schedule, I>>();
-            const std::filesystem::path path =
+            CKKSLoadPortableBinary(
+                *entry,
                 ckks_detail::CKKSDenseBootstrapIndexedPath(
-                    root, "double_angle_relin", I);
-            if (!std::filesystem::exists(path) && generator_key != nullptr)
-                CKKSDenseSeededEvalModDoubleAngleRelinKeyGen<Schedule, I>(
-                    *entry, *generator_key, generator_noise);
-            else
-                CKKSLoadPortableBinary(*entry, path);
+                    root, "double_angle_relin", I));
         }
         return *entry;
     }
@@ -11776,14 +11712,10 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
         if (!entry) {
             entry = std::make_unique<
                 CKKSDenseSeededEvalModInverseRelinKey<Schedule, I>>();
-            const std::filesystem::path path =
-                ckks_detail::CKKSDenseBootstrapIndexedPath(root, "inverse_relin",
-                                                           I);
-            if (!std::filesystem::exists(path) && generator_key != nullptr)
-                CKKSDenseSeededEvalModInverseRelinKeyGen<Schedule, I>(
-                    *entry, *generator_key, generator_noise);
-            else
-                CKKSLoadPortableBinary(*entry, path);
+            CKKSLoadPortableBinary(
+                *entry,
+                ckks_detail::CKKSDenseBootstrapIndexedPath(root,
+                                                           "inverse_relin", I));
         }
         return *entry;
     }
@@ -11813,16 +11745,12 @@ struct CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider {
                     "slot_to_coeff_galois", I, "binary");
             entry->binary.available =
                 rotation_usage_cache.slot_to_coeff_binary[I];
-            entry->binary.generator_key = generator_key;
-            entry->binary.generator_noise = generator_noise;
             entry->direct.root = root;
             entry->direct.prefix =
                 ckks_detail::CKKSDenseBootstrapLeveledKeyPrefix(
                     "slot_to_coeff_galois", I, "direct");
             entry->direct.available =
                 rotation_usage_cache.slot_to_coeff_direct[I];
-            entry->direct.generator_key = generator_key;
-            entry->direct.generator_noise = generator_noise;
         }
         return *entry;
     }
@@ -12491,21 +12419,6 @@ inline void CKKSDenseBootstrapWithSeededHybridGiantStreamedFilesystemKeyTimed(
         res, ct, provider, timings, progress);
 }
 
-template <class Schedule>
-inline void CKKSDenseBootstrapWithSeededHybridGiantStreamedGeneratedFilesystemKeyTimed(
-    typename Schedule::OutputCiphertext &res,
-    const typename Schedule::InputCiphertext &ct,
-    const std::filesystem::path &key_dir,
-    const Key<typename Schedule::Param> &bootstrap_key,
-    CKKSDenseBootstrapTimings &timings,
-    const CKKSDenseBootstrapProgress *progress = nullptr)
-{
-    CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<Schedule>
-        provider(key_dir, bootstrap_key);
-    CKKSDenseBootstrapWithKeyProviderTimed<Schedule>(
-        res, ct, provider, timings, progress);
-}
-
 template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
 inline void
 CKKSDenseBootstrapFromLevelWithSeededHybridGiantStreamedFilesystemKey(
@@ -12528,22 +12441,6 @@ CKKSDenseBootstrapFromLevelWithSeededHybridGiantStreamedFilesystemKeyTimed(
 {
     CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<Schedule>
         provider(key_dir);
-    CKKSDenseBootstrapFromLevelWithKeyProviderTimed<Schedule>(
-        res, ct, provider, timings, progress);
-}
-
-template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
-inline void
-CKKSDenseBootstrapFromLevelWithSeededHybridGiantStreamedGeneratedFilesystemKeyTimed(
-    typename Schedule::OutputCiphertext &res,
-    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
-    const std::filesystem::path &key_dir,
-    const Key<typename Schedule::Param> &bootstrap_key,
-    CKKSDenseBootstrapTimings &timings,
-    const CKKSDenseBootstrapProgress *progress = nullptr)
-{
-    CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<Schedule>
-        provider(key_dir, bootstrap_key);
     CKKSDenseBootstrapFromLevelWithKeyProviderTimed<Schedule>(
         res, ct, provider, timings, progress);
 }
@@ -12616,27 +12513,6 @@ CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantStreamedFilesystemSe
 {
     CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<Schedule>
         provider(key_dir);
-    auto encapsulation_key =
-        std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
-    CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
-        *encapsulation_key, encapsulation_key_file);
-    CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProviderTimed<Schedule>(
-        res, ct, provider, *encapsulation_key, timings, progress);
-}
-
-template <class Schedule, std::uint32_t InLogQ, std::uint32_t InLogDelta>
-inline void
-CKKSDenseBootstrapEncapsulatedFromLevelWithSeededHybridGiantStreamedGeneratedFilesystemSeededKeysTimed(
-    typename Schedule::OutputCiphertext &res,
-    const CKKSCiphertext<typename Schedule::Param, InLogQ, InLogDelta> &ct,
-    const std::filesystem::path &key_dir,
-    const Key<typename Schedule::Param> &bootstrap_key,
-    const std::filesystem::path &encapsulation_key_file,
-    CKKSDenseBootstrapTimings &timings,
-    const CKKSDenseBootstrapProgress *progress = nullptr)
-{
-    CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<Schedule>
-        provider(key_dir, bootstrap_key);
     auto encapsulation_key =
         std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
     CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
@@ -13031,32 +12907,6 @@ CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed(
 {
     CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<Schedule>
         provider(key_dir);
-    auto encapsulation_key =
-        std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
-    CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
-        *encapsulation_key, encapsulation_key_file);
-    CKKSDenseBootstrapProductWithSeededRelinKeyFileAndKeyProviderTimed<
-        Schedule>(res, lhs, rhs, relin_key_file, provider, *encapsulation_key,
-                  timings, progress);
-}
-
-template <class Schedule, std::uint32_t LhsLogQ,
-          std::uint32_t LhsLogDelta, std::uint32_t RhsLogQ,
-          std::uint32_t RhsLogDelta>
-inline void
-CKKSDenseBootstrapProductWithSeededHybridGiantStreamedGeneratedFilesystemSeededKeysTimed(
-    typename Schedule::OutputCiphertext &res,
-    const CKKSCiphertext<typename Schedule::Param, LhsLogQ, LhsLogDelta> &lhs,
-    const CKKSCiphertext<typename Schedule::Param, RhsLogQ, RhsLogDelta> &rhs,
-    const std::filesystem::path &key_dir,
-    const Key<typename Schedule::Param> &bootstrap_key,
-    const std::filesystem::path &encapsulation_key_file,
-    const std::filesystem::path &relin_key_file,
-    CKKSDenseBootstrapProductTimings &timings,
-    const CKKSDenseBootstrapProgress *progress = nullptr)
-{
-    CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<Schedule>
-        provider(key_dir, bootstrap_key);
     auto encapsulation_key =
         std::make_unique<CKKSDenseBootstrapSeededEncapsulationKey<Schedule>>();
     CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(

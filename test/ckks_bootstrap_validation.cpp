@@ -5679,124 +5679,6 @@ int run_toy_schedule_seeded_hybrid_streamed_encapsulated_product_bootstrap_valid
     return err <= tol ? 0 : 1;
 }
 
-template <class Schedule>
-int run_toy_schedule_seeded_hybrid_streamed_generated_encapsulated_product_bootstrap_validation(
-    bool keep_dir, const char *label, const char *directory_name, double tol)
-{
-    using P = typename Schedule::Param;
-    constexpr std::uint32_t fresh_log_q =
-        Schedule::input_log_q + 2 * Schedule::log_delta;
-    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
-    using ProductCt =
-        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
-                               FreshCt::log_q, FreshCt::log_delta>;
-    static_assert(ProductCt::log_q > Schedule::input_log_q);
-
-    const std::filesystem::path key_dir =
-        std::filesystem::temp_directory_path() / directory_name;
-    const std::filesystem::path encapsulation_key_file =
-        std::filesystem::temp_directory_path() /
-        (std::string(directory_name) + "_seeded_encapsulation_key.bin");
-    const std::filesystem::path relin_key_file =
-        std::filesystem::temp_directory_path() /
-        (std::string(directory_name) + "_seeded_relin_key.bin");
-    std::filesystem::remove_all(key_dir);
-    std::filesystem::remove(encapsulation_key_file);
-    std::filesystem::remove(relin_key_file);
-
-    auto external_key = std::make_unique<TFHEpp::Key<P>>();
-    auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
-    fill_test_key<P>(*external_key);
-    fill_sparse_test_key<P>(*bootstrap_key, 2);
-
-    const bool generated_encapsulation_key =
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenNextMissingToFile<
-            Schedule>(encapsulation_key_file, *external_key, *bootstrap_key,
-                      {0.0, 0});
-    const bool regenerated_encapsulation_key =
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyGenNextMissingToFile<
-            Schedule>(encapsulation_key_file, *external_key, *bootstrap_key,
-                      {0.0, 0});
-    if (!generated_encapsulation_key || regenerated_encapsulation_key) {
-        std::cerr << label << "_seeded_encapsulation_key_resume_failed\n";
-        if (!keep_dir) {
-            std::filesystem::remove_all(key_dir);
-            std::filesystem::remove(encapsulation_key_file);
-            std::filesystem::remove(relin_key_file);
-        }
-        return 1;
-    }
-    if (generate_resume_checked_seeded_relin_key<P, ProductCt::log_q>(
-            relin_key_file, *external_key, {0.0, 0}, label) != 0) {
-        if (!keep_dir) {
-            std::filesystem::remove_all(key_dir);
-            std::filesystem::remove(encapsulation_key_file);
-            std::filesystem::remove(relin_key_file);
-        }
-        return 1;
-    }
-
-    auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
-    auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
-    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
-    fill_test_slots<P>(*lhs);
-    fill_alternate_test_slots<P>(*rhs);
-    multiply_slots<P>(*expected, *lhs, *rhs);
-
-    auto lhs_ct = std::make_unique<FreshCt>();
-    auto rhs_ct = std::make_unique<FreshCt>();
-    TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
-        *lhs_ct, *lhs, *external_key, {0.0, 0});
-    TFHEpp::ckksSlotEncrypt<P, FreshCt::log_q, FreshCt::log_delta>(
-        *rhs_ct, *rhs, *external_key, {0.0, 0});
-
-    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
-    TFHEpp::CKKSDenseBootstrapProductTimings timings;
-    TFHEpp::
-        CKKSDenseBootstrapProductWithSeededHybridGiantStreamedGeneratedFilesystemSeededKeysTimed<
-            Schedule>(*output, *lhs_ct, *rhs_ct, key_dir, *bootstrap_key,
-                      encapsulation_key_file, relin_key_file, timings);
-
-    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
-    TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
-        *decoded, *output, *external_key);
-    const double err = max_error<P>(*decoded, *expected);
-    const std::size_t generated_key_dir_file_count = regular_file_count(key_dir);
-
-    print_schedule_report<Schedule>(label, &key_dir);
-    std::cout << label << " product_fresh_logQ=" << FreshCt::log_q
-              << " product_logQ=" << ProductCt::log_q
-              << " normalized_logQ=" << Schedule::input_log_q
-              << " bootstrap_sparse_weight=2\n";
-    std::cout << label << " generated_key_dir_files="
-              << generated_key_dir_file_count << '\n';
-    std::cout << label << " seeded_encapsulation_key_file="
-              << encapsulation_key_file.string()
-              << " seeded_encapsulation_key_bytes="
-              << std::filesystem::file_size(encapsulation_key_file)
-              << " estimated_seeded_encapsulation_key_bytes="
-              << TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
-                     Schedule>()
-              << '\n';
-    std::cout << label << " seeded_relin_key_file="
-              << relin_key_file.string()
-              << " seeded_relin_key_bytes="
-              << std::filesystem::file_size(relin_key_file)
-              << " estimated_seeded_relin_key_bytes="
-              << TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>()
-              << '\n';
-    print_bootstrap_timings(timings.bootstrap);
-    std::cout << label << " multiply_ms=" << timings.multiply_ms << '\n';
-    std::cout << label << "_max_error=" << err << '\n';
-
-    if (!keep_dir) {
-        std::filesystem::remove_all(key_dir);
-        std::filesystem::remove(encapsulation_key_file);
-        std::filesystem::remove(relin_key_file);
-    }
-    return err <= tol && generated_key_dir_file_count <= 4 ? 0 : 1;
-}
-
 int run_toy_validation(bool keep_dir)
 {
     using Schedule = TFHEpp::CKKSDenseBootstrapSchedule<
@@ -5844,17 +5726,10 @@ int run_toy_inverse_validation(bool keep_dir)
             "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_encapsulated_product",
             0.05) != 0)
         return 1;
-    if (run_toy_schedule_seeded_hybrid_streamed_encapsulated_product_bootstrap_validation<
-            Schedule>(
-            keep_dir, "toy-inverse-seeded-hybrid-streamed-encapsulated-product",
-            "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_streamed_encapsulated_product",
-            0.05) != 0)
-        return 1;
-    return run_toy_schedule_seeded_hybrid_streamed_generated_encapsulated_product_bootstrap_validation<
+    return run_toy_schedule_seeded_hybrid_streamed_encapsulated_product_bootstrap_validation<
         Schedule>(
-        keep_dir,
-        "toy-inverse-seeded-hybrid-streamed-generated-encapsulated-product",
-        "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_streamed_generated_encapsulated_product",
+        keep_dir, "toy-inverse-seeded-hybrid-streamed-encapsulated-product",
+        "tfhepp_ckks_bootstrap_validation_toy_inverse_seeded_hybrid_streamed_encapsulated_product",
         0.05);
 }
 
