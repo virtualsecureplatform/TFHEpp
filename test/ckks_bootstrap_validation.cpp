@@ -24,8 +24,6 @@ constexpr const char *external_eval_key_metadata_filename =
     ".ckks_bootstrap_validation_external_eval_key";
 constexpr std::uintmax_t keygen_disk_reserve_bytes =
     std::uintmax_t{1024} * 1024 * 1024;
-constexpr std::uintmax_t keygen_next_metadata_write_estimate_bytes =
-    std::uintmax_t{1024} * 1024;
 
 bool allow_low_disk_keygen = false;
 
@@ -1741,79 +1739,6 @@ int validate_keygen_disk_budget(const std::filesystem::path &key_dir,
               << keygen_disk_reserve_bytes
               << " allow_override=--allow-low-disk-keygen\n";
     return 2;
-}
-
-int validate_keygen_next_disk_budget(const std::filesystem::path &key_dir,
-                                     std::uintmax_t estimated_generated_bytes,
-                                     const char *label)
-{
-    const std::uintmax_t existing_bytes = directory_size_bytes(key_dir);
-
-    std::uintmax_t available_bytes = 0;
-    const bool have_space_info = available_space_bytes(key_dir, available_bytes);
-
-    std::cout << label << "_disk_estimated_next_generated_bytes="
-              << estimated_generated_bytes << '\n';
-    std::cout << label << "_disk_existing_bytes=" << existing_bytes << '\n';
-    if (have_space_info)
-        std::cout << label << "_disk_available_bytes=" << available_bytes
-                  << '\n';
-    else
-        std::cout << label << "_disk_available_bytes=unknown\n";
-
-    if (estimated_generated_bytes == 0) return 0;
-
-    const bool enough_space =
-        have_space_info && available_bytes > keygen_disk_reserve_bytes &&
-        estimated_generated_bytes <=
-            available_bytes - keygen_disk_reserve_bytes;
-    if (enough_space) return 0;
-
-    if (allow_low_disk_keygen) {
-        std::cerr << label
-                  << "_disk_warning=1 allow_low_disk_keygen=1 reserve_bytes="
-                  << keygen_disk_reserve_bytes << '\n';
-        return 0;
-    }
-
-    std::cerr << label
-              << "_disk_insufficient=1 reserve_bytes="
-              << keygen_disk_reserve_bytes
-              << " allow_override=--allow-low-disk-keygen\n";
-    return 2;
-}
-
-template <class Schedule>
-std::uintmax_t seeded_hybrid_streamed_keygen_next_generated_estimate_bytes(
-    const std::filesystem::path &key_dir, const char *label)
-{
-    std::uintmax_t estimated = keygen_next_metadata_write_estimate_bytes;
-    const auto next =
-        TFHEpp::
-            CKKSDenseBootstrapSeededHybridGiantStreamedNextMissingGeneratedKeyFileEstimate<
-                Schedule>(key_dir);
-
-    std::cout << label << "_disk_metadata_write_estimated_bytes="
-              << keygen_next_metadata_write_estimate_bytes << '\n';
-    if (!next) {
-        std::cout << label << "_disk_next_key_file=none\n";
-        std::cout << label << "_disk_next_key_file_estimated_bytes=0\n";
-        return 0;
-    }
-
-    std::cout << label << "_disk_next_key_file=" << next->path.string()
-              << '\n';
-    std::cout << label
-              << "_disk_next_key_file_estimated_bytes="
-              << next->estimated_bytes << '\n';
-
-    const std::uintmax_t next_bytes =
-        static_cast<std::uintmax_t>(next->estimated_bytes);
-    if (next_bytes >
-        std::numeric_limits<std::uintmax_t>::max() - estimated)
-        return std::numeric_limits<std::uintmax_t>::max();
-    estimated += next_bytes;
-    return estimated;
 }
 
 std::size_t regular_file_count(const std::filesystem::path &root)
@@ -7120,57 +7045,6 @@ int run_seeded_hybrid_keygen(const std::filesystem::path &key_dir, bool resume,
 }
 
 template <class Schedule>
-int run_seeded_hybrid_streamed_keygen_next(
-    const std::filesystem::path &key_dir, std::size_t sparse_weight = 0)
-{
-    using P = typename Schedule::Param;
-    if (const int status =
-            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
-                                                         "keygen");
-        status != 0)
-        return status;
-    if (const int status = validate_or_create_validation_test_key_metadata<
-            Schedule>(key_dir, sparse_weight, true);
-        status != 0)
-        return status;
-    constexpr const char *label = "seeded-hybrid-streamed-keygen-next";
-    const std::uintmax_t estimated_generated_bytes =
-        seeded_hybrid_streamed_keygen_next_generated_estimate_bytes<Schedule>(
-            key_dir, label);
-    if (const int status = validate_keygen_next_disk_budget(
-            key_dir, estimated_generated_bytes, label);
-        status != 0)
-        return status;
-    auto key = std::make_unique<TFHEpp::Key<P>>();
-    fill_bootstrap_test_key<P>(*key, sparse_weight);
-
-    print_schedule_report<Schedule>(
-        "seeded-hybrid-streamed-keygen-next-before", &key_dir);
-    std::cout << "keygen_next_sparse_weight=" << sparse_weight << '\n';
-    const auto before_missing =
-        TFHEpp::
-            CKKSDenseBootstrapSeededHybridGiantStreamedMissingKeyDirectoryFiles<
-                Schedule>(key_dir);
-    bool generated = false;
-    const double keygen_ms = elapsed_ms([&] {
-        generated =
-            TFHEpp::
-                CKKSDenseBootstrapSeededHybridGiantStreamedKeyGenNextMissingToDirectory<
-                    Schedule>(key_dir, *key, {P::α, 0});
-    });
-    const auto after_missing =
-        TFHEpp::
-            CKKSDenseBootstrapSeededHybridGiantStreamedMissingKeyDirectoryFiles<
-                Schedule>(key_dir);
-    print_schedule_report<Schedule>(
-        "seeded-hybrid-streamed-keygen-next-after", &key_dir);
-    std::cout << "keygen_next_generated=" << (generated ? 1 : 0) << '\n';
-    std::cout << "keygen_next_ms=" << keygen_ms << '\n';
-    print_created_key_files(before_missing, after_missing);
-    return 0;
-}
-
-template <class Schedule>
 int run_seeded_hybrid_streamed_keygen(const std::filesystem::path &key_dir,
                                       bool resume,
                                       std::size_t sparse_weight = 0)
@@ -7331,7 +7205,6 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-keygen-next DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-keygen DIR]"
-                 " [--lvl6-tuned-seeded-hybrid-streamed-keygen-next DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-evalkeygen DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-run DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-run-product-encap DIR]"
@@ -7563,8 +7436,6 @@ int main(int argc, char **argv)
                  arg == "--lvl6-tuned-seeded-hybrid-run" ||
                  arg == "--lvl6-tuned-seeded-hybrid-streamed-keygen" ||
                  arg ==
-                     "--lvl6-tuned-seeded-hybrid-streamed-keygen-next" ||
-                 arg ==
                      "--lvl6-tuned-seeded-hybrid-streamed-evalkeygen" ||
                  arg == "--lvl6-tuned-seeded-hybrid-streamed-run" ||
                 arg ==
@@ -7794,13 +7665,6 @@ int main(int argc, char **argv)
                      "--lvl6-tuned-seeded-hybrid-streamed-keygen") {
                 if (run_seeded_hybrid_streamed_keygen<Lvl6TunedSchedule>(
                         key_dir, resume, lvl6_sparse_weight) != 0)
-                    return 1;
-            }
-            else if (arg ==
-                     "--lvl6-tuned-seeded-hybrid-streamed-keygen-next") {
-                if (run_seeded_hybrid_streamed_keygen_next<
-                        Lvl6TunedSchedule>(
-                        key_dir, lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg ==
