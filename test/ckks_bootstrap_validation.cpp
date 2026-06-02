@@ -703,13 +703,15 @@ static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
 static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
-static_assert(Lvl6TunedSchedule::log_delta == 36);
+static_assert(Lvl6TunedSchedule::log_delta == 42);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
-static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 540);
-static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 49);
-static_assert(Lvl6TunedSchedule::output_log_q == 82);
+static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 630);
+static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
+static_assert(Lvl6TunedSchedule::coeff_to_slot_level_count == 2);
+static_assert(Lvl6TunedSchedule::slot_to_coeff_level_count == 2);
+static_assert(Lvl6TunedSchedule::output_log_q == 134);
 static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 2);
+static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 42);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;

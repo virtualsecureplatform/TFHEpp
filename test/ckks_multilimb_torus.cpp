@@ -91,17 +91,17 @@ int main()
     using Lvl6T = TFHEpp::lvl6param::T;
     static_assert(TFHEpp::lvl5param::nbit == 14);
     static_assert(TFHEpp::lvl6param::nbit == 15);
-    static_assert(std::numeric_limits<Lvl6T>::digits == 896);
-    static_assert(TFHEpp::lvl6param::l̅ * TFHEpp::lvl6param::B̅gbit == 896);
+    static_assert(std::numeric_limits<Lvl6T>::digits == 960);
+    static_assert(TFHEpp::lvl6param::l̅ * TFHEpp::lvl6param::B̅gbit == 960);
     static_assert(TFHEpp::lvl6param::Q_mod_t ==
-                  pow2_mod(896, TFHEpp::lvl6param::plain_modulus_u64));
+                  pow2_mod(960, TFHEpp::lvl6param::plain_modulus_u64));
 
     {
         using P = TFHEpp::lvl6param;
         using T = typename P::T;
-        using Ct = TFHEpp::CKKSCiphertext<P, 896, 50>;
-        static_assert(Ct::log_q == 896);
-        static_assert(Ct::log_budget == 846);
+        using Ct = TFHEpp::CKKSCiphertext<P, 960, 50>;
+        static_assert(Ct::log_q == 960);
+        static_assert(Ct::log_budget == 910);
         static_assert(TFHEpp::is_multilimb_digit_fft_compatible_v<P>);
 
         const T level_neg_one = TFHEpp::ckks_detail::levelMask<P, 880>();
@@ -112,7 +112,7 @@ int main()
         const T sign = T{1} << 879;
         const T centered_sign =
             TFHEpp::ckks_detail::centeredLevelToTorus<P, 880>(sign);
-        require((centered_sign >> 895) == T{1},
+        require((centered_sign >> 959) == T{1},
                 "lvl6 active sign extends to storage top bit");
         require(TFHEpp::ckks_detail::reduceToLevel<P, 880>(centered_sign) ==
                     sign,
