@@ -1125,7 +1125,11 @@ external_eval_key_metadata_file(const std::filesystem::path &root)
 
 bool is_external_eval_key_metadata_file(const std::filesystem::path &path)
 {
-    return path.filename() == external_eval_key_metadata_filename;
+    return path.filename() == external_eval_key_metadata_filename ||
+           path.filename() ==
+               TFHEpp::CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(
+                   std::filesystem::path{})
+                   .filename();
 }
 
 struct ExternalEvalKeyMetadata {
@@ -3543,6 +3547,8 @@ int run_hybrid_external_eval_keygen(const std::filesystem::path &key_dir,
                          P, PostBootstrapProductCt::log_q>()
                   << '\n';
     }
+    TFHEpp::CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest<Schedule>(
+        files.root, metadata_includes_post_bootstrap_product);
     return write_external_eval_key_metadata(
         files.root, build_external_eval_key_metadata<Schedule>(
                         "hybrid", bootstrap_sparse_weight, 0,
@@ -3621,6 +3627,9 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
         return status;
     }
     if (generate_eval_keys) {
+        TFHEpp::CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest<
+            Schedule>(eval_key_files.root,
+                      metadata_includes_post_bootstrap_product);
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(
@@ -3814,6 +3823,8 @@ int run_seeded_hybrid_external_eval_keygen(
                          P, PostBootstrapProductCt::log_q>()
                   << '\n';
     }
+    TFHEpp::CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<
+        Schedule>(files.root, metadata_includes_post_bootstrap_product);
     return write_external_eval_key_metadata(
         files.root, build_external_eval_key_metadata<Schedule>(
                         "seeded", bootstrap_sparse_weight,
@@ -3915,6 +3926,9 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
         return status;
     }
     if (generate_eval_keys) {
+        TFHEpp::CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<
+            Schedule>(eval_key_files.root,
+                      metadata_includes_post_bootstrap_product);
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(
@@ -5004,6 +5018,9 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
         return status;
     }
     if (generate_eval_keys) {
+        TFHEpp::CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest<
+            Schedule>(eval_key_files.root,
+                      metadata_includes_post_bootstrap_product);
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(
@@ -5226,6 +5243,9 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
         return status;
     }
     if (generate_eval_keys) {
+        TFHEpp::CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<
+            Schedule>(eval_key_files.root,
+                      metadata_includes_post_bootstrap_product);
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(

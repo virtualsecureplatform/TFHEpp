@@ -821,6 +821,50 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     }
 };
 
+struct CKKSDenseBootstrapProductEvalKeyDirectoryManifest {
+    static constexpr std::uint32_t current_version = 1;
+    static constexpr std::uint32_t product_format = 0;
+    static constexpr std::uint32_t seeded_product_format = 1;
+
+    std::uint32_t version = current_version;
+    std::uint32_t key_format = product_format;
+    std::uint32_t n = 0;
+    std::uint32_t nbit = 0;
+    std::uint32_t torus_bits = 0;
+    std::uint32_t log_delta = 0;
+    std::uint32_t input_log_q = 0;
+    std::uint32_t boot_log_q = 0;
+    std::uint32_t output_log_q = 0;
+    std::uint32_t coeff_to_slot_plain_log_delta = 0;
+    std::uint32_t slot_to_coeff_plain_log_delta = 0;
+    std::uint32_t evalmod_k = 0;
+    std::uint32_t evalmod_double_angle = 0;
+    std::uint32_t evalmod_inv_degree = 0;
+    std::uint32_t evalmod_log_scale = 0;
+    std::uint32_t product_fresh_log_q = 0;
+    std::uint32_t product_log_q = 0;
+    std::uint32_t post_bootstrap_product_log_q = 0;
+    std::uint32_t includes_post_bootstrap_product = 0;
+    std::uint64_t expected_file_count = 0;
+
+    bool operator==(
+        const CKKSDenseBootstrapProductEvalKeyDirectoryManifest &) const =
+        default;
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(version, key_format, n, nbit, torus_bits, log_delta,
+                input_log_q, boot_log_q, output_log_q,
+                coeff_to_slot_plain_log_delta,
+                slot_to_coeff_plain_log_delta, evalmod_k,
+                evalmod_double_angle, evalmod_inv_degree, evalmod_log_scale,
+                product_fresh_log_q, product_log_q,
+                post_bootstrap_product_log_q,
+                includes_post_bootstrap_product, expected_file_count);
+    }
+};
+
 namespace ckks_detail {
 
 inline bool ckks_linear_trace_enabled()
@@ -10619,6 +10663,12 @@ inline std::filesystem::path CKKSDenseBootstrapKeyDirectoryManifestFile(
     return ckks_detail::CKKSDenseBootstrapNamedPath(root, "manifest");
 }
 
+inline std::filesystem::path CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(
+    const std::filesystem::path &root)
+{
+    return ckks_detail::CKKSDenseBootstrapNamedPath(root, "manifest");
+}
+
 inline std::filesystem::path CKKSDenseBootstrapEncapsulationKeyFile(
     const std::filesystem::path &root)
 {
@@ -10661,6 +10711,229 @@ CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(
     return {CKKSDenseBootstrapSeededEncapsulationKeyFile(root),
             CKKSRelinKeyFile(root, "seeded_product_relin_key"),
             CKKSRelinKeyFile(root, "seeded_post_bootstrap_product_relin_key")};
+}
+
+inline std::vector<std::filesystem::path>
+CKKSDenseBootstrapProductEvalKeyDirectoryFiles(
+    const CKKSDenseBootstrapProductEvalKeyFiles &files,
+    const std::filesystem::path &manifest_file,
+    bool include_post_bootstrap_product)
+{
+    std::vector<std::filesystem::path> paths{manifest_file,
+                                             files.encapsulation_key,
+                                             files.product_relin_key};
+    if (include_post_bootstrap_product)
+        paths.push_back(files.post_bootstrap_product_relin_key);
+    return paths;
+}
+
+inline std::vector<std::filesystem::path>
+CKKSDenseBootstrapProductEvalKeyDirectoryFiles(
+    const std::filesystem::path &root, bool include_post_bootstrap_product)
+{
+    return CKKSDenseBootstrapProductEvalKeyDirectoryFiles(
+        CKKSDenseBootstrapProductEvalKeyFilesInDirectory(root),
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root),
+        include_post_bootstrap_product);
+}
+
+inline std::vector<std::filesystem::path>
+CKKSDenseBootstrapSeededProductEvalKeyDirectoryFiles(
+    const std::filesystem::path &root, bool include_post_bootstrap_product)
+{
+    return CKKSDenseBootstrapProductEvalKeyDirectoryFiles(
+        CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(root),
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root),
+        include_post_bootstrap_product);
+}
+
+template <class Schedule>
+inline CKKSDenseBootstrapProductEvalKeyDirectoryManifest
+CKKSDenseBootstrapBuildProductEvalKeyDirectoryManifest(
+    const std::filesystem::path &root, bool include_post_bootstrap_product)
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    constexpr std::uint32_t product_log_q =
+        fresh_log_q - Schedule::log_delta;
+
+    CKKSDenseBootstrapProductEvalKeyDirectoryManifest manifest;
+    manifest.key_format =
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifest::product_format;
+    manifest.n = P::n;
+    manifest.nbit = P::nbit;
+    manifest.torus_bits = std::numeric_limits<typename P::T>::digits;
+    manifest.log_delta = Schedule::log_delta;
+    manifest.input_log_q = Schedule::input_log_q;
+    manifest.boot_log_q = Schedule::boot_log_q;
+    manifest.output_log_q = Schedule::output_log_q;
+    manifest.coeff_to_slot_plain_log_delta =
+        Schedule::coeff_to_slot_plain_log_delta;
+    manifest.slot_to_coeff_plain_log_delta =
+        Schedule::slot_to_coeff_plain_log_delta;
+    manifest.evalmod_k = Schedule::evalmod_k;
+    manifest.evalmod_double_angle = Schedule::evalmod_double_angle;
+    manifest.evalmod_inv_degree = Schedule::evalmod_inv_degree;
+    manifest.evalmod_log_scale = Schedule::evalmod_log_scale;
+    manifest.product_fresh_log_q = fresh_log_q;
+    manifest.product_log_q = product_log_q;
+    manifest.post_bootstrap_product_log_q =
+        Schedule::post_bootstrap_product_log_q;
+    manifest.includes_post_bootstrap_product =
+        include_post_bootstrap_product ? 1 : 0;
+    manifest.expected_file_count =
+        CKKSDenseBootstrapProductEvalKeyDirectoryFiles(
+            root, include_post_bootstrap_product)
+            .size();
+    return manifest;
+}
+
+template <class Schedule>
+inline CKKSDenseBootstrapProductEvalKeyDirectoryManifest
+CKKSDenseBootstrapBuildProductEvalKeyDirectoryManifest(
+    bool include_post_bootstrap_product)
+{
+    return CKKSDenseBootstrapBuildProductEvalKeyDirectoryManifest<Schedule>(
+        std::filesystem::path{}, include_post_bootstrap_product);
+}
+
+template <class Schedule>
+inline CKKSDenseBootstrapProductEvalKeyDirectoryManifest
+CKKSDenseBootstrapBuildSeededProductEvalKeyDirectoryManifest(
+    const std::filesystem::path &root, bool include_post_bootstrap_product)
+{
+    CKKSDenseBootstrapProductEvalKeyDirectoryManifest manifest =
+        CKKSDenseBootstrapBuildProductEvalKeyDirectoryManifest<Schedule>(
+            root, include_post_bootstrap_product);
+    manifest.key_format =
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifest::
+            seeded_product_format;
+    manifest.expected_file_count =
+        CKKSDenseBootstrapSeededProductEvalKeyDirectoryFiles(
+            root, include_post_bootstrap_product)
+            .size();
+    return manifest;
+}
+
+template <class Schedule>
+inline CKKSDenseBootstrapProductEvalKeyDirectoryManifest
+CKKSDenseBootstrapBuildSeededProductEvalKeyDirectoryManifest(
+    bool include_post_bootstrap_product)
+{
+    return CKKSDenseBootstrapBuildSeededProductEvalKeyDirectoryManifest<
+        Schedule>(std::filesystem::path{}, include_post_bootstrap_product);
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapProductEvalKeyDirectoryManifestMatches(
+    const CKKSDenseBootstrapProductEvalKeyDirectoryManifest &manifest,
+    bool require_post_bootstrap_product = true)
+{
+    if (require_post_bootstrap_product &&
+        manifest.includes_post_bootstrap_product == 0)
+        return false;
+    return manifest ==
+           CKKSDenseBootstrapBuildProductEvalKeyDirectoryManifest<Schedule>(
+               manifest.includes_post_bootstrap_product != 0);
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapSeededProductEvalKeyDirectoryManifestMatches(
+    const CKKSDenseBootstrapProductEvalKeyDirectoryManifest &manifest,
+    bool require_post_bootstrap_product = true)
+{
+    if (require_post_bootstrap_product &&
+        manifest.includes_post_bootstrap_product == 0)
+        return false;
+    return manifest ==
+           CKKSDenseBootstrapBuildSeededProductEvalKeyDirectoryManifest<
+               Schedule>(manifest.includes_post_bootstrap_product != 0);
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapProductEvalKeyDirectoryManifestMatches(
+    const std::filesystem::path &root,
+    bool require_post_bootstrap_product = true)
+{
+    CKKSDenseBootstrapProductEvalKeyDirectoryManifest manifest;
+    CKKSLoadPortableBinary(
+        manifest, CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root));
+    return CKKSDenseBootstrapProductEvalKeyDirectoryManifestMatches<Schedule>(
+        manifest, require_post_bootstrap_product);
+}
+
+template <class Schedule>
+inline bool CKKSDenseBootstrapSeededProductEvalKeyDirectoryManifestMatches(
+    const std::filesystem::path &root,
+    bool require_post_bootstrap_product = true)
+{
+    CKKSDenseBootstrapProductEvalKeyDirectoryManifest manifest;
+    CKKSLoadPortableBinary(
+        manifest, CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root));
+    return CKKSDenseBootstrapSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(manifest, require_post_bootstrap_product);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapWriteProductEvalKeyDirectoryManifest(
+    const std::filesystem::path &root, bool include_post_bootstrap_product)
+{
+    const CKKSDenseBootstrapProductEvalKeyDirectoryManifest manifest =
+        CKKSDenseBootstrapBuildProductEvalKeyDirectoryManifest<Schedule>(
+            root, include_post_bootstrap_product);
+    CKKSSavePortableBinaryAtomic(
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root), manifest);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest(
+    const std::filesystem::path &root, bool include_post_bootstrap_product)
+{
+    const CKKSDenseBootstrapProductEvalKeyDirectoryManifest manifest =
+        CKKSDenseBootstrapBuildSeededProductEvalKeyDirectoryManifest<Schedule>(
+            root, include_post_bootstrap_product);
+    CKKSSavePortableBinaryAtomic(
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root), manifest);
+}
+
+template <class Schedule>
+inline void CKKSDenseBootstrapRequireProductEvalKeyDirectoryManifestMatches(
+    const std::filesystem::path &root,
+    bool require_post_bootstrap_product = true)
+{
+    const std::filesystem::path manifest_file =
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root);
+    if (!std::filesystem::exists(manifest_file))
+        throw std::runtime_error(
+            "missing CKKS product eval key directory manifest: " +
+            manifest_file.string());
+    if (!CKKSDenseBootstrapProductEvalKeyDirectoryManifestMatches<Schedule>(
+            root, require_post_bootstrap_product))
+        throw std::runtime_error(
+            "CKKS product eval key directory manifest does not match "
+            "schedule: " +
+            manifest_file.string());
+}
+
+template <class Schedule>
+inline void
+CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches(
+    const std::filesystem::path &root,
+    bool require_post_bootstrap_product = true)
+{
+    const std::filesystem::path manifest_file =
+        CKKSDenseBootstrapProductEvalKeyDirectoryManifestFile(root);
+    if (!std::filesystem::exists(manifest_file))
+        throw std::runtime_error(
+            "missing CKKS seeded product eval key directory manifest: " +
+            manifest_file.string());
+    if (!CKKSDenseBootstrapSeededProductEvalKeyDirectoryManifestMatches<
+            Schedule>(root, require_post_bootstrap_product))
+        throw std::runtime_error(
+            "CKKS seeded product eval key directory manifest does not match "
+            "schedule: " +
+            manifest_file.string());
 }
 
 inline bool CKKSDenseBootstrapProductEvalKeyDirectoryComplete(
@@ -14108,6 +14381,8 @@ inline void CKKSDenseBootstrapProductWithHybridGiantFilesystemEvalKeyDirectory(
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryManifestMatches<Schedule>(
+        eval_key_dir, false);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
     CKKSDenseBootstrapProductWithHybridGiantFilesystemKey<Schedule>(
         res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14129,6 +14404,8 @@ CKKSDenseBootstrapProductWithHybridGiantFilesystemEvalKeyDirectoryTimed(
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryManifestMatches<Schedule>(
+        eval_key_dir, false);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
     CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<Schedule>(
         res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14148,6 +14425,8 @@ CKKSDenseBootstrapPostBootstrapProductWithHybridGiantFilesystemEvalKeyDirectory(
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryManifestMatches<Schedule>(
+        eval_key_dir, true);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
     CKKSDenseBootstrapProductWithHybridGiantFilesystemKey<Schedule>(
         res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14169,6 +14448,8 @@ CKKSDenseBootstrapPostBootstrapProductWithHybridGiantFilesystemEvalKeyDirectoryT
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireProductEvalKeyDirectoryManifestMatches<Schedule>(
+        eval_key_dir, true);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
     CKKSDenseBootstrapProductWithHybridGiantFilesystemKeyTimed<Schedule>(
         res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14280,6 +14561,8 @@ CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectory(
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(eval_key_dir, false);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
     CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeys<
         Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14301,6 +14584,8 @@ CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededEvalKeyDirectoryTi
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(eval_key_dir, false);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
     CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
         Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14320,6 +14605,8 @@ CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantFilesystemSeededEvalK
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(eval_key_dir, true);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
     CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeys<
         Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14341,6 +14628,8 @@ CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantFilesystemSeededEvalK
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(eval_key_dir, true);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
     CKKSDenseBootstrapProductWithSeededHybridGiantFilesystemSeededKeysTimed<
         Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14453,6 +14742,8 @@ CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDir
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(eval_key_dir, false);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
     CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeys<
         Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14474,6 +14765,8 @@ CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDir
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(eval_key_dir, false);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, false);
     CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
         Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14493,6 +14786,8 @@ CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedFilesystemSee
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(eval_key_dir, true);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
     CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeys<
         Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,
@@ -14514,6 +14809,8 @@ CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedFilesystemSee
 {
     const CKKSDenseBootstrapProductEvalKeyFiles files =
         CKKSDenseBootstrapSeededProductEvalKeyFilesInDirectory(eval_key_dir);
+    CKKSDenseBootstrapRequireSeededProductEvalKeyDirectoryManifestMatches<
+        Schedule>(eval_key_dir, true);
     CKKSDenseBootstrapRequireProductEvalKeyDirectoryComplete(files, true);
     CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededKeysTimed<
         Schedule>(res, lhs, rhs, key_dir, files.encapsulation_key,

@@ -200,6 +200,8 @@ int main()
         TFHEpp::CKKSSeededRelinKeyGenNextMissingToFile<
             P, PostBootstrapProductCt::log_q>(
             post_bootstrap_relin_key_file, *external_key, {0.0, 0});
+    TFHEpp::CKKSDenseBootstrapWriteSeededProductEvalKeyDirectoryManifest<
+        Schedule>(eval_key_dir, true);
     if (!encap_generated || encap_regenerated || !relin_generated ||
         relin_regenerated || !post_relin_generated ||
         post_relin_regenerated) {
@@ -210,6 +212,12 @@ int main()
     if (!TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyDirectoryComplete(
             eval_key_dir)) {
         std::cerr << "workflow seeded eval key directory incomplete\n";
+        std::filesystem::remove_all(root);
+        return 1;
+    }
+    if (!TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyDirectoryManifestMatches<
+            Schedule>(eval_key_dir)) {
+        std::cerr << "workflow seeded eval key manifest mismatch\n";
         std::filesystem::remove_all(root);
         return 1;
     }
