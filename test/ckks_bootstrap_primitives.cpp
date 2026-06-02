@@ -2686,6 +2686,54 @@ int main()
     std::cout << "CKKS randomized mod raise preserves low-level phase"
               << std::endl;
 
+    constexpr std::uint32_t mask_bound = 3;
+    auto bounded_raised = std::make_unique<BootCt>();
+    TFHEpp::CKKSModRaiseBoundedPhaseRandomized<
+        P, low_log_q, boot_log_q, log_delta, mask_bound>(*bounded_raised,
+                                                         *low_ct);
+    auto bounded_phase = std::make_unique<TFHEpp::Polynomial<P>>(
+        TFHEpp::trlwePhase<P>(bounded_raised->ct, *key));
+    bool bounded_has_high_phase_mask = false;
+    constexpr __int128_t mask_unit = static_cast<__int128_t>(1)
+                                     << low_log_q;
+    for (std::uint32_t i = 0; i < P::n; i++) {
+        const auto low =
+            TFHEpp::ckks_detail::reduceToLevel<P, low_log_q>((*low_phase)[i]);
+        const auto bounded_low =
+            TFHEpp::ckks_detail::reduceToLevel<P, low_log_q>(
+                (*bounded_phase)[i]);
+        if (low != bounded_low) {
+            std::cerr << "bounded mod raise phase mismatch at coeff " << i
+                      << std::endl;
+            return 1;
+        }
+
+        const auto phase_delta = TFHEpp::ckks_detail::reduceToLevel<
+            P, boot_log_q>((*bounded_phase)[i] - (*raised_phase)[i]);
+        const __int128_t signed_delta =
+            TFHEpp::ckks_detail::levelToSigned<P, boot_log_q>(phase_delta);
+        if (signed_delta % mask_unit != 0) {
+            std::cerr << "bounded mod raise mask is not input-modulus aligned"
+                      << std::endl;
+            return 1;
+        }
+        const __int128_t mask = signed_delta / mask_unit;
+        if (mask < -static_cast<__int128_t>(mask_bound) ||
+            mask > static_cast<__int128_t>(mask_bound)) {
+            std::cerr << "bounded mod raise mask exceeded configured bound"
+                      << std::endl;
+            return 1;
+        }
+        if (mask != 0) bounded_has_high_phase_mask = true;
+    }
+    if (!bounded_has_high_phase_mask) {
+        std::cerr << "bounded mod raise did not populate high phase mask"
+                  << std::endl;
+        return 1;
+    }
+    std::cout << "CKKS bounded mod raise preserves low-level phase"
+              << std::endl;
+
     auto boot_ct = std::make_unique<BootCt>();
     TFHEpp::ckksSlotEncrypt<P, boot_log_q, log_delta>(*boot_ct, *slots, *key,
                                                       {0.0, 0});
