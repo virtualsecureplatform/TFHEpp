@@ -970,6 +970,8 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6FastSchedule::hybrid_giant_direct_popcount_threshold == 3);
     static_assert(Lvl6CompactSchedule::hybrid_giant_direct_popcount_threshold ==
                   4);
+    static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold ==
+                  2);
     using Lvl6PostBootstrapProductTraits =
         TFHEpp::CKKSDenseBootstrapProductTraits<
             Lvl6FastSchedule, Lvl6FastSchedule::output_log_q,

@@ -328,6 +328,161 @@ std::size_t linear_plan_term_count(const Plan &plan)
     return terms;
 }
 
+template <class Plan>
+std::size_t linear_plan_single_term_group_count(const Plan &plan)
+{
+    std::size_t groups = 0;
+    for (const auto &group : plan.groups)
+        if (group.terms.size() == 1) groups++;
+    return groups;
+}
+
+template <class Plan>
+std::size_t linear_plan_max_group_terms(const Plan &plan)
+{
+    std::size_t max_terms = 0;
+    for (const auto &group : plan.groups)
+        max_terms = std::max(max_terms, group.terms.size());
+    return max_terms;
+}
+
+template <class Plan>
+std::size_t linear_plan_fd_batch_count(const Plan &plan,
+                                       std::size_t max_fused_terms)
+{
+    std::size_t batches = 0;
+    for (const auto &group : plan.groups) {
+        batches +=
+            (group.terms.size() + max_fused_terms - 1) / max_fused_terms;
+    }
+    return batches;
+}
+
+template <class Plan>
+std::size_t linear_plan_used_baby_step_count(const Plan &plan)
+{
+    std::vector<bool> used;
+    TFHEpp::CKKSLinearTransformPlanUsedBabySteps(
+        used, plan);
+    std::size_t count = 0;
+    for (bool value : used)
+        if (value) count++;
+    return count;
+}
+
+template <class P>
+constexpr std::size_t linear_transform_fd_products_per_batch()
+{
+    if constexpr (TFHEpp::is_multilimb_uint_v<typename P::T> &&
+                  TFHEpp::use_multilimb_digit_fft_v<P>) {
+        constexpr int width = std::numeric_limits<typename P::T>::digits;
+        constexpr int plain_digits =
+            (64 + static_cast<int>(P::B̅gbit) - 1) /
+            static_cast<int>(P::B̅gbit);
+        std::size_t valid_digit_pairs = 0;
+        for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+            const int torus_shift =
+                width - (j + 1) * static_cast<int>(P::B̅gbit);
+            for (int d = 0; d < plain_digits; d++) {
+                const int plain_shift = d * static_cast<int>(P::B̅gbit);
+                if (torus_shift + plain_shift < width) valid_digit_pairs++;
+            }
+        }
+        return valid_digit_pairs * (P::k + 1);
+    }
+    else {
+        return 0;
+    }
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+void print_linear_stage_shape(const char *label, const char *prefix,
+                              std::size_t stage_index,
+                              const TFHEpp::CKKSLinearTransformStage<P> &stage,
+                              int k_step, int hybrid_threshold)
+{
+    TFHEpp::CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> plan;
+    TFHEpp::CKKSBuildLinearTransformBSGSPlan<P, LogQ, LogDelta,
+                                             PlainLogDelta>(plan, stage,
+                                                            k_step);
+    constexpr int fd_margin =
+        std::numeric_limits<double>::digits -
+        (2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3);
+    constexpr std::size_t max_fused_terms =
+        TFHEpp::is_multilimb_uint_v<typename P::T> &&
+                TFHEpp::use_multilimb_digit_fft_v<P>
+            ? (std::size_t{1} << (fd_margin - 1))
+            : 1;
+    const std::size_t fd_batches =
+        linear_plan_fd_batch_count(plan, max_fused_terms);
+    const std::size_t fd_products =
+        fd_batches * linear_transform_fd_products_per_batch<P>();
+
+    std::cout << label << ' ' << prefix << "_stage index=" << stage_index
+              << " logQ=" << LogQ << " groups=" << plan.groups.size()
+              << " terms=" << linear_plan_term_count(plan)
+              << " single_term_groups="
+              << linear_plan_single_term_group_count(plan)
+              << " max_group_terms=" << linear_plan_max_group_terms(plan)
+              << " baby_steps=" << linear_plan_used_baby_step_count(plan)
+              << " rotation_evalautos_current="
+              << TFHEpp::CKKSLinearTransformStageRotationEvalAutoCount<P>(
+                     stage, k_step)
+              << " rotation_evalautos_direct="
+              << TFHEpp::CKKSLinearTransformStageDirectRotationEvalAutoCount<P>(
+                     stage, k_step)
+              << " rotation_evalautos_hybrid="
+              << TFHEpp::
+                     CKKSLinearTransformStageHybridGiantRotationEvalAutoCount<
+                         P>(stage, k_step, hybrid_threshold)
+              << " fd_batches=" << fd_batches
+              << " fd_digit_products=" << fd_products << '\n';
+}
+
+template <std::size_t I, class Schedule>
+void print_coeff_to_slot_stage_shapes(
+    const char *label,
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    if constexpr (I < Schedule::coeff_to_slot_level_count) {
+        using P = typename Schedule::Param;
+        constexpr std::uint32_t log_q =
+            Schedule::boot_log_q -
+            I * Schedule::coeff_to_slot_plain_log_delta;
+        print_linear_stage_shape<P, log_q, Schedule::log_delta,
+                                 Schedule::coeff_to_slot_plain_log_delta>(
+            label, "c2s", I, linear_plan.coeff_to_slot_stages[I],
+            Schedule::linear_bsgs_step,
+            Schedule::hybrid_giant_direct_popcount_threshold);
+        print_coeff_to_slot_stage_shapes<I + 1, Schedule>(label, linear_plan);
+    }
+}
+
+template <std::size_t I, class Schedule>
+void print_slot_to_coeff_stage_shapes(
+    const char *label,
+    const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan)
+{
+    if constexpr (I < Schedule::slot_to_coeff_level_count) {
+        using P = typename Schedule::Param;
+        constexpr std::uint32_t log_q =
+            Schedule::after_evalmod_log_q -
+            I * Schedule::slot_to_coeff_plain_log_delta;
+        print_linear_stage_shape<P, log_q, Schedule::log_delta,
+                                 Schedule::slot_to_coeff_plain_log_delta>(
+            label, "stc_real", I, linear_plan.slot_to_coeff_stages[I],
+            Schedule::linear_bsgs_step,
+            Schedule::hybrid_giant_direct_popcount_threshold);
+        print_linear_stage_shape<P, log_q, Schedule::log_delta,
+                                 Schedule::slot_to_coeff_plain_log_delta>(
+            label, "stc_imag", I, linear_plan.slot_to_coeff_imag_stages[I],
+            Schedule::linear_bsgs_step,
+            Schedule::hybrid_giant_direct_popcount_threshold);
+        print_slot_to_coeff_stage_shapes<I + 1, Schedule>(label, linear_plan);
+    }
+}
+
 template <std::size_t KeyOffset, std::size_t I, class P,
           std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta, std::size_t StageCount,
@@ -834,12 +989,18 @@ template <int HybridThreshold>
 using Lvl6RobustHybridThresholdSchedule =
     TFHEpp::lvl6CKKSDenseBootstrapRobustHybridSchedule<HybridThreshold>;
 
+template <int HybridThreshold>
+using Lvl6TunedHybridThresholdSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
+    TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 52, 18, 4, 7, 52, 128, 0, 52, 52,
+    30, 7, 7, HybridThreshold>;
+
 using Lvl6InverseSchedule = TFHEpp::lvl6CKKSDenseBootstrapInverseSchedule;
 static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
 static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
 static_assert(Lvl6TunedSchedule::log_delta == 52);
+static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 2);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
 static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
@@ -1328,6 +1489,8 @@ void print_schedule_report(const char *label,
               << " direct_popcount_threshold="
               << Schedule::hybrid_giant_direct_popcount_threshold
               << '\n';
+    print_coeff_to_slot_stage_shapes<0, Schedule>(label, linear_plan);
+    print_slot_to_coeff_stage_shapes<0, Schedule>(label, linear_plan);
     std::cout << label << " sparse_key_bytes=" << sparse_bytes
               << " streamed_peak_bytes=" << streamed_peak_bytes
               << " direct_key_bytes=" << direct_bytes
@@ -1391,6 +1554,20 @@ void print_lvl6_robust_reports()
         "lvl6-robust-th3");
     print_schedule_report<Lvl6RobustHybridThresholdSchedule<4>>(
         "lvl6-robust-th4");
+}
+
+void print_lvl6_tuned_hybrid_threshold_reports()
+{
+    print_schedule_report<Lvl6TunedHybridThresholdSchedule<1>>(
+        "lvl6-tuned-th1");
+    print_schedule_report<Lvl6TunedHybridThresholdSchedule<2>>(
+        "lvl6-tuned-th2");
+    print_schedule_report<Lvl6TunedHybridThresholdSchedule<3>>(
+        "lvl6-tuned-th3");
+    print_schedule_report<Lvl6TunedHybridThresholdSchedule<4>>(
+        "lvl6-tuned-th4");
+    print_schedule_report<Lvl6TunedHybridThresholdSchedule<5>>(
+        "lvl6-tuned-th5");
 }
 
 void print_lvl6_inverse_reports()
@@ -4770,6 +4947,7 @@ void print_usage(const char *program)
                  " [--lvl6-hybrid-run-product-encap DIR]"
                  " [--lvl6-robust-plan]"
                  " [--lvl6-tuned-plan]"
+                 " [--lvl6-tuned-hybrid-thresholds-plan]"
                  " [--lvl6-tuned-readiness]"
                  " [--lvl6-tuned-hybrid-keygen DIR]"
                  " [--lvl6-tuned-hybrid-keygen-next DIR]"
@@ -4910,6 +5088,10 @@ int main(int argc, char **argv)
         else if (arg == "--lvl6-tuned-plan") {
             saw_action = true;
             print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
+        }
+        else if (arg == "--lvl6-tuned-hybrid-thresholds-plan") {
+            saw_action = true;
+            print_lvl6_tuned_hybrid_threshold_reports();
         }
         else if (arg == "--lvl6-tuned-readiness") {
             saw_action = true;
