@@ -12594,6 +12594,41 @@ struct CKKSDenseBootstrapLinearKeyProviderChain {
     }
 };
 
+template <class KeyProvider>
+struct CKKSDenseBootstrapRetainEvalModRelinKeyProvider {
+    const KeyProvider &provider;
+
+    template <std::size_t I>
+    decltype(auto) polynomial_relin() const
+    {
+        return provider.template polynomial_relin<I>();
+    }
+
+    template <std::size_t I>
+    void release_polynomial_relin() const
+    {}
+
+    template <std::size_t I>
+    decltype(auto) double_angle_relin() const
+    {
+        return provider.template double_angle_relin<I>();
+    }
+
+    template <std::size_t I>
+    void release_double_angle_relin() const
+    {}
+
+    template <std::size_t I>
+    decltype(auto) inverse_relin() const
+    {
+        return provider.template inverse_relin<I>();
+    }
+
+    template <std::size_t I>
+    void release_inverse_relin() const
+    {}
+};
+
 inline void CKKSDenseBootstrapProgressBegin(
     const CKKSDenseBootstrapProgress *progress, const char *stage)
 {
@@ -12838,11 +12873,13 @@ inline void CKKSDenseBootstrapWithKeyProviderImpl(
 
     auto real_evalmod =
         std::make_unique<CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    const CKKSDenseBootstrapRetainEvalModRelinKeyProvider<KeyProvider>
+        retained_evalmod_relin{key_provider};
     CKKSTimeBootstrapStage(
         timings == nullptr ? nullptr : &timings->real_evalmod_ms, [&] {
             CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
                 *real_evalmod, *real_component, key_provider.evalmod_polynomial(),
-                key_provider);
+                retained_evalmod_relin);
         },
         progress, "real_evalmod");
     real_component.reset();

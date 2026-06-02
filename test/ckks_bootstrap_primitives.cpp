@@ -1958,14 +1958,14 @@ void test_dense_bootstrap_e2e_smoke()
         counting_provider.slot_to_coeff_releases[1] != 1 ||
         counting_provider.packed_conjugate_releases != 1)
         std::exit(1);
-    if (counting_provider.polynomial_relin_releases[0] != 2 ||
-        counting_provider.polynomial_relin_releases[1] != 2 ||
-        counting_provider.polynomial_relin_releases[2] != 2 ||
-        counting_provider.polynomial_relin_releases[3] != 2 ||
+    if (counting_provider.polynomial_relin_releases[0] != 1 ||
+        counting_provider.polynomial_relin_releases[1] != 1 ||
+        counting_provider.polynomial_relin_releases[2] != 1 ||
+        counting_provider.polynomial_relin_releases[3] != 1 ||
         counting_provider.polynomial_relin_releases[4] != 0 ||
-        counting_provider.polynomial_relin_releases[5] != 2 ||
-        counting_provider.double_angle_relin_releases[0] != 2 ||
-        counting_provider.double_angle_relin_releases[1] != 2)
+        counting_provider.polynomial_relin_releases[5] != 1 ||
+        counting_provider.double_angle_relin_releases[0] != 1 ||
+        counting_provider.double_angle_relin_releases[1] != 1)
         std::exit(1);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
@@ -2121,17 +2121,17 @@ void test_dense_bootstrap_inverse_e2e_smoke()
         counting_provider.slot_to_coeff_releases[1] != 1 ||
         counting_provider.packed_conjugate_releases != 1)
         std::exit(1);
-    if (counting_provider.polynomial_relin_releases[0] != 2 ||
-        counting_provider.polynomial_relin_releases[1] != 2 ||
-        counting_provider.polynomial_relin_releases[2] != 2 ||
-        counting_provider.polynomial_relin_releases[3] != 2 ||
+    if (counting_provider.polynomial_relin_releases[0] != 1 ||
+        counting_provider.polynomial_relin_releases[1] != 1 ||
+        counting_provider.polynomial_relin_releases[2] != 1 ||
+        counting_provider.polynomial_relin_releases[3] != 1 ||
         counting_provider.polynomial_relin_releases[4] != 0 ||
-        counting_provider.polynomial_relin_releases[5] != 2 ||
-        counting_provider.double_angle_relin_releases[0] != 2 ||
-        counting_provider.double_angle_relin_releases[1] != 2 ||
-        counting_provider.inverse_relin_releases[0] != 2 ||
-        counting_provider.inverse_relin_releases[1] != 2 ||
-        counting_provider.inverse_relin_releases[2] != 2)
+        counting_provider.polynomial_relin_releases[5] != 1 ||
+        counting_provider.double_angle_relin_releases[0] != 1 ||
+        counting_provider.double_angle_relin_releases[1] != 1 ||
+        counting_provider.inverse_relin_releases[0] != 1 ||
+        counting_provider.inverse_relin_releases[1] != 1 ||
+        counting_provider.inverse_relin_releases[2] != 1)
         std::exit(1);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
