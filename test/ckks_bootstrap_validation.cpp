@@ -1151,6 +1151,19 @@ std::uintmax_t seeded_hybrid_bootstrap_key_estimate_bytes()
 }
 
 template <class Schedule>
+std::uintmax_t seeded_hybrid_streamed_peak_key_estimate_bytes()
+{
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> usage;
+    TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        usage, linear_plan);
+    return TFHEpp::
+        CKKSDenseBootstrapHybridGiantStreamedPeakSeededKeyByteEstimate<
+            Schedule>(usage);
+}
+
+template <class Schedule>
 std::uintmax_t seeded_hybrid_practical_artifact_estimate_bytes()
 {
     using P = typename Schedule::Param;
@@ -1668,6 +1681,8 @@ int print_practical_readiness_report(const char *label,
                                       Schedule::evalmod_inv_degree);
     const std::uintmax_t seeded_bootstrap_bytes =
         seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>();
+    const std::uintmax_t seeded_streamed_peak_bytes =
+        seeded_hybrid_streamed_peak_key_estimate_bytes<Schedule>();
     const std::uintmax_t seeded_encap_bytes =
         TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
             Schedule>();
@@ -1736,12 +1751,18 @@ int print_practical_readiness_report(const char *label,
               << '\n';
     std::cout << label << " readiness_seeded_hybrid_key_bytes="
               << seeded_bootstrap_bytes
+              << " readiness_seeded_hybrid_streamed_total_key_bytes="
+              << seeded_bootstrap_bytes
+              << " readiness_seeded_hybrid_streamed_peak_key_bytes="
+              << seeded_streamed_peak_bytes
               << " seeded_encapsulation_key_bytes=" << seeded_encap_bytes
               << " seeded_product_relin_key_bytes="
               << seeded_product_relin_bytes
               << " seeded_post_product_relin_key_bytes="
               << seeded_post_product_relin_bytes
-              << " seeded_artifact_bytes=" << seeded_artifact_bytes << '\n';
+              << " seeded_artifact_bytes=" << seeded_artifact_bytes
+              << " readiness_seeded_hybrid_streamed_artifact_bytes="
+              << seeded_artifact_bytes << '\n';
     if (have_space)
         std::cout << label << " readiness_disk_path=" << disk_path.string()
                   << " readiness_disk_available_bytes=" << available_bytes
@@ -1754,9 +1775,11 @@ int print_practical_readiness_report(const char *label,
               << " disk_advisory_ready=" << (disk_advisory_ready ? 1 : 0)
               << '\n';
     std::cout << label
-              << " readiness_next_keygen=--lvl6-tuned-seeded-hybrid-keygen-next DIR\n";
+              << " readiness_next_keygen=--lvl6-tuned-seeded-hybrid-streamed-keygen-next DIR\n";
     std::cout << label
-              << " readiness_next_run=--lvl6-tuned-seeded-hybrid-run-chained-product-encap DIR\n";
+              << " readiness_next_run=--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR\n";
+    std::cout << label
+              << " readiness_next_all=--lvl6-tuned-seeded-hybrid-streamed-all DIR\n";
 
     return ring_ready && torus_ready && post_product_ready &&
                    sparse_weight_ready && evalmod_ready && output_margin_ready
