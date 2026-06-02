@@ -4258,6 +4258,300 @@ inline void CKKSLinearTransformBSGSDualInput(
         *rhs_baby, rhs.ct, lhs_baby_used, input_gk);
     ckks_detail::maybe_clear_cached_keys(input_gk);
 
+    const bool trace_linear = ckks_detail::ckks_linear_trace_enabled();
+    const auto trace_total_start = std::chrono::steady_clock::now();
+    auto trace_section_start = trace_total_start;
+
+    if (trace_linear) {
+        ckks_detail::ckks_trace_linear_event(
+            "dual_baby_rotation_table",
+            ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+        trace_section_start = std::chrono::steady_clock::now();
+    }
+
+    if constexpr (is_multilimb_uint_v<typename P::T> &&
+                  use_multilimb_digit_fft_v<P>) {
+        using T = typename P::T;
+        constexpr int width = std::numeric_limits<T>::digits;
+        constexpr int plain_digits =
+            (64 + static_cast<int>(P::B̅gbit) - 1) /
+            static_cast<int>(P::B̅gbit);
+        constexpr uint64_t plain_mask =
+            P::B̅gbit == 64 ? std::numeric_limits<uint64_t>::max()
+                            : ((uint64_t{1} << P::B̅gbit) - 1);
+        constexpr T half_digit = T{1} << (P::B̅gbit - 1);
+        constexpr T torus_mask = (T{1} << P::B̅gbit) - T{1};
+        constexpr T offset = [] {
+            constexpr int local_width = std::numeric_limits<T>::digits;
+            constexpr T local_half_digit = T{1} << (P::B̅gbit - 1);
+            T value = 0;
+            for (int j = 0; j < static_cast<int>(P::l̅); j++)
+                value += local_half_digit
+                         << (local_width - (j + 1) * P::B̅gbit);
+            return value;
+        }();
+        constexpr int fd_margin =
+            std::numeric_limits<double>::digits -
+            (2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3);
+        static_assert(fd_margin > 0,
+                      "fused CKKS dual-input BSGS digit products must fit in double");
+        constexpr int max_fused_terms = 1 << (fd_margin - 1);
+
+        using BabyComponentFFT = std::array<PolynomialInFD<P>, P::l̅>;
+        using BabyFFT = std::array<BabyComponentFFT, P::k + 1>;
+        auto lhs_baby_fft =
+            std::make_unique<std::vector<std::unique_ptr<BabyFFT>>>(
+                lhs_plan.k_step);
+        auto rhs_baby_fft =
+            std::make_unique<std::vector<std::unique_ptr<BabyFFT>>>(
+                lhs_plan.k_step);
+        for (int j1 = 0; j1 < static_cast<int>(lhs_baby_used.size()); j1++) {
+            if (!lhs_baby_used[static_cast<std::size_t>(j1)]) continue;
+            (*lhs_baby_fft)[static_cast<std::size_t>(j1)] =
+                std::make_unique<BabyFFT>();
+            (*rhs_baby_fft)[static_cast<std::size_t>(j1)] =
+                std::make_unique<BabyFFT>();
+        }
+#pragma omp parallel
+        {
+            auto torus_digit = std::make_unique<Polynomial<P>>();
+#pragma omp for schedule(dynamic)
+            for (int j1 = 0; j1 < static_cast<int>(lhs_baby_used.size());
+                 j1++) {
+                if (!lhs_baby_used[static_cast<std::size_t>(j1)]) continue;
+                const auto &lhs_baby_ct =
+                    *(*lhs_baby)[static_cast<std::size_t>(j1)];
+                const auto &rhs_baby_ct =
+                    *(*rhs_baby)[static_cast<std::size_t>(j1)];
+                auto &lhs_baby_out =
+                    *(*lhs_baby_fft)[static_cast<std::size_t>(j1)];
+                auto &rhs_baby_out =
+                    *(*rhs_baby_fft)[static_cast<std::size_t>(j1)];
+                for (int c = 0; c <= static_cast<int>(P::k); c++) {
+                    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                        const int torus_shift =
+                            width - (j + 1) * static_cast<int>(P::B̅gbit);
+                        for (uint32_t n = 0; n < P::n; n++) {
+                            const T adjusted = lhs_baby_ct[c][n] + offset;
+                            (*torus_digit)[n] =
+                                ((adjusted >> torus_shift) & torus_mask) -
+                                half_digit;
+                        }
+                        TwistIFFTDigit<P>(lhs_baby_out[c][j], *torus_digit);
+                        for (uint32_t n = 0; n < P::n; n++) {
+                            const T adjusted = rhs_baby_ct[c][n] + offset;
+                            (*torus_digit)[n] =
+                                ((adjusted >> torus_shift) & torus_mask) -
+                                half_digit;
+                        }
+                        TwistIFFTDigit<P>(rhs_baby_out[c][j], *torus_digit);
+                    }
+                }
+            }
+        }
+        lhs_baby.reset();
+        rhs_baby.reset();
+        if (trace_linear) {
+            ckks_detail::ckks_trace_linear_event(
+                "dual_baby_digit_fft",
+                ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+            trace_section_start = std::chrono::steady_clock::now();
+        }
+
+        bool res_initialized = false;
+        auto inner = std::make_unique<TRLWE<P>>();
+        auto giant_rotated = std::make_unique<TRLWE<P>>();
+
+        for (std::size_t group_index = 0;
+             group_index < lhs_plan.groups.size(); group_index++) {
+            const auto &lhs_group = lhs_plan.groups[group_index];
+            const auto &rhs_group = rhs_plan.groups[group_index];
+            assert(lhs_group.giant_step == rhs_group.giant_step);
+
+            using PlainTermFFT = std::array<PolynomialInFD<P>, plain_digits>;
+            auto lhs_plain_fft =
+                std::make_unique<std::vector<PlainTermFFT>>(
+                    lhs_group.terms.size());
+            auto rhs_plain_fft =
+                std::make_unique<std::vector<PlainTermFFT>>(
+                    rhs_group.terms.size());
+            const int lhs_term_count =
+                static_cast<int>(lhs_group.terms.size());
+            const int rhs_term_count =
+                static_cast<int>(rhs_group.terms.size());
+            const int total_term_count = lhs_term_count + rhs_term_count;
+            assert(total_term_count > 0);
+#pragma omp parallel
+            {
+                auto plain_digit = std::make_unique<Polynomial<P>>();
+#pragma omp for collapse(2) schedule(dynamic)
+                for (int t = 0; t < total_term_count; t++) {
+                    for (int d = 0; d < plain_digits; d++) {
+                        const auto &plain =
+                            t < lhs_term_count
+                                ? lhs_group.terms[static_cast<std::size_t>(t)]
+                                      .plain.poly
+                                : rhs_group
+                                      .terms[static_cast<std::size_t>(
+                                          t - lhs_term_count)]
+                                      .plain.poly;
+                        auto &plain_fft =
+                            t < lhs_term_count
+                                ? (*lhs_plain_fft)[static_cast<std::size_t>(t)]
+                                : (*rhs_plain_fft)[static_cast<std::size_t>(
+                                      t - lhs_term_count)];
+                        const int plain_shift =
+                            d * static_cast<int>(P::B̅gbit);
+                        for (uint32_t n = 0; n < P::n; n++) {
+                            const auto [negative, magnitude] =
+                                ckks_detail::smallSignedMagnitude<P, LogQ>(
+                                    plain[n]);
+                            const uint64_t digit =
+                                (magnitude >> plain_shift) & plain_mask;
+                            const T digit_value{digit};
+                            (*plain_digit)[n] =
+                                negative ? T{0} - digit_value : digit_value;
+                        }
+                        TwistIFFTDigit<P>(plain_fft[d], *plain_digit);
+                    }
+                }
+            }
+            if (trace_linear) {
+                ckks_detail::ckks_trace_linear_group_event(
+                    "dual_plain_digit_fft", group_index,
+                    ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+                trace_section_start = std::chrono::steady_clock::now();
+            }
+
+            for (int c = 0; c <= static_cast<int>(P::k); c++)
+                for (uint32_t n = 0; n < P::n; n++) (*inner)[c][n] = 0;
+
+            const int component_count = static_cast<int>(P::k) + 1;
+            const int aux_row_count = static_cast<int>(P::l̅);
+#pragma omp parallel
+            {
+                auto local_inner = std::make_unique<TRLWE<P>>();
+                auto product_acc = std::make_unique<PolynomialInFD<P>>();
+                auto digit_prod = std::make_unique<Polynomial<P>>();
+
+#pragma omp for collapse(3) schedule(dynamic)
+                for (int c = 0; c < component_count; c++) {
+                    for (int j = 0; j < aux_row_count; j++) {
+                        for (int d = 0; d < plain_digits; d++) {
+                            const int torus_shift =
+                                width -
+                                (j + 1) * static_cast<int>(P::B̅gbit);
+                            const int plain_shift =
+                                d * static_cast<int>(P::B̅gbit);
+                            const int shift = torus_shift + plain_shift;
+                            if (shift >= width) continue;
+
+                            for (std::size_t batch_begin = 0;
+                                 batch_begin <
+                                 static_cast<std::size_t>(total_term_count);
+                                 batch_begin += max_fused_terms) {
+                                const std::size_t batch_end =
+                                    std::min<std::size_t>(
+                                        static_cast<std::size_t>(
+                                            total_term_count),
+                                        batch_begin + max_fused_terms);
+                                for (std::size_t t = batch_begin;
+                                     t < batch_end; t++) {
+                                    const bool is_lhs =
+                                        t <
+                                        static_cast<std::size_t>(
+                                            lhs_term_count);
+                                    const std::size_t local_t =
+                                        is_lhs
+                                            ? t
+                                            : t - static_cast<std::size_t>(
+                                                      lhs_term_count);
+                                    const auto &entry =
+                                        is_lhs
+                                            ? lhs_group.terms[local_t]
+                                            : rhs_group.terms[local_t];
+                                    assert(entry.baby_step >= 0 &&
+                                           entry.baby_step < lhs_plan.k_step);
+                                    const auto &baby_fft =
+                                        is_lhs
+                                            ? *(*lhs_baby_fft)
+                                                   [static_cast<std::size_t>(
+                                                       entry.baby_step)]
+                                            : *(*rhs_baby_fft)
+                                                   [static_cast<std::size_t>(
+                                                       entry.baby_step)];
+                                    const auto &plain_fft =
+                                        is_lhs ? (*lhs_plain_fft)[local_t]
+                                               : (*rhs_plain_fft)[local_t];
+                                    if (t == batch_begin)
+                                        MulInFD<P::n>(*product_acc,
+                                                      baby_fft[c][j],
+                                                      plain_fft[d]);
+                                    else
+                                        FMAInFD<P::n>(*product_acc,
+                                                     baby_fft[c][j],
+                                                     plain_fft[d]);
+                                }
+                                TwistFFTDigitProduct<P>(*digit_prod,
+                                                        *product_acc);
+                                for (uint32_t n = 0; n < P::n; n++)
+                                    (*local_inner)[c][n] +=
+                                        (*digit_prod)[n] << shift;
+                            }
+                        }
+                    }
+                }
+#pragma omp critical
+                {
+                    for (int c = 0; c < component_count; c++)
+                        for (uint32_t n = 0; n < P::n; n++)
+                            (*inner)[c][n] += (*local_inner)[c][n];
+                }
+            }
+            if (trace_linear) {
+                ckks_detail::ckks_trace_linear_group_event(
+                    "dual_fused_digit_products", group_index,
+                    ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+                trace_section_start = std::chrono::steady_clock::now();
+            }
+
+            for (int c = 0; c <= static_cast<int>(P::k); c++)
+                for (uint32_t n = 0; n < P::n; n++)
+                    (*inner)[c][n] =
+                        ckks_detail::roundedLevelRightShift<
+                            P, LogQ, PlainLogDelta>((*inner)[c][n]);
+            ckks_detail::reduceTRLWEToLevel<P, out_log_q>(*inner);
+
+            const TRLWE<P> *to_add = inner.get();
+            if (lhs_group.giant_step != 0) {
+                CKKSRotateSlots<P, out_log_q>(
+                    *giant_rotated, *inner,
+                    lhs_plan.k_step * lhs_group.giant_step, output_gk);
+                to_add = giant_rotated.get();
+            }
+
+            if (!res_initialized) {
+                res.ct = *to_add;
+                res_initialized = true;
+            }
+            else {
+                CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
+            }
+            if (trace_linear) {
+                ckks_detail::ckks_trace_linear_group_event(
+                    "dual_group_finalize", group_index,
+                    ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
+                trace_section_start = std::chrono::steady_clock::now();
+            }
+        }
+        ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+        if (trace_linear)
+            ckks_detail::ckks_trace_linear_event(
+                "dual_linear_transform_total",
+                ckks_detail::ckks_trace_elapsed_ms(trace_total_start));
+        return;
+    }
+
     bool res_initialized = false;
     auto term = std::make_unique<TRLWE<P>>();
     auto inner = std::make_unique<TRLWE<P>>();

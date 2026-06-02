@@ -2110,7 +2110,8 @@ void test_dense_bootstrap_inverse_e2e_smoke()
         counting_provider.polynomial_relin_gets[1] != 4 ||
         counting_provider.polynomial_relin_gets[2] != 8 ||
         counting_provider.polynomial_relin_gets[3] != 16 ||
-        counting_provider.polynomial_relin_gets[4] != 30 ||
+        counting_provider.polynomial_relin_gets[4] != 0 ||
+        counting_provider.polynomial_relin_gets[5] != 2 ||
         counting_provider.double_angle_relin_gets[0] != 2 ||
         counting_provider.double_angle_relin_gets[1] != 2 ||
         counting_provider.inverse_relin_gets[0] != 2 ||
@@ -2127,7 +2128,8 @@ void test_dense_bootstrap_inverse_e2e_smoke()
         counting_provider.polynomial_relin_releases[1] != 2 ||
         counting_provider.polynomial_relin_releases[2] != 2 ||
         counting_provider.polynomial_relin_releases[3] != 2 ||
-        counting_provider.polynomial_relin_releases[4] != 2 ||
+        counting_provider.polynomial_relin_releases[4] != 0 ||
+        counting_provider.polynomial_relin_releases[5] != 2 ||
         counting_provider.double_angle_relin_releases[0] != 2 ||
         counting_provider.double_angle_relin_releases[1] != 2 ||
         counting_provider.inverse_relin_releases[0] != 2 ||
