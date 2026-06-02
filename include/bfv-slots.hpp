@@ -882,9 +882,12 @@ void LinearTransformBSGS(TRLWE<P> &res, const TRLWE<P> &ct,
                             const int shift = torus_shift + plain_shift;
                             if (shift >= width) continue;
 
-                            for (double &v : *product_acc) v = 0.0;
-                            for (std::size_t t = batch_begin; t < batch_end;
-                                 t++) {
+                            const int first_j1 = groups[j2][batch_begin].first;
+                            MulInFD<P::n>(*product_acc,
+                                           (*baby_fft)[first_j1][c][j],
+                                           (*plain_fft)[batch_begin][d]);
+                            for (std::size_t t = batch_begin + 1;
+                                 t < batch_end; t++) {
                                 const int j1 = groups[j2][t].first;
                                 FMAInFD<P::n>(*product_acc,
                                               (*baby_fft)[j1][c][j],

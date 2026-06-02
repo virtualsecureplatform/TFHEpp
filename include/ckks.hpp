@@ -3824,9 +3824,16 @@ inline void CKKSLinearTransformBSGS(
                             const int shift = torus_shift + plain_shift;
                             if (shift >= width) continue;
 
-                            for (double &v : *product_acc) v = 0.0;
-                            for (std::size_t t = batch_begin; t < batch_end;
-                                 t++) {
+                            const int first_j1 =
+                                group.terms[batch_begin].baby_step;
+                            assert(first_j1 >= 0 && first_j1 < plan.k_step);
+                            const auto &first_fft =
+                                *(*baby_fft)[static_cast<std::size_t>(
+                                    first_j1)];
+                            MulInFD<P::n>(*product_acc, first_fft[c][j],
+                                           (*plain_fft)[batch_begin][d]);
+                            for (std::size_t t = batch_begin + 1;
+                                 t < batch_end; t++) {
                                 const int j1 = group.terms[t].baby_step;
                                 assert(j1 >= 0 && j1 < plan.k_step);
                                 const auto &fft =
