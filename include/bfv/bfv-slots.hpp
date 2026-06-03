@@ -10,10 +10,10 @@
 #include <vector>
 
 #include "bfv++.hpp"
-#include "evalkeygens.hpp"
-#include "keyswitch.hpp"
+#include "tfhe/evalkeygens.hpp"
+#include "tfhe/keyswitch.hpp"
 #include "params.hpp"
-#include "trlwe.hpp"
+#include "tfhe/trlwe.hpp"
 
 // bfv-slots.hpp: SIMD slot operations for BFV in TFHEpp
 //

@@ -27,7 +27,7 @@ plus optional tests/tutorials depending on CMake flags.
 
 ## Minimal Example (Homomorphic NAND)
 
-This is a compact version of `test/nand.cpp`.
+This is a compact version of `test/tfhe/nand.cpp`.
 
 ```cpp
 #include <iostream>

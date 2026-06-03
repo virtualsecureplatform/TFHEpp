@@ -10,8 +10,8 @@ S‑boxes, and packed evaluation.
 
 See:
 
-- API: `include/gatebootstrapping.hpp`
-- Example use: `include/aes.hpp`
+- API: `include/tfhe/gatebootstrapping.hpp`
+- Example use: `include/tfhe/aes.hpp`
 
 ## Circuit bootstrapping (TLWE → TRGSW)
 
@@ -19,7 +19,7 @@ Circuit bootstrapping turns a TLWE ciphertext into a TRGSW ciphertext to enable
 faster arithmetic over `TRLWE`/`TRGSW` or to refresh noise before complex
 circuits.
 
-Entry points (see `include/circuitbootstrapping.hpp`):
+Entry points (see `include/tfhe/circuitbootstrapping.hpp`):
 
 - `CircuitBootstrapping<brP, privksP>(trgsw, tlwe, ek)` (outputs TRGSW)
 - `CircuitBootstrapping<brP, privksP>(trgswfft, tlwe, ek)` (outputs TRGSWFFT)
@@ -40,7 +40,7 @@ the secret key. This is based on Klemsa/Zama partial key ideas.
 Look at:
 
 - Types: `SubsetKeySwitchingKey<P>` in `include/params.hpp`
-- Keygen: `subikskgen` / `subprivkskgen` in `include/evalkeygens.hpp`
+- Keygen: `subikskgen` / `subprivkskgen` in `include/tfhe/evalkeygens.hpp`
 
 ## Annihilate key switching / Modified Chen packing
 
@@ -53,7 +53,7 @@ ek.emplaceahk<AHlvl2param>(sk);
 ek.emplacecbsk<AHlvl2param>(sk);
 ```
 
-See `include/circuitbootstrapping.hpp` and `test/annihilate*.cpp`.
+See `include/tfhe/circuitbootstrapping.hpp` and `test/tfhe/annihilate*.cpp`.
 
 ## Double Decomposition (Bivariate Representation)
 
@@ -112,7 +112,7 @@ This is handled automatically by `trgswSymEncrypt` when DD parameters are detect
 
 ### Key Functions
 
-Located in `include/trgsw.hpp`:
+Located in `include/tfhe/trgsw.hpp`:
 
 - `DecompositionImpl<P, IsNonce, AuxOnly>` — Unified decomposition (standard and DD)
 - `TRLWEBaseBbarDecompose` — Decompose TRLWE to base B̅g
@@ -121,12 +121,12 @@ Located in `include/trgsw.hpp`:
 
 ### Tests
 
-- `test/externalproductdoubledecomposition.cpp` — Tests both standard (l̅=1) and DD (l̅=2) paths
-- `test/gatebootstrappingtlwe2tlwedoubledecomposition.cpp` — 128-bit gate bootstrapping with DD
+- `test/tfhe/externalproductdoubledecomposition.cpp` — Tests both standard (l̅=1) and DD (l̅=2) paths
+- `test/tfhe/gatebootstrappingtlwe2tlwedoubledecomposition.cpp` — 128-bit gate bootstrapping with DD
 
 ## BFV++ (experimental)
 
-TFHEpp includes partial BFV/BFV++ support in `include/bfv++.hpp` for users who
+TFHEpp includes partial BFV/BFV++ support in `include/bfv/bfv++.hpp` for users who
 want ring arithmetic alongside TFHE. This is not as feature‑complete as the TFHE
 stack; treat it as experimental.
 

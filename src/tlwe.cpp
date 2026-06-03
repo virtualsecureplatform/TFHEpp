@@ -4,11 +4,11 @@
 
 #include <array>
 #include <cstdint>
-#include <key.hpp>
+#include <tfhe/key.hpp>
 #include <limits>
 #include <params.hpp>
 #include <random>
-#include <tlwe.hpp>
+#include <tfhe/tlwe.hpp>
 #include <type_traits>
 #include <vector>
 

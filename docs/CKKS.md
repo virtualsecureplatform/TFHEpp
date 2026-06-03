@@ -1,6 +1,6 @@
 # CKKS
 
-TFHEpp includes experimental CKKS support in `include/ckks.hpp`. The current
+TFHEpp includes experimental CKKS support in `include/ckks/ckks.hpp`. The current
 practical path is a leveled CKKS multiplication followed by dense CKKS
 bootstrapping, using Double Decomposition (DD) through the underlying TFHEpp
 external-product parameter path.
@@ -32,7 +32,7 @@ bootstrap and product evaluation keys.
 | `Schedule::InputCiphertext` | Ciphertext type accepted by a dense bootstrap schedule. |
 | `Schedule::OutputCiphertext` | Ciphertext type produced by a dense bootstrap schedule. |
 
-Useful aliases are defined near the end of `include/ckks.hpp`, including:
+Useful aliases are defined near the end of `include/ckks/ckks.hpp`, including:
 
 - `lvl6CKKSDenseBootstrapInput`
 - `lvl6CKKSDenseBootstrapOutput`

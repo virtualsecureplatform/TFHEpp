@@ -46,7 +46,7 @@ ek.emplaceiksk<lvl10param>(sk);
 keys, and other auxiliary keys. You only need to generate the pieces required
 by the operations you plan to use.
 
-Common generators (see `include/cloudkey.hpp`):
+Common generators (see `include/tfhe/cloudkey.hpp`):
 
 - `emplacebk<P>(sk)` / `emplacebkfft<P>(sk)` / `emplacebkntt<P>(sk)`
 - `emplaceiksk<P>(sk)` — identity key switching.
@@ -85,7 +85,7 @@ Decryption functions return values:
 
 ### TRLWE / TRGSW
 
-Ring encryption lives in `include/trlwe.hpp` and `include/trgsw.hpp`.
+Ring encryption lives in `include/tfhe/trlwe.hpp` and `include/tfhe/trgsw.hpp`.
 All encryption functions use output parameters:
 
 ```cpp
@@ -106,7 +106,7 @@ These are used for LUT bootstrapping and circuit bootstrapping.
 
 ## Boolean gates
 
-High‑level gates are in `include/gate.hpp`. They consume TLWE ciphertexts and
+High‑level gates are in `include/tfhe/gate.hpp`. They consume TLWE ciphertexts and
 an `EvalKey`:
 
 ```cpp
@@ -129,12 +129,12 @@ noise growth.
 
 ## Gate bootstrapping / LUTs
 
-Low‑level bootstrapping is in `include/gatebootstrapping.hpp`. The most common
+Low‑level bootstrapping is in `include/tfhe/gatebootstrapping.hpp`. The most common
 entry points are:
 
 - `GateBootstrappingTLWE2TLWE<P>(out, in, ek.getbkfft<P>(), testvector)`
 - `GateBootstrappingManyLUT<P, num_out>(outs, in, ek.getbkfft<P>(), testvector)`
 
 Here `testvector` encodes a LUT over the torus. For concrete examples, see
-`include/aes.hpp` and tests like `test/gatebootstrapping*.cpp`.
+`include/tfhe/aes.hpp` and tests like `test/tfhe/gatebootstrapping*.cpp`.
 

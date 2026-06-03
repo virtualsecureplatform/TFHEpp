@@ -25,10 +25,10 @@ This documentation lives in `docs/` and is meant to complement the root
 
 - Main public header: `include/tfhe++.hpp`
 - Parameter/type definitions: `include/params.hpp`, `include/params/`
-- Boolean gates: `include/gate.hpp`
-- Gate bootstrapping / LUTs: `include/gatebootstrapping.hpp`
-- Circuit bootstrapping: `include/circuitbootstrapping.hpp`
-- CKKS: `include/ckks.hpp`, `test/ckks_bootstrap_validation.cpp`,
-  `test/ckks_bootstrap_workflow.cpp`
+- Boolean gates: `include/tfhe/gate.hpp`
+- Gate bootstrapping / LUTs: `include/tfhe/gatebootstrapping.hpp`
+- Circuit bootstrapping: `include/tfhe/circuitbootstrapping.hpp`
+- CKKS: `include/ckks/ckks.hpp`, `test/ckks/ckks_bootstrap_validation.cpp`,
+  `test/ckks/ckks_bootstrap_workflow.cpp`
 - Tutorial programs: `tutorial/`
 - Tests/examples: `test/`

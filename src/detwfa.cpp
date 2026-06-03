@@ -1,4 +1,4 @@
-#include <detwfa.hpp>
+#include <tfhe/detwfa.hpp>
 
 namespace TFHEpp {
 #define INST(P)                                                     \

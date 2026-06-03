@@ -7,12 +7,12 @@
 #include <type_traits>
 #include <vector>
 
-#include "gatebootstrapping.hpp"
-#include "homdecomp.hpp"
+#include "tfhe/gatebootstrapping.hpp"
+#include "tfhe/homdecomp.hpp"
 #include "mulfft.hpp"
 #include "params.hpp"
-#include "trlwe.hpp"
-#include "trgsw.hpp"
+#include "tfhe/trlwe.hpp"
+#include "tfhe/trgsw.hpp"
 #include "utils.hpp"
 
 namespace TFHEpp {

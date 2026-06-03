@@ -1,4 +1,4 @@
-#include <gatebootstrapping.hpp>
+#include <tfhe/gatebootstrapping.hpp>
 
 namespace TFHEpp {
 

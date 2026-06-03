@@ -1,4 +1,4 @@
-#include <circuitbootstrapping.hpp>
+#include <tfhe/circuitbootstrapping.hpp>
 namespace TFHEpp {
 #define INST(iksP, bkP, privksP)                            \
     template void CircuitBootstrapping<iksP, bkP, privksP>( \

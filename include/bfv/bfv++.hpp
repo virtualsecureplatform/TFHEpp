@@ -5,10 +5,10 @@
 #include <memory>
 #include <type_traits>
 
-#include "keyswitch.hpp"
+#include "tfhe/keyswitch.hpp"
 #include "mulfft.hpp"
-#include "trgsw.hpp"
-#include "trlwe.hpp"
+#include "tfhe/trgsw.hpp"
+#include "tfhe/trlwe.hpp"
 
 // #include "hexl/hexl.hpp"
 

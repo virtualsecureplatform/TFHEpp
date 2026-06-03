@@ -163,13 +163,13 @@ TFHEpp::trlweSlotDecrypt<P>(result, ct_mul, key);
 
 | File | Contents |
 |------|----------|
-| `include/bfv-slots.hpp` | SlotEncode/Decode, encrypt/decrypt, GaloisKey, rotation |
-| `include/bfv++.hpp` | TRLWEMultFullDD, Wide384, relinearization |
+| `include/bfv/bfv-slots.hpp` | SlotEncode/Decode, encrypt/decrypt, GaloisKey, rotation |
+| `include/bfv/bfv++.hpp` | TRLWEMultFullDD, Wide384, relinearization |
 | `include/params/128bit.hpp` | `lvl3simdparam` definition |
 | `include/mulfft.hpp` | TwistFFT/TwistIFFT with sign-extension + rounding |
-| `test/simd_encode.cpp` | Encode/decode round-trip test |
-| `test/simd_ops.cpp` | Addition + multiplication test |
-| `test/simd_rotation.cpp` | Slot rotation test |
+| `test/bfv/simd_encode.cpp` | Encode/decode round-trip test |
+| `test/bfv/simd_ops.cpp` | Addition + multiplication test |
+| `test/bfv/simd_rotation.cpp` | Slot rotation test |
 
 ## Limitations
 

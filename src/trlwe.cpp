@@ -1,4 +1,4 @@
-#include "trlwe.hpp"
+#include "tfhe/trlwe.hpp"
 
 namespace TFHEpp {
 #define INST(P)                                         \

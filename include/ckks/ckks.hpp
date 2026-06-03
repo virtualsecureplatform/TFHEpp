@@ -29,10 +29,10 @@
 #include <utility>
 #include <vector>
 
-#include "bfv++.hpp"
-#include "bfv-slots.hpp"
+#include "bfv/bfv++.hpp"
+#include "bfv/bfv-slots.hpp"
 #include "params.hpp"
-#include "trlwe.hpp"
+#include "tfhe/trlwe.hpp"
 #include "utils.hpp"
 
 namespace TFHEpp {

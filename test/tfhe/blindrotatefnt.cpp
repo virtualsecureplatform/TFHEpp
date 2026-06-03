@@ -5,10 +5,10 @@
 #include <memory>
 #include <random>
 
-#include <gatebootstrapping.hpp>
-#include <key.hpp>
-#include <tlwe.hpp>
-#include <trlwe.hpp>
+#include <tfhe/gatebootstrapping.hpp>
+#include <tfhe/key.hpp>
+#include <tfhe/tlwe.hpp>
+#include <tfhe/trlwe.hpp>
 
 int main()
 {

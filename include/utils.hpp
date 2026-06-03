@@ -15,7 +15,7 @@
 #include <random>
 #include <type_traits>
 
-#include "bfv-multilimb.hpp"
+#include "bfv/bfv-multilimb.hpp"
 
 #ifdef __AVX2__
 #include <immintrin.h>

@@ -8,10 +8,10 @@
 #include <type_traits>
 #include <vector>
 
-#include "evalkeygens.hpp"
-#include "keyswitch.hpp"
+#include "tfhe/evalkeygens.hpp"
+#include "tfhe/keyswitch.hpp"
 #include "params.hpp"
-#include "trlwe.hpp"
+#include "tfhe/trlwe.hpp"
 #include "utils.hpp"
 
 namespace TFHEpp::bfvboot::gbfv {
