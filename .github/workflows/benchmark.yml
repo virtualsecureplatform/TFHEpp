@@ -35,5 +35,5 @@ jobs:
     - name: benchmark
       run: |
         test/show_info.sh
-        echo "TFHEpp" && build/test/nand
+        echo "TFHEpp" && build/test/tfhe/nand
         echo "original TFHE" && tfhe/build/test/test-gate-bootstrapping-spqlios-fma

@@ -20,13 +20,24 @@ cd $SCRIPT_DIR
 
 ./show_info.sh
 
-TEST_DIRS=(
-    './common'
-    './tfhe'
-    './bfv'
-    './clpx'
-    './ckks'
-)
+if [[ $# -gt 0 ]]; then
+    TEST_DIRS=()
+    for TEST_DIR in "$@"
+    do
+        case "$TEST_DIR" in
+            ./*|/*) TEST_DIRS+=("$TEST_DIR") ;;
+            *) TEST_DIRS+=("./$TEST_DIR") ;;
+        esac
+    done
+else
+    TEST_DIRS=(
+        './common'
+        './tfhe'
+        './bfv'
+        './clpx'
+        './ckks'
+    )
+fi
 TEST_BINARIES=()
 for TEST_DIR in "${TEST_DIRS[@]}"
 do
@@ -38,6 +49,10 @@ do
         TEST_BINARIES+=("${TEST_BINARY}")
     done < <(find "${TEST_DIR}" -maxdepth 1 -perm -111 -type f | sort)
 done
+if [[ ${#TEST_BINARIES[@]} -eq 0 ]]; then
+    echo "No test binaries found for: ${TEST_DIRS[*]}" >&2
+    exit 1
+fi
 IGNORED_BINARIES=(
     './tfhe/largelut_cmux_benchmark'
     './tfhe/largelut_random_key_diagnostic'

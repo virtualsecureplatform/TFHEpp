@@ -3,118 +3,180 @@ name: Test
 on:
   push:
 
-# thanks to https://izumisy.work/entry/2022/03/28/140644
 jobs:
-  ubuntu-2404:
-    name: ubuntu-2404
-    runs-on: Ubuntu-latest
+  scheme-tests:
+    name: ${{ matrix.scheme }}-${{ matrix.compiler }}-${{ matrix.ubuntu }}
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:${{ matrix.ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scheme: tfhe
+            ubuntu: "24.04"
+            compiler: gcc
+            compiler_flags: -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+            build_targets: test_common test_tfhe
+            test_dirs: common tfhe
+          - scheme: tfhe
+            ubuntu: "24.04"
+            compiler: clang
+            compiler_flags: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            build_targets: test_common test_tfhe
+            test_dirs: common tfhe
+          - scheme: tfhe
+            ubuntu: "26.04"
+            compiler: gcc
+            compiler_flags: -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+            build_targets: test_common test_tfhe
+            test_dirs: common tfhe
+          - scheme: tfhe
+            ubuntu: "26.04"
+            compiler: clang
+            compiler_flags: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            build_targets: test_common test_tfhe
+            test_dirs: common tfhe
+          - scheme: bfv
+            ubuntu: "24.04"
+            compiler: gcc
+            compiler_flags: -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+            build_targets: test_bfv
+            test_dirs: bfv
+          - scheme: bfv
+            ubuntu: "24.04"
+            compiler: clang
+            compiler_flags: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            build_targets: test_bfv
+            test_dirs: bfv
+          - scheme: clpx
+            ubuntu: "24.04"
+            compiler: gcc
+            compiler_flags: -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+            build_targets: test_clpx
+            test_dirs: clpx
+          - scheme: clpx
+            ubuntu: "24.04"
+            compiler: clang
+            compiler_flags: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            build_targets: test_clpx
+            test_dirs: clpx
+          - scheme: ckks
+            ubuntu: "24.04"
+            compiler: gcc
+            compiler_flags: -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+            build_targets: test_ckks
+            test_dirs: ckks
+          - scheme: ckks
+            ubuntu: "24.04"
+            compiler: clang
+            compiler_flags: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            build_targets: test_ckks
+            test_dirs: ckks
+    steps:
+      - name: Install libraries
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            git build-essential g++ libomp-dev cmake ninja-build
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            DEBIAN_FRONTEND=noninteractive apt-get install -y clang lld
+          fi
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: |
+          cmake . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_TEST=ON \
+            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
+            -DCMAKE_C_FLAGS_RELEASE="-O3" \
+            ${{ matrix.compiler_flags }}
+      - name: Build scheme tests
+        run: |
+          cmake --build build --target ${{ matrix.build_targets }}
+      - name: Run scheme tests
+        run: |
+          cd build
+          # CKKS CI intentionally runs only the normal lightweight test
+          # executables. Do not pass lvl6 keygen/run/all flags here; those
+          # generate full bootstrap artifacts and exceed the storage budget.
+          test/test.sh ${{ matrix.test_dirs }}
+
+  tfhe-concrete:
+    name: tfhe-concrete-gcc-24.04
+    runs-on: ubuntu-latest
     container:
       image: ubuntu:24.04
     steps:
-    - name: Install libraries
-      run: |
-        apt-get update
-        apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: build and test
-      run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DCMAKE_C_FLAGS_RELEASE="-O3"
-        cd build
-        ninja
-        test/test.sh
-  ubuntu-2404-concrete:
-    name: ubuntu-2404-concrete
-    runs-on: Ubuntu-latest
+      - name: Install libraries
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            git build-essential g++ libomp-dev cmake ninja-build
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build and test TFHE concrete parameters
+        run: |
+          cmake . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_TEST=ON \
+            -DUSE_CONCRETE=ON
+          cmake --build build --target test_tfhe
+          cd build
+          test/test.sh tfhe
+
+  tfhe-raintt:
+    name: tfhe-raintt-gcc-24.04
+    runs-on: ubuntu-latest
     container:
       image: ubuntu:24.04
     steps:
-    - name: Install libraries
-      run: |
-        apt-get update
-        apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: build and test
-      run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_CONCRETE=ON
-        cd build
-        ninja
-        test/test.sh
-  ubuntu-2404-raintt:
-    name: ubuntu-2404-raintt
-    runs-on: Ubuntu-latest
+      - name: Install libraries
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            git build-essential g++ libomp-dev cmake ninja-build
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build and test RAINTT
+        run: |
+          cmake . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_TEST=ON \
+            -DUSE_COMPRESS=ON
+          cmake --build build --target raintt trlwerainttenc gatebootstrappingtlwe2tlweraintt
+          build/test/common/raintt
+          build/test/tfhe/trlwerainttenc
+          build/test/tfhe/gatebootstrappingtlwe2tlweraintt
+
+  tutorial:
+    name: tutorial-gcc-24.04
+    runs-on: ubuntu-latest
     container:
       image: ubuntu:24.04
     steps:
-    - name: Install libraries
-      run: |
-        apt-get update
-        apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: build and test
-      run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_COMPRESS=ON
-        cd build
-        ninja raintt trlwerainttenc gatebootstrappingtlwe2tlweraintt
-        ./test/raintt
-        ./test/trlwerainttenc
-        ./test/gatebootstrappingtlwe2tlweraintt
-  ubuntu-2404-tutorial:
-    name: ubuntu-2404-tutorial
-    runs-on: Ubuntu-latest
-    container:
-      image: ubuntu:24.04
-    steps:
-    - name: Install libraries
-      run: |
-        apt-get update
-        apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: build and run tutorial
-      run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TUTORIAL=ON
-        cd build
-        ninja
-        echo "12345" | ./tutorial/client
-        echo "54321" | ./tutorial/cloud
-        ./tutorial/verify
-  ubuntu-2404-clang:
-    name: ubuntu-2404-clang
-    runs-on: Ubuntu-latest
-    container:
-      image: ubuntu:24.04
-    steps:
-    - name: Install libraries
-      run: |
-        apt-get update
-        apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev ninja-build clang lld wget
-        wget https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.tar.gz
-        tar -xzvf cmake*
-        rm cmake*.tar.gz
-        mv cmake* /cmake-binary
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: build and test
-      run: |
-        /cmake-binary/bin/cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_LINKER_TYPE=LLD -DENABLE_TEST=ON -DCMAKE_CXX_FLAGS_RELEASE="-O3" -DCMAKE_C_FLAGS_RELEASE="-O3"
-        cd build
-        ninja
-        test/test.sh
+      - name: Install libraries
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            git build-essential g++ libomp-dev cmake ninja-build
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build and run tutorial
+        run: |
+          cmake . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_TUTORIAL=ON
+          cmake --build build
+          echo "12345" | ./build/tutorial/client
+          echo "54321" | ./build/tutorial/cloud
+          ./build/tutorial/verify

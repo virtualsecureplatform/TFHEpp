@@ -4,6 +4,8 @@ file(COPY test.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER
 file(COPY show_info.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_EXECUTE)
 file(COPY benchmark_docker.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_EXECUTE)
 
+set(test_directories common tfhe bfv clpx ckks)
+
 foreach(test_source ${test_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
     get_filename_component(test_dir ${test_source} DIRECTORY)
@@ -33,7 +35,18 @@ foreach(test_source ${test_sources})
         target_include_directories(${test_name} PRIVATE
             ${PROJECT_SOURCE_DIR}/thirdparties/ascon-c/tests)
     endif()
+    if(test_dir IN_LIST test_directories)
+        list(APPEND test_${test_dir}_targets ${test_name})
+    endif()
 endforeach(test_source ${test_sources})
+
+foreach(test_dir ${test_directories})
+    set(test_targets_var "test_${test_dir}_targets")
+    set(test_targets ${${test_targets_var}})
+    if(test_targets)
+        add_custom_target(test_${test_dir} DEPENDS ${test_targets})
+    endif()
+endforeach()
 
 # For GMP used in INTorus test
 find_library(gmp NAMES gmp gmpxx)

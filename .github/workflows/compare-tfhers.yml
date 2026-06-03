@@ -84,13 +84,13 @@ jobs:
         run: |
           echo "=== TFHEpp NAND gate (split layout, SPQLIOS) ==="
           echo "Parameters: n=805, k=3, N=512, pbs_level=2, pbs_base_log=10"
-          build-split/test/pbs_tfhers
+          build-split/test/tfhe/pbs_tfhers
 
       - name: Run TFHEpp pbs_tfhers (interleaved layout)
         run: |
           echo "=== TFHEpp NAND gate (interleaved layout, SPQLIOS_INTL) ==="
           echo "Parameters: n=805, k=3, N=512, pbs_level=2, pbs_base_log=10"
-          build-intl/test/pbs_tfhers
+          build-intl/test/tfhe/pbs_tfhers
 
       - name: Run tfhe-rs benchmark
         run: |
