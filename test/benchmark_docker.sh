@@ -8,7 +8,7 @@ cd $SCRIPT_DIR
 ./show_info.sh
 
 echo "TFHEpp"
-/TFHEpp/build/test/nand
+/TFHEpp/build/test/tfhe/nand
 
 echo "original TFHE"
 /tfhe/build/test/test-gate-bootstrapping-spqlios-fma

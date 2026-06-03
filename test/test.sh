@@ -20,16 +20,33 @@ cd $SCRIPT_DIR
 
 ./show_info.sh
 
-TEST_BINARIES=`find . -maxdepth 1 -perm -111 -type f`
-IGNORED_BINARIES=(
-    './largelut_cmux_benchmark'
-    './largelut_random_key_diagnostic'
+TEST_DIRS=(
+    './common'
+    './tfhe'
+    './bfv'
+    './clpx'
+    './ckks'
 )
-for TEST_BINARY in $TEST_BINARIES
+TEST_BINARIES=()
+for TEST_DIR in "${TEST_DIRS[@]}"
+do
+    if [[ ! -d ${TEST_DIR} ]]; then
+        continue
+    fi
+    while IFS= read -r TEST_BINARY
+    do
+        TEST_BINARIES+=("${TEST_BINARY}")
+    done < <(find "${TEST_DIR}" -maxdepth 1 -perm -111 -type f | sort)
+done
+IGNORED_BINARIES=(
+    './tfhe/largelut_cmux_benchmark'
+    './tfhe/largelut_random_key_diagnostic'
+)
+for TEST_BINARY in "${TEST_BINARIES[@]}"
 do
     if contains "$TEST_BINARY" "${IGNORED_BINARIES[@]}"; then
         continue
     fi
     echo "==== Testing $TEST_BINARY ===="
-    ./$TEST_BINARY
+    "$TEST_BINARY"
 done

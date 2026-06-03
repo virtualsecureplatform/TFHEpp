@@ -6,7 +6,19 @@ file(COPY benchmark_docker.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMI
 
 foreach(test_source ${test_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
+    get_filename_component(test_dir ${test_source} DIRECTORY)
     add_executable(${test_name} ${test_source})
+    if(test_dir STREQUAL "")
+        set(test_output_dir "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+        set(test_output_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_dir}")
+    endif()
+    set_target_properties(${test_name} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${test_output_dir}"
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${test_output_dir}"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${test_output_dir}"
+        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${test_output_dir}"
+        RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${test_output_dir}")
     if(USE_PERF)
         add_compile_definitions(USE_PERF)
         target_link_libraries(${test_name} tfhe++ AES profiler)

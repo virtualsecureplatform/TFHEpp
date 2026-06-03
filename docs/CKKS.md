@@ -82,7 +82,7 @@ Recommended practical keygen:
 
 ```bash
 DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed
-./build-ckks/test/ckks_bootstrap_validation \
+./build-ckks/test/ckks/ckks_bootstrap_validation \
   --lvl6-tuned-seeded-hybrid-streamed-keygen "$DIR"
 ```
 
@@ -130,7 +130,7 @@ directory:
 
 ```bash
 DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed
-./build-ckks/test/ckks_bootstrap_validation \
+./build-ckks/test/ckks/ckks_bootstrap_validation \
   --lvl6-tuned-seeded-hybrid-streamed-evalkeygen "$DIR"
 ```
 
@@ -176,14 +176,14 @@ cmake --build build-ckks --target ckks_bootstrap_validation -j2
 Run quick tests:
 
 ```bash
-./build-ckks/test/ckks_bootstrap_workflow
-./build-ckks/test/ckks_bootstrap_validation --toy-inverse
+./build-ckks/test/ckks/ckks_bootstrap_workflow
+./build-ckks/test/ckks/ckks_bootstrap_validation --toy-inverse
 ```
 
 Check the current tuned lvl6 readiness report:
 
 ```bash
-./build-ckks/test/ckks_bootstrap_validation --lvl6-tuned-readiness
+./build-ckks/test/ckks/ckks_bootstrap_validation --lvl6-tuned-readiness
 ```
 
 The readiness report prints:
@@ -199,13 +199,13 @@ Run the practical path as separate explicit phases:
 ```bash
 DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed
 
-./build-ckks/test/ckks_bootstrap_validation \
+./build-ckks/test/ckks/ckks_bootstrap_validation \
   --lvl6-tuned-seeded-hybrid-streamed-keygen "$DIR"
 
-./build-ckks/test/ckks_bootstrap_validation \
+./build-ckks/test/ckks/ckks_bootstrap_validation \
   --lvl6-tuned-seeded-hybrid-streamed-evalkeygen "$DIR"
 
-./build-ckks/test/ckks_bootstrap_validation \
+./build-ckks/test/ckks/ckks_bootstrap_validation \
   --lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap "$DIR"
 ```
 
@@ -213,7 +213,7 @@ Or run the same practical path as one direct command:
 
 ```bash
 DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed
-./build-ckks/test/ckks_bootstrap_validation \
+./build-ckks/test/ckks/ckks_bootstrap_validation \
   --lvl6-tuned-seeded-hybrid-streamed-all "$DIR"
 ```
 

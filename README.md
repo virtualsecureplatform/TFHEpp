@@ -95,7 +95,7 @@ cd build
 cmake .. -DENABLE_TEST=ON
 make
 ulimit -s unlimited
-./test/nand 
+./test/tfhe/nand
 ```
 
 If you want to run semantically equivalent test on original TFHE, run below code.
@@ -176,7 +176,7 @@ cd TFHEpp
 mkdir build && cd build
 cmake .. -DUSE_TFHE_RS=ON -DENABLE_TEST=ON
 make -j$(nproc) pbs_tfhers
-taskset -c 0 ./test/pbs_tfhers
+taskset -c 0 ./test/tfhe/pbs_tfhers
 ```
 
 ### Apptainer
