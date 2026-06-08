@@ -1086,10 +1086,10 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
     static_assert(Lvl6TunedSchedule::component_split_plain_log_delta == 52);
     static_assert(Lvl6TunedSchedule::slot_to_coeff_plain_log_delta == 30);
-    static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 216);
-    static_assert(Lvl6TunedSchedule::output_log_q == 156);
+    static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 172);
+    static_assert(Lvl6TunedSchedule::output_log_q == 112);
     static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-    static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 44);
+    static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 0);
     const std::filesystem::path estimate_root =
         "__tfhepp_nonexistent_ckks_key_estimate_probe__";
     if (std::filesystem::exists(estimate_root)) std::exit(1);

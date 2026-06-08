@@ -10,9 +10,9 @@ giant streamed bootstrap path:
 
 - schedule: `TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule`
 - ring degree: `n = 32768`
-- boot modulus: `boot_log_q = 1152`
+- boot modulus: `boot_log_q = 1108`
 - input level: `input_log_q = 60`
-- output level: `output_log_q = 156`
+- output level: `output_log_q = 112`
 - scale bits: `log_delta = 52`
 - lvl6 CKKS noise: `α = 2^-850`
 - low-level CKKS noise floor: `σ >= 3.2`
@@ -71,14 +71,16 @@ The bounded sparse key keeps the modulus-raising error inside the EvalMod
 interval assumed by the schedule. A dense bootstrap secret can exceed that bound
 and invalidate the practical error analysis.
 
-The current lvl6 noise is tuned for the full 1152-bit bootstrap level. With the
+The current lvl6 noise is tuned for the 1108-bit bootstrap level. With the
 Parameter-Selection lattice estimator and the BDGL16 cost model, `n = 32768`,
-`q = 2^1152`, and `α = 2^-850` gives:
+`q = 2^1108`, and `α = 2^-850` gives:
 
 - dense ternary secret: about `132.9` bits
 - sparse H=16 bootstrap secret: about `131.8` bits
 
-The previous `α = 2^-1129` setting gave only about `63` rough bits at the
+The tuned schedule spends 996 bits across C2S, component split, EvalMod, and
+STC, leaving 60 bits for a post-bootstrap product at the input level. The
+previous `α = 2^-1129` setting gave only about `63` rough bits at the old
 1152-bit bootstrap level. The lvl6 parameter also defines a `3.2` minimum CKKS
 integer noise standard deviation so direct low-active-level encryption does not
 round the default noise to zero. Reproduce the security check from the workspace
@@ -244,7 +246,7 @@ the chained product bootstrap.
 ## Current Practical Reference
 
 On the tuned lvl6 seeded-streamed path, the readiness report currently estimates
-about 33.5 GB of seeded bootstrap/product artifacts with the product eval keys.
+about 31.0 GB of seeded bootstrap/product artifacts with the product eval keys.
 The non-seeded hybrid path is roughly twice that size.
 
 A full local validation of

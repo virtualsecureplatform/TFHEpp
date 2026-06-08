@@ -323,9 +323,10 @@ struct lvl5param {
 // The extra limbs give dense CKKS bootstrapping enough room for a practical
 // EvalMod scale and a post-bootstrap product in TFHEpp's power-of-two torus
 // model.  The CKKS encryption noise is tuned against the active level modulus:
-// at logQ = 1152, α = 2^-850 gives σ = 2^302.  Direct BDGL16 estimates for
-// n = 32768, q = 2^1152 give about 132.9 bits for dense ternary secrets and
-// about 131.8 bits for the current sparse-H16 bootstrap-key validation path.
+// at the tuned logQ = 1108 bootstrap level, α = 2^-850 gives σ = 2^258.
+// Direct BDGL16 estimates for n = 32768, q = 2^1108 give about 132.9 bits for
+// dense ternary secrets and about 131.8 bits for the current sparse-H16
+// bootstrap-key validation path.
 struct lvl6param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;

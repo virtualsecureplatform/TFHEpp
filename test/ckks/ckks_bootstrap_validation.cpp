@@ -2015,7 +2015,7 @@ using Lvl6RobustHybridThresholdSchedule =
 template <int HybridThreshold>
 struct Lvl6TunedHybridThresholdSchedule
     : TFHEpp::CKKSDenseBootstrapSchedule<
-          TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
+          TFHEpp::lvl6param, 52, 8, 1108, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
           52, 30, 7, 7, HybridThreshold, 1> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
@@ -2032,13 +2032,13 @@ struct Lvl6TunedHybridThresholdSchedule
 
 template <int LinearBSGSStep>
 using Lvl6TunedBSGSStepSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
-    TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5, 52,
+    TFHEpp::lvl6param, 52, 8, 1108, 52, 7, 34, 18, 4, 5, 52,
     LinearBSGSStep, 0, 52, 52, 30, 7, 7, 2, 1>;
 
 template <int C2S0, int C2S1, int STC0, int STC1>
 struct Lvl6TunedStageBSGSSchedule
     : TFHEpp::CKKSDenseBootstrapSchedule<
-          TFHEpp::lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
+          TFHEpp::lvl6param, 52, 8, 1108, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
           52, 30, 7, 7, 2, 1> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
@@ -2085,9 +2085,9 @@ static_assert(
 static_assert(
     TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
         1, Lvl6TunedSchedule>() == 1024);
-static_assert(Lvl6TunedSchedule::output_log_q == 156);
+static_assert(Lvl6TunedSchedule::output_log_q == 112);
 static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 44);
+static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 0);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;

@@ -5888,7 +5888,7 @@ using lvl6CKKSDenseBootstrapInverseSchedule =
     CKKSDenseBootstrapSchedule<lvl6param, 40, 8, 880, 40, 5, 52, 18, 4, 3, 40,
                                128, 0, 50, 50, 20, 5, 5, 3>;
 struct lvl6CKKSDenseBootstrapTunedSchedule
-    : CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1152, 52, 7, 34, 18, 4, 5,
+    : CKKSDenseBootstrapSchedule<lvl6param, 52, 8, 1108, 52, 7, 34, 18, 4, 5,
                                   52, 128, 0, 52, 52, 30, 7, 7, 2, 1> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
