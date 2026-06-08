@@ -95,6 +95,8 @@ int main()
     static_assert(TFHEpp::lvl6param::l̅ * TFHEpp::lvl6param::B̅gbit == 1152);
     static_assert(TFHEpp::lvl6param::Q_mod_t ==
                   pow2_mod(1152, TFHEpp::lvl6param::plain_modulus_u64));
+    require(std::abs(std::log2(TFHEpp::lvl6param::α) + 850.0) < 1e-9,
+            "lvl6 CKKS security noise exponent");
 
     {
         using P = TFHEpp::lvl6param;
@@ -120,6 +122,23 @@ int main()
 
         const T uniform = TFHEpp::ckks_detail::uniformAtLevel<P, 880>();
         require((uniform >> 880) == T{0}, "lvl6 uniform sample is level-bound");
+
+        const TFHEpp::CKKSNoise default_noise{P::α, 0};
+        const long double input_noise =
+            TFHEpp::ckks_detail::effectiveNoiseStddevAtLevel<P, 60>(
+                default_noise);
+        require(std::abs(input_noise - P::ckks_min_noise_stddev) < 1e-12L,
+                "lvl6 low active-level CKKS noise floor");
+        const long double boot_noise =
+            TFHEpp::ckks_detail::effectiveNoiseStddevAtLevel<P, 1152>(
+                default_noise);
+        require(std::abs(std::log2(boot_noise) - 302.0L) < 1e-9L,
+                "lvl6 boot-level CKKS noise scale");
+        const T large_noise =
+            TFHEpp::ckks_detail::signedLongDoubleToLevel<P, 1152>(
+                std::ldexp(1.0L, 302));
+        require((large_noise >> 302) == T{1},
+                "lvl6 large CKKS noise conversion keeps high bits");
 
         auto lhs = std::make_unique<TFHEpp::Polynomial<P>>();
         auto rhs = std::make_unique<TFHEpp::Polynomial<P>>();

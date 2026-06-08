@@ -14,6 +14,8 @@ giant streamed bootstrap path:
 - input level: `input_log_q = 60`
 - output level: `output_log_q = 156`
 - scale bits: `log_delta = 52`
+- lvl6 CKKS noise: `α = 2^-850`
+- low-level CKKS noise floor: `σ >= 3.2`
 - bounded bootstrap secret weight: `16`
 
 CKKS APIs and schedules are compile-time types. Changing a schedule, level,
@@ -68,6 +70,24 @@ current tuned schedule:
 The bounded sparse key keeps the modulus-raising error inside the EvalMod
 interval assumed by the schedule. A dense bootstrap secret can exceed that bound
 and invalidate the practical error analysis.
+
+The current lvl6 noise is tuned for the full 1152-bit bootstrap level. With the
+Parameter-Selection lattice estimator and the BDGL16 cost model, `n = 32768`,
+`q = 2^1152`, and `α = 2^-850` gives:
+
+- dense ternary secret: about `132.9` bits
+- sparse H=16 bootstrap secret: about `131.8` bits
+
+The previous `α = 2^-1129` setting gave only about `63` rough bits at the
+1152-bit bootstrap level. The lvl6 parameter also defines a `3.2` minimum CKKS
+integer noise standard deviation so direct low-active-level encryption does not
+round the default noise to zero. Reproduce the security check from the workspace
+root with:
+
+```sh
+cd Parameter-Selection/python
+sage -python estimates/CKKS_lvl6.py
+```
 
 Validation commands record the requested sparse weight in the key directory and
 reject a mismatch. This prevents accidentally reusing a bootstrap key generated

@@ -322,7 +322,10 @@ struct lvl5param {
 // the next level.  Q = 2^1152 is represented as 18 little-endian 64-bit limbs.
 // The extra limbs give dense CKKS bootstrapping enough room for a practical
 // EvalMod scale and a post-bootstrap product in TFHEpp's power-of-two torus
-// model.
+// model.  The CKKS encryption noise is tuned against the active level modulus:
+// at logQ = 1152, α = 2^-850 gives σ = 2^302.  Direct BDGL16 estimates for
+// n = 32768, q = 2^1152 give about 132.9 bits for dense ternary secrets and
+// about 131.8 bits for the current sparse-H16 bootstrap-key validation path.
 struct lvl6param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
@@ -338,7 +341,11 @@ struct lvl6param {
     static constexpr T Bgₐ = T{1} << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -1129);
+    static const inline double α = std::pow(2.0, -850);
+    // Low active CKKS levels would otherwise round α*2^LogQ to zero.  This
+    // floor keeps direct lvl6 CKKS encryption/keygen non-degenerate while the
+    // high-level bootstrap keys still use the security-tuned relative α above.
+    static constexpr double ckks_min_noise_stddev = 3.2;
     static constexpr T μ = T{1} << (std::numeric_limits<T>::digits - 3);
     static constexpr uint64_t plain_modulus_u64 = 786433;
     static constexpr uint32_t plain_modulusbit = 20;

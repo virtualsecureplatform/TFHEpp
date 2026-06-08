@@ -1212,6 +1212,69 @@ inline __int128_t randomSignedBits(std::uint32_t bits)
            static_cast<__int128_t>(static_cast<__uint128_t>(1) << bits);
 }
 
+template <class P>
+inline typename P::T randomUnsignedBits(std::uint32_t bits)
+{
+    static_assert(supported_torus_v<P>);
+    if (bits == 0) return typename P::T{0};
+
+    std::uniform_int_distribution<std::uint64_t> dist64(
+        0, std::numeric_limits<std::uint64_t>::max());
+    typename P::T value = 0;
+    std::uint32_t generated = 0;
+    while (generated < bits) {
+        value |= static_cast<typename P::T>(dist64(generator)) << generated;
+        generated += 64;
+    }
+    if (bits >= torus_width_v<P>) return value;
+    return value & ((typename P::T{1} << bits) - typename P::T{1});
+}
+
+template <class P, std::uint32_t LogQ>
+inline typename P::T signedLongDoubleToLevel(long double value)
+{
+    static_assert(supported_torus_v<P>);
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= torus_width_v<P>);
+
+    using T = typename P::T;
+    if constexpr (!is_multilimb_uint_v<T>) {
+        return signedToLevel<P, LogQ>(longDoubleToI128(value));
+    }
+    else {
+        if (!std::isfinite(value)) {
+            return value < 0 ? (T{1} << (LogQ - 1))
+                             : ((T{1} << (LogQ - 1)) - T{1});
+        }
+
+        const bool negative = value < 0;
+        long double magnitude_ld = negative ? -value : value;
+        if (magnitude_ld < 1.0L) return T{0};
+
+        int exponent = 0;
+        const long double fraction = std::frexp(magnitude_ld, &exponent);
+        constexpr int mantissa_bits = 63;
+        const auto top =
+            static_cast<std::uint64_t>(std::ldexp(fraction, mantissa_bits));
+
+        T magnitude = T{top};
+        const int shift = exponent - mantissa_bits;
+        if (shift >= 0) {
+            magnitude <<= static_cast<std::size_t>(shift);
+            const std::uint32_t low_bits =
+                std::min<std::uint32_t>(static_cast<std::uint32_t>(shift), LogQ);
+            magnitude |= randomUnsignedBits<P>(low_bits);
+        }
+        else {
+            magnitude >>= static_cast<std::size_t>(-shift);
+        }
+
+        magnitude = reduceToLevel<P, LogQ>(magnitude);
+        if (!negative) return magnitude;
+        return reduceToLevel<P, LogQ>(T{0} - magnitude);
+    }
+}
+
 inline void fftInPlace(std::vector<std::complex<long double>> &a, bool inverse)
 {
     const std::size_t n = a.size();
@@ -1248,16 +1311,29 @@ inline void fftInPlace(std::vector<std::complex<long double>> &a, bool inverse)
 }
 
 template <class P, std::uint32_t LogQ>
+inline long double effectiveNoiseStddevAtLevel(const CKKSNoise &noise)
+{
+    if (noise.modular_stdev == 0.0) return 0.0L;
+
+    long double scaled =
+        std::ldexp(static_cast<long double>(noise.modular_stdev), LogQ);
+    if constexpr (requires { P::ckks_min_noise_stddev; }) {
+        scaled = std::max(
+            scaled, static_cast<long double>(P::ckks_min_noise_stddev));
+    }
+    return scaled;
+}
+
+template <class P, std::uint32_t LogQ>
 inline typename P::T sampleNoise(const CKKSNoise &noise)
 {
     typename P::T value = 0;
     if (noise.modular_stdev != 0.0) {
         std::normal_distribution<long double> distribution(0.0L, 1.0L);
         const long double scaled =
-            std::ldexp(static_cast<long double>(noise.modular_stdev) *
-                           distribution(generator),
-                       LogQ);
-        value += signedToLevel<P, LogQ>(longDoubleToI128(scaled));
+            effectiveNoiseStddevAtLevel<P, LogQ>(noise) *
+            distribution(generator);
+        value += signedLongDoubleToLevel<P, LogQ>(scaled);
     }
     if (noise.uniform_bits > 0) {
         assert(noise.uniform_bits < LogQ);
