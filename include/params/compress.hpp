@@ -122,8 +122,8 @@ struct lvl2param {
         ErrorDistribution::CenteredBinomial;
     static constexpr uint η = 3;
     using T = uint64_t;  // Torus representation
-    static constexpr T q = 1ULL << 48;
-    static constexpr uint qbit = 48;
+    static constexpr T q = 1ULL << 38;
+    static constexpr uint qbit = 38;
     static constexpr std::make_signed_t<T> μ = q / 8;
     static constexpr uint32_t plain_modulus = 8;
     static constexpr double Δ = μ;
