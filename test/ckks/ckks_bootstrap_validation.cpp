@@ -1588,6 +1588,19 @@ std::uintmax_t seeded_hybrid_streamed_low_cache_peak_key_estimate_bytes()
 }
 
 template <class Schedule>
+std::uintmax_t seeded_hybrid_streamed_dd_evalmod_bootstrap_key_estimate_bytes()
+{
+    using P = typename Schedule::Param;
+    const std::uintmax_t seeded_evalmod_relin_bytes =
+        TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>() *
+        TFHEpp::CKKSSeededKeySwitchRowByteSize<P>();
+    return seeded_hybrid_bootstrap_key_estimate_bytes<Schedule>() -
+           seeded_evalmod_relin_bytes +
+           TFHEpp::CKKSDenseBootstrapSeededDDEvalModKeyByteEstimate<
+               Schedule>();
+}
+
+template <class Schedule>
 std::uintmax_t hybrid_streamed_peak_key_estimate_bytes()
 {
     TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
@@ -1630,6 +1643,29 @@ std::uintmax_t hybrid_practical_artifact_estimate_bytes()
            TFHEpp::CKKSDenseBootstrapEncapsulationKeyByteEstimate<Schedule>() +
            TFHEpp::CKKSRelinKeyByteEstimate<P, ProductCt::log_q>() +
            TFHEpp::CKKSRelinKeyByteEstimate<
+               P, PostBootstrapProductCt::log_q>();
+}
+
+template <class Schedule>
+std::uintmax_t seeded_hybrid_streamed_dd_evalmod_practical_artifact_estimate_bytes()
+{
+    using P = typename Schedule::Param;
+    constexpr std::uint32_t fresh_log_q =
+        Schedule::input_log_q + 2 * Schedule::log_delta;
+    using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, FreshCt::log_q, FreshCt::log_delta,
+                               FreshCt::log_q, FreshCt::log_delta>;
+    using PostBootstrapProductCt = TFHEpp::CKKSMultResult<
+        P, Schedule::output_log_q, Schedule::log_delta,
+        Schedule::output_log_q, Schedule::log_delta>;
+
+    return seeded_hybrid_streamed_dd_evalmod_bootstrap_key_estimate_bytes<
+               Schedule>() +
+           TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
+               Schedule>() +
+           TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>() +
+           TFHEpp::CKKSSeededRelinKeyByteEstimate<
                P, PostBootstrapProductCt::log_q>();
 }
 
@@ -1969,6 +2005,10 @@ std::string manifest_status(const std::filesystem::path &root)
                 CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryManifestMatches<
                     Schedule>(root))
             return "seeded-hybrid-streamed-match";
+        if (TFHEpp::
+                CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyDirectoryManifestMatches<
+                    Schedule>(root))
+            return "seeded-hybrid-streamed-dd-evalmod-match";
         return "mismatch";
     }
     catch (...) {
@@ -1980,6 +2020,10 @@ template <class Schedule>
 std::vector<std::filesystem::path> key_directory_files_for_manifest(
     const std::filesystem::path &root, const std::string &manifest)
 {
+    if (manifest == "seeded-hybrid-streamed-dd-evalmod-match")
+        return TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyDirectoryFiles<
+                Schedule>(root);
     if (manifest == "seeded-hybrid-streamed-match")
         return TFHEpp::
             CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryFiles<
@@ -2309,6 +2353,14 @@ int print_practical_readiness_report(const char *label,
         seeded_hybrid_streamed_peak_key_estimate_bytes<Schedule>();
     const std::uintmax_t seeded_streamed_low_cache_peak_bytes =
         seeded_hybrid_streamed_low_cache_peak_key_estimate_bytes<Schedule>();
+    const std::uintmax_t seeded_dd_evalmod_relin_bytes =
+        TFHEpp::CKKSDenseBootstrapSeededDDEvalModKeyByteEstimate<Schedule>();
+    const std::uintmax_t seeded_dd_evalmod_relin_peak_bytes =
+        TFHEpp::CKKSDenseBootstrapSeededDDEvalModPeakKeyByteEstimate<
+            Schedule>();
+    const std::uintmax_t seeded_dd_bootstrap_bytes =
+        seeded_hybrid_streamed_dd_evalmod_bootstrap_key_estimate_bytes<
+            Schedule>();
     const std::uintmax_t hybrid_bootstrap_bytes =
         hybrid_bootstrap_key_estimate_bytes<Schedule>();
     const std::uintmax_t hybrid_streamed_peak_bytes =
@@ -2331,10 +2383,15 @@ int print_practical_readiness_report(const char *label,
             P, PostBootstrapProductCt::log_q>();
     const std::uintmax_t seeded_artifact_bytes =
         seeded_hybrid_practical_artifact_estimate_bytes<Schedule>();
+    const std::uintmax_t seeded_dd_artifact_bytes =
+        seeded_hybrid_streamed_dd_evalmod_practical_artifact_estimate_bytes<
+            Schedule>();
     const std::uintmax_t hybrid_artifact_bytes =
         hybrid_practical_artifact_estimate_bytes<Schedule>();
     const std::uintmax_t seeded_estimated_disk_need =
         seeded_artifact_bytes + keygen_disk_reserve_bytes;
+    const std::uintmax_t seeded_dd_estimated_disk_need =
+        seeded_dd_artifact_bytes + keygen_disk_reserve_bytes;
     const std::uintmax_t hybrid_estimated_disk_need =
         hybrid_artifact_bytes + keygen_disk_reserve_bytes;
 
@@ -2342,6 +2399,8 @@ int print_practical_readiness_report(const char *label,
     const bool have_space = available_space_bytes(disk_path, available_bytes);
     const bool seeded_hybrid_disk_advisory_ready =
         have_space && available_bytes >= seeded_estimated_disk_need;
+    const bool seeded_dd_disk_advisory_ready =
+        have_space && available_bytes >= seeded_dd_estimated_disk_need;
     const bool disk_advisory_ready =
         have_space && available_bytes >= hybrid_estimated_disk_need;
 
@@ -2409,6 +2468,24 @@ int print_practical_readiness_report(const char *label,
               << " seeded_artifact_bytes=" << seeded_artifact_bytes
               << " readiness_seeded_hybrid_streamed_artifact_bytes="
               << seeded_artifact_bytes << '\n';
+    std::cout << label
+              << " readiness_seeded_hybrid_streamed_dd_evalmod_key_bytes="
+              << seeded_dd_bootstrap_bytes
+              << " readiness_seeded_hybrid_streamed_dd_evalmod_artifact_bytes="
+              << seeded_dd_artifact_bytes
+              << " seeded_dd_evalmod_relin_key_bytes="
+              << seeded_dd_evalmod_relin_bytes
+              << " seeded_dd_evalmod_relin_peak_key_bytes="
+              << seeded_dd_evalmod_relin_peak_bytes
+              << " seeded_dd_evalmod_primary_rows="
+              << TFHEpp::
+                     CKKSDenseBootstrapSeededDDEvalModPrimaryRowCount<
+                         Schedule>()
+              << " seeded_dd_evalmod_peak_primary_rows="
+              << TFHEpp::
+                     CKKSDenseBootstrapSeededDDEvalModPeakPrimaryRowCount<
+                         Schedule>()
+              << '\n';
     std::cout << label << " readiness_hybrid_key_bytes="
               << hybrid_bootstrap_bytes
               << " readiness_hybrid_streamed_peak_key_bytes="
@@ -2432,6 +2509,11 @@ int print_practical_readiness_report(const char *label,
               << seeded_estimated_disk_need
               << " seeded_hybrid_disk_advisory_ready="
               << (seeded_hybrid_disk_advisory_ready ? 1 : 0) << '\n';
+    std::cout << label
+              << " readiness_seeded_hybrid_streamed_dd_evalmod_disk_required_with_reserve_bytes="
+              << seeded_dd_estimated_disk_need
+              << " seeded_hybrid_streamed_dd_evalmod_disk_advisory_ready="
+              << (seeded_dd_disk_advisory_ready ? 1 : 0) << '\n';
     std::cout << label << " readiness_disk_required_with_reserve_bytes="
               << hybrid_estimated_disk_need
               << " disk_advisory_ready=" << (disk_advisory_ready ? 1 : 0)
@@ -2454,6 +2536,14 @@ int print_practical_readiness_report(const char *label,
               << " readiness_recommended_run=--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR\n";
     std::cout << label
               << " readiness_recommended_all=--lvl6-tuned-seeded-hybrid-streamed-all DIR\n";
+    std::cout << label
+              << " readiness_dd_evalmod_keygen=--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-keygen DIR\n";
+    std::cout << label
+              << " readiness_dd_evalmod_evalkeygen=--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-evalkeygen DIR\n";
+    std::cout << label
+              << " readiness_dd_evalmod_run=--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run-chained-product-encap DIR\n";
+    std::cout << label
+              << " readiness_dd_evalmod_all=--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-all DIR\n";
     std::cout << label
               << " readiness_hybrid_keygen=--lvl6-tuned-hybrid-keygen DIR\n";
     std::cout << label
@@ -3113,6 +3203,40 @@ int validate_seeded_hybrid_streamed_filesystem_key_dir(
 }
 
 template <class Schedule>
+int validate_seeded_hybrid_streamed_dd_evalmod_filesystem_key_dir(
+    const std::filesystem::path &key_dir)
+{
+    const auto missing =
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModMissingKeyDirectoryFiles<
+                Schedule>(key_dir);
+    if (!missing.empty()) {
+        std::cerr << "seeded_hybrid_streamed_dd_evalmod_key_dir_incomplete="
+                  << key_dir.string() << " missing=" << missing.size()
+                  << '\n';
+        print_missing_key_files(missing);
+        return 2;
+    }
+    try {
+        if (!TFHEpp::
+                CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyDirectoryManifestMatches<
+                    Schedule>(key_dir)) {
+            std::cerr
+                << "seeded_hybrid_streamed_dd_evalmod_key_dir_manifest_mismatch="
+                << key_dir.string() << '\n';
+            return 2;
+        }
+    }
+    catch (const std::exception &e) {
+        std::cerr
+            << "seeded_hybrid_streamed_dd_evalmod_key_dir_manifest_unreadable="
+            << key_dir.string() << " error=" << e.what() << '\n';
+        return 2;
+    }
+    return 0;
+}
+
+template <class Schedule>
 int run_hybrid_filesystem_bootstrap(const std::filesystem::path &key_dir,
                                     double tol,
                                     std::size_t sparse_weight = 0)
@@ -3266,6 +3390,63 @@ int run_seeded_hybrid_streamed_filesystem_bootstrap(
     const double bootstrap_ms = elapsed_ms([&] {
         TFHEpp::
             CKKSDenseBootstrapWithSeededHybridGiantStreamedFilesystemKeyTimed<
+                Schedule>(*output, *input, key_dir, bootstrap_timings);
+    });
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double decrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q,
+                                Schedule::log_delta>(*decoded, *output, *key);
+    });
+    const double err = max_error<P>(*decoded, *slots);
+    std::cout << "encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "bootstrap_ms=" << bootstrap_ms << '\n';
+    print_bootstrap_timings(bootstrap_timings);
+    std::cout << "decrypt_ms=" << decrypt_ms << '\n';
+    std::cout << "max_error=" << err << '\n';
+    return err <= tol ? 0 : 1;
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_dd_evalmod_filesystem_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "bootstrap");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, false);
+        status != 0)
+        return status;
+    if (const int status =
+            validate_seeded_hybrid_streamed_dd_evalmod_filesystem_key_dir<
+                Schedule>(key_dir);
+        status != 0)
+        return status;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+    std::cout << "key_sparse_weight=" << sparse_weight << '\n';
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*slots);
+
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, Schedule::input_log_q,
+                                Schedule::log_delta>(*input, *slots, *key);
+    });
+
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings bootstrap_timings;
+    const double bootstrap_ms = elapsed_ms([&] {
+        TFHEpp::
+            CKKSDenseBootstrapWithSeededHybridGiantStreamedDDEvalModFilesystemKeyTimed<
                 Schedule>(*output, *input, key_dir, bootstrap_timings);
     });
 
@@ -3607,13 +3788,14 @@ int run_hybrid_filesystem_encapsulated_product_bootstrap(
     return err <= tol ? 0 : 1;
 }
 
-template <class Schedule, bool Streamed>
+template <class Schedule, bool Streamed, bool DDEvalMod = false>
 int run_seeded_hybrid_external_eval_keygen(
     const std::filesystem::path &key_dir, std::size_t bootstrap_sparse_weight,
     std::size_t external_sparse_weight = 0,
     bool include_post_bootstrap_product = true)
 {
     using P = typename Schedule::Param;
+    static_assert(Streamed || !DDEvalMod);
     constexpr std::uint32_t fresh_log_q =
         Schedule::input_log_q + 2 * Schedule::log_delta;
     using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
@@ -3632,7 +3814,14 @@ int run_seeded_hybrid_external_eval_keygen(
             Schedule>(key_dir, bootstrap_sparse_weight, false);
         status != 0)
         return status;
-    if constexpr (Streamed) {
+    if constexpr (DDEvalMod) {
+        if (const int status =
+                validate_seeded_hybrid_streamed_dd_evalmod_filesystem_key_dir<
+                    Schedule>(key_dir);
+            status != 0)
+            return status;
+    }
+    else if constexpr (Streamed) {
         if (const int status =
                 validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
                     key_dir);
@@ -4997,13 +5186,14 @@ int run_hybrid_filesystem_encapsulated_chained_product_bootstrap(
     return first_err <= tol && chained_err <= tol ? 0 : 1;
 }
 
-template <class Schedule, bool Streamed>
+template <class Schedule, bool Streamed, bool DDEvalMod = false>
 int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
     std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
 {
     using P = typename Schedule::Param;
+    static_assert(Streamed || !DDEvalMod);
     static_assert(Schedule::supports_post_bootstrap_product);
     constexpr std::uint32_t fresh_log_q =
         Schedule::input_log_q + 2 * Schedule::log_delta;
@@ -5027,7 +5217,14 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
             Schedule>(key_dir, bootstrap_sparse_weight, false);
         status != 0)
         return status;
-    if constexpr (Streamed) {
+    if constexpr (DDEvalMod) {
+        if (const int status =
+                validate_seeded_hybrid_streamed_dd_evalmod_filesystem_key_dir<
+                    Schedule>(key_dir);
+            status != 0)
+            return status;
+    }
+    else if constexpr (Streamed) {
         if (const int status =
                 validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
                     key_dir);
@@ -5136,7 +5333,14 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     const TFHEpp::CKKSDenseBootstrapProgress first_progress{
         bootstrap_progress_begin, bootstrap_progress_end,
         &first_progress_printer};
-    if constexpr (Streamed) {
+    if constexpr (DDEvalMod) {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedDDEvalModFilesystemSeededEvalKeyDirectoryTimed<
+                Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
+                          eval_key_files.root, first_product_timings,
+                          &first_progress);
+    }
+    else if constexpr (Streamed) {
         TFHEpp::
             CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*first_output, *lhs_ct, *rhs_ct, key_dir,
@@ -5168,7 +5372,14 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
     const TFHEpp::CKKSDenseBootstrapProgress chained_progress{
         bootstrap_progress_begin, bootstrap_progress_end,
         &chained_progress_printer};
-    if constexpr (Streamed) {
+    if constexpr (DDEvalMod) {
+        TFHEpp::
+            CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedDDEvalModFilesystemSeededEvalKeyDirectoryTimed<
+                Schedule>(*chained_output, *first_output, *first_output,
+                          key_dir, eval_key_files.root,
+                          chained_product_timings, &chained_progress);
+    }
+    else if constexpr (Streamed) {
         TFHEpp::
             CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*chained_output, *first_output, *first_output,
@@ -5257,6 +5468,17 @@ int run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap
     return run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl<
         Schedule, true>(key_dir, tol, bootstrap_sparse_weight,
                         external_sparse_weight, generate_eval_keys);
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_dd_evalmod_filesystem_encapsulated_chained_product_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
+{
+    return run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl<
+        Schedule, true, true>(key_dir, tol, bootstrap_sparse_weight,
+                              external_sparse_weight, generate_eval_keys);
 }
 
 template <class Schedule>
@@ -7251,6 +7473,57 @@ int run_seeded_hybrid_streamed_keygen(const std::filesystem::path &key_dir,
 }
 
 template <class Schedule>
+int run_seeded_hybrid_streamed_dd_evalmod_keygen(
+    const std::filesystem::path &key_dir, bool resume,
+    std::size_t sparse_weight = 0)
+{
+    using P = typename Schedule::Param;
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "keygen");
+        status != 0)
+        return status;
+    if (const int status = validate_or_create_validation_test_key_metadata<
+            Schedule>(key_dir, sparse_weight, true);
+        status != 0)
+        return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir,
+            seeded_hybrid_streamed_dd_evalmod_bootstrap_key_estimate_bytes<
+                Schedule>(),
+            "seeded-hybrid-streamed-dd-evalmod-keygen");
+        status != 0)
+        return status;
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions options;
+    options.overwrite_existing = !resume;
+    print_schedule_report<Schedule>(
+        "seeded-hybrid-streamed-dd-evalmod-keygen-before", &key_dir);
+    std::cout << "keygen_sparse_weight=" << sparse_weight << '\n';
+    std::cout << "seeded_dd_evalmod_bootstrap_key_bytes="
+              << seeded_hybrid_streamed_dd_evalmod_bootstrap_key_estimate_bytes<
+                     Schedule>()
+              << " seeded_dd_evalmod_relin_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapSeededDDEvalModKeyByteEstimate<
+                     Schedule>()
+              << " seeded_dd_evalmod_relin_peak_key_bytes="
+              << TFHEpp::CKKSDenseBootstrapSeededDDEvalModPeakKeyByteEstimate<
+                     Schedule>()
+              << '\n';
+    const double keygen_ms = elapsed_ms([&] {
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyGenToDirectory<
+                Schedule>(key_dir, *key, {P::α, 0}, options);
+    });
+    print_schedule_report<Schedule>(
+        "seeded-hybrid-streamed-dd-evalmod-keygen-after", &key_dir);
+    std::cout << "keygen_ms=" << keygen_ms << '\n';
+    return 0;
+}
+
+template <class Schedule>
 int run_hybrid_practical_all(const std::filesystem::path &key_dir, bool resume,
                              std::size_t sparse_weight = 0)
 {
@@ -7325,11 +7598,44 @@ int run_seeded_hybrid_streamed_practical_all(
         status != 0)
         return status;
     if (const int status =
-            run_seeded_hybrid_external_eval_keygen<Schedule, true>(
+            run_seeded_hybrid_external_eval_keygen<Schedule, true, true>(
                 key_dir, sparse_weight, sparse_weight);
         status != 0)
         return status;
     return run_seeded_hybrid_streamed_filesystem_encapsulated_chained_product_bootstrap<
+        Schedule>(key_dir, 0.1, sparse_weight, sparse_weight, false);
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_dd_evalmod_practical_all(
+    const std::filesystem::path &key_dir, bool resume,
+    std::size_t sparse_weight = 0)
+{
+    print_schedule_report<Schedule>(
+        "seeded-hybrid-streamed-dd-evalmod-practical-all", &key_dir);
+    if (const int status = print_practical_readiness_report<Schedule>(
+            "seeded-hybrid-streamed-dd-evalmod-practical-all", sparse_weight,
+            key_dir);
+        status != 0)
+        return status;
+    if (const int status = validate_keygen_disk_budget(
+            key_dir,
+            seeded_hybrid_streamed_dd_evalmod_practical_artifact_estimate_bytes<
+                Schedule>(),
+            "seeded-hybrid-streamed-dd-evalmod-practical-all");
+        status != 0)
+        return status;
+    if (const int status =
+            run_seeded_hybrid_streamed_dd_evalmod_keygen<Schedule>(
+                key_dir, resume, sparse_weight);
+        status != 0)
+        return status;
+    if (const int status =
+            run_seeded_hybrid_external_eval_keygen<Schedule, true>(
+                key_dir, sparse_weight, sparse_weight);
+        status != 0)
+        return status;
+    return run_seeded_hybrid_streamed_dd_evalmod_filesystem_encapsulated_chained_product_bootstrap<
         Schedule>(key_dir, 0.1, sparse_weight, sparse_weight, false);
 }
 
@@ -7380,6 +7686,11 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-debug-evalmod DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-all DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-keygen DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-evalkeygen DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run-chained-product-encap DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-all DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-chained-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-all DIR]"
@@ -7628,6 +7939,16 @@ int main(int argc, char **argv)
                 arg ==
                     "--lvl6-tuned-seeded-hybrid-streamed-debug-evalmod" ||
                 arg == "--lvl6-tuned-seeded-hybrid-streamed-all" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-keygen" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-evalkeygen" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run-chained-product-encap" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-all" ||
                  arg == "--lvl6-tuned-seeded-hybrid-run-product-encap" ||
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-run-chained-product-encap" ||
@@ -7898,6 +8219,51 @@ int main(int argc, char **argv)
             }
             else if (arg == "--lvl6-tuned-seeded-hybrid-streamed-all") {
                 if (run_seeded_hybrid_streamed_practical_all<
+                        Lvl6TunedSchedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-keygen") {
+                if (run_seeded_hybrid_streamed_dd_evalmod_keygen<
+                        Lvl6TunedSchedule>(
+                        key_dir, resume, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-evalkeygen") {
+                if (run_seeded_hybrid_external_eval_keygen<
+                        Lvl6TunedSchedule, true, true>(
+                        key_dir, lvl6_sparse_weight,
+                        lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg == "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_dd_evalmod_filesystem_bootstrap<
+                        Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run-chained-product-encap") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_dd_evalmod_filesystem_encapsulated_chained_product_bootstrap<
+                        Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight,
+                        lvl6_sparse_weight, false) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-all") {
+                if (run_seeded_hybrid_streamed_dd_evalmod_practical_all<
                         Lvl6TunedSchedule>(
                         key_dir, resume, lvl6_sparse_weight) != 0)
                     return 1;

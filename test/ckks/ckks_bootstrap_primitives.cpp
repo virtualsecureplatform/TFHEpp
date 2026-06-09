@@ -850,6 +850,16 @@ void test_lvl6_factorized_stage_shape()
         TFHEpp::CKKSDenseBootstrapDDEvalModKeyByteEstimate<Schedule>();
     constexpr std::size_t dd_evalmod_peak_bytes =
         TFHEpp::CKKSDenseBootstrapDDEvalModPeakKeyByteEstimate<Schedule>();
+    constexpr std::size_t seeded_dd_evalmod_primary_rows =
+        TFHEpp::CKKSDenseBootstrapSeededDDEvalModPrimaryRowCount<Schedule>();
+    constexpr std::size_t seeded_dd_evalmod_peak_primary_rows =
+        TFHEpp::CKKSDenseBootstrapSeededDDEvalModPeakPrimaryRowCount<
+            Schedule>();
+    constexpr std::size_t seeded_dd_evalmod_bytes =
+        TFHEpp::CKKSDenseBootstrapSeededDDEvalModKeyByteEstimate<Schedule>();
+    constexpr std::size_t seeded_dd_evalmod_peak_bytes =
+        TFHEpp::CKKSDenseBootstrapSeededDDEvalModPeakKeyByteEstimate<
+            Schedule>();
     if (sparse_key_rows != sparse_galois_rows +
                                TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<
                                    Schedule>())
@@ -870,6 +880,12 @@ void test_lvl6_factorized_stage_shape()
             dd_evalmod_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>() ||
         dd_evalmod_peak_bytes !=
             dd_evalmod_peak_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
+        std::exit(1);
+    if (seeded_dd_evalmod_primary_rows == 0 ||
+        seeded_dd_evalmod_peak_primary_rows == 0 ||
+        seeded_dd_evalmod_peak_primary_rows > seeded_dd_evalmod_primary_rows ||
+        seeded_dd_evalmod_bytes >= dd_evalmod_bytes ||
+        seeded_dd_evalmod_peak_bytes >= dd_evalmod_peak_bytes)
         std::exit(1);
     if (streamed_peak_rows == 0 || streamed_peak_rows >= sparse_key_rows)
         std::exit(1);
@@ -924,6 +940,13 @@ void test_lvl6_factorized_stage_shape()
               << dd_evalmod_rows << " bytes=" << dd_evalmod_bytes
               << " peak_rows=" << dd_evalmod_peak_rows
               << " peak_bytes=" << dd_evalmod_peak_bytes << std::endl;
+    std::cout << "CKKS lvl6 dense bootstrap compact seeded DD EvalMod relin "
+              << "primary_rows=" << seeded_dd_evalmod_primary_rows
+              << " bytes=" << seeded_dd_evalmod_bytes
+              << " peak_primary_rows="
+              << seeded_dd_evalmod_peak_primary_rows
+              << " peak_bytes=" << seeded_dd_evalmod_peak_bytes
+              << std::endl;
     std::cout << "CKKS lvl6 dense bootstrap direct key indices/rows="
               << direct_key_indices << "/" << direct_key_rows
               << " bytes=" << direct_key_bytes
@@ -2079,6 +2102,67 @@ void test_dense_bootstrap_e2e_smoke()
     require_close_param<M>(*dd_decoded, *decoded, 0.02,
                            "CKKS dense encrypted DD relin provider matches "
                            "standard relin");
+
+    const std::filesystem::path dd_streamed_dir =
+        std::filesystem::temp_directory_path() /
+        "tfhepp_ckks_dense_bootstrap_seeded_streamed_dd_evalmod";
+    std::filesystem::remove_all(dd_streamed_dir);
+    const auto dd_streamed_next_estimate =
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModNextMissingGeneratedKeyFileEstimate<
+                Schedule>(dd_streamed_dir);
+    if (!dd_streamed_next_estimate) std::exit(1);
+    std::size_t generated_dd_streamed_slices = 0;
+    while (TFHEpp::
+               CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyGenNextMissingToDirectory<
+                   Schedule>(dd_streamed_dir, *key, {0.0, 0})) {
+        generated_dd_streamed_slices++;
+    }
+    if (generated_dd_streamed_slices == 0 ||
+        !TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyDirectoryComplete<
+                Schedule>(dd_streamed_dir) ||
+        !TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyDirectoryManifestMatches<
+                Schedule>(dd_streamed_dir) ||
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedKeyDirectoryManifestMatches<
+                Schedule>(dd_streamed_dir))
+        std::exit(1);
+    bool standard_streamed_rejected_dd_manifest = false;
+    try {
+        TFHEpp::CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<
+            Schedule>
+            wrong_provider(dd_streamed_dir);
+    }
+    catch (const std::runtime_error &e) {
+        standard_streamed_rejected_dd_manifest =
+            std::string(e.what()).find("manifest") != std::string::npos;
+    }
+    if (!standard_streamed_rejected_dd_manifest) std::exit(1);
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions dd_resume_options;
+    dd_resume_options.overwrite_existing = false;
+    TFHEpp::CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyGenToDirectory<
+        Schedule>(dd_streamed_dir, *key, {0.0, 0}, dd_resume_options);
+    TFHEpp::
+        CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModFilesystemKeyProvider<
+            Schedule>
+            dd_streamed_provider(dd_streamed_dir);
+    auto dd_streamed_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(
+        *dd_streamed_output, *input, dd_streamed_provider);
+    auto dd_streamed_decoded =
+        std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *dd_streamed_decoded, *dd_streamed_output, *key);
+    require_close_param<M>(
+        *dd_streamed_decoded, *slots, 0.02,
+        "CKKS dense encrypted seeded streamed DD EvalMod bootstrap e2e");
+    require_close_param<M>(
+        *dd_streamed_decoded, *dd_decoded, 0.02,
+        "CKKS dense seeded streamed DD EvalMod matches in-memory DD relin");
+    std::filesystem::remove_all(dd_streamed_dir);
 
     auto hybrid_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
