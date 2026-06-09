@@ -4,7 +4,7 @@ TFHEpp includes experimental CKKS support in `include/ckks/ckks.hpp`. The curren
 target path is a leveled CKKS multiplication followed by dense CKKS
 bootstrapping. The current storage-practical full-size target is seeded hybrid
 giant streamed bootstrapping with compact seeded double-decomposition (DD)
-EvalMod relinearization.
+EvalMod and product relinearization.
 
 The most practical full-size configuration is the tuned lvl6 seeded hybrid
 giant streamed bootstrap path:
@@ -202,6 +202,22 @@ The seeded product eval-key directory contains:
 - `seeded_post_bootstrap_product_relin_key.bin`
 - an eval-key manifest
 
+For the full-DD path, generate a seeded-DD product eval-key directory instead:
+
+```bash
+DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed_full_dd
+./build-ckks/test/ckks/ckks_bootstrap_validation \
+  --lvl6-tuned-seeded-hybrid-streamed-full-dd-evalkeygen "$DIR"
+```
+
+That directory uses the same seeded encapsulation key file, but stores
+double-decomposition product relin keys and a different manifest format:
+
+- `seeded_encapsulation_key.bin`
+- `seeded_dd_product_relin_key.bin`
+- `seeded_dd_post_bootstrap_product_relin_key.bin`
+- an eval-key manifest with the seeded-DD product format
+
 Public helpers:
 
 ```cpp
@@ -219,6 +235,16 @@ TFHEpp::CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEv
 
 TFHEpp::CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
     Schedule>(out, lhs, rhs, key_dir, eval_key_dir, timings);
+
+TFHEpp::CKKSDenseBootstrapSeededDDProductEvalKeyGenToDirectory<Schedule>(
+    dd_eval_key_dir, external_key, bootstrap_key,
+    include_post_bootstrap_product, {P::α, 0}, options);
+
+TFHEpp::CKKSDenseBootstrapProductWithSeededHybridGiantStreamedDDEvalModFilesystemSeededDDEvalKeyDirectoryTimed<
+    Schedule>(out, lhs, rhs, dd_key_dir, dd_eval_key_dir, timings);
+
+TFHEpp::CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedDDEvalModFilesystemSeededDDEvalKeyDirectoryTimed<
+    Schedule>(out, lhs, rhs, dd_key_dir, dd_eval_key_dir, timings);
 ```
 
 Use the `PostBootstrapProduct...` function when both inputs are already at the
@@ -261,9 +287,11 @@ decomposes it by `Bbar`, and applies the active `Bg` digit. This is compact
 seeded storage, not runtime key generation. It exposes DD tuning while avoiding
 the full pre-decomposed DD EvalMod key, which is tens of GB at lvl6.
 
-The DD EvalMod filesystem path changes only EvalMod relinearization. Product
-evaluation keys still use the existing seeded relin format unless a future
-product-DD path is added.
+For multiplication followed by bootstrapping, the full-DD filesystem path pairs
+the DD EvalMod bootstrap key directory with a seeded-DD product eval-key
+directory. Standard seeded product eval-key manifests and seeded-DD product
+eval-key manifests are intentionally incompatible so the wrong relin format is
+rejected before evaluation.
 
 ## Validation Commands
 
@@ -349,6 +377,29 @@ DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed_dd_evalmod
   --lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-all "$DIR"
 ```
 
+Run the full-DD target path as separate explicit phases:
+
+```bash
+DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed_full_dd
+
+./build-ckks/test/ckks/ckks_bootstrap_validation \
+  --lvl6-tuned-seeded-hybrid-streamed-full-dd-keygen "$DIR"
+
+./build-ckks/test/ckks/ckks_bootstrap_validation \
+  --lvl6-tuned-seeded-hybrid-streamed-full-dd-evalkeygen "$DIR"
+
+./build-ckks/test/ckks/ckks_bootstrap_validation \
+  --lvl6-tuned-seeded-hybrid-streamed-full-dd-run-chained-product-encap "$DIR"
+```
+
+Or run the same full-DD target path as one direct command:
+
+```bash
+DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed_full_dd
+./build-ckks/test/ckks/ckks_bootstrap_validation \
+  --lvl6-tuned-seeded-hybrid-streamed-full-dd-all "$DIR"
+```
+
 Or run the same target path as one direct command:
 
 ```bash
@@ -371,12 +422,14 @@ depends on the schedule, sparse weight, and seeded/non-seeded layout.
 The current readiness report is green for static level budgeting, plaintext
 EvalMod approximation, disk advisory checks, and compact seeded DD EvalMod
 artifact accounting. Small encrypted regression tests pass for both in-memory DD
-EvalMod relin and the compact seeded DD EvalMod filesystem provider.
+EvalMod relin, the compact seeded DD EvalMod filesystem provider, and a tiny
+full-DD filesystem chained product bootstrap using seeded-DD product relin
+files.
 
-The remaining full-size validation step is generating the lvl6 tuned DD EvalMod
-directory, generating the seeded product eval-key directory, and running the
-chained product bootstrap command. That run is intentionally not part of CI
-because the key directory is much larger than the repository artifact limit.
+The remaining full-size validation step is generating the lvl6 tuned full-DD
+directory, generating the seeded-DD product eval-key directory, and running the
+full-DD chained product bootstrap command. That run is intentionally not part of
+CI because the key directory is much larger than the repository artifact limit.
 
 The old 1108-bit schedule generated full seeded-streamed keys locally, but the
 end-to-end chained product validation failed in encrypted EvalMod because

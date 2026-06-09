@@ -2162,6 +2162,100 @@ void test_dense_bootstrap_e2e_smoke()
     require_close_param<M>(
         *dd_streamed_decoded, *dd_decoded, 0.02,
         "CKKS dense seeded streamed DD EvalMod matches in-memory DD relin");
+
+    using FreshProductCt = TFHEpp::CKKSCiphertext<
+        M, Schedule::input_log_q + 2 * Schedule::log_delta,
+        Schedule::log_delta>;
+    using ProductCt = TFHEpp::CKKSMultResult<
+        M, FreshProductCt::log_q, FreshProductCt::log_delta,
+        FreshProductCt::log_q, FreshProductCt::log_delta>;
+    using PostProductCt = TFHEpp::CKKSMultResult<
+        M, Schedule::output_log_q, Schedule::log_delta,
+        Schedule::output_log_q, Schedule::log_delta>;
+    static_assert(ProductCt::log_q > Schedule::input_log_q);
+    static_assert(PostProductCt::log_q ==
+                  Schedule::post_bootstrap_product_log_q);
+    const std::filesystem::path dd_product_eval_dir =
+        std::filesystem::temp_directory_path() /
+        "tfhepp_ckks_dense_bootstrap_seeded_dd_product_eval_key";
+    std::filesystem::remove_all(dd_product_eval_dir);
+    TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions dd_product_options;
+    dd_product_options.overwrite_existing = false;
+    TFHEpp::CKKSDenseBootstrapSeededDDProductEvalKeyGenToDirectory<Schedule>(
+        dd_product_eval_dir, *key, *key, true, {0.0, 0},
+        dd_product_options);
+    if (!TFHEpp::
+            CKKSDenseBootstrapSeededDDProductEvalKeyDirectoryManifestMatches<
+                Schedule>(dd_product_eval_dir) ||
+        TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyDirectoryManifestMatches<
+            Schedule>(dd_product_eval_dir) ||
+        !TFHEpp::CKKSDenseBootstrapSeededDDProductEvalKeyDirectoryComplete(
+            dd_product_eval_dir))
+        std::exit(1);
+
+    const TFHEpp::CKKSDenseBootstrapProductEvalKeyFiles dd_product_files =
+        TFHEpp::CKKSDenseBootstrapSeededDDProductEvalKeyFilesInDirectory(
+            dd_product_eval_dir);
+    auto product_lhs_slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto product_rhs_slots = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto expected_product_slots =
+        std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    auto expected_chained_slots =
+        std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    for (std::size_t i = 0; i < M::n / 2; i++) {
+        const double base = static_cast<double>((i % 3) + 1) / 64.0;
+        const double alt = static_cast<double>(((i + 1) % 3) + 1) / 96.0;
+        (*product_lhs_slots)[i] = {base, alt / 2.0};
+        (*product_rhs_slots)[i] = {alt, -base / 3.0};
+        (*expected_product_slots)[i] =
+            (*product_lhs_slots)[i] * (*product_rhs_slots)[i];
+        (*expected_chained_slots)[i] =
+            (*expected_product_slots)[i] * (*expected_product_slots)[i];
+    }
+
+    auto product_lhs_ct = std::make_unique<FreshProductCt>();
+    auto product_rhs_ct = std::make_unique<FreshProductCt>();
+    TFHEpp::ckksSlotEncrypt<M, FreshProductCt::log_q,
+                            FreshProductCt::log_delta>(
+        *product_lhs_ct, *product_lhs_slots, *key, {0.0, 0});
+    TFHEpp::ckksSlotEncrypt<M, FreshProductCt::log_q,
+                            FreshProductCt::log_delta>(
+        *product_rhs_ct, *product_rhs_slots, *key, {0.0, 0});
+
+    auto dd_file_product = std::make_unique<ProductCt>();
+    TFHEpp::CKKSMultWithSeededDDRelinKeyFile<M>(
+        *dd_file_product, *product_lhs_ct, *product_rhs_ct,
+        dd_product_files.product_relin_key);
+    TFHEpp::ckksSlotDecrypt<M, ProductCt::log_q, ProductCt::log_delta>(
+        *decoded, *dd_file_product, *key);
+    require_close_param<M>(*decoded, *expected_product_slots, 0.02,
+                           "CKKS seeded DD relin file product");
+
+    auto full_dd_product_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::
+        CKKSDenseBootstrapProductWithSeededHybridGiantStreamedDDEvalModFilesystemSeededDDEvalKeyDirectory<
+            Schedule>(*full_dd_product_output, *product_lhs_ct,
+                      *product_rhs_ct, dd_streamed_dir, dd_product_eval_dir);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *full_dd_product_output, *key);
+    require_close_param<M>(
+        *decoded, *expected_product_slots, 0.05,
+        "CKKS full-DD streamed filesystem product bootstrap e2e");
+
+    auto full_dd_chained_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::
+        CKKSDenseBootstrapPostBootstrapProductWithSeededHybridGiantStreamedDDEvalModFilesystemSeededDDEvalKeyDirectory<
+            Schedule>(*full_dd_chained_output, *full_dd_product_output,
+                      *full_dd_product_output, dd_streamed_dir,
+                      dd_product_eval_dir);
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *full_dd_chained_output, *key);
+    require_close_param<M>(
+        *decoded, *expected_chained_slots, 0.05,
+        "CKKS full-DD streamed filesystem chained product bootstrap e2e");
+    std::filesystem::remove_all(dd_product_eval_dir);
     std::filesystem::remove_all(dd_streamed_dir);
 
     auto hybrid_output =
