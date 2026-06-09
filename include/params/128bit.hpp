@@ -319,14 +319,12 @@ struct lvl5param {
 // lvl6param: n = 2^15 multi-limb torus scaffold for dense CKKS bootstrap work.
 //
 // This intentionally keeps lvl5param at n = 2^14 and provides the 2^15 ring as
-// the next level.  Q = 2^1152 is represented as 18 little-endian 64-bit limbs.
-// The extra limbs give dense CKKS bootstrapping enough room for a practical
-// EvalMod scale and a post-bootstrap product in TFHEpp's power-of-two torus
-// model.  The CKKS encryption noise is tuned against the active level modulus:
-// at the tuned logQ = 1108 bootstrap level, α = 2^-850 gives σ = 2^258.
-// Direct BDGL16 estimates for n = 32768, q = 2^1108 give about 132.9 bits for
-// dense ternary secrets and about 131.8 bits for the current sparse-H16
-// bootstrap-key validation path.
+// the next level.  Q = 2^896 is represented as 14 little-endian 64-bit limbs,
+// which is enough for the tuned 888-bit CKKS bootstrap schedule while avoiding
+// the impractical absolute EvalMod noise created by the earlier 1108-bit
+// schedule.  The CKKS encryption noise is tuned close to the small integer
+// Gaussian noise used by RNS CKKS libraries: at logQ = 888, α = 2^-886 gives
+// σ = 2^2, with a 3.2 floor at lower active levels.
 struct lvl6param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
@@ -337,12 +335,12 @@ struct lvl6param {
     static constexpr std::uint32_t l = 5;
     static constexpr std::uint32_t Bgbit = 19;
     static constexpr std::uint32_t Bgₐbit = 19;
-    using T = MultiLimbUInt<18>;
+    using T = MultiLimbUInt<14>;
     static constexpr T Bg = T{1} << Bgbit;
     static constexpr T Bgₐ = T{1} << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -850);
+    static const inline double α = std::pow(2.0, -886);
     // Low active CKKS levels would otherwise round α*2^LogQ to zero.  This
     // floor keeps direct lvl6 CKKS encryption/keygen non-degenerate while the
     // high-level bootstrap keys still use the security-tuned relative α above.
@@ -358,10 +356,10 @@ struct lvl6param {
         (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
     static constexpr uint64_t bfv_bootstrap_digit_error_bound = 15;
     static constexpr int bfv_bootstrap_linear_bsgs_step = 128;
-    static constexpr std::uint32_t l̅ = 96;
-    static constexpr std::uint32_t l̅ₐ = 96;
-    static constexpr std::uint32_t B̅gbit = 12;
-    static constexpr std::uint32_t B̅gₐbit = 12;
+    static constexpr std::uint32_t l̅ = 56;
+    static constexpr std::uint32_t l̅ₐ = 56;
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t B̅gₐbit = 16;
 
     static constexpr uint64_t simd_modulus = plain_modulus_u64;
     static constexpr uint64_t simd_psi = 108788;

@@ -91,19 +91,19 @@ int main()
     using Lvl6T = TFHEpp::lvl6param::T;
     static_assert(TFHEpp::lvl5param::nbit == 14);
     static_assert(TFHEpp::lvl6param::nbit == 15);
-    static_assert(std::numeric_limits<Lvl6T>::digits == 1152);
-    static_assert(TFHEpp::lvl6param::l̅ * TFHEpp::lvl6param::B̅gbit == 1152);
+    static_assert(std::numeric_limits<Lvl6T>::digits == 896);
+    static_assert(TFHEpp::lvl6param::l̅ * TFHEpp::lvl6param::B̅gbit == 896);
     static_assert(TFHEpp::lvl6param::Q_mod_t ==
-                  pow2_mod(1152, TFHEpp::lvl6param::plain_modulus_u64));
-    require(std::abs(std::log2(TFHEpp::lvl6param::α) + 850.0) < 1e-9,
+                  pow2_mod(896, TFHEpp::lvl6param::plain_modulus_u64));
+    require(std::abs(std::log2(TFHEpp::lvl6param::α) + 886.0) < 1e-9,
             "lvl6 CKKS security noise exponent");
 
     {
         using P = TFHEpp::lvl6param;
         using T = typename P::T;
-        using Ct = TFHEpp::CKKSCiphertext<P, 1152, 50>;
-        static_assert(Ct::log_q == 1152);
-        static_assert(Ct::log_budget == 1102);
+        using Ct = TFHEpp::CKKSCiphertext<P, 896, 50>;
+        static_assert(Ct::log_q == 896);
+        static_assert(Ct::log_budget == 846);
         static_assert(TFHEpp::is_multilimb_digit_fft_compatible_v<P>);
 
         const T level_neg_one = TFHEpp::ckks_detail::levelMask<P, 880>();
@@ -114,7 +114,7 @@ int main()
         const T sign = T{1} << 879;
         const T centered_sign =
             TFHEpp::ckks_detail::centeredLevelToTorus<P, 880>(sign);
-        require((centered_sign >> 1151) == T{1},
+        require((centered_sign >> 895) == T{1},
                 "lvl6 active sign extends to storage top bit");
         require(TFHEpp::ckks_detail::reduceToLevel<P, 880>(centered_sign) ==
                     sign,
@@ -130,14 +130,14 @@ int main()
         require(std::abs(input_noise - P::ckks_min_noise_stddev) < 1e-12L,
                 "lvl6 low active-level CKKS noise floor");
         const long double boot_noise =
-            TFHEpp::ckks_detail::effectiveNoiseStddevAtLevel<P, 1152>(
+            TFHEpp::ckks_detail::effectiveNoiseStddevAtLevel<P, 888>(
                 default_noise);
-        require(std::abs(std::log2(boot_noise) - 302.0L) < 1e-9L,
+        require(std::abs(std::log2(boot_noise) - 2.0L) < 1e-9L,
                 "lvl6 boot-level CKKS noise scale");
         const T large_noise =
-            TFHEpp::ckks_detail::signedLongDoubleToLevel<P, 1152>(
-                std::ldexp(1.0L, 302));
-        require((large_noise >> 302) == T{1},
+            TFHEpp::ckks_detail::signedLongDoubleToLevel<P, 888>(
+                std::ldexp(1.0L, 2));
+        require((large_noise >> 2) == T{1},
                 "lvl6 large CKKS noise conversion keeps high bits");
 
         auto lhs = std::make_unique<TFHEpp::Polynomial<P>>();
@@ -207,7 +207,93 @@ int main()
         auto relinkey = TFHEpp::makeCKKSRelinKey<P, out_log_q>(key, {0.0, 0});
         TFHEpp::TRLWE<P> switched{};
         TFHEpp::Polynomial<P> zero{};
-        TFHEpp::CKKSRelinKeySwitch<P, out_log_q>(switched, zero, *relinkey);
+        TFHEpp::CKKSRelinKeySwitch<P>(switched, zero, *relinkey);
+    }
+
+    {
+        using P = TinyCKKSMLParam;
+        constexpr std::uint32_t log_q = 180;
+        constexpr std::uint32_t log_delta = 20;
+        using Ct = TFHEpp::CKKSCiphertext<P, log_q, log_delta>;
+        using ProductCt =
+            TFHEpp::CKKSMultResult<P, log_q, log_delta, log_q, log_delta>;
+        static_assert(ProductCt::log_q == 160);
+        static_assert(TFHEpp::CKKSDDRelinKey<P, ProductCt::log_q>::
+                          primary_rows == 10);
+        static_assert(
+            TFHEpp::CKKSDDRelinKey<P, ProductCt::log_q>::bbar_rows == 10);
+
+        TFHEpp::Key<P> key{};
+        for (std::uint32_t i = 0; i < P::n; i++)
+            key[i] =
+                P::T::from_signed_i64(static_cast<int>(i % 3) - 1);
+
+        auto relinkey =
+            TFHEpp::makeCKKSRelinKey<P, ProductCt::log_q>(key, {0.0, 0});
+        auto dd_relinkey =
+            TFHEpp::makeCKKSDDRelinKey<P, ProductCt::log_q>(key, {0.0, 0});
+        auto dd_chain =
+            std::make_unique<TFHEpp::CKKSDDRelinKeyChain<P, log_q, log_delta,
+                                                         1>>();
+        TFHEpp::CKKSDDRelinKeyChainGen<P, log_q, log_delta, 1>(*dd_chain, key,
+                                                               {0.0, 0});
+
+        auto lhs = std::make_unique<std::array<double, P::n>>();
+        auto rhs = std::make_unique<std::array<double, P::n>>();
+        auto expected = std::make_unique<std::array<double, P::n>>();
+        lhs->fill(0.0);
+        rhs->fill(0.0);
+        expected->fill(0.0);
+        (*lhs)[0] = 0.25;
+        (*lhs)[1] = -0.125;
+        (*lhs)[3] = 0.0625;
+        (*rhs)[0] = -0.5;
+        (*rhs)[2] = 0.25;
+
+        auto add_product = [&](std::uint32_t ai, double av, std::uint32_t bi,
+                               double bv) {
+            const std::uint32_t raw = ai + bi;
+            if (raw < P::n)
+                (*expected)[raw] += av * bv;
+            else
+                (*expected)[raw - P::n] -= av * bv;
+        };
+        add_product(0, (*lhs)[0], 0, (*rhs)[0]);
+        add_product(0, (*lhs)[0], 2, (*rhs)[2]);
+        add_product(1, (*lhs)[1], 0, (*rhs)[0]);
+        add_product(1, (*lhs)[1], 2, (*rhs)[2]);
+        add_product(3, (*lhs)[3], 0, (*rhs)[0]);
+        add_product(3, (*lhs)[3], 2, (*rhs)[2]);
+
+        auto lhs_ct = std::make_unique<Ct>();
+        auto rhs_ct = std::make_unique<Ct>();
+        TFHEpp::ckksEncrypt<P, log_q, log_delta>(*lhs_ct, *lhs, key, {0.0, 0});
+        TFHEpp::ckksEncrypt<P, log_q, log_delta>(*rhs_ct, *rhs, key, {0.0, 0});
+
+        auto product = std::make_unique<ProductCt>();
+        auto dd_product = std::make_unique<ProductCt>();
+        auto dd_chain_product = std::make_unique<ProductCt>();
+        TFHEpp::CKKSMult<P>(*product, *lhs_ct, *rhs_ct, *relinkey);
+        TFHEpp::CKKSMult<P>(*dd_product, *lhs_ct, *rhs_ct, *dd_relinkey);
+        TFHEpp::CKKSMult<P>(*dd_chain_product, *lhs_ct, *rhs_ct,
+                            dd_chain->template get<0>());
+
+        auto got = std::make_unique<std::array<double, P::n>>();
+        auto got_dd = std::make_unique<std::array<double, P::n>>();
+        auto got_dd_chain = std::make_unique<std::array<double, P::n>>();
+        TFHEpp::ckksDecrypt<P>(*got, *product, key);
+        TFHEpp::ckksDecrypt<P>(*got_dd, *dd_product, key);
+        TFHEpp::ckksDecrypt<P>(*got_dd_chain, *dd_chain_product, key);
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            require(std::abs((*got)[i] - (*expected)[i]) < 0.05,
+                    "tiny CKKS standard relin encrypted multiply");
+            require(std::abs((*got_dd)[i] - (*expected)[i]) < 0.05,
+                    "tiny CKKS DD relin encrypted multiply");
+            require(std::abs((*got_dd)[i] - (*got)[i]) < 0.05,
+                    "tiny CKKS DD relin matches standard relin");
+            require(std::abs((*got_dd_chain)[i] - (*got)[i]) < 0.05,
+                    "tiny CKKS DD relin chain matches standard relin");
+        }
     }
 
     {

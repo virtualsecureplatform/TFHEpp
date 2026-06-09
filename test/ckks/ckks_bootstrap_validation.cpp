@@ -2015,8 +2015,8 @@ using Lvl6RobustHybridThresholdSchedule =
 template <int HybridThreshold>
 struct Lvl6TunedHybridThresholdSchedule
     : TFHEpp::CKKSDenseBootstrapSchedule<
-          TFHEpp::lvl6param, 52, 8, 1108, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
-          52, 30, 7, 7, HybridThreshold, 1> {
+          TFHEpp::lvl6param, 40, 8, 888, 40, 7, 34, 18, 4, 5, 40, 128, 0, 40,
+          40, 30, 7, 7, HybridThreshold, 1> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
@@ -2032,14 +2032,14 @@ struct Lvl6TunedHybridThresholdSchedule
 
 template <int LinearBSGSStep>
 using Lvl6TunedBSGSStepSchedule = TFHEpp::CKKSDenseBootstrapSchedule<
-    TFHEpp::lvl6param, 52, 8, 1108, 52, 7, 34, 18, 4, 5, 52,
-    LinearBSGSStep, 0, 52, 52, 30, 7, 7, 2, 1>;
+    TFHEpp::lvl6param, 40, 8, 888, 40, 7, 34, 18, 4, 5, 40, LinearBSGSStep, 0,
+    40, 40, 30, 7, 7, 2, 1>;
 
 template <int C2S0, int C2S1, int STC0, int STC1>
 struct Lvl6TunedStageBSGSSchedule
     : TFHEpp::CKKSDenseBootstrapSchedule<
-          TFHEpp::lvl6param, 52, 8, 1108, 52, 7, 34, 18, 4, 5, 52, 128, 0, 52,
-          52, 30, 7, 7, 2, 1> {
+          TFHEpp::lvl6param, 40, 8, 888, 40, 7, 34, 18, 4, 5, 40, 128, 0, 40,
+          40, 30, 7, 7, 2, 1> {
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
@@ -2064,13 +2064,14 @@ static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
 static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
-static_assert(Lvl6TunedSchedule::log_delta == 52);
+static_assert(Lvl6TunedSchedule::log_delta == 40);
 static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 2);
 static_assert(Lvl6TunedSchedule::hybrid_baby_direct_popcount_threshold == 1);
 static_assert(Lvl6TunedSchedule::evalmod_degree == 34);
+static_assert(Lvl6TunedSchedule::evalmod_double_angle == 4);
 static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 5);
-static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
-static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
+static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 600);
+static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 40);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_level_count == 2);
 static_assert(Lvl6TunedSchedule::slot_to_coeff_level_count == 2);
 static_assert(
@@ -2085,9 +2086,10 @@ static_assert(
 static_assert(
     TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
         1, Lvl6TunedSchedule>() == 1024);
-static_assert(Lvl6TunedSchedule::output_log_q == 112);
+static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 168);
+static_assert(Lvl6TunedSchedule::output_log_q == 108);
 static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 0);
+static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 20);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;
@@ -5600,8 +5602,12 @@ int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     constexpr int k = static_cast<int>(Schedule::evalmod_k);
+    constexpr int mask_bound =
+        static_cast<int>(Schedule::bounded_sparse_secret_key_weight);
+    static_assert(mask_bound < k);
     for (std::size_t i = 0; i < P::n / 2; i++) {
-        const int mask = static_cast<int>(i % (2 * k + 3)) - k - 1;
+        const int mask =
+            static_cast<int>(i % (2 * mask_bound + 1)) - mask_bound;
         const double message =
             static_cast<double>(static_cast<int>(i % 17) - 8) / 256.0;
         const double normalized =
@@ -5636,6 +5642,167 @@ int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
     TFHEpp::ckksSlotDecrypt<P, Schedule::after_evalmod_log_q,
                             Schedule::log_delta>(*decoded, *output, *key);
     print_slot_diagnostic<P>("diag_evalmod_direct", *decoded, expected.get());
+    std::cout << "diag_encrypt_ms=" << encrypt_ms << '\n';
+    std::cout << "diag_evalmod_ms=" << evalmod_ms << '\n';
+    return max_error<P>(*decoded, *expected) <= 0.01 ? 0 : 1;
+}
+
+template <class Schedule>
+int run_inmemory_evalmod_diagnostics(std::size_t sparse_weight = 0,
+                                     TFHEpp::CKKSNoise noise = {
+                                         Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+
+    if (const int status =
+            validate_bounded_modraise_test_key<Schedule>(sparse_weight,
+                                                         "diagnostic");
+        status != 0)
+        return status;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_bootstrap_test_key<P>(*key, sparse_weight);
+    std::cout << "diag_key_sparse_weight=" << sparse_weight << '\n';
+
+    const TFHEpp::CKKSBoundedCosEvalModPolynomial poly =
+        TFHEpp::CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+    auto keys =
+        std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosRelinKeys<Schedule>>();
+    const double keygen_ms = elapsed_ms([&] {
+        TFHEpp::CKKSDenseEvalModBoundedCosKeyGen<Schedule>(*keys, *key,
+                                                           noise);
+    });
+
+    auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    constexpr int k = static_cast<int>(Schedule::evalmod_k);
+    constexpr int mask_bound =
+        static_cast<int>(Schedule::bounded_sparse_secret_key_weight);
+    static_assert(mask_bound < k);
+    for (std::size_t i = 0; i < P::n / 2; i++) {
+        const int mask =
+            static_cast<int>(i % (2 * mask_bound + 1)) - mask_bound;
+        const double message =
+            static_cast<double>(static_cast<int>(i % 17) - 8) / 256.0;
+        const double normalized =
+            (static_cast<double>(mask) * Schedule::message_ratio + message) /
+            (static_cast<double>(Schedule::evalmod_k) *
+             Schedule::message_ratio);
+        (*slots)[i] = {normalized, 0.0};
+        (*expected)[i] =
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                 poly, normalized, Schedule::evalmod_inv_degree) /
+                 Schedule::message_ratio,
+             0.0};
+    }
+    print_slot_diagnostic<P>("diag_evalmod_direct_input", *slots);
+    print_slot_diagnostic<P>("diag_evalmod_direct_expected", *expected);
+
+    auto input = std::make_unique<typename Schedule::ComponentCiphertext>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, Schedule::after_component_split_log_q,
+                                Schedule::log_delta>(*input, *slots, *key,
+                                                     noise);
+    });
+
+    auto output =
+        std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>>();
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    double evalmod_ms = 0.0;
+    if constexpr (Schedule::evalmod_inv_degree != 0) {
+        using EvalTraits = TFHEpp::CKKSDenseEvalModBoundedCosTraits<Schedule>;
+
+        auto shifted =
+            std::make_unique<typename Schedule::ComponentCiphertext>(*input);
+        TFHEpp::CKKSSubPlainRealInPlace<
+            P, Schedule::after_component_split_log_q, Schedule::log_delta>(
+            *shifted, poly.domain_offset);
+
+        auto expected_polynomial =
+            std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+        for (std::size_t i = 0; i < P::n / 2; i++) {
+            const double x = (*slots)[i].real() - poly.domain_offset;
+            const double y =
+                TFHEpp::CKKSEvaluateChebyshevUnit(poly.chebyshev_coeffs, x);
+            (*expected_polynomial)[i] = {y, 0.0};
+        }
+
+        auto polynomial =
+            std::make_unique<typename EvalTraits::PolynomialCiphertext>();
+        const double polynomial_ms = elapsed_ms([&] {
+            TFHEpp::CKKSEvalChebyshevPolynomialWithKeyProvider<
+                P, Schedule::after_component_split_log_q,
+                Schedule::log_delta, Schedule::evalmod_log_scale,
+                Schedule::evalmod_degree>(*polynomial, *shifted,
+                                           poly.chebyshev_coeffs,
+                                           keys->polynomial);
+        });
+        shifted.reset();
+        TFHEpp::ckksSlotDecrypt<P, EvalTraits::polynomial_log_q,
+                                Schedule::log_delta>(*decoded, *polynomial,
+                                                     *key);
+        print_slot_diagnostic<P>("diag_evalmod_polynomial", *decoded,
+                                 expected_polynomial.get());
+
+        auto expected_double_angle =
+            std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+        for (std::size_t i = 0; i < P::n / 2; i++) {
+            double sqrt_coeff = poly.sqrt_coeff;
+            double y = (*expected_polynomial)[i].real();
+            for (std::uint32_t j = 0; j < poly.double_angle; j++) {
+                sqrt_coeff *= sqrt_coeff;
+                y = 2.0 * y * y - sqrt_coeff;
+            }
+            (*expected_double_angle)[i] = {y, 0.0};
+        }
+        expected_polynomial.reset();
+
+        auto double_angle =
+            std::make_unique<typename EvalTraits::DoubleAngleCiphertext>();
+        const double double_angle_ms = elapsed_ms([&] {
+            TFHEpp::ckks_detail::CKKSBoundedCosDoubleAngleImpl<
+                0, P, EvalTraits::polynomial_log_q, Schedule::log_delta,
+                Schedule::evalmod_double_angle>(*double_angle, *polynomial,
+                                                keys->double_angle,
+                                                poly.sqrt_coeff);
+        });
+        polynomial.reset();
+        TFHEpp::ckksSlotDecrypt<P, EvalTraits::after_double_angle_log_q,
+                                Schedule::log_delta>(*decoded, *double_angle,
+                                                     *key);
+        print_slot_diagnostic<P>("diag_evalmod_double_angle", *decoded,
+                                 expected_double_angle.get());
+
+        const auto inverse_coeffs =
+            TFHEpp::CKKSBuildEvalModInversePowerCoefficients(
+                poly, Schedule::evalmod_inv_degree);
+        const double inverse_ms = elapsed_ms([&] {
+            TFHEpp::CKKSEvalPowerPolynomial<
+                P, EvalTraits::after_double_angle_log_q, Schedule::log_delta,
+                Schedule::evalmod_log_scale, Schedule::evalmod_inv_degree>(
+                *output, *double_angle, inverse_coeffs, keys->inverse);
+        });
+        double_angle.reset();
+        expected_double_angle.reset();
+        evalmod_ms = polynomial_ms + double_angle_ms + inverse_ms;
+        std::cout << "diag_evalmod_polynomial_ms=" << polynomial_ms << '\n';
+        std::cout << "diag_evalmod_double_angle_ms=" << double_angle_ms
+                  << '\n';
+        std::cout << "diag_evalmod_inverse_ms=" << inverse_ms << '\n';
+    }
+    else {
+        evalmod_ms = elapsed_ms([&] {
+            TFHEpp::CKKSDenseEvalModBoundedCosNormalized<Schedule>(
+                *output, *input, poly, *keys);
+        });
+    }
+    input.reset();
+    keys.reset();
+
+    TFHEpp::ckksSlotDecrypt<P, Schedule::after_evalmod_log_q,
+                            Schedule::log_delta>(*decoded, *output, *key);
+    print_slot_diagnostic<P>("diag_evalmod_direct", *decoded, expected.get());
+    std::cout << "diag_evalmod_keygen_ms=" << keygen_ms << '\n';
     std::cout << "diag_encrypt_ms=" << encrypt_ms << '\n';
     std::cout << "diag_evalmod_ms=" << evalmod_ms << '\n';
     return max_error<P>(*decoded, *expected) <= 0.01 ? 0 : 1;
@@ -7197,6 +7364,8 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-bsgs-steps-plan]"
                  " [--lvl6-tuned-stage-bsgs-plan]"
                  " [--lvl6-tuned-readiness]"
+                 " [--lvl6-tuned-inmemory-debug-evalmod]"
+                 " [--lvl6-tuned-inmemory-debug-evalmod-zero-noise]"
                  " [--lvl6-tuned-hybrid-keygen DIR]"
                  " [--lvl6-tuned-hybrid-keygen-next DIR]"
                  " [--lvl6-tuned-hybrid-evalkeygen DIR]"
@@ -7363,6 +7532,20 @@ int main(int argc, char **argv)
             print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
             if (print_practical_readiness_report<Lvl6TunedSchedule>(
                     "lvl6-tuned", lvl6_sparse_weight) != 0)
+                return 1;
+        }
+        else if (arg == "--lvl6-tuned-inmemory-debug-evalmod") {
+            saw_action = true;
+            print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
+            if (run_inmemory_evalmod_diagnostics<Lvl6TunedSchedule>(
+                    lvl6_sparse_weight) != 0)
+                return 1;
+        }
+        else if (arg == "--lvl6-tuned-inmemory-debug-evalmod-zero-noise") {
+            saw_action = true;
+            print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
+            if (run_inmemory_evalmod_diagnostics<Lvl6TunedSchedule>(
+                    lvl6_sparse_weight, {0.0, 0}) != 0)
                 return 1;
         }
         else if (arg == "--lvl6-inverse-plan") {

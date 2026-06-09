@@ -842,6 +842,14 @@ void test_lvl6_factorized_stage_shape()
         TFHEpp::CKKSDenseBootstrapFullKeySwitchRowCount<Schedule>();
     constexpr std::size_t full_key_bytes =
         TFHEpp::CKKSDenseBootstrapFullKeyByteEstimate<Schedule>();
+    constexpr std::size_t dd_evalmod_rows =
+        TFHEpp::CKKSDenseBootstrapDDEvalModKeySwitchRowCount<Schedule>();
+    constexpr std::size_t dd_evalmod_peak_rows =
+        TFHEpp::CKKSDenseBootstrapDDEvalModPeakKeySwitchRowCount<Schedule>();
+    constexpr std::size_t dd_evalmod_bytes =
+        TFHEpp::CKKSDenseBootstrapDDEvalModKeyByteEstimate<Schedule>();
+    constexpr std::size_t dd_evalmod_peak_bytes =
+        TFHEpp::CKKSDenseBootstrapDDEvalModPeakKeyByteEstimate<Schedule>();
     if (sparse_key_rows != sparse_galois_rows +
                                TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<
                                    Schedule>())
@@ -853,6 +861,15 @@ void test_lvl6_factorized_stage_shape()
         streamed_peak_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
         std::exit(1);
     if (sparse_key_rows >= full_key_rows || sparse_key_bytes >= full_key_bytes)
+        std::exit(1);
+    if (dd_evalmod_rows <=
+            TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>() ||
+        dd_evalmod_peak_rows == 0 || dd_evalmod_peak_rows > dd_evalmod_rows)
+        std::exit(1);
+    if (dd_evalmod_bytes !=
+            dd_evalmod_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>() ||
+        dd_evalmod_peak_bytes !=
+            dd_evalmod_peak_rows * TFHEpp::CKKSKeySwitchRowByteSize<L>())
         std::exit(1);
     if (streamed_peak_rows == 0 || streamed_peak_rows >= sparse_key_rows)
         std::exit(1);
@@ -903,6 +920,10 @@ void test_lvl6_factorized_stage_shape()
     std::cout << "CKKS lvl6 dense bootstrap streamed peak rows="
               << streamed_peak_rows << " bytes=" << streamed_peak_bytes
               << std::endl;
+    std::cout << "CKKS lvl6 dense bootstrap DD EvalMod relin rows="
+              << dd_evalmod_rows << " bytes=" << dd_evalmod_bytes
+              << " peak_rows=" << dd_evalmod_peak_rows
+              << " peak_bytes=" << dd_evalmod_peak_bytes << std::endl;
     std::cout << "CKKS lvl6 dense bootstrap direct key indices/rows="
               << direct_key_indices << "/" << direct_key_rows
               << " bytes=" << direct_key_bytes
@@ -1077,19 +1098,20 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6InverseSchedule::output_log_q == 60);
     static_assert(std::is_same_v<typename Lvl6TunedSchedule::Param,
                                  TFHEpp::lvl6param>);
-    static_assert(Lvl6TunedSchedule::log_delta == 52);
-    static_assert(Lvl6TunedSchedule::input_log_q == 60);
+    static_assert(Lvl6TunedSchedule::log_delta == 40);
+    static_assert(Lvl6TunedSchedule::input_log_q == 48);
+    static_assert(Lvl6TunedSchedule::boot_log_q == 888);
     static_assert(Lvl6TunedSchedule::evalmod_degree == 34);
     static_assert(Lvl6TunedSchedule::evalmod_double_angle == 4);
     static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 5);
-    static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 780);
-    static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 52);
-    static_assert(Lvl6TunedSchedule::component_split_plain_log_delta == 52);
+    static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 600);
+    static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 40);
+    static_assert(Lvl6TunedSchedule::component_split_plain_log_delta == 40);
     static_assert(Lvl6TunedSchedule::slot_to_coeff_plain_log_delta == 30);
-    static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 172);
-    static_assert(Lvl6TunedSchedule::output_log_q == 112);
+    static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 168);
+    static_assert(Lvl6TunedSchedule::output_log_q == 108);
     static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-    static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 0);
+    static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 20);
     const std::filesystem::path estimate_root =
         "__tfhepp_nonexistent_ckks_key_estimate_probe__";
     if (std::filesystem::exists(estimate_root)) std::exit(1);
@@ -2008,8 +2030,8 @@ void test_dense_bootstrap_e2e_smoke()
         counting_provider.polynomial_relin_gets[1] != 4 ||
         counting_provider.polynomial_relin_gets[2] != 8 ||
         counting_provider.polynomial_relin_gets[3] != 16 ||
-        counting_provider.polynomial_relin_gets[4] != 0 ||
-        counting_provider.polynomial_relin_gets[5] != 2 ||
+        counting_provider.polynomial_relin_gets[4] != 30 ||
+        counting_provider.polynomial_relin_gets[5] != 0 ||
         counting_provider.double_angle_relin_gets[0] != 2 ||
         counting_provider.double_angle_relin_gets[1] != 2)
         std::exit(1);
@@ -2023,8 +2045,8 @@ void test_dense_bootstrap_e2e_smoke()
         counting_provider.polynomial_relin_releases[1] != 1 ||
         counting_provider.polynomial_relin_releases[2] != 1 ||
         counting_provider.polynomial_relin_releases[3] != 1 ||
-        counting_provider.polynomial_relin_releases[4] != 0 ||
-        counting_provider.polynomial_relin_releases[5] != 1 ||
+        counting_provider.polynomial_relin_releases[4] != 1 ||
+        counting_provider.polynomial_relin_releases[5] != 0 ||
         counting_provider.double_angle_relin_releases[0] != 1 ||
         counting_provider.double_angle_relin_releases[1] != 1)
         std::exit(1);
@@ -2034,6 +2056,29 @@ void test_dense_bootstrap_e2e_smoke()
         *decoded, *provider_output, *key);
     require_close_param<M>(*decoded, *slots, 0.02,
                            "CKKS dense encrypted provider bootstrap e2e");
+
+    auto dd_bootstrap_key =
+        std::make_unique<TFHEpp::CKKSDenseBootstrapDDRelinKey<Schedule>>();
+    static_assert(
+        TFHEpp::CKKSDenseBootstrapDDEvalModKeySwitchRowCount<Schedule>() >
+        TFHEpp::CKKSDenseBootstrapEvalModKeySwitchRowCount<Schedule>());
+    TFHEpp::CKKSDenseBootstrapDDRelinKeyGen<Schedule>(*dd_bootstrap_key, *key,
+                                                      {0.0, 0});
+    TFHEpp::CKKSDenseBootstrapInMemoryKeyProvider<
+        Schedule, TFHEpp::CKKSDenseBootstrapDDRelinKey<Schedule>>
+        dd_provider(*dd_bootstrap_key);
+    auto dd_provider_output =
+        std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapWithKeyProvider<Schedule>(
+        *dd_provider_output, *input, dd_provider);
+    auto dd_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, Schedule::output_log_q, Schedule::log_delta>(
+        *dd_decoded, *dd_provider_output, *key);
+    require_close_param<M>(*dd_decoded, *slots, 0.02,
+                           "CKKS dense encrypted DD relin provider bootstrap e2e");
+    require_close_param<M>(*dd_decoded, *decoded, 0.02,
+                           "CKKS dense encrypted DD relin provider matches "
+                           "standard relin");
 
     auto hybrid_output =
         std::make_unique<typename Schedule::OutputCiphertext>();
@@ -2316,8 +2361,8 @@ void test_dense_bootstrap_inverse_e2e_smoke()
         counting_provider.polynomial_relin_gets[1] != 4 ||
         counting_provider.polynomial_relin_gets[2] != 8 ||
         counting_provider.polynomial_relin_gets[3] != 16 ||
-        counting_provider.polynomial_relin_gets[4] != 0 ||
-        counting_provider.polynomial_relin_gets[5] != 2 ||
+        counting_provider.polynomial_relin_gets[4] != 30 ||
+        counting_provider.polynomial_relin_gets[5] != 0 ||
         counting_provider.double_angle_relin_gets[0] != 2 ||
         counting_provider.double_angle_relin_gets[1] != 2 ||
         counting_provider.inverse_relin_gets[0] != 2 ||
@@ -2334,8 +2379,8 @@ void test_dense_bootstrap_inverse_e2e_smoke()
         counting_provider.polynomial_relin_releases[1] != 1 ||
         counting_provider.polynomial_relin_releases[2] != 1 ||
         counting_provider.polynomial_relin_releases[3] != 1 ||
-        counting_provider.polynomial_relin_releases[4] != 0 ||
-        counting_provider.polynomial_relin_releases[5] != 1 ||
+        counting_provider.polynomial_relin_releases[4] != 1 ||
+        counting_provider.polynomial_relin_releases[5] != 0 ||
         counting_provider.double_angle_relin_releases[0] != 1 ||
         counting_provider.double_angle_relin_releases[1] != 1 ||
         counting_provider.inverse_relin_releases[0] != 1 ||
@@ -2685,6 +2730,15 @@ void test_bounded_cos_evalmod_homomorphic()
     TFHEpp::CKKSEvalModBoundedCosKeyGen<M, log_q, log_delta, coeff_log_delta,
                                         degree, double_angle>(*keys, *key,
                                                               {0.0, 0});
+    auto dd_keys = std::make_unique<
+        TFHEpp::CKKSEvalModBoundedCosDDRelinKeys<M, log_q, log_delta,
+                                                 coeff_log_delta, degree,
+                                                 double_angle>>();
+    static_assert(TFHEpp::CKKSDDRelinKeySwitchRowCount<M, log_q - log_delta>() >
+                  TFHEpp::CKKSRelinKeySwitchRowCount<M, log_q - log_delta>());
+    TFHEpp::CKKSEvalModBoundedCosDDKeyGen<M, log_q, log_delta, coeff_log_delta,
+                                          degree, double_angle>(*dd_keys, *key,
+                                                                {0.0, 0});
 
     auto ct = std::make_unique<EvalCt>();
     TFHEpp::ckksSlotEncrypt<M, log_q, log_delta>(*ct, *slots, *key, {0.0, 0});
@@ -2694,12 +2748,25 @@ void test_bounded_cos_evalmod_homomorphic()
                                             coeff_log_delta, degree,
                                             double_angle>(*out, *ct, poly,
                                                           *keys);
+    auto dd_out = std::make_unique<EvalOut>();
+    TFHEpp::CKKSEvalModBoundedCosNormalized<M, log_q, log_delta,
+                                            coeff_log_delta, degree,
+                                            double_angle>(*dd_out, *ct, poly,
+                                                          *dd_keys);
 
     auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
     TFHEpp::ckksSlotDecrypt<M, EvalOut::log_q, EvalOut::log_delta>(
         *decoded, *out, *key);
     require_close_param<M>(*decoded, *expected, 0.03,
                            "CKKS bounded cosine EvalMod homomorphic");
+    auto dd_decoded = std::make_unique<TFHEpp::CKKSSlotVector<M>>();
+    TFHEpp::ckksSlotDecrypt<M, EvalOut::log_q, EvalOut::log_delta>(
+        *dd_decoded, *dd_out, *key);
+    require_close_param<M>(*dd_decoded, *expected, 0.03,
+                           "CKKS bounded cosine EvalMod DD relin homomorphic");
+    require_close_param<M>(*dd_decoded, *decoded, 0.03,
+                           "CKKS bounded cosine EvalMod DD relin matches "
+                           "standard relin");
 }
 
 void test_bounded_cos_evalmod_inverse_homomorphic()

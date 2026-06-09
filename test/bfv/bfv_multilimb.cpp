@@ -83,9 +83,9 @@ int main()
     static_assert(TFHEpp::lvl5param::Q_mod_t ==
                   pow2_mod(448, TFHEpp::lvl5param::plain_modulus_u64));
     static_assert(TFHEpp::lvl6param::nbit == 15);
-    static_assert(TFHEpp::lvl6param::l̅ * TFHEpp::lvl6param::B̅gbit == 1152);
+    static_assert(TFHEpp::lvl6param::l̅ * TFHEpp::lvl6param::B̅gbit == 896);
     static_assert(TFHEpp::lvl6param::Q_mod_t ==
-                  pow2_mod(1152, TFHEpp::lvl6param::plain_modulus_u64));
+                  pow2_mod(896, TFHEpp::lvl6param::plain_modulus_u64));
 
     using BP = TFHEpp::bfvboot::PrimePower2Param<TFHEpp::lvl5param>;
     static_assert(BP::base_plain_modulus == TFHEpp::lvl5param::plain_modulus_u64);

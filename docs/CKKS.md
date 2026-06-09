@@ -1,20 +1,22 @@
 # CKKS
 
 TFHEpp includes experimental CKKS support in `include/ckks/ckks.hpp`. The current
-practical path is a leveled CKKS multiplication followed by dense CKKS
-bootstrapping, using Double Decomposition (DD) through the underlying TFHEpp
-external-product parameter path.
+target path is a leveled CKKS multiplication followed by dense CKKS
+bootstrapping. Full-size CKKS bootstrapping still needs storage-aware double
+decomposition (DD) relinearization in the filesystem key path before it should
+be treated as practical.
 
 The most practical full-size configuration is the tuned lvl6 seeded hybrid
 giant streamed bootstrap path:
 
 - schedule: `TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule`
 - ring degree: `n = 32768`
-- boot modulus: `boot_log_q = 1108`
-- input level: `input_log_q = 60`
-- output level: `output_log_q = 112`
-- scale bits: `log_delta = 52`
-- lvl6 CKKS noise: `α = 2^-850`
+- torus storage: `896` bits
+- boot modulus: `boot_log_q = 888`
+- input level: `input_log_q = 48`
+- output level: `output_log_q = 108`
+- scale bits: `log_delta = 40`
+- lvl6 CKKS noise: `α = 2^-886`
 - low-level CKKS noise floor: `σ >= 3.2`
 - bounded bootstrap secret weight: `16`
 
@@ -30,6 +32,7 @@ bootstrap and product evaluation keys.
 | `CKKSCiphertext<P, LogQ, LogDelta>` | Two-component CKKS ciphertext at compile-time level and scale. |
 | `CKKSMultResult<...>` | Three-component multiplication result before relinearization. |
 | `CKKSRelinKey<P, LogQ>` | Relinearization key for CKKS multiplication at level `LogQ`. |
+| `CKKSDDRelinKey<P, LogQ>` | Double-decomposition CKKS relinearization key at level `LogQ`. |
 | `CKKSDenseBootstrapSchedule<...>` | Compile-time dense bootstrap parameter schedule. |
 | `Schedule::InputCiphertext` | Ciphertext type accepted by a dense bootstrap schedule. |
 | `Schedule::OutputCiphertext` | Ciphertext type produced by a dense bootstrap schedule. |
@@ -71,20 +74,28 @@ The bounded sparse key keeps the modulus-raising error inside the EvalMod
 interval assumed by the schedule. A dense bootstrap secret can exceed that bound
 and invalidate the practical error analysis.
 
-The current lvl6 noise is tuned for the 1108-bit bootstrap level. With the
-Parameter-Selection lattice estimator and the BDGL16 cost model, `n = 32768`,
-`q = 2^1108`, and `α = 2^-850` gives:
+The current lvl6 noise is tuned for the 888-bit bootstrap level. With
+`n = 32768`, `q = 2^888`, and `α = 2^-886`, the top-level integer noise
+standard deviation is `σ = 2^2`. Lower active levels use the `3.2` floor. This
+matches the small-integer Gaussian noise shape used by RNS CKKS libraries and
+avoids the large absolute EvalMod noise from the old relative-noise setting.
 
-- dense ternary secret: about `132.9` bits
-- sparse H=16 bootstrap secret: about `131.8` bits
+This schedule is close to Lattigo's local dense `N15QP880H16384H32`
+bootstrapping reference in ring size and modulus size: both use `LogN = 15`,
+total bootstrap modulus around 880 bits, and dense ternary main secrets.
+TFHEpp's current tuned schedule uses inverse-correction bounded-cos EvalMod
+(`degree=34`, `double_angle=4`, `inv_degree=5`). OpenFHE's local CKKS
+bootstrapping benchmark uses larger `ringDim = 2^16`/`2^17` sets with 50 to 59
+bit RNS primes, so the TFHEpp retuned lvl6 path is in the smaller full-size
+bootstrapping neighborhood rather than the earlier high-noise 1108-bit
+experiment.
 
-The tuned schedule spends 996 bits across C2S, component split, EvalMod, and
-STC, leaving 60 bits for a post-bootstrap product at the input level. The
-previous `α = 2^-1129` setting gave only about `63` rough bits at the old
-1152-bit bootstrap level. The lvl6 parameter also defines a `3.2` minimum CKKS
-integer noise standard deviation so direct low-active-level encryption does not
-round the default noise to zero. Reproduce the security check from the workspace
-root with:
+The tuned schedule spends 780 bits across C2S, component split, EvalMod, and
+STC, leaving `output_log_q = 108` and a post-bootstrap product level of 68 bits.
+That is 20 bits above the 48-bit input level. The lvl6 parameter also defines a
+`3.2` minimum CKKS integer noise standard deviation so direct low-active-level
+encryption does not round the default noise to zero. Reproduce the security
+check from the workspace root with:
 
 ```sh
 cd Parameter-Selection/python
@@ -186,6 +197,30 @@ Use the `PostBootstrapProduct...` function when both inputs are already at the
 post-bootstrap product level and the operation must use the
 post-bootstrap-product relinearization key.
 
+## DD Relinearization
+
+CKKS multiplication supports both the original full-`Bbar` relinearization key
+and the DD relinearization key:
+
+- `CKKSDDRelinKey<P, LogQ>`
+- `CKKSDDRelinKeyChain<P, StartLogQ, LogDelta, Depth>`
+- `CKKSEvalModBoundedCosDDRelinKeys<...>`
+- `CKKSDenseBootstrapDDRelinKey<Schedule>`
+
+The generic `CKKSRelinearization` overload dispatches through the key type, so a
+caller can use standard relin or DD relin without changing the multiply result
+type. The dense in-memory bootstrap provider also accepts
+`CKKSDenseBootstrapDDRelinKey<Schedule>`, which makes the EvalMod polynomial,
+double-angle, and inverse-correction stages use DD relin.
+
+The current DD bootstrap key is intentionally in-memory only. It is useful for
+small schedules and regression tests, but a full lvl6 DD EvalMod key has many
+more TRLWE rows than the standard relin key. Use
+`ckks_bootstrap_primitives` to print the lvl6 DD EvalMod row and byte estimate
+before attempting a full-size run. The practical next step is a streamed or
+seeded filesystem DD EvalMod key format; replacing the existing filesystem keys
+with an in-memory DD key is not practical at lvl6.
+
 ## Validation Commands
 
 Build the validation binaries:
@@ -208,6 +243,22 @@ Check the current tuned lvl6 readiness report:
 ./build-ckks/test/ckks/ckks_bootstrap_validation --lvl6-tuned-readiness
 ```
 
+Run the focused in-memory EvalMod diagnostic before regenerating a large key
+directory:
+
+```bash
+./build-ckks/test/ckks/ckks_bootstrap_validation \
+  --lvl6-tuned-inmemory-debug-evalmod
+```
+
+The zero-noise variant isolates arithmetic/approximation errors from
+key-switching noise:
+
+```bash
+./build-ckks/test/ckks/ckks_bootstrap_validation \
+  --lvl6-tuned-inmemory-debug-evalmod-zero-noise
+```
+
 The readiness report prints:
 
 - schedule levels and EvalMod parameters
@@ -216,7 +267,7 @@ The readiness report prints:
 - estimated key/eval-key artifact sizes
 - recommended practical commands
 
-Run the practical path as separate explicit phases:
+Run the target path as separate explicit phases:
 
 ```bash
 DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed
@@ -231,7 +282,7 @@ DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed
   --lvl6-tuned-seeded-hybrid-streamed-run-chained-product-encap "$DIR"
 ```
 
-Or run the same practical path as one direct command:
+Or run the same target path as one direct command:
 
 ```bash
 DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed
@@ -239,27 +290,34 @@ DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed
   --lvl6-tuned-seeded-hybrid-streamed-all "$DIR"
 ```
 
-The practical seeded-streamed path does not require a polling loop. It generates
+The seeded-streamed path does not require a polling loop. It generates
 the complete key directory, generates the product eval-key directory, then runs
 the chained product bootstrap.
 
-## Current Practical Reference
+## Current Full-Size Status
 
-On the tuned lvl6 seeded-streamed path, the readiness report currently estimates
-about 31.0 GB of seeded bootstrap/product artifacts with the product eval keys.
-The non-seeded hybrid path is roughly twice that size.
+The 888-bit tuned path replaces the earlier 1108-bit experiment. Existing
+1108-bit key directories are intentionally incompatible and must be regenerated.
+Use `--lvl6-tuned-readiness` for current artifact estimates; the exact key size
+depends on the schedule, sparse weight, and seeded/non-seeded layout.
 
-A full local validation of
-`--lvl6-tuned-seeded-hybrid-streamed-all /tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed`
-completed with:
+The current readiness report is green for static level budgeting and plaintext
+EvalMod approximation, but full encrypted EvalMod is not yet practical with
+normal relin-key noise. The in-memory diagnostic currently shows:
 
-- bootstrap key directory complete: `159/159` files
-- total files including product eval keys: `165`
-- first product bootstrap max error: about `0.00133`
-- chained product bootstrap max error: about `0.00140`
-- first bootstrap time: about `1.42e6 ms`
-- chained bootstrap time: about `1.42e6 ms`
+- normal noise: encrypted EvalMod fails in the polynomial stage
+- zero noise: encrypted EvalMod passes, with final max error about `2.5e-6`
 
+This means the remaining blocker is CKKS relinearization/key-switch noise under
+the current full-Bbar decomposition, not the ring size or `logQ = 888`
+selection. A practical encrypted bootstrap needs a lower-noise CKKS DD
+key-switch/relinearization path or a similarly stable EvalMod evaluator with
+enough noise margin.
+
+The old 1108-bit schedule generated full seeded-streamed keys locally, but the
+end-to-end chained product validation failed in encrypted EvalMod because
+`α = 2^-850` produced about `2^102` integer noise at the active EvalMod level.
+That run should not be used as a correctness reference for the retuned schedule.
 Exact timings depend heavily on CPU, OpenMP settings, filesystem, and build
 configuration.
 
@@ -271,7 +329,7 @@ configuration.
   or seeded/non-seeded layout.
 - Do not mix bootstrap key directories and product eval-key directories from
   different schedules; manifests are intended to catch this.
-- The tuned lvl6 path is the recommended practical target. Other schedule
+- The tuned lvl6 path is the recommended full-size tuning target. Other schedule
   variants are useful for diagnostics, tuning, or comparing key-size/runtime
   tradeoffs.
 - The implementation is still experimental. Treat validation commands as part of
