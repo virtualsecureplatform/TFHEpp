@@ -435,7 +435,8 @@ EvalMod approximation, disk advisory checks, and compact seeded DD EvalMod
 artifact accounting. Small encrypted regression tests pass for both in-memory DD
 EvalMod relin, the compact seeded DD EvalMod filesystem provider, and a tiny
 full-DD filesystem chained product bootstrap using seeded-DD product relin
-files.
+files. The full-size full-DD chained product bootstrap also passes locally with
+prebuilt seeded key directories.
 
 The measured lvl6 full-DD candidate is:
 
@@ -445,20 +446,23 @@ The measured lvl6 full-DD candidate is:
 - `evalmod_log_scale = 24`, `degree = 63`, `double_angle = 2`
 - `inv_degree = 7`, `dd_relin_bgbit = 4`, `dd_relin_bbarbit = 16`
 
-With a prebuilt full-DD seeded directory, the single full-size product bootstrap
-passes the current tolerance:
+With a prebuilt full-DD seeded directory, the full-size chained product
+bootstrap passes the current tolerance:
 
 ```text
-max_error = 0.0744292
-bootstrap_ms = 3.27017e+06
-max_rss = 20602872 KiB
+first_max_error = 0.0789272
+chained_max_error = 0.0706058
+first_bootstrap_ms = 3.28913e+06
+chained_bootstrap_ms = 3.36836e+06
+wall_time = 1:51:26
+max_rss = 20616024 KiB
 ```
 
-That run used about 35 GB of seeded full-DD key material and took about 55
-minutes on the local test host. It validates the first product-bootstrap step,
-not the chained post-bootstrap product path. The full-DD chained command remains
-the next full-size end-to-end validation target and is intentionally not part of
-CI because the key directory is much larger than the repository artifact limit.
+That run used about 35 GB of seeded full-DD key material on the local test host.
+It validates both the first product-bootstrap step and the chained
+post-bootstrap product step. The full-DD chained command is intentionally not
+part of CI because the key directory is much larger than the repository artifact
+limit.
 
 Earlier tuning points are useful negative controls. A `c2s=40`/`split=40`
 schedule failed the same streamed full-DD product path with roughly `0.33`
