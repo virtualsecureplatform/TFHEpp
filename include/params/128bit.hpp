@@ -320,11 +320,11 @@ struct lvl5param {
 //
 // This intentionally keeps lvl5param at n = 2^14 and provides the 2^15 ring as
 // the next level.  Q = 2^896 is represented as 14 little-endian 64-bit limbs,
-// which is enough for the tuned 888-bit CKKS bootstrap schedule while avoiding
+// which is enough for the tuned 896-bit CKKS bootstrap schedule while avoiding
 // the impractical absolute EvalMod noise created by the earlier 1108-bit
 // schedule.  The CKKS encryption noise is tuned close to the small integer
-// Gaussian noise used by RNS CKKS libraries: at logQ = 888, α = 2^-886 gives
-// σ = 2^2, with a 3.2 floor at lower active levels.
+// Gaussian noise used by RNS CKKS libraries: at logQ = 896, α = 2^-886 gives
+// σ = 2^10, with a 3.2 floor at lower active levels.
 struct lvl6param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;

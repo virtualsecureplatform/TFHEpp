@@ -1,10 +1,11 @@
 # CKKS
 
-TFHEpp includes experimental CKKS support in `include/ckks/ckks.hpp`. The current
-target path is a leveled CKKS multiplication followed by dense CKKS
-bootstrapping. The current storage-practical full-size target is seeded hybrid
-giant streamed bootstrapping with compact seeded double-decomposition (DD)
-EvalMod and product relinearization.
+TFHEpp includes experimental CKKS support in `include/ckks/ckks.hpp`. The
+current target path is a leveled CKKS multiplication followed by dense CKKS
+bootstrapping. The current storage-practical full-size correctness target is
+seeded hybrid giant streamed bootstrapping with compact seeded
+double-decomposition (DD) EvalMod and product relinearization. This 2^15-ring
+target is not yet a 128-bit-secure parameter set under the local estimator.
 
 The most practical full-size configuration is the tuned lvl6 seeded hybrid
 giant streamed bootstrap path:
@@ -437,6 +438,21 @@ EvalMod relin, the compact seeded DD EvalMod filesystem provider, and a tiny
 full-DD filesystem chained product bootstrap using seeded-DD product relin
 files. The full-size full-DD chained product bootstrap also passes locally with
 prebuilt seeded key directories.
+
+The current `Parameter-Selection/python/estimates/CKKS_lvl6.py` estimate for
+this exact `n=32768`, `q=2^896`, `α=2^-886` setting is below the 128-bit target:
+
+```text
+dense-ternary weakest = 127.056 bits
+sparse-H16 weakest = 125.922 bits
+```
+
+The full-DD path should therefore be treated as a working dense-bootstrapping
+correctness baseline, not as a release-ready 128-bit-secure CKKS parameter set.
+Local estimator sweeps show two possible directions: `n=65536` gives a large
+security margin at the current noise, while keeping `n=32768` would require a
+large noise increase around `α=2^-872` for sparse-H16, which has not been shown
+to preserve the measured bootstrap correctness margin.
 
 The measured lvl6 full-DD candidate is:
 
