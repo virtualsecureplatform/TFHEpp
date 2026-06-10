@@ -11,6 +11,7 @@
 #include <string>
 #include <system_error>
 #include <tfhe++.hpp>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -1715,9 +1716,14 @@ std::uintmax_t seeded_hybrid_streamed_full_dd_practical_artifact_estimate_bytes(
                Schedule>() +
            TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
                Schedule>() +
-           TFHEpp::CKKSSeededDDRelinKeyByteEstimate<P, ProductCt::log_q>() +
            TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
-               P, PostBootstrapProductCt::log_q>();
+               P, ProductCt::log_q,
+               TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+               TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>() +
+           TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
+               P, PostBootstrapProductCt::log_q,
+               TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+               TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>();
 }
 
 template <class Schedule>
@@ -1800,9 +1806,14 @@ std::uintmax_t seeded_dd_external_eval_key_estimate_bytes()
 
     return TFHEpp::CKKSDenseBootstrapEncapsulationSeededKeyByteEstimate<
                Schedule>() +
-           TFHEpp::CKKSSeededDDRelinKeyByteEstimate<P, ProductCt::log_q>() +
            TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
-               P, PostBootstrapProductCt::log_q>();
+               P, ProductCt::log_q,
+               TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+               TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>() +
+           TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
+               P, PostBootstrapProductCt::log_q,
+               TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+               TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>();
 }
 
 int validate_keygen_disk_budget(const std::filesystem::path &key_dir,
@@ -2225,14 +2236,15 @@ static_assert(Lvl6InverseSchedule::evalmod_inv_degree == 3);
 static_assert(Lvl6InverseSchedule::evalmod_log_q_consumption == 560);
 static_assert(Lvl6InverseSchedule::output_log_q == 60);
 using Lvl6TunedSchedule = TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule;
-static_assert(Lvl6TunedSchedule::log_delta == 40);
+static_assert(Lvl6TunedSchedule::log_delta == 52);
 static_assert(Lvl6TunedSchedule::hybrid_giant_direct_popcount_threshold == 2);
 static_assert(Lvl6TunedSchedule::hybrid_baby_direct_popcount_threshold == 1);
-static_assert(Lvl6TunedSchedule::evalmod_degree == 34);
-static_assert(Lvl6TunedSchedule::evalmod_double_angle == 4);
-static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 5);
-static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 600);
-static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 40);
+static_assert(Lvl6TunedSchedule::evalmod_degree == 63);
+static_assert(Lvl6TunedSchedule::evalmod_double_angle == 2);
+static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
+static_assert(Lvl6TunedSchedule::evalmod_log_scale == 24);
+static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 620);
+static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 44);
 static_assert(Lvl6TunedSchedule::coeff_to_slot_level_count == 2);
 static_assert(Lvl6TunedSchedule::slot_to_coeff_level_count == 2);
 static_assert(
@@ -2247,10 +2259,10 @@ static_assert(
 static_assert(
     TFHEpp::ckks_detail::CKKSDenseBootstrapSlotToCoeffBSGSStep<
         1, Lvl6TunedSchedule>() == 1024);
-static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 168);
-static_assert(Lvl6TunedSchedule::output_log_q == 108);
+static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 144);
+static_assert(Lvl6TunedSchedule::output_log_q == 116);
 static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 20);
+static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 6);
 
 struct Lvl6InverseBudgetParams {
     std::uint32_t log_delta = 50;
@@ -2391,7 +2403,7 @@ EvalModApproximationMetrics measure_evalmod_approximation(
                 TFHEpp::CKKSPlainEvalModBoundedCosPower(poly, masked,
                                                         inverse_degree);
             metrics.max_message_error =
-                std::max(metrics.max_message_error, std::abs(power - message));
+                std::max(metrics.max_message_error, std::abs(cheb - message));
             metrics.max_basis_error =
                 std::max(metrics.max_basis_error, std::abs(cheb - power));
         }
@@ -2499,10 +2511,15 @@ int print_practical_readiness_report(const char *label,
         TFHEpp::CKKSSeededRelinKeyByteEstimate<
             P, PostBootstrapProductCt::log_q>();
     const std::uintmax_t seeded_dd_product_relin_bytes =
-        TFHEpp::CKKSSeededDDRelinKeyByteEstimate<P, ProductCt::log_q>();
+        TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
+            P, ProductCt::log_q,
+            TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+            TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>();
     const std::uintmax_t seeded_dd_post_product_relin_bytes =
         TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
-            P, PostBootstrapProductCt::log_q>();
+            P, PostBootstrapProductCt::log_q,
+            TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+            TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>();
     const std::uintmax_t seeded_artifact_bytes =
         seeded_hybrid_practical_artifact_estimate_bytes<Schedule>();
     const std::uintmax_t seeded_dd_artifact_bytes =
@@ -2542,7 +2559,9 @@ int print_practical_readiness_report(const char *label,
     const bool sparse_weight_ready =
         sparse_weight_fits_bounded_modraise<Schedule>(
             bootstrap_sparse_weight);
-    const bool evalmod_ready = evalmod_metrics.message_bits >= 30.0;
+    constexpr double practical_evalmod_message_bits = 30.0;
+    const bool evalmod_ready =
+        evalmod_metrics.message_bits >= practical_evalmod_message_bits;
     constexpr std::uint32_t practical_output_margin_bits =
         Schedule::log_message_ratio + 32;
     const bool output_margin_ready =
@@ -2574,6 +2593,8 @@ int print_practical_readiness_report(const char *label,
     std::cout << label << " readiness_evalmod_message_bits="
               << evalmod_metrics.message_bits
               << " evalmod_basis_bits=" << evalmod_metrics.basis_bits
+              << " evalmod_message_threshold_bits="
+              << practical_evalmod_message_bits
               << " evalmod_ready=" << (evalmod_ready ? 1 : 0) << '\n';
     std::cout << label << " readiness_bootstrap_sparse_weight="
               << bootstrap_sparse_weight
@@ -2602,13 +2623,17 @@ int print_practical_readiness_report(const char *label,
               << seeded_dd_bootstrap_bytes
               << " readiness_seeded_hybrid_streamed_dd_evalmod_artifact_bytes="
               << seeded_dd_artifact_bytes
-              << " seeded_dd_evalmod_relin_key_bytes="
-              << seeded_dd_evalmod_relin_bytes
-              << " seeded_dd_evalmod_relin_peak_key_bytes="
-              << seeded_dd_evalmod_relin_peak_bytes
-              << " seeded_dd_evalmod_primary_rows="
-              << TFHEpp::
-                     CKKSDenseBootstrapSeededDDEvalModPrimaryRowCount<
+	              << " seeded_dd_evalmod_relin_key_bytes="
+	              << seeded_dd_evalmod_relin_bytes
+	              << " seeded_dd_evalmod_relin_peak_key_bytes="
+	              << seeded_dd_evalmod_relin_peak_bytes
+	              << " seeded_dd_evalmod_relin_bgbit="
+	              << TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>()
+	              << " seeded_dd_evalmod_relin_bbarbit="
+	              << TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()
+	              << " seeded_dd_evalmod_primary_rows="
+	              << TFHEpp::
+	                     CKKSDenseBootstrapSeededDDEvalModPrimaryRowCount<
                          Schedule>()
               << " seeded_dd_evalmod_peak_primary_rows="
               << TFHEpp::
@@ -2622,13 +2647,23 @@ int print_practical_readiness_report(const char *label,
               << seeded_dd_product_relin_bytes
               << " seeded_dd_post_product_relin_key_bytes="
               << seeded_dd_post_product_relin_bytes
-              << " seeded_dd_product_relin_primary_rows="
-              << TFHEpp::CKKSDDRelinPrimaryRowCountForLevel<
-                     P, ProductCt::log_q>()
-              << " seeded_dd_post_product_relin_primary_rows="
-              << TFHEpp::CKKSDDRelinPrimaryRowCountForLevel<
-                     P, PostBootstrapProductCt::log_q>()
-              << '\n';
+	              << " seeded_dd_product_relin_primary_rows="
+	              << TFHEpp::CKKSDDRelinPrimaryRowCountForLevel<
+	                     P, ProductCt::log_q,
+	                     TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>()>()
+	              << " seeded_dd_product_relin_bbar_rows="
+	              << TFHEpp::CKKSDDRelinBbarRowCountForLevel<
+	                     P, ProductCt::log_q,
+	                     TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>()
+	              << " seeded_dd_post_product_relin_primary_rows="
+	              << TFHEpp::CKKSDDRelinPrimaryRowCountForLevel<
+	                     P, PostBootstrapProductCt::log_q,
+	                     TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>()>()
+	              << " seeded_dd_post_product_relin_bbar_rows="
+	              << TFHEpp::CKKSDDRelinBbarRowCountForLevel<
+	                     P, PostBootstrapProductCt::log_q,
+	                     TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>()
+	              << '\n';
     std::cout << label << " readiness_hybrid_key_bytes="
               << hybrid_bootstrap_bytes
               << " readiness_hybrid_streamed_peak_key_bytes="
@@ -2836,6 +2871,17 @@ void print_schedule_report(const char *label,
               << Schedule::evalmod_log_scale
               << " log_q_loss=" << Schedule::evalmod_log_q_consumption
               << " after_evalmod_logQ=" << Schedule::after_evalmod_log_q
+              << '\n';
+    std::cout << label << " dd_relin_bgbit="
+              << TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>()
+              << " dd_relin_bbarbit="
+              << TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()
+              << " dd_evalmod_rows="
+              << TFHEpp::CKKSDenseBootstrapDDEvalModKeySwitchRowCount<
+                     Schedule>()
+              << " seeded_dd_evalmod_primary_rows="
+              << TFHEpp::CKKSDenseBootstrapSeededDDEvalModPrimaryRowCount<
+                     Schedule>()
               << '\n';
     std::cout << label << " modraise_mask_bound="
               << Schedule::modraise_mask_bound
@@ -3121,25 +3167,18 @@ struct Lvl6InverseSearchResult {
 void print_lvl6_inverse_search_report()
 {
     std::vector<Lvl6InverseSearchResult> results;
+    std::vector<Lvl6InverseSearchResult> approximation_options;
 
-    for (const std::uint32_t log_delta : {36U, 38U, 40U, 42U, 44U}) {
-        for (const std::uint32_t degree : {34U, 40U, 46U, 52U, 58U, 63U}) {
-            for (const std::uint32_t double_angle : {2U, 3U, 4U}) {
+    for (const std::uint32_t log_message_ratio : {2U, 3U, 4U, 5U, 6U, 7U,
+                                                  8U}) {
+        for (const std::uint32_t degree : {46U, 52U, 58U, 63U, 75U, 95U}) {
+            for (const std::uint32_t double_angle : {1U, 2U, 3U, 4U}) {
                 for (const std::uint32_t inverse_degree : {3U, 5U, 7U, 9U}) {
                     Lvl6InverseBudgetParams params;
-                    params.log_delta = log_delta;
-                    params.coeff_to_slot_plain_log_delta = log_delta;
-                    params.component_split_plain_log_delta = log_delta;
-                    params.slot_to_coeff_plain_log_delta = 25;
+                    params.log_message_ratio = log_message_ratio;
                     params.evalmod_degree = degree;
                     params.evalmod_double_angle = double_angle;
                     params.evalmod_inv_degree = inverse_degree;
-                    params.evalmod_log_scale = log_delta;
-
-                    const Lvl6InverseBudgetResult budget =
-                        compute_lvl6_inverse_budget(params);
-                    if (!budget.fits || budget.output_margin_bits < 30)
-                        continue;
 
                     const EvalModApproximationMetrics approx =
                         measure_evalmod_approximation(
@@ -3147,9 +3186,61 @@ void print_lvl6_inverse_search_report()
                             params.log_message_ratio,
                             params.evalmod_double_angle,
                             params.evalmod_inv_degree);
-                    if (approx.message_bits < 18.0) continue;
+                    if (approx.message_bits < 30.0) continue;
 
-                    results.push_back({params, budget, approx});
+                    approximation_options.push_back({params, {}, approx});
+                }
+            }
+        }
+    }
+
+    for (const std::uint32_t log_delta : {40U, 42U, 44U, 46U, 48U, 50U,
+                                          52U, 54U}) {
+        for (const std::uint32_t coeff_to_slot_log_delta : {36U, 38U, 40U,
+                                                            44U, 48U, 52U}) {
+            for (const std::uint32_t split_log_delta : {36U, 38U, 40U, 44U,
+                                                        48U}) {
+                for (const std::uint32_t slot_to_coeff_log_delta : {
+                         14U, 15U, 16U, 18U, 20U, 22U, 24U}) {
+                    for (const std::uint32_t evalmod_log_scale : {
+                             16U, 20U, 24U, 28U, 32U, 36U, 40U}) {
+                        for (const Lvl6InverseSearchResult &option :
+                             approximation_options) {
+                    Lvl6InverseBudgetParams params;
+                    params.log_delta = log_delta;
+                            params.boot_log_q = 896;
+                            params.coeff_to_slot_fuse_radix = 7;
+                            params.slot_to_coeff_fuse_radix = 7;
+                            params.coeff_to_slot_plain_log_delta =
+                                coeff_to_slot_log_delta;
+                            params.component_split_plain_log_delta =
+                                split_log_delta;
+                            params.slot_to_coeff_plain_log_delta =
+                                slot_to_coeff_log_delta;
+                            params.log_message_ratio =
+                                option.params.log_message_ratio;
+                            params.evalmod_degree =
+                                option.params.evalmod_degree;
+                            params.evalmod_double_angle =
+                                option.params.evalmod_double_angle;
+                            params.evalmod_inv_degree =
+                                option.params.evalmod_inv_degree;
+                            params.evalmod_log_scale = evalmod_log_scale;
+
+                    const Lvl6InverseBudgetResult budget =
+                        compute_lvl6_inverse_budget(params);
+                            const std::int64_t post_product_slack =
+                                budget.output_log_q -
+                                2 * static_cast<std::int64_t>(log_delta) -
+                                params.log_message_ratio;
+                            if (!budget.fits || budget.output_margin_bits < 40 ||
+                                post_product_slack < 4)
+                        continue;
+
+                            results.push_back(
+                                {params, budget, option.approx});
+                        }
+                    }
                 }
             }
         }
@@ -3158,33 +3249,72 @@ void print_lvl6_inverse_search_report()
     std::sort(results.begin(), results.end(),
               [](const Lvl6InverseSearchResult &lhs,
                  const Lvl6InverseSearchResult &rhs) {
-                  if (lhs.approx.message_bits != rhs.approx.message_bits)
-                      return lhs.approx.message_bits > rhs.approx.message_bits;
+                  if (lhs.params.log_delta != rhs.params.log_delta)
+                      return lhs.params.log_delta > rhs.params.log_delta;
+                  if (lhs.params.evalmod_log_scale !=
+                      rhs.params.evalmod_log_scale)
+                      return lhs.params.evalmod_log_scale >
+                             rhs.params.evalmod_log_scale;
                   if (lhs.budget.output_margin_bits !=
                       rhs.budget.output_margin_bits)
                       return lhs.budget.output_margin_bits >
                              rhs.budget.output_margin_bits;
-                  return lhs.params.log_delta > rhs.params.log_delta;
+                  if (lhs.approx.message_bits != rhs.approx.message_bits)
+                      return lhs.approx.message_bits > rhs.approx.message_bits;
+                  return lhs.params.evalmod_double_angle <
+                         rhs.params.evalmod_double_angle;
               });
 
     std::cout << "lvl6-inverse-search candidates=" << results.size()
-              << " shown=" << std::min<std::size_t>(results.size(), 12)
+              << " approximation_options=" << approximation_options.size()
+              << " shown=" << std::min<std::size_t>(results.size(), 24)
               << '\n';
-    for (std::size_t i = 0; i < std::min<std::size_t>(results.size(), 12);
-         i++) {
-        const Lvl6InverseSearchResult &r = results[i];
-        std::cout << "lvl6-inverse-search rank=" << (i + 1)
+
+    const auto print_candidate = [](const char *prefix, std::size_t rank,
+                                    const Lvl6InverseSearchResult &r) {
+        const std::int64_t post_product_slack =
+            r.budget.output_log_q -
+            2 * static_cast<std::int64_t>(r.params.log_delta) -
+            r.params.log_message_ratio;
+        std::cout << prefix << " rank=" << rank
                   << " log_delta=" << r.params.log_delta
+                  << " log_message_ratio=" << r.params.log_message_ratio
+                  << " c2s_delta="
+                  << r.params.coeff_to_slot_plain_log_delta
+                  << " split_delta="
+                  << r.params.component_split_plain_log_delta
+                  << " stc_delta="
+                  << r.params.slot_to_coeff_plain_log_delta
+                  << " evalmod_log_scale=" << r.params.evalmod_log_scale
                   << " degree=" << r.params.evalmod_degree
                   << " double_angle=" << r.params.evalmod_double_angle
                   << " inv_degree=" << r.params.evalmod_inv_degree
                   << " output_logQ=" << r.budget.output_log_q
                   << " output_margin_bits=" << r.budget.output_margin_bits
+                  << " post_product_slack=" << post_product_slack
                   << " evalmod_log_q_loss=" << r.budget.evalmod_log_q_loss
                   << " message_bits=" << r.approx.message_bits
                   << " max_message_error=" << r.approx.max_message_error
                   << " basis_bits=" << r.approx.basis_bits << '\n';
+    };
+
+    for (std::size_t i = 0; i < std::min<std::size_t>(results.size(), 24);
+         i++) {
+        print_candidate("lvl6-inverse-search", i + 1, results[i]);
     }
+
+    std::size_t high_linear_count = 0;
+    for (const Lvl6InverseSearchResult &r : results) {
+        if (r.params.coeff_to_slot_plain_log_delta < 44 ||
+            r.params.component_split_plain_log_delta < 44)
+            continue;
+        high_linear_count++;
+        if (high_linear_count <= 24)
+            print_candidate("lvl6-inverse-search-high-linear",
+                            high_linear_count, r);
+    }
+    std::cout << "lvl6-inverse-search-high-linear candidates="
+              << high_linear_count << '\n';
 }
 
 template <class Schedule>
@@ -4081,7 +4211,11 @@ int run_seeded_hybrid_external_eval_keygen(
               << std::filesystem::file_size(files.product_relin_key)
               << " estimated_seeded_product_relin_key_bytes="
               << (DDProduct ? TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
-                                  P, ProductCt::log_q>()
+                                  P, ProductCt::log_q,
+                                  TFHEpp::CKKSDenseBootstrapDDRelinBgbit<
+                                      Schedule>(),
+                                  TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<
+                                      Schedule>()>()
                             : TFHEpp::CKKSSeededRelinKeyByteEstimate<
                                   P, ProductCt::log_q>())
               << '\n';
@@ -4096,7 +4230,11 @@ int run_seeded_hybrid_external_eval_keygen(
                   << " estimated_seeded_post_bootstrap_relin_key_bytes="
                   << (DDProduct
                           ? TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
-                                P, PostBootstrapProductCt::log_q>()
+                                P, PostBootstrapProductCt::log_q,
+                                TFHEpp::CKKSDenseBootstrapDDRelinBgbit<
+                                    Schedule>(),
+                                TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<
+                                    Schedule>()>()
                           : TFHEpp::CKKSSeededRelinKeyByteEstimate<
                                 P, PostBootstrapProductCt::log_q>())
                   << '\n';
@@ -4108,13 +4246,15 @@ int run_seeded_hybrid_external_eval_keygen(
                         metadata_includes_post_bootstrap_product));
 }
 
-template <class Schedule, bool Streamed>
+template <class Schedule, bool Streamed, bool DDEvalMod = false,
+          bool DDProduct = false>
 int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     const std::filesystem::path &key_dir, double tol,
     std::size_t bootstrap_sparse_weight,
     std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
 {
     using P = typename Schedule::Param;
+    static_assert(Streamed || !DDEvalMod);
     constexpr std::uint32_t fresh_log_q =
         Schedule::input_log_q + 2 * Schedule::log_delta;
     using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
@@ -4131,7 +4271,14 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
             Schedule>(key_dir, bootstrap_sparse_weight, false);
         status != 0)
         return status;
-    if constexpr (Streamed) {
+    if constexpr (DDEvalMod) {
+        if (const int status =
+                validate_seeded_hybrid_streamed_dd_evalmod_filesystem_key_dir<
+                    Schedule>(key_dir);
+            status != 0)
+            return status;
+    }
+    else if constexpr (Streamed) {
         if (const int status =
                 validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
                     key_dir);
@@ -4149,9 +4296,19 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
     fill_external_test_key<P>(*external_key, external_sparse_weight);
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
-    const ExternalEvalKeyDirectory eval_key_files =
-        seeded_external_eval_key_files<Schedule>(key_dir,
-                                                 external_sparse_weight);
+    const ExternalEvalKeyDirectory eval_key_files = [&] {
+        if constexpr (DDProduct) {
+            return seeded_dd_external_eval_key_files<Schedule>(
+                key_dir, external_sparse_weight);
+        }
+        else {
+            return seeded_external_eval_key_files<Schedule>(
+                key_dir, external_sparse_weight);
+        }
+    }();
+    const char *metadata_name = DDProduct ? "seeded_dd_external_eval_key"
+                                          : "seeded_external_eval_key";
+    const char *metadata_kind = DDProduct ? "seeded_dd" : "seeded";
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
     eval_key_options.overwrite_existing = false;
     std::cout << "external_key=" << sparse_key_label(external_sparse_weight)
@@ -4160,7 +4317,7 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
               << '\n';
     std::cout << "bootstrap_key_sparse_weight=" << bootstrap_sparse_weight
               << '\n';
-    std::cout << "seeded_external_eval_key_dir="
+    std::cout << metadata_name << "_dir="
               << eval_key_files.root.string() << '\n';
     std::cout << "product_fresh_logQ=" << FreshCt::log_q
               << " product_logQ=" << ProductCt::log_q
@@ -4173,34 +4330,53 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     if (generate_eval_keys) {
         if (const int status =
                 validate_external_eval_key_metadata_for_write<Schedule>(
-                    eval_key_files.root, "seeded_external_eval_key", "seeded",
+                    eval_key_files.root, metadata_name, metadata_kind,
                     bootstrap_sparse_weight, external_sparse_weight, false,
                     metadata_includes_post_bootstrap_product);
             status != 0)
             return status;
-        const BootstrapProgressPrinter progress_printer{"seeded_product"};
+        const BootstrapProgressPrinter progress_printer{
+            DDProduct ? "seeded_dd_product" : "seeded_product"};
         const TFHEpp::CKKSDenseBootstrapProgress progress{
             bootstrap_progress_begin, bootstrap_progress_end,
             &progress_printer};
         TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
-        TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
-            eval_key_files.root, *external_key, *bootstrap_key,
-            metadata_includes_post_bootstrap_product, {P::α, 0},
-            eval_key_options, &eval_key_timings, &progress);
+        if constexpr (DDProduct) {
+            TFHEpp::CKKSDenseBootstrapSeededDDProductEvalKeyGenToDirectory<
+                Schedule>(eval_key_files.root, *external_key, *bootstrap_key,
+                          metadata_includes_post_bootstrap_product, {P::α, 0},
+                          eval_key_options, &eval_key_timings, &progress);
+        }
+        else {
+            TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<
+                Schedule>(eval_key_files.root, *external_key, *bootstrap_key,
+                          metadata_includes_post_bootstrap_product, {P::α, 0},
+                          eval_key_options, &eval_key_timings, &progress);
+        }
         encap_keygen_ms = eval_key_timings.encapsulation_keygen_ms;
         relin_keygen_ms = eval_key_timings.product_relin_keygen_ms;
     }
-    else if (const int status = validate_seeded_external_eval_key_files<
-                 Schedule>(eval_key_files, bootstrap_sparse_weight,
-                            external_sparse_weight, false);
-             status != 0) {
-        return status;
+    else {
+        if constexpr (DDProduct) {
+            if (const int status = validate_seeded_dd_external_eval_key_files<
+                    Schedule>(eval_key_files, bootstrap_sparse_weight,
+                              external_sparse_weight, false);
+                status != 0)
+                return status;
+        }
+        else if (const int status = validate_seeded_external_eval_key_files<
+                     Schedule>(eval_key_files, bootstrap_sparse_weight,
+                                external_sparse_weight, false);
+                 status != 0) {
+            return status;
+        }
     }
     if (generate_eval_keys) {
         if (const int status = write_external_eval_key_metadata(
                 eval_key_files.root,
                 build_external_eval_key_metadata<Schedule>(
-                    "seeded", bootstrap_sparse_weight, external_sparse_weight,
+                    metadata_kind, bootstrap_sparse_weight,
+                    external_sparse_weight,
                     metadata_includes_post_bootstrap_product));
             status != 0)
             return status;
@@ -4228,7 +4404,19 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
     const BootstrapProgressPrinter progress_printer{"seeded_product"};
     const TFHEpp::CKKSDenseBootstrapProgress progress{
         bootstrap_progress_begin, bootstrap_progress_end, &progress_printer};
-    if constexpr (Streamed) {
+    if constexpr (DDEvalMod && DDProduct) {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedDDEvalModFilesystemSeededDDEvalKeyDirectoryTimed<
+                Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
+                          eval_key_files.root, product_timings, &progress);
+    }
+    else if constexpr (DDEvalMod) {
+        TFHEpp::
+            CKKSDenseBootstrapProductWithSeededHybridGiantStreamedDDEvalModFilesystemSeededEvalKeyDirectoryTimed<
+                Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
+                          eval_key_files.root, product_timings, &progress);
+    }
+    else if constexpr (Streamed) {
         TFHEpp::
             CKKSDenseBootstrapProductWithSeededHybridGiantStreamedFilesystemSeededEvalKeyDirectoryTimed<
                 Schedule>(*output, *lhs_ct, *rhs_ct, key_dir,
@@ -4264,7 +4452,14 @@ int run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl(
               << " seeded_relin_key_bytes="
               << std::filesystem::file_size(eval_key_files.product_relin_key)
               << " estimated_seeded_relin_key_bytes="
-              << TFHEpp::CKKSSeededRelinKeyByteEstimate<P, ProductCt::log_q>()
+              << (DDProduct ? TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
+                                  P, ProductCt::log_q,
+                                  TFHEpp::CKKSDenseBootstrapDDRelinBgbit<
+                                      Schedule>(),
+                                  TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<
+                                      Schedule>()>()
+                            : TFHEpp::CKKSSeededRelinKeyByteEstimate<
+                                  P, ProductCt::log_q>())
               << '\n';
     std::cout << "encrypt_ms=" << encrypt_ms << '\n';
     std::cout << "multiply_ms=" << product_timings.multiply_ms << '\n';
@@ -4296,6 +4491,18 @@ int run_seeded_hybrid_streamed_filesystem_encapsulated_product_bootstrap(
     return run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl<
         Schedule, true>(key_dir, tol, bootstrap_sparse_weight,
                         external_sparse_weight, generate_eval_keys);
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_full_dd_filesystem_encapsulated_product_bootstrap(
+    const std::filesystem::path &key_dir, double tol,
+    std::size_t bootstrap_sparse_weight,
+    std::size_t external_sparse_weight = 0, bool generate_eval_keys = true)
+{
+    return run_seeded_hybrid_filesystem_encapsulated_product_bootstrap_impl<
+        Schedule, true, true, true>(key_dir, tol, bootstrap_sparse_weight,
+                                    external_sparse_weight,
+                                    generate_eval_keys);
 }
 
 template <class Schedule>
@@ -4765,13 +4972,13 @@ int run_seeded_hybrid_product_plain_pipeline_diagnostics(
     const double plain_evalmod_ms = elapsed_ms([&] {
         for (std::size_t i = 0; i < P::n / 2; i++) {
             (*real_eval)[i] =
-                {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                      poly, (*coeff_to_slot)[i].real(),
                      Schedule::evalmod_inv_degree) /
                      Schedule::message_ratio,
                  0.0};
             (*imag_eval)[i] =
-                {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+                {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                      poly, (*coeff_to_slot)[i].imag(),
                      Schedule::evalmod_inv_degree) /
                      Schedule::message_ratio,
@@ -4826,12 +5033,148 @@ int run_seeded_hybrid_product_plain_pipeline_diagnostics(
 }
 
 template <class Schedule>
+int run_inmemory_product_plain_pipeline_diagnostics(
+    std::size_t bootstrap_sparse_weight)
+{
+    using P = typename Schedule::Param;
+    constexpr double tol = 0.01;
+    if (const int status = validate_bounded_modraise_test_key<Schedule>(
+            bootstrap_sparse_weight, "inmemory-plain-product");
+        status != 0)
+        return status;
+
+    auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
+    fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
+
+    TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> linear_plan;
+    TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(linear_plan);
+    const TFHEpp::CKKSBoundedCosEvalModPolynomial poly =
+        TFHEpp::CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
+
+    auto lhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto rhs = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_product = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    fill_test_slots<P>(*lhs);
+    fill_alternate_test_slots<P>(*rhs);
+    multiply_slots<P>(*expected_product, *lhs, *rhs);
+    lhs.reset();
+    rhs.reset();
+    print_slot_diagnostic<P>("diag_inmemory_plain_product_message",
+                             *expected_product);
+
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    const double encrypt_ms = elapsed_ms([&] {
+        TFHEpp::ckksSlotEncrypt<P, Schedule::input_log_q,
+                                Schedule::log_delta>(
+            *input, *expected_product, *bootstrap_key);
+    });
+
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *decoded, *input, *bootstrap_key);
+    print_slot_diagnostic<P>("diag_inmemory_plain_product_input", *decoded,
+                             expected_product.get());
+    print_phase_coefficient_diagnostic<Schedule, Schedule::input_log_q>(
+        "diag_inmemory_plain_product_input", *input, *bootstrap_key);
+
+    auto raised = std::make_unique<typename Schedule::BootstrapCiphertext>();
+    const double modraise_ms = elapsed_ms([&] {
+        TFHEpp::CKKSModRaiseBoundedPhaseRandomized<
+            P, Schedule::input_log_q, Schedule::boot_log_q,
+            Schedule::log_delta, Schedule::modraise_mask_bound>(*raised,
+                                                                *input);
+    });
+    input.reset();
+
+    auto raised_slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::boot_log_q, Schedule::log_delta>(
+        *raised_slots, *raised, *bootstrap_key);
+    print_slot_diagnostic<P>("diag_inmemory_plain_product_raised",
+                             *raised_slots);
+    print_phase_coefficient_diagnostic<Schedule, Schedule::boot_log_q>(
+        "diag_inmemory_plain_product_raised", *raised, *bootstrap_key);
+    raised.reset();
+
+    auto coeff_to_slot = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double plain_c2s_ms = elapsed_ms([&] {
+        apply_complex_stages<P>(*coeff_to_slot, *raised_slots,
+                                linear_plan.coeff_to_slot_stages);
+    });
+    raised_slots.reset();
+    print_slot_diagnostic<P>("diag_inmemory_plain_product_c2s",
+                             *coeff_to_slot);
+
+    auto real_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto imag_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double plain_evalmod_ms = elapsed_ms([&] {
+        for (std::size_t i = 0; i < P::n / 2; i++) {
+            (*real_eval)[i] =
+                {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
+                     poly, (*coeff_to_slot)[i].real(),
+                     Schedule::evalmod_inv_degree) /
+                     Schedule::message_ratio,
+                 0.0};
+            (*imag_eval)[i] =
+                {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
+                     poly, (*coeff_to_slot)[i].imag(),
+                     Schedule::evalmod_inv_degree) /
+                     Schedule::message_ratio,
+                 0.0};
+        }
+    });
+    coeff_to_slot.reset();
+    print_slot_diagnostic<P>("diag_inmemory_plain_product_real_evalmod",
+                             *real_eval);
+    print_slot_diagnostic<P>("diag_inmemory_plain_product_imag_evalmod",
+                             *imag_eval);
+
+    auto expected_real_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto expected_imag_out = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    auto pipeline_output = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    const double plain_stc_ms = elapsed_ms([&] {
+        apply_complex_stages<P>(*expected_real_out, *real_eval,
+                                linear_plan.slot_to_coeff_stages);
+        apply_complex_stages<P>(*expected_imag_out, *imag_eval,
+                                linear_plan.slot_to_coeff_imag_stages);
+        for (std::size_t i = 0; i < P::n / 2; i++)
+            (*pipeline_output)[i] =
+                (*expected_real_out)[i] + (*expected_imag_out)[i];
+    });
+    real_eval.reset();
+    imag_eval.reset();
+    expected_real_out.reset();
+    expected_imag_out.reset();
+
+    const double pipeline_error =
+        max_error<P>(*pipeline_output, *expected_product);
+    print_slot_diagnostic<P>("diag_inmemory_plain_product_pipeline_output",
+                             *pipeline_output, expected_product.get());
+    std::cout << "diag_inmemory_plain_product_bootstrap_key_sparse_weight="
+              << bootstrap_sparse_weight << '\n';
+    std::cout << "diag_inmemory_plain_product_encrypt_ms=" << encrypt_ms
+              << '\n';
+    std::cout << "diag_inmemory_plain_product_modraise_ms=" << modraise_ms
+              << '\n';
+    std::cout << "diag_inmemory_plain_product_plain_c2s_ms=" << plain_c2s_ms
+              << '\n';
+    std::cout << "diag_inmemory_plain_product_plain_evalmod_ms="
+              << plain_evalmod_ms << '\n';
+    std::cout << "diag_inmemory_plain_product_plain_stc_ms=" << plain_stc_ms
+              << '\n';
+    std::cout << "diag_inmemory_plain_product_pipeline_error="
+              << pipeline_error << '\n';
+    return pipeline_error <= tol ? 0 : 1;
+}
+
+template <class Schedule, bool Streamed = false, bool DDEvalMod = false,
+          bool DDProduct = false>
 int run_seeded_hybrid_product_stage_diagnostics(
     const std::filesystem::path &key_dir, bool full_pipeline,
     std::size_t bootstrap_sparse_weight,
     std::size_t external_sparse_weight = 0)
 {
     using P = typename Schedule::Param;
+    static_assert(Streamed || !DDEvalMod);
     constexpr std::uint32_t fresh_log_q =
         Schedule::input_log_q + 2 * Schedule::log_delta;
     using FreshCt = TFHEpp::CKKSCiphertext<P, fresh_log_q, Schedule::log_delta>;
@@ -4849,32 +5192,60 @@ int run_seeded_hybrid_product_stage_diagnostics(
             Schedule>(key_dir, bootstrap_sparse_weight, false);
         status != 0)
         return status;
-    if (const int status =
-            validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
-        status != 0)
+    if constexpr (DDEvalMod) {
+        if (const int status =
+                validate_seeded_hybrid_streamed_dd_evalmod_filesystem_key_dir<
+                    Schedule>(key_dir);
+            status != 0)
+            return status;
+    }
+    else if constexpr (Streamed) {
+        if (const int status =
+                validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
+                    key_dir);
+            status != 0)
+            return status;
+    }
+    else if (const int status =
+                 validate_seeded_hybrid_filesystem_key_dir<Schedule>(key_dir);
+             status != 0) {
         return status;
+    }
 
     auto external_key = std::make_unique<TFHEpp::Key<P>>();
     auto bootstrap_key = std::make_unique<TFHEpp::Key<P>>();
     fill_external_test_key<P>(*external_key, external_sparse_weight);
     fill_sparse_test_key<P>(*bootstrap_key, bootstrap_sparse_weight);
 
-    const std::filesystem::path external_eval_key_dir =
-        seeded_external_eval_key_directory<Schedule>(key_dir,
-                                                     external_sparse_weight);
+    const ExternalEvalKeyDirectory eval_key_files = [&] {
+        if constexpr (DDProduct) {
+            return seeded_dd_external_eval_key_files<Schedule>(
+                key_dir, external_sparse_weight);
+        }
+        else {
+            return seeded_external_eval_key_files<Schedule>(
+                key_dir, external_sparse_weight);
+        }
+    }();
+    const std::filesystem::path external_eval_key_dir = eval_key_files.root;
     const std::filesystem::path encapsulation_key_file =
-        TFHEpp::CKKSDenseBootstrapSeededEncapsulationKeyFile(
-            external_eval_key_dir);
+        eval_key_files.encapsulation_key;
     const std::filesystem::path product_relin_key_file =
-        TFHEpp::CKKSRelinKeyFile(external_eval_key_dir,
-                                 "seeded_product_relin_key");
+        eval_key_files.product_relin_key;
     TFHEpp::CKKSDenseBootstrapKeyDirectoryOptions eval_key_options;
     eval_key_options.overwrite_existing = false;
 
     TFHEpp::CKKSDenseBootstrapProductEvalKeyGenTimings eval_key_timings;
-    TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
-        external_eval_key_dir, *external_key, *bootstrap_key, false, {P::α, 0},
-        eval_key_options, &eval_key_timings);
+    if constexpr (DDProduct) {
+        TFHEpp::CKKSDenseBootstrapSeededDDProductEvalKeyGenToDirectory<Schedule>(
+            external_eval_key_dir, *external_key, *bootstrap_key, false,
+            {P::α, 0}, eval_key_options, &eval_key_timings);
+    }
+    else {
+        TFHEpp::CKKSDenseBootstrapSeededProductEvalKeyGenToDirectory<Schedule>(
+            external_eval_key_dir, *external_key, *bootstrap_key, false,
+            {P::α, 0}, eval_key_options, &eval_key_timings);
+    }
     const double encap_keygen_ms =
         eval_key_timings.encapsulation_keygen_ms;
     const double product_relin_keygen_ms =
@@ -4885,8 +5256,18 @@ int run_seeded_hybrid_product_stage_diagnostics(
     TFHEpp::CKKSDenseBootstrapLoadSeededEncapsulationKeyFromFile<Schedule>(
         *encapsulation_key, encapsulation_key_file);
 
-    TFHEpp::CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<Schedule>
-        provider(key_dir);
+    using Provider = std::conditional_t<
+        DDEvalMod,
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModFilesystemKeyProvider<
+                Schedule>,
+        std::conditional_t<
+            Streamed,
+            TFHEpp::CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<
+                Schedule>,
+            TFHEpp::CKKSDenseBootstrapSeededHybridGiantFilesystemKeyProvider<
+                Schedule>>>;
+    Provider provider(key_dir);
     const TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan =
         provider.linear_plan();
 
@@ -4911,8 +5292,18 @@ int run_seeded_hybrid_product_stage_diagnostics(
 
     auto product = std::make_unique<ProductCt>();
     const double multiply_ms = elapsed_ms([&] {
-        TFHEpp::CKKSMultWithSeededRelinKeyFile<P>(
-            *product, *lhs_ct, *rhs_ct, product_relin_key_file);
+        if constexpr (DDProduct) {
+            TFHEpp::CKKSMultWithSeededDDRelinKeyFile<
+                P, FreshCt::log_q, FreshCt::log_delta, FreshCt::log_q,
+                FreshCt::log_delta,
+                TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
+                *product, *lhs_ct, *rhs_ct, product_relin_key_file);
+        }
+        else {
+            TFHEpp::CKKSMultWithSeededRelinKeyFile<P>(
+                *product, *lhs_ct, *rhs_ct, product_relin_key_file);
+        }
     });
     lhs_ct.reset();
     rhs_ct.reset();
@@ -5049,13 +5440,13 @@ int run_seeded_hybrid_product_stage_diagnostics(
     auto expected_imag_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     for (std::size_t i = 0; i < P::n / 2; i++) {
         (*expected_real_eval)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                  poly, (*expected_real)[i].real(),
                  Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
         (*expected_imag_eval)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                  poly, (*expected_imag)[i].real(),
                  Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
@@ -5161,12 +5552,37 @@ int run_seeded_hybrid_product_stage_diagnostics(
     print_slot_diagnostic<P>("diag_product_stage_pipeline_vs_product",
                              *expected_pipeline, expected_product.get());
 
+    auto external_output = std::make_unique<typename Schedule::OutputCiphertext>();
+    const double output_switch_ms = elapsed_ms([&] {
+        TFHEpp::CKKSSecretKeySwitch<P, Schedule::output_log_q,
+                                    Schedule::log_delta>(
+            *external_output, *output, encapsulation_key->bootstrap_to_output);
+    });
+    output.reset();
+    TFHEpp::ckksSlotDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *external_output, *external_key);
+    const double output_external_pipeline_error =
+        max_error<P>(*decoded, *expected_pipeline);
+    const double output_external_actual_pipeline_error =
+        max_error<P>(*decoded, *actual_pipeline);
+    const double output_external_product_error =
+        max_error<P>(*decoded, *expected_product);
+    print_slot_diagnostic<P>(
+        "diag_product_stage_external_output_vs_actual_pipeline", *decoded,
+        actual_pipeline.get());
+    print_slot_diagnostic<P>("diag_product_stage_external_output_vs_pipeline",
+                             *decoded, expected_pipeline.get());
+    print_slot_diagnostic<P>("diag_product_stage_external_output_vs_product",
+                             *decoded, expected_product.get());
+
     std::cout << "diag_product_stage_split_ms=" << split_ms << '\n';
     std::cout << "diag_product_stage_real_evalmod_ms="
               << real_evalmod_ms << '\n';
     std::cout << "diag_product_stage_imag_evalmod_ms="
               << imag_evalmod_ms << '\n';
     std::cout << "diag_product_stage_stc_ms=" << stc_ms << '\n';
+    std::cout << "diag_product_stage_output_switch_ms="
+              << output_switch_ms << '\n';
     std::cout << "diag_product_stage_real_split_error="
               << real_split_error << '\n';
     std::cout << "diag_product_stage_imag_split_error="
@@ -5181,7 +5597,15 @@ int run_seeded_hybrid_product_stage_diagnostics(
               << output_actual_pipeline_error << '\n';
     std::cout << "diag_product_stage_output_product_error="
               << output_product_error << '\n';
-    return output_product_error <= tol ? 0 : 1;
+    std::cout << "diag_product_stage_external_output_pipeline_error="
+              << output_external_pipeline_error << '\n';
+    std::cout << "diag_product_stage_external_output_actual_pipeline_error="
+              << output_external_actual_pipeline_error << '\n';
+    std::cout << "diag_product_stage_external_output_product_error="
+              << output_external_product_error << '\n';
+    return output_product_error <= tol && output_external_product_error <= tol
+               ? 0
+               : 1;
 }
 
 template <class Schedule>
@@ -5649,7 +6073,11 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
               << std::filesystem::file_size(eval_key_files.product_relin_key)
               << " estimated_seeded_product_relin_key_bytes="
               << (DDProduct ? TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
-                                  P, ProductCt::log_q>()
+                                  P, ProductCt::log_q,
+                                  TFHEpp::CKKSDenseBootstrapDDRelinBgbit<
+                                      Schedule>(),
+                                  TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<
+                                      Schedule>()>()
                             : TFHEpp::CKKSSeededRelinKeyByteEstimate<
                                   P, ProductCt::log_q>())
               << '\n';
@@ -5663,7 +6091,9 @@ int run_seeded_hybrid_filesystem_encapsulated_chained_product_bootstrap_impl(
               << " estimated_seeded_post_bootstrap_relin_key_bytes="
               << (DDProduct
                       ? TFHEpp::CKKSSeededDDRelinKeyByteEstimate<
-                            P, PostBootstrapProductCt::log_q>()
+                            P, PostBootstrapProductCt::log_q,
+                            TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                            TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>()
                       : TFHEpp::CKKSSeededRelinKeyByteEstimate<
                             P, PostBootstrapProductCt::log_q>())
               << '\n';
@@ -5898,13 +6328,13 @@ int run_key_provider_bootstrap_diagnostics(const std::filesystem::path &key_dir,
     auto expected_imag_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     for (std::size_t i = 0; i < P::n / 2; i++) {
         (*expected_real_eval)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                  poly, (*expected_real)[i].real(),
                  Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
         (*expected_imag_eval)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                  poly, (*expected_imag)[i].real(),
                  Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
@@ -6045,6 +6475,39 @@ int run_seeded_hybrid_filesystem_bootstrap_diagnostics(
             Schedule>>(key_dir, full_pipeline, sparse_weight);
 }
 
+template <class Schedule>
+int run_seeded_hybrid_streamed_filesystem_bootstrap_diagnostics(
+    const std::filesystem::path &key_dir, bool full_pipeline,
+    std::size_t sparse_weight = 0)
+{
+    if (const int status =
+            validate_seeded_hybrid_streamed_filesystem_key_dir<Schedule>(
+                key_dir);
+        status != 0)
+        return status;
+    return run_key_provider_bootstrap_diagnostics<
+        Schedule,
+        TFHEpp::CKKSDenseBootstrapSeededHybridGiantStreamedFilesystemKeyProvider<
+            Schedule>>(key_dir, full_pipeline, sparse_weight);
+}
+
+template <class Schedule>
+int run_seeded_hybrid_streamed_dd_evalmod_filesystem_bootstrap_diagnostics(
+    const std::filesystem::path &key_dir, bool full_pipeline,
+    std::size_t sparse_weight = 0)
+{
+    if (const int status =
+            validate_seeded_hybrid_streamed_dd_evalmod_filesystem_key_dir<
+                Schedule>(key_dir);
+        status != 0)
+        return status;
+    return run_key_provider_bootstrap_diagnostics<
+        Schedule,
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModFilesystemKeyProvider<
+                Schedule>>(key_dir, full_pipeline, sparse_weight);
+}
+
 template <class Schedule, class KeyProvider>
 int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
                                          std::size_t sparse_weight = 0)
@@ -6086,7 +6549,7 @@ int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
              Schedule::message_ratio);
         (*slots)[i] = {normalized, 0.0};
         (*expected)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                  poly, normalized, Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
@@ -6102,13 +6565,107 @@ int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
 
     auto output =
         std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosResult<Schedule>>();
-    const double evalmod_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
-            *output, *input, poly, provider);
-    });
+    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+    double evalmod_ms = 0.0;
+    if constexpr (Schedule::evalmod_inv_degree != 0) {
+        using EvalTraits = TFHEpp::CKKSDenseEvalModBoundedCosTraits<Schedule>;
+
+        auto shifted =
+            std::make_unique<typename Schedule::ComponentCiphertext>(*input);
+        TFHEpp::CKKSSubPlainRealInPlace<
+            P, Schedule::after_component_split_log_q, Schedule::log_delta>(
+            *shifted, poly.domain_offset);
+
+        auto expected_polynomial =
+            std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+        for (std::size_t i = 0; i < P::n / 2; i++) {
+            const double x = (*slots)[i].real() - poly.domain_offset;
+            const double y =
+                TFHEpp::CKKSEvaluateChebyshevUnit(poly.chebyshev_coeffs, x);
+            (*expected_polynomial)[i] = {y, 0.0};
+        }
+
+        auto polynomial =
+            std::make_unique<typename EvalTraits::PolynomialCiphertext>();
+        const TFHEpp::ckks_detail::
+            CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider, true>
+                polynomial_keys{provider};
+        const double polynomial_ms = elapsed_ms([&] {
+            TFHEpp::CKKSEvalChebyshevPolynomialWithKeyProvider<
+                P, Schedule::after_component_split_log_q,
+                Schedule::log_delta, Schedule::evalmod_log_scale,
+                Schedule::evalmod_degree>(*polynomial, *shifted,
+                                           poly.chebyshev_coeffs,
+                                           polynomial_keys);
+        });
+        shifted.reset();
+        TFHEpp::ckksSlotDecrypt<P, EvalTraits::polynomial_log_q,
+                                Schedule::log_delta>(*decoded, *polynomial,
+                                                     *key);
+        print_slot_diagnostic<P>("diag_evalmod_polynomial", *decoded,
+                                 expected_polynomial.get());
+
+        auto expected_double_angle =
+            std::make_unique<TFHEpp::CKKSSlotVector<P>>();
+        for (std::size_t i = 0; i < P::n / 2; i++) {
+            double sqrt_coeff = poly.sqrt_coeff;
+            double y = (*expected_polynomial)[i].real();
+            for (std::uint32_t j = 0; j < poly.double_angle; j++) {
+                sqrt_coeff *= sqrt_coeff;
+                y = 2.0 * y * y - sqrt_coeff;
+            }
+            (*expected_double_angle)[i] = {y, 0.0};
+        }
+        expected_polynomial.reset();
+
+        auto double_angle =
+            std::make_unique<typename EvalTraits::DoubleAngleCiphertext>();
+        const TFHEpp::ckks_detail::
+            CKKSEvalModBoundedCosRelinKeyProviderChain<KeyProvider, false>
+                double_angle_keys{provider};
+        const double double_angle_ms = elapsed_ms([&] {
+            TFHEpp::ckks_detail::CKKSBoundedCosDoubleAngleImpl<
+                0, P, EvalTraits::polynomial_log_q, Schedule::log_delta,
+                Schedule::evalmod_double_angle>(*double_angle, *polynomial,
+                                                double_angle_keys,
+                                                poly.sqrt_coeff);
+        });
+        polynomial.reset();
+        TFHEpp::ckksSlotDecrypt<P, EvalTraits::after_double_angle_log_q,
+                                Schedule::log_delta>(*decoded, *double_angle,
+                                                     *key);
+        print_slot_diagnostic<P>("diag_evalmod_double_angle", *decoded,
+                                 expected_double_angle.get());
+
+        const auto inverse_coeffs =
+            TFHEpp::CKKSBuildEvalModInversePowerCoefficients(
+                poly, Schedule::evalmod_inv_degree);
+        const TFHEpp::ckks_detail::
+            CKKSEvalModBoundedCosInverseRelinKeyProviderChain<KeyProvider>
+                inverse_keys{provider};
+        const double inverse_ms = elapsed_ms([&] {
+            TFHEpp::CKKSEvalPowerPolynomialWithKeyProvider<
+                P, EvalTraits::after_double_angle_log_q, Schedule::log_delta,
+                Schedule::evalmod_log_scale, Schedule::evalmod_inv_degree>(
+                *output, *double_angle, inverse_coeffs, inverse_keys);
+        });
+        double_angle.reset();
+        expected_double_angle.reset();
+        evalmod_ms = polynomial_ms + double_angle_ms + inverse_ms;
+        std::cout << "diag_evalmod_polynomial_ms=" << polynomial_ms << '\n';
+        std::cout << "diag_evalmod_double_angle_ms=" << double_angle_ms
+                  << '\n';
+        std::cout << "diag_evalmod_inverse_ms=" << inverse_ms << '\n';
+    }
+    else {
+        evalmod_ms = elapsed_ms([&] {
+            TFHEpp::
+                CKKSDenseEvalModBoundedCosNormalizedWithKeyProvider<Schedule>(
+                    *output, *input, poly, provider);
+        });
+    }
     input.reset();
 
-    auto decoded = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     TFHEpp::ckksSlotDecrypt<P, Schedule::after_evalmod_log_q,
                             Schedule::log_delta>(*decoded, *output, *key);
     print_slot_diagnostic<P>("diag_evalmod_direct", *decoded, expected.get());
@@ -6117,7 +6674,7 @@ int run_key_provider_evalmod_diagnostics(const std::filesystem::path &key_dir,
     return max_error<P>(*decoded, *expected) <= 0.01 ? 0 : 1;
 }
 
-template <class Schedule>
+template <class Schedule, bool DDRelin = false>
 int run_inmemory_evalmod_diagnostics(std::size_t sparse_weight = 0,
                                      TFHEpp::CKKSNoise noise = {
                                          Schedule::Param::α, 0})
@@ -6136,12 +6693,25 @@ int run_inmemory_evalmod_diagnostics(std::size_t sparse_weight = 0,
 
     const TFHEpp::CKKSBoundedCosEvalModPolynomial poly =
         TFHEpp::CKKSBuildBoundedCosEvalModPolynomial<Schedule>();
-    auto keys =
-        std::make_unique<TFHEpp::CKKSDenseEvalModBoundedCosRelinKeys<Schedule>>();
+    using RelinKeys = std::conditional_t<
+        DDRelin, TFHEpp::CKKSDenseEvalModBoundedCosDDRelinKeys<Schedule>,
+        TFHEpp::CKKSDenseEvalModBoundedCosRelinKeys<Schedule>>;
+    auto keys = std::make_unique<RelinKeys>();
     const double keygen_ms = elapsed_ms([&] {
-        TFHEpp::CKKSDenseEvalModBoundedCosKeyGen<Schedule>(*keys, *key,
-                                                           noise);
+        if constexpr (DDRelin)
+            TFHEpp::CKKSDenseEvalModBoundedCosDDKeyGen<Schedule>(*keys, *key,
+                                                                 noise);
+        else
+            TFHEpp::CKKSDenseEvalModBoundedCosKeyGen<Schedule>(*keys, *key,
+                                                               noise);
     });
+    std::cout << "diag_evalmod_dd_relin=" << (DDRelin ? 1 : 0);
+    if constexpr (DDRelin)
+        std::cout << " diag_evalmod_dd_relin_bgbit="
+                  << TFHEpp::CKKSDenseBootstrapDDRelinBgbit<Schedule>()
+                  << " diag_evalmod_dd_relin_bbarbit="
+                  << TFHEpp::CKKSDenseBootstrapDDRelinBbarbit<Schedule>();
+    std::cout << '\n';
 
     auto slots = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     auto expected = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
@@ -6160,7 +6730,7 @@ int run_inmemory_evalmod_diagnostics(std::size_t sparse_weight = 0,
              Schedule::message_ratio);
         (*slots)[i] = {normalized, 0.0};
         (*expected)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                  poly, normalized, Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
@@ -6247,7 +6817,7 @@ int run_inmemory_evalmod_diagnostics(std::size_t sparse_weight = 0,
             TFHEpp::CKKSBuildEvalModInversePowerCoefficients(
                 poly, Schedule::evalmod_inv_degree);
         const double inverse_ms = elapsed_ms([&] {
-            TFHEpp::CKKSEvalPowerPolynomial<
+            TFHEpp::CKKSEvalPowerPolynomialWithKeyProvider<
                 P, EvalTraits::after_double_angle_log_q, Schedule::log_delta,
                 Schedule::evalmod_log_scale, Schedule::evalmod_inv_degree>(
                 *output, *double_angle, inverse_coeffs, keys->inverse);
@@ -6334,6 +6904,22 @@ int run_seeded_hybrid_streamed_filesystem_evalmod_diagnostics(
                 Schedule>>(key_dir, sparse_weight);
 }
 
+template <class Schedule>
+int run_seeded_hybrid_streamed_dd_evalmod_filesystem_evalmod_diagnostics(
+    const std::filesystem::path &key_dir, std::size_t sparse_weight = 0)
+{
+    if (const int status =
+            validate_seeded_hybrid_streamed_dd_evalmod_filesystem_key_dir<
+                Schedule>(key_dir);
+        status != 0)
+        return status;
+    return run_key_provider_evalmod_diagnostics<
+        Schedule,
+        TFHEpp::
+            CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModFilesystemKeyProvider<
+                Schedule>>(key_dir, sparse_weight);
+}
+
 template <class Schedule, class KeyProvider>
 int run_key_provider_stc_diagnostics(const std::filesystem::path &key_dir,
                                      std::size_t sparse_weight = 0)
@@ -6394,13 +6980,13 @@ int run_key_provider_stc_diagnostics(const std::filesystem::path &key_dir,
     auto imag_eval = std::make_unique<TFHEpp::CKKSSlotVector<P>>();
     for (std::size_t i = 0; i < P::n / 2; i++) {
         (*real_eval)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                  poly, (*coeff_to_slot)[i].real(),
                  Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
              0.0};
         (*imag_eval)[i] =
-            {TFHEpp::CKKSPlainEvalModBoundedCosNormalizedPower(
+            {TFHEpp::CKKSPlainEvalModBoundedCosNormalized(
                  poly, (*coeff_to_slot)[i].imag(),
                  Schedule::evalmod_inv_degree) /
                  Schedule::message_ratio,
@@ -7952,6 +8538,8 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-stage-bsgs-plan]"
                  " [--lvl6-tuned-readiness]"
                  " [--lvl6-tuned-inmemory-debug-evalmod]"
+                 " [--lvl6-tuned-inmemory-dd-debug-evalmod]"
+                 " [--lvl6-tuned-inmemory-debug-practical-plain-product]"
                  " [--lvl6-tuned-inmemory-debug-evalmod-zero-noise]"
                  " [--lvl6-tuned-hybrid-keygen DIR]"
                  " [--lvl6-tuned-hybrid-keygen-next DIR]"
@@ -7969,13 +8557,19 @@ void print_usage(const char *program)
                  " [--lvl6-tuned-seeded-hybrid-streamed-all DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-keygen DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-evalkeygen DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-evalmod DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-c2s DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-stages DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run-chained-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-all DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-full-dd-keygen DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-full-dd-evalkeygen DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-full-dd-run-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-full-dd-run-chained-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-streamed-full-dd-all DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-full-dd-debug-product-c2s DIR]"
+                 " [--lvl6-tuned-seeded-hybrid-streamed-full-dd-debug-product-stages DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-run-chained-product-encap DIR]"
                  " [--lvl6-tuned-seeded-hybrid-all DIR]"
@@ -8137,6 +8731,21 @@ int main(int argc, char **argv)
                     lvl6_sparse_weight) != 0)
                 return 1;
         }
+        else if (arg == "--lvl6-tuned-inmemory-dd-debug-evalmod") {
+            saw_action = true;
+            print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
+            if (run_inmemory_evalmod_diagnostics<Lvl6TunedSchedule, true>(
+                    lvl6_sparse_weight) != 0)
+                return 1;
+        }
+        else if (arg ==
+                 "--lvl6-tuned-inmemory-debug-practical-plain-product") {
+            saw_action = true;
+            print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
+            if (run_inmemory_product_plain_pipeline_diagnostics<
+                    Lvl6TunedSchedule>(lvl6_sparse_weight) != 0)
+                return 1;
+        }
         else if (arg == "--lvl6-tuned-inmemory-debug-evalmod-zero-noise") {
             saw_action = true;
             print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned");
@@ -8229,6 +8838,12 @@ int main(int argc, char **argv)
                 arg ==
                     "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-evalkeygen" ||
                 arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-evalmod" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-c2s" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-stages" ||
+                arg ==
                     "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run" ||
                 arg ==
                     "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run-chained-product-encap" ||
@@ -8239,9 +8854,15 @@ int main(int argc, char **argv)
                 arg ==
                     "--lvl6-tuned-seeded-hybrid-streamed-full-dd-evalkeygen" ||
                 arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-full-dd-run-product-encap" ||
+                arg ==
                     "--lvl6-tuned-seeded-hybrid-streamed-full-dd-run-chained-product-encap" ||
                 arg ==
                     "--lvl6-tuned-seeded-hybrid-streamed-full-dd-all" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-full-dd-debug-product-c2s" ||
+                arg ==
+                    "--lvl6-tuned-seeded-hybrid-streamed-full-dd-debug-product-stages" ||
                  arg == "--lvl6-tuned-seeded-hybrid-run-product-encap" ||
                  arg ==
                      "--lvl6-tuned-seeded-hybrid-run-chained-product-encap" ||
@@ -8534,6 +9155,35 @@ int main(int argc, char **argv)
                     return 1;
             }
             else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-evalmod") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_dd_evalmod_filesystem_evalmod_diagnostics<
+                        Lvl6TunedSchedule>(key_dir, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-c2s") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_dd_evalmod_filesystem_bootstrap_diagnostics<
+                        Lvl6TunedSchedule>(key_dir, false,
+                                           lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-debug-stages") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_dd_evalmod_filesystem_bootstrap_diagnostics<
+                        Lvl6TunedSchedule>(key_dir, true,
+                                           lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
                 arg == "--lvl6-tuned-seeded-hybrid-streamed-dd-evalmod-run") {
                 print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
                                                          &key_dir);
@@ -8580,6 +9230,17 @@ int main(int argc, char **argv)
             }
             else if (
                 arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-full-dd-run-product-encap") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_streamed_full_dd_filesystem_encapsulated_product_bootstrap<
+                        Lvl6TunedSchedule>(
+                        key_dir, 0.1, lvl6_sparse_weight,
+                        lvl6_sparse_weight, false) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
                 "--lvl6-tuned-seeded-hybrid-streamed-full-dd-run-chained-product-encap") {
                 print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
                                                          &key_dir);
@@ -8595,6 +9256,28 @@ int main(int argc, char **argv)
                 if (run_seeded_hybrid_streamed_full_dd_practical_all<
                         Lvl6TunedSchedule>(
                         key_dir, resume, lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-full-dd-debug-product-c2s") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_product_stage_diagnostics<
+                        Lvl6TunedSchedule, true, true, true>(
+                        key_dir, false, lvl6_sparse_weight,
+                        lvl6_sparse_weight) != 0)
+                    return 1;
+            }
+            else if (
+                arg ==
+                "--lvl6-tuned-seeded-hybrid-streamed-full-dd-debug-product-stages") {
+                print_schedule_report<Lvl6TunedSchedule>("lvl6-tuned",
+                                                         &key_dir);
+                if (run_seeded_hybrid_product_stage_diagnostics<
+                        Lvl6TunedSchedule, true, true, true>(
+                        key_dir, true, lvl6_sparse_weight,
+                        lvl6_sparse_weight) != 0)
                     return 1;
             }
             else if (arg ==

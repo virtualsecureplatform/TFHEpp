@@ -12,13 +12,14 @@ giant streamed bootstrap path:
 - schedule: `TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule`
 - ring degree: `n = 32768`
 - torus storage: `896` bits
-- boot modulus: `boot_log_q = 888`
-- input level: `input_log_q = 48`
-- output level: `output_log_q = 108`
-- scale bits: `log_delta = 40`
+- boot modulus: `boot_log_q = 896`
+- input level: `input_log_q = 58`
+- output level: `output_log_q = 116`
+- scale bits: `log_delta = 52`
 - lvl6 CKKS noise: `α = 2^-886`
 - low-level CKKS noise floor: `σ >= 3.2`
 - bounded bootstrap secret weight: `16`
+- DD relin bases: `Bg = 2^4`, `Bbar = 2^16`
 
 CKKS APIs and schedules are compile-time types. Changing a schedule, level,
 scale, sparse key weight, or key layout requires regenerating the relevant
@@ -75,9 +76,9 @@ The bounded sparse key keeps the modulus-raising error inside the EvalMod
 interval assumed by the schedule. A dense bootstrap secret can exceed that bound
 and invalidate the practical error analysis.
 
-The current lvl6 noise is tuned for the 888-bit bootstrap level. With
-`n = 32768`, `q = 2^888`, and `α = 2^-886`, the top-level integer noise
-standard deviation is `σ = 2^2`. Lower active levels use the `3.2` floor. This
+The current lvl6 noise is tuned for the 896-bit bootstrap level. With
+`n = 32768`, `q = 2^896`, and `α = 2^-886`, the top-level integer noise
+standard deviation is `σ = 2^10`. Lower active levels use the `3.2` floor. This
 matches the small-integer Gaussian noise shape used by RNS CKKS libraries and
 avoids the large absolute EvalMod noise from the old relative-noise setting.
 
@@ -85,15 +86,15 @@ This schedule is close to Lattigo's local dense `N15QP880H16384H32`
 bootstrapping reference in ring size and modulus size: both use `LogN = 15`,
 total bootstrap modulus around 880 bits, and dense ternary main secrets.
 TFHEpp's current tuned schedule uses inverse-correction bounded-cos EvalMod
-(`degree=34`, `double_angle=4`, `inv_degree=5`). OpenFHE's local CKKS
+(`degree=63`, `double_angle=2`, `inv_degree=7`). OpenFHE's local CKKS
 bootstrapping benchmark uses larger `ringDim = 2^16`/`2^17` sets with 50 to 59
 bit RNS primes, so the TFHEpp retuned lvl6 path is in the smaller full-size
 bootstrapping neighborhood rather than the earlier high-noise 1108-bit
 experiment.
 
 The tuned schedule spends 780 bits across C2S, component split, EvalMod, and
-STC, leaving `output_log_q = 108` and a post-bootstrap product level of 68 bits.
-That is 20 bits above the 48-bit input level. The lvl6 parameter also defines a
+STC, leaving `output_log_q = 116` and a post-bootstrap product level of 64 bits.
+That is 6 bits above the 58-bit input level. The lvl6 parameter also defines a
 `3.2` minimum CKKS integer noise standard deviation so direct low-active-level
 encryption does not round the default noise to zero. Reproduce the security
 check from the workspace root with:
@@ -392,6 +393,16 @@ DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed_full_dd
   --lvl6-tuned-seeded-hybrid-streamed-full-dd-run-chained-product-encap "$DIR"
 ```
 
+Run only the first full-DD product bootstrap when tuning parameters. This uses
+the same key directory and product eval-key directory, but avoids the second
+post-bootstrap product:
+
+```bash
+DIR=/tmp/tfhepp_ckks_lvl6_tuned_seeded_streamed_full_dd
+./build-ckks/test/ckks/ckks_bootstrap_validation \
+  --lvl6-tuned-seeded-hybrid-streamed-full-dd-run-product-encap "$DIR"
+```
+
 Or run the same full-DD target path as one direct command:
 
 ```bash
@@ -414,7 +425,7 @@ the chained product bootstrap.
 
 ## Current Full-Size Status
 
-The 888-bit tuned path replaces the earlier 1108-bit experiment. Existing
+The 896-bit tuned path replaces the earlier 1108-bit experiment. Existing
 1108-bit key directories are intentionally incompatible and must be regenerated.
 Use `--lvl6-tuned-readiness` for current artifact estimates; the exact key size
 depends on the schedule, sparse weight, and seeded/non-seeded layout.
@@ -426,10 +437,34 @@ EvalMod relin, the compact seeded DD EvalMod filesystem provider, and a tiny
 full-DD filesystem chained product bootstrap using seeded-DD product relin
 files.
 
-The remaining full-size validation step is generating the lvl6 tuned full-DD
-directory, generating the seeded-DD product eval-key directory, and running the
-full-DD chained product bootstrap command. That run is intentionally not part of
+The measured lvl6 full-DD candidate is:
+
+- `log_delta = 52`, `ratio = 6`, `boot_log_q = 896`
+- `c2s_plain_log_delta = 44`, `split_plain_log_delta = 44`
+- `slot_to_coeff_plain_log_delta = 14`
+- `evalmod_log_scale = 24`, `degree = 63`, `double_angle = 2`
+- `inv_degree = 7`, `dd_relin_bgbit = 4`, `dd_relin_bbarbit = 16`
+
+With a prebuilt full-DD seeded directory, the single full-size product bootstrap
+passes the current tolerance:
+
+```text
+max_error = 0.0744292
+bootstrap_ms = 3.27017e+06
+max_rss = 20602872 KiB
+```
+
+That run used about 35 GB of seeded full-DD key material and took about 55
+minutes on the local test host. It validates the first product-bootstrap step,
+not the chained post-bootstrap product path. The full-DD chained command remains
+the next full-size end-to-end validation target and is intentionally not part of
 CI because the key directory is much larger than the repository artifact limit.
+
+Earlier tuning points are useful negative controls. A `c2s=40`/`split=40`
+schedule failed the same streamed full-DD product path with roughly `0.33`
+maximum error. An older `log_delta=50`/`c2s=48` schedule produced about `0.064`
+single-product error locally, but had less current output-level margin and was
+not retained as the active schedule.
 
 The old 1108-bit schedule generated full seeded-streamed keys locally, but the
 end-to-end chained product validation failed in encrypted EvalMod because

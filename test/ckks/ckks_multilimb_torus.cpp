@@ -21,6 +21,7 @@ int main()
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <string>
 
 #include <tfhe++.hpp>
 
@@ -84,10 +85,219 @@ typename P::T encode_integer(double value)
     return TFHEpp::ckks_detail::signedToLevel<P, LogQ>(scaled);
 }
 
+template <class P>
+void fill_diagnostic_key(TFHEpp::Key<P> &key)
+{
+    for (std::uint32_t i = 0; i < P::k * P::n; i++)
+        key[i] = P::T::from_signed_i64(static_cast<int>(i % 3) - 1);
+}
+
+template <std::uint32_t LogQ, std::uint32_t RelinBgbit = TFHEpp::lvl6param::Bgbit,
+          std::uint32_t RelinBbarbit = TFHEpp::lvl6param::B̅gbit>
+void run_lvl6_seeded_dd_relin_diagnostic_at(const char *label)
+{
+    using P = TFHEpp::lvl6param;
+    constexpr std::uint32_t log_delta = 40;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_diagnostic_key<P>(*key);
+
+    auto coeffs = std::make_unique<std::array<double, P::n>>();
+    coeffs->fill(0.0);
+    (*coeffs)[0] = 0.125;
+    (*coeffs)[1] = -0.0625;
+    (*coeffs)[17] = 0.03125;
+    (*coeffs)[P::n - 2] = -0.015625;
+
+    auto poly = std::make_unique<TFHEpp::Polynomial<P>>();
+    TFHEpp::ckksEncodePolynomial<P, LogQ, log_delta>(*poly, *coeffs);
+
+    auto relinkey = TFHEpp::makeCKKSRelinKey<P, LogQ>(*key, {0.0, 0});
+    auto seeded_dd_relinkey =
+        TFHEpp::makeCKKSSeededDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>(
+            *key, {0.0, 0});
+
+    auto standard = std::make_unique<TFHEpp::TRLWE<P>>();
+    auto seeded_dd = std::make_unique<TFHEpp::TRLWE<P>>();
+    TFHEpp::CKKSRelinKeySwitch<P>(*standard, *poly, *relinkey);
+    TFHEpp::CKKSRelinKeySwitch<P>(*seeded_dd, *poly, *seeded_dd_relinkey);
+
+    auto standard_ct =
+        std::make_unique<TFHEpp::CKKSCiphertext<P, LogQ, log_delta>>();
+    auto seeded_dd_ct =
+        std::make_unique<TFHEpp::CKKSCiphertext<P, LogQ, log_delta>>();
+    standard_ct->ct = *standard;
+    seeded_dd_ct->ct = *seeded_dd;
+
+    auto standard_decoded = std::make_unique<std::array<double, P::n>>();
+    auto seeded_dd_decoded = std::make_unique<std::array<double, P::n>>();
+    TFHEpp::ckksDecrypt<P, LogQ, log_delta>(*standard_decoded, *standard_ct,
+                                            *key);
+    TFHEpp::ckksDecrypt<P, LogQ, log_delta>(*seeded_dd_decoded, *seeded_dd_ct,
+                                            *key);
+
+    double max_delta = 0.0;
+    for (std::uint32_t i = 0; i < P::n; i++) {
+        max_delta = std::max(
+            max_delta,
+            std::abs((*standard_decoded)[i] - (*seeded_dd_decoded)[i]));
+    }
+    std::cout << label << "_log_q=" << LogQ
+              << " standard_rows="
+              << TFHEpp::CKKSRelinKeySwitchRowCount<P, LogQ>()
+              << " dd_bgbit=" << RelinBgbit
+              << " dd_bbarbit=" << RelinBbarbit
+              << " dd_primary_rows="
+              << TFHEpp::CKKSDDRelinPrimaryRowCountForLevel<P, LogQ,
+                                                            RelinBgbit>()
+              << " dd_bbar_rows="
+              << TFHEpp::CKKSDDRelinBbarRowCountForLevel<P, LogQ,
+                                                         RelinBbarbit>()
+              << " max_delta=" << max_delta << '\n';
+    require(max_delta < 0.01, "lvl6 seeded DD relin matches standard relin");
+}
+
+template <std::uint32_t LogQ, std::uint32_t RelinBgbit = TFHEpp::lvl6param::Bgbit,
+          std::uint32_t RelinBbarbit = TFHEpp::lvl6param::B̅gbit>
+void run_lvl6_seeded_dd_mult_diagnostic_at(const char *label,
+                                           TFHEpp::CKKSNoise noise)
+{
+    using P = TFHEpp::lvl6param;
+    constexpr std::uint32_t log_delta = 40;
+    using Ct = TFHEpp::CKKSCiphertext<P, LogQ, log_delta>;
+    using ProductCt =
+        TFHEpp::CKKSMultResult<P, LogQ, log_delta, LogQ, log_delta>;
+
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    fill_diagnostic_key<P>(*key);
+
+    auto lhs = std::make_unique<std::array<double, P::n>>();
+    auto rhs = std::make_unique<std::array<double, P::n>>();
+    auto expected = std::make_unique<std::array<double, P::n>>();
+    lhs->fill(0.0);
+    rhs->fill(0.0);
+    expected->fill(0.0);
+    (*lhs)[0] = 0.125;
+    (*lhs)[1] = -0.0625;
+    (*lhs)[17] = 0.03125;
+    (*lhs)[P::n - 2] = -0.015625;
+    (*rhs)[0] = -0.1875;
+    (*rhs)[2] = 0.078125;
+    (*rhs)[19] = -0.0390625;
+    (*rhs)[P::n - 3] = 0.0234375;
+
+    const auto add_product = [&](std::uint32_t ai, double av, std::uint32_t bi,
+                                 double bv) {
+        const std::uint32_t raw = ai + bi;
+        if (raw < P::n)
+            (*expected)[raw] += av * bv;
+        else
+            (*expected)[raw - P::n] -= av * bv;
+    };
+    const std::array<std::pair<std::uint32_t, double>, 4> lhs_terms = {
+        {{0, (*lhs)[0]}, {1, (*lhs)[1]}, {17, (*lhs)[17]},
+         {P::n - 2, (*lhs)[P::n - 2]}}};
+    const std::array<std::pair<std::uint32_t, double>, 4> rhs_terms = {
+        {{0, (*rhs)[0]}, {2, (*rhs)[2]}, {19, (*rhs)[19]},
+         {P::n - 3, (*rhs)[P::n - 3]}}};
+    for (const auto &[ai, av] : lhs_terms)
+        for (const auto &[bi, bv] : rhs_terms) add_product(ai, av, bi, bv);
+
+    auto lhs_ct = std::make_unique<Ct>();
+    auto rhs_ct = std::make_unique<Ct>();
+    TFHEpp::ckksEncrypt<P, LogQ, log_delta>(*lhs_ct, *lhs, *key, noise);
+    TFHEpp::ckksEncrypt<P, LogQ, log_delta>(*rhs_ct, *rhs, *key, noise);
+
+    auto relinkey = TFHEpp::makeCKKSRelinKey<P, ProductCt::log_q>(*key, noise);
+    auto seeded_dd_relinkey =
+        TFHEpp::makeCKKSSeededDDRelinKey<P, ProductCt::log_q, RelinBgbit,
+                                         RelinBbarbit>(*key, noise);
+
+    auto standard = std::make_unique<ProductCt>();
+    auto seeded_dd = std::make_unique<ProductCt>();
+    TFHEpp::CKKSMult<P>(*standard, *lhs_ct, *rhs_ct, *relinkey);
+    TFHEpp::CKKSMult<P>(*seeded_dd, *lhs_ct, *rhs_ct, *seeded_dd_relinkey);
+
+    auto standard_decoded = std::make_unique<std::array<double, P::n>>();
+    auto seeded_dd_decoded = std::make_unique<std::array<double, P::n>>();
+    TFHEpp::ckksDecrypt<P>(*standard_decoded, *standard, *key);
+    TFHEpp::ckksDecrypt<P>(*seeded_dd_decoded, *seeded_dd, *key);
+
+    double standard_error = 0.0;
+    double seeded_dd_error = 0.0;
+    double max_delta = 0.0;
+    for (std::uint32_t i = 0; i < P::n; i++) {
+        standard_error =
+            std::max(standard_error,
+                     std::abs((*standard_decoded)[i] - (*expected)[i]));
+        seeded_dd_error =
+            std::max(seeded_dd_error,
+                     std::abs((*seeded_dd_decoded)[i] - (*expected)[i]));
+        max_delta = std::max(
+            max_delta,
+            std::abs((*standard_decoded)[i] - (*seeded_dd_decoded)[i]));
+    }
+    std::cout << label << "_log_q=" << LogQ
+              << " product_log_q=" << ProductCt::log_q
+              << " dd_bgbit=" << RelinBgbit
+              << " dd_bbarbit=" << RelinBbarbit
+              << " standard_error=" << standard_error
+              << " seeded_dd_error=" << seeded_dd_error
+              << " max_delta=" << max_delta << '\n';
+    require(standard_error < 0.01, "lvl6 CKKS multiply standard relin");
+    require(seeded_dd_error < 0.01, "lvl6 CKKS multiply seeded DD relin");
+    require(max_delta < 0.01, "lvl6 CKKS multiply seeded DD matches standard");
+}
+
 }  // namespace
 
-int main()
+int main(int argc, char **argv)
 {
+    if (argc == 2 && std::string(argv[1]) == "--lvl6-dd-relin-low") {
+        run_lvl6_seeded_dd_relin_diagnostic_at<168>("lvl6_dd_relin_low");
+        std::cout << "Passed" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::string(argv[1]) == "--lvl6-dd-relin-mid") {
+        run_lvl6_seeded_dd_relin_diagnostic_at<328>("lvl6_dd_relin_mid");
+        std::cout << "Passed" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::string(argv[1]) == "--lvl6-dd-relin-high") {
+        run_lvl6_seeded_dd_relin_diagnostic_at<728>("lvl6_dd_relin_high");
+        std::cout << "Passed" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::string(argv[1]) == "--lvl6-dd-relin-high-tuned") {
+        run_lvl6_seeded_dd_relin_diagnostic_at<
+            728, TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule::dd_relin_bgbit,
+            TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule::dd_relin_bbarbit>(
+            "lvl6_dd_relin_high_tuned");
+        std::cout << "Passed" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::string(argv[1]) == "--lvl6-dd-mult-high") {
+        run_lvl6_seeded_dd_mult_diagnostic_at<768>("lvl6_dd_mult_high",
+                                                   {0.0, 0});
+        std::cout << "Passed" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::string(argv[1]) == "--lvl6-dd-mult-high-noisy") {
+        run_lvl6_seeded_dd_mult_diagnostic_at<768>(
+            "lvl6_dd_mult_high_noisy", {TFHEpp::lvl6param::α, 0});
+        std::cout << "Passed" << std::endl;
+        return 0;
+    }
+    if (argc == 2 &&
+        std::string(argv[1]) == "--lvl6-dd-mult-high-noisy-tuned") {
+        run_lvl6_seeded_dd_mult_diagnostic_at<
+            768, TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule::dd_relin_bgbit,
+            TFHEpp::lvl6CKKSDenseBootstrapTunedSchedule::dd_relin_bbarbit>(
+            "lvl6_dd_mult_high_noisy_tuned", {TFHEpp::lvl6param::α, 0});
+        std::cout << "Passed" << std::endl;
+        return 0;
+    }
+
     using Lvl6T = TFHEpp::lvl6param::T;
     static_assert(TFHEpp::lvl5param::nbit == 14);
     static_assert(TFHEpp::lvl6param::nbit == 15);
@@ -165,6 +375,46 @@ int main()
                 "lvl6 digit FFT coefficient n-1");
         for (std::uint32_t i = 4; i + 2 < P::n; i++)
             require((*product)[i] == T{0}, "lvl6 digit FFT zero coefficient");
+
+        auto dense_lhs = std::make_unique<TFHEpp::Polynomial<P>>();
+        auto dense_rhs = std::make_unique<TFHEpp::Polynomial<P>>();
+        auto dense_product = std::make_unique<TFHEpp::Polynomial<P>>();
+        constexpr int64_t bg_limit =
+            (int64_t{1} << (P::Bgbit - 1)) - int64_t{1};
+        constexpr int64_t bbar_limit =
+            (int64_t{1} << (P::B̅gbit - 1)) - int64_t{1};
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            const int64_t lhs_value = (i & 1) == 0 ? bg_limit : -bg_limit;
+            const int64_t rhs_value =
+                (i % 3) == 0 ? bbar_limit : -bbar_limit;
+            (*dense_lhs)[i] = T::from_signed_i64(lhs_value);
+            (*dense_rhs)[i] = T::from_signed_i64(rhs_value);
+        }
+        TFHEpp::PolyMulDigit<P>(*dense_product, *dense_lhs, *dense_rhs);
+
+        auto expected_digit_product = [&](std::uint32_t i) {
+            __int128 expected = 0;
+            for (std::uint32_t j = 0; j <= i; j++) {
+                expected +=
+                    static_cast<__int128>(TFHEpp::multilimb_to_signed_i64(
+                        (*dense_lhs)[j])) *
+                    TFHEpp::multilimb_to_signed_i64((*dense_rhs)[i - j]);
+            }
+            for (std::uint32_t j = i + 1; j < P::n; j++) {
+                expected -=
+                    static_cast<__int128>(TFHEpp::multilimb_to_signed_i64(
+                        (*dense_lhs)[j])) *
+                    TFHEpp::multilimb_to_signed_i64(
+                        (*dense_rhs)[P::n + i - j]);
+            }
+            return static_cast<int64_t>(expected);
+        };
+        for (const std::uint32_t i :
+             {0U, 1U, 2U, 17U, P::n / 2U, P::n - 1U}) {
+            require(TFHEpp::multilimb_to_signed_i64((*dense_product)[i]) ==
+                        expected_digit_product(i),
+                    "lvl6 DD relin digit FFT dense coefficient");
+        }
     }
 
     {

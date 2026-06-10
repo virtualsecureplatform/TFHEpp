@@ -1121,20 +1121,21 @@ void test_dense_bootstrap_api_shape()
     static_assert(Lvl6InverseSchedule::output_log_q == 60);
     static_assert(std::is_same_v<typename Lvl6TunedSchedule::Param,
                                  TFHEpp::lvl6param>);
-    static_assert(Lvl6TunedSchedule::log_delta == 40);
-    static_assert(Lvl6TunedSchedule::input_log_q == 48);
-    static_assert(Lvl6TunedSchedule::boot_log_q == 888);
-    static_assert(Lvl6TunedSchedule::evalmod_degree == 34);
-    static_assert(Lvl6TunedSchedule::evalmod_double_angle == 4);
-    static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 5);
-    static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 600);
-    static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 40);
-    static_assert(Lvl6TunedSchedule::component_split_plain_log_delta == 40);
-    static_assert(Lvl6TunedSchedule::slot_to_coeff_plain_log_delta == 30);
-    static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 168);
-    static_assert(Lvl6TunedSchedule::output_log_q == 108);
+    static_assert(Lvl6TunedSchedule::log_delta == 52);
+    static_assert(Lvl6TunedSchedule::input_log_q == 58);
+    static_assert(Lvl6TunedSchedule::boot_log_q == 896);
+    static_assert(Lvl6TunedSchedule::evalmod_degree == 63);
+    static_assert(Lvl6TunedSchedule::evalmod_double_angle == 2);
+    static_assert(Lvl6TunedSchedule::evalmod_inv_degree == 7);
+    static_assert(Lvl6TunedSchedule::evalmod_log_scale == 24);
+    static_assert(Lvl6TunedSchedule::evalmod_log_q_consumption == 620);
+    static_assert(Lvl6TunedSchedule::coeff_to_slot_plain_log_delta == 44);
+    static_assert(Lvl6TunedSchedule::component_split_plain_log_delta == 44);
+    static_assert(Lvl6TunedSchedule::slot_to_coeff_plain_log_delta == 14);
+    static_assert(Lvl6TunedSchedule::after_evalmod_log_q == 144);
+    static_assert(Lvl6TunedSchedule::output_log_q == 116);
     static_assert(Lvl6TunedSchedule::supports_post_bootstrap_product);
-    static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 20);
+    static_assert(Lvl6TunedSchedule::post_bootstrap_product_slack == 6);
     const std::filesystem::path estimate_root =
         "__tfhepp_nonexistent_ckks_key_estimate_probe__";
     if (std::filesystem::exists(estimate_root)) std::exit(1);

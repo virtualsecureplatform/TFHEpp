@@ -90,13 +90,26 @@ constexpr std::uint32_t CKKSKeySwitchRowCountForLevel()
     return rows;
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit>
 constexpr std::uint32_t CKKSDDRelinPrimaryRowCountForLevel()
 {
     static_assert(LogQ > 0);
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
-    static_assert(P::Bgbit > 0);
-    constexpr std::uint32_t rows = (LogQ + P::Bgbit - 1) / P::Bgbit;
+    static_assert(RelinBgbit > 0);
+    constexpr std::uint32_t rows = (LogQ + RelinBgbit - 1) / RelinBgbit;
+    static_assert(rows > 0);
+    return rows;
+}
+
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
+constexpr std::uint32_t CKKSDDRelinBbarRowCountForLevel()
+{
+    static_assert(LogQ > 0);
+    static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
+    static_assert(RelinBbarbit > 0);
+    constexpr std::uint32_t rows = (LogQ + RelinBbarbit - 1) / RelinBbarbit;
     static_assert(rows > 0);
     return rows;
 }
@@ -212,16 +225,20 @@ struct CKKSSeededRelinKey {
     }
 };
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 struct CKKSDDRelinKey {
     static_assert(LogQ > 0);
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
 
     static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t relin_bgbit = RelinBgbit;
+    static constexpr std::uint32_t relin_bbarbit = RelinBbarbit;
     static constexpr std::uint32_t primary_rows =
-        CKKSDDRelinPrimaryRowCountForLevel<P, LogQ>();
+        CKKSDDRelinPrimaryRowCountForLevel<P, LogQ, RelinBgbit>();
     static constexpr std::uint32_t bbar_rows =
-        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+        CKKSDDRelinBbarRowCountForLevel<P, LogQ, RelinBbarbit>();
 
     using BbarRows = std::array<TRLWE<P>, bbar_rows>;
     std::array<BbarRows, primary_rows> data{};
@@ -233,7 +250,9 @@ struct CKKSDDRelinKey {
     }
 };
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 struct CKKSSeededDDRelinKey {
     static_assert(std::is_same_v<typename P::T, __uint128_t> ||
                   is_multilimb_uint_v<typename P::T>);
@@ -241,8 +260,12 @@ struct CKKSSeededDDRelinKey {
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
 
     static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t relin_bgbit = RelinBgbit;
+    static constexpr std::uint32_t relin_bbarbit = RelinBbarbit;
     static constexpr std::uint32_t primary_rows =
-        CKKSDDRelinPrimaryRowCountForLevel<P, LogQ>();
+        CKKSDDRelinPrimaryRowCountForLevel<P, LogQ, RelinBgbit>();
+    static constexpr std::uint32_t bbar_rows =
+        CKKSDDRelinBbarRowCountForLevel<P, LogQ, RelinBbarbit>();
 
     using Rows = std::array<CKKSSeededKeySwitchRow<P, LogQ>, primary_rows>;
 
@@ -264,16 +287,20 @@ struct CKKSSeededDDRelinKey {
     }
 };
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 struct CKKSDDRelinKeyFFT {
     static_assert(LogQ > 0);
     static_assert(LogQ <= std::numeric_limits<typename P::T>::digits);
 
     static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t relin_bgbit = RelinBgbit;
+    static constexpr std::uint32_t relin_bbarbit = RelinBbarbit;
     static constexpr std::uint32_t primary_rows =
-        CKKSDDRelinPrimaryRowCountForLevel<P, LogQ>();
+        CKKSDDRelinPrimaryRowCountForLevel<P, LogQ, RelinBgbit>();
     static constexpr std::uint32_t bbar_rows =
-        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+        CKKSDDRelinBbarRowCountForLevel<P, LogQ, RelinBbarbit>();
 
     using BbarRows = std::array<TRLWEInFD<P>, bbar_rows>;
     std::array<BbarRows, primary_rows> data{};
@@ -326,14 +353,23 @@ inline constexpr bool is_seeded_key_switch_row_array_v =
 template <class T>
 struct is_ckks_dd_relin_key : std::false_type {};
 
-template <class P, std::uint32_t LogQ>
-struct is_ckks_dd_relin_key<CKKSDDRelinKey<P, LogQ>> : std::true_type {};
+template <class P, std::uint32_t LogQ, std::uint32_t RelinBgbit,
+          std::uint32_t RelinBbarbit>
+struct is_ckks_dd_relin_key<
+    CKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>>
+    : std::true_type {};
 
-template <class P, std::uint32_t LogQ>
-struct is_ckks_dd_relin_key<CKKSSeededDDRelinKey<P, LogQ>> : std::true_type {};
+template <class P, std::uint32_t LogQ, std::uint32_t RelinBgbit,
+          std::uint32_t RelinBbarbit>
+struct is_ckks_dd_relin_key<
+    CKKSSeededDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>>
+    : std::true_type {};
 
-template <class P, std::uint32_t LogQ>
-struct is_ckks_dd_relin_key<CKKSDDRelinKeyFFT<P, LogQ>> : std::true_type {};
+template <class P, std::uint32_t LogQ, std::uint32_t RelinBgbit,
+          std::uint32_t RelinBbarbit>
+struct is_ckks_dd_relin_key<
+    CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>>
+    : std::true_type {};
 
 template <class T>
 inline constexpr bool is_ckks_dd_relin_key_v =
@@ -356,11 +392,13 @@ constexpr std::size_t CKKSRelinKeySwitchRowCount()
     return CKKSKeySwitchRowCountForLevel<P, LogQ>();
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 constexpr std::size_t CKKSDDRelinKeySwitchRowCount()
 {
-    return CKKSDDRelinPrimaryRowCountForLevel<P, LogQ>() *
-           CKKSKeySwitchRowCountForLevel<P, LogQ>();
+    return CKKSDDRelinPrimaryRowCountForLevel<P, LogQ, RelinBgbit>() *
+           CKKSDDRelinBbarRowCountForLevel<P, LogQ, RelinBbarbit>();
 }
 
 template <class P>
@@ -394,17 +432,22 @@ constexpr std::size_t CKKSRelinKeyByteEstimate()
            CKKSKeySwitchRowByteSize<P>();
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 constexpr std::size_t CKKSDDRelinKeyByteEstimate()
 {
-    return CKKSDDRelinKeySwitchRowCount<P, LogQ>() *
+    return CKKSDDRelinKeySwitchRowCount<P, LogQ, RelinBgbit, RelinBbarbit>() *
            CKKSKeySwitchRowByteSize<P>();
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 constexpr std::size_t CKKSSeededDDRelinKeyByteEstimate()
 {
-    return CKKSDDRelinPrimaryRowCountForLevel<P, LogQ>() *
+    (void)RelinBbarbit;
+    return CKKSDDRelinPrimaryRowCountForLevel<P, LogQ, RelinBgbit>() *
            CKKSSeededKeySwitchRowByteSize<P>();
 }
 
@@ -877,7 +920,7 @@ struct CKKSDenseBootstrapProgress {
 };
 
 struct CKKSDenseBootstrapKeyDirectoryManifest {
-    static constexpr std::uint32_t current_version = 3;
+    static constexpr std::uint32_t current_version = 5;
     static constexpr std::uint32_t sparse_format = 0;
     static constexpr std::uint32_t hybrid_giant_format = 1;
     static constexpr std::uint32_t seeded_hybrid_giant_format = 2;
@@ -925,6 +968,8 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     std::uint32_t evalmod_log_scale = 0;
     std::uint32_t evalmod_depth = 0;
     std::uint32_t modraise_mask_bound = 0;
+    std::uint32_t dd_relin_bgbit = 0;
+    std::uint32_t dd_relin_bbarbit = 0;
     std::uint64_t expected_file_count = 0;
     std::uint64_t sparse_key_rows = 0;
     std::uint64_t streamed_peak_key_rows = 0;
@@ -948,14 +993,14 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
                 coeff_to_slot_level_count, slot_to_coeff_level_count,
                 evalmod_degree, evalmod_k, evalmod_double_angle,
                 evalmod_inv_degree, evalmod_log_scale, evalmod_depth,
-                modraise_mask_bound, expected_file_count, sparse_key_rows,
-                streamed_peak_key_rows, hybrid_key_rows,
-                hybrid_streamed_peak_key_rows, full_key_rows);
+                modraise_mask_bound, dd_relin_bgbit, dd_relin_bbarbit,
+                expected_file_count, sparse_key_rows, streamed_peak_key_rows,
+                hybrid_key_rows, hybrid_streamed_peak_key_rows, full_key_rows);
     }
 };
 
 struct CKKSDenseBootstrapProductEvalKeyDirectoryManifest {
-    static constexpr std::uint32_t current_version = 1;
+    static constexpr std::uint32_t current_version = 3;
     static constexpr std::uint32_t product_format = 0;
     static constexpr std::uint32_t seeded_product_format = 1;
     static constexpr std::uint32_t seeded_dd_product_format = 2;
@@ -979,6 +1024,8 @@ struct CKKSDenseBootstrapProductEvalKeyDirectoryManifest {
     std::uint32_t product_log_q = 0;
     std::uint32_t post_bootstrap_product_log_q = 0;
     std::uint32_t includes_post_bootstrap_product = 0;
+    std::uint32_t dd_relin_bgbit = 0;
+    std::uint32_t dd_relin_bbarbit = 0;
     std::uint64_t expected_file_count = 0;
 
     bool operator==(
@@ -995,7 +1042,8 @@ struct CKKSDenseBootstrapProductEvalKeyDirectoryManifest {
                 evalmod_double_angle, evalmod_inv_degree, evalmod_log_scale,
                 product_fresh_log_q, product_log_q,
                 post_bootstrap_product_log_q,
-                includes_post_bootstrap_product, expected_file_count);
+                includes_post_bootstrap_product, dd_relin_bgbit,
+                dd_relin_bbarbit, expected_file_count);
     }
 };
 
@@ -4530,7 +4578,10 @@ inline void CKKSLinearTransformBSGS(
                         const int torus_shift =
                             width - (j + 1) * static_cast<int>(P::B̅gbit);
                         for (uint32_t n = 0; n < P::n; n++) {
-                            const T adjusted = baby_ct[c][n] + offset;
+                            const T adjusted =
+                                ckks_detail::centeredLevelToTorus<P, LogQ>(
+                                    baby_ct[c][n]) +
+                                offset;
                             (*torus_digit)[n] =
                                 ((adjusted >> torus_shift) & torus_mask) -
                                 half_digit;
@@ -4923,14 +4974,20 @@ inline void CKKSLinearTransformBSGSDualInput(
                         const int torus_shift =
                             width - (j + 1) * static_cast<int>(P::B̅gbit);
                         for (uint32_t n = 0; n < P::n; n++) {
-                            const T adjusted = lhs_baby_ct[c][n] + offset;
+                            const T adjusted =
+                                ckks_detail::centeredLevelToTorus<P, LogQ>(
+                                    lhs_baby_ct[c][n]) +
+                                offset;
                             (*torus_digit)[n] =
                                 ((adjusted >> torus_shift) & torus_mask) -
                                 half_digit;
                         }
                         TwistIFFTDigit<P>(lhs_baby_out[c][j], *torus_digit);
                         for (uint32_t n = 0; n < P::n; n++) {
-                            const T adjusted = rhs_baby_ct[c][n] + offset;
+                            const T adjusted =
+                                ckks_detail::centeredLevelToTorus<P, LogQ>(
+                                    rhs_baby_ct[c][n]) +
+                                offset;
                             (*torus_digit)[n] =
                                 ((adjusted >> torus_shift) & torus_mask) -
                                 half_digit;
@@ -6090,8 +6147,14 @@ using lvl6CKKSDenseBootstrapInverseSchedule =
     CKKSDenseBootstrapSchedule<lvl6param, 40, 8, 880, 40, 5, 52, 18, 4, 3, 40,
                                128, 0, 50, 50, 20, 5, 5, 3>;
 struct lvl6CKKSDenseBootstrapTunedSchedule
-    : CKKSDenseBootstrapSchedule<lvl6param, 40, 8, 888, 40, 7, 34, 18, 4, 5,
-                                  40, 128, 0, 40, 40, 30, 7, 7, 2, 1> {
+    : CKKSDenseBootstrapSchedule<lvl6param, 52, 6, 896, 44, 7, 63, 18, 2, 7,
+                                  24, 128, 0, 44, 44, 14, 7, 7, 2, 1> {
+    // EvalMod applies many relin operations before double-angle.  Keep the DD
+    // bases schedule-local so the dense bootstrap can trade evaluation work for
+    // relin noise without changing the global lvl6 torus decomposition.
+    static constexpr std::uint32_t dd_relin_bgbit = 4;
+    static constexpr std::uint32_t dd_relin_bbarbit = 16;
+
     template <std::size_t I>
     static consteval int coeff_to_slot_bsgs_step()
     {
@@ -6740,42 +6803,55 @@ inline std::unique_ptr<CKKSSeededRelinKey<P, LogQ>> makeCKKSSeededRelinKey(
     return relinkey;
 }
 
-template <class P, std::uint32_t LogQ>
-inline std::unique_ptr<CKKSDDRelinKey<P, LogQ>> makeCKKSDDRelinKey(
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
+inline std::unique_ptr<CKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>>
+makeCKKSDDRelinKey(
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "CKKS DD relin currently targets multi-limb torus params");
-    static_assert(P::l̅ * P::B̅gbit ==
-                      std::numeric_limits<typename P::T>::digits,
-                  "CKKS DD relin requires full Bbar torus coverage");
-    static_assert(CKKSDDRelinKey<P, LogQ>::primary_rows * P::Bgbit <=
+    static_assert(RelinBbarbit > 0);
+    static_assert(RelinBgbit + RelinBbarbit + P::nbit + 3 <
+                      std::numeric_limits<double>::digits,
+                  "CKKS DD relin digit products need exact FFT headroom");
+    static_assert(CKKSDDRelinKey<P, LogQ, RelinBgbit,
+                                 RelinBbarbit>::primary_rows *
+                          RelinBgbit <=
                       std::numeric_limits<typename P::T>::digits,
                   "CKKS DD relin primary decomposition needs storage headroom");
+    static_assert(CKKSDDRelinKey<P, LogQ, RelinBgbit,
+                                 RelinBbarbit>::bbar_rows *
+                          RelinBbarbit <=
+                      std::numeric_limits<typename P::T>::digits,
+                  "CKKS DD relin Bbar decomposition needs storage headroom");
 
-    auto relinkey = std::make_unique<CKKSDDRelinKey<P, LogQ>>();
+    auto relinkey =
+        std::make_unique<CKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>>();
     auto keysquare = std::make_unique<Polynomial<P>>();
     auto partkey = std::make_unique<Polynomial<P>>();
     for (std::uint32_t i = 0; i < P::n; i++) (*partkey)[i] = key[i];
     PolyMulDigit<P>(*keysquare, *partkey, *partkey);
 
     constexpr std::uint32_t primary_rows =
-        CKKSDDRelinKey<P, LogQ>::primary_rows;
-    constexpr std::uint32_t bbar_rows = CKKSDDRelinKey<P, LogQ>::bbar_rows;
+        CKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>::primary_rows;
+    constexpr std::uint32_t bbar_rows =
+        CKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>::bbar_rows;
 
     auto gadget = std::make_unique<Polynomial<P>>();
     auto ordinary = std::make_unique<TRLWE<P>>();
     auto decomposed = std::make_unique<std::array<TRLWE<P>, bbar_rows>>();
     for (std::uint32_t i = 0; i < primary_rows; i++) {
         const int shift =
-            static_cast<int>((primary_rows - i - 1) * P::Bgbit);
+            static_cast<int>((primary_rows - i - 1) * RelinBgbit);
         for (std::uint32_t n = 0; n < P::n; n++)
             (*gadget)[n] =
                 ckks_detail::reduceToLevel<P, LogQ>((*keysquare)[n] << shift);
 
         ckks_detail::encryptPolynomialAtLevel<P, LogQ>(*ordinary, *gadget, key,
                                                        noise);
-        ckks_detail::activeBaseDecomposeTRLWERows<P, LogQ, P::B̅gbit,
+        ckks_detail::activeBaseDecomposeTRLWERows<P, LogQ, RelinBbarbit,
                                                   bbar_rows>(*decomposed,
                                                              *ordinary);
         for (std::uint32_t j = 0; j < bbar_rows; j++)
@@ -6785,32 +6861,44 @@ inline std::unique_ptr<CKKSDDRelinKey<P, LogQ>> makeCKKSDDRelinKey(
     return relinkey;
 }
 
-template <class P, std::uint32_t LogQ>
-inline std::unique_ptr<CKKSSeededDDRelinKey<P, LogQ>>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
+inline std::unique_ptr<CKKSSeededDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>>
 makeCKKSSeededDDRelinKey(const Key<P> &key,
                          CKKSNoise noise = {P::α, 0})
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "CKKS DD relin currently targets multi-limb torus params");
-    static_assert(P::l̅ * P::B̅gbit ==
-                      std::numeric_limits<typename P::T>::digits,
-                  "CKKS DD relin requires full Bbar torus coverage");
-    static_assert(CKKSSeededDDRelinKey<P, LogQ>::primary_rows * P::Bgbit <=
+    static_assert(RelinBbarbit > 0);
+    static_assert(RelinBgbit + RelinBbarbit + P::nbit + 3 <
+                      std::numeric_limits<double>::digits,
+                  "CKKS DD relin digit products need exact FFT headroom");
+    static_assert(CKKSSeededDDRelinKey<P, LogQ, RelinBgbit,
+                                       RelinBbarbit>::primary_rows *
+                          RelinBgbit <=
                       std::numeric_limits<typename P::T>::digits,
                   "CKKS DD relin primary decomposition needs storage headroom");
+    static_assert(CKKSSeededDDRelinKey<P, LogQ, RelinBgbit,
+                                       RelinBbarbit>::bbar_rows *
+                          RelinBbarbit <=
+                      std::numeric_limits<typename P::T>::digits,
+                  "CKKS DD relin Bbar decomposition needs storage headroom");
 
-    auto relinkey = std::make_unique<CKKSSeededDDRelinKey<P, LogQ>>();
+    auto relinkey =
+        std::make_unique<
+            CKKSSeededDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>>();
     auto keysquare = std::make_unique<Polynomial<P>>();
     auto partkey = std::make_unique<Polynomial<P>>();
     for (std::uint32_t i = 0; i < P::n; i++) (*partkey)[i] = key[i];
     PolyMulDigit<P>(*keysquare, *partkey, *partkey);
 
     constexpr std::uint32_t primary_rows =
-        CKKSSeededDDRelinKey<P, LogQ>::primary_rows;
+        CKKSSeededDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>::primary_rows;
     auto gadget = std::make_unique<Polynomial<P>>();
     for (std::uint32_t i = 0; i < primary_rows; i++) {
         const int shift =
-            static_cast<int>((primary_rows - i - 1) * P::Bgbit);
+            static_cast<int>((primary_rows - i - 1) * RelinBgbit);
         for (std::uint32_t n = 0; n < P::n; n++)
             (*gadget)[n] =
                 ckks_detail::reduceToLevel<P, LogQ>((*keysquare)[n] << shift);
@@ -6821,17 +6909,29 @@ makeCKKSSeededDDRelinKey(const Key<P> &key,
     return relinkey;
 }
 
-template <class P, std::uint32_t LogQ>
-inline std::unique_ptr<CKKSDDRelinKeyFFT<P, LogQ>> makeCKKSDDRelinKeyFFT(
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
+inline std::unique_ptr<CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>>
+makeCKKSDDRelinKeyFFT(
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
 {
     static_assert(use_multilimb_digit_fft_v<P>,
                   "CKKS DD relin FFT key requires a compatible multi-limb "
                   "digit FFT backend");
-    auto coeff_key = makeCKKSDDRelinKey<P, LogQ>(key, noise);
-    auto relinkey = std::make_unique<CKKSDDRelinKeyFFT<P, LogQ>>();
-    for (std::uint32_t i = 0; i < CKKSDDRelinKeyFFT<P, LogQ>::primary_rows; i++) {
-        for (std::uint32_t j = 0; j < CKKSDDRelinKeyFFT<P, LogQ>::bbar_rows; j++) {
+    auto coeff_key =
+        makeCKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>(key, noise);
+    auto relinkey =
+        std::make_unique<
+            CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>>();
+    for (std::uint32_t i = 0;
+         i < CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit,
+                               RelinBbarbit>::primary_rows;
+         i++) {
+        for (std::uint32_t j = 0;
+             j < CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit,
+                                   RelinBbarbit>::bbar_rows;
+             j++) {
             for (int c = 0; c <= static_cast<int>(P::k); c++) {
                 TwistIFFTDigit<P>(
                     relinkey->data[i][j][static_cast<std::size_t>(c)],
@@ -6849,6 +6949,7 @@ template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
 struct CKKSRelinKeyChainTuple;
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t RelinBgbit, std::uint32_t RelinBbarbit,
           class Seq>
 struct CKKSDDRelinKeyChainTuple;
 
@@ -6861,11 +6962,13 @@ struct CKKSRelinKeyChainTuple<P, StartLogQ, LogDelta,
 };
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t RelinBgbit, std::uint32_t RelinBbarbit,
           std::size_t... Is>
-struct CKKSDDRelinKeyChainTuple<P, StartLogQ, LogDelta,
-                                std::index_sequence<Is...>> {
+struct CKKSDDRelinKeyChainTuple<P, StartLogQ, LogDelta, RelinBgbit,
+                                RelinBbarbit, std::index_sequence<Is...>> {
     using type =
-        std::tuple<CKKSDDRelinKey<P, StartLogQ - (Is + 1) * LogDelta>...>;
+        std::tuple<CKKSDDRelinKey<P, StartLogQ - (Is + 1) * LogDelta,
+                                  RelinBgbit, RelinBbarbit>...>;
 };
 
 }  // namespace ckks_detail
@@ -6903,13 +7006,15 @@ struct CKKSRelinKeyChain {
 };
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
-          std::size_t Depth>
+          std::size_t Depth, std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 struct CKKSDDRelinKeyChain {
     static_assert(Depth > 0);
     static_assert(StartLogQ > Depth * LogDelta);
 
     using Tuple = typename ckks_detail::CKKSDDRelinKeyChainTuple<
-        P, StartLogQ, LogDelta, std::make_index_sequence<Depth>>::type;
+        P, StartLogQ, LogDelta, RelinBgbit, RelinBbarbit,
+        std::make_index_sequence<Depth>>::type;
 
     Tuple keys{};
 
@@ -6940,9 +7045,11 @@ using CKKSRelinKeyChainElement =
     CKKSRelinKey<P, StartLogQ - (I + 1) * LogDelta>;
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
-          std::size_t I>
+          std::size_t I, std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 using CKKSDDRelinKeyChainElement =
-    CKKSDDRelinKey<P, StartLogQ - (I + 1) * LogDelta>;
+    CKKSDDRelinKey<P, StartLogQ - (I + 1) * LogDelta, RelinBgbit,
+                   RelinBbarbit>;
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
           std::uint32_t LogDelta, std::size_t Depth>
@@ -6956,14 +7063,18 @@ inline void CKKSRelinKeyChainElementGen(
 }
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
-          std::uint32_t LogDelta, std::size_t Depth>
+          std::uint32_t LogDelta, std::size_t Depth,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline void CKKSDDRelinKeyChainElementGen(
-    CKKSDDRelinKeyChainElement<P, StartLogQ, LogDelta, I> &key_out,
+    CKKSDDRelinKeyChainElement<P, StartLogQ, LogDelta, I, RelinBgbit,
+                                RelinBbarbit>
+        &key_out,
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
 {
     static_assert(I < Depth);
-    key_out =
-        *makeCKKSDDRelinKey<P, StartLogQ - (I + 1) * LogDelta>(key, noise);
+    key_out = *makeCKKSDDRelinKey<P, StartLogQ - (I + 1) * LogDelta,
+                                  RelinBgbit, RelinBbarbit>(key, noise);
 }
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
@@ -6994,15 +7105,21 @@ inline void CKKSRelinKeyChainGenImpl(
 }
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
-          std::uint32_t LogDelta, std::size_t Depth>
+          std::uint32_t LogDelta, std::size_t Depth,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline void CKKSDDRelinKeyChainGenImpl(
-    CKKSDDRelinKeyChain<P, StartLogQ, LogDelta, Depth> &chain,
+    CKKSDDRelinKeyChain<P, StartLogQ, LogDelta, Depth, RelinBgbit,
+                        RelinBbarbit> &chain,
     const Key<P> &key, CKKSNoise noise)
 {
     if constexpr (I < Depth) {
         constexpr std::uint32_t log_q = StartLogQ - (I + 1) * LogDelta;
-        chain.template get<I>() = *makeCKKSDDRelinKey<P, log_q>(key, noise);
-        CKKSDDRelinKeyChainGenImpl<I + 1, P, StartLogQ, LogDelta, Depth>(
+        chain.template get<I>() =
+            *makeCKKSDDRelinKey<P, log_q, RelinBgbit, RelinBbarbit>(key,
+                                                                    noise);
+        CKKSDDRelinKeyChainGenImpl<I + 1, P, StartLogQ, LogDelta, Depth,
+                                   RelinBgbit, RelinBbarbit>(
             chain, key, noise);
     }
 }
@@ -7020,31 +7137,38 @@ inline void CKKSRelinKeyChainGen(
 }
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
-          std::size_t Depth>
+          std::size_t Depth, std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline void CKKSDDRelinKeyChainGen(
-    CKKSDDRelinKeyChain<P, StartLogQ, LogDelta, Depth> &chain,
+    CKKSDDRelinKeyChain<P, StartLogQ, LogDelta, Depth, RelinBgbit,
+                        RelinBbarbit> &chain,
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
 {
-    ckks_detail::CKKSDDRelinKeyChainGenImpl<0, P, StartLogQ, LogDelta, Depth>(
+    ckks_detail::CKKSDDRelinKeyChainGenImpl<0, P, StartLogQ, LogDelta, Depth,
+                                            RelinBgbit, RelinBbarbit>(
         chain, key, noise);
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ, std::uint32_t RelinBgbit,
+          std::uint32_t RelinBbarbit>
 inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
-                               const CKKSDDRelinKey<P, LogQ> &relinkey)
+                               const CKKSDDRelinKey<P, LogQ, RelinBgbit,
+                                                    RelinBbarbit>
+                                   &relinkey)
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "CKKS DD relin currently targets multi-limb torus params");
-    static_assert(P::l̅ * P::B̅gbit ==
-                      std::numeric_limits<typename P::T>::digits,
-                  "CKKS DD relin requires full Bbar torus coverage");
+    static_assert(RelinBgbit + RelinBbarbit + P::nbit + 3 <
+                      std::numeric_limits<double>::digits,
+                  "CKKS DD relin digit products need exact FFT headroom");
     constexpr std::uint32_t primary_rows =
-        CKKSDDRelinKey<P, LogQ>::primary_rows;
-    constexpr std::uint32_t bbar_rows = CKKSDDRelinKey<P, LogQ>::bbar_rows;
+        CKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>::primary_rows;
+    constexpr std::uint32_t bbar_rows =
+        CKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>::bbar_rows;
 
     auto primary_digits =
         std::make_unique<std::array<Polynomial<P>, primary_rows>>();
-    ckks_detail::activeBaseDecomposePolynomialRows<P, LogQ, P::Bgbit,
+    ckks_detail::activeBaseDecomposePolynomialRows<P, LogQ, RelinBgbit,
                                                    primary_rows>(
         *primary_digits, poly);
 
@@ -7069,27 +7193,31 @@ inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
         }
     }
 
-    ckks_detail::activeBaseRecombineTRLWERows<P, LogQ, P::B̅gbit, bbar_rows>(
-        res, *digit_rows);
+    ckks_detail::activeBaseRecombineTRLWERows<P, LogQ, RelinBbarbit,
+                                              bbar_rows>(res, *digit_rows);
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ, std::uint32_t RelinBgbit,
+          std::uint32_t RelinBbarbit>
 inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
-                               const CKKSSeededDDRelinKey<P, LogQ> &relinkey)
+                               const CKKSSeededDDRelinKey<P, LogQ, RelinBgbit,
+                                                          RelinBbarbit>
+                                   &relinkey)
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "CKKS DD relin currently targets multi-limb torus params");
-    static_assert(P::l̅ * P::B̅gbit ==
-                      std::numeric_limits<typename P::T>::digits,
-                  "CKKS DD relin requires full Bbar torus coverage");
+    static_assert(RelinBgbit + RelinBbarbit + P::nbit + 3 <
+                      std::numeric_limits<double>::digits,
+                  "CKKS DD relin digit products need exact FFT headroom");
     constexpr std::uint32_t primary_rows =
-        CKKSSeededDDRelinKey<P, LogQ>::primary_rows;
+        CKKSSeededDDRelinKey<P, LogQ, RelinBgbit,
+                             RelinBbarbit>::primary_rows;
     constexpr std::uint32_t bbar_rows =
-        CKKSKeySwitchRowCountForLevel<P, LogQ>();
+        CKKSSeededDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>::bbar_rows;
 
     auto primary_digits =
         std::make_unique<std::array<Polynomial<P>, primary_rows>>();
-    ckks_detail::activeBaseDecomposePolynomialRows<P, LogQ, P::Bgbit,
+    ckks_detail::activeBaseDecomposePolynomialRows<P, LogQ, RelinBgbit,
                                                    primary_rows>(
         *primary_digits, poly);
 
@@ -7105,7 +7233,7 @@ inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
     for (std::uint32_t i = 0; i < primary_rows; i++) {
         ckks_detail::expandSeededKeySwitchRow<P, LogQ>(
             *expanded, relinkey.data[i]);
-        ckks_detail::activeBaseDecomposeTRLWERows<P, LogQ, P::B̅gbit,
+        ckks_detail::activeBaseDecomposeTRLWERows<P, LogQ, RelinBbarbit,
                                                   bbar_rows>(*decomposed,
                                                              *expanded);
         for (std::uint32_t j = 0; j < bbar_rows; j++) {
@@ -7121,26 +7249,30 @@ inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
         }
     }
 
-    ckks_detail::activeBaseRecombineTRLWERows<P, LogQ, P::B̅gbit, bbar_rows>(
-        res, *digit_rows);
+    ckks_detail::activeBaseRecombineTRLWERows<P, LogQ, RelinBbarbit,
+                                              bbar_rows>(res, *digit_rows);
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ, std::uint32_t RelinBgbit,
+          std::uint32_t RelinBbarbit>
 inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
-                               const CKKSDDRelinKeyFFT<P, LogQ> &relinkey)
+                               const CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit,
+                                                       RelinBbarbit>
+                                   &relinkey)
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "CKKS DD relin currently targets multi-limb torus params");
-    static_assert(P::l̅ * P::B̅gbit ==
-                      std::numeric_limits<typename P::T>::digits,
-                  "CKKS DD relin requires full Bbar torus coverage");
+    static_assert(RelinBgbit + RelinBbarbit + P::nbit + 3 <
+                      std::numeric_limits<double>::digits,
+                  "CKKS DD relin digit products need exact FFT headroom");
     constexpr std::uint32_t primary_rows =
-        CKKSDDRelinKeyFFT<P, LogQ>::primary_rows;
-    constexpr std::uint32_t bbar_rows = CKKSDDRelinKeyFFT<P, LogQ>::bbar_rows;
+        CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>::primary_rows;
+    constexpr std::uint32_t bbar_rows =
+        CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>::bbar_rows;
 
     auto primary_digits =
         std::make_unique<std::array<Polynomial<P>, primary_rows>>();
-    ckks_detail::activeBaseDecomposePolynomialRows<P, LogQ, P::Bgbit,
+    ckks_detail::activeBaseDecomposePolynomialRows<P, LogQ, RelinBgbit,
                                                    primary_rows>(
         *primary_digits, poly);
 
@@ -7169,8 +7301,8 @@ inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
                                     (*acc)[j][static_cast<std::size_t>(c)]);
         }
     }
-    ckks_detail::activeBaseRecombineTRLWERows<P, LogQ, P::B̅gbit, bbar_rows>(
-        res, *digit_rows);
+    ckks_detail::activeBaseRecombineTRLWERows<P, LogQ, RelinBbarbit,
+                                              bbar_rows>(res, *digit_rows);
 }
 
 template <class P, std::uint32_t LogQ, class RelinKey>
@@ -7993,13 +8125,17 @@ inline void CKKSEvalChebyshevPolynomialWithKeyProvider(
 namespace ckks_detail {
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
-          std::size_t Depth>
+          std::size_t Depth, std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 struct CKKSDDRelinKeyChainOrEmpty {
-    using type = CKKSDDRelinKeyChain<P, StartLogQ, LogDelta, Depth>;
+    using type = CKKSDDRelinKeyChain<P, StartLogQ, LogDelta, Depth,
+                                     RelinBgbit, RelinBbarbit>;
 };
 
-template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta>
-struct CKKSDDRelinKeyChainOrEmpty<P, StartLogQ, LogDelta, 0> {
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::uint32_t RelinBgbit, std::uint32_t RelinBbarbit>
+struct CKKSDDRelinKeyChainOrEmpty<P, StartLogQ, LogDelta, 0, RelinBgbit,
+                                  RelinBbarbit> {
     using type = std::tuple<>;
 };
 
@@ -8109,7 +8245,9 @@ struct CKKSEvalModBoundedCosRelinKeys {
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 struct CKKSEvalModBoundedCosDDRelinKeys {
     using Traits = CKKSEvalModBoundedCosTraits<
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
@@ -8117,13 +8255,15 @@ struct CKKSEvalModBoundedCosDDRelinKeys {
 
     using PolynomialRelinKeyChain =
         CKKSDDRelinKeyChain<P, StartLogQ, LogDelta,
-                            Traits::PolynomialTraits::relin_depth>;
+                            Traits::PolynomialTraits::relin_depth,
+                            RelinBgbit, RelinBbarbit>;
     using DoubleAngleRelinKeyChain =
-        CKKSDDRelinKeyChain<P, Traits::polynomial_log_q, LogDelta, DoubleAngle>;
+        CKKSDDRelinKeyChain<P, Traits::polynomial_log_q, LogDelta, DoubleAngle,
+                            RelinBgbit, RelinBbarbit>;
     using InverseRelinKeyChain =
         typename ckks_detail::CKKSDDRelinKeyChainOrEmpty<
             P, Traits::after_double_angle_log_q, LogDelta,
-            Traits::InverseTraits::power_depth>::type;
+            Traits::InverseTraits::power_depth, RelinBgbit, RelinBbarbit>::type;
 
     PolynomialRelinKeyChain polynomial{};
     DoubleAngleRelinKeyChain double_angle{};
@@ -8164,23 +8304,29 @@ inline void CKKSEvalModBoundedCosKeyGen(
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline void CKKSEvalModBoundedCosDDKeyGen(
     CKKSEvalModBoundedCosDDRelinKeys<P, StartLogQ, LogDelta, CoeffLogDelta,
-                                     Degree, DoubleAngle, InvDegree> &keys,
+                                     Degree, DoubleAngle, InvDegree,
+                                     RelinBgbit, RelinBbarbit> &keys,
     const Key<P> &key, CKKSNoise noise = {P::α, 0})
 {
     using Traits = CKKSEvalModBoundedCosTraits<
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
         InvDegree>;
     CKKSDDRelinKeyChainGen<P, StartLogQ, LogDelta,
-                           Traits::PolynomialTraits::relin_depth>(
+                           Traits::PolynomialTraits::relin_depth,
+                           RelinBgbit, RelinBbarbit>(
         keys.polynomial, key, noise);
-    CKKSDDRelinKeyChainGen<P, Traits::polynomial_log_q, LogDelta, DoubleAngle>(
+    CKKSDDRelinKeyChainGen<P, Traits::polynomial_log_q, LogDelta, DoubleAngle,
+                           RelinBgbit, RelinBbarbit>(
         keys.double_angle, key, noise);
     if constexpr (Traits::inverse_enabled) {
         CKKSDDRelinKeyChainGen<P, Traits::after_double_angle_log_q, LogDelta,
-                               Traits::InverseTraits::power_depth>(
+                               Traits::InverseTraits::power_depth,
+                               RelinBgbit, RelinBbarbit>(
             keys.inverse, key, noise);
     }
 }
@@ -8255,12 +8401,14 @@ struct CKKSEvalModBoundedCosInMemoryKeyProvider {
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 struct CKKSEvalModBoundedCosDDInMemoryKeyProvider {
     using RelinKeys =
         CKKSEvalModBoundedCosDDRelinKeys<P, StartLogQ, LogDelta,
                                          CoeffLogDelta, Degree, DoubleAngle,
-                                         InvDegree>;
+                                         InvDegree, RelinBgbit, RelinBbarbit>;
     const RelinKeys *keys = nullptr;
 
     explicit CKKSEvalModBoundedCosDDInMemoryKeyProvider(const RelinKeys &keys_)
@@ -8462,7 +8610,9 @@ inline void CKKSEvalModBoundedCosNormalized(
 
 template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
           std::uint32_t CoeffLogDelta, std::size_t Degree,
-          std::uint32_t DoubleAngle, std::size_t InvDegree = 0>
+          std::uint32_t DoubleAngle, std::size_t InvDegree = 0,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline void CKKSEvalModBoundedCosNormalized(
     CKKSEvalModBoundedCosResult<P, StartLogQ, LogDelta, CoeffLogDelta, Degree,
                                 DoubleAngle, InvDegree> &res,
@@ -8470,10 +8620,12 @@ inline void CKKSEvalModBoundedCosNormalized(
     const CKKSBoundedCosEvalModPolynomial &poly,
     const CKKSEvalModBoundedCosDDRelinKeys<P, StartLogQ, LogDelta,
                                            CoeffLogDelta, Degree, DoubleAngle,
-                                           InvDegree> &keys)
+                                           InvDegree, RelinBgbit,
+                                           RelinBbarbit> &keys)
 {
     const CKKSEvalModBoundedCosDDInMemoryKeyProvider<
-        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle, InvDegree>
+        P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle, InvDegree,
+        RelinBgbit, RelinBbarbit>
         key_provider(keys);
     CKKSEvalModBoundedCosNormalizedWithKeyProvider<
         P, StartLogQ, LogDelta, CoeffLogDelta, Degree, DoubleAngle,
@@ -8500,12 +8652,32 @@ using CKKSDenseEvalModBoundedCosRelinKeys =
         Schedule::evalmod_inv_degree>;
 
 template <class Schedule>
+constexpr std::uint32_t CKKSDenseBootstrapDDRelinBgbit()
+{
+    if constexpr (requires { Schedule::dd_relin_bgbit; })
+        return Schedule::dd_relin_bgbit;
+    else
+        return Schedule::Param::Bgbit;
+}
+
+template <class Schedule>
+constexpr std::uint32_t CKKSDenseBootstrapDDRelinBbarbit()
+{
+    if constexpr (requires { Schedule::dd_relin_bbarbit; })
+        return Schedule::dd_relin_bbarbit;
+    else
+        return Schedule::Param::B̅gbit;
+}
+
+template <class Schedule>
 using CKKSDenseEvalModBoundedCosDDRelinKeys =
     CKKSEvalModBoundedCosDDRelinKeys<
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle,
-        Schedule::evalmod_inv_degree>;
+        Schedule::evalmod_inv_degree,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>;
 
 template <class Schedule>
 using CKKSDenseEvalModBoundedCosInMemoryKeyProvider =
@@ -8521,47 +8693,61 @@ using CKKSDenseEvalModBoundedCosDDInMemoryKeyProvider =
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle,
-        Schedule::evalmod_inv_degree>;
+        Schedule::evalmod_inv_degree,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseDDEvalModPolynomialRelinKey =
     CKKSDDRelinKeyChainElement<typename Schedule::Param,
                                Schedule::after_component_split_log_q,
-                               Schedule::log_delta, I>;
+                               Schedule::log_delta, I,
+                               CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                               CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseDDEvalModDoubleAngleRelinKey =
     CKKSDDRelinKeyChainElement<
         typename Schedule::Param,
         CKKSDenseEvalModBoundedCosTraits<Schedule>::polynomial_log_q,
-        Schedule::log_delta, I>;
+        Schedule::log_delta, I,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseDDEvalModInverseRelinKey =
     CKKSDDRelinKeyChainElement<
         typename Schedule::Param,
         CKKSDenseEvalModBoundedCosTraits<Schedule>::after_double_angle_log_q,
-        Schedule::log_delta, I>;
+        Schedule::log_delta, I,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseSeededDDEvalModPolynomialRelinKey =
     CKKSSeededDDRelinKey<typename Schedule::Param,
                          Schedule::after_component_split_log_q -
-                             (I + 1) * Schedule::log_delta>;
+                             (I + 1) * Schedule::log_delta,
+                         CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                         CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseSeededDDEvalModDoubleAngleRelinKey =
     CKKSSeededDDRelinKey<
         typename Schedule::Param,
         CKKSDenseEvalModBoundedCosTraits<Schedule>::polynomial_log_q -
-            (I + 1) * Schedule::log_delta>;
+            (I + 1) * Schedule::log_delta,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseSeededDDEvalModInverseRelinKey =
     CKKSSeededDDRelinKey<
         typename Schedule::Param,
         CKKSDenseEvalModBoundedCosTraits<Schedule>::after_double_angle_log_q -
-            (I + 1) * Schedule::log_delta>;
+            (I + 1) * Schedule::log_delta,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>;
 
 template <class Schedule, std::size_t I>
 using CKKSDenseEvalModPolynomialRelinKey =
@@ -8826,7 +9012,9 @@ constexpr std::size_t CKKSRelinChainPeakKeySwitchRows()
 }
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
-          std::uint32_t LogDelta, std::size_t Depth>
+          std::uint32_t LogDelta, std::size_t Depth,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 constexpr std::size_t CKKSDDRelinChainKeySwitchRows()
 {
     if constexpr (I == Depth) {
@@ -8834,14 +9022,18 @@ constexpr std::size_t CKKSDDRelinChainKeySwitchRows()
     }
     else {
         constexpr std::uint32_t log_q = StartLogQ - (I + 1) * LogDelta;
-        return CKKSDDRelinKeySwitchRowCount<P, log_q>() +
+        return CKKSDDRelinKeySwitchRowCount<P, log_q, RelinBgbit,
+                                            RelinBbarbit>() +
                CKKSDDRelinChainKeySwitchRows<I + 1, P, StartLogQ, LogDelta,
-                                             Depth>();
+                                             Depth, RelinBgbit,
+                                             RelinBbarbit>();
     }
 }
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
-          std::uint32_t LogDelta, std::size_t Depth>
+          std::uint32_t LogDelta, std::size_t Depth,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 constexpr std::size_t CKKSDDRelinChainPeakKeySwitchRows()
 {
     if constexpr (I == Depth) {
@@ -8849,14 +9041,17 @@ constexpr std::size_t CKKSDDRelinChainPeakKeySwitchRows()
     }
     else {
         constexpr std::uint32_t log_q = StartLogQ - (I + 1) * LogDelta;
-        return std::max(CKKSDDRelinKeySwitchRowCount<P, log_q>(),
+        return std::max(CKKSDDRelinKeySwitchRowCount<P, log_q, RelinBgbit,
+                                                       RelinBbarbit>(),
                         CKKSDDRelinChainPeakKeySwitchRows<
-                            I + 1, P, StartLogQ, LogDelta, Depth>());
+                            I + 1, P, StartLogQ, LogDelta, Depth,
+                            RelinBgbit, RelinBbarbit>());
     }
 }
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
-          std::uint32_t LogDelta, std::size_t Depth>
+          std::uint32_t LogDelta, std::size_t Depth,
+          std::uint32_t RelinBgbit = P::Bgbit>
 constexpr std::size_t CKKSSeededDDRelinChainPrimaryRows()
 {
     if constexpr (I == Depth) {
@@ -8864,14 +9059,16 @@ constexpr std::size_t CKKSSeededDDRelinChainPrimaryRows()
     }
     else {
         constexpr std::uint32_t log_q = StartLogQ - (I + 1) * LogDelta;
-        return CKKSDDRelinPrimaryRowCountForLevel<P, log_q>() +
+        return CKKSDDRelinPrimaryRowCountForLevel<P, log_q, RelinBgbit>() +
                CKKSSeededDDRelinChainPrimaryRows<I + 1, P, StartLogQ,
-                                                 LogDelta, Depth>();
+                                                 LogDelta, Depth,
+                                                 RelinBgbit>();
     }
 }
 
 template <std::size_t I, class P, std::uint32_t StartLogQ,
-          std::uint32_t LogDelta, std::size_t Depth>
+          std::uint32_t LogDelta, std::size_t Depth,
+          std::uint32_t RelinBgbit = P::Bgbit>
 constexpr std::size_t CKKSSeededDDRelinChainPeakPrimaryRows()
 {
     if constexpr (I == Depth) {
@@ -8880,10 +9077,11 @@ constexpr std::size_t CKKSSeededDDRelinChainPeakPrimaryRows()
     else {
         constexpr std::uint32_t log_q = StartLogQ - (I + 1) * LogDelta;
         constexpr std::size_t here =
-            CKKSDDRelinPrimaryRowCountForLevel<P, log_q>();
+            CKKSDDRelinPrimaryRowCountForLevel<P, log_q, RelinBgbit>();
         return std::max(here,
                         CKKSSeededDDRelinChainPeakPrimaryRows<
-                            I + 1, P, StartLogQ, LogDelta, Depth>());
+                            I + 1, P, StartLogQ, LogDelta, Depth,
+                            RelinBgbit>());
     }
 }
 
@@ -8924,13 +9122,19 @@ constexpr std::size_t CKKSDenseBootstrapDDEvalModKeySwitchRowCount()
     return ckks_detail::CKKSDDRelinChainKeySwitchRows<
                0, P, Schedule::after_component_split_log_q,
                Schedule::log_delta,
-               Traits::PolynomialTraits::relin_depth>() +
+               Traits::PolynomialTraits::relin_depth,
+               CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+               CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>() +
            ckks_detail::CKKSDDRelinChainKeySwitchRows<
                0, P, Traits::polynomial_log_q, Schedule::log_delta,
-               Schedule::evalmod_double_angle>() +
+               Schedule::evalmod_double_angle,
+               CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+               CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>() +
            ckks_detail::CKKSDDRelinChainKeySwitchRows<
                0, P, Traits::after_double_angle_log_q, Schedule::log_delta,
-               Traits::InverseTraits::power_depth>();
+               Traits::InverseTraits::power_depth,
+               CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+               CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>();
 }
 
 template <class Schedule>
@@ -8961,15 +9165,21 @@ constexpr std::size_t CKKSDenseBootstrapDDEvalModPeakKeySwitchRowCount()
     const std::size_t polynomial_peak =
         ckks_detail::CKKSDDRelinChainPeakKeySwitchRows<
             0, P, Schedule::after_component_split_log_q,
-            Schedule::log_delta, Traits::PolynomialTraits::relin_depth>();
+            Schedule::log_delta, Traits::PolynomialTraits::relin_depth,
+            CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+            CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>();
     const std::size_t double_angle_peak =
         ckks_detail::CKKSDDRelinChainPeakKeySwitchRows<
             0, P, Traits::polynomial_log_q, Schedule::log_delta,
-            Schedule::evalmod_double_angle>();
+            Schedule::evalmod_double_angle,
+            CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+            CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>();
     const std::size_t inverse_peak =
         ckks_detail::CKKSDDRelinChainPeakKeySwitchRows<
             0, P, Traits::after_double_angle_log_q, Schedule::log_delta,
-            Traits::InverseTraits::power_depth>();
+            Traits::InverseTraits::power_depth,
+            CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+            CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>();
     return std::max(std::max(polynomial_peak, double_angle_peak), inverse_peak);
 }
 
@@ -8981,13 +9191,16 @@ constexpr std::size_t CKKSDenseBootstrapSeededDDEvalModPrimaryRowCount()
     return ckks_detail::CKKSSeededDDRelinChainPrimaryRows<
                0, P, Schedule::after_component_split_log_q,
                Schedule::log_delta,
-               Traits::PolynomialTraits::relin_depth>() +
+               Traits::PolynomialTraits::relin_depth,
+               CKKSDenseBootstrapDDRelinBgbit<Schedule>()>() +
            ckks_detail::CKKSSeededDDRelinChainPrimaryRows<
                0, P, Traits::polynomial_log_q, Schedule::log_delta,
-               Schedule::evalmod_double_angle>() +
+               Schedule::evalmod_double_angle,
+               CKKSDenseBootstrapDDRelinBgbit<Schedule>()>() +
            ckks_detail::CKKSSeededDDRelinChainPrimaryRows<
                0, P, Traits::after_double_angle_log_q, Schedule::log_delta,
-               Traits::InverseTraits::power_depth>();
+               Traits::InverseTraits::power_depth,
+               CKKSDenseBootstrapDDRelinBgbit<Schedule>()>();
 }
 
 template <class Schedule>
@@ -8998,15 +9211,18 @@ constexpr std::size_t CKKSDenseBootstrapSeededDDEvalModPeakPrimaryRowCount()
     const std::size_t polynomial_peak =
         ckks_detail::CKKSSeededDDRelinChainPeakPrimaryRows<
             0, P, Schedule::after_component_split_log_q,
-            Schedule::log_delta, Traits::PolynomialTraits::relin_depth>();
+            Schedule::log_delta, Traits::PolynomialTraits::relin_depth,
+            CKKSDenseBootstrapDDRelinBgbit<Schedule>()>();
     const std::size_t double_angle_peak =
         ckks_detail::CKKSSeededDDRelinChainPeakPrimaryRows<
             0, P, Traits::polynomial_log_q, Schedule::log_delta,
-            Schedule::evalmod_double_angle>();
+            Schedule::evalmod_double_angle,
+            CKKSDenseBootstrapDDRelinBgbit<Schedule>()>();
     const std::size_t inverse_peak =
         ckks_detail::CKKSSeededDDRelinChainPeakPrimaryRows<
             0, P, Traits::after_double_angle_log_q, Schedule::log_delta,
-            Traits::InverseTraits::power_depth>();
+            Traits::InverseTraits::power_depth,
+            CKKSDenseBootstrapDDRelinBgbit<Schedule>()>();
     return std::max(std::max(polynomial_peak, double_angle_peak), inverse_peak);
 }
 
@@ -9618,7 +9834,9 @@ inline void CKKSDenseEvalModBoundedCosDDKeyGen(
         typename Schedule::Param, Schedule::after_component_split_log_q,
         Schedule::log_delta, Schedule::evalmod_log_scale,
         Schedule::evalmod_degree, Schedule::evalmod_double_angle,
-        Schedule::evalmod_inv_degree>(keys, key, noise);
+        Schedule::evalmod_inv_degree,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(keys, key, noise);
 }
 
 template <class Schedule, std::size_t I>
@@ -9670,8 +9888,9 @@ inline void CKKSDenseDDEvalModPolynomialRelinKeyGen(
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
     CKKSDDRelinKeyChainElementGen<
         I, typename Schedule::Param, Schedule::after_component_split_log_q,
-        Schedule::log_delta, Traits::PolynomialTraits::relin_depth>(relinkey, key,
-                                                                    noise);
+        Schedule::log_delta, Traits::PolynomialTraits::relin_depth,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(relinkey, key, noise);
 }
 
 template <class Schedule, std::size_t I>
@@ -9683,8 +9902,10 @@ inline void CKKSDenseDDEvalModDoubleAngleRelinKeyGen(
     using Traits = CKKSDenseEvalModBoundedCosTraits<Schedule>;
     CKKSDDRelinKeyChainElementGen<I, typename Schedule::Param,
                                   Traits::polynomial_log_q, Schedule::log_delta,
-                                  Schedule::evalmod_double_angle>(relinkey, key,
-                                                                  noise);
+                                  Schedule::evalmod_double_angle,
+                                  CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                                  CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
+        relinkey, key, noise);
 }
 
 template <class Schedule, std::size_t I>
@@ -9697,8 +9918,10 @@ inline void CKKSDenseDDEvalModInverseRelinKeyGen(
     CKKSDDRelinKeyChainElementGen<I, typename Schedule::Param,
                                   Traits::after_double_angle_log_q,
                                   Schedule::log_delta,
-                                  Traits::InverseTraits::power_depth>(relinkey,
-                                                                      key, noise);
+                                  Traits::InverseTraits::power_depth,
+                                  CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                                  CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
+        relinkey, key, noise);
 }
 
 template <class Schedule, std::size_t I>
@@ -9712,8 +9935,11 @@ inline void CKKSDenseSeededDDEvalModPolynomialRelinKeyGen(
         Schedule::after_component_split_log_q -
         (I + 1) * Schedule::log_delta;
     static_assert(I < Traits::PolynomialTraits::relin_depth);
-    relinkey = *makeCKKSSeededDDRelinKey<typename Schedule::Param, log_q>(
-        key, noise);
+    relinkey =
+        *makeCKKSSeededDDRelinKey<typename Schedule::Param, log_q,
+                                  CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                                  CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
+            key, noise);
 }
 
 template <class Schedule, std::size_t I>
@@ -9726,8 +9952,11 @@ inline void CKKSDenseSeededDDEvalModDoubleAngleRelinKeyGen(
     constexpr std::uint32_t log_q =
         Traits::polynomial_log_q - (I + 1) * Schedule::log_delta;
     static_assert(I < Schedule::evalmod_double_angle);
-    relinkey = *makeCKKSSeededDDRelinKey<typename Schedule::Param, log_q>(
-        key, noise);
+    relinkey =
+        *makeCKKSSeededDDRelinKey<typename Schedule::Param, log_q,
+                                  CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                                  CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
+            key, noise);
 }
 
 template <class Schedule, std::size_t I>
@@ -9740,8 +9969,11 @@ inline void CKKSDenseSeededDDEvalModInverseRelinKeyGen(
     constexpr std::uint32_t log_q =
         Traits::after_double_angle_log_q - (I + 1) * Schedule::log_delta;
     static_assert(I < Traits::InverseTraits::power_depth);
-    relinkey = *makeCKKSSeededDDRelinKey<typename Schedule::Param, log_q>(
-        key, noise);
+    relinkey =
+        *makeCKKSSeededDDRelinKey<typename Schedule::Param, log_q,
+                                  CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                                  CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
+            key, noise);
 }
 
 template <class Schedule, std::size_t I>
@@ -11783,7 +12015,10 @@ CKKSDenseBootstrapSeededDDPolynomialRelinNextMissingFileByteEstimateImpl(
             CKKSDenseBootstrapIndexedPath(root, "polynomial_relin", I);
         if (!std::filesystem::exists(path))
             return CKKSDenseBootstrapKeyFileByteEstimate{
-                path, CKKSSeededDDRelinKeyByteEstimate<P, log_q>()};
+                path,
+                CKKSSeededDDRelinKeyByteEstimate<
+                    P, log_q, CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                    CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>()};
         return CKKSDenseBootstrapSeededDDPolynomialRelinNextMissingFileByteEstimateImpl<
             I + 1, Schedule>(root);
     }
@@ -11806,7 +12041,10 @@ CKKSDenseBootstrapSeededDDDoubleAngleRelinNextMissingFileByteEstimateImpl(
             CKKSDenseBootstrapIndexedPath(root, "double_angle_relin", I);
         if (!std::filesystem::exists(path))
             return CKKSDenseBootstrapKeyFileByteEstimate{
-                path, CKKSSeededDDRelinKeyByteEstimate<P, log_q>()};
+                path,
+                CKKSSeededDDRelinKeyByteEstimate<
+                    P, log_q, CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                    CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>()};
         return CKKSDenseBootstrapSeededDDDoubleAngleRelinNextMissingFileByteEstimateImpl<
             I + 1, Schedule>(root);
     }
@@ -11829,7 +12067,10 @@ CKKSDenseBootstrapSeededDDInverseRelinNextMissingFileByteEstimateImpl(
             CKKSDenseBootstrapIndexedPath(root, "inverse_relin", I);
         if (!std::filesystem::exists(path))
             return CKKSDenseBootstrapKeyFileByteEstimate{
-                path, CKKSSeededDDRelinKeyByteEstimate<P, log_q>()};
+                path,
+                CKKSSeededDDRelinKeyByteEstimate<
+                    P, log_q, CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                    CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>()};
         return CKKSDenseBootstrapSeededDDInverseRelinNextMissingFileByteEstimateImpl<
             I + 1, Schedule>(root);
     }
@@ -12226,6 +12467,8 @@ CKKSDenseBootstrapBuildSeededDDProductEvalKeyDirectoryManifest(
     manifest.key_format =
         CKKSDenseBootstrapProductEvalKeyDirectoryManifest::
             seeded_dd_product_format;
+    manifest.dd_relin_bgbit = CKKSDenseBootstrapDDRelinBgbit<Schedule>();
+    manifest.dd_relin_bbarbit = CKKSDenseBootstrapDDRelinBbarbit<Schedule>();
     manifest.expected_file_count =
         CKKSDenseBootstrapSeededDDProductEvalKeyDirectoryFiles(
             root, include_post_bootstrap_product)
@@ -12276,9 +12519,14 @@ inline bool CKKSDenseBootstrapSeededDDProductEvalKeyDirectoryManifestMatches(
     if (require_post_bootstrap_product &&
         manifest.includes_post_bootstrap_product == 0)
         return false;
-    return manifest ==
-           CKKSDenseBootstrapBuildSeededDDProductEvalKeyDirectoryManifest<
-               Schedule>(manifest.includes_post_bootstrap_product != 0);
+    auto expected =
+        CKKSDenseBootstrapBuildSeededDDProductEvalKeyDirectoryManifest<
+            Schedule>(manifest.includes_post_bootstrap_product != 0);
+    // Compact seeded DD relin files store primary encrypted gadget rows only.
+    // Bbar is a use-time decomposition choice, so existing seeded-DD files can
+    // be evaluated with a tighter Bbar without regenerating key material.
+    expected.dd_relin_bbarbit = manifest.dd_relin_bbarbit;
+    return manifest == expected;
 }
 
 template <class Schedule>
@@ -12514,7 +12762,9 @@ inline void CKKSSeededRelinKeyGenToFile(
     CKKSSavePortableBinaryAtomic(path, *relinkey);
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline void CKKSSeededDDRelinKeyGenToFile(
     const std::filesystem::path &path, const Key<P> &key,
     CKKSNoise noise = {P::α, 0},
@@ -12522,7 +12772,8 @@ inline void CKKSSeededDDRelinKeyGenToFile(
 {
     if (!options.overwrite_existing && std::filesystem::exists(path)) return;
 
-    auto relinkey = makeCKKSSeededDDRelinKey<P, LogQ>(key, noise);
+    auto relinkey =
+        makeCKKSSeededDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>(key, noise);
     CKKSSavePortableBinaryAtomic(path, *relinkey);
 }
 
@@ -12546,13 +12797,16 @@ inline bool CKKSSeededRelinKeyGenNextMissingToFile(
     return true;
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline bool CKKSSeededDDRelinKeyGenNextMissingToFile(
     const std::filesystem::path &path, const Key<P> &key,
     CKKSNoise noise = {P::α, 0})
 {
     if (std::filesystem::exists(path)) return false;
-    CKKSSeededDDRelinKeyGenToFile<P, LogQ>(path, key, noise);
+    CKKSSeededDDRelinKeyGenToFile<P, LogQ, RelinBgbit, RelinBbarbit>(
+        path, key, noise);
     return true;
 }
 
@@ -12573,9 +12827,11 @@ inline void CKKSLoadSeededRelinKeyFromFile(
     CKKSLoadPortableBinary(relinkey, path);
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline void CKKSLoadSeededDDRelinKeyFromFile(
-    CKKSSeededDDRelinKey<P, LogQ> &relinkey,
+    CKKSSeededDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit> &relinkey,
     const std::filesystem::path &path)
 {
     CKKSRequireKeyFileReadable(path, "seeded DD relinearization");
@@ -12614,7 +12870,9 @@ inline void CKKSMultWithSeededRelinKeyFile(
 }
 
 template <class P, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
-          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta>
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
 inline void CKKSMultWithSeededDDRelinKeyFile(
     CKKSMultResult<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta> &res,
     const CKKSCiphertext<P, LhsLogQ, LhsLogDelta> &lhs,
@@ -12623,9 +12881,12 @@ inline void CKKSMultWithSeededDDRelinKeyFile(
 {
     using Traits =
         CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
-    auto relinkey = std::make_unique<CKKSSeededDDRelinKey<P, Traits::log_q>>();
-    CKKSLoadSeededDDRelinKeyFromFile<P, Traits::log_q>(*relinkey,
-                                                       relin_key_file);
+    auto relinkey =
+        std::make_unique<CKKSSeededDDRelinKey<P, Traits::log_q, RelinBgbit,
+                                              RelinBbarbit>>();
+    CKKSLoadSeededDDRelinKeyFromFile<P, Traits::log_q, RelinBgbit,
+                                     RelinBbarbit>(
+        *relinkey, relin_key_file);
     CKKSMult<P>(res, lhs, rhs, *relinkey);
 }
 
@@ -12974,7 +13235,10 @@ inline void CKKSDenseBootstrapSeededDDProductEvalKeyGenToDirectory(
     run_stage("product_dd_relin",
               timings != nullptr ? &timings->product_relin_keygen_ms : nullptr,
               [&] {
-                  CKKSSeededDDRelinKeyGenToFile<P, product_log_q>(
+                  CKKSSeededDDRelinKeyGenToFile<
+                      P, product_log_q,
+                      CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                      CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
                       files.product_relin_key, input_output_key, noise,
                       options);
               });
@@ -12986,7 +13250,9 @@ inline void CKKSDenseBootstrapSeededDDProductEvalKeyGenToDirectory(
                           : nullptr,
                       [&] {
                           CKKSSeededDDRelinKeyGenToFile<
-                              P, Schedule::post_bootstrap_product_log_q>(
+                              P, Schedule::post_bootstrap_product_log_q,
+                              CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+                              CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
                               files.post_bootstrap_product_relin_key,
                               input_output_key, noise, options);
                       });
@@ -13582,6 +13848,8 @@ CKKSDenseBootstrapBuildSeededHybridGiantStreamedDDEvalModKeyDirectoryManifest(
             seeded_hybrid_giant_streamed_dd_evalmod_tuned_format_base,
         CKKSDenseBootstrapKeyDirectoryManifest::
             seeded_hybrid_direct_baby_streamed_dd_evalmod_format_base);
+    manifest.dd_relin_bgbit = CKKSDenseBootstrapDDRelinBgbit<Schedule>();
+    manifest.dd_relin_bbarbit = CKKSDenseBootstrapDDRelinBbarbit<Schedule>();
     manifest.expected_file_count =
         CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyDirectoryFiles<
             Schedule>(root)
@@ -13647,9 +13915,18 @@ inline bool
 CKKSDenseBootstrapSeededHybridGiantStreamedDDEvalModKeyDirectoryManifestMatches(
     const CKKSDenseBootstrapKeyDirectoryManifest &manifest)
 {
-    return manifest ==
-           CKKSDenseBootstrapBuildSeededHybridGiantStreamedDDEvalModKeyDirectoryManifest<
-               Schedule>();
+    auto expected =
+        CKKSDenseBootstrapBuildSeededHybridGiantStreamedDDEvalModKeyDirectoryManifest<
+            Schedule>();
+    // Compact seeded DD relin files do not encode the Bbar decomposition.  The
+    // Bbar-dependent row counts are advisory estimates, not compatibility
+    // requirements for already-generated seeded-DD key material.
+    expected.dd_relin_bbarbit = manifest.dd_relin_bbarbit;
+    expected.hybrid_key_rows = manifest.hybrid_key_rows;
+    expected.hybrid_streamed_peak_key_rows =
+        manifest.hybrid_streamed_peak_key_rows;
+    expected.full_key_rows = manifest.full_key_rows;
+    return manifest == expected;
 }
 
 template <class Schedule>
@@ -16750,8 +17027,11 @@ inline void CKKSDenseBootstrapProductWithSeededDDRelinKeyFileAndKeyProvider(
         CKKSDenseBootstrapProductTraits<Schedule, LhsLogQ, LhsLogDelta,
                                         RhsLogQ, RhsLogDelta>;
     auto product = std::make_unique<typename Traits::ProductCiphertext>();
-    CKKSMultWithSeededDDRelinKeyFile<typename Schedule::Param>(
-        *product, lhs, rhs, relin_key_file);
+    CKKSMultWithSeededDDRelinKeyFile<
+        typename Schedule::Param, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta,
+        CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+        CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(*product, lhs, rhs,
+                                                      relin_key_file);
     CKKSDenseBootstrapEncapsulatedFromLevelWithKeyProvider<Schedule>(
         res, *product, bootstrap_key_provider, encapsulation_key);
 }
@@ -16775,7 +17055,10 @@ inline void CKKSDenseBootstrapProductWithSeededDDRelinKeyFileAndKeyProviderTimed
     timings = {};
     auto product = std::make_unique<typename Traits::ProductCiphertext>();
     ckks_detail::CKKSTimeBootstrapStage(&timings.multiply_ms, [&] {
-        CKKSMultWithSeededDDRelinKeyFile<typename Schedule::Param>(
+        CKKSMultWithSeededDDRelinKeyFile<
+            typename Schedule::Param, LhsLogQ, LhsLogDelta, RhsLogQ,
+            RhsLogDelta, CKKSDenseBootstrapDDRelinBgbit<Schedule>(),
+            CKKSDenseBootstrapDDRelinBbarbit<Schedule>()>(
             *product, lhs, rhs, relin_key_file);
     },
                                         progress, "multiply_dd");

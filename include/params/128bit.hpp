@@ -333,8 +333,12 @@ struct lvl6param {
     static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t lₐ = 5;
     static constexpr std::uint32_t l = 5;
-    static constexpr std::uint32_t Bgbit = 19;
-    static constexpr std::uint32_t Bgₐbit = 19;
+    // CKKS bootstrapping EvalMod is sensitive to pre-EvalMod automorphism
+    // noise.  A 7-bit auxiliary base gives the lvl6 linear key switches more
+    // precision for the practical dense CKKS schedule while still covering the
+    // 896-bit torus exactly at compile time.
+    static constexpr std::uint32_t Bgbit = 16;
+    static constexpr std::uint32_t Bgₐbit = 16;
     using T = MultiLimbUInt<14>;
     static constexpr T Bg = T{1} << Bgbit;
     static constexpr T Bgₐ = T{1} << Bgₐbit;
@@ -356,10 +360,10 @@ struct lvl6param {
         (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
     static constexpr uint64_t bfv_bootstrap_digit_error_bound = 15;
     static constexpr int bfv_bootstrap_linear_bsgs_step = 128;
-    static constexpr std::uint32_t l̅ = 56;
-    static constexpr std::uint32_t l̅ₐ = 56;
-    static constexpr std::uint32_t B̅gbit = 16;
-    static constexpr std::uint32_t B̅gₐbit = 16;
+    static constexpr std::uint32_t l̅ = 128;
+    static constexpr std::uint32_t l̅ₐ = 128;
+    static constexpr std::uint32_t B̅gbit = 7;
+    static constexpr std::uint32_t B̅gₐbit = 7;
 
     static constexpr uint64_t simd_modulus = plain_modulus_u64;
     static constexpr uint64_t simd_psi = 108788;
