@@ -920,7 +920,7 @@ struct CKKSDenseBootstrapProgress {
 };
 
 struct CKKSDenseBootstrapKeyDirectoryManifest {
-    static constexpr std::uint32_t current_version = 5;
+    static constexpr std::uint32_t current_version = 6;
     static constexpr std::uint32_t sparse_format = 0;
     static constexpr std::uint32_t hybrid_giant_format = 1;
     static constexpr std::uint32_t seeded_hybrid_giant_format = 2;
@@ -951,6 +951,8 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     std::uint32_t input_log_q = 0;
     std::uint32_t boot_log_q = 0;
     std::uint32_t output_log_q = 0;
+    std::int32_t noise_alpha_log2_milli = 0;
+    std::int32_t min_noise_stddev_log2_milli = 0;
     std::uint32_t linear_plain_log_delta = 0;
     std::uint32_t linear_fuse_radix = 0;
     std::uint32_t coeff_to_slot_plain_log_delta = 0;
@@ -985,6 +987,7 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
     {
         archive(version, key_format, n, nbit, torus_bits, log_delta,
                 log_message_ratio, input_log_q, boot_log_q, output_log_q,
+                noise_alpha_log2_milli, min_noise_stddev_log2_milli,
                 linear_plain_log_delta, linear_fuse_radix,
                 coeff_to_slot_plain_log_delta,
                 component_split_plain_log_delta,
@@ -1000,7 +1003,7 @@ struct CKKSDenseBootstrapKeyDirectoryManifest {
 };
 
 struct CKKSDenseBootstrapProductEvalKeyDirectoryManifest {
-    static constexpr std::uint32_t current_version = 3;
+    static constexpr std::uint32_t current_version = 4;
     static constexpr std::uint32_t product_format = 0;
     static constexpr std::uint32_t seeded_product_format = 1;
     static constexpr std::uint32_t seeded_dd_product_format = 2;
@@ -1014,6 +1017,8 @@ struct CKKSDenseBootstrapProductEvalKeyDirectoryManifest {
     std::uint32_t input_log_q = 0;
     std::uint32_t boot_log_q = 0;
     std::uint32_t output_log_q = 0;
+    std::int32_t noise_alpha_log2_milli = 0;
+    std::int32_t min_noise_stddev_log2_milli = 0;
     std::uint32_t coeff_to_slot_plain_log_delta = 0;
     std::uint32_t slot_to_coeff_plain_log_delta = 0;
     std::uint32_t evalmod_k = 0;
@@ -1037,6 +1042,7 @@ struct CKKSDenseBootstrapProductEvalKeyDirectoryManifest {
     {
         archive(version, key_format, n, nbit, torus_bits, log_delta,
                 input_log_q, boot_log_q, output_log_q,
+                noise_alpha_log2_milli, min_noise_stddev_log2_milli,
                 coeff_to_slot_plain_log_delta,
                 slot_to_coeff_plain_log_delta, evalmod_k,
                 evalmod_double_angle, evalmod_inv_degree, evalmod_log_scale,
@@ -1048,6 +1054,28 @@ struct CKKSDenseBootstrapProductEvalKeyDirectoryManifest {
 };
 
 namespace ckks_detail {
+
+inline std::int32_t ckks_manifest_log2_milli(long double value)
+{
+    return static_cast<std::int32_t>(
+        std::llround(std::log2(value) * 1000.0L));
+}
+
+template <class P>
+inline std::int32_t ckks_manifest_noise_alpha_log2_milli()
+{
+    return ckks_manifest_log2_milli(static_cast<long double>(P::α));
+}
+
+template <class P>
+inline std::int32_t ckks_manifest_min_noise_stddev_log2_milli()
+{
+    if constexpr (requires { P::ckks_min_noise_stddev; })
+        return ckks_manifest_log2_milli(
+            static_cast<long double>(P::ckks_min_noise_stddev));
+    else
+        return 0;
+}
 
 inline bool ckks_linear_trace_enabled()
 {
@@ -12399,6 +12427,10 @@ CKKSDenseBootstrapBuildProductEvalKeyDirectoryManifest(
     manifest.input_log_q = Schedule::input_log_q;
     manifest.boot_log_q = Schedule::boot_log_q;
     manifest.output_log_q = Schedule::output_log_q;
+    manifest.noise_alpha_log2_milli =
+        ckks_detail::ckks_manifest_noise_alpha_log2_milli<P>();
+    manifest.min_noise_stddev_log2_milli =
+        ckks_detail::ckks_manifest_min_noise_stddev_log2_milli<P>();
     manifest.coeff_to_slot_plain_log_delta =
         Schedule::coeff_to_slot_plain_log_delta;
     manifest.slot_to_coeff_plain_log_delta =
@@ -13671,6 +13703,10 @@ CKKSDenseBootstrapBuildKeyDirectoryManifest(const std::filesystem::path &root)
     manifest.input_log_q = Schedule::input_log_q;
     manifest.boot_log_q = Schedule::boot_log_q;
     manifest.output_log_q = Schedule::output_log_q;
+    manifest.noise_alpha_log2_milli =
+        ckks_detail::ckks_manifest_noise_alpha_log2_milli<P>();
+    manifest.min_noise_stddev_log2_milli =
+        ckks_detail::ckks_manifest_min_noise_stddev_log2_milli<P>();
     manifest.linear_plain_log_delta = Schedule::linear_plain_log_delta;
     manifest.linear_fuse_radix = Schedule::linear_fuse_radix;
     manifest.coeff_to_slot_plain_log_delta =

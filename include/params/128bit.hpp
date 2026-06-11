@@ -323,8 +323,8 @@ struct lvl5param {
 // which is enough for the tuned 896-bit CKKS bootstrap schedule while avoiding
 // the impractical absolute EvalMod noise created by the earlier 1108-bit
 // schedule.  The CKKS encryption noise is tuned close to the small integer
-// Gaussian noise used by RNS CKKS libraries: at logQ = 896, α = 2^-886 gives
-// σ = 2^10, with a 3.2 floor at lower active levels.
+// Gaussian noise used by RNS CKKS libraries: at logQ = 896, α = 2^-872 gives
+// σ = 2^24, with a 3.2 floor at lower active levels.
 struct lvl6param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
@@ -344,7 +344,7 @@ struct lvl6param {
     static constexpr T Bgₐ = T{1} << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -886);
+    static const inline double α = std::pow(2.0, -872);
     // Low active CKKS levels would otherwise round α*2^LogQ to zero.  This
     // floor keeps direct lvl6 CKKS encryption/keygen non-degenerate while the
     // high-level bootstrap keys still use the security-tuned relative α above.

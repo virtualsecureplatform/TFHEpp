@@ -5,7 +5,8 @@ current target path is a leveled CKKS multiplication followed by dense CKKS
 bootstrapping. The current storage-practical full-size correctness target is
 seeded hybrid giant streamed bootstrapping with compact seeded
 double-decomposition (DD) EvalMod and product relinearization. This 2^15-ring
-target is not yet a 128-bit-secure parameter set under the local estimator.
+target is a 128-bit-secure parameter set under the local estimator when keys
+are generated with the current lvl6 noise parameter.
 
 The most practical full-size configuration is the tuned lvl6 seeded hybrid
 giant streamed bootstrap path:
@@ -17,14 +18,14 @@ giant streamed bootstrap path:
 - input level: `input_log_q = 58`
 - output level: `output_log_q = 116`
 - scale bits: `log_delta = 52`
-- lvl6 CKKS noise: `α = 2^-886`
+- lvl6 CKKS noise: `α = 2^-872`
 - low-level CKKS noise floor: `σ >= 3.2`
 - bounded bootstrap secret weight: `16`
 - DD relin bases: `Bg = 2^4`, `Bbar = 2^16`
 
 CKKS APIs and schedules are compile-time types. Changing a schedule, level,
-scale, sparse key weight, or key layout requires regenerating the relevant
-bootstrap and product evaluation keys.
+scale, sparse key weight, CKKS noise parameter, or key layout requires
+regenerating the relevant bootstrap and product evaluation keys.
 
 ## Core Types
 
@@ -78,8 +79,8 @@ interval assumed by the schedule. A dense bootstrap secret can exceed that bound
 and invalidate the practical error analysis.
 
 The current lvl6 noise is tuned for the 896-bit bootstrap level. With
-`n = 32768`, `q = 2^896`, and `α = 2^-886`, the top-level integer noise
-standard deviation is `σ = 2^10`. Lower active levels use the `3.2` floor. This
+`n = 32768`, `q = 2^896`, and `α = 2^-872`, the top-level integer noise
+standard deviation is `σ = 2^24`. Lower active levels use the `3.2` floor. This
 matches the small-integer Gaussian noise shape used by RNS CKKS libraries and
 avoids the large absolute EvalMod noise from the old relative-noise setting.
 
@@ -105,9 +106,10 @@ cd Parameter-Selection/python
 sage -python estimates/CKKS_lvl6.py
 ```
 
-Validation commands record the requested sparse weight in the key directory and
-reject a mismatch. This prevents accidentally reusing a bootstrap key generated
-for a different sparse-weight assumption.
+Validation commands record the requested sparse weight and CKKS noise parameter
+in the key directory and reject a mismatch. This prevents accidentally reusing a
+bootstrap key generated for a different sparse-weight or security/noise
+assumption.
 
 ## Key Directories
 
@@ -440,19 +442,19 @@ files. The full-size full-DD chained product bootstrap also passes locally with
 prebuilt seeded key directories.
 
 The current `Parameter-Selection/python/estimates/CKKS_lvl6.py` estimate for
-this exact `n=32768`, `q=2^896`, `α=2^-886` setting is below the 128-bit target:
+this exact `n=32768`, `q=2^896`, `α=2^-872` setting passes the 128-bit target:
 
 ```text
-dense-ternary weakest = 127.056 bits
-sparse-H16 weakest = 125.922 bits
+dense-ternary weakest = 129.183 bits
+sparse-H16 weakest = 128.254 bits
 ```
 
-The full-DD path should therefore be treated as a working dense-bootstrapping
-correctness baseline, not as a release-ready 128-bit-secure CKKS parameter set.
-Local estimator sweeps show two possible directions: `n=65536` gives a large
-security margin at the current noise, while keeping `n=32768` would require a
-large noise increase around `α=2^-872` for sparse-H16, which has not been shown
-to preserve the measured bootstrap correctness margin.
+The full-DD path should therefore be treated as the current practical
+full-size, 128-bit-secure dense-bootstrapping baseline, provided bootstrap and
+product evaluation keys are regenerated after any parameter change. Local
+estimator sweeps still show that `n=65536` gives a larger security margin, but
+the active `n=32768` lvl6 path now has both estimator and full-size correctness
+coverage.
 
 The measured lvl6 full-DD candidate is:
 
@@ -466,19 +468,19 @@ With a prebuilt full-DD seeded directory, the full-size chained product
 bootstrap passes the current tolerance:
 
 ```text
-first_max_error = 0.0789272
-chained_max_error = 0.0706058
-first_bootstrap_ms = 3.28913e+06
-chained_bootstrap_ms = 3.36836e+06
-wall_time = 1:51:26
-max_rss = 20616024 KiB
+first_max_error = 0.0952908
+chained_max_error = 0.0773982
+first_bootstrap_ms = 3.29487e+06
+chained_bootstrap_ms = 3.36438e+06
+wall_time = 2:16:26
+max_rss = 20652888 KiB
 ```
 
-That run used about 35 GB of seeded full-DD key material on the local test host.
-It validates both the first product-bootstrap step and the chained
-post-bootstrap product step. The full-DD chained command is intentionally not
-part of CI because the key directory is much larger than the repository artifact
-limit.
+That run used a regenerated α=2^-872 seeded full-DD key directory of about
+35 GB of key material on the local test host. It validates both the first
+product-bootstrap step and the chained post-bootstrap product step. The full-DD
+chained command is intentionally not part of CI because the key directory is
+much larger than the repository artifact limit.
 
 Earlier tuning points are useful negative controls. A `c2s=40`/`split=40`
 schedule failed the same streamed full-DD product path with roughly `0.33`
