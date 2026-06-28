@@ -12,7 +12,7 @@ struct lvl0param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = 0;
     static constexpr int32_t key_value_diff = key_value_max - key_value_min;
-    static constexpr std::uint32_t n = 636;  // dimension
+    static constexpr std::uint32_t n = 630;  // dimension
     static constexpr std::uint32_t k = 1;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
