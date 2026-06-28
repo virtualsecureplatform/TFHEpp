@@ -130,6 +130,30 @@ jobs:
           cd build
           test/test.sh tfhe
 
+  tfhe-block-binary:
+    name: tfhe-block-binary-gcc-24.04
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    steps:
+      - name: Install libraries
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            git build-essential g++ libomp-dev cmake ninja-build
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build and test TFHE block-binary parameters
+        run: |
+          cmake . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_TEST=ON \
+            -DUSE_BLOCK_BINARY=ON
+          cmake --build build --target blockbinary_blindrotatefft
+          build/test/tfhe/blockbinary_blindrotatefft
+
   tfhe-raintt:
     name: tfhe-raintt-gcc-24.04
     runs-on: ubuntu-latest
