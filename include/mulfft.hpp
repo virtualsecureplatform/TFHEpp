@@ -986,17 +986,31 @@ alignas(64) static const std::unique_ptr<
     const std::array<PolynomialInFD<lvl2param>, 2 * lvl2param::n>> xaittlvl2 =
     XaittGen<lvl2param>();
 #endif
-#ifdef USE_TERNARY
+
+template <class P>
+inline const std::array<PolynomialInFD<P>, 2 * P::n> &XaittTable()
+{
+    static const auto xaitt = XaittGen<P>();
+    return *xaitt;
+}
+
 template <class P>
 inline void PolynomialMulByXaiMinusOneInFD(PolynomialInFD<P> &res,
                                            const PolynomialInFD<P> &poly,
                                            const int a)
 {
-    const int mod = a % (2 * P::n);
-    const int index = mod > 0 ? mod : mod + (2 * P::n);
-    if constexpr (std::is_same_v<P, lvl1param>) {
-        MulInFD<P::n>(res, poly, (*xaittlvl1)[index]);
-    }
+    int index = a % (2 * P::n);
+    if (index < 0) index += 2 * P::n;
+    MulInFD<P::n>(res, poly, XaittTable<P>()[index]);
 }
-#endif
+
+template <class P>
+inline void PolynomialFMAByXaiMinusOneInFD(PolynomialInFD<P> &res,
+                                           const PolynomialInFD<P> &poly,
+                                           const int a)
+{
+    int index = a % (2 * P::n);
+    if (index < 0) index += 2 * P::n;
+    FMAInFD<P::n>(res, poly, XaittTable<P>()[index]);
+}
 }  // namespace TFHEpp

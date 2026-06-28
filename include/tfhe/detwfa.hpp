@@ -81,6 +81,69 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(
 }
 
 template <class bkP>
+void CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne(
+    TRLWE<typename bkP::targetP> &acc,
+    const BootstrappingKeyElementFFT<bkP> *bkfft,
+    const typename bkP::domainP::T *bara)
+{
+    using P = typename bkP::targetP;
+
+    static_assert(bkP::domainP::key_value_min == 0 &&
+                      bkP::domainP::key_value_max == 1,
+                  "block-binary blind rotation expects binary key values");
+    static_assert(bkP::domainP::ell > 0,
+                  "block-binary blind rotation expects ell > 0");
+    static_assert(P::l̅ == 1 && P::l̅ₐ == 1,
+                  "block-binary FFT blind rotation currently expects lbar = 1");
+
+    bool any_rotation = false;
+    for (uint32_t offset = 0; offset < bkP::domainP::ell; offset++) {
+        if (bara[offset] != 0) {
+            any_rotation = true;
+            break;
+        }
+    }
+    if (!any_rotation) return;
+
+    constexpr int dec_rows = P::k * P::lₐ + P::l;
+    alignas(64) std::array<PolynomialInFD<P>, dec_rows> accdecfft;
+
+    int row = 0;
+    for (int k_idx = 0; k_idx < P::k; k_idx++) {
+        alignas(64) DecomposedNoncePolynomial<P> decpoly;
+        NonceDecomposition<P>(decpoly, acc[k_idx]);
+        for (int i = 0; i < P::lₐ; i++, row++)
+            TwistIFFT<P>(accdecfft[row], decpoly[i]);
+    }
+    {
+        alignas(64) DecomposedPolynomial<P> decpoly;
+        Decomposition<P>(decpoly, acc[P::k]);
+        for (int i = 0; i < P::l; i++, row++)
+            TwistIFFT<P>(accdecfft[row], decpoly[i]);
+    }
+
+    alignas(64) TRLWEInFD<P> blockfft = {};
+    alignas(64) TRLWEInFD<P> productfft;
+
+    for (uint32_t offset = 0; offset < bkP::domainP::ell; offset++) {
+        if (bara[offset] == 0) continue;
+
+        const TRGSWFFT<P> &trgswfft = bkfft[offset][0];
+        MulInFD_Multi<P::n, P::k + 1>(productfft, accdecfft[0],
+                                      trgswfft[0]);
+        for (int i = 1; i < dec_rows; i++)
+            FMAInFD_Multi<P::n, P::k + 1>(productfft, accdecfft[i],
+                                          trgswfft[i]);
+
+        for (int k = 0; k < P::k + 1; k++)
+            PolynomialFMAByXaiMinusOneInFD<P>(blockfft[k], productfft[k],
+                                              bara[offset]);
+    }
+
+    for (int k = 0; k < P::k + 1; k++) TwistFFTAdd<P>(acc[k], blockfft[k]);
+}
+
+template <class bkP>
 void CMUXwithPolynomialMulByXaiMinusOne(
     TRLWE<typename bkP::targetP> &acc,
     const BootstrappingKeyElementFFT<bkP> &cs, const int a)

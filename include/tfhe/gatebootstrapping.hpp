@@ -65,17 +65,42 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
         ExternalProduct<typename P::targetP>(res, res, BKadded);
     }
 #else
-    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
-        // Prefetch the next BK element (128KB ahead) to overlap memory
-        // latency with computation.  Spread prefetch hints across multiple
-        // cache lines at the start of the next TRGSW element.
-        if (i + 1 < P::domainP::k * P::domainP::n) {
-            const char *next_bk = reinterpret_cast<const char *>(&bkfft[i + 1]);
-            for (int p = 0; p < 8; p++)
-                __builtin_prefetch(next_bk + p * 4096, 0, 1);
+    if constexpr (requires { P::domainP::ell; }) {
+        static_assert(P::domainP::k == 1,
+                      "block-binary blind rotation expects domain k = 1");
+        static_assert(P::domainP::n % P::domainP::ell == 0,
+                      "block-binary dimension must be divisible by ell");
+        static_assert(P::Addends == 1,
+                      "block-binary blind rotation does not use key bundling");
+
+        constexpr uint32_t ell = P::domainP::ell;
+        constexpr uint32_t blocks = P::domainP::n / ell;
+        for (uint32_t block = 0; block < blocks; block++) {
+            const uint32_t base = block * ell;
+            if (block + 1 < blocks) {
+                const char *next_bk =
+                    reinterpret_cast<const char *>(&bkfft[base + ell]);
+                for (int p = 0; p < 8; p++)
+                    __builtin_prefetch(next_bk + p * 4096, 0, 1);
+            }
+            CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne<P>(
+                res, &bkfft[base], moded.data() + base);
         }
-        if (moded[i] == 0) continue;
-        CMUXwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], moded[i]);
+    }
+    else {
+        for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
+            // Prefetch the next BK element (128KB ahead) to overlap memory
+            // latency with computation.  Spread prefetch hints across multiple
+            // cache lines at the start of the next TRGSW element.
+            if (i + 1 < P::domainP::k * P::domainP::n) {
+                const char *next_bk =
+                    reinterpret_cast<const char *>(&bkfft[i + 1]);
+                for (int p = 0; p < 8; p++)
+                    __builtin_prefetch(next_bk + p * 4096, 0, 1);
+            }
+            if (moded[i] == 0) continue;
+            CMUXwithPolynomialMulByXaiMinusOne<P>(res, bkfft[i], moded[i]);
+        }
     }
 #endif
 }
