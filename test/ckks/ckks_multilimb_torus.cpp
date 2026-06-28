@@ -1,6 +1,6 @@
 #if defined(USE_80BIT_SECURITY) || defined(USE_COMPRESS) || \
-    defined(USE_CGGI19) || defined(USE_CONCRETE) || defined(USE_TFHE_RS) || \
-    defined(USE_TERNARY)
+    defined(USE_CGGI19) || defined(USE_BLOCK_BINARY) ||                  \
+    defined(USE_CONCRETE) || defined(USE_TFHE_RS) || defined(USE_TERNARY)
 
 #include <iostream>
 

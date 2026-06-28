@@ -19,6 +19,7 @@ endif()
 
 option(USE_80BIT_SECURITY "Use 80bit security parameter(faster)" OFF)
 option(USE_CGGI19 "Use the parameter set proposed in CGGI19" OFF)
+option(USE_BLOCK_BINARY "Use Concrete-based parameters with block-binary lvl0 keys" OFF)
 option(USE_CONCRETE "Use the parameter set proposed in CONCRETE" OFF)
 option(USE_TFHE_RS "Use the parameter set proposed in TFHE-rs" OFF)
 option(USE_TERNARY "Use ternary secret keys" OFF)
@@ -126,6 +127,11 @@ elseif(USE_CGGI19)
       "${TFHEpp_DEFINITIONS};USE_CGGI19"
       PARENT_SCOPE)
   add_compile_definitions(USE_CGGI19)
+elseif(USE_BLOCK_BINARY)
+  set(TFHEpp_DEFINITIONS
+      "${TFHEpp_DEFINITIONS};USE_BLOCK_BINARY"
+      PARENT_SCOPE)
+  add_compile_definitions(USE_BLOCK_BINARY)
 elseif(USE_CONCRETE)
   set(TFHEpp_DEFINITIONS
       "${TFHEpp_DEFINITIONS};USE_CONCRETE"
