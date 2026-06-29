@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <limits>
+#include <span>
 
 #include "cloudkey.hpp"
 #include "detwfa.hpp"
@@ -83,8 +84,12 @@ void BlindRotate(TRLWE<typename P::targetP> &res,
                 for (int p = 0; p < 8; p++)
                     __builtin_prefetch(next_bk + p * 4096, 0, 1);
             }
+            std::span<const BootstrappingKeyElementFFT<P>, ell> bkfft_block(
+                bkfft.begin() + base, ell);
+            std::span<const typename P::domainP::T, ell> bara(
+                moded.begin() + base, ell);
             CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne<P>(
-                res, &bkfft[base], moded.data() + base);
+                res, bkfft_block, bara);
         }
     }
     else {

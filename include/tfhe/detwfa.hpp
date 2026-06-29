@@ -1,5 +1,7 @@
 #pragma once
 
+#include <span>
+
 #include "trgsw.hpp"
 
 namespace TFHEpp {
@@ -83,8 +85,8 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(
 template <class bkP>
 void CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne(
     TRLWE<typename bkP::targetP> &acc,
-    const BootstrappingKeyElementFFT<bkP> *bkfft,
-    const typename bkP::domainP::T *bara)
+    std::span<const BootstrappingKeyElementFFT<bkP>, bkP::domainP::ell> bkfft,
+    std::span<const typename bkP::domainP::T, bkP::domainP::ell> bara)
 {
     using P = typename bkP::targetP;
 
