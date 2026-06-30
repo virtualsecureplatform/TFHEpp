@@ -138,15 +138,15 @@ void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
                              const TLWE<typename P::domainP> &tlwe,
                              const SubsetKeySwitchingKey<P> &ksk)
 {
-    constexpr typename P::domainP::T prec_offset =
-        static_cast<typename P::domainP::T>(1) << (std::numeric_limits<typename P::domainP::T>::digits -
-                 (1 + P::basebit * P::t));
-    constexpr uint32_t mask = (1U << P::basebit) - 1;
     res = {};
     constexpr uint32_t domain_digit =
         std::numeric_limits<typename P::domainP::T>::digits;
     constexpr uint32_t target_digit =
         std::numeric_limits<typename P::targetP::T>::digits;
+    constexpr typename P::domainP::T roundoffset =
+        (P::basebit * P::t) < domain_digit
+            ? static_cast<typename P::domainP::T>(1) << (domain_digit - (1 + P::basebit * P::t))
+            : 0;
     if constexpr (domain_digit == target_digit) {
         for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
             res[i] = tlwe[i];
@@ -164,22 +164,36 @@ void SubsetIdentityKeySwitch(TLWE<typename P::targetP> &res,
     }
     else if constexpr (domain_digit < target_digit) {
         for (int i = 0; i < P::targetP::k * P::targetP::n; i++)
-            res[i] = tlwe[i] << (target_digit - domain_digit);
-        res[P::targetP::k * P::targetP::n] = tlwe[P::domainP::k * P::domainP::n]
-                                             << (target_digit - domain_digit);
+            res[i] = static_cast<typename P::targetP::T>(tlwe[i])
+                     << (target_digit - domain_digit);
+        res[P::targetP::k * P::targetP::n] =
+            static_cast<typename P::targetP::T>(
+                tlwe[P::domainP::k * P::domainP::n])
+            << (target_digit - domain_digit);
     }
+
+    constexpr typename P::domainP::T offset = iksoffsetgen<P>();
+    constexpr typename P::domainP::T mask =
+        (static_cast<typename P::domainP::T>(1) << P::basebit) - 1;
+    constexpr typename P::domainP::T halfbase =
+        static_cast<typename P::domainP::T>(1) << (P::basebit - 1);
     for (int i = 0;
          i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n;
          i++) {
         const typename P::domainP::T aibar =
-            tlwe[i + P::targetP::k * P::targetP::n] + prec_offset;
+            tlwe[i + P::targetP::k * P::targetP::n] + offset + roundoffset;
         for (int j = 0; j < P::t; j++) {
-            const uint32_t aij =
-                (aibar >> (std::numeric_limits<typename P::domainP::T>::digits -
-                           (j + 1) * P::basebit)) &
-                mask;
-            if (aij != 0)
+            const int32_t aij =
+                static_cast<int32_t>(
+                    (aibar >>
+                     (std::numeric_limits<typename P::domainP::T>::digits -
+                      (j + 1) * P::basebit)) &
+                    mask) -
+                static_cast<int32_t>(halfbase);
+            if (aij > 0)
                 TLWESub<typename P::targetP>(res, res, ksk[i][j][aij - 1]);
+            else if (aij < 0)
+                TLWEAdd<typename P::targetP>(res, res, ksk[i][j][-aij - 1]);
         }
     }
 }

@@ -221,7 +221,7 @@ using KeySwitchingKey = std::array<
     P::domainP::k * P::domainP::n>;
 template <class P>
 using SubsetKeySwitchingKey = std::array<
-    std::array<std::array<TLWE<typename P::targetP>, (1 << P::basebit) - 1>,
+    std::array<std::array<TLWE<typename P::targetP>, (1 << (P::basebit - 1))>,
                P::t>,
     P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n>;
 template <class P>
@@ -296,6 +296,7 @@ using relinKeyFFT = aligned_array<TRLWEInFD<P>, P::l * P::l̅>;
     fun(lvl21param);                                           \
     fun(lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TLWE(fun) \
+    fun(lvl10param);                                                 \
     fun(lvl21param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TRLWE(fun) \
     fun(lvl21param);

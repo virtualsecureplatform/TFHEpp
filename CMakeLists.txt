@@ -155,6 +155,13 @@ elseif(USE_TERNARY)
   add_compile_definitions(USE_TERNARY)
 endif()
 
+if(USE_SUBSET_KEY)
+  set(TFHEpp_DEFINITIONS
+      "${TFHEpp_DEFINITIONS};USE_SUBSET_KEY"
+      PARENT_SCOPE)
+  add_compile_definitions(USE_SUBSET_KEY)
+endif()
+
 if(NOT USE_TERNARY)
   if(USE_KEY_BUNDLE)
     set(TFHEpp_DEFINITIONS

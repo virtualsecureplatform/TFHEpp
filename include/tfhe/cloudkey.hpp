@@ -54,7 +54,8 @@ struct EvalKey {
         std::shared_ptr<KeySwitchingKey<lvl22param>>,  // 17
         std::shared_ptr<KeySwitchingKey<lvl31param>>,  // 18
         // SubsetKeySwitchingKey
-        std::shared_ptr<SubsetKeySwitchingKey<lvl21param>>,  // 19
+        std::shared_ptr<SubsetKeySwitchingKey<lvl10param>>,  // 19
+        std::shared_ptr<SubsetKeySwitchingKey<lvl21param>>,  // 20
         // PrivateKeySwitchingKey
         std::unordered_map<std::string, std::shared_ptr<PrivateKeySwitchingKey<
                                             lvl11param>>>,  // 20

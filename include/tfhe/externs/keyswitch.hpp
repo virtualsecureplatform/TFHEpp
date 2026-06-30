@@ -13,7 +13,7 @@ TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
     extern template void SubsetIdentityKeySwitch<P>(TLWE<typename P::targetP> & res,       \
                                        const TLWE<typename P::domainP> &tlwe, \
                                        const SubsetKeySwitchingKey<P> &ksk)
-TFHEPP_EXPLICIT_INSTANTIATION_KEY_SWITCH_TO_TLWE(INST)
+TFHEPP_EXPLICIT_INSTANTIATION_SUBSET_KEY_SWITCH_TO_TLWE(INST)
 #undef INST
 
 #define INST(P)                                                           \

@@ -240,8 +240,8 @@ void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
     res[P::k * P::n] -= P::μ;
     if constexpr (std::is_same_v<P, lvl1param>) {
         TLWE<lvl0param> and1, and0;
-        IdentityKeySwitch<lvl10param>(and1, temp, ek.getiksk<lvl10param>());
-        IdentityKeySwitch<lvl10param>(and0, res, ek.getiksk<lvl10param>());
+        EvalIdentityKeySwitch<lvl10param>(and1, temp, ek);
+        EvalIdentityKeySwitch<lvl10param>(and0, res, ek);
         GateBootstrappingTLWE2TLWE<lvl01param>(
             temp, and1, ek.getbkfft<lvl01param>(),
             μpolygen<lvl1param, lvl1param::μ>());
@@ -261,7 +261,7 @@ void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
             μpolygen<lvl1param, lvl1param::μ>());
         for (int i = 0; i <= lvl1param::k * lvl1param::n; i++)
             and0[i] += and1[i];
-        IdentityKeySwitch<lvl10param>(res, and0, ek.getiksk<lvl10param>());
+        EvalIdentityKeySwitch<lvl10param>(res, and0, ek);
         res[P::k * P::n] += P::μ;
     }
 }
@@ -337,8 +337,8 @@ void HomMUXwoSE(TRLWE<typename brP::targetP> &res,
     temp1[iksP::domainP::k * iksP::domainP::n] -= iksP::domainP::μ;
     temp0[iksP::domainP::k * iksP::domainP::n] -= iksP::domainP::μ;
     TLWE<typename iksP::targetP> and1, and0;
-    IdentityKeySwitch<iksP>(and1, temp1, ek.getiksk<iksP>());
-    IdentityKeySwitch<iksP>(and0, temp0, ek.getiksk<iksP>());
+    EvalIdentityKeySwitch<iksP>(and1, temp1, ek);
+    EvalIdentityKeySwitch<iksP>(and0, temp0, ek);
     TRLWE<typename brP::targetP> and0trlwe;
     BlindRotate<brP>(res, and1, ek.getbkfft<brP>(),
                      μpolygen<typename brP::targetP, brP::targetP::μ>());

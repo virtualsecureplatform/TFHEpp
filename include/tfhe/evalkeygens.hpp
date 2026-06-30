@@ -275,11 +275,11 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk,
     for (int i = 0;
          i < P::domainP::k * P::domainP::n - P::targetP::k * P::targetP::n; i++)
         for (int j = 0; j < P::t; j++)
-            for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++)
+            for (uint32_t k = 0; k < (1U << (P::basebit - 1)); k++)
                 tlweSymEncrypt<typename P::targetP>(
                     ksk[i][j][k],
                     domainkey[P::targetP::k * P::targetP::n + i] * (k + 1) *
-                        (1ULL
+                        (static_cast<typename P::targetP::T>(1)
                          << (numeric_limits<typename P::targetP::T>::digits -
                              (j + 1) * P::basebit)),
                     subkey);

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <limits>
 #include <span>
+#include <type_traits>
 
 #include "cloudkey.hpp"
 #include "detwfa.hpp"
@@ -16,6 +17,25 @@
 #endif
 
 namespace TFHEpp {
+
+template <class P>
+void EvalIdentityKeySwitch(TLWE<typename P::targetP> &res,
+                           const TLWE<typename P::domainP> &tlwe,
+                           const EvalKey &ek)
+{
+#ifdef USE_SUBSET_KEY
+    if constexpr (std::is_same_v<P, lvl10param> ||
+                  std::is_same_v<P, lvl21param>) {
+        static_assert(P::domainP::k * P::domainP::n >=
+                      P::targetP::k * P::targetP::n);
+        SubsetIdentityKeySwitch<P>(res, tlwe, ek.getsubiksk<P>());
+    }
+    else
+#endif
+    {
+        IdentityKeySwitch<P>(res, tlwe, ek.getiksk<P>());
+    }
+}
 
 // https://eprint.iacr.org/2025/809
 template <class P, uint32_t num_out>
@@ -381,7 +401,7 @@ void GateBootstrapping(TLWE<typename iksP::targetP> &res,
     alignas(64) TLWE<typename bkP::targetP> tlwelvl1;
     GateBootstrappingTLWE2TLWE<bkP>(tlwelvl1, tlwe, ek.getbkfft<bkP>(),
                                     μpolygen<typename bkP::targetP, μ>());
-    IdentityKeySwitch<iksP>(res, tlwelvl1, ek.getiksk<iksP>());
+    EvalIdentityKeySwitch<iksP>(res, tlwelvl1, ek);
 }
 
 template <class iksP, class bkP, typename bkP::targetP::T μ>
@@ -390,7 +410,7 @@ void GateBootstrapping(TLWE<typename bkP::targetP> &res,
                        const EvalKey &ek)
 {
     alignas(64) TLWE<typename iksP::targetP> tlwelvl0;
-    IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
+    EvalIdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek);
     GateBootstrappingTLWE2TLWE<bkP>(res, tlwelvl0, ek.getbkfft<bkP>(),
                                     μpolygen<typename bkP::targetP, μ>());
 }
@@ -403,7 +423,7 @@ void GateBootstrappingNTT(TLWE<typename iksP::tagetP> &res,
     alignas(64) TLWE<typename bkP::targetP> tlwelvl1;
     GateBootstrappingTLWE2TLWE<bkP>(tlwelvl1, tlwe, ek.getbkntt<bkP>(),
                                     μpolygen<typename bkP::targetP, μ>());
-    IdentityKeySwitch<iksP>(res, tlwelvl1, ek.getiksk<iksP>());
+    EvalIdentityKeySwitch<iksP>(res, tlwelvl1, ek);
 }
 
 template <class iksP, class bkP, typename bkP::targetP::T μ>
@@ -412,7 +432,7 @@ void GateBootstrappingNTT(TLWE<typename bkP::targetP> &res,
                           const EvalKey &ek)
 {
     alignas(64) TLWE<typename iksP::targetP> tlwelvl0;
-    IdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek.getiksk<iksP>());
+    EvalIdentityKeySwitch<iksP>(tlwelvl0, tlwe, ek);
     GateBootstrappingTLWE2TLWE<bkP>(res, tlwelvl0, ek.getbkntt<bkP>(),
                                     μpolygen<typename bkP::targetP, μ>());
 }

@@ -58,6 +58,14 @@ struct lweKey {
         keyGen<lvl1param>(std::get<Key<lvl1param>>(keys));
         keyGen<lvl2param>(std::get<Key<lvl2param>>(keys));
 #ifdef USE_SUBSET_KEY
+        static_assert(lvl1param::k * lvl1param::n >=
+                      lvl0param::k * lvl0param::n);
+        for (int i = 0; i < lvl0param::k * lvl0param::n; i++)
+            std::get<Key<lvl1param>>(keys)[i] =
+                static_cast<typename lvl1param::T>(
+                    std::get<Key<lvl0param>>(keys)[i]);
+        static_assert(lvl2param::k * lvl2param::n >=
+                      lvl1param::k * lvl1param::n);
         for (int i = 0; i < lvl1param::k * lvl1param::n; i++)
             std::get<Key<lvl2param>>(keys)[i] =
                 std::get<Key<lvl1param>>(keys)[i];

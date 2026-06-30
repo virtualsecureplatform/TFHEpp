@@ -9,11 +9,11 @@ void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,
     TLWE<lvl1param> templvl1;
     TLWE<lvl0param> cs, c1, c0;
     SampleExtractIndex<lvl1param>(templvl1, csr, 0);
-    IdentityKeySwitch<lvl10param>(cs, templvl1, ek.getiksk<lvl10param>());
+    EvalIdentityKeySwitch<lvl10param>(cs, templvl1, ek);
     SampleExtractIndex<lvl1param>(templvl1, c1r, 0);
-    IdentityKeySwitch<lvl10param>(c1, templvl1, ek.getiksk<lvl10param>());
+    EvalIdentityKeySwitch<lvl10param>(c1, templvl1, ek);
     SampleExtractIndex<lvl1param>(templvl1, c0r, 0);
-    IdentityKeySwitch<lvl10param>(c0, templvl1, ek.getiksk<lvl10param>());
+    EvalIdentityKeySwitch<lvl10param>(c0, templvl1, ek);
 
     for (int i = 0; i <= lvl0param::n; i++) c1[i] += cs[i];
     for (int i = 0; i <= lvl0param::n; i++) c0[i] -= cs[i];

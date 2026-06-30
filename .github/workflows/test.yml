@@ -150,9 +150,11 @@ jobs:
           cmake . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DENABLE_TEST=ON \
-            -DUSE_BLOCK_BINARY=ON
-          cmake --build build --target blockbinary_blindrotatefft
+            -DUSE_BLOCK_BINARY=ON \
+            -DUSE_SUBSET_KEY=ON
+          cmake --build build --target blockbinary_blindrotatefft blockbinary_nand
           build/test/tfhe/blockbinary_blindrotatefft
+          build/test/tfhe/blockbinary_nand
 
   tfhe-raintt:
     name: tfhe-raintt-gcc-24.04
