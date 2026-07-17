@@ -2,9 +2,9 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdint>
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/array.hpp>
+#include <cstdint>
 #include <type_traits>
 
 #include "lweParams.hpp"
@@ -67,8 +67,9 @@ struct lweKey {
         static_assert(lvl2param::k * lvl2param::n >=
                       lvl1param::k * lvl1param::n);
         for (int i = 0; i < lvl1param::k * lvl1param::n; i++)
-            std::get<Key<lvl2param>>(keys)[i] =
-                std::get<Key<lvl1param>>(keys)[i];
+            std::get<Key<lvl2param>>(keys)[i] = static_cast<lvl2param::T>(
+                static_cast<std::make_signed_t<lvl1param::T>>(
+                    std::get<Key<lvl1param>>(keys)[i]));
 #endif
     }
     template <class P>
@@ -83,7 +84,7 @@ struct SecretKey {
     lweParams params;
 
     template <class Archive>
-    void serialize(Archive &archive)
+    void serialize(Archive& archive)
     {
         archive(key.keys, params);
     }

@@ -19,22 +19,32 @@ void CMUXFFT(TRLWE<P> &res, const TRGSWFFT<P> &cs, const TRLWE<P> &c1,
 template <class P>
 TRGSWFFT<P> TRGSWFFTOneGen()
 {
-    TRGSW<P> trgsw = {};
+    alignas(64) TRGSW<P> trgsw = {};
     trgswhoneadd<P>(trgsw);
     return ApplyFFT2trgsw<P>(trgsw);
 }
 
-alignas(64) const TRGSWFFT<lvl1param> trgswonelvl1 =
-    TRGSWFFTOneGen<lvl1param>();
-alignas(64) const TRGSWFFT<lvl2param> trgswonelvl2 =
-    TRGSWFFTOneGen<lvl2param>();
+template <class P>
+struct TRGSWFFTOne : TRGSWFFT<P> {
+    TRGSWFFTOne()
+    {
+        alignas(64) TRGSW<P> trgsw = {};
+        trgswhoneadd<P>(trgsw);
+        ApplyFFT2trgsw<P>(*this, trgsw);
+    }
+};
+
+alignas(64) const TRGSWFFTOne<lvl1param> trgswonelvl1;
+alignas(64) const TRGSWFFTOne<lvl2param> trgswonelvl2;
 
 // Fused CMUX for l̅==1 path: rotation + ExternalProduct + accumulation
 // in one pass, avoiding full TRLWE temp allocation and separate add-back loop.
-// Uses FMAInFD_Multi to load decpolyfft once per level and reuse across k+1 rows.
+// Uses FMAInFD_Multi to load decpolyfft once per level and reuse across k+1
+// rows.
 template <class P>
-void CMUXFFTwithPolynomialMulByXaiMinusOne(
-    TRLWE<P> &acc, const TRGSWFFT<P> &trgswfft, const typename P::T a)
+void CMUXFFTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
+                                           const TRGSWFFT<P> &trgswfft,
+                                           const typename P::T a)
 {
     alignas(64) TRLWEInFD<P> restrlwefft;
     alignas(64) Polynomial<P> rotated;
@@ -61,7 +71,7 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(
         for (int i = 0; i < P::lₐ; i++) {
             TwistIFFT<P>(decpolyfft, decpoly[i]);
             FMAInFD_Multi<P::n, P::k + 1>(restrlwefft, decpolyfft,
-                                trgswfft[i + k_idx * P::lₐ]);
+                                          trgswfft[i + k_idx * P::lₐ]);
         }
     }
 
@@ -73,13 +83,12 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(
         for (int i = 0; i < P::l; i++) {
             TwistIFFT<P>(decpolyfft, decpoly[i]);
             FMAInFD_Multi<P::n, P::k + 1>(restrlwefft, decpolyfft,
-                                trgswfft[i + P::k * P::lₐ]);
+                                          trgswfft[i + P::k * P::lₐ]);
         }
     }
 
     // --- Fused IFFT + accumulation ---
-    for (int k = 0; k < P::k + 1; k++)
-        TwistFFTAdd<P>(acc[k], restrlwefft[k]);
+    for (int k = 0; k < P::k + 1; k++) TwistFFTAdd<P>(acc[k], restrlwefft[k]);
 }
 
 template <class bkP>
@@ -90,9 +99,9 @@ void CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne(
 {
     using P = typename bkP::targetP;
 
-    static_assert(bkP::domainP::key_value_min == 0 &&
-                      bkP::domainP::key_value_max == 1,
-                  "block-binary blind rotation expects binary key values");
+    static_assert(
+        bkP::domainP::key_value_min == 0 && bkP::domainP::key_value_max == 1,
+        "block-binary blind rotation expects binary key values");
     static_assert(bkP::domainP::ell > 0,
                   "block-binary blind rotation expects ell > 0");
     static_assert(P::l̅ == 1 && P::l̅ₐ == 1,
@@ -131,8 +140,7 @@ void CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne(
         if (bara[offset] == 0) continue;
 
         const TRGSWFFT<P> &trgswfft = bkfft[offset][0];
-        MulInFD_Multi<P::n, P::k + 1>(productfft, accdecfft[0],
-                                      trgswfft[0]);
+        MulInFD_Multi<P::n, P::k + 1>(productfft, accdecfft[0], trgswfft[0]);
         for (int i = 1; i < dec_rows; i++)
             FMAInFD_Multi<P::n, P::k + 1>(productfft, accdecfft[i],
                                           trgswfft[i]);
@@ -151,8 +159,8 @@ void CMUXwithPolynomialMulByXaiMinusOne(
     const BootstrappingKeyElementFFT<bkP> &cs, const int a)
 {
     if constexpr (bkP::domainP::key_value_diff == 1) {
-        CMUXFFTwithPolynomialMulByXaiMinusOne<typename bkP::targetP>(
-            acc, cs[0], a);
+        CMUXFFTwithPolynomialMulByXaiMinusOne<typename bkP::targetP>(acc, cs[0],
+                                                                     a);
     }
     else {
 #ifdef USE_TERNARY_CMUX
@@ -192,8 +200,7 @@ void CMUXwithPolynomialMulByXaiMinusOne(
                 for (int k = 0; k < bkP::targetP::k + 1; k++)
                     PolynomialMulByXaiMinusOne<typename bkP::targetP>(
                         temp[k], acc[k], index);
-                ExternalProduct<typename bkP::targetP>(temp, temp,
-                                                               cs[count]);
+                ExternalProduct<typename bkP::targetP>(temp, temp, cs[count]);
                 for (int k = 0; k < bkP::targetP::k + 1; k++)
                     for (int i = 0; i < bkP::targetP::n; i++)
                         acc[k][i] += temp[k][i];
@@ -217,8 +224,7 @@ void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWNTT<P> &cs,
 }
 
 template <class P>
-void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
-                                        const TRGSWRAINTT<P> &cs,
+void CMUXwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc, const TRGSWRAINTT<P> &cs,
                                         const typename P::T a)
 {
     TRLWE<P> temp;

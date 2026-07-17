@@ -40,23 +40,23 @@ namespace TFHEpp {
 // }
 
 template <class P>
-constexpr TRGSWFFT<P> oneTRGSWFFTgen()
-{
-    constexpr std::array<typename P::T, P::l> h = hgen<P, false>();
-    TRGSW<P> trgsw;
-    for (TRLWE<P> &trlwe : trgsw) trlwe = {};
-    for (int i = 0; i < P::l; i++) {
-        for (int k = 0; k < P::k + 1; k++) {
-            trgsw[i + k * P::l][k][0] = static_cast<typename P::T>(h[i]);
+struct OneTRGSWFFT : TRGSWFFT<P> {
+    OneTRGSWFFT()
+    {
+        constexpr std::array<typename P::T, P::l> h = hgen<P, false>();
+        alignas(64) TRGSW<P> trgsw;
+        for (TRLWE<P> &trlwe : trgsw) trlwe = {};
+        for (int i = 0; i < P::l; i++) {
+            for (int k = 0; k < P::k + 1; k++) {
+                trgsw[i + k * P::l][k][0] = static_cast<typename P::T>(h[i]);
+            }
         }
+        ApplyFFT2trgsw<P>(*this, trgsw);
     }
-    return ApplyFFT2trgsw<P>(trgsw);
-}
+};
 
-alignas(64) const TRGSWFFT<lvl1param> onetrgswlvl1 =
-    oneTRGSWFFTgen<lvl1param>();
-alignas(64) const TRGSWFFT<lvl2param> onetrgswlvl2 =
-    oneTRGSWFFTgen<lvl2param>();
+alignas(64) const OneTRGSWFFT<lvl1param> onetrgswlvl1;
+alignas(64) const OneTRGSWFFT<lvl2param> onetrgswlvl2;
 
 template <class P>
 void KeyBundleFFT(TRGSWFFT<typename P::targetP> &kbfft,
