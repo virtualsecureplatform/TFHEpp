@@ -87,6 +87,28 @@ noise with standard deviation 3.2, matching the paper's reference choice.
 `GLNoiseAtLevel<LogQ>(sigma)` converts that absolute standard deviation into
 the modular value expected by `CKKSNoise`.
 
+## Exact NTT Multiplication
+
+The `p=17` base-ring multiplier uses the scheme-neutral arithmetic in
+`include/modular_ntt.hpp`.  That header provides radix-2 cyclic and negacyclic
+NTTs, Rader prime-length NTTs, prime-cyclotomic evaluation/interpolation, and
+centered two-prime CRT reconstruction.  The GL adapter identifies `I=X^n`,
+applies a length-`2n` negacyclic transform on the combined `(I,X)` axis, and
+uses Rader's length-17 transform on the `W` axis.
+
+Two 62-bit transform primes reconstruct the production `n512p17` 85-by-16-bit
+DD product exactly.  A 16-by-16-bit digit product needs one prime.  For the
+wide-torus-by-small products used by encryption and key generation, the wide
+operand is split into unsigned power-of-two chunks, each chunk is multiplied
+exactly with two primes, and the results are recombined modulo the native
+power-of-two torus.  Products that exceed these proved bounds retain the
+coefficient-domain reference fallback.  NTT/CRT is therefore an exact
+arithmetic backend and adds no approximation noise to the estimator.
+
+The stored ciphertexts and packed DD evaluation keys remain in coefficient
+form.  Transform primes are temporary multiplication machinery; no RNS limbs
+are added to the persistent key representation.
+
 ## Basic Use
 
 ```cpp
@@ -230,11 +252,13 @@ destination file.
 
 ## Current Boundary
 
-This remains a correctness-oriented coefficient-domain implementation. Its
-bootstrap follows the paper's algebra, but the multiplication and transform
-kernels are not the fused Rader NTT, RNS hybrid switch, or optimized modular
-matrix-multiplication kernels used for the paper's measurements. Full-size
-evaluation is therefore not practical with the reference kernels.
+This remains a correctness-oriented implementation. Its bootstrap follows the
+paper's algebra, and base-ring multiplication now has an exact Rader/NTT
+backend.  It does not yet keep repeated switch operands in the transform
+domain, fuse Rader butterflies as aggressively as the paper, or provide the
+paper's optimized modular matrix-multiplication kernels.  Consequently, the
+base multiplication benchmark must not be interpreted as a full-bootstrap
+runtime.
 
 Storage sufficiency is also not a security or precision proof. The paper's
 `n256p17` and `n512p17` values use the full 214- and 430-bit 128-bit-security
@@ -251,7 +275,9 @@ Build and run the regression with:
 
 ```bash
 cmake -S . -B build -DENABLE_TEST=ON
-cmake --build build --target gl_scheme gl_bootstrap
+cmake --build build --target modular_ntt gl_ntt gl_scheme gl_bootstrap
+./build/test/common/modular_ntt
+./build/test/gl/gl_ntt
 ./build/test/gl/gl_scheme
 ./build/test/gl/gl_bootstrap
 ```

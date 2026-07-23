@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cassert>
 #include <cmath>
 #include <complex>
@@ -15,6 +16,7 @@
 #include <vector>
 
 #include "ckks/ckks.hpp"
+#include "modular_ntt.hpp"
 #include "params.hpp"
 #include "tfhe/key.hpp"
 
@@ -505,9 +507,9 @@ inline void addWProduct(GLBasePolynomial<GLP> &result,
 }
 
 template <class GLP>
-inline void baseMultiply(GLBasePolynomial<GLP> &result,
-                         const GLBasePolynomial<GLP> &lhs,
-                         const GLBasePolynomial<GLP> &rhs)
+inline void baseMultiplyReference(GLBasePolynomial<GLP> &result,
+                                  const GLBasePolynomial<GLP> &lhs,
+                                  const GLBasePolynomial<GLP> &rhs)
 {
     clear<GLP>(result);
     for (std::uint32_t wa = 0; wa < GLP::phi; wa++) {
@@ -541,6 +543,329 @@ inline void baseMultiply(GLBasePolynomial<GLP> &result,
             }
         }
     }
+}
+
+template <class T>
+inline std::uint32_t unsignedBitWidth(const T &value)
+{
+    if constexpr (is_multilimb_uint_v<T>) {
+        for (std::size_t limb = T::limbs; limb-- > 0;)
+            if (value.limb[limb] != 0)
+                return static_cast<std::uint32_t>(
+                    64 * limb + 64 - std::countl_zero(value.limb[limb]));
+        return 0;
+    }
+    else {
+        static_assert(std::is_same_v<T, __uint128_t>);
+        const std::uint64_t high = static_cast<std::uint64_t>(value >> 64);
+        if (high != 0)
+            return 128U - static_cast<std::uint32_t>(std::countl_zero(high));
+        const std::uint64_t low = static_cast<std::uint64_t>(value);
+        return low == 0
+                   ? 0
+                   : 64U - static_cast<std::uint32_t>(std::countl_zero(low));
+    }
+}
+
+template <class T>
+inline bool fullTorusIsNegative(const T &value)
+{
+    if constexpr (is_multilimb_uint_v<T>)
+        return (value.limb[T::limbs - 1] >> 63) != 0;
+    else {
+        static_assert(std::is_same_v<T, __uint128_t>);
+        return (value >> 127) != 0;
+    }
+}
+
+template <class T>
+inline std::uint32_t signedTorusBitWidth(const T &value)
+{
+    return unsignedBitWidth(fullTorusIsNegative(value) ? T{0} - value : value);
+}
+
+template <class GLP>
+inline std::uint32_t maxSignedTorusBitWidth(
+    const GLBasePolynomial<GLP> &polynomial)
+{
+    std::uint32_t bits = 0;
+    for (const auto &coefficient : polynomial)
+        bits = std::max(bits, signedTorusBitWidth(coefficient));
+    return bits;
+}
+
+template <class T>
+inline std::uint64_t signedTorusResidue(const T &value,
+                                        const std::uint64_t modulus)
+{
+    const bool negative = fullTorusIsNegative(value);
+    const T magnitude = negative ? T{0} - value : value;
+    std::uint64_t residue;
+    if constexpr (is_multilimb_uint_v<T>)
+        residue = magnitude.mod_u64(modulus);
+    else {
+        static_assert(std::is_same_v<T, __uint128_t>);
+        residue = static_cast<std::uint64_t>(magnitude % modulus);
+    }
+    return negative && residue != 0 ? modulus - residue : residue;
+}
+
+template <class T>
+inline T signedI128ToTorus(const __int128 value)
+{
+    if constexpr (is_multilimb_uint_v<T>) {
+        const bool negative = value < 0;
+        const unsigned __int128 magnitude =
+            negative ? static_cast<unsigned __int128>(-(value + 1)) + 1
+                     : static_cast<unsigned __int128>(value);
+        T result{};
+        result.limb[0] = static_cast<std::uint64_t>(magnitude);
+        if constexpr (T::limbs > 1)
+            result.limb[1] = static_cast<std::uint64_t>(magnitude >> 64);
+        return negative ? T{0} - result : result;
+    }
+    else {
+        static_assert(std::is_same_v<T, __uint128_t>);
+        return static_cast<__uint128_t>(value);
+    }
+}
+
+constexpr std::uint32_t ceilLog2(const std::size_t value)
+{
+    if (value <= 1) return 0;
+    return static_cast<std::uint32_t>(std::numeric_limits<std::size_t>::digits -
+                                      std::countl_zero(value - 1));
+}
+
+template <class GLP>
+inline constexpr bool supportsWidePrimeNTT = [] {
+    constexpr std::uint64_t root_order = 4ULL * GLP::matrix_dimension;
+    for (const auto prime : modular_ntt::wide_primes)
+        if ((prime.value - 1) % root_order != 0 ||
+            (prime.value - 1) % GLP::cyclotomic_order != 0)
+            return false;
+    return true;
+}();
+
+template <class GLP>
+class GLBaseNTTPlan {
+public:
+    static constexpr std::size_t z_dimension = 2 * GLP::matrix_dimension;
+    static constexpr std::size_t w_dimension = GLP::phi;
+    static constexpr std::size_t coefficient_count = z_dimension * w_dimension;
+
+    explicit GLBaseNTTPlan(const modular_ntt::PrimeModulus prime)
+        : prime_(prime), w_plan_(prime), z_plan_(z_dimension, prime)
+    {
+        static_assert(coefficient_count == GLP::baseP::n);
+    }
+
+    std::uint64_t modulus() const { return prime_.value; }
+
+    void forward(std::vector<std::uint64_t> &spectrum,
+                 const GLBasePolynomial<GLP> &input) const
+    {
+        spectrum.assign(coefficient_count, 0);
+        std::array<std::uint64_t, w_dimension> w_line{};
+        for (std::size_t z = 0; z < z_dimension; z++) {
+            const std::uint32_t gaussian =
+                static_cast<std::uint32_t>(z / GLP::matrix_dimension);
+            const std::uint32_t x =
+                static_cast<std::uint32_t>(z % GLP::matrix_dimension);
+            for (std::uint32_t w = 0; w < w_dimension; w++)
+                w_line[w] = signedTorusResidue(
+                    input[baseIndex<GLP>(gaussian, x, w)], prime_.value);
+            w_plan_.forward(w_line);
+            for (std::size_t w = 0; w < w_dimension; w++)
+                spectrum[w * z_dimension + z] = w_line[w];
+        }
+        for (std::size_t w = 0; w < w_dimension; w++)
+            z_plan_.forward(std::span<std::uint64_t>(
+                spectrum.data() + w * z_dimension, z_dimension));
+    }
+
+    void inverse(std::vector<std::uint64_t> &coefficients,
+                 std::vector<std::uint64_t> &spectrum) const
+    {
+        if (spectrum.size() != coefficient_count)
+            throw std::invalid_argument("GL NTT spectrum has the wrong size");
+        for (std::size_t w = 0; w < w_dimension; w++)
+            z_plan_.inverse(std::span<std::uint64_t>(
+                spectrum.data() + w * z_dimension, z_dimension));
+
+        coefficients.assign(coefficient_count, 0);
+        std::array<std::uint64_t, w_dimension> w_line{};
+        for (std::size_t z = 0; z < z_dimension; z++) {
+            for (std::size_t w = 0; w < w_dimension; w++)
+                w_line[w] = spectrum[w * z_dimension + z];
+            w_plan_.inverse(w_line);
+            const std::uint32_t gaussian =
+                static_cast<std::uint32_t>(z / GLP::matrix_dimension);
+            const std::uint32_t x =
+                static_cast<std::uint32_t>(z % GLP::matrix_dimension);
+            for (std::uint32_t w = 0; w < w_dimension; w++)
+                coefficients[baseIndex<GLP>(gaussian, x, w)] = w_line[w];
+        }
+    }
+
+private:
+    modular_ntt::PrimeModulus prime_;
+    modular_ntt::PrimeCyclotomicNTTPlan<GLP::cyclotomic_order> w_plan_;
+    modular_ntt::NegacyclicNTTPlan z_plan_;
+};
+
+template <class GLP, std::size_t PrimeIndex>
+inline const GLBaseNTTPlan<GLP> &baseNTTPlan()
+{
+    static_assert(PrimeIndex < modular_ntt::wide_primes.size());
+    static const GLBaseNTTPlan<GLP> plan(modular_ntt::wide_primes[PrimeIndex]);
+    return plan;
+}
+
+template <class GLP, std::size_t PrimeIndex>
+inline void baseMultiplyNTTResidues(std::vector<std::uint64_t> &coefficients,
+                                    const GLBasePolynomial<GLP> &lhs,
+                                    const GLBasePolynomial<GLP> &rhs)
+{
+    const auto &plan = baseNTTPlan<GLP, PrimeIndex>();
+    std::vector<std::uint64_t> lhs_spectrum;
+    std::vector<std::uint64_t> rhs_spectrum;
+    plan.forward(lhs_spectrum, lhs);
+    plan.forward(rhs_spectrum, rhs);
+    for (std::size_t i = 0; i < lhs_spectrum.size(); i++)
+        lhs_spectrum[i] = modular_ntt::multiply(
+            lhs_spectrum[i], rhs_spectrum[i], plan.modulus());
+    plan.inverse(coefficients, lhs_spectrum);
+}
+
+template <class GLP>
+inline std::uint32_t baseMultiplyNTTPrimeCount(const GLBasePolynomial<GLP> &lhs,
+                                               const GLBasePolynomial<GLP> &rhs)
+{
+    if constexpr (!supportsWidePrimeNTT<GLP>) return 0;
+
+    constexpr std::size_t maximum_terms =
+        2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+    const std::uint32_t lhs_bits = maxSignedTorusBitWidth<GLP>(lhs);
+    const std::uint32_t rhs_bits = maxSignedTorusBitWidth<GLP>(rhs);
+    if (lhs_bits == 0 || rhs_bits == 0) return 1;
+    const std::uint32_t required_bits =
+        lhs_bits + rhs_bits + ceilLog2(maximum_terms);
+
+    // q/2 is slightly below 2^61 and q0*q1/2 is slightly below 2^123.
+    // Keeping one full bit below each threshold makes centered reconstruction
+    // valid for every coefficient satisfying the detected signed bound.
+    if (required_bits <= 60) return 1;
+    if (required_bits <= 122) return 2;
+    return 0;
+}
+
+template <class GLP>
+inline void baseMultiplyNTTDirect(GLBasePolynomial<GLP> &result,
+                                  const GLBasePolynomial<GLP> &lhs,
+                                  const GLBasePolynomial<GLP> &rhs,
+                                  const std::uint32_t prime_count)
+{
+    using T = typename GLP::T;
+    assert(prime_count == 1 || prime_count == 2);
+
+    std::vector<std::uint64_t> first_residues;
+    baseMultiplyNTTResidues<GLP, 0>(first_residues, lhs, rhs);
+    if (prime_count == 1) {
+        for (std::size_t i = 0; i < result.size(); i++)
+            result[i] = signedI128ToTorus<T>(modular_ntt::centeredResidue(
+                first_residues[i], modular_ntt::wide_primes[0].value));
+        return;
+    }
+
+    std::vector<std::uint64_t> second_residues;
+    baseMultiplyNTTResidues<GLP, 1>(second_residues, lhs, rhs);
+    static const modular_ntt::TwoPrimeCRT crt(modular_ntt::wide_primes[0],
+                                              modular_ntt::wide_primes[1]);
+    for (std::size_t i = 0; i < result.size(); i++)
+        result[i] = signedI128ToTorus<T>(
+            crt.reconstructSigned(first_residues[i], second_residues[i]));
+}
+
+template <class T>
+inline T unsignedChunk(const T &value, const std::uint32_t shift,
+                       const std::uint32_t bits)
+{
+    constexpr std::uint32_t width = std::numeric_limits<T>::digits;
+    if (shift >= width || bits == 0) return T{0};
+    const std::uint32_t available = std::min(bits, width - shift);
+    const T mask = available == width ? std::numeric_limits<T>::max()
+                                      : (T{1} << available) - T{1};
+    return (value >> shift) & mask;
+}
+
+template <class GLP>
+inline bool baseMultiplyNTT(GLBasePolynomial<GLP> &result,
+                            const GLBasePolynomial<GLP> &lhs,
+                            const GLBasePolynomial<GLP> &rhs)
+{
+    if constexpr (!supportsWidePrimeNTT<GLP>) return false;
+
+    const std::uint32_t direct_primes =
+        baseMultiplyNTTPrimeCount<GLP>(lhs, rhs);
+    if (direct_primes != 0) {
+        baseMultiplyNTTDirect<GLP>(result, lhs, rhs, direct_primes);
+        return true;
+    }
+
+    // A wide torus polynomial multiplied by a bounded signed polynomial is
+    // common during encryption and evaluation-key generation.  Expand only
+    // the wide operand into unsigned radix-2 chunks; each chunk product then
+    // fits the same exact two-prime CRT.  Recombination is modulo the native
+    // power-of-two torus, so this remains exact even for a negative wide
+    // coefficient represented in two's complement.
+    constexpr std::size_t maximum_terms =
+        2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+    constexpr std::uint32_t convolution_bits = ceilLog2(maximum_terms);
+    constexpr std::uint32_t crt_safe_bits = 122;
+    constexpr std::uint32_t torus_width =
+        std::numeric_limits<typename GLP::T>::digits;
+    const std::uint32_t lhs_bits = maxSignedTorusBitWidth<GLP>(lhs);
+    const std::uint32_t rhs_bits = maxSignedTorusBitWidth<GLP>(rhs);
+    const bool split_lhs = lhs_bits >= rhs_bits;
+    const std::uint32_t bounded_bits = split_lhs ? rhs_bits : lhs_bits;
+    if (bounded_bits == 0) {
+        clear<GLP>(result);
+        return true;
+    }
+    if (bounded_bits + convolution_bits >= crt_safe_bits) return false;
+
+    const std::uint32_t chunk_bits =
+        crt_safe_bits - bounded_bits - convolution_bits;
+    const auto &wide = split_lhs ? lhs : rhs;
+    const auto &bounded = split_lhs ? rhs : lhs;
+    GLBasePolynomial<GLP> chunk{};
+    GLBasePolynomial<GLP> chunk_product{};
+    clear<GLP>(result);
+    for (std::uint32_t shift = 0; shift < torus_width; shift += chunk_bits) {
+        bool nonzero = false;
+        for (std::size_t i = 0; i < chunk.size(); i++) {
+            chunk[i] = unsignedChunk(wide[i], shift, chunk_bits);
+            nonzero = nonzero || chunk[i] != typename GLP::T{0};
+        }
+        if (!nonzero) continue;
+        const std::uint32_t chunk_primes =
+            baseMultiplyNTTPrimeCount<GLP>(chunk, bounded);
+        if (chunk_primes == 0) return false;
+        baseMultiplyNTTDirect<GLP>(chunk_product, chunk, bounded, chunk_primes);
+        for (std::size_t i = 0; i < result.size(); i++)
+            result[i] += chunk_product[i] << shift;
+    }
+    return true;
+}
+
+template <class GLP>
+inline void baseMultiply(GLBasePolynomial<GLP> &result,
+                         const GLBasePolynomial<GLP> &lhs,
+                         const GLBasePolynomial<GLP> &rhs)
+{
+    if (!baseMultiplyNTT<GLP>(result, lhs, rhs))
+        baseMultiplyReference<GLP>(result, lhs, rhs);
 }
 
 template <class GLP>
