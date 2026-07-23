@@ -33,6 +33,9 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplacebkfft<brP>(sk);
     ek.emplaceiksk<iksP>(sk);
+#ifdef USE_SUBSET_KEY
+    ek.emplacesubiksk<iksP>(sk);
+#endif
 
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());

@@ -34,6 +34,11 @@ foreach(test_source ${test_sources})
         # largelut R2RPKS requires k=1 TRLWE keys.
         continue()
     endif()
+    if(test_name STREQUAL "gatebootstrappingtlwe2tlwedoubledecomposition"
+       AND USE_BLOCK_BINARY)
+        # The block-binary FFT blind rotation only supports lbar = 1.
+        continue()
+    endif()
     add_executable(${test_name} ${test_source})
     if(test_dir STREQUAL "")
         set(test_output_dir "${CMAKE_CURRENT_BINARY_DIR}")

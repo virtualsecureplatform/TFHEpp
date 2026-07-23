@@ -17,6 +17,9 @@ int main()
     TFHEpp::SecretKey sk;
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(sk);
+#ifdef USE_SUBSET_KEY
+    ek.emplacesubiksk<iksP>(sk);
+#endif
     ek.emplacebkntt<bkP>(sk);
     std::array<TFHEpp::TLWE<typename iksP::domainP>, num_test> tlwe;
     std::array<TFHEpp::TLWE<typename bkP::targetP>, num_test> bootedtlwe;

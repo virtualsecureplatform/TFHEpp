@@ -119,6 +119,9 @@ int main()
     ek.emplacebkfft<TFHEpp::lvl02param>(*sk);
     ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
     ek.emplaceiksk<TFHEpp::lvl20param>(*sk);
+#ifdef USE_SUBSET_KEY
+    ek.emplacesubiksk<TFHEpp::lvl10param>(*sk);
+#endif
     ek.emplaceprivksk4cb<TFHEpp::lvl21param>(*sk);
     vector<uint8_t> ramp(memsize / 2 * words);  // unit of memsize is byte(8bit)
     vector<uint8_t> romp(memsize / 2 * words);

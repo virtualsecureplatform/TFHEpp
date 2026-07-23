@@ -23,6 +23,9 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
     ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
+#ifdef USE_SUBSET_KEY
+    ek.emplacesubiksk<TFHEpp::lvl10param>(*sk);
+#endif
     vector<uint8_t> pa(num_test);
     vector<uint8_t> pb(num_test);
     vector<uint8_t> pres(num_test);

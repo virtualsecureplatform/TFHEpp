@@ -139,6 +139,9 @@ void RunTest()
     TFHEpp::EvalKey ek;
     ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
     ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
+#ifdef USE_SUBSET_KEY
+    ek.emplacesubiksk<TFHEpp::lvl10param>(*sk);
+#endif
     // MUX Need 3 input
     vector<uint8_t> p(3 * kNumTests);
     vector<TLWE<P>> cres(kNumTests);

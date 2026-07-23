@@ -27,6 +27,9 @@ int main()
     TFHEpp::ikskgen<CBiksP>(*iksk, *sk);
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<ksP>(*sk);
+#ifdef USE_SUBSET_KEY
+    ek.emplacesubiksk<ksP>(*sk);
+#endif
     ek.emplacebkfft<CBbsP>(*sk);
     ek.emplacebkfft<brP>(*sk);
     ek.emplaceprivksk4cb<CBprivksP>(*sk);

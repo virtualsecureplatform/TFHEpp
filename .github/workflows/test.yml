@@ -14,6 +14,14 @@ jobs:
       matrix:
         scheme: [tfhe, bfv, clpx, ckks]
         compiler: [gcc, clang]
+        # Non-TFHE schemes are tested with clang only to reduce the CI load.
+        exclude:
+          - scheme: bfv
+            compiler: gcc
+          - scheme: clpx
+            compiler: gcc
+          - scheme: ckks
+            compiler: gcc
         include:
           - scheme: tfhe
             build_targets: test_common test_tfhe
@@ -29,8 +37,10 @@ jobs:
             test_dirs: ckks
           - compiler: gcc
             compiler_flags: -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+          # clang-22 is the newest clang in the Ubuntu 26.04 repositories;
+          # the plain "clang" metapackage still points at clang 21.
           - compiler: clang
-            compiler_flags: -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+            compiler_flags: -DCMAKE_CXX_COMPILER=clang++-22 -DCMAKE_C_COMPILER=clang-22
     steps:
       - name: Install libraries
         run: |
@@ -38,7 +48,7 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
             git build-essential g++ libomp-dev cmake ninja-build
           if [ "${{ matrix.compiler }}" = "clang" ]; then
-            DEBIAN_FRONTEND=noninteractive apt-get install -y clang lld
+            DEBIAN_FRONTEND=noninteractive apt-get install -y clang-22 lld-22
           fi
       - name: Checkout
         uses: actions/checkout@v4
@@ -109,9 +119,9 @@ jobs:
             -DENABLE_TEST=ON \
             -DUSE_BLOCK_BINARY=ON \
             -DUSE_SUBSET_KEY=ON
-          cmake --build build --target blockbinary_blindrotatefft blockbinary_nand
-          build/test/tfhe/blockbinary_blindrotatefft
-          build/test/tfhe/blockbinary_nand
+          cmake --build build --target test_tfhe
+          cd build
+          test/test.sh tfhe
 
   tfhe-raintt:
     name: tfhe-raintt-gcc-26.04
