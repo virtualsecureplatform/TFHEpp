@@ -193,6 +193,12 @@ public:
     auto begin() const { return coefficients_.begin(); }
     auto end() const { return coefficients_.end(); }
 
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(coefficients_);
+    }
+
 private:
     std::vector<BasePolynomial> coefficients_;
 };
@@ -213,10 +219,87 @@ struct GLCiphertextData {
     {
         return data[component];
     }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(data);
+    }
 };
 
 template <class GLP>
 using GLBaseCiphertextData = std::array<GLBasePolynomial<GLP>, 2>;
+
+// DD evaluation-key rows are centered auxiliary-base digits.  Keeping those
+// digits in the full torus type multiplies their payload by as much as 112x
+// for the GL paper profiles.  Store the already-decomposed rows in the
+// smallest signed native type and expand only the row currently consumed by
+// a key switch.  This is an unseeded representation: both RLWE components are
+// retained, and no evaluation-key ciphertext is decomposed online.
+template <std::uint32_t Bits>
+struct GLSignedDigitStorage {
+    static_assert(Bits > 0 && Bits <= 30,
+                  "packed GL DD digits must fit a signed 32-bit word");
+    using type = std::conditional_t<
+        (Bits <= 8), std::int8_t,
+        std::conditional_t<(Bits <= 16), std::int16_t, std::int32_t>>;
+};
+
+template <std::uint32_t Bits>
+using GLSignedDigit = typename GLSignedDigitStorage<Bits>::type;
+
+template <class GLP, std::uint32_t Bits>
+using GLPackedBasePolynomial = std::array<GLSignedDigit<Bits>, GLP::baseP::n>;
+
+template <class GLP, std::uint32_t Bits>
+class GLPackedPolynomial {
+public:
+    using BasePolynomial = GLPackedBasePolynomial<GLP, Bits>;
+
+    GLPackedPolynomial() : coefficients_(GLP::matrix_dimension) {}
+
+    BasePolynomial &operator[](const std::size_t y) { return coefficients_[y]; }
+    const BasePolynomial &operator[](const std::size_t y) const
+    {
+        return coefficients_[y];
+    }
+
+    constexpr std::size_t size() const { return GLP::matrix_dimension; }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(coefficients_);
+    }
+
+private:
+    std::vector<BasePolynomial> coefficients_;
+};
+
+template <class GLP, std::uint32_t Bits>
+struct GLPackedCiphertextData {
+    std::array<GLPackedPolynomial<GLP, Bits>, 2> data{};
+
+    GLPackedPolynomial<GLP, Bits> &operator[](const std::size_t component)
+    {
+        return data[component];
+    }
+    const GLPackedPolynomial<GLP, Bits> &operator[](
+        const std::size_t component) const
+    {
+        return data[component];
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(data);
+    }
+};
+
+template <class GLP, std::uint32_t Bits>
+using GLPackedBaseCiphertextData =
+    std::array<GLPackedBasePolynomial<GLP, Bits>, 2>;
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
 struct GLCiphertext {
@@ -238,6 +321,12 @@ struct GLCiphertext {
     const GLPolynomial<GLP> &operator[](const std::size_t component) const
     {
         return ct[component];
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(ct);
     }
 };
 
@@ -1025,6 +1114,59 @@ inline void activeRecombine(GLBasePolynomial<GLP> &result,
     reduce<GLP, LogQ>(result);
 }
 
+template <class GLP, std::uint32_t Bits>
+inline void packDigitPolynomial(GLPackedBasePolynomial<GLP, Bits> &result,
+                                const GLBasePolynomial<GLP> &input)
+{
+    using Digit = GLSignedDigit<Bits>;
+    using P = typename GLP::baseP;
+    constexpr std::int64_t minimum =
+        static_cast<std::int64_t>(std::numeric_limits<Digit>::min());
+    constexpr std::int64_t maximum =
+        static_cast<std::int64_t>(std::numeric_limits<Digit>::max());
+    for (std::uint32_t coefficient = 0; coefficient < P::n; coefficient++) {
+        const std::int64_t value = torusToSignedSmall<P>(input[coefficient]);
+        if (value < minimum || value > maximum)
+            throw std::overflow_error("GL DD digit exceeds packed storage");
+        result[coefficient] = static_cast<Digit>(value);
+    }
+}
+
+template <class GLP, std::uint32_t Bits>
+inline void packDigitPolynomial(GLPackedPolynomial<GLP, Bits> &result,
+                                const GLPolynomial<GLP> &input)
+{
+    for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++)
+        packDigitPolynomial<GLP, Bits>(result[y], input[y]);
+}
+
+template <class GLP, std::uint32_t Bits>
+inline void unpackDigitPolynomial(
+    GLBasePolynomial<GLP> &result,
+    const GLPackedBasePolynomial<GLP, Bits> &input)
+{
+    using P = typename GLP::baseP;
+    using T = typename P::T;
+    for (std::uint32_t coefficient = 0; coefficient < P::n; coefficient++) {
+        const std::int64_t value = input[coefficient];
+        if constexpr (is_multilimb_uint_v<T>)
+            result[coefficient] = T::from_signed_i64(value);
+        else {
+            static_assert(std::is_same_v<T, __uint128_t>);
+            result[coefficient] =
+                static_cast<__uint128_t>(static_cast<__int128_t>(value));
+        }
+    }
+}
+
+template <class GLP, std::uint32_t Bits>
+inline void unpackDigitPolynomial(GLPolynomial<GLP> &result,
+                                  const GLPackedPolynomial<GLP, Bits> &input)
+{
+    for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++)
+        unpackDigitPolynomial<GLP, Bits>(result[y], input[y]);
+}
+
 template <class GLP, std::uint32_t LhsLogQ, std::uint32_t RhsLogQ,
           std::uint32_t LogScale, std::uint32_t BbarBit, bool UseMatrixTrace,
           bool NormalizeMatrixProduct>
@@ -1153,6 +1295,13 @@ struct GLDDBigKeySwitchKey {
         (LogQ + PrimaryBit - 1) / PrimaryBit;
     static constexpr std::uint32_t bbar_rows =
         (key_log_q + BbarBit - 1) / BbarBit;
+    using PackedCiphertext = GLPackedCiphertextData<GLP, BbarBit>;
+    static constexpr std::uint64_t packed_ciphertext_payload_bytes =
+        static_cast<std::uint64_t>(2) * GLP::matrix_dimension * GLP::baseP::n *
+        sizeof(GLSignedDigit<BbarBit>);
+    static constexpr std::uint64_t packed_payload_bytes =
+        static_cast<std::uint64_t>(primary_rows) * bbar_rows * 2 *
+        GLP::matrix_dimension * GLP::baseP::n * sizeof(GLSignedDigit<BbarBit>);
 
     static_assert(key_log_q <= std::numeric_limits<typename GLP::T>::digits,
                   "GL q*q0 key-switch modulus exceeds torus storage");
@@ -1161,19 +1310,30 @@ struct GLDDBigKeySwitchKey {
     static_assert(bbar_rows * BbarBit <=
                   std::numeric_limits<typename GLP::T>::digits);
 
-    std::vector<GLCiphertextData<GLP>> data{};
+    std::vector<PackedCiphertext> data{};
 
     void allocate() { data.resize(primary_rows * bbar_rows); }
 
-    GLCiphertextData<GLP> &at(const std::uint32_t primary,
-                              const std::uint32_t bbar)
+    PackedCiphertext &at(const std::uint32_t primary, const std::uint32_t bbar)
     {
         return data.at(static_cast<std::size_t>(primary) * bbar_rows + bbar);
     }
-    const GLCiphertextData<GLP> &at(const std::uint32_t primary,
-                                    const std::uint32_t bbar) const
+    const PackedCiphertext &at(const std::uint32_t primary,
+                               const std::uint32_t bbar) const
     {
         return data.at(static_cast<std::size_t>(primary) * bbar_rows + bbar);
+    }
+
+    std::uint64_t packedPayloadBytes() const
+    {
+        return static_cast<std::uint64_t>(data.size()) *
+               packed_ciphertext_payload_bytes;
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(data);
     }
 };
 
@@ -1190,6 +1350,13 @@ struct GLDDSmallKeySwitchKey {
         (LogQ + PrimaryBit - 1) / PrimaryBit;
     static constexpr std::uint32_t bbar_rows =
         (key_log_q + BbarBit - 1) / BbarBit;
+    using PackedCiphertext = GLPackedBaseCiphertextData<GLP, BbarBit>;
+    static constexpr std::uint64_t packed_ciphertext_payload_bytes =
+        static_cast<std::uint64_t>(2) * GLP::baseP::n *
+        sizeof(GLSignedDigit<BbarBit>);
+    static constexpr std::uint64_t packed_payload_bytes =
+        static_cast<std::uint64_t>(primary_rows) * bbar_rows * 2 *
+        GLP::baseP::n * sizeof(GLSignedDigit<BbarBit>);
 
     static_assert(key_log_q <= std::numeric_limits<typename GLP::T>::digits,
                   "GL q*q0 key-switch modulus exceeds torus storage");
@@ -1198,19 +1365,30 @@ struct GLDDSmallKeySwitchKey {
     static_assert(bbar_rows * BbarBit <=
                   std::numeric_limits<typename GLP::T>::digits);
 
-    std::vector<GLBaseCiphertextData<GLP>> data{};
+    std::vector<PackedCiphertext> data{};
 
     void allocate() { data.resize(primary_rows * bbar_rows); }
 
-    GLBaseCiphertextData<GLP> &at(const std::uint32_t primary,
-                                  const std::uint32_t bbar)
+    PackedCiphertext &at(const std::uint32_t primary, const std::uint32_t bbar)
     {
         return data.at(static_cast<std::size_t>(primary) * bbar_rows + bbar);
     }
-    const GLBaseCiphertextData<GLP> &at(const std::uint32_t primary,
-                                        const std::uint32_t bbar) const
+    const PackedCiphertext &at(const std::uint32_t primary,
+                               const std::uint32_t bbar) const
     {
         return data.at(static_cast<std::size_t>(primary) * bbar_rows + bbar);
+    }
+
+    std::uint64_t packedPayloadBytes() const
+    {
+        return static_cast<std::uint64_t>(data.size()) *
+               packed_ciphertext_payload_bytes;
+    }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(data);
     }
 };
 
@@ -1245,7 +1423,8 @@ inline void GLDDBigKeySwitchKeyGen(
                 gl_detail::activeDecompose<GLP, SwitchKey::key_log_q, BbarBit>(
                     (*ordinary)[component]);
             for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++)
-                switch_key.at(primary, bbar)[component] = std::move(rows[bbar]);
+                gl_detail::packDigitPolynomial<GLP, BbarBit>(
+                    switch_key.at(primary, bbar)[component], rows[bbar]);
         }
     }
 }
@@ -1278,7 +1457,8 @@ inline void GLDDSmallKeySwitchKeyGen(
                 gl_detail::activeDecompose<GLP, SwitchKey::key_log_q, BbarBit>(
                     ordinary[component]);
             for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++)
-                switch_key.at(primary, bbar)[component] = std::move(rows[bbar]);
+                gl_detail::packDigitPolynomial<GLP, BbarBit>(
+                    switch_key.at(primary, bbar)[component], rows[bbar]);
         }
     }
 }
@@ -1300,13 +1480,15 @@ inline void GLDDBigKeySwitch(
         std::vector<GLPolynomial<GLP>>(SwitchKey::bbar_rows),
         std::vector<GLPolynomial<GLP>>(SwitchKey::bbar_rows)};
     auto product = std::make_unique<GLPolynomial<GLP>>();
+    auto key_row = std::make_unique<GLPolynomial<GLP>>();
     for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
          primary++) {
         for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
             for (std::size_t component = 0; component < 2; component++) {
+                gl_detail::unpackDigitPolynomial<GLP, BbarBit>(
+                    *key_row, switch_key.at(primary, bbar)[component]);
                 gl_detail::polynomialMultiply<GLP>(
-                    *product, input_digits[primary],
-                    switch_key.at(primary, bbar)[component]);
+                    *product, input_digits[primary], *key_row);
                 gl_detail::addInPlace<GLP>(digit_rows[component][bbar],
                                            *product);
             }
@@ -1338,14 +1520,16 @@ inline void GLDDSmallKeySwitch(
         std::vector<GLPolynomial<GLP>>(SwitchKey::bbar_rows),
         std::vector<GLPolynomial<GLP>>(SwitchKey::bbar_rows)};
     auto product = std::make_unique<GLBasePolynomial<GLP>>();
+    auto key_row = std::make_unique<GLBasePolynomial<GLP>>();
     for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
          primary++) {
         for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
             for (std::size_t component = 0; component < 2; component++) {
+                gl_detail::unpackDigitPolynomial<GLP, BbarBit>(
+                    *key_row, switch_key.at(primary, bbar)[component]);
                 for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
                     gl_detail::baseMultiply<GLP>(
-                        *product, input_digits[primary][y],
-                        switch_key.at(primary, bbar)[component]);
+                        *product, input_digits[primary][y], *key_row);
                     gl_detail::addInPlace<GLP>(digit_rows[component][bbar][y],
                                                *product);
                 }
@@ -1368,6 +1552,12 @@ struct GLMatrixRelinKey {
     static constexpr std::uint32_t log_q = LogQ;
     GLDDBigKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> conjugate_key{};
     GLDDBigKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> product_key{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(conjugate_key, product_key);
+    }
 };
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,
@@ -1585,6 +1775,12 @@ struct GLRowRotationKey {
     std::uint32_t amount = 0;
     std::uint32_t multiplier = 1;
     GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> switch_key{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(amount, multiplier, switch_key);
+    }
 };
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,
@@ -1646,6 +1842,12 @@ struct GLBatchRotationKey {
     std::uint32_t amount = 0;
     std::uint32_t multiplier = 1;
     GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> switch_key{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(amount, multiplier, switch_key);
+    }
 };
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,

@@ -35,6 +35,8 @@ struct GLSHIPPaperParameterProfile<GL256p17Parameter> {
     static constexpr std::uint32_t gap_log = 5;
     static constexpr std::uint32_t outside_multiplicative_depth = 1;
     static constexpr std::uint32_t security_limit_log_pq = 214;
+    static constexpr std::uint32_t dnum = 8;
+    static constexpr std::uint32_t masked_column_count = 848;
 };
 
 template <>
@@ -46,6 +48,8 @@ struct GLSHIPPaperParameterProfile<GL512p17Parameter> {
     static constexpr std::uint32_t gap_log = 11;
     static constexpr std::uint32_t outside_multiplicative_depth = 1;
     static constexpr std::uint32_t security_limit_log_pq = 430;
+    static constexpr std::uint32_t dnum = 4;
+    static constexpr std::uint32_t masked_column_count = 1504;
 };
 
 template <>
@@ -57,6 +61,8 @@ struct GLSHIPPaperParameterProfile<GL1024p17Parameter> {
     static constexpr std::uint32_t gap_log = 11;
     static constexpr std::uint32_t outside_multiplicative_depth = 8;
     static constexpr std::uint32_t security_limit_log_pq = 868;
+    static constexpr std::uint32_t dnum = 4;
+    static constexpr std::uint32_t masked_column_count = 2880;
 };
 
 template <class GLP>
@@ -120,6 +126,12 @@ struct GLSHIPProductRelinKeyChain;
 struct GLSHIPSupportInterval {
     std::uint32_t start = 0;
     std::uint32_t width = 0;
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(start, width);
+    }
 };
 
 struct GLSHIPCandidate {
@@ -135,6 +147,12 @@ struct GLSHIPCandidate {
     }
     friend bool operator==(const GLSHIPCandidate &lhs,
                            const GLSHIPCandidate &rhs) = default;
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(fine_x, w, gaussian_phase);
+    }
 };
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
@@ -417,6 +435,12 @@ struct GLSHIPProductRelinKeyChain {
     using Tuple = typename gl_ship_detail::ProductRelinTuple<
         Schedule, std::make_index_sequence<Schedule::tree_depth>>::type;
     Tuple keys{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
+    }
 };
 
 namespace gl_ship_detail {
@@ -456,6 +480,13 @@ struct GLSHIPBootstrapKey {
         hmux_keys{};
     GLSHIPProductRelinKeyChain<Schedule> product_relin_keys{};
     OutputConjugationKey output_conjugation_key{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(stc_key, dense_to_sparse_key, masked_column_keys, hmux_keys,
+                product_relin_keys, output_conjugation_key);
+    }
 };
 
 template <class Schedule>
@@ -496,6 +527,21 @@ inline void GLSHIPBootstrapKeyGen(
     GLBaseConjugationKeyGen(
         bootstrap_key.output_conjugation_key, dense_key,
         GLNoiseAtLevel<Schedule::output_log_q + GLP::auxiliary_log_q>());
+}
+
+template <class Schedule>
+inline void GLSHIPSaveBootstrapKey(
+    const std::filesystem::path &path,
+    const GLSHIPBootstrapKey<Schedule> &bootstrap_key)
+{
+    CKKSSavePortableBinaryAtomic(path, bootstrap_key);
+}
+
+template <class Schedule>
+inline void GLSHIPLoadBootstrapKey(GLSHIPBootstrapKey<Schedule> &bootstrap_key,
+                                   const std::filesystem::path &path)
+{
+    CKKSLoadPortableBinary(bootstrap_key, path);
 }
 
 namespace gl_ship_detail {
@@ -768,10 +814,22 @@ struct GLSHIPSlotsToCoefficientsKey {
     struct RotationEntry {
         std::uint32_t amount = 0;
         RotationKey key{};
+
+        template <class Archive>
+        void serialize(Archive &archive)
+        {
+            archive(amount, key);
+        }
     };
 
     ConjugateTransposeKey conjugate_transpose_key{};
     std::vector<RotationEntry> w_rotation_keys{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(conjugate_transpose_key, w_rotation_keys);
+    }
 };
 
 template <class Schedule>
@@ -1065,6 +1123,12 @@ struct GLSHIPMaskedColumnKey {
     std::vector<GLSHIPCandidate> candidates{};
     // Selectors are encoded at scale 2^P and encrypted modulo P*Q.
     std::vector<GLBaseCiphertextData<GLP>> encrypted_masks{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(interval, candidates, encrypted_masks);
+    }
 };
 
 template <class Schedule>
@@ -1075,6 +1139,12 @@ struct GLSHIPHMuxBranchKey {
                               Schedule::primary_bit, Schedule::bbar_bit>;
     SwitchKey body_key{};
     SwitchKey mask_key{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(body_key, mask_key);
+    }
 };
 
 template <class Schedule>
@@ -1082,8 +1152,20 @@ struct GLSHIPHMuxKey {
     struct Stage {
         std::uint32_t step = 0;
         std::vector<GLSHIPHMuxBranchKey<Schedule>> branches{};
+
+        template <class Archive>
+        void serialize(Archive &archive)
+        {
+            archive(step, branches);
+        }
     };
     std::vector<Stage> stages{};
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(stages);
+    }
 };
 
 namespace gl_ship_detail {
@@ -1198,13 +1280,15 @@ inline void GLDDSmallKeySwitchBaseRaw(
         std::vector<GLBasePolynomial<GLP>>(SwitchKey::bbar_rows),
         std::vector<GLBasePolynomial<GLP>>(SwitchKey::bbar_rows)};
     GLBasePolynomial<GLP> product{};
+    GLBasePolynomial<GLP> key_row{};
     for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
          primary++) {
         for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
             for (std::size_t component = 0; component < 2; component++) {
-                gl_detail::baseMultiply<GLP>(
-                    product, input_digits[primary],
-                    switch_key.at(primary, bbar)[component]);
+                gl_detail::unpackDigitPolynomial<GLP, BbarBit>(
+                    key_row, switch_key.at(primary, bbar)[component]);
+                gl_detail::baseMultiply<GLP>(product, input_digits[primary],
+                                             key_row);
                 gl_detail::addInPlace<GLP>(digit_rows[component][bbar],
                                            product);
             }
@@ -1462,14 +1546,114 @@ struct GLSHIPBootstrapSchedule {
 // n256p17 is intentionally omitted: the unpublished per-prime schedule cannot
 // be reconstructed to the paper's measured precision with the current model.
 using GLSHIP512p17FusedDDSchedule =
-    GLSHIPBootstrapSchedule<GL512p17Parameter, 48, 11, 18, 19, 338, 47, 31, 8,
-                            4, 4, 19, 16>;
+    GLSHIPBootstrapSchedule<GL512p17Parameter, 48, 11, 18, 19, 338, 49, 31, 8,
+                            4, 4, 85, 16>;
 using GLSHIP1024p17FusedDDSchedule =
     GLSHIPBootstrapSchedule<GL1024p17Parameter, 50, 11, 19, 20, 641, 50, 31, 16,
                             4, 4, 16, 7>;
 
-static_assert(GLSHIP512p17FusedDDSchedule::output_log_q == 103);
+static_assert(GLSHIP512p17FusedDDSchedule::output_log_q == 93);
 static_assert(GLSHIP1024p17FusedDDSchedule::output_log_q == 391);
+
+namespace gl_ship_detail {
+
+template <class Schedule>
+constexpr std::uint32_t stcRotationKeyCount()
+{
+    using GLP = typename Schedule::Parameter;
+    std::array<bool, GLP::phi> used{};
+    for (std::uint32_t j = 1; j < Schedule::w_baby_step; j++)
+        used[j % GLP::phi] = true;
+    for (std::uint32_t b = 1; b < Schedule::w_giant_steps; b++)
+        used[(b * Schedule::w_baby_step) % GLP::phi] = true;
+    used[0] = false;
+    std::uint32_t count = 0;
+    for (const bool present : used)
+        if (present) count++;
+    return count;
+}
+
+template <class Schedule, std::size_t... Is>
+constexpr std::uint64_t productRelinPackedPayloadBytes(
+    std::index_sequence<Is...>)
+{
+    using Tuple = typename GLSHIPProductRelinKeyChain<Schedule>::Tuple;
+    return (std::uint64_t{0} + ... +
+            std::tuple_element_t<Is, Tuple>::packed_payload_bytes);
+}
+
+}  // namespace gl_ship_detail
+
+// Paper-profile coefficient payload of the in-memory unseeded representation.
+// The published aggregate masked-column count is used here; callers can use
+// the overload below after key generation to measure a key with its actual
+// support intervals.  Vector, allocator, and archive metadata are excluded.
+template <class Schedule>
+constexpr std::uint64_t GLSHIPPaperBootstrapKeyPackedPayloadBytes()
+{
+    using GLP = typename Schedule::Parameter;
+    using StCBig =
+        GLDDBigKeySwitchKey<GLP, Schedule::input_log_q, Schedule::primary_bit,
+                            Schedule::bbar_bit>;
+    using StCSmall =
+        GLDDSmallKeySwitchKey<GLP, Schedule::input_log_q, Schedule::primary_bit,
+                              Schedule::bbar_bit>;
+    using DenseToSparse =
+        GLDDSmallKeySwitchKey<GLP, Schedule::q0_log_q, Schedule::primary_bit,
+                              Schedule::bbar_bit>;
+    using HMuxSwitch =
+        GLDDSmallKeySwitchKey<GLP, Schedule::half_bootstrap_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit>;
+    using OutputConjugation =
+        GLDDSmallKeySwitchKey<GLP, Schedule::output_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit>;
+    constexpr auto profile = GLSHIPPaperParameterProfile<GLP>{};
+    constexpr std::uint64_t masked_column_bytes =
+        static_cast<std::uint64_t>(profile.masked_column_count) * 2 *
+        GLP::baseP::n * sizeof(typename GLP::T);
+    constexpr std::uint64_t hmux_switch_count =
+        static_cast<std::uint64_t>(Schedule::sparse_hamming_weight) *
+        Schedule::hmux_stages * Schedule::hmux_radix * 2;
+    return StCBig::packed_payload_bytes +
+           static_cast<std::uint64_t>(
+               gl_ship_detail::stcRotationKeyCount<Schedule>()) *
+               StCSmall::packed_payload_bytes +
+           DenseToSparse::packed_payload_bytes + masked_column_bytes +
+           hmux_switch_count * HMuxSwitch::packed_payload_bytes +
+           gl_ship_detail::productRelinPackedPayloadBytes<Schedule>(
+               std::make_index_sequence<Schedule::tree_depth>{}) +
+           OutputConjugation::packed_payload_bytes;
+}
+
+static_assert(
+    GLSHIPPaperBootstrapKeyPackedPayloadBytes<GLSHIP512p17FusedDDSchedule>() ==
+    UINT64_C(8458338304));
+
+template <class Schedule>
+inline std::uint64_t GLSHIPBootstrapKeyPackedPayloadBytes(
+    const GLSHIPBootstrapKey<Schedule> &bootstrap_key)
+{
+    using GLP = typename Schedule::Parameter;
+    std::uint64_t bytes =
+        bootstrap_key.stc_key.conjugate_transpose_key.packedPayloadBytes();
+    for (const auto &entry : bootstrap_key.stc_key.w_rotation_keys)
+        bytes += entry.key.switch_key.packedPayloadBytes();
+    bytes += bootstrap_key.dense_to_sparse_key.packedPayloadBytes();
+    for (const auto &masked : bootstrap_key.masked_column_keys)
+        bytes += static_cast<std::uint64_t>(masked.encrypted_masks.size()) * 2 *
+                 GLP::baseP::n * sizeof(typename GLP::T);
+    for (const auto &hmux : bootstrap_key.hmux_keys)
+        for (const auto &stage : hmux.stages)
+            for (const auto &branch : stage.branches)
+                bytes += branch.body_key.packedPayloadBytes() +
+                         branch.mask_key.packedPayloadBytes();
+    std::apply(
+        [&bytes](const auto &...relin) {
+            ((bytes += relin.packedPayloadBytes()), ...);
+        },
+        bootstrap_key.product_relin_keys.keys);
+    return bytes + bootstrap_key.output_conjugation_key.packedPayloadBytes();
+}
 
 template <class GLP>
 class GLBaseSlotTable {

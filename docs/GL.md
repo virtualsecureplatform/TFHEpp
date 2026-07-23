@@ -54,9 +54,12 @@ word:
    modulus in base `Bbar`. Small digit products are accumulated in a 384-bit
    accumulator for 128-bit parameters, or a wide signed limb accumulator for
    multi-limb parameters, and then rounded/rescaled.
-2. A switch input is decomposed in the primary base. Each evaluation-key RLWE
-   row is independently decomposed in `Bbar`, multiplied by the primary digit,
-   and recombined.
+2. A switch input is decomposed in the primary base. At key generation, each
+   unseeded evaluation-key RLWE row is independently decomposed in `Bbar` and
+   stored as signed native digits, retaining both RLWE components. Evaluation
+   expands one stored row at a time, multiplies it by the primary digit, and
+   recombines the result; it does not decompose an evaluation-key ciphertext
+   online.
 
 Evaluation keys are generated at `q * q0`. Their plaintext is
 `q0 * gadget * source_secret`; after DD recomposition, switching performs a
@@ -193,19 +196,37 @@ algebraic branch quickly. Production callers must select a schedule consistent
 with the chosen Table-1 profile and perform a fresh estimator/noise analysis.
 
 The companion estimator in `../../Parameter-Selection/python/GLnoise.py` keeps a
-`legacy` comparison mode for the old operation boundaries. With
-`--optimize-tree-scale`, the fused-DD model reaches the paper's measured
-precision for `n512p17` and `n1024p17` at 47- and 50-bit uniform tree scales
-without increasing `Q` or `P`. The reconstructed `n256p17` schedule remains
-below target at its largest feasible 26-bit tree scale, so that profile is not
-yet certified by the available schedule data.
+`legacy` comparison mode for the old operation boundaries. The fused-DD model
+first reaches the paper's measured precision for `n512p17` and `n1024p17` at
+47- and 50-bit uniform tree scales without increasing `Q` or `P`. Because the
+47-bit n512 result has only about 0.09 bit of modeled margin, the selected
+n512 alias uses 49 bits, four 85-bit primary rows (covering its 338-bit `Q`),
+and pre-decomposed signed 16-bit evaluation-key rows. The reconstructed
+`n256p17` schedule remains below target at its largest feasible 26-bit tree
+scale, so that profile is not yet certified by the available schedule data.
+
+The four-row DD layout is a TFHEpp storage/arithmetic choice that mirrors the
+paper's `dnum=4` partition count; the paper's `dnum` denotes RNS partitions and
+does not prescribe an 85-bit gadget base. Likewise, the packed unseeded key
+format is an implementation representation, not a seeded or online
+evaluation-key decomposition technique claimed by either paper.
 
 The two estimator-screened reference aliases are:
 
 | Alias | q0 | X+W StC | Half-bootstrap Q | Tree scale | Output Q | Estimated precision |
 |---|---:|---:|---:|---:|---:|---:|
-| `GLSHIP512p17FusedDDSchedule` | 48 | 18+19 | 338 | 47 | 103 | 15.05 bits |
+| `GLSHIP512p17FusedDDSchedule` | 48 | 18+19 | 338 | 49 | 93 | 16.27 bits |
 | `GLSHIP1024p17FusedDDSchedule` | 50 | 19+20 | 641 | 50 | 391 | 16.43 bits |
+
+Using the paper's aggregate count of 1,504 masked columns, the n512 alias has a
+compile-time coefficient-payload estimate of 8,458,338,304 bytes (7.88 GiB).
+This is the unseeded representation used by the implementation: the figure
+includes both components of every DD key row and native-width masked-column
+ciphertexts. `GLSHIPBootstrapKeyPackedPayloadBytes(key)` reports the exact
+coefficient payload after concrete support intervals are known. Archive and
+allocator metadata add a small overhead; saving does not require a second
+in-memory key, although the atomic writer temporarily needs room for the
+destination file.
 
 ## Current Boundary
 
@@ -221,7 +242,8 @@ limits, leaving no modulus margin; `n1024p17` uses 861 of 868 permitted bits.
 TFHEpp's power-of-two, multi-limb backend has enough bits to represent those
 profiles. The fused-DD estimator validates the modulus budget for the latter
 two profiles under its average-case model, but full-size bootstrap noise has
-not yet been measured empirically and the `n512p17` precision margin is small.
+not yet been measured empirically. The selected `n512p17` tree scale estimates
+16.27 bits of precision, 1.33 bits above the paper's reported 14.94 bits.
 Do not label these aliases production-secure until that validation and
 constant-time optimized kernels are complete.
 

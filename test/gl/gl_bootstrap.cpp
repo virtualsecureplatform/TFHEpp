@@ -3,6 +3,7 @@
 #include <cmath>
 #include <complex>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <tfhe++.hpp>
@@ -35,6 +36,27 @@ using MultiLimbGLP =
     TFHEpp::GLParameter<BootstrapMultiLimbTestBaseParameter, 2, 5, 34>;
 using Schedule =
     TFHEpp::GLSHIPBootstrapSchedule<GLP, 24, 4, 8, 8, 90, 18, 3, 1, 2, 2, 8, 8>;
+using MultiLimbSchedule =
+    TFHEpp::GLSHIPBootstrapSchedule<MultiLimbGLP, 24, 4, 8, 8, 90, 18, 3, 1, 2,
+                                    2, 8, 16>;
+using N512Schedule = TFHEpp::GLSHIP512p17FusedDDSchedule;
+
+// Compile the production key-generation and end-to-end evaluation templates.
+// Running them still requires the optimized Rader/NTT backend discussed in
+// docs/GL.md; the regression below exercises the same path at toy dimensions.
+[[maybe_unused]] void instantiateN512Bootstrap(
+    TFHEpp::GLSHIPBootstrapKey<N512Schedule> &bootstrap_key,
+    const TFHEpp::Key<typename N512Schedule::Parameter::baseP> &dense_key,
+    const TFHEpp::Key<typename N512Schedule::Parameter::baseP> &sparse_key,
+    const std::array<TFHEpp::GLSHIPSupportInterval,
+                     N512Schedule::sparse_hamming_weight> &intervals,
+    N512Schedule::OutputCiphertext &output,
+    const N512Schedule::InputCiphertext &input)
+{
+    TFHEpp::GLSHIPBootstrapKeyGen(bootstrap_key, dense_key, sparse_key,
+                                  intervals);
+    TFHEpp::GLSHIPBootstrap<N512Schedule>(output, input, bootstrap_key);
+}
 
 static_assert(Schedule::input_log_q == 40);
 static_assert(Schedule::input_log_delta == 20);
@@ -151,6 +173,40 @@ int main()
               << std::endl;
     if (high_scale_error > 1e-15) return 1;
 
+    TFHEpp::GLBasePolynomial<MultiLimbGLP> unpacked_digits{};
+    TFHEpp::GLBasePolynomial<MultiLimbGLP> packed_digit_source{};
+    packed_digit_source[0] =
+        BootstrapMultiLimbTestBaseParameter::T::from_signed_i64(-32768);
+    packed_digit_source[1] =
+        BootstrapMultiLimbTestBaseParameter::T::from_signed_i64(32767);
+    TFHEpp::GLPackedBasePolynomial<MultiLimbGLP, 16> packed_digits{};
+    TFHEpp::gl_detail::packDigitPolynomial<MultiLimbGLP, 16>(
+        packed_digits, packed_digit_source);
+    TFHEpp::gl_detail::unpackDigitPolynomial<MultiLimbGLP, 16>(unpacked_digits,
+                                                               packed_digits);
+    if (unpacked_digits != packed_digit_source) return 1;
+
+    // Exercise the actual n512 four-row, 85-bit primary decomposition without
+    // invoking the intentionally slow production-size multiplication kernel.
+    using N512GLP = TFHEpp::GL512p17Parameter;
+    auto n512_source = std::make_unique<TFHEpp::GLBasePolynomial<N512GLP>>();
+    auto n512_expected = std::make_unique<TFHEpp::GLBasePolynomial<N512GLP>>();
+    auto n512_recombined =
+        std::make_unique<TFHEpp::GLBasePolynomial<N512GLP>>();
+    (*n512_source)[0] = typename N512GLP::T{1} << 337;
+    (*n512_source)[1] = typename N512GLP::T{0} - typename N512GLP::T{1};
+    (*n512_source)[2] = (typename N512GLP::T{1} << 337) +
+                        (typename N512GLP::T{1} << 169) +
+                        typename N512GLP::T{12345};
+    *n512_expected = *n512_source;
+    TFHEpp::gl_detail::reduce<N512GLP, 338>(*n512_expected);
+    const auto n512_primary_rows =
+        TFHEpp::gl_detail::activeDecompose<N512GLP, 338, 85>(*n512_source);
+    if (n512_primary_rows.size() != 4) return 1;
+    TFHEpp::gl_detail::activeRecombine<N512GLP, 338, 85>(*n512_recombined,
+                                                         n512_primary_rows);
+    if (*n512_recombined != *n512_expected) return 1;
+
     // Exercise the production-width relinearize-before-rescale kernel.  The
     // product itself is reduced modulo its input Q, so only the low Q bits of
     // the multi-limb multiplication are needed before DD key switching.
@@ -158,6 +214,48 @@ int main()
     multi_limb_key[0] = 1;
     multi_limb_key[1] = static_cast<BootstrapMultiLimbTestBaseParameter::T>(-1);
     multi_limb_key[4] = 1;
+
+    // Exercise the complete unseeded packed-key archive with a multi-limb
+    // torus, matching the coefficient type used by the n512 profile.
+    TFHEpp::Key<BootstrapMultiLimbTestBaseParameter> multi_limb_sparse_key{};
+    multi_limb_sparse_key[0] = 1;
+    multi_limb_sparse_key[3] =
+        static_cast<BootstrapMultiLimbTestBaseParameter::T>(-1);
+    multi_limb_sparse_key[10] = 1;
+    auto archived_key =
+        std::make_unique<TFHEpp::GLSHIPBootstrapKey<MultiLimbSchedule>>();
+    TFHEpp::GLSHIPBootstrapKeyGen(*archived_key, multi_limb_key,
+                                  multi_limb_sparse_key, intervals);
+    const std::filesystem::path archive_path =
+        std::filesystem::temp_directory_path() /
+        "tfhepp_gl_ship_unseeded_packed_test.bin";
+    std::error_code archive_error;
+    std::filesystem::remove(archive_path, archive_error);
+    TFHEpp::GLSHIPSaveBootstrapKey<MultiLimbSchedule>(archive_path,
+                                                      *archived_key);
+    if (!std::filesystem::is_regular_file(archive_path) ||
+        std::filesystem::file_size(archive_path) == 0)
+        return 1;
+    auto restored_key =
+        std::make_unique<TFHEpp::GLSHIPBootstrapKey<MultiLimbSchedule>>();
+    TFHEpp::GLSHIPLoadBootstrapKey(*restored_key, archive_path);
+    std::filesystem::remove(archive_path, archive_error);
+    if (TFHEpp::GLSHIPBootstrapKeyPackedPayloadBytes(*restored_key) !=
+            TFHEpp::GLSHIPBootstrapKeyPackedPayloadBytes(*archived_key) ||
+        restored_key->stc_key.w_rotation_keys.size() !=
+            archived_key->stc_key.w_rotation_keys.size() ||
+        restored_key->hmux_keys[0].stages.size() !=
+            archived_key->hmux_keys[0].stages.size() ||
+        restored_key->dense_to_sparse_key.data.size() !=
+            archived_key->dense_to_sparse_key.data.size() ||
+        restored_key->dense_to_sparse_key.data.front()[0][0] !=
+            archived_key->dense_to_sparse_key.data.front()[0][0] ||
+        restored_key->masked_column_keys[0].encrypted_masks.front()[0][0] !=
+            archived_key->masked_column_keys[0].encrypted_masks.front()[0][0])
+        return 1;
+    archived_key.reset();
+    restored_key.reset();
+
     TFHEpp::GLBaseSlotTable<MultiLimbGLP> product_lhs_values;
     TFHEpp::GLBaseSlotTable<MultiLimbGLP> product_rhs_values;
     for (std::uint32_t batch = 0; batch < MultiLimbGLP::phi; batch++) {
