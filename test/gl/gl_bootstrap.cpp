@@ -40,6 +40,14 @@ static_assert(Schedule::input_log_q == 40);
 static_assert(Schedule::input_log_delta == 20);
 static_assert(Schedule::tree_depth == 2);
 static_assert(Schedule::output_log_q == 54);
+using FirstProductRelinKey =
+    std::tuple_element_t<0,
+                         TFHEpp::GLSHIPProductRelinKeyChain<Schedule>::Tuple>;
+using SecondProductRelinKey =
+    std::tuple_element_t<1,
+                         TFHEpp::GLSHIPProductRelinKeyChain<Schedule>::Tuple>;
+static_assert(FirstProductRelinKey::log_q == 90);
+static_assert(SecondProductRelinKey::log_q == 72);
 static_assert(TFHEpp::GLSHIPPaperProfileFitsStorage<TFHEpp::GL256p17Parameter>);
 static_assert(
     std::numeric_limits<typename TFHEpp::GL256p17Parameter::T>::digits >=
@@ -142,6 +150,53 @@ int main()
     std::cout << "  multi-limb high-scale encode error=" << high_scale_error
               << std::endl;
     if (high_scale_error > 1e-15) return 1;
+
+    // Exercise the production-width relinearize-before-rescale kernel.  The
+    // product itself is reduced modulo its input Q, so only the low Q bits of
+    // the multi-limb multiplication are needed before DD key switching.
+    TFHEpp::Key<BootstrapMultiLimbTestBaseParameter> multi_limb_key{};
+    multi_limb_key[0] = 1;
+    multi_limb_key[1] = static_cast<BootstrapMultiLimbTestBaseParameter::T>(-1);
+    multi_limb_key[4] = 1;
+    TFHEpp::GLBaseSlotTable<MultiLimbGLP> product_lhs_values;
+    TFHEpp::GLBaseSlotTable<MultiLimbGLP> product_rhs_values;
+    for (std::uint32_t batch = 0; batch < MultiLimbGLP::phi; batch++) {
+        for (std::uint32_t x = 0; x < MultiLimbGLP::matrix_dimension; x++) {
+            product_lhs_values(batch, x) = {0.025 * (1 + batch) + 0.01 * x,
+                                            -0.012 * (1 + x)};
+            product_rhs_values(batch, x) = {-0.018 * (1 + x),
+                                            0.009 * (1 + batch)};
+        }
+    }
+    TFHEpp::GLBasePlaintext<MultiLimbGLP, 180, 30> product_lhs_plain;
+    TFHEpp::GLBasePlaintext<MultiLimbGLP, 180, 30> product_rhs_plain;
+    TFHEpp::GLBaseEncode(product_lhs_plain, product_lhs_values);
+    TFHEpp::GLBaseEncode(product_rhs_plain, product_rhs_values);
+    TFHEpp::GLBaseCiphertext<MultiLimbGLP, 180, 30> product_lhs;
+    TFHEpp::GLBaseCiphertext<MultiLimbGLP, 180, 30> product_rhs;
+    TFHEpp::GLBaseEncrypt(product_lhs, product_lhs_plain, multi_limb_key);
+    TFHEpp::GLBaseEncrypt(product_rhs, product_rhs_plain, multi_limb_key);
+    TFHEpp::GLHadamardRelinKey<MultiLimbGLP, 180, 8, 8> product_relin_key;
+    TFHEpp::GLHadamardRelinKeyGen(product_relin_key, multi_limb_key);
+    TFHEpp::GLBaseCiphertext<MultiLimbGLP, 150, 30> product_ciphertext;
+    TFHEpp::GLBaseHadamardMultiply<MultiLimbGLP, 180, 30, 180, 30, 30, 8, 8>(
+        product_ciphertext, product_lhs, product_rhs, product_relin_key);
+    TFHEpp::GLBasePlaintext<MultiLimbGLP, 150, 30> product_plaintext;
+    TFHEpp::GLBaseDecrypt(product_plaintext, product_ciphertext,
+                          multi_limb_key);
+    TFHEpp::GLBaseSlotTable<MultiLimbGLP> product_values;
+    TFHEpp::GLBaseDecode(product_values, product_plaintext);
+    double multi_limb_product_error = 0;
+    for (std::uint32_t batch = 0; batch < MultiLimbGLP::phi; batch++)
+        for (std::uint32_t x = 0; x < MultiLimbGLP::matrix_dimension; x++)
+            multi_limb_product_error =
+                std::max(multi_limb_product_error,
+                         std::abs(product_values(batch, x) -
+                                  product_lhs_values(batch, x) *
+                                      product_rhs_values(batch, x)));
+    std::cout << "  multi-limb fused product error=" << multi_limb_product_error
+              << std::endl;
+    if (multi_limb_product_error > 2e-5) return 1;
 
     // Half-bootstrap a deliberately coefficient-ordered message.  This tests
     // dense-to-sparse switching, both Gaussian channels, MaskedColumn, HMux,

@@ -64,6 +64,21 @@ signed rounded division by `q0`. This is the auxiliary-modulus step from the
 GL construction and prevents evaluation-key error from being amplified by an
 unscaled same-modulus switch.
 
+The SHIP path preserves the paper's hybrid-RNS operation boundaries while
+using DD for the underlying decomposition:
+
+- masked-column ciphertext/plaintext products are accumulated modulo `P*Q`
+  and Equation (15)'s single ModDown removes `P` after the sum;
+- each HMux stage accumulates the raw DD body and mask switches for every
+  radix branch modulo `P*Q`, then performs one ModDown for the stage; and
+- a product-tree node multiplies and relinearizes modulo its input `Q`, then
+  rescales the resulting two-component ciphertext once.
+
+The last point avoids the former component-wise tensor floor
+`r00 + (r01+r10)s + r11*s^2`; relinearize-before-rescale has the standard
+two-component floor `r0+r1*s`. Product relinearization keys are consequently
+generated at each tree node's input modulus, not its post-rescale modulus.
+
 Fresh ciphertexts and evaluation keys default to coefficient-domain Gaussian
 noise with standard deviation 3.2, matching the paper's reference choice.
 `GLNoiseAtLevel<LogQ>(sigma)` converts that absolute standard deviation into
@@ -177,6 +192,21 @@ Gaussian noise. It is deliberately insecure and exists to exercise every
 algebraic branch quickly. Production callers must select a schedule consistent
 with the chosen Table-1 profile and perform a fresh estimator/noise analysis.
 
+The companion estimator in `../../Parameter-Selection/python/GLnoise.py` keeps a
+`legacy` comparison mode for the old operation boundaries. With
+`--optimize-tree-scale`, the fused-DD model reaches the paper's measured
+precision for `n512p17` and `n1024p17` at 47- and 50-bit uniform tree scales
+without increasing `Q` or `P`. The reconstructed `n256p17` schedule remains
+below target at its largest feasible 26-bit tree scale, so that profile is not
+yet certified by the available schedule data.
+
+The two estimator-screened reference aliases are:
+
+| Alias | q0 | X+W StC | Half-bootstrap Q | Tree scale | Output Q | Estimated precision |
+|---|---:|---:|---:|---:|---:|---:|
+| `GLSHIP512p17FusedDDSchedule` | 48 | 18+19 | 338 | 47 | 103 | 15.05 bits |
+| `GLSHIP1024p17FusedDDSchedule` | 50 | 19+20 | 641 | 50 | 391 | 16.43 bits |
+
 ## Current Boundary
 
 This remains a correctness-oriented coefficient-domain implementation. Its
@@ -189,9 +219,11 @@ Storage sufficiency is also not a security or precision proof. The paper's
 `n256p17` and `n512p17` values use the full 214- and 430-bit 128-bit-security
 limits, leaving no modulus margin; `n1024p17` uses 861 of 868 permitted bits.
 TFHEpp's power-of-two, multi-limb backend has enough bits to represent those
-profiles, but its full-size bootstrap noise has not yet been measured against
-an independent RLWE estimator. Do not label these aliases production-secure
-until that validation and constant-time optimized kernels are complete.
+profiles. The fused-DD estimator validates the modulus budget for the latter
+two profiles under its average-case model, but full-size bootstrap noise has
+not yet been measured empirically and the `n512p17` precision margin is small.
+Do not label these aliases production-secure until that validation and
+constant-time optimized kernels are complete.
 
 Build and run the regression with:
 
