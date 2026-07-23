@@ -4,7 +4,7 @@ file(COPY test.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER
 file(COPY show_info.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_EXECUTE)
 file(COPY benchmark_docker.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_READ OWNER_EXECUTE)
 
-set(test_directories common tfhe bfv clpx ckks)
+set(test_directories common tfhe bfv clpx ckks gl)
 
 # The default 128-bit parameter set is the only one whose TRLWE levels all use
 # k=1 keys and that provides the multi-limb scheme scaffolds; tests requiring
@@ -32,6 +32,10 @@ foreach(test_source ${test_sources})
     endif()
     if(test_name MATCHES "^largelut" AND NOT default_parameter_set)
         # largelut R2RPKS requires k=1 TRLWE keys.
+        continue()
+    endif()
+    if(test_dir STREQUAL "gl" AND NOT default_parameter_set)
+        # GL uses the active-level 128-bit/multi-limb CKKS arithmetic backend.
         continue()
     endif()
     if(test_name STREQUAL "gatebootstrappingtlwe2tlwedoubledecomposition"

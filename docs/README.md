@@ -19,6 +19,8 @@ This documentation lives in `docs/` and is meant to complement the root
   Double Decomposition, BFV++, and other advanced features.
 - `CKKS.md` — experimental CKKS types, dense bootstrapping, product eval keys,
   and practical lvl6 validation commands.
+- `GL.md` — experimental Gentry–Lee matrix FHE, Double Decomposition,
+  matrix operations, parameters, and current bootstrapping boundary.
 - `Serialization.md` — exporting/importing keys and ciphertexts with cereal.
 
 ## Quick Links
@@ -30,5 +32,6 @@ This documentation lives in `docs/` and is meant to complement the root
 - Circuit bootstrapping: `include/tfhe/circuitbootstrapping.hpp`
 - CKKS: `include/ckks/ckks.hpp`, `test/ckks/ckks_bootstrap_validation.cpp`,
   `test/ckks/ckks_bootstrap_workflow.cpp`
+- Gentry–Lee matrix FHE: `include/gl/gl.hpp`, `test/gl/gl_scheme.cpp`
 - Tutorial programs: `tutorial/`
 - Tests/examples: `test/`

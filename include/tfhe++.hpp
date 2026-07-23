@@ -41,6 +41,7 @@
 #include "bfv/bfv-bootstrapping.hpp"
 #include "bfv/bfv-gbfv.hpp"
 #include "ckks/ckks.hpp"
+#include "gl/gl.hpp"
 
 // Application
 #include "tfhe/aes.hpp"
