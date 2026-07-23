@@ -1,10 +1,12 @@
 # Gentry–Lee Matrix FHE
 
-TFHEpp includes an experimental, leveled implementation of the complex
-Gentry–Lee (GL) scheme in `include/gl/gl.hpp`. It follows the matrix encoding
-and relinearization from *Fully Homomorphic Encryption for Matrix Arithmetic*
-and uses TFHEpp's CKKS/BFV Double Decomposition (DD) arithmetic for products
-and key switching.
+TFHEpp includes an experimental implementation of the complex Gentry–Lee
+(GL) scheme in `include/gl/gl.hpp`, plus the low-depth SHIP bootstrap from
+*Low-Depth Bootstrapping for Matrix-Native FHE* in
+`include/gl/gl-bootstrap.hpp`. It follows the matrix encoding and
+relinearization from *Fully Homomorphic Encryption for Matrix Arithmetic* and
+uses TFHEpp's CKKS/BFV Double Decomposition (DD) arithmetic for products, key
+switching, masked selection, and HMux.
 
 ## Representation
 
@@ -29,10 +31,19 @@ constraints:
 - the torus is `__uint128_t` or TFHEpp's multi-limb type; and
 - every switch satisfies `ciphertext LogQ + AuxiliaryLogQ <= torus width`.
 
-`GL256p17Parameter` supplies the paper's `n=256`, `p=17`, degree-8192 ring
-shape on `lvl4param`, with a 32-bit auxiliary switch modulus. It is a baseline
-type, not a claim that the existing `lvl4param` modulus/noise schedule matches
-every parameter in the paper.
+The paper-profile storage aliases are:
+
+| Alias | Slice degree | Torus storage | Paper `log Q` | Paper `log P` | Paper `log(PQ)` |
+|---|---:|---:|---:|---:|---:|
+| `GL256p17Parameter` | 8192 | 256 bits | 180 | 34 | 214 |
+| `GL512p17Parameter` | 16384 | 448 bits | 338 | 92 | 430 |
+| `GL1024p17Parameter` | 32768 | 896 bits | 641 | 220 | 861 |
+
+The former degree-8192 alias used `lvl4param` and only 128 bits of storage;
+that is insufficient for the paper's 214-bit `P*Q` requirement. The new
+four-limb degree-8192 base fixes the representation limit. The compile-time
+`GLSHIPPaperParameterProfile` specializations record Table 1 and statically
+check that each profile fits its torus storage.
 
 ## Double Decomposition
 
@@ -123,36 +134,80 @@ The public API currently provides:
 | Batch (`W`) rotation | `GLRotateBatches` | one small DD switch, bound to the rotation key |
 | Transpose | `GLTranspose` | one big DD switch |
 | Conjugate transpose | `GLConjugateTranspose` | one big DD switch |
+| Grouped slots-to-coefficients | `GLSHIPSlotsToCoefficients` | one big conjugate-transpose key plus BSGS W-rotation keys |
+| SHIP half-bootstrap | `GLSHIPHalfBootstrap` | dense-to-sparse, encrypted-mask, HMux, relin, and conjugation keys |
+| Full SHIP bootstrap | `GLSHIPBootstrap` | StC and half-bootstrap keys |
 
 The conjugate-transpose switch source is the same
 `s(-I,Y^-1,W^-1)` source used by `GLMatrixRelinKey::conjugate_key`, so that
 member can be reused at the same active modulus.
 
+## Low-Depth SHIP Bootstrap
+
+`GLSHIPBootstrapSchedule` describes a complete reference schedule:
+
+- a natural-order grouped GL StC, with matrix-native X inversion and a
+  diagonal BSGS W inversion followed by one delayed rescale;
+- DD dense-to-sparse switching at the level-zero modulus;
+- two Gaussian channels implementing Equation (1) of the bootstrap paper;
+- encrypted row-wise masked-column selectors at modulus `P*Q`;
+- radix-B, X-only hidden HMux stages implemented as DD external key switches;
+- a balanced `h+1` product tree with one relinearization/rescale per layer;
+- conjugate-and-add sine extraction, multiplication of the second channel by
+  formal `I`, and direct Y-slice reassembly.
+
+The main interfaces are:
+
+```cpp
+TFHEpp::GLSHIPBootstrapKeyGen(key, dense_secret, sparse_secret, intervals);
+TFHEpp::GLSHIPSlotsToCoefficients<Schedule>(coeff, input, key.stc_key);
+TFHEpp::GLSHIPHalfBootstrap<Schedule>(output, coeff, key);
+TFHEpp::GLSHIPBootstrap<Schedule>(output, input, key);
+```
+
+`sparse_secret` must have the schedule's Hamming weight and coefficients in
+`{0,+1,-1}`. A coefficient's flat W-major index determines its `X`, `W`, and
+Gaussian `I` component. Each public `GLSHIPSupportInterval` must contain the
+corresponding nonzero coefficient. As in SHIP, those intervals leak bounded
+support information; the exact position, sign, Gaussian phase, and HMux
+digits remain encrypted.
+
+The regression schedule uses `n=2`, `p=5`, sparse weight 3, and nonzero
+Gaussian noise. It is deliberately insecure and exists to exercise every
+algebraic branch quickly. Production callers must select a schedule consistent
+with the chosen Table-1 profile and perform a fresh estimator/noise analysis.
+
 ## Current Boundary
 
-This is a correctness-oriented coefficient-domain implementation. The
-degree-8192 type is intentionally exposed, but the current multiplication and
-trace kernels are not yet replaced by the paper's Rader/NTT and optimized
-modular matrix-multiplication path. The alias currently serves compile-time
-integration and parameter-shape work; full-size encoding and evaluation are
-not practical with these reference kernels.
+This remains a correctness-oriented coefficient-domain implementation. Its
+bootstrap follows the paper's algebra, but the multiplication and transform
+kernels are not the fused Rader NTT, RNS hybrid switch, or optimized modular
+matrix-multiplication kernels used for the paper's measurements. Full-size
+evaluation is therefore not practical with the reference kernels.
 
-The SHIP-based low-depth bootstrap from *Low-Depth Bootstrapping for
-Matrix-Native FHE* is not implemented here. That construction additionally
-requires GL StC/CtS transforms, masked-column candidate generation, and hidden
-HMux selection over the non-power-of-two `(X,W)` algebra; the current TFHEpp
-bootstrap machinery only supplies the power-of-two CKKS path. The GL code is
-therefore leveled and should not be presented as a bootstrapped GL instance.
+Storage sufficiency is also not a security or precision proof. The paper's
+`n256p17` and `n512p17` values use the full 214- and 430-bit 128-bit-security
+limits, leaving no modulus margin; `n1024p17` uses 861 of 868 permitted bits.
+TFHEpp's power-of-two, multi-limb backend has enough bits to represent those
+profiles, but its full-size bootstrap noise has not yet been measured against
+an independent RLWE estimator. Do not label these aliases production-secure
+until that validation and constant-time optimized kernels are complete.
 
 Build and run the regression with:
 
 ```bash
 cmake -S . -B build -DENABLE_TEST=ON
-cmake --build build --target gl_scheme
+cmake --build build --target gl_scheme gl_bootstrap
 ./build/test/gl/gl_scheme
+./build/test/gl/gl_bootstrap
 ```
 
 The regression uses `n=2`, `p=5` and nonzero Gaussian noise. It covers
 encoding, the paper trace identity, encryption, both DD switch sizes, matrix
 and Hadamard products, all listed automorphisms, and auxiliary-modulus
 switching.
+
+The bootstrap regression additionally covers slice encoding, natural-order
+grouped StC, dense-to-sparse switching, masked candidates, nontrivial X HMux,
+both Gaussian channels, the balanced product tree, half-bootstrap, and the
+full bootstrap wrapper.

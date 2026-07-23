@@ -1,0 +1,1732 @@
+#pragma once
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <complex>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <memory>
+#include <set>
+#include <stdexcept>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "gl/gl.hpp"
+
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+
+namespace TFHEpp {
+
+// The modulus figures reported in Table 1 of ePrint 2026/811.  These are
+// storage/security profiles, not claims that the coefficient-domain reference
+// kernels below reproduce the paper's RNS performance.
+template <class GLP>
+struct GLSHIPPaperParameterProfile;
+
+template <>
+struct GLSHIPPaperParameterProfile<GL256p17Parameter> {
+    static constexpr std::uint32_t log_q = 180;
+    static constexpr std::uint32_t log_p = 34;
+    static constexpr std::uint32_t log_pq = 214;
+    static constexpr std::uint32_t stc_bits = 26;
+    static constexpr std::uint32_t gap_log = 5;
+    static constexpr std::uint32_t outside_multiplicative_depth = 1;
+    static constexpr std::uint32_t security_limit_log_pq = 214;
+};
+
+template <>
+struct GLSHIPPaperParameterProfile<GL512p17Parameter> {
+    static constexpr std::uint32_t log_q = 338;
+    static constexpr std::uint32_t log_p = 92;
+    static constexpr std::uint32_t log_pq = 430;
+    static constexpr std::uint32_t stc_bits = 37;
+    static constexpr std::uint32_t gap_log = 11;
+    static constexpr std::uint32_t outside_multiplicative_depth = 1;
+    static constexpr std::uint32_t security_limit_log_pq = 430;
+};
+
+template <>
+struct GLSHIPPaperParameterProfile<GL1024p17Parameter> {
+    static constexpr std::uint32_t log_q = 641;
+    static constexpr std::uint32_t log_p = 220;
+    static constexpr std::uint32_t log_pq = 861;
+    static constexpr std::uint32_t stc_bits = 39;
+    static constexpr std::uint32_t gap_log = 11;
+    static constexpr std::uint32_t outside_multiplicative_depth = 8;
+    static constexpr std::uint32_t security_limit_log_pq = 868;
+};
+
+template <class GLP>
+inline constexpr bool GLSHIPPaperProfileFitsStorage =
+    GLSHIPPaperParameterProfile<GLP>::log_pq <=
+    std::numeric_limits<typename GLP::T>::digits;
+
+static_assert(GLSHIPPaperProfileFitsStorage<GL256p17Parameter>);
+static_assert(GLSHIPPaperProfileFitsStorage<GL512p17Parameter>);
+static_assert(GLSHIPPaperProfileFitsStorage<GL1024p17Parameter>);
+
+namespace gl_ship_detail {
+
+constexpr std::uint32_t ceilLog(const std::uint32_t value,
+                                const std::uint32_t radix)
+{
+    if (value <= 1) return 0;
+    std::uint32_t power = 1;
+    std::uint32_t result = 0;
+    while (power < value) {
+        power *= radix;
+        result++;
+    }
+    return result;
+}
+
+constexpr bool isPowerOfTwo(const std::uint32_t value)
+{
+    return value != 0 && (value & (value - 1)) == 0;
+}
+
+constexpr std::uint32_t positiveMod(const std::int64_t value,
+                                    const std::uint32_t modulus)
+{
+    const std::int64_t reduced = value % static_cast<std::int64_t>(modulus);
+    return static_cast<std::uint32_t>(reduced < 0 ? reduced + modulus
+                                                  : reduced);
+}
+
+}  // namespace gl_ship_detail
+
+// Forward declarations keep the public Algorithm 3 entry points near the
+// parameter table while the implementation details remain below.
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+struct GLBasePlaintext;
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+struct GLBaseCiphertext;
+template <class GLP>
+class GLBaseSlotTable;
+template <class Schedule>
+struct GLSHIPBootstrapKey;
+template <class Schedule>
+struct GLSHIPSlotsToCoefficientsKey;
+template <class Schedule>
+struct GLSHIPMaskedColumnKey;
+template <class Schedule>
+struct GLSHIPHMuxKey;
+template <class Schedule>
+struct GLSHIPProductRelinKeyChain;
+
+struct GLSHIPSupportInterval {
+    std::uint32_t start = 0;
+    std::uint32_t width = 0;
+};
+
+struct GLSHIPCandidate {
+    std::uint32_t fine_x = 0;
+    std::uint32_t w = 0;
+    std::uint32_t gaussian_phase = 0;
+
+    friend bool operator<(const GLSHIPCandidate &lhs,
+                          const GLSHIPCandidate &rhs)
+    {
+        return std::tie(lhs.fine_x, lhs.w, lhs.gaussian_phase) <
+               std::tie(rhs.fine_x, rhs.w, rhs.gaussian_phase);
+    }
+    friend bool operator==(const GLSHIPCandidate &lhs,
+                           const GLSHIPCandidate &rhs) = default;
+};
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
+          std::uint32_t PlainLogDelta>
+using GLRawProductCiphertext =
+    GLCiphertext<GLP, LogQ, InputLogDelta + PlainLogDelta>;
+
+template <class Schedule>
+inline void GLSHIPSlotsToCoefficients(
+    typename Schedule::CoefficientCiphertext &result,
+    const typename Schedule::InputCiphertext &input,
+    const GLSHIPSlotsToCoefficientsKey<Schedule> &stc_key);
+
+template <class Schedule>
+inline void GLSHIPSlotsToCoefficientsKeyGen(
+    GLSHIPSlotsToCoefficientsKey<Schedule> &stc_key,
+    const Key<typename Schedule::Parameter::baseP> &dense_key, CKKSNoise noise);
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void GLBaseEncode(GLBasePlaintext<GLP, LogQ, LogDelta> &plaintext,
+                         const GLBaseSlotTable<GLP> &slots);
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,
+          std::uint32_t BbarBit>
+inline void GLDDSmallKeySwitchBase(
+    GLBaseCiphertextData<GLP> &result, const GLBasePolynomial<GLP> &input,
+    const GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> &switch_key);
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
+          std::uint32_t PlainLogDelta>
+inline void GLPlaintextMatrixMultiplyRaw(
+    GLRawProductCiphertext<GLP, LogQ, InputLogDelta, PlainLogDelta> &result,
+    const GLCiphertext<GLP, LogQ, InputLogDelta> &input,
+    const GLPlaintext<GLP, LogQ, PlainLogDelta> &plaintext);
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
+          std::uint32_t PlainLogDelta>
+inline void GLPlaintextHadamardMultiplyRaw(
+    GLRawProductCiphertext<GLP, LogQ, InputLogDelta, PlainLogDelta> &result,
+    const GLCiphertext<GLP, LogQ, InputLogDelta> &input,
+    const GLPlaintext<GLP, LogQ, PlainLogDelta> &plaintext);
+
+template <class GLP, std::uint32_t InputLogQ, std::uint32_t InputLogDelta,
+          std::uint32_t DropBits>
+inline void GLRescale(
+    GLCiphertext<GLP, InputLogQ - DropBits, InputLogDelta - DropBits> &result,
+    const GLCiphertext<GLP, InputLogQ, InputLogDelta> &input);
+
+template <class GLP, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta,
+          std::uint32_t DropBits, std::uint32_t BbarBit>
+inline void GLBasePlaintextMultiplyRescale(
+    GLBaseCiphertext<GLP, (LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ) - DropBits,
+                     LhsLogDelta + RhsLogDelta - DropBits> &result,
+    const GLBaseCiphertext<GLP, LhsLogQ, LhsLogDelta> &lhs,
+    const GLBasePlaintext<GLP, RhsLogQ, RhsLogDelta> &rhs);
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PrimaryBit, std::uint32_t BbarBit>
+inline void GLBaseConjugate(
+    GLBaseCiphertext<GLP, LogQ, LogDelta> &result,
+    const GLBaseCiphertext<GLP, LogQ, LogDelta> &input,
+    const GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> &key);
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,
+          std::uint32_t BbarBit>
+inline void GLBaseConjugationKeyGen(
+    GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> &key,
+    const Key<typename GLP::baseP> &secret, CKKSNoise noise);
+
+namespace gl_ship_detail {
+
+template <class GLP>
+struct SparseTerm;
+
+template <class Schedule>
+inline std::array<SparseTerm<typename Schedule::Parameter>,
+                  Schedule::sparse_hamming_weight>
+extractSparseTerms(const Key<typename Schedule::Parameter::baseP> &sparse_key);
+
+template <class Schedule>
+inline void maskedColumnKeyGen(
+    GLSHIPMaskedColumnKey<Schedule> &key,
+    const SparseTerm<typename Schedule::Parameter> &term,
+    GLSHIPSupportInterval interval,
+    const Key<typename Schedule::Parameter::baseP> &dense_key, CKKSNoise noise);
+
+template <class Schedule>
+inline void hmuxKeyGen(
+    GLSHIPHMuxKey<Schedule> &key,
+    const SparseTerm<typename Schedule::Parameter> &term,
+    const Key<typename Schedule::Parameter::baseP> &dense_key, CKKSNoise noise);
+
+template <class Schedule>
+inline void denseToSparse(typename Schedule::CoefficientCiphertext &result,
+                          const typename Schedule::CoefficientCiphertext &input,
+                          const GLDDSmallKeySwitchKey<
+                              typename Schedule::Parameter, Schedule::q0_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit> &key);
+
+template <class Schedule>
+inline void buildBaseFactor(
+    GLBaseCiphertext<typename Schedule::Parameter,
+                     Schedule::half_bootstrap_log_q, Schedule::tree_log_delta>
+        &factor,
+    const GLBasePolynomial<typename Schedule::Parameter> &body,
+    std::uint32_t channel);
+
+template <class Schedule>
+inline void maskedColumn(
+    GLBaseCiphertext<typename Schedule::Parameter,
+                     Schedule::half_bootstrap_log_q, Schedule::tree_log_delta>
+        &result,
+    const GLBasePolynomial<typename Schedule::Parameter> &mask,
+    std::uint32_t channel, const GLSHIPMaskedColumnKey<Schedule> &key);
+
+template <class Schedule>
+inline void hmux(GLBaseCiphertext<typename Schedule::Parameter,
+                                  Schedule::half_bootstrap_log_q,
+                                  Schedule::tree_log_delta> &result,
+                 const GLBaseCiphertext<typename Schedule::Parameter,
+                                        Schedule::half_bootstrap_log_q,
+                                        Schedule::tree_log_delta> &input,
+                 const GLSHIPHMuxKey<Schedule> &key);
+
+template <std::size_t Level, class Schedule>
+inline void productTreeLevel(
+    GLBaseCiphertextData<typename Schedule::Parameter> &result,
+    std::vector<GLBaseCiphertextData<typename Schedule::Parameter>> nodes,
+    const GLSHIPProductRelinKeyChain<Schedule> &keys);
+
+template <class GLP>
+inline void addInPlace(GLBaseCiphertextData<GLP> &destination,
+                       const GLBaseCiphertextData<GLP> &term);
+template <class GLP, std::uint32_t LogQ>
+inline void reduce(GLBaseCiphertextData<GLP> &ciphertext);
+template <class GLP>
+inline void multiplyByI(GLBaseCiphertextData<GLP> &ciphertext);
+
+template <class GLP>
+inline void rotateX(GLBaseCiphertextData<GLP> &result,
+                    const GLBaseCiphertextData<GLP> &input,
+                    std::uint32_t amount);
+
+template <class GLP>
+inline GLBasePolynomial<GLP> ringUnit();
+
+template <class GLP>
+inline void multiplyByScalar(GLPolynomial<GLP> &poly, std::uint32_t scalar);
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t DropBits>
+inline void rescale(GLCiphertextData<GLP> &result,
+                    const GLCiphertextData<GLP> &input);
+
+template <class GLP, std::uint32_t LhsLogQ, std::uint32_t RhsLogQ,
+          std::uint32_t LogScale, std::uint32_t BbarBit>
+inline void baseProductRescaleDD(GLBasePolynomial<GLP> &result,
+                                 const GLBasePolynomial<GLP> &lhs,
+                                 const GLBasePolynomial<GLP> &rhs);
+
+}  // namespace gl_ship_detail
+
+// Algorithm 3, lines 1-14.  The low-level ciphertext is switched to the
+// sparse secret, while every returned slice is encrypted under dense_key via
+// the encrypted masks, HMux keys, product relin keys, and final conjugation.
+template <class Schedule>
+inline void GLSHIPHalfBootstrap(
+    typename Schedule::OutputCiphertext &result,
+    const typename Schedule::CoefficientCiphertext &coefficient_ciphertext,
+    const GLSHIPBootstrapKey<Schedule> &bootstrap_key)
+{
+    using GLP = typename Schedule::Parameter;
+    typename Schedule::CoefficientCiphertext sparse_ciphertext;
+    gl_ship_detail::denseToSparse<Schedule>(sparse_ciphertext,
+                                            coefficient_ciphertext,
+                                            bootstrap_key.dense_to_sparse_key);
+
+    for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
+        const auto &body = sparse_ciphertext[0][y];
+        const auto &mask = sparse_ciphertext[1][y];
+        std::array<GLBaseCiphertext<GLP, Schedule::output_log_q,
+                                    Schedule::tree_log_delta>,
+                   2>
+            channels{};
+
+        for (std::uint32_t channel = 0; channel < 2; channel++) {
+            std::vector<GLBaseCiphertextData<GLP>> factors;
+            factors.reserve(Schedule::factor_count);
+
+            GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                             Schedule::tree_log_delta>
+                base_factor;
+            gl_ship_detail::buildBaseFactor<Schedule>(base_factor, body,
+                                                      channel);
+            factors.push_back(std::move(base_factor.ct));
+
+            for (std::size_t e = 0; e < Schedule::sparse_hamming_weight; e++) {
+                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                                 Schedule::tree_log_delta>
+                    selected;
+                gl_ship_detail::maskedColumn<Schedule>(
+                    selected, mask, channel,
+                    bootstrap_key.masked_column_keys[e]);
+                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                                 Schedule::tree_log_delta>
+                    displaced;
+                gl_ship_detail::hmux<Schedule>(displaced, selected,
+                                               bootstrap_key.hmux_keys[e]);
+                factors.push_back(std::move(displaced.ct));
+            }
+
+            GLBaseCiphertextData<GLP> product_data{};
+            gl_ship_detail::productTreeLevel<0, Schedule>(
+                product_data, std::move(factors),
+                bootstrap_key.product_relin_keys);
+            GLBaseCiphertext<GLP, Schedule::output_log_q,
+                             Schedule::tree_log_delta>
+                product;
+            product.ct = std::move(product_data);
+            GLBaseCiphertext<GLP, Schedule::output_log_q,
+                             Schedule::tree_log_delta>
+                conjugate;
+            GLBaseConjugate(conjugate, product,
+                            bootstrap_key.output_conjugation_key);
+            channels[channel] = std::move(product);
+            gl_ship_detail::addInPlace<GLP>(channels[channel].ct, conjugate.ct);
+            gl_ship_detail::reduce<GLP, Schedule::output_log_q>(
+                channels[channel].ct);
+        }
+
+        gl_ship_detail::multiplyByI<GLP>(channels[1].ct);
+        gl_ship_detail::addInPlace<GLP>(channels[0].ct, channels[1].ct);
+        gl_ship_detail::reduce<GLP, Schedule::output_log_q>(channels[0].ct);
+        result[0][y] = std::move(channels[0][0]);
+        result[1][y] = std::move(channels[0][1]);
+    }
+}
+
+// Algorithm 3, lines 15-17.
+template <class Schedule>
+inline void GLSHIPBootstrap(typename Schedule::OutputCiphertext &result,
+                            const typename Schedule::InputCiphertext &input,
+                            const GLSHIPBootstrapKey<Schedule> &bootstrap_key)
+{
+    typename Schedule::CoefficientCiphertext coefficients;
+    GLSHIPSlotsToCoefficients<Schedule>(coefficients, input,
+                                        bootstrap_key.stc_key);
+    GLSHIPHalfBootstrap<Schedule>(result, coefficients, bootstrap_key);
+}
+
+namespace gl_ship_detail {
+
+template <class Schedule, class IndexSequence>
+struct ProductRelinTuple;
+
+template <class Schedule, std::size_t... Is>
+struct ProductRelinTuple<Schedule, std::index_sequence<Is...>> {
+    using GLP = typename Schedule::Parameter;
+    using type = std::tuple<GLHadamardRelinKey<
+        GLP,
+        Schedule::half_bootstrap_log_q -
+            (static_cast<std::uint32_t>(Is) + 1) * Schedule::tree_log_delta,
+        Schedule::primary_bit, Schedule::bbar_bit>...>;
+};
+
+}  // namespace gl_ship_detail
+
+template <class Schedule>
+struct GLSHIPProductRelinKeyChain {
+    using Tuple = typename gl_ship_detail::ProductRelinTuple<
+        Schedule, std::make_index_sequence<Schedule::tree_depth>>::type;
+    Tuple keys{};
+};
+
+namespace gl_ship_detail {
+
+template <class Schedule, std::size_t... Is>
+inline void productRelinKeyChainGen(
+    GLSHIPProductRelinKeyChain<Schedule> &chain,
+    const Key<typename Schedule::Parameter::baseP> &dense_key,
+    std::index_sequence<Is...>)
+{
+    using GLP = typename Schedule::Parameter;
+    (GLHadamardRelinKeyGen(std::get<Is>(chain.keys), dense_key,
+                           GLNoiseAtLevel<Schedule::half_bootstrap_log_q -
+                                          (static_cast<std::uint32_t>(Is) + 1) *
+                                              Schedule::tree_log_delta +
+                                          GLP::auxiliary_log_q>()),
+     ...);
+}
+
+}  // namespace gl_ship_detail
+
+template <class Schedule>
+struct GLSHIPBootstrapKey {
+    using GLP = typename Schedule::Parameter;
+    using DenseToSparseKey =
+        GLDDSmallKeySwitchKey<GLP, Schedule::q0_log_q, Schedule::primary_bit,
+                              Schedule::bbar_bit>;
+    using OutputConjugationKey =
+        GLDDSmallKeySwitchKey<GLP, Schedule::output_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit>;
+
+    GLSHIPSlotsToCoefficientsKey<Schedule> stc_key{};
+    DenseToSparseKey dense_to_sparse_key{};
+    std::array<GLSHIPMaskedColumnKey<Schedule>, Schedule::sparse_hamming_weight>
+        masked_column_keys{};
+    std::array<GLSHIPHMuxKey<Schedule>, Schedule::sparse_hamming_weight>
+        hmux_keys{};
+    GLSHIPProductRelinKeyChain<Schedule> product_relin_keys{};
+    OutputConjugationKey output_conjugation_key{};
+};
+
+template <class Schedule>
+inline void GLSHIPBootstrapKeyGen(
+    GLSHIPBootstrapKey<Schedule> &bootstrap_key,
+    const Key<typename Schedule::Parameter::baseP> &dense_key,
+    const Key<typename Schedule::Parameter::baseP> &sparse_key,
+    const std::array<GLSHIPSupportInterval, Schedule::sparse_hamming_weight>
+        &intervals)
+{
+    using GLP = typename Schedule::Parameter;
+    const auto terms = gl_ship_detail::extractSparseTerms<Schedule>(sparse_key);
+
+    GLSHIPSlotsToCoefficientsKeyGen(
+        bootstrap_key.stc_key, dense_key,
+        GLNoiseAtLevel<Schedule::input_log_q + GLP::auxiliary_log_q>());
+
+    const auto dense_secret = gl_detail::keyPolynomial<GLP>(dense_key);
+    GLDDSmallKeySwitchKeyGen(
+        bootstrap_key.dense_to_sparse_key, dense_secret, sparse_key,
+        GLNoiseAtLevel<Schedule::q0_log_q + GLP::auxiliary_log_q>());
+
+    for (std::size_t e = 0; e < terms.size(); e++) {
+        gl_ship_detail::maskedColumnKeyGen<Schedule>(
+            bootstrap_key.masked_column_keys[e], terms[e], intervals[e],
+            dense_key,
+            GLNoiseAtLevel<Schedule::half_bootstrap_log_q +
+                           GLP::auxiliary_log_q>());
+        gl_ship_detail::hmuxKeyGen<Schedule>(
+            bootstrap_key.hmux_keys[e], terms[e], dense_key,
+            GLNoiseAtLevel<Schedule::half_bootstrap_log_q +
+                           GLP::auxiliary_log_q>());
+    }
+
+    gl_ship_detail::productRelinKeyChainGen(
+        bootstrap_key.product_relin_keys, dense_key,
+        std::make_index_sequence<Schedule::tree_depth>{});
+    GLBaseConjugationKeyGen(
+        bootstrap_key.output_conjugation_key, dense_key,
+        GLNoiseAtLevel<Schedule::output_log_q + GLP::auxiliary_log_q>());
+}
+
+namespace gl_ship_detail {
+
+template <class Schedule>
+inline void denseToSparse(typename Schedule::CoefficientCiphertext &result,
+                          const typename Schedule::CoefficientCiphertext &input,
+                          const GLDDSmallKeySwitchKey<
+                              typename Schedule::Parameter, Schedule::q0_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit> &key)
+{
+    using GLP = typename Schedule::Parameter;
+    GLDDSmallKeySwitch(result.ct, input[1], key);
+    gl_detail::addInPlace<GLP>(result[0], input[0]);
+    gl_detail::reduce<GLP, Schedule::q0_log_q>(result[0]);
+    gl_detail::reduce<GLP, Schedule::q0_log_q>(result[1]);
+}
+
+template <class Schedule>
+inline std::complex<long double> phaseRoot(
+    const typename Schedule::Parameter::T value)
+{
+    using GLP = typename Schedule::Parameter;
+    using P = typename GLP::baseP;
+    constexpr long double pi = 3.141592653589793238462643383279502884L;
+    const long double centered =
+        ckks_detail::levelToLongDouble<P, Schedule::q0_log_q>(value);
+    const long double modulus =
+        std::ldexp(1.0L, static_cast<int>(Schedule::q0_log_q));
+    const long double angle = 2.0L * pi * centered / modulus;
+    return {std::cos(angle), std::sin(angle)};
+}
+
+template <class Schedule>
+inline typename Schedule::Parameter::T extendedCoefficient(
+    const GLBasePolynomial<typename Schedule::Parameter> &poly,
+    const std::uint32_t gaussian, const std::uint32_t x, const std::uint32_t w)
+{
+    using GLP = typename Schedule::Parameter;
+    if (w == GLP::phi) return typename GLP::T{0};
+    return poly[gl_detail::baseIndex<GLP>(gaussian, x, w)];
+}
+
+template <class Schedule>
+inline typename Schedule::Parameter::T gaussianChannel(
+    const typename Schedule::Parameter::T real,
+    const typename Schedule::Parameter::T imag, const std::uint32_t phase,
+    const std::uint32_t channel)
+{
+    using GLP = typename Schedule::Parameter;
+    using P = typename GLP::baseP;
+    typename GLP::T value = 0;
+    bool negative = false;
+    switch (phase & 3U) {
+    case 0: value = channel == 0 ? real : imag; break;
+    case 1:
+        value = channel == 0 ? imag : real;
+        negative = channel == 0;
+        break;
+    case 2:
+        value = channel == 0 ? real : imag;
+        negative = true;
+        break;
+    default:
+        value = channel == 0 ? imag : real;
+        negative = channel != 0;
+        break;
+    }
+    if (negative) value = typename GLP::T{0} - value;
+    return ckks_detail::reduceToLevel<P, Schedule::q0_log_q>(value);
+}
+
+template <class Schedule>
+inline void buildBaseFactor(
+    GLBaseCiphertext<typename Schedule::Parameter,
+                     Schedule::half_bootstrap_log_q, Schedule::tree_log_delta>
+        &factor,
+    const GLBasePolynomial<typename Schedule::Parameter> &body,
+    const std::uint32_t channel)
+{
+    using GLP = typename Schedule::Parameter;
+    constexpr long double pi = 3.141592653589793238462643383279502884L;
+    const std::complex<long double> multiplier(0, -Schedule::gap / (4.0L * pi));
+    GLBaseSlotTable<GLP> values;
+    for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++) {
+        for (std::uint32_t w = 0; w < GLP::phi; w++) {
+            const auto coefficient =
+                body[gl_detail::baseIndex<GLP>(channel, row, w)];
+            values(w, row) = static_cast<std::complex<double>>(
+                multiplier * phaseRoot<Schedule>(coefficient));
+        }
+    }
+    GLBasePlaintext<GLP, Schedule::half_bootstrap_log_q,
+                    Schedule::tree_log_delta>
+        encoded;
+    GLBaseEncode(encoded, values);
+    factor[0] = std::move(encoded.poly);
+    gl_detail::clear<GLP>(factor[1]);
+}
+
+template <class Schedule>
+inline void buildCandidatePlaintext(
+    GLBasePlaintext<typename Schedule::Parameter,
+                    Schedule::half_bootstrap_log_q +
+                        Schedule::Parameter::auxiliary_log_q,
+                    Schedule::tree_log_delta> &plaintext,
+    const GLBasePolynomial<typename Schedule::Parameter> &mask,
+    const GLSHIPCandidate candidate, const std::uint32_t channel)
+{
+    using GLP = typename Schedule::Parameter;
+    GLBaseSlotTable<GLP> values;
+    for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++) {
+        const std::uint32_t source_x =
+            (row + GLP::matrix_dimension - candidate.fine_x) %
+            GLP::matrix_dimension;
+        for (std::uint32_t t = 0; t < GLP::phi; t++) {
+            const std::uint32_t first_w = gl_ship_detail::positiveMod(
+                static_cast<std::int64_t>(t) - candidate.w,
+                GLP::cyclotomic_order);
+            const std::uint32_t subtraction_w = gl_ship_detail::positiveMod(
+                static_cast<std::int64_t>(GLP::phi) - candidate.w,
+                GLP::cyclotomic_order);
+            const auto real = ckks_detail::reduceToLevel<typename GLP::baseP,
+                                                         Schedule::q0_log_q>(
+                extendedCoefficient<Schedule>(mask, 0, source_x, first_w) -
+                extendedCoefficient<Schedule>(mask, 0, source_x,
+                                              subtraction_w));
+            const auto imag = ckks_detail::reduceToLevel<typename GLP::baseP,
+                                                         Schedule::q0_log_q>(
+                extendedCoefficient<Schedule>(mask, 1, source_x, first_w) -
+                extendedCoefficient<Schedule>(mask, 1, source_x,
+                                              subtraction_w));
+            const auto selected = gaussianChannel<Schedule>(
+                real, imag, candidate.gaussian_phase, channel);
+            values(t, row) = static_cast<std::complex<double>>(
+                phaseRoot<Schedule>(selected));
+        }
+    }
+    GLBaseEncode(plaintext, values);
+}
+
+template <class Schedule>
+inline void maskedColumn(
+    GLBaseCiphertext<typename Schedule::Parameter,
+                     Schedule::half_bootstrap_log_q, Schedule::tree_log_delta>
+        &result,
+    const GLBasePolynomial<typename Schedule::Parameter> &mask,
+    const std::uint32_t channel, const GLSHIPMaskedColumnKey<Schedule> &key)
+{
+    using GLP = typename Schedule::Parameter;
+    constexpr std::uint32_t key_log_q =
+        Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q;
+    if (key.candidates.size() != key.encrypted_masks.size())
+        throw std::invalid_argument("malformed GL SHIP masked-column key");
+
+    bool initialized = false;
+    for (std::size_t i = 0; i < key.candidates.size(); i++) {
+        GLBasePlaintext<GLP, key_log_q, Schedule::tree_log_delta> candidate;
+        buildCandidatePlaintext<Schedule>(candidate, mask, key.candidates[i],
+                                          channel);
+        GLBaseCiphertext<GLP, key_log_q, GLP::auxiliary_log_q> encrypted_mask;
+        encrypted_mask.ct = key.encrypted_masks[i];
+        GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                         Schedule::tree_log_delta>
+            term;
+        GLBasePlaintextMultiplyRescale<
+            GLP, key_log_q, GLP::auxiliary_log_q, key_log_q,
+            Schedule::tree_log_delta, GLP::auxiliary_log_q, Schedule::bbar_bit>(
+            term, encrypted_mask, candidate);
+        if (!initialized) {
+            result = std::move(term);
+            initialized = true;
+        }
+        else {
+            addInPlace<GLP>(result.ct, term.ct);
+        }
+    }
+    reduce<GLP, Schedule::half_bootstrap_log_q>(result.ct);
+}
+
+template <class Schedule>
+inline void hmux(GLBaseCiphertext<typename Schedule::Parameter,
+                                  Schedule::half_bootstrap_log_q,
+                                  Schedule::tree_log_delta> &result,
+                 const GLBaseCiphertext<typename Schedule::Parameter,
+                                        Schedule::half_bootstrap_log_q,
+                                        Schedule::tree_log_delta> &input,
+                 const GLSHIPHMuxKey<Schedule> &key)
+{
+    using GLP = typename Schedule::Parameter;
+    auto current = input;
+    for (const auto &stage : key.stages) {
+        if (stage.branches.size() != Schedule::hmux_radix)
+            throw std::invalid_argument("malformed GL SHIP HMux key");
+        GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                         Schedule::tree_log_delta>
+            selected;
+        bool initialized = false;
+        for (std::uint32_t digit = 0; digit < Schedule::hmux_radix; digit++) {
+            const std::uint32_t desired_displacement =
+                (digit * stage.step) % GLP::matrix_dimension;
+            const std::uint32_t automorphism_amount =
+                (GLP::matrix_dimension - desired_displacement) %
+                GLP::matrix_dimension;
+            GLBaseCiphertextData<GLP> rotated{};
+            rotateX<GLP>(rotated, current.ct, automorphism_amount);
+
+            GLBaseCiphertextData<GLP> body_term{};
+            GLBaseCiphertextData<GLP> mask_term{};
+            GLDDSmallKeySwitchBase(body_term, rotated[0],
+                                   stage.branches[digit].body_key);
+            GLDDSmallKeySwitchBase(mask_term, rotated[1],
+                                   stage.branches[digit].mask_key);
+            addInPlace<GLP>(body_term, mask_term);
+            if (!initialized) {
+                selected.ct = std::move(body_term);
+                initialized = true;
+            }
+            else {
+                addInPlace<GLP>(selected.ct, body_term);
+            }
+        }
+        reduce<GLP, Schedule::half_bootstrap_log_q>(selected.ct);
+        current = std::move(selected);
+    }
+    result = std::move(current);
+}
+
+template <std::size_t Level, class Schedule>
+inline void productTreeLevel(
+    GLBaseCiphertextData<typename Schedule::Parameter> &result,
+    std::vector<GLBaseCiphertextData<typename Schedule::Parameter>> nodes,
+    const GLSHIPProductRelinKeyChain<Schedule> &keys)
+{
+    using GLP = typename Schedule::Parameter;
+    constexpr std::uint32_t input_log_q =
+        Schedule::half_bootstrap_log_q -
+        static_cast<std::uint32_t>(Level) * Schedule::tree_log_delta;
+    constexpr std::uint32_t output_log_q =
+        input_log_q - Schedule::tree_log_delta;
+    if ((nodes.size() & 1U) != 0)
+        throw std::invalid_argument("unbalanced GL SHIP product tree");
+
+    std::vector<GLBaseCiphertextData<GLP>> next(nodes.size() / 2);
+    for (std::size_t i = 0; i < next.size(); i++) {
+        GLBaseCiphertext<GLP, input_log_q, Schedule::tree_log_delta> lhs;
+        GLBaseCiphertext<GLP, input_log_q, Schedule::tree_log_delta> rhs;
+        lhs.ct = std::move(nodes[2 * i]);
+        rhs.ct = std::move(nodes[2 * i + 1]);
+        GLBaseCiphertext<GLP, output_log_q, Schedule::tree_log_delta> product;
+        GLBaseHadamardMultiply<GLP, input_log_q, Schedule::tree_log_delta,
+                               input_log_q, Schedule::tree_log_delta,
+                               Schedule::tree_log_delta, Schedule::primary_bit,
+                               Schedule::bbar_bit>(product, lhs, rhs,
+                                                   std::get<Level>(keys.keys));
+        next[i] = std::move(product.ct);
+    }
+
+    if constexpr (Level + 1 == Schedule::tree_depth) {
+        if (next.size() != 1)
+            throw std::logic_error("invalid GL SHIP tree depth");
+        result = std::move(next[0]);
+    }
+    else {
+        productTreeLevel<Level + 1, Schedule>(result, std::move(next), keys);
+    }
+}
+
+}  // namespace gl_ship_detail
+
+template <class Schedule>
+struct GLSHIPSlotsToCoefficientsKey {
+    using GLP = typename Schedule::Parameter;
+    using ConjugateTransposeKey =
+        GLConjugateTransposeKey<GLP, Schedule::input_log_q,
+                                Schedule::primary_bit, Schedule::bbar_bit>;
+    using RotationKey =
+        GLBatchRotationKey<GLP, Schedule::input_log_q, Schedule::primary_bit,
+                           Schedule::bbar_bit>;
+
+    struct RotationEntry {
+        std::uint32_t amount = 0;
+        RotationKey key{};
+    };
+
+    ConjugateTransposeKey conjugate_transpose_key{};
+    std::vector<RotationEntry> w_rotation_keys{};
+};
+
+template <class Schedule>
+inline void GLSHIPSlotsToCoefficientsKeyGen(
+    GLSHIPSlotsToCoefficientsKey<Schedule> &stc_key,
+    const Key<typename Schedule::Parameter::baseP> &dense_key,
+    const CKKSNoise noise)
+{
+    using GLP = typename Schedule::Parameter;
+    GLConjugateTransposeKeyGen(stc_key.conjugate_transpose_key, dense_key,
+                               noise);
+
+    std::set<std::uint32_t> amounts;
+    for (std::uint32_t j = 1; j < Schedule::w_baby_step; j++)
+        amounts.insert(j % GLP::phi);
+    for (std::uint32_t b = 1; b < Schedule::w_giant_steps; b++)
+        amounts.insert((b * Schedule::w_baby_step) % GLP::phi);
+    amounts.erase(0);
+
+    stc_key.w_rotation_keys.clear();
+    stc_key.w_rotation_keys.reserve(amounts.size());
+    for (const std::uint32_t amount : amounts) {
+        typename GLSHIPSlotsToCoefficientsKey<Schedule>::RotationEntry entry;
+        entry.amount = amount;
+        GLBatchRotationKeyGen(entry.key, dense_key, amount, noise);
+        stc_key.w_rotation_keys.push_back(std::move(entry));
+    }
+}
+
+namespace gl_ship_detail {
+
+template <class Schedule>
+inline const typename GLSHIPSlotsToCoefficientsKey<Schedule>::RotationKey &
+findWRotationKey(const GLSHIPSlotsToCoefficientsKey<Schedule> &key,
+                 const std::uint32_t amount)
+{
+    using GLP = typename Schedule::Parameter;
+    const std::uint32_t reduced = amount % GLP::phi;
+    const auto found = std::find_if(
+        key.w_rotation_keys.begin(), key.w_rotation_keys.end(),
+        [=](const auto &entry) { return entry.amount == reduced; });
+    if (found == key.w_rotation_keys.end())
+        throw std::invalid_argument("missing GL SHIP W-rotation key");
+    return found->key;
+}
+
+template <class Schedule>
+inline void buildXTransformPlaintext(
+    GLPlaintext<typename Schedule::Parameter, Schedule::input_log_q,
+                Schedule::x_transform_log_scale> &plaintext)
+{
+    using GLP = typename Schedule::Parameter;
+    GLMatrixBatch<GLP> values;
+    for (std::uint32_t batch = 0; batch < GLP::phi; batch++) {
+        for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++) {
+            const auto root = gl_detail::xRoot<GLP>(row);
+            for (std::uint32_t column = 0; column < GLP::matrix_dimension;
+                 column++)
+                values(batch, row, column) = static_cast<std::complex<double>>(
+                    std::pow(root, static_cast<int>(column)));
+        }
+    }
+    GLEncode(plaintext, values);
+}
+
+template <class Schedule>
+inline void buildAdjustedWDiagonalPlaintext(
+    GLPlaintext<typename Schedule::Parameter, Schedule::input_log_q,
+                Schedule::w_transform_log_scale> &plaintext,
+    const std::uint32_t t, const std::uint32_t giant_amount)
+{
+    using GLP = typename Schedule::Parameter;
+    GLMatrixBatch<GLP> values;
+    for (std::uint32_t batch = 0; batch < GLP::phi; batch++) {
+        const std::uint32_t source_batch =
+            (batch + GLP::phi - giant_amount % GLP::phi) % GLP::phi;
+        const std::uint32_t eta_exponent =
+            gl_detail::batchExponent<GLP>(source_batch);
+        const std::uint32_t column = (source_batch + t) % GLP::phi;
+        const auto diagonal = gl_detail::wRoot<GLP>(static_cast<std::uint32_t>(
+            (static_cast<std::uint64_t>(eta_exponent) * column) %
+            GLP::cyclotomic_order));
+        for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++)
+            for (std::uint32_t matrix_column = 0;
+                 matrix_column < GLP::matrix_dimension; matrix_column++)
+                values(batch, row, matrix_column) =
+                    static_cast<std::complex<double>>(diagonal);
+    }
+    GLEncode(plaintext, values);
+}
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void addInPlace(GLCiphertext<GLP, LogQ, LogDelta> &destination,
+                       const GLCiphertext<GLP, LogQ, LogDelta> &term)
+{
+    gl_detail::addInPlace<GLP>(destination[0], term[0]);
+    gl_detail::addInPlace<GLP>(destination[1], term[1]);
+    gl_detail::reduce<GLP, LogQ>(destination[0]);
+    gl_detail::reduce<GLP, LogQ>(destination[1]);
+}
+
+}  // namespace gl_ship_detail
+
+// Algorithm 1 followed by Algorithm 2.  Both plaintext transforms stay at the
+// input modulus and a single final rescale consumes the grouped StC limb.
+template <class Schedule>
+inline void GLSHIPSlotsToCoefficients(
+    typename Schedule::CoefficientCiphertext &result,
+    const typename Schedule::InputCiphertext &input,
+    const GLSHIPSlotsToCoefficientsKey<Schedule> &stc_key)
+{
+    using GLP = typename Schedule::Parameter;
+    using AfterX = GLRawProductCiphertext<GLP, Schedule::input_log_q,
+                                          Schedule::input_log_delta,
+                                          Schedule::x_transform_log_scale>;
+    using BeforeRescale =
+        GLRawProductCiphertext<GLP, Schedule::input_log_q,
+                               Schedule::input_log_delta +
+                                   Schedule::x_transform_log_scale,
+                               Schedule::w_transform_log_scale>;
+
+    GLPlaintext<GLP, Schedule::input_log_q, Schedule::x_transform_log_scale>
+        x_plaintext;
+    gl_ship_detail::buildXTransformPlaintext<Schedule>(x_plaintext);
+
+    typename Schedule::InputCiphertext transposed;
+    GLConjugateTranspose(transposed, input, stc_key.conjugate_transpose_key);
+    AfterX x_product;
+    GLPlaintextMatrixMultiplyRaw(x_product, transposed, x_plaintext);
+    AfterX after_x;
+    GLConjugateTranspose(after_x, x_product, stc_key.conjugate_transpose_key);
+
+    std::vector<AfterX> baby_rotations(Schedule::w_baby_step);
+    baby_rotations[0] = after_x;
+    for (std::uint32_t j = 1; j < Schedule::w_baby_step; j++)
+        GLRotateBatches(baby_rotations[j], after_x,
+                        gl_ship_detail::findWRotationKey<Schedule>(stc_key, j));
+
+    BeforeRescale accumulated;
+    bool accumulated_initialized = false;
+    for (std::uint32_t b = 0; b < Schedule::w_giant_steps; b++) {
+        const std::uint32_t giant_amount = b * Schedule::w_baby_step;
+        BeforeRescale group;
+        bool group_initialized = false;
+        const std::uint32_t end = std::min<std::uint32_t>(
+            GLP::phi, giant_amount + Schedule::w_baby_step);
+        for (std::uint32_t t = giant_amount; t < end; t++) {
+            const std::uint32_t j = t - giant_amount;
+            GLPlaintext<GLP, Schedule::input_log_q,
+                        Schedule::w_transform_log_scale>
+                diagonal;
+            gl_ship_detail::buildAdjustedWDiagonalPlaintext<Schedule>(
+                diagonal, t, giant_amount);
+            BeforeRescale term;
+            GLPlaintextHadamardMultiplyRaw(term, baby_rotations[j], diagonal);
+            if (!group_initialized) {
+                group = std::move(term);
+                group_initialized = true;
+            }
+            else {
+                gl_ship_detail::addInPlace(group, term);
+            }
+        }
+
+        BeforeRescale shifted;
+        if (giant_amount == 0)
+            shifted = std::move(group);
+        else
+            GLRotateBatches(shifted, group,
+                            gl_ship_detail::findWRotationKey<Schedule>(
+                                stc_key, giant_amount));
+        if (!accumulated_initialized) {
+            accumulated = std::move(shifted);
+            accumulated_initialized = true;
+        }
+        else {
+            gl_ship_detail::addInPlace(accumulated, shifted);
+        }
+    }
+
+    GLRescale<GLP, Schedule::input_log_q,
+              Schedule::input_log_delta + Schedule::stc_log_scale,
+              Schedule::stc_log_scale>(result, accumulated);
+}
+
+namespace gl_ship_detail {
+
+template <class GLP>
+struct SparseTerm {
+    std::uint32_t flat_index = 0;
+    std::uint32_t x = 0;
+    std::uint32_t w = 0;
+    std::uint32_t gaussian = 0;
+    bool negative = false;
+};
+
+template <class Schedule>
+inline std::array<SparseTerm<typename Schedule::Parameter>,
+                  Schedule::sparse_hamming_weight>
+extractSparseTerms(const Key<typename Schedule::Parameter::baseP> &sparse_key)
+{
+    using GLP = typename Schedule::Parameter;
+    using T = typename GLP::T;
+    std::array<SparseTerm<GLP>, Schedule::sparse_hamming_weight> terms{};
+    std::size_t count = 0;
+    const T minus_one = T{0} - T{1};
+    for (std::uint32_t f = 0; f < GLP::baseP::n; f++) {
+        if (sparse_key[f] == T{0}) continue;
+        if (sparse_key[f] != T{1} && sparse_key[f] != minus_one)
+            throw std::invalid_argument(
+                "GL SHIP sparse key coefficients must be in {0,+1,-1}");
+        if (count == terms.size())
+            throw std::invalid_argument(
+                "GL SHIP sparse key exceeds scheduled Hamming weight");
+        auto &term = terms[count++];
+        term.flat_index = f;
+        term.w = f / (2 * GLP::matrix_dimension);
+        const std::uint32_t within_w = f % (2 * GLP::matrix_dimension);
+        term.x = within_w / 2;
+        term.gaussian = within_w & 1U;
+        term.negative = sparse_key[f] == minus_one;
+    }
+    if (count != terms.size())
+        throw std::invalid_argument(
+            "GL SHIP sparse key does not match scheduled Hamming weight");
+    return terms;
+}
+
+template <class Schedule>
+inline std::vector<GLSHIPCandidate> buildCandidates(
+    const GLSHIPSupportInterval interval)
+{
+    using GLP = typename Schedule::Parameter;
+    if (interval.width == 0 ||
+        static_cast<std::uint64_t>(interval.start) + interval.width >
+            GLP::baseP::n)
+        throw std::invalid_argument("invalid GL SHIP support interval");
+
+    std::set<GLSHIPCandidate> candidates;
+    for (std::uint32_t f = interval.start; f < interval.start + interval.width;
+         f++) {
+        const std::uint32_t w = f / (2 * GLP::matrix_dimension);
+        const std::uint32_t within_w = f % (2 * GLP::matrix_dimension);
+        const std::uint32_t x = within_w / 2;
+        const std::uint32_t gaussian = within_w & 1U;
+        const std::uint32_t fine_x = x % Schedule::theta;
+        const std::uint32_t coarse_x = x - fine_x;
+        for (std::uint32_t sign_phase : {0U, 2U}) {
+            for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++) {
+                const std::uint32_t wrap =
+                    (row < fine_x ? 1U : 0U) +
+                    (row >= GLP::matrix_dimension - coarse_x ? 1U : 0U);
+                candidates.insert(
+                    {fine_x, w, (sign_phase + gaussian + wrap) & 3U});
+            }
+        }
+    }
+    return {candidates.begin(), candidates.end()};
+}
+
+template <class Schedule>
+inline GLSHIPCandidate selectedCandidate(
+    const SparseTerm<typename Schedule::Parameter> &term,
+    const std::uint32_t row)
+{
+    using GLP = typename Schedule::Parameter;
+    const std::uint32_t fine_x = term.x % Schedule::theta;
+    const std::uint32_t coarse_x = term.x - fine_x;
+    const std::uint32_t wrap =
+        (row < fine_x ? 1U : 0U) +
+        (row >= GLP::matrix_dimension - coarse_x ? 1U : 0U);
+    return {fine_x, term.w,
+            ((term.negative ? 2U : 0U) + term.gaussian + wrap) & 3U};
+}
+
+template <class GLP>
+inline void setZero(GLBasePolynomial<GLP> &poly)
+{
+    poly.fill(typename GLP::T{0});
+}
+
+}  // namespace gl_ship_detail
+
+template <class Schedule>
+struct GLSHIPMaskedColumnKey {
+    using GLP = typename Schedule::Parameter;
+    static constexpr std::uint32_t key_log_q =
+        Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q;
+
+    GLSHIPSupportInterval interval{};
+    std::vector<GLSHIPCandidate> candidates{};
+    // Selectors are encoded at scale 2^P and encrypted modulo P*Q.
+    std::vector<GLBaseCiphertextData<GLP>> encrypted_masks{};
+};
+
+template <class Schedule>
+struct GLSHIPHMuxBranchKey {
+    using GLP = typename Schedule::Parameter;
+    using SwitchKey =
+        GLDDSmallKeySwitchKey<GLP, Schedule::half_bootstrap_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit>;
+    SwitchKey body_key{};
+    SwitchKey mask_key{};
+};
+
+template <class Schedule>
+struct GLSHIPHMuxKey {
+    struct Stage {
+        std::uint32_t step = 0;
+        std::vector<GLSHIPHMuxBranchKey<Schedule>> branches{};
+    };
+    std::vector<Stage> stages{};
+};
+
+namespace gl_ship_detail {
+
+template <class Schedule>
+inline void maskedColumnKeyGen(
+    GLSHIPMaskedColumnKey<Schedule> &key,
+    const SparseTerm<typename Schedule::Parameter> &term,
+    const GLSHIPSupportInterval interval,
+    const Key<typename Schedule::Parameter::baseP> &dense_key,
+    const CKKSNoise noise)
+{
+    using GLP = typename Schedule::Parameter;
+    constexpr std::uint32_t key_log_q =
+        GLSHIPMaskedColumnKey<Schedule>::key_log_q;
+    if (term.flat_index < interval.start ||
+        term.flat_index >= interval.start + interval.width)
+        throw std::invalid_argument(
+            "GL SHIP support interval does not contain sparse coefficient");
+
+    key.interval = interval;
+    key.candidates = buildCandidates<Schedule>(interval);
+    key.encrypted_masks.resize(key.candidates.size());
+
+    for (std::size_t candidate_index = 0;
+         candidate_index < key.candidates.size(); candidate_index++) {
+        GLBaseSlotTable<GLP> logical_mask;
+        for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++) {
+            const bool selected = key.candidates[candidate_index] ==
+                                  selectedCandidate<Schedule>(term, row);
+            for (std::uint32_t w = 0; w < GLP::phi; w++)
+                logical_mask(w, row) = selected ? 1.0 : 0.0;
+        }
+        GLBasePlaintext<GLP, key_log_q, GLP::auxiliary_log_q> encoded;
+        GLBaseEncode(encoded, logical_mask);
+        gl_detail::encryptBaseAtLevel<GLP, key_log_q>(
+            key.encrypted_masks[candidate_index], encoded.poly, dense_key,
+            noise);
+    }
+}
+
+template <class Schedule>
+inline void hmuxKeyGen(
+    GLSHIPHMuxKey<Schedule> &key,
+    const SparseTerm<typename Schedule::Parameter> &term,
+    const Key<typename Schedule::Parameter::baseP> &dense_key,
+    const CKKSNoise noise)
+{
+    using GLP = typename Schedule::Parameter;
+    const auto secret = gl_detail::keyPolynomial<GLP>(dense_key);
+    const auto unit = ringUnit<GLP>();
+    GLBasePolynomial<GLP> zero{};
+    const std::uint32_t coarse_index =
+        (term.x - term.x % Schedule::theta) / Schedule::theta;
+
+    key.stages.clear();
+    key.stages.reserve(Schedule::hmux_stages);
+    std::uint32_t radix_power = 1;
+    for (std::uint32_t stage_index = 0; stage_index < Schedule::hmux_stages;
+         stage_index++) {
+        typename GLSHIPHMuxKey<Schedule>::Stage stage;
+        stage.step = Schedule::theta * radix_power;
+        stage.branches.resize(Schedule::hmux_radix);
+        const std::uint32_t selected_digit =
+            (coarse_index / radix_power) % Schedule::hmux_radix;
+
+        for (std::uint32_t digit = 0; digit < Schedule::hmux_radix; digit++) {
+            const std::uint32_t desired_displacement =
+                (digit * stage.step) % GLP::matrix_dimension;
+            // TFHEpp's row automorphism exposes output[r]=input[r+amount],
+            // while Equation (10) uses output[r]=input[r-U].
+            const std::uint32_t automorphism_amount =
+                (GLP::matrix_dimension - desired_displacement) %
+                GLP::matrix_dimension;
+            const std::uint32_t multiplier = gl_detail::powMod(
+                5, automorphism_amount, 4 * GLP::matrix_dimension);
+            GLBasePolynomial<GLP> rotated_secret{};
+            gl_detail::baseAutomorphism<GLP>(rotated_secret, secret, multiplier,
+                                             1);
+
+            const bool selected = digit == selected_digit;
+            GLDDSmallKeySwitchKeyGen(stage.branches[digit].body_key,
+                                     selected ? unit : zero, dense_key, noise);
+            GLDDSmallKeySwitchKeyGen(stage.branches[digit].mask_key,
+                                     selected ? rotated_secret : zero,
+                                     dense_key, noise);
+        }
+        key.stages.push_back(std::move(stage));
+        radix_power *= Schedule::hmux_radix;
+    }
+}
+
+}  // namespace gl_ship_detail
+
+// Base-ring form of the DD switch used by slice-wise HMux and the balanced
+// product tree.  It evaluates input*source_secret under the destination key.
+template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,
+          std::uint32_t BbarBit>
+inline void GLDDSmallKeySwitchBase(
+    GLBaseCiphertextData<GLP> &result, const GLBasePolynomial<GLP> &input,
+    const GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> &switch_key)
+{
+    using SwitchKey = GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit>;
+    if (switch_key.data.size() !=
+        SwitchKey::primary_rows * SwitchKey::bbar_rows)
+        throw std::invalid_argument("uninitialized GL base key-switch key");
+
+    auto input_digits =
+        gl_detail::activeDecompose<GLP, LogQ, PrimaryBit>(input);
+    std::array<std::vector<GLBasePolynomial<GLP>>, 2> digit_rows{
+        std::vector<GLBasePolynomial<GLP>>(SwitchKey::bbar_rows),
+        std::vector<GLBasePolynomial<GLP>>(SwitchKey::bbar_rows)};
+    GLBasePolynomial<GLP> product{};
+    for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
+         primary++) {
+        for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
+            for (std::size_t component = 0; component < 2; component++) {
+                gl_detail::baseMultiply<GLP>(
+                    product, input_digits[primary],
+                    switch_key.at(primary, bbar)[component]);
+                gl_detail::addInPlace<GLP>(digit_rows[component][bbar],
+                                           product);
+            }
+        }
+    }
+    for (std::size_t component = 0; component < 2; component++)
+        gl_detail::activeRecombine<GLP, SwitchKey::key_log_q, BbarBit>(
+            result[component], digit_rows[component]);
+    for (std::size_t component = 0; component < 2; component++)
+        for (auto &coefficient : result[component])
+            coefficient =
+                gl_detail::divideRoundLevel<GLP, SwitchKey::key_log_q,
+                                            SwitchKey::auxiliary_log_q>(
+                    coefficient);
+}
+
+// Raw linear products deliberately retain the plaintext scale.  The grouped
+// StC performs both axis transforms and rounds only once at the end.
+template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
+          std::uint32_t PlainLogDelta>
+inline void GLPlaintextMatrixMultiplyRaw(
+    GLRawProductCiphertext<GLP, LogQ, InputLogDelta, PlainLogDelta> &result,
+    const GLCiphertext<GLP, LogQ, InputLogDelta> &input,
+    const GLPlaintext<GLP, LogQ, PlainLogDelta> &plaintext)
+{
+    gl_detail::traceProduct<GLP>(result[0], input[0], plaintext.poly);
+    gl_detail::traceProduct<GLP>(result[1], input[1], plaintext.poly);
+    gl_ship_detail::multiplyByScalar<GLP>(result[0], GLP::matrix_dimension);
+    gl_ship_detail::multiplyByScalar<GLP>(result[1], GLP::matrix_dimension);
+    gl_detail::reduce<GLP, LogQ>(result[0]);
+    gl_detail::reduce<GLP, LogQ>(result[1]);
+}
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
+          std::uint32_t PlainLogDelta>
+inline void GLPlaintextHadamardMultiplyRaw(
+    GLRawProductCiphertext<GLP, LogQ, InputLogDelta, PlainLogDelta> &result,
+    const GLCiphertext<GLP, LogQ, InputLogDelta> &input,
+    const GLPlaintext<GLP, LogQ, PlainLogDelta> &plaintext)
+{
+    gl_detail::polynomialMultiply<GLP>(result[0], input[0], plaintext.poly);
+    gl_detail::polynomialMultiply<GLP>(result[1], input[1], plaintext.poly);
+    gl_detail::reduce<GLP, LogQ>(result[0]);
+    gl_detail::reduce<GLP, LogQ>(result[1]);
+}
+
+template <class GLP, std::uint32_t InputLogQ, std::uint32_t InputLogDelta,
+          std::uint32_t DropBits>
+inline void GLRescale(
+    GLCiphertext<GLP, InputLogQ - DropBits, InputLogDelta - DropBits> &result,
+    const GLCiphertext<GLP, InputLogQ, InputLogDelta> &input)
+{
+    static_assert(InputLogQ > DropBits && InputLogDelta >= DropBits);
+    gl_ship_detail::rescale<GLP, InputLogQ, DropBits>(result.ct, input.ct);
+}
+
+template <class GLP, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta,
+          std::uint32_t DropBits, std::uint32_t BbarBit>
+inline void GLBasePlaintextMultiplyRescale(
+    GLBaseCiphertext<GLP, (LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ) - DropBits,
+                     LhsLogDelta + RhsLogDelta - DropBits> &result,
+    const GLBaseCiphertext<GLP, LhsLogQ, LhsLogDelta> &lhs,
+    const GLBasePlaintext<GLP, RhsLogQ, RhsLogDelta> &rhs)
+{
+    static_assert(LhsLogDelta + RhsLogDelta >= DropBits);
+    for (std::size_t component = 0; component < 2; component++)
+        gl_ship_detail::baseProductRescaleDD<GLP, LhsLogQ, RhsLogQ, DropBits,
+                                             BbarBit>(result[component],
+                                                      lhs[component], rhs.poly);
+}
+
+template <class GLP, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta,
+          std::uint32_t DropBits, std::uint32_t PrimaryBit,
+          std::uint32_t BbarBit>
+inline void GLBaseHadamardMultiply(
+    GLBaseCiphertext<GLP, (LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ) - DropBits,
+                     LhsLogDelta + RhsLogDelta - DropBits> &result,
+    const GLBaseCiphertext<GLP, LhsLogQ, LhsLogDelta> &lhs,
+    const GLBaseCiphertext<GLP, RhsLogQ, RhsLogDelta> &rhs,
+    const GLHadamardRelinKey<GLP,
+                             (LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ) - DropBits,
+                             PrimaryBit, BbarBit> &relin_key)
+{
+    constexpr std::uint32_t out_log_q =
+        (LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ) - DropBits;
+    std::array<GLBasePolynomial<GLP>, 4> tensor{};
+    gl_ship_detail::baseProductRescaleDD<GLP, LhsLogQ, RhsLogQ, DropBits,
+                                         BbarBit>(tensor[0], lhs[0], rhs[0]);
+    gl_ship_detail::baseProductRescaleDD<GLP, LhsLogQ, RhsLogQ, DropBits,
+                                         BbarBit>(tensor[1], lhs[0], rhs[1]);
+    gl_ship_detail::baseProductRescaleDD<GLP, LhsLogQ, RhsLogQ, DropBits,
+                                         BbarBit>(tensor[2], lhs[1], rhs[0]);
+    gl_ship_detail::baseProductRescaleDD<GLP, LhsLogQ, RhsLogQ, DropBits,
+                                         BbarBit>(tensor[3], lhs[1], rhs[1]);
+    gl_detail::addInPlace<GLP>(tensor[1], tensor[2]);
+    gl_detail::reduce<GLP, out_log_q>(tensor[1]);
+
+    GLBaseCiphertextData<GLP> square_term{};
+    GLDDSmallKeySwitchBase(square_term, tensor[3], relin_key);
+    result[0] = std::move(tensor[0]);
+    result[1] = std::move(tensor[1]);
+    gl_detail::addInPlace<GLP>(result[0], square_term[0]);
+    gl_detail::addInPlace<GLP>(result[1], square_term[1]);
+    gl_ship_detail::reduce<GLP, out_log_q>(result.ct);
+}
+
+template <class GLP, std::uint32_t LogQ,
+          std::uint32_t PrimaryBit = GLP::baseP::Bgbit,
+          std::uint32_t BbarBit = GLP::baseP::B̅gbit>
+using GLBaseConjugationKey =
+    GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit>;
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,
+          std::uint32_t BbarBit>
+inline void GLBaseConjugationKeyGen(
+    GLBaseConjugationKey<GLP, LogQ, PrimaryBit, BbarBit> &key,
+    const Key<typename GLP::baseP> &secret, const CKKSNoise noise)
+{
+    constexpr std::uint32_t inverse_x = 4 * GLP::matrix_dimension - 1;
+    constexpr std::uint32_t inverse_w = GLP::cyclotomic_order - 1;
+    const auto destination_secret = gl_detail::keyPolynomial<GLP>(secret);
+    GLBasePolynomial<GLP> source_secret{};
+    gl_detail::baseAutomorphism<GLP>(source_secret, destination_secret,
+                                     inverse_x, inverse_w);
+    GLDDSmallKeySwitchKeyGen(key, source_secret, secret, noise);
+}
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PrimaryBit, std::uint32_t BbarBit>
+inline void GLBaseConjugate(
+    GLBaseCiphertext<GLP, LogQ, LogDelta> &result,
+    const GLBaseCiphertext<GLP, LogQ, LogDelta> &input,
+    const GLBaseConjugationKey<GLP, LogQ, PrimaryBit, BbarBit> &key)
+{
+    constexpr std::uint32_t inverse_x = 4 * GLP::matrix_dimension - 1;
+    constexpr std::uint32_t inverse_w = GLP::cyclotomic_order - 1;
+    GLBasePolynomial<GLP> body{};
+    GLBasePolynomial<GLP> mask{};
+    gl_detail::baseAutomorphism<GLP>(body, input[0], inverse_x, inverse_w);
+    gl_detail::baseAutomorphism<GLP>(mask, input[1], inverse_x, inverse_w);
+    GLDDSmallKeySwitchBase(result.ct, mask, key);
+    gl_detail::addInPlace<GLP>(result[0], body);
+    gl_ship_detail::reduce<GLP, LogQ>(result.ct);
+}
+
+namespace gl_ship_detail {
+
+template <class GLP>
+inline void rotateX(GLBaseCiphertextData<GLP> &result,
+                    const GLBaseCiphertextData<GLP> &input,
+                    const std::uint32_t amount)
+{
+    const std::uint32_t multiplier = gl_detail::powMod(
+        5, amount % GLP::matrix_dimension, 4 * GLP::matrix_dimension);
+    gl_detail::baseAutomorphism<GLP>(result[0], input[0], multiplier, 1);
+    gl_detail::baseAutomorphism<GLP>(result[1], input[1], multiplier, 1);
+}
+
+template <class GLP>
+inline GLBasePolynomial<GLP> ringUnit()
+{
+    GLBasePolynomial<GLP> result{};
+    result[gl_detail::baseIndex<GLP>(0, 0, 0)] = typename GLP::T{1};
+    return result;
+}
+
+template <class GLP>
+inline void multiplyByI(GLBaseCiphertextData<GLP> &ciphertext)
+{
+    gl_detail::multiplyByIInPlace<GLP>(ciphertext[0]);
+    gl_detail::multiplyByIInPlace<GLP>(ciphertext[1]);
+}
+
+}  // namespace gl_ship_detail
+
+// A compile-time low-depth schedule.  The level-zero phase modulus is 2^Q0;
+// the input carries one grouped StC limb; MaskedColumn/HMux lift directly to
+// HalfBootstrapLogQ; and a balanced h+1 product tree consumes TreeLogDelta
+// bits per layer.  h+1 must be a power of two as in Algorithm 3.
+template <class GLP, std::uint32_t Q0LogQ, std::uint32_t GapLog,
+          std::uint32_t XTransformLogScale, std::uint32_t WTransformLogScale,
+          std::uint32_t HalfBootstrapLogQ, std::uint32_t TreeLogDelta,
+          std::uint32_t SparseHammingWeight, std::uint32_t Theta,
+          std::uint32_t HMuxRadix = 4, std::uint32_t WBabyStep = 4,
+          std::uint32_t PrimaryBit = GLP::baseP::Bgbit,
+          std::uint32_t BbarBit = GLP::baseP::B̅gbit>
+struct GLSHIPBootstrapSchedule {
+    using Parameter = GLP;
+    static constexpr std::uint32_t q0_log_q = Q0LogQ;
+    static constexpr std::uint32_t gap_log = GapLog;
+    static constexpr std::uint32_t x_transform_log_scale = XTransformLogScale;
+    static constexpr std::uint32_t w_transform_log_scale = WTransformLogScale;
+    static constexpr std::uint32_t stc_log_scale =
+        XTransformLogScale + WTransformLogScale;
+    static constexpr std::uint32_t input_log_q = Q0LogQ + stc_log_scale;
+    static constexpr std::uint32_t input_log_delta = Q0LogQ - GapLog;
+    static constexpr std::uint32_t half_bootstrap_log_q = HalfBootstrapLogQ;
+    static constexpr std::uint32_t tree_log_delta = TreeLogDelta;
+    static constexpr std::uint32_t sparse_hamming_weight = SparseHammingWeight;
+    static constexpr std::uint32_t factor_count = SparseHammingWeight + 1;
+    static constexpr std::uint32_t tree_depth =
+        gl_ship_detail::ceilLog(factor_count, 2);
+    static constexpr std::uint32_t output_log_q =
+        HalfBootstrapLogQ - tree_depth * TreeLogDelta;
+    static constexpr std::uint32_t output_log_delta = TreeLogDelta;
+    static constexpr std::uint32_t theta = Theta;
+    static constexpr std::uint32_t hmux_radix = HMuxRadix;
+    static constexpr std::uint32_t hmux_stages =
+        gl_ship_detail::ceilLog(GLP::matrix_dimension / Theta, HMuxRadix);
+    static constexpr std::uint32_t w_baby_step = WBabyStep;
+    static constexpr std::uint32_t w_giant_steps =
+        (GLP::phi + WBabyStep - 1) / WBabyStep;
+    static constexpr std::uint32_t primary_bit = PrimaryBit;
+    static constexpr std::uint32_t bbar_bit = BbarBit;
+    static constexpr long double gap =
+        static_cast<long double>(std::uint64_t{1} << GapLog);
+
+    static_assert(Q0LogQ > GapLog);
+    static_assert(Q0LogQ < 63,
+                  "the reference root-of-unity table uses long-double phase "
+                  "conversion and supports q0 below 2^63");
+    static_assert(XTransformLogScale > 0 && WTransformLogScale > 0);
+    static_assert(SparseHammingWeight > 0);
+    static_assert(gl_ship_detail::isPowerOfTwo(factor_count));
+    static_assert(HalfBootstrapLogQ > tree_depth * TreeLogDelta);
+    static_assert(TreeLogDelta < output_log_q);
+    static_assert(Theta > 0 && GLP::matrix_dimension % Theta == 0);
+    static_assert(HMuxRadix >= 2);
+    static_assert(WBabyStep > 0 && WBabyStep <= GLP::phi);
+    static_assert(input_log_q + GLP::auxiliary_log_q <=
+                  std::numeric_limits<typename GLP::T>::digits);
+    static_assert(HalfBootstrapLogQ + GLP::auxiliary_log_q <=
+                  std::numeric_limits<typename GLP::T>::digits);
+
+    using InputCiphertext = GLCiphertext<GLP, input_log_q, input_log_delta>;
+    using CoefficientCiphertext = GLCiphertext<GLP, q0_log_q, input_log_delta>;
+    using OutputCiphertext = GLCiphertext<GLP, output_log_q, output_log_delta>;
+};
+
+template <class GLP>
+class GLBaseSlotTable {
+public:
+    using value_type = std::complex<double>;
+
+    GLBaseSlotTable()
+        : values_(static_cast<std::size_t>(GLP::phi) * GLP::matrix_dimension)
+    {
+    }
+
+    value_type &operator()(const std::size_t batch, const std::size_t x)
+    {
+        return values_.at(batch * GLP::matrix_dimension + x);
+    }
+
+    const value_type &operator()(const std::size_t batch,
+                                 const std::size_t x) const
+    {
+        return values_.at(batch * GLP::matrix_dimension + x);
+    }
+
+private:
+    std::vector<value_type> values_;
+};
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+struct GLBasePlaintext {
+    static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    GLBasePolynomial<GLP> poly{};
+};
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+struct GLBaseCiphertext {
+    static constexpr std::uint32_t log_q = LogQ;
+    static constexpr std::uint32_t log_delta = LogDelta;
+    GLBaseCiphertextData<GLP> ct{};
+
+    GLBasePolynomial<GLP> &operator[](const std::size_t component)
+    {
+        return ct[component];
+    }
+    const GLBasePolynomial<GLP> &operator[](const std::size_t component) const
+    {
+        return ct[component];
+    }
+};
+
+// Canonical encoding for one (I,X,W) slice.  Natural logical order is
+// (W-slot, X-slot), matching the order used by Algorithm 3's candidate tables.
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void GLBaseEncode(GLBasePlaintext<GLP, LogQ, LogDelta> &plaintext,
+                         const GLBaseSlotTable<GLP> &slots)
+{
+    using P = typename GLP::baseP;
+    constexpr std::uint32_t n = GLP::matrix_dimension;
+    constexpr std::uint32_t p = GLP::cyclotomic_order;
+    constexpr std::uint32_t phi = GLP::phi;
+    const long double scale = std::ldexp(1.0L, LogDelta);
+
+    std::array<std::complex<long double>, n> x_roots{};
+    for (std::uint32_t j = 0; j < n; j++) x_roots[j] = gl_detail::xRoot<GLP>(j);
+
+    std::vector<std::complex<long double>> w_coefficients(
+        static_cast<std::size_t>(n) * phi);
+    auto w_coefficient =
+        [&](const std::uint32_t x_slot,
+            const std::uint32_t w) -> std::complex<long double> & {
+        return w_coefficients[static_cast<std::size_t>(x_slot) * phi + w];
+    };
+
+    for (std::uint32_t x_slot = 0; x_slot < n; x_slot++) {
+        std::complex<long double> at_one = 0;
+        for (std::uint32_t batch = 0; batch < phi; batch++) {
+            const std::uint32_t exponent = gl_detail::batchExponent<GLP>(batch);
+            at_one -=
+                static_cast<std::complex<long double>>(slots(batch, x_slot)) *
+                gl_detail::wRoot<GLP>(exponent);
+        }
+        for (std::uint32_t w = 0; w < phi; w++) {
+            std::complex<long double> coefficient = at_one;
+            for (std::uint32_t batch = 0; batch < phi; batch++) {
+                const std::uint32_t exponent =
+                    gl_detail::batchExponent<GLP>(batch);
+                const std::uint32_t root_exponent =
+                    (p - static_cast<std::uint32_t>(
+                             (static_cast<std::uint64_t>(exponent) * w) % p)) %
+                    p;
+                coefficient += static_cast<std::complex<long double>>(
+                                   slots(batch, x_slot)) *
+                               gl_detail::wRoot<GLP>(root_exponent);
+            }
+            w_coefficient(x_slot, w) =
+                coefficient / static_cast<long double>(p);
+        }
+    }
+
+    gl_detail::clear<GLP>(plaintext.poly);
+    for (std::uint32_t w = 0; w < phi; w++) {
+        for (std::uint32_t x = 0; x < n; x++) {
+            std::complex<long double> coefficient = 0;
+            for (std::uint32_t x_slot = 0; x_slot < n; x_slot++)
+                coefficient += w_coefficient(x_slot, w) *
+                               std::pow(x_roots[x_slot], -static_cast<int>(x));
+            coefficient *= scale / static_cast<long double>(n);
+            plaintext.poly[gl_detail::baseIndex<GLP>(0, x, w)] =
+                ckks_detail::signedLongDoubleToLevel<P, LogQ>(
+                    std::round(coefficient.real()));
+            plaintext.poly[gl_detail::baseIndex<GLP>(1, x, w)] =
+                ckks_detail::signedLongDoubleToLevel<P, LogQ>(
+                    std::round(coefficient.imag()));
+        }
+    }
+}
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void GLBaseDecode(GLBaseSlotTable<GLP> &slots,
+                         const GLBasePlaintext<GLP, LogQ, LogDelta> &plaintext)
+{
+    using P = typename GLP::baseP;
+    constexpr std::uint32_t n = GLP::matrix_dimension;
+    constexpr std::uint32_t phi = GLP::phi;
+    const long double inverse_scale = std::ldexp(1.0L, -int(LogDelta));
+
+    std::array<std::complex<long double>, n> x_roots{};
+    for (std::uint32_t j = 0; j < n; j++) x_roots[j] = gl_detail::xRoot<GLP>(j);
+
+    for (std::uint32_t batch = 0; batch < phi; batch++) {
+        const std::uint32_t exponent = gl_detail::batchExponent<GLP>(batch);
+        const auto eta = gl_detail::wRoot<GLP>(exponent);
+        for (std::uint32_t x_slot = 0; x_slot < n; x_slot++) {
+            std::complex<long double> value = 0;
+            for (std::uint32_t w = 0; w < phi; w++) {
+                for (std::uint32_t x = 0; x < n; x++) {
+                    const long double real =
+                        ckks_detail::levelToLongDouble<P, LogQ>(
+                            plaintext.poly[gl_detail::baseIndex<GLP>(0, x, w)]);
+                    const long double imag =
+                        ckks_detail::levelToLongDouble<P, LogQ>(
+                            plaintext.poly[gl_detail::baseIndex<GLP>(1, x, w)]);
+                    value += std::complex<long double>(real, imag) *
+                             std::pow(x_roots[x_slot], int(x)) *
+                             std::pow(eta, int(w));
+                }
+            }
+            slots(batch, x_slot) =
+                static_cast<std::complex<double>>(value * inverse_scale);
+        }
+    }
+}
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void GLBaseEncrypt(GLBaseCiphertext<GLP, LogQ, LogDelta> &ciphertext,
+                          const GLBasePlaintext<GLP, LogQ, LogDelta> &plaintext,
+                          const Key<typename GLP::baseP> &key,
+                          const CKKSNoise noise = GLNoiseAtLevel<LogQ>())
+{
+    gl_detail::encryptBaseAtLevel<GLP, LogQ>(ciphertext.ct, plaintext.poly, key,
+                                             noise);
+}
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void GLBaseDecrypt(
+    GLBasePlaintext<GLP, LogQ, LogDelta> &plaintext,
+    const GLBaseCiphertext<GLP, LogQ, LogDelta> &ciphertext,
+    const Key<typename GLP::baseP> &key)
+{
+    const auto secret = gl_detail::keyPolynomial<GLP>(key);
+    GLBasePolynomial<GLP> product{};
+    gl_detail::baseMultiply<GLP>(product, ciphertext[1], secret);
+    for (std::uint32_t i = 0; i < GLP::baseP::n; i++)
+        plaintext.poly[i] =
+            ckks_detail::reduceToLevel<typename GLP::baseP, LogQ>(
+                ciphertext[0][i] + product[i]);
+}
+
+namespace gl_ship_detail {
+
+template <class GLP, std::uint32_t LogQ>
+inline void reduce(GLBaseCiphertextData<GLP> &ciphertext)
+{
+    gl_detail::reduce<GLP, LogQ>(ciphertext[0]);
+    gl_detail::reduce<GLP, LogQ>(ciphertext[1]);
+}
+
+template <class GLP>
+inline void addInPlace(GLBaseCiphertextData<GLP> &destination,
+                       const GLBaseCiphertextData<GLP> &term)
+{
+    gl_detail::addInPlace<GLP>(destination[0], term[0]);
+    gl_detail::addInPlace<GLP>(destination[1], term[1]);
+}
+
+template <class GLP>
+inline void multiplyByScalar(GLPolynomial<GLP> &poly,
+                             const std::uint32_t scalar)
+{
+    for (auto &slice : poly)
+        for (auto &coefficient : slice) coefficient *= scalar;
+}
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t DropBits>
+inline void rescale(GLCiphertextData<GLP> &result,
+                    const GLCiphertextData<GLP> &input)
+{
+    result = input;
+    gl_detail::divideRoundLevel<GLP, LogQ, DropBits>(result[0]);
+    gl_detail::divideRoundLevel<GLP, LogQ, DropBits>(result[1]);
+}
+
+template <class GLP, std::uint32_t LhsLogQ, std::uint32_t RhsLogQ,
+          std::uint32_t LogScale, std::uint32_t BbarBit>
+inline void baseProductRescaleDD(GLBasePolynomial<GLP> &result,
+                                 const GLBasePolynomial<GLP> &lhs,
+                                 const GLBasePolynomial<GLP> &rhs)
+{
+    using P = typename GLP::baseP;
+    using T = typename P::T;
+    constexpr std::uint32_t lhs_rows = (LhsLogQ + BbarBit - 1) / BbarBit;
+    constexpr std::uint32_t rhs_rows = (RhsLogQ + BbarBit - 1) / BbarBit;
+    constexpr std::uint32_t base_log_q = LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ;
+    constexpr std::uint32_t out_log_q = base_log_q - LogScale;
+    static_assert(LogScale > 0 && LogScale < base_log_q);
+    static_assert(lhs_rows * BbarBit <= std::numeric_limits<T>::digits);
+    static_assert(rhs_rows * BbarBit <= std::numeric_limits<T>::digits);
+    static_assert(2 * BbarBit + 2 < 63);
+
+    auto lhs_digits = gl_detail::activeDecompose<GLP, LhsLogQ, BbarBit>(lhs);
+    auto rhs_digits = gl_detail::activeDecompose<GLP, RhsLogQ, BbarBit>(rhs);
+    auto digit_product = std::make_unique<GLBasePolynomial<GLP>>();
+
+    auto accumulate = [&](auto &accumulators, auto add_shifted) {
+        for (std::uint32_t i = 0; i < lhs_rows; i++) {
+            const int lhs_shift =
+                static_cast<int>((lhs_rows - i - 1) * BbarBit);
+            for (std::uint32_t j = 0; j < rhs_rows; j++) {
+                const int rhs_shift =
+                    static_cast<int>((rhs_rows - j - 1) * BbarBit);
+                gl_detail::baseMultiply<GLP>(*digit_product, lhs_digits[i],
+                                             rhs_digits[j]);
+                for (std::uint32_t coefficient = 0; coefficient < P::n;
+                     coefficient++)
+                    add_shifted(accumulators[coefficient],
+                                gl_detail::torusToSignedSmall<P>(
+                                    (*digit_product)[coefficient]),
+                                lhs_shift + rhs_shift);
+            }
+        }
+    };
+
+    if constexpr (std::is_same_v<T, __uint128_t>) {
+        std::vector<Wide384> accumulators(P::n);
+        accumulate(accumulators, [](Wide384 &accumulator,
+                                    const std::int64_t value, const int shift) {
+            accumulator.add_shifted(static_cast<__int128_t>(value), shift);
+        });
+        for (std::uint32_t i = 0; i < P::n; i++)
+            result[i] = ckks_detail::reduceToLevel<P, out_log_q>(
+                ckks_detail::rescaleAccumulator<P, LogScale>(accumulators[i]));
+    }
+    else {
+        static_assert(is_multilimb_uint_v<T>);
+        using Accumulator = WideSignedLimbAccumulator<2 * T::limbs + 2>;
+        std::vector<Accumulator> accumulators(P::n);
+        accumulate(accumulators, [](Accumulator &accumulator,
+                                    const std::int64_t value, const int shift) {
+            accumulator.add_shifted_i64(value, shift);
+        });
+        const T divisor = T{1} << LogScale;
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            accumulators[i].add_shifted_i64(
+                accumulators[i].is_negative() ? -1 : 1,
+                static_cast<int>(LogScale) - 1);
+            result[i] = ckks_detail::reduceToLevel<P, out_log_q>(
+                accumulators[i].template div_to_torus<T::limbs>(divisor));
+        }
+    }
+}
+
+}  // namespace gl_ship_detail
+
+}  // namespace TFHEpp
+
+#endif  // TFHEPP_DEFAULT_128BIT_PARAMS

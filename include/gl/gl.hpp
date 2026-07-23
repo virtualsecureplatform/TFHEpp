@@ -140,11 +140,27 @@ struct GLParameter {
                   "GL requires the CKKS 128-bit or multi-limb torus backend");
 };
 
-// The parameter shape used in the GL paper: n=256, p=17 and slice dimension
-// 8192.  lvl4param supplies the matching 128-bit storage/DD backend.  This is
-// a compile-time shape baseline; the coefficient kernels below prioritize
-// correctness and are not the paper's optimized full-size NTT kernels.
-using GL256p17Parameter = GLParameter<lvl4param, 256, 17>;
+// Multi-limb storage profiles for the SHIP parameter sets reported in
+// ePrint 2026/811.  In particular, n256p17 needs log(PQ)=214 bits, so the
+// 128-bit lvl4param torus is not large enough even though it has the right
+// polynomial degree.  The four-limb replacement retains degree 8192 and gives
+// enough headroom for the 180-bit ciphertext chain plus the 34-bit switching
+// modulus.  lvl5param and lvl6param already have the required degrees and
+// storage widths for n512p17 and n1024p17.
+struct GL256p17BaseParameter {
+    static constexpr std::int32_t key_value_max = 1;
+    static constexpr std::int32_t key_value_min = -1;
+    static constexpr std::uint32_t nbit = 13;
+    static constexpr std::uint32_t n = 1U << nbit;
+    static constexpr std::uint32_t k = 1;
+    using T = MultiLimbUInt<4>;
+    static constexpr std::uint32_t Bgbit = 16;
+    static constexpr std::uint32_t B̅gbit = 8;
+};
+
+using GL256p17Parameter = GLParameter<GL256p17BaseParameter, 256, 17, 34>;
+using GL512p17Parameter = GLParameter<lvl5param, 512, 17, 92>;
+using GL1024p17Parameter = GLParameter<lvl6param, 1024, 17, 220>;
 
 // GL's reference parameter set uses coefficient-domain Gaussian noise with
 // standard deviation 3.2.  CKKSNoise stores a modular standard deviation, so

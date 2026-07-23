@@ -42,6 +42,7 @@
 #include "bfv/bfv-gbfv.hpp"
 #include "ckks/ckks.hpp"
 #include "gl/gl.hpp"
+#include "gl/gl-bootstrap.hpp"
 
 // Application
 #include "tfhe/aes.hpp"
