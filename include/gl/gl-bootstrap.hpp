@@ -1274,29 +1274,62 @@ inline void GLDDSmallKeySwitchBaseRaw(
         SwitchKey::primary_rows * SwitchKey::bbar_rows)
         throw std::invalid_argument("uninitialized GL base key-switch key");
 
-    auto input_digits =
-        gl_detail::activeDecompose<GLP, LogQ, PrimaryBit>(input);
-    std::array<std::vector<GLBasePolynomial<GLP>>, 2> digit_rows{
-        std::vector<GLBasePolynomial<GLP>>(SwitchKey::bbar_rows),
-        std::vector<GLBasePolynomial<GLP>>(SwitchKey::bbar_rows)};
-    GLBasePolynomial<GLP> product{};
-    GLBasePolynomial<GLP> key_row{};
-    for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
-         primary++) {
-        for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
-            for (std::size_t component = 0; component < 2; component++) {
-                gl_detail::unpackDigitPolynomial<GLP, BbarBit>(
-                    key_row, switch_key.at(primary, bbar)[component]);
-                gl_detail::baseMultiply<GLP>(product, input_digits[primary],
-                                             key_row);
-                gl_detail::addInPlace<GLP>(digit_rows[component][bbar],
-                                           product);
+    if constexpr (gl_detail::smallKeySwitchAccumulationNTTPrimeCount<
+                      GLP, SwitchKey> != 0) {
+        using P = typename GLP::baseP;
+        auto input_digits = std::make_unique<
+            std::array<Polynomial<P>, SwitchKey::primary_rows>>();
+        gl_detail::clear<GLP>(result[0]);
+        gl_detail::clear<GLP>(result[1]);
+        const bool used_ntt =
+            gl_detail::accumulateSmallKeySwitchProductsNTT<GLP, SwitchKey>(
+                1, switch_key,
+                [&](const std::size_t) {
+                    ckks_detail::activeBaseDecomposePolynomialRows<
+                        P, LogQ, PrimaryBit, SwitchKey::primary_rows>(
+                        *input_digits, input);
+                },
+                [&](const std::uint32_t primary,
+                    const std::size_t) -> const GLBasePolynomial<GLP> & {
+                    return (*input_digits)[primary];
+                },
+                [&](const std::size_t component, const std::uint32_t bbar,
+                    const std::size_t, const std::size_t coefficient,
+                    const typename GLP::T value) {
+                    const std::uint32_t shift =
+                        (SwitchKey::bbar_rows - bbar - 1) * BbarBit;
+                    result[component][coefficient] += value << shift;
+                });
+        if (!used_ntt)
+            throw std::logic_error("eligible GL DD NTT path was not used");
+        gl_detail::reduce<GLP, SwitchKey::key_log_q>(result[0]);
+        gl_detail::reduce<GLP, SwitchKey::key_log_q>(result[1]);
+    }
+    else {
+        auto input_digits =
+            gl_detail::activeDecompose<GLP, LogQ, PrimaryBit>(input);
+        std::array<std::vector<GLBasePolynomial<GLP>>, 2> digit_rows{
+            std::vector<GLBasePolynomial<GLP>>(SwitchKey::bbar_rows),
+            std::vector<GLBasePolynomial<GLP>>(SwitchKey::bbar_rows)};
+        GLBasePolynomial<GLP> product{};
+        GLBasePolynomial<GLP> key_row{};
+        for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
+             primary++) {
+            for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
+                for (std::size_t component = 0; component < 2; component++) {
+                    gl_detail::unpackDigitPolynomial<GLP, BbarBit>(
+                        key_row, switch_key.at(primary, bbar)[component]);
+                    gl_detail::baseMultiply<GLP>(product, input_digits[primary],
+                                                 key_row);
+                    gl_detail::addInPlace<GLP>(digit_rows[component][bbar],
+                                               product);
+                }
             }
         }
+        for (std::size_t component = 0; component < 2; component++)
+            gl_detail::activeRecombine<GLP, SwitchKey::key_log_q, BbarBit>(
+                result[component], digit_rows[component]);
     }
-    for (std::size_t component = 0; component < 2; component++)
-        gl_detail::activeRecombine<GLP, SwitchKey::key_log_q, BbarBit>(
-            result[component], digit_rows[component]);
 }
 
 // Base-ring form of one complete DD switch.  It evaluates

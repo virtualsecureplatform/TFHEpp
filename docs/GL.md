@@ -109,6 +109,21 @@ The stored ciphertexts and packed DD evaluation keys remain in coefficient
 form.  Transform primes are temporary multiplication machinery; no RNS limbs
 are added to the persistent key representation.
 
+Small-DD switching reuses those temporary transforms within one switch.  Each
+packed key row is transformed once, each primary input digit is transformed
+once per `Y` slice, and all primary-row products are accumulated before one
+inverse transform.  The `n512p17` path uses a 54 MiB transient key-spectrum
+cache; it does not enlarge the serialized evaluation key.  Slice-at-a-time
+decomposition and fused Bbar recomposition also remove about 25.4 GiB of old
+full-polynomial scratch at `n512p17`.  Beyond the caller-owned 896 MiB output
+ciphertext, the optimized switch needs roughly 60 MiB of working storage.  The
+full switch's per-prime transform counts fall from 221,184 forward and 110,592
+inverse transforms to 2,264 forward and 27,648 inverse transforms.  The
+regression's dense raw base switch takes about one second on the development
+host, and its measured fixed/eight-slice costs project the full 512-slice
+switch at roughly two minutes.  This is a component projection, not a measured
+end-to-end bootstrap runtime.
+
 ## Basic Use
 
 ```cpp
@@ -254,11 +269,12 @@ destination file.
 
 This remains a correctness-oriented implementation. Its bootstrap follows the
 paper's algebra, and base-ring multiplication now has an exact Rader/NTT
-backend.  It does not yet keep repeated switch operands in the transform
-domain, fuse Rader butterflies as aggressively as the paper, or provide the
-paper's optimized modular matrix-multiplication kernels.  Consequently, the
-base multiplication benchmark must not be interpreted as a full-bootstrap
-runtime.
+backend.  Small-DD switches now reuse transforms across primary rows and `Y`
+slices, but big polynomial switches do not yet have a corresponding full-ring
+transform, and the implementation does not fuse Rader butterflies as
+aggressively as the paper or provide its optimized modular matrix-multiplication
+kernels.  Consequently, the component benchmarks must not be interpreted as a
+full-bootstrap runtime.
 
 Storage sufficiency is also not a security or precision proof. The paper's
 `n256p17` and `n512p17` values use the full 214- and 430-bit 128-bit-security

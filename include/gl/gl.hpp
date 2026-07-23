@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -666,6 +667,14 @@ public:
                  const GLBasePolynomial<GLP> &input) const
     {
         spectrum.assign(coefficient_count, 0);
+        forward(std::span<std::uint64_t>(spectrum), input);
+    }
+
+    void forward(const std::span<std::uint64_t> spectrum,
+                 const GLBasePolynomial<GLP> &input) const
+    {
+        if (spectrum.size() != coefficient_count)
+            throw std::invalid_argument("GL NTT spectrum has the wrong size");
         std::array<std::uint64_t, w_dimension> w_line{};
         for (std::size_t z = 0; z < z_dimension; z++) {
             const std::uint32_t gaussian =
@@ -687,13 +696,23 @@ public:
     void inverse(std::vector<std::uint64_t> &coefficients,
                  std::vector<std::uint64_t> &spectrum) const
     {
+        coefficients.assign(coefficient_count, 0);
+        inverse(std::span<std::uint64_t>(coefficients),
+                std::span<std::uint64_t>(spectrum));
+    }
+
+    void inverse(const std::span<std::uint64_t> coefficients,
+                 const std::span<std::uint64_t> spectrum) const
+    {
         if (spectrum.size() != coefficient_count)
             throw std::invalid_argument("GL NTT spectrum has the wrong size");
+        if (coefficients.size() != coefficient_count)
+            throw std::invalid_argument(
+                "GL NTT coefficient output has the wrong size");
         for (std::size_t w = 0; w < w_dimension; w++)
             z_plan_.inverse(std::span<std::uint64_t>(
                 spectrum.data() + w * z_dimension, z_dimension));
 
-        coefficients.assign(coefficient_count, 0);
         std::array<std::uint64_t, w_dimension> w_line{};
         for (std::size_t z = 0; z < z_dimension; z++) {
             for (std::size_t w = 0; w < w_dimension; w++)
@@ -1492,6 +1511,213 @@ inline void unpackDigitPolynomial(GLPolynomial<GLP> &result,
         unpackDigitPolynomial<GLP, Bits>(result[y], input[y]);
 }
 
+// A small DD switch multiplies every primary input digit by every packed key
+// row.  All of those products are accumulated before the Bbar recomposition,
+// so the primary-row sum can stay in the NTT domain.  The bound includes that
+// extra sum; this is stricter than the bound for one baseMultiply call.
+template <class GLP, class SwitchKey>
+inline constexpr std::uint32_t smallKeySwitchAccumulationNTTPrimeCount = [] {
+    if constexpr (!supportsWidePrimeNTT<GLP>) return 0U;
+
+    constexpr std::size_t maximum_terms =
+        2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+    constexpr std::uint32_t required_bits =
+        SwitchKey::primary_bit + SwitchKey::bbar_bit + ceilLog2(maximum_terms) +
+        ceilLog2(SwitchKey::primary_rows);
+    if constexpr (required_bits <= 60)
+        return 1U;
+    else if constexpr (required_bits <= 122)
+        return 2U;
+    else
+        return 0U;
+}();
+
+template <class GLP, class SwitchKey>
+inline constexpr std::uint64_t smallKeySwitchNTTKeyCacheBytes =
+    static_cast<std::uint64_t>(
+        smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>) *
+    SwitchKey::primary_rows * SwitchKey::bbar_rows * 2 *
+    GLBaseNTTPlan<GLP>::coefficient_count * sizeof(std::uint64_t);
+
+// PrepareSlice(slice) materializes its primary decomposition, GetInput returns
+// one of those base polynomials, and StoreOutput consumes one reconstructed
+// coefficient.  Key spectra live only for this call: serialized DD keys remain
+// packed and unchanged.  Processing one Y slice at a time also avoids caching
+// all input spectra for a production-size GL polynomial.
+template <class GLP, class SwitchKey, class PrepareSlice, class GetInput,
+          class StoreOutput>
+inline bool accumulateSmallKeySwitchProductsNTT(const std::size_t slice_count,
+                                                const SwitchKey &switch_key,
+                                                PrepareSlice &&prepare_slice,
+                                                GetInput &&get_input,
+                                                StoreOutput &&store_output)
+{
+    using T = typename GLP::T;
+    constexpr std::uint32_t prime_count =
+        smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    if constexpr (prime_count == 0) {
+        return false;
+    }
+    else {
+        constexpr std::size_t coefficient_count =
+            GLBaseNTTPlan<GLP>::coefficient_count;
+        constexpr std::size_t key_row_count =
+            static_cast<std::size_t>(SwitchKey::primary_rows) *
+            SwitchKey::bbar_rows * 2;
+        constexpr std::size_t input_row_count = SwitchKey::primary_rows;
+
+        const auto &first_plan = baseNTTPlan<GLP, 0>();
+        const GLBaseNTTPlan<GLP> *second_plan = nullptr;
+        if constexpr (prime_count == 2) second_plan = &baseNTTPlan<GLP, 1>();
+        const std::uint64_t first_modulus = first_plan.modulus();
+        const std::uint64_t second_modulus =
+            prime_count == 2 ? second_plan->modulus() : 0;
+        std::array<std::vector<std::uint64_t>, 2> key_spectra;
+        key_spectra[0].resize(key_row_count * coefficient_count);
+        if constexpr (prime_count == 2)
+            key_spectra[1].resize(key_row_count * coefficient_count);
+
+        GLBasePolynomial<GLP> key_row{};
+        for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
+             primary++) {
+            for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
+                for (std::size_t component = 0; component < 2; component++) {
+                    unpackDigitPolynomial<GLP, SwitchKey::bbar_bit>(
+                        key_row, switch_key.at(primary, bbar)[component]);
+                    const std::size_t row = (static_cast<std::size_t>(primary) *
+                                                 SwitchKey::bbar_rows +
+                                             bbar) *
+                                                2 +
+                                            component;
+                    first_plan.forward(
+                        std::span<std::uint64_t>(
+                            key_spectra[0].data() + row * coefficient_count,
+                            coefficient_count),
+                        key_row);
+                    if constexpr (prime_count == 2) {
+                        second_plan->forward(
+                            std::span<std::uint64_t>(
+                                key_spectra[1].data() + row * coefficient_count,
+                                coefficient_count),
+                            key_row);
+                    }
+                }
+            }
+        }
+
+        std::array<std::vector<std::uint64_t>, 2> input_spectra;
+        std::array<std::vector<std::uint64_t>, 2> accumulators;
+        std::array<std::vector<std::uint64_t>, 2> coefficients;
+        input_spectra[0].resize(input_row_count * coefficient_count);
+        accumulators[0].resize(coefficient_count);
+        coefficients[0].resize(coefficient_count);
+        if constexpr (prime_count == 2) {
+            input_spectra[1].resize(input_row_count * coefficient_count);
+            accumulators[1].resize(coefficient_count);
+            coefficients[1].resize(coefficient_count);
+        }
+
+        for (std::size_t slice = 0; slice < slice_count; slice++) {
+            prepare_slice(slice);
+            for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
+                 primary++) {
+                first_plan.forward(std::span<std::uint64_t>(
+                                       input_spectra[0].data() +
+                                           static_cast<std::size_t>(primary) *
+                                               coefficient_count,
+                                       coefficient_count),
+                                   get_input(primary, slice));
+                if constexpr (prime_count == 2) {
+                    second_plan->forward(
+                        std::span<std::uint64_t>(
+                            input_spectra[1].data() +
+                                static_cast<std::size_t>(primary) *
+                                    coefficient_count,
+                            coefficient_count),
+                        get_input(primary, slice));
+                }
+            }
+
+            for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
+                for (std::size_t component = 0; component < 2; component++) {
+                    std::fill(accumulators[0].begin(), accumulators[0].end(),
+                              0);
+                    if constexpr (prime_count == 2)
+                        std::fill(accumulators[1].begin(),
+                                  accumulators[1].end(), 0);
+
+                    for (std::uint32_t primary = 0;
+                         primary < SwitchKey::primary_rows; primary++) {
+                        const std::size_t row =
+                            (static_cast<std::size_t>(primary) *
+                                 SwitchKey::bbar_rows +
+                             bbar) *
+                                2 +
+                            component;
+                        const std::uint64_t *first_input =
+                            input_spectra[0].data() +
+                            static_cast<std::size_t>(primary) *
+                                coefficient_count;
+                        const std::uint64_t *first_key =
+                            key_spectra[0].data() + row * coefficient_count;
+                        for (std::size_t i = 0; i < coefficient_count; i++) {
+                            const std::uint64_t product = modular_ntt::multiply(
+                                first_input[i], first_key[i], first_modulus);
+                            accumulators[0][i] = modular_ntt::add(
+                                accumulators[0][i], product, first_modulus);
+                        }
+
+                        if constexpr (prime_count == 2) {
+                            const std::uint64_t *second_input =
+                                input_spectra[1].data() +
+                                static_cast<std::size_t>(primary) *
+                                    coefficient_count;
+                            const std::uint64_t *second_key =
+                                key_spectra[1].data() + row * coefficient_count;
+                            for (std::size_t i = 0; i < coefficient_count;
+                                 i++) {
+                                const std::uint64_t product =
+                                    modular_ntt::multiply(second_input[i],
+                                                          second_key[i],
+                                                          second_modulus);
+                                accumulators[1][i] =
+                                    modular_ntt::add(accumulators[1][i],
+                                                     product, second_modulus);
+                            }
+                        }
+                    }
+
+                    first_plan.inverse(
+                        std::span<std::uint64_t>(coefficients[0]),
+                        std::span<std::uint64_t>(accumulators[0]));
+                    if constexpr (prime_count == 1) {
+                        for (std::size_t i = 0; i < coefficient_count; i++)
+                            store_output(
+                                component, bbar, slice, i,
+                                signedI128ToTorus<T>(
+                                    modular_ntt::centeredResidue(
+                                        coefficients[0][i], first_modulus)));
+                    }
+                    else {
+                        second_plan->inverse(
+                            std::span<std::uint64_t>(coefficients[1]),
+                            std::span<std::uint64_t>(accumulators[1]));
+                        static const modular_ntt::TwoPrimeCRT crt(
+                            modular_ntt::wide_primes[0],
+                            modular_ntt::wide_primes[1]);
+                        for (std::size_t i = 0; i < coefficient_count; i++)
+                            store_output(
+                                component, bbar, slice, i,
+                                signedI128ToTorus<T>(crt.reconstructSigned(
+                                    coefficients[0][i], coefficients[1][i])));
+                    }
+                }
+            }
+        }
+        return true;
+    }
+}
+
 template <class GLP, std::uint32_t LhsLogQ, std::uint32_t RhsLogQ,
           std::uint32_t LogScale, std::uint32_t BbarBit, bool UseMatrixTrace,
           bool NormalizeMatrixProduct>
@@ -1839,31 +2065,64 @@ inline void GLDDSmallKeySwitch(
         SwitchKey::primary_rows * SwitchKey::bbar_rows)
         throw std::invalid_argument("uninitialized GL small key-switch key");
 
-    auto input_digits =
-        gl_detail::activeDecompose<GLP, LogQ, PrimaryBit>(input);
-    std::array<std::vector<GLPolynomial<GLP>>, 2> digit_rows{
-        std::vector<GLPolynomial<GLP>>(SwitchKey::bbar_rows),
-        std::vector<GLPolynomial<GLP>>(SwitchKey::bbar_rows)};
-    auto product = std::make_unique<GLBasePolynomial<GLP>>();
-    auto key_row = std::make_unique<GLBasePolynomial<GLP>>();
-    for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
-         primary++) {
-        for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
-            for (std::size_t component = 0; component < 2; component++) {
-                gl_detail::unpackDigitPolynomial<GLP, BbarBit>(
-                    *key_row, switch_key.at(primary, bbar)[component]);
-                for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
-                    gl_detail::baseMultiply<GLP>(
-                        *product, input_digits[primary][y], *key_row);
-                    gl_detail::addInPlace<GLP>(digit_rows[component][bbar][y],
-                                               *product);
+    if constexpr (gl_detail::smallKeySwitchAccumulationNTTPrimeCount<
+                      GLP, SwitchKey> != 0) {
+        using P = typename GLP::baseP;
+        auto input_digits = std::make_unique<
+            std::array<Polynomial<P>, SwitchKey::primary_rows>>();
+        gl_detail::clear<GLP>(result[0]);
+        gl_detail::clear<GLP>(result[1]);
+        const bool used_ntt =
+            gl_detail::accumulateSmallKeySwitchProductsNTT<GLP, SwitchKey>(
+                GLP::matrix_dimension, switch_key,
+                [&](const std::size_t slice) {
+                    ckks_detail::activeBaseDecomposePolynomialRows<
+                        P, LogQ, PrimaryBit, SwitchKey::primary_rows>(
+                        *input_digits, input[slice]);
+                },
+                [&](const std::uint32_t primary,
+                    const std::size_t) -> const GLBasePolynomial<GLP> & {
+                    return (*input_digits)[primary];
+                },
+                [&](const std::size_t component, const std::uint32_t bbar,
+                    const std::size_t slice, const std::size_t coefficient,
+                    const typename GLP::T value) {
+                    const std::uint32_t shift =
+                        (SwitchKey::bbar_rows - bbar - 1) * BbarBit;
+                    result[component][slice][coefficient] += value << shift;
+                });
+        if (!used_ntt)
+            throw std::logic_error("eligible GL DD NTT path was not used");
+        gl_detail::reduce<GLP, SwitchKey::key_log_q>(result[0]);
+        gl_detail::reduce<GLP, SwitchKey::key_log_q>(result[1]);
+    }
+    else {
+        auto input_digits =
+            gl_detail::activeDecompose<GLP, LogQ, PrimaryBit>(input);
+        std::array<std::vector<GLPolynomial<GLP>>, 2> digit_rows{
+            std::vector<GLPolynomial<GLP>>(SwitchKey::bbar_rows),
+            std::vector<GLPolynomial<GLP>>(SwitchKey::bbar_rows)};
+        auto product = std::make_unique<GLBasePolynomial<GLP>>();
+        auto key_row = std::make_unique<GLBasePolynomial<GLP>>();
+        for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
+             primary++) {
+            for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
+                for (std::size_t component = 0; component < 2; component++) {
+                    gl_detail::unpackDigitPolynomial<GLP, BbarBit>(
+                        *key_row, switch_key.at(primary, bbar)[component]);
+                    for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
+                        gl_detail::baseMultiply<GLP>(
+                            *product, input_digits[primary][y], *key_row);
+                        gl_detail::addInPlace<GLP>(
+                            digit_rows[component][bbar][y], *product);
+                    }
                 }
             }
         }
+        for (std::size_t component = 0; component < 2; component++)
+            gl_detail::activeRecombine<GLP, SwitchKey::key_log_q, BbarBit>(
+                result[component], digit_rows[component]);
     }
-    for (std::size_t component = 0; component < 2; component++)
-        gl_detail::activeRecombine<GLP, SwitchKey::key_log_q, BbarBit>(
-            result[component], digit_rows[component]);
     gl_detail::divideRoundLevel<GLP, SwitchKey::key_log_q,
                                 SwitchKey::auxiliary_log_q>(result[0]);
     gl_detail::divideRoundLevel<GLP, SwitchKey::key_log_q,
