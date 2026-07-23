@@ -5,6 +5,10 @@
 
 #include "../../params.hpp"
 
+// The CLPX scheme-switching parameters assume the modular-Gaussian lvl2param
+// noise members of the default 128-bit parameter set.
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+
 namespace TFHEpp {
 
 // Parameter aliases for the TFHE-to-CLPX scheme-switching setting of
@@ -47,3 +51,5 @@ struct SS2CLPXlvl22param {
 };
 
 }  // namespace TFHEpp
+
+#endif  // TFHEPP_DEFAULT_128BIT_PARAMS

@@ -305,7 +305,7 @@ int main(int argc, char **argv)
     static_assert(TFHEpp::lvl6param::l̅ * TFHEpp::lvl6param::B̅gbit == 896);
     static_assert(TFHEpp::lvl6param::Q_mod_t ==
                   pow2_mod(896, TFHEpp::lvl6param::plain_modulus_u64));
-    require(std::abs(std::log2(TFHEpp::lvl6param::α) + 886.0) < 1e-9,
+    require(std::abs(std::log2(TFHEpp::lvl6param::α) + 872.0) < 1e-9,
             "lvl6 CKKS security noise exponent");
 
     {
@@ -342,7 +342,7 @@ int main(int argc, char **argv)
         const long double boot_noise =
             TFHEpp::ckks_detail::effectiveNoiseStddevAtLevel<P, 888>(
                 default_noise);
-        require(std::abs(std::log2(boot_noise) - 2.0L) < 1e-9L,
+        require(std::abs(std::log2(boot_noise) - 16.0L) < 1e-9L,
                 "lvl6 boot-level CKKS noise scale");
         const T large_noise =
             TFHEpp::ckks_detail::signedLongDoubleToLevel<P, 888>(

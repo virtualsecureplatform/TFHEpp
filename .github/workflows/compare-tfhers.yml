@@ -7,10 +7,10 @@ on:
 
 jobs:
   compare-pbs:
-    name: PBS benchmark (TFHEpp vs tfhe-rs) on Ubuntu 24.04
+    name: PBS benchmark (TFHEpp vs tfhe-rs) on Ubuntu 26.04
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:24.04
+      image: ubuntu:26.04
 
     steps:
       # ── System dependencies ───────────────────────────────────────────────
@@ -18,7 +18,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            build-essential g++-14 libomp-dev cmake ninja-build git \
+            build-essential g++ libomp-dev cmake ninja-build git \
             curl wget ca-certificates
 
       # ── Rust toolchain (rustup) ───────────────────────────────────────────
@@ -44,8 +44,8 @@ jobs:
         run: |
           cmake . -B build-split -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_COMPILER=g++-14 \
-            -DCMAKE_C_COMPILER=gcc-14 \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_C_COMPILER=gcc \
             -DUSE_TFHE_RS=ON \
             -DENABLE_TEST=ON
           cmake --build build-split --target pbs_tfhers
@@ -55,8 +55,8 @@ jobs:
         run: |
           cmake . -B build-intl -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_COMPILER=g++-14 \
-            -DCMAKE_C_COMPILER=gcc-14 \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_C_COMPILER=gcc \
             -DUSE_TFHE_RS=ON \
             -DUSE_SPQLIOS_INTL=ON \
             -DENABLE_TEST=ON

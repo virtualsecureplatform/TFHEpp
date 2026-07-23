@@ -35,6 +35,10 @@
 #include "tfhe/trlwe.hpp"
 #include "utils.hpp"
 
+// CKKS relies on the multi-limb scaffolds (lvl5param/lvl6param) that only the
+// default 128-bit parameter set defines.
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+
 namespace TFHEpp {
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -2001,11 +2005,12 @@ inline void activeBaseDecomposePolynomialRows(
     constexpr T half = T{1} << (BaseBit - 1);
     constexpr T mask = (T{1} << BaseBit) - T{1};
     constexpr T offset = [] {
+        constexpr T half_digit = T{1} << (BaseBit - 1);
         T value = 0;
         for (std::size_t row = 0; row < RowCount; row++) {
             const int shift =
                 static_cast<int>((RowCount - row - 1) * BaseBit);
-            value += half << shift;
+            value += half_digit << shift;
         }
         return value;
     }();
@@ -18260,3 +18265,5 @@ inline void CKKSEvalModSineDegree5(
 }
 
 }  // namespace TFHEpp
+
+#endif  // TFHEPP_DEFAULT_128BIT_PARAMS

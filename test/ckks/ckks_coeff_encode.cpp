@@ -22,7 +22,7 @@ int main()
 {
     constexpr std::uint32_t log_delta = 40;
     constexpr std::uint32_t log_q = 80;
-    constexpr double tol = std::ldexp(1.0, -static_cast<int>(log_delta) + 2);
+    const double tol = std::ldexp(1.0, -static_cast<int>(log_delta) + 2);
 
     for (const double value :
          {0.0, 1.0, -1.0, 0.125, -0.375, 123.5, -17.25}) {

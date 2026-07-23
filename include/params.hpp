@@ -33,6 +33,11 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 #include "params/ternary.hpp"
 #else
 #include "params/128bit.hpp"
+// The extended scheme scaffolds (BFV bootstrapping, CLPX scheme switching,
+// CKKS) require parameters such as lvl5param/lvl6param that only the default
+// 128-bit parameter set provides.  Headers implementing those schemes are
+// compiled only when this macro is defined.
+#define TFHEPP_DEFAULT_128BIT_PARAMS
 #endif
 
 #ifndef USE_DIFFERENT_BR_PARAM

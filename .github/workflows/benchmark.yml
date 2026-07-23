@@ -5,11 +5,11 @@ on:
 
 # thanks to https://izumisy.work/entry/2022/03/28/140644
 jobs:
-  ubuntu-2404:
-    name: ubuntu-2404
-    runs-on: Ubuntu-latest
+  ubuntu-2604:
+    name: ubuntu-2604
+    runs-on: ubuntu-latest
     container:
-      image: ubuntu:24.04
+      image: ubuntu:26.04
     steps:
     - name: Install libraries
       run: |
@@ -30,8 +30,12 @@ jobs:
         git clone --recursive --depth 1 https://github.com/tfhe/tfhe.git
         mkdir tfhe/build
         cd tfhe/build
-        cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=off -DENABLE_SPQLIOS_AVX=off -DENABLE_SPQLIOS_FMA=on -DCMAKE_BUILD_TYPE=optim
-        make -j$(nproc)
+        # CMAKE_POLICY_VERSION_MINIMUM: the original TFHE declares a
+        # cmake_minimum_required that CMake 4 (Ubuntu 26.04) no longer accepts.
+        cmake ../src -DENABLE_TESTS=on -DENABLE_NAYUKI_PORTABLE=off -DENABLE_NAYUKI_AVX=off -DENABLE_SPQLIOS_AVX=off -DENABLE_SPQLIOS_FMA=on -DCMAKE_BUILD_TYPE=optim -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        # Build only the benchmark binary: the original TFHE's googletest
+        # unittests do not compile with gcc 15's -Werror=maybe-uninitialized.
+        make -j$(nproc) test-gate-bootstrapping-spqlios-fma
     - name: benchmark
       run: |
         test/show_info.sh

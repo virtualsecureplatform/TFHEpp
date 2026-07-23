@@ -194,7 +194,7 @@ taskset -c 0 apptainer run compare-tfhers.sif
 
 The comparison runs automatically on every push via
 [`.github/workflows/compare-tfhers.yml`](.github/workflows/compare-tfhers.yml)
-using an Ubuntu 24.04 container.
+using an Ubuntu 26.04 container.
 
 # Theory
 
