@@ -136,6 +136,23 @@ lazy boundary work is slower at that size. On the development host, these
 changes reduce a single-thread n512 full-ring forward/inverse pair from about
 0.87/0.92 seconds to about 0.40/0.40 seconds.
 
+Configuring with `-DUSE_HEXL=ON` selects Intel HEXL for the large power-of-two
+transforms while retaining the exact fixed Rader implementation for `p=17`:
+
+```sh
+cmake -S . -B build-hexl -DENABLE_TEST=ON -DUSE_HEXL=ON
+cmake --build build-hexl -j
+```
+
+The custom transform root is the same root used by the native plan. GL keeps
+HEXL's bit-reversed spectra through pointwise operations and translates the X
+automorphism maps accordingly; the public common-arithmetic transform still
+returns natural order. A cyclic GL Y transform is obtained exactly from
+HEXL's negacyclic transform by the standard `psi^-i`/`psi^i` coefficient
+twists. Direct spectrum-evaluation tests cover both cyclic and negacyclic
+ordering, in addition to round-trip and convolution tests. The native path
+remains the default and has no HEXL dependency.
+
 The stored ciphertexts and packed DD evaluation keys remain in coefficient
 form.  Transform primes are temporary multiplication machinery; no RNS limbs
 are added to the persistent key representation.
@@ -145,8 +162,9 @@ packed key row is transformed once, each primary input digit is transformed
 once per `Y` slice, and all primary-row products are accumulated before one
 inverse transform.  The `n512p17` path uses a 54 MiB transient key-spectrum
 cache per 338-bit switch; it does not enlarge the serialized evaluation key.
-HMux also sums all eight body/mask branch switches in the NTT domain and uses
-batched 128-bit pointwise accumulators. Slice-at-a-time
+HMux also sums all eight body/mask branch switches in the NTT domain. The
+native path uses batched 128-bit pointwise accumulators; the optional HEXL
+path uses AVX-512 vector products and modular adds. Slice-at-a-time
 decomposition and fused Bbar recomposition also remove about 25.4 GiB of old
 full-polynomial scratch at `n512p17`.  Beyond the caller-owned 896 MiB output
 ciphertext, the optimized switch needs roughly 60 MiB of working storage.  The
@@ -162,7 +180,9 @@ transformed once; exact signed coefficient permutations become NTT-spectrum
 permutations. This reduces the stage's input forward transforms from 64 to 16
 without changing its two-prime CRT bound. On the development host, 128 warm
 complete stages take about 2.1 seconds instead of 2.34 seconds with unhoisted
-transforms.
+transforms on the native path. With HEXL, 128 complete stages take about
+1.8--1.9 seconds with 32 SMT workers; 16 physical-core workers sustain about
+89--90 stages per second for this bandwidth-bound kernel.
 
 Masked-column candidate construction likewise hoists the expensive torus
 phase roots out of the candidate loop. Roots for the two Gaussian channels
@@ -174,9 +194,10 @@ automorphisms. Those shifts are applied directly as NTT-spectrum permutations,
 so each group also needs only one pair of forward transforms. All three
 rewrites remain bit-for-bit equal to direct candidate encoding and
 multiplication. On the development host, 128 warm 48-candidate columns take
-about 1.47 seconds, down from 1.88 seconds before spectrum reuse, 2.12 seconds
-with phase-root hoisting alone, and about 2.50 seconds before these
-optimizations.
+about 1.47 seconds on the native path, down from 1.88 seconds before spectrum
+reuse, 2.12 seconds with phase-root hoisting alone, and about 2.50 seconds
+before these optimizations. HEXL vector products reduce the same batch to
+about 1.23 seconds.
 
 HMux X automorphisms act directly on the `(I,X,W)` base polynomial. The former
 generic route lifted one base polynomial into two 448 MiB full GL temporaries
@@ -190,6 +211,9 @@ on the development host are 3.6 seconds to prepare that cache, 6.2 seconds per
 warm big switch, and 9.3 seconds cold. The specialized X trace avoids a
 448 MiB plaintext and takes about 1.1 seconds. Four W diagonals are accumulated
 before inverse transforms, making the complete W stage about 1.5 seconds.
+With HEXL's cyclic and negacyclic transforms, representative cache-prepare,
+warm-switch, and cold-switch measurements are 1.08, 3.37, and 4.67 seconds,
+respectively. The complete n512 StC path measures 30.7 seconds with 32 workers.
 
 ## Basic Use
 
@@ -346,18 +370,32 @@ each term and then freed.
 
 ### Performance status
 
-The production n512 StC path has been measured end-to-end at 47.1 seconds with
-32 OpenMP threads. A combined sequential component run peaked at about
-17.1 GiB RSS. Warm throughput measurements for the dominant half-bootstrap
-kernels give about 65 complete HMux stages per second and 94 48-candidate
-masked columns per second on the same 16-core/32-thread host. The n512 schedule
-needs 95,232 HMux stages and 31,744 masked columns, projecting about 24.4 and
-5.6 minutes. Level-by-level throughput projects the complete 31,744-node
+The native production n512 StC path has been measured end-to-end at 47.1
+seconds with 32 OpenMP threads. A combined sequential component run peaked at
+about 17.1 GiB RSS. Native warm throughput for the dominant half-bootstrap
+kernels is about 65 complete HMux stages per second and 94 48-candidate masked
+columns per second on the same Ryzen 9 7950X3D host. The n512 schedule needs
+95,232 HMux stages and 31,744 masked columns, projecting about 24.4 and 5.6
+minutes. Native level-by-level throughput projects the complete 31,744-node
 product tree at about 3.9 minutes. Including StC and the smaller
 dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 35--36
-minutes is a reasonable component projection, not a measured end-to-end
-runtime. The full 7.88 GiB production key has deliberately not been generated
-merely to obtain a timing number.
+minutes remains the native component projection.
+
+With `USE_HEXL=ON` and 32 workers, measured component rates are about 68--70
+complete HMux stages and 104 masked columns per second; the product tree
+projects to about 165--168 seconds and StC measures 30.7 seconds. This gives a
+roughly 32--33 minute component projection. HMux is memory-bandwidth-bound on
+this 16-core/32-thread CPU: running with
+`OMP_NUM_THREADS=16 OMP_PROC_BIND=spread OMP_PLACES=cores` raises HMux
+throughput to about 89--90 stages per second, while masked-column throughput
+is about 98 per second, the product tree projects to about 191 seconds, and
+StC measures 32.7 seconds. That host-specific profile gives a roughly 27--28
+minute component projection. Other CPUs should benchmark both physical-core
+and SMT worker counts; no topology-dependent limit is hard-coded.
+
+These are component projections, not measured end-to-end runtimes. The full
+7.88 GiB production key has deliberately not been generated merely to obtain
+a timing number.
 
 ## Current Boundary
 
@@ -372,8 +410,10 @@ measured full-bootstrap runtime.
 
 The remaining performance gap is chiefly the 95,232 exact HMux stages and
 31,744 masked columns required by the algorithm, followed by the product tree.
-The code does not yet provide the paper implementation's hand-tuned SIMD/NTT
-kernels, NUMA-aware key streaming, or constant-time production hardening.
+The optional HEXL backend supplies SIMD power-of-two NTTs and pointwise
+products, but the code does not yet provide the paper implementation's full
+set of fused kernels, NUMA-aware key streaming, or constant-time production
+hardening.
 
 Storage sufficiency is also not a security or precision proof. The paper's
 `n256p17` and `n512p17` values use the full 214- and 430-bit 128-bit-security
