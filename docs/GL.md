@@ -453,6 +453,20 @@ benchmark with
 `TFHEPP_GL_N512_MASKED_BENCH=1` and `TFHEPP_GL_N512_FACTOR_BENCH=1`; run the
 arithmetic microbenchmark with `TFHEPP_MODULAR_MAC_BENCH=1`.
 
+Several further production-shape experiments were exact but were not retained
+on this host. Applying one HMux key block to two or four ciphertexts at once
+took 5.78 and 5.96 seconds, respectively, versus 4.78--4.95 seconds for the
+staged single-ciphertext path. For 128 MaskedColumn outputs, the four-product
+MAC took 1.23--1.24 seconds versus 1.16--1.18 seconds for separate HEXL
+multiply/add; coefficient blocking recovered part of the loss at 1.21 seconds,
+and paired Gaussian channels took 1.32 seconds versus 1.22 seconds. Finally,
+a double-buffered 64-factor pipeline took 7.61, 6.63, and 6.34 seconds with 8,
+12, and 16 MaskedColumn producer workers plus 16 HMux workers, while the
+sequential staged path remained about 4.9--5.4 seconds. These variants increase
+cache pressure or make the two already bandwidth-heavy kernels contend for the
+same memory channels; the measurements do not rule them out on a different
+memory topology.
+
 The component figures remain useful for tuning, but the 1,598.99-second value
 above is the measured end-to-end bootstrap runtime rather than a projection.
 
