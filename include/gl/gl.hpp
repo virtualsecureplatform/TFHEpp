@@ -2964,7 +2964,11 @@ struct SmallKeySwitchSumNTTWorkspace {
     std::array<std::vector<std::uint64_t>, 2> source_spectra{};
     std::array<std::vector<std::uint64_t>, 2> accumulators{};
     std::array<std::vector<std::uint64_t>, 2> coefficients{};
+#ifdef USE_HEXL
+    std::vector<std::uint64_t> product{};
+#else
     std::array<std::vector<unsigned __int128>, 2> wide_accumulators{};
+#endif
     std::unique_ptr<std::array<Polynomial<P>, input_row_count>> input_digits{};
 };
 
@@ -2993,14 +2997,22 @@ inline void accumulateSmallKeySwitchPreparedSumNTT(
     clear<GLP>(result[1]);
     auto &accumulators = workspace.accumulators;
     auto &coefficients = workspace.coefficients;
+#ifdef USE_HEXL
+    workspace.product.resize(coefficient_count);
+#else
     auto &wide_accumulators = workspace.wide_accumulators;
+#endif
     accumulators[0].resize(coefficient_count);
     coefficients[0].resize(coefficient_count);
+#ifndef USE_HEXL
     wide_accumulators[0].resize(coefficient_count);
+#endif
     if constexpr (prime_count == 2) {
         accumulators[1].resize(coefficient_count);
         coefficients[1].resize(coefficient_count);
+#ifndef USE_HEXL
         wide_accumulators[1].resize(coefficient_count);
+#endif
     }
 
     for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
@@ -3010,8 +3022,9 @@ inline void accumulateSmallKeySwitchPreparedSumNTT(
             const auto accumulate_prime = [&](const std::size_t prime,
                                               const std::uint64_t modulus) {
                 auto &accumulator = accumulators[prime];
-                auto &wide = wide_accumulators[prime];
                 std::fill(accumulator.begin(), accumulator.end(), 0);
+#ifndef USE_HEXL
+                auto &wide = wide_accumulators[prime];
                 std::fill(wide.begin(), wide.end(), 0);
                 std::size_t batch_count = 0;
                 const auto flush = [&] {
@@ -3023,6 +3036,7 @@ inline void accumulateSmallKeySwitchPreparedSumNTT(
                     }
                     batch_count = 0;
                 };
+#endif
                 for (std::size_t term = 0; term < Count; term++) {
                     const auto &key_spectra = key_caches[term]->spectra[prime];
                     for (std::uint32_t primary = 0;
@@ -3040,15 +3054,27 @@ inline void accumulateSmallKeySwitchPreparedSumNTT(
                             input_row * coefficient_count;
                         const std::uint64_t *key_spectrum =
                             key_spectra.data() + key_row * coefficient_count;
+#ifdef USE_HEXL
+                        intel::hexl::EltwiseMultMod(
+                            workspace.product.data(), input_spectrum,
+                            key_spectrum, coefficient_count, modulus, 1);
+                        intel::hexl::EltwiseAddMod(
+                            accumulator.data(), accumulator.data(),
+                            workspace.product.data(), coefficient_count,
+                            modulus);
+#else
                         for (std::size_t i = 0; i < coefficient_count; i++)
                             wide[i] += static_cast<unsigned __int128>(
                                            input_spectrum[i]) *
                                        key_spectrum[i];
                         batch_count++;
                         if (batch_count == 16) flush();
+#endif
                     }
                 }
+#ifndef USE_HEXL
                 if (batch_count != 0) flush();
+#endif
             };
             accumulate_prime(0, first_modulus);
             if constexpr (prime_count == 2) accumulate_prime(1, second_modulus);
