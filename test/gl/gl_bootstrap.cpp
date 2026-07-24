@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <tfhe++.hpp>
+#include <vector>
 
 namespace {
 
@@ -133,6 +134,36 @@ int main()
     std::cout << "  generating evaluation key" << std::endl;
     TFHEpp::GLSHIPBootstrapKeyGen(*bootstrap_key, dense_key, sparse_key,
                                   intervals);
+
+    // The term-major evaluator uses an online tree so transient NTT caches
+    // can be released after each sparse term.  Its carry order must remain
+    // coefficient-for-coefficient identical to the original balanced tree.
+    std::vector<TFHEpp::GLBaseCiphertextData<GLP>> tree_factors(
+        Schedule::factor_count);
+    for (std::size_t factor = 0; factor < tree_factors.size(); factor++)
+        for (std::size_t component = 0; component < 2; component++)
+            for (std::size_t coefficient = 0;
+                 coefficient < BootstrapTestBaseParameter::n; coefficient++)
+                tree_factors[factor][component][coefficient] =
+                    static_cast<BootstrapTestBaseParameter::T>(
+                        17 * factor + 7 * component + coefficient + 1);
+    TFHEpp::GLBaseCiphertextData<GLP> reference_tree_product{};
+    TFHEpp::gl_ship_detail::productTreeLevel<0, Schedule>(
+        reference_tree_product, tree_factors,
+        bootstrap_key->product_relin_keys);
+    std::array<std::unique_ptr<std::vector<TFHEpp::GLBaseCiphertextData<GLP>>>,
+               Schedule::tree_depth + 1>
+        online_tree{};
+    for (auto &factor : tree_factors) {
+        std::vector<TFHEpp::GLBaseCiphertextData<GLP>> batch;
+        batch.push_back(std::move(factor));
+        TFHEpp::gl_ship_detail::insertProductTreeBatch<0, Schedule>(
+            online_tree, std::move(batch), bootstrap_key->product_relin_keys);
+    }
+    if (!online_tree[Schedule::tree_depth] ||
+        online_tree[Schedule::tree_depth]->size() != 1 ||
+        (*online_tree[Schedule::tree_depth])[0] != reference_tree_product)
+        return 1;
 
     // Check the slice canonical encoder independently; masked-column tables
     // and the refreshed Gaussian channels both use this representation.
@@ -352,6 +383,31 @@ int main()
     const auto input = makeInput();
     Schedule::InputCiphertext input_ciphertext;
     TFHEpp::GLEncrypt(input_ciphertext, input, dense_key);
+
+    // The production StC path uses the compact W^0/signed-small trace.  At
+    // toy dimensions it must agree coefficient-for-coefficient with the
+    // generic GL trace followed by the matrix-dimension normalization.
+    using AfterX =
+        TFHEpp::GLRawProductCiphertext<GLP, Schedule::input_log_q,
+                                       Schedule::input_log_delta,
+                                       Schedule::x_transform_log_scale>;
+    TFHEpp::GLPlaintext<GLP, Schedule::input_log_q,
+                        Schedule::x_transform_log_scale>
+        x_plaintext;
+    TFHEpp::gl_ship_detail::buildXTransformPlaintext<Schedule>(x_plaintext);
+    AfterX reference_x_product;
+    AfterX compact_x_product;
+    TFHEpp::GLPlaintextMatrixMultiplyRaw(reference_x_product, input_ciphertext,
+                                         x_plaintext);
+    TFHEpp::GLXTransformMatrixMultiplyRaw<Schedule>(compact_x_product,
+                                                    input_ciphertext);
+    for (std::size_t component = 0; component < 2; component++)
+        for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++)
+            for (std::size_t coefficient = 0; coefficient < GLP::baseP::n;
+                 coefficient++)
+                if (reference_x_product[component][y][coefficient] !=
+                    compact_x_product[component][y][coefficient])
+                    return 1;
 
     Schedule::CoefficientCiphertext stc_output;
     TFHEpp::GLSHIPSlotsToCoefficients<Schedule>(stc_output, input_ciphertext,

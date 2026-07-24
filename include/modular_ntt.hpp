@@ -16,13 +16,14 @@ struct PrimeModulus {
     std::uint64_t primitive_root;
 };
 
-// These primes support power-of-two transforms through length 2^11 or
+// These primes support power-of-two transforms through length 2^12 or
 // greater and a length-17 transform.  They are deliberately scheme-neutral:
-// callers may use either one prime or the pair according to their exact
+// callers select one, two, or three primes according to their proved exact
 // coefficient bound.
-inline constexpr std::array<PrimeModulus, 2> wide_primes{{
+inline constexpr std::array<PrimeModulus, 3> wide_primes{{
     {4611686018426953729ULL, 11},
     {4611686018426884097ULL, 5},
+    {4611686018426257409ULL, 3},
 }};
 
 inline std::uint64_t add(const std::uint64_t lhs, const std::uint64_t rhs,
@@ -45,11 +46,32 @@ inline std::uint64_t negate(const std::uint64_t value,
     return value == 0 ? 0 : modulus - value;
 }
 
+inline std::uint64_t reduceWide(const unsigned __int128 value,
+                                const std::uint64_t modulus)
+{
+    // The exact GL primes are pseudo-Mersenne: p = 2^62-c with c < 2^21.
+    // For any 128-bit x, fold the high 62-bit part twice using
+    // 2^62 = c (mod p).  The second fold is below 2p, so one subtraction
+    // canonicalizes it.  This avoids the compiler's much slower 128-by-64
+    // division helper.  Retain the generic reduction for callers that provide
+    // a different modulus.
+    constexpr std::uint64_t base = std::uint64_t{1} << 62;
+    constexpr std::uint64_t mask = base - 1;
+    if (modulus < base && base - modulus < (std::uint64_t{1} << 21)) {
+        const std::uint64_t complement = base - modulus;
+        const unsigned __int128 first =
+            (value & mask) + (value >> 62) * complement;
+        const std::uint64_t second = static_cast<std::uint64_t>(
+            (first & mask) + (first >> 62) * complement);
+        return second >= modulus ? second - modulus : second;
+    }
+    return static_cast<std::uint64_t>(value % modulus);
+}
+
 inline std::uint64_t multiply(const std::uint64_t lhs, const std::uint64_t rhs,
                               const std::uint64_t modulus)
 {
-    return static_cast<std::uint64_t>(
-        (static_cast<unsigned __int128>(lhs) * rhs) % modulus);
+    return reduceWide(static_cast<unsigned __int128>(lhs) * rhs, modulus);
 }
 
 inline std::uint64_t power(std::uint64_t base, std::uint64_t exponent,
@@ -87,14 +109,30 @@ public:
             throw std::invalid_argument("modulus does not support NTT size");
 
         inverse_size_ = invert(size_ % modulus_, modulus_);
+        for (std::size_t i = 1, reversed = 0; i < size_; i++) {
+            std::size_t bit = size_ >> 1;
+            for (; (reversed & bit) != 0; bit >>= 1) reversed ^= bit;
+            reversed ^= bit;
+            if (i < reversed) bit_reversal_swaps_.emplace_back(i, reversed);
+        }
         for (std::size_t length = 2; length <= size_; length <<= 1) {
             const std::uint64_t root =
                 power(prime.primitive_root, (modulus_ - 1) / length, modulus_);
             if (power(root, length, modulus_) != 1 ||
                 power(root, length / 2, modulus_) == 1)
                 throw std::invalid_argument("invalid primitive NTT root");
-            forward_stage_roots_.push_back(root);
-            inverse_stage_roots_.push_back(invert(root, modulus_));
+            const std::uint64_t inverse_root = invert(root, modulus_);
+            const std::size_t half = length >> 1;
+            forward_twiddles_.emplace_back(half);
+            inverse_twiddles_.emplace_back(half);
+            forward_twiddles_.back()[0] = 1;
+            inverse_twiddles_.back()[0] = 1;
+            for (std::size_t j = 1; j < half; j++) {
+                forward_twiddles_.back()[j] =
+                    multiply(forward_twiddles_.back()[j - 1], root, modulus_);
+                inverse_twiddles_.back()[j] = multiply(
+                    inverse_twiddles_.back()[j - 1], inverse_root, modulus_);
+            }
         }
     }
 
@@ -108,43 +146,43 @@ public:
 
     void inverse(const std::span<std::uint64_t> values) const
     {
-        transform(values, true);
+        transform(values, true, true);
+    }
+
+    // Convolution plans can combine this normalization with a following
+    // coefficient-wise multiplier and save one modular product per value.
+    void inverseUnscaled(const std::span<std::uint64_t> values) const
+    {
+        transform(values, true, false);
     }
 
 private:
-    void transform(const std::span<std::uint64_t> values,
-                   const bool invert) const
+    void transform(const std::span<std::uint64_t> values, const bool invert,
+                   const bool normalize = false) const
     {
         if (values.size() != size_)
             throw std::invalid_argument("NTT input has the wrong size");
 
-        for (std::size_t i = 1, j = 0; i < size_; i++) {
-            std::size_t bit = size_ >> 1;
-            for (; (j & bit) != 0; bit >>= 1) j ^= bit;
-            j ^= bit;
-            if (i < j) std::swap(values[i], values[j]);
-        }
+        for (const auto &[first, second] : bit_reversal_swaps_)
+            std::swap(values[first], values[second]);
 
         std::size_t stage = 0;
         for (std::size_t length = 2; length <= size_; length <<= 1, stage++) {
-            const std::uint64_t stage_root = invert
-                                                 ? inverse_stage_roots_[stage]
-                                                 : forward_stage_roots_[stage];
+            const auto &twiddles =
+                invert ? inverse_twiddles_[stage] : forward_twiddles_[stage];
             const std::size_t half = length >> 1;
             for (std::size_t block = 0; block < size_; block += length) {
-                std::uint64_t twiddle = 1;
                 for (std::size_t j = 0; j < half; j++) {
                     const std::uint64_t even = values[block + j];
-                    const std::uint64_t odd =
-                        multiply(values[block + j + half], twiddle, modulus_);
+                    const std::uint64_t odd = multiply(values[block + j + half],
+                                                       twiddles[j], modulus_);
                     values[block + j] = add(even, odd, modulus_);
                     values[block + j + half] = subtract(even, odd, modulus_);
-                    twiddle = multiply(twiddle, stage_root, modulus_);
                 }
             }
         }
 
-        if (invert)
+        if (normalize)
             for (std::uint64_t &value : values)
                 value = multiply(value, inverse_size_, modulus_);
     }
@@ -152,8 +190,9 @@ private:
     std::size_t size_;
     std::uint64_t modulus_;
     std::uint64_t inverse_size_;
-    std::vector<std::uint64_t> forward_stage_roots_;
-    std::vector<std::uint64_t> inverse_stage_roots_;
+    std::vector<std::pair<std::size_t, std::size_t>> bit_reversal_swaps_;
+    std::vector<std::vector<std::uint64_t>> forward_twiddles_;
+    std::vector<std::vector<std::uint64_t>> inverse_twiddles_;
 };
 
 class NegacyclicNTTPlan {
@@ -172,12 +211,15 @@ public:
         forward_twist_.resize(size);
         inverse_twist_.resize(size);
         const std::uint64_t inverse_psi = invert(psi, modulus_);
+        const std::uint64_t inverse_size = invert(size % modulus_, modulus_);
         forward_twist_[0] = inverse_twist_[0] = 1;
         for (std::size_t i = 1; i < size; i++) {
             forward_twist_[i] = multiply(forward_twist_[i - 1], psi, modulus_);
             inverse_twist_[i] =
                 multiply(inverse_twist_[i - 1], inverse_psi, modulus_);
         }
+        for (std::uint64_t &twist : inverse_twist_)
+            twist = multiply(twist, inverse_size, modulus_);
     }
 
     std::size_t size() const { return cyclic_.size(); }
@@ -198,7 +240,7 @@ public:
         if (values.size() != size())
             throw std::invalid_argument(
                 "negacyclic NTT input has the wrong size");
-        cyclic_.inverse(values);
+        cyclic_.inverseUnscaled(values);
         for (std::size_t i = 0; i < size(); i++)
             values[i] = multiply(values[i], inverse_twist_[i], modulus_);
     }
@@ -279,8 +321,9 @@ public:
                 (static_cast<std::uint64_t>(powers_[i - 1]) * generator) %
                 PrimeLength);
 
-        buildKernel(forward_kernel_, root_);
-        buildKernel(inverse_kernel_, invert(root_, prime.value));
+        buildKernel(forward_kernel_, root_, 1);
+        buildKernel(inverse_kernel_, invert(root_, prime.value),
+                    inverse_prime_);
     }
 
     std::uint64_t modulus() const { return prime_.value; }
@@ -288,19 +331,18 @@ public:
 
     void forward(std::array<std::uint64_t, PrimeLength> &values) const
     {
-        apply(values, forward_kernel_);
+        apply(values, forward_kernel_, 1);
     }
 
     void inverse(std::array<std::uint64_t, PrimeLength> &values) const
     {
-        apply(values, inverse_kernel_);
-        for (std::uint64_t &value : values)
-            value = multiply(value, inverse_prime_, prime_.value);
+        apply(values, inverse_kernel_, inverse_prime_);
     }
 
 private:
     void buildKernel(std::array<std::uint64_t, convolution_size> &kernel,
-                     const std::uint64_t transform_root)
+                     const std::uint64_t transform_root,
+                     const std::uint64_t output_scale)
     {
         for (std::size_t t = 0; t < convolution_size; t++) {
             const std::size_t inverse_index =
@@ -309,10 +351,17 @@ private:
                 power(transform_root, powers_[inverse_index], prime_.value);
         }
         convolution_.forward(kernel);
+        const std::uint64_t inverse_convolution_size =
+            invert(convolution_size % prime_.value, prime_.value);
+        const std::uint64_t kernel_scale =
+            multiply(inverse_convolution_size, output_scale, prime_.value);
+        for (std::uint64_t &value : kernel)
+            value = multiply(value, kernel_scale, prime_.value);
     }
 
     void apply(std::array<std::uint64_t, PrimeLength> &values,
-               const std::array<std::uint64_t, convolution_size> &kernel) const
+               const std::array<std::uint64_t, convolution_size> &kernel,
+               const std::uint64_t constant_scale) const
     {
         const std::uint64_t zero = values[0];
         std::uint64_t sum = zero;
@@ -324,12 +373,18 @@ private:
         convolution_.forward(permuted);
         for (std::size_t t = 0; t < convolution_size; t++)
             permuted[t] = multiply(permuted[t], kernel[t], prime_.value);
-        convolution_.inverse(permuted);
+        convolution_.inverseUnscaled(permuted);
 
-        values[0] = sum;
+        const std::uint64_t scaled_zero =
+            constant_scale == 1 ? zero
+                                : multiply(zero, constant_scale, prime_.value);
+        values[0] = constant_scale == 1
+                        ? sum
+                        : multiply(sum, constant_scale, prime_.value);
         for (std::size_t m = 0; m < convolution_size; m++)
             values[powers_[m]] =
-                add(zero, permuted[(convolution_size - m) % convolution_size],
+                add(scaled_zero,
+                    permuted[(convolution_size - m) % convolution_size],
                     prime_.value);
     }
 
@@ -406,8 +461,14 @@ public:
     __int128 reconstructSigned(const std::uint64_t first_residue,
                                const std::uint64_t second_residue) const
     {
+        const std::uint64_t first_mod_second =
+            first_ < second_ ? first_residue
+            : first_ - second_ < second_
+                ? (first_residue >= second_ ? first_residue - second_
+                                            : first_residue)
+                : first_residue % second_;
         const std::uint64_t delta =
-            subtract(second_residue, first_residue % second_, second_);
+            subtract(second_residue, first_mod_second, second_);
         const std::uint64_t quotient =
             multiply(delta, first_inverse_mod_second_, second_);
         const unsigned __int128 value =
@@ -421,6 +482,64 @@ private:
     std::uint64_t second_;
     unsigned __int128 product_;
     std::uint64_t first_inverse_mod_second_;
+};
+
+// Reconstruct values that are only slightly wider than the first two-prime
+// product without materializing the roughly 186-bit three-prime product.  A
+// caller-proved |value| < 2^126 can differ from the centered two-prime lift by
+// at most four multiples of q0*q1; rejecting a larger quotient keeps every
+// intermediate within signed __int128.
+class ThreePrimeCRT {
+public:
+    ThreePrimeCRT(const PrimeModulus first, const PrimeModulus second,
+                  const PrimeModulus third)
+        : first_two_(first, second),
+          third_(third.value),
+          first_two_product_(first_two_.modulusProduct()),
+          product_inverse_mod_third_(invert(
+              static_cast<std::uint64_t>(first_two_product_ % third_), third_))
+    {
+    }
+
+    __int128 reconstructSignedBounded(const std::uint64_t first_residue,
+                                      const std::uint64_t second_residue,
+                                      const std::uint64_t third_residue) const
+    {
+        const __int128 lower =
+            first_two_.reconstructSigned(first_residue, second_residue);
+        const std::uint64_t lower_residue = signedResidue(lower, third_);
+        const std::uint64_t delta =
+            subtract(third_residue, lower_residue, third_);
+        const std::uint64_t quotient_residue =
+            multiply(delta, product_inverse_mod_third_, third_);
+        const __int128 quotient =
+            quotient_residue <= third_ / 2
+                ? static_cast<__int128>(quotient_residue)
+                : -static_cast<__int128>(third_ - quotient_residue);
+        if (quotient < -4 || quotient > 4)
+            throw std::overflow_error(
+                "three-prime CRT value exceeds the signed 126-bit bound");
+        return lower + static_cast<__int128>(first_two_product_) * quotient;
+    }
+
+private:
+    static std::uint64_t signedResidue(const __int128 value,
+                                       const std::uint64_t modulus)
+    {
+        if (value >= 0)
+            return static_cast<std::uint64_t>(
+                static_cast<unsigned __int128>(value) % modulus);
+        const unsigned __int128 magnitude =
+            static_cast<unsigned __int128>(-(value + 1)) + 1;
+        const std::uint64_t residue =
+            static_cast<std::uint64_t>(magnitude % modulus);
+        return residue == 0 ? 0 : modulus - residue;
+    }
+
+    TwoPrimeCRT first_two_;
+    std::uint64_t third_;
+    unsigned __int128 first_two_product_;
+    std::uint64_t product_inverse_mod_third_;
 };
 
 inline __int128 centeredResidue(const std::uint64_t residue,

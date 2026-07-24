@@ -21,6 +21,30 @@ std::uint64_t signedResidue(const __int128 value, const std::uint64_t modulus)
     return residue == 0 ? 0 : modulus - residue;
 }
 
+bool checkMultiply(const PrimeModulus prime)
+{
+    const auto reference = [&](const std::uint64_t lhs,
+                               const std::uint64_t rhs) {
+        return static_cast<std::uint64_t>(static_cast<unsigned __int128>(lhs) *
+                                          rhs % prime.value);
+    };
+    const std::array<std::uint64_t, 5> edges{0, 1, prime.value / 2,
+                                             prime.value - 2, prime.value - 1};
+    for (const auto lhs : edges)
+        for (const auto rhs : edges)
+            if (multiply(lhs, rhs, prime.value) != reference(lhs, rhs))
+                return false;
+
+    std::mt19937_64 rng(0x4d554c5449504c59ULL ^ prime.value);
+    for (std::size_t sample = 0; sample < 100000; sample++) {
+        const std::uint64_t lhs = rng() % prime.value;
+        const std::uint64_t rhs = rng() % prime.value;
+        if (multiply(lhs, rhs, prime.value) != reference(lhs, rhs))
+            return false;
+    }
+    return true;
+}
+
 bool checkRadix2(const PrimeModulus prime)
 {
     constexpr std::size_t size = 1024;
@@ -140,6 +164,45 @@ bool checkCRT()
                                   signedResidue(value, wide_primes[1].value)) !=
             value)
             return false;
+
+    std::mt19937_64 rng(0x43525452414e444fULL);
+    for (std::size_t sample = 0; sample < 100000; sample++) {
+        const std::uint64_t first = rng() % wide_primes[0].value;
+        const std::uint64_t second = rng() % wide_primes[1].value;
+        const __int128 reconstructed = crt.reconstructSigned(first, second);
+        if (signedResidue(reconstructed, wide_primes[0].value) != first ||
+            signedResidue(reconstructed, wide_primes[1].value) != second)
+            return false;
+    }
+
+    const TwoPrimeCRT generic({17, 3}, {5, 2});
+    const TwoPrimeCRT ascending({5, 2}, {17, 3});
+    for (__int128 value = -42; value <= 42; value++) {
+        const std::uint64_t mod17 = signedResidue(value, 17);
+        const std::uint64_t mod5 = signedResidue(value, 5);
+        if (generic.reconstructSigned(mod17, mod5) != value ||
+            ascending.reconstructSigned(mod5, mod17) != value)
+            return false;
+    }
+    return true;
+}
+
+bool checkThreePrimeCRT()
+{
+    const ThreePrimeCRT crt(wide_primes[0], wide_primes[1], wide_primes[2]);
+    const std::array<__int128, 5> values{
+        0,
+        123456789,
+        -987654321,
+        (static_cast<__int128>(1) << 125) + 7654321,
+        -((static_cast<__int128>(1) << 125) + 1234567),
+    };
+    for (const __int128 value : values)
+        if (crt.reconstructSignedBounded(
+                signedResidue(value, wide_primes[0].value),
+                signedResidue(value, wide_primes[1].value),
+                signedResidue(value, wide_primes[2].value)) != value)
+            return false;
     return true;
 }
 
@@ -148,14 +211,15 @@ bool checkCRT()
 int main()
 {
     for (const auto prime : TFHEpp::modular_ntt::wide_primes) {
-        if (!checkRadix2(prime) || !checkNegacyclic(prime) ||
-            !checkRader(prime) || !checkCyclotomic(prime)) {
+        if (!checkMultiply(prime) || !checkRadix2(prime) ||
+            !checkNegacyclic(prime) || !checkRader(prime) ||
+            !checkCyclotomic(prime)) {
             std::cerr << "modular NTT regression failed for " << prime.value
                       << std::endl;
             return 1;
         }
     }
-    if (!checkCRT()) {
+    if (!checkCRT() || !checkThreePrimeCRT()) {
         std::cerr << "CRT regression failed" << std::endl;
         return 1;
     }

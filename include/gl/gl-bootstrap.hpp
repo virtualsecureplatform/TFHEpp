@@ -111,6 +111,8 @@ struct GLBasePlaintext;
 template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
 struct GLBaseCiphertext;
 template <class GLP>
+struct GLBaseHadamardWorkspace;
+template <class GLP>
 class GLBaseSlotTable;
 template <class Schedule>
 struct GLSHIPBootstrapKey;
@@ -194,6 +196,13 @@ inline void GLPlaintextMatrixMultiplyRaw(
     const GLCiphertext<GLP, LogQ, InputLogDelta> &input,
     const GLPlaintext<GLP, LogQ, PlainLogDelta> &plaintext);
 
+template <class Schedule>
+inline void GLXTransformMatrixMultiplyRaw(
+    GLRawProductCiphertext<typename Schedule::Parameter, Schedule::input_log_q,
+                           Schedule::input_log_delta,
+                           Schedule::x_transform_log_scale> &result,
+    const typename Schedule::InputCiphertext &input);
+
 template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
           std::uint32_t PlainLogDelta>
 inline void GLPlaintextHadamardMultiplyRaw(
@@ -268,12 +277,27 @@ inline void buildBaseFactor(
     std::uint32_t channel);
 
 template <class Schedule>
+struct MaskedColumnNTTWorkspace;
+
+template <class Schedule>
 inline void maskedColumn(
     GLBaseCiphertext<typename Schedule::Parameter,
                      Schedule::half_bootstrap_log_q, Schedule::tree_log_delta>
         &result,
     const GLBasePolynomial<typename Schedule::Parameter> &mask,
-    std::uint32_t channel, const GLSHIPMaskedColumnKey<Schedule> &key);
+    std::uint32_t channel, const GLSHIPMaskedColumnKey<Schedule> &key,
+    MaskedColumnNTTWorkspace<Schedule> *workspace = nullptr);
+
+template <class Schedule>
+inline void warmMaskedColumnNTTCache(
+    const GLSHIPMaskedColumnKey<Schedule> &key);
+
+template <class Schedule>
+inline void releaseMaskedColumnNTTCache(
+    const GLSHIPMaskedColumnKey<Schedule> &key);
+
+template <class Schedule>
+struct HMuxNTTWorkspace;
 
 template <class Schedule>
 inline void hmux(GLBaseCiphertext<typename Schedule::Parameter,
@@ -282,11 +306,20 @@ inline void hmux(GLBaseCiphertext<typename Schedule::Parameter,
                  const GLBaseCiphertext<typename Schedule::Parameter,
                                         Schedule::half_bootstrap_log_q,
                                         Schedule::tree_log_delta> &input,
-                 const GLSHIPHMuxKey<Schedule> &key);
+                 const GLSHIPHMuxKey<Schedule> &key,
+                 HMuxNTTWorkspace<Schedule> *workspace = nullptr);
 
 template <std::size_t Level, class Schedule>
 inline void productTreeLevel(
     GLBaseCiphertextData<typename Schedule::Parameter> &result,
+    std::vector<GLBaseCiphertextData<typename Schedule::Parameter>> nodes,
+    const GLSHIPProductRelinKeyChain<Schedule> &keys);
+
+template <std::size_t Level, class Schedule>
+inline void insertProductTreeBatch(
+    std::array<std::unique_ptr<std::vector<
+                   GLBaseCiphertextData<typename Schedule::Parameter>>>,
+               Schedule::tree_depth + 1> &levels,
     std::vector<GLBaseCiphertextData<typename Schedule::Parameter>> nodes,
     const GLSHIPProductRelinKeyChain<Schedule> &keys);
 
@@ -335,53 +368,141 @@ inline void GLSHIPHalfBootstrap(
     const GLSHIPBootstrapKey<Schedule> &bootstrap_key)
 {
     using GLP = typename Schedule::Parameter;
+    using HMuxSwitch =
+        GLDDSmallKeySwitchKey<GLP, Schedule::half_bootstrap_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit>;
+
+    // These few shared base-ring switches are also first reached from inside
+    // worker teams, so warm them while their own transform loops can use the
+    // complete OpenMP team.
+    const auto prepare_shared_switch =
+        []<class SwitchKey>(const SwitchKey &switch_key) {
+            if constexpr (gl_detail::smallKeySwitchAccumulationNTTPrimeCount<
+                              GLP, SwitchKey> != 0)
+                gl_detail::prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
+                    switch_key);
+        };
+    std::apply(
+        [&](const auto &...switch_key) {
+            (prepare_shared_switch(switch_key), ...);
+        },
+        bootstrap_key.product_relin_keys.keys);
+    prepare_shared_switch(bootstrap_key.output_conjugation_key);
+
     typename Schedule::CoefficientCiphertext sparse_ciphertext;
     gl_ship_detail::denseToSparse<Schedule>(sparse_ciphertext,
                                             coefficient_ciphertext,
                                             bootstrap_key.dense_to_sparse_key);
 
+    // Traverse sparse terms outside the Y/channel loop.  This reuses one
+    // term's MaskedColumn and HMux spectra across every slice and releases
+    // them before preparing the next term.  An online balanced tree retains
+    // the exact factor pairing of the original per-slice product tree while
+    // bounding transient cache memory independently of the sparse weight.
+    constexpr std::size_t slice_count =
+        static_cast<std::size_t>(GLP::matrix_dimension) * 2;
+    using ProductNode = GLBaseCiphertextData<GLP>;
+    using ProductBatch = std::vector<ProductNode>;
+    std::array<std::unique_ptr<ProductBatch>, Schedule::tree_depth + 1>
+        product_levels{};
+
+    ProductBatch base_factors(slice_count);
+#pragma omp parallel for schedule(static)
+    for (std::size_t slice = 0; slice < slice_count; slice++) {
+        const std::uint32_t y = static_cast<std::uint32_t>(slice / 2);
+        const std::uint32_t channel = static_cast<std::uint32_t>(slice & 1U);
+        GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                         Schedule::tree_log_delta>
+            base_factor;
+        gl_ship_detail::buildBaseFactor<Schedule>(
+            base_factor, sparse_ciphertext[0][y], channel);
+        base_factors[slice] = std::move(base_factor.ct);
+    }
+    gl_ship_detail::insertProductTreeBatch<0, Schedule>(
+        product_levels, std::move(base_factors),
+        bootstrap_key.product_relin_keys);
+
+    for (std::size_t e = 0; e < Schedule::sparse_hamming_weight; e++) {
+        const auto &masked_key = bootstrap_key.masked_column_keys[e];
+        const auto &hmux_key = bootstrap_key.hmux_keys[e];
+        gl_ship_detail::warmMaskedColumnNTTCache<Schedule>(masked_key);
+
+        std::vector<const HMuxSwitch *> hmux_switches;
+        if constexpr (gl_detail::smallKeySwitchAccumulationNTTPrimeCount<
+                          GLP, HMuxSwitch> != 0) {
+            hmux_switches.reserve(
+                static_cast<std::size_t>(Schedule::hmux_stages) *
+                Schedule::hmux_radix * 2);
+            for (const auto &stage : hmux_key.stages)
+                for (const auto &branch : stage.branches) {
+                    hmux_switches.push_back(&branch.body_key);
+                    hmux_switches.push_back(&branch.mask_key);
+                }
+#pragma omp parallel for schedule(dynamic, 1)
+            for (std::size_t i = 0; i < hmux_switches.size(); i++)
+                gl_detail::prepareSmallKeySwitchNTTCache<GLP, HMuxSwitch>(
+                    *hmux_switches[i]);
+        }
+
+        ProductBatch sparse_factors(slice_count);
+#pragma omp parallel
+        {
+            gl_ship_detail::MaskedColumnNTTWorkspace<Schedule> masked_workspace;
+            gl_ship_detail::HMuxNTTWorkspace<Schedule> hmux_workspace;
+            auto selected = std::make_unique<
+                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                                 Schedule::tree_log_delta>>();
+            auto displaced = std::make_unique<
+                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                                 Schedule::tree_log_delta>>();
+#pragma omp for schedule(dynamic)
+            for (std::size_t slice = 0; slice < slice_count; slice++) {
+                const std::uint32_t y = static_cast<std::uint32_t>(slice / 2);
+                const std::uint32_t channel =
+                    static_cast<std::uint32_t>(slice & 1U);
+                gl_ship_detail::maskedColumn<Schedule>(
+                    *selected, sparse_ciphertext[1][y], channel, masked_key,
+                    &masked_workspace);
+                gl_ship_detail::hmux<Schedule>(*displaced, *selected, hmux_key,
+                                               &hmux_workspace);
+                sparse_factors[slice] = std::move(displaced->ct);
+            }
+        }
+
+        gl_ship_detail::releaseMaskedColumnNTTCache<Schedule>(masked_key);
+        if constexpr (gl_detail::smallKeySwitchAccumulationNTTPrimeCount<
+                          GLP, HMuxSwitch> != 0) {
+#pragma omp parallel for schedule(static)
+            for (std::size_t i = 0; i < hmux_switches.size(); i++)
+                gl_detail::releaseSmallKeySwitchNTTCache(*hmux_switches[i]);
+        }
+
+        gl_ship_detail::insertProductTreeBatch<0, Schedule>(
+            product_levels, std::move(sparse_factors),
+            bootstrap_key.product_relin_keys);
+    }
+
+    for (std::size_t level = 0; level < Schedule::tree_depth; level++)
+        if (product_levels[level])
+            throw std::logic_error("incomplete GL SHIP online product tree");
+    if (!product_levels[Schedule::tree_depth] ||
+        product_levels[Schedule::tree_depth]->size() != slice_count)
+        throw std::logic_error("invalid GL SHIP online product tree");
+    ProductBatch products = std::move(*product_levels[Schedule::tree_depth]);
+    product_levels[Schedule::tree_depth].reset();
+
+#pragma omp parallel for schedule(dynamic)
     for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
-        const auto &body = sparse_ciphertext[0][y];
-        const auto &mask = sparse_ciphertext[1][y];
         std::array<GLBaseCiphertext<GLP, Schedule::output_log_q,
                                     Schedule::tree_log_delta>,
                    2>
             channels{};
-
         for (std::uint32_t channel = 0; channel < 2; channel++) {
-            std::vector<GLBaseCiphertextData<GLP>> factors;
-            factors.reserve(Schedule::factor_count);
-
-            GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
-                             Schedule::tree_log_delta>
-                base_factor;
-            gl_ship_detail::buildBaseFactor<Schedule>(base_factor, body,
-                                                      channel);
-            factors.push_back(std::move(base_factor.ct));
-
-            for (std::size_t e = 0; e < Schedule::sparse_hamming_weight; e++) {
-                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
-                                 Schedule::tree_log_delta>
-                    selected;
-                gl_ship_detail::maskedColumn<Schedule>(
-                    selected, mask, channel,
-                    bootstrap_key.masked_column_keys[e]);
-                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
-                                 Schedule::tree_log_delta>
-                    displaced;
-                gl_ship_detail::hmux<Schedule>(displaced, selected,
-                                               bootstrap_key.hmux_keys[e]);
-                factors.push_back(std::move(displaced.ct));
-            }
-
-            GLBaseCiphertextData<GLP> product_data{};
-            gl_ship_detail::productTreeLevel<0, Schedule>(
-                product_data, std::move(factors),
-                bootstrap_key.product_relin_keys);
+            const std::size_t slice = static_cast<std::size_t>(2) * y + channel;
             GLBaseCiphertext<GLP, Schedule::output_log_q,
                              Schedule::tree_log_delta>
                 product;
-            product.ct = std::move(product_data);
+            product.ct = std::move(products[slice]);
             GLBaseCiphertext<GLP, Schedule::output_log_q,
                              Schedule::tree_log_delta>
                 conjugate;
@@ -684,18 +805,266 @@ inline void buildCandidatePlaintext(
 }
 
 template <class Schedule>
+inline std::shared_ptr<
+    typename GLSHIPMaskedColumnKey<Schedule>::TransientNTTCache>
+prepareMaskedColumnNTTCache(const GLSHIPMaskedColumnKey<Schedule> &key)
+{
+    using GLP = typename Schedule::Parameter;
+    if constexpr (!gl_detail::supportsWidePrimeNTT<GLP>) {
+        return {};
+    }
+    else {
+        if (key.candidates.size() != key.encrypted_masks.size() ||
+            key.candidates.empty())
+            throw std::invalid_argument("malformed GL SHIP masked-column key");
+        constexpr std::uint32_t key_log_q =
+            Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q;
+        constexpr std::uint32_t plaintext_bits = Schedule::tree_log_delta + 2;
+        constexpr std::size_t maximum_terms =
+            2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+        constexpr std::uint32_t convolution_bits =
+            gl_detail::ceilLog2(maximum_terms);
+        const auto cache = key.transient_ntt_cache;
+        std::call_once(cache->initialize_once, [&] {
+            const std::uint32_t candidate_bits =
+                gl_detail::ceilLog2(key.candidates.size());
+            if (plaintext_bits + convolution_bits + candidate_bits >= 122)
+                throw std::overflow_error(
+                    "GL masked-column exact NTT bound is exhausted");
+            cache->chunk_bits =
+                122 - plaintext_bits - convolution_bits - candidate_bits;
+            cache->chunk_count =
+                (key_log_q + cache->chunk_bits - 1) / cache->chunk_bits;
+
+            constexpr std::size_t coefficient_count =
+                gl_detail::GLBaseNTTPlan<GLP>::coefficient_count;
+            const std::size_t row_count =
+                key.candidates.size() * 2 * cache->chunk_count;
+            for (auto &spectra : cache->spectra)
+                spectra.resize(row_count * coefficient_count);
+            using Plan = gl_detail::GLBaseNTTPlan<GLP>;
+            const std::array<const Plan *, 2> plans{
+                &gl_detail::baseNTTPlan<GLP, 0>(),
+                &gl_detail::baseNTTPlan<GLP, 1>()};
+
+#pragma omp parallel
+            {
+                auto chunk = std::make_unique<GLBasePolynomial<GLP>>();
+#pragma omp for collapse(2) schedule(dynamic, 1)
+                for (std::size_t prime = 0; prime < 2; prime++) {
+                    for (std::size_t row = 0; row < row_count; row++) {
+                        const std::size_t candidate =
+                            row / (2 * cache->chunk_count);
+                        const std::size_t remainder =
+                            row % (2 * cache->chunk_count);
+                        const std::size_t component =
+                            remainder / cache->chunk_count;
+                        const std::uint32_t chunk_index =
+                            static_cast<std::uint32_t>(remainder %
+                                                       cache->chunk_count);
+                        const std::uint32_t shift =
+                            chunk_index * cache->chunk_bits;
+                        for (std::size_t i = 0; i < GLP::baseP::n; i++)
+                            (*chunk)[i] = gl_detail::unsignedChunk(
+                                key.encrypted_masks[candidate][component][i],
+                                shift, cache->chunk_bits);
+                        plans[prime]->forward(std::span<std::uint64_t>(
+                                                  cache->spectra[prime].data() +
+                                                      row * coefficient_count,
+                                                  coefficient_count),
+                                              *chunk);
+                    }
+                }
+            }
+        });
+        return cache;
+    }
+}
+
+template <class Schedule>
+inline void warmMaskedColumnNTTCache(const GLSHIPMaskedColumnKey<Schedule> &key)
+{
+    (void)prepareMaskedColumnNTTCache<Schedule>(key);
+}
+
+template <class Schedule>
+inline void releaseMaskedColumnNTTCache(
+    const GLSHIPMaskedColumnKey<Schedule> &key)
+{
+    using Cache = typename GLSHIPMaskedColumnKey<Schedule>::TransientNTTCache;
+    key.transient_ntt_cache = std::make_shared<Cache>();
+}
+
+template <class Schedule>
+struct MaskedColumnNTTWorkspace {
+    using GLP = typename Schedule::Parameter;
+    static constexpr std::uint32_t key_log_q =
+        Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q;
+
+    std::array<std::vector<std::uint64_t>, 2> candidate_spectra{};
+    std::array<std::vector<std::uint64_t>, 2> residues{};
+    std::array<std::vector<std::uint64_t>, 2> accumulators{};
+    std::vector<unsigned __int128> wide{};
+    std::unique_ptr<GLBasePolynomial<GLP>> signed_plaintext{};
+    std::unique_ptr<GLBasePlaintext<GLP, key_log_q, Schedule::tree_log_delta>>
+        candidate{};
+    std::unique_ptr<GLBaseCiphertextData<GLP>> accumulated{};
+};
+
+template <class Schedule>
+inline bool maskedColumnNTT(
+    GLBaseCiphertext<typename Schedule::Parameter,
+                     Schedule::half_bootstrap_log_q, Schedule::tree_log_delta>
+        &result,
+    const GLBasePolynomial<typename Schedule::Parameter> &mask,
+    const std::uint32_t channel, const GLSHIPMaskedColumnKey<Schedule> &key,
+    MaskedColumnNTTWorkspace<Schedule> *provided_workspace = nullptr)
+{
+    using GLP = typename Schedule::Parameter;
+    using P = typename GLP::baseP;
+    using T = typename GLP::T;
+    if constexpr (!gl_detail::supportsWidePrimeNTT<GLP>) {
+        return false;
+    }
+    else {
+        constexpr std::uint32_t key_log_q =
+            Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q;
+        constexpr std::uint32_t plaintext_bits = Schedule::tree_log_delta + 2;
+        constexpr std::size_t coefficient_count =
+            gl_detail::GLBaseNTTPlan<GLP>::coefficient_count;
+        const auto cache = prepareMaskedColumnNTTCache<Schedule>(key);
+        const std::size_t candidate_count = key.candidates.size();
+        MaskedColumnNTTWorkspace<Schedule> local_workspace;
+        auto &workspace = provided_workspace == nullptr ? local_workspace
+                                                        : *provided_workspace;
+        auto &candidate_spectra = workspace.candidate_spectra;
+        for (auto &spectra : candidate_spectra)
+            spectra.resize(candidate_count * coefficient_count);
+        const std::array<const gl_detail::GLBaseNTTPlan<GLP> *, 2> plans{
+            &gl_detail::baseNTTPlan<GLP, 0>(),
+            &gl_detail::baseNTTPlan<GLP, 1>()};
+
+        if (!workspace.signed_plaintext)
+            workspace.signed_plaintext =
+                std::make_unique<GLBasePolynomial<GLP>>();
+        if (!workspace.candidate)
+            workspace.candidate = std::make_unique<
+                GLBasePlaintext<GLP, key_log_q, Schedule::tree_log_delta>>();
+        auto &signed_plaintext = *workspace.signed_plaintext;
+        auto &candidate = *workspace.candidate;
+        for (std::size_t candidate_index = 0; candidate_index < candidate_count;
+             candidate_index++) {
+            buildCandidatePlaintext<Schedule>(
+                candidate, mask, key.candidates[candidate_index], channel);
+            for (std::size_t i = 0; i < P::n; i++) {
+                const auto [negative, magnitude] =
+                    ckks_detail::smallSignedMagnitude<P, key_log_q>(
+                        candidate.poly[i]);
+                if (magnitude >= (std::uint64_t{1} << plaintext_bits))
+                    throw std::overflow_error(
+                        "GL masked-column plaintext exceeds its exact NTT "
+                        "bound");
+                const std::int64_t value =
+                    negative ? -static_cast<std::int64_t>(magnitude)
+                             : static_cast<std::int64_t>(magnitude);
+                signed_plaintext[i] = gl_detail::signedI128ToTorus<T>(value);
+            }
+            for (std::size_t prime = 0; prime < 2; prime++)
+                plans[prime]->forward(
+                    std::span<std::uint64_t>(
+                        candidate_spectra[prime].data() +
+                            candidate_index * coefficient_count,
+                        coefficient_count),
+                    signed_plaintext);
+        }
+
+        if (!workspace.accumulated)
+            workspace.accumulated =
+                std::make_unique<GLBaseCiphertextData<GLP>>();
+        auto &accumulated = *workspace.accumulated;
+        gl_detail::clear<GLP>(accumulated[0]);
+        gl_detail::clear<GLP>(accumulated[1]);
+        auto &residues = workspace.residues;
+        auto &accumulators = workspace.accumulators;
+        for (auto &values : residues) values.resize(coefficient_count);
+        for (auto &values : accumulators) values.resize(coefficient_count);
+        auto &wide = workspace.wide;
+        wide.resize(coefficient_count);
+        static const modular_ntt::TwoPrimeCRT crt(modular_ntt::wide_primes[0],
+                                                  modular_ntt::wide_primes[1]);
+        for (std::size_t component = 0; component < 2; component++) {
+            for (std::uint32_t chunk = 0; chunk < cache->chunk_count; chunk++) {
+                for (std::size_t prime = 0; prime < 2; prime++) {
+                    auto &accumulator = accumulators[prime];
+                    std::fill(accumulator.begin(), accumulator.end(), 0);
+                    std::fill(wide.begin(), wide.end(), 0);
+                    std::size_t batch_count = 0;
+                    const std::uint64_t modulus = plans[prime]->modulus();
+                    const auto flush = [&] {
+                        for (std::size_t i = 0; i < coefficient_count; i++) {
+                            accumulator[i] = modular_ntt::add(
+                                accumulator[i],
+                                modular_ntt::reduceWide(wide[i], modulus),
+                                modulus);
+                            wide[i] = 0;
+                        }
+                        batch_count = 0;
+                    };
+                    for (std::size_t candidate = 0; candidate < candidate_count;
+                         candidate++) {
+                        const std::size_t key_row =
+                            (candidate * 2 + component) * cache->chunk_count +
+                            chunk;
+                        const std::uint64_t *key_spectrum =
+                            cache->spectra[prime].data() +
+                            key_row * coefficient_count;
+                        const std::uint64_t *plain_spectrum =
+                            candidate_spectra[prime].data() +
+                            candidate * coefficient_count;
+                        for (std::size_t i = 0; i < coefficient_count; i++)
+                            wide[i] += static_cast<unsigned __int128>(
+                                           key_spectrum[i]) *
+                                       plain_spectrum[i];
+                        batch_count++;
+                        if (batch_count == 16) flush();
+                    }
+                    if (batch_count != 0) flush();
+                    plans[prime]->inverse(
+                        std::span<std::uint64_t>(residues[prime]),
+                        std::span<std::uint64_t>(accumulator));
+                }
+                const std::uint32_t shift = chunk * cache->chunk_bits;
+                for (std::size_t i = 0; i < coefficient_count; i++)
+                    accumulated[component][i] +=
+                        gl_detail::signedI128ToTorus<T>(crt.reconstructSigned(
+                            residues[0][i], residues[1][i]))
+                        << shift;
+            }
+        }
+        reduce<GLP, key_log_q>(accumulated);
+        rescaleBase<GLP, key_log_q, GLP::auxiliary_log_q>(result.ct,
+                                                          accumulated);
+        return true;
+    }
+}
+
+template <class Schedule>
 inline void maskedColumn(
     GLBaseCiphertext<typename Schedule::Parameter,
                      Schedule::half_bootstrap_log_q, Schedule::tree_log_delta>
         &result,
     const GLBasePolynomial<typename Schedule::Parameter> &mask,
-    const std::uint32_t channel, const GLSHIPMaskedColumnKey<Schedule> &key)
+    const std::uint32_t channel, const GLSHIPMaskedColumnKey<Schedule> &key,
+    MaskedColumnNTTWorkspace<Schedule> *workspace)
 {
     using GLP = typename Schedule::Parameter;
     constexpr std::uint32_t key_log_q =
         Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q;
     if (key.candidates.size() != key.encrypted_masks.size())
         throw std::invalid_argument("malformed GL SHIP masked-column key");
+
+    if (maskedColumnNTT<Schedule>(result, mask, channel, key, workspace))
+        return;
 
     GLBaseCiphertextData<GLP> accumulated{};
     for (std::size_t i = 0; i < key.candidates.size(); i++) {
@@ -714,49 +1083,119 @@ inline void maskedColumn(
 }
 
 template <class Schedule>
+struct HMuxNTTWorkspace {
+    using GLP = typename Schedule::Parameter;
+    using SwitchKey =
+        GLDDSmallKeySwitchKey<GLP, Schedule::half_bootstrap_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit>;
+    using Ciphertext = GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                                        Schedule::tree_log_delta>;
+
+    gl_detail::SmallKeySwitchSumNTTWorkspace<GLP, SwitchKey,
+                                             2 * Schedule::hmux_radix>
+        switch_workspace{};
+    std::unique_ptr<Ciphertext> current{};
+    std::unique_ptr<Ciphertext> selected{};
+    std::unique_ptr<std::array<GLBaseCiphertextData<GLP>, Schedule::hmux_radix>>
+        rotated{};
+    std::unique_ptr<GLBaseCiphertextData<GLP>> accumulated{};
+};
+
+template <class Schedule>
 inline void hmux(GLBaseCiphertext<typename Schedule::Parameter,
                                   Schedule::half_bootstrap_log_q,
                                   Schedule::tree_log_delta> &result,
                  const GLBaseCiphertext<typename Schedule::Parameter,
                                         Schedule::half_bootstrap_log_q,
                                         Schedule::tree_log_delta> &input,
-                 const GLSHIPHMuxKey<Schedule> &key)
+                 const GLSHIPHMuxKey<Schedule> &key,
+                 HMuxNTTWorkspace<Schedule> *workspace)
 {
     using GLP = typename Schedule::Parameter;
     constexpr std::uint32_t key_log_q =
         Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q;
-    auto current = input;
+    using SwitchKey =
+        GLDDSmallKeySwitchKey<GLP, Schedule::half_bootstrap_log_q,
+                              Schedule::primary_bit, Schedule::bbar_bit>;
+    HMuxNTTWorkspace<Schedule> local_workspace;
+    auto &scratch = workspace == nullptr ? local_workspace : *workspace;
+    if (!scratch.current)
+        scratch.current =
+            std::make_unique<typename HMuxNTTWorkspace<Schedule>::Ciphertext>();
+    if (!scratch.selected)
+        scratch.selected =
+            std::make_unique<typename HMuxNTTWorkspace<Schedule>::Ciphertext>();
+    if (!scratch.rotated)
+        scratch.rotated = std::make_unique<
+            std::array<GLBaseCiphertextData<GLP>, Schedule::hmux_radix>>();
+    if (!scratch.accumulated)
+        scratch.accumulated = std::make_unique<GLBaseCiphertextData<GLP>>();
+    auto &current = *scratch.current;
+    auto &selected = *scratch.selected;
+    auto &rotated = *scratch.rotated;
+    auto &accumulated = *scratch.accumulated;
+    current = input;
+
+    constexpr std::uint32_t prime_count =
+        gl_detail::smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    constexpr std::size_t maximum_terms =
+        2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+    constexpr std::uint32_t required_bits =
+        SwitchKey::primary_bit + SwitchKey::bbar_bit +
+        gl_detail::ceilLog2(maximum_terms) +
+        gl_detail::ceilLog2(SwitchKey::primary_rows) +
+        gl_detail::ceilLog2(2 * Schedule::hmux_radix);
+    constexpr bool fused_ntt_supported =
+        (prime_count == 1 && required_bits <= 60) ||
+        (prime_count == 2 && required_bits <= 122);
     for (const auto &stage : key.stages) {
         if (stage.branches.size() != Schedule::hmux_radix)
             throw std::invalid_argument("malformed GL SHIP HMux key");
-        GLBaseCiphertextData<GLP> accumulated{};
+        std::array<const GLBasePolynomial<GLP> *, 2 * Schedule::hmux_radix>
+            switch_inputs{};
+        std::array<const SwitchKey *, 2 * Schedule::hmux_radix> switch_keys{};
         for (std::uint32_t digit = 0; digit < Schedule::hmux_radix; digit++) {
             const std::uint32_t desired_displacement =
                 (digit * stage.step) % GLP::matrix_dimension;
             const std::uint32_t automorphism_amount =
                 (GLP::matrix_dimension - desired_displacement) %
                 GLP::matrix_dimension;
-            GLBaseCiphertextData<GLP> rotated{};
-            rotateX<GLP>(rotated, current.ct, automorphism_amount);
+            rotateX<GLP>(rotated[digit], current.ct, automorphism_amount);
+            switch_inputs[2 * digit] = &rotated[digit][0];
+            switch_inputs[2 * digit + 1] = &rotated[digit][1];
+            switch_keys[2 * digit] = &stage.branches[digit].body_key;
+            switch_keys[2 * digit + 1] = &stage.branches[digit].mask_key;
+        }
 
-            GLBaseCiphertextData<GLP> body_term{};
-            GLBaseCiphertextData<GLP> mask_term{};
-            GLDDSmallKeySwitchBaseRaw(body_term, rotated[0],
-                                      stage.branches[digit].body_key);
-            GLDDSmallKeySwitchBaseRaw(mask_term, rotated[1],
-                                      stage.branches[digit].mask_key);
-            addInPlace<GLP>(body_term, mask_term);
-            addInPlace<GLP>(accumulated, body_term);
+        if constexpr (fused_ntt_supported) {
+            const bool fused =
+                gl_detail::accumulateSmallKeySwitchSumNTT<GLP, SwitchKey>(
+                    accumulated, switch_inputs, switch_keys,
+                    &scratch.switch_workspace);
+            if (!fused)
+                throw std::logic_error("GL SHIP HMux lost its exact NTT path");
+        }
+        else {
+            gl_detail::clear<GLP>(accumulated[0]);
+            gl_detail::clear<GLP>(accumulated[1]);
+            for (std::uint32_t digit = 0; digit < Schedule::hmux_radix;
+                 digit++) {
+                GLBaseCiphertextData<GLP> body_term{};
+                GLBaseCiphertextData<GLP> mask_term{};
+                GLDDSmallKeySwitchBaseRaw(body_term, rotated[digit][0],
+                                          stage.branches[digit].body_key);
+                GLDDSmallKeySwitchBaseRaw(mask_term, rotated[digit][1],
+                                          stage.branches[digit].mask_key);
+                addInPlace<GLP>(body_term, mask_term);
+                addInPlace<GLP>(accumulated, body_term);
+            }
         }
         reduce<GLP, key_log_q>(accumulated);
-        GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
-                         Schedule::tree_log_delta>
-            selected;
         rescaleBase<GLP, key_log_q, GLP::auxiliary_log_q>(selected.ct,
                                                           accumulated);
-        current = std::move(selected);
+        current = selected;
     }
-    result = std::move(current);
+    result = current;
 }
 
 template <std::size_t Level, class Schedule>
@@ -796,6 +1235,69 @@ inline void productTreeLevel(
     }
     else {
         productTreeLevel<Level + 1, Schedule>(result, std::move(next), keys);
+    }
+}
+
+template <std::size_t Level, class Schedule>
+inline void insertProductTreeBatch(
+    std::array<std::unique_ptr<std::vector<
+                   GLBaseCiphertextData<typename Schedule::Parameter>>>,
+               Schedule::tree_depth + 1> &levels,
+    std::vector<GLBaseCiphertextData<typename Schedule::Parameter>> nodes,
+    const GLSHIPProductRelinKeyChain<Schedule> &keys)
+{
+    using GLP = typename Schedule::Parameter;
+    static_assert(Level <= Schedule::tree_depth);
+    if (!levels[Level]) {
+        levels[Level] =
+            std::make_unique<std::vector<GLBaseCiphertextData<GLP>>>(
+                std::move(nodes));
+        return;
+    }
+
+    if constexpr (Level == Schedule::tree_depth) {
+        throw std::logic_error("overflowed GL SHIP online product tree");
+    }
+    else {
+        auto previous = std::move(levels[Level]);
+        if (previous->size() != nodes.size())
+            throw std::invalid_argument(
+                "mismatched GL SHIP product-tree batches");
+
+        constexpr std::uint32_t input_log_q =
+            Schedule::half_bootstrap_log_q -
+            static_cast<std::uint32_t>(Level) * Schedule::tree_log_delta;
+        constexpr std::uint32_t output_log_q =
+            input_log_q - Schedule::tree_log_delta;
+        std::vector<GLBaseCiphertextData<GLP>> products(nodes.size());
+#pragma omp parallel
+        {
+            GLBaseHadamardWorkspace<GLP> arithmetic_workspace;
+            auto lhs = std::make_unique<
+                GLBaseCiphertext<GLP, input_log_q, Schedule::tree_log_delta>>();
+            auto rhs = std::make_unique<
+                GLBaseCiphertext<GLP, input_log_q, Schedule::tree_log_delta>>();
+            auto product =
+                std::make_unique<GLBaseCiphertext<GLP, output_log_q,
+                                                  Schedule::tree_log_delta>>();
+#pragma omp for schedule(static)
+            for (std::size_t i = 0; i < nodes.size(); i++) {
+                lhs->ct = std::move((*previous)[i]);
+                rhs->ct = std::move(nodes[i]);
+                GLBaseHadamardMultiply<
+                    GLP, input_log_q, Schedule::tree_log_delta, input_log_q,
+                    Schedule::tree_log_delta, Schedule::tree_log_delta,
+                    Schedule::primary_bit, Schedule::bbar_bit>(
+                    *product, *lhs, *rhs, std::get<Level>(keys.keys),
+                    &arithmetic_workspace);
+                products[i] = std::move(product->ct);
+            }
+        }
+
+        previous.reset();
+        std::vector<GLBaseCiphertextData<GLP>>{}.swap(nodes);
+        insertProductTreeBatch<Level + 1, Schedule>(levels, std::move(products),
+                                                    keys);
     }
 }
 
@@ -882,27 +1384,88 @@ inline void buildXTransformPlaintext(
                 Schedule::x_transform_log_scale> &plaintext)
 {
     using GLP = typename Schedule::Parameter;
-    GLMatrixBatch<GLP> values;
-    for (std::uint32_t batch = 0; batch < GLP::phi; batch++) {
-        for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++) {
-            const auto root = gl_detail::xRoot<GLP>(row);
-            for (std::uint32_t column = 0; column < GLP::matrix_dimension;
-                 column++)
-                values(batch, row, column) = static_cast<std::complex<double>>(
-                    std::pow(root, static_cast<int>(column)));
+    using P = typename GLP::baseP;
+    constexpr long double scale =
+        std::ldexp(1.0L, Schedule::x_transform_log_scale) /
+        static_cast<long double>(GLP::matrix_dimension);
+    gl_detail::clear<GLP>(plaintext.poly);
+    // The encoded Vandermonde matrix has the closed coefficient form
+    //   [X^x Y^y W^0] = r_x^(-y) / n.
+    // Constructing it directly avoids materializing a 64 MiB matrix batch and
+    // running a general 2-D encoder every time StC is called.
+    for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++) {
+        const auto inverse_root = std::conj(gl_detail::xRoot<GLP>(row));
+        std::complex<long double> value = 1;
+        for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
+            const auto coefficient = value * scale;
+            plaintext.poly[y][gl_detail::baseIndex<GLP>(0, row, 0)] =
+                ckks_detail::signedLongDoubleToLevel<P, Schedule::input_log_q>(
+                    std::round(coefficient.real()));
+            plaintext.poly[y][gl_detail::baseIndex<GLP>(1, row, 0)] =
+                ckks_detail::signedLongDoubleToLevel<P, Schedule::input_log_q>(
+                    std::round(coefficient.imag()));
+            value *= inverse_root;
         }
     }
-    GLEncode(plaintext, values);
+}
+
+template <class Schedule>
+inline std::vector<gl_detail::TraceSmallComplexMultiplier>
+buildXTransformTraceMultipliers()
+{
+    using GLP = typename Schedule::Parameter;
+    constexpr std::uint32_t n = GLP::matrix_dimension;
+    static_assert(Schedule::x_transform_log_scale < 62);
+    constexpr long double coefficient_scale =
+        std::ldexp(1.0L, Schedule::x_transform_log_scale) /
+        static_cast<long double>(n);
+
+    std::vector<gl_detail::TraceSmallComplexMultiplier> multipliers(
+        static_cast<std::size_t>(n) * n);
+    const auto checked_i64 = [](const __int128 value) {
+        if (value < std::numeric_limits<std::int64_t>::min() ||
+            value > std::numeric_limits<std::int64_t>::max())
+            throw std::overflow_error(
+                "GL X-transform coefficient exceeds int64_t");
+        return static_cast<std::int64_t>(value);
+    };
+
+    for (std::uint32_t output_y = 0; output_y < n; output_y++) {
+        const std::uint32_t x = output_y == 0 ? 0 : n - output_y;
+        const auto inverse_root = std::conj(gl_detail::xRoot<GLP>(x));
+        std::complex<long double> value = 1;
+        for (std::uint32_t z = 0; z < n; z++) {
+            const __int128 real = static_cast<__int128>(std::round(
+                                      (value * coefficient_scale).real())) *
+                                  n;
+            const __int128 imag = static_cast<__int128>(std::round(
+                                      (value * coefficient_scale).imag())) *
+                                  n;
+
+            // traceProduct conjugates the plaintext's I coefficient and,
+            // for X^-x with x != 0, contributes the additional factor -I.
+            const __int128 transformed_real = x == 0 ? real : -imag;
+            const __int128 transformed_imag = x == 0 ? -imag : -real;
+            auto &entry =
+                multipliers[static_cast<std::size_t>(output_y) * n + z];
+            entry.real = checked_i64(transformed_real);
+            entry.imag = checked_i64(transformed_imag);
+            entry.real_plus_imag =
+                checked_i64(transformed_real + transformed_imag);
+            value *= inverse_root;
+        }
+    }
+    return multipliers;
 }
 
 template <class Schedule>
 inline void buildAdjustedWDiagonalPlaintext(
-    GLPlaintext<typename Schedule::Parameter, Schedule::input_log_q,
-                Schedule::w_transform_log_scale> &plaintext,
+    GLBasePlaintext<typename Schedule::Parameter, Schedule::input_log_q,
+                    Schedule::w_transform_log_scale> &plaintext,
     const std::uint32_t t, const std::uint32_t giant_amount)
 {
     using GLP = typename Schedule::Parameter;
-    GLMatrixBatch<GLP> values;
+    GLBaseSlotTable<GLP> values;
     for (std::uint32_t batch = 0; batch < GLP::phi; batch++) {
         const std::uint32_t source_batch =
             (batch + GLP::phi - giant_amount % GLP::phi) % GLP::phi;
@@ -913,12 +1476,9 @@ inline void buildAdjustedWDiagonalPlaintext(
             (static_cast<std::uint64_t>(eta_exponent) * column) %
             GLP::cyclotomic_order));
         for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++)
-            for (std::uint32_t matrix_column = 0;
-                 matrix_column < GLP::matrix_dimension; matrix_column++)
-                values(batch, row, matrix_column) =
-                    static_cast<std::complex<double>>(diagonal);
+            values(batch, row) = static_cast<std::complex<double>>(diagonal);
     }
-    GLEncode(plaintext, values);
+    GLBaseEncode(plaintext, values);
 }
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -929,6 +1489,199 @@ inline void addInPlace(GLCiphertext<GLP, LogQ, LogDelta> &destination,
     gl_detail::addInPlace<GLP>(destination[1], term[1]);
     gl_detail::reduce<GLP, LogQ>(destination[0]);
     gl_detail::reduce<GLP, LogQ>(destination[1]);
+}
+
+template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
+          std::uint32_t PlainLogDelta>
+inline void basePlaintextHadamardMultiplyRaw(
+    GLRawProductCiphertext<GLP, LogQ, InputLogDelta, PlainLogDelta> &result,
+    const GLCiphertext<GLP, LogQ, InputLogDelta> &input,
+    const GLBasePlaintext<GLP, LogQ, PlainLogDelta> &plaintext)
+{
+    // A W diagonal constant in both matrix axes encodes entirely in Y^0.
+    // Multiplication therefore separates into independent base-ring slices;
+    // avoid a full-ring transform and reuse all available cores over slices.
+#pragma omp parallel for collapse(2) schedule(static)
+    for (std::size_t component = 0; component < 2; component++)
+        for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++)
+            gl_detail::baseMultiply<GLP>(result[component][y],
+                                         input[component][y], plaintext.poly);
+    gl_detail::reduce<GLP, LogQ>(result[0]);
+    gl_detail::reduce<GLP, LogQ>(result[1]);
+}
+
+template <class Schedule>
+struct FusedWTransformNTTState {
+    using GLP = typename Schedule::Parameter;
+    static constexpr std::size_t coefficient_count =
+        gl_detail::GLBaseNTTPlan<GLP>::coefficient_count;
+    static constexpr std::size_t input_row_count =
+        static_cast<std::size_t>(Schedule::w_baby_step) * 2 *
+        GLP::matrix_dimension;
+    std::array<std::vector<std::uint64_t>, 2> input_spectra{};
+    std::array<std::vector<std::uint64_t>, 2> diagonal_spectra{};
+};
+
+template <class Schedule>
+inline bool prepareFusedWTransformNTT(
+    FusedWTransformNTTState<Schedule> &state,
+    const std::vector<GLRawProductCiphertext<
+        typename Schedule::Parameter, Schedule::input_log_q,
+        Schedule::input_log_delta, Schedule::x_transform_log_scale>>
+        &baby_rotations)
+{
+    using GLP = typename Schedule::Parameter;
+    using P = typename GLP::baseP;
+    using T = typename GLP::T;
+    constexpr std::size_t n = GLP::matrix_dimension;
+    constexpr std::size_t phi = GLP::phi;
+    constexpr std::size_t coefficient_count =
+        FusedWTransformNTTState<Schedule>::coefficient_count;
+    if constexpr (!gl_detail::supportsWidePrimeNTT<GLP> ||
+                  Schedule::input_log_q >= 128) {
+        return false;
+    }
+    else {
+        if (baby_rotations.size() != Schedule::w_baby_step)
+            throw std::invalid_argument(
+                "GL fused W transform has the wrong baby-step count");
+
+        std::vector<GLBasePolynomial<GLP>> signed_diagonals(phi);
+#pragma omp parallel for schedule(static)
+        for (std::uint32_t t = 0; t < phi; t++) {
+            GLBasePlaintext<GLP, Schedule::input_log_q,
+                            Schedule::w_transform_log_scale>
+                diagonal;
+            const std::uint32_t giant_amount =
+                (t / Schedule::w_baby_step) * Schedule::w_baby_step;
+            buildAdjustedWDiagonalPlaintext<Schedule>(diagonal, t,
+                                                      giant_amount);
+            for (std::size_t i = 0; i < P::n; i++)
+                signed_diagonals[t][i] = gl_detail::signedI128ToTorus<T>(
+                    ckks_detail::levelToSigned<P, Schedule::input_log_q>(
+                        diagonal.poly[i]));
+        }
+
+        std::uint32_t diagonal_bits = 0;
+        for (const auto &diagonal : signed_diagonals)
+            diagonal_bits =
+                std::max(diagonal_bits,
+                         gl_detail::maxSignedTorusBitWidth<GLP>(diagonal));
+        constexpr std::size_t maximum_terms = 2 * n * (2 * GLP::phi - 1);
+        const std::uint32_t required_bits =
+            Schedule::input_log_q + diagonal_bits +
+            gl_detail::ceilLog2(maximum_terms) +
+            gl_detail::ceilLog2(Schedule::w_baby_step);
+        if (required_bits > 122) return false;
+
+        constexpr std::size_t input_row_count =
+            FusedWTransformNTTState<Schedule>::input_row_count;
+        for (std::size_t prime = 0; prime < 2; prime++) {
+            state.input_spectra[prime].resize(input_row_count *
+                                              coefficient_count);
+            state.diagonal_spectra[prime].resize(phi * coefficient_count);
+        }
+        using Plan = gl_detail::GLBaseNTTPlan<GLP>;
+        const std::array<const Plan *, 2> plans{
+            &gl_detail::baseNTTPlan<GLP, 0>(),
+            &gl_detail::baseNTTPlan<GLP, 1>()};
+
+#pragma omp parallel for collapse(4) schedule(static)
+        for (std::size_t prime = 0; prime < 2; prime++)
+            for (std::size_t baby = 0; baby < Schedule::w_baby_step; baby++)
+                for (std::size_t component = 0; component < 2; component++)
+                    for (std::size_t y = 0; y < n; y++) {
+                        const std::size_t row = (baby * 2 + component) * n + y;
+                        plans[prime]->forward(
+                            std::span<std::uint64_t>(
+                                state.input_spectra[prime].data() +
+                                    row * coefficient_count,
+                                coefficient_count),
+                            baby_rotations[baby][component][y]);
+                    }
+
+#pragma omp parallel for collapse(2) schedule(static)
+        for (std::size_t prime = 0; prime < 2; prime++)
+            for (std::size_t t = 0; t < phi; t++)
+                plans[prime]->forward(std::span<std::uint64_t>(
+                                          state.diagonal_spectra[prime].data() +
+                                              t * coefficient_count,
+                                          coefficient_count),
+                                      signed_diagonals[t]);
+        return true;
+    }
+}
+
+template <class Schedule>
+inline void fusedWTransformGroup(
+    GLRawProductCiphertext<typename Schedule::Parameter, Schedule::input_log_q,
+                           Schedule::input_log_delta +
+                               Schedule::x_transform_log_scale,
+                           Schedule::w_transform_log_scale> &group,
+    const FusedWTransformNTTState<Schedule> &state,
+    const std::uint32_t giant_step)
+{
+    using GLP = typename Schedule::Parameter;
+    using P = typename GLP::baseP;
+    using T = typename GLP::T;
+    constexpr std::size_t n = GLP::matrix_dimension;
+    constexpr std::size_t coefficient_count =
+        FusedWTransformNTTState<Schedule>::coefficient_count;
+    using Plan = gl_detail::GLBaseNTTPlan<GLP>;
+    const std::array<const Plan *, 2> plans{&gl_detail::baseNTTPlan<GLP, 0>(),
+                                            &gl_detail::baseNTTPlan<GLP, 1>()};
+    static const modular_ntt::TwoPrimeCRT crt(modular_ntt::wide_primes[0],
+                                              modular_ntt::wide_primes[1]);
+    const std::uint32_t begin = giant_step * Schedule::w_baby_step;
+    const std::uint32_t end =
+        std::min<std::uint32_t>(GLP::phi, begin + Schedule::w_baby_step);
+
+#pragma omp parallel
+    {
+        std::array<std::vector<std::uint64_t>, 2> accumulators{
+            std::vector<std::uint64_t>(coefficient_count),
+            std::vector<std::uint64_t>(coefficient_count)};
+        std::array<std::vector<std::uint64_t>, 2> coefficients{
+            std::vector<std::uint64_t>(coefficient_count),
+            std::vector<std::uint64_t>(coefficient_count)};
+#pragma omp for collapse(2) schedule(static)
+        for (std::size_t component = 0; component < 2; component++) {
+            for (std::size_t y = 0; y < n; y++) {
+                for (std::size_t prime = 0; prime < 2; prime++) {
+                    auto &accumulator = accumulators[prime];
+                    std::fill(accumulator.begin(), accumulator.end(), 0);
+                    const std::uint64_t modulus = plans[prime]->modulus();
+                    for (std::uint32_t t = begin; t < end; t++) {
+                        const std::size_t baby = t - begin;
+                        const std::size_t input_row =
+                            (baby * 2 + component) * n + y;
+                        const std::uint64_t *input_spectrum =
+                            state.input_spectra[prime].data() +
+                            input_row * coefficient_count;
+                        const std::uint64_t *diagonal_spectrum =
+                            state.diagonal_spectra[prime].data() +
+                            t * coefficient_count;
+                        for (std::size_t i = 0; i < coefficient_count; i++) {
+                            const std::uint64_t product = modular_ntt::multiply(
+                                input_spectrum[i], diagonal_spectrum[i],
+                                modulus);
+                            accumulator[i] = modular_ntt::add(accumulator[i],
+                                                              product, modulus);
+                        }
+                    }
+                    plans[prime]->inverse(
+                        std::span<std::uint64_t>(coefficients[prime]),
+                        std::span<std::uint64_t>(accumulator));
+                }
+                for (std::size_t i = 0; i < coefficient_count; i++)
+                    group[component][y][i] =
+                        ckks_detail::reduceToLevel<P, Schedule::input_log_q>(
+                            gl_detail::signedI128ToTorus<T>(
+                                crt.reconstructSigned(coefficients[0][i],
+                                                      coefficients[1][i])));
+            }
+        }
+    }
 }
 
 }  // namespace gl_ship_detail
@@ -951,16 +1704,29 @@ inline void GLSHIPSlotsToCoefficients(
                                    Schedule::x_transform_log_scale,
                                Schedule::w_transform_log_scale>;
 
-    GLPlaintext<GLP, Schedule::input_log_q, Schedule::x_transform_log_scale>
-        x_plaintext;
-    gl_ship_detail::buildXTransformPlaintext<Schedule>(x_plaintext);
+    // The same transpose key is consumed on both sides of the X transform.
+    // Cache its full-ring spectra only for this StC call; keeping this roughly
+    // 4.5 GiB n512 cache out of the bootstrap key avoids overlapping it with
+    // the later HMux caches.
+    using TransposeKey =
+        typename GLSHIPSlotsToCoefficientsKey<Schedule>::ConjugateTransposeKey;
+    using TransposeCache = gl_detail::BigKeySwitchNTTCache<GLP, TransposeKey>;
+    std::unique_ptr<TransposeCache> transpose_cache;
+    if constexpr (TransposeCache::prime_count != 0) {
+        transpose_cache = std::make_unique<TransposeCache>();
+        gl_detail::prepareBigKeySwitchNTTCache<GLP, TransposeKey>(
+            *transpose_cache, stc_key.conjugate_transpose_key);
+    }
 
     typename Schedule::InputCiphertext transposed;
-    GLConjugateTranspose(transposed, input, stc_key.conjugate_transpose_key);
+    GLConjugateTranspose(transposed, input, stc_key.conjugate_transpose_key,
+                         transpose_cache.get());
     AfterX x_product;
-    GLPlaintextMatrixMultiplyRaw(x_product, transposed, x_plaintext);
+    GLXTransformMatrixMultiplyRaw<Schedule>(x_product, transposed);
     AfterX after_x;
-    GLConjugateTranspose(after_x, x_product, stc_key.conjugate_transpose_key);
+    GLConjugateTranspose(after_x, x_product, stc_key.conjugate_transpose_key,
+                         transpose_cache.get());
+    transpose_cache.reset();
 
     std::vector<AfterX> baby_rotations(Schedule::w_baby_step);
     baby_rotations[0] = after_x;
@@ -968,29 +1734,40 @@ inline void GLSHIPSlotsToCoefficients(
         GLRotateBatches(baby_rotations[j], after_x,
                         gl_ship_detail::findWRotationKey<Schedule>(stc_key, j));
 
+    gl_ship_detail::FusedWTransformNTTState<Schedule> w_ntt_state;
+    const bool use_fused_w =
+        gl_ship_detail::prepareFusedWTransformNTT<Schedule>(w_ntt_state,
+                                                            baby_rotations);
     BeforeRescale accumulated;
     bool accumulated_initialized = false;
     for (std::uint32_t b = 0; b < Schedule::w_giant_steps; b++) {
         const std::uint32_t giant_amount = b * Schedule::w_baby_step;
         BeforeRescale group;
-        bool group_initialized = false;
-        const std::uint32_t end = std::min<std::uint32_t>(
-            GLP::phi, giant_amount + Schedule::w_baby_step);
-        for (std::uint32_t t = giant_amount; t < end; t++) {
-            const std::uint32_t j = t - giant_amount;
-            GLPlaintext<GLP, Schedule::input_log_q,
-                        Schedule::w_transform_log_scale>
-                diagonal;
-            gl_ship_detail::buildAdjustedWDiagonalPlaintext<Schedule>(
-                diagonal, t, giant_amount);
-            BeforeRescale term;
-            GLPlaintextHadamardMultiplyRaw(term, baby_rotations[j], diagonal);
-            if (!group_initialized) {
-                group = std::move(term);
-                group_initialized = true;
-            }
-            else {
-                gl_ship_detail::addInPlace(group, term);
+        if (use_fused_w) {
+            gl_ship_detail::fusedWTransformGroup<Schedule>(group, w_ntt_state,
+                                                           b);
+        }
+        else {
+            bool group_initialized = false;
+            const std::uint32_t end = std::min<std::uint32_t>(
+                GLP::phi, giant_amount + Schedule::w_baby_step);
+            for (std::uint32_t t = giant_amount; t < end; t++) {
+                const std::uint32_t j = t - giant_amount;
+                GLBasePlaintext<GLP, Schedule::input_log_q,
+                                Schedule::w_transform_log_scale>
+                    diagonal;
+                gl_ship_detail::buildAdjustedWDiagonalPlaintext<Schedule>(
+                    diagonal, t, giant_amount);
+                BeforeRescale term;
+                gl_ship_detail::basePlaintextHadamardMultiplyRaw(
+                    term, baby_rotations[j], diagonal);
+                if (!group_initialized) {
+                    group = std::move(term);
+                    group_initialized = true;
+                }
+                else {
+                    gl_ship_detail::addInPlace(group, term);
+                }
             }
         }
 
@@ -1124,6 +1901,18 @@ struct GLSHIPMaskedColumnKey {
     // Selectors are encoded at scale 2^P and encrypted modulo P*Q.
     std::vector<GLBaseCiphertextData<GLP>> encrypted_masks{};
 
+    struct TransientNTTCache {
+        std::once_flag initialize_once{};
+        std::uint32_t chunk_bits = 0;
+        std::uint32_t chunk_count = 0;
+        std::array<std::vector<std::uint64_t>, 2> spectra{};
+    };
+    // The cache is derived from encrypted_masks and intentionally omitted
+    // from archives.  Half-bootstrap releases it after finishing this sparse
+    // term so it never overlaps every HMux cache in memory.
+    mutable std::shared_ptr<TransientNTTCache> transient_ntt_cache =
+        std::make_shared<TransientNTTCache>();
+
     template <class Archive>
     void serialize(Archive &archive)
     {
@@ -1189,6 +1978,8 @@ inline void maskedColumnKeyGen(
     key.interval = interval;
     key.candidates = buildCandidates<Schedule>(interval);
     key.encrypted_masks.resize(key.candidates.size());
+    key.transient_ntt_cache = std::make_shared<
+        typename GLSHIPMaskedColumnKey<Schedule>::TransientNTTCache>();
 
     for (std::size_t candidate_index = 0;
          candidate_index < key.candidates.size(); candidate_index++) {
@@ -1364,6 +2155,23 @@ inline void GLPlaintextMatrixMultiplyRaw(
     gl_detail::reduce<GLP, LogQ>(result[1]);
 }
 
+template <class Schedule>
+inline void GLXTransformMatrixMultiplyRaw(
+    GLRawProductCiphertext<typename Schedule::Parameter, Schedule::input_log_q,
+                           Schedule::input_log_delta,
+                           Schedule::x_transform_log_scale> &result,
+    const typename Schedule::InputCiphertext &input)
+{
+    using GLP = typename Schedule::Parameter;
+    static_assert(Schedule::input_log_q < 128,
+                  "the compact X trace currently supports active levels "
+                  "below 128 bits");
+    const auto multipliers =
+        gl_ship_detail::buildXTransformTraceMultipliers<Schedule>();
+    gl_detail::traceProductSmallComplex<GLP, Schedule::input_log_q>(
+        result.ct, input.ct, multipliers);
+}
+
 template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
           std::uint32_t PlainLogDelta>
 inline void GLPlaintextHadamardMultiplyRaw(
@@ -1403,6 +2211,13 @@ inline void GLBasePlaintextMultiplyRescale(
                                                       lhs[component], rhs.poly);
 }
 
+template <class GLP>
+struct GLBaseHadamardWorkspace {
+    std::unique_ptr<std::array<GLBasePolynomial<GLP>, 4>> tensor{};
+    std::unique_ptr<GLBaseCiphertextData<GLP>> square_term{};
+    std::unique_ptr<GLBaseCiphertextData<GLP>> relinearized{};
+};
+
 template <class GLP, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
           std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta,
           std::uint32_t DropBits, std::uint32_t PrimaryBit,
@@ -1413,24 +2228,33 @@ inline void GLBaseHadamardMultiply(
     const GLBaseCiphertext<GLP, LhsLogQ, LhsLogDelta> &lhs,
     const GLBaseCiphertext<GLP, RhsLogQ, RhsLogDelta> &rhs,
     const GLHadamardRelinKey<GLP, (LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ),
-                             PrimaryBit, BbarBit> &relin_key)
+                             PrimaryBit, BbarBit> &relin_key,
+    GLBaseHadamardWorkspace<GLP> *provided_workspace = nullptr)
 {
     constexpr std::uint32_t input_log_q = LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ;
     constexpr std::uint32_t out_log_q = input_log_q - DropBits;
     static_assert(DropBits > 0 && DropBits < input_log_q);
-    std::array<GLBasePolynomial<GLP>, 4> tensor{};
-    gl_detail::baseMultiply<GLP>(tensor[0], lhs[0], rhs[0]);
-    gl_detail::baseMultiply<GLP>(tensor[1], lhs[0], rhs[1]);
-    gl_detail::baseMultiply<GLP>(tensor[2], lhs[1], rhs[0]);
-    gl_detail::baseMultiply<GLP>(tensor[3], lhs[1], rhs[1]);
-    for (auto &component : tensor)
-        gl_detail::reduce<GLP, input_log_q>(component);
+    GLBaseHadamardWorkspace<GLP> local_workspace;
+    auto &workspace =
+        provided_workspace == nullptr ? local_workspace : *provided_workspace;
+    if (!workspace.tensor)
+        workspace.tensor =
+            std::make_unique<std::array<GLBasePolynomial<GLP>, 4>>();
+    if (!workspace.square_term)
+        workspace.square_term = std::make_unique<GLBaseCiphertextData<GLP>>();
+    if (!workspace.relinearized)
+        workspace.relinearized = std::make_unique<GLBaseCiphertextData<GLP>>();
+    auto &tensor = *workspace.tensor;
+    auto &square_term = *workspace.square_term;
+    auto &relinearized = *workspace.relinearized;
+    gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[0], lhs[0], rhs[0]);
+    gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[1], lhs[0], rhs[1]);
+    gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[2], lhs[1], rhs[0]);
+    gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[3], lhs[1], rhs[1]);
     gl_detail::addInPlace<GLP>(tensor[1], tensor[2]);
     gl_detail::reduce<GLP, input_log_q>(tensor[1]);
 
-    GLBaseCiphertextData<GLP> square_term{};
     GLDDSmallKeySwitchBase(square_term, tensor[3], relin_key);
-    GLBaseCiphertextData<GLP> relinearized{};
     relinearized[0] = std::move(tensor[0]);
     relinearized[1] = std::move(tensor[1]);
     gl_detail::addInPlace<GLP>(relinearized[0], square_term[0]);
@@ -1748,9 +2572,6 @@ inline void GLBaseEncode(GLBasePlaintext<GLP, LogQ, LogDelta> &plaintext,
     constexpr std::uint32_t phi = GLP::phi;
     const long double scale = std::ldexp(1.0L, LogDelta);
 
-    std::array<std::complex<long double>, n> x_roots{};
-    for (std::uint32_t j = 0; j < n; j++) x_roots[j] = gl_detail::xRoot<GLP>(j);
-
     std::vector<std::complex<long double>> w_coefficients(
         static_cast<std::size_t>(n) * phi);
     auto w_coefficient =
@@ -1759,46 +2580,52 @@ inline void GLBaseEncode(GLBasePlaintext<GLP, LogQ, LogDelta> &plaintext,
         return w_coefficients[static_cast<std::size_t>(x_slot) * phi + w];
     };
 
-    for (std::uint32_t x_slot = 0; x_slot < n; x_slot++) {
-        std::complex<long double> at_one = 0;
-        for (std::uint32_t batch = 0; batch < phi; batch++) {
-            const std::uint32_t exponent = gl_detail::batchExponent<GLP>(batch);
-            at_one -=
-                static_cast<std::complex<long double>>(slots(batch, x_slot)) *
-                gl_detail::wRoot<GLP>(exponent);
-        }
+    std::array<std::array<std::complex<long double>, phi>, phi> w_weights{};
+    for (std::uint32_t batch = 0; batch < phi; batch++) {
+        const std::uint32_t exponent = gl_detail::batchExponent<GLP>(batch);
+        const auto at_one_weight = gl_detail::wRoot<GLP>(exponent);
         for (std::uint32_t w = 0; w < phi; w++) {
-            std::complex<long double> coefficient = at_one;
-            for (std::uint32_t batch = 0; batch < phi; batch++) {
-                const std::uint32_t exponent =
-                    gl_detail::batchExponent<GLP>(batch);
-                const std::uint32_t root_exponent =
-                    (p - static_cast<std::uint32_t>(
-                             (static_cast<std::uint64_t>(exponent) * w) % p)) %
-                    p;
-                coefficient += static_cast<std::complex<long double>>(
-                                   slots(batch, x_slot)) *
-                               gl_detail::wRoot<GLP>(root_exponent);
-            }
-            w_coefficient(x_slot, w) =
-                coefficient / static_cast<long double>(p);
+            const std::uint32_t root_exponent =
+                (p - static_cast<std::uint32_t>(
+                         (static_cast<std::uint64_t>(exponent) * w) % p)) %
+                p;
+            w_weights[batch][w] =
+                (gl_detail::wRoot<GLP>(root_exponent) - at_one_weight) /
+                static_cast<long double>(p);
         }
     }
+#pragma omp parallel for schedule(static)
+    for (std::uint32_t x_slot = 0; x_slot < n; x_slot++)
+        for (std::uint32_t w = 0; w < phi; w++) {
+            std::complex<long double> coefficient = 0;
+            for (std::uint32_t batch = 0; batch < phi; batch++)
+                coefficient += static_cast<std::complex<long double>>(
+                                   slots(batch, x_slot)) *
+                               w_weights[batch][w];
+            w_coefficient(x_slot, w) = coefficient;
+        }
 
     gl_detail::clear<GLP>(plaintext.poly);
-    for (std::uint32_t w = 0; w < phi; w++) {
-        for (std::uint32_t x = 0; x < n; x++) {
-            std::complex<long double> coefficient = 0;
+    const auto &x_plan = gl_detail::inverseXEmbeddingPlan<GLP>();
+#pragma omp parallel
+    {
+        std::vector<std::complex<long double>> input_line(n);
+        std::vector<std::complex<long double>> output_line(n);
+        std::vector<std::complex<long double>> work;
+#pragma omp for schedule(static)
+        for (std::uint32_t w = 0; w < phi; w++) {
             for (std::uint32_t x_slot = 0; x_slot < n; x_slot++)
-                coefficient += w_coefficient(x_slot, w) *
-                               std::pow(x_roots[x_slot], -static_cast<int>(x));
-            coefficient *= scale / static_cast<long double>(n);
-            plaintext.poly[gl_detail::baseIndex<GLP>(0, x, w)] =
-                ckks_detail::signedLongDoubleToLevel<P, LogQ>(
-                    std::round(coefficient.real()));
-            plaintext.poly[gl_detail::baseIndex<GLP>(1, x, w)] =
-                ckks_detail::signedLongDoubleToLevel<P, LogQ>(
-                    std::round(coefficient.imag()));
+                input_line[x_slot] = w_coefficient(x_slot, w);
+            x_plan.apply(output_line, input_line, work);
+            for (std::uint32_t x = 0; x < n; x++) {
+                const auto coefficient = output_line[x] * scale;
+                plaintext.poly[gl_detail::baseIndex<GLP>(0, x, w)] =
+                    ckks_detail::signedLongDoubleToLevel<P, LogQ>(
+                        std::round(coefficient.real()));
+                plaintext.poly[gl_detail::baseIndex<GLP>(1, x, w)] =
+                    ckks_detail::signedLongDoubleToLevel<P, LogQ>(
+                        std::round(coefficient.imag()));
+            }
         }
     }
 }

@@ -10,11 +10,16 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "ckks/ckks.hpp"
 #include "modular_ntt.hpp"
@@ -29,6 +34,15 @@
 namespace TFHEpp {
 
 namespace gl_detail {
+
+inline bool inOpenMPParallelRegion()
+{
+#ifdef _OPENMP
+    return omp_in_parallel() != 0;
+#else
+    return false;
+#endif
+}
 
 consteval bool isPrime(const std::uint32_t value)
 {
@@ -595,6 +609,35 @@ inline std::uint32_t maxSignedTorusBitWidth(
     return bits;
 }
 
+template <class GLP>
+inline std::uint32_t maxUnsignedTorusBitWidth(
+    const GLBasePolynomial<GLP> &polynomial)
+{
+    std::uint32_t bits = 0;
+    for (const auto &coefficient : polynomial)
+        bits = std::max(bits, unsignedBitWidth(coefficient));
+    return bits;
+}
+
+template <class GLP>
+inline std::uint32_t maxSignedTorusBitWidth(const GLPolynomial<GLP> &polynomial)
+{
+    std::uint32_t bits = 0;
+    for (const auto &slice : polynomial)
+        bits = std::max(bits, maxSignedTorusBitWidth<GLP>(slice));
+    return bits;
+}
+
+template <class GLP>
+inline std::uint32_t maxUnsignedTorusBitWidth(
+    const GLPolynomial<GLP> &polynomial)
+{
+    std::uint32_t bits = 0;
+    for (const auto &slice : polynomial)
+        bits = std::max(bits, maxUnsignedTorusBitWidth<GLP>(slice));
+    return bits;
+}
+
 template <class T>
 inline std::uint64_t signedTorusResidue(const T &value,
                                         const std::uint64_t modulus)
@@ -629,6 +672,48 @@ inline T signedI128ToTorus(const __int128 value)
         static_assert(std::is_same_v<T, __uint128_t>);
         return static_cast<__uint128_t>(value);
     }
+}
+
+template <class T>
+inline __uint128_t torusLowU128(const T &value)
+{
+    if constexpr (is_multilimb_uint_v<T>) {
+        __uint128_t result = value.limb[0];
+        if constexpr (T::limbs > 1)
+            result |= static_cast<__uint128_t>(value.limb[1]) << 64;
+        return result;
+    }
+    else {
+        static_assert(std::is_same_v<T, __uint128_t>);
+        return value;
+    }
+}
+
+template <class T>
+inline T torusFromLowU128(const __uint128_t value)
+{
+    if constexpr (is_multilimb_uint_v<T>) {
+        T result{};
+        result.limb[0] = static_cast<std::uint64_t>(value);
+        if constexpr (T::limbs > 1)
+            result.limb[1] = static_cast<std::uint64_t>(value >> 64);
+        return result;
+    }
+    else {
+        static_assert(std::is_same_v<T, __uint128_t>);
+        return value;
+    }
+}
+
+inline __uint128_t multiplyU128BySignedSmall(const __uint128_t value,
+                                             const std::int64_t scalar)
+{
+    const bool negative = scalar < 0;
+    const std::uint64_t magnitude =
+        negative ? static_cast<std::uint64_t>(-(scalar + 1)) + 1
+                 : static_cast<std::uint64_t>(scalar);
+    const __uint128_t product = value * magnitude;
+    return negative ? __uint128_t{0} - product : product;
 }
 
 constexpr std::uint32_t ceilLog2(const std::size_t value)
@@ -675,19 +760,90 @@ public:
     {
         if (spectrum.size() != coefficient_count)
             throw std::invalid_argument("GL NTT spectrum has the wrong size");
-        std::array<std::uint64_t, w_dimension> w_line{};
-        for (std::size_t z = 0; z < z_dimension; z++) {
-            const std::uint32_t gaussian =
-                static_cast<std::uint32_t>(z / GLP::matrix_dimension);
-            const std::uint32_t x =
-                static_cast<std::uint32_t>(z % GLP::matrix_dimension);
-            for (std::uint32_t w = 0; w < w_dimension; w++)
-                w_line[w] = signedTorusResidue(
-                    input[baseIndex<GLP>(gaussian, x, w)], prime_.value);
-            w_plan_.forward(w_line);
+        if (inOpenMPParallelRegion()) {
+            std::array<std::uint64_t, w_dimension> w_line{};
+            for (std::size_t z = 0; z < z_dimension; z++) {
+                const std::uint32_t gaussian =
+                    static_cast<std::uint32_t>(z / GLP::matrix_dimension);
+                const std::uint32_t x =
+                    static_cast<std::uint32_t>(z % GLP::matrix_dimension);
+                for (std::uint32_t w = 0; w < w_dimension; w++)
+                    w_line[w] = signedTorusResidue(
+                        input[baseIndex<GLP>(gaussian, x, w)], prime_.value);
+                w_plan_.forward(w_line);
+                for (std::size_t w = 0; w < w_dimension; w++)
+                    spectrum[w * z_dimension + z] = w_line[w];
+            }
             for (std::size_t w = 0; w < w_dimension; w++)
-                spectrum[w * z_dimension + z] = w_line[w];
+                z_plan_.forward(std::span<std::uint64_t>(
+                    spectrum.data() + w * z_dimension, z_dimension));
+            return;
         }
+#pragma omp parallel
+        {
+            std::array<std::uint64_t, w_dimension> w_line{};
+#pragma omp for schedule(static)
+            for (std::size_t z = 0; z < z_dimension; z++) {
+                const std::uint32_t gaussian =
+                    static_cast<std::uint32_t>(z / GLP::matrix_dimension);
+                const std::uint32_t x =
+                    static_cast<std::uint32_t>(z % GLP::matrix_dimension);
+                for (std::uint32_t w = 0; w < w_dimension; w++)
+                    w_line[w] = signedTorusResidue(
+                        input[baseIndex<GLP>(gaussian, x, w)], prime_.value);
+                w_plan_.forward(w_line);
+                for (std::size_t w = 0; w < w_dimension; w++)
+                    spectrum[w * z_dimension + z] = w_line[w];
+            }
+        }
+#pragma omp parallel for schedule(static)
+        for (std::size_t w = 0; w < w_dimension; w++)
+            z_plan_.forward(std::span<std::uint64_t>(
+                spectrum.data() + w * z_dimension, z_dimension));
+    }
+
+    void forwardResidues(const std::span<std::uint64_t> spectrum,
+                         const std::span<const std::uint64_t> input) const
+    {
+        if (spectrum.size() != coefficient_count ||
+            input.size() != coefficient_count)
+            throw std::invalid_argument(
+                "GL NTT residue input has the wrong size");
+        if (inOpenMPParallelRegion()) {
+            std::array<std::uint64_t, w_dimension> w_line{};
+            for (std::size_t z = 0; z < z_dimension; z++) {
+                const std::uint32_t gaussian =
+                    static_cast<std::uint32_t>(z / GLP::matrix_dimension);
+                const std::uint32_t x =
+                    static_cast<std::uint32_t>(z % GLP::matrix_dimension);
+                for (std::uint32_t w = 0; w < w_dimension; w++)
+                    w_line[w] = input[baseIndex<GLP>(gaussian, x, w)];
+                w_plan_.forward(w_line);
+                for (std::size_t w = 0; w < w_dimension; w++)
+                    spectrum[w * z_dimension + z] = w_line[w];
+            }
+            for (std::size_t w = 0; w < w_dimension; w++)
+                z_plan_.forward(std::span<std::uint64_t>(
+                    spectrum.data() + w * z_dimension, z_dimension));
+            return;
+        }
+#pragma omp parallel
+        {
+            std::array<std::uint64_t, w_dimension> w_line{};
+#pragma omp for schedule(static)
+            for (std::size_t z = 0; z < z_dimension; z++) {
+                const std::uint32_t gaussian =
+                    static_cast<std::uint32_t>(z / GLP::matrix_dimension);
+                const std::uint32_t x =
+                    static_cast<std::uint32_t>(z % GLP::matrix_dimension);
+                for (std::uint32_t w = 0; w < w_dimension; w++)
+                    w_line[w] = input[baseIndex<GLP>(gaussian, x, w)];
+                w_plan_.forward(w_line);
+                for (std::size_t w = 0; w < w_dimension; w++)
+                    spectrum[w * z_dimension + z] = w_line[w];
+            }
+        }
+#pragma omp parallel for schedule(static)
         for (std::size_t w = 0; w < w_dimension; w++)
             z_plan_.forward(std::span<std::uint64_t>(
                 spectrum.data() + w * z_dimension, z_dimension));
@@ -709,21 +865,44 @@ public:
         if (coefficients.size() != coefficient_count)
             throw std::invalid_argument(
                 "GL NTT coefficient output has the wrong size");
+        if (inOpenMPParallelRegion()) {
+            for (std::size_t w = 0; w < w_dimension; w++)
+                z_plan_.inverse(std::span<std::uint64_t>(
+                    spectrum.data() + w * z_dimension, z_dimension));
+            std::array<std::uint64_t, w_dimension> w_line{};
+            for (std::size_t z = 0; z < z_dimension; z++) {
+                for (std::size_t w = 0; w < w_dimension; w++)
+                    w_line[w] = spectrum[w * z_dimension + z];
+                w_plan_.inverse(w_line);
+                const std::uint32_t gaussian =
+                    static_cast<std::uint32_t>(z / GLP::matrix_dimension);
+                const std::uint32_t x =
+                    static_cast<std::uint32_t>(z % GLP::matrix_dimension);
+                for (std::uint32_t w = 0; w < w_dimension; w++)
+                    coefficients[baseIndex<GLP>(gaussian, x, w)] = w_line[w];
+            }
+            return;
+        }
+#pragma omp parallel for schedule(static)
         for (std::size_t w = 0; w < w_dimension; w++)
             z_plan_.inverse(std::span<std::uint64_t>(
                 spectrum.data() + w * z_dimension, z_dimension));
 
-        std::array<std::uint64_t, w_dimension> w_line{};
-        for (std::size_t z = 0; z < z_dimension; z++) {
-            for (std::size_t w = 0; w < w_dimension; w++)
-                w_line[w] = spectrum[w * z_dimension + z];
-            w_plan_.inverse(w_line);
-            const std::uint32_t gaussian =
-                static_cast<std::uint32_t>(z / GLP::matrix_dimension);
-            const std::uint32_t x =
-                static_cast<std::uint32_t>(z % GLP::matrix_dimension);
-            for (std::uint32_t w = 0; w < w_dimension; w++)
-                coefficients[baseIndex<GLP>(gaussian, x, w)] = w_line[w];
+#pragma omp parallel
+        {
+            std::array<std::uint64_t, w_dimension> w_line{};
+#pragma omp for schedule(static)
+            for (std::size_t z = 0; z < z_dimension; z++) {
+                for (std::size_t w = 0; w < w_dimension; w++)
+                    w_line[w] = spectrum[w * z_dimension + z];
+                w_plan_.inverse(w_line);
+                const std::uint32_t gaussian =
+                    static_cast<std::uint32_t>(z / GLP::matrix_dimension);
+                const std::uint32_t x =
+                    static_cast<std::uint32_t>(z % GLP::matrix_dimension);
+                for (std::uint32_t w = 0; w < w_dimension; w++)
+                    coefficients[baseIndex<GLP>(gaussian, x, w)] = w_line[w];
+            }
         }
     }
 
@@ -738,6 +917,234 @@ inline const GLBaseNTTPlan<GLP> &baseNTTPlan()
 {
     static_assert(PrimeIndex < modular_ntt::wide_primes.size());
     static const GLBaseNTTPlan<GLP> plan(modular_ntt::wide_primes[PrimeIndex]);
+    return plan;
+}
+
+// Set U=Y/X.  Since X^n=Y^n=I, U^n=1, so the full GL ring is a cyclic
+// length-n extension of the already transformed (I,X,W) base ring.  A Y slice
+// is first multiplied by X^y, transformed in the base ring, and then
+// transformed along U.  Spectra use base-frequency-major layout so every
+// length-n U transform is contiguous.
+template <class GLP>
+class GLPolynomialNTTPlan {
+public:
+    static constexpr std::size_t y_dimension = GLP::matrix_dimension;
+    static constexpr std::size_t base_coefficient_count =
+        GLBaseNTTPlan<GLP>::coefficient_count;
+    static constexpr std::size_t coefficient_count =
+        y_dimension * base_coefficient_count;
+
+    explicit GLPolynomialNTTPlan(const modular_ntt::PrimeModulus prime)
+        : prime_(prime), base_plan_(prime), y_plan_(y_dimension, prime)
+    {
+    }
+
+    std::uint64_t modulus() const { return prime_.value; }
+
+    void forward(std::vector<std::uint64_t> &spectrum,
+                 const GLPolynomial<GLP> &input) const
+    {
+        forwardWith(
+            spectrum, [&](const std::size_t y, const std::size_t coefficient) {
+                return signedTorusResidue(input[y][coefficient], prime_.value);
+            });
+    }
+
+    template <std::uint32_t Bits>
+    void forwardPacked(std::vector<std::uint64_t> &spectrum,
+                       const GLPackedPolynomial<GLP, Bits> &input) const
+    {
+        forwardWith(spectrum,
+                    [&](const std::size_t y, const std::size_t coefficient) {
+                        return signedSmallResidue(input[y][coefficient]);
+                    });
+    }
+
+    template <std::uint32_t LogQ, std::uint32_t BaseBit>
+    void forwardActiveRows(std::vector<std::uint64_t> &spectra,
+                           const GLPolynomial<GLP> &input) const
+    {
+        using P = typename GLP::baseP;
+        constexpr std::uint32_t rows = (LogQ + BaseBit - 1) / BaseBit;
+        static_assert(rows * BaseBit <=
+                      std::numeric_limits<typename P::T>::digits);
+        spectra.assign(static_cast<std::size_t>(rows) * coefficient_count, 0);
+#pragma omp parallel
+        {
+            auto slice_rows =
+                std::make_unique<std::array<GLBasePolynomial<GLP>, rows>>();
+            std::vector<std::uint64_t> twisted(base_coefficient_count);
+            std::vector<std::uint64_t> base_spectrum(base_coefficient_count);
+#pragma omp for schedule(static)
+            for (std::size_t y = 0; y < y_dimension; y++) {
+                ckks_detail::activeBaseDecomposePolynomialRows<P, LogQ, BaseBit,
+                                                               rows>(
+                    *slice_rows, input[y]);
+                for (std::uint32_t row = 0; row < rows; row++) {
+                    fillTwistedResidues(
+                        twisted, y, [&](const std::size_t coefficient) {
+                            return signedTorusResidue(
+                                (*slice_rows)[row][coefficient], prime_.value);
+                        });
+                    base_plan_.forwardResidues(base_spectrum, twisted);
+                    std::uint64_t *row_spectrum =
+                        spectra.data() +
+                        static_cast<std::size_t>(row) * coefficient_count;
+                    for (std::size_t base = 0; base < base_coefficient_count;
+                         base++)
+                        row_spectrum[base * y_dimension + y] =
+                            base_spectrum[base];
+                }
+            }
+        }
+        for (std::uint32_t row = 0; row < rows; row++)
+            finishForward(std::span<std::uint64_t>(
+                spectra.data() +
+                    static_cast<std::size_t>(row) * coefficient_count,
+                coefficient_count));
+    }
+
+    // Inverse transforms spectrum and returns canonical coefficients in
+    // [Y-slice][base coefficient] order.  spectrum is mutable scratch.
+    void inverse(std::vector<std::uint64_t> &coefficients,
+                 std::vector<std::uint64_t> &spectrum) const
+    {
+        if (spectrum.size() != coefficient_count)
+            throw std::invalid_argument(
+                "GL polynomial NTT spectrum has the wrong size");
+#pragma omp parallel for schedule(static)
+        for (std::size_t base = 0; base < base_coefficient_count; base++)
+            y_plan_.inverse(std::span<std::uint64_t>(
+                spectrum.data() + base * y_dimension, y_dimension));
+
+        coefficients.assign(coefficient_count, 0);
+#pragma omp parallel
+        {
+            std::vector<std::uint64_t> base_spectrum(base_coefficient_count);
+            std::vector<std::uint64_t> twisted(base_coefficient_count);
+#pragma omp for schedule(static)
+            for (std::size_t y = 0; y < y_dimension; y++) {
+                for (std::size_t base = 0; base < base_coefficient_count;
+                     base++)
+                    base_spectrum[base] = spectrum[base * y_dimension + y];
+                base_plan_.inverse(twisted, base_spectrum);
+                multiplyBaseByXPowerResidues(
+                    std::span<std::uint64_t>(
+                        coefficients.data() + y * base_coefficient_count,
+                        base_coefficient_count),
+                    twisted, (4 * y_dimension - y) % (4 * y_dimension));
+            }
+        }
+    }
+
+private:
+    template <class Getter>
+    void forwardWith(std::vector<std::uint64_t> &spectrum, Getter &&get) const
+    {
+        spectrum.assign(coefficient_count, 0);
+#pragma omp parallel
+        {
+            std::vector<std::uint64_t> twisted(base_coefficient_count);
+            std::vector<std::uint64_t> base_spectrum(base_coefficient_count);
+#pragma omp for schedule(static)
+            for (std::size_t y = 0; y < y_dimension; y++) {
+                fillTwistedResidues(twisted, y,
+                                    [&](const std::size_t coefficient) {
+                                        return get(y, coefficient);
+                                    });
+                base_plan_.forwardResidues(base_spectrum, twisted);
+                for (std::size_t base = 0; base < base_coefficient_count;
+                     base++)
+                    spectrum[base * y_dimension + y] = base_spectrum[base];
+            }
+        }
+        finishForward(spectrum);
+    }
+
+    void finishForward(const std::span<std::uint64_t> spectrum) const
+    {
+        if (spectrum.size() != coefficient_count)
+            throw std::invalid_argument(
+                "GL polynomial NTT spectrum has the wrong size");
+#pragma omp parallel for schedule(static)
+        for (std::size_t base = 0; base < base_coefficient_count; base++)
+            y_plan_.forward(std::span<std::uint64_t>(
+                spectrum.data() + base * y_dimension, y_dimension));
+    }
+
+    template <class Getter>
+    void fillTwistedResidues(std::vector<std::uint64_t> &destination,
+                             const std::size_t y, Getter &&get) const
+    {
+        constexpr std::size_t n = GLP::matrix_dimension;
+        for (std::uint32_t w = 0; w < GLP::phi; w++) {
+            for (std::uint32_t x = 0; x < n; x++) {
+                const std::size_t total = x + y;
+                const std::uint32_t output_x =
+                    static_cast<std::uint32_t>(total % n);
+                const std::uint32_t carry =
+                    static_cast<std::uint32_t>(total / n);
+                for (std::uint32_t gaussian = 0; gaussian < 2; gaussian++) {
+                    const std::uint32_t phase = gaussian + carry;
+                    std::uint64_t residue = get(baseIndex<GLP>(gaussian, x, w));
+                    if ((phase & 2U) != 0)
+                        residue = modular_ntt::negate(residue, prime_.value);
+                    destination[baseIndex<GLP>(phase & 1U, output_x, w)] =
+                        residue;
+                }
+            }
+        }
+    }
+
+    void multiplyBaseByXPowerResidues(
+        const std::span<std::uint64_t> destination,
+        const std::span<const std::uint64_t> source,
+        const std::size_t exponent) const
+    {
+        constexpr std::size_t n = GLP::matrix_dimension;
+        for (std::uint32_t w = 0; w < GLP::phi; w++) {
+            for (std::uint32_t x = 0; x < n; x++) {
+                const std::size_t total = x + exponent;
+                const std::uint32_t output_x =
+                    static_cast<std::uint32_t>(total % n);
+                const std::uint32_t blocks =
+                    static_cast<std::uint32_t>(total / n);
+                for (std::uint32_t gaussian = 0; gaussian < 2; gaussian++) {
+                    const std::uint32_t phase = (gaussian + blocks) & 3U;
+                    std::uint64_t residue =
+                        source[baseIndex<GLP>(gaussian, x, w)];
+                    if ((phase & 2U) != 0)
+                        residue = modular_ntt::negate(residue, prime_.value);
+                    destination[baseIndex<GLP>(phase & 1U, output_x, w)] =
+                        residue;
+                }
+            }
+        }
+    }
+
+    template <class Digit>
+    std::uint64_t signedSmallResidue(const Digit value) const
+    {
+        const std::int64_t signed_value = value;
+        if (signed_value >= 0)
+            return static_cast<std::uint64_t>(signed_value) % prime_.value;
+        const std::uint64_t magnitude =
+            static_cast<std::uint64_t>(-(signed_value + 1)) + 1;
+        const std::uint64_t residue = magnitude % prime_.value;
+        return residue == 0 ? 0 : prime_.value - residue;
+    }
+
+    modular_ntt::PrimeModulus prime_;
+    GLBaseNTTPlan<GLP> base_plan_;
+    modular_ntt::Radix2NTTPlan y_plan_;
+};
+
+template <class GLP, std::size_t PrimeIndex>
+inline const GLPolynomialNTTPlan<GLP> &polynomialNTTPlan()
+{
+    static_assert(PrimeIndex < modular_ntt::wide_primes.size());
+    static const GLPolynomialNTTPlan<GLP> plan(
+        modular_ntt::wide_primes[PrimeIndex]);
     return plan;
 }
 
@@ -818,6 +1225,152 @@ inline T unsignedChunk(const T &value, const std::uint32_t shift,
     return (value >> shift) & mask;
 }
 
+// If neither operand is small enough for centered CRT reconstruction, split
+// both of their unsigned power-of-two representatives.  Transform every chunk
+// once, accumulate products with the same output shift in the NTT domain, and
+// perform one inverse transform per prime and output diagonal.  The exact CRT
+// bound includes every chunk pair summed on that diagonal.  Unsigned
+// decomposition is exact modulo the requested power-of-two level, including
+// for negative values represented by their low LogQ bits.
+template <class GLP, std::uint32_t OutputBits =
+                         std::numeric_limits<typename GLP::T>::digits>
+inline bool baseMultiplyNTTDoubleChunk(GLBasePolynomial<GLP> &result,
+                                       const GLBasePolynomial<GLP> &lhs,
+                                       const GLBasePolynomial<GLP> &rhs)
+{
+    if constexpr (!supportsWidePrimeNTT<GLP>) return false;
+
+    using T = typename GLP::T;
+    constexpr std::size_t maximum_terms =
+        2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+    constexpr std::uint32_t convolution_bits = ceilLog2(maximum_terms);
+    constexpr std::uint32_t two_prime_safe_bits = 122;
+    constexpr std::uint32_t torus_width = OutputBits;
+    static_assert(OutputBits > 0 &&
+                  OutputBits <= std::numeric_limits<T>::digits);
+    constexpr std::uint32_t chunk_bits = [] {
+        for (std::uint32_t bits = (two_prime_safe_bits - convolution_bits) / 2;
+             bits > 0; bits--) {
+            const std::size_t maximum_chunks = (torus_width + bits - 1) / bits;
+            if (2 * bits + convolution_bits + ceilLog2(maximum_chunks) <=
+                two_prime_safe_bits)
+                return bits;
+        }
+        return 0U;
+    }();
+    static_assert(chunk_bits > 0);
+    const std::uint32_t lhs_width = maxUnsignedTorusBitWidth<GLP>(lhs);
+    const std::uint32_t rhs_width = maxUnsignedTorusBitWidth<GLP>(rhs);
+    if (lhs_width == 0 || rhs_width == 0) {
+        clear<GLP>(result);
+        return true;
+    }
+    const std::size_t lhs_chunks = (lhs_width + chunk_bits - 1) / chunk_bits;
+    const std::size_t rhs_chunks = (rhs_width + chunk_bits - 1) / chunk_bits;
+    constexpr std::size_t coefficient_count =
+        GLBaseNTTPlan<GLP>::coefficient_count;
+    const std::array<const GLBaseNTTPlan<GLP> *, 2> plans{
+        &baseNTTPlan<GLP, 0>(), &baseNTTPlan<GLP, 1>()};
+    std::array<std::vector<std::vector<std::uint64_t>>, 2> lhs_spectra;
+    std::array<std::vector<std::vector<std::uint64_t>>, 2> rhs_spectra;
+    for (std::size_t prime = 0; prime < 2; prime++) {
+        lhs_spectra[prime].resize(
+            lhs_chunks, std::vector<std::uint64_t>(coefficient_count));
+        rhs_spectra[prime].resize(
+            rhs_chunks, std::vector<std::uint64_t>(coefficient_count));
+    }
+#pragma omp parallel
+    {
+        auto chunk = std::make_unique<GLBasePolynomial<GLP>>();
+#pragma omp for collapse(2) schedule(static)
+        for (std::size_t prime = 0; prime < 2; prime++) {
+            for (std::size_t row = 0; row < lhs_chunks; row++) {
+                const std::uint32_t shift =
+                    static_cast<std::uint32_t>(row * chunk_bits);
+                for (std::size_t i = 0; i < coefficient_count; i++)
+                    (*chunk)[i] = unsignedChunk(lhs[i], shift, chunk_bits);
+                plans[prime]->forward(
+                    std::span<std::uint64_t>(lhs_spectra[prime][row]), *chunk);
+            }
+        }
+    }
+#pragma omp parallel
+    {
+        auto chunk = std::make_unique<GLBasePolynomial<GLP>>();
+#pragma omp for collapse(2) schedule(static)
+        for (std::size_t prime = 0; prime < 2; prime++) {
+            for (std::size_t row = 0; row < rhs_chunks; row++) {
+                const std::uint32_t shift =
+                    static_cast<std::uint32_t>(row * chunk_bits);
+                for (std::size_t i = 0; i < coefficient_count; i++)
+                    (*chunk)[i] = unsignedChunk(rhs[i], shift, chunk_bits);
+                plans[prime]->forward(
+                    std::span<std::uint64_t>(rhs_spectra[prime][row]), *chunk);
+            }
+        }
+    }
+
+    clear<GLP>(result);
+    const std::size_t diagonal_count =
+        std::min<std::size_t>(lhs_chunks + rhs_chunks - 1,
+                              (torus_width + chunk_bits - 1) / chunk_bits);
+    std::array<std::vector<std::uint64_t>, 2> diagonal_coefficients{
+        std::vector<std::uint64_t>(diagonal_count * coefficient_count),
+        std::vector<std::uint64_t>(diagonal_count * coefficient_count)};
+#pragma omp parallel
+    {
+        std::array<std::vector<std::uint64_t>, 2> accumulators{
+            std::vector<std::uint64_t>(coefficient_count),
+            std::vector<std::uint64_t>(coefficient_count)};
+        std::array<std::vector<std::uint64_t>, 2> coefficients{
+            std::vector<std::uint64_t>(coefficient_count),
+            std::vector<std::uint64_t>(coefficient_count)};
+#pragma omp for schedule(dynamic)
+        for (std::size_t diagonal = 0; diagonal < diagonal_count; diagonal++) {
+            const std::size_t lhs_begin =
+                diagonal >= rhs_chunks ? diagonal - rhs_chunks + 1 : 0;
+            const std::size_t lhs_end = std::min(diagonal + 1, lhs_chunks);
+            for (std::size_t prime = 0; prime < 2; prime++) {
+                auto &accumulator = accumulators[prime];
+                std::fill(accumulator.begin(), accumulator.end(), 0);
+                const std::uint64_t modulus = plans[prime]->modulus();
+                for (std::size_t lhs_row = lhs_begin; lhs_row < lhs_end;
+                     lhs_row++) {
+                    const std::size_t rhs_row = diagonal - lhs_row;
+                    for (std::size_t i = 0; i < coefficient_count; i++) {
+                        const std::uint64_t product = modular_ntt::multiply(
+                            lhs_spectra[prime][lhs_row][i],
+                            rhs_spectra[prime][rhs_row][i], modulus);
+                        accumulator[i] =
+                            modular_ntt::add(accumulator[i], product, modulus);
+                    }
+                }
+                plans[prime]->inverse(
+                    std::span<std::uint64_t>(coefficients[prime]),
+                    std::span<std::uint64_t>(accumulator));
+                std::copy(coefficients[prime].begin(),
+                          coefficients[prime].end(),
+                          diagonal_coefficients[prime].begin() +
+                              diagonal * coefficient_count);
+            }
+        }
+    }
+    static const modular_ntt::TwoPrimeCRT crt(modular_ntt::wide_primes[0],
+                                              modular_ntt::wide_primes[1]);
+#pragma omp parallel for schedule(static)
+    for (std::size_t i = 0; i < coefficient_count; i++) {
+        T value{};
+        for (std::size_t diagonal = 0; diagonal < diagonal_count; diagonal++)
+            value +=
+                signedI128ToTorus<T>(crt.reconstructSigned(
+                    diagonal_coefficients[0][diagonal * coefficient_count + i],
+                    diagonal_coefficients[1][diagonal * coefficient_count + i]))
+                << (diagonal * chunk_bits);
+        result[i] = value;
+    }
+    return true;
+}
+
 template <class GLP>
 inline bool baseMultiplyNTT(GLBasePolynomial<GLP> &result,
                             const GLBasePolynomial<GLP> &lhs,
@@ -852,7 +1405,8 @@ inline bool baseMultiplyNTT(GLBasePolynomial<GLP> &result,
         clear<GLP>(result);
         return true;
     }
-    if (bounded_bits + convolution_bits >= crt_safe_bits) return false;
+    if (bounded_bits + convolution_bits >= crt_safe_bits)
+        return baseMultiplyNTTDoubleChunk<GLP>(result, lhs, rhs);
 
     const std::uint32_t chunk_bits =
         crt_safe_bits - bounded_bits - convolution_bits;
@@ -870,7 +1424,8 @@ inline bool baseMultiplyNTT(GLBasePolynomial<GLP> &result,
         if (!nonzero) continue;
         const std::uint32_t chunk_primes =
             baseMultiplyNTTPrimeCount<GLP>(chunk, bounded);
-        if (chunk_primes == 0) return false;
+        if (chunk_primes == 0)
+            return baseMultiplyNTTDoubleChunk<GLP>(result, lhs, rhs);
         baseMultiplyNTTDirect<GLP>(chunk_product, chunk, bounded, chunk_primes);
         for (std::size_t i = 0; i < result.size(); i++)
             result[i] += chunk_product[i] << shift;
@@ -887,10 +1442,34 @@ inline void baseMultiply(GLBasePolynomial<GLP> &result,
         baseMultiplyReference<GLP>(result, lhs, rhs);
 }
 
+template <class GLP, std::uint32_t LogQ>
+inline void baseMultiplyAtLevel(GLBasePolynomial<GLP> &result,
+                                const GLBasePolynomial<GLP> &lhs,
+                                const GLBasePolynomial<GLP> &rhs)
+{
+    static_assert(LogQ > 0 &&
+                  LogQ <= std::numeric_limits<typename GLP::T>::digits);
+    if constexpr (supportsWidePrimeNTT<GLP>) {
+        const std::uint32_t direct_primes =
+            baseMultiplyNTTPrimeCount<GLP>(lhs, rhs);
+        if (direct_primes != 0) {
+            baseMultiplyNTTDirect<GLP>(result, lhs, rhs, direct_primes);
+            reduce<GLP, LogQ>(result);
+            return;
+        }
+        if (baseMultiplyNTTDoubleChunk<GLP, LogQ>(result, lhs, rhs)) {
+            reduce<GLP, LogQ>(result);
+            return;
+        }
+    }
+    baseMultiplyReference<GLP>(result, lhs, rhs);
+    reduce<GLP, LogQ>(result);
+}
+
 template <class GLP>
-inline void polynomialMultiply(GLPolynomial<GLP> &result,
-                               const GLPolynomial<GLP> &lhs,
-                               const GLPolynomial<GLP> &rhs)
+inline void polynomialMultiplyReference(GLPolynomial<GLP> &result,
+                                        const GLPolynomial<GLP> &lhs,
+                                        const GLPolynomial<GLP> &rhs)
 {
     clear<GLP>(result);
     auto product = std::make_unique<GLBasePolynomial<GLP>>();
@@ -905,6 +1484,142 @@ inline void polynomialMultiply(GLPolynomial<GLP> &result,
             addInPlace<GLP>(result[y], *product);
         }
     }
+}
+
+template <class GLP>
+inline std::uint32_t polynomialMultiplyNTTPrimeCount(
+    const GLPolynomial<GLP> &lhs, const GLPolynomial<GLP> &rhs)
+{
+    if constexpr (!supportsWidePrimeNTT<GLP>) return 0;
+    constexpr std::size_t maximum_terms =
+        static_cast<std::size_t>(GLP::matrix_dimension) * 2 *
+        GLP::matrix_dimension * (2 * GLP::phi - 1);
+    const std::uint32_t lhs_bits = maxSignedTorusBitWidth<GLP>(lhs);
+    const std::uint32_t rhs_bits = maxSignedTorusBitWidth<GLP>(rhs);
+    if (lhs_bits == 0 || rhs_bits == 0) return 1;
+    const std::uint32_t required_bits =
+        lhs_bits + rhs_bits + ceilLog2(maximum_terms);
+    if (required_bits <= 60) return 1;
+    if (required_bits <= 122) return 2;
+    if (required_bits <= 126) return 3;
+    return 0;
+}
+
+template <class GLP, std::size_t PrimeIndex>
+inline void polynomialMultiplyNTTResidues(
+    std::vector<std::uint64_t> &coefficients, const GLPolynomial<GLP> &lhs,
+    const GLPolynomial<GLP> &rhs)
+{
+    const auto &plan = polynomialNTTPlan<GLP, PrimeIndex>();
+    std::vector<std::uint64_t> lhs_spectrum;
+    std::vector<std::uint64_t> rhs_spectrum;
+    plan.forward(lhs_spectrum, lhs);
+    plan.forward(rhs_spectrum, rhs);
+    for (std::size_t i = 0; i < lhs_spectrum.size(); i++)
+        lhs_spectrum[i] = modular_ntt::multiply(
+            lhs_spectrum[i], rhs_spectrum[i], plan.modulus());
+    plan.inverse(coefficients, lhs_spectrum);
+}
+
+template <class GLP>
+inline bool polynomialMultiplyNTT(GLPolynomial<GLP> &result,
+                                  const GLPolynomial<GLP> &lhs,
+                                  const GLPolynomial<GLP> &rhs)
+{
+    if constexpr (!supportsWidePrimeNTT<GLP>) return false;
+
+    using T = typename GLP::T;
+    const std::uint32_t prime_count =
+        polynomialMultiplyNTTPrimeCount<GLP>(lhs, rhs);
+    if (prime_count == 0) {
+        constexpr std::size_t maximum_terms =
+            static_cast<std::size_t>(GLP::matrix_dimension) * 2 *
+            GLP::matrix_dimension * (2 * GLP::phi - 1);
+        constexpr std::uint32_t convolution_bits = ceilLog2(maximum_terms);
+        constexpr std::uint32_t crt_safe_bits = 126;
+        const std::uint32_t lhs_bits = maxSignedTorusBitWidth<GLP>(lhs);
+        const std::uint32_t rhs_bits = maxSignedTorusBitWidth<GLP>(rhs);
+        const bool split_lhs = lhs_bits >= rhs_bits;
+        const std::uint32_t bounded_bits = split_lhs ? rhs_bits : lhs_bits;
+        if (bounded_bits == 0) {
+            clear<GLP>(result);
+            return true;
+        }
+        if (bounded_bits + convolution_bits >= crt_safe_bits) return false;
+        const std::uint32_t chunk_bits =
+            crt_safe_bits - bounded_bits - convolution_bits;
+        const auto &wide = split_lhs ? lhs : rhs;
+        const auto &bounded = split_lhs ? rhs : lhs;
+        const std::uint32_t wide_bits = maxUnsignedTorusBitWidth<GLP>(wide);
+        auto chunk = std::make_unique<GLPolynomial<GLP>>();
+        auto chunk_product = std::make_unique<GLPolynomial<GLP>>();
+        clear<GLP>(result);
+        for (std::uint32_t shift = 0; shift < wide_bits; shift += chunk_bits) {
+            bool nonzero = false;
+            for (std::size_t y = 0; y < GLP::matrix_dimension; y++)
+                for (std::size_t i = 0; i < GLP::baseP::n; i++) {
+                    (*chunk)[y][i] =
+                        unsignedChunk(wide[y][i], shift, chunk_bits);
+                    nonzero = nonzero || (*chunk)[y][i] != typename GLP::T{0};
+                }
+            if (!nonzero) continue;
+            if (!polynomialMultiplyNTT<GLP>(*chunk_product, *chunk, bounded))
+                return false;
+            for (std::size_t y = 0; y < GLP::matrix_dimension; y++)
+                for (std::size_t i = 0; i < GLP::baseP::n; i++)
+                    result[y][i] += (*chunk_product)[y][i] << shift;
+        }
+        return true;
+    }
+
+    std::vector<std::uint64_t> first_residues;
+    polynomialMultiplyNTTResidues<GLP, 0>(first_residues, lhs, rhs);
+    if (prime_count == 1) {
+        for (std::size_t y = 0; y < GLP::matrix_dimension; y++)
+            for (std::size_t i = 0; i < GLP::baseP::n; i++)
+                result[y][i] =
+                    signedI128ToTorus<T>(modular_ntt::centeredResidue(
+                        first_residues[y * GLP::baseP::n + i],
+                        modular_ntt::wide_primes[0].value));
+        return true;
+    }
+
+    std::vector<std::uint64_t> second_residues;
+    polynomialMultiplyNTTResidues<GLP, 1>(second_residues, lhs, rhs);
+    if (prime_count == 2) {
+        static const modular_ntt::TwoPrimeCRT crt(modular_ntt::wide_primes[0],
+                                                  modular_ntt::wide_primes[1]);
+        for (std::size_t y = 0; y < GLP::matrix_dimension; y++)
+            for (std::size_t i = 0; i < GLP::baseP::n; i++) {
+                const std::size_t index = y * GLP::baseP::n + i;
+                result[y][i] = signedI128ToTorus<T>(crt.reconstructSigned(
+                    first_residues[index], second_residues[index]));
+            }
+        return true;
+    }
+
+    std::vector<std::uint64_t> third_residues;
+    polynomialMultiplyNTTResidues<GLP, 2>(third_residues, lhs, rhs);
+    static const modular_ntt::ThreePrimeCRT crt(modular_ntt::wide_primes[0],
+                                                modular_ntt::wide_primes[1],
+                                                modular_ntt::wide_primes[2]);
+    for (std::size_t y = 0; y < GLP::matrix_dimension; y++)
+        for (std::size_t i = 0; i < GLP::baseP::n; i++) {
+            const std::size_t index = y * GLP::baseP::n + i;
+            result[y][i] = signedI128ToTorus<T>(crt.reconstructSignedBounded(
+                first_residues[index], second_residues[index],
+                third_residues[index]));
+        }
+    return true;
+}
+
+template <class GLP>
+inline void polynomialMultiply(GLPolynomial<GLP> &result,
+                               const GLPolynomial<GLP> &lhs,
+                               const GLPolynomial<GLP> &rhs)
+{
+    if (!polynomialMultiplyNTT<GLP>(result, lhs, rhs))
+        polynomialMultiplyReference<GLP>(result, lhs, rhs);
 }
 
 template <class GLP>
@@ -975,6 +1690,104 @@ inline void traceProduct(GLPolynomial<GLP> &result,
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+// A compact complex scalar used by the W^0-only trace kernel below.  The
+// third entry saves one addition in the three-multiply complex product.
+struct TraceSmallComplexMultiplier {
+    std::int64_t real;
+    std::int64_t imag;
+    std::int64_t real_plus_imag;
+};
+
+// Exact active-level trace by a pre-transformed, signed-small complex matrix.
+// The generic traceProduct has to scan both dense GL polynomials and performs
+// a full-width torus multiplication for every pair.  StC's X plaintext is
+// supported only at W^0 and its coefficients are at most a few bits wider
+// than its plaintext scale.  Compact the active ciphertext level to 128 bits,
+// retain the input rows in cache across every output row, and use Gauss's
+// three-multiply complex product.  All arithmetic wraps modulo 2^128, which
+// is exact modulo the requested (strictly smaller) active level.
+template <class GLP, std::uint32_t LogQ>
+inline void traceProductSmallComplex(
+    GLCiphertextData<GLP> &result, const GLCiphertextData<GLP> &lhs,
+    const std::span<const TraceSmallComplexMultiplier> multipliers)
+{
+    using T = typename GLP::T;
+    constexpr std::size_t n = GLP::matrix_dimension;
+    constexpr std::size_t phi = GLP::phi;
+    static_assert(LogQ > 0 && LogQ < 128);
+    static_assert(LogQ <= std::numeric_limits<T>::digits);
+    if (multipliers.size() != n * n)
+        throw std::invalid_argument(
+            "GL small-complex trace matrix has the wrong size");
+
+    constexpr __uint128_t active_mask =
+        (__uint128_t{1} << LogQ) - __uint128_t{1};
+    constexpr std::size_t component_stride = phi * n * n * 2;
+    constexpr std::size_t w_stride = n * n * 2;
+    constexpr std::size_t x_stride = n * 2;
+    std::vector<__uint128_t> active_lhs(2 * component_stride);
+
+#pragma omp parallel for collapse(4) schedule(static)
+    for (std::size_t component = 0; component < 2; component++)
+        for (std::size_t w = 0; w < phi; w++)
+            for (std::size_t x = 0; x < n; x++)
+                for (std::size_t z = 0; z < n; z++) {
+                    const std::size_t destination =
+                        component * component_stride + w * w_stride +
+                        x * x_stride + z * 2;
+                    active_lhs[destination] =
+                        torusLowU128(
+                            lhs[component][z][baseIndex<GLP>(0, x, w)]) &
+                        active_mask;
+                    active_lhs[destination + 1] =
+                        torusLowU128(
+                            lhs[component][z][baseIndex<GLP>(1, x, w)]) &
+                        active_mask;
+                }
+
+                // Each (W,X) input line is only 32 KiB for the n512 ciphertext
+                // and stays hot while all n output rows consume it.
+#pragma omp parallel for collapse(2) schedule(static)
+    for (std::size_t w = 0; w < phi; w++) {
+        for (std::size_t x = 0; x < n; x++) {
+            const __uint128_t *input_lines[2] = {
+                active_lhs.data() + w * w_stride + x * x_stride,
+                active_lhs.data() + component_stride + w * w_stride +
+                    x * x_stride};
+            for (std::size_t y = 0; y < n; y++) {
+                const auto *matrix_line = multipliers.data() + y * n;
+                __uint128_t real_sum[2]{};
+                __uint128_t imag_sum[2]{};
+                for (std::size_t z = 0; z < n; z++) {
+                    const auto &scalar = matrix_line[z];
+                    for (std::size_t component = 0; component < 2;
+                         component++) {
+                        const __uint128_t real = input_lines[component][2 * z];
+                        const __uint128_t imag =
+                            input_lines[component][2 * z + 1];
+                        const __uint128_t real_product =
+                            multiplyU128BySignedSmall(real, scalar.real);
+                        const __uint128_t imag_product =
+                            multiplyU128BySignedSmall(imag, scalar.imag);
+                        const __uint128_t sum_product =
+                            multiplyU128BySignedSmall(real + imag,
+                                                      scalar.real_plus_imag);
+                        real_sum[component] += real_product - imag_product;
+                        imag_sum[component] +=
+                            sum_product - real_product - imag_product;
+                    }
+                }
+                for (std::size_t component = 0; component < 2; component++) {
+                    result[component][y][baseIndex<GLP>(0, x, w)] =
+                        torusFromLowU128<T>(real_sum[component] & active_mask);
+                    result[component][y][baseIndex<GLP>(1, x, w)] =
+                        torusFromLowU128<T>(imag_sum[component] & active_mask);
                 }
             }
         }
@@ -1104,12 +1917,55 @@ inline void baseAutomorphism(GLBasePolynomial<GLP> &result,
                              const std::uint32_t x_multiplier,
                              const std::uint32_t w_multiplier)
 {
-    GLPolynomial<GLP> lifted;
-    GLPolynomial<GLP> transformed;
-    liftBase<GLP>(lifted, input);
-    polynomialAutomorphism<GLP>(transformed, lifted, x_multiplier & 3U,
-                                x_multiplier, 1, w_multiplier);
-    result = transformed[0];
+    constexpr std::uint32_t n = GLP::matrix_dimension;
+    constexpr std::uint32_t four_n = 4 * n;
+    constexpr std::uint32_t p = GLP::cyclotomic_order;
+    if (x_multiplier % four_n == 1 && w_multiplier % p == 1) {
+        result = input;
+        return;
+    }
+    clear<GLP>(result);
+
+    std::array<std::uint32_t, GLP::phi> mapped_ws{};
+    for (std::uint32_t w = 0; w < GLP::phi; w++)
+        mapped_ws[w] = static_cast<std::uint32_t>(
+            (static_cast<std::uint64_t>(w_multiplier) * w) % p);
+    std::array<std::uint32_t, n> x_powers{};
+    std::array<std::uint32_t, n> output_xs{};
+    for (std::uint32_t x = 0; x < n; x++) {
+        const std::uint32_t mapped_x = static_cast<std::uint32_t>(
+            (static_cast<std::uint64_t>(x_multiplier) * x) % four_n);
+        x_powers[x] = mapped_x / n;
+        output_xs[x] = mapped_x % n;
+    }
+    for (std::uint32_t w = 0; w < GLP::phi; w++) {
+        const std::uint32_t mapped_w = mapped_ws[w];
+        for (std::uint32_t x = 0; x < n; x++) {
+            const std::uint32_t x_power = x_powers[x];
+            const std::uint32_t output_x = output_xs[x];
+            for (std::uint32_t gaussian = 0; gaussian < 2; gaussian++) {
+                const auto value = input[baseIndex<GLP>(gaussian, x, w)];
+                if (value == typename GLP::T{0}) continue;
+                const std::uint32_t gaussian_power =
+                    ((x_multiplier & 3U) * gaussian + x_power) & 3U;
+                const std::uint32_t output_gaussian = gaussian_power & 1U;
+                const bool negative = gaussian_power >= 2;
+                if (mapped_w < GLP::phi) {
+                    addSigned(result[baseIndex<GLP>(output_gaussian, output_x,
+                                                    mapped_w)],
+                              value, negative);
+                }
+                else {
+                    // W^(p-1) = -(1 + W + ... + W^(p-2)).
+                    for (std::uint32_t reduced_w = 0; reduced_w < GLP::phi;
+                         reduced_w++)
+                        addSigned(result[baseIndex<GLP>(output_gaussian,
+                                                        output_x, reduced_w)],
+                                  value, !negative);
+                }
+            }
+        }
+    }
 }
 
 template <class GLP>
@@ -1136,6 +1992,91 @@ inline std::complex<long double> wRoot(const std::uint32_t exponent)
     return {std::cos(angle), std::sin(angle)};
 }
 
+// Invert one X canonical embedding.  The GL slots use roots
+// zeta^(5^j), where zeta is primitive of order 4n.  Dividing by zeta maps
+// them to every n-th root in the permutation (5^j-1)/4, so one ordinary
+// radix-2 inverse DFT plus a coefficient twist evaluates the same sum as the
+// reference formula in O(n log n).
+template <class GLP>
+class GLInverseXEmbeddingPlan {
+public:
+    static constexpr std::size_t dimension = GLP::matrix_dimension;
+    using Complex = std::complex<long double>;
+
+    GLInverseXEmbeddingPlan()
+    {
+        constexpr long double pi = 3.141592653589793238462643383279502884L;
+        for (std::size_t slot = 0; slot < dimension; slot++) {
+            const std::uint32_t exponent =
+                powMod(5, static_cast<std::uint32_t>(slot), 4 * dimension);
+            frequency_[slot] = (exponent - 1) / 4;
+        }
+        for (std::size_t coefficient = 0; coefficient < dimension;
+             coefficient++) {
+            const long double angle =
+                -2.0L * pi * coefficient / (4 * dimension);
+            inverse_twist_[coefficient] = {std::cos(angle), std::sin(angle)};
+        }
+        for (std::size_t length = 2; length <= dimension; length <<= 1) {
+            const long double angle = -2.0L * pi / length;
+            stage_roots_.emplace_back(std::cos(angle), std::sin(angle));
+        }
+    }
+
+    void apply(const std::span<Complex> output,
+               const std::span<const Complex> input,
+               std::vector<Complex> &work) const
+    {
+        if (output.size() != dimension || input.size() != dimension)
+            throw std::invalid_argument(
+                "GL X embedding transform has the wrong size");
+        work.resize(dimension);
+        for (std::size_t slot = 0; slot < dimension; slot++)
+            work[frequency_[slot]] = input[slot];
+
+        for (std::size_t i = 1, j = 0; i < dimension; i++) {
+            std::size_t bit = dimension >> 1;
+            for (; (j & bit) != 0; bit >>= 1) j ^= bit;
+            j ^= bit;
+            if (i < j) std::swap(work[i], work[j]);
+        }
+        std::size_t stage = 0;
+        for (std::size_t length = 2; length <= dimension;
+             length <<= 1, stage++) {
+            const std::size_t half = length >> 1;
+            for (std::size_t block = 0; block < dimension; block += length) {
+                Complex twiddle = 1;
+                for (std::size_t j = 0; j < half; j++) {
+                    const Complex even = work[block + j];
+                    const Complex odd = work[block + j + half] * twiddle;
+                    work[block + j] = even + odd;
+                    work[block + j + half] = even - odd;
+                    twiddle *= stage_roots_[stage];
+                }
+            }
+        }
+        const long double inverse_dimension =
+            1.0L / static_cast<long double>(dimension);
+        for (std::size_t coefficient = 0; coefficient < dimension;
+             coefficient++)
+            output[coefficient] = work[coefficient] *
+                                  inverse_twist_[coefficient] *
+                                  inverse_dimension;
+    }
+
+private:
+    std::array<std::uint32_t, dimension> frequency_{};
+    std::array<Complex, dimension> inverse_twist_{};
+    std::vector<Complex> stage_roots_{};
+};
+
+template <class GLP>
+inline const GLInverseXEmbeddingPlan<GLP> &inverseXEmbeddingPlan()
+{
+    static const GLInverseXEmbeddingPlan<GLP> plan;
+    return plan;
+}
+
 }  // namespace gl_detail
 
 template <class GLP>
@@ -1159,9 +2100,6 @@ inline void GLEncode(GLPlaintext<GLP, LogQ, LogDelta> &plaintext,
     constexpr std::uint32_t phi = GLP::phi;
     const long double scale = std::ldexp(1.0L, LogDelta);
 
-    std::array<std::complex<long double>, n> x_roots{};
-    for (std::uint32_t j = 0; j < n; j++) x_roots[j] = gl_detail::xRoot<GLP>(j);
-
     std::vector<std::complex<long double>> w_values(
         static_cast<std::size_t>(n) * n * phi);
     auto w_value = [&](const std::uint32_t row, const std::uint32_t column,
@@ -1171,60 +2109,71 @@ inline void GLEncode(GLPlaintext<GLP, LogQ, LogDelta> &plaintext,
 
     // Invert the W canonical embedding.  Values are supplied at all nonzero
     // p-th roots.  Choosing the degree-(p-2) representative determines the
-    // missing value at W=1.
+    // missing value at W=1.  Precompute the tiny phi-by-phi transform so the
+    // n^2 matrix entries do not repeatedly evaluate trigonometric functions.
+    std::array<std::array<std::complex<long double>, phi>, phi> w_weights{};
+    for (std::uint32_t batch = 0; batch < phi; batch++) {
+        const std::uint32_t exponent = gl_detail::batchExponent<GLP>(batch);
+        const auto at_one_weight = gl_detail::wRoot<GLP>(exponent);
+        for (std::uint32_t w = 0; w < phi; w++) {
+            const std::uint32_t root_exponent =
+                (p - static_cast<std::uint32_t>(
+                         (static_cast<std::uint64_t>(exponent) * w) % p)) %
+                p;
+            w_weights[batch][w] =
+                (gl_detail::wRoot<GLP>(root_exponent) - at_one_weight) /
+                static_cast<long double>(p);
+        }
+    }
+#pragma omp parallel for collapse(2) schedule(static)
     for (std::uint32_t row = 0; row < n; row++) {
         for (std::uint32_t column = 0; column < n; column++) {
-            std::complex<long double> at_one = 0;
-            for (std::uint32_t batch = 0; batch < phi; batch++) {
-                const std::uint32_t exponent =
-                    gl_detail::batchExponent<GLP>(batch);
-                at_one -= static_cast<std::complex<long double>>(
-                              matrices(batch, row, column)) *
-                          gl_detail::wRoot<GLP>(exponent);
-            }
             for (std::uint32_t w = 0; w < phi; w++) {
-                std::complex<long double> coefficient = at_one;
-                for (std::uint32_t batch = 0; batch < phi; batch++) {
-                    const std::uint32_t exponent =
-                        gl_detail::batchExponent<GLP>(batch);
-                    const std::uint32_t root_exponent =
-                        (p -
-                         static_cast<std::uint32_t>(
-                             (static_cast<std::uint64_t>(exponent) * w) % p)) %
-                        p;
+                std::complex<long double> coefficient = 0;
+                for (std::uint32_t batch = 0; batch < phi; batch++)
                     coefficient += static_cast<std::complex<long double>>(
                                        matrices(batch, row, column)) *
-                                   gl_detail::wRoot<GLP>(root_exponent);
-                }
-                w_value(row, column, w) =
-                    coefficient / static_cast<long double>(p);
+                                   w_weights[batch][w];
+                w_value(row, column, w) = coefficient;
             }
         }
     }
 
     gl_detail::clear<GLP>(plaintext.poly);
-    for (std::uint32_t w = 0; w < phi; w++) {
-        for (std::uint32_t x = 0; x < n; x++) {
+    const auto &x_plan = gl_detail::inverseXEmbeddingPlan<GLP>();
+#pragma omp parallel
+    {
+        std::vector<std::complex<long double>> after_columns(
+            static_cast<std::size_t>(n) * n);
+        std::vector<std::complex<long double>> input_line(n);
+        std::vector<std::complex<long double>> output_line(n);
+        std::vector<std::complex<long double>> work;
+#pragma omp for schedule(dynamic)
+        for (std::uint32_t w = 0; w < phi; w++) {
+            for (std::uint32_t row = 0; row < n; row++) {
+                for (std::uint32_t column = 0; column < n; column++)
+                    input_line[column] = w_value(row, column, w);
+                x_plan.apply(output_line, input_line, work);
+                for (std::uint32_t y = 0; y < n; y++)
+                    after_columns[static_cast<std::size_t>(row) * n + y] =
+                        output_line[y];
+            }
             for (std::uint32_t y = 0; y < n; y++) {
-                std::complex<long double> coefficient = 0;
-                for (std::uint32_t row = 0; row < n; row++) {
-                    const auto x_factor =
-                        std::pow(x_roots[row], -static_cast<int>(x));
-                    for (std::uint32_t column = 0; column < n; column++) {
-                        coefficient +=
-                            w_value(row, column, w) * x_factor *
-                            std::pow(x_roots[column], -static_cast<int>(y));
-                    }
+                for (std::uint32_t row = 0; row < n; row++)
+                    input_line[row] =
+                        after_columns[static_cast<std::size_t>(row) * n + y];
+                x_plan.apply(output_line, input_line, work);
+                for (std::uint32_t x = 0; x < n; x++) {
+                    const auto coefficient = output_line[x] * scale;
+                    const auto real =
+                        static_cast<__int128_t>(std::round(coefficient.real()));
+                    const auto imag =
+                        static_cast<__int128_t>(std::round(coefficient.imag()));
+                    plaintext.poly[y][gl_detail::baseIndex<GLP>(0, x, w)] =
+                        ckks_detail::signedToLevel<P, LogQ>(real);
+                    plaintext.poly[y][gl_detail::baseIndex<GLP>(1, x, w)] =
+                        ckks_detail::signedToLevel<P, LogQ>(imag);
                 }
-                coefficient *= scale / static_cast<long double>(n * n);
-                const auto real =
-                    static_cast<__int128_t>(std::round(coefficient.real()));
-                const auto imag =
-                    static_cast<__int128_t>(std::round(coefficient.imag()));
-                plaintext.poly[y][gl_detail::baseIndex<GLP>(0, x, w)] =
-                    ckks_detail::signedToLevel<P, LogQ>(real);
-                plaintext.poly[y][gl_detail::baseIndex<GLP>(1, x, w)] =
-                    ckks_detail::signedToLevel<P, LogQ>(imag);
             }
         }
     }
@@ -1539,11 +2488,79 @@ inline constexpr std::uint64_t smallKeySwitchNTTKeyCacheBytes =
     SwitchKey::primary_rows * SwitchKey::bbar_rows * 2 *
     GLBaseNTTPlan<GLP>::coefficient_count * sizeof(std::uint64_t);
 
+template <class GLP, class SwitchKey>
+inline std::shared_ptr<typename SwitchKey::TransientNTTCache>
+prepareSmallKeySwitchNTTCache(const SwitchKey &switch_key)
+{
+    constexpr std::uint32_t prime_count =
+        smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    static_assert(prime_count != 0,
+                  "the requested GL DD switch has no exact NTT path");
+    constexpr std::size_t coefficient_count =
+        GLBaseNTTPlan<GLP>::coefficient_count;
+    constexpr std::size_t key_row_count =
+        static_cast<std::size_t>(SwitchKey::primary_rows) *
+        SwitchKey::bbar_rows * 2;
+    const auto key_cache = switch_key.transient_ntt_cache;
+    std::call_once(key_cache->initialize_once, [&] {
+        auto &key_spectra = key_cache->spectra;
+        key_spectra[0].resize(key_row_count * coefficient_count);
+        if constexpr (prime_count == 2)
+            key_spectra[1].resize(key_row_count * coefficient_count);
+
+        const auto &first_plan = baseNTTPlan<GLP, 0>();
+        const GLBaseNTTPlan<GLP> *second_plan = nullptr;
+        if constexpr (prime_count == 2) second_plan = &baseNTTPlan<GLP, 1>();
+#pragma omp parallel
+        {
+            GLBasePolynomial<GLP> key_row{};
+#pragma omp for collapse(3) schedule(static)
+            for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
+                 primary++) {
+                for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows;
+                     bbar++) {
+                    for (std::size_t component = 0; component < 2;
+                         component++) {
+                        unpackDigitPolynomial<GLP, SwitchKey::bbar_bit>(
+                            key_row, switch_key.at(primary, bbar)[component]);
+                        const std::size_t row =
+                            (static_cast<std::size_t>(primary) *
+                                 SwitchKey::bbar_rows +
+                             bbar) *
+                                2 +
+                            component;
+                        first_plan.forward(
+                            std::span<std::uint64_t>(
+                                key_spectra[0].data() + row * coefficient_count,
+                                coefficient_count),
+                            key_row);
+                        if constexpr (prime_count == 2)
+                            second_plan->forward(
+                                std::span<std::uint64_t>(
+                                    key_spectra[1].data() +
+                                        row * coefficient_count,
+                                    coefficient_count),
+                                key_row);
+                    }
+                }
+            }
+        }
+    });
+    return key_cache;
+}
+
+template <class SwitchKey>
+inline void releaseSmallKeySwitchNTTCache(const SwitchKey &switch_key)
+{
+    switch_key.transient_ntt_cache =
+        std::make_shared<typename SwitchKey::TransientNTTCache>();
+}
+
 // PrepareSlice(slice) materializes its primary decomposition, GetInput returns
 // one of those base polynomials, and StoreOutput consumes one reconstructed
-// coefficient.  Key spectra live only for this call: serialized DD keys remain
-// packed and unchanged.  Processing one Y slice at a time also avoids caching
-// all input spectra for a production-size GL polynomial.
+// coefficient.  Key spectra are transient and never serialized.  Processing
+// one Y slice at a time also avoids caching all input spectra for a
+// production-size GL polynomial.
 template <class GLP, class SwitchKey, class PrepareSlice, class GetInput,
           class StoreOutput>
 inline bool accumulateSmallKeySwitchProductsNTT(const std::size_t slice_count,
@@ -1561,9 +2578,6 @@ inline bool accumulateSmallKeySwitchProductsNTT(const std::size_t slice_count,
     else {
         constexpr std::size_t coefficient_count =
             GLBaseNTTPlan<GLP>::coefficient_count;
-        constexpr std::size_t key_row_count =
-            static_cast<std::size_t>(SwitchKey::primary_rows) *
-            SwitchKey::bbar_rows * 2;
         constexpr std::size_t input_row_count = SwitchKey::primary_rows;
 
         const auto &first_plan = baseNTTPlan<GLP, 0>();
@@ -1572,38 +2586,9 @@ inline bool accumulateSmallKeySwitchProductsNTT(const std::size_t slice_count,
         const std::uint64_t first_modulus = first_plan.modulus();
         const std::uint64_t second_modulus =
             prime_count == 2 ? second_plan->modulus() : 0;
-        std::array<std::vector<std::uint64_t>, 2> key_spectra;
-        key_spectra[0].resize(key_row_count * coefficient_count);
-        if constexpr (prime_count == 2)
-            key_spectra[1].resize(key_row_count * coefficient_count);
-
-        GLBasePolynomial<GLP> key_row{};
-        for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
-             primary++) {
-            for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
-                for (std::size_t component = 0; component < 2; component++) {
-                    unpackDigitPolynomial<GLP, SwitchKey::bbar_bit>(
-                        key_row, switch_key.at(primary, bbar)[component]);
-                    const std::size_t row = (static_cast<std::size_t>(primary) *
-                                                 SwitchKey::bbar_rows +
-                                             bbar) *
-                                                2 +
-                                            component;
-                    first_plan.forward(
-                        std::span<std::uint64_t>(
-                            key_spectra[0].data() + row * coefficient_count,
-                            coefficient_count),
-                        key_row);
-                    if constexpr (prime_count == 2) {
-                        second_plan->forward(
-                            std::span<std::uint64_t>(
-                                key_spectra[1].data() + row * coefficient_count,
-                                coefficient_count),
-                            key_row);
-                    }
-                }
-            }
-        }
+        const auto key_cache =
+            prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(switch_key);
+        const auto &key_spectra = key_cache->spectra;
 
         std::array<std::vector<std::uint64_t>, 2> input_spectra;
         std::array<std::vector<std::uint64_t>, 2> accumulators;
@@ -1714,6 +2699,200 @@ inline bool accumulateSmallKeySwitchProductsNTT(const std::size_t slice_count,
                 }
             }
         }
+        return true;
+    }
+}
+
+// Sum several raw base-ring DD switches before reconstruction.  HMux uses
+// this to combine all body/mask radix branches under P*Q and therefore pays
+// for one set of inverse transforms instead of one set per branch.  Count is
+// part of the exact CRT bound; no probabilistic wraparound assumption is used.
+template <class GLP, class SwitchKey, std::size_t Count>
+struct SmallKeySwitchSumNTTWorkspace {
+    using P = typename GLP::baseP;
+    static constexpr std::size_t input_row_count = SwitchKey::primary_rows;
+
+    std::array<std::vector<std::uint64_t>, 2> input_spectra{};
+    std::array<std::vector<std::uint64_t>, 2> accumulators{};
+    std::array<std::vector<std::uint64_t>, 2> coefficients{};
+    std::array<std::vector<unsigned __int128>, 2> wide_accumulators{};
+    std::unique_ptr<std::array<Polynomial<P>, input_row_count>> input_digits{};
+};
+
+template <class GLP, class SwitchKey, std::size_t Count>
+inline bool accumulateSmallKeySwitchSumNTT(
+    GLBaseCiphertextData<GLP> &result,
+    const std::array<const GLBasePolynomial<GLP> *, Count> &inputs,
+    const std::array<const SwitchKey *, Count> &switch_keys,
+    SmallKeySwitchSumNTTWorkspace<GLP, SwitchKey, Count> *provided_workspace =
+        nullptr)
+{
+    using P = typename GLP::baseP;
+    using T = typename GLP::T;
+    constexpr std::uint32_t prime_count =
+        smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    constexpr std::size_t maximum_terms =
+        2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+    constexpr std::uint32_t required_bits =
+        SwitchKey::primary_bit + SwitchKey::bbar_bit + ceilLog2(maximum_terms) +
+        ceilLog2(SwitchKey::primary_rows) + ceilLog2(Count);
+    constexpr bool exact_bound = (prime_count == 1 && required_bits <= 60) ||
+                                 (prime_count == 2 && required_bits <= 122);
+    if constexpr (prime_count == 0 || !exact_bound) {
+        return false;
+    }
+    else {
+        static_assert(Count > 0);
+        constexpr std::size_t coefficient_count =
+            GLBaseNTTPlan<GLP>::coefficient_count;
+        constexpr std::size_t input_row_count = SwitchKey::primary_rows;
+        const auto &first_plan = baseNTTPlan<GLP, 0>();
+        const GLBaseNTTPlan<GLP> *second_plan = nullptr;
+        if constexpr (prime_count == 2) second_plan = &baseNTTPlan<GLP, 1>();
+        const std::uint64_t first_modulus = first_plan.modulus();
+        const std::uint64_t second_modulus =
+            prime_count == 2 ? second_plan->modulus() : 0;
+
+        std::array<std::shared_ptr<typename SwitchKey::TransientNTTCache>,
+                   Count>
+            key_caches;
+        SmallKeySwitchSumNTTWorkspace<GLP, SwitchKey, Count> local_workspace;
+        auto &workspace = provided_workspace == nullptr ? local_workspace
+                                                        : *provided_workspace;
+        auto &input_spectra = workspace.input_spectra;
+        const std::size_t input_spectrum_count =
+            Count * input_row_count * coefficient_count;
+        input_spectra[0].resize(input_spectrum_count);
+        if constexpr (prime_count == 2)
+            input_spectra[1].resize(input_spectrum_count);
+
+        if (!workspace.input_digits)
+            workspace.input_digits =
+                std::make_unique<std::array<Polynomial<P>, input_row_count>>();
+        auto &input_digits = *workspace.input_digits;
+        for (std::size_t term = 0; term < Count; term++) {
+            if (inputs[term] == nullptr || switch_keys[term] == nullptr)
+                throw std::invalid_argument("null GL DD switch-sum operand");
+            if (switch_keys[term]->data.size() !=
+                SwitchKey::primary_rows * SwitchKey::bbar_rows)
+                throw std::invalid_argument(
+                    "uninitialized GL DD switch-sum key");
+            key_caches[term] = prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
+                *switch_keys[term]);
+            ckks_detail::activeBaseDecomposePolynomialRows<
+                P, SwitchKey::log_q, SwitchKey::primary_bit,
+                SwitchKey::primary_rows>(input_digits, *inputs[term]);
+            for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
+                 primary++) {
+                const std::size_t input_row = term * input_row_count + primary;
+                first_plan.forward(
+                    std::span<std::uint64_t>(
+                        input_spectra[0].data() + input_row * coefficient_count,
+                        coefficient_count),
+                    input_digits[primary]);
+                if constexpr (prime_count == 2)
+                    second_plan->forward(std::span<std::uint64_t>(
+                                             input_spectra[1].data() +
+                                                 input_row * coefficient_count,
+                                             coefficient_count),
+                                         input_digits[primary]);
+            }
+        }
+
+        clear<GLP>(result[0]);
+        clear<GLP>(result[1]);
+        auto &accumulators = workspace.accumulators;
+        auto &coefficients = workspace.coefficients;
+        auto &wide_accumulators = workspace.wide_accumulators;
+        accumulators[0].resize(coefficient_count);
+        coefficients[0].resize(coefficient_count);
+        wide_accumulators[0].resize(coefficient_count);
+        if constexpr (prime_count == 2) {
+            accumulators[1].resize(coefficient_count);
+            coefficients[1].resize(coefficient_count);
+            wide_accumulators[1].resize(coefficient_count);
+        }
+
+        for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
+            const std::uint32_t shift =
+                (SwitchKey::bbar_rows - bbar - 1) * SwitchKey::bbar_bit;
+            for (std::size_t component = 0; component < 2; component++) {
+                const auto accumulate_prime = [&](const std::size_t prime,
+                                                  const std::uint64_t modulus) {
+                    auto &accumulator = accumulators[prime];
+                    auto &wide = wide_accumulators[prime];
+                    std::fill(accumulator.begin(), accumulator.end(), 0);
+                    std::fill(wide.begin(), wide.end(), 0);
+                    std::size_t batch_count = 0;
+                    const auto flush = [&] {
+                        for (std::size_t i = 0; i < coefficient_count; i++) {
+                            accumulator[i] = modular_ntt::add(
+                                accumulator[i],
+                                modular_ntt::reduceWide(wide[i], modulus),
+                                modulus);
+                            wide[i] = 0;
+                        }
+                        batch_count = 0;
+                    };
+                    for (std::size_t term = 0; term < Count; term++) {
+                        const auto &key_spectra =
+                            key_caches[term]->spectra[prime];
+                        for (std::uint32_t primary = 0;
+                             primary < SwitchKey::primary_rows; primary++) {
+                            const std::size_t input_row =
+                                term * input_row_count + primary;
+                            const std::size_t key_row =
+                                (static_cast<std::size_t>(primary) *
+                                     SwitchKey::bbar_rows +
+                                 bbar) *
+                                    2 +
+                                component;
+                            const std::uint64_t *input_spectrum =
+                                input_spectra[prime].data() +
+                                input_row * coefficient_count;
+                            const std::uint64_t *key_spectrum =
+                                key_spectra.data() +
+                                key_row * coefficient_count;
+                            for (std::size_t i = 0; i < coefficient_count; i++)
+                                wide[i] += static_cast<unsigned __int128>(
+                                               input_spectrum[i]) *
+                                           key_spectrum[i];
+                            batch_count++;
+                            if (batch_count == 16) flush();
+                        }
+                    }
+                    if (batch_count != 0) flush();
+                };
+                accumulate_prime(0, first_modulus);
+                if constexpr (prime_count == 2)
+                    accumulate_prime(1, second_modulus);
+
+                first_plan.inverse(std::span<std::uint64_t>(coefficients[0]),
+                                   std::span<std::uint64_t>(accumulators[0]));
+                if constexpr (prime_count == 1) {
+                    for (std::size_t i = 0; i < coefficient_count; i++)
+                        result[component][i] +=
+                            signedI128ToTorus<T>(modular_ntt::centeredResidue(
+                                coefficients[0][i], first_modulus))
+                            << shift;
+                }
+                else {
+                    second_plan->inverse(
+                        std::span<std::uint64_t>(coefficients[1]),
+                        std::span<std::uint64_t>(accumulators[1]));
+                    static const modular_ntt::TwoPrimeCRT crt(
+                        modular_ntt::wide_primes[0],
+                        modular_ntt::wide_primes[1]);
+                    for (std::size_t i = 0; i < coefficient_count; i++)
+                        result[component][i] +=
+                            signedI128ToTorus<T>(crt.reconstructSigned(
+                                coefficients[0][i], coefficients[1][i]))
+                            << shift;
+                }
+            }
+        }
+        reduce<GLP, SwitchKey::key_log_q>(result[0]);
+        reduce<GLP, SwitchKey::key_log_q>(result[1]);
         return true;
     }
 }
@@ -1916,9 +3095,22 @@ struct GLDDSmallKeySwitchKey {
     static_assert(bbar_rows * BbarBit <=
                   std::numeric_limits<typename GLP::T>::digits);
 
-    std::vector<PackedCiphertext> data{};
+    struct TransientNTTCache {
+        std::once_flag initialize_once{};
+        std::array<std::vector<std::uint64_t>, 2> spectra{};
+    };
 
-    void allocate() { data.resize(primary_rows * bbar_rows); }
+    std::vector<PackedCiphertext> data{};
+    // This exact transform cache is intentionally omitted from serialization.
+    // Copies of an immutable evaluation key may share it safely.
+    mutable std::shared_ptr<TransientNTTCache> transient_ntt_cache =
+        std::make_shared<TransientNTTCache>();
+
+    void allocate()
+    {
+        data.resize(primary_rows * bbar_rows);
+        transient_ntt_cache = std::make_shared<TransientNTTCache>();
+    }
 
     PackedCiphertext &at(const std::uint32_t primary, const std::uint32_t bbar)
     {
@@ -1942,6 +3134,103 @@ struct GLDDSmallKeySwitchKey {
         archive(data);
     }
 };
+
+namespace gl_detail {
+
+template <class GLP, class SwitchKey>
+inline constexpr std::uint32_t bigKeySwitchAccumulationNTTPrimeCount = [] {
+    if constexpr (!supportsWidePrimeNTT<GLP>) return 0U;
+    constexpr std::size_t maximum_terms =
+        static_cast<std::size_t>(GLP::matrix_dimension) * 2 *
+        GLP::matrix_dimension * (2 * GLP::phi - 1);
+    constexpr std::uint32_t required_bits =
+        SwitchKey::primary_bit + SwitchKey::bbar_bit + ceilLog2(maximum_terms) +
+        ceilLog2(SwitchKey::primary_rows);
+    if constexpr (required_bits <= 60)
+        return 1U;
+    else if constexpr (required_bits <= 122)
+        return 2U;
+    else if constexpr (required_bits <= 126)
+        return 3U;
+    else
+        return 0U;
+}();
+
+template <class GLP, class SwitchKey>
+struct BigKeySwitchNTTCache {
+    static constexpr std::uint32_t prime_count =
+        bigKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    static constexpr std::size_t row_count =
+        static_cast<std::size_t>(SwitchKey::primary_rows) *
+        SwitchKey::bbar_rows * 2;
+    std::array<std::vector<std::vector<std::uint64_t>>, 3> spectra{};
+};
+
+template <class GLP, class SwitchKey>
+inline constexpr std::uint64_t bigKeySwitchNTTCacheBytes =
+    static_cast<std::uint64_t>(
+        bigKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>) *
+    SwitchKey::primary_rows * SwitchKey::bbar_rows * 2 *
+    GLPolynomialNTTPlan<GLP>::coefficient_count * sizeof(std::uint64_t);
+
+template <class GLP, class SwitchKey>
+inline void prepareBigKeySwitchNTTCache(
+    BigKeySwitchNTTCache<GLP, SwitchKey> &cache, const SwitchKey &switch_key)
+{
+    constexpr std::uint32_t prime_count =
+        bigKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    static_assert(prime_count != 0,
+                  "the requested GL big DD switch has no exact NTT path");
+    if (switch_key.data.size() !=
+        SwitchKey::primary_rows * SwitchKey::bbar_rows)
+        throw std::invalid_argument("uninitialized GL big key-switch key");
+
+    using Plan = GLPolynomialNTTPlan<GLP>;
+    std::array<const Plan *, 3> plans{&polynomialNTTPlan<GLP, 0>(), nullptr,
+                                      nullptr};
+    if constexpr (prime_count >= 2) plans[1] = &polynomialNTTPlan<GLP, 1>();
+    if constexpr (prime_count == 3) plans[2] = &polynomialNTTPlan<GLP, 2>();
+    constexpr std::size_t row_count =
+        BigKeySwitchNTTCache<GLP, SwitchKey>::row_count;
+    for (std::uint32_t prime = 0; prime < prime_count; prime++)
+        cache.spectra[prime].resize(row_count);
+
+#pragma omp parallel for collapse(2) schedule(static)
+    for (std::uint32_t prime = 0; prime < prime_count; prime++) {
+        for (std::size_t row = 0; row < row_count; row++) {
+            const std::uint32_t primary =
+                static_cast<std::uint32_t>(row / (SwitchKey::bbar_rows * 2));
+            const std::size_t remainder =
+                row % (static_cast<std::size_t>(SwitchKey::bbar_rows) * 2);
+            const std::uint32_t bbar =
+                static_cast<std::uint32_t>(remainder / 2);
+            const std::size_t component = remainder % 2;
+            plans[prime]->template forwardPacked<SwitchKey::bbar_bit>(
+                cache.spectra[prime][row],
+                switch_key.at(primary, bbar)[component]);
+        }
+    }
+}
+
+template <class GLP, class SwitchKey>
+inline bool validBigKeySwitchNTTCache(
+    const BigKeySwitchNTTCache<GLP, SwitchKey> &cache)
+{
+    constexpr std::uint32_t prime_count =
+        bigKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    constexpr std::size_t row_count =
+        BigKeySwitchNTTCache<GLP, SwitchKey>::row_count;
+    constexpr std::size_t coefficient_count =
+        GLPolynomialNTTPlan<GLP>::coefficient_count;
+    for (std::uint32_t prime = 0; prime < prime_count; prime++) {
+        if (cache.spectra[prime].size() != row_count) return false;
+        for (const auto &row : cache.spectra[prime])
+            if (row.size() != coefficient_count) return false;
+    }
+    return true;
+}
+
+}  // namespace gl_detail
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,
           std::uint32_t BbarBit>
@@ -2018,12 +3307,151 @@ template <class GLP, std::uint32_t LogQ, std::uint32_t PrimaryBit,
           std::uint32_t BbarBit>
 inline void GLDDBigKeySwitch(
     GLCiphertextData<GLP> &result, const GLPolynomial<GLP> &input,
-    const GLDDBigKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> &switch_key)
+    const GLDDBigKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> &switch_key,
+    const gl_detail::BigKeySwitchNTTCache<
+        GLP, GLDDBigKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit>> *ntt_cache =
+        nullptr)
 {
     using SwitchKey = GLDDBigKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit>;
     if (switch_key.data.size() !=
         SwitchKey::primary_rows * SwitchKey::bbar_rows)
         throw std::invalid_argument("uninitialized GL big key-switch key");
+
+    constexpr std::uint32_t ntt_prime_count =
+        gl_detail::bigKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+
+    if constexpr (ntt_prime_count != 0) {
+        using T = typename GLP::T;
+        using Plan = gl_detail::GLPolynomialNTTPlan<GLP>;
+        constexpr std::size_t coefficient_count = Plan::coefficient_count;
+        constexpr std::size_t output_row_count =
+            static_cast<std::size_t>(SwitchKey::bbar_rows) * 2;
+        if (ntt_cache != nullptr &&
+            !gl_detail::validBigKeySwitchNTTCache<GLP, SwitchKey>(*ntt_cache))
+            throw std::invalid_argument("invalid GL big key-switch NTT cache");
+
+        std::array<const Plan *, 3> plans{
+            &gl_detail::polynomialNTTPlan<GLP, 0>(), nullptr, nullptr};
+        if constexpr (ntt_prime_count >= 2)
+            plans[1] = &gl_detail::polynomialNTTPlan<GLP, 1>();
+        if constexpr (ntt_prime_count == 3)
+            plans[2] = &gl_detail::polynomialNTTPlan<GLP, 2>();
+
+        std::array<std::vector<std::uint64_t>, 3> input_spectra;
+        plans[0]->template forwardActiveRows<LogQ, PrimaryBit>(input_spectra[0],
+                                                               input);
+        if constexpr (ntt_prime_count >= 2)
+            plans[1]->template forwardActiveRows<LogQ, PrimaryBit>(
+                input_spectra[1], input);
+        if constexpr (ntt_prime_count == 3)
+            plans[2]->template forwardActiveRows<LogQ, PrimaryBit>(
+                input_spectra[2], input);
+
+        // Every Bbar/component/prime inverse is independent.  Retaining its
+        // 62-bit residue row lets the outer OpenMP team process all rows in
+        // parallel and postpones the torus recombination to one cache-friendly
+        // pass over the output.
+        std::array<std::vector<std::vector<std::uint64_t>>, 3> residues;
+        for (std::uint32_t prime = 0; prime < ntt_prime_count; prime++)
+            residues[prime].resize(output_row_count);
+
+#pragma omp parallel for collapse(2) schedule(static)
+        for (std::uint32_t prime = 0; prime < ntt_prime_count; prime++) {
+            for (std::size_t output_row = 0; output_row < output_row_count;
+                 output_row++) {
+                const std::uint32_t bbar =
+                    static_cast<std::uint32_t>(output_row / 2);
+                const std::size_t component = output_row % 2;
+                const auto &plan = *plans[prime];
+                const std::uint64_t modulus = plan.modulus();
+                std::vector<std::uint64_t> accumulator(coefficient_count, 0);
+                std::vector<std::uint64_t> transient_key_spectrum;
+                for (std::uint32_t primary = 0;
+                     primary < SwitchKey::primary_rows; primary++) {
+                    const std::size_t key_row =
+                        (static_cast<std::size_t>(primary) *
+                             SwitchKey::bbar_rows +
+                         bbar) *
+                            2 +
+                        component;
+                    const std::uint64_t *key_spectrum;
+                    if (ntt_cache == nullptr) {
+                        plan.template forwardPacked<BbarBit>(
+                            transient_key_spectrum,
+                            switch_key.at(primary, bbar)[component]);
+                        key_spectrum = transient_key_spectrum.data();
+                    }
+                    else {
+                        key_spectrum =
+                            ntt_cache->spectra[prime][key_row].data();
+                    }
+                    const std::uint64_t *input_row =
+                        input_spectra[prime].data() +
+                        static_cast<std::size_t>(primary) * coefficient_count;
+                    for (std::size_t i = 0; i < coefficient_count; i++) {
+                        const std::uint64_t product = modular_ntt::multiply(
+                            input_row[i], key_spectrum[i], modulus);
+                        accumulator[i] =
+                            modular_ntt::add(accumulator[i], product, modulus);
+                    }
+                }
+                plan.inverse(residues[prime][output_row], accumulator);
+            }
+        }
+
+#pragma omp parallel for schedule(static)
+        for (std::size_t index = 0; index < coefficient_count; index++) {
+            const std::size_t y = index / GLP::baseP::n;
+            const std::size_t coefficient = index % GLP::baseP::n;
+            for (std::size_t component = 0; component < 2; component++) {
+                T accumulated{};
+                for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows;
+                     bbar++) {
+                    const std::uint32_t shift =
+                        (SwitchKey::bbar_rows - bbar - 1) * BbarBit;
+                    const std::size_t row =
+                        static_cast<std::size_t>(bbar) * 2 + component;
+                    if constexpr (ntt_prime_count == 1) {
+                        accumulated += gl_detail::signedI128ToTorus<T>(
+                                           modular_ntt::centeredResidue(
+                                               residues[0][row][index],
+                                               plans[0]->modulus()))
+                                       << shift;
+                    }
+                    else if constexpr (ntt_prime_count == 2) {
+                        static const modular_ntt::TwoPrimeCRT crt(
+                            modular_ntt::wide_primes[0],
+                            modular_ntt::wide_primes[1]);
+                        accumulated +=
+                            gl_detail::signedI128ToTorus<T>(
+                                crt.reconstructSigned(residues[0][row][index],
+                                                      residues[1][row][index]))
+                            << shift;
+                    }
+                    else {
+                        static const modular_ntt::ThreePrimeCRT crt(
+                            modular_ntt::wide_primes[0],
+                            modular_ntt::wide_primes[1],
+                            modular_ntt::wide_primes[2]);
+                        accumulated += gl_detail::signedI128ToTorus<T>(
+                                           crt.reconstructSignedBounded(
+                                               residues[0][row][index],
+                                               residues[1][row][index],
+                                               residues[2][row][index]))
+                                       << shift;
+                    }
+                }
+                result[component][y][coefficient] = accumulated;
+            }
+        }
+        gl_detail::reduce<GLP, SwitchKey::key_log_q>(result[0]);
+        gl_detail::reduce<GLP, SwitchKey::key_log_q>(result[1]);
+        gl_detail::divideRoundLevel<GLP, SwitchKey::key_log_q,
+                                    SwitchKey::auxiliary_log_q>(result[0]);
+        gl_detail::divideRoundLevel<GLP, SwitchKey::key_log_q,
+                                    SwitchKey::auxiliary_log_q>(result[1]);
+        return;
+    }
 
     auto input_digits =
         gl_detail::activeDecompose<GLP, LogQ, PrimaryBit>(input);
@@ -2068,31 +3496,43 @@ inline void GLDDSmallKeySwitch(
     if constexpr (gl_detail::smallKeySwitchAccumulationNTTPrimeCount<
                       GLP, SwitchKey> != 0) {
         using P = typename GLP::baseP;
-        auto input_digits = std::make_unique<
-            std::array<Polynomial<P>, SwitchKey::primary_rows>>();
+        // Build the immutable key spectrum before entering the Y-slice team.
+        // Otherwise the first worker performs this parallelizable work inside
+        // an already-active OpenMP region while every other worker waits on
+        // the once flag.
+        const auto prepared_cache =
+            gl_detail::prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
+                switch_key);
+        (void)prepared_cache;
         gl_detail::clear<GLP>(result[0]);
         gl_detail::clear<GLP>(result[1]);
-        const bool used_ntt =
-            gl_detail::accumulateSmallKeySwitchProductsNTT<GLP, SwitchKey>(
-                GLP::matrix_dimension, switch_key,
-                [&](const std::size_t slice) {
-                    ckks_detail::activeBaseDecomposePolynomialRows<
-                        P, LogQ, PrimaryBit, SwitchKey::primary_rows>(
-                        *input_digits, input[slice]);
-                },
-                [&](const std::uint32_t primary,
-                    const std::size_t) -> const GLBasePolynomial<GLP> & {
-                    return (*input_digits)[primary];
-                },
-                [&](const std::size_t component, const std::uint32_t bbar,
-                    const std::size_t slice, const std::size_t coefficient,
-                    const typename GLP::T value) {
-                    const std::uint32_t shift =
-                        (SwitchKey::bbar_rows - bbar - 1) * BbarBit;
-                    result[component][slice][coefficient] += value << shift;
-                });
-        if (!used_ntt)
-            throw std::logic_error("eligible GL DD NTT path was not used");
+#pragma omp parallel for schedule(dynamic)
+        for (std::size_t slice = 0; slice < GLP::matrix_dimension; slice++) {
+            auto input_digits = std::make_unique<
+                std::array<Polynomial<P>, SwitchKey::primary_rows>>();
+            const bool used_ntt =
+                gl_detail::accumulateSmallKeySwitchProductsNTT<GLP, SwitchKey>(
+                    1, switch_key,
+                    [&](const std::size_t) {
+                        ckks_detail::activeBaseDecomposePolynomialRows<
+                            P, LogQ, PrimaryBit, SwitchKey::primary_rows>(
+                            *input_digits, input[slice]);
+                    },
+                    [&](const std::uint32_t primary,
+                        const std::size_t) -> const GLBasePolynomial<GLP> & {
+                        return (*input_digits)[primary];
+                    },
+                    [&](const std::size_t component, const std::uint32_t bbar,
+                        const std::size_t, const std::size_t coefficient,
+                        const typename GLP::T value) {
+                        const std::uint32_t shift =
+                            (SwitchKey::bbar_rows - bbar - 1) * BbarBit;
+                        result[component][slice][coefficient] += value << shift;
+                    });
+            if (!used_ntt)
+                throw std::logic_error(
+                    "GL small key switch lost its exact NTT path");
+        }
         gl_detail::reduce<GLP, SwitchKey::key_log_q>(result[0]);
         gl_detail::reduce<GLP, SwitchKey::key_log_q>(result[1]);
     }
@@ -2539,7 +3979,10 @@ inline void GLConjugateTranspose(
     GLCiphertext<GLP, LogQ, LogDelta> &result,
     const GLCiphertext<GLP, LogQ, LogDelta> &input,
     const GLConjugateTransposeKey<GLP, LogQ, PrimaryBit, BbarBit>
-        &transpose_key)
+        &transpose_key,
+    const gl_detail::BigKeySwitchNTTCache<
+        GLP, GLConjugateTransposeKey<GLP, LogQ, PrimaryBit, BbarBit>>
+        *ntt_cache = nullptr)
 {
     constexpr std::uint32_t inverse_x = 4 * GLP::matrix_dimension - 1;
     constexpr std::uint32_t inverse_w = GLP::cyclotomic_order - 1;
@@ -2549,7 +3992,7 @@ inline void GLConjugateTranspose(
                                            inverse_x, inverse_w, true);
     gl_detail::polynomialAutomorphism<GLP>(mask, input[1], 3, inverse_x,
                                            inverse_x, inverse_w, true);
-    GLDDBigKeySwitch(result.ct, mask, transpose_key);
+    GLDDBigKeySwitch(result.ct, mask, transpose_key, ntt_cache);
     gl_detail::addInPlace<GLP>(result[0], body);
     gl_detail::reduce<GLP, LogQ>(result[0]);
     gl_detail::reduce<GLP, LogQ>(result[1]);

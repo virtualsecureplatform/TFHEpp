@@ -96,33 +96,62 @@ centered two-prime CRT reconstruction.  The GL adapter identifies `I=X^n`,
 applies a length-`2n` negacyclic transform on the combined `(I,X)` axis, and
 uses Rader's length-17 transform on the `W` axis.
 
-Two 62-bit transform primes reconstruct the production `n512p17` 85-by-16-bit
-DD product exactly.  A 16-by-16-bit digit product needs one prime.  For the
-wide-torus-by-small products used by encryption and key generation, the wide
-operand is split into unsigned power-of-two chunks, each chunk is multiplied
-exactly with two primes, and the results are recombined modulo the native
-power-of-two torus.  Products that exceed these proved bounds retain the
-coefficient-domain reference fallback.  NTT/CRT is therefore an exact
+One, two, or three 62-bit transform primes are selected from a proved
+coefficient bound. Two primes reconstruct the production `n512p17`
+85-by-16-bit DD product exactly; the full-polynomial big switch uses the third
+prime where its accumulation bound requires it. A 16-by-16-bit digit product
+needs one prime. For wide-torus-by-small products used by encryption and key
+generation, the wide operand is split into unsigned power-of-two chunks, each
+chunk is multiplied exactly, and the results are recombined modulo the native
+power-of-two torus. Products outside these proved bounds retain the
+coefficient-domain reference fallback. NTT/CRT is therefore an exact
 arithmetic backend and adds no approximation noise to the estimator.
+
+Wide-by-wide multiplication includes every chunk pair accumulated on an
+output diagonal in its CRT bound. It uses two primes and chooses the largest
+safe chunk width for the active modulus. At n512/logQ 338 this is seven chunks
+per operand instead of the former sixteen one-prime chunks; diagonals whose
+shift is already zero modulo `2^LogQ` are not evaluated.
+
+The common radix-2 implementation precomputes stage twiddles and bit-reversal
+swaps. Its pseudo-Mersenne reduction exploits `p = 2^62-c`, avoiding the
+compiler's 128-by-64 division helper. Inverse negacyclic and Rader transforms
+fold their normalization constants into already-required coefficient or
+kernel multipliers. These optimizations are in the scheme-neutral
+`modular_ntt.hpp`, not in a GL-specific FFT wrapper.
 
 The stored ciphertexts and packed DD evaluation keys remain in coefficient
 form.  Transform primes are temporary multiplication machinery; no RNS limbs
 are added to the persistent key representation.
 
-Small-DD switching reuses those temporary transforms within one switch.  Each
+Small-DD switching reuses those temporary transforms across calls. Each
 packed key row is transformed once, each primary input digit is transformed
 once per `Y` slice, and all primary-row products are accumulated before one
 inverse transform.  The `n512p17` path uses a 54 MiB transient key-spectrum
-cache; it does not enlarge the serialized evaluation key.  Slice-at-a-time
+cache per 338-bit switch; it does not enlarge the serialized evaluation key.
+HMux also sums all eight body/mask branch switches in the NTT domain and uses
+batched 128-bit pointwise accumulators. Slice-at-a-time
 decomposition and fused Bbar recomposition also remove about 25.4 GiB of old
 full-polynomial scratch at `n512p17`.  Beyond the caller-owned 896 MiB output
 ciphertext, the optimized switch needs roughly 60 MiB of working storage.  The
 full switch's per-prime transform counts fall from 221,184 forward and 110,592
 inverse transforms to 2,264 forward and 27,648 inverse transforms.  The
-regression's dense raw base switch takes about one second on the development
-host, and its measured fixed/eight-slice costs project the full 512-slice
-switch at roughly two minutes.  This is a component projection, not a measured
-end-to-end bootstrap runtime.
+regression's current dense raw base-switch measurement is about 0.05 second,
+or roughly 27--30 seconds when multiplied across 512 slices. This is a
+component projection, not a measured full switch.
+
+HMux X automorphisms act directly on the `(I,X,W)` base polynomial. The former
+generic route lifted one base polynomial into two 448 MiB full GL temporaries
+per automorphism at n512; the direct coefficient permutation is checked
+exactly against that generic map and avoids this allocation entirely.
+
+The big DD switch similarly caches full-ring key spectra. At n512 the cache is
+about 4.5 GiB; StC prepares it once, reuses it for both conjugate transposes,
+and releases it before the W transform. Representative 32-thread measurements
+on the development host are 3.6 seconds to prepare that cache, 6.2 seconds per
+warm big switch, and 9.3 seconds cold. The specialized X trace avoids a
+448 MiB plaintext and takes about 1.1 seconds. Four W diagonals are accumulated
+before inverse transforms, making the complete W stage about 1.5 seconds.
 
 ## Basic Use
 
@@ -265,16 +294,48 @@ allocator metadata add a small overhead; saving does not require a second
 in-memory key, although the atomic writer temporarily needs room for the
 destination file.
 
+NTT spectra and workspaces are derived state and are omitted from archives.
+Retaining every n512 HMux cache simultaneously would consume about 39.2 GiB,
+and retaining all masked-column spectra would add roughly another 6.6 GiB.
+`GLSHIPHalfBootstrap` therefore evaluates sparse terms outside the slice loop:
+it prepares one term's approximately 1.3 GiB of HMux spectra and roughly
+0.2 GiB masked-column cache, reuses them for all 1,024 Y/channel slices, then
+releases both. Its online binary product tree preserves exactly the original
+balanced factor pairing. A batch of 1,024 base ciphertexts is 1.75 GiB; the
+largest carry transient is about seven such batches (12.25 GiB), and it does
+not overlap the per-term NTT caches. Worker-local NTT scratch is reused within
+each term and then freed.
+
+### Performance status
+
+The production n512 StC path has been measured end-to-end at 47.1 seconds with
+32 OpenMP threads. A combined sequential component run peaked at about
+17.1 GiB RSS. Warm throughput measurements for the dominant half-bootstrap
+kernels give about 53 complete HMux stages per second and 52 48-candidate
+masked columns per second on the same 16-core/32-thread host. The n512 schedule
+needs 95,232 HMux stages and 31,744 masked columns, projecting about 29.7 and
+10.3 minutes. Level-by-level throughput projects the complete 31,744-node
+product tree at about 8.1 minutes. Including StC and the smaller
+dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 50
+minutes is a reasonable component projection, not a measured end-to-end
+runtime. The full 7.88 GiB production key has deliberately not been generated
+merely to obtain a timing number.
+
 ## Current Boundary
 
 This remains a correctness-oriented implementation. Its bootstrap follows the
-paper's algebra, and base-ring multiplication now has an exact Rader/NTT
-backend.  Small-DD switches now reuse transforms across primary rows and `Y`
-slices, but big polynomial switches do not yet have a corresponding full-ring
-transform, and the implementation does not fuse Rader butterflies as
-aggressively as the paper or provide its optimized modular matrix-multiplication
-kernels.  Consequently, the component benchmarks must not be interpreted as a
-full-bootstrap runtime.
+paper's algebra, and base-ring and full-polynomial DD operations now use exact
+Rader/NTT backends with reusable spectra. The specialized X trace, grouped W
+transform, big transpose switches, masked columns, fused HMux branches, and
+online product tree all compile for the n512 schedule. The toy regression runs
+the complete wrapper, but a full n512 bootstrap with a real 7.88 GiB key has
+not yet been run. Component benchmarks must therefore not be reported as a
+measured full-bootstrap runtime.
+
+The remaining performance gap is chiefly the 95,232 exact HMux stages and
+31,744 masked columns required by the algorithm, followed by the product tree.
+The code does not yet provide the paper implementation's hand-tuned SIMD/NTT
+kernels, NUMA-aware key streaming, or constant-time production hardening.
 
 Storage sufficiency is also not a security or precision proof. The paper's
 `n256p17` and `n512p17` values use the full 214- and 430-bit 128-bit-security
