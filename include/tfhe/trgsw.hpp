@@ -678,7 +678,7 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
                     std::array<uint64_t, TFHEpp::lvl1param::n> temp;
                     intel::hexl::EltwiseMultMod(
                         temp.data(), &(decpolyntt[0].value),
-                        &(trgswntt[i + k * P::l][m][0].value), P::n, lvl1P, 1);
+                        &(trgswntt[i + k * P::lₐ][m][0].value), P::n, lvl1P, 1);
                     intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),
                                                &(restrlwentt[m][0].value),
                                                temp.data(), P::n, lvl1P);
@@ -700,7 +700,7 @@ void ExternalProduct(TRLWE<P> &res, const TRLWE<P> &trlwe,
         {
             std::array<uint64_t, TFHEpp::lvl1param::n> temp;
             intel::hexl::EltwiseMultMod(temp.data(), &(decpolyntt[0].value),
-                                        &(trgswntt[i + k * P::l][m][0].value),
+                                        &(trgswntt[i + P::k * P::lₐ][m][0].value),
                                         P::n, lvl1P, 1);
             intel::hexl::EltwiseAddMod(&(restrlwentt[m][0].value),
                                        &(restrlwentt[m][0].value), temp.data(),
