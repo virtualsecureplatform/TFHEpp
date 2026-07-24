@@ -805,6 +805,85 @@ inline void buildCandidatePlaintext(
 }
 
 template <class Schedule>
+inline void prepareCandidatePhaseRoots(
+    std::vector<std::complex<long double>> &roots,
+    const GLBasePolynomial<typename Schedule::Parameter> &mask)
+{
+    using GLP = typename Schedule::Parameter;
+    constexpr std::size_t extended_phi = GLP::phi + 1;
+    roots.resize(static_cast<std::size_t>(2) * GLP::matrix_dimension *
+                 extended_phi);
+    const auto index = [](const std::size_t gaussian, const std::size_t x,
+                          const std::size_t w) {
+        return (gaussian * GLP::matrix_dimension + x) * extended_phi + w;
+    };
+    for (std::size_t gaussian = 0; gaussian < 2; gaussian++)
+        for (std::size_t x = 0; x < GLP::matrix_dimension; x++) {
+            for (std::size_t w = 0; w < GLP::phi; w++)
+                roots[index(gaussian, x, w)] = phaseRoot<Schedule>(
+                    mask[gl_detail::baseIndex<GLP>(gaussian, x, w)]);
+            roots[index(gaussian, x, GLP::phi)] = {1, 0};
+        }
+}
+
+template <class Schedule>
+inline void buildCandidatePlaintextFromPhaseRoots(
+    GLBasePlaintext<typename Schedule::Parameter,
+                    Schedule::half_bootstrap_log_q +
+                        Schedule::Parameter::auxiliary_log_q,
+                    Schedule::tree_log_delta> &plaintext,
+    const std::vector<std::complex<long double>> &roots,
+    const GLSHIPCandidate candidate, const std::uint32_t channel)
+{
+    using GLP = typename Schedule::Parameter;
+    constexpr std::size_t extended_phi = GLP::phi + 1;
+    const std::size_t expected_size =
+        static_cast<std::size_t>(2) * GLP::matrix_dimension * extended_phi;
+    if (roots.size() != expected_size || channel >= 2)
+        throw std::invalid_argument("invalid GL candidate phase-root table");
+    const auto root = [&](const std::size_t gaussian, const std::size_t x,
+                          const std::size_t w) -> const auto & {
+        return roots[(gaussian * GLP::matrix_dimension + x) * extended_phi + w];
+    };
+
+    std::uint32_t source_gaussian = channel;
+    bool negative = false;
+    switch (candidate.gaussian_phase & 3U) {
+    case 0: break;
+    case 1:
+        source_gaussian = channel == 0 ? 1 : 0;
+        negative = channel == 0;
+        break;
+    case 2: negative = true; break;
+    default:
+        source_gaussian = channel == 0 ? 1 : 0;
+        negative = channel != 0;
+        break;
+    }
+
+    GLBaseSlotTable<GLP> values;
+    for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++) {
+        const std::uint32_t source_x =
+            (row + GLP::matrix_dimension - candidate.fine_x) %
+            GLP::matrix_dimension;
+        for (std::uint32_t t = 0; t < GLP::phi; t++) {
+            const std::uint32_t first_w = gl_ship_detail::positiveMod(
+                static_cast<std::int64_t>(t) - candidate.w,
+                GLP::cyclotomic_order);
+            const std::uint32_t subtraction_w = gl_ship_detail::positiveMod(
+                static_cast<std::int64_t>(GLP::phi) - candidate.w,
+                GLP::cyclotomic_order);
+            auto value =
+                root(source_gaussian, source_x, first_w) *
+                std::conj(root(source_gaussian, source_x, subtraction_w));
+            if (negative) value = std::conj(value);
+            values(t, row) = static_cast<std::complex<double>>(value);
+        }
+    }
+    GLBaseEncode(plaintext, values);
+}
+
+template <class Schedule>
 inline std::shared_ptr<
     typename GLSHIPMaskedColumnKey<Schedule>::TransientNTTCache>
 prepareMaskedColumnNTTCache(const GLSHIPMaskedColumnKey<Schedule> &key)
@@ -905,6 +984,7 @@ struct MaskedColumnNTTWorkspace {
     std::array<std::vector<std::uint64_t>, 2> residues{};
     std::array<std::vector<std::uint64_t>, 2> accumulators{};
     std::vector<unsigned __int128> wide{};
+    std::vector<std::complex<long double>> phase_roots{};
     std::unique_ptr<GLBasePolynomial<GLP>> signed_plaintext{};
     std::unique_ptr<GLBasePlaintext<GLP, key_log_q, Schedule::tree_log_delta>>
         candidate{};
@@ -952,10 +1032,12 @@ inline bool maskedColumnNTT(
                 GLBasePlaintext<GLP, key_log_q, Schedule::tree_log_delta>>();
         auto &signed_plaintext = *workspace.signed_plaintext;
         auto &candidate = *workspace.candidate;
+        prepareCandidatePhaseRoots<Schedule>(workspace.phase_roots, mask);
         for (std::size_t candidate_index = 0; candidate_index < candidate_count;
              candidate_index++) {
-            buildCandidatePlaintext<Schedule>(
-                candidate, mask, key.candidates[candidate_index], channel);
+            buildCandidatePlaintextFromPhaseRoots<Schedule>(
+                candidate, workspace.phase_roots,
+                key.candidates[candidate_index], channel);
             for (std::size_t i = 0; i < P::n; i++) {
                 const auto [negative, magnitude] =
                     ckks_detail::smallSignedMagnitude<P, key_log_q>(

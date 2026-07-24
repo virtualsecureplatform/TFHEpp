@@ -154,6 +154,14 @@ without changing its two-prime CRT bound. On the development host, 128 warm
 complete stages take about 2.1 seconds instead of 2.34 seconds with unhoisted
 transforms.
 
+Masked-column candidate construction likewise hoists the expensive torus
+phase roots out of the candidate loop. Roots for the two Gaussian channels
+and the extended `W` basis are evaluated once per input mask; candidate
+differences, signs, and Gaussian phases are then exact complex products and
+conjugations. The fused result remains bit-for-bit equal to the direct
+coefficient-difference construction. On the development host, 128 warm
+48-candidate columns take about 2.12 seconds instead of about 2.50 seconds.
+
 HMux X automorphisms act directly on the `(I,X,W)` base polynomial. The former
 generic route lifted one base polynomial into two 448 MiB full GL temporaries
 per automorphism at n512; the direct coefficient permutation is checked
@@ -325,12 +333,12 @@ each term and then freed.
 The production n512 StC path has been measured end-to-end at 47.1 seconds with
 32 OpenMP threads. A combined sequential component run peaked at about
 17.1 GiB RSS. Warm throughput measurements for the dominant half-bootstrap
-kernels give about 61 complete HMux stages per second and 52 48-candidate
+kernels give about 61 complete HMux stages per second and 60 48-candidate
 masked columns per second on the same 16-core/32-thread host. The n512 schedule
 needs 95,232 HMux stages and 31,744 masked columns, projecting about 26.2 and
-10.3 minutes. Level-by-level throughput projects the complete 31,744-node
+8.8 minutes. Level-by-level throughput projects the complete 31,744-node
 product tree at about 6.2 minutes. Including StC and the smaller
-dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 45
+dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 43--44
 minutes is a reasonable component projection, not a measured end-to-end
 runtime. The full 7.88 GiB production key has deliberately not been generated
 merely to obtain a timing number.

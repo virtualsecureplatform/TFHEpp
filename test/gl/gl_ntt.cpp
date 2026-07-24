@@ -676,6 +676,27 @@ bool checkFusedMaskedColumn()
         coefficient = TFHEpp::ckks_detail::signedToLevel<P, Schedule::q0_log_q>(
             randomSigned(rng, 28));
 
+    std::vector<std::complex<long double>> phase_roots;
+    TFHEpp::gl_ship_detail::prepareCandidatePhaseRoots<Schedule>(phase_roots,
+                                                                 mask);
+    for (std::uint32_t fine_x = 0; fine_x < Schedule::theta; fine_x++)
+        for (std::uint32_t w = 0; w < SmallGLP::phi; w++)
+            for (std::uint32_t gaussian_phase = 0; gaussian_phase < 4;
+                 gaussian_phase++)
+                for (std::uint32_t channel = 0; channel < 2; channel++) {
+                    const TFHEpp::GLSHIPCandidate descriptor{fine_x, w,
+                                                             gaussian_phase};
+                    TFHEpp::GLBasePlaintext<SmallGLP, key_log_q,
+                                            Schedule::tree_log_delta>
+                        direct, hoisted;
+                    TFHEpp::gl_ship_detail::buildCandidatePlaintext<Schedule>(
+                        direct, mask, descriptor, channel);
+                    TFHEpp::gl_ship_detail::
+                        buildCandidatePlaintextFromPhaseRoots<Schedule>(
+                            hoisted, phase_roots, descriptor, channel);
+                    if (hoisted.poly != direct.poly) return false;
+                }
+
     TFHEpp::GLBaseCiphertextData<SmallGLP> reference_raw{};
     for (std::size_t i = 0; i < key.candidates.size(); i++) {
         TFHEpp::GLBasePlaintext<SmallGLP, key_log_q, Schedule::tree_log_delta>
