@@ -984,7 +984,11 @@ struct MaskedColumnNTTWorkspace {
     std::array<std::vector<std::uint64_t>, 2> unshifted_spectra{};
     std::array<std::vector<std::uint64_t>, 2> residues{};
     std::array<std::vector<std::uint64_t>, 2> accumulators{};
+#ifdef USE_HEXL
+    std::vector<std::uint64_t> product{};
+#else
     std::vector<unsigned __int128> wide{};
+#endif
     std::vector<std::complex<long double>> phase_roots{};
     std::unique_ptr<GLBasePolynomial<GLP>> signed_plaintext{};
     std::unique_ptr<GLBasePlaintext<GLP, key_log_q, Schedule::tree_log_delta>>
@@ -1114,8 +1118,13 @@ inline bool maskedColumnNTT(
         auto &accumulators = workspace.accumulators;
         for (auto &values : residues) values.resize(coefficient_count);
         for (auto &values : accumulators) values.resize(coefficient_count);
+#ifdef USE_HEXL
+        auto &product = workspace.product;
+        product.resize(coefficient_count);
+#else
         auto &wide = workspace.wide;
         wide.resize(coefficient_count);
+#endif
         static const modular_ntt::TwoPrimeCRT crt(modular_ntt::wide_primes[0],
                                                   modular_ntt::wide_primes[1]);
         for (std::size_t component = 0; component < 2; component++) {
@@ -1123,6 +1132,27 @@ inline bool maskedColumnNTT(
                 for (std::size_t prime = 0; prime < 2; prime++) {
                     auto &accumulator = accumulators[prime];
                     std::fill(accumulator.begin(), accumulator.end(), 0);
+#ifdef USE_HEXL
+                    const std::uint64_t modulus = plans[prime]->modulus();
+                    for (std::size_t candidate = 0;
+                         candidate < candidate_count; candidate++) {
+                        const std::size_t key_row =
+                            (candidate * 2 + component) * cache->chunk_count +
+                            chunk;
+                        const std::uint64_t *key_spectrum =
+                            cache->spectra[prime].data() +
+                            key_row * coefficient_count;
+                        const std::uint64_t *plain_spectrum =
+                            candidate_spectra[prime].data() +
+                            candidate * coefficient_count;
+                        intel::hexl::EltwiseMultMod(
+                            product.data(), key_spectrum, plain_spectrum,
+                            coefficient_count, modulus, 1);
+                        intel::hexl::EltwiseAddMod(
+                            accumulator.data(), accumulator.data(),
+                            product.data(), coefficient_count, modulus);
+                    }
+#else
                     std::fill(wide.begin(), wide.end(), 0);
                     std::size_t batch_count = 0;
                     const std::uint64_t modulus = plans[prime]->modulus();
@@ -1155,6 +1185,7 @@ inline bool maskedColumnNTT(
                         if (batch_count == 16) flush();
                     }
                     if (batch_count != 0) flush();
+#endif
                     plans[prime]->inverse(
                         std::span<std::uint64_t>(residues[prime]),
                         std::span<std::uint64_t>(accumulator));
