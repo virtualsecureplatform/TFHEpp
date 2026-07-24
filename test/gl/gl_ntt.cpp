@@ -105,6 +105,29 @@ bool checkDirectBaseAutomorphism()
                 w_multiplier);
             if (direct != transformed[0]) return false;
         }
+
+    for (const std::uint32_t x_multiplier : x_multipliers) {
+        TFHEpp::GLBasePolynomial<SmallGLP> direct{};
+        TFHEpp::gl_detail::baseAutomorphism<SmallGLP>(direct, input,
+                                                      x_multiplier, 1);
+        const auto z_map =
+            TFHEpp::gl_detail::baseXAutomorphismSpectrumMap<SmallGLP>(
+                x_multiplier);
+        const auto check_prime = [&](const auto &plan) {
+            std::vector<std::uint64_t> source, expected,
+                got(TFHEpp::gl_detail::GLBaseNTTPlan<
+                    SmallGLP>::coefficient_count);
+            plan.forward(source, input);
+            plan.forward(expected, direct);
+            TFHEpp::gl_detail::applyBaseXAutomorphismSpectrum<SmallGLP>(
+                std::span<std::uint64_t>(got),
+                std::span<const std::uint64_t>(source), z_map);
+            return got == expected;
+        };
+        if (!check_prime(TFHEpp::gl_detail::baseNTTPlan<SmallGLP, 0>()) ||
+            !check_prime(TFHEpp::gl_detail::baseNTTPlan<SmallGLP, 1>()))
+            return false;
+    }
     return true;
 }
 

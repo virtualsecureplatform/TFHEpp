@@ -981,12 +981,12 @@ struct MaskedColumnNTTWorkspace {
         Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q;
 
     std::array<std::vector<std::uint64_t>, 2> candidate_spectra{};
+    std::array<std::vector<std::uint64_t>, 2> unshifted_spectra{};
     std::array<std::vector<std::uint64_t>, 2> residues{};
     std::array<std::vector<std::uint64_t>, 2> accumulators{};
     std::vector<unsigned __int128> wide{};
     std::vector<std::complex<long double>> phase_roots{};
     std::unique_ptr<GLBasePolynomial<GLP>> signed_plaintext{};
-    std::unique_ptr<GLBasePolynomial<GLP>> shifted_candidate{};
     std::unique_ptr<GLBasePlaintext<GLP, key_log_q, Schedule::tree_log_delta>>
         candidate{};
     std::unique_ptr<GLBaseCiphertextData<GLP>> accumulated{};
@@ -1021,6 +1021,9 @@ inline bool maskedColumnNTT(
         auto &candidate_spectra = workspace.candidate_spectra;
         for (auto &spectra : candidate_spectra)
             spectra.resize(candidate_count * coefficient_count);
+        auto &unshifted_spectra = workspace.unshifted_spectra;
+        for (auto &spectra : unshifted_spectra)
+            spectra.resize(coefficient_count);
         const std::array<const gl_detail::GLBaseNTTPlan<GLP> *, 2> plans{
             &gl_detail::baseNTTPlan<GLP, 0>(),
             &gl_detail::baseNTTPlan<GLP, 1>()};
@@ -1028,21 +1031,17 @@ inline bool maskedColumnNTT(
         if (!workspace.signed_plaintext)
             workspace.signed_plaintext =
                 std::make_unique<GLBasePolynomial<GLP>>();
-        if (!workspace.shifted_candidate)
-            workspace.shifted_candidate =
-                std::make_unique<GLBasePolynomial<GLP>>();
         if (!workspace.candidate)
             workspace.candidate = std::make_unique<
                 GLBasePlaintext<GLP, key_log_q, Schedule::tree_log_delta>>();
         auto &signed_plaintext = *workspace.signed_plaintext;
-        auto &shifted_candidate = *workspace.shifted_candidate;
         auto &unshifted_candidate = *workspace.candidate;
         prepareCandidatePhaseRoots<Schedule>(workspace.phase_roots, mask);
 
         // Fine-X candidates in one (W, Gaussian-phase) group are canonical
         // slot rotations of the same encoded polynomial. Encode the unshifted
         // representative once and realize every other member as the exact
-        // X -> X^(5^-fine_x) coefficient permutation.
+        // X -> X^(5^-fine_x) NTT-spectrum permutation.
         std::array<bool, 4 * GLP::phi> encoded_groups{};
         for (std::size_t group_seed = 0; group_seed < candidate_count;
              group_seed++) {
@@ -1058,6 +1057,24 @@ inline bool maskedColumnNTT(
                 unshifted_candidate, workspace.phase_roots,
                 {0, group.w, group.gaussian_phase}, channel);
 
+            for (std::size_t i = 0; i < P::n; i++) {
+                const auto [negative, magnitude] =
+                    ckks_detail::smallSignedMagnitude<P, key_log_q>(
+                        unshifted_candidate.poly[i]);
+                if (magnitude >= (std::uint64_t{1} << plaintext_bits))
+                    throw std::overflow_error(
+                        "GL masked-column plaintext exceeds its exact NTT "
+                        "bound");
+                const std::int64_t value =
+                    negative ? -static_cast<std::int64_t>(magnitude)
+                             : static_cast<std::int64_t>(magnitude);
+                signed_plaintext[i] = gl_detail::signedI128ToTorus<T>(value);
+            }
+            for (std::size_t prime = 0; prime < 2; prime++)
+                plans[prime]->forward(
+                    std::span<std::uint64_t>(unshifted_spectra[prime]),
+                    signed_plaintext);
+
             for (std::size_t candidate_index = 0;
                  candidate_index < candidate_count; candidate_index++) {
                 const auto descriptor = key.candidates[candidate_index];
@@ -1068,38 +1085,22 @@ inline bool maskedColumnNTT(
                 if (descriptor.fine_x >= GLP::matrix_dimension)
                     throw std::invalid_argument(
                         "invalid GL masked-column candidate");
-                const GLBasePolynomial<GLP> *candidate =
-                    &unshifted_candidate.poly;
-                if (descriptor.fine_x != 0) {
-                    const std::uint32_t multiplier = gl_detail::powMod(
-                        5, GLP::matrix_dimension - descriptor.fine_x,
-                        4 * GLP::matrix_dimension);
-                    gl_detail::baseAutomorphism<GLP>(shifted_candidate,
-                                                     unshifted_candidate.poly,
-                                                     multiplier, 1);
-                    candidate = &shifted_candidate;
-                }
-                for (std::size_t i = 0; i < P::n; i++) {
-                    const auto [negative, magnitude] =
-                        ckks_detail::smallSignedMagnitude<P, key_log_q>(
-                            (*candidate)[i]);
-                    if (magnitude >= (std::uint64_t{1} << plaintext_bits))
-                        throw std::overflow_error(
-                            "GL masked-column plaintext exceeds its exact NTT "
-                            "bound");
-                    const std::int64_t value =
-                        negative ? -static_cast<std::int64_t>(magnitude)
-                                 : static_cast<std::int64_t>(magnitude);
-                    signed_plaintext[i] =
-                        gl_detail::signedI128ToTorus<T>(value);
-                }
+                const std::uint32_t multiplier = gl_detail::powMod(
+                    5,
+                    (GLP::matrix_dimension - descriptor.fine_x) %
+                        GLP::matrix_dimension,
+                    4 * GLP::matrix_dimension);
+                const auto z_map =
+                    gl_detail::baseXAutomorphismSpectrumMap<GLP>(multiplier);
                 for (std::size_t prime = 0; prime < 2; prime++)
-                    plans[prime]->forward(
+                    gl_detail::applyBaseXAutomorphismSpectrum<GLP>(
                         std::span<std::uint64_t>(
                             candidate_spectra[prime].data() +
                                 candidate_index * coefficient_count,
                             coefficient_count),
-                        signed_plaintext);
+                        std::span<const std::uint64_t>(
+                            unshifted_spectra[prime]),
+                        z_map);
             }
         }
 

@@ -920,6 +920,50 @@ inline const GLBaseNTTPlan<GLP> &baseNTTPlan()
     return plan;
 }
 
+template <class GLP>
+using GLBaseXAutomorphismSpectrumMap =
+    std::array<std::uint32_t, GLBaseNTTPlan<GLP>::z_dimension>;
+
+template <class GLP>
+inline GLBaseXAutomorphismSpectrumMap<GLP> baseXAutomorphismSpectrumMap(
+    const std::uint32_t x_multiplier)
+{
+    constexpr std::size_t z_dimension = GLBaseNTTPlan<GLP>::z_dimension;
+    constexpr std::uint32_t four_n = 4 * GLP::matrix_dimension;
+    if ((x_multiplier & 1U) == 0)
+        throw std::invalid_argument("GL X automorphism multiplier must be odd");
+    GLBaseXAutomorphismSpectrumMap<GLP> result{};
+    for (std::size_t z = 0; z < z_dimension; z++) {
+        const std::uint32_t odd_root = static_cast<std::uint32_t>(2 * z + 1);
+        const std::uint32_t mapped_root = static_cast<std::uint32_t>(
+            (static_cast<std::uint64_t>(x_multiplier) * odd_root) % four_n);
+        result[z] = (mapped_root - 1) / 2;
+    }
+    return result;
+}
+
+template <class GLP>
+inline void applyBaseXAutomorphismSpectrum(
+    const std::span<std::uint64_t> destination,
+    const std::span<const std::uint64_t> source,
+    const GLBaseXAutomorphismSpectrumMap<GLP> &z_map)
+{
+    constexpr std::size_t coefficient_count =
+        GLBaseNTTPlan<GLP>::coefficient_count;
+    constexpr std::size_t z_dimension = GLBaseNTTPlan<GLP>::z_dimension;
+    constexpr std::size_t w_dimension = GLBaseNTTPlan<GLP>::w_dimension;
+    if (destination.size() != coefficient_count ||
+        source.size() != coefficient_count)
+        throw std::invalid_argument("GL NTT spectrum has the wrong size");
+    if (destination.data() == source.data())
+        throw std::invalid_argument(
+            "in-place GL spectrum automorphism is unsupported");
+    for (std::size_t w = 0; w < w_dimension; w++)
+        for (std::size_t z = 0; z < z_dimension; z++)
+            destination[w * z_dimension + z] =
+                source[w * z_dimension + z_map[z]];
+}
+
 // Set U=Y/X.  Since X^n=Y^n=I, U^n=1, so the full GL ring is a cyclic
 // length-n extension of the already transformed (I,X,W) base ring.  A Y slice
 // is first multiplied by X^y, transformed in the base ring, and then
@@ -3146,9 +3190,6 @@ inline bool accumulateSmallKeySwitchAutomorphismSumNTT(
         constexpr std::size_t coefficient_count =
             GLBaseNTTPlan<GLP>::coefficient_count;
         constexpr std::size_t input_row_count = SwitchKey::primary_rows;
-        constexpr std::size_t z_dimension = GLBaseNTTPlan<GLP>::z_dimension;
-        constexpr std::size_t w_dimension = GLBaseNTTPlan<GLP>::w_dimension;
-        constexpr std::uint32_t four_n = 4 * GLP::matrix_dimension;
         const auto &first_plan = baseNTTPlan<GLP, 0>();
         const GLBaseNTTPlan<GLP> *second_plan = nullptr;
         if constexpr (prime_count == 2) second_plan = &baseNTTPlan<GLP, 1>();
@@ -3197,7 +3238,7 @@ inline bool accumulateSmallKeySwitchAutomorphismSumNTT(
             }
         }
 
-        std::array<std::array<std::uint32_t, z_dimension>, Count> z_maps{};
+        std::array<GLBaseXAutomorphismSpectrumMap<GLP>, Count> z_maps{};
         std::array<std::shared_ptr<typename SwitchKey::TransientNTTCache>,
                    Count>
             key_caches;
@@ -3212,15 +3253,8 @@ inline bool accumulateSmallKeySwitchAutomorphismSumNTT(
                     "uninitialized GL DD hoisted switch key");
             key_caches[term] = prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
                 *switch_keys[term]);
-            for (std::size_t z = 0; z < z_dimension; z++) {
-                const std::uint32_t odd_root =
-                    static_cast<std::uint32_t>(2 * z + 1);
-                const std::uint32_t mapped_root = static_cast<std::uint32_t>(
-                    (static_cast<std::uint64_t>(x_multipliers[term]) *
-                     odd_root) %
-                    four_n);
-                z_maps[term][z] = (mapped_root - 1) / 2;
-            }
+            z_maps[term] =
+                baseXAutomorphismSpectrumMap<GLP>(x_multipliers[term]);
         }
 
         for (std::size_t prime = 0; prime < prime_count; prime++) {
@@ -3237,11 +3271,12 @@ inline bool accumulateSmallKeySwitchAutomorphismSumNTT(
                     std::uint64_t *input_spectrum =
                         workspace.input_spectra[prime].data() +
                         input_row * coefficient_count;
-                    for (std::size_t w = 0; w < w_dimension; w++)
-                        for (std::size_t z = 0; z < z_dimension; z++)
-                            input_spectrum[w * z_dimension + z] =
-                                source_spectrum[w * z_dimension +
-                                                z_maps[term][z]];
+                    applyBaseXAutomorphismSpectrum<GLP>(
+                        std::span<std::uint64_t>(input_spectrum,
+                                                 coefficient_count),
+                        std::span<const std::uint64_t>(source_spectrum,
+                                                       coefficient_count),
+                        z_maps[term]);
                 }
             }
         }
