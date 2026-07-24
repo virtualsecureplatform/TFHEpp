@@ -100,6 +100,7 @@ bool checkNegacyclic(const PrimeModulus prime)
         lhs[i] = (7 * i + 3) % prime.value;
         rhs[i] = (11 * i + 5) % prime.value;
     }
+    const auto lhs_coefficients = lhs;
     for (std::size_t i = 0; i < size; i++)
         for (std::size_t j = 0; j < size; j++) {
             const std::uint64_t product = multiply(lhs[i], rhs[j], prime.value);
@@ -112,6 +113,23 @@ bool checkNegacyclic(const PrimeModulus prime)
         }
 
     plan.forward(lhs);
+    const std::uint64_t psi = power(
+        prime.primitive_root, (prime.value - 1) / (2 * size), prime.value);
+    for (std::size_t point = 0; point < size; point++) {
+        const std::uint64_t root =
+            power(psi, 2 * point + 1, prime.value);
+        std::uint64_t expected_value = 0;
+        std::uint64_t root_power = 1;
+        for (std::size_t coefficient = 0; coefficient < size; coefficient++) {
+            expected_value = add(
+                expected_value,
+                multiply(lhs_coefficients[coefficient], root_power,
+                         prime.value),
+                prime.value);
+            root_power = multiply(root_power, root, prime.value);
+        }
+        if (lhs[point] != expected_value) return false;
+    }
     plan.forward(rhs);
     for (std::size_t i = 0; i < size; i++)
         lhs[i] = multiply(lhs[i], rhs[i], prime.value);

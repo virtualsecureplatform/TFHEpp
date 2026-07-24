@@ -9,6 +9,10 @@
 #include <utility>
 #include <vector>
 
+#ifdef USE_HEXL
+#include <hexl/hexl.hpp>
+#endif
+
 namespace TFHEpp::modular_ntt {
 
 struct PrimeModulus {
@@ -391,7 +395,15 @@ private:
 class NegacyclicNTTPlan {
 public:
     NegacyclicNTTPlan(const std::size_t size, const PrimeModulus prime)
-        : cyclic_(size, prime), modulus_(prime.value)
+#ifdef USE_HEXL
+        : size_(size),
+          modulus_(prime.value),
+          hexl_(size, prime.value,
+                power(prime.primitive_root, (prime.value - 1) / (2 * size),
+                      prime.value))
+#else
+        : size_(size), modulus_(prime.value), cyclic_(size, prime)
+#endif
     {
         if ((modulus_ - 1) % (2 * size) != 0)
             throw std::invalid_argument(
@@ -401,6 +413,14 @@ public:
         if (power(psi, size, modulus_) != modulus_ - 1)
             throw std::invalid_argument("invalid negacyclic NTT root");
 
+#ifdef USE_HEXL
+        for (std::size_t i = 1, reversed = 0; i < size_; i++) {
+            std::size_t bit = size_ >> 1;
+            for (; (reversed & bit) != 0; bit >>= 1) reversed ^= bit;
+            reversed ^= bit;
+            if (i < reversed) bit_reversal_swaps_.emplace_back(i, reversed);
+        }
+#else
         forward_twist_.resize(size);
         inverse_twist_.resize(size);
         const std::uint64_t inverse_psi = invert(psi, modulus_);
@@ -417,9 +437,10 @@ public:
         for (ShoupMultiplier &twist : inverse_twist_)
             twist = ShoupMultiplier(
                 multiply(twist.value, inverse_size, modulus_), modulus_);
+#endif
     }
 
-    std::size_t size() const { return cyclic_.size(); }
+    std::size_t size() const { return size_; }
     std::uint64_t modulus() const { return modulus_; }
 
     void forward(const std::span<std::uint64_t> values) const
@@ -427,9 +448,14 @@ public:
         if (values.size() != size())
             throw std::invalid_argument(
                 "negacyclic NTT input has the wrong size");
+#ifdef USE_HEXL
+        hexl_.ComputeForward(values.data(), values.data(), 1, 1);
+        bitReverse(values);
+#else
         for (std::size_t i = 0; i < size(); i++)
             values[i] = forward_twist_[i].apply(values[i], modulus_);
         cyclic_.forward(values);
+#endif
     }
 
     void inverse(const std::span<std::uint64_t> values) const
@@ -437,16 +463,35 @@ public:
         if (values.size() != size())
             throw std::invalid_argument(
                 "negacyclic NTT input has the wrong size");
+#ifdef USE_HEXL
+        bitReverse(values);
+        hexl_.ComputeInverse(values.data(), values.data(), 1, 1);
+#else
         cyclic_.inverseUnscaled(values);
         for (std::size_t i = 0; i < size(); i++)
             values[i] = inverse_twist_[i].apply(values[i], modulus_);
+#endif
     }
 
 private:
-    Radix2NTTPlan cyclic_;
+    std::size_t size_;
     std::uint64_t modulus_;
+#ifdef USE_HEXL
+    void bitReverse(const std::span<std::uint64_t> values) const
+    {
+        for (const auto &[first, second] : bit_reversal_swaps_)
+            std::swap(values[first], values[second]);
+    }
+
+    // HEXL's transform API is non-const even though it only reads the plan's
+    // precomputed tables.
+    mutable intel::hexl::NTT hexl_;
+    std::vector<std::pair<std::size_t, std::size_t>> bit_reversal_swaps_;
+#else
+    Radix2NTTPlan cyclic_;
     std::vector<ShoupMultiplier> forward_twist_;
     std::vector<ShoupMultiplier> inverse_twist_;
+#endif
 };
 
 constexpr std::uint32_t smallPowerMod(std::uint32_t base,
