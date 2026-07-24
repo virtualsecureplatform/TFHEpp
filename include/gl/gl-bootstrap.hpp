@@ -157,6 +157,17 @@ struct GLSHIPCandidate {
     }
 };
 
+// Optional execution tuning for the memory-bound sparse-factor phase.  A
+// zero HMux worker count preserves the fused MaskedColumn/HMux loop.  Setting
+// it below the active OpenMP team size evaluates bounded tiles in two stages,
+// allowing MaskedColumn to use the full team while HMux uses fewer workers.
+// The useful values are host-dependent, so neither the physical-core count
+// nor an SMT policy is inferred by the library.
+struct GLSHIPBootstrapExecutionOptions {
+    std::uint32_t hmux_threads = 0;
+    std::size_t factor_tile_size = 256;
+};
+
 template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
           std::uint32_t PlainLogDelta>
 using GLRawProductCiphertext =
@@ -365,7 +376,8 @@ template <class Schedule>
 inline void GLSHIPHalfBootstrap(
     typename Schedule::OutputCiphertext &result,
     const typename Schedule::CoefficientCiphertext &coefficient_ciphertext,
-    const GLSHIPBootstrapKey<Schedule> &bootstrap_key)
+    const GLSHIPBootstrapKey<Schedule> &bootstrap_key,
+    const GLSHIPBootstrapExecutionOptions &execution = {})
 {
     using GLP = typename Schedule::Parameter;
     using HMuxSwitch =
@@ -445,27 +457,87 @@ inline void GLSHIPHalfBootstrap(
         }
 
         ProductBatch sparse_factors(slice_count);
+        int maximum_workers = 1;
+#ifdef _OPENMP
+        maximum_workers = omp_get_max_threads();
+#endif
+        const int hmux_workers =
+            execution.hmux_threads == 0
+                ? maximum_workers
+                : static_cast<int>(std::min<std::uint32_t>(
+                      execution.hmux_threads,
+                      static_cast<std::uint32_t>(maximum_workers)));
+        const bool use_staged_factors = hmux_workers < maximum_workers;
+        if (!use_staged_factors) {
 #pragma omp parallel
-        {
-            gl_ship_detail::MaskedColumnNTTWorkspace<Schedule> masked_workspace;
-            gl_ship_detail::HMuxNTTWorkspace<Schedule> hmux_workspace;
-            auto selected = std::make_unique<
-                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
-                                 Schedule::tree_log_delta>>();
-            auto displaced = std::make_unique<
-                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
-                                 Schedule::tree_log_delta>>();
+            {
+                gl_ship_detail::MaskedColumnNTTWorkspace<Schedule>
+                    masked_workspace;
+                gl_ship_detail::HMuxNTTWorkspace<Schedule> hmux_workspace;
+                auto selected = std::make_unique<
+                    GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                                     Schedule::tree_log_delta>>();
+                auto displaced = std::make_unique<
+                    GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                                     Schedule::tree_log_delta>>();
 #pragma omp for schedule(dynamic)
-            for (std::size_t slice = 0; slice < slice_count; slice++) {
-                const std::uint32_t y = static_cast<std::uint32_t>(slice / 2);
-                const std::uint32_t channel =
-                    static_cast<std::uint32_t>(slice & 1U);
-                gl_ship_detail::maskedColumn<Schedule>(
-                    *selected, sparse_ciphertext[1][y], channel, masked_key,
-                    &masked_workspace);
-                gl_ship_detail::hmux<Schedule>(*displaced, *selected, hmux_key,
-                                               &hmux_workspace);
-                sparse_factors[slice] = std::move(displaced->ct);
+                for (std::size_t slice = 0; slice < slice_count; slice++) {
+                    const std::uint32_t y =
+                        static_cast<std::uint32_t>(slice / 2);
+                    const std::uint32_t channel =
+                        static_cast<std::uint32_t>(slice & 1U);
+                    gl_ship_detail::maskedColumn<Schedule>(
+                        *selected, sparse_ciphertext[1][y], channel,
+                        masked_key, &masked_workspace);
+                    gl_ship_detail::hmux<Schedule>(
+                        *displaced, *selected, hmux_key, &hmux_workspace);
+                    sparse_factors[slice] = std::move(displaced->ct);
+                }
+            }
+        }
+        else {
+            if (execution.factor_tile_size == 0)
+                throw std::invalid_argument(
+                    "GL SHIP factor tile size must be positive");
+            using FactorCiphertext =
+                GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
+                                 Schedule::tree_log_delta>;
+            const std::size_t tile_capacity =
+                std::min(execution.factor_tile_size, slice_count);
+            std::vector<FactorCiphertext> selected_factors(tile_capacity);
+            for (std::size_t tile_begin = 0; tile_begin < slice_count;
+                 tile_begin += tile_capacity) {
+                const std::size_t tile_count =
+                    std::min(tile_capacity, slice_count - tile_begin);
+#pragma omp parallel
+                {
+                    gl_ship_detail::MaskedColumnNTTWorkspace<Schedule>
+                        masked_workspace;
+#pragma omp for schedule(dynamic)
+                    for (std::size_t local = 0; local < tile_count; local++) {
+                        const std::size_t slice = tile_begin + local;
+                        const std::uint32_t y =
+                            static_cast<std::uint32_t>(slice / 2);
+                        const std::uint32_t channel =
+                            static_cast<std::uint32_t>(slice & 1U);
+                        gl_ship_detail::maskedColumn<Schedule>(
+                            selected_factors[local], sparse_ciphertext[1][y],
+                            channel, masked_key, &masked_workspace);
+                    }
+                }
+#pragma omp parallel num_threads(hmux_workers)
+                {
+                    gl_ship_detail::HMuxNTTWorkspace<Schedule> hmux_workspace;
+                    auto displaced = std::make_unique<FactorCiphertext>();
+#pragma omp for schedule(dynamic)
+                    for (std::size_t local = 0; local < tile_count; local++) {
+                        gl_ship_detail::hmux<Schedule>(
+                            *displaced, selected_factors[local], hmux_key,
+                            &hmux_workspace);
+                        sparse_factors[tile_begin + local] =
+                            std::move(displaced->ct);
+                    }
+                }
             }
         }
 
@@ -526,12 +598,15 @@ inline void GLSHIPHalfBootstrap(
 template <class Schedule>
 inline void GLSHIPBootstrap(typename Schedule::OutputCiphertext &result,
                             const typename Schedule::InputCiphertext &input,
-                            const GLSHIPBootstrapKey<Schedule> &bootstrap_key)
+                            const GLSHIPBootstrapKey<Schedule> &bootstrap_key,
+                            const GLSHIPBootstrapExecutionOptions &execution =
+                                {})
 {
     typename Schedule::CoefficientCiphertext coefficients;
     GLSHIPSlotsToCoefficients<Schedule>(coefficients, input,
                                         bootstrap_key.stc_key);
-    GLSHIPHalfBootstrap<Schedule>(result, coefficients, bootstrap_key);
+    GLSHIPHalfBootstrap<Schedule>(result, coefficients, bootstrap_key,
+                                  execution);
 }
 
 namespace gl_ship_detail {

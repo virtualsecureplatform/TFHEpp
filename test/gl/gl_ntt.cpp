@@ -1396,6 +1396,8 @@ bool benchmarkProductionMaskedColumn()
 #ifdef _OPENMP
     batch_count = 4 * static_cast<std::size_t>(omp_get_max_threads());
 #endif
+    if (std::getenv("TFHEPP_GL_N512_FACTOR_BENCH") != nullptr)
+        batch_count *= 2;
     std::vector<Output> output_batch(batch_count);
     const auto batch_start = std::chrono::steady_clock::now();
 #pragma omp parallel
@@ -1418,6 +1420,107 @@ bool benchmarkProductionMaskedColumn()
               << cache_mib << " MiB cache); " << batch_count
               << " warm calls with reused per-thread scratch in "
               << batch_seconds << " s" << std::endl;
+    if (std::getenv("TFHEPP_GL_N512_FACTOR_BENCH") != nullptr) {
+        using SwitchKey = TFHEpp::GLDDSmallKeySwitchKey<
+            GLP, Schedule::half_bootstrap_log_q, Schedule::primary_bit,
+            Schedule::bbar_bit>;
+        TFHEpp::GLSHIPHMuxKey<Schedule> hmux_key;
+        hmux_key.stages.resize(1);
+        auto &stage = hmux_key.stages.front();
+        stage.step = 1;
+        stage.branches.resize(Schedule::hmux_radix);
+        std::vector<SwitchKey *> hmux_switches;
+        for (auto &branch : stage.branches) {
+            for (SwitchKey *switch_key :
+                 {&branch.body_key, &branch.mask_key}) {
+                switch_key->allocate();
+                for (auto &ciphertext : switch_key->data)
+                    for (auto &component : ciphertext)
+                        for (auto &coefficient : component)
+                            coefficient = static_cast<std::int16_t>(rng());
+                hmux_switches.push_back(switch_key);
+            }
+        }
+#pragma omp parallel for schedule(dynamic, 1)
+        for (std::size_t i = 0; i < hmux_switches.size(); i++)
+            TFHEpp::gl_detail::prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
+                *hmux_switches[i]);
+
+        std::vector<Output> fused_outputs(batch_count);
+        const auto fused_start = std::chrono::steady_clock::now();
+#pragma omp parallel
+        {
+            TFHEpp::gl_ship_detail::MaskedColumnNTTWorkspace<Schedule>
+                masked_workspace;
+            TFHEpp::gl_ship_detail::HMuxNTTWorkspace<Schedule> hmux_workspace;
+            auto selected = std::make_unique<Output>();
+#pragma omp for schedule(dynamic)
+            for (std::size_t batch = 0; batch < batch_count; batch++) {
+                TFHEpp::gl_ship_detail::maskedColumn<Schedule>(
+                    *selected, *mask, static_cast<std::uint32_t>(batch & 1U),
+                    *key, &masked_workspace);
+                TFHEpp::gl_ship_detail::hmux<Schedule>(
+                    fused_outputs[batch], *selected, hmux_key,
+                    &hmux_workspace);
+            }
+        }
+        const double fused_factor_seconds =
+            std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                          fused_start)
+                .count();
+
+        int maximum_workers = 1;
+#ifdef _OPENMP
+        maximum_workers = omp_get_max_threads();
+#endif
+        const int hmux_workers = std::max(1, maximum_workers / 2);
+        for (const std::size_t requested_tile : {256U, 128U, 64U}) {
+            const std::size_t tile_capacity =
+                std::min(requested_tile, batch_count);
+            std::vector<Output> selected_tile(tile_capacity);
+            std::vector<Output> staged_outputs(batch_count);
+            const auto staged_start = std::chrono::steady_clock::now();
+            for (std::size_t tile_begin = 0; tile_begin < batch_count;
+                 tile_begin += tile_capacity) {
+                const std::size_t tile_count =
+                    std::min(tile_capacity, batch_count - tile_begin);
+#pragma omp parallel
+                {
+                    TFHEpp::gl_ship_detail::MaskedColumnNTTWorkspace<Schedule>
+                        workspace;
+#pragma omp for schedule(dynamic)
+                    for (std::size_t local = 0; local < tile_count; local++)
+                        TFHEpp::gl_ship_detail::maskedColumn<Schedule>(
+                            selected_tile[local], *mask,
+                            static_cast<std::uint32_t>((tile_begin + local) &
+                                                       1U),
+                            *key, &workspace);
+                }
+#pragma omp parallel num_threads(hmux_workers)
+                {
+                    TFHEpp::gl_ship_detail::HMuxNTTWorkspace<Schedule>
+                        workspace;
+#pragma omp for schedule(dynamic)
+                    for (std::size_t local = 0; local < tile_count; local++)
+                        TFHEpp::gl_ship_detail::hmux<Schedule>(
+                            staged_outputs[tile_begin + local],
+                            selected_tile[local], hmux_key, &workspace);
+                }
+            }
+            const double staged_seconds =
+                std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - staged_start)
+                    .count();
+            for (std::size_t batch = 0; batch < batch_count; batch++)
+                if (staged_outputs[batch].ct != fused_outputs[batch].ct)
+                    return false;
+            std::cout << "n512 one-stage sparse factors, tile "
+                      << requested_tile << ": " << staged_seconds << " s ("
+                      << maximum_workers << " masked / " << hmux_workers
+                      << " HMux workers) vs " << fused_factor_seconds
+                      << " s fused" << std::endl;
+        }
+    }
     return (*output)[0][0] != typename GLP::T{} ||
            (*output)[1][0] != typename GLP::T{};
 }

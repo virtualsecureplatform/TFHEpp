@@ -311,6 +311,22 @@ TFHEpp::GLSHIPHalfBootstrap<Schedule>(output, coeff, key);
 TFHEpp::GLSHIPBootstrap<Schedule>(output, input, key);
 ```
 
+The default keeps MaskedColumn and HMux in one OpenMP loop. On an SMT host
+where HMux saturates memory bandwidth before MaskedColumn, callers can split
+bounded factor tiles and give HMux a smaller team:
+
+```cpp
+TFHEpp::GLSHIPBootstrapExecutionOptions execution{
+    .hmux_threads = 16,
+    .factor_tile_size = 256,
+};
+TFHEpp::GLSHIPBootstrap<Schedule>(output, input, key, execution);
+```
+
+The worker count is intentionally explicit and should be benchmarked per
+machine. A zero `hmux_threads` retains the portable default. At n512 a
+256-factor staging tile adds 448 MiB of ciphertext storage while it is live.
+
 `sparse_secret` must have the schedule's Hamming weight and coefficients in
 `{0,+1,-1}`. A coefficient's flat W-major index determines its `X`, `W`, and
 Gaussian `I` component. Each public `GLSHIPSupportInterval` must contain the
@@ -392,6 +408,16 @@ is about 98 per second, the product tree projects to about 191 seconds, and
 StC measures 32.7 seconds. That host-specific profile gives a roughly 27--28
 minute component projection. Other CPUs should benchmark both physical-core
 and SMT worker counts; no topology-dependent limit is hard-coded.
+
+With `OMP_NUM_THREADS=32 OMP_PROC_BIND=spread OMP_PLACES=cores` and the
+execution options above, a production-shape batch of 256 MaskedColumn plus
+one-stage HMux factors took 4.99 seconds, versus 6.39 seconds for the fused
+32-worker loop (21.9% faster). Tiles of 128 and 64 took 5.35 and 5.42 seconds.
+The benchmark uses a synthetic one-stage key; extrapolating the separately
+measured three-stage n512 schedule suggests a roughly 22% reduction in the
+sparse-factor phase, not a measured full-bootstrap runtime. Run the tuning
+benchmark with `TFHEPP_GL_N512_MASKED_BENCH=1` and
+`TFHEPP_GL_N512_FACTOR_BENCH=1`.
 
 These are component projections, not measured end-to-end runtimes. The full
 7.88 GiB production key has deliberately not been generated merely to obtain
