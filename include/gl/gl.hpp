@@ -1618,23 +1618,24 @@ inline bool baseMultiplyNTT(GLBasePolynomial<GLP> &result,
         crt_safe_bits - bounded_bits - convolution_bits;
     const auto &wide = split_lhs ? lhs : rhs;
     const auto &bounded = split_lhs ? rhs : lhs;
-    GLBasePolynomial<GLP> chunk{};
-    GLBasePolynomial<GLP> chunk_product{};
+    auto chunk = std::make_unique<GLBasePolynomial<GLP>>();
+    auto chunk_product = std::make_unique<GLBasePolynomial<GLP>>();
     clear<GLP>(result);
     for (std::uint32_t shift = 0; shift < torus_width; shift += chunk_bits) {
         bool nonzero = false;
-        for (std::size_t i = 0; i < chunk.size(); i++) {
-            chunk[i] = unsignedChunk(wide[i], shift, chunk_bits);
-            nonzero = nonzero || chunk[i] != typename GLP::T{0};
+        for (std::size_t i = 0; i < chunk->size(); i++) {
+            (*chunk)[i] = unsignedChunk(wide[i], shift, chunk_bits);
+            nonzero = nonzero || (*chunk)[i] != typename GLP::T{0};
         }
         if (!nonzero) continue;
         const std::uint32_t chunk_primes =
-            baseMultiplyNTTPrimeCount<GLP>(chunk, bounded);
+            baseMultiplyNTTPrimeCount<GLP>(*chunk, bounded);
         if (chunk_primes == 0)
             return baseMultiplyNTTDoubleChunk<GLP>(result, lhs, rhs);
-        baseMultiplyNTTDirect<GLP>(chunk_product, chunk, bounded, chunk_primes);
+        baseMultiplyNTTDirect<GLP>(*chunk_product, *chunk, bounded,
+                                   chunk_primes);
         for (std::size_t i = 0; i < result.size(); i++)
-            result[i] += chunk_product[i] << shift;
+            result[i] += (*chunk_product)[i] << shift;
     }
     return true;
 }
@@ -2001,10 +2002,26 @@ inline void traceProductSmallComplex(
 }
 
 template <class GLP>
+inline void keyPolynomial(GLBasePolynomial<GLP> &result,
+                          const Key<typename GLP::baseP> &key)
+{
+    for (std::uint32_t i = 0; i < GLP::baseP::n; i++) result[i] = key[i];
+}
+
+template <class GLP>
 inline GLBasePolynomial<GLP> keyPolynomial(const Key<typename GLP::baseP> &key)
 {
     GLBasePolynomial<GLP> result{};
-    for (std::uint32_t i = 0; i < GLP::baseP::n; i++) result[i] = key[i];
+    keyPolynomial<GLP>(result, key);
+    return result;
+}
+
+template <class GLP>
+inline std::unique_ptr<GLBasePolynomial<GLP>> heapKeyPolynomial(
+    const Key<typename GLP::baseP> &key)
+{
+    auto result = std::make_unique<GLBasePolynomial<GLP>>();
+    keyPolynomial<GLP>(*result, key);
     return result;
 }
 
@@ -2438,12 +2455,12 @@ inline void encryptBaseAtLevel(GLBaseCiphertextData<GLP> &ciphertext,
                                const CKKSNoise noise)
 {
     using P = typename GLP::baseP;
-    const auto secret = keyPolynomial<GLP>(key);
+    const auto secret = heapKeyPolynomial<GLP>(key);
     for (std::uint32_t i = 0; i < P::n; i++)
         ciphertext[1][i] = ckks_detail::uniformAtLevel<P, LogQ>();
 
     auto mask_phase = std::make_unique<GLBasePolynomial<GLP>>();
-    baseMultiply<GLP>(*mask_phase, ciphertext[1], secret);
+    baseMultiply<GLP>(*mask_phase, ciphertext[1], *secret);
     for (std::uint32_t i = 0; i < P::n; i++) {
         ciphertext[0][i] = ckks_detail::reduceToLevel<P, LogQ>(
             message[i] + ckks_detail::sampleNoise<P, LogQ>(noise) -
@@ -2458,12 +2475,12 @@ inline void encryptAtLevel(GLCiphertextData<GLP> &ciphertext,
                            const CKKSNoise noise)
 {
     using P = typename GLP::baseP;
-    const auto secret = keyPolynomial<GLP>(key);
+    const auto secret = heapKeyPolynomial<GLP>(key);
     auto mask_phase = std::make_unique<GLBasePolynomial<GLP>>();
     for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
         for (std::uint32_t i = 0; i < P::n; i++)
             ciphertext[1][y][i] = ckks_detail::uniformAtLevel<P, LogQ>();
-        baseMultiply<GLP>(*mask_phase, ciphertext[1][y], secret);
+        baseMultiply<GLP>(*mask_phase, ciphertext[1][y], *secret);
         for (std::uint32_t i = 0; i < P::n; i++) {
             ciphertext[0][y][i] = ckks_detail::reduceToLevel<P, LogQ>(
                 message[y][i] + ckks_detail::sampleNoise<P, LogQ>(noise) -
@@ -2478,10 +2495,10 @@ inline void phaseAtLevel(GLPolynomial<GLP> &phase,
                          const Key<typename GLP::baseP> &key)
 {
     using P = typename GLP::baseP;
-    const auto secret = keyPolynomial<GLP>(key);
+    const auto secret = heapKeyPolynomial<GLP>(key);
     auto mask_phase = std::make_unique<GLBasePolynomial<GLP>>();
     for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
-        baseMultiply<GLP>(*mask_phase, ciphertext[1][y], secret);
+        baseMultiply<GLP>(*mask_phase, ciphertext[1][y], *secret);
         for (std::uint32_t i = 0; i < P::n; i++)
             phase[y][i] = ckks_detail::reduceToLevel<P, LogQ>(
                 ciphertext[0][y][i] + (*mask_phase)[i]);
@@ -3887,22 +3904,22 @@ inline void GLDDSmallKeySwitchKeyGen(
     using P = typename GLP::baseP;
     using SwitchKey = GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit>;
     switch_key.allocate();
-    GLBasePolynomial<GLP> gadget{};
-    GLBaseCiphertextData<GLP> ordinary{};
+    auto gadget = std::make_unique<GLBasePolynomial<GLP>>();
+    auto ordinary = std::make_unique<GLBaseCiphertextData<GLP>>();
     for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
          primary++) {
         const std::uint32_t shift =
             (SwitchKey::primary_rows - primary - 1) * PrimaryBit +
             SwitchKey::auxiliary_log_q;
         for (std::uint32_t i = 0; i < P::n; i++)
-            gadget[i] = ckks_detail::reduceToLevel<P, SwitchKey::key_log_q>(
+            (*gadget)[i] = ckks_detail::reduceToLevel<P, SwitchKey::key_log_q>(
                 source_secret[i] << shift);
         gl_detail::encryptBaseAtLevel<GLP, SwitchKey::key_log_q>(
-            ordinary, gadget, destination_key, noise);
+            *ordinary, *gadget, destination_key, noise);
         for (std::size_t component = 0; component < 2; component++) {
             auto rows =
                 gl_detail::activeDecompose<GLP, SwitchKey::key_log_q, BbarBit>(
-                    ordinary[component]);
+                    (*ordinary)[component]);
             for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++)
                 gl_detail::packDigitPolynomial<GLP, BbarBit>(
                     switch_key.at(primary, bbar)[component], rows[bbar]);
@@ -4198,12 +4215,12 @@ inline void GLMatrixRelinKeyGen(
     const Key<typename GLP::baseP> &key,
     const CKKSNoise noise = GLNoiseAtLevel<LogQ + GLP::auxiliary_log_q>())
 {
-    auto base_secret = gl_detail::keyPolynomial<GLP>(key);
+    auto base_secret = gl_detail::heapKeyPolynomial<GLP>(key);
     auto conjugate_secret = std::make_unique<GLPolynomial<GLP>>();
     auto lifted_secret = std::make_unique<GLPolynomial<GLP>>();
     auto product_secret = std::make_unique<GLPolynomial<GLP>>();
-    gl_detail::conjugateKeyToY<GLP>(*conjugate_secret, base_secret);
-    gl_detail::liftBase<GLP>(*lifted_secret, base_secret);
+    gl_detail::conjugateKeyToY<GLP>(*conjugate_secret, *base_secret);
+    gl_detail::liftBase<GLP>(*lifted_secret, *base_secret);
     gl_detail::polynomialMultiply<GLP>(*product_secret, *lifted_secret,
                                        *conjugate_secret);
 
@@ -4311,10 +4328,10 @@ inline void GLHadamardRelinKeyGen(
     const Key<typename GLP::baseP> &key,
     const CKKSNoise noise = GLNoiseAtLevel<LogQ + GLP::auxiliary_log_q>())
 {
-    const auto secret = gl_detail::keyPolynomial<GLP>(key);
-    GLBasePolynomial<GLP> secret_square{};
-    gl_detail::baseMultiply<GLP>(secret_square, secret, secret);
-    GLDDSmallKeySwitchKeyGen(relin_key, secret_square, key, noise);
+    const auto secret = gl_detail::heapKeyPolynomial<GLP>(key);
+    auto secret_square = std::make_unique<GLBasePolynomial<GLP>>();
+    gl_detail::baseMultiply<GLP>(*secret_square, *secret, *secret);
+    GLDDSmallKeySwitchKeyGen(relin_key, *secret_square, key, noise);
 }
 
 template <class GLP, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
@@ -4371,11 +4388,11 @@ inline void GLConjugationKeyGen(
 {
     constexpr std::uint32_t inverse_x = 4 * GLP::matrix_dimension - 1;
     constexpr std::uint32_t inverse_w = GLP::cyclotomic_order - 1;
-    const auto secret = gl_detail::keyPolynomial<GLP>(key);
-    GLBasePolynomial<GLP> source_secret{};
-    gl_detail::baseAutomorphism<GLP>(source_secret, secret, inverse_x,
+    const auto secret = gl_detail::heapKeyPolynomial<GLP>(key);
+    auto source_secret = std::make_unique<GLBasePolynomial<GLP>>();
+    gl_detail::baseAutomorphism<GLP>(*source_secret, *secret, inverse_x,
                                      inverse_w);
-    GLDDSmallKeySwitchKeyGen(conjugation_key, source_secret, key, noise);
+    GLDDSmallKeySwitchKeyGen(conjugation_key, *source_secret, key, noise);
 }
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -4424,11 +4441,11 @@ inline void GLRowRotationKeyGen(
     rotation_key.amount = amount % GLP::matrix_dimension;
     rotation_key.multiplier =
         gl_detail::powMod(5, rotation_key.amount, 4 * GLP::matrix_dimension);
-    const auto secret = gl_detail::keyPolynomial<GLP>(key);
-    GLBasePolynomial<GLP> source_secret{};
-    gl_detail::baseAutomorphism<GLP>(source_secret, secret,
+    const auto secret = gl_detail::heapKeyPolynomial<GLP>(key);
+    auto source_secret = std::make_unique<GLBasePolynomial<GLP>>();
+    gl_detail::baseAutomorphism<GLP>(*source_secret, *secret,
                                      rotation_key.multiplier, 1);
-    GLDDSmallKeySwitchKeyGen(rotation_key.switch_key, source_secret, key,
+    GLDDSmallKeySwitchKeyGen(rotation_key.switch_key, *source_secret, key,
                              noise);
 }
 
@@ -4491,11 +4508,11 @@ inline void GLBatchRotationKeyGen(
     rotation_key.amount = amount % GLP::phi;
     rotation_key.multiplier = gl_detail::powMod(
         GLP::primitive_root, rotation_key.amount, GLP::cyclotomic_order);
-    const auto secret = gl_detail::keyPolynomial<GLP>(key);
-    GLBasePolynomial<GLP> source_secret{};
-    gl_detail::baseAutomorphism<GLP>(source_secret, secret, 1,
+    const auto secret = gl_detail::heapKeyPolynomial<GLP>(key);
+    auto source_secret = std::make_unique<GLBasePolynomial<GLP>>();
+    gl_detail::baseAutomorphism<GLP>(*source_secret, *secret, 1,
                                      rotation_key.multiplier);
-    GLDDSmallKeySwitchKeyGen(rotation_key.switch_key, source_secret, key,
+    GLDDSmallKeySwitchKeyGen(rotation_key.switch_key, *source_secret, key,
                              noise);
 }
 
@@ -4530,10 +4547,10 @@ inline void GLTransposeKeyGen(
     const Key<typename GLP::baseP> &key,
     const CKKSNoise noise = GLNoiseAtLevel<LogQ + GLP::auxiliary_log_q>())
 {
-    const auto secret = gl_detail::keyPolynomial<GLP>(key);
+    const auto secret = gl_detail::heapKeyPolynomial<GLP>(key);
     GLPolynomial<GLP> lifted;
     GLPolynomial<GLP> source_secret;
-    gl_detail::liftBase<GLP>(lifted, secret);
+    gl_detail::liftBase<GLP>(lifted, *secret);
     gl_detail::polynomialAutomorphism<GLP>(source_secret, lifted, 1, 1, 1, 1,
                                            true);
     GLDDBigKeySwitchKeyGen(transpose_key, source_secret, key, noise);
@@ -4571,10 +4588,10 @@ inline void GLConjugateTransposeKeyGen(
 {
     constexpr std::uint32_t inverse_x = 4 * GLP::matrix_dimension - 1;
     constexpr std::uint32_t inverse_w = GLP::cyclotomic_order - 1;
-    const auto secret = gl_detail::keyPolynomial<GLP>(key);
+    const auto secret = gl_detail::heapKeyPolynomial<GLP>(key);
     GLPolynomial<GLP> lifted;
     GLPolynomial<GLP> source_secret;
-    gl_detail::liftBase<GLP>(lifted, secret);
+    gl_detail::liftBase<GLP>(lifted, *secret);
     gl_detail::polynomialAutomorphism<GLP>(source_secret, lifted, 3, inverse_x,
                                            inverse_x, inverse_w, true);
     GLDDBigKeySwitchKeyGen(transpose_key, source_secret, key, noise);

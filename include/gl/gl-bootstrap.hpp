@@ -736,9 +736,9 @@ inline void GLSHIPBootstrapKeyGen(
         bootstrap_key.stc_key, dense_key,
         GLNoiseAtLevel<Schedule::input_log_q + GLP::auxiliary_log_q>());
 
-    const auto dense_secret = gl_detail::keyPolynomial<GLP>(dense_key);
+    const auto dense_secret = gl_detail::heapKeyPolynomial<GLP>(dense_key);
     GLDDSmallKeySwitchKeyGen(
-        bootstrap_key.dense_to_sparse_key, dense_secret, sparse_key,
+        bootstrap_key.dense_to_sparse_key, *dense_secret, sparse_key,
         GLNoiseAtLevel<Schedule::q0_log_q + GLP::auxiliary_log_q>());
 
     for (std::size_t e = 0; e < terms.size(); e++) {
@@ -2270,10 +2270,11 @@ inline void maskedColumnKeyGen(
             for (std::uint32_t w = 0; w < GLP::phi; w++)
                 logical_mask(w, row) = selected ? 1.0 : 0.0;
         }
-        GLBasePlaintext<GLP, key_log_q, GLP::auxiliary_log_q> encoded;
-        GLBaseEncode(encoded, logical_mask);
+        auto encoded = std::make_unique<
+            GLBasePlaintext<GLP, key_log_q, GLP::auxiliary_log_q>>();
+        GLBaseEncode(*encoded, logical_mask);
         gl_detail::encryptBaseAtLevel<GLP, key_log_q>(
-            key.encrypted_masks[candidate_index], encoded.poly, dense_key,
+            key.encrypted_masks[candidate_index], encoded->poly, dense_key,
             noise);
     }
 }
@@ -2286,9 +2287,10 @@ inline void hmuxKeyGen(
     const CKKSNoise noise)
 {
     using GLP = typename Schedule::Parameter;
-    const auto secret = gl_detail::keyPolynomial<GLP>(dense_key);
-    const auto unit = ringUnit<GLP>();
-    GLBasePolynomial<GLP> zero{};
+    const auto secret = gl_detail::heapKeyPolynomial<GLP>(dense_key);
+    auto unit = std::make_unique<GLBasePolynomial<GLP>>();
+    (*unit)[gl_detail::baseIndex<GLP>(0, 0, 0)] = typename GLP::T{1};
+    auto zero = std::make_unique<GLBasePolynomial<GLP>>();
     const std::uint32_t coarse_index =
         (term.x - term.x % Schedule::theta) / Schedule::theta;
 
@@ -2313,15 +2315,16 @@ inline void hmuxKeyGen(
                 GLP::matrix_dimension;
             const std::uint32_t multiplier = gl_detail::powMod(
                 5, automorphism_amount, 4 * GLP::matrix_dimension);
-            GLBasePolynomial<GLP> rotated_secret{};
-            gl_detail::baseAutomorphism<GLP>(rotated_secret, secret, multiplier,
-                                             1);
+            auto rotated_secret = std::make_unique<GLBasePolynomial<GLP>>();
+            gl_detail::baseAutomorphism<GLP>(*rotated_secret, *secret,
+                                             multiplier, 1);
 
             const bool selected = digit == selected_digit;
             GLDDSmallKeySwitchKeyGen(stage.branches[digit].body_key,
-                                     selected ? unit : zero, dense_key, noise);
+                                     selected ? *unit : *zero, dense_key,
+                                     noise);
             GLDDSmallKeySwitchKeyGen(stage.branches[digit].mask_key,
-                                     selected ? rotated_secret : zero,
+                                     selected ? *rotated_secret : *zero,
                                      dense_key, noise);
         }
         key.stages.push_back(std::move(stage));
@@ -2571,11 +2574,11 @@ inline void GLBaseConjugationKeyGen(
 {
     constexpr std::uint32_t inverse_x = 4 * GLP::matrix_dimension - 1;
     constexpr std::uint32_t inverse_w = GLP::cyclotomic_order - 1;
-    const auto destination_secret = gl_detail::keyPolynomial<GLP>(secret);
-    GLBasePolynomial<GLP> source_secret{};
-    gl_detail::baseAutomorphism<GLP>(source_secret, destination_secret,
+    const auto destination_secret = gl_detail::heapKeyPolynomial<GLP>(secret);
+    auto source_secret = std::make_unique<GLBasePolynomial<GLP>>();
+    gl_detail::baseAutomorphism<GLP>(*source_secret, *destination_secret,
                                      inverse_x, inverse_w);
-    GLDDSmallKeySwitchKeyGen(key, source_secret, secret, noise);
+    GLDDSmallKeySwitchKeyGen(key, *source_secret, secret, noise);
 }
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t LogDelta,
@@ -2974,13 +2977,13 @@ inline void GLBaseDecrypt(
     const GLBaseCiphertext<GLP, LogQ, LogDelta> &ciphertext,
     const Key<typename GLP::baseP> &key)
 {
-    const auto secret = gl_detail::keyPolynomial<GLP>(key);
-    GLBasePolynomial<GLP> product{};
-    gl_detail::baseMultiply<GLP>(product, ciphertext[1], secret);
+    const auto secret = gl_detail::heapKeyPolynomial<GLP>(key);
+    auto product = std::make_unique<GLBasePolynomial<GLP>>();
+    gl_detail::baseMultiply<GLP>(*product, ciphertext[1], *secret);
     for (std::uint32_t i = 0; i < GLP::baseP::n; i++)
         plaintext.poly[i] =
             ckks_detail::reduceToLevel<typename GLP::baseP, LogQ>(
-                ciphertext[0][i] + product[i]);
+                ciphertext[0][i] + (*product)[i]);
 }
 
 namespace gl_ship_detail {
