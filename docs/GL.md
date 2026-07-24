@@ -395,6 +395,16 @@ each term and then freed.
 
 ### Performance status
 
+The complete `GLSHIP512p17FusedDDSchedule` path has now been measured on the
+Ryzen 9 7950X3D host with `USE_HEXL=ON`, 32 OpenMP workers, 16 HMux workers,
+256-slice factor tiles, batched modular MACs, and coefficient-blocked HMux key
+spectra. Key generation took 165.95 seconds, input encryption 1.66 seconds,
+the bootstrap 1,598.99 seconds (26 minutes 39 seconds), and decryption plus
+slot decoding 0.77 seconds. Total process time, including key generation, was
+29 minutes 29 seconds. The exact unseeded coefficient payload was 7.87744 GiB,
+peak RSS was 27,124,880 KiB (25.87 GiB), and the maximum decoded slot error was
+`6.33849e-6`. The run used 1,504 support masks and did not write a key archive.
+
 The native production n512 StC path has been measured end-to-end at 47.1
 seconds with 32 OpenMP threads. A combined sequential component run peaked at
 about 17.1 GiB RSS. Native warm throughput for the dominant half-bootstrap
@@ -430,13 +440,13 @@ modular MAC microbenchmark took 0.125--0.140 seconds versus 0.162--0.184
 seconds for separate HEXL multiply/add calls (23--24% faster). The factor
 benchmark uses a synthetic one-stage key; the separately measured three-stage
 rates still suggest about a 22% reduction in the complete sparse-factor phase,
-not a measured full-bootstrap runtime. Run the tuning benchmark with
+consistent with the measured full-bootstrap runtime above. Run the tuning
+benchmark with
 `TFHEPP_GL_N512_MASKED_BENCH=1` and `TFHEPP_GL_N512_FACTOR_BENCH=1`; run the
 arithmetic microbenchmark with `TFHEPP_MODULAR_MAC_BENCH=1`.
 
-These are component projections, not measured end-to-end runtimes. The full
-7.88 GiB production key has deliberately not been generated merely to obtain
-a timing number.
+The component figures remain useful for tuning, but the 1,598.99-second value
+above is the measured end-to-end bootstrap runtime rather than a projection.
 
 ## Current Boundary
 
@@ -445,9 +455,8 @@ paper's algebra, and base-ring and full-polynomial DD operations now use exact
 Rader/NTT backends with reusable spectra. The specialized X trace, grouped W
 transform, big transpose switches, masked columns, fused HMux branches, and
 online product tree all compile for the n512 schedule. The toy regression runs
-the complete wrapper, but a full n512 bootstrap with a real 7.88 GiB key has
-not yet been run. Component benchmarks must therefore not be reported as a
-measured full-bootstrap runtime.
+the complete wrapper, and the gated production regression has completed a full
+n512 bootstrap with a real 7.88 GiB key and 1,504 support masks.
 
 The remaining performance gap is chiefly the 95,232 exact HMux stages and
 31,744 masked columns required by the algorithm, followed by the product tree.
@@ -461,10 +470,12 @@ Storage sufficiency is also not a security or precision proof. The paper's
 limits, leaving no modulus margin; `n1024p17` uses 861 of 868 permitted bits.
 TFHEpp's power-of-two, multi-limb backend has enough bits to represent those
 profiles. The fused-DD estimator validates the modulus budget for the latter
-two profiles under its average-case model, but full-size bootstrap noise has
-not yet been measured empirically. The selected `n512p17` tree scale estimates
-16.27 bits of precision, 1.33 bits above the paper's reported 14.94 bits.
-Do not label these aliases production-secure until that validation and
+two profiles under its average-case model. One deterministic full-size n512
+run measured `6.33849e-6` maximum slot error, about 17.27 bits relative to a
+unit scale, while the selected tree scale estimates 16.27 bits of precision,
+1.33 bits above the paper's reported 14.94 bits. This single run is an
+empirical check, not a statistical failure-probability or security proof. Do
+not label these aliases production-secure until broader validation and
 constant-time optimized kernels are complete.
 
 Build and run the regression with:
@@ -477,6 +488,19 @@ cmake --build build --target modular_ntt gl_ntt gl_scheme gl_bootstrap
 ./build/test/gl/gl_scheme
 ./build/test/gl/gl_bootstrap
 ```
+
+With a `USE_HEXL=ON` build, the gated n512 codec and production bootstrap runs
+are:
+
+```bash
+TFHEPP_GL_N512_CODEC_BENCH=1 OMP_NUM_THREADS=32 ./build/test/gl/gl_bootstrap
+TFHEPP_GL_N512_E2E_BENCH=1 OMP_NUM_THREADS=32 \
+  OMP_PROC_BIND=spread OMP_PLACES=cores ./build/test/gl/gl_bootstrap
+```
+
+The E2E run constructs the key in memory without saving it; allow roughly 30
+minutes, 26 GiB peak RAM, and an 8 GiB resident evaluation-key payload on the
+measured host.
 
 The regression uses `n=2`, `p=5` and nonzero Gaussian noise. It covers
 encoding, the paper trace identity, encryption, both DD switch sizes, matrix

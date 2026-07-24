@@ -1,11 +1,15 @@
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <complex>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <random>
+#include <sys/resource.h>
 #include <tfhe++.hpp>
 #include <vector>
 
@@ -91,14 +95,34 @@ TFHEpp::GLMatrixBatch<GLP> makeInput()
     return input;
 }
 
-double matrixError(const TFHEpp::GLMatrixBatch<GLP> &lhs,
-                   const TFHEpp::GLMatrixBatch<GLP> &rhs)
+TFHEpp::GLMatrixBatch<typename N512Schedule::Parameter> makeN512Input()
+{
+    using ProductionGLP = typename N512Schedule::Parameter;
+    TFHEpp::GLMatrixBatch<ProductionGLP> input;
+    for (std::uint32_t batch = 0; batch < ProductionGLP::phi; batch++)
+        for (std::uint32_t row = 0; row < ProductionGLP::matrix_dimension;
+             row++)
+            for (std::uint32_t column = 0;
+                 column < ProductionGLP::matrix_dimension; column++)
+                input(batch, row, column) = {
+                    0.001 * (static_cast<int>(batch % 5) - 2) +
+                        0.0002 * (static_cast<int>(row % 7) - 3) +
+                        0.0001 * (static_cast<int>(column % 11) - 5),
+                    0.0008 * (static_cast<int>(batch % 7) - 3) -
+                        0.00015 * (static_cast<int>(row % 9) - 4) +
+                        0.0001 * (static_cast<int>(column % 5) - 2)};
+    return input;
+}
+
+template <class Parameter>
+double matrixError(const TFHEpp::GLMatrixBatch<Parameter> &lhs,
+                   const TFHEpp::GLMatrixBatch<Parameter> &rhs)
 {
     double error = 0;
-    for (std::uint32_t batch = 0; batch < GLP::phi; batch++)
-        for (std::uint32_t row = 0; row < GLP::matrix_dimension; row++)
-            for (std::uint32_t column = 0; column < GLP::matrix_dimension;
-                 column++)
+    for (std::uint32_t batch = 0; batch < Parameter::phi; batch++)
+        for (std::uint32_t row = 0; row < Parameter::matrix_dimension; row++)
+            for (std::uint32_t column = 0;
+                 column < Parameter::matrix_dimension; column++)
                 error = std::max(error, std::abs(lhs(batch, row, column) -
                                                  rhs(batch, row, column)));
     return error;
@@ -112,10 +136,171 @@ std::complex<double> sineRefresh(const std::complex<double> value)
             gap / (2 * pi) * std::sin(2 * pi * value.imag() / gap)};
 }
 
+double peakResidentMiB()
+{
+    rusage usage{};
+    if (getrusage(RUSAGE_SELF, &usage) != 0) return 0;
+    return static_cast<double>(usage.ru_maxrss) / 1024.0;
+}
+
+int benchmarkN512Codec()
+{
+    using ProductionGLP = typename N512Schedule::Parameter;
+    const auto input = makeN512Input();
+
+    TFHEpp::GLPlaintext<ProductionGLP, N512Schedule::input_log_q,
+                        N512Schedule::input_log_delta>
+        encoded;
+    const auto encode_start = std::chrono::steady_clock::now();
+    TFHEpp::GLEncode(encoded, input);
+    const double encode_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      encode_start)
+            .count();
+    TFHEpp::GLMatrixBatch<ProductionGLP> decoded;
+    const auto decode_start = std::chrono::steady_clock::now();
+    TFHEpp::GLDecode(decoded, encoded);
+    const double decode_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      decode_start)
+            .count();
+    const double error = matrixError(input, decoded);
+    std::cout << "GL n512 codec: encode=" << encode_seconds
+              << " s, decode=" << decode_seconds
+              << " s, max error=" << error << std::endl;
+    return error < 1e-9 ? 0 : 1;
+}
+
+int benchmarkN512Bootstrap()
+{
+    using ProductionSchedule = N512Schedule;
+    using ProductionGLP = typename ProductionSchedule::Parameter;
+    using P = typename ProductionGLP::baseP;
+    using T = typename P::T;
+    constexpr std::size_t h = ProductionSchedule::sparse_hamming_weight;
+
+    auto dense_key = std::make_unique<TFHEpp::Key<P>>();
+    std::mt19937_64 rng(0x4e353132453245ULL);
+    std::uniform_int_distribution<int> ternary(-1, 1);
+    for (auto &coefficient : *dense_key) {
+        const int value = ternary(rng);
+        coefficient = value < 0 ? T{0} - T{1} : T{value};
+    }
+
+    auto sparse_key = std::make_unique<TFHEpp::Key<P>>();
+    std::array<TFHEpp::GLSHIPSupportInterval, h> intervals{};
+    for (std::size_t term = 0; term < h; term++) {
+        const std::uint32_t start = static_cast<std::uint32_t>(
+            term * static_cast<std::size_t>(P::n) / h);
+        const std::uint32_t end = static_cast<std::uint32_t>(
+            (term + 1) * static_cast<std::size_t>(P::n) / h);
+        const std::uint32_t index = start + (end - start) / 2;
+        (*sparse_key)[index] = (term & 1U) == 0 ? T{1} : T{0} - T{1};
+        intervals[term] = {start, end - start};
+    }
+    // The paper profile contains 1,504 candidate masks.  Equal partitions
+    // produce 1,472; extending the first interval through the remaining
+    // fine-X/Gaussian candidates reproduces the paper profile's 1,504.
+    intervals[0].width =
+        2 * ProductionGLP::matrix_dimension + 2 * ProductionSchedule::theta;
+    std::size_t mask_count = 0;
+    for (const auto interval : intervals)
+        mask_count +=
+            TFHEpp::gl_ship_detail::buildCandidates<ProductionSchedule>(
+                interval)
+                .size();
+
+    std::cout << "GL SHIP n512 end-to-end benchmark" << std::endl;
+    std::cout << "  support masks=" << mask_count
+              << ", estimated packed key="
+              << TFHEpp::GLSHIPPaperBootstrapKeyPackedPayloadBytes<
+                     ProductionSchedule>() /
+                     static_cast<double>(std::uint64_t{1} << 30)
+              << " GiB" << std::endl;
+
+    auto bootstrap_key =
+        std::make_unique<TFHEpp::GLSHIPBootstrapKey<ProductionSchedule>>();
+    const auto key_start = std::chrono::steady_clock::now();
+    std::cout << "  generating production evaluation key" << std::endl;
+    TFHEpp::GLSHIPBootstrapKeyGen(*bootstrap_key, *dense_key, *sparse_key,
+                                  intervals);
+    const double key_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      key_start)
+            .count();
+    const double actual_key_gib =
+        TFHEpp::GLSHIPBootstrapKeyPackedPayloadBytes(*bootstrap_key) /
+        static_cast<double>(std::uint64_t{1} << 30);
+    std::cout << "  key generation=" << key_seconds
+              << " s, packed payload=" << actual_key_gib
+              << " GiB, peak RSS=" << peakResidentMiB() << " MiB"
+              << std::endl;
+
+    const auto input = makeN512Input();
+
+    auto encrypted =
+        std::make_unique<typename ProductionSchedule::InputCiphertext>();
+    const auto encrypt_start = std::chrono::steady_clock::now();
+    TFHEpp::GLEncrypt(*encrypted, input, *dense_key);
+    const double encrypt_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      encrypt_start)
+            .count();
+    std::cout << "  input encryption=" << encrypt_seconds
+              << " s, peak RSS=" << peakResidentMiB() << " MiB" << std::endl;
+
+    auto output =
+        std::make_unique<typename ProductionSchedule::OutputCiphertext>();
+    const TFHEpp::GLSHIPBootstrapExecutionOptions execution{
+        .hmux_threads = 16,
+        .factor_tile_size = 256,
+        .batch_hmux_products = true,
+        .block_hmux_key_spectra = true,
+    };
+    const auto bootstrap_start = std::chrono::steady_clock::now();
+    std::cout << "  evaluating bootstrap (32 masked / 16 HMux workers)"
+              << std::endl;
+    TFHEpp::GLSHIPBootstrap<ProductionSchedule>(*output, *encrypted,
+                                                 *bootstrap_key, execution);
+    const double bootstrap_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      bootstrap_start)
+            .count();
+    std::cout << "  bootstrap=" << bootstrap_seconds
+              << " s, peak RSS=" << peakResidentMiB() << " MiB" << std::endl;
+
+    TFHEpp::GLMatrixBatch<ProductionGLP> decoded;
+    const auto decrypt_start = std::chrono::steady_clock::now();
+    TFHEpp::GLDecrypt(decoded, *output, *dense_key);
+    const double decrypt_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      decrypt_start)
+            .count();
+    double error = 0;
+    for (std::uint32_t batch = 0; batch < ProductionGLP::phi; batch++)
+        for (std::uint32_t row = 0; row < ProductionGLP::matrix_dimension;
+             row++)
+            for (std::uint32_t column = 0;
+                 column < ProductionGLP::matrix_dimension; column++)
+                error = std::max(
+                    error, std::abs(decoded(batch, row, column) -
+                                    input(batch, row, column)));
+    std::cout << "  decryption=" << decrypt_seconds
+              << " s, max error=" << error << std::endl;
+    if (!std::isfinite(error) || error > 0.12) return 1;
+    std::cout << "PASS" << std::endl;
+    return 0;
+}
+
 }  // namespace
 
 int main()
 {
+    if (std::getenv("TFHEPP_GL_N512_CODEC_BENCH") != nullptr)
+        return benchmarkN512Codec();
+    if (std::getenv("TFHEPP_GL_N512_E2E_BENCH") != nullptr)
+        return benchmarkN512Bootstrap();
+
     std::cout << "GL SHIP bootstrap regression" << std::endl;
 
     TFHEpp::Key<BootstrapTestBaseParameter> dense_key{};
