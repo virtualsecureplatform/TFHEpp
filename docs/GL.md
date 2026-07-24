@@ -120,11 +120,13 @@ factor included in the CRT bound. Across the five n512 product-tree levels,
 128-call batches are 24--31% faster than four separate base products.
 
 The common radix-2 implementation precomputes stage twiddles and bit-reversal
-swaps. Its pseudo-Mersenne reduction exploits `p = 2^62-c`, avoiding the
-compiler's 128-by-64 division helper. Inverse negacyclic and Rader transforms
-fold their normalization constants into already-required coefficient or
-kernel multipliers. These optimizations are in the scheme-neutral
-`modular_ntt.hpp`, not in a GL-specific FFT wrapper.
+swaps, and omits the modular product for every unity twiddle. Its
+pseudo-Mersenne reduction exploits `p = 2^62-c`, avoiding the compiler's
+128-by-64 division helper. Inverse negacyclic and Rader transforms fold their
+normalization constants into already-required coefficient or kernel
+multipliers. These optimizations are in the scheme-neutral `modular_ntt.hpp`,
+not in a GL-specific FFT wrapper. On the development host, unity skipping
+reduces a single-thread n512 full-ring forward/inverse pair by about 10%.
 
 The stored ciphertexts and packed DD evaluation keys remain in coefficient
 form.  Transform primes are temporary multiplication machinery; no RNS limbs

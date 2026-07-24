@@ -174,8 +174,10 @@ private:
             for (std::size_t block = 0; block < size_; block += length) {
                 for (std::size_t j = 0; j < half; j++) {
                     const std::uint64_t even = values[block + j];
-                    const std::uint64_t odd = multiply(values[block + j + half],
-                                                       twiddles[j], modulus_);
+                    const std::uint64_t odd =
+                        j == 0 ? values[block + half]
+                               : multiply(values[block + j + half], twiddles[j],
+                                          modulus_);
                     values[block + j] = add(even, odd, modulus_);
                     values[block + j + half] = subtract(even, odd, modulus_);
                 }
