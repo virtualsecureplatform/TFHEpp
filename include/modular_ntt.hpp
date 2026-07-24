@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <stdexcept>
 #include <utility>
@@ -193,6 +194,31 @@ public:
                     modulus_);
             }
         }
+#ifdef USE_HEXL
+        if ((modulus_ - 1) % (2 * size_) == 0 &&
+            modulus_ <= (std::uint64_t{1} << 62)) {
+            const std::uint64_t psi = power(
+                prime.primitive_root, (modulus_ - 1) / (2 * size_), modulus_);
+            if (power(psi, size_, modulus_) != modulus_ - 1)
+                throw std::invalid_argument("invalid negacyclic NTT root");
+            hexl_ = std::make_unique<intel::hexl::NTT>(size_, modulus_, psi);
+            forward_cyclic_twist_.resize(size_);
+            inverse_cyclic_twist_.resize(size_);
+            const std::uint64_t inverse_psi = invert(psi, modulus_);
+            forward_cyclic_twist_[0] = ShoupMultiplier(1, modulus_);
+            inverse_cyclic_twist_[0] = ShoupMultiplier(1, modulus_);
+            for (std::size_t i = 1; i < size_; i++) {
+                forward_cyclic_twist_[i] = ShoupMultiplier(
+                    multiply(forward_cyclic_twist_[i - 1].value, inverse_psi,
+                             modulus_),
+                    modulus_);
+                inverse_cyclic_twist_[i] = ShoupMultiplier(
+                    multiply(inverse_cyclic_twist_[i - 1].value, psi,
+                             modulus_),
+                    modulus_);
+            }
+        }
+#endif
     }
 
     std::size_t size() const { return size_; }
@@ -200,11 +226,25 @@ public:
 
     void forward(const std::span<std::uint64_t> values) const
     {
+#ifdef USE_HEXL
+        if (hexl_) {
+            forwardInBackendOrder(values);
+            bitReverse(values);
+            return;
+        }
+#endif
         transform(values, false);
     }
 
     void inverse(const std::span<std::uint64_t> values) const
     {
+#ifdef USE_HEXL
+        if (hexl_) {
+            bitReverse(values);
+            inverseInBackendOrder(values);
+            return;
+        }
+#endif
         transform(values, true, true);
     }
 
@@ -212,18 +252,65 @@ public:
     // coefficient-wise multiplier and save one modular product per value.
     void inverseUnscaled(const std::span<std::uint64_t> values) const
     {
+#ifdef USE_HEXL
+        if (hexl_) {
+            inverse(values);
+            for (std::uint64_t &value : values)
+                value = multiply(value, size_ % modulus_, modulus_);
+            return;
+        }
+#endif
         transform(values, true, false);
     }
 
+    void forwardInBackendOrder(
+        const std::span<std::uint64_t> values) const
+    {
+#ifdef USE_HEXL
+        if (hexl_) {
+            if (values.size() != size_)
+                throw std::invalid_argument("NTT input has the wrong size");
+            for (std::size_t i = 0; i < size_; i++)
+                values[i] =
+                    forward_cyclic_twist_[i].apply(values[i], modulus_);
+            hexl_->ComputeForward(values.data(), values.data(), 1, 1);
+            return;
+        }
+#endif
+        transform(values, false);
+    }
+
+    void inverseInBackendOrder(
+        const std::span<std::uint64_t> values) const
+    {
+#ifdef USE_HEXL
+        if (hexl_) {
+            if (values.size() != size_)
+                throw std::invalid_argument("NTT input has the wrong size");
+            hexl_->ComputeInverse(values.data(), values.data(), 1, 1);
+            for (std::size_t i = 0; i < size_; i++)
+                values[i] =
+                    inverse_cyclic_twist_[i].apply(values[i], modulus_);
+            return;
+        }
+#endif
+        transform(values, true, true);
+    }
+
 private:
+    void bitReverse(const std::span<std::uint64_t> values) const
+    {
+        for (const auto &[first, second] : bit_reversal_swaps_)
+            std::swap(values[first], values[second]);
+    }
+
     void transform(const std::span<std::uint64_t> values, const bool invert,
                    const bool normalize = false) const
     {
         if (values.size() != size_)
             throw std::invalid_argument("NTT input has the wrong size");
 
-        for (const auto &[first, second] : bit_reversal_swaps_)
-            std::swap(values[first], values[second]);
+        bitReverse(values);
 
         if (modulus_ < (std::uint64_t{1} << 62)) {
             const std::uint64_t twice_modulus = 2 * modulus_;
@@ -282,6 +369,11 @@ private:
     std::vector<std::pair<std::size_t, std::size_t>> bit_reversal_swaps_;
     std::vector<std::vector<ShoupMultiplier>> forward_twiddles_;
     std::vector<std::vector<ShoupMultiplier>> inverse_twiddles_;
+#ifdef USE_HEXL
+    std::unique_ptr<intel::hexl::NTT> hexl_{};
+    std::vector<ShoupMultiplier> forward_cyclic_twist_{};
+    std::vector<ShoupMultiplier> inverse_cyclic_twist_{};
+#endif
 };
 
 // Compile-time-sized radix-2 plan for small transforms embedded in another

@@ -1062,7 +1062,7 @@ public:
                 "GL polynomial NTT spectrum has the wrong size");
 #pragma omp parallel for schedule(static)
         for (std::size_t base = 0; base < base_coefficient_count; base++)
-            y_plan_.inverse(std::span<std::uint64_t>(
+            y_plan_.inverseInBackendOrder(std::span<std::uint64_t>(
                 spectrum.data() + base * y_dimension, y_dimension));
 
         coefficients.assign(coefficient_count, 0);
@@ -1116,7 +1116,7 @@ private:
                 "GL polynomial NTT spectrum has the wrong size");
 #pragma omp parallel for schedule(static)
         for (std::size_t base = 0; base < base_coefficient_count; base++)
-            y_plan_.forward(std::span<std::uint64_t>(
+            y_plan_.forwardInBackendOrder(std::span<std::uint64_t>(
                 spectrum.data() + base * y_dimension, y_dimension));
     }
 

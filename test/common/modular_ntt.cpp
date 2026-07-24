@@ -85,6 +85,26 @@ bool checkRadix2(const PrimeModulus prime)
     for (auto &value : values) value = rng() % prime.value;
     const auto expected = values;
     plan.forward(values);
+    const std::uint64_t root =
+        power(prime.primitive_root, (prime.value - 1) / size, prime.value);
+    for (std::size_t point = 0; point < size; point += 127) {
+        const std::uint64_t point_root = power(root, point, prime.value);
+        std::uint64_t root_power = 1;
+        std::uint64_t expected_value = 0;
+        for (const std::uint64_t coefficient : expected) {
+            expected_value =
+                add(expected_value,
+                    multiply(coefficient, root_power, prime.value),
+                    prime.value);
+            root_power = multiply(root_power, point_root, prime.value);
+        }
+        if (values[point] != expected_value) return false;
+    }
+    auto unscaled = values;
+    plan.inverseUnscaled(unscaled);
+    for (std::size_t i = 0; i < size; i++)
+        if (unscaled[i] != multiply(expected[i], size, prime.value))
+            return false;
     plan.inverse(values);
     return values == expected;
 }
