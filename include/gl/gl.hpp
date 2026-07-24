@@ -2707,17 +2707,171 @@ inline bool accumulateSmallKeySwitchProductsNTT(const std::size_t slice_count,
 // this to combine all body/mask radix branches under P*Q and therefore pays
 // for one set of inverse transforms instead of one set per branch.  Count is
 // part of the exact CRT bound; no probabilistic wraparound assumption is used.
+//
+// The usual half-open balanced digit interval is not exactly equivariant
+// under coefficient negation at the -B/2 boundary.  HMux automorphisms need
+// that property in order to hoist decomposition across signed coefficient
+// permutations.  This variant uses the symmetric tie convention +B/2 for a
+// positive value and -B/2 for its negative.  It has the same magnitude bound
+// and reconstructs the same active-level torus value.
+template <class P, std::uint32_t LogQ, std::uint32_t BaseBit,
+          std::size_t RowCount>
+inline void activeSymmetricBaseDecomposePolynomialRows(
+    std::array<Polynomial<P>, RowCount> &result, const Polynomial<P> &input)
+{
+    static_assert(LogQ > 0 && LogQ <= ckks_detail::torus_width_v<P>);
+    static_assert(BaseBit > 0);
+    static_assert(BaseBit < ckks_detail::torus_width_v<P>);
+    static_assert(RowCount == (LogQ + BaseBit - 1) / BaseBit);
+    static_assert(RowCount * BaseBit <= ckks_detail::torus_width_v<P>);
+
+    using T = typename P::T;
+    constexpr T half = T{1} << (BaseBit - 1);
+    constexpr T mask = (T{1} << BaseBit) - T{1};
+    for (std::uint32_t coefficient = 0; coefficient < P::n; coefficient++) {
+        const T centered =
+            ckks_detail::centeredLevelToTorus<P, LogQ>(input[coefficient]);
+        const bool negative =
+            (centered & (T{1} << (ckks_detail::torus_width_v<P> - 1))) != T{0};
+        T magnitude = negative ? T{0} - centered : centered;
+        for (std::size_t reverse = 0; reverse < RowCount; reverse++) {
+            const std::size_t row = RowCount - reverse - 1;
+            const T raw = magnitude & mask;
+            magnitude >>= BaseBit;
+            const bool carry = raw > half;
+            T digit_magnitude = carry ? (T{1} << BaseBit) - raw : raw;
+            if (carry) magnitude += T{1};
+            const bool digit_negative =
+                digit_magnitude != T{0} && (negative != carry);
+            result[row][coefficient] =
+                digit_negative ? T{0} - digit_magnitude : digit_magnitude;
+        }
+    }
+}
+
 template <class GLP, class SwitchKey, std::size_t Count>
 struct SmallKeySwitchSumNTTWorkspace {
     using P = typename GLP::baseP;
     static constexpr std::size_t input_row_count = SwitchKey::primary_rows;
 
     std::array<std::vector<std::uint64_t>, 2> input_spectra{};
+    std::array<std::vector<std::uint64_t>, 2> source_spectra{};
     std::array<std::vector<std::uint64_t>, 2> accumulators{};
     std::array<std::vector<std::uint64_t>, 2> coefficients{};
     std::array<std::vector<unsigned __int128>, 2> wide_accumulators{};
     std::unique_ptr<std::array<Polynomial<P>, input_row_count>> input_digits{};
 };
+
+template <class GLP, class SwitchKey, std::size_t Count>
+inline void accumulateSmallKeySwitchPreparedSumNTT(
+    GLBaseCiphertextData<GLP> &result,
+    const std::array<std::shared_ptr<typename SwitchKey::TransientNTTCache>,
+                     Count> &key_caches,
+    SmallKeySwitchSumNTTWorkspace<GLP, SwitchKey, Count> &workspace)
+{
+    using T = typename GLP::T;
+    constexpr std::uint32_t prime_count =
+        smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    constexpr std::size_t coefficient_count =
+        GLBaseNTTPlan<GLP>::coefficient_count;
+    constexpr std::size_t input_row_count = SwitchKey::primary_rows;
+    const auto &first_plan = baseNTTPlan<GLP, 0>();
+    const GLBaseNTTPlan<GLP> *second_plan = nullptr;
+    if constexpr (prime_count == 2) second_plan = &baseNTTPlan<GLP, 1>();
+    const std::uint64_t first_modulus = first_plan.modulus();
+    const std::uint64_t second_modulus =
+        prime_count == 2 ? second_plan->modulus() : 0;
+    const auto &input_spectra = workspace.input_spectra;
+
+    clear<GLP>(result[0]);
+    clear<GLP>(result[1]);
+    auto &accumulators = workspace.accumulators;
+    auto &coefficients = workspace.coefficients;
+    auto &wide_accumulators = workspace.wide_accumulators;
+    accumulators[0].resize(coefficient_count);
+    coefficients[0].resize(coefficient_count);
+    wide_accumulators[0].resize(coefficient_count);
+    if constexpr (prime_count == 2) {
+        accumulators[1].resize(coefficient_count);
+        coefficients[1].resize(coefficient_count);
+        wide_accumulators[1].resize(coefficient_count);
+    }
+
+    for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
+        const std::uint32_t shift =
+            (SwitchKey::bbar_rows - bbar - 1) * SwitchKey::bbar_bit;
+        for (std::size_t component = 0; component < 2; component++) {
+            const auto accumulate_prime = [&](const std::size_t prime,
+                                              const std::uint64_t modulus) {
+                auto &accumulator = accumulators[prime];
+                auto &wide = wide_accumulators[prime];
+                std::fill(accumulator.begin(), accumulator.end(), 0);
+                std::fill(wide.begin(), wide.end(), 0);
+                std::size_t batch_count = 0;
+                const auto flush = [&] {
+                    for (std::size_t i = 0; i < coefficient_count; i++) {
+                        accumulator[i] = modular_ntt::add(
+                            accumulator[i],
+                            modular_ntt::reduceWide(wide[i], modulus), modulus);
+                        wide[i] = 0;
+                    }
+                    batch_count = 0;
+                };
+                for (std::size_t term = 0; term < Count; term++) {
+                    const auto &key_spectra = key_caches[term]->spectra[prime];
+                    for (std::uint32_t primary = 0;
+                         primary < SwitchKey::primary_rows; primary++) {
+                        const std::size_t input_row =
+                            term * input_row_count + primary;
+                        const std::size_t key_row =
+                            (static_cast<std::size_t>(primary) *
+                                 SwitchKey::bbar_rows +
+                             bbar) *
+                                2 +
+                            component;
+                        const std::uint64_t *input_spectrum =
+                            input_spectra[prime].data() +
+                            input_row * coefficient_count;
+                        const std::uint64_t *key_spectrum =
+                            key_spectra.data() + key_row * coefficient_count;
+                        for (std::size_t i = 0; i < coefficient_count; i++)
+                            wide[i] += static_cast<unsigned __int128>(
+                                           input_spectrum[i]) *
+                                       key_spectrum[i];
+                        batch_count++;
+                        if (batch_count == 16) flush();
+                    }
+                }
+                if (batch_count != 0) flush();
+            };
+            accumulate_prime(0, first_modulus);
+            if constexpr (prime_count == 2) accumulate_prime(1, second_modulus);
+
+            first_plan.inverse(std::span<std::uint64_t>(coefficients[0]),
+                               std::span<std::uint64_t>(accumulators[0]));
+            if constexpr (prime_count == 1) {
+                for (std::size_t i = 0; i < coefficient_count; i++)
+                    result[component][i] +=
+                        signedI128ToTorus<T>(modular_ntt::centeredResidue(
+                            coefficients[0][i], first_modulus))
+                        << shift;
+            }
+            else {
+                second_plan->inverse(std::span<std::uint64_t>(coefficients[1]),
+                                     std::span<std::uint64_t>(accumulators[1]));
+                static const modular_ntt::TwoPrimeCRT crt(
+                    modular_ntt::wide_primes[0], modular_ntt::wide_primes[1]);
+                for (std::size_t i = 0; i < coefficient_count; i++)
+                    result[component][i] +=
+                        signedI128ToTorus<T>(crt.reconstructSigned(
+                            coefficients[0][i], coefficients[1][i]))
+                        << shift;
+            }
+        }
+    }
+    reduce<GLP, SwitchKey::key_log_q>(result[0]);
+    reduce<GLP, SwitchKey::key_log_q>(result[1]);
+}
 
 template <class GLP, class SwitchKey, std::size_t Count>
 inline bool accumulateSmallKeySwitchSumNTT(
@@ -2728,7 +2882,6 @@ inline bool accumulateSmallKeySwitchSumNTT(
         nullptr)
 {
     using P = typename GLP::baseP;
-    using T = typename GLP::T;
     constexpr std::uint32_t prime_count =
         smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
     constexpr std::size_t maximum_terms =
@@ -2749,9 +2902,6 @@ inline bool accumulateSmallKeySwitchSumNTT(
         const auto &first_plan = baseNTTPlan<GLP, 0>();
         const GLBaseNTTPlan<GLP> *second_plan = nullptr;
         if constexpr (prime_count == 2) second_plan = &baseNTTPlan<GLP, 1>();
-        const std::uint64_t first_modulus = first_plan.modulus();
-        const std::uint64_t second_modulus =
-            prime_count == 2 ? second_plan->modulus() : 0;
 
         std::array<std::shared_ptr<typename SwitchKey::TransientNTTCache>,
                    Count>
@@ -2799,100 +2949,147 @@ inline bool accumulateSmallKeySwitchSumNTT(
             }
         }
 
-        clear<GLP>(result[0]);
-        clear<GLP>(result[1]);
-        auto &accumulators = workspace.accumulators;
-        auto &coefficients = workspace.coefficients;
-        auto &wide_accumulators = workspace.wide_accumulators;
-        accumulators[0].resize(coefficient_count);
-        coefficients[0].resize(coefficient_count);
-        wide_accumulators[0].resize(coefficient_count);
-        if constexpr (prime_count == 2) {
-            accumulators[1].resize(coefficient_count);
-            coefficients[1].resize(coefficient_count);
-            wide_accumulators[1].resize(coefficient_count);
+        accumulateSmallKeySwitchPreparedSumNTT<GLP, SwitchKey, Count>(
+            result, key_caches, workspace);
+        return true;
+    }
+}
+
+// Hoisted form used by HMux. Every switch input is an automorphism of one of
+// a small number of source polynomials. Symmetric decomposition commutes with
+// the automorphism's signed coefficient permutation, and evaluation at an
+// automorphed X root is just a permutation of the already-computed spectrum.
+template <class GLP, class SwitchKey, std::size_t Count,
+          std::size_t SourceCount>
+inline bool accumulateSmallKeySwitchAutomorphismSumNTT(
+    GLBaseCiphertextData<GLP> &result,
+    const std::array<const GLBasePolynomial<GLP> *, SourceCount> &sources,
+    const std::array<std::size_t, Count> &source_indices,
+    const std::array<std::uint32_t, Count> &x_multipliers,
+    const std::array<const SwitchKey *, Count> &switch_keys,
+    SmallKeySwitchSumNTTWorkspace<GLP, SwitchKey, Count> *provided_workspace =
+        nullptr)
+{
+    using P = typename GLP::baseP;
+    constexpr std::uint32_t prime_count =
+        smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
+    constexpr std::size_t maximum_terms =
+        2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+    constexpr std::uint32_t required_bits =
+        SwitchKey::primary_bit + SwitchKey::bbar_bit + ceilLog2(maximum_terms) +
+        ceilLog2(SwitchKey::primary_rows) + ceilLog2(Count);
+    constexpr bool exact_bound = (prime_count == 1 && required_bits <= 60) ||
+                                 (prime_count == 2 && required_bits <= 122);
+    if constexpr (prime_count == 0 || !exact_bound) {
+        return false;
+    }
+    else {
+        static_assert(Count > 0 && SourceCount > 0);
+        constexpr std::size_t coefficient_count =
+            GLBaseNTTPlan<GLP>::coefficient_count;
+        constexpr std::size_t input_row_count = SwitchKey::primary_rows;
+        constexpr std::size_t z_dimension = GLBaseNTTPlan<GLP>::z_dimension;
+        constexpr std::size_t w_dimension = GLBaseNTTPlan<GLP>::w_dimension;
+        constexpr std::uint32_t four_n = 4 * GLP::matrix_dimension;
+        const auto &first_plan = baseNTTPlan<GLP, 0>();
+        const GLBaseNTTPlan<GLP> *second_plan = nullptr;
+        if constexpr (prime_count == 2) second_plan = &baseNTTPlan<GLP, 1>();
+
+        SmallKeySwitchSumNTTWorkspace<GLP, SwitchKey, Count> local_workspace;
+        auto &workspace = provided_workspace == nullptr ? local_workspace
+                                                        : *provided_workspace;
+        const std::size_t source_spectrum_count =
+            SourceCount * input_row_count * coefficient_count;
+        workspace.source_spectra[0].resize(source_spectrum_count);
+        if constexpr (prime_count == 2)
+            workspace.source_spectra[1].resize(source_spectrum_count);
+        const std::size_t input_spectrum_count =
+            Count * input_row_count * coefficient_count;
+        workspace.input_spectra[0].resize(input_spectrum_count);
+        if constexpr (prime_count == 2)
+            workspace.input_spectra[1].resize(input_spectrum_count);
+        if (!workspace.input_digits)
+            workspace.input_digits =
+                std::make_unique<std::array<Polynomial<P>, input_row_count>>();
+        auto &input_digits = *workspace.input_digits;
+
+        for (std::size_t source = 0; source < SourceCount; source++) {
+            if (sources[source] == nullptr)
+                throw std::invalid_argument("null GL DD hoisted source");
+            activeSymmetricBaseDecomposePolynomialRows<P, SwitchKey::log_q,
+                                                       SwitchKey::primary_bit,
+                                                       SwitchKey::primary_rows>(
+                input_digits, *sources[source]);
+            for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
+                 primary++) {
+                const std::size_t source_row =
+                    source * input_row_count + primary;
+                first_plan.forward(std::span<std::uint64_t>(
+                                       workspace.source_spectra[0].data() +
+                                           source_row * coefficient_count,
+                                       coefficient_count),
+                                   input_digits[primary]);
+                if constexpr (prime_count == 2)
+                    second_plan->forward(
+                        std::span<std::uint64_t>(
+                            workspace.source_spectra[1].data() +
+                                source_row * coefficient_count,
+                            coefficient_count),
+                        input_digits[primary]);
+            }
         }
 
-        for (std::uint32_t bbar = 0; bbar < SwitchKey::bbar_rows; bbar++) {
-            const std::uint32_t shift =
-                (SwitchKey::bbar_rows - bbar - 1) * SwitchKey::bbar_bit;
-            for (std::size_t component = 0; component < 2; component++) {
-                const auto accumulate_prime = [&](const std::size_t prime,
-                                                  const std::uint64_t modulus) {
-                    auto &accumulator = accumulators[prime];
-                    auto &wide = wide_accumulators[prime];
-                    std::fill(accumulator.begin(), accumulator.end(), 0);
-                    std::fill(wide.begin(), wide.end(), 0);
-                    std::size_t batch_count = 0;
-                    const auto flush = [&] {
-                        for (std::size_t i = 0; i < coefficient_count; i++) {
-                            accumulator[i] = modular_ntt::add(
-                                accumulator[i],
-                                modular_ntt::reduceWide(wide[i], modulus),
-                                modulus);
-                            wide[i] = 0;
-                        }
-                        batch_count = 0;
-                    };
-                    for (std::size_t term = 0; term < Count; term++) {
-                        const auto &key_spectra =
-                            key_caches[term]->spectra[prime];
-                        for (std::uint32_t primary = 0;
-                             primary < SwitchKey::primary_rows; primary++) {
-                            const std::size_t input_row =
-                                term * input_row_count + primary;
-                            const std::size_t key_row =
-                                (static_cast<std::size_t>(primary) *
-                                     SwitchKey::bbar_rows +
-                                 bbar) *
-                                    2 +
-                                component;
-                            const std::uint64_t *input_spectrum =
-                                input_spectra[prime].data() +
-                                input_row * coefficient_count;
-                            const std::uint64_t *key_spectrum =
-                                key_spectra.data() +
-                                key_row * coefficient_count;
-                            for (std::size_t i = 0; i < coefficient_count; i++)
-                                wide[i] += static_cast<unsigned __int128>(
-                                               input_spectrum[i]) *
-                                           key_spectrum[i];
-                            batch_count++;
-                            if (batch_count == 16) flush();
-                        }
-                    }
-                    if (batch_count != 0) flush();
-                };
-                accumulate_prime(0, first_modulus);
-                if constexpr (prime_count == 2)
-                    accumulate_prime(1, second_modulus);
+        std::array<std::array<std::uint32_t, z_dimension>, Count> z_maps{};
+        std::array<std::shared_ptr<typename SwitchKey::TransientNTTCache>,
+                   Count>
+            key_caches;
+        for (std::size_t term = 0; term < Count; term++) {
+            if (source_indices[term] >= SourceCount ||
+                (x_multipliers[term] & 1U) == 0 || switch_keys[term] == nullptr)
+                throw std::invalid_argument(
+                    "invalid GL DD hoisted automorphism operand");
+            if (switch_keys[term]->data.size() !=
+                SwitchKey::primary_rows * SwitchKey::bbar_rows)
+                throw std::invalid_argument(
+                    "uninitialized GL DD hoisted switch key");
+            key_caches[term] = prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
+                *switch_keys[term]);
+            for (std::size_t z = 0; z < z_dimension; z++) {
+                const std::uint32_t odd_root =
+                    static_cast<std::uint32_t>(2 * z + 1);
+                const std::uint32_t mapped_root = static_cast<std::uint32_t>(
+                    (static_cast<std::uint64_t>(x_multipliers[term]) *
+                     odd_root) %
+                    four_n);
+                z_maps[term][z] = (mapped_root - 1) / 2;
+            }
+        }
 
-                first_plan.inverse(std::span<std::uint64_t>(coefficients[0]),
-                                   std::span<std::uint64_t>(accumulators[0]));
-                if constexpr (prime_count == 1) {
-                    for (std::size_t i = 0; i < coefficient_count; i++)
-                        result[component][i] +=
-                            signedI128ToTorus<T>(modular_ntt::centeredResidue(
-                                coefficients[0][i], first_modulus))
-                            << shift;
-                }
-                else {
-                    second_plan->inverse(
-                        std::span<std::uint64_t>(coefficients[1]),
-                        std::span<std::uint64_t>(accumulators[1]));
-                    static const modular_ntt::TwoPrimeCRT crt(
-                        modular_ntt::wide_primes[0],
-                        modular_ntt::wide_primes[1]);
-                    for (std::size_t i = 0; i < coefficient_count; i++)
-                        result[component][i] +=
-                            signedI128ToTorus<T>(crt.reconstructSigned(
-                                coefficients[0][i], coefficients[1][i]))
-                            << shift;
+        for (std::size_t prime = 0; prime < prime_count; prime++) {
+            for (std::size_t term = 0; term < Count; term++) {
+                for (std::uint32_t primary = 0;
+                     primary < SwitchKey::primary_rows; primary++) {
+                    const std::size_t source_row =
+                        source_indices[term] * input_row_count + primary;
+                    const std::size_t input_row =
+                        term * input_row_count + primary;
+                    const std::uint64_t *source_spectrum =
+                        workspace.source_spectra[prime].data() +
+                        source_row * coefficient_count;
+                    std::uint64_t *input_spectrum =
+                        workspace.input_spectra[prime].data() +
+                        input_row * coefficient_count;
+                    for (std::size_t w = 0; w < w_dimension; w++)
+                        for (std::size_t z = 0; z < z_dimension; z++)
+                            input_spectrum[w * z_dimension + z] =
+                                source_spectrum[w * z_dimension +
+                                                z_maps[term][z]];
                 }
             }
         }
-        reduce<GLP, SwitchKey::key_log_q>(result[0]);
-        reduce<GLP, SwitchKey::key_log_q>(result[1]);
+
+        accumulateSmallKeySwitchPreparedSumNTT<GLP, SwitchKey, Count>(
+            result, key_caches, workspace);
         return true;
     }
 }

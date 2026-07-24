@@ -108,6 +108,88 @@ bool checkDirectBaseAutomorphism()
     return true;
 }
 
+bool checkSymmetricDecompositionSpectrumHoist()
+{
+    using P = typename SmallGLP::baseP;
+    constexpr std::uint32_t log_q = dd_log_q;
+    constexpr std::uint32_t base_bit = dd_primary_bit;
+    constexpr std::size_t rows = (log_q + base_bit - 1) / base_bit;
+    using T = typename P::T;
+    std::mt19937_64 rng(0x53594d4d45545259ULL);
+    TFHEpp::GLBasePolynomial<SmallGLP> input{};
+    for (auto &coefficient : input)
+        coefficient = TFHEpp::ckks_detail::signedToLevel<P, log_q>(
+            randomSigned(rng, log_q - 2));
+    input[0] = T{1} << (base_bit - 1);
+    input[1] = T{0} - (T{1} << (base_bit - 1));
+    input[2] = T{1} << (log_q - 1);
+    input[3] = (T{1} << (base_bit - 1)) << base_bit;
+
+    std::array<TFHEpp::Polynomial<P>, rows> digits{};
+    TFHEpp::gl_detail::activeSymmetricBaseDecomposePolynomialRows<
+        P, log_q, base_bit, rows>(digits, input);
+    for (std::size_t coefficient = 0; coefficient < input.size();
+         coefficient++) {
+        T recombined{};
+        for (std::size_t row = 0; row < rows; row++)
+            recombined += digits[row][coefficient]
+                          << ((rows - row - 1) * base_bit);
+        if (TFHEpp::ckks_detail::reduceToLevel<P, log_q>(recombined) !=
+            TFHEpp::ckks_detail::reduceToLevel<P, log_q>(input[coefficient]))
+            return false;
+    }
+
+    TFHEpp::GLBasePolynomial<SmallGLP> negative{};
+    for (std::size_t coefficient = 0; coefficient < input.size(); coefficient++)
+        negative[coefficient] = T{0} - input[coefficient];
+    std::array<TFHEpp::Polynomial<P>, rows> negative_digits{};
+    TFHEpp::gl_detail::activeSymmetricBaseDecomposePolynomialRows<
+        P, log_q, base_bit, rows>(negative_digits, negative);
+    const T minimum = T{1} << (log_q - 1);
+    for (std::size_t coefficient = 0; coefficient < input.size();
+         coefficient++) {
+        if (TFHEpp::ckks_detail::reduceToLevel<P, log_q>(input[coefficient]) ==
+            minimum)
+            continue;
+        for (std::size_t row = 0; row < rows; row++)
+            if (negative_digits[row][coefficient] !=
+                T{0} - digits[row][coefficient])
+                return false;
+    }
+
+    constexpr std::array<std::uint32_t, 4> multipliers{1, 3, 5, 7};
+    constexpr std::size_t z_dimension =
+        TFHEpp::gl_detail::GLBaseNTTPlan<SmallGLP>::z_dimension;
+    constexpr std::size_t coefficient_count =
+        TFHEpp::gl_detail::GLBaseNTTPlan<SmallGLP>::coefficient_count;
+    for (const std::uint32_t multiplier : multipliers) {
+        TFHEpp::GLBasePolynomial<SmallGLP> automorphed{};
+        TFHEpp::gl_detail::baseAutomorphism<SmallGLP>(automorphed, digits[0],
+                                                      multiplier, 1);
+        for (std::size_t prime = 0; prime < 2; prime++) {
+            const auto &plan =
+                prime == 0 ? TFHEpp::gl_detail::baseNTTPlan<SmallGLP, 0>()
+                           : TFHEpp::gl_detail::baseNTTPlan<SmallGLP, 1>();
+            std::vector<std::uint64_t> source_spectrum;
+            std::vector<std::uint64_t> automorphed_spectrum;
+            plan.forward(source_spectrum, digits[0]);
+            plan.forward(automorphed_spectrum, automorphed);
+            for (std::size_t i = 0; i < coefficient_count; i++) {
+                const std::size_t w = i / z_dimension;
+                const std::size_t z = i % z_dimension;
+                const std::uint32_t mapped_root = static_cast<std::uint32_t>(
+                    (static_cast<std::uint64_t>(multiplier) * (2 * z + 1)) %
+                    (4 * SmallGLP::matrix_dimension));
+                const std::size_t source_z = (mapped_root - 1) / 2;
+                if (automorphed_spectrum[i] !=
+                    source_spectrum[w * z_dimension + source_z])
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool checkSmallDense()
 {
     std::mt19937_64 rng(0x474c4e5454ULL);
@@ -854,6 +936,59 @@ bool benchmarkProductionHMuxSwitchFusion()
         std::chrono::duration<double>(std::chrono::steady_clock::now() -
                                       hmux_start)
             .count();
+    std::vector<Ciphertext> legacy_hmux_batch(batch_count);
+    const auto legacy_hmux_batch_start = std::chrono::steady_clock::now();
+#pragma omp parallel
+    {
+        auto rotated =
+            std::make_unique<std::array<TFHEpp::GLBaseCiphertextData<GLP>,
+                                        Schedule::hmux_radix>>();
+        auto accumulated =
+            std::make_unique<TFHEpp::GLBaseCiphertextData<GLP>>();
+        TFHEpp::gl_detail::SmallKeySwitchSumNTTWorkspace<
+            GLP, SwitchKey, 2 * Schedule::hmux_radix>
+            workspace;
+#pragma omp for schedule(static)
+        for (std::size_t batch = 0; batch < batch_count; batch++) {
+            std::array<const TFHEpp::GLBasePolynomial<GLP> *,
+                       2 * Schedule::hmux_radix>
+                switch_inputs{};
+            std::array<const SwitchKey *, 2 * Schedule::hmux_radix>
+                switch_keys{};
+            const auto &stage = hmux_key.stages.front();
+            for (std::uint32_t digit = 0; digit < Schedule::hmux_radix;
+                 digit++) {
+                const std::uint32_t displacement =
+                    (digit * stage.step) % GLP::matrix_dimension;
+                const std::uint32_t amount =
+                    (GLP::matrix_dimension - displacement) %
+                    GLP::matrix_dimension;
+                TFHEpp::gl_ship_detail::rotateX<GLP>((*rotated)[digit],
+                                                     hmux_input.ct, amount);
+                switch_inputs[2 * digit] = &(*rotated)[digit][0];
+                switch_inputs[2 * digit + 1] = &(*rotated)[digit][1];
+                switch_keys[2 * digit] = &stage.branches[digit].body_key;
+                switch_keys[2 * digit + 1] = &stage.branches[digit].mask_key;
+            }
+            if (!TFHEpp::gl_detail::accumulateSmallKeySwitchSumNTT<GLP,
+                                                                   SwitchKey>(
+                    *accumulated, switch_inputs, switch_keys, &workspace))
+                std::terminate();
+            TFHEpp::gl_ship_detail::reduce<GLP, Schedule::half_bootstrap_log_q +
+                                                    GLP::auxiliary_log_q>(
+                *accumulated);
+            TFHEpp::gl_ship_detail::rescaleBase<
+                GLP, Schedule::half_bootstrap_log_q + GLP::auxiliary_log_q,
+                GLP::auxiliary_log_q>(legacy_hmux_batch[batch].ct,
+                                      *accumulated);
+        }
+    }
+    const double legacy_hmux_batch_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      legacy_hmux_batch_start)
+            .count();
+    for (const auto &batch : legacy_hmux_batch)
+        if (batch.ct != hmux_output.ct) return false;
     std::vector<Ciphertext> hmux_batch(batch_count);
     const auto hmux_batch_start = std::chrono::steady_clock::now();
 #pragma omp parallel
@@ -871,7 +1006,8 @@ bool benchmarkProductionHMuxSwitchFusion()
     for (const auto &batch : hmux_batch)
         if (batch.ct != hmux_output.ct) return false;
     std::cout << "n512 complete warm HMux stage: " << hmux_seconds << " s; "
-              << batch_count << " calls in " << hmux_batch_seconds << " s"
+              << batch_count << " calls in " << hmux_batch_seconds << " s vs "
+              << legacy_hmux_batch_seconds << " s with unhoisted transforms"
               << std::endl;
     return hmux_output[0][0] != typename GLP::T{} ||
            hmux_output[1][0] != typename GLP::T{};
@@ -1425,6 +1561,11 @@ int main()
 {
     if (!checkDirectBaseAutomorphism()) {
         std::cerr << "direct GL base automorphism regression failed"
+                  << std::endl;
+        return 1;
+    }
+    if (!checkSymmetricDecompositionSpectrumHoist()) {
+        std::cerr << "GL symmetric decomposition/spectrum hoist failed"
                   << std::endl;
         return 1;
     }

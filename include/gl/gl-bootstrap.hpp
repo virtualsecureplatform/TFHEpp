@@ -1151,8 +1151,10 @@ inline void hmux(GLBaseCiphertext<typename Schedule::Parameter,
     for (const auto &stage : key.stages) {
         if (stage.branches.size() != Schedule::hmux_radix)
             throw std::invalid_argument("malformed GL SHIP HMux key");
-        std::array<const GLBasePolynomial<GLP> *, 2 * Schedule::hmux_radix>
-            switch_inputs{};
+        const std::array<const GLBasePolynomial<GLP> *, 2> sources{&current[0],
+                                                                   &current[1]};
+        std::array<std::size_t, 2 * Schedule::hmux_radix> source_indices{};
+        std::array<std::uint32_t, 2 * Schedule::hmux_radix> x_multipliers{};
         std::array<const SwitchKey *, 2 * Schedule::hmux_radix> switch_keys{};
         for (std::uint32_t digit = 0; digit < Schedule::hmux_radix; digit++) {
             const std::uint32_t desired_displacement =
@@ -1160,18 +1162,22 @@ inline void hmux(GLBaseCiphertext<typename Schedule::Parameter,
             const std::uint32_t automorphism_amount =
                 (GLP::matrix_dimension - desired_displacement) %
                 GLP::matrix_dimension;
-            rotateX<GLP>(rotated[digit], current.ct, automorphism_amount);
-            switch_inputs[2 * digit] = &rotated[digit][0];
-            switch_inputs[2 * digit + 1] = &rotated[digit][1];
+            const std::uint32_t multiplier = gl_detail::powMod(
+                5, automorphism_amount, 4 * GLP::matrix_dimension);
+            source_indices[2 * digit] = 0;
+            source_indices[2 * digit + 1] = 1;
+            x_multipliers[2 * digit] = multiplier;
+            x_multipliers[2 * digit + 1] = multiplier;
             switch_keys[2 * digit] = &stage.branches[digit].body_key;
             switch_keys[2 * digit + 1] = &stage.branches[digit].mask_key;
         }
 
         if constexpr (fused_ntt_supported) {
             const bool fused =
-                gl_detail::accumulateSmallKeySwitchSumNTT<GLP, SwitchKey>(
-                    accumulated, switch_inputs, switch_keys,
-                    &scratch.switch_workspace);
+                gl_detail::accumulateSmallKeySwitchAutomorphismSumNTT<
+                    GLP, SwitchKey>(accumulated, sources, source_indices,
+                                    x_multipliers, switch_keys,
+                                    &scratch.switch_workspace);
             if (!fused)
                 throw std::logic_error("GL SHIP HMux lost its exact NTT path");
         }
@@ -1180,6 +1186,12 @@ inline void hmux(GLBaseCiphertext<typename Schedule::Parameter,
             gl_detail::clear<GLP>(accumulated[1]);
             for (std::uint32_t digit = 0; digit < Schedule::hmux_radix;
                  digit++) {
+                const std::uint32_t desired_displacement =
+                    (digit * stage.step) % GLP::matrix_dimension;
+                const std::uint32_t automorphism_amount =
+                    (GLP::matrix_dimension - desired_displacement) %
+                    GLP::matrix_dimension;
+                rotateX<GLP>(rotated[digit], current.ct, automorphism_amount);
                 GLBaseCiphertextData<GLP> body_term{};
                 GLBaseCiphertextData<GLP> mask_term{};
                 GLDDSmallKeySwitchBaseRaw(body_term, rotated[digit][0],
