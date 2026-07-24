@@ -197,6 +197,110 @@ private:
     std::vector<std::vector<std::uint64_t>> inverse_twiddles_;
 };
 
+// Compile-time-sized radix-2 plan for small transforms embedded in another
+// fixed algorithm (notably Rader's p=17 convolution). Flat twiddle tables and
+// compile-time stages let the compiler remove the dynamic loop and vector
+// machinery used by the general plan.
+template <std::size_t Size>
+class FixedRadix2NTTPlan {
+public:
+    explicit FixedRadix2NTTPlan(const PrimeModulus prime)
+        : modulus_(prime.value), inverse_size_(0)
+    {
+        static_assert(isPowerOfTwo(Size) && Size >= 2);
+        if (modulus_ >= (std::uint64_t{1} << 63) || (modulus_ - 1) % Size != 0)
+            throw std::invalid_argument("modulus does not support NTT size");
+
+        inverse_size_ = invert(Size % modulus_, modulus_);
+        for (std::size_t length = 2; length <= Size; length <<= 1) {
+            const std::uint64_t root =
+                power(prime.primitive_root, (modulus_ - 1) / length, modulus_);
+            if (power(root, length, modulus_) != 1 ||
+                power(root, length / 2, modulus_) == 1)
+                throw std::invalid_argument("invalid primitive NTT root");
+            const std::uint64_t inverse_root = invert(root, modulus_);
+            const std::size_t half = length >> 1;
+            const std::size_t offset = half - 1;
+            forward_twiddles_[offset] = 1;
+            inverse_twiddles_[offset] = 1;
+            for (std::size_t j = 1; j < half; j++) {
+                forward_twiddles_[offset + j] =
+                    multiply(forward_twiddles_[offset + j - 1], root, modulus_);
+                inverse_twiddles_[offset + j] = multiply(
+                    inverse_twiddles_[offset + j - 1], inverse_root, modulus_);
+            }
+        }
+    }
+
+    void forward(std::array<std::uint64_t, Size> &values) const
+    {
+        transform<false, false>(values);
+    }
+
+    void inverse(std::array<std::uint64_t, Size> &values) const
+    {
+        transform<true, true>(values);
+    }
+
+    void inverseUnscaled(std::array<std::uint64_t, Size> &values) const
+    {
+        transform<true, false>(values);
+    }
+
+private:
+    static constexpr std::array<std::size_t, Size> bitReversal()
+    {
+        std::array<std::size_t, Size> result{};
+        for (std::size_t i = 0; i < Size; i++) {
+            std::size_t input = i;
+            std::size_t reversed = 0;
+            for (std::size_t bits = Size; bits > 1; bits >>= 1) {
+                reversed = (reversed << 1) | (input & 1U);
+                input >>= 1;
+            }
+            result[i] = reversed;
+        }
+        return result;
+    }
+
+    template <bool Invert, std::size_t Length>
+    void applyStages(std::array<std::uint64_t, Size> &values) const
+    {
+        constexpr std::size_t half = Length >> 1;
+        constexpr std::size_t offset = half - 1;
+        const auto &twiddles = Invert ? inverse_twiddles_ : forward_twiddles_;
+        for (std::size_t block = 0; block < Size; block += Length)
+            for (std::size_t j = 0; j < half; j++) {
+                const std::uint64_t even = values[block + j];
+                const std::uint64_t odd =
+                    j == 0 ? values[block + half]
+                           : multiply(values[block + j + half],
+                                      twiddles[offset + j], modulus_);
+                values[block + j] = add(even, odd, modulus_);
+                values[block + j + half] = subtract(even, odd, modulus_);
+            }
+        if constexpr (Length < Size) applyStages<Invert, 2 * Length>(values);
+    }
+
+    template <bool Invert, bool Normalize>
+    void transform(std::array<std::uint64_t, Size> &values) const
+    {
+        static constexpr auto bit_reversal = bitReversal();
+        for (std::size_t i = 1; i < Size; i++)
+            if (i < bit_reversal[i])
+                std::swap(values[i], values[bit_reversal[i]]);
+        applyStages<Invert, 2>(values);
+        if constexpr (Normalize)
+            for (std::uint64_t &value : values)
+                value = multiply(value, inverse_size_, modulus_);
+    }
+
+    std::uint64_t modulus_;
+    std::uint64_t inverse_size_;
+    std::array<std::uint64_t, Size - 1> forward_twiddles_{};
+    std::array<std::uint64_t, Size - 1> inverse_twiddles_{};
+};
+
 class NegacyclicNTTPlan {
 public:
     NegacyclicNTTPlan(const std::size_t size, const PrimeModulus prime)
@@ -303,7 +407,7 @@ public:
 
     explicit RaderNTTPlan(const PrimeModulus prime)
         : prime_(prime),
-          convolution_(convolution_size, prime),
+          convolution_(prime),
           root_(power(prime.primitive_root, (prime.value - 1) / PrimeLength,
                       prime.value)),
           inverse_prime_(invert(PrimeLength, prime.value))
@@ -391,7 +495,7 @@ private:
     }
 
     PrimeModulus prime_;
-    Radix2NTTPlan convolution_;
+    FixedRadix2NTTPlan<convolution_size> convolution_;
     std::uint64_t root_;
     std::uint64_t inverse_prime_;
     std::array<std::uint32_t, convolution_size> powers_{};
