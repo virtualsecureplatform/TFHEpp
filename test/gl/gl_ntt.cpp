@@ -190,6 +190,44 @@ bool checkSymmetricDecompositionSpectrumHoist()
     return true;
 }
 
+bool checkFusedCiphertextTensorMultiply()
+{
+    constexpr std::uint32_t log_q = dd_log_q;
+    std::mt19937_64 rng(0x54454e534f524e54ULL);
+    TFHEpp::GLBaseCiphertextData<SmallGLP> lhs{};
+    TFHEpp::GLBaseCiphertextData<SmallGLP> rhs{};
+    for (std::size_t component = 0; component < 2; component++) {
+        fillSigned<SmallGLP>(lhs[component], rng, log_q - 1);
+        fillSigned<SmallGLP>(rhs[component], rng, log_q - 1);
+    }
+    lhs[0][0] = TFHEpp::gl_detail::signedI128ToTorus<typename SmallGLP::T>(
+        static_cast<__int128>(1) << (log_q - 2));
+    lhs[1][1] = typename SmallGLP::T{0} - lhs[0][0];
+    rhs[0][2] =
+        (typename SmallGLP::T{1} << (log_q - 1)) - typename SmallGLP::T{1};
+    rhs[1][3] = typename SmallGLP::T{1} << (log_q - 1);
+
+    std::array<TFHEpp::GLBasePolynomial<SmallGLP>, 3> expected{};
+    TFHEpp::GLBasePolynomial<SmallGLP> second_cross{};
+    TFHEpp::gl_detail::baseMultiplyAtLevel<SmallGLP, log_q>(expected[0], lhs[0],
+                                                            rhs[0]);
+    TFHEpp::gl_detail::baseMultiplyAtLevel<SmallGLP, log_q>(expected[1], lhs[0],
+                                                            rhs[1]);
+    TFHEpp::gl_detail::baseMultiplyAtLevel<SmallGLP, log_q>(second_cross,
+                                                            lhs[1], rhs[0]);
+    TFHEpp::gl_detail::addInPlace<SmallGLP>(expected[1], second_cross);
+    TFHEpp::gl_detail::reduce<SmallGLP, log_q>(expected[1]);
+    TFHEpp::gl_detail::baseMultiplyAtLevel<SmallGLP, log_q>(expected[2], lhs[1],
+                                                            rhs[1]);
+
+    std::array<TFHEpp::GLBasePolynomial<SmallGLP>, 3> got{};
+    TFHEpp::gl_detail::BaseCiphertextTensorNTTWorkspace<SmallGLP> workspace;
+    if (!TFHEpp::gl_detail::baseCiphertextTensorMultiplyNTT<SmallGLP, log_q>(
+            got, lhs, rhs, &workspace))
+        return false;
+    return got == expected;
+}
+
 bool checkSmallDense()
 {
     std::mt19937_64 rng(0x474c4e5454ULL);
@@ -1387,6 +1425,50 @@ bool benchmarkProductionProductLevel(double &projected_total_seconds)
     for (const auto &product : products)
         if (product.ct != expected->ct) return false;
 
+    std::vector<Output> legacy_products(batch_count);
+    const auto legacy_start = std::chrono::steady_clock::now();
+#pragma omp parallel
+    {
+        auto tensor =
+            std::make_unique<std::array<TFHEpp::GLBasePolynomial<GLP>, 4>>();
+        auto square_term =
+            std::make_unique<TFHEpp::GLBaseCiphertextData<GLP>>();
+        auto relinearized =
+            std::make_unique<TFHEpp::GLBaseCiphertextData<GLP>>();
+#pragma omp for schedule(static)
+        for (std::size_t batch = 0; batch < batch_count; batch++) {
+            TFHEpp::gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(
+                (*tensor)[0], (*lhs)[0], (*rhs)[0]);
+            TFHEpp::gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(
+                (*tensor)[1], (*lhs)[0], (*rhs)[1]);
+            TFHEpp::gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(
+                (*tensor)[2], (*lhs)[1], (*rhs)[0]);
+            TFHEpp::gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(
+                (*tensor)[3], (*lhs)[1], (*rhs)[1]);
+            TFHEpp::gl_detail::addInPlace<GLP>((*tensor)[1], (*tensor)[2]);
+            TFHEpp::gl_detail::reduce<GLP, input_log_q>((*tensor)[1]);
+            TFHEpp::GLDDSmallKeySwitchBase(*square_term, (*tensor)[3], *key);
+            (*relinearized)[0] = (*tensor)[0];
+            (*relinearized)[1] = (*tensor)[1];
+            TFHEpp::gl_detail::addInPlace<GLP>((*relinearized)[0],
+                                               (*square_term)[0]);
+            TFHEpp::gl_detail::addInPlace<GLP>((*relinearized)[1],
+                                               (*square_term)[1]);
+            TFHEpp::gl_ship_detail::reduce<GLP, input_log_q>(*relinearized);
+            TFHEpp::gl_ship_detail::rescaleBase<GLP, input_log_q,
+                                                Schedule::tree_log_delta>(
+                legacy_products[batch].ct, *relinearized);
+            TFHEpp::gl_ship_detail::reduce<GLP, output_log_q>(
+                legacy_products[batch].ct);
+        }
+    }
+    const double legacy_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      legacy_start)
+            .count();
+    for (const auto &product : legacy_products)
+        if (product.ct != expected->ct) return false;
+
     constexpr std::uint64_t multiplication_count =
         static_cast<std::uint64_t>(2) * GLP::matrix_dimension *
         (Schedule::factor_count >> (Level + 1));
@@ -1394,8 +1476,10 @@ bool benchmarkProductionProductLevel(double &projected_total_seconds)
         seconds * multiplication_count / batch_count;
     projected_total_seconds += projected_seconds;
     std::cout << "n512 product level " << Level << " (logQ=" << input_log_q
-              << "): " << batch_count << " calls in " << seconds
-              << " s; projected " << projected_seconds << " s" << std::endl;
+              << "): " << batch_count << " calls in " << seconds << " s vs "
+              << legacy_seconds
+              << " s with separate tensor transforms; projected "
+              << projected_seconds << " s" << std::endl;
     return true;
 }
 
@@ -1567,6 +1651,10 @@ int main()
     if (!checkSymmetricDecompositionSpectrumHoist()) {
         std::cerr << "GL symmetric decomposition/spectrum hoist failed"
                   << std::endl;
+        return 1;
+    }
+    if (!checkFusedCiphertextTensorMultiply()) {
+        std::cerr << "fused GL ciphertext tensor multiply failed" << std::endl;
         return 1;
     }
     if (!checkSmallDense()) {

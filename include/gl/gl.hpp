@@ -1372,6 +1372,164 @@ inline bool baseMultiplyNTTDoubleChunk(GLBasePolynomial<GLP> &result,
 }
 
 template <class GLP>
+struct BaseCiphertextTensorNTTWorkspace {
+    std::array<std::vector<std::uint64_t>, 2> source_spectra{};
+    std::array<std::vector<std::uint64_t>, 2> diagonal_coefficients{};
+    std::array<std::vector<std::uint64_t>, 2> accumulators{};
+    std::array<std::vector<std::uint64_t>, 2> coefficients{};
+    std::vector<unsigned __int128> wide{};
+    std::unique_ptr<GLBasePolynomial<GLP>> chunk{};
+};
+
+// Compute (a0*b0, a0*b1+a1*b0, a1*b1) together. Chunk spectra for each of
+// the four source components are shared, and the two cross products are
+// accumulated before each inverse transform. The extra cross-term factor is
+// included in the exact two-prime bound.
+template <class GLP, std::uint32_t OutputBits>
+inline bool baseCiphertextTensorMultiplyNTT(
+    std::array<GLBasePolynomial<GLP>, 3> &result,
+    const GLBaseCiphertextData<GLP> &lhs, const GLBaseCiphertextData<GLP> &rhs,
+    BaseCiphertextTensorNTTWorkspace<GLP> *provided_workspace = nullptr)
+{
+    if constexpr (!supportsWidePrimeNTT<GLP>) return false;
+
+    using T = typename GLP::T;
+    constexpr std::size_t maximum_terms =
+        2 * GLP::matrix_dimension * (2 * GLP::phi - 1);
+    constexpr std::uint32_t convolution_bits = ceilLog2(maximum_terms);
+    constexpr std::uint32_t two_prime_safe_bits = 122;
+    static_assert(OutputBits > 0 &&
+                  OutputBits <= std::numeric_limits<T>::digits);
+    constexpr std::uint32_t chunk_bits = [] {
+        for (std::uint32_t bits = (two_prime_safe_bits - convolution_bits) / 2;
+             bits > 0; bits--) {
+            const std::size_t chunks = (OutputBits + bits - 1) / bits;
+            const std::size_t maximum_cross_pairs = 2 * chunks;
+            if (2 * bits + convolution_bits + ceilLog2(maximum_cross_pairs) <=
+                two_prime_safe_bits)
+                return bits;
+        }
+        return 0U;
+    }();
+    static_assert(chunk_bits > 0);
+    constexpr std::size_t chunk_count =
+        (OutputBits + chunk_bits - 1) / chunk_bits;
+    constexpr std::size_t diagonal_count = chunk_count;
+    constexpr std::size_t coefficient_count =
+        GLBaseNTTPlan<GLP>::coefficient_count;
+    const std::array<const GLBasePolynomial<GLP> *, 4> sources{
+        &lhs[0], &lhs[1], &rhs[0], &rhs[1]};
+    const std::array<const GLBaseNTTPlan<GLP> *, 2> plans{
+        &baseNTTPlan<GLP, 0>(), &baseNTTPlan<GLP, 1>()};
+    static const modular_ntt::TwoPrimeCRT crt(modular_ntt::wide_primes[0],
+                                              modular_ntt::wide_primes[1]);
+
+    BaseCiphertextTensorNTTWorkspace<GLP> local_workspace;
+    auto &workspace =
+        provided_workspace == nullptr ? local_workspace : *provided_workspace;
+    const std::size_t source_spectrum_size =
+        4 * chunk_count * coefficient_count;
+    for (auto &spectra : workspace.source_spectra)
+        spectra.resize(source_spectrum_size);
+    for (auto &values : workspace.diagonal_coefficients)
+        values.resize(diagonal_count * coefficient_count);
+    for (auto &values : workspace.accumulators)
+        values.resize(coefficient_count);
+    for (auto &values : workspace.coefficients)
+        values.resize(coefficient_count);
+    workspace.wide.resize(coefficient_count);
+    if (!workspace.chunk)
+        workspace.chunk = std::make_unique<GLBasePolynomial<GLP>>();
+
+    for (std::size_t source = 0; source < sources.size(); source++) {
+        for (std::size_t chunk = 0; chunk < chunk_count; chunk++) {
+            const std::uint32_t shift =
+                static_cast<std::uint32_t>(chunk * chunk_bits);
+            for (std::size_t i = 0; i < coefficient_count; i++)
+                (*workspace.chunk)[i] =
+                    unsignedChunk((*sources[source])[i], shift, chunk_bits);
+            for (std::size_t prime = 0; prime < 2; prime++) {
+                const std::size_t spectrum_row = source * chunk_count + chunk;
+                plans[prime]->forward(
+                    std::span<std::uint64_t>(
+                        workspace.source_spectra[prime].data() +
+                            spectrum_row * coefficient_count,
+                        coefficient_count),
+                    *workspace.chunk);
+            }
+        }
+    }
+
+    constexpr std::array<std::size_t, 3> pair_counts{1, 2, 1};
+    constexpr std::array<std::array<std::size_t, 2>, 3> lhs_sources{{
+        {{0, 0}},
+        {{0, 1}},
+        {{1, 1}},
+    }};
+    constexpr std::array<std::array<std::size_t, 2>, 3> rhs_sources{{
+        {{2, 2}},
+        {{3, 2}},
+        {{3, 3}},
+    }};
+    for (std::size_t output = 0; output < result.size(); output++) {
+        for (std::size_t diagonal = 0; diagonal < diagonal_count; diagonal++) {
+            for (std::size_t prime = 0; prime < 2; prime++) {
+                std::fill(workspace.wide.begin(), workspace.wide.end(), 0);
+                for (std::size_t pair = 0; pair < pair_counts[output]; pair++) {
+                    for (std::size_t lhs_chunk = 0; lhs_chunk <= diagonal;
+                         lhs_chunk++) {
+                        const std::size_t rhs_chunk = diagonal - lhs_chunk;
+                        if (lhs_chunk >= chunk_count ||
+                            rhs_chunk >= chunk_count)
+                            continue;
+                        const std::size_t lhs_row =
+                            lhs_sources[output][pair] * chunk_count + lhs_chunk;
+                        const std::size_t rhs_row =
+                            rhs_sources[output][pair] * chunk_count + rhs_chunk;
+                        const std::uint64_t *lhs_spectrum =
+                            workspace.source_spectra[prime].data() +
+                            lhs_row * coefficient_count;
+                        const std::uint64_t *rhs_spectrum =
+                            workspace.source_spectra[prime].data() +
+                            rhs_row * coefficient_count;
+                        for (std::size_t i = 0; i < coefficient_count; i++)
+                            workspace.wide[i] += static_cast<unsigned __int128>(
+                                                     lhs_spectrum[i]) *
+                                                 rhs_spectrum[i];
+                    }
+                }
+                const std::uint64_t modulus = plans[prime]->modulus();
+                for (std::size_t i = 0; i < coefficient_count; i++)
+                    workspace.accumulators[prime][i] =
+                        modular_ntt::reduceWide(workspace.wide[i], modulus);
+                plans[prime]->inverse(
+                    std::span<std::uint64_t>(workspace.coefficients[prime]),
+                    std::span<std::uint64_t>(workspace.accumulators[prime]));
+                std::copy(workspace.coefficients[prime].begin(),
+                          workspace.coefficients[prime].end(),
+                          workspace.diagonal_coefficients[prime].begin() +
+                              diagonal * coefficient_count);
+            }
+        }
+
+        for (std::size_t i = 0; i < coefficient_count; i++) {
+            T value{};
+            for (std::size_t diagonal = 0; diagonal < diagonal_count;
+                 diagonal++)
+                value += signedI128ToTorus<T>(crt.reconstructSigned(
+                             workspace.diagonal_coefficients
+                                 [0][diagonal * coefficient_count + i],
+                             workspace.diagonal_coefficients
+                                 [1][diagonal * coefficient_count + i]))
+                         << (diagonal * chunk_bits);
+            result[output][i] = value;
+        }
+        reduce<GLP, OutputBits>(result[output]);
+    }
+    return true;
+}
+
+template <class GLP>
 inline bool baseMultiplyNTT(GLBasePolynomial<GLP> &result,
                             const GLBasePolynomial<GLP> &lhs,
                             const GLBasePolynomial<GLP> &rhs)

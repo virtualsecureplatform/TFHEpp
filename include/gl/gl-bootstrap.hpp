@@ -2225,7 +2225,9 @@ inline void GLBasePlaintextMultiplyRescale(
 
 template <class GLP>
 struct GLBaseHadamardWorkspace {
-    std::unique_ptr<std::array<GLBasePolynomial<GLP>, 4>> tensor{};
+    std::unique_ptr<std::array<GLBasePolynomial<GLP>, 3>> tensor{};
+    std::unique_ptr<GLBasePolynomial<GLP>> cross_term{};
+    gl_detail::BaseCiphertextTensorNTTWorkspace<GLP> tensor_ntt{};
     std::unique_ptr<GLBaseCiphertextData<GLP>> square_term{};
     std::unique_ptr<GLBaseCiphertextData<GLP>> relinearized{};
 };
@@ -2251,22 +2253,32 @@ inline void GLBaseHadamardMultiply(
         provided_workspace == nullptr ? local_workspace : *provided_workspace;
     if (!workspace.tensor)
         workspace.tensor =
-            std::make_unique<std::array<GLBasePolynomial<GLP>, 4>>();
+            std::make_unique<std::array<GLBasePolynomial<GLP>, 3>>();
+    if (!workspace.cross_term)
+        workspace.cross_term = std::make_unique<GLBasePolynomial<GLP>>();
     if (!workspace.square_term)
         workspace.square_term = std::make_unique<GLBaseCiphertextData<GLP>>();
     if (!workspace.relinearized)
         workspace.relinearized = std::make_unique<GLBaseCiphertextData<GLP>>();
     auto &tensor = *workspace.tensor;
+    auto &cross_term = *workspace.cross_term;
     auto &square_term = *workspace.square_term;
     auto &relinearized = *workspace.relinearized;
-    gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[0], lhs[0], rhs[0]);
-    gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[1], lhs[0], rhs[1]);
-    gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[2], lhs[1], rhs[0]);
-    gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[3], lhs[1], rhs[1]);
-    gl_detail::addInPlace<GLP>(tensor[1], tensor[2]);
-    gl_detail::reduce<GLP, input_log_q>(tensor[1]);
+    if (!gl_detail::baseCiphertextTensorMultiplyNTT<GLP, input_log_q>(
+            tensor, lhs.ct, rhs.ct, &workspace.tensor_ntt)) {
+        gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[0], lhs[0],
+                                                         rhs[0]);
+        gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[1], lhs[0],
+                                                         rhs[1]);
+        gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(cross_term, lhs[1],
+                                                         rhs[0]);
+        gl_detail::baseMultiplyAtLevel<GLP, input_log_q>(tensor[2], lhs[1],
+                                                         rhs[1]);
+        gl_detail::addInPlace<GLP>(tensor[1], cross_term);
+        gl_detail::reduce<GLP, input_log_q>(tensor[1]);
+    }
 
-    GLDDSmallKeySwitchBase(square_term, tensor[3], relin_key);
+    GLDDSmallKeySwitchBase(square_term, tensor[2], relin_key);
     relinearized[0] = std::move(tensor[0]);
     relinearized[1] = std::move(tensor[1]);
     gl_detail::addInPlace<GLP>(relinearized[0], square_term[0]);

@@ -113,6 +113,12 @@ safe chunk width for the active modulus. At n512/logQ 338 this is seven chunks
 per operand instead of the former sixteen one-prime chunks; diagonals whose
 shift is already zero modulo `2^LogQ` are not evaluated.
 
+Ciphertext products share those chunk transforms across all four input
+components. The three tensor outputs `(a0*b0, a0*b1+a1*b0, a1*b1)` are formed
+directly, with the cross term accumulated before inversion and its extra
+factor included in the CRT bound. Across the five n512 product-tree levels,
+128-call batches are 24--31% faster than four separate base products.
+
 The common radix-2 implementation precomputes stage twiddles and bit-reversal
 swaps. Its pseudo-Mersenne reduction exploits `p = 2^62-c`, avoiding the
 compiler's 128-by-64 division helper. Inverse negacyclic and Rader transforms
@@ -323,8 +329,8 @@ kernels give about 61 complete HMux stages per second and 52 48-candidate
 masked columns per second on the same 16-core/32-thread host. The n512 schedule
 needs 95,232 HMux stages and 31,744 masked columns, projecting about 26.2 and
 10.3 minutes. Level-by-level throughput projects the complete 31,744-node
-product tree at about 8.1 minutes. Including StC and the smaller
-dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 47
+product tree at about 6.2 minutes. Including StC and the smaller
+dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 45
 minutes is a reasonable component projection, not a measured end-to-end
 runtime. The full 7.88 GiB production key has deliberately not been generated
 merely to obtain a timing number.
