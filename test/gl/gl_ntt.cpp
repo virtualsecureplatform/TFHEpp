@@ -695,6 +695,23 @@ bool checkFusedMaskedColumn()
                         buildCandidatePlaintextFromPhaseRoots<Schedule>(
                             hoisted, phase_roots, descriptor, channel);
                     if (hoisted.poly != direct.poly) return false;
+
+                    TFHEpp::GLBasePlaintext<SmallGLP, key_log_q,
+                                            Schedule::tree_log_delta>
+                        unshifted;
+                    TFHEpp::gl_ship_detail::
+                        buildCandidatePlaintextFromPhaseRoots<Schedule>(
+                            unshifted, phase_roots, {0, w, gaussian_phase},
+                            channel);
+                    TFHEpp::GLBasePolynomial<SmallGLP> shifted;
+                    const std::uint32_t multiplier = TFHEpp::gl_detail::powMod(
+                        5,
+                        (SmallGLP::matrix_dimension - fine_x) %
+                            SmallGLP::matrix_dimension,
+                        4 * SmallGLP::matrix_dimension);
+                    TFHEpp::gl_detail::baseAutomorphism<SmallGLP>(
+                        shifted, unshifted.poly, multiplier, 1);
+                    if (shifted != direct.poly) return false;
                 }
 
     TFHEpp::GLBaseCiphertextData<SmallGLP> reference_raw{};
