@@ -2300,6 +2300,86 @@ inline const GLInverseXEmbeddingPlan<GLP> &inverseXEmbeddingPlan()
     return plan;
 }
 
+// Evaluate one X coefficient vector at the canonical roots zeta^(5^j).
+// Twisting coefficient k by zeta^k reduces this to an ordinary positive-sign
+// radix-2 DFT, followed by the same slot-frequency permutation used by the
+// inverse embedding above.
+template <class GLP>
+class GLXEmbeddingPlan {
+public:
+    static constexpr std::size_t dimension = GLP::matrix_dimension;
+    using Complex = std::complex<long double>;
+
+    GLXEmbeddingPlan()
+    {
+        constexpr long double pi = 3.141592653589793238462643383279502884L;
+        for (std::size_t slot = 0; slot < dimension; slot++) {
+            const std::uint32_t exponent =
+                powMod(5, static_cast<std::uint32_t>(slot), 4 * dimension);
+            frequency_[slot] = (exponent - 1) / 4;
+        }
+        for (std::size_t coefficient = 0; coefficient < dimension;
+             coefficient++) {
+            const long double angle =
+                2.0L * pi * coefficient / (4 * dimension);
+            twist_[coefficient] = {std::cos(angle), std::sin(angle)};
+        }
+        for (std::size_t length = 2; length <= dimension; length <<= 1) {
+            const long double angle = 2.0L * pi / length;
+            stage_roots_.emplace_back(std::cos(angle), std::sin(angle));
+        }
+    }
+
+    void apply(const std::span<Complex> output,
+               const std::span<const Complex> input,
+               std::vector<Complex> &work) const
+    {
+        if (output.size() != dimension || input.size() != dimension)
+            throw std::invalid_argument(
+                "GL X embedding transform has the wrong size");
+        work.resize(dimension);
+        for (std::size_t coefficient = 0; coefficient < dimension;
+             coefficient++)
+            work[coefficient] = input[coefficient] * twist_[coefficient];
+
+        for (std::size_t i = 1, j = 0; i < dimension; i++) {
+            std::size_t bit = dimension >> 1;
+            for (; (j & bit) != 0; bit >>= 1) j ^= bit;
+            j ^= bit;
+            if (i < j) std::swap(work[i], work[j]);
+        }
+        std::size_t stage = 0;
+        for (std::size_t length = 2; length <= dimension;
+             length <<= 1, stage++) {
+            const std::size_t half = length >> 1;
+            for (std::size_t block = 0; block < dimension; block += length) {
+                Complex twiddle = 1;
+                for (std::size_t j = 0; j < half; j++) {
+                    const Complex even = work[block + j];
+                    const Complex odd = work[block + j + half] * twiddle;
+                    work[block + j] = even + odd;
+                    work[block + j + half] = even - odd;
+                    twiddle *= stage_roots_[stage];
+                }
+            }
+        }
+        for (std::size_t slot = 0; slot < dimension; slot++)
+            output[slot] = work[frequency_[slot]];
+    }
+
+private:
+    std::array<std::uint32_t, dimension> frequency_{};
+    std::array<Complex, dimension> twist_{};
+    std::vector<Complex> stage_roots_{};
+};
+
+template <class GLP>
+inline const GLXEmbeddingPlan<GLP> &xEmbeddingPlan()
+{
+    static const GLXEmbeddingPlan<GLP> plan;
+    return plan;
+}
+
 }  // namespace gl_detail
 
 template <class GLP>
@@ -2411,34 +2491,68 @@ inline void GLDecode(GLMatrixBatch<GLP> &matrices,
     constexpr std::uint32_t phi = GLP::phi;
     const long double inverse_scale = std::ldexp(1.0L, -int(LogDelta));
 
-    std::array<std::complex<long double>, n> x_roots{};
-    for (std::uint32_t j = 0; j < n; j++) x_roots[j] = gl_detail::xRoot<GLP>(j);
+    std::vector<std::complex<long double>> w_values(
+        static_cast<std::size_t>(n) * n * phi);
+    auto w_value = [&](const std::uint32_t row, const std::uint32_t column,
+                       const std::uint32_t w) -> std::complex<long double> & {
+        return w_values[(static_cast<std::size_t>(row) * n + column) * phi + w];
+    };
 
+    const auto &x_plan = gl_detail::xEmbeddingPlan<GLP>();
+#pragma omp parallel
+    {
+        std::vector<std::complex<long double>> after_rows(
+            static_cast<std::size_t>(n) * n);
+        std::vector<std::complex<long double>> input_line(n);
+        std::vector<std::complex<long double>> output_line(n);
+        std::vector<std::complex<long double>> work;
+#pragma omp for schedule(dynamic)
+        for (std::uint32_t w = 0; w < phi; w++) {
+            for (std::uint32_t y = 0; y < n; y++) {
+                for (std::uint32_t x = 0; x < n; x++) {
+                    const long double real =
+                        ckks_detail::levelToLongDouble<P, LogQ>(
+                            plaintext.poly[y][gl_detail::baseIndex<GLP>(0, x,
+                                                                        w)]);
+                    const long double imag =
+                        ckks_detail::levelToLongDouble<P, LogQ>(
+                            plaintext.poly[y][gl_detail::baseIndex<GLP>(1, x,
+                                                                        w)]);
+                    input_line[x] = {real, imag};
+                }
+                x_plan.apply(output_line, input_line, work);
+                for (std::uint32_t row = 0; row < n; row++)
+                    after_rows[static_cast<std::size_t>(y) * n + row] =
+                        output_line[row];
+            }
+            for (std::uint32_t row = 0; row < n; row++) {
+                for (std::uint32_t y = 0; y < n; y++)
+                    input_line[y] =
+                        after_rows[static_cast<std::size_t>(y) * n + row];
+                x_plan.apply(output_line, input_line, work);
+                for (std::uint32_t column = 0; column < n; column++)
+                    w_value(row, column, w) = output_line[column];
+            }
+        }
+    }
+
+    std::array<std::array<std::complex<long double>, phi>, phi> w_weights{};
     for (std::uint32_t batch = 0; batch < phi; batch++) {
         const std::uint32_t exponent = gl_detail::batchExponent<GLP>(batch);
         const auto eta = gl_detail::wRoot<GLP>(exponent);
-        for (std::uint32_t row = 0; row < n; row++) {
-            for (std::uint32_t column = 0; column < n; column++) {
+        std::complex<long double> power = 1;
+        for (std::uint32_t w = 0; w < phi; w++) {
+            w_weights[batch][w] = power;
+            power *= eta;
+        }
+    }
+#pragma omp parallel for collapse(2) schedule(static)
+    for (std::uint32_t row = 0; row < n; row++) {
+        for (std::uint32_t column = 0; column < n; column++) {
+            for (std::uint32_t batch = 0; batch < phi; batch++) {
                 std::complex<long double> value = 0;
-                for (std::uint32_t y = 0; y < n; y++) {
-                    const auto y_factor = std::pow(x_roots[column], int(y));
-                    for (std::uint32_t x = 0; x < n; x++) {
-                        const auto xy_factor =
-                            std::pow(x_roots[row], int(x)) * y_factor;
-                        for (std::uint32_t w = 0; w < phi; w++) {
-                            const long double real =
-                                ckks_detail::levelToLongDouble<P, LogQ>(
-                                    plaintext.poly[y][gl_detail::baseIndex<GLP>(
-                                        0, x, w)]);
-                            const long double imag =
-                                ckks_detail::levelToLongDouble<P, LogQ>(
-                                    plaintext.poly[y][gl_detail::baseIndex<GLP>(
-                                        1, x, w)]);
-                            value += std::complex<long double>(real, imag) *
-                                     xy_factor * std::pow(eta, int(w));
-                        }
-                    }
-                }
+                for (std::uint32_t w = 0; w < phi; w++)
+                    value += w_value(row, column, w) * w_weights[batch][w];
                 matrices(batch, row, column) =
                     static_cast<std::complex<double>>(value * inverse_scale);
             }
