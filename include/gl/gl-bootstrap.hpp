@@ -599,34 +599,37 @@ inline void GLSHIPHalfBootstrap(
     ProductBatch products = std::move(*product_levels[Schedule::tree_depth]);
     product_levels[Schedule::tree_depth].reset();
 
-#pragma omp parallel for schedule(dynamic)
-    for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
-        std::array<GLBaseCiphertext<GLP, Schedule::output_log_q,
-                                    Schedule::tree_log_delta>,
-                   2>
-            channels{};
-        for (std::uint32_t channel = 0; channel < 2; channel++) {
-            const std::size_t slice = static_cast<std::size_t>(2) * y + channel;
+#pragma omp parallel
+    {
+        using FinalCiphertext =
             GLBaseCiphertext<GLP, Schedule::output_log_q,
-                             Schedule::tree_log_delta>
-                product;
-            product.ct = std::move(products[slice]);
-            GLBaseCiphertext<GLP, Schedule::output_log_q,
-                             Schedule::tree_log_delta>
-                conjugate;
-            GLBaseConjugate(conjugate, product,
-                            bootstrap_key.output_conjugation_key);
-            channels[channel] = std::move(product);
-            gl_ship_detail::addInPlace<GLP>(channels[channel].ct, conjugate.ct);
-            gl_ship_detail::reduce<GLP, Schedule::output_log_q>(
-                channels[channel].ct);
-        }
+                             Schedule::tree_log_delta>;
+        auto channels = std::make_unique<std::array<FinalCiphertext, 2>>();
+        auto product = std::make_unique<FinalCiphertext>();
+        auto conjugate = std::make_unique<FinalCiphertext>();
+#pragma omp for schedule(dynamic)
+        for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++) {
+            for (std::uint32_t channel = 0; channel < 2; channel++) {
+                const std::size_t slice =
+                    static_cast<std::size_t>(2) * y + channel;
+                product->ct = std::move(products[slice]);
+                GLBaseConjugate(*conjugate, *product,
+                                bootstrap_key.output_conjugation_key);
+                (*channels)[channel] = std::move(*product);
+                gl_ship_detail::addInPlace<GLP>((*channels)[channel].ct,
+                                                conjugate->ct);
+                gl_ship_detail::reduce<GLP, Schedule::output_log_q>(
+                    (*channels)[channel].ct);
+            }
 
-        gl_ship_detail::multiplyByI<GLP>(channels[1].ct);
-        gl_ship_detail::addInPlace<GLP>(channels[0].ct, channels[1].ct);
-        gl_ship_detail::reduce<GLP, Schedule::output_log_q>(channels[0].ct);
-        result[0][y] = std::move(channels[0][0]);
-        result[1][y] = std::move(channels[0][1]);
+            gl_ship_detail::multiplyByI<GLP>((*channels)[1].ct);
+            gl_ship_detail::addInPlace<GLP>((*channels)[0].ct,
+                                            (*channels)[1].ct);
+            gl_ship_detail::reduce<GLP, Schedule::output_log_q>(
+                (*channels)[0].ct);
+            result[0][y] = std::move((*channels)[0][0]);
+            result[1][y] = std::move((*channels)[0][1]);
+        }
     }
 }
 
@@ -2415,10 +2418,10 @@ inline void GLDDSmallKeySwitchBase(
     const GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit> &switch_key)
 {
     using SwitchKey = GLDDSmallKeySwitchKey<GLP, LogQ, PrimaryBit, BbarBit>;
-    GLBaseCiphertextData<GLP> raw{};
-    GLDDSmallKeySwitchBaseRaw(raw, input, switch_key);
+    auto raw = std::make_unique<GLBaseCiphertextData<GLP>>();
+    GLDDSmallKeySwitchBaseRaw(*raw, input, switch_key);
     gl_ship_detail::rescaleBase<GLP, SwitchKey::key_log_q,
-                                SwitchKey::auxiliary_log_q>(result, raw);
+                                SwitchKey::auxiliary_log_q>(result, *raw);
 }
 
 // Raw linear products deliberately retain the plaintext scale.  The grouped
@@ -2590,12 +2593,12 @@ inline void GLBaseConjugate(
 {
     constexpr std::uint32_t inverse_x = 4 * GLP::matrix_dimension - 1;
     constexpr std::uint32_t inverse_w = GLP::cyclotomic_order - 1;
-    GLBasePolynomial<GLP> body{};
-    GLBasePolynomial<GLP> mask{};
-    gl_detail::baseAutomorphism<GLP>(body, input[0], inverse_x, inverse_w);
-    gl_detail::baseAutomorphism<GLP>(mask, input[1], inverse_x, inverse_w);
-    GLDDSmallKeySwitchBase(result.ct, mask, key);
-    gl_detail::addInPlace<GLP>(result[0], body);
+    auto body = std::make_unique<GLBasePolynomial<GLP>>();
+    auto mask = std::make_unique<GLBasePolynomial<GLP>>();
+    gl_detail::baseAutomorphism<GLP>(*body, input[0], inverse_x, inverse_w);
+    gl_detail::baseAutomorphism<GLP>(*mask, input[1], inverse_x, inverse_w);
+    GLDDSmallKeySwitchBase(result.ct, *mask, key);
+    gl_detail::addInPlace<GLP>(result[0], *body);
     gl_ship_detail::reduce<GLP, LogQ>(result.ct);
 }
 
