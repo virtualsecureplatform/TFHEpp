@@ -94,13 +94,35 @@ struct ShoupMultiplier {
     std::uint64_t apply(const std::uint64_t input,
                         const std::uint64_t modulus) const
     {
-        const std::uint64_t estimate = static_cast<std::uint64_t>(
-            (static_cast<unsigned __int128>(input) * quotient) >> 64);
-        std::uint64_t result = input * value - estimate * modulus;
+        std::uint64_t result = applyLazy(input, modulus);
         if (result >= modulus) result -= modulus;
         return result;
     }
+
+    // For modulus < 2^62 this also accepts input in [0, 2*modulus) and
+    // returns the congruent representative in that same lazy range.
+    std::uint64_t applyLazy(const std::uint64_t input,
+                            const std::uint64_t modulus) const
+    {
+        const std::uint64_t estimate = static_cast<std::uint64_t>(
+            (static_cast<unsigned __int128>(input) * quotient) >> 64);
+        return input * value - estimate * modulus;
+    }
 };
+
+inline std::uint64_t addLazy(const std::uint64_t lhs, const std::uint64_t rhs,
+                             const std::uint64_t twice_modulus)
+{
+    const std::uint64_t sum = lhs + rhs;
+    return sum >= twice_modulus ? sum - twice_modulus : sum;
+}
+
+inline std::uint64_t subtractLazy(const std::uint64_t lhs,
+                                  const std::uint64_t rhs,
+                                  const std::uint64_t twice_modulus)
+{
+    return lhs >= rhs ? lhs - rhs : lhs + twice_modulus - rhs;
+}
 
 inline std::uint64_t power(std::uint64_t base, std::uint64_t exponent,
                            const std::uint64_t modulus)
@@ -198,6 +220,34 @@ private:
 
         for (const auto &[first, second] : bit_reversal_swaps_)
             std::swap(values[first], values[second]);
+
+        if (modulus_ < (std::uint64_t{1} << 62)) {
+            const std::uint64_t twice_modulus = 2 * modulus_;
+            std::size_t stage = 0;
+            for (std::size_t length = 2; length <= size_;
+                 length <<= 1, stage++) {
+                const auto &twiddles = invert ? inverse_twiddles_[stage]
+                                              : forward_twiddles_[stage];
+                const std::size_t half = length >> 1;
+                for (std::size_t block = 0; block < size_; block += length)
+                    for (std::size_t j = 0; j < half; j++) {
+                        const std::uint64_t even = values[block + j];
+                        const std::uint64_t odd =
+                            j == 0 ? values[block + half]
+                                   : twiddles[j].applyLazy(
+                                         values[block + j + half], modulus_);
+                        values[block + j] = addLazy(even, odd, twice_modulus);
+                        values[block + j + half] =
+                            subtractLazy(even, odd, twice_modulus);
+                    }
+            }
+            for (std::uint64_t &value : values)
+                if (value >= modulus_) value -= modulus_;
+            if (normalize)
+                for (std::uint64_t &value : values)
+                    value = inverse_size_.apply(value, modulus_);
+            return;
+        }
 
         std::size_t stage = 0;
         for (std::size_t length = 2; length <= size_; length <<= 1, stage++) {

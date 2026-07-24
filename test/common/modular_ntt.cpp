@@ -61,8 +61,16 @@ bool checkShoup(const PrimeModulus prime)
     for (std::size_t sample = 0; sample < 100000; sample++) {
         const std::uint64_t constant = rng() % prime.value;
         const std::uint64_t input = rng() % prime.value;
-        if (ShoupMultiplier(constant, prime.value).apply(input, prime.value) !=
+        const ShoupMultiplier multiplier(constant, prime.value);
+        if (multiplier.apply(input, prime.value) !=
             multiply(input, constant, prime.value))
+            return false;
+        const std::uint64_t lazy_input = rng() % (2 * prime.value);
+        const std::uint64_t lazy =
+            multiplier.applyLazy(lazy_input, prime.value);
+        if (lazy >= 2 * prime.value ||
+            (lazy >= prime.value ? lazy - prime.value : lazy) !=
+                multiply(lazy_input % prime.value, constant, prime.value))
             return false;
     }
     return true;

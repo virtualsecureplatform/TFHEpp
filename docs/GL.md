@@ -129,9 +129,12 @@ not in a GL-specific FFT wrapper. The fixed 16-point convolution inside the
 `p=17` Rader transform additionally uses flat tables and compile-time-unrolled
 stages instead of the dynamic radix-2 plan. Fixed twiddles, negacyclic twists,
 Rader kernels, and cyclotomic interpolation weights use precomputed Shoup
-quotients, replacing pseudo-Mersenne reduction in constant products. On the
-development host, these changes reduce a single-thread n512 full-ring
-forward/inverse pair from about 0.87/0.92 seconds to about 0.50/0.48 seconds.
+quotients, replacing pseudo-Mersenne reduction in constant products. Larger
+radix-2 stages retain residues in `[0,2p)` and canonicalize once at the
+transform boundary; the 16-point Rader convolution remains canonical because
+lazy boundary work is slower at that size. On the development host, these
+changes reduce a single-thread n512 full-ring forward/inverse pair from about
+0.87/0.92 seconds to about 0.40/0.40 seconds.
 
 The stored ciphertexts and packed DD evaluation keys remain in coefficient
 form.  Transform primes are temporary multiplication machinery; no RNS limbs
@@ -346,12 +349,12 @@ each term and then freed.
 The production n512 StC path has been measured end-to-end at 47.1 seconds with
 32 OpenMP threads. A combined sequential component run peaked at about
 17.1 GiB RSS. Warm throughput measurements for the dominant half-bootstrap
-kernels give about 64 complete HMux stages per second and 94 48-candidate
+kernels give about 65 complete HMux stages per second and 94 48-candidate
 masked columns per second on the same 16-core/32-thread host. The n512 schedule
-needs 95,232 HMux stages and 31,744 masked columns, projecting about 24.8 and
+needs 95,232 HMux stages and 31,744 masked columns, projecting about 24.4 and
 5.6 minutes. Level-by-level throughput projects the complete 31,744-node
-product tree at about 4.1 minutes. Including StC and the smaller
-dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 36--37
+product tree at about 3.9 minutes. Including StC and the smaller
+dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 35--36
 minutes is a reasonable component projection, not a measured end-to-end
 runtime. The full 7.88 GiB production key has deliberately not been generated
 merely to obtain a timing number.
