@@ -197,16 +197,26 @@ bool checkSymmetricDecompositionSpectrumHoist()
             std::vector<std::uint64_t> automorphed_spectrum;
             plan.forward(source_spectrum, digits[0]);
             plan.forward(automorphed_spectrum, automorphed);
-            for (std::size_t i = 0; i < coefficient_count; i++) {
-                const std::size_t w = i / z_dimension;
-                const std::size_t z = i % z_dimension;
-                const std::uint32_t mapped_root = static_cast<std::uint32_t>(
-                    (static_cast<std::uint64_t>(multiplier) * (2 * z + 1)) %
-                    (4 * SmallGLP::matrix_dimension));
-                const std::size_t source_z = (mapped_root - 1) / 2;
-                if (automorphed_spectrum[i] !=
-                    source_spectrum[w * z_dimension + source_z])
-                    return false;
+            for (std::size_t w = 0; w < coefficient_count / z_dimension;
+                 w++) {
+                for (std::size_t z = 0; z < z_dimension; z++) {
+                    const std::uint32_t mapped_root =
+                        static_cast<std::uint32_t>(
+                            (static_cast<std::uint64_t>(multiplier) *
+                             (2 * z + 1)) %
+                            (4 * SmallGLP::matrix_dimension));
+                    const std::size_t source_z = (mapped_root - 1) / 2;
+                    const std::size_t destination_index =
+                        TFHEpp::modular_ntt::NegacyclicNTTPlan::backendIndex(
+                            z_dimension, z);
+                    const std::size_t source_index =
+                        TFHEpp::modular_ntt::NegacyclicNTTPlan::backendIndex(
+                            z_dimension, source_z);
+                    if (automorphed_spectrum[w * z_dimension +
+                                             destination_index] !=
+                        source_spectrum[w * z_dimension + source_index])
+                        return false;
+                }
             }
         }
     }

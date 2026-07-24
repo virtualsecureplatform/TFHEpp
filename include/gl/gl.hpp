@@ -775,7 +775,7 @@ public:
                     spectrum[w * z_dimension + z] = w_line[w];
             }
             for (std::size_t w = 0; w < w_dimension; w++)
-                z_plan_.forward(std::span<std::uint64_t>(
+                z_plan_.forwardInBackendOrder(std::span<std::uint64_t>(
                     spectrum.data() + w * z_dimension, z_dimension));
             return;
         }
@@ -798,7 +798,7 @@ public:
         }
 #pragma omp parallel for schedule(static)
         for (std::size_t w = 0; w < w_dimension; w++)
-            z_plan_.forward(std::span<std::uint64_t>(
+            z_plan_.forwardInBackendOrder(std::span<std::uint64_t>(
                 spectrum.data() + w * z_dimension, z_dimension));
     }
 
@@ -823,7 +823,7 @@ public:
                     spectrum[w * z_dimension + z] = w_line[w];
             }
             for (std::size_t w = 0; w < w_dimension; w++)
-                z_plan_.forward(std::span<std::uint64_t>(
+                z_plan_.forwardInBackendOrder(std::span<std::uint64_t>(
                     spectrum.data() + w * z_dimension, z_dimension));
             return;
         }
@@ -845,7 +845,7 @@ public:
         }
 #pragma omp parallel for schedule(static)
         for (std::size_t w = 0; w < w_dimension; w++)
-            z_plan_.forward(std::span<std::uint64_t>(
+            z_plan_.forwardInBackendOrder(std::span<std::uint64_t>(
                 spectrum.data() + w * z_dimension, z_dimension));
     }
 
@@ -867,7 +867,7 @@ public:
                 "GL NTT coefficient output has the wrong size");
         if (inOpenMPParallelRegion()) {
             for (std::size_t w = 0; w < w_dimension; w++)
-                z_plan_.inverse(std::span<std::uint64_t>(
+                z_plan_.inverseInBackendOrder(std::span<std::uint64_t>(
                     spectrum.data() + w * z_dimension, z_dimension));
             std::array<std::uint64_t, w_dimension> w_line{};
             for (std::size_t z = 0; z < z_dimension; z++) {
@@ -885,7 +885,7 @@ public:
         }
 #pragma omp parallel for schedule(static)
         for (std::size_t w = 0; w < w_dimension; w++)
-            z_plan_.inverse(std::span<std::uint64_t>(
+            z_plan_.inverseInBackendOrder(std::span<std::uint64_t>(
                 spectrum.data() + w * z_dimension, z_dimension));
 
 #pragma omp parallel
@@ -937,7 +937,11 @@ inline GLBaseXAutomorphismSpectrumMap<GLP> baseXAutomorphismSpectrumMap(
         const std::uint32_t odd_root = static_cast<std::uint32_t>(2 * z + 1);
         const std::uint32_t mapped_root = static_cast<std::uint32_t>(
             (static_cast<std::uint64_t>(x_multiplier) * odd_root) % four_n);
-        result[z] = (mapped_root - 1) / 2;
+        const std::size_t destination =
+            modular_ntt::NegacyclicNTTPlan::backendIndex(z_dimension, z);
+        result[destination] = static_cast<std::uint32_t>(
+            modular_ntt::NegacyclicNTTPlan::backendIndex(
+                z_dimension, (mapped_root - 1) / 2));
     }
     return result;
 }

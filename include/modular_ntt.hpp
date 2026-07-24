@@ -443,14 +443,51 @@ public:
     std::size_t size() const { return size_; }
     std::uint64_t modulus() const { return modulus_; }
 
+    static std::size_t backendIndex(const std::size_t size,
+                                    const std::size_t natural_index)
+    {
+        if (!isPowerOfTwo(size) || natural_index >= size)
+            throw std::invalid_argument("invalid negacyclic NTT index");
+#ifdef USE_HEXL
+        std::size_t input = natural_index;
+        std::size_t reversed = 0;
+        for (std::size_t bits = size; bits > 1; bits >>= 1) {
+            reversed = (reversed << 1) | (input & 1U);
+            input >>= 1;
+        }
+        return reversed;
+#else
+        return natural_index;
+#endif
+    }
+
     void forward(const std::span<std::uint64_t> values) const
+    {
+        forwardInBackendOrder(values);
+#ifdef USE_HEXL
+        bitReverse(values);
+#endif
+    }
+
+    void inverse(const std::span<std::uint64_t> values) const
+    {
+#ifdef USE_HEXL
+        bitReverse(values);
+#endif
+        inverseInBackendOrder(values);
+    }
+
+    // Consumers that only perform pointwise operations may retain HEXL's
+    // bit-reversed spectrum and avoid two data permutations per round trip.
+    // Semantic spectrum indices must be translated through backendIndex().
+    void forwardInBackendOrder(
+        const std::span<std::uint64_t> values) const
     {
         if (values.size() != size())
             throw std::invalid_argument(
                 "negacyclic NTT input has the wrong size");
 #ifdef USE_HEXL
         hexl_.ComputeForward(values.data(), values.data(), 1, 1);
-        bitReverse(values);
 #else
         for (std::size_t i = 0; i < size(); i++)
             values[i] = forward_twist_[i].apply(values[i], modulus_);
@@ -458,13 +495,13 @@ public:
 #endif
     }
 
-    void inverse(const std::span<std::uint64_t> values) const
+    void inverseInBackendOrder(
+        const std::span<std::uint64_t> values) const
     {
         if (values.size() != size())
             throw std::invalid_argument(
                 "negacyclic NTT input has the wrong size");
 #ifdef USE_HEXL
-        bitReverse(values);
         hexl_.ComputeInverse(values.data(), values.data(), 1, 1);
 #else
         cyclic_.inverseUnscaled(values);
