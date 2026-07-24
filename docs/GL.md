@@ -417,16 +417,24 @@ dense-to-sparse, cache-preparation, and final-conjugation phases, roughly 35--36
 minutes remains the native component projection.
 
 With `USE_HEXL=ON` and 32 workers, measured component rates are about 68--70
-complete HMux stages and 104 masked columns per second; the product tree
-projects to about 165--168 seconds and StC measures 30.7 seconds. This gives a
-roughly 32--33 minute component projection. HMux is memory-bandwidth-bound on
+complete HMux stages and 104 masked columns per second; the product tree now
+projects to about 143 seconds and StC measures 30.7 seconds. This gives a
+roughly 31--32 minute component projection. HMux is memory-bandwidth-bound on
 this 16-core/32-thread CPU: running with
 `OMP_NUM_THREADS=16 OMP_PROC_BIND=spread OMP_PLACES=cores` raises HMux
 throughput to about 89--90 stages per second, while masked-column throughput
-is about 98 per second, the product tree projects to about 191 seconds, and
+is about 98 per second, the product tree projects to about 161--163 seconds, and
 StC measures 32.7 seconds. That host-specific profile gives a roughly 27--28
 minute component projection. Other CPUs should benchmark both physical-core
 and SMT worker counts; no topology-dependent limit is hard-coded.
+
+The product-tree improvement routes each relinearization through the reusable
+exact DD switch-sum workspace and reduces its four primary products with the
+common AVX-512 modular MAC. Paired level-by-level runs projected 143 seconds
+versus 165 seconds for the former scalar relinearization at 32 workers, and
+161--163 seconds versus about 192 seconds at 16 workers. The row-major
+evaluation-key cache was retained: coefficient blocking was within benchmark
+noise here and would have duplicated persistent relin-key spectra.
 
 With `OMP_NUM_THREADS=32 OMP_PROC_BIND=spread OMP_PLACES=cores`, a
 production-shape batch of 256 MaskedColumn plus one-stage HMux factors took

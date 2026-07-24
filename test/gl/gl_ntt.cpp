@@ -1729,18 +1729,44 @@ bool benchmarkProductionProductLevel(double &projected_total_seconds)
 #pragma omp parallel
     {
         TFHEpp::GLBaseHadamardWorkspace<GLP> workspace;
+        TFHEpp::gl_detail::SmallKeySwitchSumNTTWorkspace<GLP, RelinKey, 1>
+            switch_workspace;
+#ifdef USE_HEXL
+        switch_workspace.use_batched_vector_mac = true;
+#endif
 #pragma omp for schedule(static)
         for (std::size_t batch = 0; batch < batch_count; batch++)
             TFHEpp::GLBaseHadamardMultiply<
                 GLP, input_log_q, Schedule::tree_log_delta, input_log_q,
                 Schedule::tree_log_delta, Schedule::tree_log_delta,
                 Schedule::primary_bit, Schedule::bbar_bit>(
-                products[batch], *lhs, *rhs, *key, &workspace);
+                products[batch], *lhs, *rhs, *key, &workspace,
+                &switch_workspace);
     }
     const double seconds =
         std::chrono::duration<double>(std::chrono::steady_clock::now() - start)
             .count();
     for (const auto &product : products)
+        if (product.ct != expected->ct) return false;
+
+    std::vector<Output> scalar_relin_products(batch_count);
+    const auto scalar_relin_start = std::chrono::steady_clock::now();
+#pragma omp parallel
+    {
+        TFHEpp::GLBaseHadamardWorkspace<GLP> workspace;
+#pragma omp for schedule(static)
+        for (std::size_t batch = 0; batch < batch_count; batch++)
+            TFHEpp::GLBaseHadamardMultiply<
+                GLP, input_log_q, Schedule::tree_log_delta, input_log_q,
+                Schedule::tree_log_delta, Schedule::tree_log_delta,
+                Schedule::primary_bit, Schedule::bbar_bit>(
+                scalar_relin_products[batch], *lhs, *rhs, *key, &workspace);
+    }
+    const double scalar_relin_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      scalar_relin_start)
+            .count();
+    for (const auto &product : scalar_relin_products)
         if (product.ct != expected->ct) return false;
 
     std::vector<Output> legacy_products(batch_count);
@@ -1795,6 +1821,7 @@ bool benchmarkProductionProductLevel(double &projected_total_seconds)
     projected_total_seconds += projected_seconds;
     std::cout << "n512 product level " << Level << " (logQ=" << input_log_q
               << "): " << batch_count << " calls in " << seconds << " s vs "
+              << scalar_relin_seconds << " s with scalar relinearization and "
               << legacy_seconds
               << " s with separate tensor transforms; projected "
               << projected_seconds << " s" << std::endl;

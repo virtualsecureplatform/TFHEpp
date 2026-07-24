@@ -1552,10 +1552,17 @@ inline void insertProductTreeBatch(
             static_cast<std::uint32_t>(Level) * Schedule::tree_log_delta;
         constexpr std::uint32_t output_log_q =
             input_log_q - Schedule::tree_log_delta;
+        using RelinKey = std::remove_cvref_t<
+            decltype(std::get<Level>(keys.keys))>;
         std::vector<GLBaseCiphertextData<GLP>> products(nodes.size());
 #pragma omp parallel
         {
             GLBaseHadamardWorkspace<GLP> arithmetic_workspace;
+            gl_detail::SmallKeySwitchSumNTTWorkspace<GLP, RelinKey, 1>
+                switch_workspace;
+#ifdef USE_HEXL
+            switch_workspace.use_batched_vector_mac = true;
+#endif
             auto lhs = std::make_unique<
                 GLBaseCiphertext<GLP, input_log_q, Schedule::tree_log_delta>>();
             auto rhs = std::make_unique<
@@ -1571,8 +1578,8 @@ inline void insertProductTreeBatch(
                     GLP, input_log_q, Schedule::tree_log_delta, input_log_q,
                     Schedule::tree_log_delta, Schedule::tree_log_delta,
                     Schedule::primary_bit, Schedule::bbar_bit>(
-                    *product, *lhs, *rhs, std::get<Level>(keys.keys),
-                    &arithmetic_workspace);
+                        *product, *lhs, *rhs, std::get<Level>(keys.keys),
+                        &arithmetic_workspace, &switch_workspace);
                 products[i] = std::move(product->ct);
             }
         }
@@ -2502,6 +2509,7 @@ struct GLBaseHadamardWorkspace {
     std::unique_ptr<std::array<GLBasePolynomial<GLP>, 3>> tensor{};
     std::unique_ptr<GLBasePolynomial<GLP>> cross_term{};
     gl_detail::BaseCiphertextTensorNTTWorkspace<GLP> tensor_ntt{};
+    std::unique_ptr<GLBaseCiphertextData<GLP>> raw_square_term{};
     std::unique_ptr<GLBaseCiphertextData<GLP>> square_term{};
     std::unique_ptr<GLBaseCiphertextData<GLP>> relinearized{};
 };
@@ -2517,7 +2525,13 @@ inline void GLBaseHadamardMultiply(
     const GLBaseCiphertext<GLP, RhsLogQ, RhsLogDelta> &rhs,
     const GLHadamardRelinKey<GLP, (LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ),
                              PrimaryBit, BbarBit> &relin_key,
-    GLBaseHadamardWorkspace<GLP> *provided_workspace = nullptr)
+    GLBaseHadamardWorkspace<GLP> *provided_workspace = nullptr,
+    gl_detail::SmallKeySwitchSumNTTWorkspace<
+        GLP,
+        GLHadamardRelinKey<GLP,
+                           (LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ),
+                           PrimaryBit, BbarBit>,
+        1> *provided_switch_workspace = nullptr)
 {
     constexpr std::uint32_t input_log_q = LhsLogQ < RhsLogQ ? LhsLogQ : RhsLogQ;
     constexpr std::uint32_t out_log_q = input_log_q - DropBits;
@@ -2552,7 +2566,27 @@ inline void GLBaseHadamardMultiply(
         gl_detail::reduce<GLP, input_log_q>(tensor[1]);
     }
 
-    GLDDSmallKeySwitchBase(square_term, tensor[2], relin_key);
+    if (provided_switch_workspace == nullptr) {
+        GLDDSmallKeySwitchBase(square_term, tensor[2], relin_key);
+    }
+    else {
+        using RelinKey = std::remove_cvref_t<decltype(relin_key)>;
+        if (!workspace.raw_square_term)
+            workspace.raw_square_term =
+                std::make_unique<GLBaseCiphertextData<GLP>>();
+        auto &raw_square_term = *workspace.raw_square_term;
+        const std::array<const GLBasePolynomial<GLP> *, 1> switch_inputs{
+            &tensor[2]};
+        const std::array<const RelinKey *, 1> switch_keys{&relin_key};
+        if (gl_detail::accumulateSmallKeySwitchSumNTT<GLP, RelinKey, 1>(
+                raw_square_term, switch_inputs, switch_keys,
+                provided_switch_workspace))
+            gl_ship_detail::rescaleBase<GLP, RelinKey::key_log_q,
+                                        RelinKey::auxiliary_log_q>(
+                square_term, raw_square_term);
+        else
+            GLDDSmallKeySwitchBase(square_term, tensor[2], relin_key);
+    }
     relinearized[0] = std::move(tensor[0]);
     relinearized[1] = std::move(tensor[1]);
     gl_detail::addInPlace<GLP>(relinearized[0], square_term[0]);
