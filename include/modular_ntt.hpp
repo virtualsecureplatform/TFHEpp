@@ -74,6 +74,34 @@ inline std::uint64_t multiply(const std::uint64_t lhs, const std::uint64_t rhs,
     return reduceWide(static_cast<unsigned __int128>(lhs) * rhs, modulus);
 }
 
+struct ShoupMultiplier {
+    std::uint64_t value = 0;
+    std::uint64_t quotient = 0;
+
+    ShoupMultiplier() = default;
+
+    ShoupMultiplier(const std::uint64_t constant, const std::uint64_t modulus)
+        : value(constant)
+    {
+        if (modulus == 0 || constant >= modulus ||
+            modulus >= (std::uint64_t{1} << 63))
+            throw std::invalid_argument("invalid Shoup multiplier");
+        quotient = static_cast<std::uint64_t>(
+            (static_cast<unsigned __int128>(constant) << 64) / modulus);
+    }
+
+    // input must be the canonical residue in [0, modulus).
+    std::uint64_t apply(const std::uint64_t input,
+                        const std::uint64_t modulus) const
+    {
+        const std::uint64_t estimate = static_cast<std::uint64_t>(
+            (static_cast<unsigned __int128>(input) * quotient) >> 64);
+        std::uint64_t result = input * value - estimate * modulus;
+        if (result >= modulus) result -= modulus;
+        return result;
+    }
+};
+
 inline std::uint64_t power(std::uint64_t base, std::uint64_t exponent,
                            const std::uint64_t modulus)
 {
@@ -101,14 +129,15 @@ constexpr bool isPowerOfTwo(const std::size_t value)
 class Radix2NTTPlan {
 public:
     Radix2NTTPlan(const std::size_t size, const PrimeModulus prime)
-        : size_(size), modulus_(prime.value), inverse_size_(0)
+        : size_(size), modulus_(prime.value)
     {
         if (!isPowerOfTwo(size_) || size_ < 2)
             throw std::invalid_argument("NTT size must be a power of two");
         if (modulus_ >= (std::uint64_t{1} << 63) || (modulus_ - 1) % size_ != 0)
             throw std::invalid_argument("modulus does not support NTT size");
 
-        inverse_size_ = invert(size_ % modulus_, modulus_);
+        inverse_size_ =
+            ShoupMultiplier(invert(size_ % modulus_, modulus_), modulus_);
         for (std::size_t i = 1, reversed = 0; i < size_; i++) {
             std::size_t bit = size_ >> 1;
             for (; (reversed & bit) != 0; bit >>= 1) reversed ^= bit;
@@ -125,13 +154,17 @@ public:
             const std::size_t half = length >> 1;
             forward_twiddles_.emplace_back(half);
             inverse_twiddles_.emplace_back(half);
-            forward_twiddles_.back()[0] = 1;
-            inverse_twiddles_.back()[0] = 1;
+            forward_twiddles_.back()[0] = ShoupMultiplier(1, modulus_);
+            inverse_twiddles_.back()[0] = ShoupMultiplier(1, modulus_);
             for (std::size_t j = 1; j < half; j++) {
-                forward_twiddles_.back()[j] =
-                    multiply(forward_twiddles_.back()[j - 1], root, modulus_);
-                inverse_twiddles_.back()[j] = multiply(
-                    inverse_twiddles_.back()[j - 1], inverse_root, modulus_);
+                forward_twiddles_.back()[j] = ShoupMultiplier(
+                    multiply(forward_twiddles_.back()[j - 1].value, root,
+                             modulus_),
+                    modulus_);
+                inverse_twiddles_.back()[j] = ShoupMultiplier(
+                    multiply(inverse_twiddles_.back()[j - 1].value,
+                             inverse_root, modulus_),
+                    modulus_);
             }
         }
     }
@@ -176,8 +209,8 @@ private:
                     const std::uint64_t even = values[block + j];
                     const std::uint64_t odd =
                         j == 0 ? values[block + half]
-                               : multiply(values[block + j + half], twiddles[j],
-                                          modulus_);
+                               : twiddles[j].apply(values[block + j + half],
+                                                   modulus_);
                     values[block + j] = add(even, odd, modulus_);
                     values[block + j + half] = subtract(even, odd, modulus_);
                 }
@@ -186,15 +219,15 @@ private:
 
         if (normalize)
             for (std::uint64_t &value : values)
-                value = multiply(value, inverse_size_, modulus_);
+                value = inverse_size_.apply(value, modulus_);
     }
 
     std::size_t size_;
     std::uint64_t modulus_;
-    std::uint64_t inverse_size_;
+    ShoupMultiplier inverse_size_{};
     std::vector<std::pair<std::size_t, std::size_t>> bit_reversal_swaps_;
-    std::vector<std::vector<std::uint64_t>> forward_twiddles_;
-    std::vector<std::vector<std::uint64_t>> inverse_twiddles_;
+    std::vector<std::vector<ShoupMultiplier>> forward_twiddles_;
+    std::vector<std::vector<ShoupMultiplier>> inverse_twiddles_;
 };
 
 // Compile-time-sized radix-2 plan for small transforms embedded in another
@@ -221,13 +254,17 @@ public:
             const std::uint64_t inverse_root = invert(root, modulus_);
             const std::size_t half = length >> 1;
             const std::size_t offset = half - 1;
-            forward_twiddles_[offset] = 1;
-            inverse_twiddles_[offset] = 1;
+            forward_twiddles_[offset] = ShoupMultiplier(1, modulus_);
+            inverse_twiddles_[offset] = ShoupMultiplier(1, modulus_);
             for (std::size_t j = 1; j < half; j++) {
-                forward_twiddles_[offset + j] =
-                    multiply(forward_twiddles_[offset + j - 1], root, modulus_);
-                inverse_twiddles_[offset + j] = multiply(
-                    inverse_twiddles_[offset + j - 1], inverse_root, modulus_);
+                forward_twiddles_[offset + j] = ShoupMultiplier(
+                    multiply(forward_twiddles_[offset + j - 1].value, root,
+                             modulus_),
+                    modulus_);
+                inverse_twiddles_[offset + j] = ShoupMultiplier(
+                    multiply(inverse_twiddles_[offset + j - 1].value,
+                             inverse_root, modulus_),
+                    modulus_);
             }
         }
     }
@@ -274,8 +311,8 @@ private:
                 const std::uint64_t even = values[block + j];
                 const std::uint64_t odd =
                     j == 0 ? values[block + half]
-                           : multiply(values[block + j + half],
-                                      twiddles[offset + j], modulus_);
+                           : twiddles[offset + j].apply(
+                                 values[block + j + half], modulus_);
                 values[block + j] = add(even, odd, modulus_);
                 values[block + j + half] = subtract(even, odd, modulus_);
             }
@@ -297,8 +334,8 @@ private:
 
     std::uint64_t modulus_;
     std::uint64_t inverse_size_;
-    std::array<std::uint64_t, Size - 1> forward_twiddles_{};
-    std::array<std::uint64_t, Size - 1> inverse_twiddles_{};
+    std::array<ShoupMultiplier, Size - 1> forward_twiddles_{};
+    std::array<ShoupMultiplier, Size - 1> inverse_twiddles_{};
 };
 
 class NegacyclicNTTPlan {
@@ -318,14 +355,18 @@ public:
         inverse_twist_.resize(size);
         const std::uint64_t inverse_psi = invert(psi, modulus_);
         const std::uint64_t inverse_size = invert(size % modulus_, modulus_);
-        forward_twist_[0] = inverse_twist_[0] = 1;
+        forward_twist_[0] = ShoupMultiplier(1, modulus_);
+        inverse_twist_[0] = ShoupMultiplier(1, modulus_);
         for (std::size_t i = 1; i < size; i++) {
-            forward_twist_[i] = multiply(forward_twist_[i - 1], psi, modulus_);
-            inverse_twist_[i] =
-                multiply(inverse_twist_[i - 1], inverse_psi, modulus_);
+            forward_twist_[i] = ShoupMultiplier(
+                multiply(forward_twist_[i - 1].value, psi, modulus_), modulus_);
+            inverse_twist_[i] = ShoupMultiplier(
+                multiply(inverse_twist_[i - 1].value, inverse_psi, modulus_),
+                modulus_);
         }
-        for (std::uint64_t &twist : inverse_twist_)
-            twist = multiply(twist, inverse_size, modulus_);
+        for (ShoupMultiplier &twist : inverse_twist_)
+            twist = ShoupMultiplier(
+                multiply(twist.value, inverse_size, modulus_), modulus_);
     }
 
     std::size_t size() const { return cyclic_.size(); }
@@ -337,7 +378,7 @@ public:
             throw std::invalid_argument(
                 "negacyclic NTT input has the wrong size");
         for (std::size_t i = 0; i < size(); i++)
-            values[i] = multiply(values[i], forward_twist_[i], modulus_);
+            values[i] = forward_twist_[i].apply(values[i], modulus_);
         cyclic_.forward(values);
     }
 
@@ -348,14 +389,14 @@ public:
                 "negacyclic NTT input has the wrong size");
         cyclic_.inverseUnscaled(values);
         for (std::size_t i = 0; i < size(); i++)
-            values[i] = multiply(values[i], inverse_twist_[i], modulus_);
+            values[i] = inverse_twist_[i].apply(values[i], modulus_);
     }
 
 private:
     Radix2NTTPlan cyclic_;
     std::uint64_t modulus_;
-    std::vector<std::uint64_t> forward_twist_;
-    std::vector<std::uint64_t> inverse_twist_;
+    std::vector<ShoupMultiplier> forward_twist_;
+    std::vector<ShoupMultiplier> inverse_twist_;
 };
 
 constexpr std::uint32_t smallPowerMod(std::uint32_t base,
@@ -446,27 +487,30 @@ public:
     }
 
 private:
-    void buildKernel(std::array<std::uint64_t, convolution_size> &kernel,
+    void buildKernel(std::array<ShoupMultiplier, convolution_size> &kernel,
                      const std::uint64_t transform_root,
                      const std::uint64_t output_scale)
     {
+        std::array<std::uint64_t, convolution_size> coefficients{};
         for (std::size_t t = 0; t < convolution_size; t++) {
             const std::size_t inverse_index =
                 (convolution_size - t) % convolution_size;
-            kernel[t] =
+            coefficients[t] =
                 power(transform_root, powers_[inverse_index], prime_.value);
         }
-        convolution_.forward(kernel);
+        convolution_.forward(coefficients);
         const std::uint64_t inverse_convolution_size =
             invert(convolution_size % prime_.value, prime_.value);
         const std::uint64_t kernel_scale =
             multiply(inverse_convolution_size, output_scale, prime_.value);
-        for (std::uint64_t &value : kernel)
-            value = multiply(value, kernel_scale, prime_.value);
+        for (std::size_t t = 0; t < convolution_size; t++)
+            kernel[t] = ShoupMultiplier(
+                multiply(coefficients[t], kernel_scale, prime_.value),
+                prime_.value);
     }
 
     void apply(std::array<std::uint64_t, PrimeLength> &values,
-               const std::array<std::uint64_t, convolution_size> &kernel,
+               const std::array<ShoupMultiplier, convolution_size> &kernel,
                const std::uint64_t constant_scale) const
     {
         const std::uint64_t zero = values[0];
@@ -478,7 +522,7 @@ private:
         }
         convolution_.forward(permuted);
         for (std::size_t t = 0; t < convolution_size; t++)
-            permuted[t] = multiply(permuted[t], kernel[t], prime_.value);
+            permuted[t] = kernel[t].apply(permuted[t], prime_.value);
         convolution_.inverseUnscaled(permuted);
 
         const std::uint64_t scaled_zero =
@@ -499,8 +543,8 @@ private:
     std::uint64_t root_;
     std::uint64_t inverse_prime_;
     std::array<std::uint32_t, convolution_size> powers_{};
-    std::array<std::uint64_t, convolution_size> forward_kernel_{};
-    std::array<std::uint64_t, convolution_size> inverse_kernel_{};
+    std::array<ShoupMultiplier, convolution_size> forward_kernel_{};
+    std::array<ShoupMultiplier, convolution_size> inverse_kernel_{};
 };
 
 // Evaluation/interpolation for Z_q[W]/Phi_p(W).  Coefficients are represented
@@ -514,6 +558,11 @@ public:
     explicit PrimeCyclotomicNTTPlan(const PrimeModulus prime)
         : rader_(prime), modulus_(prime.value), root_(rader_.root())
     {
+        std::uint64_t root_power = root_;
+        for (auto &weight : missing_value_weights_) {
+            weight = ShoupMultiplier(root_power, modulus_);
+            root_power = multiply(root_power, root_, modulus_);
+        }
     }
 
     std::uint64_t modulus() const { return modulus_; }
@@ -529,14 +578,13 @@ public:
     void inverse(std::array<std::uint64_t, dimension> &values) const
     {
         std::array<std::uint64_t, PrimeLength> full{};
-        std::uint64_t root_power = root_;
         std::uint64_t value_at_one = 0;
         for (std::size_t k = 1; k < PrimeLength; k++) {
             full[k] = values[k - 1];
             value_at_one =
-                add(value_at_one, multiply(full[k], root_power, modulus_),
+                add(value_at_one,
+                    missing_value_weights_[k - 1].apply(full[k], modulus_),
                     modulus_);
-            root_power = multiply(root_power, root_, modulus_);
         }
         // The missing evaluation at W=1 is selected so that the interpolated
         // W^(p-1) coefficient is zero, i.e. the canonical Phi_p representative.
@@ -550,6 +598,7 @@ private:
     RaderNTTPlan<PrimeLength> rader_;
     std::uint64_t modulus_;
     std::uint64_t root_;
+    std::array<ShoupMultiplier, dimension> missing_value_weights_{};
 };
 
 class TwoPrimeCRT {

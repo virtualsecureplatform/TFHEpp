@@ -45,6 +45,29 @@ bool checkMultiply(const PrimeModulus prime)
     return true;
 }
 
+bool checkShoup(const PrimeModulus prime)
+{
+    const std::array<std::uint64_t, 5> edges{0, 1, prime.value / 2,
+                                             prime.value - 2, prime.value - 1};
+    for (const auto constant : edges) {
+        const ShoupMultiplier multiplier(constant, prime.value);
+        for (const auto input : edges)
+            if (multiplier.apply(input, prime.value) !=
+                multiply(input, constant, prime.value))
+                return false;
+    }
+
+    std::mt19937_64 rng(0x53484f55504d554cULL ^ prime.value);
+    for (std::size_t sample = 0; sample < 100000; sample++) {
+        const std::uint64_t constant = rng() % prime.value;
+        const std::uint64_t input = rng() % prime.value;
+        if (ShoupMultiplier(constant, prime.value).apply(input, prime.value) !=
+            multiply(input, constant, prime.value))
+            return false;
+    }
+    return true;
+}
+
 bool checkRadix2(const PrimeModulus prime)
 {
     constexpr std::size_t size = 1024;
@@ -211,9 +234,9 @@ bool checkThreePrimeCRT()
 int main()
 {
     for (const auto prime : TFHEpp::modular_ntt::wide_primes) {
-        if (!checkMultiply(prime) || !checkRadix2(prime) ||
-            !checkNegacyclic(prime) || !checkRader(prime) ||
-            !checkCyclotomic(prime)) {
+        if (!checkMultiply(prime) || !checkShoup(prime) ||
+            !checkRadix2(prime) || !checkNegacyclic(prime) ||
+            !checkRader(prime) || !checkCyclotomic(prime)) {
             std::cerr << "modular NTT regression failed for " << prime.value
                       << std::endl;
             return 1;
