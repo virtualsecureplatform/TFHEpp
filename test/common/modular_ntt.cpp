@@ -1,5 +1,7 @@
 #include <array>
+#include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <modular_ntt.hpp>
 #include <random>
@@ -42,6 +44,146 @@ bool checkMultiply(const PrimeModulus prime)
         if (multiply(lhs, rhs, prime.value) != reference(lhs, rhs))
             return false;
     }
+    return true;
+}
+
+bool checkMultiplyAddVector(const PrimeModulus prime)
+{
+    constexpr std::size_t random_count = 65539;
+    std::mt19937_64 rng(0x4d41435645435452ULL ^ prime.value);
+    std::vector<std::uint64_t> accumulator(random_count);
+    std::vector<std::uint64_t> lhs(random_count);
+    std::vector<std::uint64_t> rhs(random_count);
+    for (std::size_t i = 0; i < random_count; i++) {
+        accumulator[i] = rng() % prime.value;
+        lhs[i] = rng() % prime.value;
+        rhs[i] = rng() % prime.value;
+    }
+    const std::array<std::uint64_t, 5> edges{0, 1, prime.value / 2,
+                                             prime.value - 2, prime.value - 1};
+    for (std::size_t i = 0; i < 125; i++) {
+        accumulator[i] = edges[i % edges.size()];
+        lhs[i] = edges[(i / edges.size()) % edges.size()];
+        rhs[i] = edges[(i / (edges.size() * edges.size())) % edges.size()];
+    }
+    auto expected = accumulator;
+    for (std::size_t i = 0; i < random_count; i++)
+        expected[i] = add(expected[i], multiply(lhs[i], rhs[i], prime.value),
+                          prime.value);
+    multiplyAddVector(accumulator.data(), lhs.data(), rhs.data(), random_count,
+                      prime.value);
+    if (accumulator != expected) return false;
+
+    auto aliased = lhs;
+    expected = lhs;
+    for (std::size_t i = 0; i < random_count; i++)
+        expected[i] = add(expected[i], multiply(expected[i], rhs[i],
+                                                prime.value),
+                          prime.value);
+    multiplyAddVector(aliased.data(), aliased.data(), rhs.data(), random_count,
+                      prime.value);
+    return aliased == expected;
+}
+
+bool checkMultiplyAddVectorBatch(const PrimeModulus prime)
+{
+    constexpr std::size_t coefficient_count = 1027;
+    constexpr std::size_t maximum_terms = 33;
+    std::mt19937_64 rng(0x42415443484d4143ULL ^ prime.value);
+    std::vector<std::uint64_t> initial(coefficient_count);
+    std::vector<std::vector<std::uint64_t>> lhs(maximum_terms);
+    std::vector<std::vector<std::uint64_t>> rhs(maximum_terms);
+    std::array<const std::uint64_t *, maximum_terms> lhs_pointers{};
+    std::array<const std::uint64_t *, maximum_terms> rhs_pointers{};
+    for (auto &value : initial) value = rng() % prime.value;
+    for (std::size_t term = 0; term < maximum_terms; term++) {
+        lhs[term].resize(coefficient_count);
+        rhs[term].resize(coefficient_count);
+        for (std::size_t i = 0; i < coefficient_count; i++) {
+            lhs[term][i] = rng() % prime.value;
+            rhs[term][i] = rng() % prime.value;
+        }
+        lhs_pointers[term] = lhs[term].data();
+        rhs_pointers[term] = rhs[term].data();
+    }
+    for (std::size_t term = 0; term < maximum_terms; term++) {
+        lhs[term][0] = prime.value - 1;
+        rhs[term][0] = prime.value - 1;
+    }
+    initial[0] = prime.value - 1;
+    for (const std::size_t term_count :
+         {0U, 1U, 2U, 3U, 4U, 5U, 15U, 16U, 31U, 32U, 33U}) {
+        auto expected = initial;
+        for (std::size_t term = 0; term < term_count; term++)
+            for (std::size_t i = 0; i < coefficient_count; i++)
+                expected[i] =
+                    add(expected[i],
+                        multiply(lhs[term][i], rhs[term][i], prime.value),
+                        prime.value);
+        auto actual = initial;
+        multiplyAddVectorBatch(actual.data(), lhs_pointers.data(),
+                               rhs_pointers.data(), term_count,
+                               coefficient_count, prime.value);
+        if (actual != expected) return false;
+    }
+    return true;
+}
+
+bool benchmarkMultiplyAddVector()
+{
+    if (std::getenv("TFHEPP_MODULAR_MAC_BENCH") == nullptr) return true;
+#ifdef USE_HEXL
+    constexpr std::size_t count = 16384;
+    constexpr std::size_t term_count = 32;
+    constexpr std::size_t repetitions = 512;
+    const std::uint64_t modulus = wide_primes[0].value;
+    std::mt19937_64 rng(0x4d414342454e4348ULL);
+    std::vector<std::uint64_t> initial(count);
+    std::vector<std::uint64_t> lhs(term_count * count);
+    std::vector<std::uint64_t> rhs(term_count * count);
+    std::array<const std::uint64_t *, term_count> lhs_pointers{};
+    std::array<const std::uint64_t *, term_count> rhs_pointers{};
+    std::vector<std::uint64_t> product(count);
+    for (std::size_t i = 0; i < count; i++) {
+        initial[i] = rng() % modulus;
+    }
+    for (std::size_t term = 0; term < term_count; term++) {
+        lhs_pointers[term] = lhs.data() + term * count;
+        rhs_pointers[term] = rhs.data() + term * count;
+        for (std::size_t i = 0; i < count; i++) {
+            lhs[term * count + i] = rng() % modulus;
+            rhs[term * count + i] = rng() % modulus;
+        }
+    }
+    auto split = initial;
+    const auto split_start = std::chrono::steady_clock::now();
+    for (std::size_t repetition = 0; repetition < repetitions; repetition++)
+        for (std::size_t term = 0; term < term_count; term++) {
+            intel::hexl::EltwiseMultMod(
+                product.data(), lhs_pointers[term], rhs_pointers[term], count,
+                modulus, 1);
+            intel::hexl::EltwiseAddMod(split.data(), split.data(),
+                                       product.data(), count, modulus);
+        }
+    const double split_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      split_start)
+            .count();
+
+    auto fused = initial;
+    const auto fused_start = std::chrono::steady_clock::now();
+    for (std::size_t repetition = 0; repetition < repetitions; repetition++)
+        multiplyAddVectorBatch(fused.data(), lhs_pointers.data(),
+                               rhs_pointers.data(), term_count, count, modulus);
+    const double fused_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      fused_start)
+            .count();
+    if (fused != split) return false;
+    std::cout << "16K 32-product modular vector MAC, " << repetitions
+              << " repetitions: " << fused_seconds << " s batched vs "
+              << split_seconds << " s HEXL multiply/add" << std::endl;
+#endif
     return true;
 }
 
@@ -280,7 +422,8 @@ bool checkThreePrimeCRT()
 int main()
 {
     for (const auto prime : TFHEpp::modular_ntt::wide_primes) {
-        if (!checkMultiply(prime) || !checkShoup(prime) ||
+        if (!checkMultiply(prime) || !checkMultiplyAddVector(prime) ||
+            !checkMultiplyAddVectorBatch(prime) || !checkShoup(prime) ||
             !checkRadix2(prime) || !checkNegacyclic(prime) ||
             !checkRader(prime) || !checkCyclotomic(prime)) {
             std::cerr << "modular NTT regression failed for " << prime.value
@@ -288,8 +431,10 @@ int main()
             return 1;
         }
     }
-    if (!checkCRT() || !checkThreePrimeCRT()) {
-        std::cerr << "CRT regression failed" << std::endl;
+    if (!checkMultiplyAddVector({17, 3}) ||
+        !checkMultiplyAddVectorBatch({17, 3}) || !checkCRT() ||
+        !checkThreePrimeCRT() || !benchmarkMultiplyAddVector()) {
+        std::cerr << "modular CRT/MAC regression failed" << std::endl;
         return 1;
     }
     std::cout << "modular NTT regression passed" << std::endl;

@@ -161,11 +161,13 @@ struct GLSHIPCandidate {
 // zero HMux worker count preserves the fused MaskedColumn/HMux loop.  Setting
 // it below the active OpenMP team size evaluates bounded tiles in two stages,
 // allowing MaskedColumn to use the full team while HMux uses fewer workers.
-// The useful values are host-dependent, so neither the physical-core count
-// nor an SMT policy is inferred by the library.
+// Batched HMux products amortize exact modular reduction on AVX-512DQ.  Both
+// choices are host-dependent, so neither the physical-core count nor an SMT
+// policy is inferred by the library.
 struct GLSHIPBootstrapExecutionOptions {
     std::uint32_t hmux_threads = 0;
     std::size_t factor_tile_size = 256;
+    bool batch_hmux_products = false;
 };
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
@@ -474,6 +476,10 @@ inline void GLSHIPHalfBootstrap(
                 gl_ship_detail::MaskedColumnNTTWorkspace<Schedule>
                     masked_workspace;
                 gl_ship_detail::HMuxNTTWorkspace<Schedule> hmux_workspace;
+#ifdef USE_HEXL
+                hmux_workspace.switch_workspace.use_batched_vector_mac =
+                    execution.batch_hmux_products;
+#endif
                 auto selected = std::make_unique<
                     GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
                                      Schedule::tree_log_delta>>();
@@ -528,6 +534,10 @@ inline void GLSHIPHalfBootstrap(
 #pragma omp parallel num_threads(hmux_workers)
                 {
                     gl_ship_detail::HMuxNTTWorkspace<Schedule> hmux_workspace;
+#ifdef USE_HEXL
+                    hmux_workspace.switch_workspace.use_batched_vector_mac =
+                        execution.batch_hmux_products;
+#endif
                     auto displaced = std::make_unique<FactorCiphertext>();
 #pragma omp for schedule(dynamic)
                     for (std::size_t local = 0; local < tile_count; local++) {

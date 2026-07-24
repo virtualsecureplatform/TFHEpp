@@ -2966,6 +2966,9 @@ struct SmallKeySwitchSumNTTWorkspace {
     std::array<std::vector<std::uint64_t>, 2> coefficients{};
 #ifdef USE_HEXL
     std::vector<std::uint64_t> product{};
+    // The AVX-512DQ batch kernel wins with the physical-core HMux profile but
+    // can become compute-bound with a larger SMT team, so callers opt in.
+    bool use_batched_vector_mac = false;
 #else
     std::array<std::vector<unsigned __int128>, 2> wide_accumulators{};
 #endif
@@ -3036,6 +3039,14 @@ inline void accumulateSmallKeySwitchPreparedSumNTT(
                     }
                     batch_count = 0;
                 };
+#else
+                constexpr std::size_t product_count =
+                    Count * input_row_count;
+                std::array<const std::uint64_t *, product_count>
+                    input_pointers{};
+                std::array<const std::uint64_t *, product_count>
+                    key_pointers{};
+                std::size_t product_index = 0;
 #endif
                 for (std::size_t term = 0; term < Count; term++) {
                     const auto &key_spectra = key_caches[term]->spectra[prime];
@@ -3055,13 +3066,9 @@ inline void accumulateSmallKeySwitchPreparedSumNTT(
                         const std::uint64_t *key_spectrum =
                             key_spectra.data() + key_row * coefficient_count;
 #ifdef USE_HEXL
-                        intel::hexl::EltwiseMultMod(
-                            workspace.product.data(), input_spectrum,
-                            key_spectrum, coefficient_count, modulus, 1);
-                        intel::hexl::EltwiseAddMod(
-                            accumulator.data(), accumulator.data(),
-                            workspace.product.data(), coefficient_count,
-                            modulus);
+                        input_pointers[product_index] = input_spectrum;
+                        key_pointers[product_index] = key_spectrum;
+                        product_index++;
 #else
                         for (std::size_t i = 0; i < coefficient_count; i++)
                             wide[i] += static_cast<unsigned __int128>(
@@ -3072,7 +3079,28 @@ inline void accumulateSmallKeySwitchPreparedSumNTT(
 #endif
                     }
                 }
-#ifndef USE_HEXL
+#ifdef USE_HEXL
+                if (workspace.use_batched_vector_mac &&
+                    modular_ntt::hasFastVectorMultiplyAddBatch) {
+                    modular_ntt::multiplyAddVectorBatch(
+                        accumulator.data(), input_pointers.data(),
+                        key_pointers.data(), product_count, coefficient_count,
+                        modulus);
+                }
+                else {
+                    for (std::size_t product = 0; product < product_count;
+                         product++) {
+                        intel::hexl::EltwiseMultMod(
+                            workspace.product.data(), input_pointers[product],
+                            key_pointers[product], coefficient_count, modulus,
+                            1);
+                        intel::hexl::EltwiseAddMod(
+                            accumulator.data(), accumulator.data(),
+                            workspace.product.data(), coefficient_count,
+                            modulus);
+                    }
+                }
+#else
                 if (batch_count != 0) flush();
 #endif
             };

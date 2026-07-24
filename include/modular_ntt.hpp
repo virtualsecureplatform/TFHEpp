@@ -10,6 +10,10 @@
 #include <utility>
 #include <vector>
 
+#if defined(__AVX512DQ__)
+#include <immintrin.h>
+#endif
+
 #ifdef USE_HEXL
 #include <hexl/hexl.hpp>
 #endif
@@ -77,6 +81,202 @@ inline std::uint64_t multiply(const std::uint64_t lhs, const std::uint64_t rhs,
                               const std::uint64_t modulus)
 {
     return reduceWide(static_cast<unsigned __int128>(lhs) * rhs, modulus);
+}
+
+#if defined(__AVX512DQ__)
+namespace vector_detail {
+
+inline void multiplyWide(const __m512i left, const __m512i right,
+                         const __m512i word_mask, __m512i &product_low,
+                         __m512i &product_high)
+{
+    const __m512i left_low = _mm512_and_si512(left, word_mask);
+    const __m512i left_high = _mm512_srli_epi64(left, 32);
+    const __m512i right_low = _mm512_and_si512(right, word_mask);
+    const __m512i right_high = _mm512_srli_epi64(right, 32);
+    const __m512i low_low = _mm512_mul_epu32(left_low, right_low);
+    const __m512i low_high = _mm512_mul_epu32(left_low, right_high);
+    const __m512i high_low = _mm512_mul_epu32(left_high, right_low);
+    const __m512i high_high = _mm512_mul_epu32(left_high, right_high);
+    product_low = _mm512_mullo_epi64(left, right);
+    __m512i middle = _mm512_add_epi64(
+        _mm512_srli_epi64(low_low, 32),
+        _mm512_and_si512(low_high, word_mask));
+    middle = _mm512_add_epi64(
+        middle, _mm512_and_si512(high_low, word_mask));
+    product_high = _mm512_add_epi64(
+        high_high, _mm512_srli_epi64(low_high, 32));
+    product_high = _mm512_add_epi64(
+        product_high, _mm512_srli_epi64(high_low, 32));
+    product_high =
+        _mm512_add_epi64(product_high, _mm512_srli_epi64(middle, 32));
+}
+
+// Reduces a nonnegative 128-bit lane below 2^126 and adds one canonical
+// accumulator.  The bound makes (high:low) >> 62 fit in one 64-bit lane.
+inline __m512i reduceWideAdd(const __m512i input_low,
+                            const __m512i input_high,
+                            const __m512i accumulator,
+                            const __m512i radix_mask,
+                            const __m512i word_mask,
+                            const __m512i complement,
+                            const __m512i modulus)
+{
+    __m512i low = _mm512_and_si512(input_low, radix_mask);
+    const __m512i high = _mm512_or_si512(
+        _mm512_slli_epi64(input_high, 2),
+        _mm512_srli_epi64(input_low, 62));
+    const __m512i folded_low_word = _mm512_mul_epu32(
+        _mm512_and_si512(high, word_mask), complement);
+    const __m512i folded_high_word =
+        _mm512_mul_epu32(_mm512_srli_epi64(high, 32), complement);
+    const __m512i folded_low = _mm512_add_epi64(
+        folded_low_word, _mm512_slli_epi64(folded_high_word, 32));
+    const __mmask8 word_carry = _mm512_cmp_epu64_mask(
+        folded_low, folded_low_word, _MM_CMPINT_LT);
+    __m512i folded_high = _mm512_add_epi64(
+        _mm512_srli_epi64(folded_high_word, 32),
+        _mm512_maskz_set1_epi64(word_carry, 1));
+    folded_high = _mm512_or_si512(
+        _mm512_slli_epi64(folded_high, 2),
+        _mm512_srli_epi64(folded_low, 62));
+    __m512i combined = _mm512_add_epi64(
+        low, _mm512_and_si512(folded_low, radix_mask));
+    combined = _mm512_add_epi64(combined, accumulator);
+    low = _mm512_and_si512(combined, radix_mask);
+    folded_high =
+        _mm512_add_epi64(folded_high, _mm512_srli_epi64(combined, 62));
+    __m512i result = _mm512_add_epi64(
+        low, _mm512_mullo_epi64(folded_high, complement));
+    const __mmask8 reduce =
+        _mm512_cmp_epu64_mask(result, modulus, _MM_CMPINT_NLT);
+    return _mm512_mask_sub_epi64(result, reduce, result, modulus);
+}
+
+template <std::size_t TermCount>
+inline void multiplyAddGroup(std::uint64_t *accumulator,
+                             const std::uint64_t *const *lhs,
+                             const std::uint64_t *const *rhs,
+                             const std::size_t count,
+                             const std::uint64_t scalar_modulus)
+{
+    static_assert(TermCount >= 1 && TermCount <= 4);
+    constexpr std::uint64_t radix = std::uint64_t{1} << 62;
+    constexpr std::uint64_t radix_mask = radix - 1;
+    constexpr std::uint64_t word_mask = (std::uint64_t{1} << 32) - 1;
+    const __m512i vector_radix_mask =
+        _mm512_set1_epi64(static_cast<std::int64_t>(radix_mask));
+    const __m512i vector_word_mask =
+        _mm512_set1_epi64(static_cast<std::int64_t>(word_mask));
+    const __m512i vector_complement = _mm512_set1_epi64(
+        static_cast<std::int64_t>(radix - scalar_modulus));
+    const __m512i vector_modulus =
+        _mm512_set1_epi64(static_cast<std::int64_t>(scalar_modulus));
+    std::size_t i = 0;
+    for (; i + 8 <= count; i += 8) {
+        __m512i sum_low = _mm512_setzero_si512();
+        __m512i sum_high = _mm512_setzero_si512();
+        const auto accumulate_term = [&](const std::size_t term) {
+            __m512i product_low;
+            __m512i product_high;
+            multiplyWide(
+                _mm512_loadu_si512(static_cast<const void *>(lhs[term] + i)),
+                _mm512_loadu_si512(static_cast<const void *>(rhs[term] + i)),
+                vector_word_mask, product_low, product_high);
+            const __m512i next_low =
+                _mm512_add_epi64(sum_low, product_low);
+            const __mmask8 carry = _mm512_cmp_epu64_mask(
+                next_low, sum_low, _MM_CMPINT_LT);
+            sum_low = next_low;
+            sum_high = _mm512_add_epi64(sum_high, product_high);
+            sum_high = _mm512_add_epi64(
+                sum_high, _mm512_maskz_set1_epi64(carry, 1));
+        };
+        accumulate_term(0);
+        if constexpr (TermCount >= 2) accumulate_term(1);
+        if constexpr (TermCount >= 3) accumulate_term(2);
+        if constexpr (TermCount >= 4) accumulate_term(3);
+        const __m512i reduced = reduceWideAdd(
+            sum_low, sum_high,
+            _mm512_loadu_si512(
+                static_cast<const void *>(accumulator + i)),
+            vector_radix_mask, vector_word_mask, vector_complement,
+            vector_modulus);
+        _mm512_storeu_si512(static_cast<void *>(accumulator + i), reduced);
+    }
+    for (; i < count; i++) {
+        unsigned __int128 sum = accumulator[i];
+        for (std::size_t term = 0; term < TermCount; term++)
+            sum += static_cast<unsigned __int128>(lhs[term][i]) * rhs[term][i];
+        accumulator[i] = reduceWide(sum, scalar_modulus);
+    }
+}
+
+}  // namespace vector_detail
+#endif
+
+inline constexpr bool hasFastVectorMultiplyAddBatch =
+#if defined(__AVX512DQ__)
+    true;
+#else
+    false;
+#endif
+
+// Adds several canonical pointwise products into one canonical accumulator.
+// Groups of four products stay below 2^126, allowing AVX-512DQ to defer the
+// exact pseudo-Mersenne reduction.  The scalar fallback supports all moduli.
+inline void multiplyAddVectorBatch(
+    std::uint64_t *accumulator, const std::uint64_t *const *lhs,
+    const std::uint64_t *const *rhs, const std::size_t term_count,
+    const std::size_t coefficient_count, const std::uint64_t modulus)
+{
+#if defined(__AVX512DQ__)
+    constexpr std::uint64_t radix = std::uint64_t{1} << 62;
+    if (modulus < radix && radix - modulus < (std::uint64_t{1} << 21)) {
+        std::size_t term = 0;
+        for (; term + 4 <= term_count; term += 4)
+            vector_detail::multiplyAddGroup<4>(
+                accumulator, lhs + term, rhs + term, coefficient_count,
+                modulus);
+        switch (term_count - term) {
+            case 3:
+                vector_detail::multiplyAddGroup<3>(
+                    accumulator, lhs + term, rhs + term, coefficient_count,
+                    modulus);
+                break;
+            case 2:
+                vector_detail::multiplyAddGroup<2>(
+                    accumulator, lhs + term, rhs + term, coefficient_count,
+                    modulus);
+                break;
+            case 1:
+                vector_detail::multiplyAddGroup<1>(
+                    accumulator, lhs + term, rhs + term, coefficient_count,
+                    modulus);
+                break;
+            default:
+                break;
+        }
+        return;
+    }
+#endif
+    for (std::size_t term = 0; term < term_count; term++)
+        for (std::size_t i = 0; i < coefficient_count; i++)
+            accumulator[i] = add(
+                accumulator[i], multiply(lhs[term][i], rhs[term][i], modulus),
+                modulus);
+}
+
+inline void multiplyAddVector(std::uint64_t *accumulator,
+                              const std::uint64_t *lhs,
+                              const std::uint64_t *rhs,
+                              const std::size_t count,
+                              const std::uint64_t modulus)
+{
+    const std::array<const std::uint64_t *, 1> lhs_batch{lhs};
+    const std::array<const std::uint64_t *, 1> rhs_batch{rhs};
+    multiplyAddVectorBatch(accumulator, lhs_batch.data(), rhs_batch.data(), 1,
+                           count, modulus);
 }
 
 struct ShoupMultiplier {

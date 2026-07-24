@@ -974,7 +974,7 @@ bool benchmarkProductionHMuxSwitchFusion()
 
     std::size_t batch_count = 1;
 #ifdef _OPENMP
-    batch_count = 4 * static_cast<std::size_t>(omp_get_max_threads());
+    batch_count = 8 * static_cast<std::size_t>(omp_get_max_threads());
 #endif
     std::vector<TFHEpp::GLBaseCiphertextData<GLP>> fused_batch(batch_count);
     const auto batch_start = std::chrono::steady_clock::now();
@@ -997,6 +997,31 @@ bool benchmarkProductionHMuxSwitchFusion()
             .count();
     for (const auto &batch : fused_batch)
         if (batch != fused) return false;
+#ifdef USE_HEXL
+    std::vector<TFHEpp::GLBaseCiphertextData<GLP>> batched_mac_batch(
+        batch_count);
+    const auto batched_mac_start = std::chrono::steady_clock::now();
+#pragma omp parallel
+    {
+        TFHEpp::gl_detail::SmallKeySwitchSumNTTWorkspace<GLP, SwitchKey,
+                                                         switch_count>
+            workspace;
+        workspace.use_batched_vector_mac = true;
+#pragma omp for schedule(static)
+        for (std::size_t batch = 0; batch < batch_count; batch++)
+            if (!TFHEpp::gl_detail::accumulateSmallKeySwitchSumNTT<GLP,
+                                                                   SwitchKey>(
+                    batched_mac_batch[batch], input_pointers, key_pointers,
+                    &workspace))
+                std::terminate();
+    }
+    const double batched_mac_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      batched_mac_start)
+            .count();
+    for (const auto &batch : batched_mac_batch)
+        if (batch != fused) return false;
+#endif
 
     TFHEpp::GLBaseCiphertextData<GLP> separate{};
     const auto separate_start = std::chrono::steady_clock::now();
@@ -1016,7 +1041,11 @@ bool benchmarkProductionHMuxSwitchFusion()
               << separate_seconds << " s separate (" << cache_seconds
               << " s cache preparation); " << batch_count
               << " warm calls with reused per-thread scratch in "
-              << batch_seconds << " s" << std::endl;
+              << batch_seconds << " s";
+#ifdef USE_HEXL
+    std::cout << " vs " << batched_mac_seconds << " s batched-MAC";
+#endif
+    std::cout << std::endl;
     if (fused != separate) return false;
 
     using Schedule = TFHEpp::GLSHIP512p17FusedDDSchedule;
@@ -1114,10 +1143,32 @@ bool benchmarkProductionHMuxSwitchFusion()
             .count();
     for (const auto &batch : hmux_batch)
         if (batch.ct != hmux_output.ct) return false;
+#ifdef USE_HEXL
+    std::vector<Ciphertext> batched_hmux_batch(batch_count);
+    const auto batched_hmux_batch_start = std::chrono::steady_clock::now();
+#pragma omp parallel
+    {
+        TFHEpp::gl_ship_detail::HMuxNTTWorkspace<Schedule> workspace;
+        workspace.switch_workspace.use_batched_vector_mac = true;
+#pragma omp for schedule(static)
+        for (std::size_t batch = 0; batch < batch_count; batch++)
+            TFHEpp::gl_ship_detail::hmux<Schedule>(
+                batched_hmux_batch[batch], hmux_input, hmux_key, &workspace);
+    }
+    const double batched_hmux_batch_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      batched_hmux_batch_start)
+            .count();
+    for (const auto &batch : batched_hmux_batch)
+        if (batch.ct != hmux_output.ct) return false;
+#endif
     std::cout << "n512 complete warm HMux stage: " << hmux_seconds << " s; "
-              << batch_count << " calls in " << hmux_batch_seconds << " s vs "
-              << legacy_hmux_batch_seconds << " s with unhoisted transforms"
-              << std::endl;
+              << batch_count << " calls in " << hmux_batch_seconds << " s";
+#ifdef USE_HEXL
+    std::cout << " vs " << batched_hmux_batch_seconds << " s batched-MAC";
+#endif
+    std::cout << " vs " << legacy_hmux_batch_seconds
+              << " s with unhoisted transforms" << std::endl;
     return hmux_output[0][0] != typename GLP::T{} ||
            hmux_output[1][0] != typename GLP::T{};
 }
@@ -1500,6 +1551,9 @@ bool benchmarkProductionMaskedColumn()
                 {
                     TFHEpp::gl_ship_detail::HMuxNTTWorkspace<Schedule>
                         workspace;
+#ifdef USE_HEXL
+                    workspace.switch_workspace.use_batched_vector_mac = true;
+#endif
 #pragma omp for schedule(dynamic)
                     for (std::size_t local = 0; local < tile_count; local++)
                         TFHEpp::gl_ship_detail::hmux<Schedule>(
