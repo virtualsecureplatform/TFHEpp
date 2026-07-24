@@ -2694,9 +2694,33 @@ inline constexpr std::uint64_t smallKeySwitchNTTKeyCacheBytes =
     SwitchKey::primary_rows * SwitchKey::bbar_rows * 2 *
     GLBaseNTTPlan<GLP>::coefficient_count * sizeof(std::uint64_t);
 
+template <class GLP>
+inline constexpr std::size_t smallKeySwitchNTTCoefficientBlockSize =
+    GLBaseNTTPlan<GLP>::coefficient_count < 4096
+        ? GLBaseNTTPlan<GLP>::coefficient_count
+        : 4096;
+
 template <class GLP, class SwitchKey>
+inline constexpr std::size_t smallKeySwitchBlockedSpectrumOffset(
+    const std::uint32_t primary, const std::uint32_t bbar,
+    const std::size_t component, const std::size_t block)
+{
+    constexpr std::size_t coefficient_count =
+        GLBaseNTTPlan<GLP>::coefficient_count;
+    constexpr std::size_t block_size =
+        smallKeySwitchNTTCoefficientBlockSize<GLP>;
+    static_assert(coefficient_count % block_size == 0);
+    constexpr std::size_t block_count = coefficient_count / block_size;
+    return ((((static_cast<std::size_t>(bbar) * 2 + component) * block_count +
+               block) *
+                  SwitchKey::primary_rows +
+              primary) *
+             block_size);
+}
+
+template <bool CoefficientBlocked, class GLP, class SwitchKey>
 inline std::shared_ptr<typename SwitchKey::TransientNTTCache>
-prepareSmallKeySwitchNTTCache(const SwitchKey &switch_key)
+prepareSmallKeySwitchNTTCacheLayout(const SwitchKey &switch_key)
 {
     constexpr std::uint32_t prime_count =
         smallKeySwitchAccumulationNTTPrimeCount<GLP, SwitchKey>;
@@ -2708,8 +2732,20 @@ prepareSmallKeySwitchNTTCache(const SwitchKey &switch_key)
         static_cast<std::size_t>(SwitchKey::primary_rows) *
         SwitchKey::bbar_rows * 2;
     const auto key_cache = switch_key.transient_ntt_cache;
-    std::call_once(key_cache->initialize_once, [&] {
-        auto &key_spectra = key_cache->spectra;
+    auto &initialize_once = [&]() -> std::once_flag & {
+        if constexpr (CoefficientBlocked)
+            return key_cache->blocked_initialize_once;
+        else
+            return key_cache->initialize_once;
+    }();
+    auto &key_spectra = [&]()
+        -> std::array<std::vector<std::uint64_t>, 2> & {
+        if constexpr (CoefficientBlocked)
+            return key_cache->blocked_spectra;
+        else
+            return key_cache->spectra;
+    }();
+    std::call_once(initialize_once, [&] {
         key_spectra[0].resize(key_row_count * coefficient_count);
         if constexpr (prime_count == 2)
             key_spectra[1].resize(key_row_count * coefficient_count);
@@ -2720,6 +2756,12 @@ prepareSmallKeySwitchNTTCache(const SwitchKey &switch_key)
 #pragma omp parallel
         {
             GLBasePolynomial<GLP> key_row{};
+            std::array<std::vector<std::uint64_t>, 2> transformed{};
+            if constexpr (CoefficientBlocked) {
+                transformed[0].resize(coefficient_count);
+                if constexpr (prime_count == 2)
+                    transformed[1].resize(coefficient_count);
+            }
 #pragma omp for collapse(3) schedule(static)
             for (std::uint32_t primary = 0; primary < SwitchKey::primary_rows;
                  primary++) {
@@ -2735,24 +2777,73 @@ prepareSmallKeySwitchNTTCache(const SwitchKey &switch_key)
                              bbar) *
                                 2 +
                             component;
-                        first_plan.forward(
-                            std::span<std::uint64_t>(
-                                key_spectra[0].data() + row * coefficient_count,
-                                coefficient_count),
-                            key_row);
-                        if constexpr (prime_count == 2)
-                            second_plan->forward(
+                        if constexpr (CoefficientBlocked) {
+                            constexpr std::size_t block_size =
+                                smallKeySwitchNTTCoefficientBlockSize<GLP>;
+                            constexpr std::size_t block_count =
+                                coefficient_count / block_size;
+                            first_plan.forward(
+                                std::span<std::uint64_t>(transformed[0]),
+                                key_row);
+                            if constexpr (prime_count == 2)
+                                second_plan->forward(
+                                    std::span<std::uint64_t>(transformed[1]),
+                                    key_row);
+                            for (std::size_t block = 0; block < block_count;
+                                 block++) {
+                                const std::size_t destination =
+                                    smallKeySwitchBlockedSpectrumOffset<
+                                        GLP, SwitchKey>(primary, bbar,
+                                                        component, block);
+                                std::copy_n(
+                                    transformed[0].data() + block * block_size,
+                                    block_size,
+                                    key_spectra[0].data() + destination);
+                                if constexpr (prime_count == 2)
+                                    std::copy_n(
+                                        transformed[1].data() +
+                                            block * block_size,
+                                        block_size,
+                                        key_spectra[1].data() + destination);
+                            }
+                        }
+                        else {
+                            first_plan.forward(
                                 std::span<std::uint64_t>(
-                                    key_spectra[1].data() +
+                                    key_spectra[0].data() +
                                         row * coefficient_count,
                                     coefficient_count),
                                 key_row);
+                            if constexpr (prime_count == 2)
+                                second_plan->forward(
+                                    std::span<std::uint64_t>(
+                                        key_spectra[1].data() +
+                                            row * coefficient_count,
+                                        coefficient_count),
+                                    key_row);
+                        }
                     }
                 }
             }
         }
     });
     return key_cache;
+}
+
+template <class GLP, class SwitchKey>
+inline std::shared_ptr<typename SwitchKey::TransientNTTCache>
+prepareSmallKeySwitchNTTCache(const SwitchKey &switch_key)
+{
+    return prepareSmallKeySwitchNTTCacheLayout<false, GLP, SwitchKey>(
+        switch_key);
+}
+
+template <class GLP, class SwitchKey>
+inline std::shared_ptr<typename SwitchKey::TransientNTTCache>
+prepareSmallKeySwitchBlockedNTTCache(const SwitchKey &switch_key)
+{
+    return prepareSmallKeySwitchNTTCacheLayout<true, GLP, SwitchKey>(
+        switch_key);
 }
 
 template <class SwitchKey>
@@ -2969,6 +3060,9 @@ struct SmallKeySwitchSumNTTWorkspace {
     // The AVX-512DQ batch kernel wins with the physical-core HMux profile but
     // can become compute-bound with a larger SMT team, so callers opt in.
     bool use_batched_vector_mac = false;
+    // Coefficient blocks keep the primary key rows needed by one HMux MAC
+    // close together.  This layout is useful only with the batched kernel.
+    bool use_coefficient_blocked_key_layout = false;
 #else
     std::array<std::vector<unsigned __int128>, 2> wide_accumulators{};
 #endif
@@ -3026,6 +3120,53 @@ inline void accumulateSmallKeySwitchPreparedSumNTT(
                                               const std::uint64_t modulus) {
                 auto &accumulator = accumulators[prime];
                 std::fill(accumulator.begin(), accumulator.end(), 0);
+#ifdef USE_HEXL
+                if (workspace.use_coefficient_blocked_key_layout) {
+                    if (!workspace.use_batched_vector_mac ||
+                        !modular_ntt::hasFastVectorMultiplyAddBatch)
+                        throw std::logic_error(
+                            "blocked GL DD spectra require the fast batched "
+                            "modular MAC");
+                    constexpr std::size_t block_size =
+                        smallKeySwitchNTTCoefficientBlockSize<GLP>;
+                    constexpr std::size_t block_count =
+                        coefficient_count / block_size;
+                    constexpr std::size_t product_count =
+                        Count * input_row_count;
+                    std::array<const std::uint64_t *, product_count>
+                        input_pointers{};
+                    std::array<const std::uint64_t *, product_count>
+                        key_pointers{};
+                    for (std::size_t block = 0; block < block_count; block++) {
+                        std::size_t product_index = 0;
+                        for (std::size_t term = 0; term < Count; term++) {
+                            const auto &key_spectra =
+                                key_caches[term]->blocked_spectra[prime];
+                            for (std::uint32_t primary = 0;
+                                 primary < SwitchKey::primary_rows;
+                                 primary++) {
+                                const std::size_t input_row =
+                                    term * input_row_count + primary;
+                                input_pointers[product_index] =
+                                    input_spectra[prime].data() +
+                                    input_row * coefficient_count +
+                                    block * block_size;
+                                key_pointers[product_index] =
+                                    key_spectra.data() +
+                                    smallKeySwitchBlockedSpectrumOffset<
+                                        GLP, SwitchKey>(primary, bbar,
+                                                        component, block);
+                                product_index++;
+                            }
+                        }
+                        modular_ntt::multiplyAddVectorBatch(
+                            accumulator.data() + block * block_size,
+                            input_pointers.data(), key_pointers.data(),
+                            product_count, block_size, modulus);
+                    }
+                    return;
+                }
+#endif
 #ifndef USE_HEXL
                 auto &wide = wide_accumulators[prime];
                 std::fill(wide.begin(), wide.end(), 0);
@@ -3187,8 +3328,16 @@ inline bool accumulateSmallKeySwitchSumNTT(
                 SwitchKey::primary_rows * SwitchKey::bbar_rows)
                 throw std::invalid_argument(
                     "uninitialized GL DD switch-sum key");
-            key_caches[term] = prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
-                *switch_keys[term]);
+#ifdef USE_HEXL
+            if (workspace.use_coefficient_blocked_key_layout)
+                key_caches[term] =
+                    prepareSmallKeySwitchBlockedNTTCache<GLP, SwitchKey>(
+                        *switch_keys[term]);
+            else
+#endif
+                key_caches[term] =
+                    prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
+                        *switch_keys[term]);
             ckks_detail::activeBaseDecomposePolynomialRows<
                 P, SwitchKey::log_q, SwitchKey::primary_bit,
                 SwitchKey::primary_rows>(input_digits, *inputs[term]);
@@ -3309,8 +3458,16 @@ inline bool accumulateSmallKeySwitchAutomorphismSumNTT(
                 SwitchKey::primary_rows * SwitchKey::bbar_rows)
                 throw std::invalid_argument(
                     "uninitialized GL DD hoisted switch key");
-            key_caches[term] = prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
-                *switch_keys[term]);
+#ifdef USE_HEXL
+            if (workspace.use_coefficient_blocked_key_layout)
+                key_caches[term] =
+                    prepareSmallKeySwitchBlockedNTTCache<GLP, SwitchKey>(
+                        *switch_keys[term]);
+            else
+#endif
+                key_caches[term] =
+                    prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
+                        *switch_keys[term]);
             z_maps[term] =
                 baseXAutomorphismSpectrumMap<GLP>(x_multipliers[term]);
         }
@@ -3546,6 +3703,8 @@ struct GLDDSmallKeySwitchKey {
     struct TransientNTTCache {
         std::once_flag initialize_once{};
         std::array<std::vector<std::uint64_t>, 2> spectra{};
+        std::once_flag blocked_initialize_once{};
+        std::array<std::vector<std::uint64_t>, 2> blocked_spectra{};
     };
 
     std::vector<PackedCiphertext> data{};

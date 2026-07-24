@@ -593,6 +593,19 @@ bool checkDDSwitchAccumulation()
             got_sum, sum_inputs, sum_keys) ||
         got_sum != expected_sum)
         return false;
+#ifdef USE_HEXL
+    TFHEpp::GLBaseCiphertextData<SmallGLP> blocked_sum{};
+    TFHEpp::gl_detail::SmallKeySwitchSumNTTWorkspace<SmallGLP,
+                                                     SmallDDSwitchKey, 2>
+        blocked_workspace;
+    blocked_workspace.use_batched_vector_mac = true;
+    blocked_workspace.use_coefficient_blocked_key_layout = true;
+    if (!TFHEpp::gl_detail::accumulateSmallKeySwitchSumNTT<SmallGLP,
+                                                           SmallDDSwitchKey>(
+            blocked_sum, sum_inputs, sum_keys, &blocked_workspace) ||
+        blocked_sum != expected_sum)
+        return false;
+#endif
 
     std::cout << "n512 DD transient NTT key cache: "
               << TFHEpp::gl_detail::smallKeySwitchNTTKeyCacheBytes<
@@ -961,6 +974,17 @@ bool benchmarkProductionHMuxSwitchFusion()
         std::chrono::duration<double>(std::chrono::steady_clock::now() -
                                       cache_start)
             .count();
+#ifdef USE_HEXL
+    const auto blocked_cache_start = std::chrono::steady_clock::now();
+    for (const auto &key : keys)
+        TFHEpp::gl_detail::prepareSmallKeySwitchBlockedNTTCache<GLP,
+                                                                SwitchKey>(
+            *key);
+    const double blocked_cache_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      blocked_cache_start)
+            .count();
+#endif
 
     TFHEpp::GLBaseCiphertextData<GLP> fused{};
     const auto fused_start = std::chrono::steady_clock::now();
@@ -1021,6 +1045,30 @@ bool benchmarkProductionHMuxSwitchFusion()
             .count();
     for (const auto &batch : batched_mac_batch)
         if (batch != fused) return false;
+    std::vector<TFHEpp::GLBaseCiphertextData<GLP>> blocked_mac_batch(
+        batch_count);
+    const auto blocked_mac_start = std::chrono::steady_clock::now();
+#pragma omp parallel
+    {
+        TFHEpp::gl_detail::SmallKeySwitchSumNTTWorkspace<GLP, SwitchKey,
+                                                         switch_count>
+            workspace;
+        workspace.use_batched_vector_mac = true;
+        workspace.use_coefficient_blocked_key_layout = true;
+#pragma omp for schedule(static)
+        for (std::size_t batch = 0; batch < batch_count; batch++)
+            if (!TFHEpp::gl_detail::accumulateSmallKeySwitchSumNTT<GLP,
+                                                                   SwitchKey>(
+                    blocked_mac_batch[batch], input_pointers, key_pointers,
+                    &workspace))
+                std::terminate();
+    }
+    const double blocked_mac_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      blocked_mac_start)
+            .count();
+    for (const auto &batch : blocked_mac_batch)
+        if (batch != fused) return false;
 #endif
 
     TFHEpp::GLBaseCiphertextData<GLP> separate{};
@@ -1044,6 +1092,8 @@ bool benchmarkProductionHMuxSwitchFusion()
               << batch_seconds << " s";
 #ifdef USE_HEXL
     std::cout << " vs " << batched_mac_seconds << " s batched-MAC";
+    std::cout << " vs " << blocked_mac_seconds << " s blocked-MAC ("
+              << blocked_cache_seconds << " s blocked cache preparation)";
 #endif
     std::cout << std::endl;
     if (fused != separate) return false;
@@ -1161,11 +1211,30 @@ bool benchmarkProductionHMuxSwitchFusion()
             .count();
     for (const auto &batch : batched_hmux_batch)
         if (batch.ct != hmux_output.ct) return false;
+    std::vector<Ciphertext> blocked_hmux_batch(batch_count);
+    const auto blocked_hmux_batch_start = std::chrono::steady_clock::now();
+#pragma omp parallel
+    {
+        TFHEpp::gl_ship_detail::HMuxNTTWorkspace<Schedule> workspace;
+        workspace.switch_workspace.use_batched_vector_mac = true;
+        workspace.switch_workspace.use_coefficient_blocked_key_layout = true;
+#pragma omp for schedule(static)
+        for (std::size_t batch = 0; batch < batch_count; batch++)
+            TFHEpp::gl_ship_detail::hmux<Schedule>(
+                blocked_hmux_batch[batch], hmux_input, hmux_key, &workspace);
+    }
+    const double blocked_hmux_batch_seconds =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      blocked_hmux_batch_start)
+            .count();
+    for (const auto &batch : blocked_hmux_batch)
+        if (batch.ct != hmux_output.ct) return false;
 #endif
     std::cout << "n512 complete warm HMux stage: " << hmux_seconds << " s; "
               << batch_count << " calls in " << hmux_batch_seconds << " s";
 #ifdef USE_HEXL
     std::cout << " vs " << batched_hmux_batch_seconds << " s batched-MAC";
+    std::cout << " vs " << blocked_hmux_batch_seconds << " s blocked-MAC";
 #endif
     std::cout << " vs " << legacy_hmux_batch_seconds
               << " s with unhoisted transforms" << std::endl;
@@ -1496,6 +1565,12 @@ bool benchmarkProductionMaskedColumn()
         for (std::size_t i = 0; i < hmux_switches.size(); i++)
             TFHEpp::gl_detail::prepareSmallKeySwitchNTTCache<GLP, SwitchKey>(
                 *hmux_switches[i]);
+#ifdef USE_HEXL
+#pragma omp parallel for schedule(dynamic, 1)
+        for (std::size_t i = 0; i < hmux_switches.size(); i++)
+            TFHEpp::gl_detail::prepareSmallKeySwitchBlockedNTTCache<
+                GLP, SwitchKey>(*hmux_switches[i]);
+#endif
 
         std::vector<Output> fused_outputs(batch_count);
         const auto fused_start = std::chrono::steady_clock::now();
@@ -1526,53 +1601,68 @@ bool benchmarkProductionMaskedColumn()
 #endif
         const int hmux_workers = std::max(1, maximum_workers / 2);
         for (const std::size_t requested_tile : {256U, 128U, 64U}) {
-            const std::size_t tile_capacity =
-                std::min(requested_tile, batch_count);
-            std::vector<Output> selected_tile(tile_capacity);
-            std::vector<Output> staged_outputs(batch_count);
-            const auto staged_start = std::chrono::steady_clock::now();
-            for (std::size_t tile_begin = 0; tile_begin < batch_count;
-                 tile_begin += tile_capacity) {
-                const std::size_t tile_count =
-                    std::min(tile_capacity, batch_count - tile_begin);
-#pragma omp parallel
-                {
-                    TFHEpp::gl_ship_detail::MaskedColumnNTTWorkspace<Schedule>
-                        workspace;
-#pragma omp for schedule(dynamic)
-                    for (std::size_t local = 0; local < tile_count; local++)
-                        TFHEpp::gl_ship_detail::maskedColumn<Schedule>(
-                            selected_tile[local], *mask,
-                            static_cast<std::uint32_t>((tile_begin + local) &
-                                                       1U),
-                            *key, &workspace);
-                }
-#pragma omp parallel num_threads(hmux_workers)
-                {
-                    TFHEpp::gl_ship_detail::HMuxNTTWorkspace<Schedule>
-                        workspace;
 #ifdef USE_HEXL
-                    workspace.switch_workspace.use_batched_vector_mac = true;
+            constexpr std::array blocked_layouts{false, true};
+#else
+            constexpr std::array blocked_layouts{false};
+#endif
+            for (const bool blocked_layout : blocked_layouts) {
+                const std::size_t tile_capacity =
+                    std::min(requested_tile, batch_count);
+                std::vector<Output> selected_tile(tile_capacity);
+                std::vector<Output> staged_outputs(batch_count);
+                const auto staged_start = std::chrono::steady_clock::now();
+                for (std::size_t tile_begin = 0; tile_begin < batch_count;
+                     tile_begin += tile_capacity) {
+                    const std::size_t tile_count =
+                        std::min(tile_capacity, batch_count - tile_begin);
+#pragma omp parallel
+                    {
+                        TFHEpp::gl_ship_detail::MaskedColumnNTTWorkspace<
+                            Schedule>
+                            workspace;
+#pragma omp for schedule(dynamic)
+                        for (std::size_t local = 0; local < tile_count;
+                             local++)
+                            TFHEpp::gl_ship_detail::maskedColumn<Schedule>(
+                                selected_tile[local], *mask,
+                                static_cast<std::uint32_t>(
+                                    (tile_begin + local) & 1U),
+                                *key, &workspace);
+                    }
+#pragma omp parallel num_threads(hmux_workers)
+                    {
+                        TFHEpp::gl_ship_detail::HMuxNTTWorkspace<Schedule>
+                            workspace;
+#ifdef USE_HEXL
+                        workspace.switch_workspace.use_batched_vector_mac =
+                            true;
+                        workspace.switch_workspace
+                            .use_coefficient_blocked_key_layout =
+                            blocked_layout;
 #endif
 #pragma omp for schedule(dynamic)
-                    for (std::size_t local = 0; local < tile_count; local++)
-                        TFHEpp::gl_ship_detail::hmux<Schedule>(
-                            staged_outputs[tile_begin + local],
-                            selected_tile[local], hmux_key, &workspace);
+                        for (std::size_t local = 0; local < tile_count;
+                             local++)
+                            TFHEpp::gl_ship_detail::hmux<Schedule>(
+                                staged_outputs[tile_begin + local],
+                                selected_tile[local], hmux_key, &workspace);
+                    }
                 }
+                const double staged_seconds =
+                    std::chrono::duration<double>(
+                        std::chrono::steady_clock::now() - staged_start)
+                        .count();
+                for (std::size_t batch = 0; batch < batch_count; batch++)
+                    if (staged_outputs[batch].ct != fused_outputs[batch].ct)
+                        return false;
+                std::cout
+                    << "n512 one-stage sparse factors, tile " << requested_tile
+                    << (blocked_layout ? " blocked" : " row-major") << ": "
+                    << staged_seconds << " s (" << maximum_workers
+                    << " masked / " << hmux_workers << " HMux workers) vs "
+                    << fused_factor_seconds << " s fused" << std::endl;
             }
-            const double staged_seconds =
-                std::chrono::duration<double>(
-                    std::chrono::steady_clock::now() - staged_start)
-                    .count();
-            for (std::size_t batch = 0; batch < batch_count; batch++)
-                if (staged_outputs[batch].ct != fused_outputs[batch].ct)
-                    return false;
-            std::cout << "n512 one-stage sparse factors, tile "
-                      << requested_tile << ": " << staged_seconds << " s ("
-                      << maximum_workers << " masked / " << hmux_workers
-                      << " HMux workers) vs " << fused_factor_seconds
-                      << " s fused" << std::endl;
         }
     }
     return (*output)[0][0] != typename GLP::T{} ||

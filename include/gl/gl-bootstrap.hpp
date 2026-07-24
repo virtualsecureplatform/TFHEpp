@@ -161,13 +161,15 @@ struct GLSHIPCandidate {
 // zero HMux worker count preserves the fused MaskedColumn/HMux loop.  Setting
 // it below the active OpenMP team size evaluates bounded tiles in two stages,
 // allowing MaskedColumn to use the full team while HMux uses fewer workers.
-// Batched HMux products amortize exact modular reduction on AVX-512DQ.  Both
-// choices are host-dependent, so neither the physical-core count nor an SMT
-// policy is inferred by the library.
+// Batched HMux products amortize exact modular reduction on AVX-512DQ.  The
+// optional blocked key cache groups the primary rows in 4096-coefficient
+// chunks for that kernel.  These choices are host-dependent, so neither the
+// physical-core count nor an SMT policy is inferred by the library.
 struct GLSHIPBootstrapExecutionOptions {
     std::uint32_t hmux_threads = 0;
     std::size_t factor_tile_size = 256;
     bool batch_hmux_products = false;
+    bool block_hmux_key_spectra = false;
 };
 
 template <class GLP, std::uint32_t LogQ, std::uint32_t InputLogDelta,
@@ -385,6 +387,18 @@ inline void GLSHIPHalfBootstrap(
     using HMuxSwitch =
         GLDDSmallKeySwitchKey<GLP, Schedule::half_bootstrap_log_q,
                               Schedule::primary_bit, Schedule::bbar_bit>;
+#ifdef USE_HEXL
+    if (execution.block_hmux_key_spectra &&
+        (!execution.batch_hmux_products ||
+         !modular_ntt::hasFastVectorMultiplyAddBatch))
+        throw std::invalid_argument(
+            "blocked GL SHIP HMux key spectra require the fast batched "
+            "modular MAC");
+#else
+    if (execution.block_hmux_key_spectra)
+        throw std::invalid_argument(
+            "blocked GL SHIP HMux key spectra require USE_HEXL");
+#endif
 
     // These few shared base-ring switches are also first reached from inside
     // worker teams, so warm them while their own transform loops can use the
@@ -454,8 +468,14 @@ inline void GLSHIPHalfBootstrap(
                 }
 #pragma omp parallel for schedule(dynamic, 1)
             for (std::size_t i = 0; i < hmux_switches.size(); i++)
-                gl_detail::prepareSmallKeySwitchNTTCache<GLP, HMuxSwitch>(
-                    *hmux_switches[i]);
+#ifdef USE_HEXL
+                if (execution.block_hmux_key_spectra)
+                    gl_detail::prepareSmallKeySwitchBlockedNTTCache<
+                        GLP, HMuxSwitch>(*hmux_switches[i]);
+                else
+#endif
+                    gl_detail::prepareSmallKeySwitchNTTCache<GLP, HMuxSwitch>(
+                        *hmux_switches[i]);
         }
 
         ProductBatch sparse_factors(slice_count);
@@ -479,6 +499,9 @@ inline void GLSHIPHalfBootstrap(
 #ifdef USE_HEXL
                 hmux_workspace.switch_workspace.use_batched_vector_mac =
                     execution.batch_hmux_products;
+                hmux_workspace.switch_workspace
+                    .use_coefficient_blocked_key_layout =
+                    execution.block_hmux_key_spectra;
 #endif
                 auto selected = std::make_unique<
                     GLBaseCiphertext<GLP, Schedule::half_bootstrap_log_q,
@@ -537,6 +560,9 @@ inline void GLSHIPHalfBootstrap(
 #ifdef USE_HEXL
                     hmux_workspace.switch_workspace.use_batched_vector_mac =
                         execution.batch_hmux_products;
+                    hmux_workspace.switch_workspace
+                        .use_coefficient_blocked_key_layout =
+                        execution.block_hmux_key_spectra;
 #endif
                     auto displaced = std::make_unique<FactorCiphertext>();
 #pragma omp for schedule(dynamic)

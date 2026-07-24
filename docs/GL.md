@@ -320,6 +320,7 @@ TFHEpp::GLSHIPBootstrapExecutionOptions execution{
     .hmux_threads = 16,
     .factor_tile_size = 256,
     .batch_hmux_products = true,
+    .block_hmux_key_spectra = true,
 };
 TFHEpp::GLSHIPBootstrap<Schedule>(output, input, key, execution);
 ```
@@ -329,7 +330,11 @@ machine. A zero `hmux_threads` retains the portable default. At n512 a
 256-factor staging tile adds 448 MiB of ciphertext storage while it is live.
 With `USE_HEXL`, `batch_hmux_products` uses the common AVX-512DQ
 pseudo-Mersenne MAC to reduce four exact pointwise products together; without
-AVX-512DQ the regular HEXL multiply/add path is retained.
+AVX-512DQ the regular HEXL multiply/add path is retained. With the fast MAC,
+`block_hmux_key_spectra` stores each transient HMux key spectrum in
+4096-coefficient blocks with its four primary rows adjacent. It does not
+change the serialized key size or the 54 MiB transient-cache size per n512
+switch; only one cache layout is materialized by the production path.
 
 `sparse_secret` must have the schedule's Hamming weight and coefficients in
 `{0,+1,-1}`. A coefficient's flat W-major index determines its `X`, `W`, and
@@ -413,16 +418,19 @@ StC measures 32.7 seconds. That host-specific profile gives a roughly 27--28
 minute component projection. Other CPUs should benchmark both physical-core
 and SMT worker counts; no topology-dependent limit is hard-coded.
 
-With `OMP_NUM_THREADS=32 OMP_PROC_BIND=spread OMP_PLACES=cores` and the
-execution options above, a production-shape batch of 256 MaskedColumn plus
-one-stage HMux factors took 4.69 seconds in two runs, versus 6.66--6.88 seconds
-for the fused 32-worker loop (29.5--31.9% faster). Tiles of 128 and 64 took
-5.11--5.32 and 5.29--5.33 seconds. The common 16K, 32-product modular MAC
-microbenchmark took 0.125--0.140 seconds versus 0.162--0.184 seconds for
-separate HEXL multiply/add calls (23--24% faster). The factor benchmark uses
-a synthetic one-stage key; the separately measured three-stage rates still
-suggest about a 22% reduction in the complete sparse-factor phase, not a
-measured full-bootstrap runtime. Run the tuning benchmark with
+With `OMP_NUM_THREADS=32 OMP_PROC_BIND=spread OMP_PLACES=cores`, a
+production-shape batch of 256 MaskedColumn plus one-stage HMux factors took
+4.71--4.81 seconds with the execution options above. In paired runs, the same
+staged path with row-major key spectra took 5.06--5.31 seconds, and the fused
+32-worker loop took 6.49--6.51 seconds. Thus blocking saved 4.9--11.3% over
+the otherwise identical staged path and the complete tuning saved
+25.9--27.7% over the fused loop. The benefit was not consistent for smaller
+tiles, so 256 remains the recommended n512 tile. The common 16K, 32-product
+modular MAC microbenchmark took 0.125--0.140 seconds versus 0.162--0.184
+seconds for separate HEXL multiply/add calls (23--24% faster). The factor
+benchmark uses a synthetic one-stage key; the separately measured three-stage
+rates still suggest about a 22% reduction in the complete sparse-factor phase,
+not a measured full-bootstrap runtime. Run the tuning benchmark with
 `TFHEPP_GL_N512_MASKED_BENCH=1` and `TFHEPP_GL_N512_FACTOR_BENCH=1`; run the
 arithmetic microbenchmark with `TFHEPP_MODULAR_MAC_BENCH=1`.
 

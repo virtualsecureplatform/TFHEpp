@@ -58,7 +58,7 @@ using N512Schedule = TFHEpp::GLSHIP512p17FusedDDSchedule;
                                   intervals);
     TFHEpp::GLSHIPBootstrap<N512Schedule>(
         output, input, bootstrap_key,
-        TFHEpp::GLSHIPBootstrapExecutionOptions{16, 256, true});
+        TFHEpp::GLSHIPBootstrapExecutionOptions{16, 256, true, true});
 }
 
 static_assert(Schedule::input_log_q == 40);
@@ -364,9 +364,14 @@ int main()
     TFHEpp::GLSHIPHalfBootstrap<Schedule>(half_output, coefficient_ciphertext,
                                           *bootstrap_key);
     Schedule::OutputCiphertext staged_half_output;
+    TFHEpp::GLSHIPBootstrapExecutionOptions staged_execution{1, 3, true};
+#ifdef USE_HEXL
+    staged_execution.block_hmux_key_spectra =
+        TFHEpp::modular_ntt::hasFastVectorMultiplyAddBatch;
+#endif
     TFHEpp::GLSHIPHalfBootstrap<Schedule>(
         staged_half_output, coefficient_ciphertext, *bootstrap_key,
-        TFHEpp::GLSHIPBootstrapExecutionOptions{1, 3, true});
+        staged_execution);
     for (std::size_t component = 0; component < 2; component++)
         for (std::uint32_t y = 0; y < GLP::matrix_dimension; y++)
             if (staged_half_output[component][y] !=
