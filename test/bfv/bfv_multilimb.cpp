@@ -14,6 +14,7 @@ int main()
 
 #else
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstdlib>
@@ -290,11 +291,18 @@ int main()
     }
 
     if (std::getenv("TFHEPP_BFV_LVL5_KEYGEN_TEST") != nullptr) {
-        using P = TFHEpp::lvl5param;
+        using P = TFHEpp::lvl5bootparam;
+        // Sparse ternary key: bfv_key_hamming_weight non-zero coefficients.
+        // The bootstrap digit-error bound B = 15 is a 6.4σ bound only for
+        // sparse keys (σ_e = sqrt((1+h)/12) ≈ 2.33 at h = 64).
         auto key = std::make_unique<TFHEpp::Key<P>>();
-        for (std::size_t i = 0; i < P::n; i++) {
-            const int v = static_cast<int>(i % 3) - 1;
-            (*key)[i] = static_cast<typename P::T>(v);
+        static_assert(P::bfv_key_hamming_weight <= P::n);
+        constexpr std::size_t key_stride = P::n / P::bfv_key_hamming_weight;
+        for (std::size_t i = 0; i < P::n; i++) (*key)[i] = 0;
+        for (std::size_t j = 0; j < P::bfv_key_hamming_weight; j++) {
+            const std::size_t pos = j * key_stride + (j * 7) % key_stride;
+            (*key)[pos] =
+                static_cast<typename P::T>((j % 2) ? 1 : -1);
         }
         auto relinkey = TFHEpp::makeRelinKeyFFT<P>(*key);
         require(relinkey != nullptr, "lvl5 makeRelinKeyFFT allocation");
@@ -332,8 +340,17 @@ int main()
         TFHEpp::bfvboot::SecretKeyAsPlaintext<BP, P>(*sk_plain, *key);
         auto enc_sk = std::make_unique<TFHEpp::TRLWE<BP>>();
         TFHEpp::bfvboot::BfvPolyEncrypt<BP>(*enc_sk, *sk_plain, *boot_key);
+        auto psk_plain = std::make_unique<std::array<uint64_t, BP::n>>();
+        for (std::size_t i = 0; i < BP::n; i++)
+            (*psk_plain)[i] = static_cast<uint64_t>(
+                (static_cast<unsigned __int128>(BP::base_plain_modulus) *
+                 (*sk_plain)[i]) %
+                static_cast<uint64_t>(BP::plain_modulus));
+        auto enc_psk = std::make_unique<TFHEpp::TRLWE<BP>>();
+        TFHEpp::bfvboot::BfvPolyEncrypt<BP>(*enc_psk, *psk_plain, *boot_key);
         auto noisy = std::make_unique<TFHEpp::TRLWE<BP>>();
-        TFHEpp::bfvboot::NoisyDecrypt<P, BP>(*noisy, *ct_a, *enc_sk);
+        TFHEpp::bfvboot::NoisyDecrypt<P, BP>(*noisy, *ct_a, *enc_sk,
+                                             *enc_psk);
         auto noisy_plain = std::make_unique<std::array<uint64_t, BP::n>>();
         TFHEpp::bfvboot::BfvPolyDecrypt<BP>(*noisy_plain, *noisy, *boot_key);
 
@@ -342,7 +359,9 @@ int main()
             ct_b.reset();
             ct_mul.reset();
             sk_plain.reset();
+            psk_plain.reset();
             enc_sk.reset();
+            enc_psk.reset();
             noisy.reset();
             noisy_plain.reset();
 
@@ -383,12 +402,35 @@ int main()
                 TFHEpp::trlweSlotDecrypt<BP>(*full_noisy_plain, *noisy_slots,
                                              *boot_key);
 
+                // The noisy slots must contain p*m + e with |e| bounded by
+                // the digit-error bound the removal polynomial was built for.
+                constexpr uint64_t q =
+                    static_cast<uint64_t>(BP::plain_modulus);
+                constexpr uint64_t boot_p = BP::base_plain_modulus;
+                constexpr int64_t bound = static_cast<int64_t>(
+                    P::bfv_bootstrap_digit_error_bound);
+                int64_t max_digit_err = 0;
+                for (std::size_t i = 0; i < BP::n; i++) {
+                    const uint64_t want = (boot_p * (*slots_a)[i]) % q;
+                    int64_t diff = static_cast<int64_t>(
+                        ((*full_noisy_plain)[i] + q - want) % q);
+                    if (diff > static_cast<int64_t>(q / 2))
+                        diff -= static_cast<int64_t>(q);
+                    max_digit_err = std::max(max_digit_err,
+                                             diff < 0 ? -diff : diff);
+                }
+                std::cout << "  lvl5boot noisy-slot digit error max="
+                          << max_digit_err << " (bound=" << bound << ")"
+                          << std::endl;
+                require(max_digit_err <= bound,
+                        "lvl5 noisy-slot digit error bound");
+
                 auto bootstrapped = std::make_unique<TFHEpp::TRLWE<P>>();
                 TFHEpp::bfvboot::Bootstrap<P>(*bootstrapped, *ct_a, *bk);
                 TFHEpp::trlweSlotDecrypt<P>(*decrypted, *bootstrapped, *key);
                 for (std::size_t i = 0; i < P::n; i++)
                     require((*decrypted)[i] == (*slots_a)[i],
-                            "lvl5 rounded full bootstrap");
+                            "lvl5 full digit-extraction bootstrap");
             }
         }
     }

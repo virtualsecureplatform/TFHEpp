@@ -266,8 +266,9 @@ int main()
     }
 
     TFHEpp::TRLWE<P> zero_in{};
-    TFHEpp::TRLWE<BP> zero_enc_sk{}, zero_out{};
-    TFHEpp::bfvboot::NoisyDecrypt<P, BP>(zero_out, zero_in, zero_enc_sk);
+    TFHEpp::TRLWE<BP> zero_enc_sk{}, zero_enc_psk{}, zero_out{};
+    TFHEpp::bfvboot::NoisyDecrypt<P, BP>(zero_out, zero_in, zero_enc_sk,
+                                         zero_enc_psk);
     for (int c = 0; c <= static_cast<int>(BP::k); c++) {
         for (int i = 0; i < n; i++) {
             if (zero_out[c][i] != 0) {

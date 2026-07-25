@@ -159,17 +159,57 @@ TFHEpp::trlweSlotDecrypt<P>(result, ct_mul, key);
 // result[i] == (slots_a[i] * slots_b[i]) % 114689
 ```
 
+## Bootstrapping (lvl5bootparam)
+
+`include/bfv/bfv-bootstrapping.hpp` implements a digit-extraction bootstrap
+for the multi-limb n = 2^14, Q = 2^448, p = 786433 ring.  It uses the
+dedicated `lvl5bootparam` parameter set (not `lvl5param`, which the GL scheme
+builds on) and runs
+
+```
+Enc_p(slots) --SlotToCoeff@p--> coefficients
+             --ModSwitch(p^2) + NoisyDecrypt--> Enc_{p^2}(p*m + e) coefficients
+             --CoeffToSlot@p^2--> Enc_{p^2}(p*m + e) slots
+             --PolyEval(digit-removal, B=15)--> Enc_{p^2}(p*m) slots
+             --ProjectToBase--> Enc_p(m) slots
+```
+
+Design constraints discovered while validating the pipeline (see
+`Parameter-Selection/python/BFVnoise.py --preset tfhepp-lvl5-boot`):
+
+- Both linear maps must be the **dense** BSGS diagonal transforms.  The
+  FFT-style CRT factors in `bfv-c2s.hpp` are logically correct but amplify
+  early-stage automorphism noise by the product of all later twiddle norms
+  (~2^325 at these parameters), which wraps the torus.
+- The digit-extraction stage is mandatory: projecting `Enc_{p^2}(p*m + e)` to
+  plaintext modulus p only reinterprets the phase, so the low digit `e`
+  survives as noise and any later linear map destroys the plaintext.
+- The key-switch gadget must cover almost the full torus (`l*Bgbit = 437` of
+  448 bits) and the fresh noise must be small (`α = 2^-446`), so that the
+  CoeffToSlot output stays below the ~2^84 absolute-noise input budget of the
+  degree-61 digit-removal polynomial evaluation.
+- The secret key must be sparse ternary with Hamming weight 64
+  (`bfv_key_hamming_weight`): the mod-switch digit error has stddev
+  `sqrt((1+h)/12)`, and B = 15 is a 6.4σ bound only at h = 64.
+
+The pipeline refreshes fresh-ish ciphertexts (tested end-to-end by
+`test/bfv/bfv_multilimb.cpp` under `TFHEPP_BFV_LVL5_BOOTSTRAP_FULL_TEST=1`);
+its output noise (~2^400) still exceeds the input tolerance of a subsequent
+bootstrap, so repeated bootstrapping would need a larger modulus.
+
 ## Files
 
 | File | Contents |
 |------|----------|
 | `include/bfv/bfv-slots.hpp` | SlotEncode/Decode, encrypt/decrypt, GaloisKey, rotation |
 | `include/bfv/bfv++.hpp` | TRLWEMultFullDD, Wide384, relinearization |
-| `include/params/128bit.hpp` | `lvl3simdparam` definition |
+| `include/bfv/bfv-bootstrapping.hpp` | Digit-extraction bootstrap pipeline |
+| `include/params/128bit.hpp` | `lvl3simdparam`, `lvl5bootparam` definitions |
 | `include/mulfft.hpp` | TwistFFT/TwistIFFT with sign-extension + rounding |
 | `test/bfv/simd_encode.cpp` | Encode/decode round-trip test |
 | `test/bfv/simd_ops.cpp` | Addition + multiplication test |
 | `test/bfv/simd_rotation.cpp` | Slot rotation test |
+| `test/bfv/bfv_multilimb.cpp` | Multi-limb scaffold + env-gated bootstrap test |
 
 ## Limitations
 
