@@ -127,14 +127,18 @@ inline void relinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
 }
 
 // Relinearization - automatically handles DD when l̅ > 1
+// The square-term ciphertext is heap-allocated: for large multi-limb rings a
+// TRLWE<P> is several MB and would overflow the default thread stack.
 template <class P>
 inline void Relinearization(TRLWE<P> &res, const TRLWE3<P> &mult,
                             const relinKeyFFT<P> &relinkeyfft)
 {
-    TRLWE<P> squareterm;
-    relinKeySwitch<P>(squareterm, mult[2], relinkeyfft);
-    for (int i = 0; i < P::n; i++) res[0][i] = mult[0][i] + squareterm[0][i];
-    for (int i = 0; i < P::n; i++) res[1][i] = mult[1][i] + squareterm[1][i];
+    auto squareterm = std::make_unique<TRLWE<P>>();
+    relinKeySwitch<P>(*squareterm, mult[2], relinkeyfft);
+    for (int i = 0; i < P::n; i++)
+        res[0][i] = mult[0][i] + (*squareterm)[0][i];
+    for (int i = 0; i < P::n; i++)
+        res[1][i] = mult[1][i] + (*squareterm)[1][i];
 }
 
 // TRLWE multiplication with relinearization - automatically handles DD when l̅ > 1
@@ -142,9 +146,9 @@ template <class P>
 inline void TRLWEMult(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
                       const relinKeyFFT<P> &relinkeyfft)
 {
-    TRLWE3<P> resmult;
-    TRLWEMultWithoutRelinerization<P>(resmult, a, b);
-    Relinearization<P>(res, resmult, relinkeyfft);
+    auto resmult = std::make_unique<TRLWE3<P>>();
+    TRLWEMultWithoutRelinerization<P>(*resmult, a, b);
+    Relinearization<P>(res, *resmult, relinkeyfft);
 }
 
 // ---------------------------------------------------------------------------
@@ -535,9 +539,9 @@ template <class P>
 inline void TRLWEMultFullDD(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
                              const relinKeyFFT<P> &relinkeyfft)
 {
-    TRLWE3<P> resmult;
-    TRLWEMultWithoutRelinearizationFullDD<P>(resmult, a, b);
-    Relinearization<P>(res, resmult, relinkeyfft);
+    auto resmult = std::make_unique<TRLWE3<P>>();
+    TRLWEMultWithoutRelinearizationFullDD<P>(*resmult, a, b);
+    Relinearization<P>(res, *resmult, relinkeyfft);
 }
 
 // TLWE multiplication - automatically handles DD when l̅ > 1

@@ -316,47 +316,65 @@ struct lvl5param {
     static constexpr uint64_t simd_n_inv = 786385;
 };
 
-// lvl5bootparam: BFV bootstrapping variant of lvl5param.
+// lvl5bootparam: BFV bootstrapping parameter set.
 //
-// Shares the ring (n = 2^14, Q = 2^448, p = 786433) with lvl5param but tunes
-// the gadget and noise for the digit-extraction bootstrap:
+// Ring: n = 2^15, Q = 2^640 (10 limbs), p = 786433 (p ≡ 1 mod 2n, so the
+// lvl6param SIMD roots apply).  The ring degree is forced by SECURITY: a
+// correct digit-extraction bootstrap needs ≳2^500 of modulus headroom (the
+// digit-removal PolyEval alone multiplies invariant noise variance by
+// ~2^641), and at n = 2^14 any such modulus caps LWE security at ~2^64.
 //
-//  * l = lₐ = 23 (Bgbit = 19): the key-switch/relinearization gadget covers
-//    l*Bgbit = 437 of the 448 torus bits, so each EvalAuto injects only
-//    ~2^12 phase noise instead of the ~2^360 left by lvl5param's 95-bit
-//    gadget.  The dense CoeffToSlot at plaintext modulus p^2 amplifies
-//    automorphism noise by ~2^51, and the digit-removal PolyEval needs its
-//    input below ~2^84 absolute noise (invariant variance <= 2^-650 per the
-//    Parameter-Selection BFVnoise.py model), which the lvl5param gadget
-//    misses by ~250 bits.
-//  * α = 2^-446 (fresh noise stddev 4 in torus units): keeps the EvalAuto
-//    key-noise term (~sqrt(n*l)*Bg/2*σ ≈ 2^28) and the NoisyDecrypt
-//    plain-multiplication noise (~2^27) inside the same PolyEval input
-//    budget.
-//  * bfv_key_hamming_weight = 64: the bootstrap secret key must be sparse
-//    ternary with 64 non-zero coefficients.  The mod-switch digit error
-//    e = δ_b - δ_a*s has stddev sqrt((1+h)/12); h = 64 gives σ_e ≈ 2.33 so
-//    the digit-removal bound B = 15 is a 6.4σ bound.  A dense ternary key
-//    (σ_e ≈ 30) would need B ≈ 200 and a degree-801 removal polynomial,
-//    which does not fit the 448-bit modulus.
+// Security (Parameter-Selection lattice-estimator, BDGL16 classical, full
+// attack suite; see estimates/lvl5boot_{check,sweep,full,margin,q640}.py):
+// the binding attack on a sparse key is the hybrid primal MITM
+// (bdd_mitm_hybrid).  At n = 2^15, q = 2^640, σ = 2^33, ternary h = 96 it
+// costs ~2^148; the non-hybrid attacks (usvp/bdd/dual) all exceed 2^180.
+// A smaller h = 64 key at q = 2^576 would sit at ~2^130 — technically
+// 128-bit but with no margin, hence the h = 96 / 10-limb design.
 //
-// FFT exactness: Bgbit + B̅gbit + nbit + 3 = 19 + 16 + 14 + 3 = 52 < 53.
+// The 640-bit torus also makes the bootstrap SELF-COMPOSABLE with room to
+// compute: the refreshed ciphertext's noise (~2^491) stays far below the
+// ~2^571 input tolerance of the next bootstrap, and each base-p
+// ciphertext-ciphertext multiplication costs only ~2^28 absolute growth, so
+// a bootstrap cycle supports ~2 multiplications.
+//
+// Constraints behind the tuning (see Parameter-Selection BFVnoise.py with
+// --preset tfhepp-lvl5-boot --nbit 15 --qbits 640):
+//
+//  * l = lₐ = 35 (Bgbit = 18): the key-switch/relinearization gadget covers
+//    l*Bgbit = 630 of the 640 torus bits, so EvalAuto truncation noise
+//    (~2^11) stays below its key-noise term (~2^58) instead of the ~2^360 a
+//    lvl5param-style 95-bit gadget would leave.  The dense CoeffToSlot at
+//    plaintext modulus p^2 amplifies automorphism noise by ~2^52, and the
+//    digit-removal PolyEval input must stay ~330 sigma-bits under the p^2
+//    correctness threshold — satisfied with ~110 sigma-bits to spare.
+//  * α = 2^-607 (fresh noise stddev 2^33 in torus units): larger σ buys a
+//    few security bits and the noise budget absorbs it easily.
+//  * bfv_key_hamming_weight = 96 with bfv_bootstrap_digit_error_bound = 23:
+//    the mod-switch digit error e = δ_b - δ_a*s has stddev
+//    sqrt((1+h)/12) ≈ 2.84, so B = 23 is an 8.1σ bound (failure ~2^-36 per
+//    bootstrap).  Degree 4B+1 = 93 keeps the removal-polynomial BSGS at
+//    (k=3, m=5); B > 23 would cross a depth cliff (+~120 variance bits).
+//    A dense ternary key (σ_e ≈ 30) would need B ≈ 200 and a degree-801
+//    polynomial, which does not fit any practical modulus at this n.
+//
+// FFT exactness: Bgbit + B̅gbit + nbit + 3 = 18 + 16 + 15 + 3 = 52 < 53.
 struct lvl5bootparam {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
-    static constexpr std::uint32_t nbit = 14;
+    static constexpr std::uint32_t nbit = 15;
     static constexpr std::uint32_t n = 1 << nbit;
     static constexpr std::uint32_t k = 1;
-    static constexpr std::uint32_t lₐ = 23;
-    static constexpr std::uint32_t l = 23;
-    static constexpr std::uint32_t Bgbit = 19;
-    static constexpr std::uint32_t Bgₐbit = 19;
-    using T = MultiLimbUInt<7>;
+    static constexpr std::uint32_t lₐ = 35;
+    static constexpr std::uint32_t l = 35;
+    static constexpr std::uint32_t Bgbit = 18;
+    static constexpr std::uint32_t Bgₐbit = 18;
+    using T = MultiLimbUInt<10>;
     static constexpr T Bg = T{1} << Bgbit;
     static constexpr T Bgₐ = T{1} << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -446);
+    static const inline double α = std::pow(2.0, -607);
     static constexpr T μ = T{1} << (std::numeric_limits<T>::digits - 3);
     static constexpr uint64_t plain_modulus_u64 = 786433;
     static constexpr uint32_t plain_modulusbit = 20;
@@ -366,18 +384,19 @@ struct lvl5bootparam {
         std::numeric_limits<T>::max() / plain_modulus_u64;
     static constexpr uint64_t Q_mod_t =
         (std::numeric_limits<T>::max() % plain_modulus_u64) + 1;
-    static constexpr uint64_t bfv_bootstrap_digit_error_bound = 15;
+    static constexpr uint64_t bfv_bootstrap_digit_error_bound = 23;
     static constexpr int bfv_bootstrap_linear_bsgs_step = 128;
-    static constexpr uint32_t bfv_key_hamming_weight = 64;
-    static constexpr std::uint32_t l̅ = 28;
-    static constexpr std::uint32_t l̅ₐ = 28;
+    static constexpr uint32_t bfv_key_hamming_weight = 96;
+    static constexpr std::uint32_t l̅ = 40;
+    static constexpr std::uint32_t l̅ₐ = 40;
     static constexpr std::uint32_t B̅gbit = 16;
     static constexpr std::uint32_t B̅gₐbit = 16;
 
+    // n = 2^15 SIMD roots for p = 786433 (same as lvl6param).
     static constexpr uint64_t simd_modulus = plain_modulus_u64;
-    static constexpr uint64_t simd_psi = 585160;
-    static constexpr uint64_t simd_psi_inv = 253771;
-    static constexpr uint64_t simd_n_inv = 786385;
+    static constexpr uint64_t simd_psi = 108788;
+    static constexpr uint64_t simd_psi_inv = 295516;
+    static constexpr uint64_t simd_n_inv = 786409;
 };
 
 // lvl6param: n = 2^15 multi-limb torus scaffold for dense CKKS bootstrap work.

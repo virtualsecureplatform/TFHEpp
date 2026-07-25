@@ -158,19 +158,19 @@ template <class P>
 void BfvPolyEncrypt(TRLWE<P> &ct, const std::array<uint64_t, P::n> &poly,
                     const Key<P> &key)
 {
-    Polynomial<P> scaled;
+    auto scaled = std::make_unique<Polynomial<P>>();
     for (uint32_t i = 0; i < P::n; i++)
-        scaled[i] = bfvEncodeCoeff<P>(poly[i]);
-    trlweSymEncrypt<P>(ct, scaled, key);
+        (*scaled)[i] = bfvEncodeCoeff<P>(poly[i]);
+    trlweSymEncrypt<P>(ct, *scaled, key);
 }
 
 template <class P>
 void BfvPolyDecrypt(std::array<uint64_t, P::n> &poly, const TRLWE<P> &ct,
                     const Key<P> &key)
 {
-    const Polynomial<P> phase = trlwePhase<P>(ct, key);
+    const auto phase = std::make_unique<Polynomial<P>>(trlwePhase<P>(ct, key));
     for (uint32_t i = 0; i < P::n; i++)
-        poly[i] = bfvDecodeCoeff<P>(phase[i]);
+        poly[i] = bfvDecodeCoeff<P>((*phase)[i]);
 }
 
 template <class FromP, class ToP>

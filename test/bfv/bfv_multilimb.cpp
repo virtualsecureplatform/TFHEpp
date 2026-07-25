@@ -431,6 +431,50 @@ int main()
                 for (std::size_t i = 0; i < P::n; i++)
                     require((*decrypted)[i] == (*slots_a)[i],
                             "lvl5 full digit-extraction bootstrap");
+                std::cout << "  lvl5boot single bootstrap PASS" << std::endl;
+
+                // Self-composability: bootstrap the bootstrap output.
+                auto rebootstrapped = std::make_unique<TFHEpp::TRLWE<P>>();
+                TFHEpp::bfvboot::Bootstrap<P>(*rebootstrapped, *bootstrapped,
+                                              *bk);
+                TFHEpp::trlweSlotDecrypt<P>(*decrypted, *rebootstrapped,
+                                            *key);
+                for (std::size_t i = 0; i < P::n; i++)
+                    require((*decrypted)[i] == (*slots_a)[i],
+                            "lvl5 bootstrap of bootstrap output");
+                rebootstrapped.reset();
+                std::cout << "  lvl5boot bootstrap∘bootstrap PASS"
+                          << std::endl;
+
+                // One multiplication per bootstrap cycle: multiply the
+                // bootstrap output by a fresh ciphertext, then bootstrap the
+                // product.
+                auto base_relin = TFHEpp::makeRelinKeyFFT<P>(*key);
+                auto slots_b2 =
+                    std::make_unique<std::array<uint64_t, P::n>>();
+                for (std::size_t i = 0; i < P::n; i++)
+                    (*slots_b2)[i] = (7 * i + 3) % P::plain_modulus_u64;
+                auto ct_b2 = std::make_unique<TFHEpp::TRLWE<P>>();
+                TFHEpp::trlweSlotEncrypt<P>(*ct_b2, *slots_b2, *key);
+                auto prod = std::make_unique<TFHEpp::TRLWE<P>>();
+                TFHEpp::TRLWEMultFullDD<P>(*prod, *bootstrapped, *ct_b2,
+                                           *base_relin);
+                base_relin.reset();
+                ct_b2.reset();
+                bootstrapped.reset();
+
+                auto boot_prod = std::make_unique<TFHEpp::TRLWE<P>>();
+                TFHEpp::bfvboot::Bootstrap<P>(*boot_prod, *prod, *bk);
+                TFHEpp::trlweSlotDecrypt<P>(*decrypted, *boot_prod, *key);
+                for (std::size_t i = 0; i < P::n; i++) {
+                    const uint64_t expected_prod =
+                        ((*slots_a)[i] * (*slots_b2)[i]) %
+                        P::plain_modulus_u64;
+                    require((*decrypted)[i] == expected_prod,
+                            "lvl5 bootstrap of multiplied bootstrap output");
+                }
+                std::cout << "  lvl5boot bootstrap∘mult∘bootstrap PASS"
+                          << std::endl;
             }
         }
     }

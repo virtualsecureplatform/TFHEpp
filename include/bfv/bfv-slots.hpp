@@ -371,20 +371,23 @@ template <class P>
 void trlweSlotEncrypt(TRLWE<P> &ct, const std::array<uint64_t, P::n> &slots,
                       const Key<P> &key)
 {
-    Polynomial<P> poly;
-    SlotEncode<P>(poly, slots);
+    // Polynomials are heap-allocated: for large multi-limb rings (e.g.
+    // n = 2^15 with 9 limbs) a Polynomial<P> is multiple MB and stacking a
+    // few of them overflows the default thread stack.
+    auto poly = std::make_unique<Polynomial<P>>();
+    SlotEncode<P>(*poly, slots);
 
     // BFV encoding: floor(m · Q / t) per coefficient.
     // Decompose as: m·delta_int + floor(m·Q_mod_t / t)
     // where delta_int = floor(Q/t) and Q_mod_t = Q mod t.
     // This gives at most 1 unit of rounding error regardless of m.
-    Polynomial<P> scaled;
+    auto scaled = std::make_unique<Polynomial<P>>();
     for (uint32_t i = 0; i < P::n; i++) {
-        uint64_t m = static_cast<uint64_t>(poly[i]);
-        scaled[i] = bfvEncodeCoeff<P>(m);
+        uint64_t m = static_cast<uint64_t>((*poly)[i]);
+        (*scaled)[i] = bfvEncodeCoeff<P>(m);
     }
 
-    trlweSymEncrypt<P>(ct, scaled, key);
+    trlweSymEncrypt<P>(ct, *scaled, key);
 }
 
 // ---------------------------------------------------------------------------
@@ -429,13 +432,14 @@ template <class P>
 void trlweSlotDecrypt(std::array<uint64_t, P::n> &slots, const TRLWE<P> &ct,
                       const Key<P> &key)
 {
-    Polynomial<P> phase = trlwePhase<P>(ct, key);
+    auto phase = std::make_unique<Polynomial<P>>(trlwePhase<P>(ct, key));
 
-    Polynomial<P> poly;
+    auto poly = std::make_unique<Polynomial<P>>();
     for (uint32_t i = 0; i < P::n; i++)
-        poly[i] = static_cast<typename P::T>(bfvDecodeCoeff<P>(phase[i]));
+        (*poly)[i] =
+            static_cast<typename P::T>(bfvDecodeCoeff<P>((*phase)[i]));
 
-    SlotDecode<P>(slots, poly);
+    SlotDecode<P>(slots, *poly);
 }
 
 // ---------------------------------------------------------------------------
@@ -643,25 +647,26 @@ template <class P>
 void SlotPtxtMul(TRLWE<P> &res, const TRLWE<P> &ct,
                  const std::array<uint64_t, P::n> &slot_vector)
 {
-    // Encode slot_vector via INTT into a plaintext polynomial V.
-    Polynomial<P> V;
-    SlotEncode<P>(V, slot_vector);
+    // Encode slot_vector via INTT into a plaintext polynomial V (heap: see
+    // trlweSlotEncrypt).
+    auto V = std::make_unique<Polynomial<P>>();
+    SlotEncode<P>(*V, slot_vector);
 
     // Multiply each TRLWE component by V.  PolyMul works mod 2^{width(T)},
     // which is what we want for BFV's phase arithmetic.
     if constexpr (is_multilimb_uint_v<typename P::T>) {
         auto V_u64 = std::make_unique<std::array<uint64_t, P::n>>();
         for (uint32_t i = 0; i < P::n; i++)
-            (*V_u64)[i] =
-                static_cast<uint64_t>(V[i]) % static_cast<uint64_t>(P::plain_modulus);
+            (*V_u64)[i] = static_cast<uint64_t>((*V)[i]) %
+                          static_cast<uint64_t>(P::plain_modulus);
         for (int k = 0; k <= static_cast<int>(P::k); k++)
             PolyMulTorusByCenteredPlain<P>(res[k], ct[k], *V_u64);
     }
     else {
         for (uint32_t i = 0; i < P::n; i++)
-            V[i] = bfvCenteredPlainCoeff<P>(static_cast<uint64_t>(V[i]));
+            (*V)[i] = bfvCenteredPlainCoeff<P>(static_cast<uint64_t>((*V)[i]));
         for (int k = 0; k <= static_cast<int>(P::k); k++)
-            PolyMul<P>(res[k], ct[k], V);
+            PolyMul<P>(res[k], ct[k], *V);
     }
 }
 
