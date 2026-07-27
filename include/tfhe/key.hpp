@@ -5,7 +5,9 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/array.hpp>
 #include <cstdint>
+#include <numeric>
 #include <type_traits>
+#include <vector>
 
 #include "lweParams.hpp"
 #include "params.hpp"
@@ -21,10 +23,74 @@ struct hasell : false_type {};
 template <class P>
 struct hasell<P, void_t<decltype(P::ell)>> : true_type {};
 
+template <class P, class = void>
+struct has_bfv_key_hamming_weight : false_type {};
+
+template <class P>
+struct has_bfv_key_hamming_weight<P,
+                                  void_t<decltype(P::bfv_key_hamming_weight)>>
+    : true_type {};
+
+// Sample the exact secret law used by the sparse-ternary security proof:
+// choose a support uniformly from all subsets of size h, then choose every
+// nonzero sign independently and uniformly.  The partial Fisher-Yates pass
+// makes the ordered support uniform using only h swaps.
+template <class P, class URBG>
+void fixedWeightTernaryKeyGen(Key<P>& key, URBG& engine)
+{
+    static_assert(has_bfv_key_hamming_weight<P>::value,
+                  "fixed-weight key generation requires a Hamming weight");
+    static_assert(P::k == 1, "fixed-weight key generation assumes k = 1");
+    static_assert(P::key_value_min == -1 && P::key_value_max == 1,
+                  "fixed-weight key generation assumes ternary key values");
+    static_assert(P::bfv_key_hamming_weight <= P::n,
+                  "fixed-weight key Hamming weight exceeds the dimension");
+
+    using T = typename P::T;
+    fill(key.begin(), key.end(), T{0});
+
+    vector<uint32_t> positions(P::n);
+    iota(positions.begin(), positions.end(), uint32_t{0});
+    for (uint32_t selected = 0; selected < P::bfv_key_hamming_weight;
+         selected++) {
+        uniform_int_distribution<uint32_t> supportgen(selected, P::n - 1);
+        const uint32_t replacement = supportgen(engine);
+        swap(positions[selected], positions[replacement]);
+    }
+
+    uniform_int_distribution<uint32_t> signgen(0, 1);
+    const T minus_one = T{0} - T{1};
+    for (uint32_t selected = 0; selected < P::bfv_key_hamming_weight;
+         selected++)
+        key[positions[selected]] = signgen(engine) == 0 ? minus_one : T{1};
+}
+
+// Check both the support size and the ternary alphabet.  Bootstrap-key
+// construction uses this for parameter types carrying a fixed-weight marker,
+// so externally supplied keys cannot silently violate the proof assumption.
+template <class P>
+bool isFixedWeightTernaryKey(const Key<P>& key, const uint32_t expected_weight)
+{
+    using T = typename P::T;
+    const T zero{0};
+    const T one{1};
+    const T minus_one = zero - one;
+    uint32_t weight = 0;
+    for (const T& coefficient : key) {
+        if (coefficient == zero) continue;
+        if (coefficient != one && coefficient != minus_one) return false;
+        weight++;
+    }
+    return weight == expected_weight;
+}
+
 template <class P>
 void keyGen(Key<P>& key)
 {
-    if constexpr (hasell<P>::value) {
+    if constexpr (has_bfv_key_hamming_weight<P>::value) {
+        fixedWeightTernaryKeyGen<P>(key, generator);
+    }
+    else if constexpr (hasell<P>::value) {
         static_assert(P::k == 1, "block-binary key generation assumes k = 1");
         static_assert(P::ell > 0, "block-binary ell must be positive");
         static_assert(P::n % P::ell == 0,

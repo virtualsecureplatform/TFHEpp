@@ -190,8 +190,11 @@ Design constraints discovered while validating the pipeline (see
   by ~2^641 (degree 61) to ~2^761 (degree 93), so the CoeffToSlot output
   feeding it (dominated by automorphism key-switch noise amplified ~2^52 by
   the dense p^2 map) must stay far below the p^2 correctness threshold.
-- The secret key must be sparse ternary with Hamming weight 96
-  (`bfv_key_hamming_weight`): the mod-switch digit error has stddev
+- The secret key is sampled uniformly from the weight-96 ternary slice
+  (`bfv_key_hamming_weight`): `keyGen<lvl5bootparam>` chooses the support
+  uniformly without replacement and then chooses all nonzero signs
+  independently and uniformly.  `MakeBootstrapKey` rejects a key outside
+  this support.  The mod-switch digit error has stddev
   `sqrt((1+h)/12)` ≈ 2.84, making B = 23 an 8.1σ bound.  Degree 4B+1 = 93
   keeps the removal-polynomial BSGS at (k=3, m=5); larger B crosses a depth
   cliff worth ~120 variance bits.
@@ -206,8 +209,11 @@ Design constraints discovered while validating the pipeline (see
   at ~2^64.  At n = 2^15 the binding attack on sparse keys is the hybrid
   primal MITM (`bdd_mitm_hybrid` in the Parameter-Selection
   lattice-estimator, BDGL16 classical): h = 64 at q = 2^576 sits at ~2^130
-  (no margin), while the chosen h = 96, σ = 2^33, q = 2^640 costs ~2^148;
-  non-hybrid attacks (usvp/bdd/dual) all exceed 2^180.  See
+  (no margin), while the chosen h = 96, σ = 2^33, q = 2^640 has a
+  balanced-sign proxy cost of ~2^140 in the checked-in estimator;
+  non-hybrid attacks (usvp/bdd/dual) all exceed 2^180.  The proof sampler
+  has independent signs, so the 48-positive/48-negative estimator input is
+  its modal fixed-sign-count proxy rather than its exact law.  See
   `Parameter-Selection/python/estimates/lvl5boot_{check,sweep,full,margin,q640}.py`.
 
 `test/bfv/bfv_multilimb.cpp` under `TFHEPP_BFV_LVL5_BOOTSTRAP_FULL_TEST=1`
@@ -221,6 +227,7 @@ bootstrap-of-(bootstrap-output × fresh ciphertext) end-to-end.
 | `include/bfv/bfv-slots.hpp` | SlotEncode/Decode, encrypt/decrypt, GaloisKey, rotation |
 | `include/bfv/bfv++.hpp` | TRLWEMultFullDD, Wide384, relinearization |
 | `include/bfv/bfv-bootstrapping.hpp` | Digit-extraction bootstrap pipeline |
+| `include/tfhe/key.hpp` | Proof-compatible fixed-weight ternary key sampler |
 | `include/params/128bit.hpp` | `lvl3simdparam`, `lvl5bootparam` definitions |
 | `include/mulfft.hpp` | TwistFFT/TwistIFFT with sign-extension + rounding |
 | `test/bfv/simd_encode.cpp` | Encode/decode round-trip test |

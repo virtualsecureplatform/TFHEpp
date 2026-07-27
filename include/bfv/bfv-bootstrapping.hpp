@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
 
@@ -306,6 +307,14 @@ BootstrapKey<BaseP> MakeBootstrapKey(const Key<BaseP> &base_key,
                                      bool build_linear_maps = true)
 {
     using BootP = typename BootstrapKey<BaseP>::BootP;
+
+    if constexpr (has_bfv_key_hamming_weight<BaseP>::value) {
+        if (!isFixedWeightTernaryKey<BaseP>(base_key,
+                                            BaseP::bfv_key_hamming_weight))
+            throw std::invalid_argument(
+                "BFV bootstrap key does not satisfy the fixed-weight "
+                "ternary secret distribution");
+    }
 
     BootstrapKey<BaseP> bk;
     auto boot_key = std::make_unique<Key<BootP>>();

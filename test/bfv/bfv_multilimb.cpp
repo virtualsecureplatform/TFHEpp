@@ -21,6 +21,7 @@ int main()
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <random>
 
 #include <tfhe++.hpp>
 
@@ -292,18 +293,15 @@ int main()
 
     if (std::getenv("TFHEPP_BFV_LVL5_KEYGEN_TEST") != nullptr) {
         using P = TFHEpp::lvl5bootparam;
-        // Sparse ternary key: bfv_key_hamming_weight non-zero coefficients.
-        // The bootstrap digit-error bound B = 15 is a 6.4σ bound only for
-        // sparse keys (σ_e = sqrt((1+h)/12) ≈ 2.33 at h = 64).
-        auto key = std::make_unique<TFHEpp::Key<P>>();
-        static_assert(P::bfv_key_hamming_weight <= P::n);
-        constexpr std::size_t key_stride = P::n / P::bfv_key_hamming_weight;
-        for (std::size_t i = 0; i < P::n; i++) (*key)[i] = 0;
-        for (std::size_t j = 0; j < P::bfv_key_hamming_weight; j++) {
-            const std::size_t pos = j * key_stride + (j * 7) % key_stride;
-            (*key)[pos] =
-                static_cast<typename P::T>((j % 2) ? 1 : -1);
-        }
+        // Draw from the proof-compatible law: a uniform support of size h
+        // followed by independent uniform signs.  A fixed test seed keeps the
+        // expensive end-to-end bootstrap reproducible.
+        auto key = std::make_unique<TFHEpp::Key<P> >();
+        std::mt19937_64 key_engine(0x4c564c354246564bULL);
+        TFHEpp::fixedWeightTernaryKeyGen<P>(*key, key_engine);
+        require(
+            TFHEpp::isFixedWeightTernaryKey<P>(*key, P::bfv_key_hamming_weight),
+            "lvl5 proof-compatible sparse ternary key");
         auto relinkey = TFHEpp::makeRelinKeyFFT<P>(*key);
         require(relinkey != nullptr, "lvl5 makeRelinKeyFFT allocation");
 

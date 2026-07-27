@@ -327,8 +327,9 @@ struct lvl5param {
 // Security (Parameter-Selection lattice-estimator, BDGL16 classical, full
 // attack suite; see estimates/lvl5boot_{check,sweep,full,margin,q640}.py):
 // the binding attack on a sparse key is the hybrid primal MITM
-// (bdd_mitm_hybrid).  At n = 2^15, q = 2^640, σ = 2^33, ternary h = 96 it
-// costs ~2^148; the non-hybrid attacks (usvp/bdd/dual) all exceed 2^180.
+// (bdd_mitm_hybrid).  At n = 2^15, q = 2^640, σ = 2^33, ternary h = 96 its
+// balanced-sign proxy costs ~2^140 in the checked-in estimator; the
+// non-hybrid attacks (usvp/bdd/dual) all exceed 2^180.
 // A smaller h = 64 key at q = 2^576 would sit at ~2^130 — technically
 // 128-bit but with no margin, hence the h = 96 / 10-limb design.
 //
@@ -351,11 +352,15 @@ struct lvl5param {
 //  * α = 2^-607 (fresh noise stddev 2^33 in torus units): larger σ buys a
 //    few security bits and the noise budget absorbs it easily.
 //  * bfv_key_hamming_weight = 96 with bfv_bootstrap_digit_error_bound = 23:
+//    keyGen samples the proof law uniformly from
+//    {s in {-1,0,1}^n : ||s||_0 = 96}: its support is uniform and all 96
+//    nonzero signs are independent and uniform.  MakeBootstrapKey rejects an
+//    externally supplied key that is not ternary with exactly this weight.
 //    the mod-switch digit error e = δ_b - δ_a*s has stddev
 //    sqrt((1+h)/12) ≈ 2.84, so B = 23 is an 8.1σ bound (failure ~2^-36 per
 //    bootstrap).  Degree 4B+1 = 93 keeps the removal-polynomial BSGS at
 //    (k=3, m=5); B > 23 would cross a depth cliff (+~120 variance bits).
-//    A dense ternary key (σ_e ≈ 30) would need B ≈ 200 and a degree-801
+//    A dense ternary key (σ_e ≈ 43) would need B ≈ 346 and a degree-1385
 //    polynomial, which does not fit any practical modulus at this n.
 //
 // FFT exactness: Bgbit + B̅gbit + nbit + 3 = 18 + 16 + 15 + 3 = 52 < 53.
