@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -10,6 +11,16 @@ namespace {
 using RingP = TFHEpp::lvl1param;
 constexpr std::uint32_t slots = 8;
 using ModuleP = TFHEpp::BatchRingSwitchP<RingP, slots>;
+
+struct D1RingP : TFHEpp::lvl2param {
+    static constexpr std::uint32_t l = 1;
+    static constexpr std::uint32_t lₐ = 1;
+    static constexpr std::uint32_t Bgbit = 23;
+    static constexpr std::uint32_t Bgₐbit = 23;
+    static constexpr std::uint32_t Bg = 1U << Bgbit;
+    static constexpr std::uint32_t Bgₐ = 1U << Bgₐbit;
+    static const inline double α = std::pow(2.0, -53);
+};
 
 TFHEpp::Polynomial<ModuleP> ModulePhase(
     const TFHEpp::TRLWE<ModuleP> &ciphertext,
@@ -36,8 +47,7 @@ void TestKeySerialization()
 {
     auto original =
         std::make_unique<TFHEpp::BatchBootKey<ModuleP, RingP>>();
-    original->components[0].negative_gaps.emplace_back(
-        std::make_unique<TFHEpp::BatchEMPKey<RingP>>());
+    original->components[0].negative_gaps.emplace_back();
     original->components[0].final_positive =
         std::make_unique<TFHEpp::BatchEMPKey<RingP>>();
 
@@ -54,7 +64,6 @@ void TestKeySerialization()
         archive(*restored);
     }
     assert(restored->components[0].negative_gaps.size() == 1);
-    assert(restored->components[0].negative_gaps[0]);
     assert(restored->components[0].final_positive);
     assert(!restored->components[1].final_positive);
 }
@@ -134,6 +143,47 @@ void TestEMP()
                 assert(error > -RingP::μ / 4);
                 assert(error < RingP::μ / 4);
             }
+        }
+    }
+}
+
+void TestD1EMP()
+{
+    TFHEpp::Key<D1RingP> key{};
+    key[7] = key[123] = 1;
+    constexpr std::uint32_t emp_slots = 4;
+    constexpr std::uint32_t exponent = 3;
+
+    std::vector<TFHEpp::TRLWE<D1RingP>> ciphertexts(emp_slots);
+    std::vector<TFHEpp::Polynomial<D1RingP>> expected(emp_slots);
+    for (std::uint32_t i = 0; i < emp_slots; i++) {
+        TFHEpp::Polynomial<D1RingP> plaintext{};
+        plaintext[11 + i] = D1RingP::μ;
+        TFHEpp::trlweSymEncrypt<D1RingP>(ciphertexts[i], plaintext, 0.0, key);
+        expected[i] = plaintext;
+    }
+
+    TFHEpp::BatchEMPKey<D1RingP> emp_key;
+    TFHEpp::BatchEMPKeyGen<D1RingP>(emp_key, exponent, emp_slots, key);
+    TFHEpp::BatchEMPWorkspace<D1RingP> workspace;
+    TFHEpp::BatchEMP<D1RingP>(ciphertexts, emp_key, true, workspace);
+
+    for (std::uint32_t output = 0; output < emp_slots; output++) {
+        const std::uint32_t source =
+            (output + emp_slots - exponent) % emp_slots;
+        TFHEpp::Polynomial<D1RingP> shifted;
+        if (output < exponent)
+            TFHEpp::Automorphism<D1RingP>(shifted, expected[source],
+                                           2 * D1RingP::n - 1);
+        else
+            shifted = expected[source];
+        const auto phase =
+            TFHEpp::trlwePhase<D1RingP>(ciphertexts[output], key);
+        for (std::uint32_t i = 0; i < D1RingP::n; i++) {
+            const auto error =
+                static_cast<std::int64_t>(phase[i] - shifted[i]);
+            assert(error > -static_cast<std::int64_t>(D1RingP::μ / 4));
+            assert(error < static_cast<std::int64_t>(D1RingP::μ / 4));
         }
     }
 }
@@ -398,6 +448,7 @@ int main()
     TestKeySerialization();
     TestFDConjugation();
     TestEMP();
+    TestD1EMP();
     TestSparseFunctionalBatchBoot();
     TestRLWEKeySwitch();
     TestExternalProductTree();

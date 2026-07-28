@@ -121,7 +121,10 @@ struct BatchEMPKey {
     BatchEMPKey(BatchEMPKey &&) noexcept = default;
     BatchEMPKey &operator=(BatchEMPKey &&) noexcept = default;
 
-    std::vector<std::unique_ptr<BatchEMPDigitKey<P>>> digits;
+    // Digits are consumed sequentially by BatchEMP.  Store them inline so the
+    // hot evaluation-key rows do not require one allocation and pointer chase
+    // per radix-4 digit.
+    std::vector<BatchEMPDigitKey<P>> digits;
 
     template <class Archive>
     void serialize(Archive &archive)
@@ -139,7 +142,8 @@ struct BatchBootComponentKey {
     BatchBootComponentKey &operator=(BatchBootComponentKey &&) noexcept =
         default;
 
-    std::vector<std::unique_ptr<BatchEMPKey<P>>> negative_gaps;
+    // Sparse positions are also visited sequentially during accumulation.
+    std::vector<BatchEMPKey<P>> negative_gaps;
     std::unique_ptr<BatchEMPKey<P>> final_positive;
 
     template <class Archive>
@@ -219,20 +223,19 @@ void BatchEMPKeyGen(BatchEMPKey<P> &result, const std::uint32_t exponent,
     result.digits.reserve(digit_count);
 
     for (std::uint32_t level = 0; level < digit_count; level++) {
-        auto digit_key = std::make_unique<BatchEMPDigitKey<P>>();
+        result.digits.emplace_back();
+        auto &digit_key = result.digits.back();
         const std::uint32_t digit = (exponent >> (2 * level)) & 3U;
         const std::uint32_t selected_row = digit == 0 ? 3 : digit - 1;
 
         for (std::uint32_t row = 0; row < 4; row++) {
             Polynomial<P> selector{};
             selector[0] = row == selected_row ? 1 : 0;
-            trgswSymEncrypt<P>(digit_key->direct[row], selector, target_key);
+            trgswSymEncrypt<P>(digit_key.direct[row], selector, target_key);
         }
         for (std::uint32_t row = 0; row < 3; row++)
-            BatchTauInverseTRGSWEncrypt<P>(digit_key->inverse[row],
+            BatchTauInverseTRGSWEncrypt<P>(digit_key.inverse[row],
                                            row == selected_row, target_key);
-
-        result.digits.emplace_back(std::move(digit_key));
     }
 }
 
@@ -267,10 +270,10 @@ void BatchBootKeyGen(BatchBootKey<DomainP, TargetP> &result,
         std::uint32_t previous = 0;
         component_key.negative_gaps.reserve(positions.size());
         for (const std::uint32_t position : positions) {
-            auto gap_key = std::make_unique<BatchEMPKey<TargetP>>();
-            BatchEMPKeyGen<TargetP>(*gap_key, position - previous,
+            component_key.negative_gaps.emplace_back();
+            BatchEMPKeyGen<TargetP>(component_key.negative_gaps.back(),
+                                    position - previous,
                                     DomainP::n, target_key);
-            component_key.negative_gaps.emplace_back(std::move(gap_key));
             previous = position;
         }
 
@@ -285,6 +288,18 @@ template <class P>
 struct BatchHoistedTRLWEFFT {
     static constexpr std::uint32_t rows = P::k * P::lₐ + P::l;
     aligned_array<PolynomialInFD<P>, rows> decomposition;
+};
+
+template <class P>
+struct BatchEMPWorkspace {
+    std::vector<BatchHoistedTRLWEFFT<P>> hoisted;
+    std::vector<TRLWEInFD<P>> transformed;
+
+    void prepare(const std::uint32_t slots)
+    {
+        if (hoisted.size() != slots) hoisted.resize(slots);
+        if (transformed.size() != slots) transformed.resize(slots);
+    }
 };
 
 template <class P>
@@ -329,18 +344,74 @@ template <class P>
 void BatchExternalProductAddFD(TRLWEInFD<P> &result,
                                const BatchHoistedTRLWEFFT<P> &input,
                                const TRGSWFFT<P> &key,
-                               const bool inverse)
+                               const bool inverse,
+                               const bool overwrite = false)
 {
     constexpr std::uint32_t rows = P::k * P::lₐ + P::l;
+#if defined(__AVX512F__) && defined(USE_INTERLEAVED_FORMAT)
+    if constexpr (rows == 2) {
+        for (std::uint32_t i = 0; i < P::n; i += 8) {
+            const __m512d value0 =
+                _mm512_load_pd(input.decomposition[0].data() + i);
+            const __m512d value1 =
+                _mm512_load_pd(input.decomposition[1].data() + i);
+            const __m512d value0_re =
+                _mm512_unpacklo_pd(value0, value0);
+            const __m512d value1_re =
+                _mm512_unpacklo_pd(value1, value1);
+            __m512d value0_im = _mm512_unpackhi_pd(value0, value0);
+            __m512d value1_im = _mm512_unpackhi_pd(value1, value1);
+            if (inverse) {
+                const __m512d zero = _mm512_setzero_pd();
+                value0_im = _mm512_sub_pd(zero, value0_im);
+                value1_im = _mm512_sub_pd(zero, value1_im);
+            }
+            for (std::uint32_t component = 0; component <= P::k;
+                 component++) {
+                const __m512d key0 =
+                    _mm512_load_pd(key[0][component].data() + i);
+                const __m512d key1 =
+                    _mm512_load_pd(key[1][component].data() + i);
+                const __m512d product0 = _mm512_fmaddsub_pd(
+                    value0_re, key0,
+                    _mm512_mul_pd(value0_im,
+                                  _mm512_permute_pd(key0, 0x55)));
+                const __m512d product1 = _mm512_fmaddsub_pd(
+                    value1_re, key1,
+                    _mm512_mul_pd(value1_im,
+                                  _mm512_permute_pd(key1, 0x55)));
+                __m512d sum =
+                    overwrite
+                        ? product0
+                        : _mm512_add_pd(
+                              _mm512_load_pd(result[component].data() + i),
+                              product0);
+                sum = _mm512_add_pd(sum, product1);
+                _mm512_store_pd(result[component].data() + i, sum);
+            }
+        }
+        return;
+    }
+#endif
+
     alignas(64) PolynomialInFD<P> inverse_digit;
     for (std::uint32_t row = 0; row < rows; row++) {
         if (inverse) {
             BatchConjugateInFD<P>(inverse_digit, input.decomposition[row]);
-            FMAInFD_Multi<P::n, P::k + 1>(result, inverse_digit, key[row]);
+            if (overwrite && row == 0)
+                MulInFD_Multi<P::n, P::k + 1>(result, inverse_digit,
+                                               key[row]);
+            else
+                FMAInFD_Multi<P::n, P::k + 1>(result, inverse_digit,
+                                               key[row]);
         }
         else {
-            FMAInFD_Multi<P::n, P::k + 1>(result,
-                                           input.decomposition[row], key[row]);
+            if (overwrite && row == 0)
+                MulInFD_Multi<P::n, P::k + 1>(
+                    result, input.decomposition[row], key[row]);
+            else
+                FMAInFD_Multi<P::n, P::k + 1>(
+                    result, input.decomposition[row], key[row]);
         }
     }
 }
@@ -351,7 +422,8 @@ void BatchExternalProductAddFD(TRLWEInFD<P> &result,
 // until the output sum is complete.
 template <class P>
 void BatchEMP(std::vector<TRLWE<P>> &ciphertexts,
-              const BatchEMPKey<P> &key, const bool positive)
+              const BatchEMPKey<P> &key, const bool positive,
+              BatchEMPWorkspace<P> &workspace)
 {
     const std::uint32_t slots = ciphertexts.size();
     if (!std::has_single_bit(slots) || slots > P::n)
@@ -362,18 +434,17 @@ void BatchEMP(std::vector<TRLWE<P>> &ciphertexts,
     if (key.digits.size() != expected_digits)
         throw std::invalid_argument("BatchEMP: key has the wrong digit count");
 
-    std::vector<BatchHoistedTRLWEFFT<P>> hoisted(slots);
-    std::vector<TRLWEInFD<P>> transformed(slots);
+    workspace.prepare(slots);
+    auto &hoisted = workspace.hoisted;
+    auto &transformed = workspace.transformed;
 
     for (std::uint32_t level = 0; level < key.digits.size(); level++) {
         for (std::uint32_t i = 0; i < slots; i++)
             BatchHoist<P>(hoisted[i], ciphertexts[i]);
 
         const std::uint32_t step = 1U << (2 * level);
-        const auto &digit_key = *key.digits[level];
+        const auto &digit_key = key.digits[level];
         for (std::uint32_t output = 0; output < slots; output++) {
-            transformed[output] = {};
-
             for (std::uint32_t row = 0; row < 3; row++) {
                 const std::uint32_t shift = (row + 1) * step;
                 std::uint32_t source;
@@ -390,7 +461,7 @@ void BatchEMP(std::vector<TRLWE<P>> &ciphertexts,
                     transformed[output], hoisted[source],
                     inverse ? digit_key.inverse[row]
                             : digit_key.direct[row],
-                    inverse);
+                    inverse, row == 0);
             }
 
             BatchExternalProductAddFD<P>(transformed[output],
@@ -403,6 +474,14 @@ void BatchEMP(std::vector<TRLWE<P>> &ciphertexts,
                 TwistFFT<P>(ciphertexts[i][component],
                             transformed[i][component]);
     }
+}
+
+template <class P>
+void BatchEMP(std::vector<TRLWE<P>> &ciphertexts,
+              const BatchEMPKey<P> &key, const bool positive)
+{
+    BatchEMPWorkspace<P> workspace;
+    BatchEMP<P>(ciphertexts, key, positive, workspace);
 }
 
 template <class T>
@@ -472,12 +551,13 @@ void BatchBootAccumulateModSwitched(
     }
 
     TRLWE<TargetP> rotated;
+    BatchEMPWorkspace<TargetP> workspace;
     for (std::uint32_t component = 0; component < DomainP::k; component++) {
         const auto &component_key = boot_key.components[component];
         if (!component_key.final_positive) continue;
 
         for (const auto &gap_key : component_key.negative_gaps) {
-            BatchEMP<TargetP>(result, *gap_key, false);
+            BatchEMP<TargetP>(result, gap_key, false, workspace);
             for (std::uint32_t i = 0; i < slots; i++) {
                 const std::uint32_t a = modswitched[component][i];
                 const std::uint32_t exponent =
@@ -486,7 +566,8 @@ void BatchBootAccumulateModSwitched(
                 result[i] = rotated;
             }
         }
-        BatchEMP<TargetP>(result, *component_key.final_positive, true);
+        BatchEMP<TargetP>(result, *component_key.final_positive, true,
+                          workspace);
     }
 }
 

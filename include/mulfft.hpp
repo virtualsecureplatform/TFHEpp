@@ -701,11 +701,25 @@ template <uint32_t N, int M, class ResArr, class BArr>
 inline void FMAInFD_Multi(ResArr &res, const std::array<double, N> &a,
                           const BArr &b_row)
 {
-#if defined(__AVX2__) && defined(USE_INTERLEAVED_FORMAT)
+#if defined(__AVX512F__) && defined(USE_INTERLEAVED_FORMAT)
+    // Interleaved: load a once per 8-double block, fmaddsub for each m.
+    for (uint32_t i = 0; i < N; i += 8) {
+        const __m512d va = _mm512_load_pd(a.data() + i);
+        const __m512d va_re = _mm512_unpacklo_pd(va, va);
+        const __m512d va_im = _mm512_unpackhi_pd(va, va);
+        for (int m = 0; m < M; m++) {
+            const __m512d vb = _mm512_load_pd(b_row[m].data() + i);
+            const __m512d vb_swap = _mm512_permute_pd(vb, 0x55);
+            const __m512d tmp = _mm512_mul_pd(va_im, vb_swap);
+            const __m512d prod = _mm512_fmaddsub_pd(va_re, vb, tmp);
+            const __m512d prev = _mm512_load_pd(res[m].data() + i);
+            _mm512_store_pd(res[m].data() + i, _mm512_add_pd(prev, prod));
+        }
+    }
+#elif defined(__AVX2__) && defined(USE_INTERLEAVED_FORMAT)
     // Interleaved: load a once per 4-double block, fmaddsub for each m
     for (uint32_t i = 0; i < N; i += 4) {
         __m256d va = _mm256_load_pd(a.data() + i);
-        __m256d va_swap = _mm256_permute_pd(va, 0b0101);
         __m256d va_re = _mm256_unpacklo_pd(va, va);
         __m256d va_im = _mm256_unpackhi_pd(va, va);
         for (int m = 0; m < M; m++) {
@@ -748,7 +762,20 @@ template <uint32_t N, int M, class ResArr, class BArr>
 inline void MulInFD_Multi(ResArr &res, const std::array<double, N> &a,
                           const BArr &b_row)
 {
-#if defined(__AVX2__) && defined(USE_INTERLEAVED_FORMAT)
+#if defined(__AVX512F__) && defined(USE_INTERLEAVED_FORMAT)
+    for (uint32_t i = 0; i < N; i += 8) {
+        const __m512d va = _mm512_load_pd(a.data() + i);
+        const __m512d va_re = _mm512_unpacklo_pd(va, va);
+        const __m512d va_im = _mm512_unpackhi_pd(va, va);
+        for (int m = 0; m < M; m++) {
+            const __m512d vb = _mm512_load_pd(b_row[m].data() + i);
+            const __m512d vb_swap = _mm512_permute_pd(vb, 0x55);
+            const __m512d tmp = _mm512_mul_pd(va_im, vb_swap);
+            _mm512_store_pd(res[m].data() + i,
+                            _mm512_fmaddsub_pd(va_re, vb, tmp));
+        }
+    }
+#elif defined(__AVX2__) && defined(USE_INTERLEAVED_FORMAT)
     for (uint32_t i = 0; i < N; i += 4) {
         __m256d va = _mm256_load_pd(a.data() + i);
         __m256d va_re = _mm256_unpacklo_pd(va, va);

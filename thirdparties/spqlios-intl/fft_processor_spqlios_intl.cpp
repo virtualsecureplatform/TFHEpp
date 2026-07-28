@@ -804,10 +804,23 @@ void FFT_Processor_Spqlios_Intl::execute_reverse_uint(double *res, const uint32_
 
 void FFT_Processor_Spqlios_Intl::execute_reverse_torus64(double *res, const uint64_t *a) {
     const int64_t *aa = (const int64_t*)a;
+#ifdef USE_AVX512
+    for (int32_t i = 0; i < Ns2; i += 8) {
+        const __m512d re = _mm512_cvtepi64_pd(
+            _mm512_loadu_si512((const __m512i *)(aa + i)));
+        const __m512d im = _mm512_cvtepi64_pd(
+            _mm512_loadu_si512((const __m512i *)(aa + i + Ns2)));
+        _mm512_storeu_pd(res + 2 * i,
+                         _mm512_permutex2var_pd(re, idx_intl_lo, im));
+        _mm512_storeu_pd(res + 2 * i + 8,
+                         _mm512_permutex2var_pd(re, idx_intl_hi, im));
+    }
+#else
     for (int32_t i = 0; i < Ns2; i++) {
         res[2*i]     = (double)aa[i];
         res[2*i + 1] = (double)aa[i + Ns2];
     }
+#endif
     intl_ifft((const INTL_FFT_PRECOMP*)tables_reverse, res);
 }
 
@@ -927,10 +940,42 @@ static inline __m256i f64_to_i64(__m256d x) {
     return _mm256_sub_epi64(_mm256_xor_si256(val, sign_mask), sign_mask);
 }
 
+#ifdef USE_AVX512
+static inline __m512i f64_to_i64(__m512d x) {
+    const __m512i bits = _mm512_castpd_si512(x);
+    const __m512i mantissa = _mm512_or_si512(
+        _mm512_and_si512(bits, _mm512_set1_epi64(0xFFFFFFFFFFFFF)),
+        _mm512_set1_epi64(0x10000000000000));
+    const __m512i biased_exp = _mm512_and_si512(
+        _mm512_srli_epi64(bits, 52), _mm512_set1_epi64(0x7FF));
+    const __m512i sign_mask = _mm512_sub_epi64(
+        _mm512_setzero_si512(), _mm512_srli_epi64(bits, 63));
+    const __m512i offset = _mm512_set1_epi64(1075);
+    const __m512i shift = _mm512_sub_epi64(biased_exp, offset);
+    const __m512i neg_shift = _mm512_sub_epi64(offset, biased_exp);
+    const __m512i val = _mm512_or_si512(
+        _mm512_sllv_epi64(mantissa, shift),
+        _mm512_srlv_epi64(mantissa, neg_shift));
+    return _mm512_sub_epi64(_mm512_xor_si512(val, sign_mask), sign_mask);
+}
+#endif
+
 void FFT_Processor_Spqlios_Intl::execute_direct_torus64(uint64_t *res, double *a) {
     auto *tables = (const INTL_FFT_PRECOMP*)tables_direct;
     intl_fft_from(tables, a, real_inout_direct);
     // De-interleave + convert f64→u64 with full-range IEEE754 bit extraction.
+#ifdef USE_AVX512
+    for (int32_t i = 0; i < Ns2; i += 8) {
+        const __m512d in0 = _mm512_load_pd(real_inout_direct + 2 * i);
+        const __m512d in1 = _mm512_load_pd(real_inout_direct + 2 * i + 8);
+        const __m512d re =
+            _mm512_permutex2var_pd(in0, idx_deinl_re, in1);
+        const __m512d im =
+            _mm512_permutex2var_pd(in0, idx_deinl_im, in1);
+        _mm512_storeu_si512((__m512i *)(res + i), f64_to_i64(re));
+        _mm512_storeu_si512((__m512i *)(res + i + Ns2), f64_to_i64(im));
+    }
+#else
     for (int32_t i = 0; i < Ns2; i += 4) {
         __m256d v0 = _mm256_loadu_pd(real_inout_direct + 2*i);
         __m256d v1 = _mm256_loadu_pd(real_inout_direct + 2*i + 4);
@@ -941,6 +986,7 @@ void FFT_Processor_Spqlios_Intl::execute_direct_torus64(uint64_t *res, double *a
         _mm256_storeu_si256((__m256i*)(res + i), f64_to_i64(re));
         _mm256_storeu_si256((__m256i*)(res + i + Ns2), f64_to_i64(im));
     }
+#endif
 }
 
 void FFT_Processor_Spqlios_Intl::execute_direct_torus64_add(uint64_t *res, double *a) {
