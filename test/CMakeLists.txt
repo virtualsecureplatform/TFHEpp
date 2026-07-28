@@ -34,6 +34,11 @@ foreach(test_source ${test_sources})
         # largelut R2RPKS requires k=1 TRLWE keys.
         continue()
     endif()
+    if(test_name STREQUAL "batchboot" AND NOT default_parameter_set)
+        # The BatchBoot integration test exercises the default k=1 level-1
+        # ring and the default four-row level-2 circuit-bootstrap gadget.
+        continue()
+    endif()
     if(test_dir STREQUAL "gl" AND NOT default_parameter_set)
         # GL uses the active-level 128-bit/multi-limb CKKS arithmetic backend.
         continue()

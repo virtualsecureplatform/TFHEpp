@@ -17,6 +17,8 @@ This documentation lives in `docs/` and is meant to complement the root
 - `API.md` — core types, keys, encryption/decryption, and gate APIs.
 - `Advanced.md` — LUT bootstrapping, circuit bootstrapping, subset keys, packing,
   Double Decomposition, BFV++, and other advanced features.
+- `BATCHBOOT.md` — radix-4 EMPmul, sparse/full functional BatchBoot, and batched
+  circuit bootstrapping.
 - `CKKS.md` — experimental CKKS types, dense bootstrapping, product eval keys,
   and practical lvl6 validation commands.
 - `GL.md` — experimental Gentry–Lee matrix FHE, Double Decomposition,
@@ -30,6 +32,7 @@ This documentation lives in `docs/` and is meant to complement the root
 - Boolean gates: `include/tfhe/gate.hpp`
 - Gate bootstrapping / LUTs: `include/tfhe/gatebootstrapping.hpp`
 - Circuit bootstrapping: `include/tfhe/circuitbootstrapping.hpp`
+- BatchBoot: `include/tfhe/batchboot.hpp`, `test/tfhe/batchboot.cpp`
 - CKKS: `include/ckks/ckks.hpp`, `test/ckks/ckks_bootstrap_validation.cpp`,
   `test/ckks/ckks_bootstrap_workflow.cpp`
 - Gentry–Lee matrix FHE: `include/gl/gl.hpp`, `include/gl/gl-bootstrap.hpp`,

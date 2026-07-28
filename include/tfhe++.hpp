@@ -3,6 +3,7 @@
 #include "bfv/bfv++.hpp"
 #include "clpx/bfv-clpx.hpp"
 #include "tfhe/circuitbootstrapping.hpp"
+#include "tfhe/batchboot.hpp"
 #include "tfhe/cloudkey.hpp"
 #include "tfhe/cmuxmem.hpp"
 #include "tfhe/detwfa.hpp"
