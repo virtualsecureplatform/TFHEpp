@@ -2387,6 +2387,26 @@ inline void CKKSScaleDown(
                     ct.ct[c][i]);
 }
 
+// Increase the fixed-point scale without changing the ciphertext modulus or
+// the represented slot values.  This is useful after a deliberately
+// lower-precision subcircuit which must feed a linear transform using the
+// caller's original CKKS scale.  The caller is responsible for leaving enough
+// headroom at LogQ for the shifted coefficients.
+template <class P, std::uint32_t LogQ, std::uint32_t InLogDelta,
+          std::uint32_t OutLogDelta>
+inline void CKKSScaleUpAtSameLevel(
+    CKKSCiphertext<P, LogQ, OutLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, InLogDelta> &ct)
+{
+    static_assert(InLogDelta < OutLogDelta);
+    static_assert(OutLogDelta < LogQ);
+    constexpr std::uint32_t shift = OutLogDelta - InLogDelta;
+    for (int c = 0; c <= static_cast<int>(P::k); c++)
+        for (std::uint32_t i = 0; i < P::n; i++)
+            res.ct[c][i] = ckks_detail::reduceToLevel<P, LogQ>(
+                ct.ct[c][i] << shift);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 inline void CKKSAddInPlace(CKKSCiphertext<P, LogQ, LogDelta> &acc,
                            const CKKSCiphertext<P, LogQ, LogDelta> &term)
@@ -2463,28 +2483,42 @@ inline void CKKSPlainMulByReal(
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
-inline void CKKSSetTransparentReal(CKKSCiphertext<P, LogQ, LogDelta> &res,
-                                   double value)
+inline void CKKSSetTransparentConstant(
+    CKKSCiphertext<P, LogQ, LogDelta> &res, std::complex<double> value)
 {
     for (int c = 0; c <= static_cast<int>(P::k); c++)
         for (std::uint32_t i = 0; i < P::n; i++) res.ct[c][i] = 0;
 
     CKKSSlotVector<P> slots{};
-    slots.fill({value, 0.0});
+    slots.fill(value);
     ckksSlotEncode<P, LogQ, LogDelta>(res.ct[P::k], slots);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSSetTransparentReal(CKKSCiphertext<P, LogQ, LogDelta> &res,
+                                   double value)
+{
+    CKKSSetTransparentConstant<P, LogQ, LogDelta>(res, {value, 0.0});
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
+inline void CKKSAddPlainConstantInPlace(
+    CKKSCiphertext<P, LogQ, LogDelta> &acc, std::complex<double> value)
+{
+    CKKSSlotVector<P> slots{};
+    slots.fill(value);
+    Polynomial<P> plain;
+    ckksSlotEncode<P, LogQ, LogDelta>(plain, slots);
+    for (std::uint32_t i = 0; i < P::n; i++)
+        acc.ct[P::k][i] =
+            ckks_detail::reduceToLevel<P, LogQ>(acc.ct[P::k][i] + plain[i]);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 inline void CKKSAddPlainRealInPlace(CKKSCiphertext<P, LogQ, LogDelta> &acc,
                                     double value)
 {
-    CKKSSlotVector<P> slots{};
-    slots.fill({value, 0.0});
-    Polynomial<P> plain;
-    ckksSlotEncode<P, LogQ, LogDelta>(plain, slots);
-    for (std::uint32_t i = 0; i < P::n; i++)
-        acc.ct[P::k][i] =
-            ckks_detail::reduceToLevel<P, LogQ>(acc.ct[P::k][i] + plain[i]);
+    CKKSAddPlainConstantInPlace<P, LogQ, LogDelta>(acc, {value, 0.0});
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
@@ -16313,8 +16347,8 @@ inline void CKKSDenseBootstrapSlotToCoeffTailStagesBSGSImpl(
 template <class Schedule, class GaloisKeyChain>
 inline void CKKSDenseBootstrapSlotToCoeffStagesBSGSDualInputSharedTail(
     typename Schedule::OutputCiphertext &res,
-    const CKKSDenseEvalModBoundedCosResult<Schedule> &real_evalmod,
-    const CKKSDenseEvalModBoundedCosResult<Schedule> &imag_evalmod,
+    const typename Schedule::EvalModCiphertext &real_evalmod,
+    const typename Schedule::EvalModCiphertext &imag_evalmod,
     const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan,
     const GaloisKeyChain &gk_chain)
 {

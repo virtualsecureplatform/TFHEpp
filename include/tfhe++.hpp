@@ -42,6 +42,7 @@
 #include "bfv/bfv-bootstrapping.hpp"
 #include "bfv/bfv-gbfv.hpp"
 #include "ckks/ckks.hpp"
+#include "ckks/functional_bootstrapping.hpp"
 #include "gl/gl.hpp"
 #include "gl/gl-bootstrap.hpp"
 

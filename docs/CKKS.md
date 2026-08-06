@@ -65,6 +65,114 @@ The practical product path uses prebuilt product evaluation keys. Runtime
 bootstrap/product calls should load these keys from disk rather than generating
 them on demand.
 
+## Functional EvalLUT (IACR 2024/1623)
+
+`include/ckks/functional_bootstrapping.hpp` implements the first-order
+trigonometric-Hermite LUT construction from Theorem 1 and Corollary 1 of
+*General Functional Bootstrapping using CKKS*. Given a table
+`f(0), ..., f(p-1)`, `CKKSBuildFunctionalBootstrapLUT` constructs the complex
+coefficients of Equation (4). Its real part has both required properties:
+
+- `R(k/p) = f(k)` for every plaintext representative;
+- `R'(k/p) = 0`, which gives quadratic input-noise reduction.
+
+The reference evaluator is periodic, so modulus-raising overflow terms that are
+integer multiples of its period do not change the result.
+
+TFHEpp provides two encrypted integrations. The direct prototype uses a real
+Chebyshev representation of `R` on a caller-selected bounded interval:
+
+```cpp
+auto lut = TFHEpp::CKKSBuildFunctionalBootstrapLUT({0.0, 1.0});
+auto polynomial =
+    TFHEpp::CKKSBuildFunctionalBootstrapChebyshevPolynomial(lut, 24);
+```
+
+`CKKSFunctionalBootstrapEvalLUTNormalized` expects encrypted inputs normalized
+to `[-1, 1]`. For a polynomial built with `input_bound = B`, pass an encryption
+of `x/B`. The result type and required relinearization-key chain are available
+through `CKKSFunctionalBootstrapEvalLUTResult` and
+`CKKSFunctionalBootstrapEvalLUTRelinKey`; generate the latter with
+`CKKSFunctionalBootstrapEvalLUTKeyGen`.
+
+`CKKSDenseFunctionalBootstrap` and
+`CKKSDenseFunctionalBootstrapWithKeyProvider` wire this EvalLUT into the full
+Algorithm 1 path:
+
+```text
+ModRaise -> CtS -> split -> EvalLUT(real, imag) -> StC
+```
+
+The LUT builder for this path is
+`CKKSBuildDenseFunctionalBootstrapChebyshevPolynomial<Schedule>`. It accounts
+for the C2S input normalization and the existing StC output scaling. The timed
+overloads fill `CKKSDenseBootstrapTimings` in the same way as ordinary dense
+bootstrapping.
+
+The paper's FHE-friendly path is also implemented. It evaluates a complex
+Chebyshev approximation of `exp(2*pi*i*x/2^r)`, applies `r` double-angle
+squarings, evaluates Equation (4) as a power polynomial in the encrypted
+complex exponential, and extracts the real part with conjugation. The complete
+dense API is:
+
+```cpp
+using Schedule = TFHEpp::lvl6CKKSDenseFunctionalBootstrapP8Schedule;
+auto lut = TFHEpp::CKKSBuildFunctionalBootstrapLUT(values); // 2 <= p <= 8
+auto exponential =
+    TFHEpp::CKKSBuildFunctionalBootstrapComplexExponentialPolynomial(
+        Schedule::exponential_degree, Schedule::functional_double_angle,
+        Schedule::functional_input_bound);
+
+TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapKey<Schedule> key;
+TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapKeyGen<Schedule>(key, sk);
+TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrap<Schedule>(
+    output, input, lut, exponential, key);
+```
+
+The lvl6 p<=8 schedule keeps the already checked 896-bit largest modulus. After
+C2S and component splitting it lowers the EvalLUT scale from 52 to 34 bits,
+uses exponential degree 58, 8 double-angle squarings, and a degree-7 LUT power
+polynomial, then restores the 52-bit scale before StC. Its level budget is:
+
+```text
+component q=764
+  scale adjustment: 18 bits
+  exponential:      6*34 + 34 = 238 bits
+  double angle:     8*34      = 272 bits
+  LUT powers:       3*34 + 34 = 136 bits
+EvalLUT output q=100; two 14-bit StC levels; output q=72
+```
+
+The output remains above the 58-bit input level. Since the maximum modulus is
+unchanged, the relevant `Parameter-Selection` check remains the existing
+`n=32768`, `q=2^896`, sparse-H16 estimate. Full-size correctness and runtime
+still require generating the new functional evaluation keys; the ordinary
+bootstrap key directory does not contain them.
+
+### Runtime check
+
+The functional-bootstrap test has an opt-in matched-throughput benchmark:
+
+```sh
+./build/test/ckks/ckks_functional_bootstrapping --benchmark
+```
+
+On the current test host (release build), it measured:
+
+| Path | Parameters | Packed values | Total | Amortized |
+|------|------------|--------------:|------:|----------:|
+| Direct degree-63 functional bootstrap | toy, not security-sized | 16 | 57.36 ms | 3.58 ms/value |
+| FHE-friendly complex/double-angle bootstrap | toy, not security-sized | 16 | 20.73 ms | 1.30 ms/value |
+| TFHE gate bootstrap | TFHEpp default | 16 | 691.69 ms | 43.23 ms/value |
+
+On the same encrypted input and host, the paper's FHE-friendly EvalLUT is 2.77x
+faster than the direct polynomial path. Its toy amortized throughput is 33.37x
+the default TFHE gate bootstrap. The latter comparison is not security matched.
+In particular, the recorded 128-bit lvl6 ordinary CKKS bootstrap below takes
+3.295e6 ms for 32768 values, or about 100.55 ms/value. The new lvl6 functional
+schedule has a security-matched level budget, but a full-size key generation and
+runtime run has not yet been performed, so no 128-bit runtime speedup is claimed.
+
 ## Bounded Sparse Bootstrap Key
 
 The tuned lvl6 bootstrap is validated for a bounded sparse secret key. For the
