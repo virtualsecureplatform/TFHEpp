@@ -1,7 +1,10 @@
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <chrono>
 #include <complex>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -113,8 +116,8 @@ void test_fhe_friendly_complex_exponential_reference()
         TFHEpp::CKKSBuildFunctionalBootstrapComplexExponentialPolynomial(
             Schedule::exponential_degree, Schedule::functional_double_angle,
             Schedule::functional_input_bound);
-    static_assert(Schedule::after_evalmod_log_q == 100);
-    static_assert(Schedule::output_log_q == 72);
+    static_assert(Schedule::after_evalmod_log_q == 83);
+    static_assert(Schedule::output_log_q == 55);
     for (int overflow = -18; overflow <= 18; overflow++) {
         for (std::size_t message = 0; message < lvl6_lut.values.size();
              message++) {
@@ -418,6 +421,27 @@ void test_dense_fhe_friendly_functional_bootstrap_e2e()
     std::cout << "dense_fhe_friendly_functional_bootstrap_ms="
               << timings.total_ms()
               << " amortized_ms=" << timings.total_ms() / P::n << std::endl;
+
+    using HybridKey =
+        TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapHybridGiantSeededKey<
+            Schedule>;
+    auto hybrid_key = std::make_unique<HybridKey>();
+    TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapHybridGiantSeededKeyGen<
+        Schedule>(*hybrid_key, *key, {0.0, 0});
+    TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapConsumeTimed<Schedule>(
+        *output, *input, lut, exponential, *hybrid_key, timings);
+    TFHEpp::ckksDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
+        decoded, *output, *key);
+    for (std::size_t i = 0; i < P::n; i++)
+        require_close(decoded[i], expected[i], 0.04,
+                      "consuming hybrid functional bootstrap end to end");
+    require(!hybrid_key->coeff_to_slot_galois &&
+                !hybrid_key->packed_conjugate_galois &&
+                !hybrid_key->exponential_relin &&
+                !hybrid_key->double_angle_relin && !hybrid_key->lut_relin &&
+                !hybrid_key->output_conjugate_galois &&
+                !hybrid_key->slot_to_coeff_galois,
+            "consuming functional bootstrap releases phase keys");
 }
 
 template <class F>
@@ -528,12 +552,184 @@ void benchmark_functional_bootstrap()
                  "a throughput smoke result, not a secure comparison\n";
 }
 
+void lvl6_stage_begin(const char *stage, const void *)
+{
+    std::cout << "lvl6_stage_begin=" << stage << std::endl;
+}
+
+void lvl6_stage_end(const char *stage, double elapsed_ms, const void *)
+{
+    std::cout << "lvl6_stage_end=" << stage
+              << " elapsed_ms=" << elapsed_ms << std::endl;
+}
+
+void benchmark_lvl6_functional_bootstrap(
+    const std::filesystem::path &key_file = {})
+{
+    using Schedule = TFHEpp::lvl6CKKSDenseFunctionalBootstrapP8Schedule;
+    using P = typename Schedule::Param;
+    using FunctionalKey =
+        TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapHybridGiantSeededKey<
+            Schedule>;
+    constexpr std::size_t sparse_weight = 16;
+    constexpr std::size_t stride = 7919;
+
+    std::cout << "lvl6_n=" << P::n
+              << " boot_log_q=" << Schedule::boot_log_q
+              << " input_log_q=" << Schedule::input_log_q
+              << " output_log_q=" << Schedule::output_log_q
+              << " sparse_weight=" << sparse_weight << std::endl;
+    auto key = std::make_unique<TFHEpp::Key<P>>();
+    key->fill(typename P::T{0});
+    for (std::size_t i = 0; i < sparse_weight; i++) {
+        const std::size_t index = (i * stride) % P::n;
+        const int sign = (i & 1) == 0 ? 1 : -1;
+        (*key)[index] = static_cast<typename P::T>(sign);
+    }
+
+    std::unique_ptr<FunctionalKey> functional_key;
+    const auto key_start = std::chrono::steady_clock::now();
+    if (!key_file.empty() && std::filesystem::exists(key_file)) {
+        std::cout << "lvl6_key_load=" << key_file << std::endl;
+        functional_key = std::make_unique<FunctionalKey>();
+        TFHEpp::CKKSLoadPortableBinary(*functional_key, key_file);
+    }
+    else {
+        std::cout << "lvl6_keygen_begin=1" << std::endl;
+        auto linear_plan =
+            std::make_unique<TFHEpp::CKKSDenseBootstrapLinearPlan<Schedule>>();
+        TFHEpp::CKKSBuildDenseBootstrapLinearPlan<Schedule>(*linear_plan);
+        std::cout << "lvl6_keygen_phase=linear_plan" << std::endl;
+        functional_key = std::make_unique<FunctionalKey>();
+        functional_key->linear_plan = std::move(*linear_plan);
+        linear_plan.reset();
+        auto rotation_usage = std::make_unique<
+            TFHEpp::CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule>>();
+        TFHEpp::CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+            *rotation_usage, functional_key->linear_plan);
+        std::cout << "lvl6_keygen_phase=rotation_usage" << std::endl;
+        TFHEpp::CKKSHybridSparseGaloisKeyChainGen<
+            P, Schedule::boot_log_q,
+            Schedule::coeff_to_slot_plain_log_delta,
+            Schedule::coeff_to_slot_level_count>(
+            *functional_key->coeff_to_slot_galois,
+            rotation_usage->coeff_to_slot_binary,
+            rotation_usage->coeff_to_slot_direct, *key);
+        std::cout << "lvl6_keygen_phase=coeff_to_slot" << std::endl;
+        TFHEpp::CKKSSparseGaloisKeyGen<
+            P, Schedule::after_coeff_to_slot_log_q>(
+            *functional_key->packed_conjugate_galois, *key,
+            rotation_usage->packed_conjugate);
+        std::cout << "lvl6_keygen_phase=packed_conjugate" << std::endl;
+        TFHEpp::CKKSFunctionalSeededRelinKeyChainGen<
+            P, Schedule::functional_start_log_q, Schedule::eval_log_delta,
+            Schedule::ExponentialTraits::relin_depth>(
+            *functional_key->exponential_relin, *key);
+        std::cout << "lvl6_keygen_phase=exponential_relin" << std::endl;
+        TFHEpp::CKKSFunctionalSeededRelinKeyChainGen<
+            P, Schedule::ExponentialTraits::log_q,
+            Schedule::eval_log_delta, Schedule::functional_double_angle>(
+            *functional_key->double_angle_relin, *key);
+        std::cout << "lvl6_keygen_phase=double_angle_relin" << std::endl;
+        TFHEpp::CKKSFunctionalSeededRelinKeyChainGen<
+            P, Schedule::after_exponential_log_q,
+            Schedule::eval_log_delta, Schedule::LUTTraits::relin_depth>(
+            *functional_key->lut_relin, *key);
+        std::cout << "lvl6_keygen_phase=lut_relin" << std::endl;
+        TFHEpp::CKKSRotationKeyIndexSet<P> output_conjugation_usage{};
+        TFHEpp::CKKSMarkConjugationKeyIndex<P>(output_conjugation_usage);
+        TFHEpp::CKKSSparseGaloisKeyGen<P, Schedule::after_evalmod_log_q>(
+            *functional_key->output_conjugate_galois, *key,
+            output_conjugation_usage);
+        std::cout << "lvl6_keygen_phase=output_conjugate" << std::endl;
+        TFHEpp::CKKSHybridSparseGaloisKeyChainGen<
+            P, Schedule::after_evalmod_log_q,
+            Schedule::slot_to_coeff_plain_log_delta,
+            Schedule::slot_to_coeff_level_count>(
+            *functional_key->slot_to_coeff_galois,
+            rotation_usage->slot_to_coeff_binary,
+            rotation_usage->slot_to_coeff_direct, *key);
+        std::cout << "lvl6_keygen_phase=slot_to_coeff" << std::endl;
+        rotation_usage.reset();
+        std::cout << "lvl6_keygen_complete=1" << std::endl;
+        if (!key_file.empty()) {
+            std::cout << "lvl6_key_save=" << key_file << std::endl;
+            TFHEpp::CKKSSavePortableBinaryAtomic(key_file, *functional_key);
+        }
+    }
+    const double key_ms = std::chrono::duration<double, std::milli>(
+                              std::chrono::steady_clock::now() - key_start)
+                              .count();
+    std::cout << "lvl6_key_ready_ms=" << key_ms << std::endl;
+
+    const auto lut = TFHEpp::CKKSBuildFunctionalBootstrapLUT(
+        {-0.25, 0.125, 0.5, -0.375, 0.25, 0.0, -0.125, 0.375});
+    const auto exponential =
+        TFHEpp::CKKSBuildFunctionalBootstrapComplexExponentialPolynomial(
+            Schedule::exponential_degree, Schedule::functional_double_angle,
+            Schedule::functional_input_bound);
+    auto messages = std::make_unique<std::array<double, P::n>>();
+    auto expected = std::make_unique<std::array<double, P::n>>();
+    for (std::size_t i = 0; i < P::n; i++) {
+        const std::size_t message = (5 * i + 3) % lut.values.size();
+        (*messages)[i] = static_cast<double>(message) / lut.values.size();
+        (*expected)[i] = lut.values[message];
+    }
+    auto input = std::make_unique<typename Schedule::InputCiphertext>();
+    TFHEpp::ckksEncrypt<P, Schedule::input_log_q, Schedule::log_delta>(
+        *input, *messages, *key);
+    auto output = std::make_unique<typename Schedule::OutputCiphertext>();
+    TFHEpp::CKKSDenseBootstrapTimings timings;
+    const TFHEpp::CKKSDenseBootstrapProgress progress{
+        lvl6_stage_begin, lvl6_stage_end, nullptr};
+    TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapConsumeTimed<Schedule>(
+        *output, *input, lut, exponential, *functional_key, timings,
+        &progress);
+
+    auto decoded = std::make_unique<std::array<double, P::n>>();
+    TFHEpp::ckksDecrypt<P, Schedule::output_log_q, Schedule::log_delta>(
+        *decoded, *output, *key);
+    double max_error = 0.0;
+    for (std::size_t i = 0; i < P::n; i++)
+        max_error =
+            std::max(max_error, std::abs((*decoded)[i] - (*expected)[i]));
+    std::cout << "lvl6_functional_bootstrap_ms=" << timings.total_ms()
+              << " amortized_ms=" << timings.total_ms() / P::n
+              << " max_error=" << max_error << std::endl;
+    require(max_error < 0.2, "lvl6 functional bootstrap correctness");
+
+    // Free the multi-gigabyte CKKS key before constructing the TFHE baseline.
+    functional_key.reset();
+    using BootstrapP = TFHEpp::lvl02param;
+    using IKSP = TFHEpp::lvl20param;
+    auto tfhe_secret = std::make_unique<TFHEpp::SecretKey>();
+    auto tfhe_eval = std::make_unique<TFHEpp::EvalKey>();
+    tfhe_eval->emplacebkfft<BootstrapP>(*tfhe_secret);
+    tfhe_eval->emplaceiksk<IKSP>(*tfhe_secret);
+    TFHEpp::TLWE<typename IKSP::domainP> tfhe_input{};
+    TFHEpp::TLWE<typename BootstrapP::targetP> tfhe_output{};
+    TFHEpp::tlweSymEncrypt<typename IKSP::domainP>(
+        tfhe_input, IKSP::domainP::μ,
+        tfhe_secret->key.get<typename IKSP::domainP>());
+    const double tfhe_ms = average_runtime_ms(16, [&] {
+        TFHEpp::GateBootstrapping<IKSP, BootstrapP, BootstrapP::targetP::μ>(
+            tfhe_output, tfhe_input, *tfhe_eval);
+    });
+    std::cout << "tfhe_gate_bootstrap_ms=" << tfhe_ms
+              << " lvl6_over_tfhe_amortized_speedup="
+              << tfhe_ms / (timings.total_ms() / P::n) << std::endl;
+}
+
 }  // namespace
 
 int main(int argc, char **argv)
 {
     if (argc == 2 && std::string(argv[1]) == "--benchmark") {
         benchmark_functional_bootstrap();
+        return 0;
+    }
+    if (argc >= 2 && std::string(argv[1]) == "--benchmark-lvl6") {
+        benchmark_lvl6_functional_bootstrap(argc >= 3 ? argv[2] : "");
         return 0;
     }
     test_exact_trigonometric_hermite_lut();

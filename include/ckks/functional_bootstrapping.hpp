@@ -771,9 +771,94 @@ struct CKKSDenseFHEFriendlyFunctionalBootstrapSchedule : BaseSchedule {
         BaseSchedule::slot_to_coeff_level_count>;
 };
 
+// Functional bootstrapping only needs the minimum legal message ratio 2: the
+// LUT is periodic modulo one.  Spending that input headroom on a 51-bit
+// EvalLUT scale keeps TFHEpp's torus/FFT approximation error below the
+// double-angle stability threshold without increasing the 896-bit top level.
+struct lvl6CKKSDenseFunctionalBootstrapBaseSchedule
+    : CKKSDenseBootstrapSchedule<lvl6param, 52, 1, 896, 44, 7, 63, 18, 2, 7,
+                                  24, 128, 0, 44, 44, 14, 7, 7, 2, 1> {
+    template <std::size_t I>
+    static consteval int coeff_to_slot_bsgs_step()
+    {
+        return I == 0 ? 2048 : 16;
+    }
+
+    template <std::size_t I>
+    static consteval int slot_to_coeff_bsgs_step()
+    {
+        return I + 1 == slot_to_coeff_level_count ? 1024 : 64;
+    }
+};
+
 using lvl6CKKSDenseFunctionalBootstrapP8Schedule =
     CKKSDenseFHEFriendlyFunctionalBootstrapSchedule<
-        lvl6CKKSDenseBootstrapTunedSchedule, 34, 34, 58, 8, 34, 7>;
+        lvl6CKKSDenseFunctionalBootstrapBaseSchedule, 51, 34, 58, 3, 34, 7>;
+
+namespace ckks_detail {
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta, class Seq>
+struct CKKSFunctionalSeededRelinKeyTuple;
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t... Is>
+struct CKKSFunctionalSeededRelinKeyTuple<
+    P, StartLogQ, LogDelta, std::index_sequence<Is...>> {
+    using type = std::tuple<
+        CKKSSeededRelinKey<P, StartLogQ - (Is + 1) * LogDelta>...>;
+};
+
+template <std::size_t I, class Chain, class P, std::uint32_t StartLogQ,
+          std::uint32_t LogDelta, std::size_t Depth>
+inline void CKKSFunctionalSeededRelinKeyChainGenImpl(
+    Chain &chain, const Key<P> &key, CKKSNoise noise)
+{
+    if constexpr (I < Depth) {
+        constexpr std::uint32_t log_q =
+            StartLogQ - (I + 1) * LogDelta;
+        chain.template get<I>() =
+            *makeCKKSSeededRelinKey<P, log_q>(key, noise);
+        CKKSFunctionalSeededRelinKeyChainGenImpl<
+            I + 1, Chain, P, StartLogQ, LogDelta, Depth>(chain, key, noise);
+    }
+}
+
+}  // namespace ckks_detail
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t Depth>
+struct CKKSFunctionalSeededRelinKeyChain {
+    using Tuple = typename ckks_detail::CKKSFunctionalSeededRelinKeyTuple<
+        P, StartLogQ, LogDelta,
+        std::make_index_sequence<Depth>>::type;
+    Tuple keys{};
+
+    template <std::size_t I>
+    auto &get()
+    {
+        return std::get<I>(keys);
+    }
+    template <std::size_t I>
+    const auto &get() const
+    {
+        return std::get<I>(keys);
+    }
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(keys);
+    }
+};
+
+template <class P, std::uint32_t StartLogQ, std::uint32_t LogDelta,
+          std::size_t Depth>
+inline void CKKSFunctionalSeededRelinKeyChainGen(
+    CKKSFunctionalSeededRelinKeyChain<P, StartLogQ, LogDelta, Depth> &chain,
+    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    ckks_detail::CKKSFunctionalSeededRelinKeyChainGenImpl<
+        0, decltype(chain), P, StartLogQ, LogDelta, Depth>(chain, key, noise);
+}
 
 template <class Schedule>
 struct CKKSDenseFHEFriendlyFunctionalBootstrapKey {
@@ -848,9 +933,124 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrapKeyGen(
         bootstrap_key.slot_to_coeff_galois, rotation_usage, key, noise);
 }
 
+// Practical in-memory lvl6 key: hybrid linear-transform keys avoid the dense
+// rotation-key footprint, while seeded relinearization keys are expanded only
+// while their functional phase is active.
 template <class Schedule>
+struct CKKSDenseFHEFriendlyFunctionalBootstrapHybridGiantSeededKey {
+    using P = typename Schedule::Param;
+    using CoeffToSlotGaloisKeyChain = CKKSHybridSparseGaloisKeyChain<
+        P, Schedule::boot_log_q, Schedule::coeff_to_slot_plain_log_delta,
+        Schedule::coeff_to_slot_level_count>;
+    using SlotToCoeffGaloisKeyChain = CKKSHybridSparseGaloisKeyChain<
+        P, Schedule::after_evalmod_log_q,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>;
+    using ExponentialRelinKeyChain = CKKSFunctionalSeededRelinKeyChain<
+        P, Schedule::functional_start_log_q, Schedule::eval_log_delta,
+        Schedule::ExponentialTraits::relin_depth>;
+    using DoubleAngleRelinKeyChain = CKKSFunctionalSeededRelinKeyChain<
+        P, Schedule::ExponentialTraits::log_q, Schedule::eval_log_delta,
+        Schedule::functional_double_angle>;
+    using LUTRelinKeyChain = CKKSFunctionalSeededRelinKeyChain<
+        P, Schedule::after_exponential_log_q, Schedule::eval_log_delta,
+        Schedule::LUTTraits::relin_depth>;
+
+    CKKSDenseBootstrapLinearPlan<Schedule> linear_plan{};
+    mutable std::unique_ptr<CoeffToSlotGaloisKeyChain>
+        coeff_to_slot_galois =
+            std::make_unique<CoeffToSlotGaloisKeyChain>();
+    mutable std::unique_ptr<
+        CKKSSparseGaloisKey<P, Schedule::after_coeff_to_slot_log_q>>
+        packed_conjugate_galois = std::make_unique<
+            CKKSSparseGaloisKey<P, Schedule::after_coeff_to_slot_log_q>>();
+    mutable std::unique_ptr<ExponentialRelinKeyChain> exponential_relin =
+        std::make_unique<ExponentialRelinKeyChain>();
+    mutable std::unique_ptr<DoubleAngleRelinKeyChain> double_angle_relin =
+        std::make_unique<DoubleAngleRelinKeyChain>();
+    mutable std::unique_ptr<LUTRelinKeyChain> lut_relin =
+        std::make_unique<LUTRelinKeyChain>();
+    mutable std::unique_ptr<
+        CKKSSparseGaloisKey<P, Schedule::after_evalmod_log_q>>
+        output_conjugate_galois = std::make_unique<
+            CKKSSparseGaloisKey<P, Schedule::after_evalmod_log_q>>();
+    mutable std::unique_ptr<SlotToCoeffGaloisKeyChain>
+        slot_to_coeff_galois =
+            std::make_unique<SlotToCoeffGaloisKeyChain>();
+
+    void release_coeff_to_slot() const { coeff_to_slot_galois.reset(); }
+    void release_packed_conjugate() const
+    {
+        packed_conjugate_galois.reset();
+    }
+    void release_eval_lut() const
+    {
+        exponential_relin.reset();
+        double_angle_relin.reset();
+        lut_relin.reset();
+        output_conjugate_galois.reset();
+    }
+    void release_slot_to_coeff() const { slot_to_coeff_galois.reset(); }
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+        archive(linear_plan, *coeff_to_slot_galois,
+                *packed_conjugate_galois, *exponential_relin,
+                *double_angle_relin, *lut_relin,
+                *output_conjugate_galois, *slot_to_coeff_galois);
+    }
+};
+
+template <class Schedule>
+inline void CKKSDenseFHEFriendlyFunctionalBootstrapHybridGiantSeededKeyGen(
+    CKKSDenseFHEFriendlyFunctionalBootstrapHybridGiantSeededKey<Schedule>
+        &bootstrap_key,
+    const Key<typename Schedule::Param> &key,
+    CKKSNoise noise = {Schedule::Param::α, 0})
+{
+    using P = typename Schedule::Param;
+    CKKSBuildDenseBootstrapLinearPlan<Schedule>(bootstrap_key.linear_plan);
+    CKKSDenseBootstrapHybridGiantRotationKeyUsage<Schedule> rotation_usage;
+    CKKSBuildDenseBootstrapHybridGiantRotationKeyUsage<Schedule>(
+        rotation_usage, bootstrap_key.linear_plan);
+    CKKSHybridSparseGaloisKeyChainGen<
+        P, Schedule::boot_log_q, Schedule::coeff_to_slot_plain_log_delta,
+        Schedule::coeff_to_slot_level_count>(
+        *bootstrap_key.coeff_to_slot_galois,
+        rotation_usage.coeff_to_slot_binary,
+        rotation_usage.coeff_to_slot_direct, key, noise);
+    CKKSSparseGaloisKeyGen<P, Schedule::after_coeff_to_slot_log_q>(
+        *bootstrap_key.packed_conjugate_galois, key,
+        rotation_usage.packed_conjugate, noise);
+    CKKSFunctionalSeededRelinKeyChainGen<
+        P, Schedule::functional_start_log_q, Schedule::eval_log_delta,
+        Schedule::ExponentialTraits::relin_depth>(
+        *bootstrap_key.exponential_relin, key, noise);
+    CKKSFunctionalSeededRelinKeyChainGen<
+        P, Schedule::ExponentialTraits::log_q, Schedule::eval_log_delta,
+        Schedule::functional_double_angle>(*bootstrap_key.double_angle_relin,
+                                           key, noise);
+    CKKSFunctionalSeededRelinKeyChainGen<
+        P, Schedule::after_exponential_log_q, Schedule::eval_log_delta,
+        Schedule::LUTTraits::relin_depth>(*bootstrap_key.lut_relin, key,
+                                          noise);
+    CKKSRotationKeyIndexSet<P> conjugation_usage{};
+    CKKSMarkConjugationKeyIndex<P>(conjugation_usage);
+    CKKSSparseGaloisKeyGen<P, Schedule::after_evalmod_log_q>(
+        *bootstrap_key.output_conjugate_galois, key, conjugation_usage, noise);
+    CKKSHybridSparseGaloisKeyChainGen<
+        P, Schedule::after_evalmod_log_q,
+        Schedule::slot_to_coeff_plain_log_delta,
+        Schedule::slot_to_coeff_level_count>(
+        *bootstrap_key.slot_to_coeff_galois,
+        rotation_usage.slot_to_coeff_binary,
+        rotation_usage.slot_to_coeff_direct, key, noise);
+}
+
+template <class Schedule, class BootstrapKey>
 struct CKKSDenseFHEFriendlyFunctionalBootstrapInMemoryKeyProvider {
-    const CKKSDenseFHEFriendlyFunctionalBootstrapKey<Schedule> *key;
+    const BootstrapKey *key;
 
     const CKKSDenseBootstrapLinearPlan<Schedule> &linear_plan() const
     {
@@ -859,28 +1059,76 @@ struct CKKSDenseFHEFriendlyFunctionalBootstrapInMemoryKeyProvider {
     template <std::size_t I>
     const auto &coeff_to_slot_galois() const
     {
-        return key->coeff_to_slot_galois.template get<I>();
+        if constexpr (requires { *key->coeff_to_slot_galois; })
+            return key->coeff_to_slot_galois->template get<I>();
+        else
+            return key->coeff_to_slot_galois.template get<I>();
     }
     const auto &packed_conjugate_galois() const
     {
-        return key->packed_conjugate_galois;
+        if constexpr (requires { *key->packed_conjugate_galois; })
+            return *key->packed_conjugate_galois;
+        else
+            return key->packed_conjugate_galois;
     }
     template <std::size_t I>
     const auto &slot_to_coeff_galois() const
     {
-        return key->slot_to_coeff_galois.template get<I>();
+        if constexpr (requires { *key->slot_to_coeff_galois; })
+            return key->slot_to_coeff_galois->template get<I>();
+        else
+            return key->slot_to_coeff_galois.template get<I>();
     }
 };
 
 namespace ckks_detail {
 
-template <class Schedule>
+template <class FunctionalKey>
+inline decltype(auto) CKKSFunctionalExponentialRelinKey(
+    const FunctionalKey &key)
+{
+    if constexpr (requires { *key.exponential_relin; })
+        return *key.exponential_relin;
+    else
+        return (key.exponential_relin);
+}
+
+template <class FunctionalKey>
+inline decltype(auto) CKKSFunctionalDoubleAngleRelinKey(
+    const FunctionalKey &key)
+{
+    if constexpr (requires { *key.double_angle_relin; })
+        return *key.double_angle_relin;
+    else
+        return (key.double_angle_relin);
+}
+
+template <class FunctionalKey>
+inline decltype(auto) CKKSFunctionalLUTRelinKey(const FunctionalKey &key)
+{
+    if constexpr (requires { *key.lut_relin; })
+        return *key.lut_relin;
+    else
+        return (key.lut_relin);
+}
+
+template <class FunctionalKey>
+inline decltype(auto) CKKSFunctionalOutputConjugateKey(
+    const FunctionalKey &key)
+{
+    if constexpr (requires { *key.output_conjugate_galois; })
+        return *key.output_conjugate_galois;
+    else
+        return (key.output_conjugate_galois);
+}
+
+template <class Schedule, class FunctionalKey>
 inline void CKKSDenseFHEFriendlyFunctionalBootstrapEvalComponent(
     typename Schedule::EvalModCiphertext &res,
     const typename Schedule::ComponentCiphertext &component,
     const CKKSFunctionalBootstrapLUT &lut,
     const CKKSFunctionalBootstrapComplexExponentialPolynomial &exponential,
-    const CKKSDenseFHEFriendlyFunctionalBootstrapKey<Schedule> &keys)
+    const FunctionalKey &keys)
 {
     using P = typename Schedule::Param;
     assert(lut.plaintextModulus() >= 2);
@@ -903,8 +1151,9 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrapEvalComponent(
         P, Schedule::functional_start_log_q, Schedule::eval_log_delta,
         Schedule::exponential_coeff_log_delta, Schedule::exponential_degree,
         Schedule::functional_double_angle>(
-        *exponential_value, *scaled, exponential, keys.exponential_relin,
-        keys.double_angle_relin);
+        *exponential_value, *scaled, exponential,
+        CKKSFunctionalExponentialRelinKey(keys),
+        CKKSFunctionalDoubleAngleRelinKey(keys));
     scaled.reset();
 
     std::vector<std::complex<double>> coefficients = lut.coefficients;
@@ -915,13 +1164,15 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrapEvalComponent(
     CKKSEvalComplexPowerPolynomialWithKeyProvider<
         P, Schedule::after_exponential_log_q, Schedule::eval_log_delta,
         Schedule::lut_coeff_log_delta, Schedule::lut_degree>(
-        *complex_lut, *exponential_value, coefficients, keys.lut_relin);
+        *complex_lut, *exponential_value, coefficients,
+        CKKSFunctionalLUTRelinKey(keys));
     exponential_value.reset();
 
     auto conjugated =
         std::make_unique<typename Schedule::LUTTraits::Ciphertext>();
     CKKSConjugateSlots<P, Schedule::after_evalmod_log_q>(
-        conjugated->ct, complex_lut->ct, keys.output_conjugate_galois);
+        conjugated->ct, complex_lut->ct,
+        CKKSFunctionalOutputConjugateKey(keys));
     CKKSAddInPlace<P, Schedule::after_evalmod_log_q,
                    Schedule::eval_log_delta>(*complex_lut, *conjugated);
     CKKSScaleUpAtSameLevel<P, Schedule::after_evalmod_log_q,
@@ -929,13 +1180,14 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrapEvalComponent(
         res, *complex_lut);
 }
 
-template <class Schedule, class KeyProvider>
+template <class Schedule, bool ConsumeKey, class FunctionalKey,
+          class KeyProvider>
 inline void CKKSDenseFHEFriendlyFunctionalBootstrapImpl(
     typename Schedule::OutputCiphertext &res,
     const typename Schedule::InputCiphertext &ct,
     const CKKSFunctionalBootstrapLUT &lut,
     const CKKSFunctionalBootstrapComplexExponentialPolynomial &exponential,
-    const CKKSDenseFHEFriendlyFunctionalBootstrapKey<Schedule> &functional_key,
+    const FunctionalKey &functional_key,
     const KeyProvider &key_provider, CKKSDenseBootstrapTimings *timings,
     const CKKSDenseBootstrapProgress *progress)
 {
@@ -962,6 +1214,10 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrapImpl(
         },
         progress, "functional_fhe_friendly_coeff_to_slot");
     raised.reset();
+    if constexpr (ConsumeKey && requires {
+                      functional_key.release_coeff_to_slot();
+                  })
+        functional_key.release_coeff_to_slot();
 
     auto real = std::make_unique<typename Schedule::ComponentCiphertext>();
     auto imag = std::make_unique<typename Schedule::ComponentCiphertext>();
@@ -976,6 +1232,10 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrapImpl(
         },
         progress, "functional_fhe_friendly_split");
     slots.reset();
+    if constexpr (ConsumeKey && requires {
+                      functional_key.release_packed_conjugate();
+                  })
+        functional_key.release_packed_conjugate();
 
     auto real_lut = std::make_unique<typename Schedule::EvalModCiphertext>();
     CKKSTimeBootstrapStage(
@@ -995,6 +1255,10 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrapImpl(
         },
         progress, "functional_fhe_friendly_imag_eval_lut");
     imag.reset();
+    if constexpr (ConsumeKey && requires {
+                      functional_key.release_eval_lut();
+                  })
+        functional_key.release_eval_lut();
 
     const CKKSDenseBootstrapLinearKeyProviderChain<KeyProvider, false> stc_keys{
         key_provider};
@@ -1005,38 +1269,63 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrapImpl(
                 Schedule>(res, *real_lut, *imag_lut, linear_plan, stc_keys);
         },
         progress, "functional_fhe_friendly_slot_to_coeff");
+    if constexpr (ConsumeKey && requires {
+                      functional_key.release_slot_to_coeff();
+                  })
+        functional_key.release_slot_to_coeff();
 }
 
 }  // namespace ckks_detail
 
-template <class Schedule>
+template <class Schedule, class FunctionalKey>
 inline void CKKSDenseFHEFriendlyFunctionalBootstrapTimed(
     typename Schedule::OutputCiphertext &res,
     const typename Schedule::InputCiphertext &ct,
     const CKKSFunctionalBootstrapLUT &lut,
     const CKKSFunctionalBootstrapComplexExponentialPolynomial &exponential,
-    const CKKSDenseFHEFriendlyFunctionalBootstrapKey<Schedule> &key,
+    const FunctionalKey &key,
     CKKSDenseBootstrapTimings &timings,
     const CKKSDenseBootstrapProgress *progress = nullptr)
 {
     timings = {};
-    const CKKSDenseFHEFriendlyFunctionalBootstrapInMemoryKeyProvider<Schedule>
+    const CKKSDenseFHEFriendlyFunctionalBootstrapInMemoryKeyProvider<
+        Schedule, FunctionalKey>
         provider{&key};
-    ckks_detail::CKKSDenseFHEFriendlyFunctionalBootstrapImpl<Schedule>(
+    ckks_detail::CKKSDenseFHEFriendlyFunctionalBootstrapImpl<Schedule, false>(
         res, ct, lut, exponential, key, provider, &timings, progress);
 }
 
-template <class Schedule>
+// Releases phase-owned keys when FunctionalKey provides release methods. Such
+// a key cannot be reused or serialized after this call.
+template <class Schedule, class FunctionalKey>
+inline void CKKSDenseFHEFriendlyFunctionalBootstrapConsumeTimed(
+    typename Schedule::OutputCiphertext &res,
+    const typename Schedule::InputCiphertext &ct,
+    const CKKSFunctionalBootstrapLUT &lut,
+    const CKKSFunctionalBootstrapComplexExponentialPolynomial &exponential,
+    const FunctionalKey &key, CKKSDenseBootstrapTimings &timings,
+    const CKKSDenseBootstrapProgress *progress = nullptr)
+{
+    timings = {};
+    const CKKSDenseFHEFriendlyFunctionalBootstrapInMemoryKeyProvider<
+        Schedule, FunctionalKey>
+        provider{&key};
+    ckks_detail::CKKSDenseFHEFriendlyFunctionalBootstrapImpl<Schedule, true>(
+        res, ct, lut, exponential, key, provider, &timings, progress);
+}
+
+template <class Schedule, class FunctionalKey>
 inline void CKKSDenseFHEFriendlyFunctionalBootstrap(
     typename Schedule::OutputCiphertext &res,
     const typename Schedule::InputCiphertext &ct,
     const CKKSFunctionalBootstrapLUT &lut,
     const CKKSFunctionalBootstrapComplexExponentialPolynomial &exponential,
-    const CKKSDenseFHEFriendlyFunctionalBootstrapKey<Schedule> &key)
+    const FunctionalKey &key)
 {
-    const CKKSDenseFHEFriendlyFunctionalBootstrapInMemoryKeyProvider<Schedule>
+    const CKKSDenseFHEFriendlyFunctionalBootstrapInMemoryKeyProvider<
+        Schedule, FunctionalKey>
         provider{&key};
-    ckks_detail::CKKSDenseFHEFriendlyFunctionalBootstrapImpl<Schedule>(
+    ckks_detail::CKKSDenseFHEFriendlyFunctionalBootstrapImpl<Schedule, false>(
         res, ct, lut, exponential, key, provider, nullptr, nullptr);
 }
 

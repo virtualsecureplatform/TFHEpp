@@ -123,31 +123,45 @@ auto exponential =
         Schedule::exponential_degree, Schedule::functional_double_angle,
         Schedule::functional_input_bound);
 
-TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapKey<Schedule> key;
-TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapKeyGen<Schedule>(key, sk);
-TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrap<Schedule>(
-    output, input, lut, exponential, key);
+using FunctionalKey =
+    TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapHybridGiantSeededKey<
+        Schedule>;
+FunctionalKey key;
+TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapHybridGiantSeededKeyGen<
+    Schedule>(key, sk);
+
+TFHEpp::CKKSDenseBootstrapTimings timings;
+TFHEpp::CKKSDenseFHEFriendlyFunctionalBootstrapConsumeTimed<Schedule>(
+    output, input, lut, exponential, key, timings);
 ```
 
-The lvl6 p<=8 schedule keeps the already checked 896-bit largest modulus. After
-C2S and component splitting it lowers the EvalLUT scale from 52 to 34 bits,
-uses exponential degree 58, 8 double-angle squarings, and a degree-7 LUT power
-polynomial, then restores the 52-bit scale before StC. Its level budget is:
+The hybrid giant-step/seeded key is the practical in-memory lvl6 variant. The
+`ConsumeTimed` call releases each phase's evaluation keys as soon as they are
+no longer needed, so that key object is single-use. Use the non-consuming
+`CKKSDenseFHEFriendlyFunctionalBootstrap` entry point when the key must remain
+reusable and enough memory is available.
+
+The lvl6 p<=8 schedule keeps the already checked 896-bit largest modulus. Its
+periodic LUT permits reducing the message ratio from `2^6` to `2`, which leaves
+enough budget for a 51-bit EvalLUT scale in TFHEpp's torus/FFT backend. It uses
+exponential degree 58, three double-angle squarings, 34-bit plaintext
+coefficients, and a degree-7 LUT power polynomial, then restores the 52-bit
+scale before StC. Its level budget is:
 
 ```text
 component q=764
-  scale adjustment: 18 bits
-  exponential:      6*34 + 34 = 238 bits
-  double angle:     8*34      = 272 bits
-  LUT powers:       3*34 + 34 = 136 bits
-EvalLUT output q=100; two 14-bit StC levels; output q=72
+  scale adjustment: 1 bit
+  exponential:      6*51 + 34 = 340 bits
+  double angle:     3*51      = 153 bits
+  LUT powers:       3*51 + 34 = 187 bits
+EvalLUT output q=83; two 14-bit StC levels; output q=55
 ```
 
-The output remains above the 58-bit input level. Since the maximum modulus is
+The output remains above the 53-bit input level. Since the maximum modulus is
 unchanged, the relevant `Parameter-Selection` check remains the existing
-`n=32768`, `q=2^896`, sparse-H16 estimate. Full-size correctness and runtime
-still require generating the new functional evaluation keys; the ordinary
-bootstrap key directory does not contain them.
+`n=32768`, `q=2^896`, sparse-H16 estimate. The functional evaluation key is
+different from the ordinary bootstrap key and must be generated or loaded
+separately.
 
 ### Runtime check
 
@@ -157,21 +171,53 @@ The functional-bootstrap test has an opt-in matched-throughput benchmark:
 ./build/test/ckks/ckks_functional_bootstrapping --benchmark
 ```
 
+The full lvl6 benchmark optionally caches its portable evaluation key:
+
+```sh
+./build/test/ckks/ckks_functional_bootstrapping \
+  --benchmark-lvl6 /path/to/lvl6-functional-key.bin
+```
+
+If the file does not exist, the benchmark generates and saves it. Later runs
+load the same key before invoking the single-use consuming bootstrap.
+
 On the current test host (release build), it measured:
 
 | Path | Parameters | Packed values | Total | Amortized |
 |------|------------|--------------:|------:|----------:|
-| Direct degree-63 functional bootstrap | toy, not security-sized | 16 | 57.36 ms | 3.58 ms/value |
-| FHE-friendly complex/double-angle bootstrap | toy, not security-sized | 16 | 20.73 ms | 1.30 ms/value |
-| TFHE gate bootstrap | TFHEpp default | 16 | 691.69 ms | 43.23 ms/value |
+| Direct degree-63 functional bootstrap | toy, not security-sized | 16 | 56.89 ms | 3.56 ms/value |
+| FHE-friendly complex/double-angle bootstrap | toy, not security-sized | 16 | 22.03 ms | 1.38 ms/value |
+| TFHE gate bootstrap | TFHEpp default | 16 | 694.88 ms | 43.43 ms/value |
 
-On the same encrypted input and host, the paper's FHE-friendly EvalLUT is 2.77x
-faster than the direct polynomial path. Its toy amortized throughput is 33.37x
-the default TFHE gate bootstrap. The latter comparison is not security matched.
-In particular, the recorded 128-bit lvl6 ordinary CKKS bootstrap below takes
-3.295e6 ms for 32768 values, or about 100.55 ms/value. The new lvl6 functional
-schedule has a security-matched level budget, but a full-size key generation and
-runtime run has not yet been performed, so no 128-bit runtime speedup is claimed.
+The real lvl6 run used an Intel i9-9900X (10 cores/20 threads), 62.48 GiB RAM,
+and 8 GiB swap. Its arbitrary p=8 LUT passed over all 32768 coefficients:
+
+| Stage | Runtime |
+|-------|--------:|
+| C2S | 1114.590 s |
+| Component split | 25.362 s |
+| Real EvalLUT | 1171.920 s |
+| Imaginary EvalLUT | 1174.400 s |
+| StC | 365.519 s |
+| **Functional bootstrap total** | **3851.790 s** |
+
+The resulting amortized time is **117.547 ms/value**, with maximum error
+`0.0030527`. The matched-host TFHEpp default gate bootstrap measured
+`44.0333 ms/gate`, so the current lvl6 implementation has `0.3746x` TFHE's
+amortized throughput: it is **2.67x slower**, not faster. The recorded ordinary
+lvl6 CKKS bootstrap takes about `100.55 ms/value`, making this functional path
+about 16.9% slower than ordinary bootstrapping as well.
+
+The portable seeded evaluation-key cache is 57,597,521,697 bytes (53.64 GiB).
+Generation plus atomic serialization took 47.69 minutes. The consuming run
+peaked at 61,899,136 KiB RSS (59.03 GiB), then fell to roughly 11--13 GiB after
+C2S keys were released. Thus the 62.48 GiB host needs no additional RAM for
+this path; a reusable non-consuming key would require more memory.
+
+On the toy encrypted input, the paper's FHE-friendly EvalLUT is 2.58x faster
+than the direct polynomial path. The toy result is useful as a regression but
+does not predict the full-size comparison; the measured lvl6 result above is the
+relevant throughput result.
 
 ## Bounded Sparse Bootstrap Key
 
