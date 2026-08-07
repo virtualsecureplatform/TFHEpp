@@ -9,6 +9,7 @@
 #include <iostream>
 #include <tuple>
 
+#include "../clpx/params/SS2CLPX.hpp"
 #include "evalkeygens.hpp"
 
 namespace TFHEpp {
@@ -32,6 +33,10 @@ struct EvalKey {
         std::shared_ptr<BootstrappingKeyFFT<lvlh1param>>,  // 5
         std::shared_ptr<BootstrappingKeyFFT<lvl02param>>,  // 6
         std::shared_ptr<BootstrappingKeyFFT<lvlh2param>>,  // 7
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+        std::shared_ptr<BootstrappingKeyFFT<SS2CLPXlvl02param>>,
+        std::shared_ptr<BootstrappingKeyFFT<SS2CLPXlvlh2param>>,
+#endif
 #ifdef USE_DIFFERENT_BR_PARAM
         std::shared_ptr<BootstrappingKeyFFT<cblvl02param>>,  // 6
         std::shared_ptr<BootstrappingKeyFFT<cblvlh2param>>,  // 7

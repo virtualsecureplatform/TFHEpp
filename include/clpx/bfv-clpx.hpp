@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -198,17 +199,35 @@ void TLWES2CLPXIKS(TRLWE<typename bkP::targetP> &res,
         jpra++;
     }
 
-    for (uint32_t i = 0; i < tlnum; i++) {
-        std::array<TLWE<typename bkP::targetP>, num_multi> temps{};
-        jpra = 0;
-        TLWE<typename iksP::targetP> tlwelvl0;
-        IdentityKeySwitch<iksP>(tlwelvl0, tlwes[i], ek.getiksk<iksP>());
-        for (int j = w - 1; j >= 0; j -= step) {
-            GateBootstrappingManyLUT<bkP, num_multi>(
-                temps, tlwelvl0, ek.getbkfft<bkP>(), test_vectors[jpra]);
-            for (int l = 0; l < num_multi; l++)
-                temps[l][bkP::targetP::n] += test_vectors[jpra][l];
+    using BootstrapOutputs =
+        std::array<TLWE<typename bkP::targetP>, num_multi>;
+    std::vector<BootstrapOutputs> bootstrap_outputs(tlnum * jcir);
+    const auto &iksk = ek.getiksk<iksP>();
+    const auto &bkfft = ek.getbkfft<bkP>();
 
+    // The key switch and blind rotation for one input TLWE do not depend on
+    // any other input.  Keep their comparatively large outputs separate so
+    // the overlapping diagonal accumulation into temp1 remains race-free.
+#pragma omp parallel for schedule(static)
+    for (int64_t i = 0; i < static_cast<int64_t>(tlnum); i++) {
+        TLWE<typename iksP::targetP> tlwelvl0;
+        IdentityKeySwitch<iksP>(tlwelvl0, tlwes[i], iksk);
+        int local_jpra = 0;
+        for (int j = w - 1; j >= 0; j -= step) {
+            auto &temps = bootstrap_outputs[i * jcir + local_jpra];
+            GateBootstrappingManyLUT<bkP, num_multi>(
+                temps, tlwelvl0, bkfft, test_vectors[local_jpra]);
+            for (int l = 0; l < num_multi; l++)
+                temps[l][bkP::targetP::n] += test_vectors[local_jpra][l];
+
+            local_jpra++;
+        }
+    }
+
+    for (uint32_t i = 0; i < tlnum; i++) {
+        jpra = 0;
+        for (int j = w - 1; j >= 0; j -= step) {
+            const auto &temps = bootstrap_outputs[i * jcir + jpra];
             for (int l = 0; l < num_multi; l++) {
                 for (int m = 0; m < shiftnum; m++) {
                     const int bit_index = j - l * shiftnum - m;
@@ -247,13 +266,19 @@ template <class iksP10, class iksP21, class bkP01, class bkP02, class iksP20,
 void CLPX2TLWESIKSAnyBit(
     std::vector<TLWE<typename bkP01::targetP>> &res,
     const TRLWE<typename iksP20::domainP> &trlwe, const EvalKey &ek,
-    const SecretKey &sk)
+    const SecretKey &)
 {
-    uint32_t batch_num = 16;
+    static_assert(numdigit > 1, "CLPX2TLWESIKSAnyBit needs a data digit");
+    static_assert(basebit > 0, "CLPX2TLWESIKSAnyBit needs a positive basebit");
+    static_assert(basebit == 2,
+                  "the centered rounded-digit LUT currently requires basebit=2");
+    // HomDecomp layout: one noise digit, numdigit-1 data digits, then two
+    // carry digits consumed by the inter-block correction below.
+    constexpr uint32_t block_size = (numdigit - 1) * basebit;
     const uint32_t tlnum = res.size();
-    const uint32_t epoch_num = (tlnum + batch_num - 1) / batch_num;
+    const uint32_t epoch_num = (tlnum + block_size - 1) / block_size;
     TLWE<typename bkP02::targetP> sumpra = {};
-    std::array<TLWE<typename bkP02::targetP>, 2> temps;
+    TLWE<typename bkP02::targetP> previous_scaled = {};
     Polynomial<typename bkP02::targetP> testVectora = {};
     Polynomial<typename bkP02::targetP> testVectorb = {};
 
@@ -266,133 +291,93 @@ void CLPX2TLWESIKSAnyBit(
                                       (bkP02::targetP::nbit + 1))));
     }
 
-    for (int k = 0; k < bkP02::targetP::n; k += 2) {
-        for (int l = 0; l < 2; l++) {
-            testVectorb[k + l] = static_cast<typename bkP02::targetP::T>(
-                static_cast<double>(k)
-                * static_cast<double>(typename bkP02::targetP::T(1)
-                                      << (std::numeric_limits<
-                                              typename bkP02::targetP::T>::digits -
-                                          (bkP02::targetP::nbit + 2 + l))));
-        }
-    }
+    for (int i = 0; i < bkP02::targetP::n; i++)
+        testVectorb[i] = static_cast<typename bkP02::targetP::T>(
+            static_cast<double>(i)
+            * static_cast<double>(typename bkP02::targetP::T(1)
+                                  << (std::numeric_limits<
+                                          typename bkP02::targetP::T>::digits -
+                                      (bkP02::targetP::nbit + 4))));
 
     for (uint32_t epoch = 0; epoch < epoch_num; epoch++) {
-        if ((tlnum - epoch * batch_num) < batch_num)
-            batch_num = tlnum - epoch * batch_num;
+        const uint32_t block_offset = epoch * block_size;
+        const uint32_t batch_num =
+            std::min(block_size, tlnum - block_offset);
 
         for (uint32_t i = 0; i < batch_num; i++) {
             TLWE<typename iksP20::targetP> temp10 = {};
+            TLWE<typename bkP02::targetP> fid_stage1 = {};
+            TLWE<typename bkP02::targetP> fid_stage2 = {};
+            TLWE<typename bkP02::targetP> x_minus_b = {};
+            TLWE<typename bkP02::domainP> temp = {};
 
-            if (epoch * batch_num + i > 0) {
-                TLWE<typename bkP02::targetP> temp3 = {};
-                TLWE<typename bkP02::targetP> temp31 = {};
-                TLWE<typename bkP02::domainP> temp = {};
+            SampleExtractIndex<typename iksP20::domainP>(
+                fid_stage1, trlwe, block_offset + i);
+            IdentityKeySwitch<iksP20>(temp, fid_stage1,
+                                      ek.getiksk<iksP20>());
+            GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                fid_stage1, temp, ek.getbkfft<bkP02>(), testVectora);
 
-                for (int j = 0; j < bkP02::targetP::n + 1; j++) temp3[j] = temps[1][j];
-                SampleExtractIndex<typename iksP20::domainP>(temp31, trlwe,
-                                                             epoch * batch_num + i);
-
-                IdentityKeySwitch<iksP20>(temp, temp31, ek.getiksk<iksP20>());
-                GateBootstrappingTLWE2TLWEFFT<bkP02>(temp31, temp,
-                                                     ek.getbkfft<bkP02>(),
-                                                     testVectora);
-
-                IdentityKeySwitch<iksP20>(temp, temp31, ek.getiksk<iksP20>());
-                GateBootstrappingTLWE2TLWEFFTManyLut<bkP02, 2>(
-                    temps, temp, ek.getbkfft<bkP02>(), testVectorb);
-
-                for (int j = 0; j < bkP02::targetP::n + 1; j++)
-                    temp31[j] = temp3[j] - temps[0][j];
-                IdentityKeySwitch<iksP20>(temp10, temp31, ek.getiksk<iksP20>());
-            }
-            else {
-                TLWE<typename bkP02::targetP> temp31 = {};
-                TLWE<typename bkP02::domainP> temp = {};
-
-                SampleExtractIndex<typename iksP20::domainP>(temp31, trlwe,
-                                                             epoch * batch_num + i);
-
-                IdentityKeySwitch<iksP20>(temp, temp31, ek.getiksk<iksP20>());
-                GateBootstrappingTLWE2TLWEFFT<bkP02>(temp31, temp,
-                                                     ek.getbkfft<bkP02>(),
-                                                     testVectora);
-
-                IdentityKeySwitch<iksP20>(temp, temp31, ek.getiksk<iksP20>());
-                GateBootstrappingTLWE2TLWEFFTManyLut<bkP02, 2>(
-                    temps, temp, ek.getbkfft<bkP02>(), testVectorb);
-
-                for (int j = 0; j < bkP02::targetP::n + 1; j++) temp31[j] = -temps[0][j];
-                IdentityKeySwitch<iksP20>(temp10, temp31, ek.getiksk<iksP20>());
-            }
-
-            std::array<Polynomial<typename bkP02::targetP>, 3> testVectors = {};
-            TLWE<typename bkP01::domainP> temp1 = {};
-            TLWE<typename bkP02::targetP> temp3 = {};
-            TLWE<typename bkP02::targetP> temp31 = {};
-            std::array<TLWE<typename bkP02::targetP>, 2> temp32;
-
-            for (int k = 0; k < 2; k++)
-                for (int j = 0; j < bkP02::targetP::n; j++)
-                    testVectors[k][j] = static_cast<typename bkP02::targetP::T>(
-                        static_cast<double>(typename bkP02::targetP::T(1)
-                                            << (std::numeric_limits<
-                                                    typename bkP02::targetP::T>::digits -
-                                                batch_num + i - k - 3)));
-
-            for (int k = 0; k < bkP02::targetP::n; k += 2) {
-                testVectors[2][k] = static_cast<typename bkP02::targetP::T>(
-                    static_cast<double>(typename bkP02::targetP::T(1)
-                                        << (std::numeric_limits<
-                                                typename bkP02::targetP::T>::digits -
-                                            batch_num + i - 5)));
-                testVectors[2][k + 1] = static_cast<typename bkP02::targetP::T>(
-                    static_cast<double>(typename bkP02::targetP::T(1)
-                                        << (std::numeric_limits<
-                                                typename bkP02::targetP::T>::digits -
-                                            4)));
-            }
-
-            for (int j = 0; j < bkP01::domainP::n + 1; j++) temp1[j] = temp10[j] << 2;
-            temp1[iksP20::targetP::n] += static_cast<typename iksP20::targetP::T>(
-                typename iksP20::targetP::T(1)
-                << (std::numeric_limits<typename iksP20::targetP::T>::digits - 3));
-
-            GateBootstrappingTLWE2TLWEFFTManyLut<bkP02, 2>(
-                temp32, temp1, ek.getbkfft<bkP02>(), testVectors[2]);
-            IdentityKeySwitch<iksP20>(temp1, temp32[1], ek.getiksk<iksP20>());
-            for (int j = 0; j < iksP20::targetP::n + 1; j++) temp10[j] += temp1[j];
-            temp10[iksP20::targetP::n] += static_cast<typename iksP20::targetP::T>(
-                typename iksP20::targetP::T(1)
-                << (std::numeric_limits<typename iksP20::targetP::T>::digits - 4));
-
-            for (int j = 0; j < bkP01::domainP::n + 1; j++) temp1[j] = temp10[j] << 1;
-
-            GateBootstrappingTLWE2TLWEFFT<bkP02>(temp31, temp1,
-                                                 ek.getbkfft<bkP02>(),
-                                                 testVectors[1]);
-            GateBootstrappingTLWE2TLWEFFT<bkP02>(temp3, temp10,
-                                                 ek.getbkfft<bkP02>(),
-                                                 testVectors[0]);
-            temp3[bkP02::targetP::n] -= static_cast<typename bkP02::targetP::T>(
-                typename bkP02::targetP::T(1)
-                << (std::numeric_limits<typename bkP02::targetP::T>::digits -
-                    batch_num + i - 5));
+            IdentityKeySwitch<iksP20>(temp, fid_stage1,
+                                      ek.getiksk<iksP20>());
+            GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                fid_stage2, temp, ek.getbkfft<bkP02>(), testVectorb);
 
             for (int j = 0; j < bkP02::targetP::n + 1; j++)
-                sumpra[j] = temp3[j] - temp31[j] - temp32[0][j] + sumpra[j];
+                x_minus_b[j] = previous_scaled[j] - (fid_stage2[j] << 1);
+            IdentityKeySwitch<iksP20>(temp10, x_minus_b,
+                                      ek.getiksk<iksP20>());
+            previous_scaled = fid_stage2;
+
+            // Algorithm Bign2TFHEanyB: round the centered (x-b) digit and
+            // apply its block weight in one PBS.  For CLPX radix b=2 the
+            // input is split into 2^(2+log2(b))=8 centered intervals.
+            constexpr uint32_t num_intervals = 8;
+            static_assert(bkP02::targetP::n % num_intervals == 0);
+            constexpr uint32_t interval_size =
+                bkP02::targetP::n / num_intervals;
+            Polynomial<typename bkP02::targetP> rounded_digit_tv = {};
+            const auto unit = typename bkP02::targetP::T(1)
+                              << (std::numeric_limits<
+                                  typename bkP02::targetP::T>::digits -
+                                  batch_num + i - 2 * basebit);
+            for (uint32_t interval = 0; interval < num_intervals;
+                 interval++) {
+                // Blind rotation addresses 2N torus positions, so an N/8
+                // table interval represents 1/16 of the torus.  The +1/32
+                // input bias centers digit d in its interval; negative phases
+                // address the upper intervals with an implicit sign flip.
+                const uint32_t magnitude =
+                    interval <= num_intervals / 2
+                        ? interval
+                        : num_intervals - interval;
+                const auto value =
+                    static_cast<typename bkP02::targetP::T>(magnitude) * unit;
+                for (uint32_t j = 0; j < interval_size; j++)
+                    rounded_digit_tv[interval * interval_size + j] = value;
+            }
+
+            temp10[iksP20::targetP::n] +=
+                typename iksP20::targetP::T(1)
+                << (std::numeric_limits<typename iksP20::targetP::T>::digits -
+                    5);
+            TLWE<typename bkP02::targetP> rounded_digit = {};
+            GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                rounded_digit, temp10, ek.getbkfft<bkP02>(),
+                rounded_digit_tv);
+            for (int j = 0; j < bkP02::targetP::n + 1; j++)
+                sumpra[j] += rounded_digit[j];
         }
 
         sumpra[bkP02::targetP::n] += static_cast<typename bkP02::targetP::T>(
             typename bkP02::targetP::T(1)
             << (std::numeric_limits<typename bkP02::targetP::T>::digits -
                 batch_num - 6));
-
         std::array<TLWE<typename bkP01::targetP>, numdigit + 2> sums;
-        HomDecomp<iksP21, iksP10, bkP01, basebit, numdigit + 2>(
+        HomDecomp<iksP21, iksP10, bkP01, basebit, numdigit + 2,
+                  basebit * (numdigit + 2)>(
             sums, sumpra, ek.getiksk<iksP21>(), ek.getiksk<iksP10>(),
             ek.getbkfft<bkP01>());
-
         Polynomial<typename bkP01::targetP> testVector3 = {};
         for (int i = 0; i < bkP01::targetP::n; i++)
             testVector3[i] = -static_cast<typename bkP01::targetP::T>(
@@ -412,58 +397,64 @@ void CLPX2TLWESIKSAnyBit(
                 for (int j = 0; j < iksP10::targetP::n + 1; j++)
                     temp2[j] = temp1[j] << (basebit - k - 1);
 
-                GateBootstrappingTLWE2TLWEFFT<bkP01>(
-                    res[epoch * batch_num + (i - 1) * basebit + k], temp2,
-                    ek.getbkfft<bkP01>(), testVector3);
+                const uint32_t output_index =
+                    block_offset + (i - 1) * basebit + k;
+                if (output_index < tlnum)
+                    GateBootstrappingTLWE2TLWEFFT<bkP01>(
+                        res[output_index], temp2, ek.getbkfft<bkP01>(),
+                        testVector3);
             }
 
-            GateBootstrappingTLWE2TLWEFFT<bkP01>(
-                res[epoch * batch_num + i * basebit - 1], temp1,
-                ek.getbkfft<bkP01>(), testVector3);
+            const uint32_t output_index = block_offset + i * basebit - 1;
+            if (output_index < tlnum)
+                GateBootstrappingTLWE2TLWEFFT<bkP01>(
+                    res[output_index], temp1, ek.getbkfft<bkP01>(),
+                    testVector3);
         }
 
         if (epoch < epoch_num - 1) {
-            std::array<Polynomial<typename bkP02::targetP>, 3> testVectors = {};
-            TLWE<typename iksP20::targetP> temp1 = {};
-            std::array<TLWE<typename iksP20::targetP>, 2> temp11;
-            TLWE<typename bkP02::targetP> temp3 = {};
-            TLWE<typename bkP02::targetP> temp31 = {};
-            TLWE<typename bkP02::targetP> temp32 = {};
+            std::array<Polynomial<typename bkP02::targetP>, 3> carry_tvs = {};
+            TLWE<typename iksP20::targetP> shifted_carry = {};
+            std::array<TLWE<typename iksP20::targetP>, 2> carry_inputs{};
+            TLWE<typename bkP02::targetP> carry_high = {};
+            TLWE<typename bkP02::targetP> carry_low = {};
+            TLWE<typename bkP02::targetP> carry_shifted = {};
 
             for (int i = 0; i < 2; i++) {
                 sums[numdigit + i][iksP10::domainP::n] +=
-                    static_cast<typename iksP10::domainP::T>(
-                        typename iksP10::domainP::T(1)
-                        << (std::numeric_limits<typename iksP10::domainP::T>::digits - 3));
-                IdentityKeySwitch<iksP10>(temp11[i], sums[numdigit + i],
+                    typename iksP10::domainP::T(1)
+                    << (std::numeric_limits<
+                            typename iksP10::domainP::T>::digits -
+                        3);
+                IdentityKeySwitch<iksP10>(carry_inputs[i],
+                                          sums[numdigit + i],
                                           ek.getiksk<iksP10>());
             }
 
             for (int k = 0; k < 3; k++)
                 for (int j = 0; j < bkP02::targetP::n; j++)
-                    testVectors[k][j] = static_cast<typename bkP02::targetP::T>(
-                        typename bkP02::targetP::T(1)
-                        << (std::numeric_limits<typename bkP02::targetP::T>::digits -
-                            batch_num - k - 3));
+                    carry_tvs[k][j] = typename bkP02::targetP::T(1)
+                                      << (std::numeric_limits<
+                                              typename bkP02::targetP::T>::digits -
+                                          batch_num - k - 3);
 
-            GateBootstrappingTLWE2TLWEFFT<bkP02>(temp3, temp11[1],
-                                                 ek.getbkfft<bkP02>(),
-                                                 testVectors[0]);
-            temp3[bkP02::targetP::n] -= static_cast<typename bkP02::targetP::T>(
+            GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                carry_high, carry_inputs[1], ek.getbkfft<bkP02>(),
+                carry_tvs[0]);
+            carry_high[bkP02::targetP::n] -=
                 typename bkP02::targetP::T(1)
                 << (std::numeric_limits<typename bkP02::targetP::T>::digits -
-                    batch_num - 5));
-
-            GateBootstrappingTLWE2TLWEFFT<bkP02>(temp31, temp11[0],
-                                                 ek.getbkfft<bkP02>(),
-                                                 testVectors[1]);
-
-            for (int j = 0; j < iksP20::targetP::n + 1; j++) temp1[j] = temp11[0][j] << 1;
-            GateBootstrappingTLWE2TLWEFFT<bkP02>(temp32, temp1,
-                                                 ek.getbkfft<bkP02>(),
-                                                 testVectors[2]);
+                    batch_num - 5);
+            GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                carry_low, carry_inputs[0], ek.getbkfft<bkP02>(),
+                carry_tvs[1]);
+            for (int j = 0; j < iksP20::targetP::n + 1; j++)
+                shifted_carry[j] = carry_inputs[0][j] << 1;
+            GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                carry_shifted, shifted_carry, ek.getbkfft<bkP02>(),
+                carry_tvs[2]);
             for (int j = 0; j < bkP02::targetP::n + 1; j++)
-                sumpra[j] = temp3[j] - temp31[j] - temp32[j];
+                sumpra[j] = carry_high[j] - carry_low[j] - carry_shifted[j];
         }
     }
 }

@@ -181,6 +181,7 @@ bool check_switched_clpx_mult_with_runtime(
     using c2tIksP20 = TFHEpp::lvl2hparam;
     constexpr int validbit = 64;
     constexpr int productbit = validbit * 2;
+    constexpr int switched_output_bits = productbit;
     constexpr int lutnum = 4;
     constexpr int shiftnum = 5;
     constexpr int shift = shiftnum - 1;
@@ -216,19 +217,23 @@ bool check_switched_clpx_mult_with_runtime(
             product_digits, product_expected, "TLWES2CLPXIKS + CLPXMult"))
         return false;
 
-    std::vector<TFHEpp::TLWE<typename c2tBkP01::targetP>> output(productbit);
+    std::vector<TFHEpp::TLWE<typename c2tBkP01::targetP>> output(
+        switched_output_bits);
     const auto clpx2tfhe_start = Clock::now();
     TFHEpp::CLPX2TLWESIKSanybit<c2tIksP10, c2tIksP21, c2tBkP01, c2tBkP02,
-                                c2tIksP20, 4, 2>(output, product_ct, ek, sk);
+                                c2tIksP20, 9, 2>(output, product_ct, ek, sk);
     const auto clpx2tfhe_end = Clock::now();
 
-    bool output_nonzero = false;
-    for (const auto &tlwe : output)
-        for (const auto value : tlwe)
-            output_nonzero = output_nonzero || (value != 0);
-    if (!output_nonzero) {
-        std::cerr << "CLPX2TFHE produced all-zero TLWEs" << std::endl;
-        return false;
+    const auto &output_key = sk.key.get<typename c2tBkP01::targetP>();
+    for (int bit = 0; bit < switched_output_bits; bit++) {
+        const bool actual = TFHEpp::tlweSymDecrypt<typename c2tBkP01::targetP>(
+            output[bit], output_key);
+        const bool expected = ((product_expected >> bit) & 1) != 0;
+        if (actual != expected) {
+            std::cerr << "CLPX2TFHE bit " << bit << " decoded as " << actual
+                      << ", expected " << expected << std::endl;
+            return false;
+        }
     }
 
     std::cout << std::fixed << std::setprecision(3);
@@ -237,7 +242,7 @@ bool check_switched_clpx_mult_with_runtime(
               << std::endl;
     std::cout << "CLPX mult runtime (64-bit x 64-bit): "
               << elapsed_ms(mult_start, mult_end) << " ms" << std::endl;
-    std::cout << "CLPX2TFHE runtime (128 output TLWEs): "
+    std::cout << "CLPX2TFHE runtime (128 verified output TLWEs): "
               << elapsed_ms(clpx2tfhe_start, clpx2tfhe_end) << " ms"
               << std::endl;
     return true;
@@ -268,6 +273,7 @@ int main()
     ss_ek.emplaceiksk<TFHEpp::lvl2hparam>(sk);
     ss_ek.emplacebkfft<TFHEpp::lvlh1param>(sk);
     ss_ek.emplacebkfft<TFHEpp::lvlh2param>(sk);
+    ss_ek.emplacebkfft<TFHEpp::SS2CLPXlvlh2param>(sk);
     const auto ss_key = sk.key.get<TFHEpp::lvl2param>();
     TFHEpp::AnnihilateKey<ssP> ss_ahk;
     TFHEpp::annihilatekeygen<ssP>(ss_ahk, ss_key);

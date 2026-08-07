@@ -34,6 +34,8 @@ constexpr Polynomial<P> subtractpolygen()
  * @tparam brP The bootstrapping parameter set
  * @tparam basebit The base value
  * @tparam numdigit The number of digits
+ * @tparam source_bits Number of low-order domain-torus bits in the
+ * decomposition window; defaults to the full torus width
  * @param cres Array of output ciphertexts
  * @param cin Input ciphertext
  * @param kskh2m The key switching key for high to mid level
@@ -41,7 +43,9 @@ constexpr Polynomial<P> subtractpolygen()
  * @param bkfft The bootstrapping key FFT
  */
 template <class high2midP, class mid2lowP, class brP, uint basebit,
-          uint numdigit>
+          uint numdigit,
+          uint source_bits =
+              std::numeric_limits<typename high2midP::domainP::T>::digits>
 void HomDecomp(std::array<TLWE<typename high2midP::targetP>, numdigit> &cres,
                const TLWE<typename high2midP::domainP> &cin,
                const KeySwitchingKey<high2midP> &kskh2m,
@@ -52,16 +56,17 @@ void HomDecomp(std::array<TLWE<typename high2midP::targetP>, numdigit> &cres,
     TFHEpp::TLWE<typename high2midP::targetP> subtlwe;
 
     // cres will be used as a reusable buffer
-    // Use domain torus width (not basebit*numdigit) so that after key switching
-    // to a narrower torus, the lower bits are zero-padded rather than filled
-    // with uncontrolled phase data from the wider torus.
-    constexpr uint32_t domain_digits =
-        std::numeric_limits<typename high2midP::domainP::T>::digits;
+    static_assert(source_bits >= basebit * numdigit,
+                  "HomDecomp source window is too small");
+    static_assert(
+        source_bits <=
+            std::numeric_limits<typename high2midP::domainP::T>::digits,
+        "HomDecomp source window exceeds the domain torus width");
 #pragma omp parallel for default(none) shared(cin, cres, kskh2m)
     for (int digit = 1; digit <= numdigit; digit++) {
         TFHEpp::TLWE<typename high2midP::domainP> switchedtlwe;
         for (int i = 0; i <= high2midP::domainP::k * high2midP::domainP::n; i++)
-            switchedtlwe[i] = cin[i] << (domain_digits - basebit * digit);
+            switchedtlwe[i] = cin[i] << (source_bits - basebit * digit);
         IdentityKeySwitch<high2midP>(cres[digit - 1], switchedtlwe, kskh2m);
     }
     for (int digit = 1; digit <= numdigit; digit++) {
