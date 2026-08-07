@@ -8,11 +8,21 @@
 #include <cereal/types/vector.hpp>
 #include <iostream>
 #include <tuple>
+#include <type_traits>
 
 #include "../clpx/params/SS2CLPX.hpp"
 #include "evalkeygens.hpp"
 
 namespace TFHEpp {
+
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+// BootstrappingKeyFFT is an array type whose identity only depends on its
+// dimensions.  CLPX2TFHElvlh2param and lvlh2param therefore have the same
+// concrete key type even though their gadget bases differ.  The extra array
+// level keeps the two independently generated keys distinct in EvalKey.
+using CLPX2TFHEBKFFTStorage =
+    std::array<BootstrappingKeyFFT<CLPX2TFHElvlh2param>, 1>;
+#endif
 
 struct EvalKey {
     lweParams params;
@@ -36,6 +46,7 @@ struct EvalKey {
 #ifdef TFHEPP_DEFAULT_128BIT_PARAMS
         std::shared_ptr<BootstrappingKeyFFT<SS2CLPXlvl02param>>,
         std::shared_ptr<BootstrappingKeyFFT<SS2CLPXlvlh2param>>,
+        std::shared_ptr<CLPX2TFHEBKFFTStorage>,
 #endif
 #ifdef USE_DIFFERENT_BR_PARAM
         std::shared_ptr<BootstrappingKeyFFT<cblvl02param>>,  // 6
@@ -142,6 +153,20 @@ struct EvalKey {
     template <class P>
     void emplacebkfft(const SecretKey& sk)
     {
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+        if constexpr (std::is_same_v<P, CLPX2TFHElvlh2param>) {
+            if (get<CLPX2TFHEBKFFTStorage>() != nullptr) {
+                std::cerr << "Warning: BootstrappingKeyFFT<P> already exists. "
+                             "Skipping duplicate key generation."
+                          << std::endl;
+                return;
+            }
+            get<CLPX2TFHEBKFFTStorage>() =
+                std::make_unique_for_overwrite<CLPX2TFHEBKFFTStorage>();
+            bkfftgen<P>((*get<CLPX2TFHEBKFFTStorage>())[0], sk);
+            return;
+        }
+#endif
         if (get<BootstrappingKeyFFT<P>>() != nullptr) {
             std::cerr << "Warning: BootstrappingKeyFFT<P> already exists. "
                          "Skipping duplicate key generation."
@@ -344,6 +369,11 @@ struct EvalKey {
     template <class P>
     BootstrappingKeyFFT<P>& getbkfft() const
     {
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+        if constexpr (std::is_same_v<P, CLPX2TFHElvlh2param>)
+            return (*const_cast<EvalKey*>(this)
+                         ->get<CLPX2TFHEBKFFTStorage>())[0];
+#endif
         return *const_cast<EvalKey*>(this)->get<BootstrappingKeyFFT<P>>();
     }
     template <class P>

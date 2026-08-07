@@ -48,6 +48,29 @@ struct SS2CLPXlvlh2param {
 #endif
 };
 
+// Reverse-switch-only lvl2 PBS output parameters.  The ring, secret
+// distribution, fresh noise, and number of gadget rows are unchanged from
+// lvl2param.  Bgbit=10 balances gadget and decomposition noise for the
+// basebit=4 HomDecomp path.
+struct CLPX2TFHElvl2param : lvl2param {
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t lₐ = l;
+    static constexpr std::uint32_t Bgbit = 10;
+    static constexpr std::uint32_t Bgₐbit = Bgbit;
+    static constexpr std::uint32_t Bg = 1 << Bgbit;
+    static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
+};
+
+struct CLPX2TFHElvlh2param {
+    using domainP = lvlhalfparam;
+    using targetP = CLPX2TFHElvl2param;
+#ifdef USE_KEY_BUNDLE
+    static constexpr std::uint32_t Addends = 2;
+#else
+    static constexpr std::uint32_t Addends = 1;
+#endif
+};
+
 struct SS2CLPXlvl22param {
     static constexpr std::uint32_t t = lvl22param::t;
     static constexpr std::uint32_t basebit = lvl22param::basebit;

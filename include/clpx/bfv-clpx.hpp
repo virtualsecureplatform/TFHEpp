@@ -270,10 +270,13 @@ void CLPX2TLWESIKSAnyBit(
 {
     static_assert(numdigit > 1, "CLPX2TLWESIKSAnyBit needs a data digit");
     static_assert(basebit > 0, "CLPX2TLWESIKSAnyBit needs a positive basebit");
-    static_assert(basebit == 2,
-                  "the centered rounded-digit LUT currently requires basebit=2");
-    // HomDecomp layout: one noise digit, numdigit-1 data digits, then two
-    // carry digits consumed by the inter-block correction below.
+    static_assert(basebit == 2 || basebit == 4,
+                  "the reverse switch supports basebit 2 or 4");
+    constexpr bool single_carry = basebit >= 4;
+    constexpr uint32_t carry_digits = single_carry ? 1 : 2;
+    constexpr uint32_t carry_width = carry_digits * basebit;
+    // HomDecomp layout: one noise digit, numdigit-1 data digits, followed by
+    // either the legacy two base-4 carry digits or one base-16 carry digit.
     constexpr uint32_t block_size = (numdigit - 1) * basebit;
     const uint32_t tlnum = res.size();
     const uint32_t epoch_num = (tlnum + block_size - 1) / block_size;
@@ -340,7 +343,7 @@ void CLPX2TLWESIKSAnyBit(
             const auto unit = typename bkP02::targetP::T(1)
                               << (std::numeric_limits<
                                   typename bkP02::targetP::T>::digits -
-                                  batch_num + i - 2 * basebit);
+                                  batch_num + i - carry_width);
             for (uint32_t interval = 0; interval < num_intervals;
                  interval++) {
                 // Blind rotation addresses 2N torus positions, so an N/8
@@ -373,9 +376,11 @@ void CLPX2TLWESIKSAnyBit(
             typename bkP02::targetP::T(1)
             << (std::numeric_limits<typename bkP02::targetP::T>::digits -
                 batch_num - 6));
-        std::array<TLWE<typename bkP01::targetP>, numdigit + 2> sums;
-        HomDecomp<iksP21, iksP10, bkP01, basebit, numdigit + 2,
-                  basebit * (numdigit + 2)>(
+        std::array<TLWE<typename bkP01::targetP>, numdigit + carry_digits>
+            sums;
+        HomDecomp<iksP21, iksP10, bkP01, basebit,
+                  numdigit + carry_digits,
+                  basebit * (numdigit + carry_digits)>(
             sums, sumpra, ek.getiksk<iksP21>(), ek.getiksk<iksP10>(),
             ek.getbkfft<bkP01>());
         Polynomial<typename bkP01::targetP> testVector3 = {};
@@ -388,9 +393,11 @@ void CLPX2TLWESIKSAnyBit(
             TLWE<typename iksP20::targetP> temp1 = {};
             TLWE<typename iksP20::targetP> temp2 = {};
 
+            // Center the base-2^basebit digit in its PBS decision interval.
             sums[i][iksP10::domainP::n] += static_cast<typename iksP10::domainP::T>(
                 typename iksP10::domainP::T(1)
-                << (std::numeric_limits<typename iksP10::domainP::T>::digits - 3));
+                << (std::numeric_limits<typename iksP10::domainP::T>::digits -
+                    basebit - 1));
             IdentityKeySwitch<iksP10>(temp1, sums[i], ek.getiksk<iksP10>());
 
             for (int k = 0; k < static_cast<int>(basebit) - 1; k++) {
@@ -413,48 +420,91 @@ void CLPX2TLWESIKSAnyBit(
         }
 
         if (epoch < epoch_num - 1) {
-            std::array<Polynomial<typename bkP02::targetP>, 3> carry_tvs = {};
-            TLWE<typename iksP20::targetP> shifted_carry = {};
-            std::array<TLWE<typename iksP20::targetP>, 2> carry_inputs{};
-            TLWE<typename bkP02::targetP> carry_high = {};
-            TLWE<typename bkP02::targetP> carry_low = {};
-            TLWE<typename bkP02::targetP> carry_shifted = {};
-
-            for (int i = 0; i < 2; i++) {
-                sums[numdigit + i][iksP10::domainP::n] +=
+            if constexpr (single_carry) {
+                sums[numdigit][iksP10::domainP::n] +=
                     typename iksP10::domainP::T(1)
                     << (std::numeric_limits<
                             typename iksP10::domainP::T>::digits -
-                        3);
-                IdentityKeySwitch<iksP10>(carry_inputs[i],
-                                          sums[numdigit + i],
+                        basebit - 1);
+                TLWE<typename iksP20::targetP> carry_input = {};
+                IdentityKeySwitch<iksP10>(carry_input, sums[numdigit],
                                           ek.getiksk<iksP10>());
+
+                constexpr uint32_t carry_intervals = 8;
+                static_assert(bkP02::targetP::n % carry_intervals == 0);
+                constexpr uint32_t carry_interval_size =
+                    bkP02::targetP::n / carry_intervals;
+                const auto carry_unit = typename bkP02::targetP::T(1)
+                                        << (std::numeric_limits<
+                                                typename bkP02::targetP::T>::digits -
+                                            batch_num - basebit);
+                Polynomial<typename bkP02::targetP> carry_tv = {};
+                // The triangular table recovers the centered base-16 carry;
+                // carry_unit applies the attenuation required by the next
+                // block's accumulator.
+                for (uint32_t interval = 0; interval < carry_intervals;
+                     interval++) {
+                    const uint32_t magnitude =
+                        interval <= carry_intervals / 2
+                            ? interval
+                            : carry_intervals - interval;
+                    const auto value =
+                        static_cast<typename bkP02::targetP::T>(magnitude) *
+                        carry_unit;
+                    for (uint32_t j = 0; j < carry_interval_size; j++)
+                        carry_tv[interval * carry_interval_size + j] = value;
+                }
+                GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                    sumpra, carry_input, ek.getbkfft<bkP02>(), carry_tv);
             }
+            else {
+                std::array<Polynomial<typename bkP02::targetP>, 3> carry_tvs =
+                    {};
+                TLWE<typename iksP20::targetP> shifted_carry = {};
+                std::array<TLWE<typename iksP20::targetP>, 2> carry_inputs{};
+                TLWE<typename bkP02::targetP> carry_high = {};
+                TLWE<typename bkP02::targetP> carry_low = {};
+                TLWE<typename bkP02::targetP> carry_shifted = {};
 
-            for (int k = 0; k < 3; k++)
-                for (int j = 0; j < bkP02::targetP::n; j++)
-                    carry_tvs[k][j] = typename bkP02::targetP::T(1)
-                                      << (std::numeric_limits<
-                                              typename bkP02::targetP::T>::digits -
-                                          batch_num - k - 3);
+                for (int i = 0; i < 2; i++) {
+                    sums[numdigit + i][iksP10::domainP::n] +=
+                        typename iksP10::domainP::T(1)
+                        << (std::numeric_limits<
+                                typename iksP10::domainP::T>::digits -
+                            3);
+                    IdentityKeySwitch<iksP10>(carry_inputs[i],
+                                              sums[numdigit + i],
+                                              ek.getiksk<iksP10>());
+                }
 
-            GateBootstrappingTLWE2TLWEFFT<bkP02>(
-                carry_high, carry_inputs[1], ek.getbkfft<bkP02>(),
-                carry_tvs[0]);
-            carry_high[bkP02::targetP::n] -=
-                typename bkP02::targetP::T(1)
-                << (std::numeric_limits<typename bkP02::targetP::T>::digits -
-                    batch_num - 5);
-            GateBootstrappingTLWE2TLWEFFT<bkP02>(
-                carry_low, carry_inputs[0], ek.getbkfft<bkP02>(),
-                carry_tvs[1]);
-            for (int j = 0; j < iksP20::targetP::n + 1; j++)
-                shifted_carry[j] = carry_inputs[0][j] << 1;
-            GateBootstrappingTLWE2TLWEFFT<bkP02>(
-                carry_shifted, shifted_carry, ek.getbkfft<bkP02>(),
-                carry_tvs[2]);
-            for (int j = 0; j < bkP02::targetP::n + 1; j++)
-                sumpra[j] = carry_high[j] - carry_low[j] - carry_shifted[j];
+                for (int k = 0; k < 3; k++)
+                    for (int j = 0; j < bkP02::targetP::n; j++)
+                        carry_tvs[k][j] =
+                            typename bkP02::targetP::T(1)
+                            << (std::numeric_limits<
+                                    typename bkP02::targetP::T>::digits -
+                                batch_num - k - 3);
+
+                GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                    carry_high, carry_inputs[1], ek.getbkfft<bkP02>(),
+                    carry_tvs[0]);
+                carry_high[bkP02::targetP::n] -=
+                    typename bkP02::targetP::T(1)
+                    << (std::numeric_limits<
+                            typename bkP02::targetP::T>::digits -
+                        batch_num - 5);
+                GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                    carry_low, carry_inputs[0], ek.getbkfft<bkP02>(),
+                    carry_tvs[1]);
+                for (int j = 0; j < iksP20::targetP::n + 1; j++)
+                    shifted_carry[j] = carry_inputs[0][j] << 1;
+                GateBootstrappingTLWE2TLWEFFT<bkP02>(
+                    carry_shifted, shifted_carry, ek.getbkfft<bkP02>(),
+                    carry_tvs[2]);
+                for (int j = 0; j < bkP02::targetP::n + 1; j++)
+                    sumpra[j] =
+                        carry_high[j] - carry_low[j] - carry_shifted[j];
+            }
         }
     }
 }

@@ -177,7 +177,7 @@ bool check_switched_clpx_mult_with_runtime(
     using c2tIksP10 = TFHEpp::lvl1hparam;
     using c2tIksP21 = TFHEpp::lvl21param;
     using c2tBkP01 = TFHEpp::lvlh1param;
-    using c2tBkP02 = TFHEpp::lvlh2param;
+    using c2tBkP02 = TFHEpp::CLPX2TFHElvlh2param;
     using c2tIksP20 = TFHEpp::lvl2hparam;
     constexpr int validbit = 64;
     constexpr int productbit = validbit * 2;
@@ -221,7 +221,7 @@ bool check_switched_clpx_mult_with_runtime(
         switched_output_bits);
     const auto clpx2tfhe_start = Clock::now();
     TFHEpp::CLPX2TLWESIKSanybit<c2tIksP10, c2tIksP21, c2tBkP01, c2tBkP02,
-                                c2tIksP20, 9, 2>(output, product_ct, ek, sk);
+                                c2tIksP20, 5, 4>(output, product_ct, ek, sk);
     const auto clpx2tfhe_end = Clock::now();
 
     const auto &output_key = sk.key.get<typename c2tBkP01::targetP>();
@@ -272,8 +272,8 @@ int main()
     ss_ek.emplaceiksk<TFHEpp::lvl21param>(sk);
     ss_ek.emplaceiksk<TFHEpp::lvl2hparam>(sk);
     ss_ek.emplacebkfft<TFHEpp::lvlh1param>(sk);
-    ss_ek.emplacebkfft<TFHEpp::lvlh2param>(sk);
     ss_ek.emplacebkfft<TFHEpp::SS2CLPXlvlh2param>(sk);
+    ss_ek.emplacebkfft<TFHEpp::CLPX2TFHElvlh2param>(sk);
     const auto ss_key = sk.key.get<TFHEpp::lvl2param>();
     TFHEpp::AnnihilateKey<ssP> ss_ahk;
     TFHEpp::annihilatekeygen<ssP>(ss_ahk, ss_key);

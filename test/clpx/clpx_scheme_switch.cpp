@@ -36,7 +36,7 @@ int main()
         using iksP10 = TFHEpp::lvl1hparam;
         using iksP21 = TFHEpp::lvl21param;
         using bkP01 = TFHEpp::lvlh1param;
-        using bkP02 = TFHEpp::lvlh2param;
+        using bkP02 = TFHEpp::CLPX2TFHElvlh2param;
         using iksP20 = TFHEpp::lvl2hparam;
         using bigP = TFHEpp::SS2CLPXlvl2param;
         constexpr uint32_t validbit = 16;
@@ -57,7 +57,7 @@ int main()
 
             std::vector<TFHEpp::TLWE<typename iksP10::domainP>> out(validbit);
             TFHEpp::CLPX2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02,
-                                        iksP20, 9, 2>(out, big, ek, sk);
+                                        iksP20, 5, 4>(out, big, ek, sk);
 
             uint32_t decoded = 0;
             for (uint32_t bit = 0; bit < validbit; bit++) {
