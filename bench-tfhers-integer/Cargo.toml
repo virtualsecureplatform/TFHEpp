@@ -1,0 +1,13 @@
+[package]
+name = "tfhers-integer-mul-bench"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.91.1"
+
+[dependencies]
+rayon = "1"
+tfhe = { path = "../tfhe-rs/tfhe", features = ["integer"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

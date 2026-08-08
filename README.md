@@ -169,6 +169,14 @@ Pin the benchmark to a V-Cache core for best and most stable results.
 TFHEpp's BR is ~11% faster than tfhe-rs.
 The IKS phase accounts for most of the end-to-end difference (~1.6x faster in tfhe-rs).
 
+### Full-width integer multiplication
+
+The `bench-tfhers-integer` artifact compares the TFHE2CLPX
+`64 x 64 -> 128` pipeline against TFHE-rs 1.6.1 on one pinned physical core.
+It widens encrypted `FheUint64` inputs to `FheUint128` before multiplication so
+that TFHE-rs returns the full product instead of reducing it modulo `2^64`.
+See `bench-tfhers-integer/README.md` for the pinned parameters and commands.
+
 ## Reproducing locally
 
 ```bash

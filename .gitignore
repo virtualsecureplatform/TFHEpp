@@ -21,3 +21,6 @@ bench-tfhers/cmake_install.cmake
 # bench-tfhers-fft: track Rust sources, ignore build artifacts
 bench-tfhers-fft/target/
 bench-tfhers-fft/Cargo.lock
+
+# bench-tfhers-integer: track Rust sources and lockfile, ignore build artifacts
+bench-tfhers-integer/target/
