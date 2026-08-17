@@ -188,6 +188,20 @@ inline Polynomial<P> AESInvSboxPoly(const uint8_t upperindex)
     return poly;
 }
 
+template <class P>
+inline Polynomial<P> AESInvSboxPoly(const uint8_t upperindex,
+                                    const uint8_t output)
+{
+    Polynomial<P> poly;
+    constexpr uint segment = P::n / 16;
+    for (int i = 0; i < 16; i++)
+        for (int j = 0; j < segment; j++)
+            poly[i * segment + j] =
+                ((inv_sbox[upperindex][i] >> (4 * output)) & 0xF) *
+                (1ULL << (std::numeric_limits<typename P::T>::digits - 5));
+    return poly;
+}
+
 template <class iksP, class brP, class ahP>
 void AESInvSbox(std::array<TLWE<typename brP::targetP>, 2> &res,
                 const std::array<TLWE<typename iksP::domainP>, 2> &tlwe,
@@ -199,21 +213,23 @@ void AESInvSbox(std::array<TLWE<typename brP::targetP>, 2> &res,
     shifted[iksP::targetP::k * iksP::targetP::n] +=
         1ULL << (std::numeric_limits<typename iksP::targetP::T>::digits - 6);
     for (int i = 0; i < 16; i++)
-        GateBootstrappingManyLUT<brP, 2>(
-            midtlwes[i], shifted, ek.getbkfft<brP>(),
-            AESInvSboxPoly<typename brP::targetP>(i));
+        for (int output = 0; output < 2; output++)
+            GateBootstrappingTLWE2TLWE<brP>(
+                midtlwes[i][output], shifted, ek.getbkfft<brP>(),
+                AESInvSboxPoly<typename brP::targetP>(i, output));
     IdentityKeySwitch<iksP>(shifted, tlwe[1], ek.getiksk<iksP>());
     shifted[iksP::targetP::k * iksP::targetP::n] +=
         1ULL << (std::numeric_limits<typename iksP::targetP::T>::digits - 6);
     {
-        TRLWE<typename brP::targetP> trlwe;
-        std::array<std::array<TLWE<typename iksP::domainP>, 16>, 2> tabletlwe;
-        for (int i = 0; i < 2; i++)
-            for (int j = 0; j < 16; j++) tabletlwe[i][j] = midtlwes[j][i];
-        TLWE2TablePackingManyLUT<ahP, 16, 2>(trlwe, tabletlwe,
-                                             ek.getahk<ahP>());
-        GateBootstrappingManyLUT<brP, 2>(res, shifted, ek.getbkfft<brP>(),
-                                         trlwe);
+        for (int output = 0; output < 2; output++) {
+            TRLWE<typename brP::targetP> trlwe;
+            std::array<TLWE<typename iksP::domainP>, 16> tabletlwe;
+            for (int j = 0; j < 16; j++)
+                tabletlwe[j] = midtlwes[j][output];
+            TLWE2TablePacking<ahP, 16>(trlwe, tabletlwe, ek.getahk<ahP>());
+            GateBootstrappingTLWE2TLWE<brP>(res[output], shifted,
+                                            ek.getbkfft<brP>(), trlwe);
+        }
     }
 }
 

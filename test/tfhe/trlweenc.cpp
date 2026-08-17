@@ -21,12 +21,12 @@ int main()
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
         TRLWE<TFHEpp::lvl1param> c;
-        trlweSymEncrypt<lvl1param>(c, pmu, key.get<lvl1param>());
+        trlweSymEncrypt<lvl1param>(c, pmu, key.getSubset<lvl1param>());
         // if constexpr(hasq<lvl1param>) for (int i = 0; i < lvl1param::n; i++)
         // if(c[lvl1param::k][i] >= lvl1param::q)
         // std::cout<<i<<":"<<c[lvl1param::k][i]<<std::endl;
         array<bool, lvl1param::n> p2 =
-            trlweSymDecrypt<lvl1param>(c, key.get<lvl1param>());
+            trlweSymDecrypt<lvl1param>(c, key.getSubset<lvl1param>());
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == p2[i]);
     }
     cout << "Passed" << endl;
@@ -44,9 +44,9 @@ int main()
         for (int i = 0; i < lvl2param::n; i++)
             pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
         TRLWE<lvl2param> c;
-        trlweSymEncrypt<lvl2param>(c, pmu, key.get<lvl2param>());
+        trlweSymEncrypt<lvl2param>(c, pmu, key.getSubset<lvl2param>());
         array<bool, lvl2param::n> p2 =
-            trlweSymDecrypt<lvl2param>(c, key.get<lvl2param>());
+            trlweSymDecrypt<lvl2param>(c, key.getSubset<lvl2param>());
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == p2[i]);
     }
     cout << "Passed" << endl;

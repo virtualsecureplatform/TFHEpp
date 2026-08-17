@@ -44,10 +44,10 @@ int main()
         TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {};
         plainpoly[0] = ps[i];
         trgswSymEncrypt<lvl1param>(cs[i][TFHEpp::lvl0param::key_value_diff - 1],
-                                   plainpoly, sk->key.get<lvl1param>());
+                                   plainpoly, sk->key.getSubset<lvl1param>());
     }
     for (int i = 0; i < num_test; i++)
-        trlweSymEncrypt<lvl1param>(c1[i], pmu1[i], sk->key.get<lvl1param>());
+        trlweSymEncrypt<lvl1param>(c1[i], pmu1[i], sk->key.getSubset<lvl1param>());
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
@@ -58,7 +58,7 @@ int main()
     end = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        pres = trlweSymDecrypt<lvl1param>(c1[test], sk->key.get<lvl1param>());
+        pres = trlweSymDecrypt<lvl1param>(c1[test], sk->key.getSubset<lvl1param>());
         TFHEpp::Polynomial<TFHEpp::lvl1param> polyres = pmu1[test];
         if (ps[test] == 1)
             TFHEpp::PolynomialMulByXai<lvl1param>(polyres, pmu1[test],

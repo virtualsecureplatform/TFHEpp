@@ -17,11 +17,15 @@ int main()
     SecretKey sk;
 
     vector<uint8_t> p(num_test);
-    for (uint8_t &i : p) i = binary(engine);
+    for (uint8_t& i : p) i = binary(engine);
     vector<TLWE<lvl1param>> c(num_test);
     bootsSymEncrypt(c, p, sk);
     vector<uint8_t> p2(num_test);
     p2 = bootsSymDecrypt(c, sk);
+    for (int i = 0; i < num_test; i++) assert(p[i] == p2[i]);
+
+    bootsSymEncrypt<lvl1param, false>(c, p, sk);
+    p2 = bootsSymDecrypt<lvl1param, false>(c, sk);
     for (int i = 0; i < num_test; i++) assert(p[i] == p2[i]);
 
     cout << "Passed" << endl;

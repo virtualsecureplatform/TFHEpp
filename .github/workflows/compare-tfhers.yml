@@ -47,7 +47,6 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_C_COMPILER=gcc \
             -DUSE_BLOCK_BINARY=OFF \
-            -DUSE_SUBSET_KEY=OFF \
             -DUSE_TFHE_RS=ON \
             -DENABLE_TEST=ON
           cmake --build build-split --target pbs_tfhers
@@ -60,7 +59,6 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_C_COMPILER=gcc \
             -DUSE_BLOCK_BINARY=OFF \
-            -DUSE_SUBSET_KEY=OFF \
             -DUSE_TFHE_RS=ON \
             -DUSE_SPQLIOS_INTL=ON \
             -DENABLE_TEST=ON

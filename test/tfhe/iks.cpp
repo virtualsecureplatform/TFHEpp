@@ -21,7 +21,7 @@ int main()
     for (int i = 0; i < num_test; i++)
         TFHEpp::tlweSymEncrypt<TFHEpp::lvl1param>(
             tlwe[i], p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ,
-            sk.key.get<TFHEpp::lvl1param>());
+            sk.key.getIndependent<TFHEpp::lvl1param>());
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
@@ -36,7 +36,7 @@ int main()
     std::cout << elapsed / num_test << "ms" << std::endl;
     for (int i = 0; i < num_test; i++) {
         bool p2 = TFHEpp::tlweSymDecrypt<TFHEpp::lvl0param>(
-            res[i], sk.key.get<TFHEpp::lvl0param>());
+            res[i], sk.key.getSubset<TFHEpp::lvl0param>());
         assert(p[i] == p2);
     }
     std::cout << "Passed" << std::endl;

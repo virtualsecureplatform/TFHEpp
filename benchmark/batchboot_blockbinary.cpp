@@ -1,7 +1,7 @@
 // End-to-end operational-throughput benchmark for the two implementations.
 //
 // Build this target twice: once with the default parameter set (BatchBoot) and
-// once with -DUSE_BLOCK_BINARY=ON -DUSE_SUBSET_KEY=ON (block-binary NAND).
+// once with -DUSE_BLOCK_BINARY=ON (block-binary NAND).
 // The configurations deliberately stay separate: the current block-binary
 // lvl1 key has k=2, while generic BatchRingSwitch requires a k=1 source.
 
@@ -23,7 +23,7 @@
 
 #ifdef USE_BLOCK_BINARY
 
-static void BM_BlockBinaryNAND(benchmark::State &state)
+static void BM_BlockBinaryNAND(benchmark::State& state)
 {
     using bkP = TFHEpp::lvl01param;
     using iksP = TFHEpp::lvl10param;
@@ -44,12 +44,12 @@ static void BM_BlockBinaryNAND(benchmark::State &state)
             eval_key.emplacesubiksk<iksP>(secret_key);
             TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
                 left, TFHEpp::lvl0param::μ, TFHEpp::lvl0param::α,
-                secret_key.key.get<TFHEpp::lvl0param>());
+                secret_key.key.getSubset<TFHEpp::lvl0param>());
             TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
                 right, -TFHEpp::lvl0param::μ, TFHEpp::lvl0param::α,
-                secret_key.key.get<TFHEpp::lvl0param>());
-            TFHEpp::HomNAND<bkP, TFHEpp::lvl1param::μ, iksP>(
-                result, left, right, eval_key);
+                secret_key.key.getSubset<TFHEpp::lvl0param>());
+            TFHEpp::HomNAND<bkP, TFHEpp::lvl1param::μ, iksP>(result, left,
+                                                             right, eval_key);
             initialized = true;
             state.ResumeTiming();
         }
@@ -89,7 +89,7 @@ static_assert(std::has_single_bit(slots) && slots <= SourceP::n);
 constexpr std::uint32_t source_weight = 64;
 using ModuleP = TFHEpp::BatchRingSwitchP<SourceP, slots>;
 
-void BM_BatchBoot(benchmark::State &state)
+void BM_BatchBoot(benchmark::State& state)
 {
     constexpr std::uint32_t input_bits = 2;
     constexpr std::uint32_t stride = SourceP::n / slots;
@@ -124,23 +124,23 @@ void BM_BatchBoot(benchmark::State &state)
             }
             TFHEpp::keyGen<TargetP>(accumulator_key);
             for (std::uint32_t i = 0; i < slots; i++)
-                plaintext[i * stride] = static_cast<SourceP::T>(i & 1)
-                                        << (std::numeric_limits<SourceP::T>::digits -
-                                            input_bits);
+                plaintext[i * stride] =
+                    static_cast<SourceP::T>(i & 1)
+                    << (std::numeric_limits<SourceP::T>::digits - input_bits);
             TFHEpp::trlweSymEncrypt<SourceP>(packed_input, plaintext, 0.0,
-                                           sparse_key);
-            module_key = TFHEpp::BatchRingSwitchSecret<SourceP, slots>(
-                sparse_key);
+                                             sparse_key);
+            module_key =
+                TFHEpp::BatchRingSwitchSecret<SourceP, slots>(sparse_key);
             TFHEpp::BatchBootKeyGen<ModuleP, TargetP>(boot_key, module_key,
                                                       accumulator_key);
             TFHEpp::annihilatekeygen<TargetP>(automorphism_keys,
-                                               accumulator_key);
+                                              accumulator_key);
             TFHEpp::BatchRingSwitch<SourceP, slots>(module_input, packed_input);
             TFHEpp::BatchBootstrap<ModuleP, TargetP>(
                 result, module_input, identity.polynomial, boot_key,
                 automorphism_keys, identity.exponent_bias);
-            const auto phase = TFHEpp::trlwePhase<TargetP>(result,
-                                                           accumulator_key);
+            const auto phase =
+                TFHEpp::trlwePhase<TargetP>(result, accumulator_key);
             for (std::uint32_t i = 0; i < slots; i++)
                 if (TFHEpp::BatchTorusDecode<input_bits>(phase[i * stride]) !=
                     (i & 1))
@@ -156,8 +156,8 @@ void BM_BatchBoot(benchmark::State &state)
         benchmark::DoNotOptimize(result);
     }
     state.SetItemsProcessed(state.iterations() * slots);
-    state.SetLabel("128-bit screen: h=64 source, " +
-                   std::to_string(slots) + " packed 1-bit outputs / job");
+    state.SetLabel("128-bit screen: h=64 source, " + std::to_string(slots) +
+                   " packed 1-bit outputs / job");
 }
 }  // namespace
 

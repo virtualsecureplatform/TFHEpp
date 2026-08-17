@@ -9,7 +9,7 @@ void perform(const SecretKey &sk, std::vector<TRGSWFFT<lvl1param>> &cs)
 {
     Polynomial<lvl1param> poly = {};
     for (auto &&t : cs) {
-        trgswSymEncrypt<lvl1param>(t, poly, sk.key.get<lvl1param>());
+        trgswSymEncrypt<lvl1param>(t, poly, sk.key.getSubset<lvl1param>());
     }
 }
 

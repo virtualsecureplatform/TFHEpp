@@ -38,6 +38,9 @@ struct EvalKey {
         std::shared_ptr<BootstrappingKey<cblvl02param>>,
         std::shared_ptr<BootstrappingKey<cblvlh2param>>,
 #endif
+#ifdef USE_DIFFERENT_CB_TARGET_PARAM
+        std::shared_ptr<BootstrappingKey<independentlvl01param>>,
+#endif
         // BootstrappingKeyFFT
         std::shared_ptr<BootstrappingKeyFFT<lvl01param>>,  // 4
         std::shared_ptr<BootstrappingKeyFFT<lvlh1param>>,  // 5
@@ -55,6 +58,9 @@ struct EvalKey {
         std::shared_ptr<BootstrappingKeyFFT<cblvl02param>>,  // 6
         std::shared_ptr<BootstrappingKeyFFT<cblvlh2param>>,  // 7
 #endif
+#ifdef USE_DIFFERENT_CB_TARGET_PARAM
+        std::shared_ptr<BootstrappingKeyFFT<independentlvl01param>>,
+#endif
         // BootstrappingKeyNTT
         std::shared_ptr<BootstrappingKeyNTT<lvl01param>>,  // 8
         std::shared_ptr<BootstrappingKeyNTT<lvlh1param>>,  // 9
@@ -63,6 +69,9 @@ struct EvalKey {
 #ifdef USE_DIFFERENT_BR_PARAM
         std::shared_ptr<BootstrappingKeyNTT<cblvl02param>>,  // 10
         std::shared_ptr<BootstrappingKeyNTT<cblvlh2param>>,  // 11
+#endif
+#ifdef USE_DIFFERENT_CB_TARGET_PARAM
+        std::shared_ptr<BootstrappingKeyNTT<independentlvl01param>>,
 #endif
         // KeySwitchingKey
         std::shared_ptr<KeySwitchingKey<lvl10param>>,  // 12
@@ -117,6 +126,10 @@ struct EvalKey {
         ,
         std::shared_ptr<BootstrappingKeyRAINTT<cblvl02param>>,
         std::shared_ptr<BootstrappingKeyRAINTT<cblvlh2param>>
+#endif
+#ifdef USE_DIFFERENT_CB_TARGET_PARAM
+        ,
+        std::shared_ptr<BootstrappingKeyRAINTT<independentlvl01param>>
 #endif
 #endif
         >
@@ -314,8 +327,8 @@ struct EvalKey {
         for (int k = 0; k < P::targetP::k; k++) {
             Polynomial<typename P::targetP> partkey;
             for (int i = 0; i < P::targetP::n; i++)
-                partkey[i] =
-                    -sk.key.get<typename P::targetP>()[k * P::targetP::n + i];
+                partkey[i] = -sk.key.getIndependent<
+                    typename P::targetP>()[k * P::targetP::n + i];
             emplaceprivksk<P>("privksk4cb_" + std::to_string(k), partkey, sk);
         }
         emplaceprivksk<P>("privksk4cb_" + std::to_string(P::targetP::k), {1},
@@ -328,7 +341,7 @@ struct EvalKey {
             Polynomial<typename P::targetP> partkey;
             for (int i = 0; i < P::targetP::n; i++)
                 partkey[i] =
-                    -sk.key.get<typename P::targetP>()[k * P::targetP::n + i];
+                    -sk.key.getSubset<typename P::targetP>()[k * P::targetP::n + i];
             emplacesubprivksk<P>("subprivksk4cb_" + std::to_string(k), partkey,
                                  sk);
         }
@@ -364,9 +377,9 @@ struct EvalKey {
         for (int i = 0; i < P::k; i++) {
             Polynomial<P> partkey;
             for (int j = 0; j < P::n; j++)
-                partkey[j] = -sk.key.get<P>()[i * P::n + j];
+                partkey[j] = -sk.key.getIndependent<P>()[i * P::n + j];
             trgswSymEncrypt<P>((*get<CBswitchingKey<P>>())[i], partkey,
-                               sk.key.get<P>());
+                               sk.key.getIndependent<P>());
         }
     }
 
@@ -381,8 +394,8 @@ struct EvalKey {
     {
 #ifdef TFHEPP_HAS_CLPX_PARAMS
         if constexpr (std::is_same_v<P, CLPX2TFHElvlh2param>)
-            return (*const_cast<EvalKey*>(this)
-                         ->get<CLPX2TFHEBKFFTStorage>())[0];
+            return (
+                *const_cast<EvalKey*>(this)->get<CLPX2TFHEBKFFTStorage>())[0];
 #endif
         return *const_cast<EvalKey*>(this)->get<BootstrappingKeyFFT<P>>();
     }

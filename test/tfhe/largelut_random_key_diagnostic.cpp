@@ -27,7 +27,7 @@ long double plaintext_signed_error_units(const TFHEpp::TLWE<P> &ct,
                                          const TFHEpp::SecretKey &sk)
 {
     constexpr uint32_t plain_modulus = 1 << 5;
-    const auto phase = TFHEpp::tlweSymPhase<P>(ct, sk.key.get<P>());
+    const auto phase = TFHEpp::tlweSymPhase<P>(ct, sk.key.getSubset<P>());
     const long double modulus =
         std::ldexp(1.0L, std::numeric_limits<typename P::T>::digits);
     const long double delta = modulus / plain_modulus;
@@ -166,7 +166,7 @@ int main()
         for (uint32_t i = 0; i < L; i++)
             TFHEpp::tlweSymIntEncrypt<domainP, plain_modulus>(
                 encrypted_digits[i], decomposed[i], 0.0,
-                sk->key.get<domainP>());
+                sk->key.getSubset<domainP>());
 
         std::array<TFHEpp::TLWE<domainP>, L> calibrated;
         std::array<TFHEpp::TLWE<targetP>, 2> aes_res;

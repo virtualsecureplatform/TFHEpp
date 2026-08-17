@@ -25,7 +25,7 @@ int main()
     for (int i = 0; i < num_test; i++)
         TFHEpp::tlweSymEncrypt<typename bkP::domainP>(
             tlwe[i], p[i] ? bkP::domainP::μ : -bkP::domainP::μ, bkP::domainP::α,
-            sk.key.get<typename bkP::domainP>());
+            sk.key.getSubset<typename bkP::domainP>());
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
@@ -39,7 +39,7 @@ int main()
     end = std::chrono::system_clock::now();
     for (int i = 0; i < num_test; i++) {
         bool p2 = TFHEpp::tlweSymDecrypt<typename bkP::targetP>(
-            bootedtlwe[i], sk.key.get<typename bkP::targetP>());
+            bootedtlwe[i], sk.key.getSubset<typename bkP::targetP>());
         assert(p[i] == p2);
     }
     std::cout << "Passed" << std::endl;

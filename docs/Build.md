@@ -20,7 +20,7 @@ Security / parameters:
 - `-DUSE_TFHE_RS=ON` — TFHE‑rs‑style parameter set.
 - `-DUSE_COMPRESS=ON` — compressed ciphertext parameters.
 - `-DUSE_TERNARY=ON` — ternary secret keys.
-- `-DUSE_SUBSET_KEY=ON` — subset/partial key switching support.
+- Subset and independent secret-key chains are both generated automatically.
 - `-DUSE_TERNARY_CMUX=ON` — ternary CMUX (implies `USE_TERNARY`).
 - `-DUSE_KEY_BUNDLE=ON` — key‑bundle algorithm for bootstrapping.
 

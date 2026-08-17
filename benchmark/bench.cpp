@@ -15,7 +15,7 @@ void BM_TLWE2TRLWE(benchmark::State& state)
     TFHEpp::TLWE<TFHEpp::lvl0param> ca;
     TFHEpp::tlweSymEncrypt<TFHEpp::lvl0param>(
         ca, static_cast<TFHEpp::lvl0param::T>(binary(engine)),
-        TFHEpp::lvl0param::α, sk->key.get<TFHEpp::lvl0param>());
+        TFHEpp::lvl0param::α, sk->key.getSubset<TFHEpp::lvl0param>());
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state)
         TFHEpp::BlindRotate<TFHEpp::lvl01param>(
@@ -36,14 +36,14 @@ void BM_CMUX(benchmark::State& state)
         pmu0[j] = binary(engine) ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
     TFHEpp::TRLWE<TFHEpp::lvl1param> c0, c1;
     TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(c0, pmu0,
-                                               sk->key.get<TFHEpp::lvl1param>());
+                                               sk->key.getSubset<TFHEpp::lvl1param>());
     TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(c1, pmu1,
-                                               sk->key.get<TFHEpp::lvl1param>());
+                                               sk->key.getSubset<TFHEpp::lvl1param>());
     const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {binary(engine)};
     TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs;
     TFHEpp::trgswSymEncrypt<TFHEpp::lvl1param>(cs, plainpoly,
                                                TFHEpp::lvl1param::α,
-                                               sk->key.get<TFHEpp::lvl1param>());
+                                               sk->key.getSubset<TFHEpp::lvl1param>());
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state) TFHEpp::CMUXFFT<TFHEpp::lvl1param>(res, cs, c1, c0);
 }
@@ -59,12 +59,12 @@ void BM_ExternalProduct(benchmark::State& state)
         pmu0[j] = binary(engine) ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
     TFHEpp::TRLWE<TFHEpp::lvl1param> c0;
     TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(c0, pmu0,
-                                               sk->key.get<TFHEpp::lvl1param>());
+                                               sk->key.getSubset<TFHEpp::lvl1param>());
     const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {binary(engine)};
     TFHEpp::TRGSWFFT<TFHEpp::lvl1param> cs;
     TFHEpp::trgswSymEncrypt<TFHEpp::lvl1param>(cs, plainpoly,
                                                TFHEpp::lvl1param::α,
-                                               sk->key.get<TFHEpp::lvl1param>());
+                                               sk->key.getSubset<TFHEpp::lvl1param>());
     TFHEpp::TRLWE<TFHEpp::lvl1param> res;
     for (auto _ : state)
         TFHEpp::ExternalProduct<TFHEpp::lvl1param>(res, c0, cs);

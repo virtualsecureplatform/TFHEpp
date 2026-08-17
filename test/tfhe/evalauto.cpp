@@ -25,11 +25,11 @@ int main()
 
         TFHEpp::TRLWE<TFHEpp::lvl1param> ca;
         TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(
-            ca, pmu, sk.key.get<TFHEpp::lvl1param>());
+            ca, pmu, sk.key.getSubset<TFHEpp::lvl1param>());
 
         TFHEpp::EvalAutoKey<TFHEpp::lvl1param> eak;
         TFHEpp::evalautokeygen<TFHEpp::lvl1param>(
-            eak, d, sk.key.get<TFHEpp::lvl1param>());
+            eak, d, sk.key.getSubset<TFHEpp::lvl1param>());
 
         TFHEpp::TRLWE<TFHEpp::lvl1param> cres;
         TFHEpp::EvalAuto<TFHEpp::lvl1param>(cres, ca, d, eak);
@@ -39,7 +39,7 @@ int main()
 
         std::array<bool, TFHEpp::lvl1param::n> pres =
             TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(
-                cres, sk.key.get<TFHEpp::lvl1param>());
+                cres, sk.key.getSubset<TFHEpp::lvl1param>());
 
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             assert(pres[i] == (autopoly[i] == 1));

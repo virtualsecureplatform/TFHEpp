@@ -17,10 +17,10 @@ int main()
     std::uniform_int_distribution<uint32_t> binary(0, 1);
 
     using iksP = TFHEpp::lvl10param;
-    using bkP = TFHEpp::lvl02param;
-    using privksP = TFHEpp::lvl21param;
+    using bkP = TFHEpp::cblvl02param;
+    using privksP = TFHEpp::cblvl21param;
 
-    TFHEpp::SecretKey *sk = new TFHEpp::SecretKey;
+    TFHEpp::SecretKey* sk = new TFHEpp::SecretKey;
     std::stringstream serialized_secret{std::ios::binary | std::ios::out |
                                         std::ios::in};
     {
@@ -55,8 +55,8 @@ int main()
     std::vector<uint8_t> pones(num_test);
     std::vector<uint8_t> pzeros(num_test, 0);
     std::array<bool, privksP::targetP::n> pres;
-    for (std::array<uint8_t, privksP::targetP::n> &i : pa)
-        for (uint8_t &p : i) p = binary(engine);
+    for (std::array<uint8_t, privksP::targetP::n>& i : pa)
+        for (uint8_t& p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < privksP::targetP::n; j++)
             pmu[i][j] = pa[i][j] ? privksP::targetP::μ : -privksP::targetP::μ;
@@ -74,8 +74,9 @@ int main()
 
     for (int i = 0; i < num_test; i++)
         TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
-            ca[i], pmu[i], sk->key.get<typename privksP::targetP>());
-    TFHEpp::bootsSymEncrypt<typename iksP::domainP>(cones, pones, *sk);
+            ca[i], pmu[i], sk->key.getIndependent<typename privksP::targetP>());
+    TFHEpp::bootsSymEncrypt<typename iksP::domainP>(
+        cones, pones, sk->key.getIndependent<typename iksP::domainP>());
     TFHEpp::bootsSymEncrypt<typename bkP::domainP>(directcones, pones, *sk);
 
     std::chrono::system_clock::time_point start, end;
@@ -84,28 +85,28 @@ int main()
 #endif
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::CircuitBootstrapping<iksP, bkP, privksP>(bootedTGSW[test],
-                                                         cones[test], serialized_ek);
-        TFHEpp::CircuitBootstrapping<bkP, privksP>(bootedTGSW[test],
-                                                    directcones[test], serialized_ek);
+        TFHEpp::CircuitBootstrapping<iksP, bkP, privksP>(
+            bootedTGSW[test], cones[test], serialized_ek);
+        TFHEpp::CircuitBootstrapping<bkP, privksP>(
+            bootedTGSW[test], directcones[test], serialized_ek);
     }
     end = std::chrono::system_clock::now();
 #ifdef USE_PERF
     ProfilerStop();
 #endif
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::ExternalProduct<typename privksP::targetP>(
-            ca[test], ca[test], bootedTGSW[test]);
+        TFHEpp::ExternalProduct<typename privksP::targetP>(ca[test], ca[test],
+                                                           bootedTGSW[test]);
         pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(
-            ca[test], sk->key.get<typename privksP::targetP>());
+            ca[test], sk->key.getIndependent<typename privksP::targetP>());
         for (int i = 0; i < privksP::targetP::n; i++)
             assert(pres[i] == pa[test][i]);
 
         TFHEpp::TLWE<TFHEpp::lvl1param> extracted;
         TFHEpp::TLWE<TFHEpp::lvl0param> switched;
         TFHEpp::SampleExtractIndex<TFHEpp::lvl1param>(extracted, ca[test], 0);
-        TFHEpp::IdentityKeySwitch<iksP>(
-            switched, extracted, serialized_ek.getiksk<iksP>());
+        TFHEpp::IdentityKeySwitch<iksP>(switched, extracted,
+                                        serialized_ek.getiksk<iksP>());
         assert(TFHEpp::tlweSymDecrypt<TFHEpp::lvl0param>(switched, *sk) ==
                pa[test][0]);
     }
@@ -123,17 +124,27 @@ int main()
 
         TFHEpp::TRLWE<typename privksP::targetP> normal, inverted;
         TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
-            normal, pmu[test], sk->key.get<typename privksP::targetP>());
+            normal, pmu[test],
+            sk->key.getIndependent<typename privksP::targetP>());
         inverted = normal;
         TFHEpp::ExternalProduct<typename privksP::targetP>(
             normal, normal, directZeroTGSW[test]);
         TFHEpp::ExternalProduct<typename privksP::targetP>(
             inverted, inverted, directZeroInvTGSW[test]);
+        const auto zero_phase = TFHEpp::trlwePhase<typename privksP::targetP>(
+            normal, sk->key.getIndependent<typename privksP::targetP>());
+        for (int i = 0; i < privksP::targetP::n; i++) {
+            const auto centered =
+                static_cast<std::make_signed_t<typename privksP::targetP::T>>(
+                    zero_phase[i]);
+            const auto magnitude = centered < 0 ? -centered : centered;
+            assert(
+                magnitude <
+                static_cast<std::make_signed_t<typename privksP::targetP::T>>(
+                    privksP::targetP::μ));
+        }
         pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(
-            normal, sk->key.get<typename privksP::targetP>());
-        for (int i = 0; i < privksP::targetP::n; i++) assert(!pres[i]);
-        pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(
-            inverted, sk->key.get<typename privksP::targetP>());
+            inverted, sk->key.getIndependent<typename privksP::targetP>());
         for (int i = 0; i < privksP::targetP::n; i++)
             assert(pres[i] == pa[test][i]);
     }
@@ -147,10 +158,10 @@ int main()
             directTGSW[test], directInvTGSW[test], directcones[test],
             serialized_ek);
 
-        TFHEpp::ExternalProduct<typename privksP::targetP>(
-            ca[test], ca[test], directTGSW[test]);
+        TFHEpp::ExternalProduct<typename privksP::targetP>(ca[test], ca[test],
+                                                           directTGSW[test]);
         pres = TFHEpp::trlweSymDecrypt<typename privksP::targetP>(
-            ca[test], sk->key.get<typename privksP::targetP>());
+            ca[test], sk->key.getIndependent<typename privksP::targetP>());
         for (int i = 0; i < privksP::targetP::n; i++)
             assert(pres[i] == pa[test][i]);
     }

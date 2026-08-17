@@ -44,7 +44,7 @@ long double plaintext_error_units(const TFHEpp::TLWE<P> &ct,
                                   const TFHEpp::SecretKey &sk)
 {
     constexpr uint32_t plain_modulus = 1 << 5;
-    const auto phase = TFHEpp::tlweSymPhase<P>(ct, sk.key.get<P>());
+    const auto phase = TFHEpp::tlweSymPhase<P>(ct, sk.key.getSubset<P>());
     const long double modulus =
         std::ldexp(1.0L, std::numeric_limits<typename P::T>::digits);
     const long double delta = modulus / plain_modulus;
@@ -172,7 +172,7 @@ int main()
             const uint32_t Bi =
                 TFHEpp::LargeLUTStepBlockSize<targetP, W, K>(i);
             TFHEpp::R2RKeyGen<targetP, r2r_t, r2r_basebit>(
-                (*step_r2rks)[i - 1], positions, Bi, sk->key.get<targetP>());
+                (*step_r2rks)[i - 1], positions, Bi, sk->key.getSubset<targetP>());
         });
     }
     const double r2r_keygen_ms =
@@ -183,13 +183,13 @@ int main()
     const auto decomposed = TFHEpp::LargeLUTRadixDecompose<W, K>(largelut_input);
     for (uint32_t i = 0; i < L; i++)
         TFHEpp::tlweSymIntEncrypt<domainP, plain_modulus>(
-            largelut_digits[i], decomposed[i], 0.0, sk->key.get<domainP>());
+            largelut_digits[i], decomposed[i], 0.0, sk->key.getSubset<domainP>());
 
     std::array<TFHEpp::TLWE<targetP>, 2> aes_nibbles;
     TFHEpp::tlweSymIntEncrypt<targetP, plain_modulus>(
-        aes_nibbles[0], input & 0xF, 0.0, sk->key.get<targetP>());
+        aes_nibbles[0], input & 0xF, 0.0, sk->key.getSubset<targetP>());
     TFHEpp::tlweSymIntEncrypt<targetP, plain_modulus>(
-        aes_nibbles[1], input >> 4, 0.0, sk->key.get<targetP>());
+        aes_nibbles[1], input >> 4, 0.0, sk->key.getSubset<targetP>());
 
     std::array<TFHEpp::TLWE<targetP>, 8> aes_bits;
     for (uint32_t i = 0; i < aes_bits.size(); i++) {
@@ -201,7 +201,7 @@ int main()
                    (typename targetP::T{1}
                     << (std::numeric_limits<typename targetP::T>::digits - 2)));
         TFHEpp::tlweSymEncrypt<targetP>(
-            aes_bits[i], message, 0.0, sk->key.get<targetP>());
+            aes_bits[i], message, 0.0, sk->key.getSubset<targetP>());
     }
 
     const auto low_table = LargeLUTNibbleTRLWE<targetP, W, K>(false);

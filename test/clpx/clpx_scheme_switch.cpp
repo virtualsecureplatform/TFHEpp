@@ -16,11 +16,14 @@ int main()
         ek.emplacebkfft<bkP>(sk);
 
         TFHEpp::AnnihilateKey<typename bkP::targetP> ahk;
-        TFHEpp::annihilatekeygen<typename bkP::targetP>(ahk, sk);
+        TFHEpp::annihilatekeygen<typename bkP::targetP>(
+            ahk, sk.key.getIndependent<typename bkP::targetP>());
 
         const auto digits = TFHEpp::EncodeHatEncoderInt8<typename sskP::targetP, validbit>(13);
         std::vector<TFHEpp::TLWE<typename iksP::domainP>> tlwes;
-        TFHEpp::bootsSymEncrypt<typename iksP::domainP>(tlwes, digits, sk);
+        TFHEpp::bootsSymEncrypt<typename iksP::domainP>(
+            tlwes, digits,
+            sk.key.getIndependent<typename iksP::domainP>());
         assert(tlwes.size() == digits.size());
 
         TFHEpp::TRLWE<typename sskP::targetP> switched;
@@ -52,8 +55,8 @@ int main()
         for (const uint32_t plaintext : {0x2029U, 0x6029U, 0xa029U,
                                          0xe029U}) {
             const auto encoded = TFHEpp::EncodeHatEncoderP<bigP>(plaintext);
-            const auto big =
-                TFHEpp::clpxSymIntEncrypt<bigP>(encoded, sk.key.get<bigP>());
+            const auto big = TFHEpp::clpxSymIntEncrypt<bigP>(
+                encoded, sk.key.getIndependent<bigP>());
 
             std::vector<TFHEpp::TLWE<typename iksP10::domainP>> out(validbit);
             TFHEpp::CLPX2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02,
@@ -63,7 +66,8 @@ int main()
             for (uint32_t bit = 0; bit < validbit; bit++) {
                 const bool actual =
                     TFHEpp::tlweSymDecrypt<typename bkP01::targetP>(
-                        out[bit], sk.key.get<typename bkP01::targetP>());
+                        out[bit],
+                        sk.key.getIndependent<typename bkP01::targetP>());
                 decoded |= static_cast<uint32_t>(actual) << bit;
             }
             if (decoded != plaintext) {

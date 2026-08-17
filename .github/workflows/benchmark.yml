@@ -22,7 +22,7 @@ jobs:
         submodules: recursive
     - name: build TFHEpp
       run: |
-        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_BLOCK_BINARY=OFF -DUSE_SUBSET_KEY=OFF
+        cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DUSE_BLOCK_BINARY=OFF
         cd build
         ninja
     - name: build original TFHE

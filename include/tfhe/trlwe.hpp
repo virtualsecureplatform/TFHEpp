@@ -8,11 +8,11 @@
 
 namespace TFHEpp {
 template <class P>
-void trlweSymEncryptZero(TRLWE<P> &c, const double α, const Key<P> &key)
+void trlweSymEncryptZero(TRLWE<P>& c, const double α, const Key<P>& key)
 {
-    for (typename P::T &i : c[P::k]) i = ModularGaussian<P>(0, α);
+    for (typename P::T& i : c[P::k]) i = ModularGaussian<P>(0, α);
     for (int k = 0; k < P::k; k++) {
-        for (typename P::T &i : c[k]) i = UniformTorusRandom<P>();
+        for (typename P::T& i : c[k]) i = UniformTorusRandom<P>();
         if constexpr (is_multilimb_uint_v<typename P::T>) {
             auto partkey = std::make_unique<Polynomial<P>>();
             auto temp = std::make_unique<Polynomial<P>>();
@@ -31,13 +31,13 @@ void trlweSymEncryptZero(TRLWE<P> &c, const double α, const Key<P> &key)
 }
 
 template <class P>
-void trlweSymEncryptZero(TRLWE<P> &c, const uint η, const Key<P> &key)
+void trlweSymEncryptZero(TRLWE<P>& c, const uint η, const Key<P>& key)
 {
-    for (typename P::T &i : c[P::k])
+    for (typename P::T& i : c[P::k])
         i = CenteredBinomial<P>(η)
             << (std::numeric_limits<typename P::T>::digits - P::qbit);
     for (int k = 0; k < P::k; k++) {
-        for (typename P::T &i : c[k]) i = UniformTorusRandom<P>();
+        for (typename P::T& i : c[k]) i = UniformTorusRandom<P>();
         if constexpr (is_multilimb_uint_v<typename P::T>) {
             auto partkey = std::make_unique<Polynomial<P>>();
             auto temp = std::make_unique<Polynomial<P>>();
@@ -56,7 +56,7 @@ void trlweSymEncryptZero(TRLWE<P> &c, const uint η, const Key<P> &key)
 }
 
 template <class P>
-void trlweSymEncryptZero(TRLWE<P> &c, const Key<P> &key)
+void trlweSymEncryptZero(TRLWE<P>& c, const Key<P>& key)
 {
     if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
         trlweSymEncryptZero<P>(c, P::α, key);
@@ -65,7 +65,7 @@ void trlweSymEncryptZero(TRLWE<P> &c, const Key<P> &key)
 }
 
 template <class P>
-void trlweSymEncryptZero(TRLWERAINTT<P> &c, const uint η, const Key<P> &key)
+void trlweSymEncryptZero(TRLWERAINTT<P>& c, const uint η, const Key<P>& key)
 {
     static_assert(P::q == raintt::P);
     std::uniform_int_distribution<typename P::T> Torusdist(0, P::q - 1);
@@ -73,7 +73,7 @@ void trlweSymEncryptZero(TRLWERAINTT<P> &c, const uint η, const Key<P> &key)
     c = {};
     {
         Polynomial<P> b;
-        for (typename P::T &i : b) i = CenteredBinomial<P>(η);
+        for (typename P::T& i : b) i = CenteredBinomial<P>(η);
         raintt::TwistINTT<typename P::T, P::nbit, false>(
             c[P::k], b, (*raintttable)[1], (*raintttwist)[1]);
         for (int i = 0; i < P::n; i++)
@@ -81,7 +81,7 @@ void trlweSymEncryptZero(TRLWERAINTT<P> &c, const uint η, const Key<P> &key)
                 c[P::k][i] = raintt::MulSREDC(c[P::k][i], raintt::R2);
     }
     for (int k = 0; k < P::k; k++) {
-        for (typename raintt::DoubleSWord &i : c[k]) i = Torusdist(generator);
+        for (typename raintt::DoubleSWord& i : c[k]) i = Torusdist(generator);
         PolynomialRAINTT<P> partkeyraintt;
         {
             Polynomial<P> partkey;
@@ -103,24 +103,24 @@ void trlweSymEncryptZero(TRLWERAINTT<P> &c, const uint η, const Key<P> &key)
 }
 
 template <class P>
-void trlweSymEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
-                     const double α, const Key<P> &key)
+void trlweSymEncrypt(TRLWE<P>& c, const std::array<typename P::T, P::n>& p,
+                     const double α, const Key<P>& key)
 {
     trlweSymEncryptZero<P>(c, α, key);
     for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
 }
 
 template <class P>
-void trlweSymEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
-                     const uint η, const Key<P> &key)
+void trlweSymEncrypt(TRLWE<P>& c, const std::array<typename P::T, P::n>& p,
+                     const uint η, const Key<P>& key)
 {
     trlweSymEncryptZero<P>(c, η, key);
     for (int i = 0; i < P::n; i++) c[P::k][i] += p[i];
 }
 
 template <class P>
-void trlweSymEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
-                     const Key<P> &key)
+void trlweSymEncrypt(TRLWE<P>& c, const std::array<typename P::T, P::n>& p,
+                     const Key<P>& key)
 {
     if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
         trlweSymEncrypt<P>(c, p, P::α, key);
@@ -129,8 +129,8 @@ void trlweSymEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
 }
 
 template <class P, bool modswitch = false>
-void trlweSymEncrypt(TRLWERAINTT<P> &c, const Polynomial<P> &p, const uint η,
-                     const Key<P> &key)
+void trlweSymEncrypt(TRLWERAINTT<P>& c, const Polynomial<P>& p, const uint η,
+                     const Key<P>& key)
 {
     trlweSymEncryptZero<P>(c, η, key);
     PolynomialRAINTT<P> pntt;
@@ -152,8 +152,8 @@ void trlweSymEncrypt(TRLWERAINTT<P> &c, const Polynomial<P> &p, const uint η,
 }
 
 template <class P>
-void trlweSymIntEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
-                        const double α, const Key<P> &key)
+void trlweSymIntEncrypt(TRLWE<P>& c, const std::array<typename P::T, P::n>& p,
+                        const double α, const Key<P>& key)
 {
     trlweSymEncryptZero<P>(c, α, key);
     for (int i = 0; i < P::n; i++)
@@ -161,8 +161,8 @@ void trlweSymIntEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
 }
 
 template <class P>
-void trlweSymIntEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
-                        const uint η, const Key<P> &key)
+void trlweSymIntEncrypt(TRLWE<P>& c, const std::array<typename P::T, P::n>& p,
+                        const uint η, const Key<P>& key)
 {
     trlweSymEncryptZero<P>(c, η, key);
     for (int i = 0; i < P::n; i++)
@@ -170,8 +170,8 @@ void trlweSymIntEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
 }
 
 template <class P>
-void trlweSymIntEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
-                        const Key<P> &key)
+void trlweSymIntEncrypt(TRLWE<P>& c, const std::array<typename P::T, P::n>& p,
+                        const Key<P>& key)
 {
     if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
         trlweSymIntEncrypt<P>(c, p, P::α, key);
@@ -180,7 +180,7 @@ void trlweSymIntEncrypt(TRLWE<P> &c, const std::array<typename P::T, P::n> &p,
 }
 
 template <class P>
-Polynomial<P> trlwePhase(const TRLWE<P> &c, const Key<P> &key)
+Polynomial<P> trlwePhase(const TRLWE<P>& c, const Key<P>& key)
 {
     Polynomial<P> phase = c[P::k];
     for (int k = 0; k < P::k; k++) {
@@ -203,7 +203,7 @@ Polynomial<P> trlwePhase(const TRLWE<P> &c, const Key<P> &key)
 }
 
 template <class P>
-std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
+std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P>& c, const Key<P>& key)
 {
     Polynomial<P> phase = trlwePhase<P>(c, key);
 
@@ -219,7 +219,7 @@ std::array<bool, P::n> trlweSymDecrypt(const TRLWE<P> &c, const Key<P> &key)
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
+Polynomial<P> trlweSymIntDecrypt(const TRLWE<P>& c, const Key<P>& key)
 {
     Polynomial<P> phase = c[P::k];
     for (int k = 0; k < P::k; k++) {
@@ -248,14 +248,19 @@ Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const Key<P> &key)
     return p;
 }
 
-template <class P, uint plain_modulus = P::plain_modulus>
-Polynomial<P> trlweSymIntDecrypt(const TRLWE<P> &c, const SecretKey &sk)
+template <class P, uint plain_modulus = P::plain_modulus,
+          bool use_subset_key = true>
+Polynomial<P> trlweSymIntDecrypt(const TRLWE<P>& c, const SecretKey& sk)
 {
-    return trlweSymIntDecrypt<P, plain_modulus>(c, sk.key.get<P>());
+    if constexpr (use_subset_key)
+        return trlweSymIntDecrypt<P, plain_modulus>(c, sk.key.getSubset<P>());
+    else
+        return trlweSymIntDecrypt<P, plain_modulus>(c,
+                                                    sk.key.getIndependent<P>());
 }
 
 template <class P, class... Args>
-void TRLWEAdd(TRLWE<P> &res, const TRLWE<P> &first, const Args &...rest)
+void TRLWEAdd(TRLWE<P>& res, const TRLWE<P>& first, const Args&... rest)
 {
     for (int component = 0; component < P::k + 1; component++)
         for (int i = 0; i < P::n; i++) {
@@ -266,7 +271,7 @@ void TRLWEAdd(TRLWE<P> &res, const TRLWE<P> &first, const Args &...rest)
 }
 
 template <class P, class... Args>
-void TRLWESub(TRLWE<P> &res, const TRLWE<P> &first, const Args &...rest)
+void TRLWESub(TRLWE<P>& res, const TRLWE<P>& first, const Args&... rest)
 {
     for (int component = 0; component < P::k + 1; component++)
         for (int i = 0; i < P::n; i++) {
@@ -278,7 +283,7 @@ void TRLWESub(TRLWE<P> &res, const TRLWE<P> &first, const Args &...rest)
 }
 
 template <class P>
-void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
+void SampleExtractIndex(TLWE<P>& tlwe, const TRLWE<P>& trlwe, const int index)
 {
     for (int k = 0; k < P::k; k++) {
         for (int i = 0; i <= index; i++)
@@ -290,7 +295,7 @@ void SampleExtractIndex(TLWE<P> &tlwe, const TRLWE<P> &trlwe, const int index)
 }
 
 template <class P>
-void InvSampleExtractIndex(TRLWE<P> &trlwe, const TLWE<P> &tlwe,
+void InvSampleExtractIndex(TRLWE<P>& trlwe, const TLWE<P>& tlwe,
                            const int index)
 {
     for (int k = 0; k < P::k; k++) {

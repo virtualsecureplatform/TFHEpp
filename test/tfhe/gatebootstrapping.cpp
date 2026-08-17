@@ -15,7 +15,7 @@ int main()
     std::default_random_engine engine(seed_gen());
     std::uniform_int_distribution<uint32_t> binary(0, 1);
 
-    using bkP = TFHEpp::lvl02param;
+    using bkP = TFHEpp::cblvl02param;
     using iksP = TFHEpp::lvl20param;
 
     TFHEpp::SecretKey sk;
@@ -29,7 +29,7 @@ int main()
     for (int i = 0; i < num_test; i++)
         TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
             tlwe[i], p[i] ? iksP::domainP::μ : -iksP::domainP::μ,
-            sk.key.get<typename iksP::domainP>());
+            sk.key.getIndependent<typename iksP::domainP>());
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
@@ -51,7 +51,7 @@ int main()
     std::cout << elapsed / num_test << "ms" << std::endl;
     for (int i = 0; i < num_test; i++) {
         bool p2 = TFHEpp::tlweSymDecrypt<typename iksP::domainP>(
-            bootedtlwe[i], sk.key.get<typename iksP::domainP>());
+            bootedtlwe[i], sk.key.getIndependent<typename iksP::domainP>());
         assert(p[i] == p2);
     }
     std::cout << "Passed" << std::endl;

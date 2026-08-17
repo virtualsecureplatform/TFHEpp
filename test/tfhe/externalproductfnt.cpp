@@ -21,7 +21,7 @@ int main()
         plain[0] = static_cast<typename P::T>(message);
 
         TFHEpp::TRGSWFNT<P> trgswfnt;
-        TFHEpp::trgswSymEncrypt<P>(trgswfnt, plain, key.get<P>());
+        TFHEpp::trgswSymEncrypt<P>(trgswfnt, plain, key.getSubset<P>());
 
         for (uint32_t test = 0; test < num_test; test++) {
             std::array<bool, P::n> p;
@@ -32,11 +32,11 @@ int main()
             }
 
             TFHEpp::TRLWE<P> c;
-            TFHEpp::trlweSymEncrypt<P>(c, pmu, key.get<P>());
+            TFHEpp::trlweSymEncrypt<P>(c, pmu, key.getSubset<P>());
             TFHEpp::ExternalProduct<P>(c, c, trgswfnt);
 
             const std::array<bool, P::n> decrypted =
-                TFHEpp::trlweSymDecrypt<P>(c, key.get<P>());
+                TFHEpp::trlweSymDecrypt<P>(c, key.getSubset<P>());
             for (uint32_t i = 0; i < P::n; i++) {
                 const bool expected = message > 0 ? p[i] : !p[i];
                 if (decrypted[i] != expected) {

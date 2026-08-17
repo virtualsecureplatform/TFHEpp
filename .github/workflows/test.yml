@@ -41,7 +41,7 @@ jobs:
           - scheme: clpx
             compiler: clang
             parameter_label: 128bit
-            parameter_flags: -DUSE_BLOCK_BINARY=OFF -DUSE_SUBSET_KEY=OFF
+            parameter_flags: -DUSE_BLOCK_BINARY=OFF
           - compiler: gcc
             compiler_flags: -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
           # clang-22 is the newest clang in the Ubuntu 26.04 repositories;
@@ -101,7 +101,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DENABLE_TEST=ON \
             -DUSE_BLOCK_BINARY=OFF \
-            -DUSE_SUBSET_KEY=OFF \
             -DUSE_CONCRETE=ON
           cmake --build build --target test_tfhe
           cd build
@@ -127,8 +126,7 @@ jobs:
           cmake . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DENABLE_TEST=ON \
-            -DUSE_BLOCK_BINARY=OFF \
-            -DUSE_SUBSET_KEY=OFF
+            -DUSE_BLOCK_BINARY=OFF
           cmake --build build --target test_tfhe
           cd build
           test/test.sh tfhe
@@ -179,8 +177,7 @@ jobs:
           cmake . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DENABLE_TUTORIAL=ON \
-            -DUSE_BLOCK_BINARY=OFF \
-            -DUSE_SUBSET_KEY=OFF
+            -DUSE_BLOCK_BINARY=OFF
           cmake --build build
           echo "12345" | ./build/tutorial/client
           echo "54321" | ./build/tutorial/cloud

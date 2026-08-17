@@ -12,7 +12,8 @@ using namespace TFHEpp;
 struct DDRelinParam {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = -1;
-    static constexpr std::uint32_t nbit = lvl2param::nbit;  // Use lvl2param's nbit for FFT
+    static constexpr std::uint32_t nbit =
+        lvl2param::nbit;  // Use lvl2param's nbit for FFT
     static constexpr std::uint32_t n = 1 << nbit;  // dimension = 2048
     static constexpr std::uint32_t k = 1;
     static constexpr std::uint32_t l = 2;
@@ -39,8 +40,8 @@ struct DDRelinParam {
     static constexpr std::uint32_t B̅gₐbit = B̅gbit;
 };
 
-// Test that the relinearization key generation works correctly for DD parameters
-// Verifies that relinKeygen produces keys with l * l̅ rows when l̅ > 1
+// Test that the relinearization key generation works correctly for DD
+// parameters Verifies that relinKeygen produces keys with l * l̅ rows when l̅ > 1
 template <class P>
 void testDDRelinKeyGeneration()
 {
@@ -49,7 +50,8 @@ void testDDRelinKeyGeneration()
     uniform_int_distribution<int> binary(0, 1);
 
     cout << "Testing DD relinearization key generation..." << endl;
-    cout << "Parameters: n=" << P::n << ", l=" << P::l << ", l̅=" << P::l̅ << endl;
+    cout << "Parameters: n=" << P::n << ", l=" << P::l << ", l̅=" << P::l̅
+         << endl;
     cout << "Expected relinKey rows: " << (P::l * P::l̅) << endl;
 
     // Generate secret key
@@ -66,8 +68,8 @@ void testDDRelinKeyGeneration()
     static_assert(sizeof(relinkey) / sizeof(relinkey[0]) == P::l * P::l̅,
                   "relinKey should have l * l̅ rows");
 
-    cout << "relinKey generated with " << (sizeof(relinkey) / sizeof(relinkey[0]))
-         << " rows." << endl;
+    cout << "relinKey generated with "
+         << (sizeof(relinkey) / sizeof(relinkey[0])) << " rows." << endl;
 
     // Generate FFT version
     relinKeyFFT<P> relinkeyfft = relinKeyFFTgen<P>(key);
@@ -75,8 +77,8 @@ void testDDRelinKeyGeneration()
     static_assert(sizeof(relinkeyfft) / sizeof(relinkeyfft[0]) == P::l * P::l̅,
                   "relinKeyFFT should have l * l̅ rows");
 
-    cout << "relinKeyFFT generated with " << (sizeof(relinkeyfft) / sizeof(relinkeyfft[0]))
-         << " rows." << endl;
+    cout << "relinKeyFFT generated with "
+         << (sizeof(relinkeyfft) / sizeof(relinkeyfft[0])) << " rows." << endl;
 
     cout << "Passed!" << endl;
 }
@@ -90,7 +92,8 @@ void testDDRelinKeySwitch()
     random_device seed_gen;
     default_random_engine engine(seed_gen());
     uniform_int_distribution<int> binary(0, 1);
-    uniform_int_distribution<typename P::T> coeffDist(0, std::numeric_limits<typename P::T>::max());
+    uniform_int_distribution<typename P::T> coeffDist(
+        0, std::numeric_limits<typename P::T>::max());
 
     cout << "Testing DD relinearization key switch..." << endl;
 
@@ -119,7 +122,8 @@ void testDDRelinKeySwitch()
         // The result should be a valid TRLWE with k+1 polynomials
         // Just verify the structure is correct (full verification would require
         // the complete multiplication context)
-        static_assert(result.size() == P::k + 1, "TRLWE should have k+1 polynomials");
+        static_assert(result.size() == P::k + 1,
+                      "TRLWE should have k+1 polynomials");
     }
 
     cout << "Passed!" << endl;
@@ -142,50 +146,61 @@ int main()
     // Also verify that the standard path still works
     cout << "=== Test 3: Standard Relinearization (lvl1param) ===" << endl;
     using P2 = lvl1param;
-    cout << "Parameters: n=" << P2::n << ", l=" << P2::l << ", l̅=" << P2::l̅ << endl;
-
-    SecretKey *sk = new SecretKey();
-
-    cout << "Generating standard relinearization key..." << endl;
-    relinKeyFFT<P2> relinkeyfft2 = relinKeyFFTgen<P2>(sk->key.get<P2>());
-    cout << "Done." << endl;
-
-    // Run a few standard TRLWE multiplications to ensure we didn't break anything
-    constexpr int num_test = 10;
+    cout << "Parameters: n=" << P2::n << ", l=" << P2::l << ", l̅=" << P2::l̅
+         << endl;
     random_device seed_gen;
     default_random_engine engine(seed_gen());
 
-    cout << "Testing standard TRLWE multiplication..." << endl;
-    for (int test = 0; test < num_test; test++) {
-        uniform_int_distribution<typename P2::T> message(0, P2::plain_modulus - 1);
+    if constexpr (P2::k == 1) {
+        SecretKey* sk = new SecretKey();
 
-        Polynomial<P2> p0, p1, pres, ptrue;
-        for (typename P2::T &i : p0) i = message(engine);
-        for (typename P2::T &i : p1) i = message(engine);
+        cout << "Generating standard relinearization key..." << endl;
+        relinKeyFFT<P2> relinkeyfft2 =
+            relinKeyFFTgen<P2>(sk->key.getSubset<P2>());
+        cout << "Done." << endl;
 
-        TRLWE<P2> c0, c1;
-        trlweSymIntEncrypt<P2>(c0, p0, sk->key.get<P2>());
-        trlweSymIntEncrypt<P2>(c1, p1, sk->key.get<P2>());
+        // Run a few standard TRLWE multiplications to ensure we didn't break
+        // anything
+        constexpr int num_test = 10;
+        cout << "Testing standard TRLWE multiplication..." << endl;
+        for (int test = 0; test < num_test; test++) {
+            uniform_int_distribution<typename P2::T> message(
+                0, P2::plain_modulus - 1);
 
-        TRLWE<P2> cres;
-        TRLWEMult<P2>(cres, c0, c1, relinkeyfft2);
+            Polynomial<P2> p0, p1, pres, ptrue;
+            for (typename P2::T& i : p0) i = message(engine);
+            for (typename P2::T& i : p1) i = message(engine);
 
-        pres = trlweSymIntDecrypt<P2>(cres, sk->key.get<P2>());
+            TRLWE<P2> c0, c1;
+            trlweSymIntEncrypt<P2>(c0, p0, sk->key.getSubset<P2>());
+            trlweSymIntEncrypt<P2>(c1, p1, sk->key.getSubset<P2>());
 
-        PolyMulNaive<P2>(ptrue, p0, p1);
-        for (int i = 0; i < P2::n; i++) ptrue[i] %= P2::plain_modulus;
+            TRLWE<P2> cres;
+            TRLWEMult<P2>(cres, c0, c1, relinkeyfft2);
 
-        for (int i = 0; i < P2::n; i++) {
-            if (pres[i] != ptrue[i]) {
-                cerr << "Standard TRLWE multiplication failed at test " << test
-                     << ", index " << i << endl;
-                assert(false);
+            pres = trlweSymIntDecrypt<P2>(cres, sk->key.getSubset<P2>());
+
+            PolyMulNaive<P2>(ptrue, p0, p1);
+            for (int i = 0; i < P2::n; i++) ptrue[i] %= P2::plain_modulus;
+
+            for (int i = 0; i < P2::n; i++) {
+                if (pres[i] != ptrue[i]) {
+                    cerr << "Standard TRLWE multiplication failed at test "
+                         << test << ", index " << i << endl;
+                    assert(false);
+                }
             }
         }
-    }
-    cout << "Passed!" << endl << endl;
+        cout << "Passed!" << endl << endl;
 
-    delete sk;
+        delete sk;
+    }
+    else {
+        cout << "Skipped: standard relinearization supports k=1; active lvl1 "
+                "uses k="
+             << P2::k << "." << endl
+             << endl;
+    }
 
     // Test 4: Full DD TRLWE multiplication
     cout << "=== Test 4: Full DD TRLWE Multiplication ===" << endl;
@@ -194,7 +209,8 @@ int main()
     // Use the DDRelinParam which has l̅=2
     {
         using PDD = DDRelinParam;
-        cout << "Parameters: n=" << PDD::n << ", l̅=" << PDD::l̅ << ", B̅gbit=" << PDD::B̅gbit << endl;
+        cout << "Parameters: n=" << PDD::n << ", l̅=" << PDD::l̅
+             << ", B̅gbit=" << PDD::B̅gbit << endl;
 
         // Generate key
         Key<PDD> keyDD;
@@ -204,7 +220,8 @@ int main()
                                             : static_cast<typename PDD::T>(-1);
         }
 
-        // Generate relinearization key (unified function handles DD automatically)
+        // Generate relinearization key (unified function handles DD
+        // automatically)
         relinKeyFFT<PDD> relinkeyfftDD = relinKeyFFTgen<PDD>(keyDD);
 
         // Test a few multiplications
@@ -215,7 +232,8 @@ int main()
         for (int test = 0; test < num_dd_test; test++) {
             // Create simple plaintexts (small values for testing)
             Polynomial<PDD> p0, p1;
-            uniform_int_distribution<typename PDD::T> msgDist(0, PDD::plain_modulus - 1);
+            uniform_int_distribution<typename PDD::T> msgDist(
+                0, PDD::plain_modulus - 1);
             for (int i = 0; i < PDD::n; i++) {
                 p0[i] = msgDist(engine);
                 p1[i] = msgDist(engine);
@@ -244,8 +262,8 @@ int main()
                 if (pres[i] != ptrue[i]) {
                     test_passed = false;
                     if (failed == 0) {  // Print first failure details
-                        cout << "First mismatch at index " << i
-                             << ": expected " << ptrue[i] << " got " << pres[i] << endl;
+                        cout << "First mismatch at index " << i << ": expected "
+                             << ptrue[i] << " got " << pres[i] << endl;
                     }
                     break;
                 }
@@ -253,18 +271,22 @@ int main()
 
             if (test_passed) {
                 passed++;
-            } else {
+            }
+            else {
                 failed++;
             }
         }
 
-        cout << "Full DD multiplication: " << passed << "/" << num_dd_test << " passed" << endl;
+        cout << "Full DD multiplication: " << passed << "/" << num_dd_test
+             << " passed" << endl;
         if (failed > 0) {
-            cout << "Note: Full DD multiplication may need parameter tuning." << endl;
+            cout << "Note: Full DD multiplication may need parameter tuning."
+                 << endl;
         }
     }
     cout << endl;
 
-    cout << "=== All TRLWE multiplication DD extension tests passed ===" << endl;
+    cout << "=== All TRLWE multiplication DD extension tests passed ==="
+         << endl;
     return 0;
 }

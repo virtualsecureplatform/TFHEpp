@@ -113,10 +113,22 @@ void keyGen(Key<P>& key)
     }
 }
 
+template <class K>
+struct KeyPair {
+    K subset;
+    K independent;
+
+    template <class Archive>
+    void serialize(Archive& archive)
+    {
+        archive(subset, independent);
+    }
+};
+
 struct lweKey {
 #ifdef USE_BLOCK_BINARY
     struct blockbinaryaesKey {
-        Key<blockbinaryaeslvl2param> value;
+        KeyPair<Key<blockbinaryaeslvl2param>> value;
 
         template <class Archive>
         void serialize(Archive& archive)
@@ -125,48 +137,94 @@ struct lweKey {
         }
     };
 #endif
-    std::tuple<Key<lvl0param>, Key<lvlhalfparam>, Key<lvl1param>,
-               Key<lvl2param>, Key<lvl3param>
+    std::tuple<Key<lvl0param>, KeyPair<Key<lvlhalfparam>>,
+               KeyPair<Key<lvl1param>>, KeyPair<Key<lvl2param>>,
+               KeyPair<Key<lvl3param>>
 #ifdef USE_BLOCK_BINARY
-               , blockbinaryaesKey
+               ,
+               blockbinaryaesKey
 #endif
                >
         keys;
     lweKey()
     {
         keyGen<lvl0param>(std::get<Key<lvl0param>>(keys));
-        keyGen<lvlhalfparam>(std::get<Key<lvlhalfparam>>(keys));
-        keyGen<lvl1param>(std::get<Key<lvl1param>>(keys));
-        keyGen<lvl2param>(std::get<Key<lvl2param>>(keys));
+        auto& halfkeys = std::get<KeyPair<Key<lvlhalfparam>>>(keys);
+        auto& lvl1keys = std::get<KeyPair<Key<lvl1param>>>(keys);
+        auto& lvl2keys = std::get<KeyPair<Key<lvl2param>>>(keys);
+        auto& lvl3keys = std::get<KeyPair<Key<lvl3param>>>(keys);
+        keyGen<lvlhalfparam>(halfkeys.subset);
+        keyGen<lvlhalfparam>(halfkeys.independent);
+        keyGen<lvl1param>(lvl1keys.subset);
+        keyGen<lvl1param>(lvl1keys.independent);
+        keyGen<lvl2param>(lvl2keys.subset);
+        keyGen<lvl2param>(lvl2keys.independent);
+        keyGen<lvl3param>(lvl3keys.subset);
+        keyGen<lvl3param>(lvl3keys.independent);
 #ifdef USE_BLOCK_BINARY
-        keyGen<blockbinaryaeslvl2param>(
-            std::get<blockbinaryaesKey>(keys).value);
+        auto& blockaeskeys = std::get<blockbinaryaesKey>(keys).value;
+        keyGen<blockbinaryaeslvl2param>(blockaeskeys.subset);
+        keyGen<blockbinaryaeslvl2param>(blockaeskeys.independent);
 #endif
-#ifdef USE_SUBSET_KEY
+        if constexpr (lvlhalfparam::k * lvlhalfparam::n >=
+                      lvl0param::k * lvl0param::n)
+            for (int i = 0; i < lvl0param::k * lvl0param::n; i++)
+                halfkeys.subset[i] = static_cast<typename lvlhalfparam::T>(
+                    std::get<Key<lvl0param>>(keys)[i]);
         static_assert(lvl1param::k * lvl1param::n >=
                       lvl0param::k * lvl0param::n);
         for (int i = 0; i < lvl0param::k * lvl0param::n; i++)
-            std::get<Key<lvl1param>>(keys)[i] =
-                static_cast<typename lvl1param::T>(
-                    std::get<Key<lvl0param>>(keys)[i]);
+            lvl1keys.subset[i] = static_cast<typename lvl1param::T>(
+                std::get<Key<lvl0param>>(keys)[i]);
         static_assert(lvl2param::k * lvl2param::n >=
                       lvl1param::k * lvl1param::n);
         for (int i = 0; i < lvl1param::k * lvl1param::n; i++)
-            std::get<Key<lvl2param>>(keys)[i] = static_cast<lvl2param::T>(
+            lvl2keys.subset[i] = static_cast<lvl2param::T>(
                 static_cast<std::make_signed_t<lvl1param::T>>(
-                    std::get<Key<lvl1param>>(keys)[i]));
+                    lvl1keys.subset[i]));
+        static_assert(lvl3param::k * lvl3param::n >=
+                      lvl2param::k * lvl2param::n);
+        for (int i = 0; i < lvl2param::k * lvl2param::n; i++)
+            lvl3keys.subset[i] = static_cast<lvl3param::T>(
+                static_cast<std::make_signed_t<lvl2param::T>>(
+                    lvl2keys.subset[i]));
+#ifdef USE_BLOCK_BINARY
+        static_assert(blockbinaryaeslvl2param::k * blockbinaryaeslvl2param::n >=
+                      lvl1param::k * lvl1param::n);
+        for (int i = 0; i < lvl1param::k * lvl1param::n; i++)
+            blockaeskeys.subset[i] = static_cast<blockbinaryaeslvl2param::T>(
+                static_cast<std::make_signed_t<lvl1param::T>>(
+                    lvl1keys.subset[i]));
 #endif
     }
     template <class P>
-    Key<P> get() const
+    Key<P> getSubset() const
     {
 #ifdef USE_BLOCK_BINARY
         if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||
                       std::is_same_v<P, blockbinaryaesAHlvl2param>)
-            return std::get<blockbinaryaesKey>(keys).value;
+            return std::get<blockbinaryaesKey>(keys).value.subset;
         else
 #endif
-        return std::get<Key<P>>(keys);
+            if constexpr (std::is_same_v<P, lvl0param>)
+            return std::get<Key<lvl0param>>(keys);
+        else
+            return std::get<KeyPair<Key<P>>>(keys).subset;
+    }
+
+    template <class P>
+    Key<P> getIndependent() const
+    {
+#ifdef USE_BLOCK_BINARY
+        if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||
+                      std::is_same_v<P, blockbinaryaesAHlvl2param>)
+            return std::get<blockbinaryaesKey>(keys).value.independent;
+        else
+#endif
+            if constexpr (std::is_same_v<P, lvl0param>)
+            return std::get<Key<lvl0param>>(keys);
+        else
+            return std::get<KeyPair<Key<P>>>(keys).independent;
     }
 };
 

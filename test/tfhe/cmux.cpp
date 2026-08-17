@@ -45,12 +45,12 @@ int main()
     for (int i = 0; i < num_test; i++) {
         Polynomial<TFHEpp::lvl1param> plainpoly = {};
         plainpoly[0] = ps[i];
-        trgswSymEncrypt<lvl1param>(cs[i], plainpoly, sk->key.get<lvl1param>());
+        trgswSymEncrypt<lvl1param>(cs[i], plainpoly, sk->key.getSubset<lvl1param>());
     }
     for (int i = 0; i < num_test; i++)
-        trlweSymEncrypt<lvl1param>(c1[i], pmu1[i], sk->key.get<lvl1param>());
+        trlweSymEncrypt<lvl1param>(c1[i], pmu1[i], sk->key.getSubset<lvl1param>());
     for (int i = 0; i < num_test; i++)
-        trlweSymEncrypt<lvl1param>(c0[i], pmu0[i], sk->key.get<lvl1param>());
+        trlweSymEncrypt<lvl1param>(c0[i], pmu0[i], sk->key.getSubset<lvl1param>());
 
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
@@ -60,7 +60,7 @@ int main()
     end = chrono::system_clock::now();
 
     for (int test = 0; test < num_test; test++) {
-        pres = trlweSymDecrypt<lvl1param>(cres[test], sk->key.get<lvl1param>());
+        pres = trlweSymDecrypt<lvl1param>(cres[test], sk->key.getSubset<lvl1param>());
         for (int i = 0; i < lvl1param::n; i++)
             assert(pres[i] ==
                    (((ps[test] > 0) ? p1[test][i] : p0[test][i]) > 0));

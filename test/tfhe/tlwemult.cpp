@@ -15,7 +15,7 @@ int main()
 
     std::unique_ptr<TFHEpp::relinKeyFFT<P>> relinkeyfft =
         std::make_unique<TFHEpp::relinKeyFFT<P>>();
-    *relinkeyfft = TFHEpp::relinKeyFFTgen<P>(sk->key.get<P>());
+    *relinkeyfft = TFHEpp::relinKeyFFTgen<P>(sk->key.getSubset<P>());
     std::unique_ptr<TFHEpp::PrivateKeySwitchingKey<privksP>> privksk =
         std::make_unique<TFHEpp::PrivateKeySwitchingKey<privksP>>();
     TFHEpp::privkskgen<privksP>(*privksk, {1}, *sk);
@@ -32,12 +32,12 @@ int main()
         ptrue = (p0 * p1) % P::plain_modulus;
 
         TFHEpp::TLWE<P> c0;
-        TFHEpp::tlweSymIntEncrypt<P>(c0, p0, sk->key.get<P>());
+        TFHEpp::tlweSymIntEncrypt<P>(c0, p0, sk->key.getSubset<P>());
         TFHEpp::TLWE<P> c1;
-        TFHEpp::tlweSymIntEncrypt<P>(c1, p1, sk->key.get<P>());
+        TFHEpp::tlweSymIntEncrypt<P>(c1, p1, sk->key.getSubset<P>());
         TFHEpp::TLWE<P> cres;
         TFHEpp::TLWEMult<privksP>(cres, c0, c1, *relinkeyfft, *privksk);
-        pres = TFHEpp::tlweSymIntDecrypt<P>(cres, sk->key.get<P>());
+        pres = TFHEpp::tlweSymIntDecrypt<P>(cres, sk->key.getSubset<P>());
 
         if (pres != ptrue) count++;
         // std::cout << p0 << ":" << p1 << ":" << pres << ":" << ptrue

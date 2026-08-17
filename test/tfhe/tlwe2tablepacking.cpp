@@ -7,7 +7,7 @@
 
 int main()
 {
-    using P = TFHEpp::lvl1param;
+    using P = TFHEpp::AHlvl1param;
     constexpr uint32_t num_test = 1000;
     constexpr uint l = 4;
     constexpr uint numtlwe = 1 << l;
@@ -22,19 +22,20 @@ int main()
     std::vector<std::array<TFHEpp::TLWE<P>, numtlwe>> ca(num_test);
 
     std::vector<std::vector<uint8_t>> pin(num_test);
-    for (std::vector<uint8_t> &i : pin) {
+    for (std::vector<uint8_t>& i : pin) {
         i.resize(numtlwe);
-        for (uint8_t &p : i) p = intgen(engine);
+        for (uint8_t& p : i) p = intgen(engine);
     }
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < numtlwe; j++)
-            TFHEpp::tlweSymIntEncrypt<P, plain_modulus>(ca[i][j], pin[i][j], *sk);
+            TFHEpp::tlweSymIntEncrypt<P, plain_modulus>(ca[i][j], pin[i][j],
+                                                        sk->key.getIndependent<P>());
 
     std::vector<TFHEpp::TRLWE<P>> cres(num_test);
 
     std::unique_ptr<TFHEpp::AnnihilateKey<P>> ahk(
         new TFHEpp::AnnihilateKey<P>());
-    TFHEpp::annihilatekeygen<P>(*ahk, *sk);
+    TFHEpp::annihilatekeygen<P>(*ahk, sk->key.getIndependent<P>());
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
@@ -47,7 +48,8 @@ int main()
 
     for (int i = 0; i < num_test; i++) {
         TFHEpp::Polynomial<P> pres;
-        pres = TFHEpp::trlweSymIntDecrypt<P, plain_modulus>(cres[i], *sk);
+        pres = TFHEpp::trlweSymIntDecrypt<P, plain_modulus>(
+            cres[i], sk->key.getIndependent<P>());
         // for (int j = 0; j < numtlwe; j++)
         //     for (int k = 0; k < segment; k++)
         //         std::cout << static_cast<int64_t>(pres[j * segment + k]) <<

@@ -57,7 +57,7 @@ int main()
     for (size_t i = 0; i < N; i++) {
         guard.emplace_back();
         TFHEpp::trgswSymEncrypt<Lvl1>(guard.back(), plainpoly,
-                                      skey.key.get<Lvl1>());
+                                      skey.key.getSubset<Lvl1>());
     }
 
     alignas(64) TRLWELvl1 c1 = trivial_TRLWELvl1(uint2weight(1)),
@@ -65,14 +65,14 @@ int main()
     alignas(64) TRLWELvl1 res = c1;
     dump_histgram_of_phase_of_TRLWELvl1(
         std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(
-                       res, skey.key.get<TFHEpp::lvl1param>()));
+                       res, skey.key.getSubset<TFHEpp::lvl1param>()));
     for (size_t i = 0; i < N; i++) {
         alignas(64) TRLWELvl1 tmp = res;
         TFHEpp::CMUXFFT<Lvl1>(res, guard.at(i), tmp, c0);
     }
     dump_histgram_of_phase_of_TRLWELvl1(
         std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(
-                       res, skey.key.get<TFHEpp::lvl1param>()));
+                       res, skey.key.getSubset<TFHEpp::lvl1param>()));
 
     /*
     PolyLvl1 testvec1 = {}, testvec2 = {};

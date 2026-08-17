@@ -4,11 +4,12 @@
 #include <random>
 #include <tfhe++.hpp>
 
-using TRGSWLvl1FFT = TFHEpp::TRGSWFFT<TFHEpp::lvl1param>;
-using TRLWELvl1 = TFHEpp::TRLWE<TFHEpp::lvl1param>;
-using PolyLvl1 = TFHEpp::Polynomial<TFHEpp::lvl1param>;
+using CBPrivP = TFHEpp::cblvl21param;
+using Lvl1 = typename CBPrivP::targetP;
+using TRGSWLvl1FFT = TFHEpp::TRGSWFFT<Lvl1>;
+using TRLWELvl1 = TFHEpp::TRLWE<Lvl1>;
+using PolyLvl1 = TFHEpp::Polynomial<Lvl1>;
 using SecretKey = TFHEpp::SecretKey;
-using Lvl1 = TFHEpp::lvl1param;
 
 PolyLvl1 uint2weight(uint64_t n)
 {
@@ -25,7 +26,7 @@ PolyLvl1 uint2weight(uint64_t n)
 TRLWELvl1 trivial_TRLWELvl1(const PolyLvl1 &src)
 {
     TRLWELvl1 ret = {};
-    ret[TFHEpp::lvl1param::k] = src;
+    ret[Lvl1::k] = src;
     return ret;
 }
 
@@ -50,18 +51,20 @@ int main()
     SecretKey skey;
     TFHEpp::EvalKey ekey;
     ekey.emplaceiksk<TFHEpp::lvl10param>(skey);
-    ekey.emplacebkfft<TFHEpp::lvl02param>(skey);
-    ekey.emplaceprivksk4cb<TFHEpp::lvl21param>(skey);
+    ekey.emplacebkfft<TFHEpp::cblvl02param>(skey);
+    ekey.emplaceprivksk4cb<CBPrivP>(skey);
 
-    std::vector<TRGSWLvl1FFT, TFHEpp::AlignedAllocator<
-                                  TFHEpp::TRGSWFFT<TFHEpp::lvl1param>, 64>>
+    std::vector<TRGSWLvl1FFT,
+                TFHEpp::AlignedAllocator<TFHEpp::TRGSWFFT<Lvl1>, 64>>
         guard;
     for (size_t i = 0; i < N; i++) {
         TFHEpp::TRGSWFFT<Lvl1> trgsw;
         TFHEpp::TLWE<Lvl1> tlwe;
-        TFHEpp::tlweSymEncrypt<Lvl1>(tlwe, Lvl1::μ, skey.key.get<Lvl1>());
-        TFHEpp::CircuitBootstrapping<TFHEpp::lvl10param, TFHEpp::lvl02param,
-                                     TFHEpp::lvl21param>(trgsw, tlwe, ekey);
+        TFHEpp::tlweSymEncrypt<Lvl1>(tlwe, Lvl1::μ,
+                                     skey.key.getIndependent<Lvl1>());
+        TFHEpp::CircuitBootstrapping<TFHEpp::lvl10param,
+                                     TFHEpp::cblvl02param, CBPrivP>(trgsw,
+                                                                   tlwe, ekey);
         guard.emplace_back(std::move(trgsw));
     }
 
@@ -69,15 +72,15 @@ int main()
               c0 = trivial_TRLWELvl1(uint2weight(0));
     TRLWELvl1 res = c1;
     dump_histgram_of_phase_of_TRLWELvl1(
-        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(
-                       res, skey.key.get<TFHEpp::lvl1param>()));
+        std::cout,
+        TFHEpp::trlwePhase<Lvl1>(res, skey.key.getIndependent<Lvl1>()));
     for (size_t i = 0; i < N; i++) {
         TRLWELvl1 tmp = res;
         TFHEpp::CMUXFFT<Lvl1>(res, guard.at(i), tmp, c0);
     }
     dump_histgram_of_phase_of_TRLWELvl1(
-        std::cout, TFHEpp::trlwePhase<TFHEpp::lvl1param>(
-                       res, skey.key.get<TFHEpp::lvl1param>()));
+        std::cout,
+        TFHEpp::trlwePhase<Lvl1>(res, skey.key.getIndependent<Lvl1>()));
 
     /*
     PolyLvl1 testvec1 = {}, testvec2 = {};

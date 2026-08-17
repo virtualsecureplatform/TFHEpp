@@ -18,7 +18,7 @@ int main()
     using xorbrP = TFHEpp::lvl01param;
     using briksP = TFHEpp::lvl10param;
     using cbiksP = TFHEpp::lvl21param;
-    using privksP = TFHEpp::lvl21param;
+    using privksP = TFHEpp::cblvl21param;
 
     // To see performance
     std::chrono::system_clock::time_point start, end;

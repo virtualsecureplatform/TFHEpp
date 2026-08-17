@@ -527,7 +527,7 @@ void benchmark_functional_bootstrap()
     for (std::size_t i = 0; i < P::n; i++)
         TFHEpp::tlweSymEncrypt<typename IKSP::domainP>(
             tfhe_inputs[i], (i & 1) ? IKSP::domainP::μ : -IKSP::domainP::μ,
-            tfhe_secret->key.get<typename IKSP::domainP>());
+            tfhe_secret->key.getSubset<typename IKSP::domainP>());
     const double tfhe_total_ms = average_runtime_ms(2, [&] {
         for (std::size_t i = 0; i < P::n; i++)
             TFHEpp::GateBootstrapping<IKSP, BootstrapP,
@@ -710,7 +710,7 @@ void benchmark_lvl6_functional_bootstrap(
     TFHEpp::TLWE<typename BootstrapP::targetP> tfhe_output{};
     TFHEpp::tlweSymEncrypt<typename IKSP::domainP>(
         tfhe_input, IKSP::domainP::μ,
-        tfhe_secret->key.get<typename IKSP::domainP>());
+        tfhe_secret->key.getSubset<typename IKSP::domainP>());
     const double tfhe_ms = average_runtime_ms(16, [&] {
         TFHEpp::GateBootstrapping<IKSP, BootstrapP, BootstrapP::targetP::μ>(
             tfhe_output, tfhe_input, *tfhe_eval);

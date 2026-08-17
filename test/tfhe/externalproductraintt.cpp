@@ -23,20 +23,20 @@ int main()
             pmu[i] = p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
         TFHEpp::TRLWE<TFHEpp::lvl1param> c;
         TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(
-            c, pmu, key.get<TFHEpp::lvl1param>());
+            c, pmu, key.getSubset<TFHEpp::lvl1param>());
 
         const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {
             static_cast<typename TFHEpp::lvl1param::T>(1)};
 
         TFHEpp::TRGSWRAINTT<TFHEpp::lvl1param> trgswntt;
         TFHEpp::trgswSymEncrypt<TFHEpp::lvl1param>(
-            trgswntt, plainpoly, key.get<TFHEpp::lvl1param>());
+            trgswntt, plainpoly, key.getSubset<TFHEpp::lvl1param>());
         TFHEpp::ExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
         // if constexpr(TFHEpp::hasq<TFHEpp::lvl1param>) for(int
         // i=0;i<TFHEpp::lvl1param::n;i++) assert(c[0][i]<TFHEpp::lvl1param::q);
         std::array<bool, TFHEpp::lvl1param::n> p2 =
             TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(
-                c, key.get<TFHEpp::lvl1param>());
+                c, key.getSubset<TFHEpp::lvl1param>());
         for (int i = 0; i < TFHEpp::lvl1param::n; i++)
             if (p[i] != p2[i])
                 std::cout << i << ":" << (p[i] ? 1 : 0) << ":"
@@ -58,18 +58,18 @@ int main()
             pmu[i] = p[i] ? TFHEpp::lvl1param::μ : -TFHEpp::lvl1param::μ;
         TFHEpp::TRLWE<TFHEpp::lvl1param> c;
         TFHEpp::trlweSymEncrypt<TFHEpp::lvl1param>(
-            c, pmu, key.get<TFHEpp::lvl1param>());
+            c, pmu, key.getSubset<TFHEpp::lvl1param>());
 
         const TFHEpp::Polynomial<TFHEpp::lvl1param> plainpoly = {
             static_cast<typename TFHEpp::lvl1param::T>(-1)};
 
         TFHEpp::TRGSWRAINTT<TFHEpp::lvl1param> trgswntt;
         TFHEpp::trgswSymEncrypt<TFHEpp::lvl1param>(
-            trgswntt, plainpoly, key.get<TFHEpp::lvl1param>());
+            trgswntt, plainpoly, key.getSubset<TFHEpp::lvl1param>());
         TFHEpp::ExternalProduct<TFHEpp::lvl1param>(c, c, trgswntt);
         std::array<bool, TFHEpp::lvl1param::n> p2 =
             TFHEpp::trlweSymDecrypt<TFHEpp::lvl1param>(
-                c, key.get<TFHEpp::lvl1param>());
+                c, key.getSubset<TFHEpp::lvl1param>());
         for (int i = 0; i < TFHEpp::lvl1param::n; i++) assert(p[i] == !p2[i]);
     }
     std::cout << "Passed" << std::endl;

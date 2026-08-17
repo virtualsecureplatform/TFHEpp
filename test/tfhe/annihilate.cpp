@@ -22,15 +22,15 @@ int main()
 
     std::vector<std::array<typename P::T, P::n>> pmu(num_test);
 
-    for (std::array<uint8_t, P::n> &i : pin)
-        for (uint8_t &p : i) p = binary(engine);
+    for (std::array<uint8_t, P::n>& i : pin)
+        for (uint8_t& p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < P::n; j++)
             pmu[i][j] = (pin[i][j] > 0) ? (P::μ) : -(P::μ);
 
     std::vector<TFHEpp::TRLWE<P>> cin(num_test);
     for (int i = 0; i < num_test; i++)
-        TFHEpp::trlweSymEncrypt<P>(cin[i], pmu[i], sk->key.get<P>());
+        TFHEpp::trlweSymEncrypt<P>(cin[i], pmu[i], sk->key.getIndependent<P>());
 
     std::vector<TFHEpp::TRLWE<P>> cres(num_test);
 
@@ -48,10 +48,11 @@ int main()
     end = std::chrono::system_clock::now();
     std::vector<std::array<bool, P::n>> pres(num_test);
     for (int i = 0; i < num_test; i++)
-        pres[i] = TFHEpp::trlweSymDecrypt<P>(cres[i], sk->key.get<P>());
+        pres[i] =
+            TFHEpp::trlweSymDecrypt<P>(cres[i], sk->key.getIndependent<P>());
     for (int i = 0; i < num_test; i++) assert(pres[i][0] == (pin[i][0] > 0));
     // TFHEpp::Polynomial<P> phase =
-    // TFHEpp::trlwePhase<P>(cres[0], sk->key.get<P>());
+    // TFHEpp::trlwePhase<P>(cres[0], sk->key.getSubset<P>());
     // for (int i = 0; i < P::n; i++)
     // std::cout << static_cast<int64_t>(phase[i]) << ":";
     // std::cout << std::endl;

@@ -27,11 +27,13 @@ foreach(test_source ${test_sources})
         test_name STREQUAL "blockbinary_nand") AND NOT USE_BLOCK_BINARY)
         continue()
     endif()
-    if(test_name STREQUAL "blockbinary_nand" AND NOT USE_SUBSET_KEY)
-        continue()
-    endif()
     if(test_name MATCHES "^largelut" AND NOT default_parameter_set)
         # largelut R2RPKS requires k=1 TRLWE keys.
+        continue()
+    endif()
+    if(test_name STREQUAL "trlwemult" AND USE_CONCRETE)
+        # Standard BFV TRLWE multiplication and its relinearization key encode
+        # one ring-key polynomial; Concrete's active lvl1 ring has k=2.
         continue()
     endif()
     if(test_name STREQUAL "batchboot" AND NOT default_parameter_set)

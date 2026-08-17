@@ -38,7 +38,7 @@ int main()
     for (int i = 0; i < num_test; i++)
         TFHEpp::tlweSymEncrypt<typename bkP::domainP>(
             tlwe[i], p[i] ? bkP::domainP::μ : -bkP::domainP::μ,
-            bkP::domainP::α, sk.key.get<typename bkP::domainP>());
+            bkP::domainP::α, sk.key.getSubset<typename bkP::domainP>());
 
     auto blindrotate_start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
@@ -51,7 +51,7 @@ int main()
 
     for (int i = 0; i < num_test; i++) {
         bool p2 = TFHEpp::tlweSymDecrypt<typename bkP::targetP>(
-            bootedtlwe[i], sk.key.get<typename bkP::targetP>());
+            bootedtlwe[i], sk.key.getSubset<typename bkP::targetP>());
         if (p[i] != p2) {
             std::cerr << "FNT BlindRotate decrypted " << p2 << ", expected "
                       << p[i] << std::endl;

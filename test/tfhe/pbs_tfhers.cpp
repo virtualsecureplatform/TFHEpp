@@ -13,7 +13,6 @@
 #include <chrono>
 #include <iostream>
 #include <random>
-
 #include <tfhe++.hpp>
 
 int main()
@@ -33,9 +32,7 @@ int main()
     TFHEpp::EvalKey ek;
     ek.emplacebkfft<brP>(sk);
     ek.emplaceiksk<iksP>(sk);
-#ifdef USE_SUBSET_KEY
     ek.emplacesubiksk<iksP>(sk);
-#endif
 
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
@@ -47,12 +44,12 @@ int main()
     for (uint32_t i = 0; i < num_test; i++) {
         pa[i] = binary(engine) > 0;
         pb[i] = binary(engine) > 0;
-        TFHEpp::tlweSymEncrypt<lvl0param>(
-            ca[i], pa[i] ? lvl0param::μ : -lvl0param::μ,
-            sk.key.get<lvl0param>());
-        TFHEpp::tlweSymEncrypt<lvl0param>(
-            cb[i], pb[i] ? lvl0param::μ : -lvl0param::μ,
-            sk.key.get<lvl0param>());
+        TFHEpp::tlweSymEncrypt<lvl0param>(ca[i],
+                                          pa[i] ? lvl0param::μ : -lvl0param::μ,
+                                          sk.key.getSubset<lvl0param>());
+        TFHEpp::tlweSymEncrypt<lvl0param>(cb[i],
+                                          pb[i] ? lvl0param::μ : -lvl0param::μ,
+                                          sk.key.getSubset<lvl0param>());
     }
 
     // Prepare NAND inputs: -ca - cb + μ (replicating HomGate with casign=-1,
@@ -64,40 +61,39 @@ int main()
         prepared[i][lvl0param::k * lvl0param::n] += lvl0param::μ;
     }
 
-    const auto testvector =
-        TFHEpp::μpolygen<lvl1param, lvl1param::μ>();
+    const auto testvector = TFHEpp::μpolygen<lvl1param, lvl1param::μ>();
 
     // Warmup
     {
         LWEbig tmp;
-        TFHEpp::GateBootstrappingTLWE2TLWE<brP>(
-            tmp, prepared[0], ek.getbkfft<brP>(), testvector);
+        TFHEpp::GateBootstrappingTLWE2TLWE<brP>(tmp, prepared[0],
+                                                ek.getbkfft<brP>(), testvector);
         LWEin tmp2;
-        TFHEpp::IdentityKeySwitch<iksP>(tmp2, tmp, ek.getiksk<iksP>());
+        TFHEpp::SubsetIdentityKeySwitch<iksP>(tmp2, tmp, ek.getsubiksk<iksP>());
     }
 
     // --- BR benchmark ---
     std::vector<LWEbig> tlwelvl1(num_test);
     auto br_start = std::chrono::system_clock::now();
     for (uint32_t i = 0; i < num_test; i++)
-        TFHEpp::GateBootstrappingTLWE2TLWE<brP>(
-            tlwelvl1[i], prepared[i], ek.getbkfft<brP>(), testvector);
+        TFHEpp::GateBootstrappingTLWE2TLWE<brP>(tlwelvl1[i], prepared[i],
+                                                ek.getbkfft<brP>(), testvector);
     auto br_end = std::chrono::system_clock::now();
 
     // --- IKS benchmark ---
     std::vector<LWEin> res(num_test);
     auto iks_start = std::chrono::system_clock::now();
     for (uint32_t i = 0; i < num_test; i++)
-        TFHEpp::IdentityKeySwitch<iksP>(
-            res[i], tlwelvl1[i], ek.getiksk<iksP>());
+        TFHEpp::SubsetIdentityKeySwitch<iksP>(res[i], tlwelvl1[i],
+                                              ek.getsubiksk<iksP>());
     auto iks_end = std::chrono::system_clock::now();
 
     // --- Full NAND benchmark ---
     std::vector<LWEin> nand_res(num_test);
     auto nand_start = std::chrono::system_clock::now();
     for (uint32_t i = 0; i < num_test; i++)
-        TFHEpp::HomNAND<brP, brP::targetP::μ, iksP>(
-            nand_res[i], ca[i], cb[i], ek);
+        TFHEpp::HomNAND<brP, brP::targetP::μ, iksP>(nand_res[i], ca[i], cb[i],
+                                                    ek);
     auto nand_end = std::chrono::system_clock::now();
 
     double br_ms =
@@ -115,13 +111,13 @@ int main()
     // Correctness check (split BR+IKS)
     for (uint32_t i = 0; i < num_test; i++) {
         assert(TFHEpp::tlweSymDecrypt<typename iksP::targetP>(
-                   res[i], sk.key.get<typename iksP::targetP>()) ==
+                   res[i], sk.key.getSubset<typename iksP::targetP>()) ==
                !(pa[i] && pb[i]));
     }
     // Correctness check (full NAND)
     for (uint32_t i = 0; i < num_test; i++) {
         assert(TFHEpp::tlweSymDecrypt<typename iksP::targetP>(
-                   nand_res[i], sk.key.get<typename iksP::targetP>()) ==
+                   nand_res[i], sk.key.getSubset<typename iksP::targetP>()) ==
                !(pa[i] && pb[i]));
     }
     std::cout << "Passed" << std::endl;

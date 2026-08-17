@@ -238,16 +238,30 @@ void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
     for (int i = 0; i <= P::k * P::n; i++) res[i] = -cs[i] + c0[i];
     temp[P::k * P::n] -= P::μ;
     res[P::k * P::n] -= P::μ;
-    if constexpr (std::is_same_v<P, lvl1param>) {
+    if constexpr (is_lvl1_ring_v<P>) {
         TLWE<lvl0param> and1, and0;
-        EvalIdentityKeySwitch<lvl10param>(and1, temp, ek);
-        EvalIdentityKeySwitch<lvl10param>(and0, res, ek);
-        GateBootstrappingTLWE2TLWE<lvl01param>(
-            temp, and1, ek.getbkfft<lvl01param>(),
-            μpolygen<lvl1param, lvl1param::μ>());
-        GateBootstrappingTLWE2TLWE<lvl01param>(
-            res, and0, ek.getbkfft<lvl01param>(),
-            μpolygen<lvl1param, lvl1param::μ>());
+        if constexpr (std::is_same_v<P, lvl1param>) {
+            EvalIdentityKeySwitch<lvl10param>(and1, temp, ek);
+            EvalIdentityKeySwitch<lvl10param>(and0, res, ek);
+            GateBootstrappingTLWE2TLWE<lvl01param>(
+                temp, and1, ek.getbkfft<lvl01param>(),
+                μpolygen<lvl1param, lvl1param::μ>());
+            GateBootstrappingTLWE2TLWE<lvl01param>(
+                res, and0, ek.getbkfft<lvl01param>(),
+                μpolygen<lvl1param, lvl1param::μ>());
+        }
+        else {
+            IdentityKeySwitch<independentlvl10param>(
+                and1, temp, ek.getiksk<independentlvl10param>());
+            IdentityKeySwitch<independentlvl10param>(
+                and0, res, ek.getiksk<independentlvl10param>());
+            GateBootstrappingTLWE2TLWE<independentlvl01param>(
+                temp, and1, ek.getbkfft<independentlvl01param>(),
+                μpolygen<P, P::μ>());
+            GateBootstrappingTLWE2TLWE<independentlvl01param>(
+                res, and0, ek.getbkfft<independentlvl01param>(),
+                μpolygen<P, P::μ>());
+        }
         for (int i = 0; i <= P::k * lvl1param::n; i++) res[i] += temp[i];
         res[P::k * P::n] += P::μ;
     }
@@ -290,11 +304,11 @@ void HomMUXwoIKSandSE(TRLWE<typename bkP::targetP> &res,
     BlindRotate<bkP>(and0, temp0, ek.getbkfft<bkP>(),
                      μpolygen<typename bkP::targetP, bkP::targetP::μ>());
 
-    for (int i = 0; i < bkP::targetP::n; i++) {
-        res[0][i] += and0[0][i];
-        res[1][i] += and0[1][i];
-    };
-    res[1][0] += bkP::targetP::μ;
+    for (int component = 0; component <= bkP::targetP::k; component++)
+        for (int coefficient = 0; coefficient < bkP::targetP::n;
+             coefficient++)
+            res[component][coefficient] += and0[component][coefficient];
+    res[bkP::targetP::k][0] += bkP::targetP::μ;
 }
 
 template <class brP, typename brP::targetP::T μ = brP::targetP::μ>
@@ -316,11 +330,12 @@ void HomMUXwoSE(TRLWE<typename brP::targetP> &res,
     BlindRotate<brP>(and0trlwe, and0, ek.getbkfft<brP>(),
                      μpolygen<typename brP::targetP, brP::targetP::μ>());
 
-    for (int i = 0; i < brP::targetP::k * brP::targetP::n; i++) {
-        res[0][i] += and0trlwe[0][i];
-        res[1][i] += and0trlwe[1][i];
-    };
-    res[1][0] += brP::targetP::μ;
+    for (int component = 0; component <= brP::targetP::k; component++)
+        for (int coefficient = 0; coefficient < brP::targetP::n;
+             coefficient++)
+            res[component][coefficient] +=
+                and0trlwe[component][coefficient];
+    res[brP::targetP::k][0] += brP::targetP::μ;
 }
 
 template <class iksP, class brP, typename brP::targetP::T μ = brP::targetP::μ>
@@ -345,11 +360,12 @@ void HomMUXwoSE(TRLWE<typename brP::targetP> &res,
     BlindRotate<brP>(and0trlwe, and0, ek.getbkfft<brP>(),
                      μpolygen<typename brP::targetP, brP::targetP::μ>());
 
-    for (int i = 0; i < brP::targetP::k * brP::targetP::n; i++) {
-        res[0][i] += and0trlwe[0][i];
-        res[1][i] += and0trlwe[1][i];
-    };
-    res[1][0] += brP::targetP::μ;
+    for (int component = 0; component <= brP::targetP::k; component++)
+        for (int coefficient = 0; coefficient < brP::targetP::n;
+             coefficient++)
+            res[component][coefficient] +=
+                and0trlwe[component][coefficient];
+    res[brP::targetP::k][0] += brP::targetP::μ;
 }
 
 void ExtractSwitchAndHomMUX(TRLWE<lvl1param> &res, const TRLWE<lvl1param> &csr,

@@ -24,7 +24,6 @@ option(USE_CONCRETE "Use the parameter set proposed in CONCRETE" OFF)
 option(USE_TFHE_RS "Use the parameter set proposed in TFHE-rs" OFF)
 option(USE_TERNARY "Use ternary secret keys" OFF)
 option(USE_COMPRESS "Use compressed ciphertexts" OFF)
-option(USE_SUBSET_KEY "Use subset key" ON)
 
 option(USE_TERNARY_CMUX "Use ternary cmux" OFF)
 option(USE_KEY_BUNDLE "Use key bundle algorithm" OFF)
@@ -153,13 +152,6 @@ elseif(USE_TERNARY)
       "${TFHEpp_DEFINITIONS};USE_TERNARY"
       PARENT_SCOPE)
   add_compile_definitions(USE_TERNARY)
-endif()
-
-if(USE_SUBSET_KEY)
-  set(TFHEpp_DEFINITIONS
-      "${TFHEpp_DEFINITIONS};USE_SUBSET_KEY"
-      PARENT_SCOPE)
-  add_compile_definitions(USE_SUBSET_KEY)
 endif()
 
 if(NOT USE_TERNARY)

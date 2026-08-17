@@ -12,9 +12,9 @@ int main()
     using iksP = TFHEpp::blockbinaryaeslvl2hparam;
     using ahP = TFHEpp::blockbinaryaesAHlvl2param;
 #else
-    using brP = TFHEpp::lvlh2param;
-    using iksP = TFHEpp::lvl2hparam;
-    using ahP = TFHEpp::AHlvl2param;
+    using brP = TFHEpp::cblvlh2param;
+    using iksP = TFHEpp::cblvl2hparam;
+    using ahP = TFHEpp::cbAHlvl2param;
 #endif
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
@@ -27,9 +27,11 @@ int main()
 
     for (int i = 0; i < num_test; i++) {
         TFHEpp::tlweSymIntEncrypt<typename iksP::domainP, plain_modulus>(
-            cin[i][0], i & 0xF, *sk);
+            cin[i][0], i & 0xF,
+            sk->key.getIndependent<typename iksP::domainP>());
         TFHEpp::tlweSymIntEncrypt<typename iksP::domainP, plain_modulus>(
-            cin[i][1], (i >> 4), *sk);
+            cin[i][1], (i >> 4),
+            sk->key.getIndependent<typename iksP::domainP>());
     }
     std::vector<std::array<TFHEpp::TLWE<typename brP::targetP>, 2>> cres(
         num_test);
@@ -53,12 +55,19 @@ int main()
     for (int i = 0; i < num_test; i++) {
         const uint8_t pres =
             (TFHEpp::tlweSymIntDecrypt<typename brP::targetP, plain_modulus>(
-                 cres[i][1], *sk)
+                 cres[i][1],
+                 sk->key.getIndependent<typename brP::targetP>())
              << 4) +
             TFHEpp::tlweSymIntDecrypt<typename brP::targetP, plain_modulus>(
-                cres[i][0], *sk);
+                cres[i][0],
+                sk->key.getIndependent<typename brP::targetP>());
         // std::cout << "test: " << i << " pres: " << (int)pres << " expected: "
         // << (int)inv_sbox[i>>4][i&0xF] << std::endl;
+        if (pres != inv_sbox[i >> 4][i & 0xF])
+            std::cerr << "Mismatch at " << i << ": got "
+                      << static_cast<int>(pres) << ", expected "
+                      << static_cast<int>(inv_sbox[i >> 4][i & 0xF])
+                      << std::endl;
         assert(pres == inv_sbox[i >> 4][i & 0xF]);
     }
     std::cout << "Passed" << std::endl;

@@ -17,9 +17,7 @@ int main()
     TFHEpp::SecretKey sk;
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(sk);
-#ifdef USE_SUBSET_KEY
     ek.emplacesubiksk<iksP>(sk);
-#endif
     ek.emplacebkntt<bkP>(sk);
     std::array<TFHEpp::TLWE<typename iksP::domainP>, num_test> tlwe;
     std::array<TFHEpp::TLWE<typename bkP::targetP>, num_test> bootedtlwe;
@@ -28,7 +26,7 @@ int main()
     for (int i = 0; i < num_test; i++)
         TFHEpp::tlweSymEncrypt<typename iksP::domainP>(
             tlwe[i], p[i] ? iksP::domainP::μ : -iksP::domainP::μ,
-            sk.key.get<typename iksP::domainP>());
+            sk.key.getSubset<typename iksP::domainP>());
 
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();
@@ -41,7 +39,7 @@ int main()
     end = std::chrono::system_clock::now();
     for (int i = 0; i < num_test; i++) {
         bool p2 = TFHEpp::tlweSymDecrypt<typename bkP::targetP>(
-            bootedtlwe[i], sk.key.get<typename bkP::targetP>());
+            bootedtlwe[i], sk.key.getSubset<typename bkP::targetP>());
         assert(p[i] == p2);
     }
     std::cout << "Passed" << std::endl;

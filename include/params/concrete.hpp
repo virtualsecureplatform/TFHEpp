@@ -78,8 +78,14 @@ struct lvl1param {
     static constexpr std::uint32_t B̅gₐbit = B̅gbit;
 };
 
-// Dummy
-using AHlvl1param = lvl1param;
+struct AHlvl1param : lvl1param {
+    static constexpr std::uint32_t lₐ = 4;
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t Bgₐbit = 5;
+    static constexpr std::uint32_t Bgbit = 5;
+    static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
+    static constexpr std::uint32_t Bg = 1 << Bgbit;
+};
 
 struct lvl2param {
     static constexpr int32_t key_value_max = 1;
@@ -288,6 +294,15 @@ struct lvl2hparam {
     using targetP = lvlhalfparam;
 };
 
+struct cblvl2hparam {
+    static constexpr std::uint32_t t = lvl2hparam::t;
+    static constexpr std::uint32_t basebit = lvl2hparam::basebit;
+    static constexpr ErrorDistribution errordist = lvl2hparam::errordist;
+    static const inline double α = lvl2hparam::α;
+    using domainP = cblvl2param;
+    using targetP = lvlhalfparam;
+};
+
 struct lvl21param {
     static constexpr std::uint32_t t = 8;  // number of addition in
                                            // keyswitching
@@ -298,6 +313,23 @@ struct lvl21param {
     static const inline double α = lvl1param::α;  // key noise
     using domainP = lvl2param;
     using targetP = lvl1param;
+};
+
+// Full circuit bootstrapping needs a decomposition that is also safe when its
+// result is reused for gate bootstrapping, seven-CMUX RAM, and 16-digit
+// HomDecomp. Parameter-Selection's joint model estimates a worst error of about
+// 3.9e-54 for these parameters, down from about 4.1e-3 with a single 8-bit
+// body row.
+#define USE_DIFFERENT_CB_TARGET_PARAM
+struct cblvl21param {
+    static constexpr std::uint32_t t = lvl21param::t;
+    static constexpr std::uint32_t basebit = lvl21param::basebit;
+    static constexpr ErrorDistribution errordist = lvl21param::errordist;
+    static const inline double α = lvl21param::α;
+    using domainP = lvl21param::domainP;
+    struct targetP : AHlvl1param {
+        static constexpr std::uint32_t l = 3;
+    };
 };
 
 struct lvl22param {

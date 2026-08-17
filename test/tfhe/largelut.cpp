@@ -3,8 +3,8 @@
 #include <iostream>
 #include <limits>
 #include <memory>
-#include <vector>
 #include <tfhe++.hpp>
+#include <vector>
 
 struct TinyR2RParam {
     static constexpr int32_t key_value_max = 1;
@@ -56,29 +56,29 @@ void test_r2rpks()
 }
 
 void instantiate_optimized_large_lut_api(
-    TFHEpp::TLWE<TFHEpp::lvl1param> &result,
-    const TFHEpp::TRLWE<TFHEpp::lvl1param> &table,
+    TFHEpp::TLWE<TFHEpp::lvl1param>& result,
+    const TFHEpp::TRLWE<TFHEpp::lvl1param>& table,
     const std::array<TFHEpp::TLWE<TFHEpp::lvl0param>,
-                     TFHEpp::LargeLUTDigitCount<2, 3>()> &digits,
-    const TFHEpp::BootstrappingKeyFFT<TFHEpp::lvl01param> &bkfft,
-    const TFHEpp::KeySwitchingKey<TFHEpp::lvl10param> &iksk,
-    const TFHEpp::R2RKey<TFHEpp::lvl1param, 1, 1> &batch_r2rk,
+                     TFHEpp::LargeLUTDigitCount<2, 3>()>& digits,
+    const TFHEpp::BootstrappingKeyFFT<TFHEpp::lvl01param>& bkfft,
+    const TFHEpp::KeySwitchingKey<TFHEpp::lvl10param>& iksk,
+    const TFHEpp::R2RKey<TFHEpp::lvl1param, 1, 1>& batch_r2rk,
     const std::array<TFHEpp::R2RKey<TFHEpp::lvl1param, 1, 1>,
-                     TFHEpp::LargeLUTDigitCount<2, 3>() - 1> &step_r2rks)
+                     TFHEpp::LargeLUTDigitCount<2, 3>() - 1>& step_r2rks)
 {
     TFHEpp::LargeLUTOptimized<TFHEpp::lvl01param, TFHEpp::lvl10param, 1, 1, 2,
-                              3>(result, table, digits, bkfft, iksk,
-                                 batch_r2rk, step_r2rks);
+                              3>(result, table, digits, bkfft, iksk, batch_r2rk,
+                                 step_r2rks);
 }
 
 void instantiate_large_lut_r2r_keygen(
-    TFHEpp::R2RKey<TFHEpp::lvl1param, 1, 1> &batch_r2rk,
+    TFHEpp::R2RKey<TFHEpp::lvl1param, 1, 1>& batch_r2rk,
     std::array<TFHEpp::R2RKey<TFHEpp::lvl1param, 1, 1>,
-               TFHEpp::LargeLUTDigitCount<2, 3>() - 1> &step_r2rks,
-    const TFHEpp::Key<TFHEpp::lvl1param> &key)
+               TFHEpp::LargeLUTDigitCount<2, 3>() - 1>& step_r2rks,
+    const TFHEpp::Key<TFHEpp::lvl1param>& key)
 {
-    TFHEpp::LargeLUTR2RKeyGen<TFHEpp::lvl1param, 1, 1, 2, 3>(
-        batch_r2rk, step_r2rks, key);
+    TFHEpp::LargeLUTR2RKeyGen<TFHEpp::lvl1param, 1, 1, 2, 3>(batch_r2rk,
+                                                             step_r2rks, key);
 }
 
 int main()
@@ -101,9 +101,10 @@ int main()
     auto bkfft = std::make_unique<TFHEpp::BootstrappingKeyFFT<brP>>();
     TFHEpp::bkfftgen<brP>(*bkfft, sk);
     auto iksk = std::make_unique<TFHEpp::KeySwitchingKey<iksP>>();
-    TFHEpp::ikskgen<iksP>(*iksk, sk);
+    TFHEpp::ikskgen<iksP>(*iksk, sk.key.getSubset<typename iksP::domainP>(),
+                          sk.key.getSubset<typename iksP::targetP>());
     auto ahk = std::make_unique<TFHEpp::AnnihilateKey<ahP>>();
-    TFHEpp::annihilatekeygen<ahP>(*ahk, sk);
+    TFHEpp::annihilatekeygen<ahP>(*ahk, sk.key.getSubset<ahP>());
 
     std::array<uint32_t, table_size> table{};
     for (uint32_t i = 0; i < table_size; i++) table[i] = (3 * i + 1) & 3U;
@@ -117,7 +118,7 @@ int main()
         std::array<TFHEpp::TLWE<domainP>, digits_count> encrypted_digits;
         for (uint32_t i = 0; i < digits_count; i++)
             TFHEpp::tlweSymIntEncrypt<domainP, message_modulus>(
-                encrypted_digits[i], decomposed[i], sk.key.get<domainP>());
+                encrypted_digits[i], decomposed[i], sk.key.getSubset<domainP>());
 
         TFHEpp::TLWE<targetP> result;
         TFHEpp::LargeLUT<brP, iksP, ahP, W, K>(
@@ -125,7 +126,7 @@ int main()
 
         const auto decrypted =
             TFHEpp::tlweSymIntDecrypt<targetP, message_modulus>(
-                result, sk.key.get<targetP>());
+                result, sk.key.getSubset<targetP>());
         if (decrypted != table[x]) {
             std::cerr << "LargeLUT mismatch at x=" << x << ": expected "
                       << table[x] << ", got " << decrypted << std::endl;

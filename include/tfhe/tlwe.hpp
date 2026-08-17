@@ -10,8 +10,8 @@
 
 namespace TFHEpp {
 template <class P>
-void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const double α,
-                    const Key<P> &key)
+void tlweSymEncrypt(TLWE<P>& res, const typename P::T p, const double α,
+                    const Key<P>& key)
 {
     res = {};
     res[P::k * P::n] = ModularGaussian<P>(p, α);
@@ -23,8 +23,8 @@ void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const double α,
 }
 
 template <class P>
-void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const uint η,
-                    const Key<P> &key)
+void tlweSymEncrypt(TLWE<P>& res, const typename P::T p, const uint η,
+                    const Key<P>& key)
 {
     std::uniform_int_distribution<typename P::T> Torusdist(0, P::q - 1);
     res = {};
@@ -41,7 +41,7 @@ void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const uint η,
 }
 
 template <class P>
-void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const Key<P> &key)
+void tlweSymEncrypt(TLWE<P>& res, const typename P::T p, const Key<P>& key)
 {
     if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
         tlweSymEncrypt<P>(res, p, P::α, key);
@@ -49,15 +49,18 @@ void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const Key<P> &key)
         tlweSymEncrypt<P>(res, p, P::η, key);
 }
 
-template <class P>
-void tlweSymEncrypt(TLWE<P> &res, const typename P::T p, const SecretKey &sk)
+template <class P, bool use_subset_key = true>
+void tlweSymEncrypt(TLWE<P>& res, const typename P::T p, const SecretKey& sk)
 {
-    tlweSymEncrypt<P>(res, p, sk.key.get<P>());
+    if constexpr (use_subset_key)
+        tlweSymEncrypt<P>(res, p, sk.key.getSubset<P>());
+    else
+        tlweSymEncrypt<P>(res, p, sk.key.getIndependent<P>());
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const double α,
-                       const Key<P> &key)
+void tlweSymIntEncrypt(TLWE<P>& res, const typename P::T p, const double α,
+                       const Key<P>& key)
 {
     const double Δ = std::pow(2.0, std::numeric_limits<typename P::T>::digits) /
                      plain_modulus;
@@ -65,8 +68,8 @@ void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const double α,
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const uint η,
-                       const Key<P> &key)
+void tlweSymIntEncrypt(TLWE<P>& res, const typename P::T p, const uint η,
+                       const Key<P>& key)
 {
     constexpr double Δ =
         2 *
@@ -78,7 +81,7 @@ void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const uint η,
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const Key<P> &key)
+void tlweSymIntEncrypt(TLWE<P>& res, const typename P::T p, const Key<P>& key)
 {
     if constexpr (P::errordist == ErrorDistribution::ModularGaussian)
         tlweSymIntEncrypt<P, plain_modulus>(res, p, P::α, key);
@@ -86,14 +89,18 @@ void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const Key<P> &key)
         tlweSymIntEncrypt<P, plain_modulus>(res, p, P::η, key);
 }
 
-template <class P, uint plain_modulus = P::plain_modulus>
-void tlweSymIntEncrypt(TLWE<P> &res, const typename P::T p, const SecretKey &sk)
+template <class P, uint plain_modulus = P::plain_modulus,
+          bool use_subset_key = true>
+void tlweSymIntEncrypt(TLWE<P>& res, const typename P::T p, const SecretKey& sk)
 {
-    tlweSymIntEncrypt<P, plain_modulus>(res, p, sk.key.get<P>());
+    if constexpr (use_subset_key)
+        tlweSymIntEncrypt<P, plain_modulus>(res, p, sk.key.getSubset<P>());
+    else
+        tlweSymIntEncrypt<P, plain_modulus>(res, p, sk.key.getIndependent<P>());
 }
 
 template <class P>
-typename P::T tlweSymPhase(const TLWE<P> &c, const Key<P> &key)
+typename P::T tlweSymPhase(const TLWE<P>& c, const Key<P>& key)
 {
     typename P::T phase = c[P::k * P::n];
     for (int k = 0; k < P::k; k++)
@@ -103,7 +110,7 @@ typename P::T tlweSymPhase(const TLWE<P> &c, const Key<P> &key)
 }
 
 template <class P>
-bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
+bool tlweSymDecrypt(const TLWE<P>& c, const Key<P>& key)
 {
     typename P::T phase = tlweSymPhase<P>(c, key);
     bool res =
@@ -111,34 +118,43 @@ bool tlweSymDecrypt(const TLWE<P> &c, const Key<P> &key)
     return res;
 }
 
-template <class P>
-bool tlweSymDecrypt(const TLWE<P> &c, const SecretKey &sk)
+template <class P, bool use_subset_key = true>
+bool tlweSymDecrypt(const TLWE<P>& c, const SecretKey& sk)
 {
-    return tlweSymDecrypt<P>(c, sk.key.get<P>());
+    if constexpr (use_subset_key)
+        return tlweSymDecrypt<P>(c, sk.key.getSubset<P>());
+    else
+        return tlweSymDecrypt<P>(c, sk.key.getIndependent<P>());
 }
 
 template <class P, uint plain_modulus = P::plain_modulus>
-typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const Key<P> &key)
+typename P::T tlweSymIntDecrypt(const TLWE<P>& c, const Key<P>& key)
 {
     constexpr double Δ =
         2 *
         static_cast<double>(
-            static_cast<typename P::T>(1) << (std::numeric_limits<typename P::T>::digits - 1)) /
+            static_cast<typename P::T>(1)
+            << (std::numeric_limits<typename P::T>::digits - 1)) /
         plain_modulus;
     const typename P::T phase = tlweSymPhase<P>(c, key);
     typename P::T res = static_cast<typename P::T>(std::round(phase / Δ));
     return res >= plain_modulus / 2 ? res - plain_modulus : res;
 }
 
-template <class P, uint plain_modulus = P::plain_modulus>
-typename P::T tlweSymIntDecrypt(const TLWE<P> &c, const SecretKey &sk)
+template <class P, uint plain_modulus = P::plain_modulus,
+          bool use_subset_key = true>
+typename P::T tlweSymIntDecrypt(const TLWE<P>& c, const SecretKey& sk)
 {
-    return tlweSymIntDecrypt<P, plain_modulus>(c, sk.key.get<P>());
+    if constexpr (use_subset_key)
+        return tlweSymIntDecrypt<P, plain_modulus>(c, sk.key.getSubset<P>());
+    else
+        return tlweSymIntDecrypt<P, plain_modulus>(c,
+                                                   sk.key.getIndependent<P>());
 }
 
 template <class P, std::make_signed_t<typename P::T> μ>
-void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
-                     const Key<P> &key)
+void bootsSymEncrypt(std::vector<TLWE<P>>& c, const std::vector<uint8_t>& p,
+                     const Key<P>& key)
 {
     c.resize(p.size());
 #pragma omp parallel for
@@ -147,29 +163,37 @@ void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
 }
 
 template <class P>
-void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
-                     const Key<P> &key)
+void bootsSymEncrypt(std::vector<TLWE<P>>& c, const std::vector<uint8_t>& p,
+                     const Key<P>& key)
 {
     bootsSymEncrypt<P, P::μ>(c, p, key);
 }
 
-template <class P = lvl1param>
-void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
-                     const SecretKey &sk)
+template <class P = lvl1param, bool use_subset_key = true>
+void bootsSymEncrypt(std::vector<TLWE<P>>& c, const std::vector<uint8_t>& p,
+                     const SecretKey& sk)
 {
-    bootsSymEncrypt<P>(c, p, sk.key.get<P>());
+    if constexpr (use_subset_key)
+        bootsSymEncrypt<P>(c, p, sk.key.getSubset<P>());
+    else
+        bootsSymEncrypt<P>(c, p, sk.key.getIndependent<P>());
 }
 
-template <class P = lvl1param, std::make_signed_t<typename P::T> μ>
-void bootsSymEncrypt(std::vector<TLWE<P>> &c, const std::vector<uint8_t> &p,
-                     const SecretKey &sk)
+template <class P = lvl1param, auto μ, bool use_subset_key = true,
+          std::enable_if_t<!std::is_same_v<decltype(μ), bool>, int> = 0>
+void bootsSymEncrypt(std::vector<TLWE<P>>& c, const std::vector<uint8_t>& p,
+                     const SecretKey& sk)
 {
-    bootsSymEncrypt<P, μ>(c, p, sk.key.get<P>());
+    constexpr std::make_signed_t<typename P::T> message = μ;
+    if constexpr (use_subset_key)
+        bootsSymEncrypt<P, message>(c, p, sk.key.getSubset<P>());
+    else
+        bootsSymEncrypt<P, message>(c, p, sk.key.getIndependent<P>());
 }
 
 template <class P>
-std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
-                                     const Key<P> &key)
+std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>>& c,
+                                     const Key<P>& key)
 {
     vector<uint8_t> p(c.size());
 #pragma omp parallel for
@@ -177,11 +201,14 @@ std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
     return p;
 }
 
-template <class P = lvl1param>
-std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
-                                     const SecretKey &sk)
+template <class P = lvl1param, bool use_subset_key = true>
+std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>>& c,
+                                     const SecretKey& sk)
 {
-    return bootsSymDecrypt<P>(c, sk.key.get<P>());
+    if constexpr (use_subset_key)
+        return bootsSymDecrypt<P>(c, sk.key.getSubset<P>());
+    else
+        return bootsSymDecrypt<P>(c, sk.key.getIndependent<P>());
 }
 
 /**
@@ -198,7 +225,7 @@ std::vector<uint8_t> bootsSymDecrypt(const std::vector<TLWE<P>> &c,
  * @param rest The remaining ciphertexts in the sum.
  */
 template <class P, class... Args>
-void TLWEAdd(TLWE<P> &res, const TLWE<P> &first, const Args &...rest)
+void TLWEAdd(TLWE<P>& res, const TLWE<P>& first, const Args&... rest)
 {
     for (int i = 0; i <= P::k * P::n; i++) {
         // A binary fold expression sums all corresponding elements at once.
@@ -213,7 +240,7 @@ void TLWEAdd(TLWE<P> &res, const TLWE<P> &first, const Args &...rest)
  * NOTE: This implementation requires at least two input ciphertexts.
  */
 template <class P, class... Args>
-void TLWESub(TLWE<P> &res, const TLWE<P> &first, const Args &...rest)
+void TLWESub(TLWE<P>& res, const TLWE<P>& first, const Args&... rest)
 {
     // A binary fold requires the parameter pack 'rest' to be non-empty.
     static_assert(

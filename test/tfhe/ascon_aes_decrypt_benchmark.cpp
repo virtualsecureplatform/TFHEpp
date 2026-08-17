@@ -82,7 +82,7 @@ void encrypt_bytes_as_bits(std::vector<TFHEpp::TLWE<P>> &out,
                                       ((bytes[byte] >> bit) & 1)
                                           ? TFHEpp::ascon_bit_mu<P>
                                           : -TFHEpp::ascon_bit_mu<P>,
-                                      0.0, sk.key.get<P>());
+                                      0.0, sk.key.getIndependent<P>());
 }
 
 template <class P>
@@ -96,7 +96,7 @@ void encrypt_block_as_bits(std::array<TFHEpp::TLWE<P>, 128> &out,
                                       ((bytes[byte] >> bit) & 1)
                                           ? TFHEpp::ascon_bit_mu<P>
                                           : -TFHEpp::ascon_bit_mu<P>,
-                                      0.0, sk.key.get<P>());
+                                      0.0, sk.key.getIndependent<P>());
 }
 
 template <class P>
@@ -107,7 +107,8 @@ std::vector<uint8_t> decrypt_bits_as_bytes(
     std::vector<uint8_t> bytes(bits.size() / 8);
     for (std::size_t byte = 0; byte < bytes.size(); byte++)
         for (std::size_t bit = 0; bit < 8; bit++)
-            if (TFHEpp::tlweSymDecrypt<P>(bits[byte * 8 + bit], sk))
+            if (TFHEpp::tlweSymDecrypt<P>(
+                    bits[byte * 8 + bit], sk.key.getIndependent<P>()))
                 bytes[byte] |= static_cast<uint8_t>(1U << bit);
     return bytes;
 }
@@ -119,7 +120,8 @@ std::array<uint8_t, 16> decrypt_block_bits(
     std::array<uint8_t, 16> bytes = {};
     for (std::size_t byte = 0; byte < bytes.size(); byte++)
         for (std::size_t bit = 0; bit < 8; bit++)
-            if (TFHEpp::tlweSymDecrypt<P>(bits[byte * 8 + bit], sk))
+            if (TFHEpp::tlweSymDecrypt<P>(
+                    bits[byte * 8 + bit], sk.key.getIndependent<P>()))
                 bytes[byte] |= static_cast<uint8_t>(1U << bit);
     return bytes;
 }
@@ -139,7 +141,7 @@ void encrypt_expanded_aes_key(
                     ((expanded[round * 16 + byte] >> bit) & 1)
                         ? TFHEpp::ascon_bit_mu<P>
                         : -TFHEpp::ascon_bit_mu<P>,
-                    0.0, sk.key.get<P>());
+                    0.0, sk.key.getIndependent<P>());
 }
 
 template <class F>
@@ -159,10 +161,14 @@ int main(int argc, char **argv)
     using brP = TFHEpp::blockbinaryaeslvlh2param;
     using iksP = TFHEpp::blockbinaryaeslvl2hparam;
     using ahP = TFHEpp::blockbinaryaesAHlvl2param;
+    using aesbrP = brP;
+    using aesahP = ahP;
 #else
-    using brP = TFHEpp::lvlh2param;
-    using iksP = TFHEpp::lvl2hparam;
-    using ahP = TFHEpp::AHlvl2param;
+    using brP = TFHEpp::cblvlh2param;
+    using iksP = TFHEpp::cblvl2hparam;
+    using ahP = TFHEpp::cbAHlvl2param;
+    using aesbrP = brP;
+    using aesahP = ahP;
 #endif
     using P = typename brP::targetP;
 
@@ -199,6 +205,12 @@ int main(int argc, char **argv)
     ek.emplaceiksk<iksP>(sk);
     ek.emplaceahk<ahP>(sk);
     ek.emplacecbsk<ahP>(sk);
+    if constexpr (!std::is_same_v<aesbrP, brP>)
+        ek.emplacebkfft<aesbrP>(sk);
+    if constexpr (!std::is_same_v<aesahP, ahP>) {
+        ek.emplaceahk<aesahP>(sk);
+        ek.emplacecbsk<aesahP>(sk);
+    }
 
     using AESBlock = std::array<TFHEpp::TLWE<P>, 128>;
     using AESRoundKeys = std::array<AESBlock, TFHEpp::Nr + 1>;
@@ -223,8 +235,8 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < repetitions; i++) {
         aes_total_ms += time_ms([&] {
-            TFHEpp::AESDec<iksP, brP, ahP>(*caes_plain, *caes_cipher,
-                                           *caes_expanded_key, ek);
+            TFHEpp::AESDec<iksP, aesbrP, aesahP>(
+                *caes_plain, *caes_cipher, *caes_expanded_key, ek);
         });
 
         ascon_total_ms += time_ms([&] {

@@ -2,15 +2,14 @@
 #include <cstdint>
 #include <iostream>
 #include <random>
-#include <type_traits>
-
 #include <tfhe/gate.hpp>
 #include <tfhe/key.hpp>
 #include <tfhe/tlwe.hpp>
+#include <type_traits>
 
 int main()
 {
-#if !defined(USE_BLOCK_BINARY) || !defined(USE_SUBSET_KEY)
+#ifndef USE_BLOCK_BINARY
     std::cout << "Skipped" << std::endl;
     return 0;
 #else
@@ -20,8 +19,10 @@ int main()
 
     static_assert(bkP::domainP::n == 630);
     static_assert(bkP::domainP::ell == 2);
-    static_assert(std::is_same_v<typename iksP::domainP, typename bkP::targetP>);
-    static_assert(std::is_same_v<typename iksP::targetP, typename bkP::domainP>);
+    static_assert(
+        std::is_same_v<typename iksP::domainP, typename bkP::targetP>);
+    static_assert(
+        std::is_same_v<typename iksP::targetP, typename bkP::domainP>);
 
     std::mt19937 engine(0);
     std::uniform_int_distribution<uint32_t> binary(0, 1);
@@ -31,8 +32,8 @@ int main()
     ek.emplacebkfft<bkP>(sk);
     ek.emplacesubiksk<iksP>(sk);
 
-    const auto lvl0key = sk.key.get<TFHEpp::lvl0param>();
-    const auto lvl1key = sk.key.get<TFHEpp::lvl1param>();
+    const auto lvl0key = sk.key.getSubset<TFHEpp::lvl0param>();
+    const auto lvl1key = sk.key.getSubset<TFHEpp::lvl1param>();
     for (int i = 0; i < TFHEpp::lvl0param::k * TFHEpp::lvl0param::n; i++) {
         if (static_cast<typename TFHEpp::lvl1param::T>(lvl0key[i]) !=
             lvl1key[i]) {

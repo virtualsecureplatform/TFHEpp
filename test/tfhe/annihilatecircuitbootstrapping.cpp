@@ -19,9 +19,10 @@ int main()
     using brP = TFHEpp::cblvl02param;
     using ahP = TFHEpp::cbAHlvl2param;
 
-    TFHEpp::SecretKey *sk = new TFHEpp::SecretKey;
+    TFHEpp::SecretKey* sk = new TFHEpp::SecretKey;
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<iksP>(*sk);
+    ek.emplacesubiksk<iksP>(*sk);
     ek.emplacebkfft<brP>(*sk);
     ek.emplaceahk<ahP>(*sk);
     ek.emplacecbsk<ahP>(*sk);
@@ -31,8 +32,8 @@ int main()
         num_test);
     std::vector<uint8_t> pones(num_test);
     std::array<bool, brP::targetP::n> pres;
-    for (std::array<uint8_t, brP::targetP::n> &i : pa)
-        for (uint8_t &p : i) p = binary(engine);
+    for (std::array<uint8_t, brP::targetP::n>& i : pa)
+        for (uint8_t& p : i) p = binary(engine);
     for (int i = 0; i < num_test; i++)
         for (int j = 0; j < brP::targetP::n; j++)
             pmu[i][j] = pa[i][j] ? brP::targetP::μ : -brP::targetP::μ;
@@ -47,7 +48,7 @@ int main()
 
     for (int i = 0; i < num_test; i++) {
         // ca[i] = TFHEpp::trlweSymEncrypt<typename privksP::targetP>(
-        // pmu[i], sk->key.get<typename privksP::targetP>());
+        // pmu[i], sk->key.getSubset<typename privksP::targetP>());
         ca[i] = {};
         ca[i][brP::targetP::k] = pmu[i];
     }
@@ -59,18 +60,18 @@ int main()
 #endif
     start = std::chrono::system_clock::now();
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::AnnihilateCircuitBootstrapping<iksP, brP, ahP>(
-            bootedTGSW[test], cones[test], ek);
+        TFHEpp::AnnihilateCircuitBootstrapping<iksP, brP, ahP>(bootedTGSW[test],
+                                                               cones[test], ek);
     }
     end = std::chrono::system_clock::now();
 #ifdef USE_PERF
     ProfilerStop();
 #endif
     for (int test = 0; test < num_test; test++) {
-        TFHEpp::ExternalProduct<typename brP::targetP>(
-            ca[test], ca[test], bootedTGSW[test]);
+        TFHEpp::ExternalProduct<typename brP::targetP>(ca[test], ca[test],
+                                                       bootedTGSW[test]);
         pres = TFHEpp::trlweSymDecrypt<typename brP::targetP>(
-            ca[test], sk->key.get<typename brP::targetP>());
+            ca[test], sk->key.getIndependent<typename brP::targetP>());
         for (int i = 0; i < brP::targetP::n; i++)
             assert(pres[i] == pa[test][i]);
     }

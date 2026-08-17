@@ -117,7 +117,7 @@ void encrypt_bytes_as_bits(std::vector<TFHEpp::TLWE<P>> &out,
                                       ((bytes[byte] >> bit) & 1)
                                           ? TFHEpp::ascon_bit_mu<P>
                                           : -TFHEpp::ascon_bit_mu<P>,
-                                      0.0, sk.key.get<P>());
+                                      0.0, sk.key.getIndependent<P>());
 }
 
 template <class P>
@@ -128,7 +128,8 @@ std::vector<uint8_t> decrypt_bits_as_bytes(
     std::vector<uint8_t> bytes(bits.size() / 8);
     for (std::size_t byte = 0; byte < bytes.size(); byte++)
         for (std::size_t bit = 0; bit < 8; bit++)
-            if (TFHEpp::tlweSymDecrypt<P>(bits[byte * 8 + bit], sk))
+            if (TFHEpp::tlweSymDecrypt<P>(
+                    bits[byte * 8 + bit], sk.key.getIndependent<P>()))
                 bytes[byte] |= static_cast<uint8_t>(1U << bit);
     return bytes;
 }
@@ -202,11 +203,12 @@ void compare_homomorphic_ascon_with_ascon_c()
             TFHEpp::tlweSymEncrypt<P>(
                 cin[word], ((input >> word) & 1) ? TFHEpp::ascon_bit_mu<P>
                                                  : -TFHEpp::ascon_bit_mu<P>,
-                0.0, sk.key.get<P>());
+                0.0, sk.key.getIndependent<P>());
         TFHEpp::ASCONSbox<iksP, brP>(cout, cin, ek);
         uint8_t actual = 0;
         for (std::size_t word = 0; word < TFHEpp::ascon_words; word++)
-            if (TFHEpp::tlweSymDecrypt<P>(cout[word], sk))
+            if (TFHEpp::tlweSymDecrypt<P>(cout[word],
+                                           sk.key.getIndependent<P>()))
                 actual |= static_cast<uint8_t>(1U << word);
         const uint8_t expected =
             TFHEpp::ASCONSboxWord(static_cast<uint8_t>(input));

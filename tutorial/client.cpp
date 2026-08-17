@@ -13,7 +13,7 @@ int main()
         std::make_unique<TFHEpp::SecretKey>();
     TFHEpp::EvalKey ek;
     ek.emplacebkfft<TFHEpp::lvl01param>(*sk);
-    ek.emplaceiksk<TFHEpp::lvl10param>(*sk);
+    ek.emplacesubiksk<TFHEpp::lvl10param>(*sk);
 
     // export the secret key to file for later use
     {

@@ -53,6 +53,11 @@ using cblvl2param = lvl2param;
 using cbAHlvl2param = AHlvl2param;
 #endif
 
+template <class P>
+inline constexpr bool is_lvl1_ring_v =
+    std::is_same_v<P, lvl1param> || std::is_same_v<P, AHlvl1param> ||
+    std::is_same_v<P, typename cblvl21param::targetP>;
+
 using ckkslvl3param = lvl3simdparam;
 
 struct lvl01param {
@@ -65,9 +70,24 @@ struct lvl01param {
 #endif
 };
 
+// Chain-selection tags. They make evaluation-key generation select the
+// independent secret-key chain. The target also carries any parameter-family
+// override needed by circuit bootstrapping.
+struct independentlvl01param {
+    using domainP = lvl0param;
+    using targetP = typename cblvl21param::targetP;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
+};
+
+struct independentlvl10param : lvl10param {};
+
 struct lvlh1param {
     using domainP = lvlhalfparam;
-    using targetP = lvl1param;
+    using targetP = typename cblvl21param::targetP;
 #ifdef USE_KEY_BUNDLE
     static constexpr uint32_t Addends = 2;
 #else
@@ -261,7 +281,7 @@ template <class P>
 using TLWE2TRLWEIKSKey = std::array<
     std::array<std::array<TRLWE<typename P::targetP>, (1 << P::basebit) - 1>,
                P::t>,
-    P::domainP::n>;
+    P::domainP::k * P::domainP::n>;
 template <class P>
 using EvalAutoKey = std::array<HalfTRGSWFFT<P>, P::k>;
 template <class P>
@@ -343,10 +363,10 @@ using relinKeyFFT = aligned_array<TRLWEInFD<P>, P::l * P::l̅>;
     fun(lvl20param, lvl01param);                \
     fun(lvl20param, lvl02param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_KEY(fun) \
-    fun(lvl02param, lvl21param);                       \
+    fun(cblvl02param, cblvl21param);                   \
     fun(lvl02param, lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_CIRCUIT_BOOTSTRAPPING(fun) \
-    fun(lvl10param, lvl02param, lvl21param);                     \
+    fun(lvl10param, cblvl02param, cblvl21param);                 \
     fun(lvl10param, lvl02param, lvl22param);
 #define TFHEPP_EXPLICIT_INSTANTIATION_ANNIHILATE_CIRCUIT_BOOTSTRAPPING(fun) \
     fun(lvl10param, cblvl02param, cbAHlvl2param);

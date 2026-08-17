@@ -518,6 +518,8 @@ struct lvl2hparam {
     using targetP = lvlhalfparam;
 };
 
+using cblvl2hparam = lvl2hparam;
+
 struct lvl21param {
     static constexpr std::uint32_t t = 8;  // number of addition in
                                            // keyswitching
@@ -529,6 +531,8 @@ struct lvl21param {
     using domainP = lvl2param;
     using targetP = lvl1param;
 };
+
+using cblvl21param = lvl21param;
 
 struct lvl22param {
     static constexpr std::uint32_t t =

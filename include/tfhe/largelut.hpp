@@ -411,7 +411,7 @@ void R2RKeyGen(R2RKey<P, t, basebit> &r2rk,
                const std::vector<uint32_t> &positions, const uint32_t R,
                const SecretKey &sk)
 {
-    R2RKeyGen<P, t, basebit>(r2rk, positions, R, sk.key.get<P>());
+    R2RKeyGen<P, t, basebit>(r2rk, positions, R, sk.key.getSubset<P>());
 }
 
 template <class P, uint32_t t, uint32_t basebit, uint32_t W, uint32_t K>
@@ -442,7 +442,7 @@ void LargeLUTR2RKeyGen(
     const SecretKey &sk)
 {
     LargeLUTR2RKeyGen<P, t, basebit, W, K>(batch_r2rk, step_r2rks,
-                                           sk.key.get<P>());
+                                           sk.key.getSubset<P>());
 }
 
 template <class P, uint32_t t, uint32_t basebit>

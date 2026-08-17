@@ -25,16 +25,16 @@ int main()
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
         TRLWE<lvl1param> c;
-        trlweSymEncrypt<lvl1param>(c, pmu, key.get<lvl1param>());
+        trlweSymEncrypt<lvl1param>(c, pmu, key.getSubset<lvl1param>());
 
         const Polynomial<TFHEpp::lvl1param> plainpoly = {
             static_cast<typename lvl1param::T>(1)};
 
         TRGSWFFT<lvl1param> trgswfft;
-        trgswSymEncrypt<lvl1param>(trgswfft, plainpoly, key.get<lvl1param>());
+        trgswSymEncrypt<lvl1param>(trgswfft, plainpoly, key.getSubset<lvl1param>());
         ExternalProduct<lvl1param>(c, c, trgswfft);
         const array<bool, lvl1param::n> p2 =
-            trlweSymDecrypt<lvl1param>(c, key.get<lvl1param>());
+            trlweSymDecrypt<lvl1param>(c, key.getSubset<lvl1param>());
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == p2[i]);
     }
     cout << "Passed" << endl;
@@ -49,16 +49,16 @@ int main()
         for (int i = 0; i < lvl2param::n; i++)
             pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
         TRLWE<lvl2param> c;
-        trlweSymEncrypt<lvl2param>(c, pmu, key.get<lvl2param>());
+        trlweSymEncrypt<lvl2param>(c, pmu, key.getSubset<lvl2param>());
 
         const Polynomial<TFHEpp::lvl2param> plainpoly = {
             static_cast<typename lvl2param::T>(1)};
 
         TRGSWFFT<lvl2param> trgswfft;
-        trgswSymEncrypt<lvl2param>(trgswfft, plainpoly, key.get<lvl2param>());
+        trgswSymEncrypt<lvl2param>(trgswfft, plainpoly, key.getSubset<lvl2param>());
         ExternalProduct<lvl2param>(c, c, trgswfft);
         const array<bool, lvl2param::n> p2 =
-            trlweSymDecrypt<lvl2param>(c, key.get<lvl2param>());
+            trlweSymDecrypt<lvl2param>(c, key.getSubset<lvl2param>());
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == p2[i]);
     }
     cout << "Passed" << endl;
@@ -75,16 +75,16 @@ int main()
         for (int i = 0; i < lvl1param::n; i++)
             pmu[i] = p[i] ? lvl1param::μ : -lvl1param::μ;
         TRLWE<lvl1param> c;
-        trlweSymEncrypt<lvl1param>(c, pmu, key.get<lvl1param>());
+        trlweSymEncrypt<lvl1param>(c, pmu, key.getSubset<lvl1param>());
 
         const Polynomial<TFHEpp::lvl1param> plainpoly = {
             static_cast<typename lvl1param::T>(-1)};
 
         TRGSWFFT<lvl1param> trgswfft;
-        trgswSymEncrypt<lvl1param>(trgswfft, plainpoly, key.get<lvl1param>());
+        trgswSymEncrypt<lvl1param>(trgswfft, plainpoly, key.getSubset<lvl1param>());
         ExternalProduct<lvl1param>(c, c, trgswfft);
         const array<bool, lvl1param::n> p2 =
-            trlweSymDecrypt<lvl1param>(c, key.get<lvl1param>());
+            trlweSymDecrypt<lvl1param>(c, key.getSubset<lvl1param>());
         for (int i = 0; i < lvl1param::n; i++) assert(p[i] == !p2[i]);
     }
     cout << "Passed" << endl;
@@ -99,16 +99,16 @@ int main()
         for (int i = 0; i < lvl2param::n; i++)
             pmu[i] = p[i] ? lvl2param::μ : -lvl2param::μ;
         TRLWE<lvl2param> c;
-        trlweSymEncrypt<lvl2param>(c, pmu, key.get<lvl2param>());
+        trlweSymEncrypt<lvl2param>(c, pmu, key.getSubset<lvl2param>());
 
         const Polynomial<TFHEpp::lvl2param> plainpoly = {
             static_cast<typename lvl2param::T>(-1)};
 
         TRGSWFFT<lvl2param> trgswfft;
-        trgswSymEncrypt<lvl2param>(trgswfft, plainpoly, key.get<lvl2param>());
+        trgswSymEncrypt<lvl2param>(trgswfft, plainpoly, key.getSubset<lvl2param>());
         ExternalProduct<lvl2param>(c, c, trgswfft);
         const array<bool, lvl2param::n> p2 =
-            trlweSymDecrypt<lvl2param>(c, key.get<lvl2param>());
+            trlweSymDecrypt<lvl2param>(c, key.getSubset<lvl2param>());
         for (int i = 0; i < lvl2param::n; i++) assert(p[i] == !p2[i]);
     }
     cout << "Passed" << endl;

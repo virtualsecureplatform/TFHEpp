@@ -33,9 +33,16 @@ You must generate:
 
 ## Subset / partial keys
 
-With `-DUSE_SUBSET_KEY=ON`, TFHEpp can generate subset key‑switching keys
+TFHEpp always generates a subset secret-key chain alongside the independent
+chain and can generate subset key-switching keys
 (`emplacesubiksk`, `emplacesubprivksk`) that allow evaluation with only part of
 the secret key. This is based on Klemsa/Zama partial key ideas.
+
+Level 0 is shared by both chains. Select higher-level keys explicitly with
+`getSubset<P>()` or `getIndependent<P>()`. The `SecretKey` convenience
+overloads for TLWE encryption and decryption take a compile-time boolean key
+selector: `true` (the default) selects the subset chain and `false` selects the
+independent chain.
 
 Look at:
 
@@ -136,4 +143,3 @@ stack; treat it as experimental.
   AArch64 backend, or MKL/FFTW3).
 - Generate only the evaluation keys you need; some (BK/CB) are large.
 - Use batch encrypt/decrypt APIs which are OpenMP‑parallelized.
-

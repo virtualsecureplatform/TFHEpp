@@ -13,7 +13,7 @@ namespace {
 using Clock = std::chrono::steady_clock;
 
 template <class F>
-double time_ms(F &&f)
+double time_ms(F&& f)
 {
     const auto start = Clock::now();
     f();
@@ -21,16 +21,16 @@ double time_ms(F &&f)
     return std::chrono::duration<double, std::milli>(end - start).count();
 }
 
-double average(const std::vector<double> &values)
+double average(const std::vector<double>& values)
 {
     return std::accumulate(values.begin(), values.end(), 0.0) / values.size();
 }
 
 template <class P>
-uint64_t checksum(const TFHEpp::TRLWE<P> &trlwe)
+uint64_t checksum(const TFHEpp::TRLWE<P>& trlwe)
 {
     uint64_t acc = 0;
-    for (const auto &poly : trlwe)
+    for (const auto& poly : trlwe)
         for (const auto coeff : poly) acc += static_cast<uint64_t>(coeff);
     return acc;
 }
@@ -54,19 +54,19 @@ int main()
 
     auto ahk = std::make_unique<TFHEpp::AnnihilateKey<P>>();
     const double ah_keygen_ms =
-        time_ms([&] { TFHEpp::annihilatekeygen<P>(*ahk, *sk); });
+        time_ms([&] { TFHEpp::annihilatekeygen<P>(*ahk, sk->key.getSubset<P>()); });
 
     const auto positions = TFHEpp::LargeLUTStepR2RPositions<P, W, K>(step);
     const uint32_t R = TFHEpp::LargeLUTStepBlockSize<P, W, K>(step);
 
     auto r2rk = std::make_unique<TFHEpp::R2RKey<P, r2r_t, r2r_basebit>>();
     const double r2r_keygen_ms = time_ms([&] {
-        TFHEpp::R2RKeyGen<P, r2r_t, r2r_basebit>(
-            *r2rk, positions, R, sk->key.get<P>());
+        TFHEpp::R2RKeyGen<P, r2r_t, r2r_basebit>(*r2rk, positions, R,
+                                                 sk->key.getSubset<P>());
     });
 
     TFHEpp::TRLWE<P> input;
-    TFHEpp::trlweSymEncryptZero<P>(input, sk->key.get<P>());
+    TFHEpp::trlweSymEncryptZero<P>(input, sk->key.getSubset<P>());
 
     auto extract_and_duplicate = [&] {
         std::vector<TFHEpp::TLWE<P>> packed;
@@ -97,8 +97,7 @@ int main()
     TFHEpp::TLWE2TRLWEPacking<P>(ah_out, packed, *ahk);
     TFHEpp::TLWE2TablePacking<P, table_tlwes>(ah_specialized_out,
                                               extracted_positions, *ahk);
-    TFHEpp::R2RPKS<P, r2r_t, r2r_basebit>(r2r_out, input, positions, R,
-                                          *r2rk);
+    TFHEpp::R2RPKS<P, r2r_t, r2r_basebit>(r2r_out, input, positions, R, *r2rk);
 
     std::vector<double> extract_ms;
     std::vector<double> extract_positions_ms;
@@ -107,16 +106,17 @@ int main()
     std::vector<double> ah_specialized_pack_ms;
     std::vector<double> ah_specialized_total_ms;
     std::vector<double> r2r_ms;
-    uint64_t sink =
-        checksum<P>(ah_out) + checksum<P>(ah_specialized_out) + checksum<P>(r2r_out);
+    uint64_t sink = checksum<P>(ah_out) + checksum<P>(ah_specialized_out) +
+                    checksum<P>(r2r_out);
 
     for (uint32_t repeat = 0; repeat < repeats; repeat++) {
         std::vector<TFHEpp::TLWE<P>> local_packed;
         std::array<TFHEpp::TLWE<P>, table_tlwes> local_extracted_positions;
 
-        extract_ms.push_back(time_ms([&] { local_packed = extract_and_duplicate(); }));
-        extract_positions_ms.push_back(
-            time_ms([&] { local_extracted_positions = extract_positions_array(); }));
+        extract_ms.push_back(
+            time_ms([&] { local_packed = extract_and_duplicate(); }));
+        extract_positions_ms.push_back(time_ms(
+            [&] { local_extracted_positions = extract_positions_array(); }));
 
         ah_pack_ms.push_back(time_ms([&] {
             TFHEpp::TLWE2TRLWEPacking<P>(ah_out, packed, *ahk);
@@ -165,11 +165,9 @@ int main()
                      (1024.0 * 1024.0)
               << "\n";
     std::cout << "R2RKey size MiB: "
-              << static_cast<double>(r2rk_bytes) / (1024.0 * 1024.0)
-              << "\n";
+              << static_cast<double>(r2rk_bytes) / (1024.0 * 1024.0) << "\n";
     std::cout << "Intermediate TLWE vector MiB: "
-              << static_cast<double>(packed_bytes) / (1024.0 * 1024.0)
-              << "\n";
+              << static_cast<double>(packed_bytes) / (1024.0 * 1024.0) << "\n";
     std::cout << "AnnihilateKey gen ms: " << ah_keygen_ms << "\n";
     std::cout << "R2RKey gen ms: " << r2r_keygen_ms << "\n";
     std::cout << "SampleExtract+duplicate ms: " << average(extract_ms) << "\n";

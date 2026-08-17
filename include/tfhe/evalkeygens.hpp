@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "../clpx/params/SS2CLPX.hpp"
 #include "key.hpp"
 #include "params.hpp"
 #include "tlwe.hpp"
@@ -11,6 +12,21 @@
 
 namespace TFHEpp {
 template <class P>
+inline constexpr bool bootstraps_to_independent_chain_v =
+    std::is_same_v<P, independentlvl01param> ||
+    std::is_same_v<P, cblvl02param> || std::is_same_v<P, cblvlh2param> ||
+    std::is_same_v<P, lvlh1param> || std::is_same_v<P, lvlh2param>
+#ifdef USE_BLOCK_BINARY
+    || std::is_same_v<P, blockbinaryaeslvlh2param>
+#endif
+#ifdef TFHEPP_HAS_CLPX_PARAMS
+    || std::is_same_v<P, SS2CLPXlvl02param> ||
+    std::is_same_v<P, SS2CLPXlvlh2param> ||
+    std::is_same_v<P, CLPX2TFHElvlh2param>
+#endif
+    ;
+
+template <class P>
 void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey,
            const Key<typename P::targetP>& targetkey)
 {
@@ -19,16 +35,16 @@ void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey,
     for (int i = 0; i < P::domainP::k * P::domainP::n / P::Addends; i++) {
         plainpoly[0] =
             static_cast<int32_t>(domainkey[2 * i] * domainkey[2 * i + 1]);
-        trgswSymEncrypt<typename P::targetP>(bk[i][0], plainpoly,
-                                             P::targetP::α, targetkey);
+        trgswSymEncrypt<typename P::targetP>(bk[i][0], plainpoly, P::targetP::α,
+                                             targetkey);
         plainpoly[0] =
             static_cast<int32_t>(domainkey[2 * i] * (1 - domainkey[2 * i + 1]));
-        trgswSymEncrypt<typename P::targetP>(bk[i][1], plainpoly,
-                                             P::targetP::α, targetkey);
+        trgswSymEncrypt<typename P::targetP>(bk[i][1], plainpoly, P::targetP::α,
+                                             targetkey);
         plainpoly[0] =
             static_cast<int32_t>((1 - domainkey[2 * i]) * domainkey[2 * i + 1]);
-        trgswSymEncrypt<typename P::targetP>(bk[i][2], plainpoly,
-                                             P::targetP::α, targetkey);
+        trgswSymEncrypt<typename P::targetP>(bk[i][2], plainpoly, P::targetP::α,
+                                             targetkey);
     }
 #else
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
@@ -49,8 +65,12 @@ void bkgen(BootstrappingKey<P>& bk, const Key<typename P::domainP>& domainkey,
 template <class P>
 void bkgen(BootstrappingKey<P>& bk, const SecretKey& sk)
 {
-    bkgen<P>(bk, sk.key.get<typename P::domainP>(),
-             sk.key.get<typename P::targetP>());
+    if constexpr (bootstraps_to_independent_chain_v<P>)
+        bkgen<P>(bk, sk.key.getIndependent<typename P::domainP>(),
+                 sk.key.getIndependent<typename P::targetP>());
+    else
+        bkgen<P>(bk, sk.key.getSubset<typename P::domainP>(),
+                 sk.key.getSubset<typename P::targetP>());
 }
 
 template <class P>
@@ -94,8 +114,12 @@ void bkfftgen(BootstrappingKeyFFT<P>& bkfft,
 template <class P>
 void bkfftgen(BootstrappingKeyFFT<P>& bkfft, const SecretKey& sk)
 {
-    bkfftgen<P>(bkfft, sk.key.get<typename P::domainP>(),
-                sk.key.get<typename P::targetP>());
+    if constexpr (bootstraps_to_independent_chain_v<P>)
+        bkfftgen<P>(bkfft, sk.key.getIndependent<typename P::domainP>(),
+                    sk.key.getIndependent<typename P::targetP>());
+    else
+        bkfftgen<P>(bkfft, sk.key.getSubset<typename P::domainP>(),
+                    sk.key.getSubset<typename P::targetP>());
 }
 
 template <class P>
@@ -113,8 +137,12 @@ void bknttgen(BootstrappingKeyNTT<P>& bkntt,
 template <class P>
 void bknttgen(BootstrappingKeyNTT<P>& bkntt, const SecretKey& sk)
 {
-    bknttgen<P>(bkntt, sk.key.get<typename P::domainP>(),
-                sk.key.get<typename P::targetP>());
+    if constexpr (bootstraps_to_independent_chain_v<P>)
+        bknttgen<P>(bkntt, sk.key.getIndependent<typename P::domainP>(),
+                    sk.key.getIndependent<typename P::targetP>());
+    else
+        bknttgen<P>(bkntt, sk.key.getSubset<typename P::domainP>(),
+                    sk.key.getSubset<typename P::targetP>());
 }
 
 template <class P>
@@ -133,8 +161,12 @@ void bkfntgen(BootstrappingKeyFNT<P>& bkfnt,
 template <class P>
 void bkfntgen(BootstrappingKeyFNT<P>& bkfnt, const SecretKey& sk)
 {
-    bkfntgen<P>(bkfnt, sk.key.get<typename P::domainP>(),
-                sk.key.get<typename P::targetP>());
+    if constexpr (bootstraps_to_independent_chain_v<P>)
+        bkfntgen<P>(bkfnt, sk.key.getIndependent<typename P::domainP>(),
+                    sk.key.getIndependent<typename P::targetP>());
+    else
+        bkfntgen<P>(bkfnt, sk.key.getSubset<typename P::domainP>(),
+                    sk.key.getSubset<typename P::targetP>());
 }
 
 template <class P>
@@ -153,8 +185,12 @@ void bkrainttgen(BootstrappingKeyRAINTT<P>& bkraintt,
 template <class P>
 void bkrainttgen(BootstrappingKeyRAINTT<P>& bkraintt, const SecretKey& sk)
 {
-    bkrainttgen<P>(bkraintt, sk.key.get<typename P::domainP>(),
-                   sk.key.get<typename P::targetP>());
+    if constexpr (bootstraps_to_independent_chain_v<P>)
+        bkrainttgen<P>(bkraintt, sk.key.getIndependent<typename P::domainP>(),
+                       sk.key.getIndependent<typename P::targetP>());
+    else
+        bkrainttgen<P>(bkraintt, sk.key.getSubset<typename P::domainP>(),
+                       sk.key.getSubset<typename P::targetP>());
 }
 
 template <class P>
@@ -162,7 +198,7 @@ void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk,
                        const Key<typename P::domainP>& domainkey,
                        const Key<typename P::targetP>& targetkey)
 {
-    for (int i = 0; i < P::domainP::n; i++)
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++)
         for (int j = 0; j < P::t; j++)
             for (uint32_t k = 0; k < (1 << P::basebit) - 1; k++) {
                 Polynomial<typename P::targetP> p = {};
@@ -178,8 +214,8 @@ void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk,
 template <class P>
 void tlwe2trlweikskgen(TLWE2TRLWEIKSKey<P>& iksk, const SecretKey& sk)
 {
-    tlwe2trlweikskgen<P>(iksk, sk.key.get<typename P::domainP>(),
-                         sk.key.get<typename P::targetP>());
+    tlwe2trlweikskgen<P>(iksk, sk.key.getSubset<typename P::domainP>(),
+                         sk.key.getSubset<typename P::targetP>());
 }
 
 template <class P>
@@ -204,7 +240,7 @@ void annihilatekeygen(AnnihilateKey<P>& ahk, const Key<P>& key)
 template <class P>
 void annihilatekeygen(AnnihilateKey<P>& ahk, const SecretKey& sk)
 {
-    annihilatekeygen<P>(ahk, sk.key.get<P>());
+    annihilatekeygen<P>(ahk, sk.key.getIndependent<P>());
 }
 
 template <class P>
@@ -227,8 +263,8 @@ void ikskgen(KeySwitchingKey<P>& ksk, const Key<typename P::domainP>& domainkey,
 template <class P>
 void ikskgen(KeySwitchingKey<P>& ksk, const SecretKey& sk)
 {
-    ikskgen<P>(ksk, sk.key.get<typename P::domainP>(),
-               sk.key.get<typename P::targetP>());
+    ikskgen<P>(ksk, sk.key.getIndependent<typename P::domainP>(),
+               sk.key.getIndependent<typename P::targetP>());
 }
 
 template <class P>
@@ -261,8 +297,8 @@ void privkskgen(PrivateKeySwitchingKey<P>& privksk,
                 const Polynomial<typename P::targetP>& func,
                 const SecretKey& sk)
 {
-    privkskgen<P>(privksk, func, sk.key.get<typename P::domainP>(),
-                  sk.key.get<typename P::targetP>());
+    privkskgen<P>(privksk, func, sk.key.getIndependent<typename P::domainP>(),
+                  sk.key.getIndependent<typename P::targetP>());
 }
 
 template <class P>
@@ -288,7 +324,7 @@ void subikskgen(SubsetKeySwitchingKey<P>& ksk,
 template <class P>
 void subikskgen(SubsetKeySwitchingKey<P>& ksk, const SecretKey& sk)
 {
-    subikskgen<P>(ksk, sk.key.get<typename P::domainP>());
+    subikskgen<P>(ksk, sk.key.getSubset<typename P::domainP>());
 }
 
 // Relinearization key generation - automatically handles DD when l̅ > 1
@@ -315,7 +351,8 @@ relinKey<P> relinKeygen(const Key<P>& key)
         for (int i = 0; i < P::n; i++) partkey[i] = key[0 * P::n + i];
         PolyMulNaive<P>(keysquare, partkey, partkey);
 
-        // halftrgswSymEncrypt uses constexpr if internally to handle DD vs standard
+        // halftrgswSymEncrypt uses constexpr if internally to handle DD vs
+        // standard
         HalfTRGSW<P> halftrgsw;
         halftrgswSymEncrypt<P>(halftrgsw, keysquare, key);
 
@@ -356,8 +393,8 @@ void subprivkskgen(SubsetPrivateKeySwitchingKey<P>& privksk,
                    const Polynomial<typename P::targetP>& func,
                    const SecretKey& sk)
 {
-    subprivkskgen<P>(privksk, func, sk.key.get<typename P::domainP>(),
-                     sk.key.get<typename P::targetP>());
+    subprivkskgen<P>(privksk, func, sk.key.getSubset<typename P::domainP>(),
+                     sk.key.getSubset<typename P::targetP>());
 }
 
 // FFT relinearization key generation - automatically handles DD when l̅ > 1

@@ -18,10 +18,6 @@ int main()
 
     TFHEpp::SecretKey sk;
     TFHEpp::EvalKey ek;
-    std::uniform_int_distribution<int32_t> lvl3gen(
-        TFHEpp::lvl3param::key_value_min, TFHEpp::lvl3param::key_value_max);
-    for (typename TFHEpp::lvl3param::T &i : sk.key.get<TFHEpp::lvl3param>())
-        i = lvl3gen(TFHEpp::generator);
     ek.emplacebkfft<low2midP>(sk);
     ek.emplaceiksk<mid2lowP>(sk);
     ek.emplaceiksk<high2midP>(sk);
@@ -32,13 +28,14 @@ int main()
     std::uniform_int_distribution<typename TFHEpp::lvl3param::T> maskgen(
         0, std::numeric_limits<typename TFHEpp::lvl3param::T>::max());
     std::array<typename TFHEpp::lvl3param::T, numtest> plains{};
-    for (typename TFHEpp::lvl3param::T &i : plains) {
+    for (typename TFHEpp::lvl3param::T& i : plains) {
         i = messagegen(engine);
     }
     std::array<TFHEpp::TLWE<TFHEpp::lvl3param>, numtest> ciphers{};
     for (uint i = 0; i < numtest; i++) {
         TFHEpp::tlweSymIntEncrypt<TFHEpp::lvl3param>(
-            ciphers[i], plains[i], TFHEpp::lvl3param::α, sk.key.get<TFHEpp::lvl3param>());
+            ciphers[i], plains[i], TFHEpp::lvl3param::α,
+            sk.key.getIndependent<TFHEpp::lvl3param>());
         ciphers[i][TFHEpp::lvl3param::n] += maskgen(engine);
     }
 
@@ -61,17 +58,21 @@ int main()
     using domainT = typename high2midP::domainP::T;
     for (uint test = 0; test < numtest; test++) {
         domainT phase = TFHEpp::tlweSymPhase<typename high2midP::domainP>(
-            ciphers.at(test), sk.key.get<TFHEpp::lvl3param>());
+            ciphers.at(test), sk.key.getIndependent<TFHEpp::lvl3param>());
         for (uint digit = 0; digit < numdigits; digit++) {
             int plainResult =
                 TFHEpp::tlweSymIntDecrypt<typename high2midP::targetP,
                                           1U << basebit>(
                     result_multiple[test][digit],
-                    sk.key.get<typename high2midP::targetP>());
+                    sk.key.getIndependent<typename high2midP::targetP>());
             const uint64_t plainExpected = static_cast<uint64_t>(
                 (phase >> (basebit * digit)) &
                 static_cast<domainT>((1ULL << basebit) - 1));
             plainResult = (plainResult + (1U << basebit)) % (1U << basebit);
+            if (plainExpected != static_cast<uint64_t>(plainResult))
+                std::cerr << "Mismatch at test " << test << ", digit "
+                          << digit << ": got " << plainResult << ", expected "
+                          << plainExpected << std::endl;
             assert(plainExpected == plainResult);
         }
     }

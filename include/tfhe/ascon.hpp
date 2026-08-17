@@ -157,6 +157,11 @@ struct ASCONDefaultAHParam<cblvl02param> {
     using type = cbAHlvl2param;
 };
 
+template <>
+struct ASCONDefaultAHParam<cblvlh2param> {
+    using type = cbAHlvl2param;
+};
+
 template <class brP>
 using ASCONDefaultAHParamT = typename ASCONDefaultAHParam<brP>::type;
 
@@ -179,6 +184,12 @@ template <class brParam>
 struct ASCONDefaultCBParams {
     using iks = lvl20param;
     using br = lvl02param;
+};
+
+template <>
+struct ASCONDefaultCBParams<cblvlh2param> {
+    using iks = cblvl2hparam;
+    using br = cblvlh2param;
 };
 
 #ifdef USE_BLOCK_BINARY

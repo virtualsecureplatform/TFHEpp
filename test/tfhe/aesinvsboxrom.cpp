@@ -7,7 +7,7 @@
 
 int main()
 {
-    using brP = TFHEpp::lvl02param;
+    using brP = TFHEpp::cblvl02param;
     using iksP = TFHEpp::lvl20param;
     using ahP = TFHEpp::AHlvl2param;
     std::random_device seed_gen;
@@ -29,7 +29,7 @@ int main()
                     : -(1ULL << (std::numeric_limits<
                                      typename iksP::domainP::T>::digits -
                                  2)),
-                *sk);
+                sk->key.getIndependent<typename iksP::domainP>());
     }
     std::vector<std::array<TFHEpp::TLWE<typename brP::targetP>, 8>> cres(
         num_test);
@@ -54,7 +54,9 @@ int main()
     for (int i = 0; i < num_test; i++) {
         uint8_t pres = 0;
         for (int j = 0; j < 8; j++) {
-            if (TFHEpp::tlweSymDecrypt<typename brP::targetP>(cres[i][j], *sk))
+            if (TFHEpp::tlweSymDecrypt<typename brP::targetP>(
+                    cres[i][j],
+                    sk->key.getIndependent<typename brP::targetP>()))
                 pres += (1 << j);
         }
         // std::cout << "test: " << i << " pres: " << (int)pres << " expected: "

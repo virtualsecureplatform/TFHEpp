@@ -25,7 +25,7 @@ bool run_rainttenc_test()
                 for (int i = 0; i < P::n; i++)
                     pmu[i] = p[i] ? P::μ : -P::μ;
                 TFHEpp::TRLWERAINTT<P> craintt;
-                TFHEpp::trlweSymEncrypt<P>(craintt, pmu, 3, key.get<P>());
+                TFHEpp::trlweSymEncrypt<P>(craintt, pmu, 3, key.getSubset<P>());
                 TFHEpp::TRLWE<P> c;
                 for (int k = 0; k <= P::k; k++) {
                     raintt::TwistNTT<typename P::T, P::nbit, false>(
@@ -37,7 +37,7 @@ bool run_rainttenc_test()
                                       : c[k][i];
                 }
                 std::array<bool, P::n> p2 =
-                    TFHEpp::trlweSymDecrypt<P>(c, key.get<P>());
+                    TFHEpp::trlweSymDecrypt<P>(c, key.getSubset<P>());
                 // for (int i = 0; i < TFHEpp::lvl1param::n; i++)
                 // std::cout<<test<<":"<<i<<":"<<c[TFHEpp::lvl1param::k][i]<<":"<<(p[i]?1:0)<<":"<<(p2[i]?1:0)<<std::endl;
                 for (int i = 0; i < P::n; i++) assert(p[i] == p2[i]);

@@ -282,15 +282,18 @@ void TLWE2TRLWEIKS(TRLWE<typename P::targetP> &res,
     constexpr uint32_t target_digit =
         std::numeric_limits<typename P::targetP::T>::digits;
     if constexpr (domain_digit == target_digit)
-        res[P::targetP::k][0] = tlwe[P::domainP::n];
+        res[P::targetP::k][0] =
+            tlwe[P::domainP::k * P::domainP::n];
     else if constexpr (domain_digit > target_digit)
-        res[P::targetP::k][0] = (tlwe[P::domainP::n] +
+        res[P::targetP::k][0] =
+            (tlwe[P::domainP::k * P::domainP::n] +
                                  (static_cast<typename P::domainP::T>(1) << (domain_digit - target_digit - 1))) >>
                                 (domain_digit - target_digit);
     else if constexpr (domain_digit < target_digit)
-        res[P::targetP::k][0] = tlwe[P::domainP::n]
-                                << (target_digit - domain_digit);
-    for (int i = 0; i < P::domainP::n; i++) {
+        res[P::targetP::k][0] =
+            tlwe[P::domainP::k * P::domainP::n]
+            << (target_digit - domain_digit);
+    for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
         const typename P::domainP::T aibar = tlwe[i] + prec_offset;
         for (int j = 0; j < P::t; j++) {
             const uint32_t aij =

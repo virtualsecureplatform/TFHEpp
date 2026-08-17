@@ -10,7 +10,7 @@ int main()
     using brP = TFHEpp::lvl01param;
     using iksP = TFHEpp::lvl10param;
     using cbiksP = TFHEpp::lvl20param;
-    using cbbrP = TFHEpp::lvl02param;
+    using cbbrP = TFHEpp::cblvl02param;
     using ahP = TFHEpp::AHlvl2param;
     // using brP = TFHEpp::lvl02param;
     // using iksP = TFHEpp::lvl20param;
@@ -56,10 +56,9 @@ int main()
                         ? 1ULL << (std::numeric_limits<
                                        typename iksP::domainP::T>::digits -
                                    2)
-                        : -(1ULL
-                            << (std::numeric_limits<
-                                    typename iksP::domainP::T>::digits -
-                                2)),
+                        : -(1ULL << (std::numeric_limits<
+                                         typename iksP::domainP::T>::digits -
+                                     2)),
                     *sk);
     }
     std::vector<std::array<TFHEpp::TLWE<typename brP::targetP>, 128>> cres(
@@ -68,6 +67,7 @@ int main()
     ek.emplacebkfft<brP>(*sk);
     ek.emplacebkfft<cbbrP>(*sk);
     ek.emplaceiksk<iksP>(*sk);
+    ek.emplacesubiksk<iksP>(*sk);
     ek.emplaceiksk<cbiksP>(*sk);
     ek.emplaceahk<ahP>(*sk);
     ek.emplacecbsk<ahP>(*sk);

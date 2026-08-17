@@ -42,7 +42,7 @@ int testBlindRotate()
     for (int i = 0; i < num_test; i++) {
         TFHEpp::tlweSymEncrypt<typename bkP::domainP>(
             tlwe[i], plain[i] ? bkP::domainP::μ : -bkP::domainP::μ,
-            bkP::domainP::α, sk.key.get<typename bkP::domainP>());
+            bkP::domainP::α, sk.key.getSubset<typename bkP::domainP>());
     }
 
     for (int test = 0; test < num_test; test++) {
@@ -54,7 +54,7 @@ int testBlindRotate()
 
     for (int i = 0; i < num_test; i++) {
         const bool decrypted = TFHEpp::tlweSymDecrypt<typename bkP::targetP>(
-            bootedtlwe[i], sk.key.get<typename bkP::targetP>());
+            bootedtlwe[i], sk.key.getSubset<typename bkP::targetP>());
         if (plain[i] != decrypted) {
             std::cerr << "FFT BlindRotate decrypted " << decrypted
                       << ", expected " << plain[i] << std::endl;
