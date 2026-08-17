@@ -160,7 +160,7 @@ jobs:
           build/test/tfhe/gatebootstrappingtlwe2tlweraintt
 
   tutorial:
-    name: tutorial-gcc-26.04
+    name: tutorial-128bit-gcc-26.04
     runs-on: ubuntu-latest
     container:
       image: ubuntu:26.04
@@ -178,7 +178,9 @@ jobs:
         run: |
           cmake . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DENABLE_TUTORIAL=ON
+            -DENABLE_TUTORIAL=ON \
+            -DUSE_BLOCK_BINARY=OFF \
+            -DUSE_SUBSET_KEY=OFF
           cmake --build build
           echo "12345" | ./build/tutorial/client
           echo "54321" | ./build/tutorial/cloud
