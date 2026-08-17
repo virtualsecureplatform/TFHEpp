@@ -229,7 +229,7 @@ void HomORYN(TLWE<typename brP::targetP> &res,
 
 // 3input
 // cs?c1:c0
-template <class P = lvl1param>
+template <class P = lvl1param, bool use_subset_key = true>
 void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
             const TLWE<P> &c0, const EvalKey &ek)
 {
@@ -240,7 +240,7 @@ void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
     res[P::k * P::n] -= P::μ;
     if constexpr (is_lvl1_ring_v<P>) {
         TLWE<lvl0param> and1, and0;
-        if constexpr (std::is_same_v<P, lvl1param>) {
+        if constexpr (std::is_same_v<P, lvl1param> && use_subset_key) {
             EvalIdentityKeySwitch<lvl10param>(and1, temp, ek);
             EvalIdentityKeySwitch<lvl10param>(and0, res, ek);
             GateBootstrappingTLWE2TLWE<lvl01param>(
@@ -279,11 +279,11 @@ void HomMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
         res[P::k * P::n] += P::μ;
     }
 }
-template <class P = lvl1param>
+template <class P = lvl1param, bool use_subset_key = true>
 void HomNMUX(TLWE<P> &res, const TLWE<P> &cs, const TLWE<P> &c1,
              const TLWE<P> &c0, const EvalKey &ek)
 {
-    HomMUX<P>(res, cs, c1, c0, ek);
+    HomMUX<P, use_subset_key>(res, cs, c1, c0, ek);
     for (int i = 0; i <= P::k * P::n; i++) res[i] = -res[i];
 }
 template <class bkP>

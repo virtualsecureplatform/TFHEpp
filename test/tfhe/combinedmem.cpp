@@ -231,8 +231,9 @@ int main()
                 encromreadres, (*bootedTGSW)[1], encumemory);
 
             for (int i = 0; i < words; i++)
-                HomMUX<dataP>(encreadres[i], encaddress[address_bit - 1],
-                              encramreadres[i], encromreadres[i], ek);
+                HomMUX<dataP, false>(
+                    encreadres[i], encaddress[address_bit - 1],
+                    encramreadres[i], encromreadres[i], ek);
 
             // Controll
             TLWE<dataP> cs;
