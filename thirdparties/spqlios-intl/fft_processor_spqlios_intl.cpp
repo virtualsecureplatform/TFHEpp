@@ -1021,8 +1021,14 @@ void FFT_Processor_Spqlios_Intl::execute_direct_torus32_rescale(uint32_t *res, c
     auto *tables = (const INTL_FFT_PRECOMP*)tables_direct;
     intl_fft_from(tables, a, real_inout_direct);
     for (int32_t i = 0; i < Ns2; i++) {
-        res[i] = (uint32_t)(int64_t)(real_inout_direct[2*i]/D);
-        res[i+Ns2] = (uint32_t)(int64_t)(real_inout_direct[2*i+1]/D);
+        // Rescaling is a signed arithmetic right shift in the reference
+        // implementation.  C++ casts truncate toward zero, which is one too
+        // large for negative non-integral values and can exceed the FFT error
+        // budget after a negacyclic product.
+        res[i] = static_cast<uint32_t>(
+            static_cast<int64_t>(std::floor(real_inout_direct[2 * i] / D)));
+        res[i + Ns2] = static_cast<uint32_t>(static_cast<int64_t>(
+            std::floor(real_inout_direct[2 * i + 1] / D)));
     }
 }
 

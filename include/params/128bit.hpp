@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 
+#ifndef TFHEPP_BLOCK_BINARY_LVL0
 struct lvl0param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = 0;
@@ -21,6 +22,7 @@ struct lvl0param {
         static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
         plain_modulus;
 };
+#endif  // TFHEPP_BLOCK_BINARY_LVL0
 
 struct lvlhalfparam {
     static constexpr int32_t key_value_max = 1;
@@ -272,6 +274,9 @@ struct lvl4param {
     static constexpr std::uint32_t B̅gₐbit = 16;
 };
 
+// Kept for direct inclusion of this legacy header.  params.hpp supplies these
+// definitions from extended-multilimb.hpp for every active parameter family.
+#ifndef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 // lvl5param: BFV-oriented DD multi-limb torus scaffold.
 //
 // Q = 2^448 is represented as 7 little-endian 64-bit limbs.  The SIMD
@@ -458,6 +463,7 @@ struct lvl6param {
     static constexpr uint64_t simd_psi_inv = 295516;
     static constexpr uint64_t simd_n_inv = 786409;
 };
+#endif  // TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 
 // Key Switching parameters
 struct lvl10param {

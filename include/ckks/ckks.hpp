@@ -35,9 +35,8 @@
 #include "tfhe/trlwe.hpp"
 #include "utils.hpp"
 
-// CKKS relies on the multi-limb scaffolds (lvl5param/lvl6param) that only the
-// default 128-bit parameter set defines.
-#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+// CKKS relies on the shared multi-limb scaffolds (lvl5param/lvl6param).
+#ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 
 namespace TFHEpp {
 
@@ -18300,4 +18299,4 @@ inline void CKKSEvalModSineDegree5(
 
 }  // namespace TFHEpp
 
-#endif  // TFHEPP_DEFAULT_128BIT_PARAMS
+#endif  // TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS

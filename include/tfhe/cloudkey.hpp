@@ -15,7 +15,7 @@
 
 namespace TFHEpp {
 
-#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+#ifdef TFHEPP_HAS_CLPX_PARAMS
 // BootstrappingKeyFFT is an array type whose identity only depends on its
 // dimensions.  CLPX2TFHElvlh2param and lvlh2param therefore have the same
 // concrete key type even though their gadget bases differ.  The extra array
@@ -43,7 +43,7 @@ struct EvalKey {
         std::shared_ptr<BootstrappingKeyFFT<lvlh1param>>,  // 5
         std::shared_ptr<BootstrappingKeyFFT<lvl02param>>,  // 6
         std::shared_ptr<BootstrappingKeyFFT<lvlh2param>>,  // 7
-#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+#ifdef TFHEPP_HAS_CLPX_PARAMS
         std::shared_ptr<BootstrappingKeyFFT<SS2CLPXlvl02param>>,
         std::shared_ptr<BootstrappingKeyFFT<SS2CLPXlvlh2param>>,
         std::shared_ptr<CLPX2TFHEBKFFTStorage>,
@@ -153,7 +153,7 @@ struct EvalKey {
     template <class P>
     void emplacebkfft(const SecretKey& sk)
     {
-#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+#ifdef TFHEPP_HAS_CLPX_PARAMS
         if constexpr (std::is_same_v<P, CLPX2TFHElvlh2param>) {
             if (get<CLPX2TFHEBKFFTStorage>() != nullptr) {
                 std::cerr << "Warning: BootstrappingKeyFFT<P> already exists. "
@@ -369,7 +369,7 @@ struct EvalKey {
     template <class P>
     BootstrappingKeyFFT<P>& getbkfft() const
     {
-#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+#ifdef TFHEPP_HAS_CLPX_PARAMS
         if constexpr (std::is_same_v<P, CLPX2TFHElvlh2param>)
             return (*const_cast<EvalKey*>(this)
                          ->get<CLPX2TFHEBKFFTStorage>())[0];

@@ -5,7 +5,7 @@ on:
 
 jobs:
   scheme-tests:
-    name: ${{ matrix.scheme }}-${{ matrix.compiler }}-26.04
+    name: block-binary-${{ matrix.scheme }}-${{ matrix.compiler }}-26.04
     runs-on: ubuntu-latest
     container:
       image: ubuntu:26.04
@@ -92,13 +92,15 @@ jobs:
           cmake . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DENABLE_TEST=ON \
+            -DUSE_BLOCK_BINARY=OFF \
+            -DUSE_SUBSET_KEY=OFF \
             -DUSE_CONCRETE=ON
           cmake --build build --target test_tfhe
           cd build
           test/test.sh tfhe
 
-  tfhe-block-binary:
-    name: tfhe-block-binary-gcc-26.04
+  tfhe-128bit:
+    name: tfhe-128bit-gcc-26.04
     runs-on: ubuntu-latest
     container:
       image: ubuntu:26.04
@@ -112,13 +114,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Build and test TFHE block-binary parameters
+      - name: Build and test TFHE 128-bit parameters
         run: |
           cmake . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DENABLE_TEST=ON \
-            -DUSE_BLOCK_BINARY=ON \
-            -DUSE_SUBSET_KEY=ON
+            -DUSE_BLOCK_BINARY=OFF \
+            -DUSE_SUBSET_KEY=OFF
           cmake --build build --target test_tfhe
           cd build
           test/test.sh tfhe

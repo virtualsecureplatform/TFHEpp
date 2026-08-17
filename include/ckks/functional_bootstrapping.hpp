@@ -10,7 +10,7 @@
 
 #include "ckks/ckks.hpp"
 
-#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+#ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 
 namespace TFHEpp {
 
@@ -1331,4 +1331,4 @@ inline void CKKSDenseFHEFriendlyFunctionalBootstrap(
 
 }  // namespace TFHEpp
 
-#endif  // TFHEPP_DEFAULT_128BIT_PARAMS
+#endif  // TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS

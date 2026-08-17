@@ -16,6 +16,10 @@ struct alignas(64) aligned_array : public std::array<T, N> {};
 
 enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 
+// lvl5/lvl6 do not conflict with, or depend on, the active lvl0--lvl4 family.
+#include "params/extended-multilimb.hpp"
+#define TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
+
 // Use old 80bit security parameters. It is faster, but not recommended.
 #if defined(USE_80BIT_SECURITY)
 #include "params/CGGI16.hpp"
@@ -25,6 +29,7 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 #include "params/CGGI19.hpp"
 #elif defined(USE_BLOCK_BINARY)
 #include "params/blockbinary.hpp"
+#define TFHEPP_HAS_CLPX_PARAMS
 #elif defined(USE_CONCRETE)
 #include "params/concrete.hpp"
 #elif defined(USE_TFHE_RS)
@@ -38,6 +43,7 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 // 128-bit parameter set provides.  Headers implementing those schemes are
 // compiled only when this macro is defined.
 #define TFHEPP_DEFAULT_128BIT_PARAMS
+#define TFHEPP_HAS_CLPX_PARAMS
 #endif
 
 #ifndef USE_DIFFERENT_BR_PARAM

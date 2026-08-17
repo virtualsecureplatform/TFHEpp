@@ -205,7 +205,11 @@ void FFT_Processor_Spqlios::execute_direct_torus32_rescale(uint32_t *res, const 
     for (int32_t i = 0; i < N; i++) real_inout_direct[i] = a[i] * _2sN;
 #endif
     fft(tables_direct, real_inout_direct);
-    for (int32_t i = 0; i < N; i++) res[i] = static_cast<uint32_t>(int64_t(real_inout_direct[i]/D));
+    // Match the signed arithmetic right shift used by the exact rescaling
+    // reference.  Truncation toward zero is wrong for negative coefficients.
+    for (int32_t i = 0; i < N; i++)
+        res[i] = static_cast<uint32_t>(
+            static_cast<int64_t>(std::floor(real_inout_direct[i] / D)));
 }
 
 void FFT_Processor_Spqlios::execute_direct_torus32_rescale_clpx(
