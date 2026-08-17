@@ -24,11 +24,8 @@ jobs:
             compiler: gcc
         include:
           - scheme: tfhe
-            # AES/ASCON tests use the 128-bit lvlhalf/lvl2 topology.  The
-            # dedicated tfhe-128bit job covers that full suite; this default
-            # configuration validates common arithmetic plus the block-binary
-            # gate paths themselves.
-            build_targets: test_common blockbinary_nand blockbinary_blindrotatefft
+            build_targets: test_common test_tfhe
+            test_dirs: common tfhe
           - scheme: bfv
             build_targets: test_bfv
             test_dirs: bfv
@@ -81,13 +78,7 @@ jobs:
           # CKKS CI intentionally runs only the normal lightweight test
           # executables. Do not pass lvl6 keygen/run/all flags here; those
           # generate full bootstrap artifacts and exceed the storage budget.
-          if [ "${{ matrix.scheme }}" = "tfhe" ]; then
-            test/test.sh common
-            test/tfhe/blockbinary_nand
-            test/tfhe/blockbinary_blindrotatefft
-          else
-            test/test.sh ${{ matrix.test_dirs }}
-          fi
+          test/test.sh ${{ matrix.test_dirs }}
 
   tfhe-concrete:
     name: tfhe-concrete-gcc-26.04

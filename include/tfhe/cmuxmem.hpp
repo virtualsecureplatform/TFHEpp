@@ -91,16 +91,19 @@ void LROMUX(vector<TLWE<P>> &res,
     for (int i = 0; i < P::k + 1; i++)
         PolynomialMulByXaiMinusOne<P>(temp[i], data[i], 2 * P::n - (P::n >> 1));
     ExternalProduct<P>(temp, temp, address[width_bit - 1]);
-    for (int i = 0; i < (P::k + 1) * P::n; i++)
-        // initialize acc
-        acc[0][i] = temp[0][i] + data[0][i];
+    for (int component = 0; component < P::k + 1; component++)
+        for (int i = 0; i < P::n; i++)
+            // initialize acc
+            acc[component][i] = temp[component][i] + data[component][i];
 
     for (uint32_t bit = 2; bit <= width_bit; bit++) {
         for (int i = 0; i < P::k + 1; i++)
             PolynomialMulByXaiMinusOne<P>(temp[i], acc[i],
                                           2 * P::n - (P::n >> bit));
         ExternalProduct<P>(temp, temp, address[width_bit - bit]);
-        for (int i = 0; i < (P::k + 1) * P::n; i++) acc[0][i] += temp[0][i];
+        for (int component = 0; component < P::k + 1; component++)
+            for (int i = 0; i < P::n; i++)
+                acc[component][i] += temp[component][i];
     }
 
     constexpr uint32_t word = 1 << (P::nbit - width_bit);
@@ -120,16 +123,19 @@ void LROMUX(std::span<TLWE<P>, num_tlwe> res,
     for (int i = 0; i < P::k + 1; i++)
         PolynomialMulByXaiMinusOne<P>(temp[i], data[i], 2 * P::n - (P::n >> 1));
     ExternalProduct<P>(temp, temp, address[width_bit - 1]);
-    for (int i = 0; i < (P::k + 1) * P::n; i++)
-        // initialize acc
-        acc[0][i] = temp[0][i] + data[0][i];
+    for (int component = 0; component < P::k + 1; component++)
+        for (int i = 0; i < P::n; i++)
+            // initialize acc
+            acc[component][i] = temp[component][i] + data[component][i];
 
     for (uint32_t bit = 2; bit <= width_bit; bit++) {
         for (int i = 0; i < P::k + 1; i++)
             PolynomialMulByXaiMinusOne<P>(temp[i], acc[i],
                                           2 * P::n - (P::n >> bit));
         ExternalProduct<P>(temp, temp, address[width_bit - bit]);
-        for (int i = 0; i < (P::k + 1) * P::n; i++) acc[0][i] += temp[0][i];
+        for (int component = 0; component < P::k + 1; component++)
+            for (int i = 0; i < P::n; i++)
+                acc[component][i] += temp[component][i];
     }
 
     for (int i = 0; i < num_tlwe; i++) SampleExtractIndex<P>(res[i], acc, i);

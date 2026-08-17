@@ -341,7 +341,8 @@ void AnnihilateKeySwitching(TRLWE<P> &res, const TRLWE<P> &trlwe,
     res = trlwe;
     // for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] /= P::n;
     for (int i = 0; i < P::nbit; i++) {
-        for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] /= 2;
+        for (int component = 0; component < P::k + 1; component++)
+            for (int j = 0; j < P::n; j++) res[component][j] /= 2;
         TRLWE<P> evaledauto;
         EvalAuto<P>(evaledauto, res, (1 << (i + 1)) + 1, ahk[i]);
         TRLWEAdd<P>(res, res, evaledauto);
@@ -448,7 +449,8 @@ void TLWE2TRLWEChensPacking(TRLWE<P> &res, std::vector<TLWE<P>> &tlwe,
     PackLWEs<P>(res, tlwe, ahk, l, 0, 1);
     for (int i = l; i < P::nbit; i++) {
         TRLWE<P> evaledauto;
-        for (int j = 0; j < (P::k + 1) * P::n; j++) res[0][j] /= 2;
+        for (int component = 0; component < P::k + 1; component++)
+            for (int j = 0; j < P::n; j++) res[component][j] /= 2;
         EvalAuto<P>(evaledauto, res, (1 << (i + 1)) + 1, ahk[i]);
         TRLWEAdd<P>(res, res, evaledauto);
         // for (int j = 0; j < (P::k + 1) * P::n; j++)
@@ -469,12 +471,14 @@ void TLWE2TablePacking(TRLWE<P> &res, std::array<TLWE<P>, num_tlwe> &tlwe,
         for (int j = 0; j < P::k + 1; j++)
             PolynomialMulByXai<P>(tempmul[j], res[j], P::n >> (i + 1));
         TRLWE<P> tempsub;
-        for (int j = 0; j < (P::k + 1) * P::n; j++) {
-            res[0][j] /= 2;
-            tempmul[0][j] /= 2;
-            tempsub[0][j] = res[0][j] - tempmul[0][j];
-            res[0][j] += tempmul[0][j];
-        }
+        for (int component = 0; component < P::k + 1; component++)
+            for (int j = 0; j < P::n; j++) {
+                res[component][j] /= 2;
+                tempmul[component][j] /= 2;
+                tempsub[component][j] =
+                    res[component][j] - tempmul[component][j];
+                res[component][j] += tempmul[component][j];
+            }
         // reuse tempmul
         EvalAuto<P>(tempmul, tempsub, (1 << (i + 1)) + 1, ahk[i]);
         TRLWEAdd<P>(res, res, tempmul);
@@ -502,12 +506,15 @@ void TLWE2TablePackingManyLUT(
                 PolynomialMulByXai<P>(tempmul[j], temptrlwe[index][j],
                                       P::n >> (i + 1));
             TRLWE<P> tempsub;
-            for (int j = 0; j < (P::k + 1) * P::n; j++) {
-                temptrlwe[index][0][j] /= 2;
-                tempmul[0][j] /= 2;
-                tempsub[0][j] = temptrlwe[index][0][j] - tempmul[0][j];
-                temptrlwe[index][0][j] += tempmul[0][j];
-            }
+            for (int component = 0; component < P::k + 1; component++)
+                for (int j = 0; j < P::n; j++) {
+                    temptrlwe[index][component][j] /= 2;
+                    tempmul[component][j] /= 2;
+                    tempsub[component][j] =
+                        temptrlwe[index][component][j] -
+                        tempmul[component][j];
+                    temptrlwe[index][component][j] += tempmul[component][j];
+                }
             // reuse tempmul
             EvalAuto<P>(tempmul, tempsub, (1 << (i + 1)) + 1, ahk[i]);
             TRLWEAdd<P>(temptrlwe[index], temptrlwe[index], tempmul);
