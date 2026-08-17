@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <limits>
 
-#ifndef TFHEPP_BLOCK_BINARY_LVL0
 struct lvl0param {
     static constexpr int32_t key_value_max = 1;
     static constexpr int32_t key_value_min = 0;
@@ -22,7 +21,6 @@ struct lvl0param {
         static_cast<double>(1ULL << std::numeric_limits<T>::digits) /
         plain_modulus;
 };
-#endif  // TFHEPP_BLOCK_BINARY_LVL0
 
 struct lvlhalfparam {
     static constexpr int32_t key_value_max = 1;

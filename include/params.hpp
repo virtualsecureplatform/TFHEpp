@@ -29,7 +29,6 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 #include "params/CGGI19.hpp"
 #elif defined(USE_BLOCK_BINARY)
 #include "params/blockbinary.hpp"
-#define TFHEPP_HAS_CLPX_PARAMS
 #elif defined(USE_CONCRETE)
 #include "params/concrete.hpp"
 #elif defined(USE_TFHE_RS)

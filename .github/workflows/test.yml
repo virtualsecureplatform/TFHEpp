@@ -5,7 +5,7 @@ on:
 
 jobs:
   scheme-tests:
-    name: block-binary-${{ matrix.scheme }}-${{ matrix.compiler }}-26.04
+    name: ${{ matrix.parameter_label || 'block-binary' }}-${{ matrix.scheme }}-${{ matrix.compiler }}-26.04
     runs-on: ubuntu-latest
     container:
       image: ubuntu:26.04
@@ -35,6 +35,13 @@ jobs:
           - scheme: ckks
             build_targets: test_ckks
             test_dirs: ckks
+          # CLPX currently requires the 128-bit lvl1/lvl2 topology.  Keep
+          # this explicit while the default block-binary configuration covers
+          # TFHE, BFV, and CKKS.
+          - scheme: clpx
+            compiler: clang
+            parameter_label: 128bit
+            parameter_flags: -DUSE_BLOCK_BINARY=OFF -DUSE_SUBSET_KEY=OFF
           - compiler: gcc
             compiler_flags: -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
           # clang-22 is the newest clang in the Ubuntu 26.04 repositories;
@@ -64,7 +71,8 @@ jobs:
             -DENABLE_TEST=ON \
             -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
             -DCMAKE_C_FLAGS_RELEASE="-O3" \
-            ${{ matrix.compiler_flags }}
+            ${{ matrix.compiler_flags }} \
+            ${{ matrix.parameter_flags }}
           cmake --build build --target ${{ matrix.build_targets }}
           cd build
           # CKKS CI intentionally runs only the normal lightweight test
