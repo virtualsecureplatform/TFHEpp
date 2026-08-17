@@ -135,8 +135,13 @@ std::vector<uint8_t> decrypt_bits_as_bytes(
 
 void compare_homomorphic_ascon_xof_with_ascon_c()
 {
+#ifdef USE_BLOCK_BINARY
+    using brP = TFHEpp::blockbinaryaeslvlh2param;
+    using iksP = TFHEpp::blockbinaryaeslvl2hparam;
+#else
     using brP = TFHEpp::lvlh2param;
     using iksP = TFHEpp::lvl2hparam;
+#endif
     using P = typename brP::targetP;
 
     const std::vector<uint8_t> empty;
@@ -164,8 +169,13 @@ void compare_homomorphic_ascon_xof_with_ascon_c()
 
 void compare_homomorphic_ascon_with_ascon_c()
 {
+#ifdef USE_BLOCK_BINARY
+    using brP = TFHEpp::blockbinaryaeslvlh2param;
+    using iksP = TFHEpp::blockbinaryaeslvl2hparam;
+#else
     using brP = TFHEpp::lvlh2param;
     using iksP = TFHEpp::lvl2hparam;
+#endif
     using P = typename brP::targetP;
 
     if (std::getenv("TFHEPP_RUN_ASCON_HOM_TEST") == nullptr) return;

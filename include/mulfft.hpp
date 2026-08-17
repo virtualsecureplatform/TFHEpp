@@ -44,6 +44,11 @@
 
 namespace TFHEpp {
 
+#if defined(USE_CONCRETE_FFT) && defined(USE_BLOCK_BINARY)
+inline thread_local FFT_Processor_Concrete<blockbinaryaeslvl2param::n>
+    fftplvlblockbinaryaes;
+#endif
+
 template <uint32_t N>
 inline void MulInFD(std::array<double, N> &res,
                     const std::array<double, N> &b);
@@ -107,6 +112,16 @@ inline const std::unique_ptr<
 inline const std::unique_ptr<
     const std::array<std::array<cuHEpp::INTorus, lvl2param::n>, 2>>
     ntttablelvl2 = cuHEpp::TableGen<lvl2param::nbit>();
+#ifdef USE_BLOCK_BINARY
+inline const std::unique_ptr<const std::array<
+    std::array<cuHEpp::INTorus, blockbinaryaeslvl2param::n>, 2>>
+    ntttwistblockbinaryaes =
+        cuHEpp::TwistGen<blockbinaryaeslvl2param::nbit>();
+inline const std::unique_ptr<const std::array<
+    std::array<cuHEpp::INTorus, blockbinaryaeslvl2param::n>, 2>>
+    ntttableblockbinaryaes =
+        cuHEpp::TableGen<blockbinaryaeslvl2param::nbit>();
+#endif
 inline const std::unique_ptr<
     std::array<std::array<raintt::SWord, lvl1param::n>, 2>>
     raintttwist = raintt::TwistGen<lvl1param::nbit, 3>();
@@ -135,6 +150,13 @@ inline void TwistNTT(Polynomial<P> &res, PolynomialNTT<P> &a)
 #else
         cuHEpp::TwistNTT<typename P::T, P::nbit>(
             res, a, (*ntttablelvl1)[0], (*ntttwistlvl1)[0]);
+#endif
+#ifdef USE_BLOCK_BINARY
+    else if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||
+                       std::is_same_v<P, blockbinaryaesAHlvl2param>)
+        cuHEpp::TwistNTT<typename P::T, P::nbit>(
+            res, a, (*ntttableblockbinaryaes)[0],
+            (*ntttwistblockbinaryaes)[0]);
 #endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistNTT<typename lvl2param::T, lvl2param::nbit>(
@@ -171,6 +193,11 @@ inline void TwistFFT(Polynomial<P> &res, PolynomialInFD<P> &a)
             res[i] = static_cast<__uint128_t>(
                 static_cast<__int128_t>(static_cast<int64_t>(temp[i])));
     }
+#ifdef USE_BLOCK_BINARY
+    else if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||
+                       std::is_same_v<P, blockbinaryaesAHlvl2param>)
+        fftplvlblockbinaryaes.execute_direct_torus64(res.data(), a.data());
+#endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_direct_torus64(res.data(), a.data());
     else
@@ -194,6 +221,11 @@ inline void TwistFFTAdd(Polynomial<P> &res, PolynomialInFD<P> &a)
             res[i] += static_cast<__uint128_t>(
                 static_cast<__int128_t>(static_cast<int64_t>(temp[i])));
     }
+#ifdef USE_BLOCK_BINARY
+    else if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||
+                       std::is_same_v<P, blockbinaryaesAHlvl2param>)
+        fftplvlblockbinaryaes.execute_direct_torus64_add(res.data(), a.data());
+#endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_direct_torus64_add(res.data(), a.data());
     else
@@ -234,6 +266,13 @@ inline void TwistINTT(PolynomialNTT<P> &res, const Polynomial<P> &a)
         cuHEpp::TwistINTT<typename P::T, P::nbit>(res, a, (*ntttablelvl1)[1],
                                                   (*ntttwistlvl1)[1]);
 #endif
+#ifdef USE_BLOCK_BINARY
+    else if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||
+                       std::is_same_v<P, blockbinaryaesAHlvl2param>)
+        cuHEpp::TwistINTT<typename P::T, P::nbit>(
+            res, a, (*ntttableblockbinaryaes)[1],
+            (*ntttwistblockbinaryaes)[1]);
+#endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         cuHEpp::TwistINTT<typename P::T, P::nbit>(res, a, (*ntttablelvl2)[1],
                                                   (*ntttwistlvl2)[1]);
@@ -260,6 +299,11 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
             temp[i] = static_cast<uint64_t>(a[i]);
         fftplvl3.execute_reverse_torus64(res.data(), temp.data());
     }
+#ifdef USE_BLOCK_BINARY
+    else if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||
+                       std::is_same_v<P, blockbinaryaesAHlvl2param>)
+        fftplvlblockbinaryaes.execute_reverse_torus64(res.data(), a.data());
+#endif
     else if constexpr (std::is_same_v<typename P::T, uint64_t>)
         fftplvl2.execute_reverse_torus64(res.data(), a.data());
     else

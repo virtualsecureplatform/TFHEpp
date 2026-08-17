@@ -254,3 +254,7 @@ FFT_Processor_Spqlios_Arithmetic::~FFT_Processor_Spqlios_Arithmetic()
 // Thread-local FFT processors for level 1 and level 2
 thread_local FFT_Processor_Spqlios_Arithmetic fftplvl1(TFHEpp::lvl1param::n);
 thread_local FFT_Processor_Spqlios_Arithmetic fftplvl2(TFHEpp::lvl2param::n);
+#ifdef USE_BLOCK_BINARY
+thread_local FFT_Processor_Spqlios_Arithmetic fftplvlblockbinaryaes(
+    TFHEpp::blockbinaryaeslvl2param::n);
+#endif

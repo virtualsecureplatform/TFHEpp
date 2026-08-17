@@ -293,3 +293,7 @@ FFT_Processor_Spqliox_AArch64::~FFT_Processor_Spqliox_AArch64() {}
 
 thread_local FFT_Processor_Spqliox_AArch64 fftplvl1(TFHEpp::lvl1param::n);
 thread_local FFT_Processor_Spqliox_AArch64 fftplvl2(TFHEpp::lvl2param::n);
+#ifdef USE_BLOCK_BINARY
+thread_local FFT_Processor_Spqliox_AArch64 fftplvlblockbinaryaes(
+    TFHEpp::blockbinaryaeslvl2param::n);
+#endif

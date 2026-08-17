@@ -48,6 +48,9 @@ public:
 
 extern thread_local FFT_Processor_Spqlios fftplvl1;
 extern thread_local FFT_Processor_Spqlios fftplvl2;
+#ifdef USE_BLOCK_BINARY
+extern thread_local FFT_Processor_Spqlios fftplvlblockbinaryaes;
+#endif
 extern thread_local FFT_Processor_Spqlios fftplvl3;
 extern thread_local FFT_Processor_Spqlios fftplvl5;
 extern thread_local FFT_Processor_Spqlios fftplvl6;

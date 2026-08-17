@@ -155,9 +155,15 @@ double time_ms(F &&f)
 
 int main(int argc, char **argv)
 {
+#ifdef USE_BLOCK_BINARY
+    using brP = TFHEpp::blockbinaryaeslvlh2param;
+    using iksP = TFHEpp::blockbinaryaeslvl2hparam;
+    using ahP = TFHEpp::blockbinaryaesAHlvl2param;
+#else
     using brP = TFHEpp::lvlh2param;
     using iksP = TFHEpp::lvl2hparam;
-    using ahP = TFHEpp::cbAHlvl2param;
+    using ahP = TFHEpp::AHlvl2param;
+#endif
     using P = typename brP::targetP;
 
     int repetitions = 1;

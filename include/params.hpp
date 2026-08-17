@@ -29,6 +29,7 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 #include "params/CGGI19.hpp"
 #elif defined(USE_BLOCK_BINARY)
 #include "params/blockbinary.hpp"
+#include "params/blockbinary-aes.hpp"
 #elif defined(USE_CONCRETE)
 #include "params/concrete.hpp"
 #elif defined(USE_TFHE_RS)
@@ -123,6 +124,28 @@ struct cblvlh2param {
     static constexpr uint32_t Addends = 1;
 #endif
 };
+
+#ifdef USE_BLOCK_BINARY
+struct blockbinaryaeslvlh2param {
+    using domainP = lvlhalfparam;
+    using targetP = blockbinaryaeslvl2param;
+#ifdef USE_KEY_BUNDLE
+    static constexpr uint32_t Addends = 2;
+#else
+    static constexpr uint32_t Addends = 1;
+#endif
+};
+
+struct blockbinaryaeslvl2hparam {
+    static constexpr std::uint32_t t = 7;
+    static constexpr std::uint32_t basebit = 2;
+    static constexpr ErrorDistribution errordist =
+        ErrorDistribution::ModularGaussian;
+    static const inline double α = lvlhalfparam::α;
+    using domainP = blockbinaryaeslvl2param;
+    using targetP = lvlhalfparam;
+};
+#endif
 
 template <class P>
 using Key = std::array<typename P::T, P::k * P::n>;

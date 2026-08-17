@@ -43,6 +43,9 @@ struct EvalKey {
         std::shared_ptr<BootstrappingKeyFFT<lvlh1param>>,  // 5
         std::shared_ptr<BootstrappingKeyFFT<lvl02param>>,  // 6
         std::shared_ptr<BootstrappingKeyFFT<lvlh2param>>,  // 7
+#ifdef USE_BLOCK_BINARY
+        std::shared_ptr<BootstrappingKeyFFT<blockbinaryaeslvlh2param>>,
+#endif
 #ifdef TFHEPP_HAS_CLPX_PARAMS
         std::shared_ptr<BootstrappingKeyFFT<SS2CLPXlvl02param>>,
         std::shared_ptr<BootstrappingKeyFFT<SS2CLPXlvlh2param>>,
@@ -86,12 +89,19 @@ struct EvalKey {
         // AnnihilateKey
         std::shared_ptr<AnnihilateKey<AHlvl1param>>,  // 24
         std::shared_ptr<AnnihilateKey<AHlvl2param>>,  // 25
+#ifdef USE_BLOCK_BINARY
+        std::shared_ptr<AnnihilateKey<blockbinaryaesAHlvl2param>>,
+#endif
 #ifdef USE_DIFFERENT_AH_PARAM
         std::shared_ptr<AnnihilateKey<cbAHlvl2param>>,  // 25
 #endif
         // CBswitchingKey
         std::shared_ptr<CBswitchingKey<AHlvl1param>>,  // 26
         std::shared_ptr<CBswitchingKey<AHlvl2param>>   // 27
+#ifdef USE_BLOCK_BINARY
+        ,
+        std::shared_ptr<CBswitchingKey<blockbinaryaesAHlvl2param>>
+#endif
 #ifdef USE_DIFFERENT_AH_PARAM
         ,
         std::shared_ptr<CBswitchingKey<cbAHlvl2param>>  // 27

@@ -142,12 +142,15 @@ struct ASCONDefaultAHParam<lvl02param> {
 
 template <>
 struct ASCONDefaultAHParam<lvlh2param> {
-#ifdef USE_BLOCK_BINARY
-    using type = cbAHlvl2param;
-#else
     using type = AHlvl2param;
-#endif
 };
+
+#ifdef USE_BLOCK_BINARY
+template <>
+struct ASCONDefaultAHParam<blockbinaryaeslvlh2param> {
+    using type = blockbinaryaesAHlvl2param;
+};
+#endif
 
 template <>
 struct ASCONDefaultAHParam<cblvl02param> {
@@ -171,6 +174,20 @@ struct ASCONSboxAHParam<brP, cbbrP, true> {
 
 template <class brP, class cbbrP>
 using ASCONSboxAHParamT = typename ASCONSboxAHParam<brP, cbbrP>::type;
+
+template <class brParam>
+struct ASCONDefaultCBParams {
+    using iks = lvl20param;
+    using br = lvl02param;
+};
+
+#ifdef USE_BLOCK_BINARY
+template <>
+struct ASCONDefaultCBParams<blockbinaryaeslvlh2param> {
+    using iks = blockbinaryaeslvl2hparam;
+    using br = blockbinaryaeslvlh2param;
+};
+#endif
 
 template <class P>
 inline Polynomial<P> ASCONSboxROMPoly()
@@ -214,8 +231,9 @@ void ASCONSboxROM(std::array<TLWE<typename brP::targetP>, ascon_words> &out,
     LROMUX<P, address_bit, width_bit, ascon_words>(std::span(out), trgsw, rom);
 }
 
-template <class iksP, class brP, class cbiksP = lvl20param,
-          class cbbrP = lvl02param,
+template <class iksP, class brP,
+          class cbiksP = typename ASCONDefaultCBParams<brP>::iks,
+          class cbbrP = typename ASCONDefaultCBParams<brP>::br,
           class ahP = ASCONSboxAHParamT<brP, cbbrP>>
 void ASCONSbox(std::array<TLWE<typename brP::targetP>, ascon_words> &out,
                const std::array<TLWE<typename iksP::domainP>, ascon_words> &in,
@@ -255,8 +273,9 @@ void ASCONCopyRateBytes(std::span<TLWE<P>> out, const ASCONState<P> &state,
                 state[ASCONRateByteBitIndex(byte, bit)];
 }
 
-template <class iksP, class brP, class cbiksP = lvl20param,
-          class cbbrP = lvl02param,
+template <class iksP, class brP,
+          class cbiksP = typename ASCONDefaultCBParams<brP>::iks,
+          class cbbrP = typename ASCONDefaultCBParams<brP>::br,
           class ahP = ASCONSboxAHParamT<brP, cbbrP>>
 void ASCONRound(ASCONState<typename brP::targetP> &state, const uint8_t C,
                 const EvalKey &ek)

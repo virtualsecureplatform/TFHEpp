@@ -3,3 +3,7 @@
 // FFT_Processor_MKL is thread-safe
 thread_local FFT_Processor_MKL<TFHEpp::lvl1param::n> fftplvl1;
 thread_local FFT_Processor_MKL<TFHEpp::lvl2param::n> fftplvl2;
+#ifdef USE_BLOCK_BINARY
+thread_local FFT_Processor_MKL<TFHEpp::blockbinaryaeslvl2param::n>
+    fftplvlblockbinaryaes;
+#endif

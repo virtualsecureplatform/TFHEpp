@@ -7,9 +7,15 @@
 
 int main()
 {
+#ifdef USE_BLOCK_BINARY
+    using brP = TFHEpp::blockbinaryaeslvlh2param;
+    using iksP = TFHEpp::blockbinaryaeslvl2hparam;
+    using ahP = TFHEpp::blockbinaryaesAHlvl2param;
+#else
     using brP = TFHEpp::lvlh2param;
     using iksP = TFHEpp::lvl2hparam;
-    using ahP = TFHEpp::cbAHlvl2param;
+    using ahP = TFHEpp::AHlvl2param;
+#endif
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     constexpr uint32_t plain_modulus = 1 << (4 + 1);

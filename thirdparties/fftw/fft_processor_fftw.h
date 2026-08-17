@@ -49,3 +49,6 @@ public:
 // FFT_Processor_FFTW is thread-safe
 extern FFT_Processor_FFTW fftplvl1;
 extern FFT_Processor_FFTW fftplvl2;
+#ifdef USE_BLOCK_BINARY
+extern FFT_Processor_FFTW fftplvlblockbinaryaes;
+#endif

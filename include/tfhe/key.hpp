@@ -114,8 +114,23 @@ void keyGen(Key<P>& key)
 }
 
 struct lweKey {
+#ifdef USE_BLOCK_BINARY
+    struct blockbinaryaesKey {
+        Key<blockbinaryaeslvl2param> value;
+
+        template <class Archive>
+        void serialize(Archive& archive)
+        {
+            archive(value);
+        }
+    };
+#endif
     std::tuple<Key<lvl0param>, Key<lvlhalfparam>, Key<lvl1param>,
-               Key<lvl2param>, Key<lvl3param>>
+               Key<lvl2param>, Key<lvl3param>
+#ifdef USE_BLOCK_BINARY
+               , blockbinaryaesKey
+#endif
+               >
         keys;
     lweKey()
     {
@@ -123,6 +138,10 @@ struct lweKey {
         keyGen<lvlhalfparam>(std::get<Key<lvlhalfparam>>(keys));
         keyGen<lvl1param>(std::get<Key<lvl1param>>(keys));
         keyGen<lvl2param>(std::get<Key<lvl2param>>(keys));
+#ifdef USE_BLOCK_BINARY
+        keyGen<blockbinaryaeslvl2param>(
+            std::get<blockbinaryaesKey>(keys).value);
+#endif
 #ifdef USE_SUBSET_KEY
         static_assert(lvl1param::k * lvl1param::n >=
                       lvl0param::k * lvl0param::n);
@@ -141,6 +160,12 @@ struct lweKey {
     template <class P>
     Key<P> get() const
     {
+#ifdef USE_BLOCK_BINARY
+        if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||
+                      std::is_same_v<P, blockbinaryaesAHlvl2param>)
+            return std::get<blockbinaryaesKey>(keys).value;
+        else
+#endif
         return std::get<Key<P>>(keys);
     }
 };

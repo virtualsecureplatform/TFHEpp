@@ -55,3 +55,6 @@ public:
 
 extern thread_local FFT_Processor_Spqliox_AArch64 fftplvl1;
 extern thread_local FFT_Processor_Spqliox_AArch64 fftplvl2;
+#ifdef USE_BLOCK_BINARY
+extern thread_local FFT_Processor_Spqliox_AArch64 fftplvlblockbinaryaes;
+#endif

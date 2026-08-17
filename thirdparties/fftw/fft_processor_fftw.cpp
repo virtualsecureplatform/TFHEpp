@@ -166,3 +166,6 @@ FFT_Processor_FFTW::~FFT_Processor_FFTW()
 // FFT_Processor_FFTW is thread-safe
 FFT_Processor_FFTW fftplvl1(TFHEpp::lvl1param::n);
 FFT_Processor_FFTW fftplvl2(TFHEpp::lvl2param::n);
+#ifdef USE_BLOCK_BINARY
+FFT_Processor_FFTW fftplvlblockbinaryaes(TFHEpp::blockbinaryaeslvl2param::n);
+#endif

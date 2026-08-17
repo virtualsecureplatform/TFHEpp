@@ -50,3 +50,6 @@ public:
 
 extern thread_local FFT_Processor_Spqlios_Arithmetic fftplvl1;
 extern thread_local FFT_Processor_Spqlios_Arithmetic fftplvl2;
+#ifdef USE_BLOCK_BINARY
+extern thread_local FFT_Processor_Spqlios_Arithmetic fftplvlblockbinaryaes;
+#endif
