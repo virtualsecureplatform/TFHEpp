@@ -1,8 +1,10 @@
 #include <cassert>
+#include <bit>
 #include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <random>
+#include <sstream>
 #include <tfhe++.hpp>
 
 using namespace std;
@@ -35,8 +37,24 @@ int main()
     SecretKey *sk = new SecretKey;
     TFHEpp::EvalKey ek;
     ek.emplaceiksk<ksP>(*sk);
+    ek.emplacebk<lvl01param>(*sk);
+#ifdef USE_SUBSET_KEY
+    ek.emplacesubiksk<ksP>(*sk);
+#endif
     ek.emplacebkfft<CBbsP>(*sk);
+    ek.emplacebkfft<lvl01param>(*sk);
     ek.emplaceprivksk4cb<CBprivksP>(*sk);
+    std::stringstream serialized_key{ios::binary | ios::out | ios::in};
+    {
+        cereal::PortableBinaryOutputArchive archive{serialized_key};
+        archive(ek);
+    }
+    TFHEpp::EvalKey deserialized_ek;
+    {
+        cereal::PortableBinaryInputArchive archive{serialized_key};
+        archive(deserialized_ek);
+    }
+    auto& test_ek = deserialized_ek;
     vector<array<uint8_t, ksP::domainP::n>> pmemory(num_trlwe);
     vector<array<typename ksP::domainP::T, ksP::domainP::n>> pmu(num_trlwe);
     vector<uint8_t> address(address_bit);
@@ -54,10 +72,12 @@ int main()
 
     alignas(64) array<TRGSWFFT<typename ksP::domainP>, address_bit> bootedTGSW;
     vector<TLWE<typename ksP::domainP>> encaddress(address_bit);
+    vector<TLWE<typename CBbsP::domainP>> directEncaddress(address_bit);
     array<TRLWE<typename ksP::domainP>, num_trlwe> encmemory;
     vector<TLWE<typename ksP::domainP>> encres(word);
 
     bootsSymEncrypt(encaddress, address, *sk);
+    bootsSymEncrypt<typename CBbsP::domainP>(directEncaddress, address, *sk);
     for (int i = 0; i < num_trlwe; i++)
         trlweSymEncrypt<typename ksP::domainP>(
             encmemory[i], pmu[i], (*sk).key.get<typename ksP::domainP>());
@@ -65,11 +85,11 @@ int main()
     chrono::system_clock::time_point start, end;
     start = chrono::system_clock::now();
     for (int i = 0; i < width_bit; i++)
-        CircuitBootstrapping<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
-                                                    encaddress[i], ek);
+        CircuitBootstrapping<CBbsP, CBprivksP>(bootedTGSW[i],
+                                               directEncaddress[i], test_ek);
     for (int i = width_bit; i < address_bit; i++)
-        CircuitBootstrappingInv<ksP, CBbsP, CBprivksP>(bootedTGSW[i],
-                                                       encaddress[i], ek);
+        CircuitBootstrappingInv<CBbsP, CBprivksP>(bootedTGSW[i],
+                                                  directEncaddress[i], test_ek);
     TRLWE<typename ksP::domainP> encumemory;
 
     UROMUX<typename ksP::domainP, address_bit, width_bit>(
@@ -92,6 +112,63 @@ int main()
     for (uint32_t i = 0; i < word; i++)
         assert(static_cast<int>(pres[i]) ==
                static_cast<int>(pmemory[uaddress][laddress + i]));
+
+    for (uint32_t i = 0; i < word; i++) {
+        TLWE<typename ksP::targetP> switched;
+        IdentityKeySwitch<ksP>(switched, encres[i], test_ek.getiksk<ksP>());
+        assert(tlweSymDecrypt<typename ksP::targetP>(switched, *sk) ==
+               pmemory[uaddress][laddress + i]);
+    }
+
+    // Iyokan allows a ROM address width smaller than the number of words in a
+    // TRLWE. Exercise its horizontal mux schedule and final key switching.
+    constexpr uint32_t iyokan_address_bit = 4;
+    constexpr uint32_t iyokan_output_bit = 8;
+    constexpr uint32_t iyokan_log_words =
+        ksP::domainP::nbit - std::countr_zero(iyokan_output_bit);
+    array<uint8_t, 128> iyokan_memory{};
+    for (uint32_t i = 0; i < iyokan_memory.size(); i++)
+        iyokan_memory[i] = (i / 8) & 1;
+    array<typename ksP::domainP::T, ksP::domainP::n> iyokan_mu{};
+    for (uint32_t i = 0; i < iyokan_memory.size(); i++)
+        iyokan_mu[i] = iyokan_memory[i] ? ksP::domainP::μ : -ksP::domainP::μ;
+    TRLWE<typename ksP::domainP> iyokan_data;
+    trlweSymEncrypt<typename ksP::domainP>(
+        iyokan_data, iyokan_mu, sk->key.get<typename ksP::domainP>());
+    array<uint8_t, iyokan_address_bit> iyokan_address{1, 1, 1, 0};
+    array<TLWE<typename CBbsP::domainP>, iyokan_address_bit>
+        iyokan_encaddress;
+    for (uint32_t i = 0; i < iyokan_address_bit; i++)
+        tlweSymEncrypt<typename CBbsP::domainP>(
+            iyokan_encaddress[i],
+            iyokan_address[i] ? CBbsP::domainP::μ : -CBbsP::domainP::μ,
+            sk->key.get<typename CBbsP::domainP>());
+    array<TRGSWFFT<typename ksP::domainP>, iyokan_address_bit> iyokan_tgsw;
+    for (uint32_t i = 0; i < iyokan_address_bit; i++)
+        CircuitBootstrapping<CBbsP, CBprivksP>(iyokan_tgsw[i],
+                                               iyokan_encaddress[i], test_ek);
+    TRLWE<typename ksP::domainP> iyokan_acc = iyokan_data, iyokan_temp;
+    for (uint32_t bit = 1; bit <= iyokan_log_words; bit++) {
+        if (iyokan_log_words - bit >= iyokan_address_bit) continue;
+        for (int component = 0; component <= ksP::domainP::k; component++)
+            PolynomialMulByXaiMinusOne<typename ksP::domainP>(
+                iyokan_temp[component], iyokan_acc[component],
+                2 * ksP::domainP::n - (ksP::domainP::n >> bit));
+        ExternalProduct<typename ksP::domainP>(
+            iyokan_temp, iyokan_temp,
+            iyokan_tgsw[iyokan_log_words - bit]);
+        for (uint32_t i = 0; i < ksP::domainP::n; i++)
+            for (int component = 0; component <= ksP::domainP::k; component++)
+                iyokan_acc[component][i] += iyokan_temp[component][i];
+    }
+    for (uint32_t i = 0; i < iyokan_output_bit; i++) {
+        TLWE<typename ksP::domainP> extracted;
+        TLWE<typename ksP::targetP> switched;
+        SampleExtractIndex<typename ksP::domainP>(extracted, iyokan_acc, i);
+        IdentityKeySwitch<ksP>(switched, extracted, test_ek.getiksk<ksP>());
+        assert(tlweSymDecrypt<typename ksP::targetP>(switched, *sk) ==
+               iyokan_memory[7 * iyokan_output_bit + i]);
+    }
     cout << "Passed" << endl;
     double elapsed =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)

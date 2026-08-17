@@ -9,14 +9,14 @@
 #include <tfhe/tlwe.hpp>
 #include <tfhe/trlwe.hpp>
 
-int main()
+template <class bkP>
+int testBlindRotate()
 {
 #ifndef USE_BLOCK_BINARY
     std::cout << "Skipped" << std::endl;
     return 0;
 #else
     constexpr uint32_t num_test = 4;
-    using bkP = TFHEpp::lvl01param;
 
     static_assert(bkP::domainP::n == 630);
     static_assert(bkP::domainP::ell == 2);
@@ -65,4 +65,10 @@ int main()
     std::cout << "Passed" << std::endl;
     return 0;
 #endif
+}
+
+int main()
+{
+    return testBlindRotate<TFHEpp::lvl01param>() ||
+           testBlindRotate<TFHEpp::lvl02param>();
 }
