@@ -142,7 +142,11 @@ struct ASCONDefaultAHParam<lvl02param> {
 
 template <>
 struct ASCONDefaultAHParam<lvlh2param> {
+#ifdef USE_BLOCK_BINARY
+    using type = cbAHlvl2param;
+#else
     using type = AHlvl2param;
+#endif
 };
 
 template <>

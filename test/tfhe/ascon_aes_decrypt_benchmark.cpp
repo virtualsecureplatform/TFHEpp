@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 {
     using brP = TFHEpp::lvlh2param;
     using iksP = TFHEpp::lvl2hparam;
-    using ahP = TFHEpp::AHlvl2param;
+    using ahP = TFHEpp::cbAHlvl2param;
     using P = typename brP::targetP;
 
     int repetitions = 1;

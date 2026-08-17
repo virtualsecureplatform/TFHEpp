@@ -9,7 +9,7 @@ int main()
 {
     using brP = TFHEpp::lvlh2param;
     using iksP = TFHEpp::lvl2hparam;
-    using ahP = TFHEpp::AHlvl2param;
+    using ahP = TFHEpp::cbAHlvl2param;
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     constexpr uint32_t plain_modulus = 1 << (4 + 1);
