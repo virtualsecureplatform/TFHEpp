@@ -31,6 +31,7 @@
 
 #include "bfv/bfv++.hpp"
 #include "bfv/bfv-slots.hpp"
+#include "modular_ntt.hpp"
 #include "params.hpp"
 #include "tfhe/trlwe.hpp"
 #include "utils.hpp"
@@ -1269,7 +1270,23 @@ template <class P>
 inline typename P::T signedToTorus(__int128_t value)
 {
     static_assert(supported_torus_v<P>);
-    return static_cast<typename P::T>(value);
+    if constexpr (is_multilimb_uint_v<typename P::T>) {
+        // MultiLimbUInt's generic integral constructor deliberately stores a
+        // machine-word integer.  CKKS encoding, however, receives a signed
+        // 128-bit scaled coefficient, so explicitly retain its two words and
+        // sign-extend any remaining storage limbs.
+        typename P::T result{};
+        if (value < 0)
+            result.limb.fill(std::numeric_limits<std::uint64_t>::max());
+        const auto bits = static_cast<__uint128_t>(value);
+        result.limb[0] = static_cast<std::uint64_t>(bits);
+        if constexpr (P::T::limbs > 1)
+            result.limb[1] = static_cast<std::uint64_t>(bits >> 64);
+        return result;
+    }
+    else {
+        return static_cast<typename P::T>(value);
+    }
 }
 
 template <class P, std::uint32_t LogQ>
@@ -1733,6 +1750,66 @@ inline void encodeRealPolynomial(Polynomial<P> &poly,
     }
 }
 
+// Exact negacyclic multiplication of an active CKKS torus polynomial by a
+// small signed polynomial.  Floating FFT multiplication is normally adequate
+// for CKKS noise margins, but loses low active-level bits needed by an exact
+// cross-scheme extraction.  The NTT bound covers 16-bit torus chunks times
+// Bbar digits through 20 bits for rings through degree 2^15.
+template <class P, std::uint32_t LogQ>
+inline void exactActiveTorusMulBySmall(Polynomial<P> &res,
+                                       const Polynomial<P> &torus,
+                                       const Polynomial<P> &small)
+{
+    static_assert(is_multilimb_uint_v<typename P::T>);
+    static_assert(P::n == (std::uint32_t{1} << P::nbit));
+    static_assert(P::nbit <= 15,
+                  "exact CKKS NTT supports rings through 2^15");
+    static_assert(P::B̅gbit <= 20,
+                  "exact CKKS NTT requires small Bbar digits");
+    static_assert(LogQ > 0 && LogQ <= torus_width_v<P>);
+
+    // p - 1 = 2^16 * 3 * 47 * 178481 * 2796203; 7 is primitive modulo p.
+    static constexpr modular_ntt::PrimeModulus exact_prime{
+        4611686018427322369ULL, 7};
+    static const modular_ntt::NegacyclicNTTPlan plan(P::n, exact_prime);
+    constexpr std::uint32_t chunk_bits = 16;
+    constexpr std::uint32_t chunk_count =
+        (LogQ + chunk_bits - 1) / chunk_bits;
+    constexpr std::uint64_t chunk_mask =
+        (std::uint64_t{1} << chunk_bits) - 1;
+    const std::uint64_t modulus = plan.modulus();
+
+    for (std::uint32_t i = 0; i < P::n; i++) res[i] = 0;
+    std::vector<std::uint64_t> lhs(P::n);
+    std::vector<std::uint64_t> rhs(P::n);
+    for (std::uint32_t chunk = 0; chunk < chunk_count; chunk++) {
+        const std::uint32_t shift = chunk * chunk_bits;
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            const auto active = reduceToLevel<P, LogQ>(torus[i]);
+            lhs[i] = static_cast<std::uint64_t>(
+                (active >> shift) & typename P::T{chunk_mask});
+            const std::int64_t value = multilimb_to_signed_i64(small[i]);
+            rhs[i] = value < 0
+                         ? modulus - static_cast<std::uint64_t>(-value)
+                         : static_cast<std::uint64_t>(value);
+        }
+        plan.forward(lhs);
+        plan.forward(rhs);
+        for (std::uint32_t i = 0; i < P::n; i++)
+            lhs[i] = modular_ntt::multiply(lhs[i], rhs[i], modulus);
+        plan.inverse(lhs);
+        for (std::uint32_t i = 0; i < P::n; i++) {
+            const std::int64_t coefficient =
+                lhs[i] <= modulus / 2
+                    ? static_cast<std::int64_t>(lhs[i])
+                    : -static_cast<std::int64_t>(modulus - lhs[i]);
+            res[i] += P::T::from_signed_i64(coefficient) << shift;
+        }
+    }
+    for (std::uint32_t i = 0; i < P::n; i++)
+        res[i] = reduceToLevel<P, LogQ>(res[i]);
+}
+
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta>
 inline void decodeRealPolynomial(std::array<double, P::n> &coeffs,
                                  const Polynomial<P> &poly)
@@ -1806,7 +1883,10 @@ inline void encryptPolynomialAtLevel(TRLWE<P> &ct, const Polynomial<P> &poly,
         for (std::uint32_t i = 0; i < P::n; i++)
             (*partkey)[i] = key[k * P::n + i];
 
-        if constexpr (is_multilimb_uint_v<typename P::T>)
+        if constexpr (is_multilimb_uint_v<typename P::T> && P::nbit <= 15 &&
+                      P::B̅gbit <= 20)
+            exactActiveTorusMulBySmall<P, LogQ>(*mask_phase, ct[k], *partkey);
+        else if constexpr (is_multilimb_uint_v<typename P::T>)
             PolyMulTorusByDigit<P>(*mask_phase, ct[k], *partkey);
         else
             PolyMul<P>(*mask_phase, ct[k], *partkey);
