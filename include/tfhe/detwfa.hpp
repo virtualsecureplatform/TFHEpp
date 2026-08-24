@@ -1,6 +1,7 @@
 #pragma once
 
 #include <span>
+#include <stdexcept>
 
 #include "trgsw.hpp"
 
@@ -92,23 +93,24 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
 }
 
 template <class bkP>
-void CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne(
+void CMUXFFTwithScheduledPolynomialMulByXaiMinusOne(
     TRLWE<typename bkP::targetP> &acc,
-    std::span<const BootstrappingKeyElementFFT<bkP>, bkP::domainP::ell> bkfft,
-    std::span<const typename bkP::domainP::T, bkP::domainP::ell> bara)
+    std::span<const BootstrappingKeyElementFFT<bkP>> bkfft,
+    std::span<const typename bkP::domainP::T> bara)
 {
     using P = typename bkP::targetP;
 
+    if (bkfft.size() != bara.size())
+        throw std::invalid_argument(
+            "bootstrapping-key and rotation spans differ");
     static_assert(
         bkP::domainP::key_value_min == 0 && bkP::domainP::key_value_max == 1,
-        "block-binary blind rotation expects binary key values");
-    static_assert(bkP::domainP::ell > 0,
-                  "block-binary blind rotation expects ell > 0");
+        "scheduled blind rotation expects binary key values");
     static_assert(P::l̅ == 1 && P::l̅ₐ == 1,
-                  "block-binary FFT blind rotation currently expects lbar = 1");
+                  "scheduled FFT blind rotation currently expects lbar = 1");
 
     bool any_rotation = false;
-    for (uint32_t offset = 0; offset < bkP::domainP::ell; offset++) {
+    for (uint32_t offset = 0; offset < bkfft.size(); offset++) {
         if (bara[offset] != 0) {
             any_rotation = true;
             break;
@@ -136,7 +138,7 @@ void CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne(
     alignas(64) TRLWEInFD<P> blockfft = {};
     alignas(64) TRLWEInFD<P> productfft;
 
-    for (uint32_t offset = 0; offset < bkP::domainP::ell; offset++) {
+    for (uint32_t offset = 0; offset < bkfft.size(); offset++) {
         if (bara[offset] == 0) continue;
 
         const TRGSWFFT<P> &trgswfft = bkfft[offset][0];
@@ -151,6 +153,18 @@ void CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne(
     }
 
     for (int k = 0; k < P::k + 1; k++) TwistFFTAdd<P>(acc[k], blockfft[k]);
+}
+
+// Backward-compatible entry point for the compile-time block-binary
+// parameters.  The scheduled form above is also used by the sparse-key
+// bootstrap API, where bucket widths are supplied at runtime.
+template <class bkP>
+void CMUXFFTwithBlockBinaryPolynomialMulByXaiMinusOne(
+    TRLWE<typename bkP::targetP> &acc,
+    std::span<const BootstrappingKeyElementFFT<bkP>, bkP::domainP::ell> bkfft,
+    std::span<const typename bkP::domainP::T, bkP::domainP::ell> bara)
+{
+    CMUXFFTwithScheduledPolynomialMulByXaiMinusOne<bkP>(acc, bkfft, bara);
 }
 
 template <class bkP>

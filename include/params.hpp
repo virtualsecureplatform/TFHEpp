@@ -46,6 +46,11 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 #define TFHEPP_HAS_CLPX_PARAMS
 #endif
 
+// Paper-specific parameter records are always available for explicit use.
+// They are not selected as the active torus parameter family until the
+// Z_q/Z_Q shallow-bootstrap representation is implemented.
+#include "params/shallowboot.hpp"
+
 #ifndef USE_DIFFERENT_BR_PARAM
 using cblvl2param = lvl2param;
 #endif

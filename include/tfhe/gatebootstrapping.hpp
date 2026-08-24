@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include <cmath>
 #include <limits>
 #include <span>
@@ -17,6 +18,18 @@
 #endif
 
 namespace TFHEpp {
+
+// Most TFHEpp parameter families use all 2N automorphisms of the target
+// ring.  Shallow bootstrap parameters may instead use a smaller power-of-two
+// LWE modulus q, provided q divides 2N; this is the setting of ePrint
+// 2026/1730 (q = 512, N = 1024).
+template <class P>
+inline constexpr uint32_t BlindRotationModulus = [] {
+    if constexpr (requires { P::blind_rotation_modulus; })
+        return P::blind_rotation_modulus;
+    else
+        return 2 * P::targetP::n;
+}();
 
 template <class P>
 void EvalIdentityKeySwitch(TLWE<typename P::targetP>& res,
@@ -45,30 +58,40 @@ void BRModSwitch(ModswitchTLWE<typename P::domainP>& moded,
     using correctionT =
         std::conditional_t<(std::numeric_limits<domainT>::digits <= 32),
                            int64_t, __int128_t>;
+    constexpr uint32_t modulus = BlindRotationModulus<P>;
+    static_assert(std::has_single_bit(modulus),
+                  "blind rotation modulus must be a power of two");
+    static_assert(modulus <= 2 * P::targetP::n,
+                  "blind rotation modulus cannot exceed the ring automorphisms");
+    static_assert((2 * P::targetP::n) % modulus == 0,
+                  "blind rotation modulus must divide the ring automorphisms");
+    constexpr uint32_t modulusbit = std::countr_zero(modulus);
+    constexpr uint32_t exponent_scale = 2 * P::targetP::n / modulus;
     constexpr uint32_t bitwidth = bits_needed<num_out - 1>();
     correctionT c = 0;
     constexpr domainT roundoffset =
-        1ULL << (std::numeric_limits<domainT>::digits - 2 -
-                 P::targetP::nbit + bitwidth);
+        1ULL << (std::numeric_limits<domainT>::digits - 1 - modulusbit +
+                 bitwidth);
     for (int i = 0; i < P::domainP::k * P::domainP::n; i++) {
-        moded[i] = (tlwe[i] + roundoffset) >>
-                   (std::numeric_limits<domainT>::digits - 1 -
-                    P::targetP::nbit + bitwidth)
-                       << bitwidth;
+        const domainT reduced =
+            (tlwe[i] + roundoffset) >>
+            (std::numeric_limits<domainT>::digits - modulusbit + bitwidth)
+                << bitwidth;
+        moded[i] = reduced * exponent_scale;
         const domainT rounded =
-            static_cast<domainT>(moded[i])
-            << (std::numeric_limits<domainT>::digits - 1 - P::targetP::nbit);
+            reduced
+            << (std::numeric_limits<domainT>::digits - modulusbit);
         c += static_cast<std::make_signed_t<domainT>>(tlwe[i] - rounded);
     }
-    moded[P::domainP::k * P::domainP::n] =
-        2 * P::targetP::n -
+    const domainT reduced_b =
+        modulus -
         (static_cast<domainT>(
              static_cast<correctionT>(
                  tlwe[P::domainP::k * P::domainP::n]) -
              c / 2 + roundoffset) >>
-         (std::numeric_limits<domainT>::digits - 1 -
-          P::targetP::nbit + bitwidth)
+         (std::numeric_limits<domainT>::digits - modulusbit + bitwidth)
              << bitwidth);
+    moded[P::domainP::k * P::domainP::n] = reduced_b * exponent_scale;
 }
 
 template <class P, uint32_t num_out = 1>

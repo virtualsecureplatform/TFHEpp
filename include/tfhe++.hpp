@@ -16,6 +16,7 @@
 #include "tfhe/externs/trlwe.hpp"
 #include "tfhe/gate.hpp"
 #include "tfhe/gatebootstrapping.hpp"
+#include "tfhe/sparsebootstrapping.hpp"
 #include "tfhe/homdecomp.hpp"
 #include "io-packet.hpp"
 #include "tfhe/key.hpp"
