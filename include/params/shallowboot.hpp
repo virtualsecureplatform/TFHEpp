@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
@@ -70,13 +71,106 @@ struct LowDepthParameters : Parameters {
     std::uint32_t key_switch_digits;
 };
 
-inline constexpr LowDepthParameters binary_ntt_std128 = {
+// Paper Section 7.2 row.  The local full sparse-secret screen currently
+// reports 112.9 bits for its LWE component; retain it as a reproduction target
+// rather than enabling it as a validated TFHEpp parameter set.
+inline constexpr LowDepthParameters binary_ntt_paper_std128 = {
     {SecretDistribution::BinaryNTT, 1450, 9, 29, 4096, 105, 12},
     3.2,
     0.75,
     3,
     4,
 };
+
+// Local source-security candidate: changing the sparse source to h=37 gives
+// a 133.3-bit uniform-sparse proxy under the vendored estimator.  PBC uses
+// c=3 and k=h+3=40 leaves; the 16-by-4 schedule keeps its extra layer above
+// the modulus boundary and retains two post-boundary product layers.
+inline constexpr LowDepthParameters binary_ntt_source_screened = {
+    {SecretDistribution::BinaryNTT, 1450, 9, 37, 4096, 105, 12},
+    3.2,
+    0.75,
+    3,
+    4,
+};
+
+// Concrete Section 7.2 execution schedule: three Binary-NTT multiplication
+// layers at the initial ~105-bit modulus, then two post-switch layers near 50
+// bits.  The RNS implementation uses two 62-bit primes to represent the
+// initial level; exact modulus-down/key-switch arithmetic remains experimental.
+struct LowDepthExecutionSchedule {
+    std::uint32_t initial_modulus_bits;
+    std::uint32_t post_switch_modulus_bits;
+    std::array<std::uint32_t, 2> multiplication_windows;
+    std::uint32_t initial_rns_primes;
+};
+
+inline constexpr LowDepthExecutionSchedule binary_ntt_std128_schedule = {
+    105, 50, {8, 4}, 2};
+
+inline constexpr LowDepthExecutionSchedule
+    binary_ntt_source_screened_schedule = {105, 50, {16, 4}, 2};
+
+// Security- and noise-screened QH-SS candidate for the direct-RLWE PBC tree.
+// Input, refreshed-output, and ring LWE proxies exceed 133, 138, and 188
+// classical bits. The R_4 selector tree uses modular-inverse LSB-to-MSB
+// conversion before its dense sign LUT. The refreshed key uses h=50 at the
+// 15-bit ring-to-LWE key-switch boundary; the paper's 12-bit h=37 choice does
+// not retain enough key-switch noise margin in this implementation.
+struct LowDepthSecureRNSParameters {
+    std::uint32_t ring_dimension;
+    std::array<std::uint32_t, 4> modulus_bits;
+    std::array<std::uint32_t, 4> multiplication_windows;
+    std::uint32_t pbc_copies;
+    std::uint32_t pbc_slack;
+    std::uint32_t plaintext_modulus;
+    std::uint32_t key_switch_modulus_bits;
+    std::uint32_t refreshed_lwe_dimension;
+    std::uint32_t refreshed_lwe_hamming_weight;
+};
+
+inline constexpr LowDepthSecureRNSParameters qh_ss_source_screened_rns = {
+    8192, {151, 69, 52, 36}, {8, 2, 2, 2}, 3, 3, 4, 15, 1450, 60};
+
+struct LowDepthStructuredSecureRNSParameters {
+    LowDepthSecureRNSParameters execution;
+    std::uint32_t source_lwe_dimension;
+    std::uint32_t source_lwe_hamming_weight;
+    std::uint32_t structured_block_width;
+    bool seeded_pbc_key;
+};
+
+inline constexpr LowDepthStructuredSecureRNSParameters
+    qh_ss_structured_source_rns = {
+        {8192, {151, 69, 52, 36}, {8, 2, 2, 2},
+         1, 0, 4, 15, 1450, 60},
+        1024, 64, 16, true};
+
+
+// Prospective mapping of the source-screened Algorithm-3 row onto TFHEpp's
+// 128-bit torus / Double-Decomposition representation.  The 105-bit native
+// high level is embedded with a 23-bit scale, so its sigma'=0.75 noise maps to
+// an absolute torus standard deviation of 0.75*2^23.  This preserves the
+// paper-level relative noise and a coherent wide secret through a future
+// coefficient-domain boundary.  The quadratic-hint two-component FullDD
+// product is implemented and unit-tested; PBC/tree and boundary integration
+// are still required before this parameter can be activated.
+struct LowDepthDoubleDecompositionParameters : LowDepthParameters {
+    std::uint32_t torus_modulus_bits;
+    std::uint32_t native_high_modulus_bits;
+    std::uint32_t embedding_scale_bits;
+    std::uint32_t decomposition_limbs;
+    std::uint32_t decomposition_limb_bits;
+};
+
+inline constexpr LowDepthDoubleDecompositionParameters
+    binary_ntt_source_screened_dd = {
+        binary_ntt_source_screened,
+        128,
+        105,
+        23,
+        8,
+        16};
 
 constexpr bool isStructuredOneHotCompatible(const Parameters &parameters)
 {

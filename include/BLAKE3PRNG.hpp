@@ -47,6 +47,14 @@ struct alignas(64) BLAKE3PRNG {
                                     buffer_len);
     }
 
+    explicit BLAKE3PRNG(const std::array<uint8_t, 32>& seed_value)
+        : seed(seed_value)
+    {
+        blake3_hasher_init_keyed(&hasher, seed.data());
+        blake3_hasher_finalize_seek(&hasher, counter, (uint8_t*)buffer.data(),
+                                    buffer_len);
+    }
+
     explicit BLAKE3PRNG(std::random_device& seed_gen)
     {
         // https://cpprefjp.github.io/reference/random/seed_seq.html

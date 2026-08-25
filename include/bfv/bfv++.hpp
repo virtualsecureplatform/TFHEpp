@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
+#include <vector>
 
 #include "tfhe/keyswitch.hpp"
 #include "mulfft.hpp"
@@ -542,6 +544,110 @@ inline void TRLWEMultFullDD(TRLWE<P> &res, const TRLWE<P> &a, const TRLWE<P> &b,
     auto resmult = std::make_unique<TRLWE3<P>>();
     TRLWEMultWithoutRelinearizationFullDD<P>(*resmult, a, b);
     Relinearization<P>(res, *resmult, relinkeyfft);
+}
+
+// Algorithm-3 / QH-SS multiplication on the Full-DD tensor product.
+// Ciphertexts use phase b-a*s.  Given the public quadratic hint
+// s^2 = u*s+v, collapse
+//   bb - cross*s + square*s^2
+// back to b'-a'*s with
+//   a' = cross-square*u, b' = bb+square*v.
+// This avoids the relinearization key entirely.  The hint products currently
+// use the exact coefficient-domain multiplier; a digit-FFT implementation is
+// the performance follow-up once the algebraic path is validated.
+template <class P>
+inline void TRLWEQuadraticHintMultFullDD(
+    TRLWE<P> &res, const TRLWE<P> &left, const TRLWE<P> &right,
+    const Polynomial<P> &quadratic_u, const Polynomial<P> &quadratic_v)
+{
+    static_assert(P::k == 1,
+                  "quadratic-hint DD multiplication expects k=1 TRLWE");
+    auto tensor = std::make_unique<TRLWE3<P>>();
+    TRLWEMultWithoutRelinearizationFullDD<P>(*tensor, left, right);
+    auto square_u = std::make_unique<Polynomial<P>>();
+    auto square_v = std::make_unique<Polynomial<P>>();
+    PolyMul<P>(*square_u, (*tensor)[2], quadratic_u);
+    PolyMul<P>(*square_v, (*tensor)[2], quadratic_v);
+    for (std::size_t i = 0; i < P::n; i++) {
+        res[0][i] = (*tensor)[0][i] - (*square_u)[i];
+        res[1][i] = (*tensor)[1][i] + (*square_v)[i];
+    }
+}
+
+template <class P>
+inline TRLWE<P> TRLWEQuadraticHintProductTreeFullDD(
+    std::vector<TRLWE<P>> inputs, const Polynomial<P> &quadratic_u,
+    const Polynomial<P> &quadratic_v, std::uint32_t *layers = nullptr,
+    std::uint32_t *multiplications = nullptr)
+{
+    if (inputs.empty())
+        throw std::invalid_argument("quadratic-hint DD product tree is empty");
+    std::uint32_t local_layers = 0;
+    std::uint32_t local_multiplications = 0;
+    while (inputs.size() > 1) {
+        const std::size_t pairs = inputs.size() / 2;
+        std::vector<TRLWE<P>> next((inputs.size() + 1) / 2);
+#pragma omp parallel for if (pairs > 1)
+        for (std::int64_t pair = 0;
+             pair < static_cast<std::int64_t>(pairs); pair++)
+            TRLWEQuadraticHintMultFullDD<P>(
+                next[static_cast<std::size_t>(pair)],
+                inputs[2 * static_cast<std::size_t>(pair)],
+                inputs[2 * static_cast<std::size_t>(pair) + 1], quadratic_u,
+                quadratic_v);
+        if ((inputs.size() & 1U) != 0)
+            next.back() = std::move(inputs.back());
+        inputs = std::move(next);
+        local_layers++;
+        local_multiplications += static_cast<std::uint32_t>(pairs);
+    }
+    if (layers != nullptr) *layers = local_layers;
+    if (multiplications != nullptr) *multiplications = local_multiplications;
+    return std::move(inputs.front());
+}
+
+template <class P>
+inline void TRLWEMonomialFactorBFV(TRLWE<P> &result,
+                                   const TRLWE<P> &encrypted_bit,
+                                   const std::uint32_t exponent)
+{
+    static_assert(P::k == 1,
+                  "Algorithm-3 monomial factor expects k=1 TRLWE");
+    for (std::size_t component = 0; component <= P::k; component++)
+        PolynomialMulByXaiMinusOne<P>(result[component],
+                                      encrypted_bit[component], exponent);
+    // 1 + (X^a-1)s in BFV's coefficient encoding.  delta_int=floor(Q/t);
+    // the omitted sub-unit correction is below the decoding/noise margin.
+    result[P::k][0] += P::delta_int;
+}
+
+template <class P>
+inline void TRLWEAddInPlace(TRLWE<P> &left, const TRLWE<P> &right)
+{
+    for (std::size_t component = 0; component <= P::k; component++)
+        for (std::size_t coefficient = 0; coefficient < P::n; coefficient++)
+            left[component][coefficient] += right[component][coefficient];
+}
+
+template <class P>
+inline TRLWE<P> TRLWEPBCPreparedFactorBFV(
+    const std::vector<TRLWE<P>> &encrypted_selectors,
+    const TRLWE<P> &encrypted_dummy,
+    const std::vector<std::uint32_t> &source_mask,
+    const std::uint32_t exponent_scale)
+{
+    if (encrypted_selectors.size() != source_mask.size())
+        throw std::invalid_argument("DD PBC bucket input size mismatch");
+    TRLWE<P> result = encrypted_dummy;
+    for (std::size_t i = 0; i < encrypted_selectors.size(); i++) {
+        TRLWE<P> term;
+        for (std::size_t component = 0; component <= P::k; component++)
+            PolynomialMulByXai<P>(
+                term[component], encrypted_selectors[i][component],
+                source_mask[i] * exponent_scale);
+        TRLWEAddInPlace<P>(result, term);
+    }
+    return result;
 }
 
 // TLWE multiplication - automatically handles DD when l̅ > 1
