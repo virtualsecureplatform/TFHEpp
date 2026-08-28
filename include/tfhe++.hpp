@@ -43,6 +43,8 @@
 #include "bfv/bfv-c2s.hpp"
 #include "bfv/bfv-bootstrapping.hpp"
 #include "bfv/bfv-gbfv.hpp"
+#include "bfv/compact-cover-bgv.hpp"
+#include "bfv/compact-cover-bgv-bootstrap.hpp"
 #include "bfv/regular-cover-bgv.hpp"
 #include "ckks/ckks.hpp"
 #include "ckks/functional_bootstrapping.hpp"

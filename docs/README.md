@@ -35,6 +35,8 @@ This documentation lives in `docs/` and is meant to complement the root
 - BatchBoot: `include/tfhe/batchboot.hpp`, `test/tfhe/batchboot.cpp`
 - CKKS: `include/ckks/ckks.hpp`, `test/ckks/ckks_bootstrap_validation.cpp`,
   `test/ckks/ckks_bootstrap_workflow.cpp`
+- Scalar compact-cover BGV: `docs/CompactCoverBGV.md`,
+  `test/bfv/compact_cover_bgv_bootstrap_65536.cpp`
 - Gentry–Lee matrix FHE: `include/gl/gl.hpp`, `include/gl/gl-bootstrap.hpp`,
   `test/gl/gl_scheme.cpp`, `test/gl/gl_bootstrap.cpp`
 - Tutorial programs: `tutorial/`
