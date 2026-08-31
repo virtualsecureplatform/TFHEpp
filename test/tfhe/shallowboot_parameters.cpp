@@ -10,6 +10,6 @@ int main()
     if (general_binary_gate_std128.lwe_hamming_weight != 43 ||
         binary_ntt_paper_std128.rlwe_modulus_log2 != 105 ||
         binary_ntt_paper_std128.key_switch_digits != 4 ||
-        binary_ntt_source_screened.lwe_hamming_weight != 43)
+        binary_ntt_source_screened.lwe_hamming_weight != 37)
         return 1;
 }

@@ -6,7 +6,6 @@
 
 #include <bfv/bfv++.hpp>
 #include <bfv/bfv-slots.hpp>
-#include <params/128bit.hpp>
 
 struct ShallowDDParam : TFHEpp::lvl3simdparam {
     static const inline double α = std::pow(2.0, -105);

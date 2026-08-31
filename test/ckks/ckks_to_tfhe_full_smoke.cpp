@@ -15,13 +15,17 @@ constexpr std::uint32_t log_delta = 88;
 
 void fill_ckks_key(TFHEpp::Key<CKKS> &key)
 {
-    for (std::uint32_t i = 0; i < CKKS::n; i++)
-        key[i] = static_cast<CKKS::T>(static_cast<int>(i % 3) - 1);
+    for (std::uint32_t i = 0; i < CKKS::n; i++) {
+        if (i % 3 == 0)
+            key[i] = CKKS::T{0} - CKKS::T{1};
+        else
+            key[i] = CKKS::T{i % 3 == 1 ? 0U : 1U};
+    }
 }
 
 void fill_tfhe_key(TFHEpp::Key<TFHE> &key)
 {
-    for (std::uint32_t i = 0; i < TFHE::n; i++)
+    for (std::uint32_t i = 0; i < TFHE::k * TFHE::n; i++)
         key[i] = static_cast<TFHE::T>(static_cast<int>(i % 3) - 1);
 }
 
@@ -138,7 +142,7 @@ int main()
         *reverse_switch_key, *ckks_key, tfhe_key, {0.0, 0});
     TFHEpp::TLWE<TFHE> reverse_input{};
     reverse_input[0] = std::uint64_t{1} << 62;
-    reverse_input[TFHE::n] = std::uint64_t{1} << 62;
+    reverse_input[TFHE::k * TFHE::n] = std::uint64_t{1} << 62;
     auto reverse_phase = std::make_unique<ReverseCt>();
     TFHEpp::TFHEToCKKSPhase<CKKS, TFHE, log_q, log_delta,
                              reverse_plain_log_delta>(

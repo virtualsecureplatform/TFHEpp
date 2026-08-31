@@ -57,7 +57,7 @@ int main()
     // A PBC bucket has at most 110 encrypted entries. Sampling one Gaussian
     // with their aggregate standard deviation is distribution-equivalent for
     // this phase/noise regression and avoids constructing a multi-GB key.
-    constexpr double aggregate_sigma = 0.75 * std::sqrt(110.0);
+    const double aggregate_sigma = 0.75 * std::sqrt(110.0);
     for (std::size_t factor = 0; factor < 40; factor++) {
         std::vector<std::vector<std::uint64_t>> message(
             rings[0].levels(), std::vector<std::uint64_t>(degree));
