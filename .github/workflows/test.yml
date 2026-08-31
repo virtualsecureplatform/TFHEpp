@@ -53,7 +53,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            git build-essential g++ libomp-dev cmake ninja-build
+            git build-essential g++ libomp-dev libboost-dev cmake ninja-build
           if [ "${{ matrix.compiler }}" = "clang" ]; then
             DEBIAN_FRONTEND=noninteractive apt-get install -y clang-22 lld-22
           fi
@@ -90,7 +90,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            git build-essential g++ libomp-dev cmake ninja-build
+            git build-essential g++ libomp-dev libboost-dev cmake ninja-build
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -116,7 +116,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            git build-essential g++ libomp-dev cmake ninja-build
+            git build-essential g++ libomp-dev libboost-dev cmake ninja-build
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -141,7 +141,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            git build-essential g++ libomp-dev cmake ninja-build
+            git build-essential g++ libomp-dev libboost-dev cmake ninja-build
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -167,7 +167,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            git build-essential g++ libomp-dev cmake ninja-build
+            git build-essential g++ libomp-dev libboost-dev cmake ninja-build
       - name: Checkout
         uses: actions/checkout@v4
         with:

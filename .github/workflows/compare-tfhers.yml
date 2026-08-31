@@ -18,7 +18,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            build-essential g++ libomp-dev cmake ninja-build git \
+            build-essential g++ libomp-dev libboost-dev cmake ninja-build git \
             curl wget ca-certificates
 
       # ── Rust toolchain (rustup) ───────────────────────────────────────────

@@ -15,7 +15,7 @@ jobs:
       run: |
         apt-get update
         apt-get upgrade -y
-        apt-get install -y git build-essential g++ libomp-dev cmake git ninja-build
+        apt-get install -y git build-essential g++ libomp-dev libboost-dev cmake ninja-build
     - name: Checkout
       uses: actions/checkout@v4
       with:
