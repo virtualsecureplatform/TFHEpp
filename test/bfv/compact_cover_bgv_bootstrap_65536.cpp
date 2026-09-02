@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <random>
 
 #include "bfv/compact-cover-bgv-bootstrap.hpp"
@@ -94,6 +95,62 @@ int main()
         std::cerr << "FAIL compact BGV full scalar bootstrap" << std::endl;
         return 1;
     }
+
+    // Audit the same public stages independently.  The secret is used only by
+    // this test to measure centered phase errors; evaluation remains secret-free.
+    bgv::CompactBGVScalarCiphertext audited_lifted(
+        Parameters::plaintext_square, Parameters::rns_limbs);
+    bgv::CompactBGVPhaseLiftTransition(audited_lifted, input, provider);
+    const auto measured_error = [&](const auto &ciphertext) {
+        return bgv::CompactBGVMaxErrorLog2(
+            ciphertext, key.secret,
+            bgv::CompactBGVDecryptPolynomial(ciphertext, key.secret));
+    };
+    if (measured_error(audited_lifted) >= 52.0) {
+        std::cerr << "FAIL compact BGV phase-lift error bound" << std::endl;
+        return 1;
+    }
+    bgv::CompactBGVScalarCiphertext audited_trace(
+        Parameters::plaintext_square, Parameters::rns_limbs);
+    bgv::CompactBGVTraceProjectConstant(audited_trace, audited_lifted,
+                                        provider);
+    if (audited_trace.limbs() != 21 ||
+        measured_error(audited_trace) >= 46.0) {
+        std::cerr << "FAIL compact BGV trace error bound" << std::endl;
+        return 1;
+    }
+    const auto audited_polynomial =
+        TFHEpp::digitext::GetLowestDigitRemovalPolynomialOverRange(
+            Parameters::plaintext_prime, Parameters::digit_error_bound);
+    std::uint64_t polynomial_hash = UINT64_C(1469598103934665603);
+    for (const auto coefficient : audited_polynomial)
+        for (unsigned byte = 0; byte < 8; ++byte) {
+            polynomial_hash ^=
+                static_cast<std::uint8_t>(coefficient >> (8 * byte));
+            polynomial_hash *= UINT64_C(1099511628211);
+        }
+    if (polynomial_hash != Parameters::digit_polynomial_fnv1a) {
+        std::cerr << "FAIL compact BGV digit-polynomial manifest"
+                  << std::endl;
+        return 1;
+    }
+    bgv::CompactBGVScalarCiphertext audited_removed(
+        Parameters::plaintext_square, Parameters::rns_limbs);
+    bgv::CompactBGVPolynomialEval(audited_removed, audited_polynomial,
+                                  audited_trace, provider.quadraticHint());
+    if (audited_removed.limbs() != 13 ||
+        measured_error(audited_removed) >= 642.0) {
+        std::cerr << "FAIL compact BGV digit-removal error bound" << std::endl;
+        return 1;
+    }
+    bgv::CompactBGVScalarCiphertext audited_divided(
+        Parameters::plaintext_prime, audited_removed.limbs());
+    bgv::CompactBGVExactDivideByPlaintextPrime(audited_divided,
+                                               audited_removed);
+    if (bgv::CompactBGVDecryptScalar(audited_divided, key.secret) != 4242) {
+        std::cerr << "FAIL compact BGV audited exact division" << std::endl;
+        return 1;
+    }
     if (refreshed.limbs() != 13) {
         std::cerr << "FAIL compact BGV certified output level" << std::endl;
         return 1;
@@ -114,6 +171,32 @@ int main()
     bgv::CompactBGVBootstrap(refreshed_twice, refreshed_low, provider);
     if (bgv::CompactBGVDecryptScalar(refreshed_twice, key.secret) != 4242) {
         std::cerr << "FAIL compact BGV bootstrap of bootstrap" << std::endl;
+        return 1;
+    }
+
+    bgv::CompactBGVScalarCiphertext refreshed_add_level(
+        Parameters::plaintext_prime, 1);
+    bgv::CompactBGVScalarCiphertext refreshed_twice_add_level(
+        Parameters::plaintext_prime, 1);
+    bgv::CompactBGVModSwitch(refreshed_add_level, refreshed);
+    bgv::CompactBGVModSwitch(refreshed_twice_add_level, refreshed_twice);
+    bgv::CompactBGVScalarCiphertext refreshed_sum(
+        Parameters::plaintext_prime, 1);
+    bgv::CompactBGVAdd(refreshed_sum, refreshed_add_level,
+                       refreshed_twice_add_level);
+    const auto refreshed_sum_message =
+        (UINT64_C(4242) + UINT64_C(4242)) % Parameters::plaintext_prime;
+    if (bgv::CompactBGVDecryptScalar(refreshed_sum, key.secret) !=
+        refreshed_sum_message) {
+        std::cerr << "FAIL compact BGV addition of refreshed outputs"
+                  << std::endl;
+        return 1;
+    }
+    bgv::CompactBGVScalarCiphertext bootstrapped_sum;
+    bgv::CompactBGVBootstrap(bootstrapped_sum, refreshed_sum, provider);
+    if (bgv::CompactBGVDecryptScalar(bootstrapped_sum, key.secret) !=
+        refreshed_sum_message) {
+        std::cerr << "FAIL compact BGV bootstrap after addition" << std::endl;
         return 1;
     }
 

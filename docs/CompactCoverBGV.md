@@ -96,7 +96,9 @@ The deterministic recurrence bounds the 13-limb output error by `2^641.98`
 against capacity `2^775.61`. Before multiplication, refreshed ciphertexts are
 dropped to two limbs. One quadratic-hint multiplication and level drop then
 produces a one-limb error below `2^4.17`, against capacity near `2^44`, ready
-for the next bootstrap. The complete cycle contracts by about 27.4 bits.
+for the next bootstrap. Dropping two refreshed operands to one limb and adding
+them gives the exact certified bound 36, also inside the next bootstrap's
+accepted input set. The multiplication cycle contracts by about 27.4 bits.
 
 The unlimited-sample comparison proxy for the actual `p^2*CBD(20)`
 Binary-NTT source is 133.44 bits; reserving one bit for reduction accounting
@@ -108,6 +110,10 @@ Binary-NTT witness, unit pivots, and the public quadratic hint. The public
 directory contains the phase-lift rows, sixteen level-specific Galois keys,
 the hint, parameter/certificate hashes, and checksums. The master witness is
 erased before evaluation, and the same directory is reused indefinitely.
+The production key-generation and encryption overloads use TFHEpp's
+cryptographically seeded generator. Engine-taking overloads are retained for
+deterministic conformance tests and callers that explicitly manage their own
+cryptographic generator.
 
 ## Build and run
 
@@ -123,7 +129,10 @@ cmake --build build-compact-cover \
 
 The full-size bootstrap test checks encryption, nested BGV modulus reduction,
 resumable filesystem key generation, one refresh, refresh of the refresh
-output, multiplication of two refreshed outputs, and refresh of that product.
+output, addition and multiplication of refreshed outputs, and refresh of each
+result. It also reconstructs the secret phase after every bootstrap stage and
+checks the measured error against the formal certificate. The test-only phase
+audit does not expose the secret to the evaluator API.
 
 ## Scope boundary
 
@@ -136,3 +145,8 @@ the implemented interface is secret-key FHE with public evaluation material.
 The security statement is under ordinary Binary-NTT RLWE and the checked
 quadratic/affine compiler. A reduction from conventional RLWE to Binary-NTT
 RLWE remains a separate research premise.
+
+FormalProof4FHE computes the correctness recurrence over exact natural numbers
+and proves the concrete digit-removal polynomial for every scalar message and
+supported carry. The reported 132.44-bit value remains a computational
+lattice-attack estimate and is not part of the Lean correctness predicate.

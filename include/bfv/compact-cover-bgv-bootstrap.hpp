@@ -32,13 +32,15 @@ struct CompactBGV65536Parameters {
     static constexpr std::uint64_t plaintext_prime = 65537;
     static constexpr std::uint64_t plaintext_square =
         plaintext_prime * plaintext_prime;
-    static constexpr std::uint32_t certificate_version = 3;
+    static constexpr std::uint32_t certificate_version = 4;
     static constexpr std::uint64_t bootstrap_manifest_magic =
         UINT64_C(0x4342475642543031);
     static constexpr const char *scalar_gate_manifest_sha256 =
         "9584b90e526fc67ca85c4ea1b6cea004ca64b30b70e4e6609d0961c7e6144843";
     static constexpr const char *certificate_sha256 =
-        "09c36cf48f9ac9b51cbd0a454b109e563663d3dc48a3f141fac7637cff13f16c";
+        "69f97713b99002f8be8fc337b9899bd7e2969b5b27f2345577bd4e3a0cafb3f8";
+    static constexpr std::uint64_t digit_polynomial_fnv1a =
+        UINT64_C(0xa4beb97e03c045ab);
     static constexpr const char *general_gate_manifest_sha256 =
         "6d376c090ad655badcb23b00da1e16c4429c83d3f20c3195df93eef5bf94049e";
 };
@@ -213,6 +215,13 @@ inline void CompactBGVKeyGen(CompactBGVKeyMaterial &key, Engine &engine)
     }
 }
 
+// Production entry point. The engine-taking overload remains available only
+// for deterministic conformance tests and explicitly managed deployments.
+inline void CompactBGVKeyGen(CompactBGVKeyMaterial &key)
+{
+    CompactBGVKeyGen(key, TFHEpp::generator);
+}
+
 inline bool CompactBGVQuadraticHintValid(const CompactBGVKeyMaterial &key)
 {
     for (std::size_t limb = 0; limb < CompactBGV65536Parameters::rns_limbs;
@@ -276,6 +285,13 @@ inline void CompactBGVEncryptScalar(CompactBGVScalarCiphertext &result,
                 modulus);
         }
     }
+}
+
+inline void CompactBGVEncryptScalar(CompactBGVScalarCiphertext &result,
+                                    const std::uint64_t message,
+                                    const CompactBGVSecretKey &secret)
+{
+    CompactBGVEncryptScalar(result, message, secret, TFHEpp::generator);
 }
 
 inline std::vector<std::uint64_t> CompactBGVDecryptPolynomial(
@@ -613,6 +629,7 @@ struct CompactBGVBootstrapManifest {
     std::uint64_t rows{};
     std::uint64_t plaintext_prime{};
     std::uint64_t plaintext_square{};
+    std::uint64_t digit_polynomial_fnv1a{};
     std::uint64_t key_file_checksum{};
     std::uint64_t quadratic_hint_checksum{};
     std::array<std::uint64_t, CompactBGV65536Parameters::trace_key_count>
@@ -632,6 +649,7 @@ inline CompactBGVBootstrapManifest CompactBGVExpectedBootstrapManifest()
         CompactBGV65536Parameters::phase_lift_gadget_digits,
         CompactBGV65536Parameters::plaintext_prime,
         CompactBGV65536Parameters::plaintext_square,
+        CompactBGV65536Parameters::digit_polynomial_fnv1a,
         0,
         0};
     std::copy_n(CompactBGV65536Parameters::scalar_gate_manifest_sha256, 64,
@@ -760,6 +778,7 @@ inline bool CompactBGVBootstrapKeyDirectoryManifestMatches(
           actual.limbs == expected.limbs && actual.rows == expected.rows &&
           actual.plaintext_prime == expected.plaintext_prime &&
           actual.plaintext_square == expected.plaintext_square &&
+          actual.digit_polynomial_fnv1a == expected.digit_polynomial_fnv1a &&
           actual.gate_manifest_sha256 == expected.gate_manifest_sha256 &&
           actual.certificate_sha256 == expected.certificate_sha256 &&
           actual.key_file_checksum == CompactBGVBootstrapKeyChecksum(key_path)))
@@ -959,6 +978,14 @@ inline void CompactBGVBootstrapKeyGenToDirectory(
     }
     std::filesystem::rename(manifest_partial,
                             CompactBGVBootstrapManifestPath(options.root));
+}
+
+inline void CompactBGVBootstrapKeyGenToDirectory(
+    const CompactBGVBootstrapKeyDirectoryOptions &options,
+    const CompactBGVKeyMaterial &key_material)
+{
+    CompactBGVBootstrapKeyGenToDirectory(options, key_material,
+                                         TFHEpp::generator);
 }
 
 class CompactBGVBootstrapFilesystemKeyProvider {
