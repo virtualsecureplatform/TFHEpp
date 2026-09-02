@@ -27,11 +27,10 @@ both the count of distinct automorphisms and that they generate all 65536 odd
 cyclotomic exponents; the 362 exponents are not maintained as an unrelated
 literal table.
 
-The RNS basis contains fifteen 61-bit primes supporting degree-65536
+The RNS basis contains twenty-three approximately 61-bit primes supporting degree-65536
 negacyclic NTTs. Every prime is also one modulo `65537^2`, permitting exact
-plaintext-preserving BGV operations. A full width-368 ciphertext occupies
-about 5.39 GiB, while the scalar specialization uses width one and a 75 MiB
-five-row bootstrap key.
+plaintext-preserving BGV operations. The scalar specialization uses width one;
+its complete stored-uniform evaluation directory is approximately 8.18 GiB.
 
 ## Implemented operations
 
@@ -45,7 +44,7 @@ five-row bootstrap key.
 - slice-at-a-time seeded mask expansion and body loading; and
 - an optional seeded per-limb transition for integration tests;
 - a stored-uniform transition format adding no PRG assumption; and
-- balanced coefficient decomposition over the complete 915-bit CRT modulus.
+- balanced coefficient decomposition over the active CRT modulus.
 
 For gadget base `B`, transition row `r` uses the convention
 
@@ -66,7 +65,7 @@ SplitMix fallback for tests; that fallback must not be used to generate
 cryptographic evaluation keys.  Storing truly uniform masks instead remains
 the information-theoretic alternative to seeded compression.
 
-## Scalar direct bootstrap
+## Scalar bootstrap
 
 For an input BGV phase
 
@@ -74,31 +73,41 @@ For an input BGV phase
 b - a*s = m + p*e,
 ```
 
-the scalar circuit first multiplies both ciphertext components by `p`. Its
-stored-uniform transition rows have phase
+the evaluator first modulus-switches the tired ciphertext to one RNS limb. A
+two-row cross-modulus transition centers and scales its components by `p` and
+lifts the result to the full 23-limb modulus. Its rows have phase
 
 ```text
 -B^r*s + p^2*e_r.
 ```
 
-Full-modulus key switching therefore produces phase
+The resulting plaintext modulo `p^2` is
 
 ```text
-p*m + p^2*(e + sum_r d_r*e_r).
+p*m + carry(X),
 ```
 
-Multiplication of both output components by `p^-1 mod Q` gives an ordinary
-plaintext-`p` BGV ciphertext of `m`. CBD(20) is bounded, and the checked
-worst-case absolute error is below `2^221`, far below the 915-bit modulus.
-There is no rounding failure or digit-extraction failure in this scalar path.
-The unlimited-sample attack-cost proxy for the actual `p^2*CBD(20)`
-Binary-NTT source is 243.53 bits; the checked certificate retains 242.53 bits
-after its explicit reduction reserve.
+where every coefficient of the carry is bounded by 23 at the accepted input
+level. A 16-stage Galois trace projects the constant coefficient, dropping one
+RNS limb halfway and one afterward. The odd degree-93 removal polynomial maps
+`p*m+carry[0]` to `p*m`; exact division by `p` returns `m`.
 
-Key generation samples a weight-32 ternary operational secret, a shared
-Binary-NTT witness, unit pivots, and the public quadratic hint used for
-two-component ciphertext multiplication. The same evaluation key is reused by
-repeated bootstraps.
+The deterministic recurrence bounds the 13-limb output error by `2^641.98`
+against capacity `2^775.61`. Before multiplication, refreshed ciphertexts are
+dropped to two limbs. One quadratic-hint multiplication and level drop then
+produces a one-limb error below `2^4.17`, against capacity near `2^44`, ready
+for the next bootstrap. The complete cycle contracts by about 27.4 bits.
+
+The unlimited-sample comparison proxy for the actual `p^2*CBD(20)`
+Binary-NTT source is 133.44 bits; reserving one bit for reduction accounting
+leaves 132.44 bits. This number is an attack-cost proxy, not a proof reduction
+to coefficient-binary LWE.
+
+Key generation samples a weight-32 ternary operational secret, a temporary
+Binary-NTT witness, unit pivots, and the public quadratic hint. The public
+directory contains the phase-lift rows, sixteen level-specific Galois keys,
+the hint, parameter/certificate hashes, and checksums. The master witness is
+erased before evaluation, and the same directory is reused indefinitely.
 
 ## Build and run
 
@@ -112,9 +121,9 @@ cmake --build build-compact-cover \
 ./build-compact-cover/test/bfv/compact_cover_bgv_bootstrap_65536
 ```
 
-The full-size bootstrap test checks encryption, quadratic-hint multiplication,
+The full-size bootstrap test checks encryption, nested BGV modulus reduction,
 resumable filesystem key generation, one refresh, refresh of the refresh
-output, and refresh after multiplication.
+output, multiplication of two refreshed outputs, and refresh of that product.
 
 ## Scope boundary
 

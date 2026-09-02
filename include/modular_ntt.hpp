@@ -38,7 +38,7 @@ inline constexpr std::array<PrimeModulus, 3> wide_primes{{
 // Certified compact-cover BGV basis.  Every prime is one modulo both 2^17
 // (degree-2^16 negacyclic NTT support) and 65537^2 (plaintext-preserving BGV
 // modulus drops at Hensel exponents one and two).
-inline constexpr std::array<PrimeModulus, 15> degree65536_primes{{
+inline constexpr std::array<PrimeModulus, 23> degree65536_primes{{
     {2301972608560791553ULL, 5},
     {2295217002959732737ULL, 5},
     {2291839200159203329ULL, 7},
@@ -54,6 +54,14 @@ inline constexpr std::array<PrimeModulus, 15> degree65536_primes{{
     {2203453360212017153ULL, 3},
     {2179808740608311297ULL, 5},
     {2156164121004605441ULL, 3},
+    {2152786318204076033ULL, 3},
+    {2124637961532997633ULL, 11},
+    {2114504553131409409ULL, 14},
+    {2109437848930615297ULL, 5},
+    {2102682243329556481ULL, 13},
+    {2078474656592429057ULL, 3},
+    {2065526412523732993ULL, 11},
+    {2057081905522409473ULL, 5},
 }};
 
 inline std::uint64_t add(const std::uint64_t lhs, const std::uint64_t rhs,

@@ -10,8 +10,8 @@ int main()
     namespace bgv = TFHEpp::compact_cover_bgv;
     using Parameters = bgv::CompactBGV65536Parameters;
     static_assert(Parameters::ring_degree == 65536);
-    static_assert(Parameters::rns_limbs == 15);
-    static_assert(Parameters::gadget_digits == 5);
+    static_assert(Parameters::rns_limbs == 23);
+    static_assert(Parameters::gadget_digits == 23);
 
     std::mt19937_64 engine(UINT64_C(0x4342475642543635));
     bgv::CompactBGVKeyMaterial key;
@@ -46,10 +46,9 @@ int main()
 
     const auto root = std::filesystem::temp_directory_path() /
                       "tfhepp_compact_bgv_bootstrap_65536";
-    std::filesystem::remove_all(root);
-    bgv::CompactBGVBootstrapKeyDirectoryOptions options{root, 256ULL << 20,
+    bgv::CompactBGVBootstrapKeyDirectoryOptions options{root, 12ULL << 30,
                                                         true};
-    bgv::CompactBGVBootstrapKeyGenToDirectory(options, key.secret, engine);
+    bgv::CompactBGVBootstrapKeyGenToDirectory(options, key, engine);
     if (!bgv::CompactBGVBootstrapKeyDirectoryComplete(root) ||
         !bgv::CompactBGVBootstrapKeyDirectoryManifestMatches(root)) {
         std::cerr << "FAIL compact BGV bootstrap directory" << std::endl;
@@ -57,7 +56,7 @@ int main()
     }
     const auto before =
         std::filesystem::last_write_time(bgv::CompactBGVBootstrapKeyPath(root));
-    bgv::CompactBGVBootstrapKeyGenToDirectory(options, key.secret, engine);
+    bgv::CompactBGVBootstrapKeyGenToDirectory(options, key, engine);
     const auto after =
         std::filesystem::last_write_time(bgv::CompactBGVBootstrapKeyPath(root));
     if (before != after) {
@@ -66,33 +65,84 @@ int main()
     }
 
     bgv::CompactBGVBootstrapFilesystemKeyProvider provider(root);
-    bgv::CompactBGVScalarCiphertext input;
+    bgv::CompactBGVEraseMasterWitness(key);
+    if (std::any_of(key.binary_ntt_witness.storage().begin(),
+                    key.binary_ntt_witness.storage().end(),
+                    [](const auto value) { return value != 0; })) {
+        std::cerr << "FAIL compact BGV master-witness erasure" << std::endl;
+        return 1;
+    }
+    bgv::CompactBGVScalarCiphertext input_high;
+    bgv::CompactBGVScalarCiphertext input(Parameters::plaintext_prime, 1);
     bgv::CompactBGVScalarCiphertext refreshed;
     bgv::CompactBGVBootstrapTimings timings;
-    bgv::CompactBGVEncryptScalar(input, 4242, key.secret, engine);
+    bgv::CompactBGVEncryptScalar(input_high, 4242, key.secret, engine);
+    bgv::CompactBGVModSwitch(input, input_high);
+    const auto low_modulus = TFHEpp::modular_ntt::degree65536_primes[0].value;
+    const auto injected_error =
+        5 * (low_modulus / Parameters::plaintext_square);
+    const auto injected_phase = TFHEpp::modular_ntt::multiply(
+        Parameters::plaintext_prime, injected_error, low_modulus);
+    for (auto &slot : input.value.body.slice(0, 0))
+        slot = TFHEpp::modular_ntt::add(slot, injected_phase, low_modulus);
+    if (bgv::CompactBGVDecryptScalar(input, key.secret) != 4242) {
+        std::cerr << "FAIL compact BGV low-level modulus switch" << std::endl;
+        return 1;
+    }
     bgv::CompactBGVBootstrap(refreshed, input, provider, &timings);
     if (bgv::CompactBGVDecryptScalar(refreshed, key.secret) != 4242) {
         std::cerr << "FAIL compact BGV full scalar bootstrap" << std::endl;
         return 1;
     }
+    if (refreshed.limbs() != 13) {
+        std::cerr << "FAIL compact BGV certified output level" << std::endl;
+        return 1;
+    }
     if (timings.lift_milliseconds <= 0 ||
         timings.transition_milliseconds <= 0 ||
+        timings.trace_milliseconds <= 0 ||
+        timings.digit_removal_milliseconds <= 0 ||
         timings.divide_milliseconds <= 0) {
         std::cerr << "FAIL compact BGV bootstrap timings" << std::endl;
         return 1;
     }
 
+    bgv::CompactBGVScalarCiphertext refreshed_low(Parameters::plaintext_prime,
+                                                  1);
+    bgv::CompactBGVModSwitch(refreshed_low, refreshed);
     bgv::CompactBGVScalarCiphertext refreshed_twice;
-    bgv::CompactBGVBootstrap(refreshed_twice, refreshed, provider);
+    bgv::CompactBGVBootstrap(refreshed_twice, refreshed_low, provider);
     if (bgv::CompactBGVDecryptScalar(refreshed_twice, key.secret) != 4242) {
         std::cerr << "FAIL compact BGV bootstrap of bootstrap" << std::endl;
         return 1;
     }
 
+    bgv::CompactBGVScalarCiphertext refreshed_mul_level(
+        Parameters::plaintext_prime, 2);
+    bgv::CompactBGVScalarCiphertext refreshed_twice_mul_level(
+        Parameters::plaintext_prime, 2);
+    bgv::CompactBGVModSwitch(refreshed_mul_level, refreshed);
+    bgv::CompactBGVModSwitch(refreshed_twice_mul_level, refreshed_twice);
+    const auto refreshed_product = bgv::CompactBGVMultiplyAndDrop(
+        refreshed_mul_level, refreshed_twice_mul_level,
+        provider.quadraticHint());
+    if (refreshed_product.limbs() != 1) {
+        std::cerr << "FAIL compact BGV multiplication closure level"
+                  << std::endl;
+        return 1;
+    }
+    const auto refreshed_product_message =
+        (UINT64_C(4242) * UINT64_C(4242)) % Parameters::plaintext_prime;
+    if (bgv::CompactBGVDecryptScalar(refreshed_product, key.secret) !=
+        refreshed_product_message) {
+        std::cerr << "FAIL compact BGV multiplication of refreshed outputs"
+                  << std::endl;
+        return 1;
+    }
     bgv::CompactBGVScalarCiphertext bootstrapped_product;
-    bgv::CompactBGVBootstrap(bootstrapped_product, product, provider);
+    bgv::CompactBGVBootstrap(bootstrapped_product, refreshed_product, provider);
     if (bgv::CompactBGVDecryptScalar(bootstrapped_product, key.secret) !=
-        17 * 29) {
+        refreshed_product_message) {
         std::cerr << "FAIL compact BGV bootstrap after multiplication"
                   << std::endl;
         return 1;
@@ -102,8 +152,7 @@ int main()
     try {
         bgv::CompactBGVBootstrapKeyDirectoryOptions too_small{
             root / "too-small", 1, false};
-        bgv::CompactBGVBootstrapKeyGenToDirectory(too_small, key.secret,
-                                                  engine);
+        bgv::CompactBGVBootstrapKeyGenToDirectory(too_small, key, engine);
     }
     catch (const std::runtime_error &) {
         budget_guard = true;
@@ -131,6 +180,8 @@ int main()
               << static_cast<double>(resources.bootstrap_key_bytes) /
                      (1ULL << 20)
               << " MiB transition=" << timings.transition_milliseconds << " ms"
+              << " trace=" << timings.trace_milliseconds << " ms"
+              << " digit=" << timings.digit_removal_milliseconds << " ms"
               << std::endl;
     std::filesystem::remove_all(root);
     return 0;
