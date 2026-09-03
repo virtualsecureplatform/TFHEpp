@@ -27,10 +27,10 @@ both the count of distinct automorphisms and that they generate all 65536 odd
 cyclotomic exponents; the 362 exponents are not maintained as an unrelated
 literal table.
 
-The RNS basis contains twenty-three approximately 61-bit primes supporting degree-65536
+The selected RNS basis contains twenty approximately 61-bit primes supporting degree-65536
 negacyclic NTTs. Every prime is also one modulo `65537^2`, permitting exact
 plaintext-preserving BGV operations. The scalar specialization uses width one;
-its complete stored-uniform evaluation directory is approximately 8.18 GiB.
+its complete stored-uniform evaluation directory is approximately 7.09 GiB.
 
 ## Implemented operations
 
@@ -75,7 +75,7 @@ b - a*s = m + p*e,
 
 the evaluator first modulus-switches the tired ciphertext to one RNS limb. A
 two-row cross-modulus transition centers and scales its components by `p` and
-lifts the result to the full 23-limb modulus. Its rows have phase
+lifts the result to the full 20-limb modulus. Its rows have phase
 
 ```text
 -B^r*s + p^2*e_r.
@@ -92,18 +92,23 @@ level. A 16-stage Galois trace projects the constant coefficient, dropping one
 RNS limb halfway and one afterward. The odd degree-93 removal polynomial maps
 `p*m+carry[0]` to `p*m`; exact division by `p` returns `m`.
 
-The deterministic recurrence bounds the 13-limb output error by `2^641.98`
-against capacity `2^775.61`. Before multiplication, refreshed ciphertexts are
+The deterministic recurrence bounds the 10-limb output error by `2^154.01`
+against capacity `2^592.78`. Before multiplication, refreshed ciphertexts are
 dropped to two limbs. One quadratic-hint multiplication and level drop then
 produces a one-limb error below `2^4.17`, against capacity near `2^44`, ready
 for the next bootstrap. Dropping two refreshed operands to one limb and adding
 them gives the exact certified bound 36, also inside the next bootstrap's
 accepted input set. The multiplication cycle contracts by about 27.4 bits.
 
-The unlimited-sample comparison proxy for the actual `p^2*CBD(20)`
-Binary-NTT source is 133.44 bits; reserving one bit for reduction accounting
-leaves 132.44 bits. This number is an attack-cost proxy, not a proof reduction
-to coefficient-binary LWE.
+The unlimited-sample comparison proxy for the `p^2*CBD(20)` evaluation rows is
+162.94 bits. The separately charged public context row has a 155.93-bit proxy
+when its weight-32 ternary error is variance-matched and its one ring row is
+flattened to 65536 scalar samples. The full-source hybrid charges one context
+term and the auxiliary-context triangle charges it again; adding one evaluation
+term and both context terms leaves 154.92 bits after unit conditioning. These
+numbers are attack-cost proxies, not a proof reduction to
+coefficient-binary LWE; in particular, Gaussian variance matching does not
+capture every possible attack on the fixed-weight context error.
 
 Key generation samples a weight-32 ternary operational secret, a temporary
 Binary-NTT witness, unit pivots, and the public quadratic hint. The public
@@ -153,5 +158,5 @@ RLWE remains a separate research premise.
 
 FormalProof4FHE computes the correctness recurrence over exact natural numbers
 and proves the concrete digit-removal polynomial for every scalar message and
-supported carry. The reported 132.44-bit value remains a computational
+supported carry. The reported 154.92-bit combined value remains a computational
 lattice-attack estimate and is not part of the Lean correctness predicate.

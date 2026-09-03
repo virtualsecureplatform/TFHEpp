@@ -11,7 +11,7 @@ int main()
     namespace bgv = TFHEpp::compact_cover_bgv;
     using Parameters = bgv::CompactBGV65536Parameters;
     static_assert(Parameters::ring_degree == 65536);
-    static_assert(Parameters::rns_limbs == 23);
+    static_assert(Parameters::rns_limbs == 20);
     static_assert(Parameters::gadget_digits == 23);
 
     std::mt19937_64 engine(UINT64_C(0x4342475642543635));
@@ -114,8 +114,8 @@ int main()
         Parameters::plaintext_square, Parameters::rns_limbs);
     bgv::CompactBGVTraceProjectConstant(audited_trace, audited_lifted,
                                         provider);
-    if (audited_trace.limbs() != 21 ||
-        measured_error(audited_trace) >= 46.0) {
+    if (audited_trace.limbs() != 18 ||
+        measured_error(audited_trace) >= 38.0) {
         std::cerr << "FAIL compact BGV trace error bound" << std::endl;
         return 1;
     }
@@ -138,8 +138,8 @@ int main()
         Parameters::plaintext_square, Parameters::rns_limbs);
     bgv::CompactBGVPolynomialEval(audited_removed, audited_polynomial,
                                   audited_trace, provider.quadraticHint());
-    if (audited_removed.limbs() != 13 ||
-        measured_error(audited_removed) >= 642.0) {
+    if (audited_removed.limbs() != 10 ||
+        measured_error(audited_removed) >= 155.0) {
         std::cerr << "FAIL compact BGV digit-removal error bound" << std::endl;
         return 1;
     }
@@ -151,7 +151,7 @@ int main()
         std::cerr << "FAIL compact BGV audited exact division" << std::endl;
         return 1;
     }
-    if (refreshed.limbs() != 13) {
+    if (refreshed.limbs() != 10) {
         std::cerr << "FAIL compact BGV certified output level" << std::endl;
         return 1;
     }

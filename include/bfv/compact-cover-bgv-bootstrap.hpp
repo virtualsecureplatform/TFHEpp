@@ -22,7 +22,7 @@ namespace TFHEpp::compact_cover_bgv {
 
 struct CompactBGV65536Parameters {
     static constexpr std::size_t ring_degree = degree;
-    static constexpr std::size_t rns_limbs = 23;
+    static constexpr std::size_t rns_limbs = 20;
     static constexpr std::size_t gadget_digits = 23;
     static constexpr std::size_t phase_lift_gadget_digits = 2;
     static constexpr std::size_t trace_key_count = 16;
@@ -32,13 +32,13 @@ struct CompactBGV65536Parameters {
     static constexpr std::uint64_t plaintext_prime = 65537;
     static constexpr std::uint64_t plaintext_square =
         plaintext_prime * plaintext_prime;
-    static constexpr std::uint32_t certificate_version = 5;
+    static constexpr std::uint32_t certificate_version = 8;
     static constexpr std::uint64_t bootstrap_manifest_magic =
         UINT64_C(0x4342475642543031);
     static constexpr const char *scalar_gate_manifest_sha256 =
         "9584b90e526fc67ca85c4ea1b6cea004ca64b30b70e4e6609d0961c7e6144843";
     static constexpr const char *certificate_sha256 =
-        "f3b1e9f169d152bdab7d17305d54e881d20fd022aed273cbc0640afe946a4e73";
+        "155a50174b509e170a649674d38c55c450f475e43ae56d32a8865c3459eaab7e";
     static constexpr std::uint64_t digit_polynomial_fnv1a =
         UINT64_C(0xa4beb97e03c045ab);
     static constexpr const char *general_gate_manifest_sha256 =
