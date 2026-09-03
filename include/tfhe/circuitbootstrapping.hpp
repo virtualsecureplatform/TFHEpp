@@ -94,6 +94,83 @@ void CircuitBootstrapping(TRGSW<typename privksP::targetP>& trgsw,
     }
 }
 
+// Circuit bootstrap into the subset secret-key chain.  The blind rotation
+// produces level-2 TLWEs under the subset key.  Reduce each one to the
+// level-1 subset key once, then use subset private key switching to construct
+// the TRGSW rows under that same key.
+template <class bkP, class privksP>
+void CircuitBootstrappingSubset(
+    TRGSW<typename privksP::targetP>& trgsw,
+    const TLWE<typename bkP::domainP>& tlwe, const EvalKey& ek)
+{
+    using targetP = typename privksP::targetP;
+    using midP = typename bkP::targetP;
+    static_assert(std::is_same_v<midP, typename privksP::domainP>);
+    static_assert(targetP::l̅ == 1 && targetP::l̅ₐ == 1,
+                  "Circuit bootstrapping does not yet produce DD TRGSW rows");
+
+    auto subset_private_switch = [&](auto& out, const auto& in,
+                                     const std::string& key) {
+        TLWE<targetP> reduced;
+        SubsetIdentityKeySwitch<privksP>(
+            reduced, in, ek.getsubiksk<privksP>());
+        SubsetPrivKeySwitch<privksP>(
+            out, reduced, ek.getsubprivksk<privksP>(key));
+    };
+
+    if constexpr (targetP::l == targetP::lₐ &&
+                  targetP::Bgbit == targetP::Bgₐbit) {
+        alignas(64) std::array<TLWE<midP>, targetP::l> temp;
+        GateBootstrappingManyLUT<bkP, targetP::l>(
+            temp, tlwe, ek.getbkfft<bkP>(), CBtestvector<privksP>());
+        for (int i = 0; i < targetP::l; i++) {
+            temp[i][midP::k * midP::n] +=
+                1ULL << (numeric_limits<typename midP::T>::digits -
+                         (i + 1) * targetP::Bgbit - 1);
+            TLWE<targetP> reduced;
+            SubsetIdentityKeySwitch<privksP>(
+                reduced, temp[i], ek.getsubiksk<privksP>());
+            for (int k = 0; k < targetP::k + 1; k++)
+                SubsetPrivKeySwitch<privksP>(
+                    trgsw[i + k * targetP::l], reduced,
+                    ek.getsubprivksk<privksP>(
+                        "subprivksk4cb_" + std::to_string(k)));
+        }
+    }
+    else {
+        alignas(64) std::array<TLWE<midP>, targetP::lₐ> nonce_temp;
+        GateBootstrappingManyLUT<bkP, targetP::lₐ>(
+            nonce_temp, tlwe, ek.getbkfft<bkP>(),
+            CBtestvector<midP, targetP::lₐ, targetP::Bgₐbit>());
+        for (int i = 0; i < targetP::lₐ; i++) {
+            nonce_temp[i][midP::k * midP::n] +=
+                1ULL << (numeric_limits<typename midP::T>::digits -
+                         (i + 1) * targetP::Bgₐbit - 1);
+            TLWE<targetP> reduced;
+            SubsetIdentityKeySwitch<privksP>(
+                reduced, nonce_temp[i], ek.getsubiksk<privksP>());
+            for (int k = 0; k < targetP::k; k++)
+                SubsetPrivKeySwitch<privksP>(
+                    trgsw[i + k * targetP::lₐ], reduced,
+                    ek.getsubprivksk<privksP>(
+                        "subprivksk4cb_" + std::to_string(k)));
+        }
+
+        alignas(64) std::array<TLWE<midP>, targetP::l> body_temp;
+        GateBootstrappingManyLUT<bkP, targetP::l>(
+            body_temp, tlwe, ek.getbkfft<bkP>(),
+            CBtestvector<midP, targetP::l, targetP::Bgbit>());
+        for (int i = 0; i < targetP::l; i++) {
+            body_temp[i][midP::k * midP::n] +=
+                1ULL << (numeric_limits<typename midP::T>::digits -
+                         (i + 1) * targetP::Bgbit - 1);
+            subset_private_switch(
+                trgsw[i + targetP::k * targetP::lₐ], body_temp[i],
+                "subprivksk4cb_" + std::to_string(targetP::k));
+        }
+    }
+}
+
 // https://eprint.iacr.org/2024/1318
 template <class brP, class ahP>
 void AnnihilateCircuitBootstrapping(TRGSW<typename brP::targetP>& trgsw,
@@ -150,6 +227,16 @@ void CircuitBootstrapping(TRGSWFFT<typename privksP::targetP>& trgswfft,
 {
     alignas(64) TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<brP, privksP>(trgsw, tlwe, ek);
+    ApplyFFT2trgsw<typename privksP::targetP>(trgswfft, trgsw);
+}
+
+template <class brP, class privksP>
+void CircuitBootstrappingSubset(
+    TRGSWFFT<typename privksP::targetP>& trgswfft,
+    const TLWE<typename brP::domainP>& tlwe, const EvalKey& ek)
+{
+    alignas(64) TRGSW<typename privksP::targetP> trgsw;
+    CircuitBootstrappingSubset<brP, privksP>(trgsw, tlwe, ek);
     ApplyFFT2trgsw<typename privksP::targetP>(trgswfft, trgsw);
 }
 
@@ -215,6 +302,18 @@ void CircuitBootstrappingInv(TRGSWFFT<typename privksP::targetP>& invtrgswfft,
     CircuitBootstrapping<brP, privksP>(invtrgswfft, invtlwe, ek);
 }
 
+template <class brP, class privksP>
+void CircuitBootstrappingSubsetInv(
+    TRGSWFFT<typename privksP::targetP>& invtrgswfft,
+    const TLWE<typename brP::domainP>& tlwe, const EvalKey& ek)
+{
+    alignas(64) TLWE<typename brP::domainP> invtlwe;
+    // HomNot
+    for (int i = 0; i <= brP::domainP::k * brP::domainP::n; i++)
+        invtlwe[i] = -tlwe[i];
+    CircuitBootstrappingSubset<brP, privksP>(invtrgswfft, invtlwe, ek);
+}
+
 template <class iksP, class bkP, class privksP>
 void CircuitBootstrappingInv(TRGSWFFT<typename privksP::targetP>& invtrgswfft,
                              const TLWE<typename iksP::domainP>& tlwe,
@@ -235,6 +334,22 @@ void CircuitBootstrappingWithInv(
 {
     alignas(64) TRGSW<typename privksP::targetP> trgsw;
     CircuitBootstrapping<brP, privksP>(trgsw, tlwe, ek);
+    ApplyFFT2trgsw<typename privksP::targetP>(trgswfft, trgsw);
+    for (auto& row : trgsw)
+        for (auto& polynomial : row)
+            for (auto& coefficient : polynomial) coefficient *= -1;
+    trgswhoneadd<typename privksP::targetP>(trgsw);
+    ApplyFFT2trgsw<typename privksP::targetP>(invtrgswfft, trgsw);
+}
+
+template <class brP, class privksP>
+void CircuitBootstrappingSubsetWithInv(
+    TRGSWFFT<typename privksP::targetP>& trgswfft,
+    TRGSWFFT<typename privksP::targetP>& invtrgswfft,
+    const TLWE<typename brP::domainP>& tlwe, const EvalKey& ek)
+{
+    alignas(64) TRGSW<typename privksP::targetP> trgsw;
+    CircuitBootstrappingSubset<brP, privksP>(trgsw, tlwe, ek);
     ApplyFFT2trgsw<typename privksP::targetP>(trgswfft, trgsw);
     for (auto& row : trgsw)
         for (auto& polynomial : row)
