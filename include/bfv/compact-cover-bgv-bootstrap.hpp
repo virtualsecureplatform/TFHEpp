@@ -32,13 +32,13 @@ struct CompactBGV65536Parameters {
     static constexpr std::uint64_t plaintext_prime = 65537;
     static constexpr std::uint64_t plaintext_square =
         plaintext_prime * plaintext_prime;
-    static constexpr std::uint32_t certificate_version = 4;
+    static constexpr std::uint32_t certificate_version = 5;
     static constexpr std::uint64_t bootstrap_manifest_magic =
         UINT64_C(0x4342475642543031);
     static constexpr const char *scalar_gate_manifest_sha256 =
         "9584b90e526fc67ca85c4ea1b6cea004ca64b30b70e4e6609d0961c7e6144843";
     static constexpr const char *certificate_sha256 =
-        "69f97713b99002f8be8fc337b9899bd7e2969b5b27f2345577bd4e3a0cafb3f8";
+        "f3b1e9f169d152bdab7d17305d54e881d20fd022aed273cbc0640afe946a4e73";
     static constexpr std::uint64_t digit_polynomial_fnv1a =
         UINT64_C(0xa4beb97e03c045ab);
     static constexpr const char *general_gate_manifest_sha256 =

@@ -67,6 +67,41 @@ int main()
         return 1;
     }
 
+    // Match the Lean backend definition: natural slot k is evaluation at
+    // psi^(2k+1). A sparse polynomial makes this check linear-time while still
+    // detecting backend-order and twist-direction mismatches.
+    std::fill(transform_slice.begin(), transform_slice.end(), 0);
+    transform_slice[0] = 7;
+    transform_slice[1] = 11;
+    transform_slice[17] = 3;
+    transform_slice[cc::degree - 1] = 5;
+    cc::forwardNTT(transform_value);
+    const auto generator = ntt::degree65536_primes[0].primitive_root;
+    const auto psi = ntt::power(
+        generator, (modulus - 1) / (2 * cc::degree), modulus);
+    for (const std::size_t slot :
+         {std::size_t{0}, std::size_t{1}, std::size_t{17},
+          std::size_t{32768}, std::size_t{65535}}) {
+        const auto point = ntt::power(psi, 2 * slot + 1, modulus);
+        auto expected = UINT64_C(7);
+        expected = ntt::add(expected, ntt::multiply(11, point, modulus),
+                            modulus);
+        expected = ntt::add(
+            expected,
+            ntt::multiply(3, ntt::power(point, 17, modulus), modulus),
+            modulus);
+        expected = ntt::add(
+            expected,
+            ntt::multiply(5, ntt::power(point, cc::degree - 1, modulus),
+                          modulus),
+            modulus);
+        if (transform_slice[slot] != expected) {
+            std::cerr << "FAIL mathematical NTT ordering at slot " << slot
+                      << std::endl;
+            return 1;
+        }
+    }
+
     // Materialize and relabel the actual width-368, one-limb frontier.  The
     // fifteen-limb profile is opt-in because it consumes 5.39 GiB per
     // ciphertext.

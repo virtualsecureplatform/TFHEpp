@@ -134,6 +134,11 @@ result. It also reconstructs the secret phase after every bootstrap stage and
 checks the measured error against the formal certificate. The test-only phase
 audit does not expose the secret to the evaluator API.
 
+The N=65536 substrate test also evaluates a sparse polynomial at selected odd
+root powers and checks that `NegacyclicNTTPlan::forward` uses the same natural
+slot ordering as the mathematical Lean backend. This closes the public NTT
+ordering boundary for both HEXL and scalar transform implementations.
+
 ## Scope boundary
 
 The executable API encrypts one integer as a constant polynomial. Arbitrary
