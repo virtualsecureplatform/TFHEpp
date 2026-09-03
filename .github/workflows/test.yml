@@ -55,7 +55,8 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
             git build-essential g++ libomp-dev libboost-dev cmake ninja-build
           if [ "${{ matrix.compiler }}" = "clang" ]; then
-            DEBIAN_FRONTEND=noninteractive apt-get install -y clang-22 lld-22
+            DEBIAN_FRONTEND=noninteractive apt-get install -y \
+              clang-22 llvm-22 lld-22
           fi
       - name: Checkout
         uses: actions/checkout@v4

@@ -145,9 +145,14 @@ int main()
     const LWECiphertext extracted =
         SampleExtract(rings.back()[0], accumulator.residues[0]);
     const LWEPhase output = ModulusSwitch(extracted, 512);
-    // Coefficient zero of the generated sign LUT is +Q/2 after multiplying
-    // its -1 plaintext coefficient by the converted selector's -Q/2 phase.
-    if (output.b < 64 || output.b > 192) return 14;
+    // Coefficient zero of the generated sign LUT is +Q/4 after multiplying
+    // its -1 plaintext coefficient by the converted selector's -Q/4 phase.
+    // The aggregate PBC noise fixture above models up to 110 encrypted
+    // entries. Allow its deterministic 112-bin phase budget around Q/4.
+    if (output.b < 16 || output.b > 240) {
+        std::cerr << "unexpected sign-LUT phase: " << output.b << std::endl;
+        return 14;
+    }
     auto opposite_lut = lut;
     for (std::size_t level = 0; level < rings.back().levels(); level++)
         for (std::uint64_t &value : opposite_lut[level])
@@ -157,7 +162,7 @@ int main()
         MultiplyByPlaintextNTT(rings.back(), msb_selector, opposite_lut);
     const LWEPhase opposite_output = ModulusSwitch(
         SampleExtract(rings.back()[0], opposite_accumulator.residues[0]), 512);
-    if (opposite_output.b < 320 || opposite_output.b > 448) return 16;
+    if (opposite_output.b < 272 || opposite_output.b > 496) return 16;
 
     // Exercise the public PBC frontend and complete bootstrap wrapper. A
     // compact identity schedule keeps this integration test small; the first
