@@ -1,0 +1,425 @@
+{
+  "scope": "Analytical KS20 search, half n=760 alpha=2^-17, HomDecomp basebit=2; estimated single KS20 key cap 3 GiB; same conditional tail assumptions",
+  "rows": [
+    {
+      "levels": 1,
+      "basebit": 1,
+      "estimated_key_bytes": 6234112,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 3.7712361821333213
+    },
+    {
+      "levels": 1,
+      "basebit": 2,
+      "estimated_key_bytes": 12468224,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 1.8856181147742628
+    },
+    {
+      "levels": 2,
+      "basebit": 1,
+      "estimated_key_bytes": 12468224,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 1.8856181463843984
+    },
+    {
+      "levels": 3,
+      "basebit": 1,
+      "estimated_key_bytes": 18702336,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.9428092312428625
+    },
+    {
+      "levels": 1,
+      "basebit": 3,
+      "estimated_key_bytes": 24936448,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.942809104802334
+    },
+    {
+      "levels": 2,
+      "basebit": 2,
+      "estimated_key_bytes": 24936448,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.4714047736720549
+    },
+    {
+      "levels": 4,
+      "basebit": 1,
+      "estimated_key_bytes": 24936448,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.47140502655294253
+    },
+    {
+      "levels": 5,
+      "basebit": 1,
+      "estimated_key_bytes": 31170560,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.23570352479757983
+    },
+    {
+      "levels": 3,
+      "basebit": 2,
+      "estimated_key_bytes": 37404672,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.11785264747453729
+    },
+    {
+      "levels": 6,
+      "basebit": 1,
+      "estimated_key_bytes": 37404672,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.11785416473178287
+    },
+    {
+      "levels": 7,
+      "basebit": 1,
+      "estimated_key_bytes": 43638784,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.05893264534406288
+    },
+    {
+      "levels": 1,
+      "basebit": 4,
+      "estimated_key_bytes": 49872896,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.4714046472315603
+    },
+    {
+      "levels": 2,
+      "basebit": 3,
+      "estimated_key_bytes": 49872896,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.1178521417177813
+    },
+    {
+      "levels": 4,
+      "basebit": 2,
+      "estimated_key_bytes": 49872896,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.02947087363336515
+    },
+    {
+      "levels": 8,
+      "basebit": 1,
+      "estimated_key_bytes": 49872896,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.02947896249653268
+    },
+    {
+      "levels": 9,
+      "basebit": 1,
+      "estimated_key_bytes": 56107008,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.014767761255344847
+    },
+    {
+      "levels": 5,
+      "basebit": 2,
+      "estimated_key_bytes": 62341120,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.007406046088838134
+    },
+    {
+      "levels": 10,
+      "basebit": 1,
+      "estimated_key_bytes": 62341120,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.007446177886523296
+    },
+    {
+      "levels": 3,
+      "basebit": 3,
+      "estimated_key_bytes": 74809344,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.014743524570385459
+    },
+    {
+      "levels": 6,
+      "basebit": 2,
+      "estimated_key_bytes": 74809344,
+      "conditional_log2_failure_bound": -3.5630424874234237,
+      "ks20_scale": 0.0020263508460313774
+    },
+    {
+      "levels": 7,
+      "basebit": 2,
+      "estimated_key_bytes": 87277568,
+      "conditional_log2_failure_bound": -25.174567853707053,
+      "ks20_scale": 0.0010229333569407285
+    },
+    {
+      "levels": 1,
+      "basebit": 5,
+      "estimated_key_bytes": 99745792,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.2357025132764713
+    },
+    {
+      "levels": 2,
+      "basebit": 4,
+      "estimated_key_bytes": 99745792,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.029466828369111523
+    },
+    {
+      "levels": 4,
+      "basebit": 3,
+      "estimated_key_bytes": 99745792,
+      "conditional_log2_failure_bound": -4.320671507681826,
+      "ks20_scale": 0.0019666415972694456
+    },
+    {
+      "levels": 8,
+      "basebit": 2,
+      "estimated_key_bytes": 99745792,
+      "conditional_log2_failure_bound": -26.653431769894325,
+      "ks20_scale": 0.0009833207986417794
+    },
+    {
+      "levels": 9,
+      "basebit": 2,
+      "estimated_key_bytes": 112214016,
+      "conditional_log2_failure_bound": -24.69606239111046,
+      "ks20_scale": 0.0010362004865199022
+    },
+    {
+      "levels": 5,
+      "basebit": 3,
+      "estimated_key_bytes": 124682240,
+      "conditional_log2_failure_bound": -34.35105384656738,
+      "ks20_scale": 0.0008056229603477198
+    },
+    {
+      "levels": 10,
+      "basebit": 2,
+      "estimated_key_bytes": 124682240,
+      "conditional_log2_failure_bound": -22.77513018280829,
+      "ks20_scale": 0.001091853761118837
+    },
+    {
+      "levels": 3,
+      "basebit": 4,
+      "estimated_key_bytes": 149618688,
+      "conditional_log2_failure_bound": -4.724605090961276,
+      "ks20_scale": 0.0019360965581705204
+    },
+    {
+      "levels": 6,
+      "basebit": 3,
+      "estimated_key_bytes": 149618688,
+      "conditional_log2_failure_bound": -32.42220369433097,
+      "ks20_scale": 0.0008462172177471564
+    },
+    {
+      "levels": 7,
+      "basebit": 3,
+      "estimated_key_bytes": 174555136,
+      "conditional_log2_failure_bound": -29.45685425520739,
+      "ks20_scale": 0.0009134976529306088
+    },
+    {
+      "levels": 1,
+      "basebit": 6,
+      "estimated_key_bytes": 199491584,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.11785163595885488
+    },
+    {
+      "levels": 2,
+      "basebit": 5,
+      "estimated_key_bytes": 199491584,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.0073818622854495385
+    },
+    {
+      "levels": 4,
+      "basebit": 4,
+      "estimated_key_bytes": 199491584,
+      "conditional_log2_failure_bound": -39.93079189312777,
+      "ks20_scale": 0.000700059022396242
+    },
+    {
+      "levels": 8,
+      "basebit": 3,
+      "estimated_key_bytes": 199491584,
+      "conditional_log2_failure_bound": -26.913505092464185,
+      "ks20_scale": 0.0009765626034897545
+    },
+    {
+      "levels": 9,
+      "basebit": 3,
+      "estimated_key_bytes": 224428032,
+      "conditional_log2_failure_bound": -24.71035304122323,
+      "ks20_scale": 0.0010358009505370724
+    },
+    {
+      "levels": 5,
+      "basebit": 4,
+      "estimated_key_bytes": 249364480,
+      "conditional_log2_failure_bound": -36.03181094321359,
+      "ks20_scale": 0.0007720739523617179
+    },
+    {
+      "levels": 10,
+      "basebit": 3,
+      "estimated_key_bytes": 249364480,
+      "conditional_log2_failure_bound": -22.775919482053524,
+      "ks20_scale": 0.0010918300671696394
+    },
+    {
+      "levels": 3,
+      "basebit": 5,
+      "estimated_key_bytes": 299237376,
+      "conditional_log2_failure_bound": -43.47219157771921,
+      "ks20_scale": 0.0006407884012198263
+    },
+    {
+      "levels": 6,
+      "basebit": 4,
+      "estimated_key_bytes": 299237376,
+      "conditional_log2_failure_bound": -32.444794292246435,
+      "ks20_scale": 0.000845728052882914
+    },
+    {
+      "levels": 7,
+      "basebit": 4,
+      "estimated_key_bytes": 349110272,
+      "conditional_log2_failure_bound": -29.45715207530325,
+      "ks20_scale": 0.000913490573385114
+    },
+    {
+      "levels": 1,
+      "basebit": 7,
+      "estimated_key_bytes": 398983168,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.05892657661456154
+    },
+    {
+      "levels": 2,
+      "basebit": 6,
+      "estimated_key_bytes": 398983168,
+      "conditional_log2_failure_bound": -5.1469316019849,
+      "ks20_scale": 0.0019050618344318784
+    },
+    {
+      "levels": 4,
+      "basebit": 5,
+      "estimated_key_bytes": 398983168,
+      "conditional_log2_failure_bound": -40.47638731707231,
+      "ks20_scale": 0.000690571428865011
+    },
+    {
+      "levels": 8,
+      "basebit": 4,
+      "estimated_key_bytes": 398983168,
+      "conditional_log2_failure_bound": -26.913509092408773,
+      "ks20_scale": 0.0009765625000110528
+    },
+    {
+      "levels": 5,
+      "basebit": 5,
+      "estimated_key_bytes": 498728960,
+      "conditional_log2_failure_bound": -36.033529058089556,
+      "ks20_scale": 0.0007720404771123684
+    },
+    {
+      "levels": 3,
+      "basebit": 6,
+      "estimated_key_bytes": 598474752,
+      "conditional_log2_failure_bound": -46.19101459963691,
+      "ks20_scale": 0.0005987117093889132
+    },
+    {
+      "levels": 6,
+      "basebit": 5,
+      "estimated_key_bytes": 598474752,
+      "conditional_log2_failure_bound": -32.44479981101926,
+      "ks20_scale": 0.0008457279334233524
+    },
+    {
+      "levels": 1,
+      "basebit": 8,
+      "estimated_key_bytes": 797966336,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.02946480552871722
+    },
+    {
+      "levels": 2,
+      "basebit": 7,
+      "estimated_key_bytes": 797966336,
+      "conditional_log2_failure_bound": -41.6222916470597,
+      "ks20_scale": 0.0006710783895999941
+    },
+    {
+      "levels": 4,
+      "basebit": 6,
+      "estimated_key_bytes": 797966336,
+      "conditional_log2_failure_bound": -40.47854872997746,
+      "ks20_scale": 0.0006905341123590944
+    },
+    {
+      "levels": 5,
+      "basebit": 6,
+      "estimated_key_bytes": 997457920,
+      "conditional_log2_failure_bound": -36.0335307360134,
+      "ks20_scale": 0.0007720404444209858
+    },
+    {
+      "levels": 3,
+      "basebit": 7,
+      "estimated_key_bytes": 1196949504,
+      "conditional_log2_failure_bound": -46.23651328009155,
+      "ks20_scale": 0.0005980307715382261
+    },
+    {
+      "levels": 1,
+      "basebit": 9,
+      "estimated_key_bytes": 1595932672,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.014735436816683045
+    },
+    {
+      "levels": 2,
+      "basebit": 8,
+      "estimated_key_bytes": 1595932672,
+      "conditional_log2_failure_bound": -53.207904461611164,
+      "ks20_scale": 0.0005016612958329749
+    },
+    {
+      "levels": 4,
+      "basebit": 7,
+      "estimated_key_bytes": 1595932672,
+      "conditional_log2_failure_bound": -40.478557173465035,
+      "ks20_scale": 0.0006905339665875392
+    },
+    {
+      "levels": 3,
+      "basebit": 8,
+      "estimated_key_bytes": 2393899008,
+      "conditional_log2_failure_bound": -46.2372249986317,
+      "ks20_scale": 0.0005980201257322209
+    },
+    {
+      "levels": 1,
+      "basebit": 10,
+      "estimated_key_bytes": 3191865344,
+      "conditional_log2_failure_bound": 0,
+      "ks20_scale": 0.007373783391976706
+    },
+    {
+      "levels": 2,
+      "basebit": 9,
+      "estimated_key_bytes": 3191865344,
+      "conditional_log2_failure_bound": -54.19865890646055,
+      "ks20_scale": 0.0004891282259373438
+    },
+    {
+      "levels": 4,
+      "basebit": 8,
+      "estimated_key_bytes": 3191865344,
+      "conditional_log2_failure_bound": -40.47855720644742,
+      "ks20_scale": 0.000690533966018119
+    }
+  ]
+}

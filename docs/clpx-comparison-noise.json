@@ -1,0 +1,31 @@
+{
+  "scope": "Forward switch and one CLPX multiplication noise screen only; not end-to-end correctness certification.",
+  "parameters": {
+    "ring_n": 2048,
+    "torus_bits": 64,
+    "forward_gadget_levels": 3,
+    "forward_gadget_bits": 13,
+    "reverse_gadget_levels": 4,
+    "reverse_gadget_bits": 10,
+    "validbit": 8,
+    "productbit": 16,
+    "num_multi": 4,
+    "shift": 4,
+    "w": 20,
+    "reverse_numdigit": 5,
+    "reverse_basebit": 4
+  },
+  "forward_coefficient_log2_variance": 80.99395017950346,
+  "product_coefficient_log2_variance": 109.20114828158572,
+  "paper_postconversion_log2_variance": 112.37107328302803,
+  "paper_threshold_standard_deviations": 112.55320707109837,
+  "paper_scalar_log2_gaussian_tail": -9145.33260051668,
+  "paper_16_outputs_256_products_log2_union_tail": -9133.33260051668,
+  "end_to_end_failure_target_verified": false,
+  "limitations": [
+    "Gaussian variance screen and paper threshold; correlations and FFT rounding are not a formal bound.",
+    "The local reverse estimator models the older temps0/temps1 circuit and two carry digits.",
+    "The measured C++ reverse circuit uses previous_scaled-2*fid_stage2, rounded-digit PBS and one base-16 carry digit.",
+    "The scalar paper tail omits semantic failures at intermediate PBS calls and cannot certify the whole path."
+  ]
+}

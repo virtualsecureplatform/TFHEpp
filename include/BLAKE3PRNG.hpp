@@ -71,7 +71,10 @@ struct alignas(64) BLAKE3PRNG {
         // Refill the buffer if needed (unlikely).
         if (next == buffer_result_len) {
             counter++;
-            blake3_hasher_finalize_seek(&hasher, counter * buffer_result_len,
+            // BLAKE3's seek offset is in bytes, not result_type elements.
+            // Advancing by buffer_result_len repeats most of the last block
+            // for multi-byte words and breaks the uniform-stream assumption.
+            blake3_hasher_finalize_seek(&hasher, counter * buffer_len,
                                         (uint8_t*)buffer.data(), buffer_len);
             next = 0;
         }

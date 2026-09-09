@@ -1,0 +1,740 @@
+{
+  "scope": "One 16-bit-output block; whole run of configured length. Input noise and primitive sub-Gaussian tail hypotheses are explicit.",
+  "parameters": {
+    "basebit": 2,
+    "numdigit": 9,
+    "source_bits": 22,
+    "half_n": 832,
+    "half_alpha_bits": 18
+  },
+  "multiplications": 256,
+  "primitive_scales": {
+    "ks20": 0.0006484935486189713,
+    "ks21": 3.841099278307042e-06,
+    "ks1h": 0.0003860202222324629,
+    "br2": 0.0010188789083287126,
+    "br1": 0.0020377578166581203,
+    "pbs2": 5.235373334094349e-10,
+    "pbs1": 0.0013767223121417744,
+    "input": 0.001480781139930622
+  },
+  "primitive_bias_allowances": {
+    "ks20": 2.3283064365386963e-10,
+    "ks21": 2.3283064365386963e-10,
+    "ks1h": 2.3283064365386963e-10,
+    "br2": 2.3283064365386963e-10,
+    "br1": 2.3283064365386963e-10,
+    "pbs2": 5.421010862427522e-20,
+    "pbs1": 2.3283064365386963e-10,
+    "input": 0.0
+  },
+  "primitive_events_per_product": {
+    "input": 16,
+    "ks20": 48,
+    "br2": 48,
+    "pbs2": 48,
+    "ks21": 11,
+    "ks1h": 19,
+    "br1": 26,
+    "pbs1": 26
+  },
+  "total_primitive_events": 61952,
+  "maximum_uniform_cutoff_sigma": 8.997475161120141,
+  "used_cutoff_sigma": 8.90750040950894,
+  "cutoff_required_for_target": 8.882921768606769,
+  "conditional_log2_failure_bound": -40.315419589430256,
+  "conditional_target_passes": true,
+  "bottleneck": {
+    "stage": "digit_round",
+    "index": 1,
+    "error": 0.00347319649407093,
+    "radius": 0.03125,
+    "bias": 8.149072529715028e-10,
+    "cutoff_limit": 8.997475161120141,
+    "error_at_target_cutoff": 0.03085213355873863,
+    "passes_at_target_cutoff": true
+  },
+  "constraints": [
+    {
+      "stage": "digit_range",
+      "index": 0,
+      "error": 0.0018058256077352463,
+      "radius": 0.03125,
+      "bias": 3.492459658263939e-10,
+      "cutoff_limit": 17.30510383555023,
+      "error_at_target_cutoff": 0.01604100795050493,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 0,
+      "error": 0.002871255148363181,
+      "radius": 0.03125,
+      "bias": 6.984919310835816e-10,
+      "cutoff_limit": 10.883741669326316,
+      "error_at_target_cutoff": 0.02550513555911149,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 1,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 2,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 3,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 4,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 5,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 6,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 7,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 8,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 9,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 10,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 11,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 12,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 13,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 14,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "digit_round",
+      "index": 15,
+      "error": 0.00347319649407093,
+      "radius": 0.03125,
+      "bias": 8.149072529715028e-10,
+      "cutoff_limit": 8.997475161120141,
+      "error_at_target_cutoff": 0.03085213355873863,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "hom_subtract",
+      "index": 0,
+      "error": 0.011211118064842996,
+      "radius": 0.125,
+      "bias": 6.994014256633818e-10,
+      "cutoff_limit": 11.14964614391019,
+      "error_at_target_cutoff": 0.09958748540801587,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "hom_subtract",
+      "index": 1,
+      "error": 0.006000216181979191,
+      "radius": 0.125,
+      "bias": 9.315499482909217e-10,
+      "cutoff_limit": 20.83258257325295,
+      "error_at_target_cutoff": 0.0532994518707995,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 0,
+      "error": 0.009962674547300264,
+      "radius": 0.25,
+      "bias": 1.6302692529279739e-09,
+      "cutoff_limit": 25.093663070372706,
+      "error_at_target_cutoff": 0.08849766024002735,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 1,
+      "error": 0.006000216181979191,
+      "radius": 0.125,
+      "bias": 9.315499482909217e-10,
+      "cutoff_limit": 20.83258257325295,
+      "error_at_target_cutoff": 0.0532994518707995,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "hom_subtract",
+      "index": 2,
+      "error": 0.004353310133227796,
+      "radius": 0.078125,
+      "bias": 9.313794180343393e-10,
+      "cutoff_limit": 17.946113802531727,
+      "error_at_target_cutoff": 0.03867011427932504,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 2,
+      "error": 0.006668862449797473,
+      "radius": 0.15625,
+      "bias": 1.629928192414809e-09,
+      "cutoff_limit": 23.42978274725354,
+      "error_at_target_cutoff": 0.05923898505707843,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 3,
+      "error": 0.004353310133227796,
+      "radius": 0.078125,
+      "bias": 9.313794180343393e-10,
+      "cutoff_limit": 17.946113802531727,
+      "error_at_target_cutoff": 0.03867011427932504,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "hom_subtract",
+      "index": 3,
+      "error": 0.003941583621039947,
+      "radius": 0.06640625,
+      "bias": 9.313367854701937e-10,
+      "cutoff_limit": 16.847606305798124,
+      "error_at_target_cutoff": 0.03501277988145642,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 4,
+      "error": 0.005845409425421775,
+      "radius": 0.1328125,
+      "bias": 1.6298429272865178e-09,
+      "cutoff_limit": 22.720820511314994,
+      "error_at_target_cutoff": 0.051924316261341204,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 5,
+      "error": 0.003941583621039947,
+      "radius": 0.06640625,
+      "bias": 9.313367854701937e-10,
+      "cutoff_limit": 16.847606305798124,
+      "error_at_target_cutoff": 0.03501277988145642,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "hom_subtract",
+      "index": 4,
+      "error": 0.0038386519929929854,
+      "radius": 0.0634765625,
+      "bias": 9.313261273291573e-10,
+      "cutoff_limit": 16.536159486336086,
+      "error_at_target_cutoff": 0.03409844628198928,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 6,
+      "error": 0.005639546169327851,
+      "radius": 0.126953125,
+      "bias": 1.629821611004445e-09,
+      "cutoff_limit": 22.511230435641473,
+      "error_at_target_cutoff": 0.05009564906240689,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 7,
+      "error": 0.0038386519929929854,
+      "radius": 0.0634765625,
+      "bias": 9.313261273291573e-10,
+      "cutoff_limit": 16.536159486336086,
+      "error_at_target_cutoff": 0.03409844628198928,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "hom_subtract",
+      "index": 5,
+      "error": 0.003812919085981245,
+      "radius": 0.062744140625,
+      "bias": 9.313234627938982e-10,
+      "cutoff_limit": 16.455670387647235,
+      "error_at_target_cutoff": 0.03386986288212249,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 8,
+      "error": 0.00558808035530437,
+      "radius": 0.12548828125,
+      "bias": 1.6298162819339268e-09,
+      "cutoff_limit": 22.456420030013806,
+      "error_at_target_cutoff": 0.04963848226267332,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 9,
+      "error": 0.003812919085981245,
+      "radius": 0.062744140625,
+      "bias": 9.313234627938982e-10,
+      "cutoff_limit": 16.455670387647235,
+      "error_at_target_cutoff": 0.03386986288212249,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "hom_subtract",
+      "index": 6,
+      "error": 0.0038064858592283097,
+      "radius": 0.06256103515625,
+      "bias": 9.313227966600834e-10,
+      "cutoff_limit": 16.435378072732476,
+      "error_at_target_cutoff": 0.03381271703215579,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 10,
+      "error": 0.0055752139017984995,
+      "radius": 0.1251220703125,
+      "bias": 1.6298149496662973e-09,
+      "cutoff_limit": 22.442559314598157,
+      "error_at_target_cutoff": 0.04952419056273992,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 11,
+      "error": 0.0038064858592283097,
+      "radius": 0.06256103515625,
+      "bias": 9.313227966600834e-10,
+      "cutoff_limit": 16.435378072732476,
+      "error_at_target_cutoff": 0.03381271703215579,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "hom_subtract",
+      "index": 7,
+      "error": 0.003804877552540076,
+      "radius": 0.0625152587890625,
+      "bias": 9.313226301266297e-10,
+      "cutoff_limit": 16.430294272152246,
+      "error_at_target_cutoff": 0.03379843056966412,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 12,
+      "error": 0.0055719972884220315,
+      "radius": 0.125030517578125,
+      "bias": 1.6298146165993899e-09,
+      "cutoff_limit": 22.439084133818476,
+      "error_at_target_cutoff": 0.04949561763775657,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 13,
+      "error": 0.003804877552540076,
+      "radius": 0.0625152587890625,
+      "bias": 9.313226301266297e-10,
+      "cutoff_limit": 16.430294272152246,
+      "error_at_target_cutoff": 0.03379843056966412,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 14,
+      "error": 0.0055711931350779145,
+      "radius": 0.12500762939453125,
+      "bias": 1.629814533332663e-09,
+      "cutoff_limit": 22.438214711608353,
+      "error_at_target_cutoff": 0.04948847440651073,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_bit_pbs",
+      "index": 15,
+      "error": 0.0038044754758680176,
+      "radius": 0.06250381469726562,
+      "bias": 9.313225884932663e-10,
+      "cutoff_limit": 16.42902265040422,
+      "error_at_target_cutoff": 0.0337948589540412,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 0,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 1,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 2,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 3,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 4,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 5,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 6,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 7,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 8,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 9,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 10,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 11,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 12,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 13,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 14,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    },
+    {
+      "stage": "output_decrypt",
+      "index": 15,
+      "error": 0.0013767223121417744,
+      "radius": 0.125,
+      "bias": 2.3283064365386963e-10,
+      "cutoff_limit": 90.79536131923814,
+      "error_at_target_cutoff": 0.012229316828681454,
+      "passes_at_target_cutoff": true
+    }
+  ],
+  "oracle": {
+    "basebit": 2,
+    "numdigit": 9,
+    "carry_digits": 2,
+    "source_bits": 22,
+    "verified_residues": 65536,
+    "hom_margins": [
+      0.125,
+      0.125,
+      0.078125,
+      0.06640625,
+      0.0634765625,
+      0.062744140625,
+      0.06256103515625,
+      0.0625152587890625
+    ],
+    "output_margins": [
+      0.25,
+      0.125,
+      0.15625,
+      0.078125,
+      0.1328125,
+      0.06640625,
+      0.126953125,
+      0.0634765625,
+      0.12548828125,
+      0.062744140625,
+      0.1251220703125,
+      0.06256103515625,
+      0.125030517578125,
+      0.0625152587890625,
+      0.12500762939453125,
+      0.06250381469726562
+    ],
+    "hom_margin_numerators": [
+      2305843009213693952,
+      2305843009213693952,
+      1441151880758558720,
+      1224979098644774912,
+      1170935903116328960,
+      1157425104234217472,
+      1154047404513689600,
+      1153202979583557632
+    ],
+    "output_margin_numerators": [
+      4611686018427387904,
+      2305843009213693952,
+      2882303761517117440,
+      1441151880758558720,
+      2449958197289549824,
+      1224979098644774912,
+      2341871806232657920,
+      1170935903116328960,
+      2314850208468434944,
+      1157425104234217472,
+      2308094809027379200,
+      1154047404513689600,
+      2306405959167115264,
+      1153202979583557632,
+      2305983746702049280,
+      1152991873351024640
+    ],
+    "denominator": 18446744073709551616,
+    "witnesses": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "implementation_certified": false,
+  "unproved_hypotheses": [
+    "Each primitive error has two-sided tail <= 2 exp(-t^2/2) at the supplied scale; Parameter-Selection variances alone do not prove this.",
+    "The input CLPX coefficients have the specified marginal tails around a valid radix-2 encoding.",
+    "Numerical FFT error is bounded within the primitive envelopes; the current adapter has no certified FFT envelope."
+  ],
+  "input_log2_integer_variance": 109.20114828158572,
+  "parameter_selection_base_revision": "9dcf0acb9adb8765c5aa2d5a9b1292a612083543",
+  "analysis_sha256": {
+    "python/CLPXreverse.py": "9f52c0de2b6b27ea7271091196f0ec836227afad8b470f847c478ce0118d8de2",
+    "python/noiseestimation/clpx_reverse_bound.py": "54b19f03e494890ed38293998d374fdf86da76c303f07d5a8d639770238769f5"
+  },
+  "is_measured_parameter_configuration": false,
+  "tfhepp_source_sha256": {
+    "include/clpx/bfv-clpx.hpp": "a87e5eef63e3ef88c89f45faf1522dd0284bd2ed5c2441e0ed4929eaaa124563",
+    "include/tfhe/homdecomp.hpp": "bef47e18df4173cff45164e9fa93b6e6215339e72780d1e4b2eec2808ecda0cd",
+    "include/tfhe/gatebootstrapping.hpp": "1e4e19ac964f396b71efcae0823e7c5c004f95b6c6a1f2cad075ed3c9a39ac1a",
+    "include/tfhe/keyswitch.hpp": "eb9b976e0c7ac09b9626023f0fbb537e679d3fdc71431fa1e120da8633df4281",
+    "include/params/128bit.hpp": "a4151167a966e542b338d4c9d03d5c7157ba656a349fb672d8ed1bd81bc6fc3e",
+    "include/clpx/params/SS2CLPX.hpp": "72a650a1a95cf2c782417da5dd492adacf85091d6639e9a37ff0fb482eae8c51"
+  }
+}

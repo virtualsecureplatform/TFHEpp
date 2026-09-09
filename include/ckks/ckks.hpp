@@ -1190,6 +1190,10 @@ inline std::uint64_t splitmix64Scramble(std::uint64_t x)
     return x ^ (x >> 31);
 }
 
+// Legacy reproducibility helper, NOT a cryptographic pseudorandom generator.
+// Calibrated security-sensitive paths must use full uniformly sampled masks
+// (as integer_multiplication.hpp does) or a separately reviewed CSPRNG format.
+// Keep this format unchanged for compatibility with existing test artifacts.
 struct CKKSSeedStream {
     std::uint64_t state = UINT64_C(0x6a09e667f3bcc909);
 
@@ -4640,27 +4644,24 @@ inline void maybe_clear_cached_keys(const GaloisKey &gk)
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta, class InputGaloisKey,
-          class OutputGaloisKey>
-inline void CKKSLinearTransformBSGS(
+          class OutputGaloisKey, class GroupProvider>
+inline void CKKSLinearTransformBSGSWithGroupProvider(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
-    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    int k_step, const std::vector<bool> &baby_used,
+    std::size_t group_count, GroupProvider &&group_provider,
     const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
 {
     static_assert(PlainLogDelta < LogQ);
     constexpr std::uint32_t out_log_q = LogQ - PlainLogDelta;
-    assert(plan.k_step > 0 && plan.k_step <= static_cast<int>(P::n / 2));
-    assert(!plan.groups.empty());
+    assert(k_step > 0 && k_step <= static_cast<int>(P::n / 2));
+    assert(group_count > 0);
     const bool trace_linear = ckks_detail::ckks_linear_trace_enabled();
     const auto trace_total_start = std::chrono::steady_clock::now();
     auto trace_section_start = trace_total_start;
 
-    std::vector<bool> baby_used;
-    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
-        baby_used, plan);
-
     auto baby =
-        std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(plan.k_step);
+        std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(k_step);
     ckks_detail::CKKSBuildSparseBabyStepRotationTable<P, LogQ>(
         *baby, ct.ct, baby_used, input_gk);
     ckks_detail::maybe_clear_cached_keys(input_gk);
@@ -4703,7 +4704,7 @@ inline void CKKSLinearTransformBSGS(
         using BabyFFT = std::array<BabyComponentFFT, P::k + 1>;
         auto baby_fft =
             std::make_unique<std::vector<std::unique_ptr<BabyFFT>>>(
-                plan.k_step);
+                k_step);
         for (int j1 = 0; j1 < static_cast<int>(baby_used.size()); j1++) {
             if (!baby_used[static_cast<std::size_t>(j1)]) continue;
             (*baby_fft)[static_cast<std::size_t>(j1)] =
@@ -4749,8 +4750,9 @@ inline void CKKSLinearTransformBSGS(
         auto inner = std::make_unique<TRLWE<P>>();
         auto giant_rotated = std::make_unique<TRLWE<P>>();
 
-        std::size_t group_index = 0;
-        for (const auto &group : plan.groups) {
+        for (std::size_t group_index = 0; group_index < group_count;
+             group_index++) {
+            const auto &group = group_provider(group_index);
             using PlainTermFFT = std::array<PolynomialInFD<P>, plain_digits>;
             auto plain_fft =
                 std::make_unique<std::vector<PlainTermFFT>>(group.terms.size());
@@ -4822,7 +4824,7 @@ inline void CKKSLinearTransformBSGS(
                                 const int first_j1 =
                                     group.terms[batch_begin].baby_step;
                                 assert(first_j1 >= 0 &&
-                                       first_j1 < plan.k_step);
+                                       first_j1 < k_step);
                                 const auto &first_fft =
                                     *(*baby_fft)[static_cast<std::size_t>(
                                         first_j1)];
@@ -4832,7 +4834,7 @@ inline void CKKSLinearTransformBSGS(
                                 for (std::size_t t = batch_begin + 1;
                                      t < batch_end; t++) {
                                     const int j1 = group.terms[t].baby_step;
-                                    assert(j1 >= 0 && j1 < plan.k_step);
+                                    assert(j1 >= 0 && j1 < k_step);
                                     const auto &fft =
                                         *(*baby_fft)[static_cast<std::size_t>(
                                             j1)];
@@ -4872,7 +4874,7 @@ inline void CKKSLinearTransformBSGS(
             const TRLWE<P> *to_add = inner.get();
             if (group.giant_step != 0) {
                 CKKSRotateSlots<P, out_log_q>(
-                    *giant_rotated, *inner, plan.k_step * group.giant_step,
+                    *giant_rotated, *inner, k_step * group.giant_step,
                     output_gk);
                 to_add = giant_rotated.get();
             }
@@ -4890,7 +4892,6 @@ inline void CKKSLinearTransformBSGS(
                     ckks_detail::ckks_trace_elapsed_ms(trace_section_start));
                 trace_section_start = std::chrono::steady_clock::now();
             }
-            group_index++;
         }
         ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
         if (trace_linear)
@@ -4905,7 +4906,8 @@ inline void CKKSLinearTransformBSGS(
     auto inner = std::make_unique<TRLWE<P>>();
     auto giant_rotated = std::make_unique<TRLWE<P>>();
 
-    for (const auto &group : plan.groups) {
+    for (std::size_t group_index = 0; group_index < group_count; group_index++) {
+        const auto &group = group_provider(group_index);
         bool inner_initialized = false;
         for (const auto &entry : group.terms) {
             assert((*baby)[static_cast<std::size_t>(entry.baby_step)]);
@@ -4925,7 +4927,7 @@ inline void CKKSLinearTransformBSGS(
         const TRLWE<P> *to_add = inner.get();
         if (group.giant_step != 0) {
             CKKSRotateSlots<P, out_log_q>(
-                *giant_rotated, *inner, plan.k_step * group.giant_step,
+                *giant_rotated, *inner, k_step * group.giant_step,
                 output_gk);
             to_add = giant_rotated.get();
         }
@@ -4939,6 +4941,80 @@ inline void CKKSLinearTransformBSGS(
         }
     }
     ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, class InputGaloisKey,
+          class OutputGaloisKey>
+inline void CKKSLinearTransformBSGS(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const CKKSLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> &plan,
+    const InputGaloisKey &input_gk, const OutputGaloisKey &output_gk)
+{
+    std::vector<bool> used;
+    CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta, PlainLogDelta>(
+        used, plan);
+    CKKSLinearTransformBSGSWithGroupProvider<P, LogQ, LogDelta, PlainLogDelta>(
+        res, ct, plan.k_step, used, plan.groups.size(),
+        [&](std::size_t index) -> const auto & { return plan.groups[index]; },
+        input_gk, output_gk);
+}
+
+// Evaluate a diagonal transform without retaining its plaintext matrix or an
+// encoded plan. The provider fills one unrotated diagonal for each distinct
+// normalized offset. One encoded giant group and the used baby ciphertexts
+// (or their fused digit FFTs) remain resident: O(k_step * N) storage for fixed
+// parameters, rather than O(N^2). Provider calls are sequential.
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta, class DiagonalProvider,
+          class InputGaloisKey, class OutputGaloisKey>
+inline void CKKSLinearTransformBSGSStreamed(
+    CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
+    const CKKSCiphertext<P, LogQ, LogDelta> &ct,
+    const std::vector<int> &rotation_offsets, int k_step,
+    DiagonalProvider &&diagonal_provider, const InputGaloisKey &input_gk,
+    const OutputGaloisKey &output_gk)
+{
+    static_assert(PlainLogDelta < LogQ);
+    constexpr int half = static_cast<int>(P::n / 2);
+    if (k_step <= 0 || k_step > half || rotation_offsets.empty())
+        throw std::invalid_argument("invalid streamed CKKS transform schedule");
+    std::vector<int> offsets(rotation_offsets);
+    for (int &offset : offsets) offset = ((offset % half) + half) % half;
+    std::sort(offsets.begin(), offsets.end());
+    if (std::adjacent_find(offsets.begin(), offsets.end()) != offsets.end())
+        throw std::invalid_argument("duplicate streamed CKKS transform offset");
+    std::vector<bool> used(k_step, false);
+    std::vector<std::size_t> group_starts;
+    for (std::size_t i = 0; i < offsets.size(); i++) {
+        used[offsets[i] % k_step] = true;
+        if (i == 0 || offsets[i] / k_step != offsets[i - 1] / k_step)
+            group_starts.push_back(i);
+    }
+    group_starts.push_back(offsets.size());
+    auto diagonal = std::make_unique<CKKSSlotVector<P>>();
+    auto rotated = std::make_unique<CKKSSlotVector<P>>();
+    CKKSLinearTransformGiantStep<P, LogQ, PlainLogDelta> group;
+    CKKSLinearTransformBSGSWithGroupProvider<P, LogQ, LogDelta, PlainLogDelta>(
+        res, ct, k_step, used, group_starts.size() - 1,
+        [&](std::size_t index) -> const auto & {
+            ckks_detail::maybe_clear_cached_keys(output_gk);
+            const auto begin = group_starts[index];
+            const auto end = group_starts[index + 1];
+            group.giant_step = offsets[begin] / k_step;
+            group.terms.resize(end - begin);
+            for (std::size_t i = begin; i < end; i++) {
+                auto &term = group.terms[i - begin];
+                term.baby_step = offsets[i] % k_step;
+                diagonal_provider(offsets[i], *diagonal);
+                rotateCKKSSlotVector<P>(*rotated, *diagonal,
+                                       -k_step * group.giant_step);
+                ckksSlotEncode<P, LogQ, PlainLogDelta>(term.plain.poly, *rotated);
+            }
+            return group;
+        }, input_gk, output_gk);
+    ckks_detail::maybe_clear_cached_keys(output_gk);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,

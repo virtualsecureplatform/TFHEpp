@@ -48,6 +48,7 @@
 #include "ckks/ckks.hpp"
 #include "ckks/functional_bootstrapping.hpp"
 #include "ckks/scheme_switching.hpp"
+#include "ckks/integer_multiplication.hpp"
 #include "gl/gl.hpp"
 #include "gl/gl-bootstrap.hpp"
 

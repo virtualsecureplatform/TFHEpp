@@ -1,0 +1,38 @@
+{
+  "utc": "2026-09-06T01:49:03.176556+00:00",
+  "parameter_selection_revision": "9dcf0acb9adb8765c5aa2d5a9b1292a612083543",
+  "estimator_revision": "27a581bb8e9d49f5e9e2db315bd48ac769d5f5f5",
+  "cost_model": "RC.BDGL16 (classical)",
+  "samples": "unbounded; conservative generic LWE screen",
+  "target_bits": 128,
+  "scope": "Four-attack LWE screen; not a protocol security certificate. Known-support ring structure and circular/KDM security are not modeled.",
+  "cases": {
+    "clpx-reverse-half832-low-noise": {
+      "n": 832,
+      "log_q": 32,
+      "sigma": 8192,
+      "secret_alphabet": 2,
+      "attacks": {
+        "dual": {
+          "bits": 138.93988149001348,
+          "cost": "         rop: \u22482^138.9\n         mem: \u22482^85.9\n           m:      746\n           \u03b2:      373\n           d:     1578\n           \u21bb:        1\n         tag:     dual"
+        },
+        "primal_usvp": {
+          "bits": 135.94482190845875,
+          "cost": "         rop: \u22482^135.9\n         red: \u22482^135.9\n           \u03b4: 1.004258\n           \u03b2:      363\n           d:     1498\n         tag:     usvp"
+        },
+        "primal_bdd": {
+          "bits": 132.45757941946616,
+          "cost": "         rop: \u22482^132.5\n         red: \u22482^131.9\n         svp: \u22482^130.9\n           \u03b2:      349\n           \u03b7:      391\n           d:     1519\n         tag:      bdd"
+        },
+        "dual_hybrid": {
+          "bits": 128.4086398076178,
+          "cost": "         rop: \u22482^128.4\n         red: \u22482^128.1\n       guess: \u22482^125.9\n           \u03b2:      336\n           p:        2\n           \u03b6:       30\n           t:       60\n          \u03b2':      336\n           N: \u22482^69.6\n           m:      832"
+        }
+      },
+      "complete": true,
+      "weakest_bits": 128.4086398076178,
+      "passes_lwe_screen": true
+    }
+  }
+}

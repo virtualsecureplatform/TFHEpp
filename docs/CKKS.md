@@ -49,11 +49,23 @@ Useful aliases are defined near the end of `include/ckks/ckks.hpp`, including:
 
 ## CKKS / TFHE Scheme Switching
 
-`include/ckks/scheme_switching.hpp` provides the coefficient-domain legs of
-scheme switching.  It is deliberately separate from dense CKKS bootstrapping
-because OpenFHE's `EvalCKKStoFHEW` starts by homomorphically decoding packed
-CKKS slots to coefficients, and that transform's rotation-key schedule is
-application and parameter-set specific.
+For the **4-bit TFHE → CKKS multiplication → TFHE** objective, use the
+specialized [integer multiplication path](Integer4Multiplication.md). Its
+components pass the 128-bit classical screen and its modeled failure bound
+is below 2^-40. It uses constant CKKS plaintexts and exact NTT arithmetic,
+so it needs neither the dense slot transforms nor EvalMod described below.
+
+**General-path security calibration:** the measured full roundtrip below fails the
+128-bit target (111.87-bit CKKS screen and 61.59-bit compact-key screen).
+See [SchemeSwitchingCalibration.md](SchemeSwitchingCalibration.md) for the
+Parameter-Selection results, component targets, and the remaining precision
+and switching-key changes. Its memory and correctness results describe the
+functional prototype only.
+
+`include/ckks/scheme_switching.hpp` provides CKKS-to-TFHE slot decoding and
+extraction, and TFHE-to-CKKS encrypted partial decryption followed by periodic
+EvalMod. Evaluation uses public evaluation keys; secret keys are required only
+for setup and result verification.
 
 The available path is:
 
@@ -100,14 +112,18 @@ and compact paths.
 For directly packed CKKS inputs, `CKKSSlotsToCoeffs` applies the same
 SlotToCoeff linear map and `CKKSSlotsToTFHE` composes that map with extraction.
 Both require the input- and output-level Galois keys for the chosen BSGS
-layout. `CKKSSlotsToCoeffsRotationKeyIndices` exposes precisely the required
+layout. `CKKSSlotsToCoeffs` now generates and evaluates diagonals on demand;
+it does not construct `CKKSRealLinearTransformPlan`. The binary and hybrid
+rotation-key collectors also derive their schedules without encoding any
+plaintexts. `CKKSSlotsToCoeffsRotationKeyIndices` exposes precisely the required
 binary rotation indices, and `CKKSSlotsToCoeffsSparseGaloisKeyGen` creates the
-matching sparse input/output key pair.
+matching sparse input/output key pair. It accepts either unseeded or
+`CKKSSeededSparseGaloisKey` outputs; seeded rows regenerate masks on use.
 `CKKSSlotsToCoeffsHybridRotationKeyIndices` and
 `CKKSSlotsToCoeffsHybridSparseGaloisKeyGen` additionally choose direct versus
-binary keys independently for the BSGS baby and giant rotations. The direct
-full-galois layout remains a correctness/reference path; a fused schedule is
-still preferable for large production inputs.
+binary keys independently for the BSGS baby and giant rotations. The materialized full-Galois transform builders remain available as reference
+implementations. The streamed evaluator generates one giant-step group at a time while
+reusing the materialized evaluator's fused FFT products and baby-step cache.
 `CKKSSlotsToTFHEViaRingSwitch` composes this same SlotToCoeff transform with
 the compact ring switch; generate its ring key at the decoded output level
 `InputLogQ - PlainLogDelta`.
@@ -141,10 +157,12 @@ binary rotations that compose offsets below `lwe_dimension`.
 For OpenFHE-compatible dense output packing, use
 `TFHEToCKKSSlotPackedSwitchKey`, `TFHEToCKKSSlotPackedKeyGen`, and
 `TFHEToCKKSSlotPackedPhase`. This stores the encrypted TFHE secret once and
-uses a rectangular BSGS transform to place up to `N/2` unwrapped phases in
-consecutive CKKS slots. `TFHEToCKKSSlotPackedPhaseRotationKeyIndices` and
+uses a streamed rectangular BSGS transform to place up to `N/2` unwrapped
+phases in consecutive CKKS slots. Public LWE masks are read one diagonal at a
+time, without a dense diagonal matrix or an encoded plan. `TFHEToCKKSSlotPackedPhaseRotationKeyIndices` and
 `TFHEToCKKSSlotPackedPhaseSparseGaloisKeyGen` derive the corresponding sparse
-input/output keys for a selected batch size and BSGS step. Feed the result to
+input/output keys for a selected batch size and BSGS step, including a seeded
+key overload. Feed the result to
 the same bounded-cosine EvalMod stage to obtain canonical messages, or use
 `TFHEToCKKSSlotPackedEvalModKeyGen` and
 `TFHEToCKKSSlotPackedEvalMod` for the composed dense reverse switch.
@@ -168,14 +186,110 @@ approximate CKKS messages. The EvalMod degree, double-angle count, precision,
 and ciphertext modulus are template parameters, so production callers must
 select a chain with enough remaining levels for their accuracy target.
 
+### Bounded-memory execution and sparse inputs
+
+The old forward key collector built two dense encoded transforms merely to
+learn which rotations were needed. With `lvl6param` (`N=32768`, 112-byte
+multi-limb coefficients), those encoded plaintexts alone take
+`2 * (N/2) * N * sizeof(T) = 112 GiB`, before raw diagonals, keys, or scratch.
+Collecting the schedule now takes O(N log N) time and O(log N) binary-key
+metadata, without plaintext allocation.
+
+`CKKSLinearTransformBSGSStreamed` retains one encoded giant-step group and
+the used baby-step ciphertexts (or their digit FFTs), instead of O(N^2)
+plaintext storage. Its provider fills one unrotated diagonal for each requested offset. Offsets may be
+negative or unsorted, but normalized duplicates are rejected. The resident
+baby ciphertexts cost at most `bsgs_step * sizeof(TRLWE<P>)`. On the fused
+multi-limb backend, the baby FFT cache costs up to
+`bsgs_step * (P::k+1) * P::l̅ * sizeof(PolynomialInFD<P>)`; the encoded group
+has at most `bsgs_step` plaintexts. Rotation keys, EvalMod keys, and arithmetic
+scratch are additional. Full logical packing still requires quadratic
+diagonal arithmetic; streaming fixes storage, not
+that computational cost.
+
+For OpenFHE-style sparse **input** packing, repeat `logical_slots` values
+across all N/2 physical CKKS slots, then call
+`CKKSSparseSlotsToTFHEViaRingSwitch`. It decodes using only `logical_slots`
+diagonals per real-linear branch, switches the ring key once, and extracts
+at `i * N/(2*logical_slots)`. Pass the same final `logical_slots` argument to
+`CKKSSlotsToCoeffsSparseGaloisKeyGen` (after its noise argument). The lower-level
+`CKKSSlotsToCoeffs` and rotation collectors also accept this optional argument;
+its default is full physical packing. The existing `...OpenFHEPacked`
+wrappers keep their original selected-coefficient semantics and do not assert
+that their inputs have this periodic layout.
+
+From the repository root, build and run the focused checks with a Linux
+address-space cap (bytes):
+
+```sh
+cmake -S . -B build -DENABLE_TEST=ON -DUSE_BLOCK_BINARY=OFF
+cmake --build build --target ckks_streamed_transform ckks_to_tfhe_scheme_switch ckks_to_tfhe_full_smoke ckks_tfhe_roundtrip ckks_tfhe_roundtrip_quick -j2
+OMP_NUM_THREADS=4 prlimit --as=134217728 --core=0 -- build/test/ckks/ckks_tfhe_roundtrip --schedule-only
+OMP_NUM_THREADS=4 prlimit --as=8589934592 --core=0 -- build/test/ckks/ckks_streamed_transform
+OMP_NUM_THREADS=4 /usr/bin/time -v prlimit --as=1073741824 --core=0 -- build/test/ckks/ckks_tfhe_roundtrip_quick
+OMP_NUM_THREADS=8 /usr/bin/time -v prlimit --as=34359738368 --core=0 -- build/test/ckks/ckks_tfhe_roundtrip --full
+```
+
+`ckks_streamed_transform` checks complex matrix-vector products against a
+plaintext oracle, non-dividing BSGS steps, normalized-offset validation,
+rotation schedules against the materialized reference, and periodic sparse
+inputs including their real and imaginary coefficient layout.
+`ckks_tfhe_roundtrip --schedule-only` exercises the formerly memory-heavy
+full lvl6 schedule under 128 MiB without generating keys. This schedule check
+is also the default; the multi-GiB encrypted run requires `--full`.
+`ckks_tfhe_roundtrip_quick` checks the entire encrypted path at N=128,
+with an experimental eight-dimensional TFHE secret and eight real values.
+It takes about one second and 15 MiB here. Its `--full-precision` mode uses
+the large test's modulus/scale chain in the small ring (about six seconds).
+Both recover values in [-1,1] with roughly 0.0016 maximum error, dominated by
+the sine approximation used for modular reduction.
+
+The opt-in full test uses the precision-oriented `FullCKKS` profile in
+`test/ckks/scheme_switch_test_params.hpp`: N=32768, a 16-limb torus, reverse
+logQ=1000, 58-bit ciphertext/coefficient scales, and a 60-bit linear plaintext
+scale. It uses 760-dimensional lvlhalf TFHE and eight repeated real slots.
+It checks the forward TLWE phases, encrypted partial decryption, periodic
+EvalMod, and an encrypted integer post-scale. Keys are independently
+randomized and CKKS uses centered Gaussian noise with a 3.2-unit floor at
+every active level. These are functional configurations, not calibrated
+128-bit-security claims. The full roundtrip can take tens of minutes;
+large multi-limb key switches dominate the linear stage. Set
+`TFHEPP_CKKS_TRACE_LINEAR=1` and `TFHEPP_CKKS_TRACE_EVALMOD=1` for stage timings.
+
+On this Ryzen 9 9950X3D host with eight OpenMP threads, the full encrypted
+roundtrip passed under the 32 GiB address-space cap:
+
+| Measurement | Result |
+|-------------|-------:|
+| Peak resident memory | 16.61 GiB (17,415,804 KiB) |
+| Total time, including key generation | 46 min 30.94 s |
+| Forward maximum error, original message units | 7.90e-7 |
+| Reverse normalized phase maximum complex error | 6.44e-9 |
+| Final roundtrip maximum complex error | 0.001902 |
+
+The reverse linear transform took 1768.06 seconds and EvalMod took 604.10
+seconds. This is one randomized functional run, with no swapping or OOM;
+it establishes that this configuration fits this machine, rather than a
+memory guarantee for arbitrary parameters or packing sizes.
+
+The noise choice matters: the four-bit signed uniform test distribution
+[-8,7] has mean -0.5, whose bias accumulates through long key-switch schedules.
+The optional `ckks_seeded_key_precision --rotation-noise` diagnostic compares
+zero, bounded-uniform, and Gaussian noise in one full-ring rotation. Its
+default mode checks exact zero-noise seeded-row decryption at N=32768.
+`ckks_streamed_transform --full-arithmetic` separately checks the fused
+16-limb transform against a plaintext oracle, using transparent ciphertexts
+to isolate arithmetic from key noise; it is not an encrypted roundtrip.
+
+
 This is not yet a drop-in equivalent to OpenFHE's tuned production API. The
 remaining work is to add:
 
 1. a schedule-bound fused packed transform and an accelerated RNS/hybrid
    specialization beyond the current exact-NTT compact-cross-key limit;
-2. a production-size key schedule and noise calibration that composes the
-   linear, compact cross-key, and EvalMod stages without the reference
-   full-Galois layout.
+2. application-specific security, noise, and precision calibration for the
+   composed linear, compact cross-key, and EvalMod stages. The functional
+   roundtrip test does not constitute a security estimate.
 
 The regression `test/ckks/ckks_to_tfhe_scheme_switch.cpp` covers packed
 CKKS-slot decoding/extraction into TFHE through both direct and compact ring

@@ -1,0 +1,43 @@
+{
+  "scope": "One key generation and at most the configured number of fresh-input multiplications. Unsigned 8-bit inputs encoded as x/65536; exact 16-bit product. Widths other than 4 are analytical candidates.",
+  "sampler_model": "Ideal normal samples with integer rounding allowance; not a formal verification of std::normal_distribution or the PRNG.",
+  "arithmetic": "Exact modular integer/NTT evaluation; no floating CKKS encoding or FFT.",
+  "parameters": {
+    "ckks_n": 16384,
+    "tfhe_n": 2048,
+    "plaintext_modulus": 65536,
+    "log_delta": 64,
+    "ckks_input_log_q": 256,
+    "phase_log_q": 192,
+    "product_log_q": 128,
+    "extraction_log_q": 48,
+    "extraction_log_delta": 40
+  },
+  "input_bits": 8,
+  "product_bits": 16,
+  "public_postscale": 16777216,
+  "multiplications": 256,
+  "normal_cutoff_sigma": 10,
+  "ckks_integer_noise_cutoff": 33,
+  "tfhe_integer_noise_cutoff": 81921,
+  "gaussian_draw_counts": {
+    "phase_key": 33554432,
+    "relinearization_key": 262144,
+    "output_switching_key": 786432,
+    "fresh_tfhe_inputs": 512
+  },
+  "integer_unit_error_terms": {
+    "input_tfhe_noise": 0.07816410111263394,
+    "ckks_phase_conversion": 0.07230138801969707,
+    "tensor_rounding_and_relinearization": 0.28906631481368095,
+    "final_rescale_rounding": 1.907465048134327e-06,
+    "direct_output_switching": 0.00011444231495261192
+  },
+  "integer_unit_error_bound": 0.4396481537260127,
+  "exact_error_bound_fraction": "34832515372500804532688818177/79228162514264337593543950336",
+  "rounding_radius": 0.5,
+  "no_unintended_wrap": true,
+  "log2_failure_probability_bound": -46.09033657855256,
+  "target_log2_failure_probability": -40,
+  "passes": true
+}

@@ -192,12 +192,17 @@ inline void CKKSToTFHEKeyGen(
     using TargetT = typename TFHEParam::T;
     constexpr std::uint32_t target_bits =
         std::numeric_limits<TargetT>::digits;
+    // Validate before entering OpenMP: exceptions cannot leave a parallel
+    // region, and invalid source keys must still produce invalid_argument.
+    std::vector<std::int64_t> source_coefficients(CKKSParam::k * CKKSParam::n);
+    for (std::size_t i = 0; i < source_coefficients.size(); i++)
+        source_coefficients[i] =
+            ckks_scheme_switch_detail::ternarySecretToInt<CKKSParam>(ckks_key[i]);
+#pragma omp parallel for collapse(2)
     for (std::uint32_t ring = 0; ring < CKKSParam::k; ring++)
         for (std::uint32_t coefficient = 0; coefficient < CKKSParam::n;
              coefficient++) {
-            const std::int64_t secret =
-                ckks_scheme_switch_detail::ternarySecretToInt<CKKSParam>(
-                    ckks_key[ring * CKKSParam::n + coefficient]);
+            const std::int64_t secret = source_coefficients[ring * CKKSParam::n + coefficient];
             for (std::uint32_t level = 0; level < Params::t; level++)
                 for (std::uint32_t digit = 0;
                      digit < (std::uint32_t{1} << (Params::basebit - 1));
@@ -225,6 +230,12 @@ inline void CKKSToTFHEKeyGen(
 //
 // The underlying key is seeded, so its public representation is O(N) per
 // CKKS gadget row rather than O(N * LWE_dimension) TLWE coefficients.
+// Security depends on the known-support target secret and this key's actual
+// noise, not the ambient ring dimension or TFHEParam::alpha. For example,
+// the functional N=32768, TFHE n=760, LogQ=46, sigma=3.2 profile fails the
+// 128-bit screen after reducing the highest gadget row modulo 2^40.
+// See docs/SchemeSwitchingCalibration.md; passing a generic LWE screen alone
+// does not account for this padded ring secret's additional structure.
 template <class CKKSParam, class TFHEParam, std::uint32_t LogQ>
 struct CKKSToTFHERingSwitchKey {
     static constexpr std::uint32_t lwe_dimension =
@@ -642,7 +653,8 @@ inline void CKKSOpenFHEExtractionIndices(
 // coefficient representation used by CKKSCoeffToTFHE.  This is the same
 // mathematical SlotToCoeff transform used by OpenFHE before RLWE extraction;
 // it is exposed separately so applications can select their own BSGS step and
-// rotation-key layout.
+// rotation-key layout. When logical_slots < N/2, input slots must repeat
+// periodically; output coefficient i*N/(2*logical_slots) holds value i.
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta, class InputGaloisKey,
           class OutputGaloisKey>
@@ -650,18 +662,51 @@ inline void CKKSSlotsToCoeffs(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &out,
     const CKKSCiphertext<P, LogQ, LogDelta> &in, int bsgs_step,
     const InputGaloisKey &input_galois_key,
-    const OutputGaloisKey &output_galois_key)
+    const OutputGaloisKey &output_galois_key,
+    std::uint32_t logical_slots = P::n / 2)
 {
     static_assert(PlainLogDelta > 0);
     static_assert(PlainLogDelta < LogQ);
     if (bsgs_step <= 0 || bsgs_step > static_cast<int>(P::n / 2))
         throw std::invalid_argument("invalid CKKS SlotToCoeff BSGS step");
 
-    CKKSRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> plan;
-    CKKSBuildPackedSlotToCoeffPlan<P, LogQ, LogDelta, PlainLogDelta>(
-        plan, bsgs_step);
-    CKKSRealLinearTransform<P, LogQ, LogDelta, PlainLogDelta>(
-        out, in, plan, input_galois_key, output_galois_key);
+    constexpr int half = static_cast<int>(P::n / 2);
+    if (logical_slots == 0 || logical_slots > P::n / 2 ||
+        (P::n / 2) % logical_slots != 0)
+        throw std::invalid_argument("invalid CKKS logical slot count");
+    const int gap = half / static_cast<int>(logical_slots);
+    constexpr long double pi = 3.141592653589793238462643383279502884L;
+    const auto &slot_to_eval = ckks_detail::ckksSlotToEvalIndex<P>();
+    std::vector<int> offsets(logical_slots);
+    for (std::uint32_t i = 0; i < logical_slots; i++) offsets[i] = i;
+    // Full packing matches CKKSBuildPackedSlotToCoeffDiagonals; sparse
+    // packing evaluates the logical transform in the X^gap subring. Both are
+    // generated a diagonal at a time instead of two dense N/2 by N/2 arrays.
+    const auto fill = [&](bool conjugate, int offset, CKKSSlotVector<P> &diag) {
+        for (int i = 0; i < half; i++) {
+            const long double theta = pi * (2 * slot_to_eval[i] + 1) / P::n;
+            const int c = ((i + offset) % logical_slots) * gap;
+            const std::complex<long double> e0(std::cos(theta * c),
+                                                std::sin(theta * c));
+            const std::complex<long double> e1(
+                std::cos(theta * (c + half)), std::sin(theta * (c + half)));
+            diag[i] = static_cast<std::complex<double>>(
+                0.5L * (e0 + std::complex<long double>(0, conjugate ? 1 : -1) * e1));
+        }
+    };
+    CKKSLinearTransformBSGSStreamed<P, LogQ, LogDelta, PlainLogDelta>(
+        out, in, offsets, bsgs_step,
+        [&](int offset, auto &diag) { fill(false, offset, diag); },
+        input_galois_key, output_galois_key);
+    auto conjugated = std::make_unique<CKKSCiphertext<P, LogQ, LogDelta>>();
+    CKKSConjugateSlots<P, LogQ>(conjugated->ct, in.ct, input_galois_key);
+    auto term = std::make_unique<CKKSPlainMulResult<P, LogQ, LogDelta,
+                                                   PlainLogDelta>>();
+    CKKSLinearTransformBSGSStreamed<P, LogQ, LogDelta, PlainLogDelta>(
+        *term, *conjugated, offsets, bsgs_step,
+        [&](int offset, auto &diag) { fill(true, offset, diag); },
+        input_galois_key, output_galois_key);
+    CKKSAddTRLWEInPlace<P, LogQ - PlainLogDelta>(out.ct, term->ct);
 }
 
 // Collect exactly the binary rotation keys consumed by the reference
@@ -673,24 +718,22 @@ template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta>
 inline void CKKSSlotsToCoeffsRotationKeyIndices(
     CKKSRotationKeyIndexSet<P> &input_keys,
-    CKKSRotationKeyIndexSet<P> &output_keys, int bsgs_step)
+    CKKSRotationKeyIndexSet<P> &output_keys, int bsgs_step,
+    std::uint32_t logical_slots = P::n / 2)
 {
+    if (logical_slots == 0 || logical_slots > P::n / 2 ||
+        (P::n / 2) % logical_slots != 0)
+        throw std::invalid_argument("invalid CKKS logical slot count");
     if (bsgs_step <= 0 || bsgs_step > static_cast<int>(P::n / 2))
         throw std::invalid_argument("invalid CKKS SlotToCoeff BSGS step");
-    CKKSRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> plan;
-    CKKSBuildPackedSlotToCoeffPlan<P, LogQ, LogDelta, PlainLogDelta>(
-        plan, bsgs_step);
     CKKSClearRotationKeyIndexSet<P>(input_keys);
     CKKSClearRotationKeyIndexSet<P>(output_keys);
-    if (plan.has_direct)
-        CKKSCollectLinearTransformPlanRotationKeyIndices<
-            P, LogQ, LogDelta, PlainLogDelta>(input_keys, output_keys,
-                                               plan.direct);
-    if (plan.has_conjugate) {
-        CKKSMarkConjugationKeyIndex<P>(input_keys);
-        CKKSCollectLinearTransformPlanRotationKeyIndices<
-            P, LogQ, LogDelta, PlainLogDelta>(input_keys, output_keys,
-                                               plan.conjugate);
+    CKKSMarkConjugationKeyIndex<P>(input_keys);
+    for (int rotation = 0; rotation < static_cast<int>(logical_slots); rotation++) {
+        const int baby = rotation % bsgs_step;
+        const int giant = rotation - baby;
+        if (baby != 0) CKKSMarkRotationPowerKeyIndices<P>(input_keys, baby);
+        if (giant != 0) CKKSMarkRotationPowerKeyIndices<P>(output_keys, giant);
     }
 }
 
@@ -699,12 +742,31 @@ template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
 inline void CKKSSlotsToCoeffsSparseGaloisKeyGen(
     CKKSSparseGaloisKey<P, LogQ> &input_galois_key,
     CKKSSparseGaloisKey<P, LogQ - PlainLogDelta> &output_galois_key,
-    const Key<P> &key, int bsgs_step, CKKSNoise noise = {P::α, 0})
+    const Key<P> &key, int bsgs_step, CKKSNoise noise = {P::α, 0},
+    std::uint32_t logical_slots = P::n / 2)
 {
     CKKSRotationKeyIndexSet<P> input_indices{};
     CKKSRotationKeyIndexSet<P> output_indices{};
     CKKSSlotsToCoeffsRotationKeyIndices<P, LogQ, LogDelta, PlainLogDelta>(
-        input_indices, output_indices, bsgs_step);
+        input_indices, output_indices, bsgs_step, logical_slots);
+    CKKSSparseGaloisKeyGen<P, LogQ>(input_galois_key, key, input_indices,
+                                    noise);
+    CKKSSparseGaloisKeyGen<P, LogQ - PlainLogDelta>(
+        output_galois_key, key, output_indices, noise);
+}
+
+template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
+          std::uint32_t PlainLogDelta>
+inline void CKKSSlotsToCoeffsSparseGaloisKeyGen(
+    CKKSSeededSparseGaloisKey<P, LogQ> &input_galois_key,
+    CKKSSeededSparseGaloisKey<P, LogQ - PlainLogDelta> &output_galois_key,
+    const Key<P> &key, int bsgs_step, CKKSNoise noise = {P::α, 0},
+    std::uint32_t logical_slots = P::n / 2)
+{
+    CKKSRotationKeyIndexSet<P> input_indices{};
+    CKKSRotationKeyIndexSet<P> output_indices{};
+    CKKSSlotsToCoeffsRotationKeyIndices<P, LogQ, LogDelta, PlainLogDelta>(
+        input_indices, output_indices, bsgs_step, logical_slots);
     CKKSSparseGaloisKeyGen<P, LogQ>(input_galois_key, key, input_indices,
                                     noise);
     CKKSSparseGaloisKeyGen<P, LogQ - PlainLogDelta>(
@@ -721,44 +783,29 @@ inline void CKKSSlotsToCoeffsHybridRotationKeyIndices(
     CKKSRotationKeyIndexSet<P> &input_binary,
     CKKSDirectRotationKeyIndexSet<P> &input_direct,
     CKKSRotationKeyIndexSet<P> &output_binary,
-    CKKSDirectRotationKeyIndexSet<P> &output_direct, int bsgs_step)
+    CKKSDirectRotationKeyIndexSet<P> &output_direct, int bsgs_step,
+    std::uint32_t logical_slots = P::n / 2)
 {
+    if (logical_slots == 0 || logical_slots > P::n / 2 ||
+        (P::n / 2) % logical_slots != 0)
+        throw std::invalid_argument("invalid CKKS logical slot count");
     if (bsgs_step <= 0 || bsgs_step > static_cast<int>(P::n / 2))
         throw std::invalid_argument("invalid CKKS SlotToCoeff BSGS step");
-    CKKSRealLinearTransformPlan<P, LogQ, LogDelta, PlainLogDelta> plan;
-    CKKSBuildPackedSlotToCoeffPlan<P, LogQ, LogDelta, PlainLogDelta>(
-        plan, bsgs_step);
-    CKKSClearRotationKeyIndexSet<P>(input_binary);
+    CKKSSlotsToCoeffsRotationKeyIndices<P, LogQ, LogDelta, PlainLogDelta>(
+        input_binary, output_binary, bsgs_step, logical_slots);
     CKKSClearDirectRotationKeyIndexSet<P>(input_direct);
-    CKKSClearRotationKeyIndexSet<P>(output_binary);
     CKKSClearDirectRotationKeyIndexSet<P>(output_direct);
-
-    const auto collect = [&](const auto &linear_plan) {
-        CKKSCollectLinearTransformPlanRotationKeyIndices<
-            P, LogQ, LogDelta, PlainLogDelta>(input_binary, output_binary,
-                                               linear_plan);
-        std::vector<bool> baby_used;
-        CKKSLinearTransformPlanUsedBabySteps<P, LogQ, LogDelta,
-                                              PlainLogDelta>(baby_used,
-                                                              linear_plan);
-        for (int baby = 1; baby < linear_plan.k_step; baby++)
-            if (baby_used[static_cast<std::size_t>(baby)])
-                CKKSMarkDirectRotationKeyIndex<P>(input_direct, baby);
-        for (const auto &group : linear_plan.groups)
-            if (group.giant_step != 0)
-                CKKSMarkDirectRotationKeyIndex<P>(
-                    output_direct, linear_plan.k_step * group.giant_step);
-    };
-    if (plan.has_direct) collect(plan.direct);
-    if (plan.has_conjugate) {
-        CKKSMarkConjugationKeyIndex<P>(input_binary);
-        collect(plan.conjugate);
+    for (int rotation = 0; rotation < static_cast<int>(logical_slots); rotation++) {
+        const int baby = rotation % bsgs_step;
+        const int giant = rotation - baby;
+        if (baby != 0) CKKSMarkDirectRotationKeyIndex<P>(input_direct, baby);
+        if (giant != 0) CKKSMarkDirectRotationKeyIndex<P>(output_direct, giant);
     }
 
     const bool keep_input_direct =
         CKKSDirectRotationKeyIndexSetCount<P>(input_direct) <=
         CKKSRotationKeyIndexSetCount<P>(input_binary) -
-            (plan.has_conjugate ? 1U : 0U);
+            1U;
     if (keep_input_direct) {
         const bool conjugate = input_binary[P::nbit];
         CKKSClearRotationKeyIndexSet<P>(input_binary);
@@ -784,7 +831,8 @@ template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
 inline void CKKSSlotsToCoeffsHybridSparseGaloisKeyGen(
     CKKSHybridSparseGaloisKey<P, LogQ> &input_galois_key,
     CKKSHybridSparseGaloisKey<P, LogQ - PlainLogDelta> &output_galois_key,
-    const Key<P> &key, int bsgs_step, CKKSNoise noise = {P::α, 0})
+    const Key<P> &key, int bsgs_step, CKKSNoise noise = {P::α, 0},
+    std::uint32_t logical_slots = P::n / 2)
 {
     CKKSRotationKeyIndexSet<P> input_binary{};
     CKKSDirectRotationKeyIndexSet<P> input_direct{};
@@ -792,7 +840,8 @@ inline void CKKSSlotsToCoeffsHybridSparseGaloisKeyGen(
     CKKSDirectRotationKeyIndexSet<P> output_direct{};
     CKKSSlotsToCoeffsHybridRotationKeyIndices<P, LogQ, LogDelta,
                                                PlainLogDelta>(
-        input_binary, input_direct, output_binary, output_direct, bsgs_step);
+        input_binary, input_direct, output_binary, output_direct, bsgs_step,
+        logical_slots);
     CKKSHybridSparseGaloisKeyGen<P, LogQ>(
         input_galois_key, key, input_binary, input_direct, noise);
     CKKSHybridSparseGaloisKeyGen<P, LogQ - PlainLogDelta>(
@@ -946,6 +995,35 @@ inline void CKKSSlotsToTFHEViaRingSwitchOpenFHEPacked(
         CKKSParam, TFHEParam, InputLogQ, InputLogDelta, PlainLogDelta>(
         out, in, indices, bsgs_step, input_galois_key, output_galois_key,
         ring_switch);
+}
+
+// Sparse-input variant: the logical_slots values MUST repeat across the
+// physical N/2 input slots. The logical transform needs only logical_slots
+// diagonals and writes value i at coefficient i*N/(2*logical_slots). Generate
+// the forward rotation keys with the same logical_slots argument.
+template <class CKKSParam, class TFHEParam, std::uint32_t InputLogQ,
+          std::uint32_t InputLogDelta, std::uint32_t PlainLogDelta,
+          class InputGaloisKey, class OutputGaloisKey>
+inline void CKKSSparseSlotsToTFHEViaRingSwitch(
+    std::vector<TLWE<TFHEParam>> &out,
+    const CKKSCiphertext<CKKSParam, InputLogQ, InputLogDelta> &in,
+    std::uint32_t num_ciphertexts, std::uint32_t logical_slots, int bsgs_step,
+    const InputGaloisKey &input_galois_key,
+    const OutputGaloisKey &output_galois_key,
+    const CKKSToTFHERingSwitchKey<CKKSParam, TFHEParam,
+                                 InputLogQ - PlainLogDelta> &ring_switch)
+{
+    std::vector<std::uint32_t> indices;
+    CKKSOpenFHEExtractionIndices<CKKSParam>(indices, num_ciphertexts,
+                                          logical_slots);
+    auto decoded = std::make_unique<
+        CKKSPlainMulResult<CKKSParam, InputLogQ, InputLogDelta, PlainLogDelta>>();
+    CKKSSlotsToCoeffs<CKKSParam, InputLogQ, InputLogDelta, PlainLogDelta>(
+        *decoded, in, bsgs_step, input_galois_key, output_galois_key,
+        logical_slots);
+    CKKSCoeffIndicesToTFHEViaRingSwitch<
+        CKKSParam, TFHEParam, InputLogQ - PlainLogDelta, InputLogDelta>(
+        out, *decoded, indices, ring_switch);
 }
 
 // OpenFHE's EvalCKKStoFHEW performs a modulus switch after SlotToCoeff and
@@ -1312,38 +1390,26 @@ inline void TFHEToCKKSSlotPackedPhase(
         throw std::invalid_argument("invalid dense packed TFHE phase scale");
 
     std::vector<int> offsets;
-    std::vector<CKKSSlotVector<CKKSParam>> diagonals;
-    for (std::uint32_t slot = 0; slot < in.size(); slot++) {
-        for (std::uint32_t secret_index = 0; secret_index < lwe_dimension;
-             secret_index++) {
-            const int offset =
-                (static_cast<int>(secret_index) - static_cast<int>(slot) +
-                 slot_count) %
-                slot_count;
-            std::size_t diagonal = 0;
-            while (diagonal < offsets.size() && offsets[diagonal] != offset)
-                diagonal++;
-            if (diagonal == offsets.size()) {
-                offsets.push_back(offset);
-                diagonals.emplace_back();
-                diagonals.back().fill({0.0, 0.0});
-            }
-            diagonals[diagonal][slot] = {
-                -phase_scale *
-                    ckks_scheme_switch_detail::
-                        tfheTorusToUnitInterval<TFHEParam>(
-                            in[slot][secret_index]),
-                0.0};
-        }
+    // A diagonal is active iff some output slot maps into the encrypted
+    // secret prefix. Schedule metadata is O(N); plaintexts are never cached.
+    for (int offset = 0; offset < slot_count; offset++) {
+        if (offset < static_cast<int>(lwe_dimension) ||
+            offset > slot_count - static_cast<int>(in.size()))
+            offsets.push_back(offset);
     }
-
-    CKKSLinearTransformPlan<CKKSParam, LogQ, LogDelta, PlainLogDelta> plan;
-    CKKSBuildLinearTransformBSGSPlan<CKKSParam, LogQ, LogDelta,
-                                     PlainLogDelta>(
-        plan, diagonals, offsets, bsgs_step);
-    CKKSLinearTransformBSGS<CKKSParam, LogQ, LogDelta, PlainLogDelta>(
-        out, switch_key.encrypted_secret_slots, plan, input_galois_key,
-        output_galois_key);
+    CKKSLinearTransformBSGSStreamed<CKKSParam, LogQ, LogDelta, PlainLogDelta>(
+        out, switch_key.encrypted_secret_slots, offsets, bsgs_step,
+        [&](int offset, CKKSSlotVector<CKKSParam> &diagonal) {
+            diagonal.fill({0.0, 0.0});
+            for (std::uint32_t slot = 0; slot < in.size(); slot++) {
+                const auto secret_index = (slot + offset) % slot_count;
+                if (secret_index < lwe_dimension)
+                    diagonal[slot] = {
+                        -phase_scale * ckks_scheme_switch_detail::
+                            tfheTorusToUnitInterval<TFHEParam>(in[slot][secret_index]),
+                        0.0};
+            }
+        }, input_galois_key, output_galois_key);
 
     auto body = std::make_unique<CKKSSlotVector<CKKSParam>>();
     body->fill({0.0, 0.0});
@@ -1406,6 +1472,25 @@ template <class CKKSParam, class TFHEParam, std::uint32_t LogQ,
 inline void TFHEToCKKSSlotPackedPhaseSparseGaloisKeyGen(
     CKKSSparseGaloisKey<CKKSParam, LogQ> &input_galois_key,
     CKKSSparseGaloisKey<CKKSParam, LogQ - PlainLogDelta> &output_galois_key,
+    const Key<CKKSParam> &key, std::uint32_t num_ciphertexts, int bsgs_step,
+    CKKSNoise noise = {CKKSParam::α, 0})
+{
+    CKKSRotationKeyIndexSet<CKKSParam> input_indices{};
+    CKKSRotationKeyIndexSet<CKKSParam> output_indices{};
+    TFHEToCKKSSlotPackedPhaseRotationKeyIndices<
+        CKKSParam, TFHEParam, LogQ, LogDelta, PlainLogDelta>(
+        input_indices, output_indices, num_ciphertexts, bsgs_step);
+    CKKSSparseGaloisKeyGen<CKKSParam, LogQ>(input_galois_key, key,
+                                            input_indices, noise);
+    CKKSSparseGaloisKeyGen<CKKSParam, LogQ - PlainLogDelta>(
+        output_galois_key, key, output_indices, noise);
+}
+
+template <class CKKSParam, class TFHEParam, std::uint32_t LogQ,
+          std::uint32_t LogDelta, std::uint32_t PlainLogDelta>
+inline void TFHEToCKKSSlotPackedPhaseSparseGaloisKeyGen(
+    CKKSSeededSparseGaloisKey<CKKSParam, LogQ> &input_galois_key,
+    CKKSSeededSparseGaloisKey<CKKSParam, LogQ - PlainLogDelta> &output_galois_key,
     const Key<CKKSParam> &key, std::uint32_t num_ciphertexts, int bsgs_step,
     CKKSNoise noise = {CKKSParam::α, 0})
 {

@@ -1,0 +1,92 @@
+{
+  "utc": "2026-09-08T07:39:52.067278+00:00",
+  "parameter_selection_revision": "9dcf0acb9adb8765c5aa2d5a9b1292a612083543",
+  "estimator_revision": "27a581bb8e9d49f5e9e2db315bd48ac769d5f5f5",
+  "cost_model": "RC.BDGL16 (classical)",
+  "samples": "unbounded; conservative generic LWE screen",
+  "target_bits": 128,
+  "scope": "Four-attack LWE screen; not a protocol security certificate. Known-support ring structure and circular/KDM security are not modeled.",
+  "cases": {
+    "tfhe760-alpha17p125": {
+      "n": 760,
+      "log_q": 32,
+      "sigma": 30048.388487730666,
+      "secret_alphabet": 2,
+      "attacks": {
+        "primal_usvp": {
+          "bits": 136.40731284413496,
+          "cost": "         rop: \u22482^136.4\n         red: \u22482^136.4\n           \u03b4: 1.004242\n           \u03b2:      365\n           d:     1377\n         tag:     usvp"
+        },
+        "dual": {
+          "bits": 139.96882289426213,
+          "cost": "         rop: \u22482^140.0\n         mem: \u22482^86.8\n           m:      673\n           \u03b2:      377\n           d:     1433\n           \u21bb:        1\n         tag:     dual"
+        },
+        "primal_bdd": {
+          "bits": 132.75898954544067,
+          "cost": "         rop: \u22482^132.8\n         red: \u22482^132.0\n         svp: \u22482^131.4\n           \u03b2:      350\n           \u03b7:      393\n           d:     1365\n         tag:      bdd"
+        },
+        "dual_hybrid": {
+          "bits": 128.60185845426514,
+          "cost": "         rop: \u22482^128.6\n         red: \u22482^128.6\n       guess: \u22482^123.2\n           \u03b2:      338\n           p:        2\n           \u03b6:       10\n           t:       90\n          \u03b2':      338\n           N: \u22482^70.1\n           m:      760"
+        }
+      },
+      "complete": true,
+      "weakest_bits": 128.60185845426514,
+      "passes_lwe_screen": true
+    },
+    "tfhe760-alpha17p25": {
+      "n": 760,
+      "log_q": 32,
+      "sigma": 27554.493735033717,
+      "secret_alphabet": 2,
+      "attacks": {
+        "primal_usvp": {
+          "bits": 135.5250128557792,
+          "cost": "         rop: \u22482^135.5\n         red: \u22482^135.5\n           \u03b4: 1.004266\n           \u03b2:      362\n           d:     1371\n         tag:     usvp"
+        },
+        "dual": {
+          "bits": 139.09483502156306,
+          "cost": "         rop: \u22482^139.1\n         mem: \u22482^86.2\n           m:      675\n           \u03b2:      374\n           d:     1435\n           \u21bb:        1\n         tag:     dual"
+        },
+        "primal_bdd": {
+          "bits": 131.88172712516976,
+          "cost": "         rop: \u22482^131.9\n         red: \u22482^131.1\n         svp: \u22482^130.6\n           \u03b2:      347\n           \u03b7:      390\n           d:     1363\n         tag:      bdd"
+        },
+        "dual_hybrid": {
+          "bits": 127.75380302126659,
+          "cost": "         rop: \u22482^127.8\n         red: \u22482^127.7\n       guess: \u22482^123.2\n           \u03b2:      335\n           p:        2\n           \u03b6:       10\n           t:       90\n          \u03b2':      335\n           N: \u22482^69.5\n           m:      760"
+        }
+      },
+      "complete": true,
+      "weakest_bits": 127.75380302126659,
+      "passes_lwe_screen": false
+    },
+    "tfhe760-alpha18": {
+      "n": 760,
+      "log_q": 32,
+      "sigma": 16384,
+      "secret_alphabet": 2,
+      "attacks": {
+        "primal_usvp": {
+          "bits": 130.26690673125788,
+          "cost": "         rop: \u22482^130.3\n         red: \u22482^130.3\n           \u03b4: 1.004417\n           \u03b2:      344\n           d:     1369\n         tag:     usvp"
+        },
+        "primal_bdd": {
+          "bits": 126.7191408054271,
+          "cost": "         rop: \u22482^126.7\n         red: \u22482^126.2\n         svp: \u22482^125.0\n           \u03b2:      330\n           \u03b7:      371\n           d:     1376\n         tag:      bdd"
+        },
+        "dual": {
+          "bits": 133.55285462017474,
+          "cost": "         rop: \u22482^133.6\n         mem: \u22482^82.1\n           m:      681\n           \u03b2:      355\n           d:     1441\n           \u21bb:        1\n         tag:     dual"
+        },
+        "dual_hybrid": {
+          "bits": 123.08342439054583,
+          "cost": "         rop: \u22482^123.1\n         red: \u22482^123.0\n       guess: \u22482^118.3\n           \u03b2:      319\n           p:        2\n           \u03b6:       20\n           t:       70\n          \u03b2':      319\n           N: \u22482^65.3\n           m:      760"
+        }
+      },
+      "complete": true,
+      "weakest_bits": 123.08342439054583,
+      "passes_lwe_screen": false
+    }
+  }
+}

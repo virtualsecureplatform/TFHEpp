@@ -1,0 +1,20 @@
+{
+  "utc": "2026-09-05T09:16:39.404921+00:00",
+  "path": "unsigned 8-bit TFHE -> CKKS multiplication -> unsigned 16-bit TFHE",
+  "ckks_n": 16384,
+  "tfhe_n": 2048,
+  "openmp_threads": 8,
+  "address_space_cap_bytes": 25769803776,
+  "products": 256,
+  "sampling": "8 boundary cases and 248 deterministic pseudorandom pairs; fresh cryptographic keys and encryption randomness",
+  "key_generation_seconds": 8.62622,
+  "evaluation_seconds": 419.124,
+  "max_integer_unit_error": 0.000194995,
+  "elapsed": "7:08.04",
+  "peak_rss_kib": 14732196,
+  "exit_status": 0,
+  "small_dimension_exhaustive_products": 65536,
+  "small_dimension_max_integer_unit_error": 2.83182e-05,
+  "interpretation": "Full-dimension sampled correctness check; failure probability is analytical, see integer8-failure-bound.json.",
+  "log": "N=16384 TFHE n=2048 direct key bytes=12891193344\nKey generation seconds=8.62622\nChecked 16/256; max error=8.60841e-05\nChecked 32/256; max error=0.000130693\nChecked 48/256; max error=0.000154533\nChecked 64/256; max error=0.000154533\nChecked 80/256; max error=0.000154533\nChecked 96/256; max error=0.000154533\nChecked 112/256; max error=0.000154533\nChecked 128/256; max error=0.000154533\nChecked 144/256; max error=0.000154533\nChecked 160/256; max error=0.000154533\nChecked 176/256; max error=0.000154533\nChecked 192/256; max error=0.000154533\nChecked 208/256; max error=0.000154533\nChecked 224/256; max error=0.000157798\nChecked 240/256; max error=0.000194995\nChecked 256/256; max error=0.000194995\nProducts=256 maximum integer-unit error=0.000194995 evaluation seconds=419.124\nPassed\n\tCommand being timed: \"prlimit --as=25769803776 -- build/test/ckks/ckks_integer_multiplication --8bit\"\n\tUser time (seconds): 468.11\n\tSystem time (seconds): 2.57\n\tPercent of CPU this job got: 109%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 7:08.04\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 14732196\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 59\n\tMinor (reclaiming a frame) page faults: 4284853\n\tVoluntary context switches: 91\n\tInvoluntary context switches: 5520\n\tSwaps: 0\n\tFile system inputs: 30\n\tFile system outputs: 1\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+}
