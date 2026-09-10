@@ -1,0 +1,82 @@
+{
+  "utc": "2026-09-10T23:33:46.574616+00:00",
+  "tfhepp_base_revision": "1451663bdcd4c84d8644476e1e9572500ee46cb1",
+  "cpu": "AMD Ryzen 9 9950X3D",
+  "openmp_threads": 8,
+  "address_space_cap_bytes": 25769803776,
+  "parameters": {
+    "baseline": {
+      "ks20_t": 7,
+      "ks20_basebit": 2,
+      "hom_numdigit": 5,
+      "hom_basebit": 4,
+      "half_n": 760,
+      "half_alpha_bits": 17
+    },
+    "candidate": {
+      "ks20_t": 3,
+      "ks20_basebit": 5,
+      "hom_numdigit": 9,
+      "hom_basebit": 2,
+      "half_n": 760,
+      "half_alpha_bits": 17
+    }
+  },
+  "runs": {
+    "baseline": {
+      "key_generation_seconds": 1.98467,
+      "forward_seconds": 10.63978769,
+      "mult_seconds": 0.011696948,
+      "reverse_seconds": 255.2138916,
+      "evaluation_seconds": 265.8653762,
+      "products": 256,
+      "peak_rss_kib": 921212,
+      "peak_rss_gib": 0.8785362243652344,
+      "exit_status": 0,
+      "seconds_per_product": {
+        "forward": 0.0415616706640625,
+        "mult": 4.5691203125e-05,
+        "reverse": 0.9969292640625,
+        "evaluation": 1.03853662578125
+      },
+      "log": "key_generation_seconds=1.98467\nChecked 16/256\nChecked 32/256\nChecked 48/256\nChecked 64/256\nChecked 80/256\nChecked 96/256\nChecked 112/256\nChecked 128/256\nChecked 144/256\nChecked 160/256\nChecked 176/256\nChecked 192/256\nChecked 208/256\nChecked 224/256\nChecked 240/256\nChecked 256/256\nforward_seconds=10.63978769\nmult_seconds=0.011696948\nreverse_seconds=255.2138916\nevaluation_seconds=265.8653762\nProducts=256 Passed\n\tCommand being timed: \"prlimit --as=25769803776 -- build/test/clpx/scheme_switch_comparison clpx\"\n\tUser time (seconds): 358.10\n\tSystem time (seconds): 0.30\n\tPercent of CPU this job got: 133%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 4:27.95\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 921212\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 334343\n\tVoluntary context switches: 3962\n\tInvoluntary context switches: 4777\n\tSwaps: 0\n\tFile system inputs: 30\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+    },
+    "candidate": {
+      "key_generation_seconds": 2.09307,
+      "forward_seconds": 10.73604739,
+      "mult_seconds": 0.011527056,
+      "reverse_seconds": 258.671655,
+      "evaluation_seconds": 269.4192294,
+      "products": 256,
+      "peak_rss_kib": 1128536,
+      "peak_rss_gib": 1.0762557983398438,
+      "exit_status": 0,
+      "seconds_per_product": {
+        "forward": 0.0419376851171875,
+        "mult": 4.50275625e-05,
+        "reverse": 1.01043615234375,
+        "evaluation": 1.05241886484375
+      },
+      "log": "key_generation_seconds=2.09307\nChecked 16/256\nChecked 32/256\nChecked 48/256\nChecked 64/256\nChecked 80/256\nChecked 96/256\nChecked 112/256\nChecked 128/256\nChecked 144/256\nChecked 160/256\nChecked 176/256\nChecked 192/256\nChecked 208/256\nChecked 224/256\nChecked 240/256\nChecked 256/256\nforward_seconds=10.73604739\nmult_seconds=0.011527056\nreverse_seconds=258.671655\nevaluation_seconds=269.4192294\nProducts=256 Passed\n\tCommand being timed: \"prlimit --as=25769803776 -- build/test/clpx/scheme_switch_comparison clpx\"\n\tUser time (seconds): 368.63\n\tSystem time (seconds): 0.34\n\tPercent of CPU this job got: 135%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 4:31.62\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 1128536\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 70\n\tMinor (reclaiming a frame) page faults: 386077\n\tVoluntary context switches: 3743\n\tInvoluntary context switches: 5266\n\tSwaps: 0\n\tFile system inputs: 30\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+    }
+  },
+  "source_sha256": {
+    "baseline": {
+      "include/params/128bit.hpp": "a4151167a966e542b338d4c9d03d5c7157ba656a349fb672d8ed1bd81bc6fc3e",
+      "test/clpx/scheme_switch_comparison.cpp": "491af93a7da9b8f1f209357e08335ae7dfcea1eecd5ff9c8e9a388f63ecdea43",
+      "include/clpx/bfv-clpx.hpp": "a87e5eef63e3ef88c89f45faf1522dd0284bd2ed5c2441e0ed4929eaaa124563",
+      "include/tfhe/homdecomp.hpp": "bef47e18df4173cff45164e9fa93b6e6215339e72780d1e4b2eec2808ecda0cd",
+      "include/BLAKE3PRNG.hpp": "35cb8233a874c63e844b19fcd24eef3ba112914396c35149331e8ace68979141"
+    },
+    "candidate": {
+      "include/params/128bit.hpp": "cfdd3e0f853ff411983ad079976a9c4424dc01ccc3e165719e299d51e3ebc730",
+      "test/clpx/scheme_switch_comparison.cpp": "3ef40731ba379505a44709e2f8d83d4a4315cab832fb5ddc0dc1791708de3114",
+      "include/clpx/bfv-clpx.hpp": "a87e5eef63e3ef88c89f45faf1522dd0284bd2ed5c2441e0ed4929eaaa124563",
+      "include/tfhe/homdecomp.hpp": "bef47e18df4173cff45164e9fa93b6e6215339e72780d1e4b2eec2808ecda0cd",
+      "include/BLAKE3PRNG.hpp": "35cb8233a874c63e844b19fcd24eef3ba112914396c35149331e8ace68979141"
+    }
+  },
+  "method": "Sequential processes; identical 256 pairs; one fresh key set per configuration; excludes input encryption and output checks from evaluation timers.",
+  "scope": "Functional and performance sample; not a statistical proof of rare failure probability.",
+  "candidate_over_baseline_evaluation_ratio": 1.013367115533414
+}

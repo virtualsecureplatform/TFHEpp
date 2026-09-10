@@ -62,7 +62,7 @@ void run_clpx(const std::vector<std::pair<unsigned,unsigned>>& pairs) {
         auto t1=Clock::now();
         CLPXMult<P>(product,a,b,*relin);
         auto t2=Clock::now();
-        CLPX2TLWESIKSanybit<lvl1hparam,lvl21param,lvlh1param,CLPX2TFHElvlh2param,lvl2hparam,5,4>(result,product,*ek,*sk);
+        CLPX2TLWESIKSanybit<lvl1hparam,lvl21param,lvlh1param,CLPX2TFHElvlh2param,lvl2hparam,9,2>(result,product,*ek,*sk);
         auto t3=Clock::now();
         timing.forward+=seconds(t0,t1); timing.mult+=seconds(t1,t2); timing.reverse+=seconds(t2,t3);
         unsigned decoded=0;

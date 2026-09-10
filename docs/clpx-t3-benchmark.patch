@@ -1,0 +1,26 @@
+--- a/include/params/128bit.hpp
++++ b/include/params/128bit.hpp
+@@ -508,9 +508,9 @@
+ };
+ 
+ struct lvl2hparam {
+-    static constexpr std::uint32_t t = 7;  // number of addition in keyswitching
+-    static constexpr std::uint32_t basebit =
+-        2;  // how many bit should be encrypted in keyswitching key
++    static constexpr std::uint32_t t = 3;  // number of addition in keyswitching
++    static constexpr std::uint32_t basebit =
++        5;  // how many bit should be encrypted in keyswitching key
+     static constexpr ErrorDistribution errordist =
+         ErrorDistribution::ModularGaussian;
+     static const inline double α = lvlhalfparam::α;  // key noise
+--- a/test/clpx/scheme_switch_comparison.cpp
++++ b/test/clpx/scheme_switch_comparison.cpp
+@@ -62,7 +62,7 @@
+         auto t1=Clock::now();
+         CLPXMult<P>(product,a,b,*relin);
+         auto t2=Clock::now();
+-        CLPX2TLWESIKSanybit<lvl1hparam,lvl21param,lvlh1param,CLPX2TFHElvlh2param,lvl2hparam,5,4>(result,product,*ek,*sk);
++        CLPX2TLWESIKSanybit<lvl1hparam,lvl21param,lvlh1param,CLPX2TFHElvlh2param,lvl2hparam,9,2>(result,product,*ek,*sk);
+         auto t3=Clock::now();
+         timing.forward+=seconds(t0,t1); timing.mult+=seconds(t1,t2); timing.reverse+=seconds(t2,t3);
+         unsigned decoded=0;

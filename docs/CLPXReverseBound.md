@@ -66,7 +66,9 @@ process overhead. Blind-rotation rounding itself is unchanged.
 
 These remain analytical candidates under the same unproved primitive-tail and
 FFT assumptions. Four scalar-trace tests pass, including error injections for
-both new candidates; neither new configuration has been encrypted-benchmarked.
+both new candidates. The t=3, basebit=5 candidate subsequently passed
+[the encrypted 256-product performance benchmark](CLPXT3Performance.md); the
+t=2, basebit=8 candidate has not been encrypted-benchmarked.
 Reports: [smaller key](clpx-reverse-fixed760-small-key-bound.json),
 [stronger bound](clpx-reverse-fixed760-bound.json), and
 [search results](clpx-reverse-fixed760-search.json).

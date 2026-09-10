@@ -508,9 +508,9 @@ struct lvl20param {
 };
 
 struct lvl2hparam {
-    static constexpr std::uint32_t t = 7;  // number of addition in keyswitching
+    static constexpr std::uint32_t t = 3;  // number of addition in keyswitching
     static constexpr std::uint32_t basebit =
-        2;  // how many bit should be encrypted in keyswitching key
+        5;  // how many bit should be encrypted in keyswitching key
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
     static const inline double α = lvlhalfparam::α;  // key noise
