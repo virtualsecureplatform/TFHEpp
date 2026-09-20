@@ -21,6 +21,8 @@ This documentation lives in `docs/` and is meant to complement the root
   circuit bootstrapping.
 - `CKKS.md` — experimental CKKS types, dense bootstrapping, product eval keys,
   and practical lvl6 validation commands.
+- [BFVSchemeSwitching.md](BFVSchemeSwitching.md) — scalar Boolean TFHE → BFV
+  multiplication → TFHE, matched timing comparisons, and conditional error bounds.
 - `GL.md` — experimental Gentry–Lee matrix FHE, Double Decomposition,
   low-depth SHIP bootstrapping, parameters, and current performance boundary.
 - `Serialization.md` — exporting/importing keys and ciphertexts with cereal.

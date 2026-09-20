@@ -47,6 +47,20 @@ void CMUXFFTwithPolynomialMulByXaiMinusOne(TRLWE<P> &acc,
                                            const TRGSWFFT<P> &trgswfft,
                                            const typename P::T a)
 {
+    if constexpr (P::l̅ > 1) {
+        // The fused path below indexes one FFT row per primary digit.
+        // DD keys instead store lbar auxiliary rows for each primary digit;
+        // use the DD-aware external product and its limb recombination.
+        auto difference = std::make_unique<TRLWE<P>>();
+        for (int component = 0; component <= P::k; ++component)
+            PolynomialMulByXaiMinusOne<P>((*difference)[component],
+                                          acc[component], a);
+        ExternalProduct<P>(*difference, *difference, trgswfft);
+        for (int component = 0; component <= P::k; ++component)
+            for (int i = 0; i < P::n; ++i)
+                acc[component][i] += (*difference)[component][i];
+        return;
+    }
     alignas(64) TRLWEInFD<P> restrlwefft;
     alignas(64) Polynomial<P> rotated;
     alignas(64) PolynomialInFD<P> decpolyfft;

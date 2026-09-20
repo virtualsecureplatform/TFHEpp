@@ -12,11 +12,16 @@ double seconds(Clock::time_point a, Clock::time_point b) {
 }
 struct Timings {
     double forward=0, mult=0, reverse=0;
-    void print() const {
+    void print(size_t products) const {
         std::cout << std::setprecision(10)
                   << "forward_seconds=" << forward << "\nmult_seconds=" << mult
                   << "\nreverse_seconds=" << reverse
-                  << "\nevaluation_seconds=" << forward+mult+reverse << std::endl;
+                  << "\nevaluation_seconds=" << forward+mult+reverse
+                  << "\nforward_seconds_per_product=" << forward/products
+                  << "\nmult_seconds_per_product=" << mult/products
+                  << "\nreverse_seconds_per_product=" << reverse/products
+                  << "\nevaluation_seconds_per_product=" << (forward+mult+reverse)/products
+                  << std::endl;
     }
 };
 std::vector<std::pair<unsigned,unsigned>> inputs() {
@@ -70,7 +75,7 @@ void run_clpx(const std::vector<std::pair<unsigned,unsigned>>& pairs) {
         if (decoded!=x*y) throw std::runtime_error("CLPX mismatch: "+std::to_string(x)+"*"+std::to_string(y)+" got "+std::to_string(decoded));
         if (++done%16==0) std::cout << "Checked " << done << "/" << pairs.size() << std::endl;
     }
-    timing.print();
+    timing.print(pairs.size());
 }
 void run_ckks(const std::vector<std::pair<unsigned,unsigned>>& pairs) {
     using P=CKKSInteger4Param; using L=lvl2param;
@@ -106,14 +111,98 @@ void run_ckks(const std::vector<std::pair<unsigned,unsigned>>& pairs) {
         maxerror=std::max(maxerror,std::ldexp(std::abs(static_cast<long double>(static_cast<int64_t>(diff))),-48));
         if (++done%16==0) std::cout << "Checked " << done << "/" << pairs.size() << std::endl;
     }
-    timing.print();
+    timing.print(pairs.size());
     std::cout << "max_integer_unit_error=" << maxerror << std::endl;
 }
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+// Diagnostic decryption is called only after all evaluation timers stop.
+long double bfv_error(const TRLWE<BFVSwitchParam>& ct, unsigned expected,
+                      const Key<BFVSwitchParam>& key) {
+    using P=BFVSwitchParam;
+    const auto phase=trlwePhase<P>(ct,key);
+    long double error=0;
+    for (unsigned i=0;i<P::n;++i) {
+        const auto diff=phase[i]-(i==0 ? P::T{expected}*P::delta_int : P::T{0});
+        const auto magnitude=(diff>>(127)) ? P::T{0}-diff : diff;
+        error=std::max(error,std::ldexp(static_cast<long double>(magnitude),-112));
+    }
+    return error;
+}
+void run_bfv(const std::vector<std::pair<unsigned,unsigned>>& pairs) {
+    using P=BFVSwitchParam;
+    const auto start=Clock::now();
+    Key<lvl1param> io_key;
+    Key<lvlhalfparam> half_key;
+    Key<P> bfv_key;
+    keyGen<lvl1param>(io_key); keyGen<lvlhalfparam>(half_key); keyGen<P>(bfv_key);
+    TFHEBFVSwitchKey key;
+    TFHEBFVSwitchKeyGen(key,io_key,half_key,bfv_key);
+    std::cout << "key_generation_seconds=" << seconds(start,Clock::now()) << '\n'
+              << "bfv_ring_dimension=" << P::n << "\nbfv_ciphertext_bits=128"
+              << "\nbfv_plaintext_modulus=65536\nbfv_scale_bits=112"
+              << "\nbfv_alpha_log2=" << std::log2(P::α)
+              << "\nbfv_gadget_levels=" << P::l << "\nbfv_gadget_basebit=" << P::Bgbit
+              << "\nbfv_dd_levels=" << P::l̅ << "\nbfv_dd_basebit=" << P::B̅gbit
+              << "\nbfv_to_tfhe_levels=" << BFVToTFHEKeySwitchParam::t
+              << "\nbfv_to_tfhe_basebit=" << BFVToTFHEKeySwitchParam::basebit
+              << "\ntfhe_io_n=" << lvl1param::n
+              << "\ntfhe_io_alpha_log2=" << std::log2(lvl1param::α)
+              << "\ntfhe_io_levels=" << lvl1param::l
+              << "\ntfhe_io_basebit=" << lvl1param::Bgbit
+              << "\ntfhe_half_n=" << lvlhalfparam::n
+              << "\ntfhe_half_alpha_log2=" << std::log2(lvlhalfparam::α)
+              << "\ntfhe_to_half_levels=" << lvl1hparam::t
+              << "\ntfhe_to_half_basebit=" << lvl1hparam::basebit
+              << "\nevaluation_key_bytes=" << sizeof(*key.to_half)+sizeof(*key.to_bfv)
+                    +sizeof(*key.packing)+sizeof(*key.relin)+sizeof(*key.to_tfhe)+sizeof(*key.boolean_bootstrap)
+              << "\nio_format=boolean_bits\n" << std::flush;
+    Timings timing;
+    long double forward_error=0, product_error=0;
+    size_t done=0;
+    for (const auto& [x,y]:pairs) {
+        BFVSwitchInput xc,yc;
+        for (unsigned i=0;i<8;++i) {
+            tlweSymEncrypt<lvl1param>(xc[i],((x>>i)&1)?lvl1param::μ:-lvl1param::μ,lvl1param::α,io_key);
+            tlweSymEncrypt<lvl1param>(yc[i],((y>>i)&1)?lvl1param::μ:-lvl1param::μ,lvl1param::α,io_key);
+        }
+        auto a=std::make_unique<TRLWE<P>>();
+        auto b=std::make_unique<TRLWE<P>>();
+        auto product=std::make_unique<TRLWE<P>>();
+        BFVSwitchOutput result;
+        const auto t0=Clock::now();
+        TFHEToBFV(*a,xc,key); TFHEToBFV(*b,yc,key);
+        const auto t1=Clock::now();
+        TRLWEMultFullDD<P>(*product,*a,*b,*key.relin);
+        const auto t2=Clock::now();
+        BFVToTFHE(result,*product,key);
+        const auto t3=Clock::now();
+        timing.forward+=seconds(t0,t1); timing.mult+=seconds(t1,t2); timing.reverse+=seconds(t2,t3);
+        unsigned decoded=0;
+        for (unsigned i=0;i<16;++i)
+            decoded|=unsigned(tlweSymDecrypt<lvl1param>(result[i],io_key))<<i;
+        if (decoded!=x*y)
+            throw std::runtime_error("BFV mismatch: "+std::to_string(x)+"*"+std::to_string(y)+" got "+std::to_string(decoded));
+        forward_error=std::max({forward_error,bfv_error(*a,x,bfv_key),bfv_error(*b,y,bfv_key)});
+        product_error=std::max(product_error,bfv_error(*product,x*y,bfv_key));
+        if (++done%16==0) std::cout << "Checked " << done << "/" << pairs.size() << std::endl;
+    }
+    timing.print(pairs.size());
+    std::cout << "max_forward_integer_unit_error=" << forward_error
+              << "\nmax_product_integer_unit_error=" << product_error << std::endl;
+}
+#endif
 int main(int argc,char** argv) try {
-    if (argc!=2) throw std::invalid_argument("usage: scheme_switch_comparison clpx|ckks");
+    if (argc!=2) throw std::invalid_argument("usage: scheme_switch_comparison clpx|ckks|bfv");
     const auto pairs=inputs();
     if (std::string_view(argv[1])=="clpx") run_clpx(pairs);
     else if (std::string_view(argv[1])=="ckks") run_ckks(pairs);
+    else if (std::string_view(argv[1])=="bfv") {
+#ifdef TFHEPP_DEFAULT_128BIT_PARAMS
+        run_bfv(pairs);
+#else
+        throw std::invalid_argument("BFV switching requires default 128-bit parameters (USE_BLOCK_BINARY=OFF)");
+#endif
+    }
     else throw std::invalid_argument("unknown scheme");
     std::cout << "Products=" << pairs.size() << " Passed" << std::endl;
 } catch (const std::exception& e) {std::cerr << e.what() << std::endl;return 1;}

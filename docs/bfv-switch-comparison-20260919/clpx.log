@@ -1,0 +1,26 @@
+key_generation_seconds=5.57618
+Checked 16/256
+Checked 32/256
+Checked 48/256
+Checked 64/256
+Checked 80/256
+Checked 96/256
+Checked 112/256
+Checked 128/256
+Checked 144/256
+Checked 160/256
+Checked 176/256
+Checked 192/256
+Checked 208/256
+Checked 224/256
+Checked 240/256
+Checked 256/256
+forward_seconds=30.87844103
+mult_seconds=0.033097418
+reverse_seconds=797.9855479
+evaluation_seconds=828.8970863
+forward_seconds_per_product=0.1206189103
+mult_seconds_per_product=0.0001292867891
+reverse_seconds_per_product=3.117131046
+evaluation_seconds_per_product=3.237879243
+Products=256 Passed

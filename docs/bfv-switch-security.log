@@ -1,0 +1,24 @@
+tfhe_io: primal_usvp
+  133.4001 bits
+tfhe_io: primal_bdd
+  130.7582 bits
+tfhe_io: dual
+  135.7978 bits
+tfhe_io: dual_hybrid
+  129.6484 bits
+tfhe_half: primal_usvp
+  137.2958 bits
+tfhe_half: primal_bdd
+  133.6381 bits
+tfhe_half: dual
+  141.1368 bits
+tfhe_half: dual_hybrid
+  129.4624 bits
+bfv_ring: primal_usvp
+  131.0387 bits
+bfv_ring: primal_bdd
+  130.2678 bits
+bfv_ring: dual
+  131.6781 bits
+bfv_ring: dual_hybrid
+  130.2096 bits

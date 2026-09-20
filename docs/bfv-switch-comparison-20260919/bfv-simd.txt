@@ -1,0 +1,5 @@
+SIMD slot operations test
+  n=4096  t=114689  l̅=8  B̅gbit=16
+  Testing SIMD addition... PASS
+  Testing SIMD multiplication (TRLWEMultFullDD)... PASS
+PASS (all SIMD ops tests)
