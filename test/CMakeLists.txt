@@ -24,6 +24,7 @@ foreach(test_source ${test_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
     get_filename_component(test_dir ${test_source} DIRECTORY)
     if((test_name STREQUAL "bfv_scheme_switch" OR
+        test_name STREQUAL "bfv16_reverse" OR
         test_name STREQUAL "cmux_double_decomposition") AND NOT default_parameter_set)
         continue()
     endif()

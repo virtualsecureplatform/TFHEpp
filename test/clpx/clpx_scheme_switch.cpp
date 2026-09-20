@@ -42,7 +42,6 @@ int main()
         using bkP02 = TFHEpp::CLPX2TFHElvlh2param;
         using iksP20 = TFHEpp::lvl2hparam;
         using bigP = TFHEpp::SS2CLPXlvl2param;
-        constexpr uint32_t validbit = 16;
 
         TFHEpp::SecretKey sk;
         TFHEpp::EvalKey ek;
@@ -52,15 +51,25 @@ int main()
         ek.emplacebkfft<bkP01>(sk);
         ek.emplacebkfft<bkP02>(sk);
 
-        for (const uint32_t plaintext : {0x2029U, 0x6029U, 0xa029U,
-                                         0xe029U}) {
+        // Include short first/final blocks for both reverse decompositions.
+        // The old batch-dependent scale decoded 0 as 2^16 at width 18.
+        for (const auto [validbit, plaintext] :
+             std::array<std::pair<uint32_t, uint32_t>, 10>{{
+                 {16, 0x2029U}, {16, 0x6029U}, {16, 0xa029U}, {16, 0xe029U},
+                 {2, 0}, {2, 3}, {18, 0}, {18, 0x3ffffU},
+                 {24, 0}, {24, 0xffffffU}}}) {
             const auto encoded = TFHEpp::EncodeHatEncoderP<bigP>(plaintext);
             const auto big = TFHEpp::clpxSymIntEncrypt<bigP>(
                 encoded, sk.key.getIndependent<bigP>());
 
+          for (const bool base4 : {false, true}) {
             std::vector<TFHEpp::TLWE<typename iksP10::domainP>> out(validbit);
-            TFHEpp::CLPX2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02,
-                                        iksP20, 5, 4>(out, big, ek, sk);
+            if (base4)
+                TFHEpp::CLPX2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02,
+                                            iksP20, 5, 4>(out, big, ek, sk);
+            else
+                TFHEpp::CLPX2TLWESIKSanybit<iksP10, iksP21, bkP01, bkP02,
+                                            iksP20, 9, 2>(out, big, ek, sk);
 
             uint32_t decoded = 0;
             for (uint32_t bit = 0; bit < validbit; bit++) {
@@ -75,6 +84,7 @@ int main()
                           << plaintext << std::endl;
                 return 1;
             }
+          }
         }
     }
 

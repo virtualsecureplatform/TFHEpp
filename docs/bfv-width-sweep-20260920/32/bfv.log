@@ -1,0 +1,26 @@
+operand_bits=32
+product_bits=64
+key_generation_seconds=21.3522
+bfv_ring_dimension=4096
+bfv_ciphertext_bits=128
+bfv_plaintext_modulus=18446744073709551616
+bfv_scale_bits=64
+bfv_alpha_log2=-105
+bfv_gadget_levels=4
+bfv_gadget_basebit=21
+bfv_dd_levels=8
+bfv_dd_basebit=16
+bfv_to_tfhe_levels=7
+bfv_to_tfhe_basebit=2
+tfhe_io_n=1024
+tfhe_io_alpha_log2=-25
+tfhe_io_levels=3
+tfhe_io_basebit=6
+tfhe_half_n=760
+tfhe_half_alpha_log2=-17
+tfhe_to_half_levels=10
+tfhe_to_half_basebit=3
+evaluation_key_bytes=3649437696
+io_format=boolean_bits
+failed_product_integer_unit_error=9.21383e+18
+BFV mismatch: 0*4294967295 got 15097240616735441842

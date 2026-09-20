@@ -1,0 +1,271 @@
+{
+  "parameters": {
+    "products": 256,
+    "target_failure_bits": 40,
+    "ring_n": 4096,
+    "qbits": 128,
+    "plaintext_bits": 24,
+    "ring_alpha_log2": -105,
+    "ring_levels": 4,
+    "ring_basebit": 21,
+    "io_n": 1024,
+    "io_alpha_log2": -25,
+    "io_levels": 3,
+    "io_basebit": 6,
+    "half_n": 760,
+    "half_alpha_log2": -17,
+    "to_half_levels": 10,
+    "to_half_basebit": 3,
+    "to_io_levels": 7,
+    "to_io_basebit": 2,
+    "boolean_fft_error": 9.5367431640625e-07
+  },
+  "primitive_assumed_subgaussian_scales": {
+    "input": 2.9802322387695312e-08,
+    "ks1h": 0.0007720404444110023,
+    "ks31": 0.0009207257840074927,
+    "br3": 0.0004870080242344492,
+    "br1": 0.0019480320969377967,
+    "pbs3": 7.601320933270511e-23,
+    "pbs1": 0.0013158048551056708,
+    "auto3": 4.0797639572546e-23,
+    "relin3": 4.0797639572546e-23
+  },
+  "events": {
+    "input": 6144,
+    "ks1h": 12544,
+    "ks31": 3328,
+    "br3": 6144,
+    "br1": 9216,
+    "pbs3": 6144,
+    "pbs1": 9216,
+    "auto3": 25165824,
+    "relin3": 1048576
+  },
+  "total_events": 26267136,
+  "maximum_uniform_cutoff": 0.018845934562331558,
+  "cutoff_with_slack": 0.01865747521670824,
+  "conditional_log2_failure": 0.0,
+  "meets_target_conditionally": false,
+  "evaluation_key_bytes": 3649437696,
+  "assumptions": [
+    "Each modeled primitive error obeys the stated sub-Gaussian tail uniformly over this circuit's inputs; variance estimates alone do not prove this.",
+    "All DD FFT integer digit convolutions, including key generation and BFV tensor multiplication, round exactly; this is not a proved floating-point bound.",
+    "Non-DD Boolean PBS numerical error is bounded by boolean_fft_error in normalized torus units.",
+    "Primitive marginal bounds apply with reused keys and dependent ciphertexts; no independence between circuit errors is assumed in composition.",
+    "Uniform ternary ring/IO secrets and uniform binary half-level secrets, using the source parameter family."
+  ],
+  "envelope": {
+    "errors": {
+      "input": 5.560360913487745e-10,
+      "ks1h": 1.4404325457894694e-05,
+      "ks31": 1.717841849650406e-05,
+      "br3": 9.086340142492283e-06,
+      "br1": 3.634536056996913e-05,
+      "pbs3": 1.4182145692674012e-24,
+      "pbs1": 2.550327079056468e-05,
+      "auto3": 7.611809492249725e-25,
+      "relin3": 7.611809492249725e-25
+    },
+    "forward_error": 2.6152746222052964e-23,
+    "product_error": 1.4729876079900656e-08,
+    "checks": {
+      "forward_boolean_address": {
+        "error": 2.3491221636478324e-05,
+        "radius": 0.125,
+        "passes": true
+      },
+      "bfv_plaintext_rounding": {
+        "error": 1.4729876079900656e-08,
+        "radius": 2.9802322387695312e-08,
+        "passes": true
+      },
+      "guard_digit_address": {
+        "error": 0.24719424075025093,
+        "radius": 0.25,
+        "passes": true
+      },
+      "output_boolean_decryption": {
+        "error": 2.550327079056468e-05,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_1_correction": {
+        "error": 0.06187500953674657,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_1_low_bit": {
+        "error": 0.12371367371292318,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_1_high_bit": {
+        "error": 0.06187500953674657,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_2_correction": {
+        "error": 0.015538825915672844,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_2_low_bit": {
+        "error": 0.031041306470775718,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_2_high_bit": {
+        "error": 0.015538825915672844,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_3_correction": {
+        "error": 0.00395478001040441,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_3_low_bit": {
+        "error": 0.007873214660238851,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_3_high_bit": {
+        "error": 0.00395478001040441,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_4_correction": {
+        "error": 0.0010587685340873022,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_4_low_bit": {
+        "error": 0.002081191707604635,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_4_high_bit": {
+        "error": 0.0010587685340873022,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_5_correction": {
+        "error": 0.00033476566500802494,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_5_low_bit": {
+        "error": 0.0006331859694460807,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_5_high_bit": {
+        "error": 0.00033476566500802494,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_6_correction": {
+        "error": 0.00015376494773820565,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_6_low_bit": {
+        "error": 0.00027118453490644216,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_6_high_bit": {
+        "error": 0.00015376494773820565,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_7_correction": {
+        "error": 0.00010851476842075084,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_7_low_bit": {
+        "error": 0.00018068417627153255,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_7_high_bit": {
+        "error": 0.00010851476842075084,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_8_correction": {
+        "error": 9.720222359138714e-05,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_8_low_bit": {
+        "error": 0.00015805908661280514,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_8_high_bit": {
+        "error": 9.720222359138714e-05,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_9_correction": {
+        "error": 9.43740873840462e-05,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_9_low_bit": {
+        "error": 0.00015240281419812328,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_9_high_bit": {
+        "error": 9.43740873840462e-05,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_10_correction": {
+        "error": 9.366705333221099e-05,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_10_low_bit": {
+        "error": 0.00015098874609445283,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_10_high_bit": {
+        "error": 9.366705333221099e-05,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_11_correction": {
+        "error": 9.349029481925216e-05,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_11_low_bit": {
+        "error": 0.0001506352290685352,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_11_high_bit": {
+        "error": 9.349029481925216e-05,
+        "radius": 0.0625,
+        "passes": true
+      },
+      "digit_12_low_bit": {
+        "error": 0.0001505468498120558,
+        "radius": 0.125,
+        "passes": true
+      },
+      "digit_12_high_bit": {
+        "error": 9.344610519101246e-05,
+        "radius": 0.0625,
+        "passes": true
+      }
+    },
+    "passes": true
+  }
+}

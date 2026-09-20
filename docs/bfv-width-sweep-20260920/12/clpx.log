@@ -1,0 +1,13 @@
+operand_bits=12
+product_bits=24
+key_generation_seconds=5.1291
+Checked 16/16
+forward_seconds=3.551666429
+mult_seconds=0.002081017
+reverse_seconds=78.81938544
+evaluation_seconds=82.37313288
+forward_seconds_per_product=0.2219791518
+mult_seconds_per_product=0.0001300635625
+reverse_seconds_per_product=4.92621159
+evaluation_seconds_per_product=5.148320805
+Products=16 Passed

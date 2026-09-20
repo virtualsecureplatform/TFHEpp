@@ -1,0 +1,14 @@
+test_all_uint16_reverse_values (test_bfv_switch.BFVSwitchTests.test_all_uint16_reverse_values) ... ok
+test_fail_closed (test_bfv_switch.BFVSwitchTests.test_fail_closed) ... ok
+test_paired_forward (test_bfv_switch.BFVSwitchTests.test_paired_forward) ... ok
+test_primitive_error_injections (test_bfv_switch.BFVSwitchTests.test_primitive_error_injections) ... ok
+test_search_and_multiplication_lift_terms (test_bfv_switch.BFVSwitchTests.test_search_and_multiplication_lift_terms) ... ok
+test_signed_product_error_and_carry_boundaries (test_bfv_switch.BFVSwitchTests.test_signed_product_error_and_carry_boundaries) ... ok
+test_target_and_union_bound (test_bfv_switch.BFVSwitchTests.test_target_and_union_bound) ... ok
+test_tuned_16bit_profile (test_bfv_switch.BFVSwitchTests.test_tuned_16bit_profile) ... ok
+test_wider_profiles_and_reference (test_bfv_switch.BFVSwitchTests.test_wider_profiles_and_reference) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 3.123s
+
+OK

@@ -1,0 +1,4 @@
+operand_bits=12
+product_bits=24
+key_generation_seconds=5.10789
+CLPX mismatch: 0*4095 got 4194304

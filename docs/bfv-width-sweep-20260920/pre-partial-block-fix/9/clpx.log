@@ -1,0 +1,4 @@
+operand_bits=9
+product_bits=18
+key_generation_seconds=5.13635
+CLPX mismatch: 0*511 got 65536

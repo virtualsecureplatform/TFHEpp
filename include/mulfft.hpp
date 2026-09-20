@@ -61,8 +61,28 @@ inline void MulInFD(std::array<double, N> &res,
 template <class P>
 inline constexpr bool is_lvl3_fft_compatible_v =
     std::is_same_v<P, lvl3param> || std::is_same_v<P, lvl3simdparam> ||
-    (std::is_same_v<typename P::T, __uint128_t> && P::n == lvl3param::n &&
-     P::nbit == lvl3param::nbit);
+    (std::is_same_v<typename P::T, __uint128_t> &&
+     ((P::n == lvl3param::n && P::nbit == lvl3param::nbit) ||
+      (P::n == 8192 && P::nbit == 13)));
+
+// Preserve the existing processor for 4096-coefficient profiles. The tuned
+// 16-bit BFV profile needs its own 8192-point processor (and thread-local
+// scratch), rather than reusing a smaller transform on a larger polynomial.
+template <class P>
+inline auto &UInt128DigitFFTProcessor()
+{
+    static_assert(is_lvl3_fft_compatible_v<P>);
+    if constexpr (P::n == lvl3param::n)
+        return fftplvl3;
+    else {
+#if TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT
+        static thread_local std::remove_reference_t<decltype(fftplvl3)> processor(P::n);
+        return processor;
+#else
+        static_assert(false_v<P>, "8192-point uint128 DD FFT requires a SPQLIOS backend");
+#endif
+    }
+}
 
 template <class P>
 inline constexpr bool is_multilimb_digit_fft_compatible_v =
@@ -186,7 +206,7 @@ inline void TwistFFT(Polynomial<P> &res, PolynomialInFD<P> &a)
         //    uint64_t(2^64-x) must become uint128_t(2^128-x), not (2^64-x).
         //    Without this, shifts < 64 bits produce wrong torus values.
         alignas(64) std::array<uint64_t, P::n> temp;
-        fftplvl3.execute_direct_torus64_rescale(temp.data(), a.data(), 1.0);
+        UInt128DigitFFTProcessor<P>().execute_direct_torus64_rescale(temp.data(), a.data(), 1.0);
         for (int i = 0; i < P::n; i++)
             res[i] = static_cast<__uint128_t>(
                 static_cast<__int128_t>(static_cast<int64_t>(temp[i])));
@@ -213,7 +233,7 @@ inline void TwistFFTAdd(Polynomial<P> &res, PolynomialInFD<P> &a)
     }
     else if constexpr (is_lvl3_fft_compatible_v<P>) {
         alignas(64) std::array<uint64_t, P::n> temp;
-        fftplvl3.execute_direct_torus64_rescale(temp.data(), a.data(), 1.0);
+        UInt128DigitFFTProcessor<P>().execute_direct_torus64_rescale(temp.data(), a.data(), 1.0);
         for (int i = 0; i < P::n; i++)
             res[i] += static_cast<__uint128_t>(
                 static_cast<__int128_t>(static_cast<int64_t>(temp[i])));
@@ -292,7 +312,7 @@ inline void TwistIFFT(PolynomialInFD<P> &res, const Polynomial<P> &a)
         alignas(64) std::array<uint64_t, P::n> temp;
         for (int i = 0; i < P::n; i++)
             temp[i] = static_cast<uint64_t>(a[i]);
-        fftplvl3.execute_reverse_torus64(res.data(), temp.data());
+        UInt128DigitFFTProcessor<P>().execute_reverse_torus64(res.data(), temp.data());
     }
 #ifdef USE_BLOCK_BINARY
     else if constexpr (std::is_same_v<P, blockbinaryaeslvl2param> ||

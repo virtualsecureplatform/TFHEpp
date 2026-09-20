@@ -1,0 +1,18 @@
+Generating BFV switching keys
+Keys ready
+PBS bit=0 decoded=0 phase/Delta=1.15267e-17
+Packed bit=0 decoded=0
+PBS bit=1 decoded=1 phase/Delta=1
+Packed bit=1 decoded=1
+Forward checked 0
+Forward checked 1
+Forward checked 128
+Forward checked 255
+Reverse boundary cases passed
+0*255=0
+1*255=255
+255*255=65025
+128*128=16384
+127*129=16383
+254*255=64770
+BFV scheme switching Passed

@@ -343,7 +343,7 @@ void CLPX2TLWESIKSAnyBit(
             const auto unit = typename bkP02::targetP::T(1)
                               << (std::numeric_limits<
                                   typename bkP02::targetP::T>::digits -
-                                  batch_num + i - carry_width);
+                                  block_size + i - carry_width);
             for (uint32_t interval = 0; interval < num_intervals;
                  interval++) {
                 // Blind rotation addresses 2N torus positions, so an N/8
@@ -372,10 +372,14 @@ void CLPX2TLWESIKSAnyBit(
                 sumpra[j] += rounded_digit[j];
         }
 
+        // HomDecomp always uses the full block_size-bit data window. Keep
+        // its weights and guard bias fixed even for a short final block;
+        // batch_num only limits how many input/output digits are processed.
+        // Scaling by batch_num moves the final digits into the carry window.
         sumpra[bkP02::targetP::n] += static_cast<typename bkP02::targetP::T>(
             typename bkP02::targetP::T(1)
             << (std::numeric_limits<typename bkP02::targetP::T>::digits -
-                batch_num - 6));
+                block_size - 6));
         std::array<TLWE<typename bkP01::targetP>, numdigit + carry_digits>
             sums;
         HomDecomp<iksP21, iksP10, bkP01, basebit,

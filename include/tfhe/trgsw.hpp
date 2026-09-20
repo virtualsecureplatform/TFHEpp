@@ -987,7 +987,9 @@ void trgswSymEncryptOneImpl(TRGSW<P> &trgsw, const NoiseType noise,
     if constexpr (P::l̅ > 1 || P::l̅ₐ > 1) {
         // Double Decomposition path
         constexpr int ordinary_rows = P::k * P::lₐ + P::l;
-        std::array<TRLWE<P>, ordinary_rows> ordinary_trgsw;
+        // DD profiles can exceed the main thread's default stack limit.
+        auto ordinary_storage = std::make_unique<std::array<TRLWE<P>, ordinary_rows>>();
+        auto &ordinary_trgsw = *ordinary_storage;
         for (auto &trlwe : ordinary_trgsw)
             trlweSymEncryptZero<P>(trlwe, noise, key);
 
@@ -1064,7 +1066,8 @@ void trgswSymEncryptImpl(TRGSW<P> &trgsw, const Polynomial<P> &p,
         // Double Decomposition path:
         // Step 1: Create ordinary TRGSW with k*lₐ + l rows
         constexpr int ordinary_rows = P::k * P::lₐ + P::l;
-        std::array<TRLWE<P>, ordinary_rows> ordinary_trgsw;
+        auto ordinary_storage = std::make_unique<std::array<TRLWE<P>, ordinary_rows>>();
+        auto &ordinary_trgsw = *ordinary_storage;
         for (auto &trlwe : ordinary_trgsw)
             trlweSymEncryptZero<P>(trlwe, noise, key);
 

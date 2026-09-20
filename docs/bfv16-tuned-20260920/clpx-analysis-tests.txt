@@ -1,0 +1,14 @@
+test_clpx_to_tfhe_block_matches_data_digits (python.test_clpx_noise.CLPXNoiseTest.test_clpx_to_tfhe_block_matches_data_digits) ... ok
+test_delta_b_approximation_variance (python.test_clpx_noise.CLPXNoiseTest.test_delta_b_approximation_variance) ... ok
+test_failure_probability_stays_in_log_domain (python.test_clpx_noise.CLPXNoiseTest.test_failure_probability_stays_in_log_domain) ... ok
+test_many_lut_uses_semantic_input_interval (python.test_clpx_noise.CLPXNoiseTest.test_many_lut_uses_semantic_input_interval) ... ok
+test_optimized_scheme_switch_decomposition (python.test_clpx_noise.CLPXNoiseTest.test_optimized_scheme_switch_decomposition) ... ok
+test_paper_w_transition (python.test_clpx_noise.CLPXNoiseTest.test_paper_w_transition) ... ok
+test_relinearization_width_is_not_delta_b_width (python.test_clpx_noise.CLPXNoiseTest.test_relinearization_width_is_not_delta_b_width) ... ok
+test_reverse_lvl2_candidate_keeps_four_gadget_rows (python.test_clpx_noise.CLPXNoiseTest.test_reverse_lvl2_candidate_keeps_four_gadget_rows) ... ok
+test_reverse_switch_candidates_have_expected_counts_and_margins (python.test_clpx_noise.CLPXNoiseTest.test_reverse_switch_candidates_have_expected_counts_and_margins) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.558s
+
+OK
