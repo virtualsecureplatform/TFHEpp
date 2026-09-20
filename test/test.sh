@@ -54,6 +54,8 @@ if [[ ${#TEST_BINARIES[@]} -eq 0 ]]; then
     exit 1
 fi
 IGNORED_BINARIES=(
+    # Argument-driven, long-running benchmark; run through its dedicated runner.
+    './clpx/scheme_switch_comparison'
     './tfhe/largelut_cmux_benchmark'
     './tfhe/largelut_random_key_diagnostic'
 )

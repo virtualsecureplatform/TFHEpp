@@ -48,6 +48,15 @@ jobs:
           # the plain "clang" metapackage still points at clang 21.
           - compiler: clang
             compiler_flags: -DCMAKE_CXX_COMPILER=clang++-22 -DCMAKE_C_COMPILER=clang-22
+          # Keep block-binary CKKS coverage above, and exercise the integer
+          # switching test separately with its required k=1 level topology.
+          - scheme: ckks-integer
+            compiler: clang
+            parameter_label: 128bit
+            parameter_flags: -DUSE_BLOCK_BINARY=OFF
+            compiler_flags: -DCMAKE_CXX_COMPILER=clang++-22 -DCMAKE_C_COMPILER=clang-22
+            build_targets: ckks_integer_multiplication
+            test_dirs: ckks
     steps:
       - name: Install libraries
         run: |

@@ -25,7 +25,9 @@ foreach(test_source ${test_sources})
     get_filename_component(test_dir ${test_source} DIRECTORY)
     if((test_name STREQUAL "bfv_scheme_switch" OR
         test_name STREQUAL "bfv16_reverse" OR
+        test_name STREQUAL "ckks_integer_multiplication" OR
         test_name STREQUAL "cmux_double_decomposition") AND NOT default_parameter_set)
+        # These switching tests require the default k=1 level topology.
         continue()
     endif()
     if((test_name STREQUAL "blockbinary_blindrotatefft" OR
