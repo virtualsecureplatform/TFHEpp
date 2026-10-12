@@ -1,0 +1,176 @@
+{
+  "scope": "Verified CPU 32-bit Montgomery arithmetic, natural-order negacyclic NTT and four-prime signed CRT building blocks. Not full-refresh qualification or achieved 10x performance.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "selector_reconstructions": 0,
+  "primes": [
+    1073479681,
+    1071513601,
+    1070727169,
+    1068236801
+  ],
+  "primality_verification": "Independent trial division through sqrt(p) in C++ test for all four primes.",
+  "ntt_degrees_checked": [
+    2,
+    8,
+    512,
+    16384,
+    65536
+  ],
+  "oracle_checks": 1079688,
+  "full_matrix_crt_coefficients_checked": 2097152,
+  "signed_convolution_oracle": "Independent int128 negacyclic convolution of signed 52-bit and 42-bit inputs; signed CRT also checked near full centered range.",
+  "selector_digit_bits": 52,
+  "selector_modulus_bits": 379,
+  "selector_digit_count": 8,
+  "source_table_scale_bits": 42,
+  "full_group_selector_count": 512,
+  "full_group_ring_degree": 16384,
+  "full_group_convolution_bound": "166153499473152226151350692269260800",
+  "centered_crt_limit": "657821220234910467805273421263929344",
+  "spectrum_payload_bytes_per_coefficient": 16,
+  "previous_spectrum_payload_bytes_per_coefficient": 16,
+  "native_test_exit_code": 0,
+  "portable_without_avx2_test_exit_code": 0,
+  "normal_cmake_build_and_test_exit_code": 0,
+  "native_observed_component_speedups": {
+    "matrix_seconds": 2.2020562836967223,
+    "transform_seconds": 1.1713546768899132
+  },
+  "timing_scope": "Single-process ABBA component observations. Matrix uses 8 OpenMP threads; transforms use one thread. New basis processes four primes, old basis two, with equal allocated spectrum bytes. Unpinned host. Full-refresh speedup unproven.",
+  "logs": {
+    "arithmetic": [
+      {
+        "oracle_checks": 1079688,
+        "passed": true
+      },
+      {
+        "small_primes": false,
+        "transform_seconds": 0.0524665
+      },
+      {
+        "small_primes": true,
+        "transform_seconds": 0.0448125
+      },
+      {
+        "small_primes": true,
+        "transform_seconds": 0.0448133
+      },
+      {
+        "small_primes": false,
+        "transform_seconds": 0.0525171
+      },
+      {
+        "small_primes": false,
+        "matrix_seconds": 0.089474
+      },
+      {
+        "small_primes": true,
+        "matrix_seconds": 0.0377989
+      },
+      {
+        "small_primes": true,
+        "matrix_seconds": 0.0371713
+      },
+      {
+        "small_primes": false,
+        "matrix_seconds": 0.0756146
+      },
+      {
+        "matrix_crt_coefficients": 2097152,
+        "passed": true
+      }
+    ],
+    "arithmetic-portable": [
+      {
+        "oracle_checks": 1079688,
+        "passed": true
+      },
+      {
+        "small_primes": false,
+        "transform_seconds": 0.120116
+      },
+      {
+        "small_primes": true,
+        "transform_seconds": 0.0737014
+      },
+      {
+        "small_primes": true,
+        "transform_seconds": 0.0737264
+      },
+      {
+        "small_primes": false,
+        "transform_seconds": 0.119411
+      },
+      {
+        "small_primes": false,
+        "matrix_seconds": 0.121366
+      },
+      {
+        "small_primes": true,
+        "matrix_seconds": 0.100756
+      },
+      {
+        "small_primes": true,
+        "matrix_seconds": 0.101009
+      },
+      {
+        "small_primes": false,
+        "matrix_seconds": 0.102291
+      },
+      {
+        "matrix_crt_coefficients": 2097152,
+        "passed": true
+      }
+    ],
+    "cmake-test": [
+      {
+        "oracle_checks": 1079688,
+        "passed": true
+      },
+      {
+        "small_primes": false,
+        "transform_seconds": 0.0527133
+      },
+      {
+        "small_primes": true,
+        "transform_seconds": 0.0452484
+      },
+      {
+        "small_primes": true,
+        "transform_seconds": 0.045236
+      },
+      {
+        "small_primes": false,
+        "transform_seconds": 0.0526735
+      },
+      {
+        "small_primes": false,
+        "matrix_seconds": 0.0952522
+      },
+      {
+        "small_primes": true,
+        "matrix_seconds": 0.0371766
+      },
+      {
+        "small_primes": true,
+        "matrix_seconds": 0.0382214
+      },
+      {
+        "small_primes": false,
+        "matrix_seconds": 0.0746671
+      },
+      {
+        "matrix_crt_coefficients": 2097152,
+        "passed": true
+      }
+    ]
+  },
+  "source_sha256": {
+    "include/modular_ntt32.hpp": "626d53be54c6a26cf62eea006c89ec90289627e34269de31701ddd060551ab33",
+    "test/common/modular_ntt32.cpp": "cbf691656b1bc1a371b27929ed93cab8c3f6b0fc26dfef80505e0f4afb8a6ede"
+  },
+  "completed_utc": "2026-10-12T12:30:48.081135+00:00"
+}

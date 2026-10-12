@@ -1,0 +1,253 @@
+#pragma once
+
+#include "modular_ntt.hpp"
+#include <algorithm>
+
+namespace TFHEpp::modular_ntt32 {
+
+// Each prime is below 2^30 and one modulo 2^17. Four primes support the
+// same exact 52-bit selector convolution without increasing spectrum bytes.
+inline constexpr std::array<modular_ntt::PrimeModulus, 4> primes{{
+    {1073479681, 11}, {1071513601, 23}, {1070727169, 11}, {1068236801, 3}}};
+inline constexpr unsigned __int128 crt_product = [] {
+    unsigned __int128 result = 1;
+    for (auto prime : primes) result *= prime.value;
+    return result;
+}();
+
+class Montgomery {
+    std::uint32_t modulus_, negative_inverse_, r_cubed_;
+public:
+    explicit Montgomery(std::uint64_t modulus) : modulus_(modulus)
+    {
+        if (!(modulus & 1) || modulus < 3 || modulus >= (1U << 30))
+            throw std::invalid_argument("Montgomery modulus must be odd and below 2^30");
+        std::uint32_t inverse = modulus;
+        for (unsigned i = 0; i < 5; ++i) inverse *= 2 - modulus * inverse;
+        negative_inverse_ = 0U - inverse;
+        const std::uint64_t radix = (std::uint64_t{1} << 32) % modulus;
+        const auto square = radix * radix % modulus;
+        r_cubed_ = square * radix % modulus;
+    }
+    std::uint32_t modulus() const { return modulus_; }
+    // t < p*2^32, hence t + m*p < 2^63 and the result is below 2p.
+    std::uint32_t reduceLazy(std::uint64_t t) const
+    {
+        const std::uint32_t m = std::uint32_t(t) * negative_inverse_;
+        return (t + std::uint64_t(m) * modulus_) >> 32;
+    }
+    std::uint32_t canonical(std::uint32_t value) const
+    { return value >= modulus_ ? value - modulus_ : value; }
+    std::uint32_t multiplyLazy(std::uint32_t a, std::uint32_t b) const
+    { return reduceLazy(std::uint64_t(a) * b); }
+    std::uint32_t multiply(std::uint32_t a, std::uint32_t b) const
+    { return canonical(multiplyLazy(a, b)); }
+    // Accept a complete unsigned selector digit, avoiding division per digit.
+    std::uint32_t encode(std::uint64_t value) const
+    {
+        if (value >= (std::uint64_t(modulus_) << 32))
+            throw std::invalid_argument("wide Montgomery input exceeds reduction range");
+        return multiply(canonical(reduceLazy(value)), r_cubed_);
+    }
+    std::uint32_t decode(std::uint32_t value) const
+    { return canonical(reduceLazy(value)); }
+#if defined(__AVX2__)
+    __m256i multiplyLazyVector(__m256i input, __m256i constant) const
+    {
+        const auto inverse = _mm256_set1_epi32(negative_inverse_);
+        const auto prime = _mm256_set1_epi32(modulus_);
+        auto even = _mm256_mul_epu32(input, constant);
+        auto odd = _mm256_mul_epu32(_mm256_srli_epi64(input, 32),
+                                   _mm256_srli_epi64(constant, 32));
+        const auto even_m = _mm256_mul_epu32(even, inverse);
+        const auto odd_m = _mm256_mul_epu32(odd, inverse);
+        even = _mm256_srli_epi64(_mm256_add_epi64(even,
+            _mm256_mul_epu32(even_m, prime)), 32);
+        odd = _mm256_srli_epi64(_mm256_add_epi64(odd,
+            _mm256_mul_epu32(odd_m, prime)), 32);
+        return _mm256_or_si256(even, _mm256_slli_epi64(odd, 32));
+    }
+    __m256i canonicalVector(__m256i value) const
+    {
+        return _mm256_min_epu32(value,
+            _mm256_sub_epi32(value, _mm256_set1_epi32(modulus_)));
+    }
+    __m256i accumulateVector(__m256i destination, __m256i input,
+                            __m256i selector) const
+    {
+        const auto sum = _mm256_add_epi32(destination,
+            multiplyLazyVector(input, selector));
+        // Both operands <2p, so sum <4p<2^32. Underflow of subtraction
+        // lies above every unreduced value below 2p; unsigned min reduces.
+        return _mm256_min_epu32(sum,
+            _mm256_sub_epi32(sum, _mm256_set1_epi32(2 * modulus_)));
+    }
+#endif
+    // Tables are ordinary residues; the selector is in Montgomery form.
+    // Destinations remain in [0,2p); canonicalize at a matrix tile boundary.
+    void addPair(std::uint32_t *first, std::uint32_t *second,
+                 const std::uint32_t *left, const std::uint32_t *right,
+                 std::size_t columns, std::uint32_t selector) const
+    {
+        std::size_t column = 0;
+#if defined(__AVX2__)
+        const auto fixed = _mm256_set1_epi32(selector);
+        if (columns == 4) {
+            const auto pack = [](const std::uint32_t *a, const std::uint32_t *b) {
+                return _mm256_inserti128_si256(_mm256_castsi128_si256(
+                    _mm_loadu_si128(reinterpret_cast<const __m128i *>(a))),
+                    _mm_loadu_si128(reinterpret_cast<const __m128i *>(b)), 1);
+            };
+            const auto result = accumulateVector(pack(first, second), pack(left, right), fixed);
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(first), _mm256_castsi256_si128(result));
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(second), _mm256_extracti128_si256(result, 1));
+            return;
+        }
+        for (; column + 8 <= columns; column += 8)
+            for (auto pair : {std::pair{first, left}, std::pair{second, right}}) {
+                const auto result = accumulateVector(
+                    _mm256_loadu_si256(reinterpret_cast<const __m256i *>(pair.first + column)),
+                    _mm256_loadu_si256(reinterpret_cast<const __m256i *>(pair.second + column)), fixed);
+                _mm256_storeu_si256(reinterpret_cast<__m256i *>(pair.first + column), result);
+            }
+#endif
+        for (; column < columns; ++column) {
+            auto a = first[column] + multiplyLazy(left[column], selector);
+            auto b = second[column] + multiplyLazy(right[column], selector);
+            first[column] = a >= 2 * modulus_ ? a - 2 * modulus_ : a;
+            second[column] = b >= 2 * modulus_ ? b - 2 * modulus_ : b;
+        }
+    }
+};
+
+class NegacyclicNTTPlan {
+    std::size_t size_;
+    Montgomery arithmetic_;
+    std::vector<std::pair<std::size_t, std::size_t>> swaps_;
+    std::vector<std::vector<std::uint32_t>> forward_, inverse_;
+    std::vector<std::uint32_t> twist_, untwist_;
+    void transform(std::span<std::uint32_t> values, bool inverse) const
+    {
+        for (auto [a, b] : swaps_) std::swap(values[a], values[b]);
+        const auto modulus = arithmetic_.modulus();
+        const auto &stages = inverse ? inverse_ : forward_;
+        std::size_t stage = 0;
+        for (std::size_t length = 2; length <= size_; length <<= 1, ++stage) {
+            const auto half = length / 2;
+            for (std::size_t block = 0; block < size_; block += length) {
+                std::size_t j = 0;
+#if defined(__AVX2__)
+                const auto prime = _mm256_set1_epi32(modulus);
+                for (; j + 8 <= half; j += 8) {
+                    const auto even = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(values.data()+block+j));
+                    const auto odd = arithmetic_.canonicalVector(arithmetic_.multiplyLazyVector(
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(values.data()+block+j+half)),
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(stages[stage].data()+j))));
+                    const auto sum = arithmetic_.canonicalVector(_mm256_add_epi32(even, odd));
+                    const auto difference = arithmetic_.canonicalVector(
+                        _mm256_sub_epi32(_mm256_add_epi32(even, prime), odd));
+                    _mm256_storeu_si256(reinterpret_cast<__m256i *>(values.data()+block+j), sum);
+                    _mm256_storeu_si256(reinterpret_cast<__m256i *>(values.data()+block+j+half), difference);
+                }
+#endif
+                for (; j < half; ++j) {
+                    const auto even = values[block+j];
+                    const auto odd = arithmetic_.multiply(values[block+j+half], stages[stage][j]);
+                    values[block+j] = arithmetic_.canonical(even+odd);
+                    values[block+j+half] = arithmetic_.canonical(even+modulus-odd);
+                }
+            }
+        }
+    }
+    void multiplyRows(std::span<std::uint32_t> values,
+                      const std::vector<std::uint32_t> &constants) const
+    {
+        std::size_t i = 0;
+#if defined(__AVX2__)
+        for (; i + 8 <= size_; i += 8) {
+            const auto result = arithmetic_.canonicalVector(arithmetic_.multiplyLazyVector(
+                _mm256_loadu_si256(reinterpret_cast<const __m256i *>(values.data()+i)),
+                _mm256_loadu_si256(reinterpret_cast<const __m256i *>(constants.data()+i))));
+            _mm256_storeu_si256(reinterpret_cast<__m256i *>(values.data()+i), result);
+        }
+#endif
+        for (; i < size_; ++i) values[i] = arithmetic_.multiply(values[i], constants[i]);
+    }
+public:
+    // Values must be canonical. Ordinary and Montgomery residues both keep
+    // their representation through these linear transforms.
+    NegacyclicNTTPlan(std::size_t size, modular_ntt::PrimeModulus prime)
+        : size_(size), arithmetic_(prime.value), twist_(size), untwist_(size)
+    {
+        const auto modulus = arithmetic_.modulus();
+        if (!modular_ntt::isPowerOfTwo(size) || size < 2 || (modulus-1) % (2*size))
+            throw std::invalid_argument("unsupported small-prime NTT degree");
+        const auto psi = modular_ntt::power(prime.primitive_root, (modulus-1)/(2*size), modulus);
+        if (modular_ntt::power(psi, size, modulus) != modulus-1)
+            throw std::invalid_argument("invalid small-prime NTT root");
+        const auto inverse_psi = modular_ntt::invert(psi, modulus);
+        const auto inverse_size = modular_ntt::invert(size, modulus);
+        std::uint64_t a = 1, b = inverse_size;
+        for (std::size_t i = 0; i < size; ++i) {
+            twist_[i] = arithmetic_.encode(a); untwist_[i] = arithmetic_.encode(b);
+            a = a*psi % modulus; b = b*inverse_psi % modulus;
+        }
+        for (std::size_t i = 1, reversed = 0; i < size; ++i) {
+            std::size_t bit = size/2;
+            for (; reversed & bit; bit >>= 1) reversed ^= bit;
+            reversed ^= bit;
+            if (i < reversed) swaps_.emplace_back(i, reversed);
+        }
+        for (std::size_t length = 2; length <= size; length <<= 1) {
+            forward_.emplace_back(length/2); inverse_.emplace_back(length/2);
+            const auto root = modular_ntt::power(psi, 2*size/length, modulus);
+            const auto inverse_root = modular_ntt::invert(root, modulus);
+            a = b = 1;
+            for (std::size_t j = 0; j < length/2; ++j) {
+                forward_.back()[j] = arithmetic_.encode(a);
+                inverse_.back()[j] = arithmetic_.encode(b);
+                a = a*root % modulus; b = b*inverse_root % modulus;
+            }
+        }
+    }
+    const Montgomery &arithmetic() const { return arithmetic_; }
+    void forward(std::span<std::uint32_t> values) const
+    {
+        if (values.size() != size_) throw std::invalid_argument("NTT input length mismatch");
+        multiplyRows(values, twist_); transform(values, false);
+    }
+    void inverse(std::span<std::uint32_t> values) const
+    {
+        if (values.size() != size_) throw std::invalid_argument("NTT input length mismatch");
+        transform(values, true); multiplyRows(values, untwist_);
+    }
+};
+
+class FourPrimeCRT {
+    std::array<std::uint64_t, 4> inverses_{}, radix_residues_{};
+public:
+    FourPrimeCRT()
+    {
+        unsigned __int128 product = primes[0].value;
+        for (std::size_t i = 1; i < 4; ++i) {
+            inverses_[i] = modular_ntt::invert(product % primes[i].value, primes[i].value);
+            product *= primes[i].value;
+        }
+        for (std::size_t i = 0; i < 4; ++i)
+            radix_residues_[i] = (static_cast<unsigned __int128>(1) << 64) % primes[i].value;
+    }
+    __int128 reconstructSigned(const std::array<std::uint32_t, 4> &residues) const
+    {
+        unsigned __int128 value = residues[0], product = primes[0].value;
+        for (std::size_t i = 1; i < 4; ++i) {
+            const auto prime = primes[i].value;
+            const auto reduced = (std::uint64_t(value) % prime +
+                std::uint64_t(value >> 64) * radix_residues_[i]) % prime;
+            const auto digit = (residues[i] + prime - reduced) * inverses_[i] % prime;
+            value += product * digit; product *= prime;
+        }
+        return value > crt_product/2 ? -static_cast<__int128>(crt_product-value)
+                                     : static_cast<__int128>(value);
+    }
+};
+} // namespace TFHEpp::modular_ntt32
