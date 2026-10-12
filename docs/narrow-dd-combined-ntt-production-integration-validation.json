@@ -1,0 +1,43 @@
+{
+  "scope": "Promoted the combined CPU backend and real/complex retained runners only after full real, complex, default-regression and saved-artifact validation passed. Headers exactly match qualified isolated snapshots; runner includes made relative. Current-production build/lifecycle verification follows.",
+  "updated_utc": "2026-10-12T01:52:26.459579+00:00",
+  "production_promoted": true,
+  "headers_match_qualified_sources": true,
+  "runners_match_prepared_sources": true,
+  "current_production_checks_complete": true,
+  "header_sha256": {
+    "narrow_bootstrapping.hpp": "b0d7644937d1d585cf385463aa72eb3dec890ec40e3d44115f7bba5bea54feda",
+    "narrow_selector_projection.hpp": "c6cdb7d4c5b7cbae0216fc6bb790a746f68d324cc1473bbfd17d33707b5f0420",
+    "narrow_dd_ntt.hpp": "f5bf7818e43c4d5bcc7eefc31c0a54920078ca7be21a858c8b81a23b89e06cde",
+    "narrow_auto_ntt.hpp": "0ffad925553faa230e6e68bfe12d0e49152a8c2add3945f959bf3e26c29849ea",
+    "public_auto_ntt.hpp": "84790360f1e0818b306382a909cf1d67ab366266bfc82629ed2bfed51eca44a2"
+  },
+  "runner_sha256": {
+    "test/ckks/ckks_narrow_ll14_ntt_fbs.cpp": "03be3d87311ceeabffbcf274c0dba2566ae364ff7d01cec448075602d51de140",
+    "test/ckks/ckks_narrow_ll14_ntt_complex_fbs.cpp": "387f8f7a94330e9d49e5d370046aeaa28502f5bf2996e625d7b0513f14766627"
+  },
+  "cmake_sha256": "7b93fdb88724f252a315825838ae45cdefb15ea8825cdf4f424d5527b408b046",
+  "current_real_build_actual_exit_code": 0,
+  "current_complex_build_actual_exit_code": 0,
+  "lifecycle_actual_exit_code": 0,
+  "lifecycle_archive_sha256": "6e44bce123d1e001e4b9e87959090c2b14568491ace331cb37a1f7b72a6bee4d",
+  "qualified_headers_matching_production": 96,
+  "all_checks_passed": true,
+  "cmake_configuration_actual_exit_code": 0,
+  "cmake_build_actual_exit_code": 0,
+  "cmake_targets": {
+    "ckks_narrow_ll14_ntt_fbs": {
+      "binary_sha256": "c95326849b23b5f096b9730f9a196af06a27fff82e37e688d46d144e45f076ce",
+      "compile_workaround_present": true,
+      "link_workaround_present": true,
+      "usage_check_exit_code": 1
+    },
+    "ckks_narrow_ll14_ntt_complex_fbs": {
+      "binary_sha256": "d5eb590cb2c397223d64120ba16a974d2367f4b5bbeb111a0e0cb84d806354ae",
+      "compile_workaround_present": true,
+      "link_workaround_present": true,
+      "usage_check_exit_code": 1
+    }
+  },
+  "current_cuda_exclusion_passed": true
+}

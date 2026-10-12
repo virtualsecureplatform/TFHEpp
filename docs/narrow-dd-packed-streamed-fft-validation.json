@@ -1,0 +1,92 @@
+{
+  "observed_at_utc": "2026-10-10T09:35:20.667493+00:00",
+  "scope": "N512 Q422 packed extraction, reused public key and ordered pre-change ciphertext reference, two cached depths",
+  "implementation": "Uncached switches sum primary rows in Fourier space and transform raw key digits on demand",
+  "build_actual_exit_code": 0,
+  "streamed_test_session": 13293,
+  "raw_baseline_test_session": 49410,
+  "fixture_files": {
+    "packed.bin": {
+      "bytes": 54935625,
+      "sha256": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2"
+    },
+    "terms.bin": {
+      "bytes": 117458945,
+      "sha256": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+    }
+  },
+  "fixture_unchanged": true,
+  "new_keys_generated": false,
+  "source_sha256": {
+    "include/ckks/prepared_auto.hpp": "7106c632b9c880c3cabe2fc6eed37608b92045f3018e32b322d09e88b3b2fb5c",
+    "include/ckks/narrow_bootstrapping.hpp": "d719068e49c98cc881c82b2c15f18103195943a4ef6e68781ff2c397f8e5a4ca",
+    "test/ckks/ckks_narrow_packed_cache_profile.cpp": "4431e4205c068bddd24bb34dbde9c1686df4acd11eb72a4e1690ba946571fecd"
+  },
+  "streamed_executable_sha256": "41ec78b254483c21f0f58c54e8c1d43686d4c6720571acbba14e162c3c6321ac",
+  "raw_baseline_executable_sha256": "5fe5c5c1da8829c74d7860576588a180482d12de658535da897aa3f0d2c77146",
+  "raw_baseline_source": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-streamed-fft-20261010/raw_baseline.cpp",
+  "raw_baseline_source_sha256": "96509e15b12eee011bd7db9fe6a3eb92665d7bf95cb7bf41158abe885f7ec059",
+  "raw_baseline_method": "Include prepared_auto.hpp first, then macro-route only extraction CKKSEvalAutoStreamedFFT calls to original CKKSEvalAuto; same build flags and libraries",
+  "omp_threads": 4,
+  "points": {
+    "streamed": {
+      "n": 512,
+      "packed_log_q": 422,
+      "cached_depths": 2,
+      "cache_bytes": 184090624,
+      "prepare_seconds": 0.114564434,
+      "extraction_seconds": 57.783868152,
+      "terms": 2048,
+      "coefficients": 2097152,
+      "reference_written": false,
+      "ordered_terms_identical": true,
+      "actual_exit_code": 0,
+      "user_cpu_seconds": 110.51,
+      "peak_rss_kib": 249096,
+      "report": {
+        "path": "TFHEpp/docs/ckks-streamed-packed-depth2.json",
+        "sha256": "ca8444ccfbfa2998d18b340694ae2078f181a9f70e44b24b7c2007bb8abc8661"
+      },
+      "time_log": {
+        "path": "TFHEpp/docs/ckks-streamed-packed-depth2-time.log",
+        "sha256": "792a5873bc8dabc5ce0054bd22691a06fc857f5e28090ad93163bcb13b526e7c"
+      }
+    },
+    "raw": {
+      "n": 512,
+      "packed_log_q": 422,
+      "cached_depths": 2,
+      "cache_bytes": 184090624,
+      "prepare_seconds": 0.122403906,
+      "extraction_seconds": 70.410267913,
+      "terms": 2048,
+      "coefficients": 2097152,
+      "reference_written": false,
+      "ordered_terms_identical": true,
+      "actual_exit_code": 0,
+      "user_cpu_seconds": 171.78,
+      "peak_rss_kib": 249080,
+      "report": {
+        "path": "TFHEpp/docs/ckks-raw-packed-depth2-current.json",
+        "sha256": "7ba2d661baacebca385d78d836ac6279c3bad79b7cab19110785cb5c7abd0ccb"
+      },
+      "time_log": {
+        "path": "TFHEpp/docs/ckks-raw-packed-depth2-current-time.log",
+        "sha256": "6367909219a426a492b4ec2e7c514c544286d56f575129923e9d4d0ddd16677a"
+      }
+    }
+  },
+  "observed_wall_time_ratio": 1.2185108087223646,
+  "observed_user_cpu_ratio": 1.5544294633969775,
+  "exact_ordered_terms_passed": true,
+  "coefficients_compared_per_run": 2097152,
+  "full_ring_optimization_validated": false,
+  "online_refresh_optimization_validated": false,
+  "security_validated": false,
+  "goal_complete": false,
+  "limitations": [
+    "One trial per path, sequential runs under concurrent full-ring CPU load; timing ratio is observational",
+    "Full-ring live checkpoint retains pre-change pinned executable",
+    "No full-ring speedup or paper performance reproduction established"
+  ]
+}

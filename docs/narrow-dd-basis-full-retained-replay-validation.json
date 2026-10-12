@@ -1,0 +1,71 @@
+{
+  "observed_at_utc": "2026-10-11T01:11:29.185607+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Completed original frozen N32768 initial and retained-key all-function replay, independent saved-input/refresh/square/normalized-square checks, exact initial/replay ciphertext identity and 37 retained-file hashes unchanged. Does not qualify latest-source full refresh, paper performance or structured-key security.",
+  "actual_controller_exit_code": 0,
+  "controller_evidence": "TFHEpp/docs/narrow-dd-basis-full-current-checkpoint-validation.json",
+  "controller_evidence_sha256": "bf71658667ec550d3be17d74b31d39a4ad6f79ddc428703d31fff56b2f0bb8fa",
+  "executable_sha256": "13ef030801b5a9c28d470290cf4d0630964bcf6dac6030fe6065bb3e92e59970",
+  "initial_fixture_generation_count": 1,
+  "replay_fresh_keys_generated": false,
+  "checkpoint_files_unchanged": true,
+  "checkpoint_files_checked": 37,
+  "ciphertext_identity": {
+    "sigmoid": true,
+    "gelu": true,
+    "tanh": true
+  },
+  "replay_independent": {
+    "sigmoid": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 32768,
+      "function": "sigmoid",
+      "metrics": {
+        "fresh_input_max_error": 9.033599188412621e-11,
+        "max_error": 5.263058323660706e-09,
+        "post_refresh_product_max_error": 9.472418715013627e-09,
+        "square_normalization_max_error": 2.692538244943504e-09
+      },
+      "product_tolerance": 4.50319595316329e-07,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    },
+    "gelu": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 32768,
+      "function": "gelu",
+      "metrics": {
+        "fresh_input_max_error": 9.033599188412621e-11,
+        "max_error": 1.5541199769161976e-08,
+        "post_refresh_product_max_error": 1.262155845454321e-07,
+        "square_normalization_max_error": 2.15174226503516e-09
+      },
+      "product_tolerance": 1.4678657411332307e-06,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    },
+    "tanh": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 32768,
+      "function": "tanh",
+      "metrics": {
+        "fresh_input_max_error": 9.033599188412621e-11,
+        "max_error": 2.0760775289823365e-08,
+        "post_refresh_product_max_error": 5.73710758396451e-08,
+        "square_normalization_max_error": 2.3742523121777745e-09
+      },
+      "product_tolerance": 4.5615794863043815e-07,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    }
+  },
+  "refresh_seconds": {
+    "sigmoid": 4231.094612951,
+    "gelu": 4803.120858271,
+    "tanh": 6245.2193375
+  },
+  "current_source_full_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false
+}

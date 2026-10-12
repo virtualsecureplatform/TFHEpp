@@ -1,0 +1,151 @@
+{
+  "utc": "2026-10-10T06:28:18.926371+00:00",
+  "scope": "Actual packed N16384 Q48 fixed-sign-count uniform sparse proxy; preserve raw optimizer outputs and revalidate expanded search limit. No keys generated.",
+  "n": 16384,
+  "log_q": 48,
+  "sigma": 3.2,
+  "source_sha256": "529022871973ec19ed6db3524e336b2198f3f2bdd1c4653ff46660c59642885a",
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "available_memory_bytes": 113880489984,
+  "required_available_memory_bytes": 74588327936,
+  "per_process_address_space_limit_bytes": 2147483648,
+  "test_total_virtual_reserve_bytes": 12884901888,
+  "outer_container_address_space_limit_bytes": 8589934592,
+  "first_launch_failed_before_estimator": true,
+  "first_launch_error": "Go container runtime pthread_create failure under outer 2GiB cap; no estimator report written",
+  "existing_benchmark_pid": 1910341,
+  "existing_benchmark_start_ticks": 225941687,
+  "existing_benchmark_rss_bytes": 17753468928,
+  "launch_eligible": true,
+  "terminal": true,
+  "runs": [
+    {
+      "label": "default",
+      "actual_exit_code": 1,
+      "report": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_ll14_packed_q48_raw_default.json",
+      "report_sha256": "4e809f385ba50b3daf26eabbcec0888bed3af200b48866500548a3b6ff2088d2",
+      "time_log": "TFHEpp/docs/narrow-dd-packed-q48-raw-default-time.log",
+      "module_limits": {
+        "lwe_primal": 1754,
+        "lwe_dual": 1754
+      },
+      "attacks": {
+        "primal_usvp": {
+          "error": "ValueError: nonfinite attack cost",
+          "status": "nonfinite_optimizer_result",
+          "nonfinite_kind": "positive_infinity",
+          "rop": "+Infinity",
+          "cost": "         rop:  \u22482^inf\n         tag:     usvp",
+          "estimator_module_max_beta": {
+            "lwe_primal": 1754,
+            "lwe_dual": 1754
+          }
+        },
+        "primal_bdd": {
+          "error": "ValueError: nonfinite attack cost",
+          "status": "nonfinite_optimizer_result",
+          "nonfinite_kind": "positive_infinity",
+          "rop": "+Infinity",
+          "cost": "         rop:  \u22482^inf\n         tag:      bdd",
+          "estimator_module_max_beta": {
+            "lwe_primal": 1754,
+            "lwe_dual": 1754
+          }
+        },
+        "dual": {
+          "error": "ValueError: nonfinite attack cost",
+          "status": "nonfinite_optimizer_result",
+          "nonfinite_kind": "positive_infinity",
+          "rop": "+Infinity",
+          "cost": "         rop:  \u22482^inf\n         mem:  \u22482^inf\n           m:  \u22482^inf\n           \u03b2:       47\n         tag:     dual",
+          "estimator_module_max_beta": {
+            "lwe_primal": 1754,
+            "lwe_dual": 1754
+          }
+        },
+        "dual_hybrid": {
+          "error": "ValueError: nonfinite attack cost",
+          "status": "nonfinite_optimizer_result",
+          "nonfinite_kind": "positive_infinity",
+          "rop": "+Infinity",
+          "cost": "         rop:  \u22482^inf\n         red:  \u22482^inf\n       guess:  \u22482^inf\n           \u03b2:     1753\n           p:        2\n           \u03b6:        0\n           t:        0\n          \u03b2':     1753\n           N:  \u22482^inf\n           m: \u22482^14.0",
+          "estimator_module_max_beta": {
+            "lwe_primal": 1754,
+            "lwe_dual": 1754
+          }
+        }
+      },
+      "requested_attacks_complete": false,
+      "time_log_sha256": "c23f4448a32b98e8fe48531fce31ea2d66969a0ee193a8a3ecd5f3003f75eff6"
+    },
+    {
+      "label": "beta4096",
+      "actual_exit_code": 1,
+      "report": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_ll14_packed_q48_raw_beta4096.json",
+      "report_sha256": "3f06ff368f3924169cc1c00118c65b20d82289d811469d9ae5b626c820693fdb",
+      "time_log": "TFHEpp/docs/narrow-dd-packed-q48-raw-beta4096-time.log",
+      "module_limits": {
+        "lwe_primal": 4096,
+        "lwe_dual": 4096
+      },
+      "attacks": {
+        "primal_usvp": {
+          "error": "ValueError: nonfinite attack cost",
+          "status": "nonfinite_optimizer_result",
+          "nonfinite_kind": "positive_infinity",
+          "rop": "+Infinity",
+          "cost": "         rop:  \u22482^inf\n         tag:     usvp",
+          "estimator_module_max_beta": {
+            "lwe_primal": 4096,
+            "lwe_dual": 4096
+          }
+        },
+        "primal_bdd": {
+          "error": "ValueError: nonfinite attack cost",
+          "status": "nonfinite_optimizer_result",
+          "nonfinite_kind": "positive_infinity",
+          "rop": "+Infinity",
+          "cost": "         rop:  \u22482^inf\n         tag:      bdd",
+          "estimator_module_max_beta": {
+            "lwe_primal": 4096,
+            "lwe_dual": 4096
+          }
+        },
+        "dual": {
+          "error": "ValueError: nonfinite attack cost",
+          "status": "nonfinite_optimizer_result",
+          "nonfinite_kind": "positive_infinity",
+          "rop": "+Infinity",
+          "cost": "         rop:  \u22482^inf\n         mem:  \u22482^inf\n           m:  \u22482^inf\n           \u03b2:       47\n         tag:     dual",
+          "estimator_module_max_beta": {
+            "lwe_primal": 4096,
+            "lwe_dual": 4096
+          }
+        },
+        "dual_hybrid": {
+          "error": "ValueError: nonfinite attack cost",
+          "status": "nonfinite_optimizer_result",
+          "nonfinite_kind": "positive_infinity",
+          "rop": "+Infinity",
+          "cost": "         rop:  \u22482^inf\n         red:  \u22482^inf\n       guess: \u22482^425252.3\n           \u03b2:     4095\n           p:        2\n           \u03b6:        0\n           t:        0\n          \u03b2':     4095\n           N: \u22482^425243.0\n           m: \u22482^14.0",
+          "estimator_module_max_beta": {
+            "lwe_primal": 4096,
+            "lwe_dual": 4096
+          }
+        }
+      },
+      "requested_attacks_complete": false,
+      "time_log_sha256": "f43812dd99f2cccdf3573c5c7444f625460ce56b5c6348630ba90bdc09e836d0"
+    }
+  ],
+  "security_validated": false,
+  "goal_complete": false,
+  "all_requested_attacks_attempted": true,
+  "raw_results_retained": true,
+  "generic_screen_complete": false,
+  "raw_result_capture_passed": true,
+  "updated_utc": "2026-10-10T06:29:16.320192+00:00",
+  "estimator_checkout_clean": true,
+  "eight_raw_results_positive_infinity": true,
+  "expanded_search_did_not_produce_finite_bound": true
+}

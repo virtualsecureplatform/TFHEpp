@@ -1,0 +1,42 @@
+{
+  "observed_at_utc": "2026-10-10T08:11:41.893424+00:00",
+  "scope": "Independent exact-integer phase check of completed N16384 mixed-selector diagnostic; reproduces an inaccurate archived output using original keys and input. Does not establish fault origin or timing.",
+  "actual_replay_exit_code": 0,
+  "selector_group_loads": 72,
+  "fresh_keys_generated": false,
+  "result": {
+    "isolated_real_component_max_error": 4.165432110347922e-09,
+    "isolated_imaginary_component_max_error": 1.7331694525133953e+20,
+    "real_component_max_error": 4546399.191963597,
+    "imaginary_component_max_error": 1.7331694525133953e+20,
+    "real_component_rms_error": 808853.9281079714,
+    "imaginary_component_rms_error": 4.235902733671648e+19,
+    "function": "sigmoid",
+    "n": 16384,
+    "prefix_bytes": 5636193,
+    "phase_arithmetic": "exact 15-bit limbs with one bounded 31-bit NTT prime",
+    "fresh_input_max_error": 6.113455435669392e-11,
+    "max_error": 1.7331694525133953e+20,
+    "rms_error": 4.235902733671648e+19,
+    "sparse_key_geometry_passed": true,
+    "evaluation_key_suffix_validated": false,
+    "retained_square_validated": false
+  },
+  "replayed_prefix_equals_archived_prefix": true,
+  "prefix_sha256": "10bb13fa17602391abb594dea3227d0bafa331233b5f243734a65fe312284de5",
+  "report_sha256": "19a233d77526d0c73e60f56ef3dfa24145a617114b3cd0819fd81c5f708d4966",
+  "retained_state_unchanged": true,
+  "selector_groups_unchanged": true,
+  "real_component_fixed_23bit_passed": true,
+  "imaginary_component_fixed_23bit_passed": false,
+  "encrypted_accuracy_passed": false,
+  "archived_output_reproduced": true,
+  "diagnostic_validation_passed": true,
+  "failure_cause_established": false,
+  "security_validated": false,
+  "goal_complete": false,
+  "source_sha256": {
+    "Parameter-Selection/python/estimates/narrow_ckks_auxiliary_probe_prefix.py": "d3293410764e88981701e3d6333d6f5d8014691626304b7bc92e7d389fbdedeb",
+    "Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "scope": "CPU worker sensitivity of qualified N16384 packed435 primary8 automorphism and parallel mask kernels on the same saved public archive. Ordered4/8/12/4 controls, full13 ciphertext archives compared against qualified4-worker reference. Concurrent full reconstruction and retained integrity reads; preliminary component timings, not full reconstruction/functional/paper benchmark. No source/default configuration changes.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "controller_pid": 2061395,
+  "new_private_or_public_keys_generated": 0,
+  "stage": "complete",
+  "runs": [
+    {
+      "workers": 4,
+      "actual_exit_code": 0,
+      "report": {
+        "n": 16384,
+        "private_keys_generated": 0,
+        "new_public_keys_generated": 0,
+        "auto_seconds_per_call": 0.070053737,
+        "mask_seconds_per_call": 0.03759482283333334,
+        "mask_cases": 12
+      },
+      "output_sha256": "71906d14b03a0ebd07577e558a286082ba4b8e65fcc2ec92e32217511bc314c8",
+      "ciphertexts_byte_identical": true,
+      "mask_speedup_vs_two_four_worker_controls": 0.987380383408022,
+      "auto_speedup_vs_two_four_worker_controls": 0.9608265107613031
+    },
+    {
+      "workers": 8,
+      "actual_exit_code": 0,
+      "report": {
+        "n": 16384,
+        "private_keys_generated": 0,
+        "new_public_keys_generated": 0,
+        "auto_seconds_per_call": 0.06317212425,
+        "mask_seconds_per_call": 0.030677372583333334,
+        "mask_cases": 12
+      },
+      "output_sha256": "71906d14b03a0ebd07577e558a286082ba4b8e65fcc2ec92e32217511bc314c8",
+      "ciphertexts_byte_identical": true,
+      "mask_speedup_vs_two_four_worker_controls": 1.2100250920282665,
+      "auto_speedup_vs_two_four_worker_controls": 1.0654934987008926
+    },
+    {
+      "workers": 12,
+      "actual_exit_code": 0,
+      "report": {
+        "n": 16384,
+        "private_keys_generated": 0,
+        "new_public_keys_generated": 0,
+        "auto_seconds_per_call": 0.062051248125,
+        "mask_seconds_per_call": 0.031316996916666666,
+        "mask_cases": 12
+      },
+      "output_sha256": "71906d14b03a0ebd07577e558a286082ba4b8e65fcc2ec92e32217511bc314c8",
+      "ciphertexts_byte_identical": true,
+      "mask_speedup_vs_two_four_worker_controls": 1.1853113081726603,
+      "auto_speedup_vs_two_four_worker_controls": 1.0847402706857316
+    },
+    {
+      "workers": 4,
+      "actual_exit_code": 0,
+      "report": {
+        "n": 16384,
+        "private_keys_generated": 0,
+        "new_public_keys_generated": 0,
+        "auto_seconds_per_call": 0.064565238375,
+        "mask_seconds_per_call": 0.03664595833333333,
+        "mask_cases": 12
+      },
+      "output_sha256": "71906d14b03a0ebd07577e558a286082ba4b8e65fcc2ec92e32217511bc314c8",
+      "ciphertexts_byte_identical": true,
+      "mask_speedup_vs_two_four_worker_controls": 1.012946373122093,
+      "auto_speedup_vs_two_four_worker_controls": 1.0425035108917462
+    }
+  ],
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-workers-profile-20261011/run.py": "5fa1d07a9b2b6495e3d2f8f88771752230485ab3b0c32dd867d46b4252a6c6a0",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-mask-parallel-profile-20261011/profile.cpp": "d6089473e637f390322fa38c237f4b502930bb518ed7fdd98378a322d99eaf5b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-mask-parallel-profile-20261011/parallel": "7f3d7aaab8c534137496d948056e91f3f1a67df41e81285f97204017d5647b05",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_plain.hpp": "d4a29304ce32840e8681e31d06d1263ebfc81cc7a7a62ae2f4713737afef055f"
+  },
+  "updated_utc": "2026-10-11T20:05:08.381447+00:00",
+  "public_key_sha256": "edabb5da09912a47adc71d22bca73ad1cc14336b384b973d96c03e4ce4545878",
+  "reference_outputs_sha256": "71906d14b03a0ebd07577e558a286082ba4b8e65fcc2ec92e32217511bc314c8",
+  "evaluator_pid": 2061435,
+  "public_key_unchanged": true,
+  "sources_unchanged": true
+}

@@ -1,0 +1,38 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "actual_exit_codes": {
+    "threads1": 0,
+    "threads4": 0
+  },
+  "scope": "N8192 Q85/Q379 prepared default/secondary16 and streamed original/adaptive automorphisms versus coefficient-domain reference. Public synthetic input and small generated test keys; retained full keys not regenerated.",
+  "reports": {
+    "1": "prepared auto N=8192 Q=85 setup=0.0274336 raw=0.170359 prepared=0.00935648 cache_bytes=17301504\nprepared auto N=8192 Q=379 setup=0.426201 raw=3.07199 prepared=0.0446207 cache_bytes=298844160\n",
+    "4": "prepared auto N=8192 Q=85 setup=0.0126106 raw=0.0494316 prepared=0.00751595 cache_bytes=17301504\nprepared auto N=8192 Q=379 setup=0.163822 raw=0.805486 prepared=0.0324571 cache_bytes=298844160\n"
+  },
+  "source_sha256": {
+    "TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "1f960a87c6bc3f95d055b49bd8c8c320b07f01af54afbab5070f797e128f52b8",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "c741aaecf05cc374f5dc9dc8809f0d4b4da05f99fc21d27e4c954993119f25ae",
+    "TFHEpp/test/ckks/ckks_narrow_bootstrapping.cpp": "87963459fbef1a91af66bea48d2aeab73362752914a1aae15f2d78b02102298c"
+  },
+  "exe_sha256": "4fc910f9bf24f2ecf4f0c4dc239607f5c1e1c0c44ef939f814cc525d6cd770b2",
+  "factor_exe_sha256": "45376462e469e87135b19370e95c2f6c469d011b558a4eb3a370ea96a650953d",
+  "full_size_refresh_qualified": false,
+  "material_full_refresh_speedup_demonstrated": false,
+  "synthetic_unit_test_keys_generated": true,
+  "retained_full_keys_regenerated": false,
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/prepared-auto-parallel-20261011/build.log": "c3e95c72cd7ce3d22085c343a81ec7ef9530ab2a175954afcce8b23501fd812c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/prepared-auto-parallel-20261011/threads1.log": "38051434a3f2cbf26942ae865fe8de9283e45e615414f49fdc6efcf55689f08b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/prepared-auto-parallel-20261011/threads1.time": "6138e09aab80a65b77218550a384d5280e3608e3efe0400b4e947276def99f6c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/prepared-auto-parallel-20261011/threads4.log": "c955fe844bbd5245567293673c6f57a7b9bfc034aaba2a1ac8364cf8b2dd4f73",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/prepared-auto-parallel-20261011/threads4.time": "40cb1e74d609d09194eb04c2da0dac791a7dff1e5a24a7a8e83ab491d6c06b69"
+  }
+}

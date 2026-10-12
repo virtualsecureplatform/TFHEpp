@@ -1,0 +1,25 @@
+{
+  "scope": "CMake configuration and generated GNU compile/link settings for the already independently qualified packed real/complex runners. This is configuration validation, not a repeated full-ring run.",
+  "updated_utc": "2026-10-12T00:36:56.659087+00:00",
+  "cmake_actual_exit_code": 0,
+  "targets": {
+    "ckks_narrow_ll14_packed_fbs": {
+      "compile_workaround_present": true,
+      "link_workaround_present": true,
+      "generated_files_sha256": {
+        "TFHEpp/build/test/CMakeFiles/ckks_narrow_ll14_packed_fbs.dir/flags.make": "68cd242d29d9123b297f84471a5aa8c64df8b4d699cbd77773c2f4774f7f2da3",
+        "TFHEpp/build/test/CMakeFiles/ckks_narrow_ll14_packed_fbs.dir/link.txt": "a0a5be1e60be97f1d559523ce521b27b6bc786a0f90f0fa6d80aad65a6abe5e1"
+      }
+    },
+    "ckks_narrow_ll14_packed_complex_fbs": {
+      "compile_workaround_present": true,
+      "link_workaround_present": true,
+      "generated_files_sha256": {
+        "TFHEpp/build/test/CMakeFiles/ckks_narrow_ll14_packed_complex_fbs.dir/flags.make": "68cd242d29d9123b297f84471a5aa8c64df8b4d699cbd77773c2f4774f7f2da3",
+        "TFHEpp/build/test/CMakeFiles/ckks_narrow_ll14_packed_complex_fbs.dir/link.txt": "0c1d2f573127ed5170296abcd560ee302727f9fb4560ab03a6aca9dbb106c998"
+      }
+    }
+  },
+  "all_checks_passed": true,
+  "source_sha256": "876e9a17474fbafeb6dfdec56d497ec8efc55899deb679dfbed8cefc202a2c78"
+}

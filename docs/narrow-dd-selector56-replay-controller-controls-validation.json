@@ -1,0 +1,15 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Reject wrong small selector policy and explicit-width factor evidence before configured-policy replay. Neither control launched evaluation.",
+  "actual_exit_codes": [
+    2,
+    2
+  ],
+  "no_evaluator_launched": true,
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/current-combined-small-replay-20261011/rejected-selector-policy.json": "0e64d5e1da3a48a869645528cbd7a4a5d42edcdf183f4e859d9385cd4ef2f848",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/current-combined-small-replay-20261011/rejected-factor-policy.json": "558526e924cbaf944d2c3e6192c9917a97c4c81b76a84cccfac64541500245af",
+    "Parameter-Selection/python/estimates/narrow_ckks_basis_root_reuse_run.py": "8853f69cb429ff2aabc05b105db116c92c1b3bd97d9ac27b1a72033201897fd6"
+  }
+}

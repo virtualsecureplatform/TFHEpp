@@ -1,0 +1,19 @@
+{
+  "observed_at_utc": "2026-10-09T00:58:39.864011+00:00",
+  "scope": "N512 injected accuracy failure, retained snapshot, independent inspection and same-state replay. Synthetic failure does not count as a genuine failing cryptographic run.",
+  "test_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-failure-capture-test-20261009-bspmxo36",
+  "existing_process_pid": 1756575,
+  "existing_process_virtual_limit_bytes": 68719476736,
+  "existing_process_rss_bytes": 17785008128,
+  "remaining_growth_bytes": 50934468608,
+  "available_memory_bytes": 105621413888,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 4294967296,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 65966854144,
+  "launch_margin_bytes": 39654559744,
+  "launch_eligible": true,
+  "test_actual_exit_code": 0,
+  "test_terminal": true,
+  "maximum_test_peak_rss_kib": 349768
+}

@@ -1,0 +1,40 @@
+{
+  "observed_utc": "2026-10-11T10:57:53.559165+00:00",
+  "scope": "Observed frozen/current executable comparison on the same retained N16384 standard-refresh checkpoint; includes earlier core CPU optimizations and latest benchmark changes, not an isolated or controlled speedup",
+  "terminal": true,
+  "all_checks_passed": true,
+  "controller_actual_exit_code": 0,
+  "evaluator_actual_exit_code": 0,
+  "n": 16384,
+  "omp_threads": 4,
+  "current_evaluator_wall_seconds": 434.05,
+  "frozen_evaluator_wall_seconds": 2099.85,
+  "current_phase_seconds": {
+    "selector_validation_seconds": 218.074106179,
+    "coefficient_preparation_seconds": 46.766898411,
+    "prepared_evaluation_seconds": 162.233679811,
+    "refresh_seconds": 209.000578222,
+    "key_setup_seconds": 219.716465606
+  },
+  "frozen_key_setup_seconds": 869.456227827,
+  "frozen_refresh_seconds": 875.334680983,
+  "selector_slot_comparisons": 156008448,
+  "checkpoint_file_count": 38,
+  "checkpoint_files_unchanged": true,
+  "earlier_ciphertext_identities": {
+    ".ciphertext": true,
+    ".square.ciphertext": true
+  },
+  "independent_phase_metrics": {
+    "fresh_input_max_error": 4.911206931974722e-10,
+    "max_error": 4.6876697864815724e-06,
+    "rms_error": 1.1194193286553253e-06,
+    "post_refresh_product_max_error": 1.6635640541809998e-06
+  },
+  "validation_sha256": "9593dc4ece8d862763322c10bea2e59444e80ef47c82805174127465cf71f7d0",
+  "fresh_keys_generated": false,
+  "standard_prepared_api_full_size_qualified": true,
+  "prepared_functional_api_full_size_qualified": false,
+  "paper_functional_performance_reproduced": false,
+  "security_validated": false
+}

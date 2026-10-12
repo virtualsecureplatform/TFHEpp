@@ -1,0 +1,27 @@
+{
+  "scope": "Full N16384 primary8/secondary16 retained-key five-level DD product trees: head-only, tail-only and all-slot complex targets. Independent integer phases and canonical decode of public ciphertexts. Reuses retained keys; newly encrypts known test plaintexts. Not a complete refresh, paper timing comparison or security qualification.",
+  "terminal": true,
+  "all_checks_passed": false,
+  "fresh_keys_generated": false,
+  "new_test_plaintexts_encrypted": true,
+  "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin",
+  "child_cap_bytes": 2147483648,
+  "stage": "complete",
+  "build_actual_exit_code": 0,
+  "source_sha256": {
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "3e0b0d7f3aa8f4bfb3ede55ba51bb8fdb7210b7924ddba8ad2aea94692b9515d",
+    "TFHEpp/test/ckks/ckks_narrow_dd_exact.cpp": "2a204775341012144f1b9455b7c1fbbe7c8daf55c57b4b3976174d664031b838"
+  },
+  "updated_utc": "2026-10-10T15:26:25.114798+00:00",
+  "frozen_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-20261010/frozen/ckks_narrow_dd_exact": "41161d96527ee4e954d181b7d6fc552abc4dd28006de80399f05e356fc2786f0",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-20261010/frozen/narrow_ckks_dd_tree_validate.py": "7b42a775b32e9357f1b7d2eab08646a2839273f7af7e04d6f643d419b8f9c4a8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-20261010/frozen/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "state_sha256_before": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "child_pid": 1951661,
+  "child_start_ticks": 229255193,
+  "tree_actual_exit_code": 1,
+  "error": "tree failed"
+}

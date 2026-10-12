@@ -1,0 +1,36 @@
+{
+  "observed_at_utc": "2026-10-11T04:48:08.396355+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Runtime observer reset on narrow-key archive loading plus existing N512 file-selector batch/reference/FFT/generation/archive/cleanup regression. Does not qualify full performance or security.",
+  "build_actual_exit_code": 0,
+  "failed_attempt": {
+    "actual_exit_code": 134,
+    "virtual_memory_cap_bytes": 2147483648,
+    "error": "std::bad_alloc",
+    "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/root-observer-load-reset-20261011/test.log"
+  },
+  "passing_attempt": {
+    "actual_exit_code": 0,
+    "virtual_memory_cap_bytes": 4294967296,
+    "peak_rss_kib": 3163276,
+    "omp_threads": 4,
+    "command": "ckks_narrow_bootstrapping --file-selectors",
+    "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/root-observer-load-reset-20261011/test-4gib.log"
+  },
+  "factor_observer_cleared_on_load": true,
+  "root_stage_observer_cleared_on_load": true,
+  "full_size_keys_generated": false,
+  "small_fixture_generation": "Existing regression creates its synthetic N512 fixtures; no full checkpoint or retained key modified.",
+  "frozen_full_runs_updated": false,
+  "qualified_source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "c56d6463d7418c5e6e87e647eca269a61d5391c9d5b30e08141c30720018e79d",
+    "TFHEpp/test/ckks/ckks_narrow_bootstrapping.cpp": "0660837b27fdff9cefa532ae925b05bf6d1df13a32ac27b9f89ec2733f42e56e"
+  },
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/root-observer-load-reset-20261011/build.log": "2d656a8cc0d3244e1917e0f31b7639118ac5e3eb295228d9fab6ad4211ac493f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/root-observer-load-reset-20261011/test.log": "97fec367a5d5883ee6f4f00f70b836c9e26731a7702ee31d0f96d3bacca6cb03",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/root-observer-load-reset-20261011/test-4gib.log": "9ac62c1d660e2a4a3ce7df9cec88ea89489b32ac1dab9fb821b5f5cc6d01cab1",
+    "TFHEpp/build/test/ckks/ckks_narrow_bootstrapping": "e6282edd964e8eeb8a93c4504d2cae63fe8e58c8255845de5813add593a68ffd"
+  }
+}

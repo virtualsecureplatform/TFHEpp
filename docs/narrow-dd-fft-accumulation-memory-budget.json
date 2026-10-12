@@ -1,0 +1,24 @@
+{
+  "observed_at_utc": "2026-10-09T00:48:07.328976+00:00",
+  "scope": "Sequential DD headroom runtime checks after build completes; reserve the packed job growth and host headroom.",
+  "existing_process_pid": 1756575,
+  "existing_process_cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json ",
+  "existing_process_virtual_limit_bytes": 68719476736,
+  "existing_process_rss_bytes": 17686831104,
+  "remaining_growth_bytes": 51032645632,
+  "available_memory_bytes": 113215361024,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 4294967296,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 66065031168,
+  "launch_margin_bytes": 47150329856,
+  "launch_eligible": true,
+  "runtime_launch_rechecked_at_utc": "2026-10-09T00:50:18.569786+00:00",
+  "runtime_checks_terminal": true,
+  "runtime_checks_actual_exit_codes": {
+    "compact": 0,
+    "wide": 0,
+    "packed": 0
+  },
+  "maximum_test_peak_rss_kib": 1820628
+}

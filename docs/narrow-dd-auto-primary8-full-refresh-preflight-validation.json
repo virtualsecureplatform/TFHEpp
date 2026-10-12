@@ -1,0 +1,55 @@
+{
+  "scope": "Queue retained N16384 primary8 refresh behind a completed basis validation.\n\nFreezes the small-qualified executable and independent validators before waiting.\nReuses the original state and diagnostically corrected selectors; verifies original\ninput identity, independent refresh/square accuracy and unchanged retained files.\nThis is not a security qualification or a reproduction of paper performance.\n",
+  "terminal": true,
+  "all_checks_passed": false,
+  "stage": "preflight replaced before any child launch",
+  "fresh_keys_generated": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "selector_bit_error_origin_established": false,
+  "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin",
+  "selectors": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1",
+  "destination": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-primary8-full-refresh-20261010",
+  "child_cap_bytes": 21474836480,
+  "parent_cap_bytes": 134217728,
+  "host_reserve_bytes": 10737418240,
+  "small_qualification_sha256": "6da5677adc9908a3dca448c8222ce2fbe2793d8f936e4878655253847366396b",
+  "selector_correction_provenance_sha256": "f74f9da05e74e582d495d1c392b54de8cb1508861137338baa7dd8220f557d79",
+  "source_sha256": {
+    "TFHEpp/include/ckks/prepared_auto.hpp": "62a95a5dc0a089e2a710a905dc562d8f11176b4625605d2a4072147153b435b0",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "26f4444a423e0af9c50e8479179c2d42afbed90c9066ef98229aaa200c7af8eb",
+    "TFHEpp/test/ckks/ckks_narrow_auxiliary_replay.cpp": "c776202d83a84d67e61c64177689240a573f285c94f6b13336c94d187944fb88"
+  },
+  "frozen_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-primary8-full-refresh-20261010/frozen/ckks_narrow_auxiliary_replay": "008ded9b01dd413797be0cad743740573e49a699dd83a235fd25504e3f16215e",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-primary8-full-refresh-20261010/frozen/ckks_narrow_auxiliary_square": "47623ab54e30d8bb7105fbaa7fa49db099326acbbb50d5b9551ec427192db615",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-primary8-full-refresh-20261010/frozen/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-primary8-full-refresh-20261010/frozen/narrow_ckks_auxiliary_probe_prefix.py": "d3293410764e88981701e3d6333d6f5d8014691626304b7bc92e7d389fbdedeb",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-primary8-full-refresh-20261010/frozen/narrow_ckks_auxiliary_square_validate.py": "7a048ff3f5ac106ac2de581a6bfe65ea3f510fd97e0fdd84aa3c9edb618bb670",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-primary8-full-refresh-20261010/frozen/narrow_ckks_auxiliary_functions_validate.py": "f464626ff140f00058642a69dc492ae4380a0db48695fd04e443380c31a2ae2d"
+  },
+  "controller_sha256": "dfb4f2790c4522bc6d2a1d362e8270836ee82a06cba1805d0943ac1703f73fbb",
+  "controller": {
+    "pid": 1949748,
+    "start_ticks": 229120997
+  },
+  "basis_gate_passed": false,
+  "packed_process_observation": {
+    "pid": 1910341,
+    "start_ticks": 225941687,
+    "state": "R",
+    "cpu_ticks": 7496628,
+    "rss_bytes": 17752485888
+  },
+  "memory_budget": {
+    "available_bytes": 90393219072,
+    "required_bytes": 83313463296,
+    "packed_remaining_reservation_bytes": 50966990848
+  },
+  "disk_budget": {
+    "available_bytes": 66162891161600,
+    "required_bytes": 4294967296
+  },
+  "updated_utc": "2026-10-10T15:04:27.926783+00:00",
+  "error": "Parent hard address-space limit needed to permit the larger child limit; corrected before evaluation."
+}

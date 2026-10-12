@@ -1,0 +1,39 @@
+{
+  "observed_utc": "2026-10-11T01:49:15.967158+00:00",
+  "scope": "Completed retained N16384 sigmoid refresh with projected primary8 conjugation, on the diagnostically corrected selector fixture. Full-refresh latency and reported factor timers, not a controlled hardware comparison or the projected DD experiment. Concurrent packed reconstruction remained active.",
+  "evidence": "TFHEpp/docs/narrow-dd-auto-primary8-full-refresh-validation.json",
+  "evidence_sha256": "4ac7e14a961313c261427994a3315724c8173327b64e680d29a5cc65a45e16e9",
+  "n": 16384,
+  "function": "sigmoid",
+  "mode": "--replay-primary8",
+  "fresh_keys_generated": false,
+  "factor_groups_completed": 72,
+  "refresh_seconds": 988.89490463,
+  "reported_factor_stage_seconds": {
+    "selector_load": 25.491388115000007,
+    "table_ntt": 9.726113880000002,
+    "selector_ntt": 191.53463720599993,
+    "matrix": 293.15659907300005,
+    "inverse_crt": 10.249700845000003,
+    "conjugation": 44.669138249
+  },
+  "reported_factor_fraction_of_refresh": {
+    "selector_load": 0.025777651392124158,
+    "table_ntt": 0.009835336226794571,
+    "selector_ntt": 0.1936855335276134,
+    "matrix": 0.29644869004829794,
+    "inverse_crt": 0.010364802970478424,
+    "conjugation": 0.04517076388993346
+  },
+  "reported_factor_seconds_sum": 574.827577368,
+  "refresh_minus_reported_factor_timers_seconds": 414.06732726200005,
+  "remainder_scope": "Arithmetic residual only. Includes work outside the reported factor timers and instrumentation gaps. It must not be attributed wholly to DD, product-tree work, S2C, or key I/O without additional measurements.",
+  "independent_max_refresh_error": 5.433376001925557e-09,
+  "independent_product_max_error": 1.0987972278681344e-08,
+  "original_files_unchanged": true,
+  "original_files_checked": 37,
+  "selector_bit_error_origin_established": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "next_measurement": "Complete the already live retained primary8 projected-DD refresh; independently validate accuracy and retained-file identity, then compare its reported timing scope without claiming an isolated speedup."
+}

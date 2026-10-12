@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-09T11:03:25.172952+00:00",
+  "points": [
+    {
+      "control": "wrong-ciphertext-hash",
+      "rejected": true,
+      "error": "original ciphertext hash mismatch"
+    },
+    {
+      "control": "multibit-delta",
+      "rejected": true,
+      "error": "invalid one-bit correction"
+    },
+    {
+      "control": "existing-destination",
+      "rejected": true,
+      "error": "[Errno 17] File exists: '/tmp/tmpfdmtvwr7/new-selectors'"
+    }
+  ],
+  "all_rejected": true,
+  "source_sha256": "bc2e5bb7d0bac1d620e7e76439af5595368f27cdd0535fd5afe614c74244fd1a"
+}

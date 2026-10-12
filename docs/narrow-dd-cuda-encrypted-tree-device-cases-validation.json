@@ -1,0 +1,68 @@
+{
+  "observed_at_utc": "2026-10-08T21:39:42.543830+00:00",
+  "scope": "Generated encrypted resident three-node ProductTree fixtures compiled. Small-ring CPU/portable references pass normal and host UBSan. Device arithmetic, lifecycle and performance unexecuted; full refresh integration incomplete.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_cuda_setup.cpp": "871ebe72ad8cf047c13b9dca005e226226d6b995fb2fdb06f80efd7d2d3b3245",
+    "include/ckks/narrow_cuda.hpp": "1aa55cf425793143ca5eb1d8148c2d7a65f2416051192f0988807be2b66004a0",
+    "include/ckks/narrow_cuda_multiply_device.hpp": "79b4e9a77b702e5d81555d2b33cc07f591c4e166d8fb3e0c327f03fbcf0291f1",
+    "src/ckks/narrow_cuda.cu": "b77f84f43142a5382426338a86bf612f7511d8518f6c9672961e71d7ec756adc"
+  },
+  "points": 16,
+  "native_bits": 448,
+  "dd_axes": [
+    4,
+    4
+  ],
+  "input_key_gaussian_sigma_floor": 3.2,
+  "columns": [
+    1,
+    3
+  ],
+  "prime_modes": [
+    "first prime",
+    "second prime",
+    "two-prime CRT"
+  ],
+  "leaf_q": 217,
+  "intermediate_q": 180,
+  "root_q": 143,
+  "delta": 37,
+  "node_orders": [
+    "left before rescale",
+    "right after rescale",
+    "root before rescale"
+  ],
+  "device_fixtures_compiled": 6,
+  "resident_tree_evaluations_compiled": 18,
+  "resident_tree_evaluations_executed": 0,
+  "pending_work_cleanup_submissions_compiled": 6,
+  "native_node_word_comparisons_compiled": 24192,
+  "root_phase_coefficient_comparisons_compiled": 576,
+  "leaf_preservation_word_comparisons_compiled": 32256,
+  "phase_gate": 3.814697265625e-06,
+  "reference": "Retain the exact generated CPU node keys; upload encrypted leaves and keys once. Root inputs directly reference branch device outputs. Compare every node to CPU same-key output and root to independent quadruple negacyclic plaintext product. Repeat on one nonblocking stream; test scope cleanup with pending work.",
+  "host_reference_validated": true,
+  "host_ubsan_validated": true,
+  "device_validated": false,
+  "full_refresh_connected": false,
+  "security_qualified": false,
+  "cmake_build_exit_code": 0,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-encrypted-tree-device-cases-final-build.log",
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-encrypted-tree-device-cases-host-ubsan-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-encrypted-tree-device-cases-host-ubsan-argv.json",
+  "host_ubsan_scope": "Current C++ test, inline native crypto and portable helpers instrumented; current host-instrumented CUDA objects reused. BLAKE3/runtime/device kernels uninstrumented; device branches unexecuted.",
+  "root_max_error": {
+    "cmake": 1.8917489796876907e-10,
+    "ubsan": 1.1641532182693481e-10
+  },
+  "cmake_test_actual_exit_code": 0,
+  "ubsan_test_actual_exit_code": 0,
+  "gpu_skip_reason": "no CUDA-capable device is detected",
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-encrypted-tree-device-cases-cmake-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-tree-device-cases-cmake-test.stderr",
+  "cmake_test_stderr_bytes": 0,
+  "ubsan_test_log": "/tmp/ckks-narrow-cuda-encrypted-tree-device-cases-ubsan-test.log",
+  "ubsan_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-tree-device-cases-ubsan-test.stderr",
+  "ubsan_test_stderr_bytes": 0
+}

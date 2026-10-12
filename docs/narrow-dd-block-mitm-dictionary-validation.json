@@ -1,0 +1,380 @@
+{
+  "utc": "2026-10-09T06:43:55.614816+00:00",
+  "scope": "Exact zero-rotation signed partial dictionaries and compatibility, not lattice collision search or security",
+  "source": "python/estimates/narrow_ckks_block_mitm_dictionaries.py",
+  "source_sha256": "11d98dd59643d98d196e9cb8cbbb1ed8f88543d6b79dc91f08bd5ebc6833a5e6",
+  "exhaustive_signed_toy_strata": 30,
+  "runs": [
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_default_weight10.json",
+      "report_sha256": "70bc0494814ea74c204970e786a4da071071d72cfe181613d96fa2373bb00328",
+      "weight": 10,
+      "zeta": 14688,
+      "support_count": "59493986610846745098689459995984896",
+      "left_count": "2313752740375732960",
+      "right_count": "330310555843430112",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "3111734078",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "19831328870282248366229819998661632",
+          "left_rank": "771251861415890058",
+          "right_rank": "110103518448290576"
+        },
+        {
+          "full_rank": "29746993305423372549344729997992448",
+          "left_rank": "1156876373299600558",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "59493986610846745098689459995984895",
+          "left_rank": "2313752740375732959",
+          "right_rank": "330310555781541791"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 3.4383128815399715
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_default_weight11.json",
+      "report_sha256": "74daf2d3727758bc34562b9d7b2c8b74d220a28b576abcf2d65ed61c5134c1c5",
+      "weight": 11,
+      "zeta": 14688,
+      "support_count": "192898806272178801731357093931606763520",
+      "left_count": "44879161366028938272",
+      "right_count": "31929566370942394048",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "662453974579500",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "64299602090726267243785697977202254506",
+          "left_rank": "32220925885841765150",
+          "right_rank": "10643188790314117222"
+        },
+        {
+          "full_rank": "96449403136089400865678546965803381760",
+          "left_rank": "662453974579500",
+          "right_rank": "15964783185471197024"
+        },
+        {
+          "full_rank": "192898806272178801731357093931606763519",
+          "left_rank": "44879161366028938271",
+          "right_rank": "31929566370942389407"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 2.467348145223312
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_default_weight12.json",
+      "report_sha256": "aa9a6967188a88fca957b619ba2790fd4ac7645a3fbb4d993c02587d457be8f4",
+      "weight": 12,
+      "zeta": 14688,
+      "support_count": "510562994758351465612944300387536337817600",
+      "left_count": "12324643985325085024064",
+      "right_count": "2447950399317525471680",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "10830341973764",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "170187664919450488537648100129178779272533",
+          "left_rank": "4108219841375608322123",
+          "right_rank": "815983465187802034781"
+        },
+        {
+          "full_rank": "255281497379175732806472150193768168908800",
+          "left_rank": "6162322003492884485796",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "510562994758351465612944300387536337817599",
+          "left_rank": "12324643985325085024063",
+          "right_rank": "2447950398473649503167"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 4.36977087088556
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_default_weight13.json",
+      "report_sha256": "c9eff995f29f6fdb008a48a29cabeee996708d86237a97c9cbf3054cd0a6c075",
+      "weight": 13,
+      "zeta": 14688,
+      "support_count": "1123311485968738053114382872331080964579246080",
+      "left_count": "145512801329489781624640",
+      "right_count": "369737745031125303888768",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "4311084872963260206",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "374437161989579351038127624110360321526415360",
+          "left_rank": "108826971985172031687439",
+          "right_rank": "123245915010374927144404"
+        },
+        {
+          "full_rank": "561655742984369026557191436165540482289623040",
+          "left_rank": "4311084872963260206",
+          "right_rank": "184868872515562651944384"
+        },
+        {
+          "full_rank": "1123311485968738053114382872331080964579246079",
+          "left_rank": "145512801329489781624639",
+          "right_rank": "369737745031125187862783"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 3.9423591610714226
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_default_weight14.json",
+      "report_sha256": "ff9486b1566acc7288d43c2f5c52d085aa30331e906e5a0480a43f74f1b5cff9",
+      "weight": 14,
+      "zeta": 14688,
+      "support_count": "2081214572964982560652659118923300903453149102080",
+      "left_count": "50236117583323616459899008",
+      "right_count": "13039473336473939955459712",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "37484152356805430",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "693738190988327520217553039641100301151049700693",
+          "left_rank": "16745394136302531930522719",
+          "right_rank": "4346491104926463952779525"
+        },
+        {
+          "full_rank": "1040607286482491280326329559461650451726574551040",
+          "left_rank": "25118058829145960586754934",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "2081214572964982560652659118923300903453149102079",
+          "left_rank": "50236117583323616459899007",
+          "right_rank": "13039473329864049303654271"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 5.454864313154843
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_default_weight15.json",
+      "report_sha256": "18cfffeddf49f23d201bb4da2ca254eab611a2a89a9b115639a22805ca31ad5e",
+      "weight": 15,
+      "zeta": 14688,
+      "support_count": "3277569071669469540707140324093518596495496559198208",
+      "left_count": "385142101489388243661123200",
+      "right_count": "2740147550781662582081611520",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "20610294923405849385924",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "1092523023889823180235713441364506198831832186399402",
+          "left_rank": "295270495340651092695130323",
+          "right_rank": "913382516927219510428432306"
+        },
+        {
+          "full_rank": "1638784535834734770353570162046759298247748279599104",
+          "left_rank": "20610294923405849385924",
+          "right_rank": "1370073775390831291040805760"
+        },
+        {
+          "full_rank": "3277569071669469540707140324093518596495496559198207",
+          "left_rank": "385142101489388243661123199",
+          "right_rank": "2740147550781661283934924927"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 5.770568955374614
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_default_weight9.json",
+      "report_sha256": "5c65b2a7d14f282155aaaacacf5aaba119ad5ff0b68df16b8e27de13c2675e1f",
+      "weight": 9,
+      "zeta": 14688,
+      "support_count": "14595917031808815324303205063168",
+      "left_count": "11010398749044176",
+      "right_count": "1325648358836768",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "0",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "4865305677269605108101068354389",
+          "left_rank": "7340265832696117",
+          "right_rank": "441882786278922"
+        },
+        {
+          "full_rank": "7297958515904407662151602531584",
+          "left_rank": "0",
+          "right_rank": "662824179418384"
+        },
+        {
+          "full_rank": "14595917031808815324303205063167",
+          "left_rank": "11010398749044175",
+          "right_rank": "1325648358836767"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 1.6910617994219947
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_z14560-s5.json",
+      "report_sha256": "a6ee0bb4f6968a7a346f7b704e2c81c1ec51c3dc4750c969ce127af904e6d34d",
+      "weight": 12,
+      "zeta": 14560,
+      "support_count": "473766686469124445996221413803116977192960",
+      "left_count": "11808962088043413870400",
+      "right_count": "2370722092867177207680",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "10367954815914",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "157922228823041481998740471267705659064320",
+          "left_rank": "3936325658887235019017",
+          "right_rank": "790240696335951931008"
+        },
+        {
+          "full_rank": "236883343234562222998110706901558488596480",
+          "left_rank": "5904481054389661751114",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "473766686469124445996221413803116977192959",
+          "left_rank": "11808962088043413870399",
+          "right_rank": "2370722092050020278799"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 4.364629164062251
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_z14688-s4.json",
+      "report_sha256": "68992ed469b7d6566ebbc4d34750e3df3f578fc35d28c385e407fc5682a7fbc7",
+      "weight": 12,
+      "zeta": 14688,
+      "support_count": "1573481519019554856554923379638031276638208",
+      "left_count": "14775016900911010034880",
+      "right_count": "14775016900911010034880",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "26002771834934",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "524493839673184952184974459879343758879402",
+          "left_rank": "4925009244071261228760",
+          "right_rank": "4925001971757257671130"
+        },
+        {
+          "full_rank": "786740759509777428277461689819015638319104",
+          "left_rank": "7387508476458276852374",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "1573481519019554856554923379638031276638207",
+          "left_rank": "14775016900911010034879",
+          "right_rank": "14775010350186803800719"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 4.558107758627855
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_z14688-s6.json",
+      "report_sha256": "28bbf1648b2a7bfb2c542c3354434aeb0a36e4b846cb0ec2a1bcaf2006a7f20f",
+      "weight": 12,
+      "zeta": 14688,
+      "support_count": "151712480604254978305408525697668836888576",
+      "left_count": "2128784861579952536576",
+      "right_count": "2128784861579952536576",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "7710192704",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "50570826868084992768469508565889612296192",
+          "left_rank": "709594953739449601136",
+          "right_rank": "1419189907154905761920"
+        },
+        {
+          "full_rank": "75856240302127489152704262848834418444288",
+          "left_rank": "1064392430797686460992",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "151712480604254978305408525697668836888575",
+          "left_rank": "2128784861579952536575",
+          "right_rank": "2128784860984804048207"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 3.450324316742879
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_dictionary_z14816-s5.json",
+      "report_sha256": "c1ad9d7ae9f163aac9fccf56a009d8658a9e9da4cfa9c79043effcec5ec04cb8",
+      "weight": 12,
+      "zeta": 14816,
+      "support_count": "549782247289785748565187950954569357885440",
+      "left_count": "12857033796851757257472",
+      "right_count": "2526837951737753368064",
+      "grouped_binomial_counts_match": true,
+      "actual_full_projection_decomposition_samples": [
+        {
+          "full_rank": "0",
+          "left_rank": "11308025069614",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "183260749096595249521729316984856452628480",
+          "left_rank": "4285683335620207837587",
+          "right_rank": "842279316084291828480"
+        },
+        {
+          "full_rank": "274891123644892874282593975477284678942720",
+          "left_rank": "6428516909733903698350",
+          "right_rank": "0"
+        },
+        {
+          "full_rank": "549782247289785748565187950954569357885439",
+          "left_rank": "12857033796851757257471",
+          "right_rank": "2526837950866582198607"
+        }
+      ],
+      "enumeration_over_square_root_support_bits": 4.374880621618203
+    }
+  ],
+  "independent_count_oracle": "Grouped binomial polynomial factors, distinct from dictionary suffix DP",
+  "passed": true,
+  "full_attack_constructed": false,
+  "rotation_dictionary_reuse_validated": false,
+  "security_validated": false,
+  "entry_overhead_is_security_margin": false,
+  "cost_screen_changed": false,
+  "lowest_searched_optimistic_endpoint_bits": 130.8559031670172
+}

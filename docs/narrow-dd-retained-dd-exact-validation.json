@@ -1,0 +1,134 @@
+{
+  "observed_at_utc": "2026-10-09T00:03:37.597754+00:00",
+  "scope": "Actual stored DD keys from the second retained full plain37 sigmoid trial; independent exact key-message and switched-phase verification plus FFT/NTT coefficient equality.",
+  "n": 16384,
+  "active_moduli": [
+    348,
+    300,
+    252,
+    204,
+    156
+  ],
+  "native_storage_bits": 448,
+  "primary_digit_bits": 4,
+  "secondary_digit_bits": 4,
+  "relinearization_order": "before rescale",
+  "key_phase_checks": [
+    {
+      "active_modulus": 348,
+      "coefficients": 1425408,
+      "maximum_noise": 17
+    },
+    {
+      "active_modulus": 300,
+      "coefficients": 1228800,
+      "maximum_noise": 16
+    },
+    {
+      "active_modulus": 252,
+      "coefficients": 1032192,
+      "maximum_noise": 16
+    },
+    {
+      "active_modulus": 204,
+      "coefficients": 835584,
+      "maximum_noise": 15
+    },
+    {
+      "active_modulus": 156,
+      "coefficients": 638976,
+      "maximum_noise": 15
+    }
+  ],
+  "key_phase_coefficients": 5160960,
+  "switched_phase_checks": [
+    {
+      "active_modulus": 348,
+      "coefficients": 16384,
+      "maximum_error": 69967,
+      "convolution_bound": 193855488
+    },
+    {
+      "active_modulus": 300,
+      "coefficients": 16384,
+      "maximum_error": 60409,
+      "convolution_bound": 157286400
+    },
+    {
+      "active_modulus": 252,
+      "coefficients": 16384,
+      "maximum_error": 53070,
+      "convolution_bound": 132120576
+    },
+    {
+      "active_modulus": 204,
+      "coefficients": 16384,
+      "maximum_error": 46739,
+      "convolution_bound": 100270080
+    },
+    {
+      "active_modulus": 156,
+      "coefficients": 16384,
+      "maximum_error": 40972,
+      "convolution_bound": 76677120
+    }
+  ],
+  "switched_phase_coefficients": 81920,
+  "fft_ntt_coefficients_compared": 163840,
+  "checkpoint_file": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008/checkpoint.bin",
+  "checkpoint_file_bytes": 6854643214,
+  "checkpoint_mtime_ns": 1791500932795412679,
+  "checkpoint_prefix_bytes_read": 917592,
+  "dd_chain_offset": 6157176050,
+  "dd_chain_payload_bytes": 697467160,
+  "cache_mode_bytes": 4,
+  "serialized_cache_mode": 1,
+  "dd_chain_and_mode_sha256": "123856a3eaae2a2943a98aab9866f1ce500ba4f805b914c8ef9a9049ef400fb9",
+  "skipped_middle_key_payload_bytes": 6156258458,
+  "loaded_dense_secret": true,
+  "loaded_actual_checkpoint_dd_keys": true,
+  "linear_and_automorphism_keys_loaded": false,
+  "reference": "Independent bounded single-prime integer NTT secret/secret-square products, radix-16 extraction and low-Q recomposition; diagnostic 39-unit key-noise envelope and measured key-noise convolution bound for switched phase.",
+  "all_checks_passed": true,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "stderr_bytes": 0,
+  "session": 54420,
+  "wall_time": "0:45.25",
+  "peak_rss_kib": 2896636,
+  "controls": [
+    {
+      "control": "truncated.bin",
+      "actual_exit_code": 2,
+      "stdout": "",
+      "stderr": "Failed to read 56 bytes from input stream! Read 0\n"
+    },
+    {
+      "control": "wrong-magic.bin",
+      "actual_exit_code": 2,
+      "stdout": "",
+      "stderr": "unsupported full plain37 DD checkpoint profile\n"
+    }
+  ],
+  "build_log": "/tmp/ckks-narrow-retained-dd-exact-build.log",
+  "test_log": "/tmp/ckks-narrow-retained-dd-exact-test.log",
+  "time_log": "/tmp/ckks-narrow-retained-dd-exact-time.log",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_dd_exact.cpp": "c573dc93883c792a72c1544550c02c428f0f4a2b3d3b31ed1b29ac8f3a44ece5",
+    "include/ckks/compact_dd.hpp": "33322058094889f5f117b38638e2237430eeb9c7f6300919003b0da4a391ad3b",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a",
+    "include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79",
+    "include/ckks/narrow_bootstrapping.hpp": "6174ee3a0bede45851ccb2fe745f85795e8b2906dddfbec48e561b6c4b1cc903"
+  },
+  "limitations": [
+    "Fixed suffix reader supports the known full plain37 portable checkpoint layout; it does not validate the skipped middle archive.",
+    "Validates stored coefficient keys with fresh FFT preparation, not the live derived cache or complete product tree.",
+    "Unsaved original/O1 failing keys cannot be checked; those failures remain unresolved."
+  ],
+  "generated_companion_revalidation_pending": false,
+  "original_sigmoid_failures_resolved": false,
+  "security_qualified": false,
+  "goal_complete": false,
+  "generated_companion_revalidation_evidence": "narrow-dd-generated-dd-revalidation.json"
+}

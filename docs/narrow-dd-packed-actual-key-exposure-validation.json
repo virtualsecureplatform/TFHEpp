@@ -1,0 +1,76 @@
+{
+  "utc": "2026-10-10T06:25:43.848678+00:00",
+  "scope": "Match actual completed and live CPU packed profile moduli to archived generic LWE screens; this is exposure bookkeeping, not a new attack or security proof.",
+  "n": 16384,
+  "h": 31,
+  "actual_structured_switch_key_log_q": 48,
+  "cases": [
+    {
+      "case": "dd_ll14_dense_selectors",
+      "n": 16384,
+      "log_q": 379,
+      "sigma": 3.2,
+      "modeled_secret": "dense ternary",
+      "generic_four_attack_screen_complete": true,
+      "actual_structured_and_correlated_security_qualified": false,
+      "weakest_generic_bits": 150.01099995668946,
+      "generic_screen_passed": true
+    },
+    {
+      "case": "dd_ll14_dense_packed_setup",
+      "n": 16384,
+      "log_q": 427,
+      "sigma": 3.2,
+      "modeled_secret": "dense ternary",
+      "generic_four_attack_screen_complete": true,
+      "actual_structured_and_correlated_security_qualified": false,
+      "weakest_generic_bits": 131.6010453604796,
+      "generic_screen_passed": true
+    },
+    {
+      "case": "dd_ll14_structured_source_uniform_sparse_proxy",
+      "n": 16384,
+      "log_q": 48,
+      "sigma": 3.2,
+      "modeled_secret": "uniform sparse fixed sign-count proxy; actual public one-per-block distribution differs",
+      "generic_four_attack_screen_complete": false,
+      "actual_structured_and_correlated_security_qualified": false,
+      "generic_screen_passed": null,
+      "incomplete_attack_errors": {
+        "primal_usvp": "ValueError: nonfinite attack cost",
+        "primal_bdd": "ValueError: nonfinite attack cost",
+        "dual": "ValueError: nonfinite attack cost",
+        "dual_hybrid": "ValueError: nonfinite attack cost"
+      },
+      "raw_optimizer_outcomes_retained": false
+    }
+  ],
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "ring_security_qualified": false,
+  "correlated_key_security_qualified": false,
+  "security_validated": false,
+  "full_cpu_accuracy_report_present": true,
+  "higher_structured_modulus_profiles_not_transferred": [
+    56,
+    64,
+    76
+  ],
+  "limits": [
+    "Dense generic screens exclude ring-specific and circular/correlated evaluation keys.",
+    "The Q48 structured proxy fixes16positive/15negative signs and omits the public one-per-block constraint and actual random sign counts.",
+    "Archived Q48 nonfinite attack-cost errors were revalidated with raw results: all four attacks return positive infinity at limits1754 and4096. These remain incomplete screens and do not establish security lower bounds.",
+    "The Q56/Q64/Q76 scalar decoder and dictionary sensitivities apply to different switch moduli."
+  ],
+  "source_sha256": {
+    "TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json": "a19bdcbd1beec01df0865f53441572c1b1fb9735b5aac2a2491884774fc9185a",
+    "Parameter-Selection/python/estimates/narrow_ckks_ll14_security.json": "153531b5dc3e368c0effbfb91464fed3d7c4ec0a0e6de4cb7501c518f6471bf2",
+    "Parameter-Selection/python/estimates/narrow_ckks_security.py": "529022871973ec19ed6db3524e336b2198f3f2bdd1c4653ff46660c59642885a",
+    "TFHEpp/test/ckks/ckks_narrow_benchmark.cpp": "15050404e075dcdf361b4c4d413b1ce2e0fea5bc0125f1040f36506ed84d42d7"
+  },
+  "all_exposure_checks_passed": true,
+  "goal_complete": false,
+  "q48_raw_optimizer_revalidation": "narrow-dd-packed-q48-raw-optimizer-validation.json",
+  "q48_raw_optimizer_results_retained": true,
+  "q48_expanded_search_limit": 4096,
+  "q48_generic_screen_complete": false
+}

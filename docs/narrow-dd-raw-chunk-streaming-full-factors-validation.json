@@ -1,0 +1,109 @@
+{
+  "observed_at_utc": "2026-10-10T19:39:53.316693+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "N3276822-column raw-chunk callback factor control, head30/tail4, two trials each; compare archives with preceding lazy-matrix build and independent slot accuracy. Does not qualify whole-refresh peak RSS or paper latency.",
+  "process": {
+    "pid": 1969698,
+    "start_ticks": 230733126
+  },
+  "session_id": 59562,
+  "memory_cap_bytes": 3221225472,
+  "fresh_keys_generated": false,
+  "prepared_selector_cache_created": false,
+  "frozen_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-raw-chunk-streaming-20261010/full-factor-frozen",
+  "frozen_executable_sha256": "a856141d292026abb0eeb50aad7854c6f01e93a6006edb22cf0e740647bb0b7a",
+  "qualified_source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "5b6a77e75b5ffeaee48e3c9acfb171e60623ba04ad5f5c2b595b0e7c66e98c4d",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5d9dc333cfba0b7e0d28a9e1207e926b1956eca68bcddf188a75dc93507b0d7e",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "7886c40e1204bc4b36a09dd153c2f5d4f4d0f171985871c1eeb0b82182a52b12"
+  },
+  "head_reference_cross_version_byte_identity": true,
+  "tail_reference_cross_version_byte_identity": true,
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 22,
+      "seconds": 100.985409749,
+      "cache_setup_seconds": 4.89e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.3209458480000007,
+      "selector_ntt_seconds": 19.841970307000004,
+      "matrix_seconds": 72.731604813,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 22,
+      "seconds": 75.310511136,
+      "cache_setup_seconds": 4.89e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.0615141689999996,
+      "selector_ntt_seconds": 16.743598277999993,
+      "matrix_seconds": 50.47213000200001,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 22,
+      "seconds": 80.089341933,
+      "cache_setup_seconds": 1.77e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.1303597330000001,
+      "selector_ntt_seconds": 17.511336755000002,
+      "matrix_seconds": 54.053188555,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 22,
+      "seconds": 76.292647927,
+      "cache_setup_seconds": 1.77e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.100174615999999,
+      "selector_ntt_seconds": 16.776211249999996,
+      "matrix_seconds": 51.236340443,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-raw-chunk-streaming-20261010/full.log",
+  "time": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-raw-chunk-streaming-20261010/full.time",
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-raw-chunk-streaming-20261010",
+  "actual_exit_code": 0,
+  "columns": 22,
+  "slots_checked": 720896,
+  "unique_repeated_ciphertext_coefficients": 2883584,
+  "cross_version_ciphertext_coefficients": 2883584,
+  "maximum_resident_kib": 1943144,
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "complete head30/tail4 raw groups and public/secret prefix; not full key suffix",
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false
+}

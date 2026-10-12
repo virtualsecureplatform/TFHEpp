@@ -1,0 +1,24 @@
+{
+  "observed_utc": "2026-10-12T01:03:02.062954+00:00",
+  "scope": "Observed current CPU host for retained mask42 real/complex runs; hardware and timing are not matched to paper.",
+  "host_cpu": {
+    "Architecture": "x86_64",
+    "CPU(s)": "24",
+    "Model name": "12th Gen Intel(R) Core(TM) i9-12900K",
+    "Thread(s) per core": "2",
+    "Core(s) per socket": "16",
+    "Socket(s)": "1"
+  },
+  "available_logical_cpu_count": 24,
+  "compiler_version": "13.3.0",
+  "retained_function_omp_num_threads": 8,
+  "current_default_regression_omp_num_threads": 4,
+  "paper_platform": {
+    "cpu": "two AMD EPYC 7K62 processors",
+    "functional_comparison_cpu_cores": 48,
+    "smt_disabled": true,
+    "memory": "1 TB DDR4-3200"
+  },
+  "concurrent_runs_occurred": true,
+  "matched_paper_timing_qualified": false
+}

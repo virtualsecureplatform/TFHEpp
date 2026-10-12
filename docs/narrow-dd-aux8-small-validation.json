@@ -1,0 +1,95 @@
+{
+  "scope": "Check the N512 auxiliary8 encrypted probe against fixed 23-bit gates.\n\nSmall-ring diagnostics do not establish full-ring accuracy or key security.\n",
+  "small_encrypted_validation_passed": true,
+  "full_encrypted_validation_passed": false,
+  "security_validated": false,
+  "functions": {
+    "sigmoid": {
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/run/sigmoid.json",
+      "report_sha256": "9a11ca126a2e9bb78e72c8e60c257ff8c83cbd1f2c29bff493992065f5ea26d7",
+      "accuracy_passed": true,
+      "max_error": 1.2799614604033807e-09,
+      "evaluation_max_error": 4.309841203913226e-10,
+      "fresh_input_max_error": 1.0051961609495791e-11,
+      "rms_error": 8.055122503700838e-10,
+      "complex_uniform_bound": 1.0813569365872264e-09,
+      "post_refresh_product_max_error": 3.4861872603578376e-09,
+      "post_refresh_product_evaluation_max_error": 1.1622067031686277e-09,
+      "refresh_seconds": 62.004088038,
+      "product_tolerance": 4.50319595316329e-07,
+      "evaluation_product_tolerance_lower_bound": 4.503195950585134e-07
+    },
+    "gelu": {
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/run/gelu.json",
+      "report_sha256": "ea98d85eab0bffc51dce5adc401d925d6eb1f32ab258ddfb931ac3093282bbf2",
+      "accuracy_passed": true,
+      "max_error": 2.852741362493433e-09,
+      "evaluation_max_error": 3.2533941315102693e-09,
+      "fresh_input_max_error": 7.476303488525725e-12,
+      "rms_error": 1.2373703899407827e-09,
+      "complex_uniform_bound": 5.883761800935726e-10,
+      "post_refresh_product_max_error": 1.9585975807183352e-08,
+      "post_refresh_product_evaluation_max_error": 2.2372226400294036e-08,
+      "refresh_seconds": 62.305483219,
+      "product_tolerance": 1.467865741133231e-06,
+      "evaluation_product_tolerance_lower_bound": 1.467865740992951e-06
+    },
+    "tanh": {
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/run/tanh.json",
+      "report_sha256": "4716f9d78b005a8c38bd0f350810840088cf89ba2ba01f179e4a5468c5a819b3",
+      "accuracy_passed": true,
+      "max_error": 1.5501760799116596e-08,
+      "evaluation_max_error": 1.1719498317930545e-09,
+      "fresh_input_max_error": 7.579691141942882e-12,
+      "rms_error": 1.0779159991815115e-08,
+      "complex_uniform_bound": 1.5300144120715163e-08,
+      "post_refresh_product_max_error": 4.377687724501778e-08,
+      "post_refresh_product_evaluation_max_error": 3.1489223286677154e-09,
+      "refresh_seconds": 212.207385387,
+      "product_tolerance": 4.5615794863043815e-07,
+      "evaluation_product_tolerance_lower_bound": 4.5615794498259955e-07
+    }
+  },
+  "utc": "2026-10-09T07:58:17.302147+00:00",
+  "runners": [
+    {
+      "tag": "probe",
+      "session": 81251,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "normal_exit": true,
+      "stderr_bytes": 0,
+      "wall_time": "5:43.61",
+      "peak_rss_kib": 333832
+    },
+    {
+      "tag": "capture-control",
+      "session": 48206,
+      "terminal": true,
+      "actual_exit_code": 1,
+      "expected_exit_code": 1,
+      "normal_exit": true,
+      "stderr_bytes": 0,
+      "wall_time": "1:18.85",
+      "peak_rss_kib": 333400
+    }
+  ],
+  "probe_source_sha256": "08f14b24a6b7a12b24fc28e2edeaf2152997731ce0ff29edc328a3f5bc88070f",
+  "probe_executable_sha256": "cc76c89970bdc1f4cc326212cbd0c5b9159bc3162d7190a2d319c02950261266",
+  "validator_source_sha256": "3a16b1cfe47dc4dab06456ccbabe05309af91bca97e15b2e036dd76224e2e5ce",
+  "validator_actual_exit_code": 0,
+  "probe_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v",
+  "successful_selector_cleanup": true,
+  "failure_selector_files_retained": 35,
+  "failure_state_prefix_evidence": "narrow-dd-aux8-capture-prefix-validation.json",
+  "rejected_corruption_controls": [
+    "wrong_ring",
+    "wrong_auxiliary_lift",
+    "failed_product_with_inflated_threshold",
+    "nonfinite_measurement",
+    "failed_uniform_gate",
+    "false_success_flag"
+  ],
+  "functions_share_one_key_set": true
+}

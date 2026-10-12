@@ -1,0 +1,44 @@
+{
+  "observed_at_utc": "2026-10-11T04:59:51.542245+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Stopped-queue frozen-artifact recovery and exact completed payload-baseline handoff; does not qualify the active full evaluator.",
+  "stopped_controller_actual_exit_code": 2,
+  "stopped_queue_evaluators_started": 0,
+  "stopped_queue_evidence": "TFHEpp/docs/narrow-dd-parallel-secondary11-full-validation.json",
+  "stopped_queue_evidence_sha256": "ade9634112db7c22d145f23d3bd9f997709323f0974ba1c4796914bcf1bfe882",
+  "all7_previous_frozen_artifacts_unchanged": true,
+  "positive_actual_stopped_queue_verified": true,
+  "positive_actual_completed_37_file_baseline_verified": true,
+  "rejection_controls_passed": [
+    "not_terminal",
+    "already_succeeded",
+    "wrong_error",
+    "evaluator_started",
+    "wrong_checkpoint",
+    "wrong_mode",
+    "live_controller",
+    "live_child",
+    "wrong_receipt",
+    "changed_artifact"
+  ],
+  "controller_source_sha256": "d0fe09c0bb6540b33200cc945436a2a7857388b2098398121149fb889cb4a385",
+  "new_full_evidence": "TFHEpp/docs/narrow-dd-parallel-secondary11-full-resumed-validation.json",
+  "new_controller": {
+    "pid": 1996541,
+    "start_ticks": 234127637
+  },
+  "new_time_wrapper": {
+    "pid": 1996542,
+    "start_ticks": 234127728
+  },
+  "new_evaluator": {
+    "pid": 1996543,
+    "start_ticks": 234127728
+  },
+  "full_payload_pre_scan_skipped": true,
+  "mandatory_full_payload_post_scan_preserved": true,
+  "frozen_runner_sha256": "b1067ea02c2d2870201797a932f204f0f6d4460b446ed9ed0040dd9b913218b9",
+  "current_source_full_refresh_qualified": false,
+  "fresh_keys_generated": false
+}

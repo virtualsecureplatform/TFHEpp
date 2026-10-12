@@ -1,0 +1,96 @@
+{
+  "observed_at_utc": "2026-10-08T19:26:41.485752+00:00",
+  "scope": "Resident balanced-digit tensor spectra -> contraction -> inverse NTT -> centered CRT -> wide shifted recomposition -> signed projection. Host metadata and portable arithmetic tested; CUDA graph compiled but device execution unavailable. Native ciphertext decomposition/forward NTT, encrypted DD relinearization/tree and full refresh remain unconnected.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "66efd85664a1a5453c359153ca67ec5d8e956265059c4ed600d1734f027cf9fd",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "561db59a5490bca2a6d4141b1e4ce33569b1039d9859b6578793f5dea13b006d",
+    "src/ckks/narrow_cuda.cu": "49184d4e954ea086c8be1e34a639e2cbb656743b1321cf7f44f009712fad0904",
+    "test/ckks/ckks_narrow_cuda.cu": "ed511ed5f87c1fb27ad1a7036530ee1b98f012c44ad82bf4d51be99691e6fc46"
+  },
+  "cuda_tensor_from_spectra_source_implemented": true,
+  "graph_primes_supported": [
+    1,
+    2
+  ],
+  "operand_digit_semantic_precondition": "Spectra of signed balanced digits with magnitude at most 2^(base_bits-1); caller guarantees device contents.",
+  "crt_capacity_preflight": "Strict bound 2*N*min(lhs_rows,rhs_rows)*2^(2*(base_bits-1)) < floor(prime_product/2).",
+  "wide_storage_preflight": "input_log_q >= (lhs_rows+rhs_rows)*base_bits+log2(N)+3, with enough limbs. This conservative signed bound covers complete cross-mask products before projection.",
+  "recomposition_supports_fewer_rows_than_output_level": true,
+  "all_mutable_buffers_pairwise_disjoint": true,
+  "all_mutable_buffers_disjoint_from_operand_and_ntt_tables": true,
+  "read_only_operand_overlap_allowed": true,
+  "no_device_allocation_or_host_tensor_transfer_during_graph": true,
+  "full_sum_before_rounding": true,
+  "host_invalid_graph_requests_passed": 21,
+  "host_valid_graph_requests_passed": 4,
+  "two_prime_base32_capacity_acceptance_one_prime_rejection_checked": true,
+  "host_spectral_cases_passed": 16,
+  "host_projected_tensor_cases_passed": 48,
+  "host_projected_tensor_coefficients_passed": 7056,
+  "reference": "Independent 896-bit signed operand reconstruction and full coefficient-space negacyclic multiplication, compared with CPU inverse NTT plus portable CRT/wide recomposition/project helpers. No CUDA kernels execute on host.",
+  "profiles": {
+    "points": [
+      2,
+      32
+    ],
+    "columns": [
+      1,
+      3
+    ],
+    "lhs_rhs_rows": [
+      [
+        1,
+        1
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        3,
+        3
+      ]
+    ],
+    "base_bits": 8,
+    "squaring_profile": [
+      3,
+      3
+    ],
+    "per_profile_primes": "each of the two actual auxiliary primes separately",
+    "scale_drops": "0,9,min(37,wideQ-1)",
+    "output_bits": "min(63,wideQ-drop)",
+    "output_limbs": 1
+  },
+  "cuda_cmake_final_build_exit_code": 0,
+  "cuda_cmake_final_build_session": 76386,
+  "cuda_cmake_build_log": "/tmp/ckks-narrow-cuda-tensor-graph-final-build.log",
+  "cuda_test_actual_exit_code": 77,
+  "cuda_test_log": "/tmp/ckks-narrow-cuda-tensor-graph-cmake-test.log",
+  "host_ubsan_final_build_exit_code": 0,
+  "host_ubsan_final_build_session": 3060,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-tensor-graph-host-ubsan-final-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-tensor-graph-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_driver_session": 58889,
+  "host_ubsan_test_driver_exit_code": 0,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-tensor-graph-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-tensor-graph-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "Both CUDA source/test host routines and portable arithmetic instrumented; device kernels not instrumented or executed.",
+  "all_prior_kernel_host_checks_rechecked": true,
+  "total_kernel_host_rejection_cases_passed": 170,
+  "compiled_matching_one_prime_device_graph_cases": 48,
+  "two_prime_device_graph_case_present": false,
+  "device_cases_executed": false,
+  "gpu_device_count": 0,
+  "gpu_tensor_graph_validated": false,
+  "complete_cuda_native_tensor_product_implemented": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

@@ -1,0 +1,29 @@
+{
+  "scope": "Full N16384 coefficient-packed reconstruction from retained public packed435 primary8/delta57 archive, all14 substitution depths cached once. No secrets loaded and no key generation. New output selectors retained for reuse after qualification. Local-disk temporary accumulator, network-disk retained final selectors. Two-hour wall-time cap. Does not qualify full functional accuracy or paper performance/security.",
+  "terminal": true,
+  "all_checks_passed": false,
+  "stage": "reconstruction failed",
+  "controller_pid": 2057399,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-local-reconstruction-20261011/run.py": "e803d83ab151ed72a3373d448361e90112d531f3d4743e508957f44654d142a6",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_packed_archive.cpp": "a49982b6129d0fdb399cfba811e8f456a5660c727aa5c1e897cfbc957c3f23a8",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "636aaa5b5ebf3a02c851db136c4a200188f5c1e088fdaa8925ab83ac65167619",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_file.hpp": "87c159a4bc5142e680a2624d89cee23b8bfa12250918ccedc1654b241eaae11a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_packed_file.hpp": "66ea433a16f90301dffd89d5c767a2c79f5fc850cef22d10cd20d003ee20b882",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81"
+  },
+  "completed_terms": 768,
+  "total_terms": 65536,
+  "new_keys_generated": 0,
+  "wall_time_cap_seconds": 7200,
+  "updated_utc": "2026-10-11T18:35:23.558740+00:00",
+  "packed_archive_sha256": "edabb5da09912a47adc71d22bca73ad1cc14336b384b973d96c03e4ce4545878",
+  "local_scratch_directory": "/tmp/ckks-packed-ll14-local-20261011",
+  "evaluator_pid": 2057429,
+  "evaluator_start_ticks": 239014841,
+  "extraction_elapsed_seconds": 116.277,
+  "extraction_linear_total_estimate_seconds": 9922.304,
+  "test_actual_exit_code": -15,
+  "error": "",
+  "intentional_stop_reason": "Local accumulator768/65536 in116.277 s still projects about2.76 h, exceeding2 h cap. Local placement has only marginal effect, so initial I/O diagnosis is not supported as the dominant cause. Owned evaluator stopped for kernel profiling; public packed archive retained."
+}

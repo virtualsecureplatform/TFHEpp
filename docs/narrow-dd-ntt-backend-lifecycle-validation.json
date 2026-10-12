@@ -1,0 +1,114 @@
+{
+  "scope": "Derived product-tree backend lifecycle and portable archive compatibility. Synthetic public-only N512 key with one nonzero marker, no encryption/private-key generation. Original header and isolated optional-NTT header compiled from same test; archive bytes must be identical, move must preserve backend ownership, load must discard stale backend and release cached ownership while restoring raw marker. Not cryptographic accuracy or full FBS qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "new_private_or_public_keys_generated": 0,
+  "build_results": {
+    "new": {
+      "command": [
+        "g++",
+        "-I/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/include",
+        "-std=gnu++20",
+        "-O2",
+        "-march=native",
+        "-fopenmp",
+        "-DUSE_BLAKE3",
+        "-DUSE_INTERLEAVED_FORMAT",
+        "-DUSE_SPQLIOS_INTL",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/concrete-fft",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl",
+        "-isystem",
+        "/tmp/ckks-build-deps/root/usr/include",
+        "-fno-ipa-icf",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-lifecycle.cpp",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a",
+        "-o",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-new"
+      ],
+      "actual_exit_code": 0
+    },
+    "old": {
+      "command": [
+        "g++",
+        "-std=gnu++20",
+        "-O2",
+        "-march=native",
+        "-fopenmp",
+        "-DUSE_BLAKE3",
+        "-DUSE_INTERLEAVED_FORMAT",
+        "-DUSE_SPQLIOS_INTL",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/concrete-fft",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c",
+        "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl",
+        "-isystem",
+        "/tmp/ckks-build-deps/root/usr/include",
+        "-fno-ipa-icf",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-lifecycle.cpp",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a",
+        "-o",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-old"
+      ],
+      "actual_exit_code": 0
+    }
+  },
+  "runs": {
+    "old": {
+      "command": [
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-old",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-old.bin"
+      ],
+      "actual_exit_code": 0,
+      "stdout": "derived_backend=0 lifecycle passed; archive_bytes=73917741",
+      "stderr": ""
+    },
+    "new": {
+      "command": [
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-new",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-new.bin"
+      ],
+      "actual_exit_code": 0,
+      "stdout": "derived_backend=1 lifecycle passed; archive_bytes=73917741",
+      "stderr": ""
+    }
+  },
+  "archive_bytes": 73917741,
+  "archive_sha256": "6e44bce123d1e001e4b9e87959090c2b14568491ace331cb37a1f7b72a6bee4d",
+  "archives_byte_identical": true,
+  "move_backend_ownership_preserved": true,
+  "load_cleared_backend_and_released_ownership": true,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/callback-lifecycle.cpp": "ee4cd72c56bed305a05f7a1ba538f04495c0263a762a8d826ca315b868e9d0c8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-integration-20261011/include/ckks/narrow_bootstrapping.hpp": "507d167f4ae99f67c596c5b1e4a8da0084f2fc73087c6ef83d6434a9f76cd344",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "636aaa5b5ebf3a02c851db136c4a200188f5c1e088fdaa8925ab83ac65167619"
+  },
+  "updated_utc": "2026-10-11T20:14:19.358829+00:00"
+}

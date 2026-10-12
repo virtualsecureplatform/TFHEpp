@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-09T12:55:03.997646+00:00",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 16834166784,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1846175,
+      "start_ticks": 219616642,
+      "rss_bytes": 10911961088,
+      "cap_bytes": 17179869184
+    }
+  ],
+  "available_bytes": 103430615040,
+  "required_bytes": 73185603584,
+  "host_reserve_bytes": 10737418240,
+  "compiler_aggregate_budget_bytes": 4294967296,
+  "eligible": true,
+  "compiled": true,
+  "build_session": 37757,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "build_completion_evidence": "narrow-dd-aux8-retained-square-build-small-validation.json"
+}

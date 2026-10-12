@@ -1,0 +1,32 @@
+{
+  "utc": "2026-10-09T10:56:40.271075+00:00",
+  "scope": "Native own-metadata aux8 selector reader confirms actual group19 phase failure",
+  "build_session": 57390,
+  "build_actual_exit_code": 0,
+  "session": 25921,
+  "terminal": true,
+  "actual_exit_code": 1,
+  "result": {
+    "n": 16384,
+    "group": 19,
+    "tail": false,
+    "selectors_checked": 529,
+    "phase_coefficients_checked": 8667136,
+    "checkpoint_prefix_bytes_read": 1835105,
+    "evaluation_keys_loaded": false,
+    "auxiliary8_probe_state": true,
+    "failed_selectors": 1,
+    "maximum_bounded_noise": 17,
+    "failed_phase_coefficients": 10816,
+    "maximum_error_bits": 152,
+    "failed_records": [
+      466
+    ],
+    "phase_accuracy_passed": false
+  },
+  "stderr_bytes": 0,
+  "source_sha256": "20e5942ff5cf08f40dde91f00b9a6680bef80031a8937df0128bf86df6df72ae",
+  "executable_sha256": "8d127d618df52a276fc1217b280397828a921850c5a1e99cfb743d65e931fa18",
+  "independent_shape_evidence": "narrow-dd-aux8-retained-selector-corruption-validation.json",
+  "failure_cause_established": false
+}

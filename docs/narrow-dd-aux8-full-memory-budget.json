@@ -1,0 +1,97 @@
+{
+  "utc": "2026-10-09T08:10:41.449052+00:00",
+  "scope": "Full N16384 auxiliary8 sigmoid/GeLU/tanh, one fresh key set; fixed23bit refresh and square gates; experimental profile",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17783480320,
+      "vm_peak_bytes": 20418478080,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1831156,
+      "start_ticks": 217652148,
+      "rss_bytes": 11345887232,
+      "vm_peak_bytes": 15038504960,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 102247694336,
+  "required_bytes": 101867134976,
+  "host_reserve_bytes": 10737418240,
+  "full_process_limit_bytes": 17179869184,
+  "full_stack_bytes": 67108864,
+  "omp_threads": 4,
+  "eligible": true,
+  "launched": true,
+  "all_auxiliary_preparation_sessions_terminal": true,
+  "preparation_sessions": [
+    {
+      "session": 38911,
+      "actual_exit_code": 0
+    },
+    {
+      "session": 25811,
+      "actual_exit_code": 0
+    },
+    {
+      "session": 25266,
+      "actual_exit_code": 1
+    },
+    {
+      "session": 22837,
+      "actual_exit_code": 0
+    }
+  ],
+  "source_sha256": {
+    "test/ckks/ckks_narrow_benchmark.cpp": "7b26c8346bc50ff1f65c4f6011f6e7997d666df7e7ac7ae461e573acd6c1b9d3",
+    "test/ckks/ckks_narrow_checkpoint_inspect.cpp": "3cf275d95f408ae0bd291e8e00489e47a08500ce6428d0e073b08216cea03028",
+    "include/ckks/ckks.hpp": "4e11d00df1c72f505f6635cf115810ec21299d85d19f538c73b1c2b0653c2372",
+    "include/mulfft.hpp": "0b9b7c957e57ffff0262c2a11160fab99ed1af095cc1b64d4979a761b7e14c2f",
+    "include/ckks/narrow_bootstrapping.hpp": "60ffcdbd18d5ea4057e6eb7348ce83c687816e46938bef014d01a9efa8217f8d",
+    "include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79",
+    "include/ckks/narrow_selector_file.hpp": "baa876f1d73f170a62117ce6fb27fb4aaf32866106243d7ae8e0d07dcc5e13c8",
+    "include/ckks/compact_dd.hpp": "59aad7215838b861168d54e50355db4c19c4cb3d9aaaad6ec01b38724288c5ce",
+    "include/ckks/compact_linear.hpp": "f46bce3180291c3bdbbea66a44326b0c6929773cde1078952c74d74a9ab0fc9f"
+  },
+  "probe_source_sha256": "03b094ba5f50b6c39f141a45c4937adc5fb164559f0740f739906f69a7424e0d",
+  "probe_executable_sha256": "78f4a04befffb56af429819cca417e3c2244042850b25c2e82ef6c8e365ad8ee",
+  "cmake_sha256": "5dda722f5ebe0b73e80724e49ef22b178a9b74bd3b799d94f6cebfaae5aad967",
+  "baseline_aux16_vm_peak_bytes": 15038504960,
+  "baseline_aux16_vm_peak_headroom_bytes": 2141364224,
+  "limit_basis": "Measured auxiliary16 analog VM peak with eight threads; auxiliary8 reduces gadget row counts and this run uses four threads. This is an empirical engineering budget, not a worst-case allocator proof.",
+  "disk_available_bytes": 66366530912256,
+  "artifact_reserve_bytes": 103079215104,
+  "security_validated": false,
+  "private_parent": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe",
+  "probe_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run",
+  "session_id": 71054,
+  "pid": 1835248,
+  "start_ticks": 218003646,
+  "terminal": true,
+  "phase": "retained_sigmoid_failure",
+  "current_function": "sigmoid",
+  "all_functions_validated": false,
+  "launch_process_observation": {
+    "pid": 1835248,
+    "start_ticks": 218003646,
+    "state": "R",
+    "cpu_ticks": 17939,
+    "resident_pages": 1631823,
+    "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_auxiliary_probe /home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run --full "
+  },
+  "latest_verified_observation": {
+    "observed_at_utc": "2026-10-09T08:30:34.725078+00:00",
+    "pid": 1835248,
+    "start_ticks": 218003646,
+    "state": "R",
+    "cpu_ticks": 290084,
+    "resident_pages": 2111883,
+    "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_auxiliary_probe /home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run --full ",
+    "terminal": false,
+    "cpu_ticks_since_previous_observation": 272138
+  },
+  "actual_exit_code": 1,
+  "completion_evidence": "narrow-dd-aux8-full-sigmoid-failure-validation.json"
+}

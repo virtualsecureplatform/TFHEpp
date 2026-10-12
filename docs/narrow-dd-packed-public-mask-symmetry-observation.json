@@ -1,0 +1,81 @@
+{
+  "scope": "Public-only integer conjugation-symmetry audit of real plaintext reconstruction masks; no secrets or encrypted-phase computation. Real masks should have c[i]=-c[N-i] and c[N/2]=0. Tests encoded masks used by current packed path. Observation alone does not prove the complete root-error cause.",
+  "input_path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011/public-masks.bin",
+  "log_delta": 34,
+  "masks": [
+    {
+      "mask": 0,
+      "nonzero_conjugation_pair_defects": 0,
+      "max_integer_pair_defect": 0,
+      "imaginary_basis_coefficient": 0,
+      "max_imaginary_slot_leakage": 3.1337686821347607e-14,
+      "max_active_mask_encoding_error": 1.0409306083758468e-08,
+      "max_outside_support_leakage": 6.645697547825506e-09
+    },
+    {
+      "mask": 1,
+      "nonzero_conjugation_pair_defects": 0,
+      "max_integer_pair_defect": 0,
+      "imaginary_basis_coefficient": 0,
+      "max_imaginary_slot_leakage": 2.7767044789396163e-14,
+      "max_active_mask_encoding_error": 6.645645811436738e-09,
+      "max_outside_support_leakage": 1.0409305651662682e-08
+    },
+    {
+      "mask": 2,
+      "nonzero_conjugation_pair_defects": 0,
+      "max_integer_pair_defect": 0,
+      "imaginary_basis_coefficient": 0,
+      "max_imaginary_slot_leakage": 2.6893836106830235e-14,
+      "max_active_mask_encoding_error": 6.64561050634367e-09,
+      "max_outside_support_leakage": 1.0409306005145522e-08
+    },
+    {
+      "mask": 3,
+      "nonzero_conjugation_pair_defects": 0,
+      "max_integer_pair_defect": 0,
+      "imaginary_basis_coefficient": 0,
+      "max_imaginary_slot_leakage": 2.580850219156241e-14,
+      "max_active_mask_encoding_error": 6.645564099019834e-09,
+      "max_outside_support_leakage": 1.0409305961681787e-08
+    },
+    {
+      "mask": 4,
+      "nonzero_conjugation_pair_defects": 0,
+      "max_integer_pair_defect": 0,
+      "imaginary_basis_coefficient": 0,
+      "max_imaginary_slot_leakage": 2.5788250455557438e-14,
+      "max_active_mask_encoding_error": 6.645698658050021e-09,
+      "max_outside_support_leakage": 1.0409305631487681e-08
+    },
+    {
+      "mask": 5,
+      "nonzero_conjugation_pair_defects": 0,
+      "max_integer_pair_defect": 0,
+      "imaginary_basis_coefficient": 0,
+      "max_imaginary_slot_leakage": 2.8918680852563634e-14,
+      "max_active_mask_encoding_error": 6.645645145299394e-09,
+      "max_outside_support_leakage": 1.0409305596107257e-08
+    },
+    {
+      "mask": 6,
+      "nonzero_conjugation_pair_defects": 0,
+      "max_integer_pair_defect": 0,
+      "imaginary_basis_coefficient": 0,
+      "max_imaginary_slot_leakage": 2.7084388062756285e-14,
+      "max_active_mask_encoding_error": 6.645610062251464e-09,
+      "max_outside_support_leakage": 1.0409305994551713e-08
+    },
+    {
+      "mask": 7,
+      "nonzero_conjugation_pair_defects": 0,
+      "max_integer_pair_defect": 0,
+      "imaginary_basis_coefficient": 0,
+      "max_imaginary_slot_leakage": 2.5351003609769603e-14,
+      "max_active_mask_encoding_error": 6.6455627667497945e-09,
+      "max_outside_support_leakage": 1.040930539570541e-08
+    }
+  ],
+  "imaginary_mask_asymmetry_hypothesis_rejected": true,
+  "full_root_error_cause_proven": false
+}

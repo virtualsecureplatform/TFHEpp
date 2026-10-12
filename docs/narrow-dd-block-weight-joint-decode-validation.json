@@ -1,0 +1,493 @@
+{
+  "observed_at_utc": "2026-10-09T05:37:25.822998+00:00",
+  "scope": "Bounded adjacent exact-weight strata9/10/12 of the same actual-block mask; two weight10 seeds; default weight11 regression",
+  "source": "Parameter-Selection/python/estimates/narrow_ckks_block_ring_joint_decode.py",
+  "source_sha256": "1e79f2acef26b6902faeb4335d2d67342c49481e79a2049b18e2f6d58f570ef0",
+  "runs": [
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_weight10.json",
+      "sha256": "3a1d029efafdbbdde1036775808a91ced4a9357ef5b4682b422b7f70535b3c89",
+      "posterior_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_rotation_weight10.json",
+      "posterior_sha256": "b839058897a1f1ddfeea12e045a9adfb5d589ed1ebb9d87153bf26a97db35eda",
+      "weight": 10,
+      "seed": 2119,
+      "session": 37030,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 840,
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 128.46282819148016,
+            "beta": 190,
+            "d": 3095
+          },
+          "independent_decoder": {
+            "bits": 127.69882899064042,
+            "beta": 182,
+            "d": 3095
+          },
+          "optimistic_joint_bound": {
+            "bits": 127.03802334418162,
+            "beta": 182,
+            "d": 2967
+          },
+          "common_decoder_iid95": {
+            "bits": 128.30576427931183,
+            "beta": 190,
+            "d": 3095
+          },
+          "independent_decoder_iid95": {
+            "bits": 127.62421165344658,
+            "beta": 182,
+            "d": 3095
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 126.89658093190886,
+            "beta": 182,
+            "d": 2967
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 128.42295585377232,
+            "beta": 190,
+            "d": 3095
+          },
+          "independent_decoder": {
+            "bits": 127.6965501813215,
+            "beta": 182,
+            "d": 3095
+          },
+          "optimistic_joint_bound": {
+            "bits": 127.03542424881483,
+            "beta": 182,
+            "d": 2967
+          },
+          "common_decoder_iid95": {
+            "bits": 128.26589194160402,
+            "beta": 190,
+            "d": 3095
+          },
+          "independent_decoder_iid95": {
+            "bits": 127.6027827772901,
+            "beta": 190,
+            "d": 3095
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 126.89398183654208,
+            "beta": 182,
+            "d": 2967
+          }
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_weight12.json",
+      "sha256": "a21ccfa9acff214d32980bf554d51eb8b61a33c99e73f42c566e59fe783ee42f",
+      "posterior_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_rotation_weight12.json",
+      "posterior_sha256": "27391db776fdb33efe39bab655ae162df52bfeac1006c59a685f31473c23a797",
+      "weight": 12,
+      "seed": 2119,
+      "session": 37030,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 840,
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 130.20418034671778,
+            "beta": 222,
+            "d": 2967
+          },
+          "independent_decoder": {
+            "bits": 129.852037853425,
+            "beta": 214,
+            "d": 2775
+          },
+          "optimistic_joint_bound": {
+            "bits": 129.58171525262938,
+            "beta": 198,
+            "d": 2711
+          },
+          "common_decoder_iid95": {
+            "bits": 130.00085685161676,
+            "beta": 222,
+            "d": 2967
+          },
+          "independent_decoder_iid95": {
+            "bits": 129.7153747760682,
+            "beta": 214,
+            "d": 2839
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 129.3783917615781,
+            "beta": 198,
+            "d": 2711
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 130.16413699668436,
+            "beta": 222,
+            "d": 2967
+          },
+          "independent_decoder": {
+            "bits": 129.8268680803701,
+            "beta": 222,
+            "d": 2711
+          },
+          "optimistic_joint_bound": {
+            "bits": 129.58152926710545,
+            "beta": 198,
+            "d": 2711
+          },
+          "common_decoder_iid95": {
+            "bits": 129.96081350158335,
+            "beta": 222,
+            "d": 2967
+          },
+          "independent_decoder_iid95": {
+            "bits": 129.6837280704482,
+            "beta": 222,
+            "d": 2775
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 129.37820577605416,
+            "beta": 198,
+            "d": 2711
+          }
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_weight9_seed2119.json",
+      "sha256": "4c9e7b6f32e253cd9d6312996cb39cdefb479b54c74ab41d92393f37dfae5b61",
+      "posterior_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_rotation_weight9_seed2119.json",
+      "posterior_sha256": "602252aacd9e4d0b2e4ff0c0cca7f6b0342fa59e7bbf3d6eb0a4153fd72f778a",
+      "weight": 9,
+      "seed": 2119,
+      "session": 73785,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 840,
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 129.0608406424926,
+            "beta": 174,
+            "d": 3287
+          },
+          "independent_decoder": {
+            "bits": 127.70416397404549,
+            "beta": 174,
+            "d": 3287
+          },
+          "optimistic_joint_bound": {
+            "bits": 126.8775720737951,
+            "beta": 174,
+            "d": 3287
+          },
+          "common_decoder_iid95": {
+            "bits": 128.91722182557535,
+            "beta": 174,
+            "d": 3287
+          },
+          "independent_decoder_iid95": {
+            "bits": 127.64637044166287,
+            "beta": 174,
+            "d": 3287
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 126.77558443528196,
+            "beta": 174,
+            "d": 3287
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 129.10423861074116,
+            "beta": 174,
+            "d": 3287
+          },
+          "independent_decoder": {
+            "bits": 127.74756194229407,
+            "beta": 174,
+            "d": 3287
+          },
+          "optimistic_joint_bound": {
+            "bits": 126.92097004204368,
+            "beta": 174,
+            "d": 3287
+          },
+          "common_decoder_iid95": {
+            "bits": 128.96061979382395,
+            "beta": 174,
+            "d": 3287
+          },
+          "independent_decoder_iid95": {
+            "bits": 127.68976840991145,
+            "beta": 174,
+            "d": 3287
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 126.81898240353054,
+            "beta": 174,
+            "d": 3287
+          }
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_weight10_seed21190.json",
+      "sha256": "8c2da38c87531a1918f06d9a990c6e4802f48f606b468e8344f5b8ddfa35f35f",
+      "posterior_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_rotation_weight10_seed21190.json",
+      "posterior_sha256": "daa884c2533490e4301b2522d11c730ac77a36b1aa164de0956b4a32866a6383",
+      "weight": 10,
+      "seed": 21190,
+      "session": 73785,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 840,
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 128.35225674684253,
+            "beta": 190,
+            "d": 3287
+          },
+          "independent_decoder": {
+            "bits": 127.67182254219216,
+            "beta": 182,
+            "d": 3223
+          },
+          "optimistic_joint_bound": {
+            "bits": 127.06196716313312,
+            "beta": 182,
+            "d": 2967
+          },
+          "common_decoder_iid95": {
+            "bits": 128.19270452986615,
+            "beta": 190,
+            "d": 3287
+          },
+          "independent_decoder_iid95": {
+            "bits": 127.5867968984273,
+            "beta": 182,
+            "d": 3223
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 126.90241494616383,
+            "beta": 182,
+            "d": 2967
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 128.3153413808713,
+            "beta": 190,
+            "d": 3287
+          },
+          "independent_decoder": {
+            "bits": 127.66982319871923,
+            "beta": 182,
+            "d": 3223
+          },
+          "optimistic_joint_bound": {
+            "bits": 127.05936806776633,
+            "beta": 182,
+            "d": 2967
+          },
+          "common_decoder_iid95": {
+            "bits": 128.15578916389492,
+            "beta": 190,
+            "d": 3287
+          },
+          "independent_decoder_iid95": {
+            "bits": 127.58479755495436,
+            "beta": 182,
+            "d": 3223
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 126.89981585079704,
+            "beta": 182,
+            "d": 2967
+          }
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_weight9_boundary.json",
+      "sha256": "d46b79506ea03c317169b2fdbe5168dd3e7f281aa859fb841ee220fcf467b07a",
+      "posterior_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_rotation_weight9_seed2119.json",
+      "posterior_sha256": "602252aacd9e4d0b2e4ff0c0cca7f6b0342fa59e7bbf3d6eb0a4153fd72f778a",
+      "weight": 9,
+      "seed": 2119,
+      "session": 74203,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 840,
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 128.97543882634568,
+            "beta": 174,
+            "d": 3415
+          },
+          "independent_decoder": {
+            "bits": 127.68945405914647,
+            "beta": 174,
+            "d": 3351
+          },
+          "optimistic_joint_bound": {
+            "bits": 126.92175678515949,
+            "beta": 174,
+            "d": 3351
+          },
+          "common_decoder_iid95": {
+            "bits": 128.83182000942853,
+            "beta": 174,
+            "d": 3415
+          },
+          "independent_decoder_iid95": {
+            "bits": 127.62972378698714,
+            "beta": 174,
+            "d": 3351
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 126.77813796824212,
+            "beta": 174,
+            "d": 3351
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 129.01915816822373,
+            "beta": 174,
+            "d": 3415
+          },
+          "independent_decoder": {
+            "bits": 127.73302684726163,
+            "beta": 174,
+            "d": 3351
+          },
+          "optimistic_joint_bound": {
+            "bits": 126.96532957327464,
+            "beta": 174,
+            "d": 3351
+          },
+          "common_decoder_iid95": {
+            "bits": 128.87553935130657,
+            "beta": 174,
+            "d": 3415
+          },
+          "independent_decoder_iid95": {
+            "bits": 127.6732965751023,
+            "beta": 174,
+            "d": 3351
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 126.82171075635728,
+            "beta": 174,
+            "d": 3351
+          }
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_weight11_regression.json",
+      "sha256": "bba53122ba83241627f72254875d3ccedc37d2e6da7f2c00593b3a5426c86b52",
+      "posterior_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_rotation_histogram.json",
+      "posterior_sha256": "22b55047cc5eef032cc7db894630d1cf64c720d65a2ff1316d30bd73509eb10e",
+      "weight": 11,
+      "seed": 2119,
+      "session": 74203,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 12,
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 129.00859505028248,
+            "beta": 206,
+            "d": 3095
+          },
+          "independent_decoder": {
+            "bits": 128.70103157654742,
+            "beta": 206,
+            "d": 3095
+          },
+          "optimistic_joint_bound": {
+            "bits": 128.6138271029078,
+            "beta": 206,
+            "d": 3095
+          },
+          "common_decoder_iid95": {
+            "bits": 128.83203029980544,
+            "beta": 206,
+            "d": 3095
+          },
+          "independent_decoder_iid95": {
+            "bits": 128.5567321585088,
+            "beta": 206,
+            "d": 3095
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 128.43726235249497,
+            "beta": 206,
+            "d": 3095
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 128.9598942549671,
+            "beta": 206,
+            "d": 3095
+          },
+          "independent_decoder": {
+            "bits": 128.65233078123205,
+            "beta": 206,
+            "d": 3095
+          },
+          "optimistic_joint_bound": {
+            "bits": 128.56512630759244,
+            "beta": 206,
+            "d": 3095
+          },
+          "common_decoder_iid95": {
+            "bits": 128.78332950449007,
+            "beta": 206,
+            "d": 3095
+          },
+          "independent_decoder_iid95": {
+            "bits": 128.50803136319342,
+            "beta": 206,
+            "d": 3095
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 128.3885615571796,
+            "beta": 206,
+            "d": 3095
+          }
+        }
+      }
+    }
+  ],
+  "finite_cost_evaluations": 4212,
+  "independent_decimal_joint_probability_checks": 2106,
+  "default_weight11_costs_exactly_preserved": 12,
+  "independent_count_evidence": "narrow-dd-block-weight-independent-count-validation.json",
+  "independent_oracle_exhaustive_toy_cases": 576,
+  "weight10_seeds_separation_combined_standard_errors": 0.6795377531615829,
+  "confidence_scope": "Each histogram separately has simultaneous 95% CDF coverage over beta/d and decoder marginals; no combined 95% claim across these weights/seeds",
+  "security_validated": false,
+  "complete_attack_optimization": false,
+  "limitations": [
+    "Decoder marginal uses scalar GSA Babai and MITM probabilities; actual cross-rotation correlations unmodeled",
+    "Conditional decoder independence and optimistic union bound are sensitivities, not established attacks",
+    "Only one zeta/layout/weight and supplied beta/d offsets; no global optimum",
+    "Full square-root work on labelled dictionaries assumed; compatible decompositions not constructed",
+    "Posterior finite-sample uncertainty is not a security confidence interval",
+    "Correlated evaluation keys remain unqualified"
+  ]
+}

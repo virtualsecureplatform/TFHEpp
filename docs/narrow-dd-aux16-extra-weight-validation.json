@@ -1,0 +1,88 @@
+{
+  "observed_at_utc": "2026-10-09T06:06:58.726529+00:00",
+  "scope": "Completed weights13/14/15 phase of sequential q64 search; conventional attacks in same session may remain live",
+  "session": 95642,
+  "weight_phase_complete": true,
+  "session_terminal": true,
+  "finite_costs": 3960,
+  "runs": [
+    {
+      "report": "python/estimates/narrow_ckks_ll14_block_joint_decode_q64_weight13.json",
+      "sha256": "0f61e74d4b3d7e32b1488526228c446598bf6af872c5406b7548633ebd1c0207",
+      "weight": 13,
+      "cost_count": 1320,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 133.9104726920467,
+          "independent_decoder": 132.55926491262665,
+          "optimistic_joint_bound": 131.80696720753213,
+          "common_decoder_iid95": 133.677268645899,
+          "independent_decoder_iid95": 132.46705410820033,
+          "optimistic_joint_bound_iid95": 131.62946804901785
+        },
+        "MATZOV": {
+          "common_decoder": 133.61257103801717,
+          "independent_decoder": 132.43053016866708,
+          "optimistic_joint_bound": 131.7639184494209,
+          "common_decoder_iid95": 133.37936700003047,
+          "independent_decoder_iid95": 132.3393122113201,
+          "optimistic_joint_bound_iid95": 131.53071440634062
+        }
+      }
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_block_joint_decode_q64_weight14.json",
+      "sha256": "2553748901a3636c911ebea0775953e0d13b07fb59f27bf3025d067c634257c0",
+      "weight": 14,
+      "cost_count": 1320,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 134.92616475762907,
+          "independent_decoder": 133.83951649717156,
+          "optimistic_joint_bound": 133.41936110228372,
+          "common_decoder_iid95": 134.662951078009,
+          "independent_decoder_iid95": 133.72165373015127,
+          "optimistic_joint_bound_iid95": 133.15614735373651
+        },
+        "MATZOV": {
+          "common_decoder": 134.9082679956132,
+          "independent_decoder": 133.82047913378605,
+          "optimistic_joint_bound": 133.4157276174159,
+          "common_decoder_iid95": 134.64505431599312,
+          "independent_decoder_iid95": 133.70261636676577,
+          "optimistic_joint_bound_iid95": 133.15251386886868
+        }
+      }
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_block_joint_decode_q64_weight15.json",
+      "sha256": "b0411fb922863855f4f2075b52bf82a72b5ad911fe9f0a002aa8bed91889bbc8",
+      "weight": 15,
+      "cost_count": 1320,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 136.9183139950907,
+          "independent_decoder": 135.80089707985306,
+          "optimistic_joint_bound": 135.45439976329038,
+          "common_decoder_iid95": 136.59326218518603,
+          "independent_decoder_iid95": 135.6628412821968,
+          "optimistic_joint_bound_iid95": 135.1294848829608
+        },
+        "MATZOV": {
+          "common_decoder": 136.9178512589276,
+          "independent_decoder": 135.80039356433272,
+          "optimistic_joint_bound": 135.4543828802624,
+          "common_decoder_iid95": 136.59279944902295,
+          "independent_decoder_iid95": 135.66234861842142,
+          "optimistic_joint_bound_iid95": 135.12939203476577
+        }
+      }
+    }
+  ],
+  "independent_count_evidence": "narrow-dd-aux16-extra-weight-count-validation.json",
+  "lowest_extra_weight_optimistic_endpoint_bits": 131.53071440634062,
+  "security_validated": false,
+  "complete_attack_optimization": false,
+  "actual_exit_code": 0,
+  "uniform_attack_evidence": "narrow-dd-aux16-uniform-security-validation.json"
+}

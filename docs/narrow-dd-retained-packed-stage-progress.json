@@ -1,0 +1,53 @@
+{
+  "observed_utc": "2026-10-11T10:33:01.161098+00:00",
+  "scope": "Completed frozen N16384 packed public-key reconstruction, standard refresh and retained-key replay; not Table7 functional timing or security qualification",
+  "terminal": true,
+  "all_checks_passed": true,
+  "pid": 1910341,
+  "start_ticks": 225941687,
+  "n": 16384,
+  "selector_count": 19044,
+  "selector_reconstruction_seconds": 97118.6,
+  "selector_reconstruction_reported_max_error": 1.04822e-08,
+  "key_setup_seconds": 98396.3,
+  "latest_stage_line": "evaluating full complex refresh",
+  "fresh_keys_generated_for_this_observation": false,
+  "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/retained-time.log",
+  "log_snapshot_sha256": "f9c72be2734cd40bac10781e0c04572de2a52fb5414e4ac5ac8989ceca5ad43b",
+  "independent_phase_accuracy_validated": true,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "checkpoint_published_stdout": true,
+  "checkpoint_bytes": 6004903435,
+  "raw_packed_key_archive_present": false,
+  "latest_stage_lines": [
+    "published replay checkpoint before refresh evaluation",
+    "fresh input max error=4.91126e-10",
+    "evaluating S2C and sparse encapsulation",
+    "S2C complete; decrypting coefficient diagnostics",
+    "evaluating first packed factor",
+    "S2C max error=2.27519e-06 first packed factor max error=2.20853e-08",
+    "evaluating full complex refresh"
+  ],
+  "live_state": "retained evaluator exited; controller performing checkpoint integrity/replay",
+  "live_cpu_ticks": 22633605,
+  "s2c_reported_max_error": 2.27519e-06,
+  "first_factor_reported_max_error": 2.20853e-08,
+  "retained_evaluator_actual_exit_code": 0,
+  "retained_full_refresh_seconds": 900.433054735,
+  "independent_phase_metrics": {
+    "fresh_input_max_error": 4.911206931974722e-10,
+    "max_error": 4.6876697864815724e-06,
+    "rms_error": 1.1194193286553253e-06,
+    "post_refresh_product_max_error": 1.6635640541809998e-06
+  },
+  "controller_stage": "completed",
+  "replay_evaluator": {
+    "pid": 2021248,
+    "start_ticks": 235917669,
+    "state": "R",
+    "cpu_ticks": 42871
+  },
+  "controller_actual_exit_code": 0,
+  "completion_validation": "narrow-dd-full-packed-retained-completion-validation.json"
+}

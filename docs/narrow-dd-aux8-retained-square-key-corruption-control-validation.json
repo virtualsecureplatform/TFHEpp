@@ -1,0 +1,9 @@
+{
+  "scope": "One-bit top-secondary-body digit corruption of a private retained square prefix/suffix diagnostic view; skipped refresh-key middle omitted",
+  "modified_bits": 1,
+  "archive_boundary_check_passed": true,
+  "actual_exit_code": 2,
+  "error": "exact DD key row phase outside 12-sigma envelope",
+  "phase_corruption_detected": true,
+  "original_state_modified": false
+}

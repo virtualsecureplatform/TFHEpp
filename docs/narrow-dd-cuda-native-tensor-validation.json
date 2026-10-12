@@ -1,0 +1,123 @@
+{
+  "observed_at_utc": "2026-10-08T19:35:37.272199+00:00",
+  "scope": "Native mask/body words through portable balanced decomposition, host NTT oracle, spectral contraction, inverse host NTT, centered CRT/wide recomposition and native signed projection. Resident CUDA orchestration compiled; device execution unavailable. No encrypted DD relinearization/tree/full refresh or performance/security claim.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "98c3f21484c707292edc9d0f8894994ea7c408d5aa7c51b9416351a0fd6ffa56",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "561db59a5490bca2a6d4141b1e4ce33569b1039d9859b6578793f5dea13b006d",
+    "src/ckks/narrow_cuda.cu": "9b059d6d7d077b7706f06dd2ea9b22cec1979967ee00c9770513a0558a7eb040",
+    "test/ckks/ckks_narrow_cuda.cu": "db5f2c3ccf5b27cded18dcce62d61710c57c65a39827c88883dc25fb3214f558"
+  },
+  "cuda_native_word_tensor_graph_source_implemented": true,
+  "graph_stages": [
+    "center active native level and balanced decomposition",
+    "forward negacyclic NTT of both operands",
+    "dynamic RHS Shoup quotients",
+    "tensor spectral contraction",
+    "inverse negacyclic NTT",
+    "centered CRT and wide digit recomposition",
+    "signed ties-away rounding and native level projection"
+  ],
+  "primes_supported": [
+    1,
+    2
+  ],
+  "same_native_input_level_storage_across_primes_required": true,
+  "output_level_bound": "outputQ <= min(lhsQ,rhsQ)-drop; drop < min(lhsQ,rhsQ).",
+  "capacity_and_wide_storage_preflight_inherited_from": "narrow-dd-cuda-tensor-graph-validation.json",
+  "all_mutable_buffers_pairwise_disjoint": true,
+  "all_mutable_buffers_disjoint_from_native_inputs_offsets_and_transform_tables": true,
+  "read_only_native_operand_overlap_allowed": true,
+  "separate_operand_workspaces_even_for_squaring": true,
+  "no_device_allocation_or_host_tensor_transfer_during_graph": true,
+  "host_invalid_native_tensor_requests_passed": 26,
+  "host_valid_native_tensor_layouts_passed": 4,
+  "total_kernel_host_rejection_cases_passed": 196,
+  "host_native_tensor_profiles_passed": 16,
+  "host_native_projected_tensor_cases_passed": 48,
+  "host_native_projected_tensor_coefficients_passed": 8064,
+  "host_native_projected_output_words_passed": 60480,
+  "integer_reference_bits": 2048,
+  "reference": "Independent full-native balanced offset/shift extraction, reconstruction of finite signed digit representatives and full coefficient-space negacyclic tensor multiplication. Compare with portable center/offset/digit helpers, actual CPU modular NTT, portable spectral/CRT/recompose/project helpers. Matches the CPU finite balanced-row convention; no direct encrypted CKKSTensorProductRescale test or device kernel execution claimed.",
+  "profiles": {
+    "points": 32,
+    "small_native_level_pairs": [
+      [
+        23,
+        40
+      ],
+      [
+        39,
+        24
+      ],
+      [
+        23,
+        23
+      ]
+    ],
+    "small_columns": [
+      1,
+      3
+    ],
+    "small_base_bits": 8,
+    "small_native_limbs": 7,
+    "large_profiles": [
+      {
+        "lhs_q": 217,
+        "rhs_q": 379,
+        "rows": [
+          55,
+          95
+        ],
+        "base_bits": 4,
+        "native_limbs": 7,
+        "columns": 1,
+        "square": false
+      },
+      {
+        "lhs_q": 842,
+        "rhs_q": 842,
+        "rows": [
+          106,
+          106
+        ],
+        "base_bits": 8,
+        "native_limbs": 14,
+        "columns": 1,
+        "square": true
+      }
+    ],
+    "per_profile_prime": "Each actual auxiliary prime separately",
+    "scale_drops": "0,9,min(37,min(lhsQ,rhsQ)-1)",
+    "output_bits": "min(lhsQ,rhsQ)-drop",
+    "output_storage": "Native 448 or 896 bits, upper output words masked to zero"
+  },
+  "boundary_scope": "Native raw-word randomness, centered sign boundary and neighboring values, all-zero/unit/all-ones/limb carry values; arbitrary upper storage bits ignored. RHS differs except shared-input squaring.",
+  "cuda_cmake_final_build_exit_code": 0,
+  "cuda_cmake_final_build_session": 26717,
+  "cuda_cmake_build_log": "/tmp/ckks-narrow-cuda-native-tensor-final-build.log",
+  "cuda_test_actual_exit_code": 77,
+  "cuda_test_log": "/tmp/ckks-narrow-cuda-native-tensor-cmake-test.log",
+  "host_ubsan_final_build_exit_code": 0,
+  "host_ubsan_final_build_session": 52680,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-native-tensor-host-ubsan-final-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-native-tensor-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_driver_session": 94787,
+  "host_ubsan_test_driver_exit_code": 0,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-native-tensor-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-native-tensor-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "Both CUDA source/test host routines and portable arithmetic instrumented. Device kernels not instrumented or executed.",
+  "all_prior_kernel_host_checks_rechecked": true,
+  "compiled_matching_one_prime_device_native_tensor_cases": 48,
+  "two_prime_device_native_tensor_case_present": false,
+  "device_cases_executed": false,
+  "gpu_device_count": 0,
+  "gpu_native_tensor_validated": false,
+  "typed_native_tensor_device_owner_implemented": false,
+  "encrypted_dd_relinearization_tensor_tree_connected": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

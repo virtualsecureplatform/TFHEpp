@@ -1,0 +1,60 @@
+{
+  "scope": "Validate current full-ring root reuse against a completed retained checkpoint.\n\nFreeze the small-qualified executable and independent decoder before waiting.\nWait for the original basis validation and termination of preceding large tests.\nReuse the checkpoint, compare all output bytes, decode phases independently and\ncheck retained payload integrity. No fresh key generation or security claim.\n",
+  "terminal": true,
+  "all_checks_passed": false,
+  "stage": "superseded before evaluation by qualified joint-input tiling",
+  "fresh_keys_generated": false,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+  "reference_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010",
+  "child_cap_bytes": 42949672960,
+  "parent_soft_cap_bytes": 134217728,
+  "host_reserve_bytes": 10737418240,
+  "full_encrypted_root_reuse_validated": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "small_qualification_sha256": "30617d480e2dad9f72f3562957d828a5c0990ee7aaaaf057a492e3b29b02b963",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_frequency_basis.hpp": "b7ebd811c65123e44ba2adcc3fd5e0ed1a68779acacb636f508e36b2271d1a68",
+    "TFHEpp/test/ckks/ckks_narrow_benchmark.cpp": "3c1c31378f0dea2954aa6ffd573f0b44e136a222bf10bd067dfe69e5891b6f13"
+  },
+  "frozen_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-root-reuse-full-20261010/frozen/ckks_narrow_benchmark": "e4a8807c22769f9fff774da6ea9f2153743eca6da2c99517613b109e4553d3a5",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-root-reuse-full-20261010/frozen/narrow_ckks_basis_checkpoint_validate.py": "1fa76656f8c9a2ae6e5b1f71b192ba6e6b4fea08fdbc49b8b5aa472cfcbeb2c8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-root-reuse-full-20261010/frozen/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "controller": {
+    "pid": 1954377,
+    "start_ticks": 229387989
+  },
+  "controller_sha256": "06e30f6901aa2ed6b5b9cddbfe7cc20837fa38b465b9f16c62fe94eed19b4a7d",
+  "original_basis_validated": false,
+  "preceding_test_terminal": false,
+  "preceding_tests": {
+    "TFHEpp/docs/narrow-dd-auto-primary8-full-refresh-validation.json": {
+      "idle": false,
+      "accuracy_passed": false
+    },
+    "TFHEpp/docs/narrow-dd-primary8-dd-full-refresh-validation.json": {
+      "idle": false,
+      "accuracy_passed": false
+    }
+  },
+  "packed_process": {
+    "pid": 1910341,
+    "start_ticks": 225941687,
+    "state": "R",
+    "rss_bytes": 17651392512,
+    "cpu_ticks": 8669319
+  },
+  "budget": {
+    "available_bytes": 89955483648,
+    "required_bytes": 104889393152,
+    "packed_remaining_reservation_bytes": 51068084224,
+    "free_disk_bytes": 66162022940672,
+    "required_disk_bytes": 2147483648
+  },
+  "updated_utc": "2026-10-10T16:32:13.108470+00:00",
+  "superseded_by": "TFHEpp/docs/narrow-dd-basis-joint-input-full-validation.json",
+  "superseded_at_utc": "2026-10-10T16:32:20.463130+00:00",
+  "evaluation_child_launched": false
+}

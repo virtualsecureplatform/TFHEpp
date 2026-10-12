@@ -1,0 +1,36 @@
+{
+  "utc": "2026-10-09T11:04:31.523559+00:00",
+  "points": [
+    {
+      "path": "test/ckks/ckks_narrow_benchmark.cpp",
+      "sha256": "7b26c8346bc50ff1f65c4f6011f6e7997d666df7e7ac7ae461e573acd6c1b9d3",
+      "matched": true
+    },
+    {
+      "path": "build/test/ckks/ckks_narrow_benchmark",
+      "sha256": "30737489e19f92fa0d4c92822903cc958febde31fb5fe1cb52851aaaa4c39a4e",
+      "matched": true
+    },
+    {
+      "path": "test/ckks/ckks_narrow_auxiliary_probe.cpp",
+      "sha256": "03b094ba5f50b6c39f141a45c4937adc5fb164559f0740f739906f69a7424e0d",
+      "matched": true
+    },
+    {
+      "path": "build/test/ckks/ckks_narrow_auxiliary_probe",
+      "sha256": "78f4a04befffb56af429819cca417e3c2244042850b25c2e82ef6c8e365ad8ee",
+      "matched": true
+    },
+    {
+      "path": "test/ckks/ckks_narrow_auxiliary_replay.cpp",
+      "sha256": "4e6452a258685493cabf5a57fcd909ac37d5ccc008361d92709367f3f39cb915",
+      "matched": true
+    },
+    {
+      "path": "build/test/ckks/ckks_narrow_auxiliary_replay",
+      "sha256": "bf55514427cb68909f6ea97859b02814ca0ced1a83e5131379d9db12c75a5470",
+      "matched": true
+    }
+  ],
+  "all_matched": true
+}

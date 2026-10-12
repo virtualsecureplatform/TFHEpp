@@ -1,0 +1,98 @@
+{
+  "observed_at_utc": "2026-10-10T12:53:43.374968+00:00",
+  "scope": "Public canonical selector/table modular matrix experiment; synthetic coefficients, no encryption or keys; not end-to-end refresh or paper benchmark",
+  "actual_exit_code": 0,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "omp_threads": 4,
+  "address_space_limit_bytes": 2147483648,
+  "available_memory_bytes": 104476741632,
+  "required_available_memory_bytes": 98784247808,
+  "source_sha256": "a94f5e383cdada85437ea0fea1fa7602799be835eb669abdd5520c2e1ecf274e",
+  "executable_sha256": "0ce7a7e925f71de8f4a5b7d818b811c1ce9642ee7b838f1cc107fedcf69fddc0",
+  "records": [
+    {
+      "columns": "1",
+      "trial": "0",
+      "residues": "1179648",
+      "original_seconds": "0.0791568",
+      "paired_seconds": "0.14483"
+    },
+    {
+      "columns": "1",
+      "trial": "1",
+      "residues": "1179648",
+      "original_seconds": "0.0461364",
+      "paired_seconds": "0.107894"
+    },
+    {
+      "columns": "1",
+      "trial": "2",
+      "residues": "1179648",
+      "original_seconds": "0.0749384",
+      "paired_seconds": "0.139853"
+    },
+    {
+      "columns": "12",
+      "trial": "0",
+      "residues": "14155776",
+      "original_seconds": "0.343057",
+      "paired_seconds": "0.443862"
+    },
+    {
+      "columns": "12",
+      "trial": "1",
+      "residues": "14155776",
+      "original_seconds": "0.363502",
+      "paired_seconds": "0.323015"
+    },
+    {
+      "columns": "12",
+      "trial": "2",
+      "residues": "14155776",
+      "original_seconds": "0.273776",
+      "paired_seconds": "0.41008"
+    },
+    {
+      "columns": "17",
+      "trial": "0",
+      "residues": "20054016",
+      "original_seconds": "0.452198",
+      "paired_seconds": "0.379432"
+    },
+    {
+      "columns": "17",
+      "trial": "1",
+      "residues": "20054016",
+      "original_seconds": "0.397701",
+      "paired_seconds": "0.413717"
+    },
+    {
+      "columns": "17",
+      "trial": "2",
+      "residues": "20054016",
+      "original_seconds": "0.500956",
+      "paired_seconds": "0.368623"
+    }
+  ],
+  "medians": {
+    "1": {
+      "original_seconds": 0.0749384,
+      "paired_seconds": 0.139853,
+      "paired_over_original": 1.8662394713524708
+    },
+    "12": {
+      "original_seconds": 0.343057,
+      "paired_seconds": 0.41008,
+      "paired_over_original": 1.1953698656491487
+    },
+    "17": {
+      "original_seconds": 0.452198,
+      "paired_seconds": 0.379432,
+      "paired_over_original": 0.8390837641917921
+    }
+  },
+  "production_code_changed": false,
+  "decision": "Do not integrate paired-table loop: mixed timings under concurrent jobs, including 19.5% slower median at current 12-column workload; no demonstrated general improvement.",
+  "timing_limitations": "Three public-data interleaved trials while independent retained-key jobs run; observational, not controlled end-to-end or paper timing."
+}

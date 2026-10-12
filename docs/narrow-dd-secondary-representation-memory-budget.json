@@ -1,0 +1,25 @@
+{
+  "observed_at_utc": "2026-10-10T10:28:06.696872+00:00",
+  "scope": "Existing live RSS already deducted by MemAvailable; reserve all remaining growth to existing caps plus test cap and host reserve",
+  "existing_jobs": [
+    {
+      "pid": 1910341,
+      "start_ticks": 225941687,
+      "rss_bytes": 17751359488,
+      "address_space_cap_bytes": 68719476736,
+      "future_headroom_bytes": 50968117248
+    },
+    {
+      "pid": 1924017,
+      "start_ticks": 227383664,
+      "rss_bytes": 11861590016,
+      "address_space_cap_bytes": 25769803776,
+      "future_headroom_bytes": 13908213760
+    }
+  ],
+  "available_memory_bytes": 101987323904,
+  "required_available_memory_bytes": 79908716544,
+  "child_address_space_cap_bytes": 4294967296,
+  "host_reserve_bytes": 10737418240,
+  "passed": true
+}

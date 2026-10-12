@@ -1,0 +1,30 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Exact native selector-digit extraction versus legacy reduce/mask/shift, including high storage bits, native limb crossings, partial final digits and out-of-level digits. Not a full refresh.",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "initial_build_actual_exit_code": 2,
+  "fresh_keys_generated": false,
+  "report": {
+    "selector_digits_checked": 149504,
+    "all_digits_exact": true
+  },
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "1f960a87c6bc3f95d055b49bd8c8c320b07f01af54afbab5070f797e128f52b8",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "c741aaecf05cc374f5dc9dc8809f0d4b4da05f99fc21d27e4c954993119f25ae",
+    "TFHEpp/test/ckks/ckks_narrow_bootstrapping.cpp": "6902d05e6fd38be9112fa6574dc63a29b187f2cef16084936939f4a48f69a4c9"
+  },
+  "exe_sha256": "e4b3838197b572b51b1df6a2f8e52fffdfe424c87d7c8612956885ff9ccb0978",
+  "factor_exe_sha256": "cebb5713e43d99f6468d9269ed439a55b7d1fffa3dab29595c6cc859dd2e4afc",
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector-digit-extraction-20261011/build.log": "d4894f2b789fa551ffbe5be0180adfb1fea7c56d03b8c179380e40399e083d62",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector-digit-extraction-20261011/build-retry.log": "c3e95c72cd7ce3d22085c343a81ec7ef9530ab2a175954afcce8b23501fd812c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector-digit-extraction-20261011/digits.json": "27247c36e6f9591871717c69d53732fd7f45470cd21815e218cd84a7a8e013bc"
+  },
+  "full_size_refresh_qualified": false
+}

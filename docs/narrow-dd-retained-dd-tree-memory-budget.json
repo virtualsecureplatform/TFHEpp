@@ -1,0 +1,36 @@
+{
+  "observed_at_utc": "2026-10-09T00:10:33.967334+00:00",
+  "scope": "Three complete retained-key N16384 DD product trees: 31 fresh encrypted unit-root leaves and transparent beta, pre-rescale keys348/300/252/204/156; all derived DD caches held together.",
+  "existing_processes": [
+    {
+      "pid": 1789289,
+      "virtual_limit_bytes": 34359738368,
+      "rss_bytes": 13458141184,
+      "remaining_growth_bytes": 20901597184,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-checkpoint sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008 TFHEpp/docs/narrow-dd-ll14-plain37-checkpoint-reproduction-2.json"
+    },
+    {
+      "pid": 1756575,
+      "virtual_limit_bytes": 68719476736,
+      "rss_bytes": 17785008128,
+      "remaining_growth_bytes": 50934468608,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json"
+    }
+  ],
+  "available_memory_bytes": 99862138880,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 8589934592,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 91163418624,
+  "launch_margin_bytes": 8698720256,
+  "launch_eligible": true,
+  "test_terminal": true,
+  "estimated_peak_components_bytes": {
+    "compact_dd_chain": 697466880,
+    "all_dd_fft_caches": 5579735040,
+    "workspace_allowance": 1073741824,
+    "stack_reservation": 536870912
+  },
+  "test_actual_exit_code": 0,
+  "test_peak_rss_kib": 6687348
+}

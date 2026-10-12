@@ -1,0 +1,162 @@
+{
+  "utc": "2026-10-09T07:19:31.885754+00:00",
+  "scope": "Same-key N512 Q422 packed extraction, cache depths2/3/4, exact ordered ciphertext equality and CPU timing",
+  "points": [
+    {
+      "n": 512,
+      "packed_log_q": 422,
+      "cached_depths": 2,
+      "cache_bytes": 184090624,
+      "prepare_seconds": 0.162648218,
+      "extraction_seconds": 111.525201138,
+      "terms": 2048,
+      "coefficients": 2097152,
+      "reference_written": true,
+      "ordered_terms_identical": null,
+      "actual_exit_code": 0,
+      "stderr_bytes": 0,
+      "log": "/tmp/ckks-packed-cache-depth-2.log",
+      "log_sha256": "4e32018bec53ce0360980a07f92575a40b79a159e990d52163274a6bfab57b08",
+      "time_log": "/tmp/ckks-packed-cache-depth-2-time.log",
+      "time_log_sha256": "913a92ae29d09b8b0c9e8c86e5019299607c346d9493749f9f64bc044d4cb998",
+      "peak_rss_kib": 248856,
+      "cached_automorphisms": 1536,
+      "uncached_automorphisms": 508
+    },
+    {
+      "n": 512,
+      "packed_log_q": 422,
+      "cached_depths": 3,
+      "cache_bytes": 276135936,
+      "prepare_seconds": 0.297945102,
+      "extraction_seconds": 78.630593579,
+      "terms": 2048,
+      "coefficients": 2097152,
+      "reference_written": false,
+      "ordered_terms_identical": true,
+      "actual_exit_code": 0,
+      "stderr_bytes": 0,
+      "log": "/tmp/ckks-packed-cache-depth-3.log",
+      "log_sha256": "d8660a9d743326787e27b6ff5b8c63e42cd89f8ff14ad0bda3d79fdfa9e345f2",
+      "time_log": "/tmp/ckks-packed-cache-depth-3-time.log",
+      "time_log_sha256": "bb63dbabe7cdaa6d6f64a0115d63d6fc7e16432893a0f37597859f790def81ff",
+      "peak_rss_kib": 339024,
+      "cached_automorphisms": 1792,
+      "uncached_automorphisms": 252
+    },
+    {
+      "n": 512,
+      "packed_log_q": 422,
+      "cached_depths": 4,
+      "cache_bytes": 368181248,
+      "prepare_seconds": 0.307005793,
+      "extraction_seconds": 67.919504743,
+      "terms": 2048,
+      "coefficients": 2097152,
+      "reference_written": false,
+      "ordered_terms_identical": true,
+      "actual_exit_code": 0,
+      "stderr_bytes": 0,
+      "log": "/tmp/ckks-packed-cache-depth-4.log",
+      "log_sha256": "2362ae6b0bb9063281d8d09f0648c2b885d03a6fbac45c3dd073f784c71d754a",
+      "time_log": "/tmp/ckks-packed-cache-depth-4-time.log",
+      "time_log_sha256": "0a98eca188a1741230d43d055b736a11a6ac056feb85779da1a916117784baa1",
+      "peak_rss_kib": 428676,
+      "cached_automorphisms": 1920,
+      "uncached_automorphisms": 124
+    }
+  ],
+  "fixture": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-depths-20261009-l0em3r_0/fixture",
+  "fixture_files": {
+    "packed.bin": {
+      "bytes": 54935625,
+      "sha256": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2"
+    },
+    "terms.bin": {
+      "bytes": 117458945,
+      "sha256": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+    }
+  },
+  "profiled_source_snapshot": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-depths-20261009-l0em3r_0/profiled-source.cpp",
+  "profiled_source_sha256": "4431e4205c068bddd24bb34dbde9c1686df4acd11eb72a4e1690ba946571fecd",
+  "profiled_executable_sha256": "479d99ebe2dd7c6b6e4001273c461004be5c6b6ee2813cdba80d9381016292fc",
+  "current_source_sha256": "4431e4205c068bddd24bb34dbde9c1686df4acd11eb72a4e1690ba946571fecd",
+  "current_executable_sha256": "479d99ebe2dd7c6b6e4001273c461004be5c6b6ee2813cdba80d9381016292fc",
+  "build_session": 8563,
+  "build_actual_exit_code": 0,
+  "guard_build_session": 34718,
+  "guard_build_actual_exit_code": 0,
+  "study_session": 52217,
+  "study_terminal": true,
+  "study_actual_exit_code": 0,
+  "corruption_session": 78203,
+  "corruption_terminal": true,
+  "corruption_expected_exit_code": 2,
+  "corruption_control_rejected": true,
+  "corruption_byte_offset": 10,
+  "original_reference_preserved": true,
+  "observed_extraction_ratio_depth3": 1.4183436250668875,
+  "observed_extraction_ratio_depth4": 1.6420202349825606,
+  "full_ring_budget_sensitivities": [
+    {
+      "cached_depths": 2,
+      "conservative_envelope_bytes": 51111821888,
+      "substitution_fft_bytes": 6002573312,
+      "uncached_automorphisms": 16380,
+      "fits_existing_64gib_cap": true
+    },
+    {
+      "cached_depths": 3,
+      "conservative_envelope_bytes": 54113108544,
+      "substitution_fft_bytes": 9003859968,
+      "uncached_automorphisms": 8188,
+      "fits_existing_64gib_cap": true
+    },
+    {
+      "cached_depths": 4,
+      "conservative_envelope_bytes": 57114395200,
+      "substitution_fft_bytes": 12005146624,
+      "uncached_automorphisms": 4092,
+      "fits_existing_64gib_cap": true
+    },
+    {
+      "cached_depths": 5,
+      "conservative_envelope_bytes": 60115681856,
+      "substitution_fft_bytes": 15006433280,
+      "uncached_automorphisms": 2044,
+      "fits_existing_64gib_cap": true
+    },
+    {
+      "cached_depths": 6,
+      "conservative_envelope_bytes": 63116968512,
+      "substitution_fft_bytes": 18007719936,
+      "uncached_automorphisms": 1020,
+      "fits_existing_64gib_cap": true
+    },
+    {
+      "cached_depths": 7,
+      "conservative_envelope_bytes": 66118255168,
+      "substitution_fft_bytes": 21009006592,
+      "uncached_automorphisms": 508,
+      "fits_existing_64gib_cap": true
+    }
+  ],
+  "limitations": [
+    "Small ring only; no full N16384 cache-depth validation or speed claim",
+    "One trial per depth under concurrent CPU load; baseline writes reference while other runs read/compare it",
+    "Full-ring budgets reuse an existing conservative compiled payload sum; no measured larger-cache RSS",
+    "No production cache policy changed and no live full run restarted"
+  ],
+  "full_packed_validation_complete": false,
+  "security_validated": false,
+  "source_restored_to_profiled_version": true,
+  "alternative_parameter_probe": {
+    "session": 84844,
+    "actual_exit_code": 1,
+    "passed": false,
+    "reason": "Upstream params.hpp references AHlvl1param/AHlvl2param absent from the 80-bit parameter header; this check did not reach the profiling tool body"
+  },
+  "final_default_build_session": 76381,
+  "final_default_build_terminal": true,
+  "final_default_build_actual_exit_code": 0
+}

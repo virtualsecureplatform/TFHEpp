@@ -1,0 +1,172 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "scope": "N32768 head30/tail4 22-column exact schedule-configured56bit synchronous/read-ahead native-limb extraction and parallel prepared automorphism factor controls. Four-worker immutable factor NTT plan reuse component qualification. Not a full refresh or controlled performance comparison.",
+  "fresh_keys_generated": false,
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "memory_cap_bytes": 4294967296,
+  "omp_num_threads": 4,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+  "baseline_evidence": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-parallel-secondary11-full-resumed-validation.json",
+  "baseline_evidence_sha256": "78554178fdf267cb0e0b643a3c752e939df60a70dfc1d8d72f70b73a4e344643",
+  "selected_before": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "prehash_reused_from_completed_baseline": true,
+  "mandatory_selected_post_hash": true,
+  "mem_available_bytes": 132019458048,
+  "reserved_headroom_required_bytes": 15166603264,
+  "qualified_source_sha256": {
+    "TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "3b228b8c6da5b5349ba8347de26babbf3484f0caf3ede819ce4af680d5053031",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "small_qualification_sha256": "ee4f8e62db077aaf7bed914076fc72097c24ac00154e118b9bfaf66ecef3e1c7",
+  "default_width_changed": false,
+  "frozen_executable_sha256": "c53109e98c0f28572cd2e62d96cc41f242443f25b37e7f040ace85ba93f20688",
+  "command": [
+    "/usr/bin/time",
+    "-v",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/factor-plan-reuse-full-20261011/ckks_narrow_basis_factor_cache_checkpoint",
+    "--full-union-wide-prefetch",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/factor-plan-reuse-full-20261011/factors"
+  ],
+  "child_pid": 2029266,
+  "actual_exit_code": 0,
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 35.727332553,
+      "cache_setup_seconds": 7.24e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.6891605620000003,
+      "selector_ntt_seconds": 12.354990532999999,
+      "matrix_seconds": 16.83225841,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": true,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 34.371073824,
+      "cache_setup_seconds": 7.24e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 0.06684334799999997,
+      "selector_ntt_seconds": 12.403454176,
+      "matrix_seconds": 17.058669350000002,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 35.705954336,
+      "cache_setup_seconds": 2.14e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.697251113,
+      "selector_ntt_seconds": 12.350778741000003,
+      "matrix_seconds": 16.740553761999998,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": true,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 34.280631531,
+      "cache_setup_seconds": 2.14e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 0.06581388599999993,
+      "selector_ntt_seconds": 12.361996161000002,
+      "matrix_seconds": 17.004403956999994,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "cross_version_archive_identity": {
+    "head-reference.bin": true,
+    "tail-reference.bin": true
+  },
+  "slots_checked": 720896,
+  "selected_after": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "Complete checkpoint.bin and selected head30/tail4 files. Other selector files are not read by this component test.",
+  "controller_actual_exit_code": 0,
+  "controller_source_sha256": "73a91ff59574de8dcea9f1593e79c89e89fb32b99ca3697a93ef50d6aa9da002",
+  "compiled_modular_ntt_snapshot_sha256": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a",
+  "avx2_ntt_evaluated": false
+}

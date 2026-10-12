@@ -1,0 +1,96 @@
+{
+  "terminal": true,
+  "all_component_checks_passed": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "fresh_keys_generated": false,
+  "scope": "Retained N32768 Q244/Q197 DD secondary8/12 coefficient equality. Larger levels remain secondary11; existing precision guard unchanged. No whole-refresh, speedup, or security qualification.",
+  "levels": [
+    {
+      "q": 244,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "57c31b45a9bc41436e224c287ab751452c43a0ac5b73f0aa2f8f01a6a4b3fe4d",
+      "report": {
+        "n": 32768,
+        "q": 244,
+        "primary_bits": 18,
+        "old_secondary_bits": 8,
+        "new_secondary_bits": 12,
+        "samples": 3,
+        "row_coefficients_checked": 917504,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 227540992,
+        "new_cache_bytes": 154140672,
+        "conversion_seconds": 0.901579673,
+        "old_prepare_seconds": 0.217305908,
+        "new_prepare_seconds": 0.14614341,
+        "coefficient_reference_seconds": 1.9290680940000002,
+        "old_switch_seconds": 0.205217804,
+        "new_switch_seconds": 0.139014517,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false
+      }
+    },
+    {
+      "q": 197,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "a82cf8dfaebcfbac3164fe6c88edf9acf75decb23ca624348967aafc7e962cc3",
+      "report": {
+        "n": 32768,
+        "q": 197,
+        "primary_bits": 18,
+        "old_secondary_bits": 8,
+        "new_secondary_bits": 12,
+        "samples": 3,
+        "row_coefficients_checked": 720896,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 144179200,
+        "new_cache_bytes": 98041856,
+        "conversion_seconds": 0.574047817,
+        "old_prepare_seconds": 0.138935562,
+        "new_prepare_seconds": 0.093701461,
+        "coefficient_reference_seconds": 1.247884682,
+        "old_switch_seconds": 0.15980370700000002,
+        "new_switch_seconds": 0.106043883,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false
+      }
+    }
+  ],
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "dae3a45d1a6e11a7838fc555629f5bbef03f2eb13fd56c6893f34866e52f9844",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/test/ckks/ckks_dd_recombine_exact.cpp": "b8f5b81ee2b4b00302ce0a7c04d7b76c87988d47cbf157ec8442d4cd9e1eccf6",
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f"
+  },
+  "public_key_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q479.bin": "ea06bce9aeab7b29105a8024218c087cbee8e2f71a8dda0a17b3fb2c2f1e42a9",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q432.bin": "750c2acec2b433010c843350731b0ccc1a52ec89c3364e7a9423668c9fbdb3d6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q385.bin": "62bc3817e6ffb392e07fcb2b618e570c4c7ec4b1175ad04eefa5254a45bf1fe6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q338.bin": "1c814f76ad96382002b138e6e8d9ec26bef06f52f9bf58035e3efc40e2eb3aee",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q291.bin": "4413889ba323f874ffd5d57de8ba118e89f39f8c606d4a75b2994cd1360daa0b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q244.bin": "a5e47be5dd4a0deeced38b520ead6898bdcaebcae9c80777bc9fa4af65d11d9c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q197.bin": "a2da314a725538931572721eaef0b807718b349cbc0553de791d4d20e67a8562"
+  },
+  "build_inputs_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a": "d5fe98dbe264fdb5881e1405c4515e4710f3e4102f9f4d1e688957bac6e47f3c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a": "a1b3b4f6fdb2b9e200d18a4052f2ae8dd876ae1bb4689dd3bf5b72f43aaae6e9",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a": "e4cf740aa473cebf2e2679f148dcadf21ea7034ec9a3f71b4cbb66205c8f0064",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a": "e00b2d38402e510d6c8abed808c4404d3299c034d5bef73ea7f8b15819e13cf8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary12-low-levels-20261011/control.cpp": "2b4fc5669c222bd2976bccccbcdb9401500dfb0c79704ead6575e9cc537562a2"
+  },
+  "extracted_public_key_files_unchanged": true,
+  "public_key_files_unchanged": true,
+  "validation_controller_actual_exit_code": 0,
+  "controller_actual_exit_code": 0,
+  "controller_sha256": "af9ff78433d907e485e90ceb1247ff97508c4da14aa295ed531cdc5d0c9881f6",
+  "higher_levels_secondary12_enabled": false,
+  "whole_refresh_qualified": false,
+  "secondary11_comparison_executed": false
+}

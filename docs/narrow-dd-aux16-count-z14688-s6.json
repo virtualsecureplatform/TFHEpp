@@ -1,0 +1,21 @@
+{
+  "scope": "Verify actual-block rotation counts with bit masks and grouped binomials.\n\nThis independent oracle does not use the sampler's NumPy correlations or\nlinear-factor dynamic program. It verifies exact event masses and labelled\nsigned projection counts, not decoding probabilities or security.\n",
+  "source_sha256": "9df8dfdaecee44e2c58c65b4540a1c148e4773be27682c591ffa1eb007cc921e",
+  "exhaustive_toy_cases": 576,
+  "n": 16384,
+  "weights": [
+    12
+  ],
+  "rotations_checked": 16384,
+  "exact_mass_sums": {
+    "12": "38918116039899945502523181987811535875431249188152938234030428068061242195968"
+  },
+  "exact_signed_labelled_support_sums": {
+    "12": "3170128749768763217001438667596932813759090688"
+  },
+  "reports": {
+    "Parameter-Selection/python/estimates/narrow_ckks_ll14_rotation_z14688-s6.json": "f71688133fdeb1d559b35b1a70d5b7930d080903c84b0b093085d60055e07d85"
+  },
+  "passed": true,
+  "security_validated": false
+}

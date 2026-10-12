@@ -1,0 +1,63 @@
+{
+  "utc": "2026-10-09T10:15:06.781990+00:00",
+  "scope": "Actual retained full aux8 sigmoid failure Q116 output-conjugation key: exact all-row phase and three encrypted operations",
+  "source": "test/ckks/ckks_narrow_dd_exact.cpp",
+  "source_sha256": "f15bb74d6439d72056daa55dc8b0067f91ed361506a21f3f6d7138f04aa2285f",
+  "executable_sha256": "e3a4ff45bce7a2c1848efcdcf0ff95a15e8425629ca9ca36fbce4846938001ad",
+  "state_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "build_session": 29557,
+  "build_actual_exit_code": 0,
+  "oracle_runner_session": 83951,
+  "output_conjugation_terminal": true,
+  "output_conjugation_actual_exit_code": 0,
+  "key_log_q": 116,
+  "phase_coefficients": 475136,
+  "maximum_noise": 15,
+  "noise_envelope": 39,
+  "cases": [
+    {
+      "output_conjugation_kind": 0,
+      "slots_checked": 8192,
+      "maximum_error": 1.3895472150926393e-10,
+      "rms_error": 2.0750235961157518e-11,
+      "accuracy_passed": true
+    },
+    {
+      "output_conjugation_kind": 1,
+      "slots_checked": 8192,
+      "maximum_error": 1.3821960290876679e-10,
+      "rms_error": 2.0796394319125884e-11,
+      "accuracy_passed": true
+    },
+    {
+      "output_conjugation_kind": 2,
+      "slots_checked": 8192,
+      "maximum_error": 1.3577530480264708e-10,
+      "rms_error": 2.071791044597097e-11,
+      "accuracy_passed": true
+    }
+  ],
+  "log": "/tmp/ckks-aux8-retained-output-conjugation.log",
+  "log_sha256": "b05077c79d06e5560ec69a04039d65ee3dbbfc41bad1ab7d743f3d9c68bc2a99",
+  "stderr_bytes": 0,
+  "parser_controls": [
+    {
+      "name": "wrong-ring",
+      "actual_exit_code": 2,
+      "error": "unsupported or unfinished auxiliary8 probe state"
+    },
+    {
+      "name": "unfinished",
+      "actual_exit_code": 2,
+      "error": "unsupported or unfinished auxiliary8 probe state"
+    },
+    {
+      "name": "truncated-suffix",
+      "actual_exit_code": 2,
+      "error": "truncated auxiliary8 retained-square suffix"
+    }
+  ],
+  "saved_failing_output_replayed": false,
+  "failure_cause_established": false,
+  "security_validated": false
+}

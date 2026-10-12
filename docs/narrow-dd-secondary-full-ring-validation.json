@@ -1,0 +1,117 @@
+{
+  "observed_at_utc": "2026-10-10T10:46:14.055891+00:00",
+  "scope": "N16384 retained aux8 DD keys at first and last product-tree levels, old4/new16 secondary FFT cache comparison",
+  "fresh_keys_generated": false,
+  "terminal": true,
+  "all_checks_passed": true,
+  "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secondary-dd-controls-20261010",
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_narrow_auxiliary_replay.cpp": "e40491a8591f4c4645451ec77747e2641b44c122a004ff6635e8ae041802e620",
+    "TFHEpp/include/ckks/compact_dd.hpp": "9ee1886deaa51d4faebbd47308f92754ff9c404c25f29aa2aaf9835e0ba296ab",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "59de9ffa11663cd4cb7f12f7e1349c7ea1a5c9e61733b7f590f045232d1c81e6"
+  },
+  "executable_sha256": "e4c805db29c2d7f2806fab6359376d11eb0b6c94d1e90c523cb41fef0b1b6b4d",
+  "build_actual_exit_code": 0,
+  "state_before_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "whole_refresh_validated": false,
+  "paper_performance_reproduced": false,
+  "goal_complete": false,
+  "time_pid": 1926796,
+  "actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--dd-cache-control",
+    "fresh_keys_generated": false,
+    "dd_levels": [
+      {
+        "log_q": 348,
+        "samples": 3,
+        "round_trip_equal": true,
+        "switch_coefficients_equal": true,
+        "old_cache_bytes": 1984167936,
+        "new_cache_bytes": 501743616,
+        "old_prepare_seconds": 1.620102696,
+        "conversion_seconds": 2.890920234,
+        "new_prepare_seconds": 0.406600858,
+        "old_switch_seconds": 1.247121825,
+        "new_switch_seconds": 0.434067806
+      },
+      {
+        "log_q": 156,
+        "samples": 3,
+        "round_trip_equal": true,
+        "switch_coefficients_equal": true,
+        "old_cache_bytes": 398721024,
+        "new_cache_bytes": 102236160,
+        "old_prepare_seconds": 0.322356889,
+        "conversion_seconds": 0.573432568,
+        "new_prepare_seconds": 0.082479321,
+        "old_switch_seconds": 0.244923766,
+        "new_switch_seconds": 0.08611791299999999
+      }
+    ],
+    "all_dd_controls_passed": true,
+    "whole_refresh_validated": false
+  },
+  "state_after_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "retained_state_unchanged": true,
+  "samples_per_level": 3,
+  "levels_checked": 2,
+  "coefficients_compared": 196608,
+  "timing_limitations": "Single component-level observations under concurrent CPU load; excludes archive loading and whole-refresh stages",
+  "build_session": 98073,
+  "test_session": 11834,
+  "small_control": {
+    "n": 512,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--dd-cache-control",
+    "fresh_keys_generated": false,
+    "dd_levels": [
+      {
+        "log_q": 348,
+        "samples": 3,
+        "round_trip_equal": true,
+        "switch_coefficients_equal": true,
+        "old_cache_bytes": 62005248,
+        "new_cache_bytes": 15679488,
+        "old_prepare_seconds": 0.04962905,
+        "conversion_seconds": 0.064341057,
+        "new_prepare_seconds": 0.009135797,
+        "old_switch_seconds": 0.019016155,
+        "new_switch_seconds": 0.004982053
+      },
+      {
+        "log_q": 156,
+        "samples": 3,
+        "round_trip_equal": true,
+        "switch_coefficients_equal": true,
+        "old_cache_bytes": 12460032,
+        "new_cache_bytes": 3194880,
+        "old_prepare_seconds": 0.005018095,
+        "conversion_seconds": 0.011889522,
+        "new_prepare_seconds": 0.000999268,
+        "old_switch_seconds": 0.004273913,
+        "new_switch_seconds": 0.001214434
+      }
+    ],
+    "all_dd_controls_passed": true,
+    "whole_refresh_validated": false
+  },
+  "small_control_actual_exit_code": 0,
+  "build_log_sha256": "077858908819a1ffe70733fbf54c55940db3babaa7fd976504baa28d045f74b8",
+  "full_time_log_sha256": "2bd91373dc1c7c42a1971d56bdb74ab771f3ab96e2563ae45b276d066edc2018",
+  "conversion_requires_secret": false,
+  "control_inputs": [
+    "uniform public arithmetic polynomial",
+    "alternating centered-boundary coefficients",
+    "negative impulse"
+  ],
+  "remaining_validation": [
+    "Intermediate DD levels and complete converted-chain full refresh",
+    "Shared tail-rotation full-ring comparison",
+    "Matched whole-pipeline performance and actual structured-key security"
+  ]
+}

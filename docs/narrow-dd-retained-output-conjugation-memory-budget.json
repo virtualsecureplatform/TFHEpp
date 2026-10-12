@@ -1,0 +1,19 @@
+{
+  "observed_at_utc": "2026-10-09T00:43:15.230680+00:00",
+  "scope": "Retained full-ring output conjugation key phase and cached auxiliary-scale evaluation diagnostic alongside one existing packed job.",
+  "existing_process_pid": 1756575,
+  "existing_process_cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json ",
+  "existing_process_rss_bytes": 17686831104,
+  "existing_process_virtual_limit_bytes": 68719476736,
+  "remaining_growth_bytes": 51032645632,
+  "available_memory_bytes": 113628094464,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 4294967296,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 66065031168,
+  "launch_margin_bytes": 47563063296,
+  "launch_eligible": true,
+  "test_actual_exit_code": 0,
+  "test_terminal": true,
+  "test_peak_rss_kib": 686016
+}

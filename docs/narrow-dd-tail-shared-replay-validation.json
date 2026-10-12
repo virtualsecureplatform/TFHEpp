@@ -1,0 +1,101 @@
+{
+  "observed_at_utc": "2026-10-10T10:43:07.568849+00:00",
+  "actual_exit_code": 0,
+  "result": {
+    "n": 512,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--replay",
+    "fresh_keys_generated": false,
+    "fresh_input_max_error": 8.612885499260468e-12,
+    "saved_max_error": 1.3615911225947476e-09,
+    "saved_rms_error": 8.208303918710317e-10,
+    "refresh_seconds": 42.173322782,
+    "selector_ntt_digit_bits": 16,
+    "factor_groups_completed": 70,
+    "factor_stage_seconds": {
+      "selector_load": 0.028586278,
+      "table_ntt": 0.2586461409999999,
+      "selector_ntt": 0.5462635600000001,
+      "matrix": 1.4601950920000004,
+      "inverse_crt": 0.8964908069999995,
+      "conjugation": 5.806350643000001
+    },
+    "max_error": 1.3615911225947476e-09,
+    "rms_error": 8.208303918710317e-10,
+    "saved_output_equal": true,
+    "accuracy_passed": true,
+    "retained_square_validated": false,
+    "selector_halves_mixed": false,
+    "selector_group_loads": 0
+  },
+  "original_files_unchanged": true,
+  "input_file_count": 36,
+  "prefix_identical_to_previous_control": true,
+  "baseline_prefix_sha256": "fb28516def3cc36e2e88e3fa2ae8f3642a71b9210224dee7bd0c88f6b877c52b",
+  "full_ring_validated": false,
+  "executable_sha256": "3ebe93794e96bbdf53e7e82bc2759c05e1cc031686dfbe7c65b49178107724a6",
+  "source_sha256": {
+    "TFHEpp/include/ckks/compact_dd.hpp": "9ee1886deaa51d4faebbd47308f92754ff9c404c25f29aa2aaf9835e0ba296ab",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "59de9ffa11663cd4cb7f12f7e1349c7ea1a5c9e61733b7f590f045232d1c81e6"
+  },
+  "scope": "Share bounded binary rotation FFT preparation across all tail packs in each frequency tile; retained N512 complete sigmoid replay",
+  "preparation_counts": [
+    {
+      "n": 512,
+      "tail_packs": 4,
+      "old_fft_key_preparations_per_tile": 12,
+      "new_fft_key_preparations_per_tile": 3,
+      "ordered_steps_identical": true,
+      "ciphertext_rotation_operations_unchanged": true
+    },
+    {
+      "n": 16384,
+      "tail_packs": 5,
+      "old_fft_key_preparations_per_tile": 28,
+      "new_fft_key_preparations_per_tile": 6,
+      "ordered_steps_identical": true,
+      "ciphertext_rotation_operations_unchanged": true
+    }
+  ],
+  "independent_phase_validation": {
+    "isolated_real_component_max_error": 1.220112788580252e-09,
+    "isolated_imaginary_component_max_error": 1.1158476920236637e-09,
+    "real_component_max_error": 1.220121892409054e-09,
+    "imaginary_component_max_error": 1.1158373669495347e-09,
+    "real_component_rms_error": 5.881981180619612e-10,
+    "imaginary_component_rms_error": 5.725259471456843e-10,
+    "function": "sigmoid",
+    "n": 512,
+    "prefix_bytes": 176225,
+    "phase_arithmetic": "integer scalar convolution",
+    "fresh_input_max_error": 8.603562567773713e-12,
+    "max_error": 1.3615935682817904e-09,
+    "rms_error": 8.208306684369779e-10,
+    "sparse_key_geometry_passed": true,
+    "evaluation_key_suffix_validated": false,
+    "retained_square_validated": false,
+    "scope": "Inspect auxiliary8 N512/N16384 prefixes using independent phase arithmetic.\n\nReads secrets only from a private diagnostic file. Outputs metrics, never key\nmaterial. Does not inspect evaluation-key suffixes or retained-square keys.\n",
+    "state_bytes": 176225,
+    "report_sha256": "c35d9b676edd537bc1cb884b709fd741834222fda6ff2beff2b2863d64857a94",
+    "comparison_relative_tolerance": 1e-11,
+    "comparison_absolute_tolerance": 1e-11,
+    "fixed_23bit_refresh_passed": true
+  },
+  "build_sessions": [
+    32233,
+    22386
+  ],
+  "build_actual_exit_codes": [
+    0,
+    0
+  ],
+  "test_session": 89834,
+  "goal_complete": false,
+  "speedup_established": false,
+  "limitations": [
+    "N512 timing overlaps a compile/link job and the two long-running benchmark jobs; no matched timing comparison",
+    "N16384 preparation counts are structural accounting, not runtime observations or encrypted full-ring validation",
+    "The already-running full replay uses the earlier pinned executable"
+  ]
+}

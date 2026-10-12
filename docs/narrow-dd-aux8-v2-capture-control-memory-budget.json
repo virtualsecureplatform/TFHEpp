@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-09T08:07:15.149786+00:00",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17685303296,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1831156,
+      "start_ticks": 217652148,
+      "rss_bytes": 12888305664,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 99879514112,
+  "required_bytes": 96127926272,
+  "small_regression_cap_bytes": 4294967296,
+  "capture_control_cap_bytes": 4294967296,
+  "security_parent_plus_worker_cap_bytes": 4294967296,
+  "host_reserve_bytes": 10737418240,
+  "eligible": true
+}

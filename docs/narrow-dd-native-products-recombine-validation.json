@@ -1,0 +1,28 @@
+{
+  "scope": "Signed native64 DD recombination versus independent Boost cpp_int modular oracle, zero/min/max signed64/negative/all-ones/random rows, N512/N8192 Q479/base8 and Q197/base11. Includes legacy full-width recombination controls. Integrated prepared DD seven-level and saved-input N512 all-function evidence linked separately.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "build_and_small_controller_actual_exit_code": 0,
+  "full_level_controller_actual_exit_code": 0,
+  "full_level_initial_controller_actual_exit_code": 2,
+  "native_oracle_coefficients": 101376,
+  "legacy_oracle_coefficients": 101376,
+  "fresh_keys_generated": false,
+  "full_refresh_qualified": false,
+  "full_level_evidence": "narrow-dd-native-products-full-levels-validation.json",
+  "small_refresh_evidence": "narrow-dd-native-products-small-refresh-validation.json",
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_dd_recombine_exact.cpp": "13c58c5c69e0c3f13e25b8508b3d8f50e0d4b8bf93b773f9017b728ab4277fcf",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-native-products-20261011/recombine-exact": "c4443525bf6cc13a6e73f2a557876b44508592be35e0bcc57070fadf4ce2b292",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-native-products-20261011/recombine-exact.log": "a3601067839342f46c897f9027c2f6e9a67aca62a009a300f1761e543f53b590",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-native-products-20261011/recombine-exact-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-native-products-20261011/build-unit-small.py": "7abbb9481941b788e8ed8732ba82f904be8b0253def2ab213686ebde005ec738",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-native-products-20261011/build-results.json": "87a540bb64c3cf4251b84d998085788db9df2b8b1ccbc72e548efebb399b1fd7",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-native-products-20261011/finalize-levels.py": "de7535604b2b38982a8b010570ef51e91cb57317964c023615b87ffbfe9dc0d5"
+  },
+  "completed_utc": "2026-10-11T13:09:51.595963+00:00"
+}

@@ -1,0 +1,99 @@
+{
+  "terminal": true,
+  "all_component_checks_passed": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "fresh_keys_generated": false,
+  "scope": "Retained N32768 Q244/Q197 DD secondary11/12 comparison against coefficient-domain reference. Single-run component timing only; no whole-refresh speedup or security qualification.",
+  "levels": [
+    {
+      "q": 244,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "f3a25a2564c4d7b7dbcf9200e542dbeb80e638b162a758a9d7caaf921fa49bf2",
+      "report": {
+        "n": 32768,
+        "q": 244,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 12,
+        "samples": 3,
+        "row_coefficients_checked": 917504,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 168820736,
+        "new_cache_bytes": 154140672,
+        "conversion_seconds": 0.907086146,
+        "old_prepare_seconds": 1.145986277,
+        "new_prepare_seconds": 0.146281186,
+        "coefficient_reference_seconds": 1.929417897,
+        "old_switch_seconds": 0.16143164799999998,
+        "new_switch_seconds": 0.13736985899999998,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false
+      }
+    },
+    {
+      "q": 197,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "d529276c4a8ae03ed84c6b6ec9fc501126f748c4891310110400225a7c81aef9",
+      "report": {
+        "n": 32768,
+        "q": 197,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 12,
+        "samples": 3,
+        "row_coefficients_checked": 720896,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 103809024,
+        "new_cache_bytes": 98041856,
+        "conversion_seconds": 0.590551086,
+        "old_prepare_seconds": 0.713617372,
+        "new_prepare_seconds": 0.092443408,
+        "coefficient_reference_seconds": 1.247887055,
+        "old_switch_seconds": 0.115386192,
+        "new_switch_seconds": 0.10894190099999998,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false
+      }
+    }
+  ],
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "dae3a45d1a6e11a7838fc555629f5bbef03f2eb13fd56c6893f34866e52f9844",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/test/ckks/ckks_dd_recombine_exact.cpp": "b8f5b81ee2b4b00302ce0a7c04d7b76c87988d47cbf157ec8442d4cd9e1eccf6",
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f"
+  },
+  "public_key_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q479.bin": "ea06bce9aeab7b29105a8024218c087cbee8e2f71a8dda0a17b3fb2c2f1e42a9",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q432.bin": "750c2acec2b433010c843350731b0ccc1a52ec89c3364e7a9423668c9fbdb3d6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q385.bin": "62bc3817e6ffb392e07fcb2b618e570c4c7ec4b1175ad04eefa5254a45bf1fe6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q338.bin": "1c814f76ad96382002b138e6e8d9ec26bef06f52f9bf58035e3efc40e2eb3aee",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q291.bin": "4413889ba323f874ffd5d57de8ba118e89f39f8c606d4a75b2994cd1360daa0b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q244.bin": "a5e47be5dd4a0deeced38b520ead6898bdcaebcae9c80777bc9fa4af65d11d9c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q197.bin": "a2da314a725538931572721eaef0b807718b349cbc0553de791d4d20e67a8562"
+  },
+  "build_inputs_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a": "d5fe98dbe264fdb5881e1405c4515e4710f3e4102f9f4d1e688957bac6e47f3c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a": "a1b3b4f6fdb2b9e200d18a4052f2ae8dd876ae1bb4689dd3bf5b72f43aaae6e9",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a": "e4cf740aa473cebf2e2679f148dcadf21ea7034ec9a3f71b4cbb66205c8f0064",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a": "e00b2d38402e510d6c8abed808c4404d3299c034d5bef73ea7f8b15819e13cf8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-v12-low-levels-20261011/control.cpp": "613af965095d634aea2efe88807883b312327eed08bb3a48d1e67cd9267ac0c3"
+  },
+  "extracted_public_key_files_unchanged": true,
+  "public_key_files_unchanged": true,
+  "validation_controller_actual_exit_code": 0,
+  "controller_actual_exit_code": 0,
+  "controller_sha256": "bd7fa8b4b774ba30c01b5a7cf912f8aaae5229327562806cd3bcb281ec4833d2",
+  "whole_refresh_qualified": false,
+  "refresh_policy_changed": false,
+  "preparation_times_comparable": false,
+  "preparation_scope_note": "old_prepare_seconds includes conversion to secondary11; conversion to secondary12 is reported separately. Only switch timings share the same scope.",
+  "timing_scope": "Single fixed-order component observation with three public input patterns per level; no controlled full-refresh speedup claim.",
+  "cache_bytes_saved": 20447232
+}

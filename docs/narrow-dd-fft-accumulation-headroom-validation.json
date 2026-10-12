@@ -1,0 +1,150 @@
+{
+  "observed_at_utc": "2026-10-09T00:51:30.097794+00:00",
+  "scope": "Consistent compile-time FFT accumulation precision guard for compact DD preparation and direct cached-key switching.",
+  "changed_sources": [
+    "include/ckks/ckks.hpp",
+    "include/ckks/compact_dd.hpp"
+  ],
+  "source_sha256": {
+    "include/ckks/ckks.hpp": "d5ea7b4dbd3b60fc278814b5e6a9ade66fe34700a4773aa31afed8a255020371",
+    "include/ckks/compact_dd.hpp": "59aad7215838b861168d54e50355db4c19c4cb3d9aaaad6ec01b38724288c5ce",
+    "include/ckks/prepared_dd.hpp": "890fdfe6def7d1bcc03272930769494ff1cbf0b3120b8cf61406af6f472fa5c8",
+    "include/ckks/prepared_auto.hpp": "f8e1a2b97bb60dcbdf3eddedb0d04d03f2f5de9e25190c8db8441fd39b9a26a4"
+  },
+  "guard": "Bg + Bbar + nbit + bit_width(primary_rows) + 3 < numeric_limits<double>::digits",
+  "double_precision_bits": 53,
+  "reason": "Each secondary accumulator sums every primary-row convolution before the inverse FFT; guarding individual row products alone omitted accumulation growth.",
+  "consistent_with_existing_raw_factory_and_chain_guards": true,
+  "prepared_auto_guard_already_includes_row_accumulation": true,
+  "coefficient_domain_dd_accumulation_unchanged": "Coefficient-domain products are transformed independently and accumulated as modular multi-limb integers; no floating-point sum across primary rows.",
+  "compile_controls": [
+    {
+      "operation": "compact_factory",
+      "points": 16384,
+      "active_modulus": 432,
+      "primary_bits": 4,
+      "secondary_bits": 4,
+      "single_product_bound_bits": 25,
+      "accumulation_bound_bits": 32,
+      "expected_acceptance": true,
+      "compiler_exit_code": 0,
+      "expected_guard_observed": false
+    },
+    {
+      "operation": "compact_factory",
+      "points": 16384,
+      "active_modulus": 432,
+      "primary_bits": 18,
+      "secondary_bits": 8,
+      "single_product_bound_bits": 43,
+      "accumulation_bound_bits": 48,
+      "expected_acceptance": true,
+      "compiler_exit_code": 0,
+      "expected_guard_observed": false
+    },
+    {
+      "operation": "compact_factory",
+      "points": 16384,
+      "active_modulus": 432,
+      "primary_bits": 18,
+      "secondary_bits": 16,
+      "single_product_bound_bits": 51,
+      "accumulation_bound_bits": 56,
+      "expected_acceptance": false,
+      "compiler_exit_code": 1,
+      "expected_guard_observed": true
+    },
+    {
+      "operation": "fft_switch",
+      "points": 16384,
+      "active_modulus": 432,
+      "primary_bits": 4,
+      "secondary_bits": 4,
+      "single_product_bound_bits": 25,
+      "accumulation_bound_bits": 32,
+      "expected_acceptance": true,
+      "compiler_exit_code": 0,
+      "expected_guard_observed": false
+    },
+    {
+      "operation": "fft_switch",
+      "points": 16384,
+      "active_modulus": 432,
+      "primary_bits": 18,
+      "secondary_bits": 8,
+      "single_product_bound_bits": 43,
+      "accumulation_bound_bits": 48,
+      "expected_acceptance": true,
+      "compiler_exit_code": 0,
+      "expected_guard_observed": false
+    },
+    {
+      "operation": "fft_switch",
+      "points": 16384,
+      "active_modulus": 432,
+      "primary_bits": 18,
+      "secondary_bits": 16,
+      "single_product_bound_bits": 51,
+      "accumulation_bound_bits": 56,
+      "expected_acceptance": false,
+      "compiler_exit_code": 1,
+      "expected_guard_observed": true
+    }
+  ],
+  "compile_control_compiler": "/usr/bin/c++ -std=gnu++20 -fsyntax-only, using the target CXX_DEFINES and CXX_INCLUDES from flags.make",
+  "compile_control_old_per_product_bound_asserted": true,
+  "safe_profiles_acceptance_verified": true,
+  "unsafe_profile_rejection_verified": true,
+  "current_4_4_full_ring_accumulation_bound_bits": 32,
+  "old_full_18_8_n32768_native576_upper_bound_bits": 50,
+  "original_sigmoid_failure_resolved": false,
+  "failure_cause_claim": "None: the 4/4 failing profile already had ample headroom; this repairs the generic API contract.",
+  "memory_budget": "narrow-dd-fft-accumulation-memory-budget.json",
+  "runtime_validation_pending": false,
+  "build_terminal": true,
+  "build_log": "/tmp/ckks-narrow-dd-fft-accumulation-final-build.log",
+  "security_qualified": false,
+  "goal_complete": false,
+  "runtime_checks": {
+    "compact": {
+      "test_actual_exit_code": 0,
+      "test_terminal": true,
+      "test_log": "/tmp/ckks-narrow-dd-fft-accumulation-compact.log",
+      "test_stderr_bytes": 0,
+      "elapsed_wall_time": "0:06.44",
+      "peak_rss_kib": 1032512
+    },
+    "wide": {
+      "test_actual_exit_code": 0,
+      "test_terminal": true,
+      "test_log": "/tmp/ckks-narrow-dd-fft-accumulation-wide.log",
+      "test_stderr_bytes": 0,
+      "elapsed_wall_time": "0:00.56",
+      "peak_rss_kib": 31388
+    },
+    "packed": {
+      "test_actual_exit_code": 0,
+      "test_terminal": true,
+      "test_log": "/tmp/ckks-narrow-dd-fft-accumulation-packed.log",
+      "test_stderr_bytes": 0,
+      "elapsed_wall_time": "0:48.92",
+      "peak_rss_kib": 1820628
+    }
+  },
+  "build_actual_exit_code": 0,
+  "initial_build_actual_exit_code": 0,
+  "initial_build_terminal": true,
+  "packed_full_ring_validation": {
+    "active_moduli": [
+      296,
+      247,
+      198,
+      149,
+      100
+    ],
+    "key_phase_coefficients_checked": 4079616,
+    "fft_ntt_coefficients_compared": 163840,
+    "switched_phase_coefficients_checked": 81920,
+    "scope": "New generated compact keys at the packed job modulus chain, independent integer NTT key-message and FFT-switch checks; not the live packed keys or complete refresh."
+  }
+}

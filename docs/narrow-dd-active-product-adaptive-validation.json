@@ -1,0 +1,110 @@
+{
+  "scope": "Exact active torus multiplication used by CKKS encryption: adaptive exact NTT chunks and one transform of the small polynomial. Public integer references and corrected retained-mask component timing, not whole refresh or selector-origin qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "observed_at_utc": "2026-10-10T16:50:13.052833+00:00",
+  "main_goal_fixture_fresh_keys_generated": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "9fd7a2cacdafecfc1833338159a61386513d98b7c10b15fa082f29d12a38f86f",
+    "TFHEpp/test/ckks/ckks_active_torus_product_exact.cpp": "418f8f2b71031158c74383af478893467af7b91ee1d003eae6620da3cfa19be8"
+  },
+  "executable_sha256": "ece9dac05dbdf42b7d08f4cec3bdd262961c7e66ca40b786a2ebbefea3be52e2",
+  "public_exact_checks": [
+    {
+      "n": 64,
+      "q": 518,
+      "independent_coefficients": 192,
+      "baseline16_exact": true,
+      "zero_multiplier_exact": true
+    },
+    {
+      "n": 16384,
+      "q": 128,
+      "independent_coefficients": 49152,
+      "baseline16_exact": true,
+      "zero_multiplier_exact": true
+    },
+    {
+      "n": 16384,
+      "q": 385,
+      "independent_coefficients": 49152,
+      "baseline16_exact": true,
+      "zero_multiplier_exact": true
+    },
+    {
+      "n": 16384,
+      "q": 448,
+      "independent_coefficients": 49152,
+      "baseline16_exact": true,
+      "zero_multiplier_exact": true
+    },
+    {
+      "n": 32768,
+      "q": 518,
+      "independent_coefficients": 98304,
+      "baseline16_exact": true,
+      "zero_multiplier_exact": true
+    }
+  ],
+  "out_of_range_controls_per_profile": 2,
+  "concurrent_corrected_retained_mask": {
+    "concurrent_products": 16,
+    "exact_coefficients": 262144,
+    "passed": true
+  },
+  "retained_corrected_record_identity": {
+    "scope": "Corrected diagnostic selector, not the historical failing original",
+    "group": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/head-19.bin",
+    "record": 466,
+    "before": "e9d2fbe12fa00ef67cfc98db454c11db9b06274aee1a04c28afd400aef1ade2a",
+    "after": "e9d2fbe12fa00ef67cfc98db454c11db9b06274aee1a04c28afd400aef1ade2a",
+    "unchanged": true,
+    "exit_code": 0,
+    "error_origin_established": false
+  },
+  "paired_trials": [
+    {
+      "old16": false,
+      "repeats": 8,
+      "seconds": 0.090676,
+      "retained_mask_coefficients_exact": 16384
+    },
+    {
+      "old16": true,
+      "repeats": 8,
+      "seconds": 0.332692,
+      "retained_mask_coefficients_exact": 16384
+    },
+    {
+      "old16": true,
+      "repeats": 8,
+      "seconds": 0.323927,
+      "retained_mask_coefficients_exact": 16384
+    },
+    {
+      "old16": false,
+      "repeats": 8,
+      "seconds": 0.0907685,
+      "retained_mask_coefficients_exact": 16384
+    }
+  ],
+  "median_product_seconds": {
+    "False": 0.01134028125,
+    "True": 0.041038687500000004
+  },
+  "observed_component_ratio": 3.6188421252779777,
+  "timing_scope": "Serial product calls, paired trials under concurrent packed/basis load. No whole encryption, setup, refresh or isolated performance claim.",
+  "shared_caller_regression": {
+    "target": "ckks_to_tfhe_full_smoke",
+    "build_exit_code": 0,
+    "actual_exit_code": 0,
+    "executable_sha256": "05392824d42498077b9ddf167408e025b6b022b9b417dd9dcc1ab57ca4432c02",
+    "scope": "Existing full-ring encryption/scheme-switching test with its own small switch-key setup; no retained narrow keys regenerated"
+  },
+  "error_origin_established": false,
+  "complete_refresh_under_new_source_qualified": false,
+  "security_qualified": false,
+  "paper_performance_reproduced": false,
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/active-product-adaptive-20261010",
+  "goal_complete": false
+}

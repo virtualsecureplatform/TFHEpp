@@ -1,0 +1,53 @@
+{
+  "scope": "S2C auxiliary8 with blind-rotation auxiliary8, N16384 retained factor Galois345 projected to93/56 and public plan rebound85/41->93/52, newly encrypted public random/endpoints domain[-4,4] under retained dense secret. No fresh private keys or selector reconstruction; one new evaluation switch key56 under retained secrets, saved for reuse. Independent coefficient phase accuracy gate2^-23. Complete refresh/security remain unqualified.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_private_keys_generated": false,
+  "new_evaluation_keys_generated": 1,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/control-full.cpp": "e581c0ebddafcbb3b4b57395ee29e3104e6e2afc5eac07d651ead16e77476d6c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/validate-full.py": "ce9c324b92fae1b1a907677774be05ccb7a944c150cf4af153e7995e1417bc70",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_refresh.hpp": "f07bbe5c1796c31345a554480c8477c80124b917acef23a5ce072bf0996a82a7",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_linear.hpp": "7dc89ec7a6455a3487b23ecf5d47b4fa4f44654e940daac7e2b2e79da72fff2b",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "297e7d6632e63102c9b45ea987de060c74363858c28dfdcdeff260c9a762009f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "stage": "complete",
+  "checkpoint_baseline_sha256": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "baseline_receipt_sha256": "6fbd5747a1361e76025a995600d84cc9d758029584524fa59212324fea09b69c",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "input_log_q": 85,
+    "input_log_delta": 44,
+    "output_log_q": 48,
+    "output_log_delta": 44,
+    "s2c_auxiliary_bits": 8,
+    "blind_rotation_auxiliary_bits": 8,
+    "fresh_private_keys_generated": false,
+    "new_evaluation_keys_generated": 1,
+    "retained_plan_rebound_from_scale": 41,
+    "message_bound": 4,
+    "fresh_input_max_error": 6.386438946189541e-11,
+    "coefficient_preparation_max_error": 2.631051376766891e-09,
+    "coefficient_prepare_seconds": 16.628227176,
+    "accuracy_gate": 1.1920928955078125e-07,
+    "accuracy_passed": true
+  },
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent integer phases of fresh dense input and retained-key S2C output under structured secret, all coefficients and all slot components.",
+    "phase_coefficients_checked": 32768,
+    "fresh_input_max_error": 6.447510692163894e-11,
+    "coefficient_preparation_max_error": 2.631051376766891e-09,
+    "accuracy_gate": 1.1920928955078125e-07,
+    "accuracy_passed": true
+  },
+  "checkpoint_sha256_after": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "checkpoint_unchanged": true,
+  "sources_unchanged": true,
+  "completed_utc": "2026-10-11T15:46:42.132264+00:00"
+}

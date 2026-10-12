@@ -1,0 +1,9 @@
+{
+  "scope": "Adapter template extension only: default SelectorSchedule equals SourceSchedule; removing new parameter/guards/alias restores exact previously qualified header. Does not qualify changed table precision or full functional replay.",
+  "current_header_sha256": "21064ebd7d954ef4ad4010b96ac530db2c01071e4a2636be834f7b47b39272ab",
+  "restored_header_sha256": "b84a0c001509fc69ffcec293b858c218c1ebda600952f58b092112c3f024215a",
+  "qualified_header_sha256": "b84a0c001509fc69ffcec293b858c218c1ebda600952f58b092112c3f024215a",
+  "exact_previously_qualified_source_restored": true,
+  "default_template_argument": "SourceSchedule",
+  "all_checks_passed": true
+}

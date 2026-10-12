@@ -1,0 +1,194 @@
+{
+  "observed_at_utc": "2026-10-09T05:28:52.000954+00:00",
+  "scope": "Actual-block joint-decoder sensitivities at fixed saturated5 prefix layout, zeta14688, weight11; not an established attack",
+  "source": "Parameter-Selection/python/estimates/narrow_ckks_block_ring_joint_decode.py",
+  "source_sha256": "de16d9d95f9ad03e150e966f1a1e08c30fe0ace048a9d767ebe0909f86467bd4",
+  "histograms": [
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_rotation_histogram.json",
+      "report_sha256": "22b55047cc5eef032cc7db894630d1cf64c720d65a2ff1316d30bd73509eb10e",
+      "source_sha256": "26629e7d0c7798efe51b4179dc055bd24d87f4039ec2d3980700699d8aa20398",
+      "seed": 2119,
+      "samples": 4000,
+      "session": 70248,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "old_probability_geometry_fields_exactly_preserved": true
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_rotation_histogram_control.json",
+      "report_sha256": "91dd3c42d696ecf29ec50d28cd16c238c5a9e92868c598ea1f8bae0749b17d6c",
+      "source_sha256": "26629e7d0c7798efe51b4179dc055bd24d87f4039ec2d3980700699d8aa20398",
+      "seed": 21190,
+      "samples": 4000,
+      "session": 2331,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "old_probability_geometry_fields_exactly_preserved": true
+    }
+  ],
+  "runs": [
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode.json",
+      "report_sha256": "c9d47e3c59b3898efb35b843f95c4b059195084bd1680b6931647597d7d2ac84",
+      "source_sha256": "dca8b553982238cc55d744920a4f545d5d62f78511c62445d8f837a5812a3979",
+      "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+      "session": 71049,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 540,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 129.00773209034247,
+          "independent_decoder": 128.60708543738298,
+          "optimistic_joint_bound": 128.42377096870626
+        },
+        "MATZOV": {
+          "common_decoder": 128.9598942549671,
+          "independent_decoder": 128.59937133918362,
+          "optimistic_joint_bound": 128.42372752018483
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_control.json",
+      "report_sha256": "787a3df5c11ef99f1c072b6e7e9cb2ac2ca6c219eba91b6c61cb84b461e1189b",
+      "source_sha256": "dca8b553982238cc55d744920a4f545d5d62f78511c62445d8f837a5812a3979",
+      "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+      "session": 67031,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 420,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 129.02811808273745,
+          "independent_decoder": 128.57280255517946,
+          "optimistic_joint_bound": 128.10508911808856
+        },
+        "MATZOV": {
+          "common_decoder": 128.97941728742208,
+          "independent_decoder": 128.5646660377729,
+          "optimistic_joint_bound": 128.095960969387
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_confidence.json",
+      "report_sha256": "d245267ad11f4dcfcd7c406d13b66dc3e0f1acd70caab294a6542704852a0cc4",
+      "source_sha256": "97a2912850f9ca679ad9320f88a386064ef191c04a7b4da4b3a98ff7c9df0311",
+      "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+      "session": 73916,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 840,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 129.00859505028248,
+          "independent_decoder": 128.56486061040582,
+          "optimistic_joint_bound": 128.0855660856378,
+          "common_decoder_iid95": 128.83203029980544,
+          "independent_decoder_iid95": 128.45069031569057,
+          "optimistic_joint_bound_iid95": 127.9752907107643
+        },
+        "MATZOV": {
+          "common_decoder": 128.9598942549671,
+          "independent_decoder": 128.55672409299925,
+          "optimistic_joint_bound": 128.07643793693623,
+          "common_decoder_iid95": 128.78332950449007,
+          "independent_decoder_iid95": 128.44068835622826,
+          "optimistic_joint_bound_iid95": 127.96643130842632
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_dkw.json",
+      "report_sha256": "2fd647ab0f52c8868cc216490b374dce88a32cfefe47db06191b7c8b6f78d0de",
+      "source_sha256": "de16d9d95f9ad03e150e966f1a1e08c30fe0ace048a9d767ebe0909f86467bd4",
+      "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+      "session": 96269,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 840,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 129.00859505028248,
+          "independent_decoder": 128.56486061040582,
+          "optimistic_joint_bound": 128.0855660856378,
+          "common_decoder_iid95": 128.83203029980544,
+          "independent_decoder_iid95": 128.45069031569057,
+          "optimistic_joint_bound_iid95": 127.9752907107643
+        },
+        "MATZOV": {
+          "common_decoder": 128.9598942549671,
+          "independent_decoder": 128.55672409299925,
+          "optimistic_joint_bound": 128.07643793693623,
+          "common_decoder_iid95": 128.78332950449007,
+          "independent_decoder_iid95": 128.44068835622826,
+          "optimistic_joint_bound_iid95": 127.96643130842632
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_dkw_external_copy.json",
+      "report_sha256": "eb7939bddfb8f4bee4009b2d46a146d431f58ce25b723ba037c87bdd4f8695be",
+      "source_sha256": "de16d9d95f9ad03e150e966f1a1e08c30fe0ace048a9d767ebe0909f86467bd4",
+      "estimator_revision": "53da5982597709ba0fdf94ea37a84d822310fd84",
+      "session": 74513,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "finite_cost_evaluations": 840,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 129.00859505028248,
+          "independent_decoder": 128.56486061040582,
+          "optimistic_joint_bound": 128.0855660856378,
+          "common_decoder_iid95": 128.83203029980544,
+          "independent_decoder_iid95": 128.45069031569057,
+          "optimistic_joint_bound_iid95": 127.9752907107643
+        },
+        "MATZOV": {
+          "common_decoder": 128.9598942549671,
+          "independent_decoder": 128.55672409299925,
+          "optimistic_joint_bound": 128.07643793693623,
+          "common_decoder_iid95": 128.78332950449007,
+          "independent_decoder_iid95": 128.44068835622826,
+          "optimistic_joint_bound_iid95": 127.96643130842632
+        }
+      }
+    }
+  ],
+  "exact_toy_rotation_cases": 256,
+  "exact_bernoulli_enumeration_passed": true,
+  "exact_monotonicity_and_cdf_summation_by_parts_passed": true,
+  "dkw_radius_independent_decimal_check_passed": true,
+  "posterior_uncertainty": {
+    "method": "one-sample DKW-Massart empirical-CDF bound",
+    "confidence": 0.95,
+    "cdf_radius": "0.0214734704173368781032242841342038503466515669369749345308620141575750989049906340350342649576978382986809972591505233378802094130578198842907135936421776",
+    "theorem_source": "https://arxiv.org/abs/1107.5356",
+    "formula": "epsilon=sqrt(log(2/0.05)/(2*samples))",
+    "simultaneous_scope": "All decoder marginals and beta/d choices using this same fixed-layout posterior histogram",
+    "expectation_bound": "epsilon for 1/K; p*epsilon for h_p(K)=(1-(1-p)^K)/K by monotone summation by parts",
+    "excludes": "Other layouts, weights, zeta, seeds, decoding-correlation hypotheses, and security certification"
+  },
+  "new_pinned_costs_identical_to_previous_and_external_copy": 1680,
+  "current_pinned_stderr_bytes": 0,
+  "security_validated": false,
+  "complete_attack_optimization": false,
+  "limitations": [
+    "Decoder marginal uses scalar GSA Babai and MITM probabilities; actual cross-rotation correlations unmodeled",
+    "Conditional decoder independence and optimistic union bound are sensitivities, not established attacks",
+    "Only one zeta/layout/weight and supplied beta/d offsets; no global optimum",
+    "Full square-root work on labelled dictionaries assumed; compatible decompositions not constructed",
+    "Posterior finite-sample uncertainty is not a security confidence interval",
+    "Correlated evaluation keys remain unqualified"
+  ],
+  "next_actions": [
+    "Optimize additional zeta/layout/weight choices",
+    "Construct compatible rotation-labelled MITM dictionaries",
+    "Qualify actual decoding correlations and heterogeneous GSA geometry",
+    "Qualify correlated evaluation-key exposure"
+  ],
+  "earlier_common_decoder_shared_point_comparisons": 142,
+  "posterior_and_joint_self_tests_reverified_at_utc": "2026-10-09T05:29:42.163742+00:00"
+}

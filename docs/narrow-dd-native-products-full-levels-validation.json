@@ -1,0 +1,506 @@
+{
+  "terminal": true,
+  "all_component_checks_passed": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "fresh_keys_generated": false,
+  "scope": "Fresh current-source builds and exact retained N32768 DD controls at all seven levels, Native64 versus frozen multi-limb product storage at secondary11, and coefficient-domain secondary8 switches. Not a complete refresh or security qualification.",
+  "levels": [
+    {
+      "q": 479,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "a2feec326bf33ccf52c19c91c7dce5c46b84ac00d58b60ef51a970cc841d4aa0",
+      "report": {
+        "n": 32768,
+        "q": 479,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1769472,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 622854144,
+        "new_cache_bytes": 622854144,
+        "conversion_seconds": 3.590606062,
+        "old_prepare_seconds": 0.588804907,
+        "new_prepare_seconds": 0.580311156,
+        "coefficient_reference_seconds": 6.904803770999999,
+        "old_switch_seconds": 0.367594299,
+        "new_switch_seconds": 0.163507776,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.469214787
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.20877317
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.207039657
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.472404724
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.206782548
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.475413893
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.467765606
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.205810748
+          }
+        ]
+      },
+      "paired_median_seconds": {
+        "False": 0.47080975550000004,
+        "True": 0.2069111025
+      },
+      "native_time_ratio": 0.43947921656861244
+    },
+    {
+      "q": 432,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "68cc50684c6024ef68a8ef7ce0033b6e0ab2c1cbeb1fb757267a62fd090cb3ca",
+      "report": {
+        "n": 32768,
+        "q": 432,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1572864,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 503316480,
+        "new_cache_bytes": 503316480,
+        "conversion_seconds": 2.916579071,
+        "old_prepare_seconds": 0.477758992,
+        "new_prepare_seconds": 0.473918734,
+        "coefficient_reference_seconds": 5.553730787,
+        "old_switch_seconds": 0.31390106100000004,
+        "new_switch_seconds": 0.149530533,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.421343094
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.182369082
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.180669746
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.409766062
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.188440349
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.411120779
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.411345367
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.184260155
+          }
+        ]
+      },
+      "paired_median_seconds": {
+        "False": 0.411233073,
+        "True": 0.1833146185
+      },
+      "native_time_ratio": 0.44576817998293633
+    },
+    {
+      "q": 385,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "88615bc46111c3445a7cdd158cc546bcbef31b0412799890571a1758072c62c3",
+      "report": {
+        "n": 32768,
+        "q": 385,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1441792,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 403701760,
+        "new_cache_bytes": 403701760,
+        "conversion_seconds": 2.333361798,
+        "old_prepare_seconds": 0.384230378,
+        "new_prepare_seconds": 0.380404577,
+        "coefficient_reference_seconds": 4.626883659,
+        "old_switch_seconds": 0.276139389,
+        "new_switch_seconds": 0.124123852,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.35928292
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.156820871
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.156376661
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.35866292
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.155763609
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.363022401
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.367687616
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.156116383
+          }
+        ]
+      },
+      "paired_median_seconds": {
+        "False": 0.3611526605,
+        "True": 0.156246522
+      },
+      "native_time_ratio": 0.4326328976330496
+    },
+    {
+      "q": 338,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "89d790a2034636b1891126b1ba8a1fc6e6aafab38f59162d68bbd171dc33f977",
+      "report": {
+        "n": 32768,
+        "q": 338,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1245184,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 308805632,
+        "new_cache_bytes": 308805632,
+        "conversion_seconds": 1.797312876,
+        "old_prepare_seconds": 0.294683696,
+        "new_prepare_seconds": 0.292709475,
+        "coefficient_reference_seconds": 3.5626455859999995,
+        "old_switch_seconds": 0.241968672,
+        "new_switch_seconds": 0.10360777700000001,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.31381964
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.129361335
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.127668869
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.313822259
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.131985977
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.316085635
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.312589149
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.129432676
+          }
+        ]
+      },
+      "paired_median_seconds": {
+        "False": 0.3138209495,
+        "True": 0.1293970055
+      },
+      "native_time_ratio": 0.4123274934518035
+    },
+    {
+      "q": 291,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "349e77cf1216d815787c294827a7bcf74e4f44f8975a5da936ca8a007a012686",
+      "report": {
+        "n": 32768,
+        "q": 291,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1114112,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 240648192,
+        "new_cache_bytes": 240648192,
+        "conversion_seconds": 1.394876137,
+        "old_prepare_seconds": 0.230880275,
+        "new_prepare_seconds": 0.2286543,
+        "coefficient_reference_seconds": 2.777365036,
+        "old_switch_seconds": 0.20681438400000002,
+        "new_switch_seconds": 0.08736385499999999,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.274362708
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.108332607
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.108492502
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.26864265
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.109750359
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.271000493
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.269991661
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.110367498
+          }
+        ]
+      },
+      "paired_median_seconds": {
+        "False": 0.270496077,
+        "True": 0.1091214305
+      },
+      "native_time_ratio": 0.403412248008314
+    },
+    {
+      "q": 244,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "4ae29b85557f8e5e41e08bc3ef9f3bace85f91e1c745bdee438de8e00d40d572",
+      "report": {
+        "n": 32768,
+        "q": 244,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 917504,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 168820736,
+        "new_cache_bytes": 168820736,
+        "conversion_seconds": 1.00762267,
+        "old_prepare_seconds": 0.166217944,
+        "new_prepare_seconds": 0.161458185,
+        "coefficient_reference_seconds": 1.9301179140000002,
+        "old_switch_seconds": 0.15973941,
+        "new_switch_seconds": 0.04410024,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.19814637
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.057696154
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.055543024
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.199047887
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.05771488
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.20018803
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.198363071
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.056455151
+          }
+        ]
+      },
+      "paired_median_seconds": {
+        "False": 0.19870547900000002,
+        "True": 0.057075652500000004
+      },
+      "native_time_ratio": 0.2872374369707239
+    },
+    {
+      "q": 197,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "a9f6b5fe99570273d485b459cc6f179e9ba9aaf9f39e662263aa08c0bca19008",
+      "report": {
+        "n": 32768,
+        "q": 197,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 720896,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 103809024,
+        "new_cache_bytes": 103809024,
+        "conversion_seconds": 0.605149208,
+        "old_prepare_seconds": 0.101516533,
+        "new_prepare_seconds": 0.097781254,
+        "coefficient_reference_seconds": 1.245992021,
+        "old_switch_seconds": 0.11530670900000001,
+        "new_switch_seconds": 0.029559085,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.148436266
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.036143423
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.035967646
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.148924918
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.037433812
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.147942233
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.148231559
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.038929096
+          }
+        ]
+      },
+      "paired_median_seconds": {
+        "False": 0.1483339125,
+        "True": 0.036788617499999995
+      },
+      "native_time_ratio": 0.24801218332321678
+    }
+  ],
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f",
+    "TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c"
+  },
+  "public_key_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q479.bin": "ea06bce9aeab7b29105a8024218c087cbee8e2f71a8dda0a17b3fb2c2f1e42a9",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q432.bin": "750c2acec2b433010c843350731b0ccc1a52ec89c3364e7a9423668c9fbdb3d6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q385.bin": "62bc3817e6ffb392e07fcb2b618e570c4c7ec4b1175ad04eefa5254a45bf1fe6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q338.bin": "1c814f76ad96382002b138e6e8d9ec26bef06f52f9bf58035e3efc40e2eb3aee",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q291.bin": "4413889ba323f874ffd5d57de8ba118e89f39f8c606d4a75b2994cd1360daa0b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q244.bin": "a5e47be5dd4a0deeced38b520ead6898bdcaebcae9c80777bc9fa4af65d11d9c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q197.bin": "a2da314a725538931572721eaef0b807718b349cbc0553de791d4d20e67a8562"
+  },
+  "build_inputs_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a": "d5fe98dbe264fdb5881e1405c4515e4710f3e4102f9f4d1e688957bac6e47f3c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a": "a1b3b4f6fdb2b9e200d18a4052f2ae8dd876ae1bb4689dd3bf5b72f43aaae6e9",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a": "e4cf740aa473cebf2e2679f148dcadf21ea7034ec9a3f71b4cbb66205c8f0064",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a": "e00b2d38402e510d6c8abed808c4404d3299c034d5bef73ea7f8b15819e13cf8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-native-products-20261011/integrated-control.cpp": "82aa6d1d8828d6e91f19065274efeb366fbfbea620382a669cede31600f92e02",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-native-products-20261011/reference-switch.hpp": "1fd644511e27349158a23484360d2ce0f308252d08e044d6abeedce4ad6a3b28"
+  },
+  "native_product_storage_ratio": 0.1111111111111111,
+  "public_key_files_unchanged": true,
+  "extracted_public_key_files_unchanged": true,
+  "validation_controller_actual_exit_code": 0,
+  "initial_controller_actual_exit_code": 2,
+  "original_controller_issue": "All seven builds and switches exited 0. Final source audit rejected an unrelated recombine unit source changed to add its explicit bit header during execution; it is not compiled into these controls. Relevant compiled sources and all keys were unchanged. Finalizer checks those sources, every executable, build inputs and completed reports without repeating compute.",
+  "unused_unit_initial_sha256": "e5a7000e961a30e4af5b39a754eac3ef69475880d7dcfa3499f96456b26772d5",
+  "full_refresh_qualified": false
+}

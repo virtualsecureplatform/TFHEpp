@@ -1,0 +1,38 @@
+{
+  "scope": "Conservative payload deltas from previously validated full lean basis envelope; retains prior runtime reserve, includes unused legacy digit workspace conservatively; not measured current full-ring RSS",
+  "payload_reductions_bytes": {
+    "factor_fft_bytes": 1141899264,
+    "bounded_rotation_fft_bytes": 1141899264,
+    "selector_ntt_chunk_bytes": 922746880,
+    "factor_digit_workspace_bytes": 1868562432,
+    "factor_modular_sum_bytes": 415236096
+  },
+  "estimated_process_envelope_bytes": 39206846704,
+  "proposed_address_space_limit_bytes": 42949672960,
+  "available_memory_bytes": 94666076160,
+  "required_available_memory_bytes": 125061885952,
+  "existing_jobs": [
+    {
+      "pid": 1910341,
+      "start_ticks": 225941687,
+      "rss_bytes": 17656209408,
+      "future_headroom_bytes": 51063267328
+    },
+    {
+      "pid": 1940496,
+      "start_ticks": 228379705,
+      "rss_bytes": 9170395136,
+      "future_headroom_bytes": 8009474048
+    },
+    {
+      "pid": 1940434,
+      "start_ticks": 228373611,
+      "rss_bytes": 9172783104,
+      "future_headroom_bytes": 12302053376
+    }
+  ],
+  "eligible": false,
+  "job_launched": false,
+  "full_current_encrypted_basis_validation_passed": false,
+  "file_selector_payload_bytes": 179721732096
+}

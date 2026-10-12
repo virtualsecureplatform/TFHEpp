@@ -1,0 +1,40 @@
+{
+  "observed_at_utc": "2026-10-10T18:11:24.631227+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Implicit Eq.25 NTT permutation indices versus independent coefficient automorphisms at N512/N8192/N16384/N32768, and retained N512 complete all-function ciphertext identity. Does not qualify a latest-source full N32768 refresh or latency.",
+  "independent_ntt_points_checked": 15968256,
+  "prime_count_checked": 23,
+  "degrees_checked": [
+    512,
+    8192,
+    16384,
+    32768
+  ],
+  "coefficient_automorphisms_per_degree_and_prime": 12,
+  "ciphertext_identity": {
+    "sigmoid": {
+      "exact": true,
+      "sha256": "5f305d3359263666cafa2ecf6126483f3c3cfa68284ee272c35eb7767a2772c4"
+    },
+    "gelu": {
+      "exact": true,
+      "sha256": "d229ade2aba24954149111818305f7fae045cc70e13a5abcf5c674460c2e3663"
+    },
+    "tanh": {
+      "exact": true,
+      "sha256": "69c3992958693cceb8c460fcf8e3ce751455a596669aeaa4ce2134b469541112"
+    }
+  },
+  "fresh_keys_generated": false,
+  "permutation_storage_bytes_before_n32768": 277348352,
+  "permutation_storage_bytes_after_n32768": 8464,
+  "paper_performance_reproduced": false,
+  "full_refresh_qualified": false,
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-implicit-permutation-20261010",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "d9613010f670362346dd5534dd587c61cbe41d8fee42bcdae92b19cd0a8567fc",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "90675a75bbab74d19def802f2004e3cc484f3ae6d0b8eeb8ccbe6d649743b484",
+    "TFHEpp/test/ckks/ckks_narrow_permutation_exact.cpp": "586318db49e371b4517ed01f43bf044f8e1ff4c79b39f6842e6b131785f070ea"
+  }
+}

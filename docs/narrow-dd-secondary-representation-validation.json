@@ -1,0 +1,78 @@
+{
+  "observed_at_utc": "2026-10-10T10:32:39.247959+00:00",
+  "scope": "Public compact DD secondary-base conversion, preserving primary encrypted rows modulo Q; N512 exact codec/scalar/FFT controls",
+  "api": "makeCKKSCompactDDRelinKeyWithSecondaryBase<NewBbar>",
+  "secret_required_by_conversion": false,
+  "fresh_encryption_by_conversion": false,
+  "primary_gadget_and_modulus_unchanged": true,
+  "original_source_preserved": true,
+  "new_secondary_bits": 16,
+  "cases": [
+    {
+      "q": 17,
+      "old_secondary_bits": 4
+    },
+    {
+      "q": 85,
+      "old_secondary_bits": 4
+    },
+    {
+      "q": 379,
+      "old_secondary_bits": 4
+    },
+    {
+      "q": 448,
+      "old_secondary_bits": 4
+    },
+    {
+      "q": 97,
+      "old_secondary_bits": 12
+    },
+    {
+      "q": 97,
+      "old_secondary_bits": 24
+    }
+  ],
+  "samples_per_case": 3,
+  "switch_coefficients_compared_per_path": 18432,
+  "exact_primary_row_round_trip_passed": true,
+  "scalar_switch_equality_passed": true,
+  "fft_switch_equality_passed": true,
+  "invalid_source_digit_rejection_passed": true,
+  "partial_and_full_modulus_widths_exercised": true,
+  "build_session": 97525,
+  "build_actual_exit_code": 0,
+  "test_session": 89293,
+  "actual_exit_code": 0,
+  "source_sha256": {
+    "include/ckks/compact_dd.hpp": "f6b4533eced4c0eb85b25b56e6297dcf1e1f40ec827498a6d5e680ad3c44354e",
+    "test/ckks/ckks_narrow_bootstrapping.cpp": "61a2c11abfc0f0471253d994817257ab34e5b252443537c60f4636f596622af5"
+  },
+  "focused_control_source": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary-representation-20261010/controls.cpp",
+  "focused_control_source_sha256": "75d92002cfe4b1c35c5f108c962b8e6f6cb4122595a3a5ef0adbc3a7a9ca6b5a",
+  "artifacts": {
+    "controls.log": {
+      "path": "TFHEpp/docs/narrow-dd-secondary-representation-controls.log",
+      "sha256": "e495e9527adc1e212454f8545dcc0ae6fa892562149ce0f544431d18fd96ff2b"
+    },
+    "controls-time.log": {
+      "path": "TFHEpp/docs/narrow-dd-secondary-representation-controls-time.log",
+      "sha256": "5766af3115181a7860927252b51dc4cf3f9e87f0c7997259cca6884c883dadfe"
+    },
+    "memory-budget.json": {
+      "path": "TFHEpp/docs/narrow-dd-secondary-representation-memory-budget.json",
+      "sha256": "ef3305b4b61c595f270efdf46262b0f55a623ef205f047d054bd8e20736dc639"
+    }
+  },
+  "potential_full_ring_fft_payload_ratio_q348": 3.9545454545454546,
+  "production_refresh_uses_converted_secondary_base": false,
+  "full_ring_conversion_validated": false,
+  "speedup_measured": false,
+  "security_validated": false,
+  "goal_complete": false,
+  "limitations": [
+    "Control tests generate small original keys; conversion itself never encrypts or needs a secret",
+    "The potential spectrum ratio is dimension accounting, not a measured runtime gain",
+    "Full retained refresh in progress uses original secondary width and remains pinned"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "observed_utc": "2026-10-11T08:13:04.232855+00:00",
+  "scope": "Replay CLI worker selection; does not qualify full refresh under eight workers.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "source": "Parameter-Selection/python/estimates/narrow_ckks_basis_root_reuse_run.py",
+  "source_sha256": "12c8b67df68bbd666747da54b2dd7e22aa5d3956e5cd2197d1811ef6d3edf6dc",
+  "default_omp_threads": 4,
+  "configured_threads_recorded_in_receipt": true,
+  "py_compile_exit_code": 0,
+  "invalid_values_rejected_before_output_creation": [
+    "0",
+    "-1",
+    "invalid"
+  ],
+  "invalid_controls_actual_exit_codes": [
+    2,
+    2,
+    2
+  ],
+  "help_actual_exit_code": 0,
+  "initial_help_assertion_failed_due_to_line_wrapping": true,
+  "normalized_help_assertion_passed": true,
+  "full_eight_worker_replay_validated": false
+}

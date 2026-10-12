@@ -1,0 +1,12 @@
+{
+  "n": 512, "h": 31, "gaussian_sigma": 3.2,
+  "source_log_q": 48, "input_log_q": 85, "input_log_delta": 44,
+  "selector_log_q": 440, "root_plain_log_delta": 34, "root_log_delta": 40,
+  "coefficient_bits": 32, "output_log_q": 166, "output_log_delta": 72,
+  "message_bound": 4, "target_bits": 23, "security_validated": false,
+  "full_ring_validated": false, "results": [
+    {"function": "sigmoid", "degree": 12, "basis_size": 4, "target_tolerance": 1.1920928955078125e-07, "approximation_uniform_bound": 1.0813569365872264e-09, "max_error": 4.7681741018215412e-09, "evaluation_max_error": 4.768168763541941e-09, "post_refresh_product_max_error": 9.751689860828957e-09, "post_refresh_product_evaluation_max_error": 1.2668433336091227e-08, "product_tolerance": 4.5031959531632899e-07, "product_evaluation_tolerance": 4.5031959506006621e-07, "refresh_seconds": 20.109733352999999, "accuracy_passed": true},
+    {"function": "gelu", "degree": 12, "basis_size": 4, "target_tolerance": 1.1920928955078125e-07, "approximation_uniform_bound": 5.8837618009357256e-10, "max_error": 2.6844890118167602e-08, "evaluation_max_error": 2.6826404540510128e-08, "post_refresh_product_max_error": 2.4421976015683993e-07, "post_refresh_product_evaluation_max_error": 2.4405158810108847e-07, "product_tolerance": 1.4678657411332307e-06, "product_evaluation_tolerance": 1.4678657409967672e-06, "refresh_seconds": 26.901628597999999, "accuracy_passed": true},
+    {"function": "tanh", "degree": 40, "basis_size": 9, "target_tolerance": 1.1920928955078125e-07, "approximation_uniform_bound": 1.5300144120715163e-08, "max_error": 2.1837540529995175e-08, "evaluation_max_error": 1.3059866659403833e-08, "post_refresh_product_max_error": 5.7660606059467321e-08, "post_refresh_product_evaluation_max_error": 3.5802183671650726e-08, "product_tolerance": 4.5615794863043815e-07, "product_evaluation_tolerance": 4.5615794645224607e-07, "refresh_seconds": 44.051498266000003, "accuracy_passed": true}
+  ]
+}

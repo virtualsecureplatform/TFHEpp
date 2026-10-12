@@ -1,0 +1,121 @@
+{
+  "scope": "Observed same-key N32768 all-function native64 DD and automorphism storage replay. Evaluator, independent checks and all37-file posthash/controller completion passed. Includes host/compiler/runtime variation; not an isolated speedup or standalone Table7 latency.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "validation_path": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-native-products-full-replay-validation.json",
+  "diagnostic_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-products-full-replay-20261011",
+  "fresh_keys_generated": false,
+  "previous_shared_preparation_and_roots_seconds": 2181.399101031,
+  "full_refresh_qualified": true,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "observation_session_id": 42349,
+  "qualification_session_id": 63045,
+  "observed_utc": "2026-10-11T14:02:38.590394+00:00",
+  "observer_samples": 58,
+  "observed_interval_seconds": 180.0205131699331,
+  "evaluator_cpu_growth_seconds": 654.12,
+  "observed_mean_busy_cpu_cores": 3.6335859090821137,
+  "completed_factor_groups_logged": 36,
+  "progress_confirmed": true,
+  "latest_factor_progress": "basis sigmoid completed tail group=4 factor_groups=36 elapsed_seconds=1071.82",
+  "expected_factor_groups": 36,
+  "completed_head_groups": 31,
+  "completed_tail_groups": 5,
+  "head_factor_generation_complete": true,
+  "all_factor_generation_complete": true,
+  "latest_observer_cpu_growth_seconds": 62.01000000000022,
+  "latest_observer_interval_seconds": 30.002032516989857,
+  "observation_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-products-full-replay-20261011/live-progress-2.jsonl",
+  "previous_observation_session_id": 80909,
+  "previous_observation_actual_exit_code": 0,
+  "previous_observation_samples": 61,
+  "observer_expiration_stopped_compute": false,
+  "evaluator_actual_exit_code": 0,
+  "evaluator_finished": true,
+  "validation_terminal": true,
+  "validation_all_checks_passed": true,
+  "retained_file_integrity_pending": false,
+  "shared_coefficient_prepare_seconds": 291.635442359,
+  "shared_root_generation_seconds": 1720.727710829,
+  "shared_preparation_and_roots_seconds": 2012.363153188,
+  "observed_shared_phase_reduction_fraction": 0.07748969354718638,
+  "reconstruction_seconds": {
+    "sigmoid": 2.542023631,
+    "gelu": 2.449942867,
+    "tanh": 8.737388612
+  },
+  "root_tile_stage_seconds": {
+    "input_and_factor_cache": 2.503177121,
+    "leaf_factors_and_inline_alignment": 1069.378691852,
+    "bounded_tail_alignment": 319.188643054,
+    "dd_cache_preparation": 11.370779643,
+    "dd_trees_and_beta": 318.193399417
+  },
+  "factor_stage_seconds": {
+    "selector_load": 122.50997976900004,
+    "table_ntt": 13.570904885000001,
+    "selector_ntt": 219.90303878300003,
+    "matrix": 618.5667949990001,
+    "inverse_crt": 15.080752344999999,
+    "conjugation": 78.05924178800002
+  },
+  "evaluator_wall_time_reported": "33:57.28",
+  "maximum_rss_kib": 17551272,
+  "reported_accuracy_passed": true,
+  "all_three_output_archives_identical": true,
+  "independent_phase_checks_passed": true,
+  "controller_actual_exit_code": 0,
+  "checkpoint_files_checked": 37,
+  "checkpoint_files_unchanged": true,
+  "qualification_session_actual_exit_code": 0,
+  "validation_sha256": "4e4b18d634aecbe36db63311ee37c9a4571058f7a7200ccd3e3575b6377ccb7c",
+  "independent_metrics": {
+    "sigmoid": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 5.263058323660706e-09,
+      "post_refresh_product_max_error": 9.472418715013627e-09,
+      "square_normalization_max_error": 2.692538244943504e-09
+    },
+    "gelu": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 1.5541199769161976e-08,
+      "post_refresh_product_max_error": 1.262155845454321e-07,
+      "square_normalization_max_error": 2.15174226503516e-09
+    },
+    "tanh": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 2.0760775289823365e-08,
+      "post_refresh_product_max_error": 5.73710758396451e-08,
+      "square_normalization_max_error": 2.3742523121777745e-09
+    }
+  },
+  "pinned_sources_and_frozen_artifacts_rechecked": true,
+  "completed_utc": "2026-10-11T14:09:33.983511+00:00",
+  "historical_process_sample": {
+    "controller": {
+      "pid": 2036059,
+      "start_ticks": 237153035,
+      "state": "S",
+      "cpu_seconds": 0.15,
+      "rss_bytes": 19202048
+    },
+    "wrapper": {
+      "pid": 2036060,
+      "start_ticks": 237153120,
+      "state": "S",
+      "cpu_seconds": 0.0,
+      "rss_bytes": 1376256
+    },
+    "evaluator": {
+      "pid": 2036061,
+      "start_ticks": 237153120,
+      "state": "R",
+      "cpu_seconds": 6138.21,
+      "rss_bytes": 11179970560
+    }
+  },
+  "observation_actual_exit_code": 0,
+  "observation_finished": true
+}

@@ -1,0 +1,30 @@
+{
+  "observed_at_utc": "2026-10-08T23:43:22.629229+00:00",
+  "scope": "Sequential exact phase inspection of all 36 retained full plain37 expanded-selector groups; one 2GiB-capped child at a time.",
+  "existing_processes": [
+    {
+      "pid": 1789289,
+      "virtual_limit_bytes": 34359738368,
+      "rss_bytes": 11955609600,
+      "remaining_growth_bytes": 22404128768,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-checkpoint sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008 TFHEpp/docs/narrow-dd-ll14-plain37-checkpoint-reproduction-2.json"
+    },
+    {
+      "pid": 1756575,
+      "virtual_limit_bytes": 68719476736,
+      "rss_bytes": 17686831104,
+      "remaining_growth_bytes": 51032645632,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json"
+    }
+  ],
+  "available_memory_bytes": 101238005760,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 2147483648,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 86321676288,
+  "launch_margin_bytes": 14916329472,
+  "launch_eligible": true,
+  "test_terminal": true,
+  "test_actual_exit_code": 0,
+  "test_peak_rss_kib": 37728
+}

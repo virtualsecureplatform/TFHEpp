@@ -1,0 +1,669 @@
+{
+  "utc": "2026-10-09T06:37:21.697295+00:00",
+  "scope": "Check complete Q364 candidate and Q376 baseline factor-oracle evidence.",
+  "candidate": {
+    "log": "/tmp/ckks-aux16-factor-oracle.log",
+    "log_sha256": "d359c7d6c99e8c31ca2b91d62a6f5ad62c0eaab81396c60fedbd6e6041dc9041",
+    "time_log": "/tmp/ckks-aux16-factor-oracle-time.log",
+    "time_log_sha256": "b527d5cbb7f31b1a7d503472839acaf7b141f9927b89f0773bb0451b79b19434",
+    "actual_exit_code": 0,
+    "stderr_bytes": 0,
+    "key_log_q": 364,
+    "phase": [
+      {
+        "factor_key_index": 0,
+        "automorphism_exponent": 5,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 1,
+        "automorphism_exponent": 25,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 2,
+        "automorphism_exponent": 625,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 3,
+        "automorphism_exponent": 30177,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 17,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 4,
+        "automorphism_exponent": 28609,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 5,
+        "automorphism_exponent": 28545,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 6,
+        "automorphism_exponent": 7937,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 17,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 7,
+        "automorphism_exponent": 15873,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 8,
+        "automorphism_exponent": 31745,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 9,
+        "automorphism_exponent": 30721,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 10,
+        "automorphism_exponent": 28673,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 11,
+        "automorphism_exponent": 24577,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 17,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 12,
+        "automorphism_exponent": 16385,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 18,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 13,
+        "automorphism_exponent": 1,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 17,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 14,
+        "automorphism_exponent": 32767,
+        "key_log_q": 364,
+        "phase_coefficients_checked": 1490944,
+        "maximum_noise": 16,
+        "phase_passed": true
+      }
+    ],
+    "evaluation": [
+      {
+        "factor_key_index": 0,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 7.140126146159532e-11,
+        "rms_error": 1.3585496689751227e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 0,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 7.315894104292855e-11,
+        "rms_error": 1.38136407855588e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 0,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.977462223415576e-11,
+        "rms_error": 1.377630547588403e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 1,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 6.92161853067041e-11,
+        "rms_error": 1.3875153725308737e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 1,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 7.283799227416328e-11,
+        "rms_error": 1.392751630535358e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 1,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.066542537732074e-11,
+        "rms_error": 1.3926939870614281e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 2,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 8.743631832764257e-11,
+        "rms_error": 1.3946893139819747e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 2,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 6.957573988526752e-11,
+        "rms_error": 1.39464474125738e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 2,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 6.422924020747978e-11,
+        "rms_error": 1.3727131687812462e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 3,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 6.447908010295367e-11,
+        "rms_error": 1.3865922640911476e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 3,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 7.08960439669518e-11,
+        "rms_error": 1.3715356424098828e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 3,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 8.607508934292591e-11,
+        "rms_error": 1.3842078276161332e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 4,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 7.930024618746889e-11,
+        "rms_error": 1.389209633157469e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 4,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 8.326762922492475e-11,
+        "rms_error": 1.3916825530955477e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 4,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.486637444898057e-11,
+        "rms_error": 1.3865480047605221e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 5,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 7.639962685135508e-11,
+        "rms_error": 1.3898357364630523e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 5,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 8.521348966838015e-11,
+        "rms_error": 1.3754149470299712e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 5,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.054125893062658e-11,
+        "rms_error": 1.3833200478629293e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 6,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 7.585129272412563e-11,
+        "rms_error": 1.3806749781316164e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 6,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 8.379520821242315e-11,
+        "rms_error": 1.3893264846247464e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 6,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 6.794933788659395e-11,
+        "rms_error": 1.382954481487801e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 7,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 7.259881678103129e-11,
+        "rms_error": 1.3632847831303035e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 7,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 8.364653238467712e-11,
+        "rms_error": 1.3779730953064935e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 7,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.928237501668008e-11,
+        "rms_error": 1.386636528387589e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 8,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 6.251196651471846e-11,
+        "rms_error": 1.3735366746119768e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 8,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 6.477123940425704e-11,
+        "rms_error": 1.3828224836123768e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 8,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 8.076455074277065e-11,
+        "rms_error": 1.3810570682695973e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 9,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 7.649040811734431e-11,
+        "rms_error": 1.393508255133101e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 9,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 9.267245301295848e-11,
+        "rms_error": 1.3868693611013183e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 9,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.602554984765029e-11,
+        "rms_error": 1.3691817902979953e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 10,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 8.380863342481009e-11,
+        "rms_error": 1.3667447615320105e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 10,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 7.495209052196113e-11,
+        "rms_error": 1.3907115562913497e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 10,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 6.075400948402773e-11,
+        "rms_error": 1.3642564388095968e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 11,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 7.95302283441777e-11,
+        "rms_error": 1.3955479338310173e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 11,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 7.594079954728622e-11,
+        "rms_error": 1.3851865325861944e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 11,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 6.906977783538545e-11,
+        "rms_error": 1.3788583430436307e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 12,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 1.0072236490987172e-10,
+        "rms_error": 1.3843836936026384e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 12,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 6.444461299379607e-11,
+        "rms_error": 1.3688584336582667e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 12,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 8.259102872172954e-11,
+        "rms_error": 1.379708741582137e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 13,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 6.912118545906384e-11,
+        "rms_error": 1.3704719979982905e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 13,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 6.940351419137692e-11,
+        "rms_error": 1.3831456391257678e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 13,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.679404766386374e-11,
+        "rms_error": 1.3863084827764438e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 14,
+        "evaluation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 6.699330034263498e-11,
+        "rms_error": 1.3970542041317186e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 14,
+        "evaluation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 6.521875092067553e-11,
+        "rms_error": 1.3674868093737608e-11,
+        "accuracy_passed": true
+      },
+      {
+        "factor_key_index": 14,
+        "evaluation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.453009861013783e-11,
+        "rms_error": 1.3791199785900346e-11,
+        "accuracy_passed": true
+      }
+    ],
+    "phase_coefficients": 22364160,
+    "encrypted_slots": 368640,
+    "maximum_noise": 18,
+    "maximum_error": 1.0072236490987172e-10,
+    "peak_rss_kib": 2601936
+  },
+  "baseline": {
+    "log": "/tmp/ckks-aux28-factor-oracle-regression.log",
+    "log_sha256": "24dde33e2306bfb626d9342076dbe1249b500d8bad91857aab278075379a10b9",
+    "time_log": "/tmp/ckks-aux28-factor-oracle-regression-time.log",
+    "time_log_sha256": "ca717992c7a5873f9582e540b517198384db0d6a32d89e2af4576588e5c49c00",
+    "actual_exit_code": 0,
+    "stderr_bytes": 0,
+    "key_log_q": 376,
+    "phase": [
+      {
+        "factor_key_index": 0,
+        "automorphism_exponent": 5,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 1,
+        "automorphism_exponent": 25,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 2,
+        "automorphism_exponent": 625,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 3,
+        "automorphism_exponent": 30177,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 4,
+        "automorphism_exponent": 28609,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 5,
+        "automorphism_exponent": 28545,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 6,
+        "automorphism_exponent": 7937,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 7,
+        "automorphism_exponent": 15873,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 8,
+        "automorphism_exponent": 31745,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 9,
+        "automorphism_exponent": 30721,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 10,
+        "automorphism_exponent": 28673,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 11,
+        "automorphism_exponent": 24577,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 12,
+        "automorphism_exponent": 16385,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 13,
+        "automorphism_exponent": 1,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 15,
+        "phase_passed": true
+      },
+      {
+        "factor_key_index": 14,
+        "automorphism_exponent": 32767,
+        "key_log_q": 376,
+        "phase_coefficients_checked": 1540096,
+        "maximum_noise": 16,
+        "phase_passed": true
+      }
+    ],
+    "evaluation": [],
+    "phase_coefficients": 23101440,
+    "encrypted_slots": 0,
+    "maximum_noise": 16,
+    "maximum_error": null,
+    "peak_rss_kib": 686016
+  },
+  "passed": true,
+  "source_sha256": "113ab94390596dff6ae7405d3eb55ae6539eefeb28ffca925a204ea1f0531ef6",
+  "executable_sha256": "8fcae9bc984405359f5a787139d36970699965889fab7543078f98cca66c041e",
+  "validator_sha256": "1bc51f34cff20129f118b3d607d4221d050aa93d5990d065df0222cb7a4a8cdd",
+  "fixed_precision_bits": 23,
+  "noise_limit": 39,
+  "noise_limit_is_diagnostic_12_sigma": true,
+  "phase_oracle": "Independent exact single-prime integer NTT, explicit negacyclic substitution and low-Q key-message subtraction",
+  "evaluation_oracle": "Direct substitution of encoded plaintext coefficients; shared CKKS encoder/decoder, no production automorphism in reference",
+  "candidate_keys_are_fresh": true,
+  "candidate_live_refresh_keys_checked": false,
+  "full_refresh_validated": false,
+  "security_validated": false,
+  "build_session": 20578,
+  "build_actual_exit_code": 0,
+  "build_terminal": true,
+  "test_session": 54734,
+  "test_actual_exit_code": 0,
+  "test_terminal": true,
+  "baseline_key_phases_match_historical_evidence": true,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008/checkpoint.bin",
+  "checkpoint_bytes": 6854643214,
+  "checkpoint_mtime_ns": 1791500932795412679,
+  "validator_rejection_controls": [
+    "missing encrypted case",
+    "duplicate key phase",
+    "NaN error",
+    "signal termination with zero time-log exit status"
+  ],
+  "memory_budget": "narrow-dd-aux16-factor-oracle-memory-budget.json"
+}

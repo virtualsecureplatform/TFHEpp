@@ -1,0 +1,16 @@
+{
+  "observed_at_utc": "2026-10-09T04:35:45.647776+00:00",
+  "available_memory_bytes": 101627265024,
+  "required_available_memory_bytes": 92857679872,
+  "build_virtual_limit_bytes": 4294967296,
+  "runtime_virtual_limit_bytes": 2147483648,
+  "live_sage_reserve_bytes": 2147483648,
+  "host_reserve_bytes": 10737418240,
+  "launch_eligible": true,
+  "build_session": 68590,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "runtime_terminal": true,
+  "runtime_actual_exit_code": 0,
+  "validation": "narrow-dd-phase-spectrum-validation.json"
+}

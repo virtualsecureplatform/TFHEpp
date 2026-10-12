@@ -1,0 +1,49 @@
+{
+  "utc": "2026-10-09T11:00:43.162926+00:00",
+  "points": [
+    {
+      "control": "wrong-profile",
+      "actual_exit_code": 2,
+      "error": "selector phase inspector requires finished full auxiliary8 probe state"
+    },
+    {
+      "control": "unfinished",
+      "actual_exit_code": 2,
+      "error": "selector phase inspector requires finished full auxiliary8 probe state"
+    },
+    {
+      "control": "wrong-function",
+      "actual_exit_code": 2,
+      "error": "selector phase inspector requires full plain37 sigmoid checkpoint"
+    },
+    {
+      "control": "truncated-prefix",
+      "actual_exit_code": 2,
+      "error": "Failed to read 7 bytes from input stream! Read 6"
+    }
+  ],
+  "all_rejected": true,
+  "source_sha256": "20e5942ff5cf08f40dde91f00b9a6680bef80031a8937df0128bf86df6df72ae",
+  "old_cp01_regression": {
+    "session": 80312,
+    "actual_exit_code": 0,
+    "terminal": true,
+    "result": {
+      "n": 16384,
+      "group": 0,
+      "tail": false,
+      "selectors_checked": 529,
+      "phase_coefficients_checked": 8667136,
+      "checkpoint_prefix_bytes_read": 1835096,
+      "evaluation_keys_loaded": false,
+      "auxiliary8_probe_state": false,
+      "failed_selectors": 0,
+      "maximum_bounded_noise": 16,
+      "failed_phase_coefficients": 0,
+      "maximum_error_bits": 0,
+      "failed_records": [],
+      "phase_accuracy_passed": true
+    },
+    "initial_environment_failure": "OMP default thread count exceeded 128MiB address-space cap; initial command exited1 before phase checks; corrected to OMP1"
+  }
+}

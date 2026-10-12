@@ -1,0 +1,261 @@
+{
+  "scope": "Queued full N16384 frequency1 encrypted root with reconstructed coefficient-packed selector387/57, table42, sourcefactor345/57 rescaled13 to332/44, original345 conjugation key and publicly projected DD332/288/244/200/156. Public reconstruction masks normalized only in beta. Saved private/evaluation keys and prepared input reused. Component root qualification, not full functional/security/performance qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "controller_pid": 2058209,
+  "new_private_keys_generated": 0,
+  "new_encrypted_evaluation_keys_generated": 0,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011/control.cpp": "2f4006510a74ca5c6058791f999305abe4127eaaf76bc8b1ba81b8cc1d9e6324",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011/validate.py": "0fdb4e5d83f0bf61c8c5fe20ac56d6ee4aa0e1555830ec679d3e5d8aebeaa079",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011/run.py": "acbcd974076d8e09d1d9053bf8531d0d7d20982083b6cce9c1e95f37707a0731",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011/control": "3d19cb93e78f4e84e51ebd756de908402803ee577d58fe28f2f09ee55265c3d9",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "636aaa5b5ebf3a02c851db136c4a200188f5c1e088fdaa8925ab83ac65167619",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_refresh.hpp": "f07bbe5c1796c31345a554480c8477c80124b917acef23a5ce072bf0996a82a7",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_projection.hpp": "37ca3c8bbb9815e8321e3acbc03daf7479f924d3bac3cf7d6292e615d6078309",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_file.hpp": "87c159a4bc5142e680a2624d89cee23b8bfa12250918ccedc1654b241eaae11a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_linear.hpp": "7dc89ec7a6455a3487b23ecf5d47b4fa4f44654e940daac7e2b2e79da72fff2b",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "297e7d6632e63102c9b45ea987de060c74363858c28dfdcdeff260c9a762009f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_plain.hpp": "d4a29304ce32840e8681e31d06d1263ebfc81cc7a7a62ae2f4713737afef055f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "updated_utc": "2026-10-11T20:29:14.254678+00:00",
+  "awaited_reconstruction_controller_pid": 2057859,
+  "awaited_reconstruction_start_ticks": 239065786,
+  "selector_artifacts_before": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-0.bin": {
+      "bytes": 970719305,
+      "sha256": "6903013119b87490bf315ad41733ab8eccaabd22c51d7616440362b69d585e82"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-1.bin": {
+      "bytes": 970719305,
+      "sha256": "2a46a8e4fc25c30ddc122e2a45c265f9323f8b9c2b65017e53b874f3d9eccc76"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-2.bin": {
+      "bytes": 970719305,
+      "sha256": "f480c3e5b6e82aea68e1ee3025411889ed83a8c1ce36c06ce089a45947fc5e6a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-3.bin": {
+      "bytes": 970719305,
+      "sha256": "99f4d541cbfafb3e91524f70b6cf2a26502fbd35c0ae23bb4dbeeb57497df493"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-4.bin": {
+      "bytes": 970719305,
+      "sha256": "c376052885d985b873fb02a7447106db07fbedee0b94585f7eabd6d0a9426826"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-5.bin": {
+      "bytes": 970719305,
+      "sha256": "d99078c420f18c3d01f150876bc5882d246a8045eed331a235322a8e2a5e8a18"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-6.bin": {
+      "bytes": 970719305,
+      "sha256": "972400cdc0a75f220b1eb8d33d1f9e74b2cf762b90ee7ee3f62847f3b675e43a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-7.bin": {
+      "bytes": 970719305,
+      "sha256": "6b0cb401f698a130fd9abf5caaf99f167fbbc96b74847fddcafecd883ed92874"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-8.bin": {
+      "bytes": 970719305,
+      "sha256": "0bfd8105fde127d5f8b093c5f0d28e2f213cc250d004e52b6105d296462aead5"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-9.bin": {
+      "bytes": 970719305,
+      "sha256": "628a828128d66d77c2774cbf1bf4879e9f3bdf9d23df9bf877386d9a49976cd1"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-10.bin": {
+      "bytes": 970719305,
+      "sha256": "5db5d6431fd7d9135b66ebdb343ce7cadec90b50663f22eabaa98a38bfe160e2"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-11.bin": {
+      "bytes": 970719305,
+      "sha256": "3f40f8e5b7ae4f91ce438157045e926e51ac6c08d59eb317196753863aa1d38a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-12.bin": {
+      "bytes": 970719305,
+      "sha256": "850247dd4ccd966bb11cc76df3a9c2b068edc12c932262f851d4f89bde50d1a8"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-13.bin": {
+      "bytes": 970719305,
+      "sha256": "44c75e4effae049172fbf6f62c95f42a7021be990c9e6a95134c23af9a9b6132"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-14.bin": {
+      "bytes": 970719305,
+      "sha256": "f3ef1e8d95938a99c4268d630805d0a6f4cd91b55ff8e19b90d300f39fbdabcc"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-15.bin": {
+      "bytes": 970719305,
+      "sha256": "d595bfa7c4b3f31991d94c22836bb39ffa2083a2d270a281a658117f3d7b317d"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-16.bin": {
+      "bytes": 970719305,
+      "sha256": "c166f84d71247e0f8892246ffce70b2624f9266329149ed3f47ef2bcc32bfcc0"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-17.bin": {
+      "bytes": 970719305,
+      "sha256": "4eb6d717349f5a685fcf9072e6e5b09aa3eb4561386e93c673eb9334ae1c2cb4"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-18.bin": {
+      "bytes": 970719305,
+      "sha256": "3bde2730f50cd597e4b3d058fdf0b85aebb56121205e6f652b8c669830705482"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-19.bin": {
+      "bytes": 970719305,
+      "sha256": "31abc8fa43035b7657a191befa662804c0904dfdb612ea06ec11cdb5f0fb2ad1"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-20.bin": {
+      "bytes": 970719305,
+      "sha256": "498293533859de753be22cdf30781eb8a659926ba1f0fa362bb3d42dc232948e"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-21.bin": {
+      "bytes": 970719305,
+      "sha256": "931e4c6b7ec1f97bbdb6774d79029483bd672fb724d90261c972b98360d48d94"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-22.bin": {
+      "bytes": 970719305,
+      "sha256": "dba3c3d93efb29a77b757e804b6a5c514c5ab8b59ca2c6902c44297c8ac4aea8"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-23.bin": {
+      "bytes": 970719305,
+      "sha256": "694166ff657620927b61c50df4cc9d3abfb04e90de5c8ad7b9142b091af896a2"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-24.bin": {
+      "bytes": 970719305,
+      "sha256": "4c54993472d682a2778f6376fa021f62c657a299aa9ff5afe7b75261064d87e2"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-25.bin": {
+      "bytes": 970719305,
+      "sha256": "ec6fcc5215b7b134ad7a6beff3c0fa8fa38e4c3141841b10631450673c75900b"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-26.bin": {
+      "bytes": 970719305,
+      "sha256": "588de798d0e2511f8ab9e1e9f5ed667ef31c102988e0cf4d43f1c6be46bcf8d3"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-27.bin": {
+      "bytes": 970719305,
+      "sha256": "c1d5a2390d21b00ad71db79bd287e5e5ebf7edf9a7d52bf46409a55e3ba5032e"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-28.bin": {
+      "bytes": 970719305,
+      "sha256": "7303a88ecfffe0b7c30f5e093656c340627e6f7dd866b69a8084bf16b374e79d"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-29.bin": {
+      "bytes": 970719305,
+      "sha256": "48a43aa7f916185ed6c75afe2187049cac7b6f9b3203697885fdde069227274b"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-30.bin": {
+      "bytes": 970719305,
+      "sha256": "27ca06a7bd26f180441687dbfc12ba231337a5189febc61fb4e99493d6a9634a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-0.bin": {
+      "bytes": 970719305,
+      "sha256": "df8a54236e9dcba2ac0623bad01b93db13a81ff4fed3a190849c77bbe99fcf33"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-1.bin": {
+      "bytes": 970719305,
+      "sha256": "ee472f0326d173793d9f965d80da1c0bc309a17eca06025f4b39aa204ac82635"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-2.bin": {
+      "bytes": 970719305,
+      "sha256": "48b8db878ae20f5241c87f0efaf3ee93d73669278e2b7917a69eeb74f930ed4f"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-3.bin": {
+      "bytes": 970719305,
+      "sha256": "9b01ecb6de02628e17bd96ffd4b203e1e35735f2eade4d2b3a05a7ada2a28b3b"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-4.bin": {
+      "bytes": 970719305,
+      "sha256": "4280b920ce09e30b0a3bf89852e314a400a54d7692a94cb1629ea18c85e79521"
+    }
+  },
+  "reconstruction_receipt_sha256": "b07ed5ffeb08929f2ba7e87c70163df5051824f7c9a95a4b96d73dafaa511a28",
+  "input_artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint/checkpoint.bin": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-retained-tree-full-20261011/candidate-dd-chain.bin": "20abdbaf9faf63155f31cb9babd6271df451b5f776ddc77332126115a0961ad4",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin": "f60352ab8b2d61b623681055f98380bfaef250f7230f2c3f8ff3ee3c8f418f98",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-deferred-fbs-20261011/sigmoid-outputs.bin": "b1145357e963a0ebc727a449accb686dad7e4ce00153f95851daf73ac2b0414f"
+  },
+  "evaluator_pid": 2062857,
+  "evaluator_start_ticks": 239685542,
+  "test_actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "captured_factor_groups": 36,
+    "frequency": 1,
+    "factor_log_q": 332,
+    "root_log_delta": 44,
+    "plain_log_delta": 42,
+    "fresh_keys_generated": false
+  },
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent full N16384 frequency1 root error isolation. Product of decoded factors compared with exact structured input phase; actual evaluated root compared with this product. Public mask gains are computed solely from encoded public reconstruction masks; normalization is integrated in the public transparent beta leaf during encrypted frequency1 evaluation; this does not qualify full functional refresh.",
+    "n": 16384,
+    "phase_coefficients_checked": 622592,
+    "decoded_factor_and_root_slots_checked": 303104,
+    "metrics": {
+      "factor_product_vs_exact_phase_max_error": 3.229802773924951e-07,
+      "evaluated_root_vs_factor_product_max_error": 7.955555756553797e-09,
+      "evaluated_root_vs_exact_phase_max_error": 7.992210319195988e-08,
+      "publicly_normalized_factor_product_error": 8.014236176315325e-08,
+      "publicly_normalized_evaluated_root_error": 7.992210319195988e-08,
+      "public_mask_gain_max_deviation": 3.2268853744632556e-07
+    },
+    "max_leaf_errors_by_public_block": [
+      1.4869876821812277e-08,
+      1.513340239716853e-08,
+      1.4308847840516892e-08,
+      1.7569364596206907e-08,
+      1.4401521583195326e-08,
+      1.4469722861428476e-08,
+      1.7040540698478832e-08,
+      1.478273200308073e-08,
+      1.5043475827708036e-08,
+      1.4026476646696528e-08,
+      1.3910150614681415e-08,
+      1.4343991973061125e-08,
+      1.6231506436068116e-08,
+      1.3197758657574806e-08,
+      1.4880374271266426e-08,
+      1.657590573096245e-08,
+      1.590917585648307e-08,
+      1.6916647065076713e-08,
+      1.628738207606611e-08,
+      1.3651601386996288e-08,
+      1.8045725153602285e-08,
+      1.5708382131798155e-08,
+      1.729524135513551e-08,
+      1.5724355380809532e-08,
+      1.8133845390070427e-08,
+      1.496422424014525e-08,
+      1.40216852628837e-08,
+      1.575330750780987e-08,
+      1.0465724117203496e-08,
+      1.0452476099678628e-08,
+      1.3598375409576987e-08
+    ],
+    "geometry": {
+      "block_width": 529,
+      "head_slots": 7664,
+      "tail_width": 528,
+      "blocks_per_pack": 7
+    },
+    "measurement_passed": true,
+    "root_accuracy_gate": 1.1920928955078125e-07,
+    "root_accuracy_passed": true
+  },
+  "input_artifacts_unchanged": true,
+  "reconstructed_selector_files_unchanged": true,
+  "sources_unchanged": true,
+  "projected_dd_chain_artifact": {
+    "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011/projected-dd-chain.bin",
+    "bytes": 671449545,
+    "sha256": "d55baace9801dc7f48eec737362fb406d17729a1a875a55622877709ffa89cc2"
+  }
+}

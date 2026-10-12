@@ -1,0 +1,56 @@
+{
+  "utc": "2026-10-10T06:59:14.517199+00:00",
+  "scope": "Independent real/imaginary phase-error decomposition of retained aux8 archived and current bad outputs; no new cryptographic evaluations or keys.",
+  "results": {
+    "archived": {
+      "isolated_real_component_max_error": 4.165432110347922e-09,
+      "isolated_imaginary_component_max_error": 1.7331694525133953e+20,
+      "real_component_max_error": 4546399.191963597,
+      "imaginary_component_max_error": 1.7331694525133953e+20,
+      "real_component_rms_error": 808853.9281079714,
+      "imaginary_component_rms_error": 4.235902733671648e+19,
+      "function": "sigmoid",
+      "n": 16384,
+      "prefix_bytes": 5636193,
+      "phase_arithmetic": "exact 15-bit limbs with one bounded 31-bit NTT prime",
+      "fresh_input_max_error": 6.113455435669392e-11,
+      "max_error": 1.7331694525133953e+20,
+      "rms_error": 4.235902733671648e+19,
+      "sparse_key_geometry_passed": true,
+      "evaluation_key_suffix_validated": false,
+      "retained_square_validated": false
+    },
+    "current_bad": {
+      "isolated_real_component_max_error": 1.1967500890286781e+20,
+      "isolated_imaginary_component_max_error": 1.3203056762329245e+20,
+      "real_component_max_error": 1.1967500890286847e+20,
+      "imaginary_component_max_error": 1.3203056762329167e+20,
+      "real_component_rms_error": 3.045955611443256e+19,
+      "imaginary_component_rms_error": 2.9846640911460286e+19,
+      "function": "sigmoid",
+      "n": 16384,
+      "prefix_bytes": 5636193,
+      "phase_arithmetic": "exact 15-bit limbs with one bounded 31-bit NTT prime",
+      "fresh_input_max_error": 6.113455435669392e-11,
+      "max_error": 1.3212045850307636e+20,
+      "rms_error": 4.2645123195811275e+19,
+      "sparse_key_geometry_passed": true,
+      "evaluation_key_suffix_validated": false,
+      "retained_square_validated": false
+    }
+  },
+  "rms_component_identity_passed": true,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_auxiliary_probe_prefix.py": "d3293410764e88981701e3d6333d6f5d8014691626304b7bc92e7d389fbdedeb",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "60ffcdbd18d5ea4057e6eb7348ce83c687816e46938bef014d01a9efa8217f8d",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79",
+    "Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "failure_cause_established": false,
+  "security_validated": false,
+  "goal_complete": false,
+  "archived_real_component_fixed23bit_passed": true,
+  "archived_imaginary_component_fixed23bit_passed": false,
+  "component_decode_controls": "narrow-dd-component-phase-decode-controls-validation.json",
+  "interpretation": "Archived output has a correct real component and a failed imaginary component after exact phase separation. Current always-bad replay fails both. This motivates testing different selector states between component passes; it does not establish error timing or origin."
+}

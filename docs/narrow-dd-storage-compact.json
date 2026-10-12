@@ -1,0 +1,8 @@
+{
+  "scope": "Static raw setup and selector storage plus dense S2C terms; excludes FFT/NTT caches, workspaces and allocator overhead",
+  "profiles": [
+    {"profile": "ll14-auxiliary-fbs", "n": 16384, "raw_setup_bytes": 44609044704, "raw_dd_chain_bytes": 40548171776, "compact_dd_setup_bytes": 4784947424, "compact_dd_chain_bytes": 724074496, "dense_s2c_term_bytes": 15032516608, "expanded_selector_bytes": 34945892352, "one_selector_group_bytes": 970719232},
+    {"profile": "ht14-auxiliary", "n": 16384, "raw_setup_bytes": 60683714784, "raw_dd_chain_bytes": 56241160192, "compact_dd_setup_bytes": 5446861024, "compact_dd_chain_bytes": 1004306432, "dense_s2c_term_bytes": 15032516608, "expanded_selector_bytes": 34945892352, "one_selector_group_bytes": 970719232},
+    {"profile": "ht15-auxiliary", "n": 32768, "raw_setup_bytes": 719653437664, "raw_dd_chain_bytes": 676589469696, "compact_dd_setup_bytes": 49104945376, "compact_dd_chain_bytes": 6040977408, "dense_s2c_term_bytes": 120259346432, "expanded_selector_bytes": 279567138816, "one_selector_group_bytes": 7765753856}
+  ]
+}

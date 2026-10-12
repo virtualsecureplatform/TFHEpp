@@ -1,0 +1,28 @@
+{
+  "observed_at_utc": "2026-10-09T04:43:09.065215+00:00",
+  "scope": "Single 2GiB Sage intermediate block-layout exact-weight probe at beta182 zeta14688 d3415",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "rss_bytes": 17687748608,
+      "limit_bytes": 68719476736
+    },
+    {
+      "pid": 1812584,
+      "rss_bytes": 14425358336,
+      "limit_bytes": 34359738368
+    }
+  ],
+  "available_memory_bytes": 99376623616,
+  "required_available_memory_bytes": 85998493696,
+  "launch_eligible": true,
+  "layout_session": 46727,
+  "layout_terminal": true,
+  "layout_actual_exit_code": 0,
+  "ring_probe_session": 56912,
+  "ring_probe_terminal": true,
+  "ring_probe_actual_exit_code": 0,
+  "ring_precision_control_session": 1356,
+  "ring_precision_control_terminal": true,
+  "ring_precision_control_actual_exit_code": 0
+}

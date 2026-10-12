@@ -1,0 +1,97 @@
+{
+  "observed_at_utc": "2026-10-10T11:13:38.411726+00:00",
+  "scope": "N16384 retained factor/output conjugation keys, old4/new16 secondary FFT cache comparison",
+  "fresh_keys_generated": false,
+  "terminal": true,
+  "all_checks_passed": true,
+  "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-full-controls-20261010",
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_narrow_auxiliary_replay.cpp": "a8b08f07171bdbd35a7ddd1e3e098039495c3cc6def2267a6933930777e3e73e",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "4927bd0b611bf54b6c3feb42067ac521bb8232458bab7d73d073edc460b54783",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "59de9ffa11663cd4cb7f12f7e1349c7ea1a5c9e61733b7f590f045232d1c81e6"
+  },
+  "executable_sha256": "c86a0e470f46db83b675ce6a409893e21681baa64b143c7821fc8c99f5ecb551",
+  "build_actual_exit_code": 0,
+  "state_before_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "whole_refresh_validated": false,
+  "paper_performance_reproduced": false,
+  "goal_complete": false,
+  "time_pid": 1928644,
+  "actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--auto-cache-control",
+    "fresh_keys_generated": false,
+    "auto_levels": [
+      {
+        "log_q": 356,
+        "samples": 3,
+        "coefficients_equal": true,
+        "old_cache_bytes": 2076442624,
+        "new_cache_bytes": 536608768,
+        "old_prepare_seconds": 1.678835561,
+        "new_prepare_seconds": 0.488134548,
+        "old_switch_seconds": 0.9372866439999998,
+        "new_switch_seconds": 0.385016975
+      },
+      {
+        "log_q": 116,
+        "samples": 3,
+        "coefficients_equal": true,
+        "old_cache_bytes": 220463104,
+        "new_cache_bytes": 60817408,
+        "old_prepare_seconds": 0.18276869,
+        "new_prepare_seconds": 0.08716885,
+        "old_switch_seconds": 0.167292086,
+        "new_switch_seconds": 0.065994261
+      }
+    ],
+    "all_auto_controls_passed": true,
+    "whole_refresh_validated": false
+  },
+  "state_after_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "retained_state_unchanged": true,
+  "samples_per_level": 3,
+  "levels_checked": 2,
+  "coefficients_compared": 196608,
+  "timing_limitations": "Single component-level observations under concurrent CPU load; excludes archive loading and whole-refresh stages",
+  "build_session": 83758,
+  "initial_build_exit_code": 2,
+  "initial_build_failure": "Diagnostic referenced nonexistent output_galois; corrected to output_conjugation",
+  "test_session": 43968,
+  "small_control": {
+    "n": 512,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--auto-cache-control",
+    "fresh_keys_generated": false,
+    "auto_levels": [
+      {
+        "log_q": 356,
+        "samples": 3,
+        "coefficients_equal": true,
+        "old_cache_bytes": 64888832,
+        "new_cache_bytes": 16769024,
+        "old_prepare_seconds": 0.049498793,
+        "new_prepare_seconds": 0.017324826,
+        "old_switch_seconds": 0.035142020999999996,
+        "new_switch_seconds": 0.011766395999999998
+      },
+      {
+        "log_q": 116,
+        "samples": 3,
+        "coefficients_equal": true,
+        "old_cache_bytes": 6889472,
+        "new_cache_bytes": 1900544,
+        "old_prepare_seconds": 0.005170571,
+        "new_prepare_seconds": 0.001732292,
+        "old_switch_seconds": 0.004592937,
+        "new_switch_seconds": 0.0017897730000000001
+      }
+    ],
+    "all_auto_controls_passed": true,
+    "whole_refresh_validated": false
+  }
+}

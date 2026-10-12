@@ -1,0 +1,144 @@
+{
+  "scope": "N16384 retained DD296 projected to296/255/214/173/101 with independent fixed-width512-bit integer recomposition for all encrypted coefficients. One missing337 evaluation key generated under retained dense private key and saved for reuse. Six raw/prepared exact before-rescale squares and complete32-leaf production DD tree, independent integer phase/slot gates2^-23. Not selector factors/full functional refresh/security.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_private_keys_generated": false,
+  "new_evaluation_keys_generated": 1,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-retained-tree-full-20261011/control.cpp": "8a95627801cb5bd3943acc56640c4ff23639e3f937920a94fce19205a1ea17b3",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-retained-tree-full-20261011/validate.py": "8c650e396b5643ec99b3ce35f0ba3c08ac59fbf384c77e972f3b31bc0434fae5",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_refresh.hpp": "f07bbe5c1796c31345a554480c8477c80124b917acef23a5ce072bf0996a82a7",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_linear.hpp": "7dc89ec7a6455a3487b23ecf5d47b4fa4f44654e940daac7e2b2e79da72fff2b",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "297e7d6632e63102c9b45ea987de060c74363858c28dfdcdeff260c9a762009f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "stage": "complete",
+  "checkpoint_baseline_sha256": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "baseline_receipt_sha256": "6fbd5747a1361e76025a995600d84cc9d758029584524fa59212324fea09b69c",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "fresh_private_keys_generated": false,
+    "new_evaluation_keys_generated": 1,
+    "integer_key_coefficients_checked": 8585216,
+    "cases": [
+      {
+        "input_log_q": 337,
+        "output_log_q": 296,
+        "log_delta": 41,
+        "max_error": 8.301484622795435e-09,
+        "raw_prepared_identical": true
+      },
+      {
+        "input_log_q": 296,
+        "output_log_q": 255,
+        "log_delta": 41,
+        "max_error": 8.827284495851625e-09,
+        "raw_prepared_identical": true
+      },
+      {
+        "input_log_q": 255,
+        "output_log_q": 214,
+        "log_delta": 41,
+        "max_error": 1.0214032028262586e-08,
+        "raw_prepared_identical": true
+      },
+      {
+        "input_log_q": 214,
+        "output_log_q": 173,
+        "log_delta": 41,
+        "max_error": 1.0472528584530954e-08,
+        "raw_prepared_identical": true
+      },
+      {
+        "input_log_q": 173,
+        "output_log_q": 132,
+        "log_delta": 41,
+        "max_error": 1.1627652707737042e-08,
+        "raw_prepared_identical": true
+      },
+      {
+        "input_log_q": 101,
+        "output_log_q": 60,
+        "log_delta": 41,
+        "max_error": 9.677772238728336e-09,
+        "raw_prepared_identical": true
+      }
+    ],
+    "tree_leaves": 32,
+    "tree_depth": 5,
+    "tree_output_log_q": 132,
+    "tree_log_delta": 41,
+    "tree_max_error": 4.8656047489861415e-08,
+    "tree_raw_prepared_identical": true,
+    "accuracy_passed": true
+  },
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent integer NTT phases and canonical slots of six full-ring before-rescale DD squares and complete32-leaf/five-level DD tree. All output coefficients/slots; not selector factors or full functional refresh.",
+    "phase_coefficients_checked": 114688,
+    "decoded_slots_checked": 57344,
+    "rows": [
+      {
+        "input_log_q": 337,
+        "output_log_q": 296,
+        "tree": false,
+        "max_error": 8.301407543619332e-09
+      },
+      {
+        "input_log_q": 296,
+        "output_log_q": 255,
+        "tree": false,
+        "max_error": 8.827256373384573e-09
+      },
+      {
+        "input_log_q": 255,
+        "output_log_q": 214,
+        "tree": false,
+        "max_error": 1.0214002622572115e-08
+      },
+      {
+        "input_log_q": 214,
+        "output_log_q": 173,
+        "tree": false,
+        "max_error": 1.047258980069228e-08
+      },
+      {
+        "input_log_q": 173,
+        "output_log_q": 132,
+        "tree": false,
+        "max_error": 1.1627650159476633e-08
+      },
+      {
+        "input_log_q": 101,
+        "output_log_q": 60,
+        "tree": false,
+        "max_error": 9.67780122328166e-09
+      },
+      {
+        "input_log_q": 337,
+        "output_log_q": 132,
+        "tree": true,
+        "max_error": 4.865604761499537e-08
+      }
+    ],
+    "all_checks_passed": true
+  },
+  "saved_public_evaluation_artifacts": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-retained-tree-full-20261011/dd337.bin": {
+      "bytes": 236748929,
+      "sha256": "047c43398f39db4bf3029bff32014e5530ebb4ef06bf1e1370279f19f1df91d1"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-retained-tree-full-20261011/candidate-dd-chain.bin": {
+      "bytes": 731546057,
+      "sha256": "20abdbaf9faf63155f31cb9babd6271df451b5f776ddc77332126115a0961ad4"
+    }
+  },
+  "checkpoint_sha256_after": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "checkpoint_unchanged": true,
+  "sources_unchanged": true,
+  "completed_utc": "2026-10-11T16:01:34.094944+00:00"
+}

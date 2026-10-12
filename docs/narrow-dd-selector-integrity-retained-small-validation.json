@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-09T23:48:57.747168+00:00",
+  "scope": "Retained encrypted N512 aux8 selector cache observed after completed evaluations; baseline begins now, not at generation",
+  "manifest": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selector-integrity-20261009.json",
+  "manifest_sha256": "99dcc86326a317ee18a167cac146897888ceae84bf74a1136bc6ca4c98adb7b8",
+  "source_sha256": "c92f6e6eed240473a30768426ee22b33aa4d442cdb346b0cdc2c549c0b631831",
+  "validation": {
+    "utc": "2026-10-09T23:48:57.746455+00:00",
+    "n": 512,
+    "groups_checked": 35,
+    "payloads_match_snapshot": true,
+    "selector_phases_validated": false,
+    "error_origin_established": false,
+    "security_validated": false
+  },
+  "all_payloads_match": true,
+  "error_origin_established": false,
+  "security_validated": false
+}

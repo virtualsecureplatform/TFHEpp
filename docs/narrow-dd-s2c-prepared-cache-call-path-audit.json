@@ -1,0 +1,42 @@
+{
+  "scope": "Read-only source call-path and spectrum-memory audit for the retained N32768 lean-basis profile. No new timing measurement, executable, key, or implementation change.",
+  "observed_utc": "2026-10-11T13:30:28.729832+00:00",
+  "profile": {
+    "n": 32768,
+    "storage_bits": 576,
+    "evaluation_input_q": 129,
+    "evaluation_output_q": 92,
+    "secondary_bits_if_prepared": 16
+  },
+  "current_coefficient_preparation_path": [
+    "CKKSNarrowPrepareCoefficients",
+    "compact CKKSRealLinearTransform",
+    "CKKSLinearTransformBSGS via group provider",
+    "CKKSBuildSparseBabyStepRotationTable / giant-step CKKSRotateSlots / CKKSConjugateSlots",
+    "raw CKKSGaloisKey -> CKKSEvalAuto -> CKKSKeySwitchRows",
+    "CKKSSecretKeySwitch to sparse secret"
+  ],
+  "remaining_full_width_work": [
+    "Raw-key switching performs coefficient-key digit convolutions on demand.",
+    "Fused S2C plaintext products call TwistFFTDigitProduct and store a full multi-limb product before adding it to a local torus accumulator."
+  ],
+  "prepared_auto_change_scope": "The new prepared CKKSPreparedKeySwitchRows storage does not replace raw-key CKKSKeySwitchRows or the fused plaintext-product call sites.",
+  "derived_public_cache_upper_bound": {
+    "input_bytes_per_binary_or_conjugation_key": 80216064,
+    "output_bytes_per_binary_key": 37748736,
+    "input_14_binary_plus_conjugation_keys_bytes": 1203240960,
+    "output_14_binary_keys_bytes": 528482304,
+    "total_spectrum_payload_bytes": 1731723264,
+    "exclusions": "Raw coefficient keys, ciphertexts, FFT scratch, allocator metadata, and the existing S2C plaintext plan."
+  },
+  "next_candidate": "After the active replay finishes, qualify an evaluation-owned prepared Galois adapter for S2C, deriving public caches from retained input/output raw keys. Preserve binary rotation order and conjugation semantics; compare prepared coefficients exactly with saved-input raw S2C before any refresh integration.",
+  "implementation_qualified": false,
+  "performance_improvement_proven": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_refresh.hpp": "18974af4ddd430b1f96efbd065ebe154be659fc4ae66ef9d8a5b26fc05b4aa94",
+    "TFHEpp/include/ckks/compact_linear.hpp": "f46bce3180291c3bdbbea66a44326b0c6929773cde1078952c74d74a9ab0fc9f",
+    "TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "a088e1fc57791a9de7d7cb621e3bc23083a424aac10835aeab9f8ae2dcc7d0c9",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  }
+}

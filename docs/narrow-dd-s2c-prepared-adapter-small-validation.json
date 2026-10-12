@@ -1,0 +1,86 @@
+{
+  "scope": "Standalone evaluation-owned prepared Galois adapter for retained N512 compact S2C. Raw/prepared dense transforms and sparse-secret encapsulated coefficients exact for the saved input. Alternating timings include cache construction/release. Not integrated, N32768 arithmetic, full refresh or security qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "controller_actual_exit_code": 0,
+  "fresh_keys_generated": false,
+  "checkpoint_unchanged": true,
+  "checkpoint_sha256": "0963cb52856c1c564bd80edf3f0b0a9c4533a87530307ab63619167cce98dcd4",
+  "paired_order": [
+    false,
+    true,
+    true,
+    false
+  ],
+  "rows": [
+    {
+      "n": 512,
+      "prepared": false,
+      "seconds_including_cache_construction": 0.306645354,
+      "prepared_key_builds": 0,
+      "sum_cache_peaks_bytes": 0,
+      "dense_coefficients_exact": true,
+      "encapsulated_coefficients_exact": true,
+      "coefficients_checked": 2048
+    },
+    {
+      "n": 512,
+      "prepared": true,
+      "seconds_including_cache_construction": 0.080487554,
+      "prepared_key_builds": 13,
+      "sum_cache_peaks_bytes": 8626176,
+      "dense_coefficients_exact": true,
+      "encapsulated_coefficients_exact": true,
+      "coefficients_checked": 2048
+    },
+    {
+      "n": 512,
+      "prepared": true,
+      "seconds_including_cache_construction": 0.075322307,
+      "prepared_key_builds": 13,
+      "sum_cache_peaks_bytes": 8626176,
+      "dense_coefficients_exact": true,
+      "encapsulated_coefficients_exact": true,
+      "coefficients_checked": 2048
+    },
+    {
+      "n": 512,
+      "prepared": false,
+      "seconds_including_cache_construction": 0.286633266,
+      "prepared_key_builds": 0,
+      "sum_cache_peaks_bytes": 0,
+      "dense_coefficients_exact": true,
+      "encapsulated_coefficients_exact": true,
+      "coefficients_checked": 2048
+    }
+  ],
+  "median_seconds_including_cache_construction": {
+    "False": 0.29663931,
+    "True": 0.0779049305
+  },
+  "prepared_time_ratio": 0.2626251069017117,
+  "cache_release_and_reserved_index_rejection_checked": true,
+  "coefficients_checked": 8192,
+  "full_ring_arithmetic_qualified": false,
+  "full_refresh_qualified": false,
+  "integrated": false,
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/candidate.hpp": "1273ff3ef206617651a619f2292b0f5b3dc25dca1a28528c426f43d52887a76d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/control.cpp": "ef37d12be2ff357d7b4887ef3e9aeef91cd68f7806f8a1d6dbe3ab83b7c239a1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/control": "bcf9096a9fac9b0146340202c8166780d297d0028caf7345f83ab3cc7ec8e28d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/control-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/control-run.log": "60e1433c6290138ccc9afa9e4868b221228b037595c2f68dc32c4e4393456008",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/control-actual-exits.json": "aab14002cbb77a4220c730cec64593627d2d02d7b9a3af48894e8ee0d1daa5a4"
+  },
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "a088e1fc57791a9de7d7cb621e3bc23083a424aac10835aeab9f8ae2dcc7d0c9",
+    "TFHEpp/include/ckks/compact_linear.hpp": "f46bce3180291c3bdbbea66a44326b0c6929773cde1078952c74d74a9ab0fc9f",
+    "TFHEpp/include/ckks/narrow_refresh.hpp": "18974af4ddd430b1f96efbd065ebe154be659fc4ae66ef9d8a5b26fc05b4aa94",
+    "TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "completed_utc": "2026-10-11T14:02:38.444230+00:00"
+}

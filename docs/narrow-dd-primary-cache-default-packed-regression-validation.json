@@ -1,0 +1,28 @@
+{
+  "scope": "Default primary4 prepared auto cache regression after optional primary8 support: retained N512 packed extraction matches all archived ciphertext coefficients.",
+  "actual_exit_code": 0,
+  "report": {
+    "n": 512,
+    "packed_log_q": 422,
+    "cached_depths": 2,
+    "cache_bytes": 46891008,
+    "prepare_seconds": 0.031795185,
+    "extraction_seconds": 9.366345398,
+    "terms": 2048,
+    "coefficients": 2097152,
+    "reference_written": false,
+    "ordered_terms_identical": true
+  },
+  "retained_files_before": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "retained_files_after": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "exe_sha256": "f4774f7d32502faa0a06685fca1e809da3fc24d8e882f60200058ef56f4bd09c",
+  "header_sha256": "62a95a5dc0a089e2a710a905dc562d8f11176b4625605d2a4072147153b435b0"
+}

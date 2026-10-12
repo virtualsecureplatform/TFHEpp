@@ -1,0 +1,30 @@
+{
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17783480320,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1831156,
+      "start_ticks": 217652148,
+      "rss_bytes": 10449186816,
+      "cap_bytes": 34359738368
+    },
+    {
+      "pid": 1835248,
+      "start_ticks": 218003646,
+      "rss_bytes": 7432187904,
+      "cap_bytes": 17179869184
+    }
+  ],
+  "available_bytes": 95890771968,
+  "required_bytes": 95465865216,
+  "auxiliary_cap_bytes": 134217728,
+  "host_reserve_bytes": 10737418240,
+  "eligible": true,
+  "terminal": true,
+  "session": 17040,
+  "actual_exit_code": 0
+}

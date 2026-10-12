@@ -1,0 +1,19 @@
+{
+  "scope": "Reject copied wrong-level metadata and a bit48 flip in the first output body coefficient using the independent DD tree verifier; no private key or original ciphertext writes.",
+  "controls": [
+    {
+      "case": "wrong-output-level",
+      "actual_exit_code": 1,
+      "rejected": true,
+      "reason": "incompatible public tree archive"
+    },
+    {
+      "case": "ciphertext-phase-bit",
+      "actual_exit_code": 1,
+      "rejected": true,
+      "reason": "independent tree metric mismatch"
+    }
+  ],
+  "original_public_ciphertexts_unchanged": true,
+  "all_checks_passed": true
+}

@@ -1,0 +1,707 @@
+{
+  "scope": "Independently check saved joint-decoder probabilities and grid minima.\n\nDecimal arithmetic checks the posterior formulas, not the scalar GSA decoder\nor the attack cost formula. Passing does not qualify structured-key security.\n",
+  "validator_source_sha256": "0b3167778073e60b56dd5299422300e0c2ca075ba7e6379b7838b92aea37bdb5",
+  "posterior_sha256": "f72d1361b2ef2b99a793cb84e3b3cd6da09abdefb3ce5f10827e879ec5c01bd8",
+  "reports": [
+    {
+      "report": "python/estimates/narrow_ckks_ll14_joint_q56_z14560-s5.json",
+      "report_sha256": "84e7aa3873268a395d32ca8d82e0a65ac3c6e5adc265b325fc4d23eb6f11a2b5",
+      "checked_probabilities": 522,
+      "minima": {
+        "BDGL16": {
+          "common_decoder": [
+            259.98211531689293,
+            254,
+            3479
+          ],
+          "independent_decoder": [
+            257.0039028678766,
+            254,
+            3479
+          ],
+          "optimistic_joint_bound": [
+            257.0039028678766,
+            254,
+            3479
+          ],
+          "common_decoder_iid95": [
+            259.7565776410087,
+            254,
+            3479
+          ],
+          "independent_decoder_iid95": [
+            257.0039028678766,
+            254,
+            3479
+          ],
+          "optimistic_joint_bound_iid95": [
+            257.0039028678766,
+            254,
+            3479
+          ]
+        },
+        "MATZOV": {
+          "common_decoder": [
+            258.7983676573607,
+            254,
+            3479
+          ],
+          "independent_decoder": [
+            255.82015520834437,
+            254,
+            3479
+          ],
+          "optimistic_joint_bound": [
+            255.82015520834437,
+            254,
+            3479
+          ],
+          "common_decoder_iid95": [
+            258.57282998147645,
+            254,
+            3479
+          ],
+          "independent_decoder_iid95": [
+            255.82015520834437,
+            254,
+            3479
+          ],
+          "optimistic_joint_bound_iid95": [
+            255.82015520834437,
+            254,
+            3479
+          ]
+        }
+      },
+      "unavailable_points": [
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3095,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3159,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3223,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3287,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3351,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3415,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3479,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3543,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3607,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3671,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3095,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3159,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3223,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3287,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3351,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3415,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3479,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3543,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3607,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 182,
+          "d": 3671,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 190,
+          "d": 3543,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 190,
+          "d": 3607,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 190,
+          "d": 3671,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3095,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3159,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3223,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3287,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3351,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3415,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3479,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3543,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3607,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3671,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3095,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3159,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3223,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3287,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3351,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3415,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3479,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3543,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3607,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 182,
+          "d": 3671,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 190,
+          "d": 3543,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 190,
+          "d": 3607,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 190,
+          "d": 3671,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        }
+      ],
+      "unavailable_decoder_probabilities_validated": false,
+      "producer_source_sha256_matches": true,
+      "finite_costs": 1044
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_joint_q56_z14560-s5_expanded.json",
+      "report_sha256": "de68c9e2889378d5c977c60cc0650fa7194b7739909a0f5b91bec55060a40499",
+      "checked_probabilities": 660,
+      "minima": {
+        "BDGL16": {
+          "common_decoder": [
+            158.86089727199962,
+            302,
+            3607
+          ],
+          "independent_decoder": [
+            155.89072323734746,
+            302,
+            3607
+          ],
+          "optimistic_joint_bound": [
+            155.8826848229547,
+            302,
+            3607
+          ],
+          "common_decoder_iid95": [
+            158.63535959611548,
+            302,
+            3607
+          ],
+          "independent_decoder_iid95": [
+            155.8826848229547,
+            302,
+            3607
+          ],
+          "optimistic_joint_bound_iid95": [
+            155.8826848229547,
+            302,
+            3607
+          ]
+        },
+        "MATZOV": {
+          "common_decoder": [
+            156.64009695996086,
+            318,
+            3607
+          ],
+          "independent_decoder": [
+            153.84113586455638,
+            318,
+            3607
+          ],
+          "optimistic_joint_bound": [
+            153.66188451029905,
+            318,
+            3607
+          ],
+          "common_decoder_iid95": [
+            156.41455928409127,
+            318,
+            3607
+          ],
+          "independent_decoder_iid95": [
+            153.80647736635996,
+            318,
+            3607
+          ],
+          "optimistic_joint_bound_iid95": [
+            153.66188451029905,
+            318,
+            3607
+          ]
+        }
+      },
+      "unavailable_points": [],
+      "unavailable_decoder_probabilities_validated": false,
+      "producer_source_sha256_matches": true,
+      "finite_costs": 1320
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_joint_q56_z14560-s5_high_dimensions.json",
+      "report_sha256": "bb3135e41e7c345f44f05fed1c01dcf105f11f2e66feb3fe7ffdc2a9df755c92",
+      "checked_probabilities": 576,
+      "minima": {
+        "BDGL16": {
+          "common_decoder": [
+            158.81076189845524,
+            318,
+            3671
+          ],
+          "independent_decoder": [
+            155.8719034952942,
+            302,
+            3671
+          ],
+          "optimistic_joint_bound": [
+            155.83254944893207,
+            318,
+            3671
+          ],
+          "common_decoder_iid95": [
+            158.58522422254526,
+            318,
+            3671
+          ],
+          "independent_decoder_iid95": [
+            155.86361516083113,
+            302,
+            3671
+          ],
+          "optimistic_joint_bound_iid95": [
+            155.83254944893207,
+            318,
+            3671
+          ]
+        },
+        "MATZOV": {
+          "common_decoder": [
+            156.5782144300818,
+            318,
+            3671
+          ],
+          "independent_decoder": [
+            153.78941017405472,
+            318,
+            3671
+          ],
+          "optimistic_joint_bound": [
+            153.60000198055863,
+            318,
+            3671
+          ],
+          "common_decoder_iid95": [
+            156.35267675417182,
+            318,
+            3671
+          ],
+          "independent_decoder_iid95": [
+            153.7545097496727,
+            318,
+            3671
+          ],
+          "optimistic_joint_bound_iid95": [
+            153.60000198055863,
+            318,
+            3671
+          ]
+        }
+      },
+      "unavailable_points": [
+        {
+          "model": "BDGL16",
+          "beta": 254,
+          "d": 5463,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 254,
+          "d": 5719,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 270,
+          "d": 5719,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 254,
+          "d": 5463,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 254,
+          "d": 5719,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 270,
+          "d": 5719,
+          "finite": false,
+          "reason": "zero/out-of-range decoder marginal"
+        }
+      ],
+      "unavailable_decoder_probabilities_validated": false,
+      "producer_source_sha256_matches": true,
+      "finite_costs": 1152
+    },
+    {
+      "report": "python/estimates/narrow_ckks_ll14_joint_q56_z14560-s5_refined.json",
+      "report_sha256": "40c9d53655137c8234e2d3b35f8a4e0ee842e7d0d5d5dbc1c043d852975bc6f8",
+      "checked_probabilities": 594,
+      "minima": {
+        "BDGL16": {
+          "common_decoder": [
+            158.44108246590105,
+            310,
+            3671
+          ],
+          "independent_decoder": [
+            155.5162873026062,
+            310,
+            3671
+          ],
+          "optimistic_joint_bound": [
+            155.46287001658592,
+            310,
+            3671
+          ],
+          "common_decoder_iid95": [
+            158.21554479000918,
+            310,
+            3671
+          ],
+          "independent_decoder_iid95": [
+            155.4844920318911,
+            310,
+            3671
+          ],
+          "optimistic_joint_bound_iid95": [
+            155.46287001658592,
+            310,
+            3671
+          ]
+        },
+        "MATZOV": {
+          "common_decoder": [
+            156.33257998797032,
+            310,
+            3671
+          ],
+          "independent_decoder": [
+            153.4077848246755,
+            310,
+            3671
+          ],
+          "optimistic_joint_bound": [
+            153.3543675386552,
+            310,
+            3671
+          ],
+          "common_decoder_iid95": [
+            156.10704231207845,
+            310,
+            3671
+          ],
+          "independent_decoder_iid95": [
+            153.3759895539604,
+            310,
+            3671
+          ],
+          "optimistic_joint_bound_iid95": [
+            153.3543675386552,
+            310,
+            3671
+          ]
+        }
+      },
+      "unavailable_points": [],
+      "unavailable_decoder_probabilities_validated": false,
+      "producer_source_sha256_matches": true,
+      "finite_costs": 1188
+    }
+  ],
+  "passed": true,
+  "security_validated": false,
+  "utc": "2026-10-09T07:45:07.892084+00:00",
+  "validator_session": 74919,
+  "validator_actual_exit_code": 0,
+  "rejected_corruption_controls": [
+    "changed_probability",
+    "changed_minimum",
+    "missing_point",
+    "nonfinite_cost",
+    "wrong_posterior_hash",
+    "unearned_security_claim"
+  ],
+  "grid_sessions": [
+    {
+      "session": 83276,
+      "actual_exit_code": 0
+    },
+    {
+      "session": 27600,
+      "actual_exit_code": 0
+    },
+    {
+      "session": 64618,
+      "actual_exit_code": 0
+    }
+  ],
+  "auxiliary_lift_scan_sha256": "dcae5b0fefd6ca5a5b5a3eedf5a0b1a4ffc14eb9bdc7068fac9083bb21324027",
+  "all_nine_lift_rows_reproduced_exactly": true,
+  "refined_minimum_interior": true,
+  "lowest_searched_optimistic_dkw95_bits": 153.3543675386552,
+  "active_cpp_source_and_executable_hashes_unchanged": true,
+  "prior_scan_archive": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/auxiliary-lift-scan-v1.json",
+  "cpp_status_removed_from_pure_model_report": true
+}

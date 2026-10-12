@@ -1,0 +1,29 @@
+{
+  "scope": "N512 retained original keys/input, same source for both component passes, ciphertext equality and file preservation control",
+  "actual_exit_code": 0,
+  "build_actual_exit_code": 0,
+  "all_passed": true,
+  "result": {
+    "n": 512,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--selector-halves",
+    "fresh_keys_generated": false,
+    "fresh_input_max_error": 8.612885499260468e-12,
+    "saved_max_error": 1.3615911225947476e-09,
+    "saved_rms_error": 8.208303918710317e-10,
+    "max_error": 1.3615911225947476e-09,
+    "rms_error": 8.208303918710317e-10,
+    "saved_output_equal": true,
+    "accuracy_passed": true,
+    "retained_square_validated": false,
+    "selector_halves_mixed": true,
+    "selector_group_loads": 70
+  },
+  "retained_files_unchanged": true,
+  "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/aux8-selector-halves-20261010-control",
+  "source_sha256": "02eda0b461e6fd31e729ee728e337d3db8a69933f879ea3b2a8c35c807232d27",
+  "exe_sha256": "a1a9790227e102059d139cae4cd4177888a05d9a4ca7411294b0dc60198792b1",
+  "security_validated": false,
+  "full_mixed_selector_hypothesis_validated": false
+}

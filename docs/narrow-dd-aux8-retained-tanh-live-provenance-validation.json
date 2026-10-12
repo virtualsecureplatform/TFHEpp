@@ -1,0 +1,25 @@
+{
+  "utc": "2026-10-09T16:35:24.860213+00:00",
+  "scope": "Live retained tanh source and on-disk/mapped executable match original launch record",
+  "pid": 1856410,
+  "start_ticks": 220988742,
+  "checks": {
+    "source": {
+      "path": "TFHEpp/test/ckks/ckks_narrow_auxiliary_functions.cpp",
+      "sha256": "88932b57c0350feab5d8a18fe7d8bc40b50033afc570c0a24ef58dab5c77503b",
+      "matches_launch_record": true
+    },
+    "executable": {
+      "path": "TFHEpp/build/test/ckks/ckks_narrow_auxiliary_functions",
+      "sha256": "d3ae9f224bfa549522957da7605ab5c40df8736b4871a7ee44f191f01b801066",
+      "matches_launch_record": true
+    },
+    "mapped_executable": {
+      "path": "/proc/1856410/exe",
+      "sha256": "d3ae9f224bfa549522957da7605ab5c40df8736b4871a7ee44f191f01b801066",
+      "matches_launch_record": true
+    }
+  },
+  "full_function_accuracy_established": false,
+  "security_validated": false
+}

@@ -1,0 +1,13 @@
+{
+  "scope": "Actual integer noise accounting. Existing sampleNoise uses signedLongDoubleToLevel, which truncates magnitude below one and fractional magnitude bits; configured continuous normal sigma3.2 is not the resulting integer sigma. Independent DD433 raw encryption phases reproduce the truncation model. No sampler modification while reconstruction/root sources are pinned, no key regeneration and no security claim.",
+  "configured_continuous_sigma": 3.2,
+  "expected_truncated_integer_sigma": 2.828301687834186,
+  "expected_nearest_integer_sigma": 3.2129944496269105,
+  "observed_integer_rms": 2.8269146359267667,
+  "independent_noise_coefficients": 114688,
+  "source": "TFHEpp/include/ckks/ckks.hpp",
+  "source_sha256": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+  "conversion_line": 1456,
+  "sampler_line": 1550,
+  "security_model_must_use_actual_distribution": true
+}

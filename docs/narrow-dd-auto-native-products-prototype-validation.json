@@ -1,0 +1,67 @@
+{
+  "scope": "Native64 prepared automorphism product storage prototype versus preceding FFT implementation using retained N512/N32768 Q523 factor conjugation keys. N512 also checked against coefficient-domain switching. Full-ring output equivalence, not full refresh or security qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_codes": [
+    0,
+    0
+  ],
+  "controller_actual_exit_code": 0,
+  "initial_build_actual_exit_code": 1,
+  "initial_build_issue": "Diagnostic local Cache alias collided with copied selector alias; corrected before any evaluation.",
+  "fresh_keys_generated": false,
+  "full_refresh_qualified": false,
+  "summary": [
+    {
+      "nbit": 9,
+      "report": {
+        "n": 512,
+        "q": 523,
+        "exact_coefficients": 3072,
+        "oracle_coefficients": 3072,
+        "product_bytes_before": 2433024,
+        "product_bytes_after": 270336,
+        "passed": true
+      },
+      "median_four_switches_seconds": {
+        "False": 0.0071581625,
+        "True": 0.003487123
+      },
+      "native_time_ratio": 0.48715337211190723
+    },
+    {
+      "nbit": 15,
+      "report": {
+        "n": 32768,
+        "q": 523,
+        "exact_coefficients": 196608,
+        "oracle_coefficients": 0,
+        "product_bytes_before": 155713536,
+        "product_bytes_after": 17301504,
+        "passed": true
+      },
+      "median_four_switches_seconds": {
+        "False": 0.6253932799999999,
+        "True": 0.451023113
+      },
+      "native_time_ratio": 0.7211831777277812
+    }
+  ],
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/control.cpp": "0ba26f457b6acc8608b5c58be655dc9f6cff4c3c55a1822ac9d6cf0dec841f47",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/run-15.log": "d1f3debd24469db4bf197c9c41927baab7d18ee9400b2c12ed08086f56288a99",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/build-run.py": "f5033671cd3c18013611686e4f32347becf6928037c086cb5d269a256765ca04",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/initial-build-name-collision.log": "7c6d7c906b4e1caffdf773513bbfac57cedf9bf1f7afed4e163661860e9c6684",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/run-9.log": "1f4a812b35f683952dfd500346d424f8376526d59d2b3b9a0b170d1449d3d413",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/reference.hpp": "e52ecbae85b58cd60d67ade9b1a9ed9b4008cf84e8bd1e70978e31fcd7ae8c07",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/candidate.hpp": "b7aa26fb14b711e1d2941633b33d20bc42cb256621b1b34f55709df7f37b2fb7",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/control": "b1294ebaf97757d17da90ce5f7cd4525e90fb09a24e9fbf0c24aded3f071daf3",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/actual-exits.json": "98af42bff93c318b11ce2e7be7bbfa67ddfa63600aa1526b4190c7b22cba33da",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c"
+  },
+  "completed_utc": "2026-10-11T13:13:00.749505+00:00"
+}

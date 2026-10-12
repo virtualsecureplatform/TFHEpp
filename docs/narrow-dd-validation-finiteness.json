@@ -1,0 +1,25 @@
+{
+  "observed_at_utc": "2026-10-08T15:20:26.238386+00:00",
+  "scope": "Benchmark validation hardening only; does not resolve original full sigmoid failure. Long tanh/packed runs started before this build.",
+  "build_session": 83939,
+  "build_exit_code": 0,
+  "adversarial_command": "ckks_narrow_benchmark --validation-finiteness",
+  "adversarial_exit_code": 0,
+  "finite_maxima_preserved": true,
+  "nonfinite_injections_rejected": 7,
+  "covers": [
+    "NaN and both infinities in candidate and prior positions",
+    "long double NaN"
+  ],
+  "small_encrypted_session": 1892,
+  "small_encrypted_exit_code": 0,
+  "small_encrypted_report": "narrow-dd-small-ll14-plain37-finite-metrics.json",
+  "small_metadata_and_fixed_23bit_gates_independently_verified": true,
+  "small_scalar_uniform_sqrt2_gate_verified": true,
+  "small_corner_propagated_square_gates_verified": true,
+  "small_owner_cleanup_verified": true,
+  "small_wall_time": "1:10.83",
+  "small_peak_rss_kib": 346836,
+  "full_profile_failure_resolved": false,
+  "security_qualified": false
+}

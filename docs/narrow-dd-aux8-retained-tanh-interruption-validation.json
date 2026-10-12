@@ -1,0 +1,17 @@
+{
+  "observed_at_utc": "2026-10-09T20:05:21.358011+00:00",
+  "missing_session": 11898,
+  "absent_processes": [
+    1853218,
+    1856409,
+    1856410
+  ],
+  "matching_retained_evaluators_live": [],
+  "original_run_validation": "TFHEpp/docs/narrow-dd-aux8-retained-functions-full-validation.json",
+  "original_gelu_independent_accuracy_passed": true,
+  "tanh_report_present": false,
+  "actual_exit_code_known": false,
+  "interruption_cause_known": false,
+  "retry_scope": "tanh only; unchanged original keys, input, corrected selector and validated executable",
+  "new_result_required": true
+}

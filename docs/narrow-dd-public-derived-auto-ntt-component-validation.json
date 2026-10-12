@@ -1,0 +1,106 @@
+{
+  "scope": "Public composition from saved packed435 primary8 substitution keys, constructing gadget*s^exponent rows for conjugation and one tail rotation. Auxiliary NTT switching reuses encrypted-gadget multiplication arithmetic at337/57 and324/44. No private keys read by C++, no key generation or fresh encryption. Independent verifier reads original dense secret locally. Bounded component qualification only; full pipeline/runtime/security unqualified. Prototype isolated outside production headers.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "controller_pid": 2075101,
+  "fresh_private_keys_generated": 0,
+  "fresh_encrypted_evaluation_keys_generated": 0,
+  "public_automorphism_derivations": 2,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/public-auto-ntt-20261011/public_auto_ntt.hpp": "84790360f1e0818b306382a909cf1d67ab366266bfc82629ed2bfed51eca44a2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/public-auto-ntt-20261011/probe.cpp": "24625c2faf7dd777e4ea554011afcf8b7369a9a201a9e690d8c3ebbf010f4e0c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/public-auto-ntt-20261011/probe": "0d20d731f536b548bf05093091415f42d596dfccc0838ee77ccf8868dfb8b094",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/public-auto-ntt-20261011/run.py": "ad659cb0bff5ef2d27defde34957c26db38f95470e50c877096c002c8c5d7c14",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/public-auto-ntt-20261011/validate.py": "e78c46b55987f7bdf11d6c9a7e1a008a174cf75593fea336d54ae5670dbf2a29",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "b8cc6294d5b5a613c4e136aea0094189a97290d12c78a72f37d42a85d26dcd5b",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_packed_file.hpp": "66ea433a16f90301dffd89d5c767a2c79f5fc850cef22d10cd20d003ee20b882",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_dd_ntt.hpp": "bc92c1b9cb101c8e393e1bdf20f7c420f2640096834dfdcb067ffd71e0b15b13",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "stage": "complete",
+  "updated_utc": "2026-10-11T23:59:40.639032+00:00",
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-pilot-20261011/packed435-primary8.bin": "edabb5da09912a47adc71d22bca73ad1cc14336b384b973d96c03e4ce4545878",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint/checkpoint.bin": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-mask42-root44-20261011/outputs.bin": "8d43a2ca4b27cc8b7f7414e6a45e5d13402e5cb38bb13b8b8e4d29dc5af92df9"
+  },
+  "evaluator_pid": 2075108,
+  "evaluator_start_ticks": 240964066,
+  "test_actual_exit_code": 0,
+  "report": [
+    {
+      "exponent": 32767,
+      "public_composition_steps": 4,
+      "derivation_seconds": 3.755811542,
+      "cache_prepare_seconds": 0.622602343,
+      "cache_bytes": 102760448,
+      "evaluation_seconds": 0.017325551,
+      "low_scale_evaluation_seconds": 0.026864162
+    },
+    {
+      "exponent": 24449,
+      "public_composition_steps": 7,
+      "derivation_seconds": 5.857603719,
+      "cache_prepare_seconds": 0.63059428,
+      "cache_bytes": 102760448,
+      "evaluation_seconds": 0.017417531,
+      "low_scale_evaluation_seconds": 0.017173524
+    }
+  ],
+  "independent_pid": 2075114,
+  "independent_start_ticks": 240965314,
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent full-ring integer phases of publicly composed s^exponent gadget rows and direct auxiliary NTT automorphisms at337/57 and324/44. Original private key read only by this independent diagnostic; no key values/phase arrays printed. No full pipeline, security or overall runtime qualification. Composed noise is measured, not treated as Gaussian3.2.",
+    "n": 16384,
+    "phase_coefficients_checked": 360448,
+    "decoded_evaluation_slots_checked": 65536,
+    "records": [
+      {
+        "exponent": 32767,
+        "public_gadget_noise_max_abs": 1551239,
+        "public_gadget_noise_rms": 340999.9698872287,
+        "evaluations": [
+          {
+            "data_log_q": 337,
+            "log_delta": 57,
+            "max_slot_error": 1.41641659992346e-13,
+            "accuracy_passed": true
+          },
+          {
+            "data_log_q": 324,
+            "log_delta": 44,
+            "max_slot_error": 1.3980207671138879e-09,
+            "accuracy_passed": true
+          }
+        ]
+      },
+      {
+        "exponent": 24449,
+        "public_gadget_noise_max_abs": 2020048,
+        "public_gadget_noise_rms": 480339.06625125505,
+        "evaluations": [
+          {
+            "data_log_q": 337,
+            "log_delta": 57,
+            "max_slot_error": 1.28596958496396e-13,
+            "accuracy_passed": true
+          },
+          {
+            "data_log_q": 324,
+            "log_delta": 44,
+            "max_slot_error": 1.1617090339239876e-09,
+            "accuracy_passed": true
+          }
+        ]
+      }
+    ],
+    "all_checks_passed": true
+  },
+  "artifacts_unchanged": true,
+  "sources_unchanged": true
+}

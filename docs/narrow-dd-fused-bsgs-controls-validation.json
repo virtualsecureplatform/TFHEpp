@@ -1,0 +1,146 @@
+{
+  "observed_at_utc": "2026-10-10T12:16:23.336416+00:00",
+  "scope": "N16384 fused BSGS single unrotated giant group, exact independent cpp_int negacyclic convolution and active-Q signed ties-away rounding; frozen original4 full-width versus adaptive16 active-Q arithmetic",
+  "actual_exit_codes": [
+    {
+      "name": "baseline",
+      "actual_exit_code": 0
+    },
+    {
+      "name": "benchmark",
+      "actual_exit_code": 0
+    }
+  ],
+  "all_checks_passed": true,
+  "coefficients_per_path": 393216,
+  "total_independent_coefficients_checked": 786432,
+  "cases": [
+    {
+      "q": 81,
+      "drop": 20,
+      "mode": 0,
+      "terms": 33,
+      "coefficients": 32768,
+      "old_seconds": 1.26399,
+      "new_seconds": 0.0815308
+    },
+    {
+      "q": 93,
+      "drop": 20,
+      "mode": 0,
+      "terms": 33,
+      "coefficients": 32768,
+      "old_seconds": 1.03674,
+      "new_seconds": 0.0670828
+    },
+    {
+      "q": 413,
+      "drop": 48,
+      "mode": 0,
+      "terms": 33,
+      "coefficients": 32768,
+      "old_seconds": 1.09633,
+      "new_seconds": 0.21841
+    },
+    {
+      "q": 448,
+      "drop": 48,
+      "mode": 0,
+      "terms": 33,
+      "coefficients": 32768,
+      "old_seconds": 0.999544,
+      "new_seconds": 0.205707
+    },
+    {
+      "q": 81,
+      "drop": 20,
+      "mode": 1,
+      "terms": 33,
+      "coefficients": 32768,
+      "old_seconds": 1.00186,
+      "new_seconds": 0.0623899
+    },
+    {
+      "q": 93,
+      "drop": 20,
+      "mode": 1,
+      "terms": 33,
+      "coefficients": 32768,
+      "old_seconds": 1.10567,
+      "new_seconds": 0.0682442
+    },
+    {
+      "q": 413,
+      "drop": 48,
+      "mode": 1,
+      "terms": 33,
+      "coefficients": 32768,
+      "old_seconds": 1.02876,
+      "new_seconds": 0.219663
+    },
+    {
+      "q": 448,
+      "drop": 48,
+      "mode": 1,
+      "terms": 33,
+      "coefficients": 32768,
+      "old_seconds": 1.16827,
+      "new_seconds": 0.229841
+    },
+    {
+      "q": 81,
+      "drop": 20,
+      "mode": 2,
+      "terms": 1,
+      "coefficients": 32768,
+      "old_seconds": 0.613257,
+      "new_seconds": 0.0206059
+    },
+    {
+      "q": 93,
+      "drop": 20,
+      "mode": 2,
+      "terms": 1,
+      "coefficients": 32768,
+      "old_seconds": 0.617463,
+      "new_seconds": 0.0211872
+    },
+    {
+      "q": 413,
+      "drop": 48,
+      "mode": 2,
+      "terms": 1,
+      "coefficients": 32768,
+      "old_seconds": 0.574445,
+      "new_seconds": 0.0739414
+    },
+    {
+      "q": 448,
+      "drop": 48,
+      "mode": 2,
+      "terms": 1,
+      "coefficients": 32768,
+      "old_seconds": 0.531658,
+      "new_seconds": 0.0584327
+    }
+  ],
+  "modes": {
+    "0": "33-term sparse signed uint64 magnitudes with random full-width ciphertext",
+    "1": "33-term dense max uint64 plaintext and max balanced16 ciphertext coefficients",
+    "2": "single identity plaintext with sign/wrap/halfway rounding boundaries"
+  },
+  "new_keys_generated": false,
+  "input_output_rotation_keys_empty": true,
+  "rotation_accuracy_not_covered_by_component_control": true,
+  "source_sha256": "9ff45d5d7ec32abcf1430770bdf9c0d6369f0f4e3e104eadadb1b9f69d6c05d9",
+  "baseline_header_sha256": "108ed15f7127030b385ba1075761cfc964d3a53692143ac6628d6cd0024b7877",
+  "baseline_executable_sha256": "3258ca89bd876307f9915d9f5a18876ccc23d9a3949e0f22abe5ce5052e4ba1f",
+  "new_executable_sha256": "3becfb5f21ddd16fb3537d8428f344984b2951f90d98a534ec303f2cafa7afa5",
+  "control_source_sha256": "7fb7ec9908c87c8033a5d74d5c9f434f3bb831be59a737f3b6318ba2220ef9e8",
+  "build_actual_exit_code": 0,
+  "production_build_actual_exit_code": 0,
+  "production_build_session": 49637,
+  "timing_scope": "Sequential single-group samples with other CPU jobs; not controlled whole-refresh speedup",
+  "full_current_source_refresh_validated": false,
+  "paper_performance_reproduced": false
+}

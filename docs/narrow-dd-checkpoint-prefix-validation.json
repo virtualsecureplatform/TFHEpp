@@ -1,0 +1,108 @@
+{
+  "observed_at_utc": "2026-10-08T22:59:04.486842+00:00",
+  "scope": "Read and independently decrypt the saved metadata/secrets/input prefix plus refresh ciphertext without loading evaluation keys. Supports plain37 checkpoints N512/N16384, inputQ85/delta44 and outputQ108/delta48. Does not validate evaluation-key suffix or post-refresh multiplication.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_checkpoint_inspect.cpp": "ed06bd4697dc557a730d9604e16b4e667edc7cfca7d74e131ce527d6c6849208"
+  },
+  "build_exit_code": 0,
+  "configure_log": "/tmp/ckks-narrow-checkpoint-inspect-configure.log",
+  "build_log": "/tmp/ckks-narrow-checkpoint-inspect-build.log",
+  "valid_cases": 3,
+  "malformed_input_rejections": 3,
+  "accuracy_gate_failure_cases": 1,
+  "valid_case_memory_limit_bytes": 536870912,
+  "valid_case_stack_limit_bytes": 67108864,
+  "archived_metrics_exactly_matched": [
+    "fresh_input_max_error",
+    "refresh_max_error",
+    "refresh_rms_error"
+  ],
+  "cases": [
+    {
+      "case": "small",
+      "report": "narrow-dd-small-plain37-checkpoint.json",
+      "actual_exit_code": 0,
+      "metrics": {
+        "n": 512,
+        "function": "sigmoid",
+        "checkpoint_prefix_bytes_read": 118872,
+        "evaluation_keys_loaded": false,
+        "fresh_input_max_error": 1.0143029468343426e-11,
+        "refresh_max_error": 1.2812528949196806e-09,
+        "refresh_rms_error": 7.571149902876981e-10,
+        "target_tolerance": 1.1920928955078125e-07,
+        "refresh_accuracy_passed": true
+      },
+      "peak_rss_kib": 4608,
+      "ciphertext_sha256": "8a8ac8ec3b1a547456600bd9dd3ca8e2dc9ac0c65460f04316c8995c0bf1a10d"
+    },
+    {
+      "case": "full-original",
+      "report": "narrow-dd-ll14-plain37-checkpoint.json",
+      "actual_exit_code": 0,
+      "metrics": {
+        "n": 16384,
+        "function": "sigmoid",
+        "checkpoint_prefix_bytes_read": 3801176,
+        "evaluation_keys_loaded": false,
+        "fresh_input_max_error": 6.82136424399922e-11,
+        "refresh_max_error": 3.9497631131273335e-09,
+        "refresh_rms_error": 1.4121876612855677e-09,
+        "target_tolerance": 1.1920928955078125e-07,
+        "refresh_accuracy_passed": true
+      },
+      "peak_rss_kib": 18432,
+      "ciphertext_sha256": "394e4d31cff7be3c891da361346f54809f2e053525fe1bd53cc233f765361bcf"
+    },
+    {
+      "case": "full-reproduction",
+      "report": "narrow-dd-ll14-plain37-checkpoint-reproduction.json",
+      "actual_exit_code": 0,
+      "metrics": {
+        "n": 16384,
+        "function": "sigmoid",
+        "checkpoint_prefix_bytes_read": 3801176,
+        "evaluation_keys_loaded": false,
+        "fresh_input_max_error": 6.698080191593879e-11,
+        "refresh_max_error": 4.086080830633658e-09,
+        "refresh_rms_error": 1.4196766212965653e-09,
+        "target_tolerance": 1.1920928955078125e-07,
+        "refresh_accuracy_passed": true
+      },
+      "peak_rss_kib": 18328,
+      "ciphertext_sha256": "fcaa848401a4102671b2624c9953c7ccc7ed822fdfea74cd1bc34aa1e8fcb656"
+    },
+    {
+      "case": "truncated-prefix",
+      "actual_exit_code": 2,
+      "rejected": true
+    },
+    {
+      "case": "ciphertext-trailing-data",
+      "actual_exit_code": 2,
+      "rejected": true
+    },
+    {
+      "case": "wrong-magic",
+      "actual_exit_code": 2,
+      "rejected": true
+    },
+    {
+      "case": "encrypted-zero-fails-target-gate",
+      "actual_exit_code": 1,
+      "metrics": {
+        "n": 512,
+        "function": "sigmoid",
+        "checkpoint_prefix_bytes_read": 118872,
+        "evaluation_keys_loaded": false,
+        "fresh_input_max_error": 1.0143029468343426e-11,
+        "refresh_max_error": 1.3887772203090152,
+        "refresh_rms_error": 0.8930378385114557,
+        "target_tolerance": 1.1920928955078125e-07,
+        "refresh_accuracy_passed": false
+      }
+    }
+  ],
+  "original_sigmoid_failure_resolved": false,
+  "security_qualified": false
+}

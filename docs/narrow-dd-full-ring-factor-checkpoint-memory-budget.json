@@ -1,0 +1,40 @@
+{
+  "observed_at_utc": "2026-10-08T23:52:42.288366+00:00",
+  "scope": "Retained full-ring packed-factor stage, final head/tail groups, 12 columns and two chunk policies; generated factor conjugation cache, unused normal key-container storage included.",
+  "existing_processes": [
+    {
+      "pid": 1789289,
+      "virtual_limit_bytes": 34359738368,
+      "rss_bytes": 13564854272,
+      "remaining_growth_bytes": 20794884096,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-checkpoint sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008 TFHEpp/docs/narrow-dd-ll14-plain37-checkpoint-reproduction-2.json"
+    },
+    {
+      "pid": 1756575,
+      "virtual_limit_bytes": 68719476736,
+      "rss_bytes": 17686831104,
+      "remaining_growth_bytes": 51032645632,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json"
+    }
+  ],
+  "available_memory_bytes": 99596988416,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 12884901888,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 95449849856,
+  "launch_margin_bytes": 4147138560,
+  "launch_eligible": true,
+  "test_terminal": true,
+  "estimated_peak_components_bytes": {
+    "normal_key_container": 3400000000,
+    "conjugation_fft_cache": 2316402688,
+    "selector_group": 970719232,
+    "selector_chunk_ntt": 524288000,
+    "digit_accumulators": 1101004800,
+    "chunk_sums": 314572800,
+    "stack_reservation": 536870912,
+    "additional_workspace_allowance": 536870912
+  },
+  "test_actual_exit_code": 0,
+  "test_peak_rss_kib": 8095236
+}

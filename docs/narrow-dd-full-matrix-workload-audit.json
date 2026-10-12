@@ -1,0 +1,27 @@
+{
+  "scope": "Static workload counts derived from retained N32768 schedule and verified preceding full-ring report. Counts describe current torus-digit/two-prime kernel, not paper hardware-normalized latency or runtime predictions.",
+  "n": 32768,
+  "h": 31,
+  "block_width": 1058,
+  "tail_blocks_per_pack": 7,
+  "tail_packs": 5,
+  "head_and_tail_factor_groups": 36,
+  "batch_columns": 22,
+  "selector_digits": 10,
+  "selector_primes": 2,
+  "selector_components": 2,
+  "signed_tables": 2,
+  "selector_count": 38088,
+  "selector_forward_ntt_count": 1523520,
+  "selector_table_modular_multiply_add_count": 2196598947840,
+  "ntt_butterflies_per_radix2_transform": 245760,
+  "baseline_factor_groups_completed": 36,
+  "baseline_report_sha256": "a38546b4437647c273a0fb02cabe3d1b2a20b6b477580ae9c2db188a2bcd342b",
+  "kernel_sources_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "observed_utc": "2026-10-11T13:39:33.721804+00:00",
+  "next_investigation": "Measure how much per-selector transform work can be reused within the host memory budget; compare representation and modular matrix workload against the paper parameter sets before further SIMD tuning."
+}

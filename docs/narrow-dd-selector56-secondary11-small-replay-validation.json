@@ -1,0 +1,106 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Complete optional N512 retained-key all-function replay using schedule-configured selector56 and secondary11 DD cache, current read-ahead/S2C release included. Not full-size qualification.",
+  "build_actual_exit_code": 0,
+  "replay_actual_exit_code": 0,
+  "independent_actual_exit_codes": {
+    "sigmoid": 0,
+    "gelu": 0,
+    "tanh": 0
+  },
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-random-key-20261011/checkpoint",
+  "ciphertext_identity": {
+    "sigmoid": true,
+    "gelu": true,
+    "tanh": true
+  },
+  "independent_phase_checks": {
+    "sigmoid": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 512,
+      "function": "sigmoid",
+      "metrics": {
+        "fresh_input_max_error": 9.470563716740074e-12,
+        "max_error": 3.986548194417286e-09,
+        "post_refresh_product_max_error": 6.857574075431243e-09,
+        "square_normalization_max_error": 2.562327295515966e-11
+      },
+      "product_tolerance": 4.50319595316329e-07,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    },
+    "gelu": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 512,
+      "function": "gelu",
+      "metrics": {
+        "fresh_input_max_error": 9.470563716740074e-12,
+        "max_error": 3.170458513877858e-09,
+        "post_refresh_product_max_error": 2.67014595286042e-08,
+        "square_normalization_max_error": 1.8904641321516074e-11
+      },
+      "product_tolerance": 1.4678657411332307e-06,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    },
+    "tanh": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 512,
+      "function": "tanh",
+      "metrics": {
+        "fresh_input_max_error": 9.470563716740074e-12,
+        "max_error": 1.6774424021747814e-08,
+        "post_refresh_product_max_error": 4.6572610066310045e-08,
+        "square_normalization_max_error": 2.7320448628593068e-11
+      },
+      "product_tolerance": 4.5615794863043815e-07,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    }
+  },
+  "root_tile_timing_gates_passed": true,
+  "checkpoint_files_checked": 36,
+  "checkpoint_files_unchanged": true,
+  "fresh_keys_generated": false,
+  "setup_generation_count": 0,
+  "new_roots": [
+    22,
+    0,
+    0
+  ],
+  "reused_roots": [
+    0,
+    8,
+    18
+  ],
+  "selector_matrix_digit_bits": 56,
+  "selector_matrix_digits": 10,
+  "derived_tree_dd_secondary_bits": 11,
+  "default_width_changed": false,
+  "full_size_refresh_qualified": false,
+  "security_validated": false,
+  "exe_sha256": "b616b6ccdfaf5e00779148e493ea9882d0d491f0abad65f9e03b1fc9a2eaec03",
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "13300b26c74f9fb7f3354f2763d22b689dba8605ed9c80caa3af2248546f062c",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/test/ckks/ckks_narrow_basis_replay.cpp": "605a6b3f15f56c259f32374f2024ad108f6e9c646bb3bf763bda2a6f63529a19"
+  },
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/build.log": "b3b29c5dba339ace6493d8c1c8063677997f50c01d6e200d9d270fb1683ea88b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/replay.log": "49c738ae821fd8a58727c53852f56a0e93ae0805ceaf0ee6754ddb78c8c421d9",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/replay.json": "c2156967d5fbd43dd05f2906a1e8c76e0c0a9d38216114f3725cd1163b883d2e",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/replay.time": "d1cdfcc23f80f0067d02b96b6233749ebe457040da2fb12479cc0103b9ad4fdd",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/before.json": "f7f851351441e3f28f26a5167ab596262a91c07a1c2be6edf18292e8a5ece717",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/after.json": "f7f851351441e3f28f26a5167ab596262a91c07a1c2be6edf18292e8a5ece717",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/sigmoid-replay.bin": "60ed944ddc6168c1e68088cae8b282bcc03475a54cb8c1b7e3a1d4d8cf77a151",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/gelu-replay.bin": "34a5dd3404c58408266e46b45010ef92508f238e1e61fe1a3796787a20b71a93",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/tanh-replay.bin": "a6f77689370d476558b364f7c88a581d39facc2a3623e91566c7db609439da61",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/sigmoid-independent.json": "f22a8b9cb94749226563eac65398a4e26be81f0f6722d9d5994d7c277aa3ca5d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/gelu-independent.json": "c182df39b51e79b659a15f047250b46189e17ea8f005a79f01faa75c673159b3",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-replay-small-20261011/tanh-independent.json": "e4c7feccd0aacfb6f4750cef275619793478ff44bd0598811e54c48c26809b14"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "scope": "Public N32768 independent fourteen-bit-limb phase decoder against direct Python integer negacyclic convolution; synthetic sparse ternary key, not encrypted basis validation",
+  "all_checks_passed": true,
+  "checks": [
+    {
+      "sample": 0,
+      "phase_coefficients_exact": 32768
+    },
+    {
+      "sample": 1,
+      "phase_coefficients_exact": 32768
+    }
+  ],
+  "fresh_keys_generated": false
+}

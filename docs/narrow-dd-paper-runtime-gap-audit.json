@@ -1,0 +1,128 @@
+{
+  "observed_at_utc": "2026-10-10T20:21:05.889070+00:00",
+  "scope": "Attribution of four completed N32768, 22-column head30/tail4 factor trials, two repetitions each. Concurrent host workloads; not a whole-refresh profile or controlled paper comparison.",
+  "measurement_evidence": "TFHEpp/docs/narrow-dd-raw-chunk-streaming-full-factors-validation.json",
+  "measurement_evidence_sha256": "4c600776771b1800f227577f825a3e6d8d3840e908a4b47c9aa76941cc1b8719",
+  "component_trials": [
+    {
+      "group": 30,
+      "tail": false,
+      "columns": 22,
+      "seconds": 100.985409749,
+      "selector_provider_seconds": 1.3209458480000007,
+      "selector_ntt_seconds": 19.841970307000004,
+      "matrix_seconds": 72.731604813,
+      "selector_provider_fraction": 0.013080561353201632,
+      "selector_ntt_fraction": 0.19648353515935987,
+      "matrix_fraction": 0.7202189404764011
+    },
+    {
+      "group": 30,
+      "tail": false,
+      "columns": 22,
+      "seconds": 75.310511136,
+      "selector_provider_seconds": 1.0615141689999996,
+      "selector_ntt_seconds": 16.743598277999993,
+      "matrix_seconds": 50.47213000200001,
+      "selector_provider_fraction": 0.014095166172528786,
+      "selector_ntt_fraction": 0.2223275081450908,
+      "matrix_fraction": 0.6701870594246077
+    },
+    {
+      "group": 4,
+      "tail": true,
+      "columns": 22,
+      "seconds": 80.089341933,
+      "selector_provider_seconds": 1.1303597330000001,
+      "selector_ntt_seconds": 17.511336755000002,
+      "matrix_seconds": 54.053188555,
+      "selector_provider_fraction": 0.014113734808129906,
+      "selector_ntt_fraction": 0.2186475295258311,
+      "matrix_fraction": 0.6749111336214879
+    },
+    {
+      "group": 4,
+      "tail": true,
+      "columns": 22,
+      "seconds": 76.292647927,
+      "selector_provider_seconds": 1.100174615999999,
+      "selector_ntt_seconds": 16.776211249999996,
+      "matrix_seconds": 51.236340443,
+      "selector_provider_fraction": 0.014420453947970086,
+      "selector_ntt_fraction": 0.219892895394746,
+      "matrix_fraction": 0.6715763816721249
+    }
+  ],
+  "paper_reference": {
+    "file": "refs/2026-2119.pdf",
+    "sections": [
+      "5",
+      "8.1",
+      "8.2"
+    ],
+    "cpu_backend": "SEAL RNS with AVX2 and OpenMP",
+    "table2_profiles": {
+      "LL14": {
+        "n": 16384,
+        "log_pq": 437
+      },
+      "HT15": {
+        "n": 32768,
+        "log_pq": 881
+      }
+    },
+    "hardware": "dual AMD EPYC7K62, 1TB DDR4-3200, SMT disabled"
+  },
+  "current_completed_full_profile": {
+    "n": 32768,
+    "selector_log_q": 518,
+    "storage_bits": 576,
+    "primary_gadget_bits": 18,
+    "secondary_digit_bits": 8,
+    "sigma": 3.2,
+    "h": 31,
+    "exact_table2_profile_match": false
+  },
+  "conclusions": [
+    {
+      "claim": "Raw chunk provider time is a small fraction of these measured factor trials.",
+      "status": "measured",
+      "range_percent": [
+        1.3080561353201632,
+        1.4420453947970087
+      ]
+    },
+    {
+      "claim": "Matrix accumulation dominates these measured factor trials.",
+      "status": "measured",
+      "range_percent": [
+        67.01870594246077,
+        72.02189404764012
+      ]
+    },
+    {
+      "claim": "Selector NTT preparation is a substantial secondary cost in these measured trials.",
+      "status": "measured",
+      "range_percent": [
+        19.648353515935987,
+        22.23275081450908
+      ]
+    },
+    {
+      "claim": "Key reuse or eliminating raw-provider time alone cannot remove the measured matrix and NTT costs.",
+      "status": "component inference; not whole-refresh prediction"
+    },
+    {
+      "claim": "Different ring/modulus schedules and exact torus-limb arithmetic prevent treating current accuracy checks as reproduction of paper Table2 security or Table7 latency.",
+      "status": "fidelity gap"
+    }
+  ],
+  "next_evidence_required": [
+    "Complete frozen retained-key replay and independently validate all functions without changing the fixture.",
+    "Run queued current-source full refresh and inspect its per-stage timings before further production optimization.",
+    "Qualify actual structured-key security and the port modulus schedule; generic or conditional estimates alone are insufficient."
+  ],
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "goal_complete": false
+}

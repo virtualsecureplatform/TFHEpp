@@ -1,0 +1,70 @@
+{
+  "observed_at_utc": "2026-10-10T11:29:36.402442+00:00",
+  "scope": "Explicit16-bit torus-by-unsigned FFT products; independent arbitrary-precision sparse/signed/full-width/max-amplitude oracles and dense4-bit baseline",
+  "ring_n": 16384,
+  "active_moduli_independent": [
+    81,
+    93,
+    413,
+    448
+  ],
+  "oracle_coefficients_checked": 163840,
+  "dense_coefficients_compared": 49152,
+  "total_coefficients_checked": 212992,
+  "fresh_keys_generated": false,
+  "encryption_performed": false,
+  "actual_exit_code": 0,
+  "build_actual_exit_code": 0,
+  "build_session": 47914,
+  "test_session": 55261,
+  "points": [
+    {
+      "active_bits": 93,
+      "old_seconds": 0.111306,
+      "new_seconds": 0.011257,
+      "ratio": 9.88771431109532
+    },
+    {
+      "active_bits": 413,
+      "old_seconds": 0.515936,
+      "new_seconds": 0.0516193,
+      "ratio": 9.995021242054811
+    },
+    {
+      "active_bits": 448,
+      "old_seconds": 0.819995,
+      "new_seconds": 0.0926227,
+      "ratio": 8.853067336624823
+    }
+  ],
+  "header_sha256": "c1bbe004d61a9a9aeb45712ca047fc1da254e171102c0f3ff36812f51d124012",
+  "control_source_sha256": "0159cdc326f924b4ac0a83350bc72c959c098cf7427d43549d385d3121f31112",
+  "maximum_amplitude_passed": true,
+  "full_refresh_validated": false,
+  "production_default_widened": true,
+  "limitations": [
+    "Single component timing observations under concurrent CPU load",
+    "Full current-source N16384 refresh with widened plaintext arithmetic remains pending"
+  ],
+  "goal_complete": false,
+  "final_observed_at_utc": "2026-10-10T11:37:54.465498+00:00",
+  "final_control_build_session": 64838,
+  "final_control_test_session": 64109,
+  "legacy_plaintext_coverage_passed": [
+    [
+      17,
+      20
+    ],
+    [
+      20,
+      20
+    ],
+    [
+      37,
+      40
+    ]
+  ],
+  "final_header_sha256": "62fb565326a0efd5ce5a7cddb74c81aca7b8c1634a64b90588da6cf5f92d35b3",
+  "final_control_source_sha256": "21ff83024dc1f68587ed3aa5416ae335d1ee6ec206c99e0d7c8cf671d9df79f1",
+  "final_test_log_sha256": "a1bdf661a9e8fd753a1312efda72c4d8f291244cae567f92d6914657eba1da35"
+}

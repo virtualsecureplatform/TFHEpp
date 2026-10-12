@@ -1,0 +1,52 @@
+{
+  "observed_at_utc": "2026-10-09T05:50:05.819660+00:00",
+  "scope": "Sequential full N16384 aux16 GeLU/sigmoid/tanh; unchanged 23bit and square gates; automatic failure capture",
+  "existing_packed_pid": 1756575,
+  "existing_packed_rss_bytes": 17687748608,
+  "existing_packed_limit_bytes": 68719476736,
+  "small_test_reserve_bytes": 4294967296,
+  "available_memory_bytes": 113945452544,
+  "required_available_memory_bytes": 100423852032,
+  "test_limit_bytes": 34359738368,
+  "test_stack_bytes": 67108864,
+  "omp_threads": 8,
+  "launch_eligible": true,
+  "test_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-aux16-full-20261009-hxauk7lg",
+  "test_root_mode": "0o700",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_benchmark.cpp": "7b26c8346bc50ff1f65c4f6011f6e7997d666df7e7ac7ae461e573acd6c1b9d3",
+    "test/ckks/ckks_narrow_checkpoint_inspect.cpp": "3cf275d95f408ae0bd291e8e00489e47a08500ce6428d0e073b08216cea03028",
+    "include/ckks/ckks.hpp": "4e11d00df1c72f505f6635cf115810ec21299d85d19f538c73b1c2b0653c2372",
+    "include/mulfft.hpp": "0b9b7c957e57ffff0262c2a11160fab99ed1af095cc1b64d4979a761b7e14c2f",
+    "include/ckks/narrow_bootstrapping.hpp": "60ffcdbd18d5ea4057e6eb7348ce83c687816e46938bef014d01a9efa8217f8d",
+    "include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79",
+    "include/ckks/narrow_selector_file.hpp": "baa876f1d73f170a62117ce6fb27fb4aaf32866106243d7ae8e0d07dcc5e13c8",
+    "include/ckks/compact_dd.hpp": "59aad7215838b861168d54e50355db4c19c4cb3d9aaaad6ec01b38724288c5ce",
+    "include/ckks/compact_linear.hpp": "f46bce3180291c3bdbbea66a44326b0c6929773cde1078952c74d74a9ab0fc9f"
+  },
+  "executable_sha256": "30737489e19f92fa0d4c92822903cc958febde31fb5fe1cb52851aaaa4c39a4e",
+  "functions": [
+    "gelu",
+    "sigmoid",
+    "tanh"
+  ],
+  "pre_evaluation_checkpoint": false,
+  "post_failure_capture": true,
+  "terminal": false,
+  "goal_complete": false,
+  "cpu_model": "12th Gen Intel(R) Core(TM) i9-12900K",
+  "available_cpu_count": 24,
+  "disk_available_bytes": 66402309373952,
+  "planned_artifact_reserve_bytes": 171798691840,
+  "session_id": 50626,
+  "launch_process_observation": {
+    "pid": 1823852,
+    "ppid": 1823851,
+    "start_ticks": 217158705,
+    "state": "R",
+    "cpu_ticks": 3899,
+    "resident_pages": 1300954,
+    "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-aux16-fbs-file gelu /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-aux16-full-20261009-hxauk7lg/selectors-gelu TFHEpp/docs/narrow-dd-ll14-plain37-aux16-gelu.json ",
+    "observed_at_utc": "2026-10-09T05:50:52.670544+00:00"
+  }
+}

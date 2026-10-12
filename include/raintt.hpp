@@ -19,7 +19,7 @@ constexpr uint min_wordbits = 27;
 constexpr uint min_wordbits = 31;
 #endif
 
-#if defined(__clang__) && !defined(__CUDACC__)
+#if defined(__clang__)
 // Currently _BigInt is only implemented in clang
 #ifdef USE_COMPRESS
 constexpr uint wordbits = 27;

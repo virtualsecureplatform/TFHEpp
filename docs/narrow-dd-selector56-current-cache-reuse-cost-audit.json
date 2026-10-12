@@ -1,0 +1,31 @@
+{
+  "scope": "Current selector56 disk-cache reuse scope and optimistic I/O break-even model. Uses verified schedule dimensions and preceding full replay timings; no storage bandwidth measurement or full-size cache speedup claim.",
+  "small_current_cache_replay_evidence": "TFHEpp/docs/narrow-dd-s2c-tensor-existing-cache-replay-validation.json",
+  "small_reused_checkpoint_files": 36,
+  "small_reused_cache_files": 35,
+  "small_selector_ntt_seconds": 0,
+  "full_n": 32768,
+  "full_selector_records": 38088,
+  "full_cache_spectrum_payload_bytes": 399381626880,
+  "full_cache_spectrum_payload_gib": 371.953125,
+  "raw_selector_payload_bytes": 179721732096,
+  "raw_source_verification_still_required": true,
+  "minimum_additional_cache_read_bytes_per_evaluation": 399381626880,
+  "preceding_full_selector_ntt_seconds": 219.903038783,
+  "optimistic_additional_bandwidth_to_offset_ntt_bytes_per_second": 1816171477.621595,
+  "optimistic_model_excludes": [
+    "cache canonical-residue verification",
+    "BLAKE3 payload verification",
+    "lost raw-read overlap",
+    "record metadata",
+    "cache creation"
+  ],
+  "decision": "Keep the current raw+NTT selector path on this host. Warm bounded prepared chunk loading including raw and payload verification is slower at both measured groups; do not build a complete 399GB cache on this evidence.",
+  "fresh_keys_generated": false,
+  "new_full_cache_generated": false,
+  "full_chunk_cost_evidence": "TFHEpp/docs/narrow-dd-selector56-full-chunk-cost-validation.json",
+  "measured_full_chunk_cached_time_ratios": [
+    1.1363593894382293,
+    1.174453965375093
+  ]
+}

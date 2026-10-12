@@ -1,0 +1,72 @@
+{
+  "updated_utc": "2026-10-12T00:28:50.509431+00:00",
+  "scope": "Map existing security assessments to the selected mask42 N16384 CPU port. Evidence review only, no new attack or security certificate.",
+  "n": 16384,
+  "structured_hamming_weight": 31,
+  "structured_block_widths": [
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    529,
+    514
+  ],
+  "highest_dense_public_key_log_q": 435,
+  "wide_dd_public_key_log_q": 433,
+  "sparse_switch_and_output_galois_log_q": 56,
+  "actual_integer_noise_rms": 2.828301687834186,
+  "dense_actual_noise_proxy_weakest_bits": 128.95829839375767,
+  "sparse_uniform_proxy": {
+    "log_q": 56,
+    "assumed_sigma": 3.2,
+    "weakest_bits": 143.9888568183254,
+    "uses_actual_integer_noise_rms": false,
+    "models_public_block_structure": false
+  },
+  "older_structured_sensitivity": {
+    "n": 16384,
+    "log_q": 76,
+    "sigma": 3.2,
+    "same_block_geometry_as_current_port": true,
+    "same_modulus_and_noise_as_current_port": false,
+    "joint_decode_is_heuristic": true,
+    "constructed_attack": false
+  },
+  "evidence_sha256": {
+    "TFHEpp/docs/narrow-dd-actual-noise-dense-security-validation.json": "6ee124d0fcf9eb7741317103acd0d208903cb1a4df9e572b7672e7910b18b553",
+    "Parameter-Selection/python/estimates/narrow_ckks_ll14_aux8_uniform_security.json": "26eba506bd136975927ac0062973002bb71d0b05cb6151657f578a48dad12115",
+    "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_default_geometry_control.json": "16b75fa7acbea564fc9513489ffd9287838aa2f8ec99102d9d448152598e5f2b",
+    "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode.json": "c9d47e3c59b3898efb35b843f95c4b059195084bd1680b6931647597d7d2ac84"
+  },
+  "overall_128_bit_security_validated": false,
+  "remaining_limitations": [
+    "Uniform-sparse sigma3.2 proxy is not an exact screen for integer-noise sigma2.8283.",
+    "Older structured attack sensitivity at log_q76/sigma3.2 does not establish current log_q56 security.",
+    "Ring, public block structure, dependent samples, correlated/circular keys and exact integer error distribution require separate assessment."
+  ]
+}

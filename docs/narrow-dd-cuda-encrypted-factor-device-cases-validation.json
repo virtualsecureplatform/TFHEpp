@@ -1,0 +1,102 @@
+{
+  "observed_at_utc": "2026-10-08T21:17:00.064081+00:00",
+  "scope": "Generated encrypted selector/conjugation-key fixtures for the joined packed factor CUDA graph source compiled. Host generated-key references rechecked; device branches, stream/events/reuse/cleanup and full native word/phase comparisons unexecuted on this machine.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_cuda_device.cpp": "af9881a8063ed2c94017ddcc04afd1a08a7c4e40c6737cf2dc0acabd5d70f3f9",
+    "include/ckks/narrow_cuda.hpp": "9dcc69e4257410b46755d079f1fb65b50ed7c06d3679d602c6ae108085905c44",
+    "include/ckks/narrow_cuda_setup.hpp": "575cd7dcd966f57faa3a00dea9cd651281f16bc560cedbccd04a6d95df6ca23e",
+    "include/ckks/narrow_cuda_tensor_core.hpp": "f1d5dbbb820c3c6ab751f0f496fdb95db02c5650c909adea4d282ce9ca4af66d",
+    "src/ckks/narrow_cuda.cu": "e6f9c18fb9b92193dde8364ee935c7de034457ad3fd6bb29b443ad78cc1bb7bd",
+    "src/ckks/narrow_cuda_tensor_core.cu": "5edae42540903da28226488780ceca0a1540f4c15a1deea9eb727318202fb102"
+  },
+  "entry_points": [
+    "CKKSNarrowCUDAEvaluatePackedFactor",
+    "CKKSNarrowCUDAEvaluatePackedFactorConcurrent"
+  ],
+  "points": 16,
+  "native_bits": 448,
+  "columns": [
+    1,
+    3
+  ],
+  "selector_count": 3,
+  "selector_chunks": [
+    2,
+    1
+  ],
+  "selector_q": 45,
+  "selector_delta": 23,
+  "encoded_table_delta": 8,
+  "factor_q": 37,
+  "factor_delta": 23,
+  "auto_key_q": 53,
+  "auto_auxiliary_lift": 16,
+  "auto_digit_base": 4,
+  "generated_input_key_gaussian_sigma_floor": 3.2,
+  "phase_gate": 6.103515625e-05,
+  "compiled_device_fixtures": 14,
+  "resident_evaluations_per_fixture": 3,
+  "compiled_device_evaluations": 42,
+  "compiled_output_ciphertexts": 84,
+  "compiled_full_native_word_comparisons": 18816,
+  "compiled_plaintext_phase_coefficient_comparisons": 1344,
+  "compiled_device_modes": [
+    "CUDA Core one prime",
+    "CUDA Core two primes",
+    "Tensor Core one prime",
+    "Tensor first / CUDA second sequential",
+    "both Tensor Core sequential",
+    "concurrent Tensor first / CUDA second",
+    "concurrent CUDA first / Tensor second"
+  ],
+  "compiled_concurrent_fixtures": 4,
+  "compiled_concurrent_evaluations": 12,
+  "reference": "Actual generated encrypted selectors and native conjugation key; exact CPU native ciphertext output word comparisons and independent known coefficient plaintext products/conjugation/sum phase gate. Nontrivial table substitutions and chunk accumulation.",
+  "keys_tables_and_workspaces_uploaded_before_evaluation": true,
+  "resident_ntt_tables_shared_read_only_between_matrix_and_auto": true,
+  "host_table_coefficients_restored_between_repeats": true,
+  "fixture_private_nonblocking_streams_and_completion_events": true,
+  "fixture_destructor_synchronizes_before_device_buffer_free_source_implemented": true,
+  "fixture_host_upload_arrays_outlive_cleanup_source_implemented": true,
+  "fixture_partial_constructor_cleanup_source_implemented": true,
+  "cmake_final_build_exit_code": 0,
+  "cmake_final_build_session": 88038,
+  "cmake_final_build_log": "/tmp/ckks-narrow-cuda-encrypted-factor-device-cases-final-build.log",
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 28833,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-encrypted-factor-device-cases-host-ubsan-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-encrypted-factor-device-cases-host-ubsan-argv.json",
+  "host_ubsan_scope": "C++ host test/inline native crypto instrumented; unchanged current host-instrumented CUDA Core/Tensor Core objects reused. BLAKE3 and CUDA runtime uninstrumented; device kernels uninstrumented/unexecuted.",
+  "device_count": 0,
+  "device_evaluations_executed": 0,
+  "host_metrics": {
+    "cmake": {
+      "1": 2.7418136596679688e-06,
+      "3": 1.1920928955078125e-06
+    },
+    "ubsan": {
+      "1": 2.1457672119140625e-06,
+      "3": 1.1920928955078125e-06
+    }
+  },
+  "cmake_test_actual_exit_code": 77,
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-encrypted-factor-device-cases-cmake-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-factor-device-cases-cmake-test.stderr",
+  "ubsan_test_actual_exit_code": 77,
+  "ubsan_test_log": "/tmp/ckks-narrow-cuda-encrypted-factor-device-cases-ubsan-test.log",
+  "ubsan_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-factor-device-cases-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "gpu_skip_reason": "no CUDA-capable device is detected",
+  "encrypted_gpu_factor_validated": false,
+  "device_full_native_word_comparison_validated": false,
+  "device_plaintext_phase_gate_validated": false,
+  "device_resident_key_reuse_validated": false,
+  "device_concurrent_event_schedule_validated": false,
+  "fixture_device_exception_cleanup_validated": false,
+  "full_profile_fft_factor_compared": false,
+  "encrypted_dd_tree_connected": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

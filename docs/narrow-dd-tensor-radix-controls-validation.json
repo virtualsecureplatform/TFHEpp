@@ -1,0 +1,46 @@
+{
+  "observed_at_utc": "2026-10-10T11:48:31.806426+00:00",
+  "scope": "N16384 public polynomial zero-rescale tensor: original balanced4 versus explicit balanced16 versus independent exact single-prime integer NTT convolution",
+  "actual_exit_codes": [
+    {
+      "mode": "--full",
+      "exit_code": 0
+    },
+    {
+      "mode": "--packed",
+      "exit_code": 0
+    }
+  ],
+  "all_checks_passed": true,
+  "coefficients_checked": 884736,
+  "fresh_keys_generated": false,
+  "encrypted_gadget_unchanged": true,
+  "control_source_sha256": "678b032a95051111e90d4185179e260c7c06beb19ba21105c1c61b79932361de",
+  "control_executable_sha256": "4d7bcef3be1501293a381dd3cb624d2e995f61d86ef5e0ef8c9bce260c03d961",
+  "results": {
+    "full": [
+      "PASS lhsQ=348 rhsQ=348 boundary=0 coefficients=49152 legacy_seconds=0.987796 widened_seconds=0.561884",
+      "PASS lhsQ=348 rhsQ=300 boundary=0 coefficients=49152 legacy_seconds=0.958823 widened_seconds=0.558589",
+      "PASS lhsQ=300 rhsQ=300 boundary=0 coefficients=49152 legacy_seconds=0.887323 widened_seconds=0.644325",
+      "PASS lhsQ=252 rhsQ=252 boundary=0 coefficients=49152 legacy_seconds=0.661392 widened_seconds=0.389265",
+      "PASS lhsQ=204 rhsQ=204 boundary=0 coefficients=49152 legacy_seconds=0.576281 widened_seconds=0.354381",
+      "PASS lhsQ=156 rhsQ=156 boundary=0 coefficients=49152 legacy_seconds=0.454914 widened_seconds=0.34897",
+      "PASS lhsQ=108 rhsQ=108 boundary=0 coefficients=49152 legacy_seconds=0.360713 widened_seconds=0.313784",
+      "PASS lhsQ=348 rhsQ=348 boundary=1 coefficients=49152 legacy_seconds=0.674039 widened_seconds=0.251021"
+    ],
+    "packed": [
+      "PASS lhsQ=345 rhsQ=345 boundary=0 coefficients=49152 legacy_seconds=0.835416 widened_seconds=0.487402",
+      "PASS lhsQ=345 rhsQ=296 boundary=0 coefficients=49152 legacy_seconds=0.749608 widened_seconds=0.507489",
+      "PASS lhsQ=296 rhsQ=296 boundary=0 coefficients=49152 legacy_seconds=1.01126 widened_seconds=0.487193",
+      "PASS lhsQ=247 rhsQ=247 boundary=0 coefficients=49152 legacy_seconds=0.655958 widened_seconds=0.403497",
+      "PASS lhsQ=198 rhsQ=198 boundary=0 coefficients=49152 legacy_seconds=0.516095 widened_seconds=0.365089",
+      "PASS lhsQ=149 rhsQ=149 boundary=0 coefficients=49152 legacy_seconds=0.436533 widened_seconds=0.294547",
+      "PASS lhsQ=345 rhsQ=345 boundary=1 coefficients=49152 legacy_seconds=0.545174 widened_seconds=0.250254",
+      "PASS lhsQ=247 rhsQ=247 boundary=1 coefficients=49152 legacy_seconds=0.42188 widened_seconds=0.229735",
+      "PASS lhsQ=198 rhsQ=198 boundary=1 coefficients=49152 legacy_seconds=0.402374 widened_seconds=0.281953",
+      "PASS lhsQ=149 rhsQ=149 boundary=1 coefficients=49152 legacy_seconds=0.304739 widened_seconds=0.221169"
+    ]
+  },
+  "whole_refresh_validated": false,
+  "paper_performance_reproduced": false
+}

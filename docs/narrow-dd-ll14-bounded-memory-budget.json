@@ -1,0 +1,24 @@
+{
+  "scope": "Conservative LL14 bounded sigmoid payload estimate, now checked against a terminal full-size run; timings under concurrent CPU/memory contention",
+  "n": 16384,
+  "frequency_columns": 24,
+  "components": {
+    "persistent_key_plan_and_fft_payload_bytes": 15444115680,
+    "loaded_selector_group_bytes": 970719232,
+    "one_selector_group_ntt_bytes": 6933708800,
+    "factor_digit_workspace_bytes": 2202009600,
+    "head_tail_factor_capacity_bytes": 2818572288,
+    "factor_accum_bytes": 88080384,
+    "permutation_bytes": 69337088,
+    "bounded_rotation_key_bytes": 2415919104
+  },
+  "factor_phase_payload_bytes": 28526543072,
+  "rotation_phase_payload_bytes": 20678607072,
+  "temporary_and_runtime_reserve_bytes": 5368709120,
+  "estimated_process_envelope_bytes": 33895252192,
+  "virtual_address_space_limit_bytes": 36507222016,
+  "full_size_validation_passed": true,
+  "measured_maximum_resident_set_bytes": 28538318848,
+  "terminal_exit_code": 0,
+  "validation_report": "narrow-dd-ll14-sigmoid-bounded.json"
+}

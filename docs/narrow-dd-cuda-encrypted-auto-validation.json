@@ -1,0 +1,82 @@
+{
+  "observed_at_utc": "2026-10-08T18:26:29.529403+00:00",
+  "scope": "Actual native TFHEpp encrypted automorphism keys/ciphertexts checked on CPU in coefficient and auxiliary-prime spectral representations; encrypted GPU tests compiled but unexecuted. Small-ring validation does not establish full-refresh accuracy or security.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_cuda_device.cpp": "b51e1bed5d997e28e52ac889edd74657a474a8cc7ecbad3e91db135927b3f48a",
+    "src/ckks/cuda/CMakeLists.txt": "410500deb440b2b3eb500f29d3977f06483f397ccbd653deb164ca1ddce8bb8d",
+    "include/ckks/narrow_cuda_device.hpp": "6dadd94a4b097ed92262c2e255debd8b9722f56f4509fed8e7fa93021ea8b734",
+    "include/ckks/narrow_cuda_setup.hpp": "d79ea13c213005bc32ba4813307dd02b096901ca4cf5e50faaeb6c211949e7a5",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a"
+  },
+  "cuda_cmake_configure_exit_code": 0,
+  "cuda_cmake_configure_log": "/tmp/ckks-narrow-cuda-encrypted-configure.log",
+  "cuda_cmake_build_exit_code": 0,
+  "cuda_cmake_build_session": 46546,
+  "cuda_cmake_build_log": "/tmp/ckks-narrow-cuda-encrypted-spectral-final-build.log",
+  "test_actual_exit_code": 77,
+  "test_log": "/tmp/ckks-narrow-cuda-encrypted-spectral-cmake-test.log",
+  "test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-spectral-cmake-test.stderr",
+  "host_metadata_invalid_cases_passed": 9,
+  "host_metadata_valid_layouts_passed": 1,
+  "actual_native_auto_key_generation": "CKKSAutoKeyGen<P,53>",
+  "actual_native_ciphertext_encryption": "ckksEncrypt<P> at Q37/Delta23",
+  "noise": {
+    "modular_stdev": "2^-448",
+    "uniform_bits": 0,
+    "effective_coefficient_gaussian_stddev": 3.2,
+    "floor_checked_for_both_input_and_key_levels": true
+  },
+  "profile": {
+    "points": 16,
+    "native_bits": 448,
+    "mask_rank": 1,
+    "base_bits": 4,
+    "key_log_q": 53,
+    "input_log_q": 37,
+    "log_delta": 23,
+    "auxiliary_bits": 16,
+    "columns": 3,
+    "exponents": [
+      5,
+      31
+    ],
+    "auxiliary_primes": [
+      2301972608560791553,
+      2295217002959732737
+    ]
+  },
+  "native_encrypted_keys_generated": 2,
+  "native_encrypted_ciphertexts_checked": 6,
+  "host_fresh_coefficient_phase_gate": 3.814697265625e-06,
+  "host_substituted_coefficient_phase_gate": 3.814697265625e-06,
+  "host_phase_gates_passed": true,
+  "phase_oracle": "Exact native coefficient-space body-minus-mask*secret negacyclic convolution followed by native coefficient decoding; no floating FFT decryption.",
+  "host_spectral_ciphertext_prime_comparisons_passed": 12,
+  "host_spectral_oracle": "Actual native prepared key adapter; CPU centered Bbar input decomposition and natural-order NTT; secondary-axis spectral contraction, inverse NTT and centered reconstruction at each of the first two primes; native auxiliary rounding. Exact ciphertext equality against independent direct full-torus raw-key row products.",
+  "noncanonical_input_upper_bits_covered": [
+    90,
+    180
+  ],
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 29920,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-encrypted-spectral-host-ubsan-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-encrypted-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-encrypted-spectral-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-spectral-ubsan-test.stderr",
+  "host_ubsan_all_host_checks_passed": true,
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "C++ test and instantiated inline native key generation/encryption/setup/phase/spectral/reference arithmetic instrumented; separately compiled CUDA and BLAKE3 libraries uninstrumented. Device allocation, kernels and runtime lifetime paths not executed.",
+  "compiled_encrypted_gpu_ciphertext_comparisons": 12,
+  "compiled_encrypted_gpu_evaluator_instances": 4,
+  "compiled_encrypted_gpu_reference": "Exact ciphertext equality versus CPU direct raw-row products, followed by exact decoded phase equality. CPU expected ciphertexts independently pass the 2^-18 substituted phase gate.",
+  "encrypted_gpu_checks_executed": false,
+  "gpu_device_count": 0,
+  "encrypted_gpu_evaluation_validated": false,
+  "device_ownership_runtime_validated": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

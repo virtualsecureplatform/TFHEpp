@@ -1,0 +1,125 @@
+{
+  "scope": "Validate full-ring prefix arithmetic with algebraic fixtures, not FBS runs.\n\nAll full-ring phase coefficients have independently constructed references.\nThese fixtures do not run encrypted functional bootstrapping or inspect keys.\n",
+  "toy_cases": 15,
+  "rejected_controls": [
+    "non_power_of_two_transform",
+    "nonternary_secret",
+    "oversized_ring",
+    "wrong_ciphertext_shape"
+  ],
+  "full_phase_coefficients_checked": 32768,
+  "full_decoded_slots_checked": 16384,
+  "full_analytical_slot_checks": [
+    {
+      "log_q": 85,
+      "log_delta": 44,
+      "maximum_analytical_error": 5.535240417373934e-14
+    },
+    {
+      "log_q": 108,
+      "log_delta": 48,
+      "maximum_analytical_error": 6.550823241441511e-15
+    }
+  ],
+  "full_archive_prefix_result": {
+    "function": "sigmoid",
+    "n": 16384,
+    "prefix_bytes": 5636193,
+    "phase_arithmetic": "exact 15-bit limbs with one bounded 31-bit NTT prime",
+    "fresh_input_max_error": 5.535240417373934e-14,
+    "max_error": 0.5851273416924379,
+    "rms_error": 0.5091815209238146,
+    "sparse_key_geometry_passed": true,
+    "evaluation_key_suffix_validated": false,
+    "retained_square_validated": false
+  },
+  "synthetic_prefix_path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/aux8-prefix-algebraic-xxcl8njm/synthetic-prefix.bin",
+  "synthetic_prefix_only": true,
+  "full_encrypted_fbs_accuracy_validated": false,
+  "security_validated": false,
+  "source_sha256": {
+    "narrow_ckks_prefix_arithmetic_validate.py": "0a940415a1b0b20b57239024d686090ba77c8d1b4282011f4b5342e2b2a90c4c",
+    "narrow_ckks_prefix_arithmetic.py": "7f552abcef41d0d87b3031759505e1ff00190267e4754c8e10bed234d7f8d044",
+    "narrow_ckks_auxiliary_probe_prefix.py": "1641802409f402ad59a814ea0eaa8714f39dc7f336427f4dd2be9146d7ecf124"
+  },
+  "utc": "2026-10-09T08:30:34.588592+00:00",
+  "session": 17040,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "initial_validation_session": 97057,
+  "initial_validation_actual_exit_code": 0,
+  "stderr_bytes": 0,
+  "wall_time": "0:09.40",
+  "peak_rss_kib": 36064,
+  "malformed_report_state_controls": [
+    {
+      "name": "nan_max",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "infinite_rms",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "negative_fresh",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "string_max",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "bool_rms",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "wrong_function",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "wrong_metric",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "truncated_prefix",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "name": "out_of_domain",
+      "actual_exit_code": 1,
+      "expected_exit_code": 1
+    }
+  ],
+  "controls_session": 47952,
+  "controls_wrapper_actual_exit_code": 0,
+  "large_phase_control": {
+    "function": "sigmoid",
+    "n": 512,
+    "prefix_bytes": 176225,
+    "phase_arithmetic": "integer scalar convolution",
+    "fresh_input_max_error": 8.603562567773713e-12,
+    "max_error": 5.764607523034235e+17,
+    "rms_error": 5.764607523034235e+17,
+    "sparse_key_geometry_passed": true,
+    "evaluation_key_suffix_validated": false,
+    "retained_square_validated": false,
+    "scope": "Inspect auxiliary8 N512/N16384 prefixes using independent phase arithmetic.\n\nReads secrets only from a private diagnostic file. Outputs metrics, never key\nmaterial. Does not inspect evaluation-key suffixes or retained-square keys.\n",
+    "state_bytes": 176225,
+    "report_sha256": "654ea35a554a55a3560f6b9b0547bb5a785d5d304eda1874087742f0c032d7ec",
+    "comparison_relative_tolerance": 1e-11,
+    "comparison_absolute_tolerance": 1e-11,
+    "fixed_23bit_refresh_passed": false
+  },
+  "large_phase_control_injected": true,
+  "original_captured_state_sha256_unchanged": true,
+  "small_prefix_regression_actual_exit_code": 0,
+  "real_full_failure_prefix_validated": false
+}

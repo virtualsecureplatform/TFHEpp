@@ -1,0 +1,14 @@
+{
+  "scope": "Joint envelope for suspended packed RSS plus both active process payloads, one shared host/runtime reserve; not measured peak",
+  "packed_pid": 1599409,
+  "packed_preserved_rss_bytes": 82529402880,
+  "basis_pid": 1643002,
+  "basis_payload_bytes": 33959772400,
+  "ll13_payload_bytes": 3120398576,
+  "shared_temporary_and_runtime_reserve_bytes": 10737418240,
+  "joint_envelope_bytes": 130346992096,
+  "host_memory_bytes": 134843355136,
+  "launch_mem_available_bytes": 22281871360,
+  "ll13_virtual_address_limit_bytes": 17179869184,
+  "packed_must_remain_suspended_while_basis_active": true
+}

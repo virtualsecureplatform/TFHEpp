@@ -1,0 +1,104 @@
+{
+  "scope": "N512 frequency-basis checkpoint reuse controls; C++ accuracy gates and exact serialized refresh/square/normalized ciphertexts, independent integer phases for all three functions; not full-ring validation or security",
+  "build_actual_exit_code": 0,
+  "terminal": true,
+  "all_checks_passed": true,
+  "initial_fixture_generation_count": 1,
+  "replay_fresh_keys_generated": false,
+  "exe_sha256": "13ef030801b5a9c28d470290cf4d0630964bcf6dac6030fe6065bb3e92e59970",
+  "source_sha256": "fb0ad3235ae547b0a5067d258e8ffbdee8958e60b00a826dcd3f231b4e6feb9d",
+  "memory_budget": {
+    "jobs": [
+      {
+        "pid": 1910341,
+        "start_ticks": 225941687,
+        "rss_bytes": 17656209408,
+        "remaining_cap_bytes": 51063267328
+      },
+      {
+        "pid": 1940496,
+        "start_ticks": 228379705,
+        "rss_bytes": 9334960128,
+        "remaining_cap_bytes": 7844909056
+      },
+      {
+        "pid": 1940434,
+        "start_ticks": 228373611,
+        "rss_bytes": 8581836800,
+        "remaining_cap_bytes": 12892999680
+      }
+    ],
+    "available_bytes": 95163011072,
+    "required_bytes": 86833561600
+  },
+  "stage": "complete",
+  "child_pid": 1943119,
+  "initial_actual_exit_code": 0,
+  "replay_actual_exit_code": 0,
+  "checkpoint_files_unchanged": true,
+  "ciphertext_identity": {
+    "sigmoid": true,
+    "gelu": true,
+    "tanh": true
+  },
+  "independent_phase_checks": {
+    "sigmoid": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 512,
+      "function": "sigmoid",
+      "metrics": {
+        "fresh_input_max_error": 1.0157029543322783e-11,
+        "max_error": 4.180547616507686e-09,
+        "post_refresh_product_max_error": 7.0233752135247876e-09,
+        "square_normalization_max_error": 2.1165520533573635e-11
+      },
+      "product_tolerance": 4.50319595316329e-07,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    },
+    "gelu": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 512,
+      "function": "gelu",
+      "metrics": {
+        "fresh_input_max_error": 1.0157029543322783e-11,
+        "max_error": 3.3698084311241213e-09,
+        "post_refresh_product_max_error": 3.236385124717918e-08,
+        "square_normalization_max_error": 2.6969314345098643e-11
+      },
+      "product_tolerance": 1.4678657411332307e-06,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    },
+    "tanh": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 512,
+      "function": "tanh",
+      "metrics": {
+        "fresh_input_max_error": 1.0157029543322783e-11,
+        "max_error": 1.602449818761247e-08,
+        "post_refresh_product_max_error": 4.4484020104693454e-08,
+        "square_normalization_max_error": 2.226855031659685e-11
+      },
+      "product_tolerance": 4.5615794863043815e-07,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    }
+  },
+  "mismatch_actual_exit_code": 2,
+  "mismatch_rejected": true,
+  "checkpoint_files_unchanged_after_rejection": true,
+  "observed_at_utc": "2026-10-10T13:16:43.593912+00:00",
+  "first_mismatch_actual_exit_code": -6,
+  "first_mismatch_failure": "Profile rejected by uncaught exception; corrected to return2.",
+  "corrected_replay_memory_budget": {
+    "available_bytes": 95168696320,
+    "required_bytes": 86570504192
+  },
+  "corrected_replay_actual_exit_code": 0,
+  "existing_directory_actual_exit_code": 2,
+  "existing_directory_rejected": true,
+  "independent_helper_sha256": "1fa76656f8c9a2ae6e5b1f71b192ba6e6b4fea08fdbc49b8b5aa472cfcbeb2c8",
+  "corrected_build_actual_exit_code": 0,
+  "checkpoint_file_count": 36
+}

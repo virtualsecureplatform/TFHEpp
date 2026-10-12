@@ -1,0 +1,19 @@
+{
+  "scope": "Run the retained one-bit selector experiment after a matching baseline.\n\nWaits for the original process to terminate and for its authoritative completion\nreport. Refuses a nonmatching baseline. Rechecks frozen executable/source,\nretained state, corrected selector hash and available memory before launching.\nNo keys or inputs are generated. Diagnostic accuracy is separate from exit code.\n",
+  "terminal": true,
+  "stage": "diagnostic launcher failed",
+  "baseline_pid": 1841995,
+  "baseline_start_ticks": 219001048,
+  "fresh_keys_generated": false,
+  "failure_cause_established": false,
+  "security_validated": false,
+  "baseline_observation": {
+    "pid": 1841995,
+    "start_ticks": 219001048,
+    "state": "R",
+    "rss_bytes": 12622172160,
+    "cpu_ticks": 1594889,
+    "cap_bytes": 17179869184
+  },
+  "error": "baseline did not complete with identical saved ciphertext"
+}

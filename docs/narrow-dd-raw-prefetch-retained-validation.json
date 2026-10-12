@@ -1,0 +1,104 @@
+{
+  "observed_at_utc": "2026-10-11T06:25:30.251389+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "N512 retained checkpoint exact batching/union and bounded raw read-ahead regression; no full-size performance claim.",
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-random-key-20261011/checkpoint",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "memory_limit_kib": 4194304,
+  "peak_rss_kib": 303144,
+  "elapsed_seconds": 50.6,
+  "observations": [
+    {
+      "tile_size": 5,
+      "inputs": 3,
+      "frequencies_per_input": 4,
+      "factor_groups": 105,
+      "expected_factor_groups": 105,
+      "exact_coefficients": 3072,
+      "passed": true
+    },
+    {
+      "tile_size": 7,
+      "inputs": 3,
+      "frequencies_per_input": 4,
+      "factor_groups": 70,
+      "expected_factor_groups": 70,
+      "exact_coefficients": 3072,
+      "passed": true
+    },
+    {
+      "tile_size": 12,
+      "inputs": 3,
+      "frequencies_per_input": 4,
+      "factor_groups": 35,
+      "expected_factor_groups": 35,
+      "exact_coefficients": 3072,
+      "passed": true
+    },
+    {
+      "union_tile_size": 22,
+      "inputs": 3,
+      "unique_frequencies": 11,
+      "factor_groups": 70,
+      "expected_factor_groups": 70,
+      "exact_root_coefficients": 33792,
+      "passed": true
+    },
+    {
+      "union_tile_size": 33,
+      "inputs": 3,
+      "unique_frequencies": 11,
+      "factor_groups": 35,
+      "expected_factor_groups": 35,
+      "exact_root_coefficients": 33792,
+      "passed": true
+    },
+    {
+      "raw_chunk_calls": 1260,
+      "maximum_raw_chunk_count": 8,
+      "full_group_load_forbidden": true,
+      "passed": true
+    },
+    {
+      "prefetched_exact_coefficients": 3072,
+      "raw_chunk_calls": 105,
+      "maximum_raw_chunk_count": 8,
+      "full_group_load_forbidden": true,
+      "passed": true
+    },
+    {
+      "short_raw_chunk_rejected": true,
+      "prefetch": false,
+      "passed": true
+    },
+    {
+      "short_raw_chunk_rejected": true,
+      "prefetch": true,
+      "passed": true
+    }
+  ],
+  "prefetched_exact_output_coefficients": 3072,
+  "prefetched_raw_chunk_calls": 105,
+  "maximum_raw_chunk_count": 8,
+  "full_group_load_forbidden": true,
+  "synchronous_and_prefetched_short_reads_rejected": true,
+  "checkpoint_files_checked": 36,
+  "checkpoint_files_unchanged": true,
+  "fresh_keys_generated": false,
+  "full_size_speedup_verified": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "1a7b5269b882d0bccc1b551e4b6329f7f9e1be9281910a402d8a7a0543f06d8a",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/test/ckks/ckks_narrow_basis_batch_checkpoint.cpp": "caa981241b9476027dfa559f8175f06c7f364e4ba090172cd3b21a092f5c8eea"
+  },
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/raw-prefetch-retained-20261011/before.json": "f7f851351441e3f28f26a5167ab596262a91c07a1c2be6edf18292e8a5ece717",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/raw-prefetch-retained-20261011/after.json": "f7f851351441e3f28f26a5167ab596262a91c07a1c2be6edf18292e8a5ece717",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/raw-prefetch-retained-20261011/build.log": "1b034bc89aaec9a3049fba749d46ff99efe0590d1e2cc7caa8f886346efe7209",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/raw-prefetch-retained-20261011/test.log": "c7718a37b1248d9d2256183004ff8cfda737c50ca26b67e7f37fe7893d39ca89",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/raw-prefetch-retained-20261011/time.log": "4a3e6ea373ad2a09dc627968ee27bd5e70934d56ba55e0292a869dfc4e5c2390"
+  },
+  "executable_sha256": "3cf2ca1ffa8ebeb54bb9510d04f5cc7b4bd8fc079b71b2449495e735bb20f259"
+}

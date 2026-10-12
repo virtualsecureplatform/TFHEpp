@@ -1,0 +1,181 @@
+{
+  "scope": "Full direct expanded selector setup using retained dense/structured private keys. Reuse qualified two pilot groups; generate remaining34 once, save all groups for future replay. No new private, automorphism or DD keys. Expanded Section5 setup; does not qualify coefficient-packed high-precision setup or full refresh/security/performance.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete setup",
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/setup.cpp": "5dbbaa891f061966826e69599d9e30ee9c7f586c80639723f51eb7a43fc33046",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/run.py": "de0308cdfd7aed649576b7ced9855258e84aac852ef2c8d2f20f6ce52d888a80",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "179cd5c6134d6be529e659530b02c6f4c1d189d9a8bae946240d623e4638b3fc",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c"
+  },
+  "checkpoint_sha256_before": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "pilot_group_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-pilot-20261011/head-30.bin": "7cdd3cdec57b4ce522536708989759f59f1a7d6ccf79a4a1cf6509922176e01d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-pilot-20261011/tail-4.bin": "32494c9ad90dd6d8819a158fc2f18a00c74d1716291455f49870c18d11b6d663"
+  },
+  "build_actual_exit_code": 0,
+  "evaluator_pid": 2053485,
+  "evaluator_start_ticks": 238677557,
+  "test_actual_exit_code": 0,
+  "report": {
+    "new_public_selector_groups_generated": 34,
+    "reused_public_selector_groups": 2,
+    "new_public_selector_ciphertexts_generated": 17986,
+    "fresh_private_keys_generated": false,
+    "new_automorphism_or_dd_keys_generated": 0,
+    "generation_and_write_seconds": 634.855507998,
+    "all_group_headers_and_lengths_validated": true
+  },
+  "selector_group_artifacts": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-0.bin": {
+      "bytes": 970719305,
+      "sha256": "d4c1a39ddd7398eb4894493edc7119ba841e3028cb948854db2b5f43daad295f"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-1.bin": {
+      "bytes": 970719305,
+      "sha256": "bd24a0259f47e8b39cb5e4068dc49a5be057f87694a25cf4a4bbde745ac0f0ed"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-10.bin": {
+      "bytes": 970719305,
+      "sha256": "b41d92e3441b8c5d5f4f0ec1ec22e8905f4f08d4311edc71c483dcfb530d699e"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-11.bin": {
+      "bytes": 970719305,
+      "sha256": "5b2b76a0df36b266f0a91a298e99d349a392691900982bd582d0fdfca03fca65"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-12.bin": {
+      "bytes": 970719305,
+      "sha256": "1e21ec3805a1f22d896df9c67b0ee57e7a5565dc7a1e7026a0e7e92db0774a7d"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-13.bin": {
+      "bytes": 970719305,
+      "sha256": "18b853726dd16c9416817cea6ce7345afb3f87bb9f2d8227ac7d9306ba9605e7"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-14.bin": {
+      "bytes": 970719305,
+      "sha256": "c4e32be71804129870ee0d77e960fdd45fabc9f90c284646e69d8bf644733a48"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-15.bin": {
+      "bytes": 970719305,
+      "sha256": "eada8530e7cf6850788ece2c57dacda67d97ece763297f5db8a6af3fc0a9abb0"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-16.bin": {
+      "bytes": 970719305,
+      "sha256": "04f195b4a9d4e2fc184acd2907a168c9f008dc9001ddaf43b066fa05da5c6a4f"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-17.bin": {
+      "bytes": 970719305,
+      "sha256": "b569ab8461095d37d8911c5396aa9d08e44b001d4dbb4d3339eda5c89d4b39a0"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-18.bin": {
+      "bytes": 970719305,
+      "sha256": "0c578bc4c5cc2d2d9e3f807470edd5b970ac25d205bfc66428871bfff329dead"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-19.bin": {
+      "bytes": 970719305,
+      "sha256": "c3a304cdd18461b2503468b215cab82df9ac8b39906b2e83ea157a35c97bb0be"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-2.bin": {
+      "bytes": 970719305,
+      "sha256": "4090e455562fee20a53d76b09c6349918cacf032af4564167c4bedaf666ef1ea"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-20.bin": {
+      "bytes": 970719305,
+      "sha256": "063d4dcf9c2f7c262b3ebd5021615c3f5ece7b6a708096392f5c461b03f07bcf"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-21.bin": {
+      "bytes": 970719305,
+      "sha256": "cc1715cb47af477b17099728d9ba540b1af9f2ee3266b724bdb6e1aac27ca78f"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-22.bin": {
+      "bytes": 970719305,
+      "sha256": "388c180c44c6c6c42b7b66f6dadbf780105f12ffaacdf86ec9bbee68ce34eea0"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-23.bin": {
+      "bytes": 970719305,
+      "sha256": "5fa0f3edf39219963853149d137bb1b4e5cbba9d4491e7287af07d766033f158"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-24.bin": {
+      "bytes": 970719305,
+      "sha256": "b154ed03ae55184caaf1dc328ea51528ffaec1bfb16c26079e7602eb0efb2dfc"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-25.bin": {
+      "bytes": 970719305,
+      "sha256": "c65780f7bd9eb7bf170011b1ed1eff2052432c326fa6cc6868530639f19a1c8c"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-26.bin": {
+      "bytes": 970719305,
+      "sha256": "149f8265bfc4ab1bc63c3c7ff04b2c4fadfc9426e260483a987d63413b5958d8"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-27.bin": {
+      "bytes": 970719305,
+      "sha256": "1a72233ddb75881765008bd10c5ebd9b0c54065d7e1190663255329c4929cd9c"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-28.bin": {
+      "bytes": 970719305,
+      "sha256": "3dca87f6309e71bc14afd8a2e3c4ac0573696433b263d30c01dad2387c7571ec"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-29.bin": {
+      "bytes": 970719305,
+      "sha256": "2a503e76c4a04a46128d8518cfed35e3ec4b2024ba913989351ff6d112097aca"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-3.bin": {
+      "bytes": 970719305,
+      "sha256": "98ea8579871453512758c82afc08695a349af320231e598c84106941ae54aaf7"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-30.bin": {
+      "bytes": 970719305,
+      "sha256": "7cdd3cdec57b4ce522536708989759f59f1a7d6ccf79a4a1cf6509922176e01d"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-4.bin": {
+      "bytes": 970719305,
+      "sha256": "79fad65391f6636823601655ed5c54db4c6790cd794969612991e8024c4547a7"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-5.bin": {
+      "bytes": 970719305,
+      "sha256": "72a2264ee3b4c95f3cde446c97161c065000a44a98e919c00ed8a95c2ec5c0ff"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-6.bin": {
+      "bytes": 970719305,
+      "sha256": "db3d11d73af93f5fb0525005119bba62b8d948649dc330c031a50b6032c6099a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-7.bin": {
+      "bytes": 970719305,
+      "sha256": "5e365b9ce158c706219219d5b45237b54ce2281b36b905a50367e0ce7fc96f4d"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-8.bin": {
+      "bytes": 970719305,
+      "sha256": "17ccf89787f5a83c35eca825f31d79c103d582deb5426c9810b9e48e83a9b4d8"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/head-9.bin": {
+      "bytes": 970719305,
+      "sha256": "249dcef3dd73c7977b22150353a71a377200046333c2d5d07e539239f5435849"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/tail-0.bin": {
+      "bytes": 970719305,
+      "sha256": "92783f73fa2dedc0a1967399db2d31b84b24d6142a1e754ac5dc9aa25ef51217"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/tail-1.bin": {
+      "bytes": 970719305,
+      "sha256": "3413fe8e492cd99eb96f26e2af2d81838f459ad10ac1c00742a4f33d2c19b927"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/tail-2.bin": {
+      "bytes": 970719305,
+      "sha256": "fcc0683bac76050a3241134946fcdbdf8c47712eee6fd3146f8b45aebb5c3da1"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/tail-3.bin": {
+      "bytes": 970719305,
+      "sha256": "1512536e38592c0b0bb7f18097bc9d04efd561484f2737099195c2695333affe"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-direct-selector-setup-20261011/selectors/tail-4.bin": {
+      "bytes": 970719305,
+      "sha256": "32494c9ad90dd6d8819a158fc2f18a00c74d1716291455f49870c18d11b6d663"
+    }
+  },
+  "checkpoint_unchanged": true,
+  "pilot_groups_unchanged": true,
+  "sources_unchanged": true
+}

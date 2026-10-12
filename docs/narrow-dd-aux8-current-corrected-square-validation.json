@@ -1,0 +1,65 @@
+{
+  "scope": "Square a completed corrected aux8 replay using its original retained key.\n\nRequires independent replay metrics, checks retained-state and square-program\nprovenance, and budgets memory before evaluation. Process success and accuracy\nare reported separately. This does not establish the archived failure's cause.\n",
+  "terminal": true,
+  "stage": "corrected replay square terminal",
+  "destination": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/square-untraced-one-bit-diagnostic-v1",
+  "state_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "prefix_sha256": "95ec6468e2f634bf8368887719a2501f9c66db61967ff41c47de2e82e52a2782",
+  "source_sha256": "7b021c81fdbf3759021593d4707ec27c0e753cdfff2b0855e09749fc200f98a3",
+  "executable_sha256": "253ebab139b8086570a791bafa160fec52cfc640ff43a483460d93f33a5b100e",
+  "budget": {
+    "utc": "2026-10-09T15:06:37.094559+00:00",
+    "jobs": [
+      {
+        "pid": 1756575,
+        "start_ticks": 211884551,
+        "state": "R",
+        "rss_bytes": 16676110336,
+        "cpu_ticks": 28389631,
+        "cap_bytes": 68719476736
+      }
+    ],
+    "available_bytes": 115047587840,
+    "required_bytes": 65062486016,
+    "host_reserve_bytes": 10737418240,
+    "child_limit_bytes": 2147483648,
+    "parent_limit_bytes": 134217728,
+    "eligible": true
+  },
+  "fixed_23bit_refresh_passed": true,
+  "fresh_keys_generated": false,
+  "failure_cause_established": false,
+  "security_validated": false,
+  "child_pid": 1852604,
+  "actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "function": "sigmoid",
+    "fresh_keys_generated": false,
+    "log_q": 60,
+    "log_delta": 48,
+    "retained_square_evaluated": true,
+    "independent_phase_validated": false,
+    "post_refresh_product_max_error": 9.216953019217234e-09,
+    "rms_error": 2.4462853625423155e-09,
+    "target_amplitude": 1.3887772203090152,
+    "product_tolerance": 4.50319595316329e-07,
+    "product_accuracy_passed": true
+  },
+  "independent_phase": {
+    "n": 16384,
+    "function": "sigmoid",
+    "log_q": 60,
+    "log_delta": 48,
+    "post_refresh_product_max_error": 9.216969118541319e-09,
+    "rms_error": 2.4462852306032912e-09,
+    "target_amplitude": 1.3887772203090152,
+    "product_tolerance": 4.50319595316329e-07,
+    "product_accuracy_passed": true,
+    "independent_phase_validated": true,
+    "security_validated": false,
+    "retained_key_coefficients_validated": false
+  },
+  "square_sha256": "7d784c049ef6547ca9cfbaa5d1b3b09949b83eccfa7c8cda3d4be585c5cdf321",
+  "corrected_refresh_and_square_passed": true
+}

@@ -1,0 +1,66 @@
+{
+  "observed_at_utc": "2026-10-10T20:14:24.360840+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Read-only process/file progress observer controls and real live sampling, not benchmark accuracy or completion.",
+  "source_sha256": "1de5eb3f1ece7d4fd0eae64780ee7185412838305267833134d6ec3cea306cb8",
+  "controls": {
+    "live_pid_start_identity": true,
+    "wrong_start_identity_rejected": true,
+    "absent_pid_recognized": true,
+    "existing_outputs_rejected_and_preserved": true,
+    "real_cpu_deltas_positive": true,
+    "atomic_summary_matches_history": true,
+    "output_files_private": true
+  },
+  "observer_session_id": 60263,
+  "observer_duration_seconds": 1800,
+  "observer_interval_seconds": 30,
+  "observer_address_space_limit_bytes": 134217728,
+  "observer_history": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/live-progress-20261010/live.jsonl",
+  "observer_summary": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/live-progress-20261010/latest.json",
+  "observer_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/live-progress-20261010/observer.log",
+  "samples_observed": 4,
+  "last_observation": {
+    "observed_utc": "2026-10-10T20:14:13.336247+00:00",
+    "elapsed_seconds": 90.77001544414088,
+    "interval_seconds": 30.414022624958307,
+    "jobs": {
+      "packed": {
+        "pid": 1910341,
+        "start_ticks": 225941687,
+        "state": "R",
+        "cpu_ticks": 11659225,
+        "rss_bytes": 17755836416,
+        "cpu_seconds_since_previous": 70.13
+      },
+      "replay": {
+        "pid": 1970702,
+        "start_ticks": 230912314,
+        "state": "D",
+        "cpu_ticks": 189279,
+        "rss_bytes": 23746908160,
+        "cpu_seconds_since_previous": 74.19
+      },
+      "latest-queue": {
+        "pid": 1969980,
+        "start_ticks": 230786668,
+        "state": "S",
+        "cpu_ticks": 20,
+        "rss_bytes": 18542592,
+        "cpu_seconds_since_previous": 0.0
+      }
+    },
+    "artifacts": {
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint/selectors/packed-accumulator.bin": {
+        "bytes": 34923891288,
+        "inode": 4039062,
+        "mtime_ns": 1791663253331305162
+      }
+    },
+    "scope": "Read-only activity observation; does not establish test accuracy or completion"
+  },
+  "production_and_frozen_queue_unchanged": true,
+  "new_keys_generated": false,
+  "benchmark_validation_complete": false
+}

@@ -1,0 +1,99 @@
+{
+  "utc": "2026-10-09T06:31:23.522478+00:00",
+  "scope": "Aux16 full-ring Q124 output conjugation, exact independent key phase and fixed 23-bit encrypted gates; baseline CP01 Q136 regression",
+  "source": "test/ckks/ckks_narrow_dd_exact.cpp",
+  "source_sha256": "a82813e4de7bd7b463f1f1aeb639538effd2131c2dedb875f85f94205a7bf174",
+  "executable_sha256": "3dbd7666dc9fd19f7b24c3d525de6edf5699d5d746196f67c74562686f9c736e",
+  "build_session": 79523,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "test_session": 75464,
+  "test_terminal": true,
+  "test_actual_exit_code": 0,
+  "points": [
+    {
+      "profile": "aux16-output-conjugation",
+      "phase_coefficients": 507904,
+      "maximum_noise": 15,
+      "key_log_q": 124,
+      "cases": [
+        {
+          "output_conjugation_kind": 0,
+          "slots_checked": 8192,
+          "maximum_error": 6.883974455516834e-11,
+          "rms_error": 1.3975095422415358e-11,
+          "accuracy_passed": true
+        },
+        {
+          "output_conjugation_kind": 1,
+          "slots_checked": 8192,
+          "maximum_error": 8.014914668773772e-11,
+          "rms_error": 1.3836622711439462e-11,
+          "accuracy_passed": true
+        },
+        {
+          "output_conjugation_kind": 2,
+          "slots_checked": 8192,
+          "maximum_error": 7.829589779669249e-11,
+          "rms_error": 1.3873879258177097e-11,
+          "accuracy_passed": true
+        }
+      ],
+      "log": "/tmp/ckks-aux16-output-conjugation.log",
+      "log_sha256": "608e8027147d39d145b795b49317025dc3b7786b9924e01d5f14f74b282692e0",
+      "stderr_bytes": 0,
+      "actual_exit_code": 0,
+      "peak_rss_kib": 448220
+    },
+    {
+      "profile": "aux28-output-conjugation-regression",
+      "phase_coefficients": 557056,
+      "maximum_noise": 15,
+      "key_log_q": 136,
+      "cases": [
+        {
+          "output_conjugation_kind": 0,
+          "slots_checked": 8192,
+          "maximum_error": 7.99062246114538e-11,
+          "rms_error": 1.3756172110155046e-11,
+          "accuracy_passed": true
+        },
+        {
+          "output_conjugation_kind": 1,
+          "slots_checked": 8192,
+          "maximum_error": 7.131325145139403e-11,
+          "rms_error": 1.3875269825361365e-11,
+          "accuracy_passed": true
+        },
+        {
+          "output_conjugation_kind": 2,
+          "slots_checked": 8192,
+          "maximum_error": 8.221876325957983e-11,
+          "rms_error": 1.3724434334701915e-11,
+          "accuracy_passed": true
+        }
+      ],
+      "log": "/tmp/ckks-aux28-output-conjugation-regression.log",
+      "log_sha256": "a46bf26512de8475f71c8919134ba98ffb7714da5380699fcd042888f547cd18",
+      "stderr_bytes": 0,
+      "actual_exit_code": 0,
+      "peak_rss_kib": 686016
+    }
+  ],
+  "old_checkpoint_rejected_by_aux16_mode": true,
+  "wrong_profile_actual_exit_code": 2,
+  "phase_oracle": "Independent exact single-prime integer NTT multiplication and low-Q subtraction; explicit s[0], -s[N-n] conjugation; shifts Q-4-4*row",
+  "noise_limit": 39,
+  "noise_limit_is_diagnostic_12_sigma": true,
+  "aux16_full_retained_checkpoint_positive_read_validated": false,
+  "aux16_factor_key_phase_validated": false,
+  "aux16_full_refresh_validated": false,
+  "security_validated": false,
+  "reader_implemented_modes": [
+    "--aux16-checkpoint",
+    "--aux16-checkpoint-tree",
+    "--aux16-checkpoint-output-conjugation",
+    "--aux16-checkpoint-factor-galois"
+  ],
+  "memory_budget": "narrow-dd-aux16-exact-inspector-memory-budget.json"
+}

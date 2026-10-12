@@ -1,0 +1,193 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "scope": "Carry forward completed retained DD-switch and head/tail-factor controls only. Replacing the newly oracle-qualified tensor function with its frozen predecessor and removing the separately qualified lazy Galois adapter restores entire prerequisite headers byte-for-byte. All other prerequisite source hashes match. Existing DD switching and factor code is unchanged. Current narrow S2C wiring is covered by current all-function small replay and the separately qualified N32768 adapter. This source provenance check does not qualify full integrated N32768 refresh.",
+  "fresh_keys_generated": false,
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "memory_cap_bytes": 4294967296,
+  "omp_num_threads": 4,
+  "columns": 22,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+  "baseline_evidence": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-parallel-secondary11-full-resumed-validation.json",
+  "baseline_evidence_sha256": "78554178fdf267cb0e0b643a3c752e939df60a70dfc1d8d72f70b73a4e344643",
+  "selected_before": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "prehash_reused_from_completed_baseline": true,
+  "mandatory_selected_post_hash": true,
+  "mem_available_bytes": 131830067200,
+  "reserved_headroom_required_bytes": 15166603264,
+  "qualified_source_sha256": {
+    "TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c",
+    "TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "3b228b8c6da5b5349ba8347de26babbf3484f0caf3ede819ce4af680d5053031",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "small_qualification_sha256": "31d17dea5b8fe4b9af3611afc3483ddfb3efa07e65b8f272ded7d995b778ae64",
+  "default_width_changed": false,
+  "frozen_executable_sha256": "3b14e2f0cfa09b4e2ef84e560d84a7c4d3aaa6e1b4984447fbdeee87b025809c",
+  "command": [
+    "/usr/bin/time",
+    "-v",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/full-factors/ckks_narrow_basis_factor_cache_checkpoint",
+    "--full-union-wide",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/full-factors/factors"
+  ],
+  "child_pid": 2035507,
+  "actual_exit_code": 0,
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 48,
+      "schedule_configured_width": false,
+      "selector_digits": 11,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 31.625560303,
+      "cache_setup_seconds": 6.06e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.700581132,
+      "selector_ntt_seconds": 6.5881291939999995,
+      "matrix_seconds": 19.806565648,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 27.14769074,
+      "cache_setup_seconds": 6.06e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.6941222769999997,
+      "selector_ntt_seconds": 6.066630396,
+      "matrix_seconds": 16.793984177000002,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 48,
+      "schedule_configured_width": false,
+      "selector_digits": 11,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 30.8379319,
+      "cache_setup_seconds": 2.4e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.7157503300000003,
+      "selector_ntt_seconds": 6.611818511,
+      "matrix_seconds": 19.873609642,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 26.927291635,
+      "cache_setup_seconds": 2.4e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.6891901310000004,
+      "selector_ntt_seconds": 6.021392087000001,
+      "matrix_seconds": 16.608511435999997,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "cross_version_archive_identity": {
+    "head-reference.bin": true,
+    "tail-reference.bin": true
+  },
+  "slots_checked": 720896,
+  "selected_after": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "Complete checkpoint.bin and selected head30/tail4 files. Other selector files are not read by this component test.",
+  "controller_actual_exit_code": 0,
+  "preceding_source_sha256": {
+    "TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c",
+    "TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "a088e1fc57791a9de7d7cb621e3bc23083a424aac10835aeab9f8ae2dcc7d0c9",
+    "TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "3b228b8c6da5b5349ba8347de26babbf3484f0caf3ede819ce4af680d5053031",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "validation_kind": "source_projection_carry_forward",
+  "preceding_receipt": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-auto-native-products-full-factors-validation.json",
+  "preceding_receipt_sha256": "f1d157eb4c9129304986fa9d03b4e3af50263a3d5e4bbf4766d4152c56e7d058",
+  "test_execution": "Actual test exits and level/factor measurements are reused from the preceding receipt; no new component evaluation claimed.",
+  "source_projection_evidence": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-tensor-full-qualification-20261011/source-projection.json",
+  "projection_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "a088e1fc57791a9de7d7cb621e3bc23083a424aac10835aeab9f8ae2dcc7d0c9"
+  },
+  "full_integrated_refresh_qualified": false
+}

@@ -1,0 +1,171 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "scope": "N32768 head30/tail4 22-column exact 48/56bit schedule-configured width comparison native-limb extraction and parallel prepared automorphism factor controls. Four-worker AVX2 NTT integration component qualification. Not a full refresh or controlled performance comparison.",
+  "fresh_keys_generated": false,
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "memory_cap_bytes": 4294967296,
+  "omp_num_threads": 4,
+  "columns": 22,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+  "baseline_evidence": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-parallel-secondary11-full-resumed-validation.json",
+  "baseline_evidence_sha256": "78554178fdf267cb0e0b643a3c752e939df60a70dfc1d8d72f70b73a4e344643",
+  "selected_before": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "prehash_reused_from_completed_baseline": true,
+  "mandatory_selected_post_hash": true,
+  "mem_available_bytes": 131536834560,
+  "reserved_headroom_required_bytes": 15166603264,
+  "qualified_source_sha256": {
+    "TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "3b228b8c6da5b5349ba8347de26babbf3484f0caf3ede819ce4af680d5053031",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "small_qualification_sha256": "f6a0d145cc5ea0cf3f05b0b14d085191d3b1e98185e1c2c895dcd3def3cd0b97",
+  "default_width_changed": false,
+  "frozen_executable_sha256": "7b41f46961a19d9963ebde619444914d55706653d4a9f04d7cab43959ff52a33",
+  "command": [
+    "/usr/bin/time",
+    "-v",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-wide-full-factors-20261011/ckks_narrow_basis_factor_cache_checkpoint",
+    "--full-union-wide",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-wide-full-factors-20261011/factors"
+  ],
+  "child_pid": 2030596,
+  "actual_exit_code": 0,
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 48,
+      "schedule_configured_width": false,
+      "selector_digits": 11,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 32.513782137,
+      "cache_setup_seconds": 6.98e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.672304867,
+      "selector_ntt_seconds": 6.5542735709999995,
+      "matrix_seconds": 19.718558526,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 27.248528678,
+      "cache_setup_seconds": 6.98e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.674161555,
+      "selector_ntt_seconds": 6.000398745000001,
+      "matrix_seconds": 16.576331717999995,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 48,
+      "schedule_configured_width": false,
+      "selector_digits": 11,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 31.008195941,
+      "cache_setup_seconds": 2.2e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.6869402039999999,
+      "selector_ntt_seconds": 6.574899725,
+      "matrix_seconds": 19.710392398,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 27.219116474,
+      "cache_setup_seconds": 2.2e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.684937562,
+      "selector_ntt_seconds": 6.008379734999999,
+      "matrix_seconds": 16.519868334,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "cross_version_archive_identity": {
+    "head-reference.bin": true,
+    "tail-reference.bin": true
+  },
+  "slots_checked": 720896,
+  "selected_after": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "Complete checkpoint.bin and selected head30/tail4 files. Other selector files are not read by this component test.",
+  "controller_actual_exit_code": 0
+}

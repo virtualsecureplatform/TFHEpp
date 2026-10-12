@@ -1,0 +1,22 @@
+{
+  "observed_at_utc": "2026-10-09T04:32:31.389148+00:00",
+  "scope": "Sequential 2GiB Sage expanded exact-weight block-hybrid grid",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "rss_bytes": 17687748608,
+      "limit_bytes": 68719476736
+    },
+    {
+      "pid": 1812584,
+      "rss_bytes": 11881062400,
+      "limit_bytes": 34359738368
+    }
+  ],
+  "available_memory_bytes": 101392977920,
+  "required_available_memory_bytes": 88542789632,
+  "launch_eligible": true,
+  "session": 19911,
+  "terminal": true,
+  "actual_exit_code": 0
+}

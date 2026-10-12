@@ -1,0 +1,86 @@
+{
+  "observed_at_utc": "2026-10-08T16:50:39.335871+00:00",
+  "scope": "Centered one/two-prime CRT, signed digit recomposition modulo 2^Q, and optional signed round-to-nearest (ties away from zero) on device buffers. No conjugation, key switching, tree evaluation, complete refresh or GPU execution validated.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "75cfe98ad9a8529368893b07c5b9b63bae85d056e35b37984ac9c39efbd04a94",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "0ae2611b10816495087cec50fa7a0d99b5bf8c3217c361eb449faecc04c9a91e",
+    "src/ckks/narrow_cuda.cu": "1ecfc631d66ede2711fcd7a8249aa542c1e0cc804ba6d8ed9d4c2b6dbc975054",
+    "src/ckks/cuda/CMakeLists.txt": "b0123e5ffddd2cbdb69903497b6a2c4cebf37aec92d0ebcdb747cc3464579e0f",
+    "test/ckks/ckks_narrow_cuda.cu": "f5ef725ed2bb2e90eb4c2a8bceb3fb1271850484a2faa3caf73d0d87bc95cf81"
+  },
+  "cuda_cmake_build_exit_code": 0,
+  "cuda_cmake_build_log": "/tmp/ckks-narrow-cuda-recompose-build.log",
+  "configured_architecture": "80",
+  "host_metadata_rejection_cases_passed": 16,
+  "host_arithmetic_cases_passed": 90,
+  "host_arithmetic_reference": "Existing modular_ntt::TwoPrimeCRT and MultiLimbUInt<14> sum/shift/mask operations, with signed magnitude rounding formula matching ckks_detail::roundedLevelRightShift.",
+  "profiles": [
+    {
+      "log_q": 63,
+      "storage_limbs": 1
+    },
+    {
+      "log_q": 64,
+      "storage_limbs": 1
+    },
+    {
+      "log_q": 128,
+      "storage_limbs": 2
+    },
+    {
+      "log_q": 217,
+      "storage_limbs": 4
+    },
+    {
+      "log_q": 385,
+      "storage_limbs": 7
+    },
+    {
+      "log_q": 518,
+      "storage_limbs": 9
+    },
+    {
+      "log_q": 669,
+      "storage_limbs": 14
+    }
+  ],
+  "digit_bits": 16,
+  "groups": 3,
+  "points": 8,
+  "columns": 3,
+  "prime_counts": [
+    1,
+    2
+  ],
+  "auxiliary_primes": [
+    2301972608560791553,
+    2295217002959732737
+  ],
+  "drop_bits": "0, 1, 16, 48, 64, 65 and log_q-1, excluding drops outside the input level.",
+  "boundary_checks": [
+    "CRT half-product and half-product+1 centering",
+    "zero and -1",
+    "maximum signed positive and minimum signed negative torus values",
+    "positive and negative rounding ties and their adjacent integers",
+    "cross-limb carries and sign extension",
+    "random full-range canonical CRT residues"
+  ],
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 66878,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-host-ubsan-build.log",
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-host-ubsan-test.log",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_arithmetic_cases_passed": 90,
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_instrumentation_scope": "g++ -O1 -g1 -fsanitize=undefined -fno-sanitize-recover=all instrumented the test translation unit, including portable host CRT/recomposition/rounding helpers and CPU oracle header code. The separately compiled CUDA static library and device kernels are not sanitizer instrumented.",
+  "cuda_test_actual_exit_code": 77,
+  "device_count": 0,
+  "gpu_arithmetic_cases_present": 90,
+  "gpu_arithmetic_cases_executed": false,
+  "gpu_arithmetic_validated": false,
+  "full_cuda_refresh_implemented": false,
+  "security_qualified": false,
+  "latest_combined_validation_evidence": "narrow-dd-cuda-packed-matrix-validation.json",
+  "historical_validation_scope_note": "Source hashes and g++ host UBSan scope above describe the standalone primitive revision. Latest combined CUDA revision repeats all 90 comparisons and additionally instruments CUDA source host routines under NVCC; device kernels remain unexecuted.",
+  "latest_extended_validation_evidence": "narrow-dd-cuda-torus-validation.json"
+}

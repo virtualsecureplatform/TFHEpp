@@ -1,0 +1,34 @@
+{
+  "observed_at_utc": "2026-10-11T06:23:03.266339+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Bounded raw selector read-ahead and focused N512 file-selector regression; no full-size performance qualification.",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "test_command": "OMP_NUM_THREADS=4 TFHEpp/build/test/ckks/ckks_narrow_bootstrapping --file-selectors",
+  "memory_limit_kib": 4194304,
+  "peak_rss_kib": 3167064,
+  "elapsed_seconds": 44.95,
+  "exact_ciphertext_file_chunk_modes_passed": true,
+  "worker_truncated_file_rejected": true,
+  "file_source_worker_read_capability_explicit": true,
+  "generic_sources_default_to_synchronous_reads": true,
+  "read_ahead_storage_bound": "One prepared chunk plus at most one raw chunk; current raw storage is released before launching its successor.",
+  "selector_load_timer_scope": "Exclusive consumer read/wait time. Background reads overlap matrix time and are not added again.",
+  "fixture_scope": "Existing focused test generates synthetic N512 fixtures.",
+  "full_size_keys_generated": false,
+  "full_size_checkpoint_changed": false,
+  "full_size_speedup_verified": false,
+  "existing_frozen_full_runs_updated": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "1a7b5269b882d0bccc1b551e4b6329f7f9e1be9281910a402d8a7a0543f06d8a",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/test/ckks/ckks_narrow_bootstrapping.cpp": "db0dde6f82eca63deb5f72646f032e0e7646a7e519cb90ca5f202490cd0fcafb"
+  },
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/raw-prefetch-20261011/build-final.log": "4d68ee1e747ae6a53d7a36048f6286860cd0745a15d625711e60e48171d4d502",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/raw-prefetch-20261011/test.log": "6557773d64aca9a015d5be56dd65bc69a48533665ff9c04f215d98e43fb63bfd",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/raw-prefetch-20261011/time.log": "2e52aebce4ca549ebdec1a21055702778f693fa196b470906debef7d44884614"
+  },
+  "executable_sha256": "0d41ec7e809e4074f437ada6ceaf8084ce8107ca44b106a845711cdfebe92a35"
+}

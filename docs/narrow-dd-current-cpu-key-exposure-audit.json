@@ -1,0 +1,136 @@
+{
+  "observed_at_utc": "2026-10-08T23:01:45.416132+00:00",
+  "scope": "Current CPU LL14 plain37 exposed-key modulus accounting. Archived estimator screens are proxies; no new security qualification inferred.",
+  "report": "TFHEpp/docs/narrow-dd-ll14-plain37-checkpoint-reproduction.json",
+  "report_sha256": "9bb48d7987cd68fffcb0d1d260f7dfac8f5a1c5ba2f5882d9428c824fe357c3e",
+  "key_exposures": [
+    {
+      "name": "expanded selector ciphertexts",
+      "secret": "dense evaluation",
+      "log_q": 385,
+      "used_by_retained_run": true
+    },
+    {
+      "name": "factor conjugation/tail rotation keys",
+      "secret": "dense evaluation",
+      "log_q": 376,
+      "used_by_retained_run": true
+    },
+    {
+      "name": "output conjugation key",
+      "secret": "dense evaluation",
+      "log_q": 136,
+      "used_by_retained_run": true
+    },
+    {
+      "name": "DD tree key levels before rescale",
+      "secret": "dense evaluation",
+      "log_q_levels": [
+        348,
+        300,
+        252,
+        204,
+        156
+      ],
+      "used_by_retained_run": true
+    },
+    {
+      "name": "S2C input rotations",
+      "secret": "dense input",
+      "log_q": 113,
+      "used_by_retained_run": true
+    },
+    {
+      "name": "S2C output rotations",
+      "secret": "dense input",
+      "log_q": 76,
+      "used_by_retained_run": true
+    },
+    {
+      "name": "dense-to-structured switch ciphertexts",
+      "secret": "one signed nonzero per public block",
+      "log_q": 76,
+      "used_by_retained_run": true
+    },
+    {
+      "name": "post-refresh DD square key",
+      "secret": "dense evaluation",
+      "log_q": 108,
+      "used_by_retained_run": true
+    },
+    {
+      "name": "four packed indicators and extraction keys",
+      "secret": "dense evaluation",
+      "log_q": 436,
+      "used_by_retained_run": false
+    }
+  ],
+  "largest_used_dense_level_bits": 385,
+  "largest_dense_level_with_packed_provisioning_bits": 436,
+  "structured_target_level_bits": 76,
+  "dd_relinearization_before_rescale_key_levels": [
+    348,
+    300,
+    252,
+    204,
+    156
+  ],
+  "native_storage_bits": 448,
+  "native_storage_is_not_exposed_ciphertext_modulus": true,
+  "accounting_matches_profile_fields_and_source_formulas": true,
+  "dense_estimator_file": "Parameter-Selection/python/estimates/narrow_ckks_ll14_plain37_security.json",
+  "dense_estimator_sha256": "a0bca3ffb6520d1aedb49707af59f3be8655186797cb0e7988bac4dd6b7f690e",
+  "dense_estimator_complete": true,
+  "dense_estimator_weakest_bits": 128.6704442945677,
+  "sparse_estimator_file": "Parameter-Selection/python/estimates/narrow_ckks_auxiliary_security.json",
+  "sparse_estimator_sha256": "05081e1d4a5336c54e2fa2f7cdfaec0f34ea8253cf1273969af452757b973acd",
+  "sparse_estimator_complete": false,
+  "sparse_estimator_errors": {
+    "primal_usvp": "ValueError: nonfinite attack cost",
+    "dual": "ValueError: nonfinite attack cost",
+    "dual_hybrid": "ValueError: nonfinite attack cost",
+    "primal_bdd": "ValueError: nonfinite attack cost"
+  },
+  "public_block_width": 529,
+  "last_block_width": 514,
+  "public_block_signed_secret_entropy_bits": 311.41934191261464,
+  "entropy_is_not_attack_cost_or_security_proof": true,
+  "uncovered": [
+    "public one-per-block constraint",
+    "random sign-count distribution rather than fixed 16-positive/15-negative proxy",
+    "ring-specific attacks",
+    "correlated/circular evaluation-key assumptions"
+  ],
+  "independent_validation_import": "Parameter-Selection/python/estimates/narrow_ckks_ll14_plain37_checkpoint_reproduction_validation.json",
+  "independent_validation_passed_all_three_functions": true,
+  "original_sigmoid_failure_resolved": false,
+  "security_qualified": false,
+  "sparse_raw_optimizer_review_evidence": "narrow-dd-sparse-estimator-raw-result-validation.json",
+  "sparse_raw_optimizer_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_sparse_raw_optimizer_results.json",
+  "sparse_raw_optimizer_report_sha256": "8850666ef9ffa2c2ac44281761726ab567cb38bc421ef3d3aa703cb0071da619",
+  "sparse_raw_optimizer_results": {
+    "primal_usvp": "positive_infinity",
+    "primal_bdd": "positive_infinity",
+    "dual": "positive_infinity",
+    "dual_hybrid": "positive_infinity"
+  },
+  "sparse_nonfinite_results_are_security_bounds": false,
+  "dense_current_wrapper_control_matches_previous_costs": true,
+  "latest_sparse_search_limit_evidence": "narrow-dd-sparse-search-limit-validation.json",
+  "latest_sparse_uniform_proxy_attacks": [
+    "primal_usvp",
+    "primal_bdd",
+    "dual",
+    "dual_hybrid",
+    "mitm",
+    "bdd_hybrid",
+    "bdd_mitm_hybrid"
+  ],
+  "latest_sparse_uniform_proxy_weakest_bits": 134.67162119260712,
+  "actual_structured_secret_security_qualified": false,
+  "latest_exact_public_block_guessing_evidence": "narrow-dd-block-hybrid-probe-validation.json",
+  "public_block_fixed_parameter_hybrid_cost_bits": 133.79224773502924,
+  "public_block_conditioning_lattice_geometry_not_validated": true,
+  "exact_conditional_public_block_moments_evidence": "narrow-dd-block-conditional-geometry-validation.json",
+  "conditional_scalar_geometry_mitm_fixed_point_bits": 134.4771864224255
+}

@@ -1,0 +1,20 @@
+{
+  "observed_at_utc": "2026-10-09T00:52:48.154810+00:00",
+  "scope": "Streaming all saved factor Galois keys from a full plain37 checkpoint; one raw automorphism key at a time, independent exact phase checks.",
+  "existing_process_pid": 1756575,
+  "existing_process_cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json ",
+  "existing_process_rss_bytes": 17785008128,
+  "existing_process_virtual_limit_bytes": 68719476736,
+  "remaining_growth_bytes": 50934468608,
+  "available_memory_bytes": 113848102912,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 2147483648,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 63819370496,
+  "launch_margin_bytes": 50028732416,
+  "launch_eligible": true,
+  "test_actual_exit_code": 0,
+  "test_terminal": true,
+  "test_peak_rss_kib": 686208,
+  "output_conjugation_reader_compatibility_actual_exit_code": 0
+}

@@ -1,0 +1,73 @@
+{
+  "scope": "Validate current full-ring root reuse against a completed retained checkpoint.\n\nFreeze the small-qualified executable and independent decoder before waiting.\nWait for the original basis validation and termination of preceding large tests.\nReuse the checkpoint, compare all output bytes, decode phases independently and\ncheck retained payload integrity. No fresh key generation or security claim.\n",
+  "terminal": true,
+  "all_checks_passed": false,
+  "stage": "superseded while idle by qualified combined-frequency-union replay",
+  "fresh_keys_generated": false,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+  "reference_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010",
+  "child_cap_bytes": 42949672960,
+  "parent_soft_cap_bytes": 134217728,
+  "host_reserve_bytes": 10737418240,
+  "full_encrypted_root_reuse_validated": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "small_qualification_sha256": "f0b4653b8fe6d76fc3163577272401b4a7b31d7a7c8640afc47707698354f4ad",
+  "shared_input_tiles": true,
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_narrow_basis_replay.cpp": "86ffa38fc3183cfce99bee17cd3dbf54d6a4f9a96fca72148db56229a6db262d",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "0df97ec98b1665dfdbd84eaa113ab783958eec314c124e50f06c991e5872977c",
+    "TFHEpp/test/ckks/ckks_narrow_benchmark.cpp": "002bac19ea5dde07c840e5a66b3a46f7f43b681ad6b70e7890cce8affb820199",
+    "TFHEpp/include/ckks/ckks.hpp": "9fd7a2cacdafecfc1833338159a61386513d98b7c10b15fa082f29d12a38f86f",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "70ccca11755aede0454ed22d226830146d41af92fdf2a4dae4f2d8632980d2ea",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "2b413328cd3adc2ec58a860bd2c8435fc3ca07e9a6a221eeb106fa7287cacf59",
+    "TFHEpp/include/ckks/narrow_frequency_basis.hpp": "6cb54227ab5ad1fe5ce359a35fdbdcf1fbc22751691df7071a857a895a0bb093"
+  },
+  "executable_source_path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-avx2-profiled-replay-20261010/ckks_narrow_basis_replay",
+  "small_qualification_frozen_path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-profiled-avx2-full-20261010/frozen/narrow-dd-basis-profiled-replay-validation.json",
+  "factor_stage_profiled": true,
+  "frozen_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-profiled-avx2-full-20261010/frozen/ckks_narrow_basis_replay": "c75be66c747bd2364a74647861c8bf5189eeae39257cc09580214c05d0661713",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-profiled-avx2-full-20261010/frozen/narrow-dd-basis-profiled-replay-validation.json": "f0b4653b8fe6d76fc3163577272401b4a7b31d7a7c8640afc47707698354f4ad",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-profiled-avx2-full-20261010/frozen/narrow_ckks_basis_checkpoint_validate.py": "1fa76656f8c9a2ae6e5b1f71b192ba6e6b4fea08fdbc49b8b5aa472cfcbeb2c8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-profiled-avx2-full-20261010/frozen/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-profiled-avx2-full-20261010/frozen/narrow_ckks_basis_root_reuse_run.py": "98f8b05afff2cd16734b5fec6a616cb4fe35379cedb299a65ee5e6eedca84af7"
+  },
+  "controller": {
+    "pid": 1960766,
+    "start_ticks": 229937296
+  },
+  "controller_sha256": "98f8b05afff2cd16734b5fec6a616cb4fe35379cedb299a65ee5e6eedca84af7",
+  "controller_frozen_path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-profiled-avx2-full-20261010/frozen/narrow_ckks_basis_root_reuse_run.py",
+  "original_basis_validated": false,
+  "preceding_test_terminal": false,
+  "preceding_tests": {
+    "TFHEpp/docs/narrow-dd-auto-primary8-full-refresh-validation.json": {
+      "idle": false,
+      "accuracy_passed": false
+    },
+    "TFHEpp/docs/narrow-dd-primary8-dd-full-refresh-validation.json": {
+      "idle": false,
+      "accuracy_passed": false
+    }
+  },
+  "packed_process": {
+    "pid": 1910341,
+    "start_ticks": 225941687,
+    "state": "R",
+    "rss_bytes": 17651814400,
+    "cpu_ticks": 10816627
+  },
+  "budget": {
+    "available_bytes": 88484958208,
+    "required_bytes": 104888971264,
+    "packed_remaining_reservation_bytes": 51067662336,
+    "free_disk_bytes": 66133936832512,
+    "required_disk_bytes": 2147483648
+  },
+  "updated_utc": "2026-10-10T19:14:02.705668+00:00",
+  "superseded": true,
+  "superseded_at_utc": "2026-10-10T19:14:03.508787+00:00",
+  "superseded_by": "narrow-dd-basis-frequency-union-full-validation.json",
+  "evaluator_launched": false
+}

@@ -1,0 +1,16 @@
+{
+  "scope": "Prospective HT15 staged cache payload estimate from compiled C++ layouts; excludes process overhead/temporary allocations covered by reserve; requires a host without the other full-ring jobs",
+  "n": 32768,
+  "batch_columns": 2,
+  "selector_chunk_size": 40,
+  "persistent_setup_and_compact_s2c_bytes": 57695142112,
+  "factor_phase_payload_bytes": 93190488288,
+  "rotation_phase_payload_bytes": 105318318304,
+  "product_tree_phase_payload_bytes": 106962485472,
+  "output_phase_payload_bytes": 69968199904,
+  "runtime_and_temporary_reserve_bytes": 10737418240,
+  "estimated_process_envelope_bytes": 117699903712,
+  "proposed_virtual_address_limit_bytes": 124554051584,
+  "full_size_validation_passed": false,
+  "full_size_job_launched": false
+}

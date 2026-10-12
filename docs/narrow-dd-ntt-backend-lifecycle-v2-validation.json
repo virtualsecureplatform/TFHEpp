@@ -1,0 +1,23 @@
+{
+  "scope": "Second isolated optional NTT backend revision: detach callback when explicitly selecting staged/default/projected FFT, and before regenerating evaluation keys. Public synthetic N512 lifecycle/move/load/archive controls, no key generation. Regeneration reset placement checked in source; regeneration itself not run. New cache constructed before switching default FFT backend. No arithmetic changes relative to qualified isolated NTT root revision; production and queued first-revision headers unchanged.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "test_stdout": "derived_backend=1 lifecycle passed; archive_bytes=73917741",
+  "new_private_or_public_keys_generated": 0,
+  "explicit_fft_switches_checked": [
+    "staged",
+    "default prepared DD",
+    "projected primary8 DD"
+  ],
+  "archive_byte_identical_to_original": true,
+  "regeneration_reset_precedes_first_encryption_source_checked": true,
+  "regeneration_runtime_tested": false,
+  "only_cache_lifecycle_changes": true,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-lifecycle-v2-20261011/include/ckks/narrow_bootstrapping.hpp": "48cd14e3234f792a31ef39955a80f706f7d00d026be970b554eaff0d83af1311",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-ntt-lifecycle-v2-20261011/callback-lifecycle.cpp": "bdc6b0d3d8004ea59ee22c9a5162c6ba3e688e052706d24a6dcdf6d850ca7a4d"
+  },
+  "updated_utc": "2026-10-11T20:18:37.549530+00:00"
+}

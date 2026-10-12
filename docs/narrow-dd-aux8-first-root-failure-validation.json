@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-09T11:47:05.963249+00:00",
+  "scope": "First completed weighted positive-frequency root in actual retained aux8 sigmoid replay fails before final output combination; observer metrics only",
+  "session": 71792,
+  "pid": 1841995,
+  "start_ticks": 219001048,
+  "first_failed_root": {
+    "observation": 0,
+    "frequency": 1,
+    "weight_abs": 0.2699818048968007,
+    "max_error": 1.2607399722319741e+20,
+    "max_abs": 1.2607399722319741e+20
+  },
+  "observed_trace_complete_prefix_sha256": "6cc648b0e4c49a47107c8074d24be9e0cbbb7e4e065e066733f6d4dee1a8721c",
+  "independent_prepared_phase_evidence": "narrow-dd-aux8-full-prepared-phase-validation.json",
+  "independent_selector_phase_evidence": "narrow-dd-aux8-all-selector-phase-validation.json",
+  "one_bit_error_shape_evidence": "narrow-dd-aux8-retained-selector-corruption-validation.json",
+  "baseline_terminal": false,
+  "baseline_saved_output_equal_validated": false,
+  "root_independent_phase_validated": false,
+  "corrected_functional_replay_validated": false,
+  "failure_cause_established": false,
+  "security_validated": false
+}

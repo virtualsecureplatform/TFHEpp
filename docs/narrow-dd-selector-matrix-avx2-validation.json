@@ -1,0 +1,218 @@
+{
+  "observed_at_utc": "2026-10-10T17:10:22.628223+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Exact AVX2 paired selector matrix arithmetic and CPU integration; public full-degree matrix trial plus retained corrected N16384 factor and N512 basis-tile controls. Does not qualify whole full-ring refresh performance or security.",
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-pair-avx2-20261010",
+  "fresh_keys_generated": false,
+  "cuda_used": false,
+  "native_independent_modular_coefficients_checked": 196083712,
+  "scalar_fallback_independent_modular_coefficients_checked": 196083712,
+  "public_matrix_exact_coefficients_per_trial": 6291456,
+  "public_matrix_trials": 8,
+  "matrix_repetitions_per_trial": 8,
+  "scalar_paired_median_seconds": 1.0483285,
+  "avx2_paired_median_seconds": 0.6809105,
+  "observed_component_ratio": 1.5395980822736615,
+  "timing_scope": "Four threads under concurrent packed/basis load; paired loop only, not isolated or whole bootstrap speedup.",
+  "native_trials": [
+    {
+      "vector": false,
+      "seconds": 0.897927,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": true,
+      "seconds": 0.612997,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": true,
+      "seconds": 0.630931,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": false,
+      "seconds": 1.22107,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": false,
+      "seconds": 1.19873,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": true,
+      "seconds": 1.01682,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": true,
+      "seconds": 0.73089,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": false,
+      "seconds": 0.757965,
+      "exact_coefficients": 6291456
+    }
+  ],
+  "fallback_trials": [
+    {
+      "vector": false,
+      "seconds": 0.75781,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": true,
+      "seconds": 0.833594,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": true,
+      "seconds": 0.843925,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": false,
+      "seconds": 0.761117,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": false,
+      "seconds": 0.831965,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": true,
+      "seconds": 0.767019,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": true,
+      "seconds": 0.894407,
+      "exact_coefficients": 6291456
+    },
+    {
+      "vector": false,
+      "seconds": 1.21979,
+      "exact_coefficients": 6291456
+    }
+  ],
+  "full_encrypted_factors": [
+    {
+      "tail": false,
+      "group": 30,
+      "columns": 5,
+      "slots_checked": 40960,
+      "max_error": 1.2522476022539664e-09,
+      "chunk_size": 8,
+      "alternate_chunk_size": 5,
+      "chunks_exact": true,
+      "single_columns_first_middle_last_exact": true,
+      "accuracy_passed": true,
+      "ntt_digit_bits": 60,
+      "ntt_digits": 7,
+      "baseline16_ciphertexts_exact": true,
+      "baseline16_timings": {
+        "selector_ntt_seconds": 8.705809079999998,
+        "matrix_seconds": 7.312158852000003,
+        "inverse_crt_seconds": 0.213232652,
+        "conjugation_seconds": 0.534940247
+      },
+      "timings": {
+        "selector_load_seconds": 0.439533519,
+        "table_ntt_seconds": 0.077714556,
+        "selector_ntt_seconds": 2.3642975059999993,
+        "matrix_seconds": 2.150674851000001,
+        "inverse_crt_seconds": 0.068582975,
+        "conjugation_seconds": 0.502958555
+      }
+    },
+    {
+      "tail": true,
+      "group": 4,
+      "columns": 5,
+      "slots_checked": 40960,
+      "max_error": 1.0728227448417034e-09,
+      "chunk_size": 8,
+      "alternate_chunk_size": 5,
+      "chunks_exact": true,
+      "single_columns_first_middle_last_exact": true,
+      "accuracy_passed": true,
+      "ntt_digit_bits": 60,
+      "ntt_digits": 7,
+      "baseline16_ciphertexts_exact": true,
+      "baseline16_timings": {
+        "selector_ntt_seconds": 8.517221531999999,
+        "matrix_seconds": 7.042259493000001,
+        "inverse_crt_seconds": 0.16049471,
+        "conjugation_seconds": 0.432370293
+      },
+      "timings": {
+        "selector_load_seconds": 0.38743183,
+        "table_ntt_seconds": 0.065867222,
+        "selector_ntt_seconds": 2.317890761,
+        "matrix_seconds": 2.086372174,
+        "inverse_crt_seconds": 0.060367144,
+        "conjugation_seconds": 0.662554772
+      }
+    }
+  ],
+  "full_factor_fixed23bit_slots_checked": 81920,
+  "full_factor_unique_exact_ciphertext_coefficients": 327680,
+  "diagnostic_corrected_selector_fixture_used_for_full_factors": true,
+  "factor_peak_rss_kib": 1896984,
+  "basis_tiles": [
+    {
+      "tile_size": 5,
+      "inputs": 3,
+      "frequencies_per_input": 4,
+      "factor_groups": 105,
+      "expected_factor_groups": 105,
+      "exact_coefficients": 3072,
+      "passed": true
+    },
+    {
+      "tile_size": 7,
+      "inputs": 3,
+      "frequencies_per_input": 4,
+      "factor_groups": 70,
+      "expected_factor_groups": 70,
+      "exact_coefficients": 3072,
+      "passed": true
+    },
+    {
+      "tile_size": 12,
+      "inputs": 3,
+      "frequencies_per_input": 4,
+      "factor_groups": 35,
+      "expected_factor_groups": 35,
+      "exact_coefficients": 3072,
+      "passed": true
+    }
+  ],
+  "basis_checkpoint_files_unchanged": 36,
+  "selected_full_fixture_files_unchanged": 3,
+  "memory_caps_bytes": {
+    "public_and_factor": 2147483648,
+    "basis_control": 1073741824
+  },
+  "full_refresh_avx2_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "goal_complete": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "70ccca11755aede0454ed22d226830146d41af92fdf2a4dae4f2d8632980d2ea",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "2b413328cd3adc2ec58a860bd2c8435fc3ca07e9a6a221eeb106fa7287cacf59",
+    "TFHEpp/test/ckks/ckks_narrow_matrix_pair_exact.cpp": "442e4c3ec2161d635d44f3c38d825ea985a20f35bb3dcd822f15711ef0d92694",
+    "TFHEpp/test/ckks/ckks_narrow_factor_checkpoint.cpp": "08f13dcbc452a52bf57edebbf7f6b771adea0fc74ecbf3cde8156d39cadb9055",
+    "TFHEpp/test/ckks/ckks_narrow_basis_batch_checkpoint.cpp": "64533dc1343e185840b25025d14e402784654b4ee25179e87190a727a265d985"
+  },
+  "executable_sha256": {
+    "/tmp/ckks_narrow_matrix_pair_avx2_exact": "897f0ac728f23cbd3bd89b2c4401e60bb58b548c23daeac099233548e01c639f",
+    "/tmp/ckks_narrow_matrix_pair_scalar_exact": "347e6120480dc2b1002b895f346687d9bfa1292ccee04c36565ac325787656a0",
+    "/tmp/ckks_narrow_factor_checkpoint_avx2": "fd60bd7b3150a7ca3f9bbd8d2f67c5af7a42ff03acbd394d14002f5fe7d27abd",
+    "/tmp/ckks_narrow_basis_batch_checkpoint_avx2": "1a3b8dcda8aaf58363acef489a9950c67630697be51b369d9b267a81c0ff16b0"
+  }
+}

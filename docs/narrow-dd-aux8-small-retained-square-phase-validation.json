@@ -1,0 +1,14 @@
+{
+  "n": 512,
+  "function": "sigmoid",
+  "log_q": 60,
+  "log_delta": 48,
+  "post_refresh_product_max_error": 3.1660952265268255e-09,
+  "rms_error": 1.4252952406385507e-09,
+  "target_amplitude": 1.3887772203090152,
+  "product_tolerance": 4.50319595316329e-07,
+  "product_accuracy_passed": true,
+  "independent_phase_validated": true,
+  "security_validated": false,
+  "retained_key_coefficients_validated": false
+}

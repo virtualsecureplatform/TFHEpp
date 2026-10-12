@@ -1,0 +1,64 @@
+{
+  "observed_at_utc": "2026-10-09T05:56:11.150264+00:00",
+  "scope": "Opt-in aux16 small N512 accuracy/squares and checkpoint lifecycle; not full-ring accuracy or security qualification",
+  "build_session": 41050,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "small_session": 54643,
+  "small_terminal": true,
+  "small_actual_exit_code": 0,
+  "executable_sha256": "30737489e19f92fa0d4c92822903cc958febde31fb5fe1cb52851aaaa4c39a4e",
+  "inspector_executable_sha256": "22969b4c91fdbd39f07707a94fe8d81ba0f4ab4c2ffe80c27939616a3aa60ea9",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_benchmark.cpp": "7b26c8346bc50ff1f65c4f6011f6e7997d666df7e7ac7ae461e573acd6c1b9d3",
+    "test/ckks/ckks_narrow_checkpoint_inspect.cpp": "3cf275d95f408ae0bd291e8e00489e47a08500ce6428d0e073b08216cea03028"
+  },
+  "reports": {
+    "TFHEpp/docs/narrow-dd-small-ll14-plain37-aux16-sigmoid.json": {
+      "sha256": "faf2524e0592f4c4357775bd58fe4a95f4661e2587da8bd3d4b20c07045d42bb",
+      "max_error": 1.2061410116545627e-09,
+      "square_error": 3.1253422238200746e-09
+    },
+    "TFHEpp/docs/narrow-dd-small-ll14-plain37-aux16-gelu.json": {
+      "sha256": "90d9a3cd78f96d47262794c057485e85ce9f1b05f8c1854d3200113c130fa428",
+      "max_error": 2.823871149578758e-09,
+      "square_error": 2.5288925576414773e-08
+    },
+    "TFHEpp/docs/narrow-dd-small-ll14-plain37-aux16-tanh.json": {
+      "sha256": "dccd4d9bbfe8b24cf759ff088ce1157bc9ee89dfc17907da6903d7ffd92c2c85",
+      "max_error": 1.5382055905418134e-08,
+      "square_error": 4.1629028836020815e-08
+    }
+  },
+  "independent_fixed23bit_and_square_gates_passed": true,
+  "all_report_numbers_finite": true,
+  "selector_cleanup_passed": true,
+  "small_functions": [
+    "sigmoid",
+    "gelu",
+    "tanh"
+  ],
+  "failure_injection_expected_exit_code": 1,
+  "failure_snapshot_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-aux16-small-20261009-cwo2_t8e/failure-selectors.failed-state-0",
+  "failure_snapshot_magic": "0x4e41525243503136",
+  "failure_snapshot_selector_files": 35,
+  "prefix_inspector_passed": true,
+  "prefix_inspector_evaluation_keys_loaded": false,
+  "replay_report": "TFHEpp/docs/narrow-dd-small-ll14-plain37-aux16-replay.json",
+  "replay_sha256": "d94df211b85387db3dec9bbc7f05cb082f129f239eeb8671e1bba0e72a3ec199",
+  "replay_output_sha256": "d64d878275acecb5b1ba0b3ba798b9ffe1350fdf62438463b1732e194d5114c1",
+  "saved_and_replayed_ciphertexts_byte_identical": true,
+  "aux28_reader_rejects_aux16_checkpoint_exit_code": 134,
+  "aux16_reader_rejects_aux28_checkpoint_observed": true,
+  "old_aux28_retained_checkpoint_replay_pending": false,
+  "full_ring_accuracy_pending": true,
+  "security_validated": false,
+  "old_aux28_retained_checkpoint_replay_byte_identical": true,
+  "old_aux28_control_session": 55521,
+  "old_aux28_control_terminal": true,
+  "old_aux28_control_actual_exit_code": 0,
+  "old_aux28_control_report": "TFHEpp/docs/narrow-dd-small-ll14-plain37-aux16-old-checkpoint-control.json",
+  "old_aux28_control_report_sha256": "c4012953335f6beb7d71a71be7cb59f7f96a0b2e7a92e1ad9fa11904bde765c0",
+  "aux16_reader_rejects_aux28_checkpoint_exit_code": 134,
+  "final_small_validation_observed_at_utc": "2026-10-09T05:57:12.336673+00:00"
+}

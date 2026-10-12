@@ -1,0 +1,30 @@
+{
+  "message_bound": 4, "gap": 16, "grid_intervals": 65536,
+  "bound_method": "residual-curvature",
+  "results": [
+    {"function": "tanh", "degree": 6, "sampled_error": 0.004246627173340678, "uniform_bound": 0.0042466275846333472, "coefficient_l1_norm": 12.608216523017852, "complex_23_bit_bound_passed": false},
+    {"function": "tanh", "degree": 8, "sampled_error": 0.00076060005510258932, "uniform_bound": 0.00076060030643898633, "coefficient_l1_norm": 72.828307247231521, "complex_23_bit_bound_passed": false},
+    {"function": "tanh", "degree": 10, "sampled_error": 0.00013630785946561197, "uniform_bound": 0.0001363079791975396, "coefficient_l1_norm": 405.34546529887308, "complex_23_bit_bound_passed": false},
+    {"function": "tanh", "degree": 12, "sampled_error": 2.4429853757390596e-05, "uniform_bound": 2.4429929448272103e-05, "coefficient_l1_norm": 2269.0212651270845, "complex_23_bit_bound_passed": false},
+    {"function": "tanh", "degree": 14, "sampled_error": 4.3784960472859069e-06, "uniform_bound": 4.3786931799874058e-06, "coefficient_l1_norm": 12835.136826301208, "complex_23_bit_bound_passed": false},
+    {"function": "tanh", "degree": 16, "sampled_error": 7.847503425972846e-07, "uniform_bound": 7.8579649162892423e-07, "coefficient_l1_norm": 73268.817732911193, "complex_23_bit_bound_passed": false},
+    {"function": "tanh", "degree": 18, "sampled_error": 1.4065620590475447e-07, "uniform_bound": 1.4664754221080687e-07, "coefficient_l1_norm": 421314.00398788066, "complex_23_bit_bound_passed": false},
+    {"function": "tanh", "degree": 20, "sampled_error": 2.5235629919073688e-08, "uniform_bound": 5.9885961758609287e-08, "coefficient_l1_norm": 2436878.0504892073, "complex_23_bit_bound_passed": true},
+    {"function": "sigmoid", "degree": 6, "sampled_error": 1.7403500480368123e-05, "uniform_bound": 1.7403502734067252e-05, "coefficient_l1_norm": 1.0841918318316137, "complex_23_bit_bound_passed": false},
+    {"function": "sigmoid", "degree": 8, "sampled_error": 6.0727712336561268e-07, "uniform_bound": 6.0727739494453601e-07, "coefficient_l1_norm": 1.1133629251315151, "complex_23_bit_bound_passed": false},
+    {"function": "sigmoid", "degree": 10, "sampled_error": 2.145694867616843e-08, "uniform_bound": 2.1456999737988068e-08, "coefficient_l1_norm": 1.138747169903241, "complex_23_bit_bound_passed": true},
+    {"function": "sigmoid", "degree": 12, "sampled_error": 7.6460257569799239e-10, "uniform_bound": 7.6463482274393918e-10, "coefficient_l1_norm": 1.160267297466592, "complex_23_bit_bound_passed": true},
+    {"function": "sigmoid", "degree": 14, "sampled_error": 5.5350640737472645e-11, "uniform_bound": 5.5381875146005582e-11, "coefficient_l1_norm": 1.1922135871390602, "complex_23_bit_bound_passed": true},
+    {"function": "sigmoid", "degree": 16, "sampled_error": 2.2178647807180596e-12, "uniform_bound": 2.2492724336594448e-12, "coefficient_l1_norm": 1.207491069183908, "complex_23_bit_bound_passed": true},
+    {"function": "sigmoid", "degree": 18, "sampled_error": 9.0483176506950258e-14, "uniform_bound": 1.2206699008624015e-13, "coefficient_l1_norm": 1.2200340326698582, "complex_23_bit_bound_passed": true},
+    {"function": "sigmoid", "degree": 20, "sampled_error": 3.8857805861880479e-15, "uniform_bound": 3.5618657497048413e-14, "coefficient_l1_norm": 1.2305179827205308, "complex_23_bit_bound_passed": true},
+    {"function": "gelu", "degree": 6, "sampled_error": 0.00019714789586565724, "uniform_bound": 0.00019714793410240174, "coefficient_l1_norm": 8.5906662566179346, "complex_23_bit_bound_passed": false},
+    {"function": "gelu", "degree": 8, "sampled_error": 3.6886123601816959e-06, "uniform_bound": 3.6886145884166887e-06, "coefficient_l1_norm": 7.7270556737664222, "complex_23_bit_bound_passed": false},
+    {"function": "gelu", "degree": 10, "sampled_error": 3.9115784166451981e-08, "uniform_bound": 3.9115942599751326e-08, "coefficient_l1_norm": 6.4949093328569996, "complex_23_bit_bound_passed": true},
+    {"function": "gelu", "degree": 12, "sampled_error": 4.1593328781175387e-10, "uniform_bound": 4.160447868328025e-10, "coefficient_l1_norm": 6.7690640223396734, "complex_23_bit_bound_passed": true},
+    {"function": "gelu", "degree": 14, "sampled_error": 1.7332787982660136e-11, "uniform_bound": 1.7447466539418775e-11, "coefficient_l1_norm": 7.0649400992752103, "complex_23_bit_bound_passed": true},
+    {"function": "gelu", "degree": 16, "sampled_error": 4.972550149417998e-13, "uniform_bound": 6.1437696040632228e-13, "coefficient_l1_norm": 7.238955314801907, "complex_23_bit_bound_passed": true},
+    {"function": "gelu", "degree": 18, "sampled_error": 1.5917822615563182e-14, "uniform_bound": 1.3513397387218732e-13, "coefficient_l1_norm": 7.3863470286454334, "complex_23_bit_bound_passed": true},
+    {"function": "gelu", "degree": 20, "sampled_error": 9.1593399531575415e-16, "uniform_bound": 1.22302484307603e-13, "coefficient_l1_norm": 7.5390066311691122, "complex_23_bit_bound_passed": true}
+  ]
+}

@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#if defined(__AVX512DQ__)
+#if defined(__AVX2__) || defined(__AVX512DQ__)
 #include <immintrin.h>
 #endif
 
@@ -382,6 +382,35 @@ constexpr bool isPowerOfTwo(const std::size_t value)
     return value != 0 && (value & (value - 1)) == 0;
 }
 
+#if defined(__AVX2__)
+namespace avx2_ntt_detail {
+
+// AVX2 provides 32-bit limb products, but no 64-bit high product.
+// Recombine the four limb products without losing their carries.
+inline __m256i highProduct(__m256i a, __m256i b)
+{
+    const auto mask = _mm256_set1_epi64x(0xffffffffULL);
+    const auto ah = _mm256_srli_epi64(a, 32), bh = _mm256_srli_epi64(b, 32);
+    const auto ll = _mm256_mul_epu32(a, b);
+    const auto lh = _mm256_mul_epu32(a, bh);
+    const auto hl = _mm256_mul_epu32(ah, b);
+    const auto hh = _mm256_mul_epu32(ah, bh);
+    const auto middle = _mm256_add_epi64(_mm256_srli_epi64(ll, 32),
+        _mm256_add_epi64(_mm256_and_si256(lh, mask), _mm256_and_si256(hl, mask)));
+    return _mm256_add_epi64(hh, _mm256_add_epi64(_mm256_srli_epi64(lh, 32),
+        _mm256_add_epi64(_mm256_srli_epi64(hl, 32), _mm256_srli_epi64(middle, 32))));
+}
+
+inline __m256i lowProduct(__m256i a, __m256i b)
+{
+    const auto cross = _mm256_add_epi64(_mm256_mul_epu32(a, _mm256_srli_epi64(b, 32)),
+                                       _mm256_mul_epu32(_mm256_srli_epi64(a, 32), b));
+    return _mm256_add_epi64(_mm256_mul_epu32(a, b), _mm256_slli_epi64(cross, 32));
+}
+
+}
+#endif
+
 class Radix2NTTPlan {
 public:
     Radix2NTTPlan(const std::size_t size, const PrimeModulus prime)
@@ -549,8 +578,38 @@ private:
                 const auto &twiddles = invert ? inverse_twiddles_[stage]
                                               : forward_twiddles_[stage];
                 const std::size_t half = length >> 1;
-                for (std::size_t block = 0; block < size_; block += length)
-                    for (std::size_t j = 0; j < half; j++) {
+                for (std::size_t block = 0; block < size_; block += length) {
+                    std::size_t j = 0;
+#if defined(__AVX2__)
+                    // Inputs and Shoup products are below 2p. For p < 2^61,
+                    // their sum is below 4p < 2^63, so signed lane comparisons
+                    // reduce both butterfly outputs exactly into [0,2p).
+                    if (modulus_ < (std::uint64_t{1} << 61)) {
+                        const auto prime = _mm256_set1_epi64x(modulus_);
+                        const auto twice = _mm256_set1_epi64x(twice_modulus);
+                        const auto limit = _mm256_set1_epi64x(twice_modulus - 1);
+                        for (; j + 4 <= half; j += 4) {
+                            using namespace avx2_ntt_detail;
+                            // Deinterleave four {value, quotient} twiddles.
+                            static_assert(sizeof(ShoupMultiplier) == 2 * sizeof(std::uint64_t));
+                            const auto a = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(twiddles.data() + j));
+                            const auto b = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(twiddles.data() + j + 2));
+                            const auto value = _mm256_permute4x64_epi64(_mm256_unpacklo_epi64(a, b), 0xd8);
+                            const auto quotient = _mm256_permute4x64_epi64(_mm256_unpackhi_epi64(a, b), 0xd8);
+                            const auto even = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(values.data() + block + j));
+                            const auto input = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(values.data() + block + j + half));
+                            const auto estimate = highProduct(input, quotient);
+                            const auto odd = _mm256_sub_epi64(lowProduct(input, value),lowProduct(estimate, prime));
+                            auto sum = _mm256_add_epi64(even, odd);
+                            sum = _mm256_sub_epi64(sum,_mm256_and_si256(_mm256_cmpgt_epi64(sum, limit), twice));
+                            auto difference = _mm256_sub_epi64(even, odd);
+                            difference = _mm256_add_epi64(difference,_mm256_and_si256(_mm256_cmpgt_epi64(_mm256_setzero_si256(), difference), twice));
+                            _mm256_storeu_si256(reinterpret_cast<__m256i *>(values.data() + block + j), sum);
+                            _mm256_storeu_si256(reinterpret_cast<__m256i *>(values.data() + block + j + half), difference);
+                        }
+                    }
+#endif
+                    for (; j < half; j++) {
                         const std::uint64_t even = values[block + j];
                         const std::uint64_t odd =
                             j == 0 ? values[block + half]
@@ -560,6 +619,7 @@ private:
                         values[block + j + half] =
                             subtractLazy(even, odd, twice_modulus);
                     }
+                }
             }
             for (std::uint64_t &value : values)
                 if (value >= modulus_) value -= modulus_;

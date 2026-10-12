@@ -1,0 +1,158 @@
+{
+  "observed_at_utc": "2026-10-10T12:01:29.474535+00:00",
+  "scope": "Production zero-rescale tensor uses torus-width accumulator and skips products divisible by active output modulus; nonzero signed rounding retains full integer accumulation",
+  "all_checks_passed": true,
+  "build_session": 23659,
+  "build_actual_exit_code": 0,
+  "actual_exit_codes": [
+    {
+      "mode": "--full",
+      "exit_code": 0
+    },
+    {
+      "mode": "--packed",
+      "exit_code": 0
+    },
+    {
+      "mode": "--rescale",
+      "exit_code": 0
+    }
+  ],
+  "ring_n": 16384,
+  "tensor_coefficients_checked": 2359296,
+  "independent_accumulator_cases": 2992,
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "108ed15f7127030b385ba1075761cfc964d3a53692143ac6628d6cd0024b7877",
+    "TFHEpp/test/ckks/ckks_narrow_tensor_exact.cpp": "6ffad54405daf1682bafb12114f12beaa1953da69ca668e10b63d28c2b2de7be"
+  },
+  "production_executable_sha256": "759bba58da7b8b1bb80718b20b40babaee11031fdb832f6cdbcd0707c63718ef",
+  "results": {
+    "full": [
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=348 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=348 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=300 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=300 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=300 rhsQ=300 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=300 rhsQ=300 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=252 rhsQ=252 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=252 rhsQ=252 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=204 rhsQ=204 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=204 rhsQ=204 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=156 rhsQ=156 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=156 rhsQ=156 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=108 rhsQ=108 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=108 rhsQ=108 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=348 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=348 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=300 rhsQ=300 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=300 rhsQ=300 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=252 rhsQ=252 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=252 rhsQ=252 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=204 rhsQ=204 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=204 rhsQ=204 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=156 rhsQ=156 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=156 rhsQ=156 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=108 rhsQ=108 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=108 rhsQ=108 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=448 rhsQ=448 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=448 rhsQ=448 drop=48 coefficients=49152"
+    ],
+    "packed": [
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=345 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=345 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=296 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=296 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=296 rhsQ=296 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=296 rhsQ=296 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=247 rhsQ=247 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=247 rhsQ=247 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=198 rhsQ=198 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=198 rhsQ=198 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=149 rhsQ=149 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=149 rhsQ=149 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=345 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=345 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=247 rhsQ=247 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=247 rhsQ=247 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=198 rhsQ=198 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=198 rhsQ=198 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=149 rhsQ=149 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=149 rhsQ=149 drop=49 coefficients=49152"
+    ],
+    "rescale": [
+      "exact accumulator rescale passed drop=0 samples=272",
+      "exact accumulator rescale passed drop=1 samples=272",
+      "exact accumulator rescale passed drop=48 samples=272",
+      "exact accumulator rescale passed drop=49 samples=272",
+      "exact accumulator rescale passed drop=63 samples=272",
+      "exact accumulator rescale passed drop=64 samples=272",
+      "exact accumulator rescale passed drop=65 samples=272",
+      "exact accumulator rescale passed drop=127 samples=272",
+      "exact accumulator rescale passed drop=128 samples=272",
+      "exact accumulator rescale passed drop=256 samples=272",
+      "exact accumulator rescale passed drop=447 samples=272"
+    ]
+  },
+  "component_timing": [
+    {
+      "lhs_q": 348,
+      "rhs_q": 348,
+      "boundary": false,
+      "adaptive16_shift_seconds": 0.227482,
+      "adaptive16_modular_seconds": 0.135322
+    },
+    {
+      "lhs_q": 348,
+      "rhs_q": 300,
+      "boundary": false,
+      "adaptive16_shift_seconds": 0.124,
+      "adaptive16_modular_seconds": 0.0994481
+    },
+    {
+      "lhs_q": 300,
+      "rhs_q": 300,
+      "boundary": false,
+      "adaptive16_shift_seconds": 0.172096,
+      "adaptive16_modular_seconds": 0.119427
+    },
+    {
+      "lhs_q": 252,
+      "rhs_q": 252,
+      "boundary": false,
+      "adaptive16_shift_seconds": 0.119111,
+      "adaptive16_modular_seconds": 0.0715186
+    },
+    {
+      "lhs_q": 204,
+      "rhs_q": 204,
+      "boundary": false,
+      "adaptive16_shift_seconds": 0.0922978,
+      "adaptive16_modular_seconds": 0.0648165
+    },
+    {
+      "lhs_q": 156,
+      "rhs_q": 156,
+      "boundary": false,
+      "adaptive16_shift_seconds": 0.108002,
+      "adaptive16_modular_seconds": 0.0661232
+    },
+    {
+      "lhs_q": 108,
+      "rhs_q": 108,
+      "boundary": false,
+      "adaptive16_shift_seconds": 0.0727289,
+      "adaptive16_modular_seconds": 0.0371093
+    },
+    {
+      "lhs_q": 348,
+      "rhs_q": 348,
+      "boundary": true,
+      "adaptive16_shift_seconds": 0.0962791,
+      "adaptive16_modular_seconds": 0.094646
+    }
+  ],
+  "component_timing_scope": "Sequential individual calls under other concurrent CPU jobs; does not establish controlled whole-refresh speedup",
+  "fresh_keys_generated": false,
+  "whole_current_source_refresh_validated": false,
+  "paper_performance_reproduced": false
+}

@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-10T06:13:59.546765+00:00",
+  "scope": "Retained N16384 packed setup, exact checkpoint replay and independent saved input/refresh/square phases. CPU only.",
+  "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010",
+  "available_memory_bytes": 132009320448,
+  "address_space_limit_bytes": 68719476736,
+  "host_reserve_bytes": 10737418240,
+  "available_disk_bytes": 66378160668672,
+  "conservative_peak_disk_budget_bytes": 171798691840,
+  "root_exists": false,
+  "compatible_full_checkpoint_found": false,
+  "previous_one_shot_keys_recoverable": false,
+  "n512_runner_control": "narrow-dd-packed-checkpoint-runner-reuse-control-validation.json",
+  "launch_eligible": true,
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_narrow_benchmark.cpp": "15050404e075dcdf361b4c4d413b1ce2e0fea5bc0125f1040f36506ed84d42d7",
+    "Parameter-Selection/python/estimates/narrow_ckks_packed_checkpoint_run.py": "3062ceac74b2954790ebcf7588fcd4a3065978b60d0c47b224e93e4bce3e75ce",
+    "Parameter-Selection/python/estimates/narrow_ckks_packed_checkpoint_validate.py": "7047681affca5e818e15a4c8a5041908abfe6c9808270cf640af1ae064495918"
+  },
+  "exe_sha256": "f33a4d07ba3dc8100e64820b807b899d17bfc5f91b530704ac47cf3fc748947c",
+  "fresh_setup_reason": "No compatible retained N16384 packed checkpoint; save this setup and reuse it in all subsequent compatible tests.",
+  "security_validated": false,
+  "goal_complete": false
+}

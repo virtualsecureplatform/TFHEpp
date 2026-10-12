@@ -1,0 +1,57 @@
+{
+  "observed_at_utc": "2026-10-10T07:48:34.459767+00:00",
+  "scope": "Current source hashes and live pinned executable identity; does not establish encrypted accuracy or security.",
+  "source_sha256": {
+    "include/ckks/narrow_bootstrapping.hpp": "60ffcdbd18d5ea4057e6eb7348ce83c687816e46938bef014d01a9efa8217f8d",
+    "include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79",
+    "include/ckks/narrow_selector_file.hpp": "baa876f1d73f170a62117ce6fb27fb4aaf32866106243d7ae8e0d07dcc5e13c8",
+    "include/ckks/narrow_approximation.hpp": "cf1875973b73b5375879672924271ba696b0cc8814ff1ec061b44148c8d721a0",
+    "include/ckks/narrow_frequency_basis.hpp": "86795ee2e39ad93d50a3bd053cae00ea0de0bbad819b63968ce82b5ba1496fba",
+    "include/ckks/compact_dd.hpp": "59aad7215838b861168d54e50355db4c19c4cb3d9aaaad6ec01b38724288c5ce",
+    "include/ckks/compact_linear.hpp": "f46bce3180291c3bdbbea66a44326b0c6929773cde1078952c74d74a9ab0fc9f",
+    "include/ckks/prepared_dd.hpp": "890fdfe6def7d1bcc03272930769494ff1cbf0b3120b8cf61406af6f472fa5c8",
+    "test/ckks/ckks_narrow_bootstrapping.cpp": "1a2fa52d1f1d8095eca7a90f98cbac3f1ada0af5f07ef09323b974bdc30e1e6a",
+    "test/ckks/ckks_narrow_benchmark.cpp": "15050404e075dcdf361b4c4d413b1ce2e0fea5bc0125f1040f36506ed84d42d7",
+    "test/ckks/ckks_narrow_checkpoint_inspect.cpp": "20e5942ff5cf08f40dde91f00b9a6680bef80031a8937df0128bf86df6df72ae",
+    "test/ckks/ckks_narrow_tensor_exact.cpp": "0090155067258c6cfdacdd27cd4fe47726e5bb86eefefdc1c8f3e12808a9a7fd",
+    "include/ckks/ckks.hpp": "4e11d00df1c72f505f6635cf115810ec21299d85d19f538c73b1c2b0653c2372",
+    "include/mulfft.hpp": "0b9b7c957e57ffff0262c2a11160fab99ed1af095cc1b64d4979a761b7e14c2f",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a",
+    "test/ckks/ckks_narrow_dd_exact.cpp": "5e5c2e30ab0f9f2b8ce667e961cf608b7da0d757eb31c462395bfec817200740",
+    "test/ckks/ckks_narrow_factor_checkpoint.cpp": "29f5a0a0e9ed8cbabe7a25a64a1d358de661d29332461c45dc5e84c8f66ef88b",
+    "include/ckks/prepared_auto.hpp": "f8e1a2b97bb60dcbdf3eddedb0d04d03f2f5de9e25190c8db8441fd39b9a26a4",
+    "test/ckks/ckks_plain_mul_exact.cpp": "f27e4179cce4ec3c0976d547ae9769756355e737bc004cfa2cafe942b9b6ab84",
+    "test/ckks/ckks_narrow_memory_replay.cpp": "849b3d026bc57ba902a2a5c49648b57c924379b725915934609fa39a52e580a1",
+    "test/ckks/ckks_narrow_auxiliary_replay.cpp": "02eda0b461e6fd31e729ee728e337d3db8a69933f879ea3b2a8c35c807232d27"
+  },
+  "source_mismatches_against_previous_audit": [],
+  "python_source_sha256": {
+    "Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0",
+    "Parameter-Selection/python/estimates/narrow_ckks_auxiliary_probe_prefix.py": "d3293410764e88981701e3d6333d6f5d8014691626304b7bc92e7d389fbdedeb",
+    "Parameter-Selection/python/estimates/narrow_ckks_component_decode_controls.py": "7176d52e52903196c7fcd6ef8455592354b50130728ef60339ccf770d84dbabc",
+    "Parameter-Selection/python/estimates/narrow_ckks_packed_checkpoint_run.py": "3062ceac74b2954790ebcf7588fcd4a3065978b60d0c47b224e93e4bce3e75ce",
+    "Parameter-Selection/python/estimates/narrow_ckks_packed_checkpoint_validate.py": "7047681affca5e818e15a4c8a5041908abfe6c9808270cf640af1ae064495918",
+    "Parameter-Selection/python/estimates/narrow_ckks_packed_checkpoint_controls.py": "735c6bc64d00e436ee3d7b1459c29fe45c7fe070fd9ad538a3faaa43a4382317"
+  },
+  "live_processes": [
+    {
+      "pid": 1910341,
+      "start_ticks": 225941687,
+      "pinned_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/ckks_narrow_benchmark",
+      "running_executable_sha256": "f33a4d07ba3dc8100e64820b807b899d17bfc5f91b530704ac47cf3fc748947c",
+      "pinned_file_sha256": "f33a4d07ba3dc8100e64820b807b899d17bfc5f91b530704ac47cf3fc748947c",
+      "identity_passed": true
+    },
+    {
+      "pid": 1912823,
+      "start_ticks": 226261686,
+      "pinned_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selector-halves-diagnostic-v1/ckks_narrow_auxiliary_replay",
+      "running_executable_sha256": "a1a9790227e102059d139cae4cd4177888a05d9a4ca7411294b0dc60198792b1",
+      "pinned_file_sha256": "a1a9790227e102059d139cae4cd4177888a05d9a4ca7411294b0dc60198792b1",
+      "identity_passed": true
+    }
+  ],
+  "provenance_passed": true,
+  "encrypted_results_pending": true,
+  "goal_complete": false
+}

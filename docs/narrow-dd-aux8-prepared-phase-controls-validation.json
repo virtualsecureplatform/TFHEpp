@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-09T10:54:21.433030+00:00",
+  "points": [
+    {
+      "control": "truncated-prepared",
+      "rejected": true,
+      "reason": "invalid prepared archive length or endian flag"
+    },
+    {
+      "control": "trailing-prepared",
+      "rejected": true,
+      "reason": "invalid prepared archive length or endian flag"
+    },
+    {
+      "control": "wrong-report-metric",
+      "rejected": true,
+      "reason": "independent prepared phase metric mismatch"
+    },
+    {
+      "control": "wrong-state-profile",
+      "rejected": true,
+      "reason": "wrong auxiliary8 state profile"
+    }
+  ],
+  "all_rejected": true,
+  "source_sha256": "902ae52bd2c8a3397ced43b45643c35435155be3355870c6d9bff79837d59f2a"
+}

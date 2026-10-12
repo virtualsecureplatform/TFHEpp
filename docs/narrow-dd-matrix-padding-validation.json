@@ -1,0 +1,49 @@
+{
+  "scope": "Standalone paired 22 versus zero-padded 24 column matrix control; not full refresh qualification. Timing excludes copying/padding allocations.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "omp_threads": 4,
+  "full_ring_comparisons": 92274688,
+  "independent_oracle_checks": 1441792,
+  "paired_order": [
+    22,
+    24,
+    24,
+    22,
+    24,
+    22,
+    22,
+    24
+  ],
+  "summary": [
+    {
+      "prime": 0,
+      "median_seconds": {
+        "22": 0.122628371,
+        "24": 0.12099937599999999
+      },
+      "padding_time_ratio": 0.9867160022862898
+    },
+    {
+      "prime": 1,
+      "median_seconds": {
+        "22": 0.1208439005,
+        "24": 0.1302706575
+      },
+      "padding_time_ratio": 1.078007718726358
+    }
+  ],
+  "decision": "Reject padding: median change was -1.3% for prime 0 and +7.8% for prime 1; no consistent benefit, extra storage and copying excluded. Core unchanged.",
+  "fresh_keys_generated": false,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-padding-20261011/control.cpp": "c227dda83fdbaf982ee9ce40fd2cb4fcc7879f423994e8689932099079799fa8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-padding-20261011/control": "263c38743c9f1311f68efa8d6d39dd8e2d3d0d3619070d3813155f609ccbddf2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-padding-20261011/results.jsonl": "fd9b93aa54d1922bd55383ca218ee610f05b18bb503f58c6d4f394d17d3a641e",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-padding-20261011/time.log": "45e2086e4a4dc5159df8c8a0bb4f49fb9fe757adb792fa3970fc4ca4515264ca",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320"
+  },
+  "completed_utc": "2026-10-11T12:59:27.093891+00:00"
+}

@@ -1,0 +1,57 @@
+{
+  "observed_at_utc": "2026-10-10T11:02:22.266936+00:00",
+  "scope": "Explicit16-bit secondary auto FFT cache; N512 Q422 retained packed substitution keys at depths0/3/8 with four saved encrypted indicators",
+  "actual_exit_code": 0,
+  "build_actual_exit_code": 0,
+  "fixture_sha256": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+  "fixture_unchanged": true,
+  "fresh_keys_generated": false,
+  "expected_ciphertexts_compared": 12,
+  "expected_coefficients_compared": 12288,
+  "production_default_secondary_bits": 4,
+  "tested_secondary_bits": 16,
+  "full_ring_validated": false,
+  "all_checks_passed": true,
+  "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-secondary-controls-20261010/test.log",
+  "source_sha256": {
+    "TFHEpp/include/ckks/prepared_auto.hpp": "4927bd0b611bf54b6c3feb42067ac521bb8232458bab7d73d073edc460b54783",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-secondary-controls-20261010/controls.cpp": "b3f8cae53d73535415367ef93bb65c3eb72746ca170525c340c87b0c0de14da7"
+  },
+  "build_session": 60919,
+  "test_session": 62922,
+  "api": "makeCKKSPreparedAutoKeyFFT<P,LogQ,SecondaryBits>",
+  "primary_gadget_unchanged": true,
+  "serialized_key_format_unchanged": true,
+  "cache_bytes_before": 92045312,
+  "cache_bytes_after": 23445504,
+  "memory_budget": {
+    "available_bytes": 91467919360,
+    "required_bytes": 89614598144,
+    "child_cap_bytes": 536870912,
+    "host_reserve_bytes": 8589934592,
+    "jobs": [
+      {
+        "pid": 1910341,
+        "future_headroom_bytes": 50770685952
+      },
+      {
+        "pid": 1924017,
+        "future_headroom_bytes": 12579151872
+      },
+      {
+        "pid": 1927462,
+        "future_headroom_bytes": 17137954816
+      }
+    ],
+    "passed": true
+  },
+  "build_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "test_log_sha256": "e5fce8d51dc2f54f3d6df701fdd4c46dda76792b99557eaaba2c94943a767be6",
+  "limitations": [
+    "Only the explicit16-bit derived cache has been tested at N512 Q422",
+    "Production cache factories retain the original secondary digit width by default",
+    "Current full refresh benchmarks use pinned earlier executables",
+    "Broader modulus/degree controls and full-ring timing remain pending"
+  ],
+  "goal_complete": false
+}

@@ -1,0 +1,152 @@
+{
+  "scope": "Share selector quotient across both signed factor tables; independent exact modular arithmetic controls and N512 retained default refresh regression. No full encrypted N16384 replay under this source, security qualification or paper timing reproduction.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "build_actual_exit_code": 0,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "df205a57dadef8ec2de37a687ad676304db77bad5c74ad9ca8426ca0cf7118eb",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "83c8475fabe44393c4aeeeb0a18125c3dbe66746ba32a2b4e9dbc5811519feae",
+    "TFHEpp/test/ckks/ckks_narrow_matrix_pair_exact.cpp": "3f34a78ea9d9b2d8df34c67fad801e84ba57e8ae9bc3ee364394f57c182ac1c1"
+  },
+  "executable_sha256": "38c1eee49300afde49286fb58c755bcc7009379f1ab2e51da9840b409b075365",
+  "modular_oracle_and_timing": [
+    {
+      "independent_modular_coefficients_checked": 59047936,
+      "passed": true
+    },
+    {
+      "paired": false,
+      "seconds": 0.11723,
+      "exact_coefficients": 6291456
+    },
+    {
+      "paired": true,
+      "seconds": 0.0840337,
+      "exact_coefficients": 6291456
+    },
+    {
+      "paired": true,
+      "seconds": 0.0974805,
+      "exact_coefficients": 6291456
+    },
+    {
+      "paired": false,
+      "seconds": 0.0969052,
+      "exact_coefficients": 6291456
+    }
+  ],
+  "original_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/sigmoid-failure.bin": "946e15e6c42c663f042d147d2669a89ed0687285f53243623c3f83a0ac6cfc11",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-0.bin": "d7e3d5684693a1631a104999864309604eff69a612dba4526381b86e6893ab8f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-1.bin": "c393d8262bc5bb466bd37a2abb5a2760b3527bbe07ea01aa09320e5e240df11d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-10.bin": "f3a06c67fd51cce44e4a58721ff8774b1845c4ff924787e61e81ed6500962d71",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-11.bin": "0c2c5d57a9cde9beb0bb3fb70cf94e5bfacb89d1c56cecc5f1d7111a69f68f33",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-12.bin": "8591d13a0b87079328f2b90baddfad11fe6f7eb89c1c8eea3d4028b059e0bea2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-13.bin": "bdc2e70baeecffb5d8333b4ab696365caad6d38509f29b3951983f00401a7a61",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-14.bin": "31a2ca6abf0ec5d07244736ae2b98fbdd5ffadc79bd7ad9499cf3af58c14a229",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-15.bin": "52f1917d5da3871cd46f7acb534a89dadf71f2dcb92caeac5f934a60192c611e",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-16.bin": "c5cdd1b259771a08e5b4882bb43fe5adc70bd3075ba2910616fde5bbed680309",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-17.bin": "8204b61c16b3e7654c8f929963c00b7294361a8d34ddd2359f0c9e87c21b9fd2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-18.bin": "861ac1af4e04c21b4cc191980e46386d8c11cd1bb45af44f7853050c6862cd0f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-19.bin": "a751f223b2e1e7d4bf96cad47b9aa15d76cbaeef71af78415649c916cc8975a2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-2.bin": "758888c5f61a64aa4017e938d54bebed81d0407552107577e3c7c5aaf4892875",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-20.bin": "385d633aef6b8cd61702277e832512715b7bcfc3321360971b5e954341f2fddb",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-21.bin": "5f7b6fc872c992214da942295f8d08a381f3050b955411a0e23ff4837cc67972",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-22.bin": "06df18fa8029f373d9b92d7406a234118253a5d0536c5a68a21c7855c3a8d5e8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-23.bin": "37513b08a3e7741a5c16ac13937d560d0d827aaf2e573031cd89b9965f836dcb",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-24.bin": "810c2cbd6c2be3f32074af219002899a57c9bbc7bd550a0d3b9d93efca755875",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-25.bin": "95d5584f43db97a16480748c018eef58dcc8752d349404b352757356a96595ce",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-26.bin": "c155cb52e145521bc0f64a2dd295dc4090a6b840f31b97b37f6bd61be415220b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-27.bin": "e795843f9758a58282c012499fae0b85f26a5f98b3cb2858ac261e17b07075a4",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-28.bin": "f41de6f1d32c00bf1f0525a62bb9ca3c38c18e92c5ff573381703a793c807c48",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-29.bin": "40ebcb04ad5b7f9348944054d763d81533aeb261dc624bbb22fe9aa8ccd8ac70",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-3.bin": "7dc09978b88dff128fb566805087ef50fb9a8a2f4aeae8be1f99fe86a1c97e94",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-30.bin": "89d0465d447906726474ff5ae60c2bfe2e5abc53be9a4e1754812eacc6c25fc9",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-4.bin": "0313b7cba8bd0bce781ac9bee7e7fc60e18c32a0b489c08fbb8577a5c04614f2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-5.bin": "b6a2c292ba14f09c01df8e2b58a6610db0d7220dda953b0e307221fe71450a43",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-6.bin": "7285c93a957e6a2b97d8542ea550f47633f9e4bd4a160bdaa2883373e755e4ea",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-7.bin": "dee569d2f155412869be3643fc06bf0c83de5e94d9a6fc6cdfb036b3b1e159ea",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-8.bin": "e0281ba1f5b617fe7c37fa4c41995b2c56a6d824112d98674cc432358202b707",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/head-9.bin": "202161c48938fddcd79327f31c2f0c3816f4220c7b931637b71ab85761b9ddf1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/tail-0.bin": "962571ee8ade44479fc6a3834f9a28626dc09e16d8cc24aef00cb2b2dabd6f8f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/tail-1.bin": "38278b6048d0958939eb7aab7e1d3ca8f4d0ba372cc3de1a2e6fe2529acf7cb9",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/tail-2.bin": "cd50bc74e2c7c20a96280603181b9a19bd8adec0b4cf068d230718ba28a52927",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/selectors/tail-3.bin": "990ba1884f0541083aad5c5b12e5240345286e28691443da9fbe5a95cc55e4b1"
+  },
+  "refresh_actual_exit_code": 0,
+  "report": {
+    "n": 512,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--replay",
+    "fresh_keys_generated": false,
+    "fresh_input_max_error": 8.612885499260468e-12,
+    "saved_max_error": 1.3615911225947476e-09,
+    "saved_rms_error": 8.208303918710317e-10,
+    "projected_primary8_conjugation": false,
+    "persistent_fft_caches": false,
+    "derived_cache_prepare_seconds": 3.67e-07,
+    "refresh_seconds": 7.835286706,
+    "selector_ntt_digit_bits": 16,
+    "factor_groups_completed": 70,
+    "factor_stage_seconds": {
+      "selector_load": 0.016031893999999998,
+      "table_ntt": 0.23237637600000002,
+      "selector_ntt": 0.40537193800000015,
+      "matrix": 0.551913662,
+      "inverse_crt": 0.5576149860000001,
+      "conjugation": 1.0694454250000003
+    },
+    "max_error": 1.3615911225947476e-09,
+    "rms_error": 8.208303918710317e-10,
+    "saved_output_equal": true,
+    "accuracy_passed": true,
+    "retained_square_validated": false,
+    "selector_halves_mixed": false,
+    "selector_group_loads": 0
+  },
+  "prefix_sha256": "fb28516def3cc36e2e88e3fa2ae8f3642a71b9210224dee7bd0c88f6b877c52b",
+  "independent_refresh_actual_exit_code": 0,
+  "independent_refresh": {
+    "isolated_real_component_max_error": 1.220112788580252e-09,
+    "isolated_imaginary_component_max_error": 1.1158476920236637e-09,
+    "real_component_max_error": 1.220121892409054e-09,
+    "imaginary_component_max_error": 1.1158373669495347e-09,
+    "real_component_rms_error": 5.881981180619612e-10,
+    "imaginary_component_rms_error": 5.725259471456843e-10,
+    "function": "sigmoid",
+    "n": 512,
+    "prefix_bytes": 176225,
+    "phase_arithmetic": "integer scalar convolution",
+    "fresh_input_max_error": 8.603562567773713e-12,
+    "max_error": 1.3615935682817904e-09,
+    "rms_error": 8.208306684369779e-10,
+    "sparse_key_geometry_passed": true,
+    "evaluation_key_suffix_validated": false,
+    "retained_square_validated": false,
+    "scope": "Inspect auxiliary8 N512/N16384 prefixes using independent phase arithmetic.\n\nReads secrets only from a private diagnostic file. Outputs metrics, never key\nmaterial. Does not inspect evaluation-key suffixes or retained-square keys.\n",
+    "state_bytes": 176225,
+    "report_sha256": "b1e1e68638f249a83da3632cb6b5b03f222a610f326f4a0bbf122d892e115e1f",
+    "comparison_relative_tolerance": 1e-11,
+    "comparison_absolute_tolerance": 1e-11,
+    "fixed_23bit_refresh_passed": true
+  },
+  "original_files_unchanged": true,
+  "matrix_test_actual_exit_code": 0,
+  "timing_scope": "Four-thread public full-size matrix microbenchmark under concurrent large jobs; not isolated or whole-refresh performance.",
+  "median_matrix_seconds": {
+    "False": 0.1070676,
+    "True": 0.09075710000000001
+  },
+  "observed_matrix_median_ratio": 1.179715967125437,
+  "original_files_checked": 36,
+  "full_encrypted_n16384_replay_passed": false,
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/paired-selector-quotient-20261010/matrix-exact": "1d90233a15a05d74ed69f9ad66ec8adf3ff68bc848fc1e5e92bb155660769df4",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/paired-selector-quotient-20261010/test.log": "f568d93350a1eca2ee08cfae13aaf785cc021d013f79458dfa2d4d780dfdccb1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/paired-selector-quotient-20261010/build.log": "3c460e9d3575670485f91968403f454540a50e1cde3965326c28084ee62fdecc",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/paired-selector-quotient-20261010/refresh.log": "f31ed64b7ed53daac16d3fa9860caac4af9ba434374f9c5e712fceb7275319ca",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/paired-selector-quotient-20261010/independent_refresh.log": "ec3c950ea6d966006ba668a31ec34347e7493a107d625c6cf3f645b715fef4ad"
+  }
+}

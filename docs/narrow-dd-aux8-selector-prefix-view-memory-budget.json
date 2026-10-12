@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-09T10:41:57.662525+00:00",
+  "scope": "All36 actual aux8 selector groups via byte-identical private secret prefix view",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17683132416,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 14018863104,
+      "cap_bytes": 34359738368
+    },
+    {
+      "pid": 1840803,
+      "start_ticks": 218836594,
+      "rss_bytes": 8628973568,
+      "cap_bytes": 17179869184
+    }
+  ],
+  "available_bytes": 91368894464,
+  "required_bytes": 90933968896,
+  "process_limit_bytes": 134217728,
+  "stack_bytes": 8388608,
+  "omp_threads": 1,
+  "host_reserve_bytes": 10737418240,
+  "eligible": true,
+  "compiler_budget_eligible": false,
+  "aggregate_budget_bytes": 268435456
+}

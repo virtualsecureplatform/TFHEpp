@@ -1,0 +1,232 @@
+{
+  "objective": "Implement refs/2026-2119.pdf using Double Decomposition in TFHEpp",
+  "scope": "CPU only; CUDA excluded and removed at explicit user request",
+  "audited_utc": "2026-10-12T02:14:47.114124+00:00",
+  "paper_sha256": "ae1ca857606685c682b7f26164e96ac97ef8d27800108e8e6042cdcc9d3a0189",
+  "requirements": [
+    {
+      "id": 0,
+      "requirement": "Head/tail tables, signed complex-packed selectors, odd h31 geometry, beta leaf and balanced DD product trees",
+      "result": "verified implementation and evaluation",
+      "evidence": [
+        "narrow-dd-ll14-direct-fbs-validation.json",
+        "narrow-dd-wide-primary-ntt-tree-validation.json",
+        "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+        "narrow-dd-ll14-packed-mask42-root44-validation.json",
+        "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-complex-fbs-validation.json",
+        "narrow-dd-public-auto-ntt-root-integration-validation.json",
+        "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+        "narrow-dd-combined-default-regression-validation.json",
+        "narrow-dd-combined-ntt-production-integration-validation.json"
+      ]
+    },
+    {
+      "id": 1,
+      "requirement": "One transform per base table and fixed NTT permutations; W*U batching with exact bounded auxiliary-prime reconstruction",
+      "result": "verified implementation and evaluation",
+      "evidence": [
+        "narrow-dd-ll14-direct-fbs-validation.json",
+        "narrow-dd-wide-primary-ntt-tree-validation.json",
+        "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+        "narrow-dd-ll14-packed-mask42-root44-validation.json",
+        "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-complex-fbs-validation.json",
+        "narrow-dd-public-auto-ntt-root-integration-validation.json",
+        "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+        "narrow-dd-combined-default-regression-validation.json",
+        "narrow-dd-combined-ntt-production-integration-validation.json"
+      ]
+    },
+    {
+      "id": 2,
+      "requirement": "Four packed indicator ciphertexts, reusable public substitution keys, coefficient extraction/divide by N and evaluator-only selector reconstruction",
+      "result": "verified implementation and evaluation",
+      "evidence": [
+        "narrow-dd-ll14-packed-precision57-parallel-pilot-validation.json",
+        "narrow-dd-ll14-packed-precision57-reconstruction-validation.json",
+        "narrow-dd-ll14-packed-precision57-root44-validation.json",
+        "narrow-dd-ll14-packed-precision57-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+        "narrow-dd-ll14-packed-mask42-root44-validation.json",
+        "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-complex-fbs-validation.json",
+        "narrow-dd-public-auto-ntt-root-integration-validation.json",
+        "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+        "narrow-dd-combined-default-regression-validation.json",
+        "narrow-dd-combined-ntt-production-integration-validation.json"
+      ]
+    },
+    {
+      "id": 3,
+      "requirement": "Offline trigonometric Remez; positively weighted roots directly from shared selectors; negatives by conjugation; componentwise full complex FBS",
+      "result": "verified implementation and evaluation",
+      "evidence": [
+        "narrow-dd-ll14-direct-fbs-validation.json",
+        "narrow-dd-ll14-packed-precision57-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+        "narrow-dd-ll14-packed-mask42-root44-validation.json",
+        "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-complex-fbs-validation.json",
+        "narrow-dd-public-auto-ntt-root-integration-validation.json",
+        "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+        "narrow-dd-combined-default-regression-validation.json",
+        "narrow-dd-combined-ntt-production-integration-validation.json"
+      ]
+    },
+    {
+      "id": 4,
+      "requirement": "Order-two frequency basis plus one DD multiplication level; coefficients after reconstruction",
+      "result": "verified implementation and evaluation",
+      "evidence": [
+        "narrow-dd-s2c-tensor-full-replay-validation.json"
+      ]
+    },
+    {
+      "id": 5,
+      "requirement": "Natural-order diagonal BSGS S2C then dense-to-one-per-block h31 secret switching at lowest data level; real and imaginary halves",
+      "result": "verified implementation and evaluation",
+      "evidence": [
+        "narrow-dd-ll14-direct-fbs-validation.json",
+        "narrow-dd-s2c-tensor-full-replay-validation.json",
+        "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+        "narrow-dd-ll14-packed-mask42-root44-validation.json",
+        "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-complex-fbs-validation.json",
+        "narrow-dd-public-auto-ntt-root-integration-validation.json",
+        "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+        "narrow-dd-combined-default-regression-validation.json",
+        "narrow-dd-combined-ntt-production-integration-validation.json"
+      ]
+    },
+    {
+      "id": 6,
+      "requirement": "Actual DD port moduli/noise accounted for; fixed precision and retained multiplication on full rings",
+      "result": "verified implementation and evaluation",
+      "evidence": [
+        "narrow-dd-ll14-direct-fbs-validation.json",
+        "narrow-dd-wide-primary-ntt-tree-validation.json",
+        "narrow-dd-integer-noise-model-observation.json",
+        "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+        "narrow-dd-ll14-packed-mask42-root44-validation.json",
+        "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-complex-fbs-validation.json",
+        "narrow-dd-public-auto-ntt-root-integration-validation.json",
+        "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+        "narrow-dd-combined-default-regression-validation.json",
+        "narrow-dd-combined-ntt-production-integration-validation.json"
+      ]
+    },
+    {
+      "id": 7,
+      "requirement": "Assess actual exposed DD/encapsulation/packed moduli and structured sparse distribution rather than importing RNS parameter security",
+      "result": "assessment completed with explicit limitations",
+      "evidence": [
+        "narrow-dd-actual-noise-dense-security-validation.json",
+        "narrow-dd-integer-noise-model-observation.json",
+        "narrow-dd-mask42-security-scope-review.json"
+      ]
+    },
+    {
+      "id": 8,
+      "requirement": "Measure CPU online/setup/storage for implemented port with clear hardware and parameter differences",
+      "result": "measured; paper latency not reproduced",
+      "evidence": [
+        "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+        "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+        "narrow-dd-mask42-cpu-platform-observation.json"
+      ]
+    },
+    {
+      "id": 9,
+      "requirement": "CUDA pipeline and GPU performance",
+      "result": "excluded by user",
+      "evidence": [
+        "narrow-dd-current-cuda-exclusion-validation.json"
+      ]
+    }
+  ],
+  "canonical_proofs_inspected": {
+    "narrow-dd-ll14-packed-mask42-reconstruction-validation.json": {
+      "sha256": "e57b7458da8f104e7372dbc0f1561c8679192a1e04014647df1d503073405dc5",
+      "verified_scope": "Full N16384 mask42 coefficient-packed reconstruction to selector379/57 from retained public packed435 primary8/delta57 archive, all14 substitution depths cached once. No secrets loaded and no key generation. New output selectors retained for reuse after qualification. Qualified parallel mask kernel, local-disk temporary accumulator, network-disk retained final selectors. Two-hour wall-time cap. Does not qualify full functional accuracy or paper performance/security."
+    },
+    "narrow-dd-ll14-packed-mask42-root44-validation.json": {
+      "sha256": "ba839385ef931dd0310339ed1795de5c68f18afe31c9f1e5d27f42d760498837",
+      "verified_scope": "Queued full N16384 frequency1 encrypted root with reconstructed coefficient-packed selector379/57 from public mask42, table42, sourcefactor337/57 rescaled13 to324/44, original345 conjugation key publicly reduced to337 and publicly projected DD324/280/236/192/148. Public reconstruction masks normalized only in beta. Saved private/evaluation keys and prepared input reused. Component root qualification, not full functional/security/performance qualification."
+    },
+    "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json": {
+      "sha256": "8f45f1c9b0973f757cbd6efeaf7c67933da3e732853a4737ab6ca89523c85ad5",
+      "verified_scope": "Full N16384 real GeLU/Tanh/Sigmoid functional refresh using reconstructed coefficient-packed selectors379/57 reconstructed with public mask42, public mask normalization, table42/scratch54, factor324/44 and auxiliary100 primary64/secondary32 NTT DD324/280/236/192/148 from saved public DD433, public-derived primary64/secondary32 NTT conjugation and all seven direct tail rotations from saved packed435 keys, S2C auxiliary8, output101/44 and subsequent square57/44. Reuses saved private/evaluation keys and input; no reconstruction or encryption here. Independent all-slot integer phase checks. Experimental CPU accuracy/remaining-level qualification, not paper security/performance qualification. Isolated header integration; production headers unchanged. Waits for full original NTT DD real validation, full public-derived automorphism root qualification and original complex qualification, original real packed qualification and original NTT root qualification. Eight workers. Stops on failed prerequisite or accuracy gate."
+    },
+    "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json": {
+      "sha256": "42f2193cb7929ef7f96202f7fa63d0f9681957841c8467b2db6827a206a4971c",
+      "verified_scope": "Full N16384 componentwise complex GeLU/Tanh/Sigmoid functional refresh using reconstructed coefficient-packed selectors379/57 reconstructed with public mask42, public mask normalization, table42/scratch54, factor324/44 and auxiliary100 primary64/secondary32 NTT DD324/280/236/192/148 from saved public DD433, public-derived primary64/secondary32 NTT conjugation and all seven direct tail rotations from saved packed435 keys, S2C auxiliary8, output101/44 and subsequent square57/44. Reuses saved private/evaluation keys and input; no reconstruction or encryption here. Independent all-slot integer phase checks against f(real)+i*f(imaginary) and its complex square. Experimental CPU accuracy/remaining-level qualification, not paper security/performance qualification. Isolated header integration; production headers unchanged. Waits for full original NTT DD real validation, full public-derived automorphism root qualification and original complex qualification, original real packed qualification and original NTT root qualification. Eight workers. Stops on failed prerequisite or accuracy gate."
+    },
+    "narrow-dd-combined-default-regression-validation.json": {
+      "sha256": "6f8af22fbfec6ef2ce435b167bd43ac0656ef7394d103f12fecb5033b3389ad8",
+      "verified_scope": "Existing default CPU narrow bootstrapping regression compiled against pinned isolated combined-backend headers. Tests exercise default FFT behavior, exact arithmetic, packed selectors, odd geometry, frequency basis and small functional refresh. Existing small unit tests generate their own synthetic keys; no large retained checkpoint key or selector setup is regenerated."
+    },
+    "narrow-dd-combined-ntt-production-integration-validation.json": {
+      "sha256": "96642b387dacf87fd7b141a54e659b2080f0ef1ead94b40885b33a70cd1ef462",
+      "verified_scope": "Promoted the combined CPU backend and real/complex retained runners only after full real, complex, default-regression and saved-artifact validation passed. Headers exactly match qualified isolated snapshots; runner includes made relative. Current-production build/lifecycle verification follows."
+    },
+    "narrow-dd-s2c-tensor-full-replay-validation.json": {
+      "sha256": "7aa05923dfbd7312c3c043027be4f51c60e0e855c3eeccffe0065e9e8db95fb6",
+      "verified_scope": "Validate current full-ring root reuse against a completed retained checkpoint.\n\nFreeze the small-qualified executable and independent decoder before waiting.\nWait for the original basis validation and termination of preceding large tests.\nReuse the checkpoint, compare all output bytes, decode phases independently and\ncheck retained payload integrity. No fresh key generation or security claim.\n"
+    },
+    "narrow-dd-actual-noise-dense-security-validation.json": {
+      "sha256": "6ee124d0fcf9eb7741317103acd0d208903cb1a4df9e572b7672e7910b18b553",
+      "verified_scope": "Dense LWE proxy screen for highest exposed packed-key modulus435 at N16384, using analytic integer RMS of the actual historical truncating sampler. DiscreteGaussian variance proxy only; exact truncation distribution, structured secret, ring/correlated keys and circular security not qualified."
+    },
+    "narrow-dd-current-cuda-exclusion-validation.json": {
+      "sha256": "d94134c80436a43e98753ee3e9f61c6b0bc9e0ddb95e9f681210e81fcb4642eb",
+      "verified_scope": "Current installed CKKS include/test trees and root/test CMake files after combined CPU backend promotion; historical diagnostics and unrelated core/third-party code excluded."
+    }
+  },
+  "current_source_sha256": {
+    "narrow_bootstrapping.hpp": "b0d7644937d1d585cf385463aa72eb3dec890ec40e3d44115f7bba5bea54feda",
+    "narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "narrow_approximation.hpp": "cf1875973b73b5375879672924271ba696b0cc8814ff1ec061b44148c8d721a0",
+    "narrow_frequency_basis.hpp": "65fc51d26f988f9cd49c154384c15ad46b19d189e085ac21101861fc275c6208",
+    "narrow_refresh.hpp": "f07bbe5c1796c31345a554480c8477c80124b917acef23a5ce072bf0996a82a7",
+    "compact_linear.hpp": "7dc89ec7a6455a3487b23ecf5d47b4fa4f44654e940daac7e2b2e79da72fff2b",
+    "compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "prepared_dd_ntt.hpp": "bc92c1b9cb101c8e393e1bdf20f7c420f2640096834dfdcb067ffd71e0b15b13",
+    "prepared_dd_ntt_chain.hpp": "aca92d9b2c81d8fdccd0b510af290b0400346dab08a3ba7a992c7a019d7c7a49",
+    "narrow_dd_ntt.hpp": "f5bf7818e43c4d5bcc7eefc31c0a54920078ca7be21a858c8b81a23b89e06cde",
+    "narrow_auto_ntt.hpp": "0ffad925553faa230e6e68bfe12d0e49152a8c2add3945f959bf3e26c29849ea",
+    "public_auto_ntt.hpp": "84790360f1e0818b306382a909cf1d67ab366266bfc82629ed2bfed51eca44a2",
+    "narrow_selector_projection.hpp": "c6cdb7d4c5b7cbae0216fc6bb790a746f68d324cc1473bbfd17d33707b5f0420",
+    "narrow_selector_file.hpp": "e05f6af47c068c4d7a419a5739d29eafd509e7896bfbdd7050fe1a172fb89265",
+    "narrow_packed_file.hpp": "66ea433a16f90301dffd89d5c767a2c79f5fc850cef22d10cd20d003ee20b882"
+  },
+  "cpu_algorithm_implementation_verified": true,
+  "large_retained_key_reuse_verified": true,
+  "real_and_complex_independent_phase_coefficients_checked": 393216,
+  "subsequent_multiplication_verified": true,
+  "production_build_and_lifecycle_verified": true,
+  "cuda_excluded": true,
+  "overall_128_bit_security_established": false,
+  "paper_cpu_latency_reproduced": false,
+  "limitations": [
+    "Native modulus/DD parameters and host differ from the paper.",
+    "Dense highest-modulus actual-RMS generic proxy is assessed; structured sparse, exact error-distribution and correlated/circular key security are not certified.",
+    "CPU measurements are much slower than the paper and are not matched hardware benchmarks."
+  ],
+  "implementation_work_remaining": [],
+  "goal_complete": true,
+  "completed_utc": "2026-10-12T02:17:06.476618+00:00"
+}

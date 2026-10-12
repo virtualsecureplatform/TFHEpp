@@ -1,0 +1,49 @@
+{
+  "scope": "Five-level N16384 DD NTT product-tree integration through existing productTree API; primary64/secondary32, auxiliary100 at each level333/290/247/204/161, output118/43. Uses one saved public DD433 master, publicly projected at each level; no private or encrypted evaluation key generation. Independently compares all result slots with product of decoded input factors and baseline FFT DD tree. Timings preliminary under concurrent reconstruction. Not full FBS/security/paper performance qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "new_private_keys_generated": 0,
+  "new_encrypted_evaluation_keys_generated": 0,
+  "controller_pid": 2060433,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_dd_ntt_tree.cpp": "38999fd4f0a0d39088c7f6d9c2ddc70ee3ee7e9b5abfbd8cf7e40781d315904d",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_dd_ntt_chain.hpp": "aca92d9b2c81d8fdccd0b510af290b0400346dab08a3ba7a992c7a019d7c7a49",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_dd_ntt.hpp": "bc92c1b9cb101c8e393e1bdf20f7c420f2640096834dfdcb067ffd71e0b15b13",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "297e7d6632e63102c9b45ea987de060c74363858c28dfdcdeff260c9a762009f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "636aaa5b5ebf3a02c851db136c4a200188f5c1e088fdaa8925ab83ac65167619",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/wide-dd-ntt-tree-20261011/run.py": "06e72f1cb70fc49bd924f6bbe64aae94037bacf3886c1da38b736cf5bc868d12",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/wide-dd-ntt-tree-20261011/validate.py": "0d6b7443ecf636e49dc8196e58f0318a21e06798f728588705cf88d14d48b770",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/wide-dd-ntt-tree-20261011/tree": "643f0689129dbafbd600230bcfb779d00bd5a056f11faf8dab79916eabfbdc6a"
+  },
+  "updated_utc": "2026-10-11T19:52:32.522320+00:00",
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/wide-dd-ntt-20261011/dd433-primary64.bin": "78e146fa149609184199ed2b0f696140ed466b6375392cd1dd1925497af48f21",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-plain40-scale43-root-20261011/projected-dd-chain.bin": "8ccce9ddc8f4686969cfe2b8f5825f110fd86d76e04d5fb9017bff5e3b1bd108",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-plain40-scale43-root-20261011/outputs.bin": "c848d6e710c209162878a6e754748964bfc0c9880673a780c23f6dc2514eef65",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint/checkpoint.bin": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af"
+  },
+  "evaluator_pid": 2060437,
+  "test_actual_exit_code": 0,
+  "report": {
+    "new_private_keys_generated": 0,
+    "new_encrypted_evaluation_keys_generated": 0,
+    "ntt_chain_cache_bytes": 367001600,
+    "ntt_chain_preparation_seconds": 2.788572333,
+    "ntt_tree_seconds": 2.933514221,
+    "fft_tree_seconds": 4.567566647,
+    "speedup": 1.5570289771572918
+  },
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent full-ring integer phases of all32 saved input factors and two full five-level encrypted product trees. Expected product computed from independently decoded inputs, isolating multiplication from selector noise. Public NTT chain projected from saved DD433 primary64 master; no key generation. Not a full FBS or security qualification.",
+    "phase_coefficients_checked": 557056,
+    "all_output_slots_checked": 16384,
+    "ntt_tree_max_error": 1.5006928584549752e-08,
+    "baseline_fft_tree_max_error": 1.2937365582026508e-08,
+    "fixed_error_gate": 1.1920928955078125e-07,
+    "all_checks_passed": true
+  },
+  "artifacts_unchanged": true,
+  "sources_unchanged": true
+}

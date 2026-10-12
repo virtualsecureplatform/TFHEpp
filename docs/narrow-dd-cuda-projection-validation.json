@@ -1,0 +1,88 @@
+{
+  "observed_at_utc": "2026-10-08T19:15:22.751020+00:00",
+  "scope": "Standalone wide signed tensor projection to native words: full-width rounding then output-level reduction. Portable arithmetic and metadata tested on host; device kernel and complete tensor/DD tree integration unexecuted.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "69982935b1a1839b33df5ae56a814011ae70b215ada7caed2ca52d219d966c2d",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "561db59a5490bca2a6d4141b1e4ce33569b1039d9859b6578793f5dea13b006d",
+    "src/ckks/narrow_cuda.cu": "c0adda8d76bdcade3f40449502656c64471d0fa1ff6afc27e22ef0e0abab6a29",
+    "test/ckks/ckks_narrow_cuda.cu": "24eef28881c8950246dbeff90630bfce1d2cc14a1516d373dca95eabc70f5564"
+  },
+  "cuda_wide_torus_projection_source_implemented": true,
+  "projection_order": "Preserve source, copy to disjoint wide scratch, signed round-to-nearest ties away from zero at full input level, copy low output limbs, reduce to declared output level.",
+  "drop_zero_supports_exact_level_reduction_before_relinearization": true,
+  "positive_drop_preserves_wide_carries_before_output_truncation": true,
+  "input_scratch_output_disjoint_required": true,
+  "output_level_cannot_exceed_input_level_minus_drop": true,
+  "device_allocation_or_host_tensor_transfer_during_projection": false,
+  "cuda_cmake_final_build_exit_code": 0,
+  "cuda_cmake_final_build_session": 97643,
+  "cuda_cmake_build_log": "/tmp/ckks-narrow-cuda-projection-final-build.log",
+  "cuda_test_actual_exit_code": 77,
+  "cuda_test_log": "/tmp/ckks-narrow-cuda-projection-cmake-test.log",
+  "host_invalid_projection_cases_passed": 16,
+  "host_valid_projection_layouts_passed": 1,
+  "host_integer_reference_profiles_passed": 33,
+  "host_integer_reference_coefficients_passed": 858,
+  "integer_reference": "Independent MultiLimbUInt<32> (2048-bit) signed magnitude rounding and output mask, compared word-for-word with portable limb-loop projection.",
+  "input_output_level_pairs": [
+    [
+      64,
+      37
+    ],
+    [
+      128,
+      63
+    ],
+    [
+      449,
+      217
+    ],
+    [
+      1041,
+      518
+    ],
+    [
+      1700,
+      842
+    ],
+    [
+      1811,
+      896
+    ]
+  ],
+  "tested_scale_drops": "Distinct valid values among 0,1,37,64,65,inputQ-outputQ for each level pair.",
+  "additional_padded_output_profile": [
+    64,
+    37,
+    0
+  ],
+  "additional_padded_output_limbs": 3,
+  "values_per_profile": 26,
+  "coefficient_boundaries": "Zero, positive/negative half-drop ties and neighbors, full input sign boundary and neighbor, all ones, sixteen full-width random values. Noncanonical upper input storage bits forced to ones.",
+  "ties_and_carries_above_native_output_storage_width_covered": true,
+  "input_preservation_checked": true,
+  "padded_output_upper_zero_words_checked": true,
+  "host_ubsan_final_build_exit_code": 0,
+  "host_ubsan_final_build_session": 59896,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-projection-host-ubsan-final-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-projection-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_driver_session": 15726,
+  "host_ubsan_test_driver_exit_code": 0,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-projection-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-projection-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "Both CUDA source/test host routines and portable projection helper instrumented. Device kernels not instrumented or executed.",
+  "all_prior_kernel_host_checks_rechecked": true,
+  "total_kernel_host_rejection_cases_passed": 149,
+  "compiled_matching_device_projection_profiles": 33,
+  "compiled_matching_device_projection_coefficients": 858,
+  "device_cases_executed": false,
+  "gpu_device_count": 0,
+  "gpu_wide_projection_validated": false,
+  "complete_cuda_tensor_product_implemented": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

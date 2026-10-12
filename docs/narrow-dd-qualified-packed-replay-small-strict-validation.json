@@ -1,0 +1,139 @@
+{
+  "scope": "Replay a completed packed checkpoint with a small-qualified frozen executable.\n\nAn optional PID/start-time pair delays evaluation until the baseline controller\nhas exited. No key generation or selector reconstruction is requested. This\nchecks standard refresh and multiplication, not Table 7 functional latency or\nstructured-key security.\n",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "completed",
+  "runner": {
+    "pid": 2025442,
+    "start_ticks": 236090918,
+    "state": "R"
+  },
+  "wait_runner": null,
+  "baseline_validation": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-prepared-refresh-retained-replay-validation.json",
+  "small_qualification_sha256": "a7c342419f26c4ae7e3a08d014b522a42887120de619a2b7570e6d163fc70c66",
+  "exe_sha256": "d5bf8780d28ad0e518610fc3d482e99f6f5c3a1bfb7d01aa7dc08b2453a60b9d",
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/include/ckks/narrow_refresh.hpp": "18974af4ddd430b1f96efbd065ebe154be659fc4ae66ef9d8a5b26fc05b4aa94",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/tfhe/trlwe.hpp": "ff2a7e7d5aca14f41787c4a02b2601a931ef8da089fe8e1c4c6dc40604bbe537",
+    "TFHEpp/include/mulfft.hpp": "62fb565326a0efd5ce5a7cddb74c81aca7b8c1634a64b90588da6cf5f92d35b3",
+    "TFHEpp/thirdparties/spqlios-intl/fft_processor_spqlios_intl.h": "ef041a0db3ff57a7bb426d7ce0e350d1b1ee8cd75a337e9cc1c385e8bd388722",
+    "TFHEpp/test/ckks/ckks_narrow_benchmark.cpp": "d164ede774a45b68e183cf0b54ecfa1d5c2c0debf2f25dbec9ccee722e82bf71"
+  },
+  "controller_sha256": "d1de93f768ae15503dee0c57867cab475c7ce1cb6cc17c75cd344974f2f2bf2f",
+  "helper_sha256": {
+    "narrow_ckks_packed_checkpoint_validate.py": "7047681affca5e818e15a4c8a5041908abfe6c9808270cf640af1ae064495918",
+    "narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0",
+    "narrow_ckks_packed_cpu_compare.py": "719486b7834b0ad19b8a54cf77c10f56d47355c98a396c9f770d712975db035c"
+  },
+  "omp_threads": 4,
+  "evaluator_cap_bytes": 34359738368,
+  "fresh_keys_generated": false,
+  "selector_reconstruction_requested": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "updated_utc": "2026-10-11T10:25:42.663606+00:00",
+  "n": 512,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/checkpoint",
+  "checkpoint_file_count": 37,
+  "checkpoint_hashes": {
+    "checkpoint.bin": "b2d2db248b7584d980b936677341a5658611119551e76b291b05ec845c6e628a",
+    "selectors/head-0.bin": "e522fc4bb21cd4579d7e26340638146e87d0349ccebf73bde834920bf2fe490e",
+    "selectors/head-1.bin": "0a25b5f6f7c0000ebca07a75470f5a7bcf5069168ddab3f59e147fc4cbbb95af",
+    "selectors/head-10.bin": "ad4f8d82eba044227fbae9141edbd22f0f38b7774f96408327caefccceee817b",
+    "selectors/head-11.bin": "36173f61d65716c279fd0f3fd025ebd9c881b67c08b03ae4faec5d171b5f4c24",
+    "selectors/head-12.bin": "b36f4a2fd3625636689297f88edc37e8a72a52db6929b4352f005956d7658382",
+    "selectors/head-13.bin": "54f0a3a16df1d5bcc7bd93ee7c6305c2b1ed6fd02df5c5da0ab5b0dd15181138",
+    "selectors/head-14.bin": "feb7788d5a9d5130e1867758cba5e6b3b5d74f22f9a1ec9172a25a39fe1daf32",
+    "selectors/head-15.bin": "a2254b442630da2f7b4dd907d9b754a32b3190e95aef8748e61fd5ba8aaf55b1",
+    "selectors/head-16.bin": "a532f776ab05336753a20caaae4518ed06620ea0bc81b4d880588fcee94480fe",
+    "selectors/head-17.bin": "f2b9b4cdc62f252c88b8adf9a52373a73599028729f98b2ad399c4301eaba477",
+    "selectors/head-18.bin": "ecb766fd6c6310cefb3f787a604461f4105bfc755082eb11cb7c741a3bd40d14",
+    "selectors/head-19.bin": "33ee8392bfe236f5a8c93d6adbea5d05795f3a7099978f167b5dcd7172bc9272",
+    "selectors/head-2.bin": "04089a7ec0f129533fd7c7eea9e6fd1ec9db4b5ae2a5f107f85f81b63c53904d",
+    "selectors/head-20.bin": "95ec8550a77a4075a7acb564e608fbd8139aa7e1603e00801f11a8408ad1338d",
+    "selectors/head-21.bin": "3212d43a2c201a9a2df23b64ceaa8fd4268c851196bd2fa0181bd597756bfbce",
+    "selectors/head-22.bin": "804a4ad9abe7f6f4cb1e01f6bcd881d5c40976c465209cc0d7ec3f23302c0338",
+    "selectors/head-23.bin": "e97308702c8ef1a6a3fe25cf98a10e091d985ea5cb67d74f8475ce6050eb2009",
+    "selectors/head-24.bin": "0c1d0ce3750667d01eaa4f3135d615bf0d9e78a8c83ac7faef6c978d0624bdcc",
+    "selectors/head-25.bin": "c02cbe735f910519fe5c67c38992d1f27c82cedc3adb3b86793c5553e9e5382f",
+    "selectors/head-26.bin": "c92a21b3b476b33e3e3fbb961bc7da14a4b274860d5172d913ce7c03bdc8e182",
+    "selectors/head-27.bin": "cdd3e611eb507bcec7f68495c976c710525159d89b0f43e03546d3acbf85dd71",
+    "selectors/head-28.bin": "767f893fe2331201dc899e93d6ef43ecbef58a4f14ef7ae7749b1324f4cb4ec6",
+    "selectors/head-29.bin": "ccfc34b312d4aac8cdb8caf0708fce5227bb94360fcb8603b340aa6c7c3ceaca",
+    "selectors/head-3.bin": "c6df6dda2b1eadf58e2a0aafa8e8f4723c4ca4025fba0c78125e138c426082de",
+    "selectors/head-30.bin": "05d5b13c0f6aa5c224f267e5e91ceeb568ff037d4c297563c73ca1f741d6fc8e",
+    "selectors/head-4.bin": "4a1053b2975212086e811e29999ca025065ad9b9fdfadb389b2a9d1783693a93",
+    "selectors/head-5.bin": "87694432c840391f04223c811245df3cc46ffd359cde664c7b93137e3952ec3c",
+    "selectors/head-6.bin": "c899581e55cfde6f18dacb3a338dcd8d3163a5d428f786d4c19053fff58cedd5",
+    "selectors/head-7.bin": "c83f425ce35f802715ad5d3b6c6a87221fe09a178dc40b46c92aee09364283ac",
+    "selectors/head-8.bin": "eb19b17f0ee686b744af3983b645c261fdee75e31df4dfc0242b3024bc9c1280",
+    "selectors/head-9.bin": "f0749ecd90350f9ca4f45c709215a88f9e207f7542c4389cc4a8b34fef0a17ae",
+    "selectors/tail-0.bin": "c60b65a146bd83ef1fdf22800cd10007c423435eadf5e98c0648b879aed28b72",
+    "selectors/tail-1.bin": "32a16152ca923a0123f28449d95275119c5dea6cce64eb03e570cc07ff51dcc1",
+    "selectors/tail-2.bin": "9b2fd10068030a8ae7253eef38e38374c6e0e34218712c27f4a3bcc0c6f61f89",
+    "selectors/tail-3.bin": "34f4a252736ea000e48562c1b5530a1e8b1c60521337de54590f8bb7b8a4519f",
+    "square-key.bin": "ac64ba9906cb9fec25366830cb5ff0f391bc56bb940fd88b0fb77d7ea30af6b6"
+  },
+  "baseline_validation_sha256": "b9cef1eb5344e29d8b26278b63f38634150ec15452275e9595b9ba96f41ef74e",
+  "checkpoint_rehashed_before_evaluation": false,
+  "command": [
+    "/usr/bin/time",
+    "-v",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/qualified-packed-replay-small-strict-20261011/ckks_narrow_benchmark",
+    "--small-high-packed-bounded-replay",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/qualified-packed-replay-small-strict-20261011/replay.json"
+  ],
+  "evaluator_actual_exit_code": 0,
+  "selector_slot_comparisons": 152320,
+  "phase_seconds": {
+    "selector_validation_seconds": 0.231377737,
+    "coefficient_preparation_seconds": 0.116693003,
+    "prepared_evaluation_seconds": 1.224439862,
+    "refresh_seconds": 1.341132865,
+    "key_setup_seconds": 0.279258105
+  },
+  "independent_phase_validation": {
+    "n": 512,
+    "metrics": {
+      "fresh_input_max_error": 6.425916590990133e-11,
+      "max_error": 1.1839592284083153e-06,
+      "rms_error": 4.3521162003621303e-07,
+      "post_refresh_product_max_error": 4.185404876517042e-07
+    },
+    "tolerance": 1.52587890625e-05,
+    "checkpoint_prefix_bytes_read": 118869,
+    "checkpoint_prefix_sha256": "106c0c88c387ca05f0d718e72a4f630eef59e4340813d14f0b73d10fce6c04b3",
+    "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/checkpoint/checkpoint.bin",
+    "independent_phase_validated": true,
+    "evaluation_keys_loaded": false,
+    "selector_phases_validated": false,
+    "security_validated": false,
+    "full_ring_phase_validated": false,
+    "accuracy_passed": true,
+    "artifacts": {
+      "refresh": {
+        "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/qualified-packed-replay-small-strict-20261011/replay.json.ciphertext",
+        "sha256": "570829d0f4cefa0f74e912543ac4c6485e37ec10e956cfd0db06515194ce3a25"
+      },
+      "square": {
+        "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/qualified-packed-replay-small-strict-20261011/replay.json.square.ciphertext",
+        "sha256": "0994b73ae30e8514f33f1d641fdfa6cc0a4b16c93d90ec43a05de74e4fd84f24"
+      },
+      "report": {
+        "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/qualified-packed-replay-small-strict-20261011/replay.json",
+        "sha256": "a3f1d9c75c024ce071f6a95f4d8c0d43b7d8df5d82cbdfff06ace2b7cd920e60"
+      }
+    }
+  },
+  "checkpoint_files_unchanged": true,
+  "earlier_ciphertext_identities": {
+    ".ciphertext": true,
+    ".square.ciphertext": true
+  },
+  "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/qualified-packed-replay-small-strict-20261011/replay.json",
+  "report_sha256": "a3f1d9c75c024ce071f6a95f4d8c0d43b7d8df5d82cbdfff06ace2b7cd920e60",
+  "controller_actual_exit_code": 0
+}

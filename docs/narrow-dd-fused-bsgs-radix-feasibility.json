@@ -1,0 +1,18 @@
+{
+  "observed_at_utc": "2026-10-10T12:08:50.438199+00:00",
+  "source": "TFHEpp/include/ckks/ckks.hpp:4648",
+  "source_sha256": "108ed15f7127030b385ba1075761cfc964d3a53692143ac6628d6cd0024b7877",
+  "observation": "Fused multilimb BSGS kernel uses P::Bbar4 for arithmetic torus/plaintext digits independently of optimized PolyMulTorusByUnsignedBits; retains 112 torus rows and 16 signed-magnitude plaintext chunks at width448",
+  "candidate": "Use independent arithmetic16 digits with bounded fused batches; modulo-storage product is reduced to activeQ before existing signed rounding, so representation differences should vanish",
+  "implementation_added": true,
+  "correctness_validated": true,
+  "performance_gain_established": false,
+  "next_required_checks": [
+    "independent exact fused group convolution including signed/wrap/tie cases",
+    "full ring current4 versus arithmetic16 fused groups",
+    "retained saved-key complete refresh and independent phase"
+  ],
+  "component_evidence": "narrow-dd-fused-bsgs-controls-validation.json",
+  "saved_key_integration_evidence": "narrow-dd-fused-bsgs-integrated-validation.json",
+  "whole_full_ring_validation_pending": true
+}

@@ -1,0 +1,145 @@
+{
+  "observed_at_utc": "2026-10-10T12:56:22.942736+00:00",
+  "scope": "Shared public NTT plans for selector preparation; same old/new full spectra and every inverse residue checked against direct limb extraction; synthetic public coefficients, not encrypted refresh or security",
+  "actual_exit_code": 0,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "omp_threads": 4,
+  "address_space_limit_bytes": 1073741824,
+  "available_memory_bytes": 104799506432,
+  "required_available_memory_bytes": 97710505984,
+  "records": [
+    {
+      "n": "512",
+      "primes": "1",
+      "digit_bits": "16",
+      "selectors": "3",
+      "trial": "0",
+      "residues": "76800",
+      "original_seconds": "0.000810527",
+      "shared_seconds": "0.000667181"
+    },
+    {
+      "n": "512",
+      "primes": "1",
+      "digit_bits": "16",
+      "selectors": "3",
+      "trial": "1",
+      "residues": "76800",
+      "original_seconds": "0.000554421",
+      "shared_seconds": "0.00057862"
+    },
+    {
+      "n": "512",
+      "primes": "1",
+      "digit_bits": "16",
+      "selectors": "3",
+      "trial": "2",
+      "residues": "76800",
+      "original_seconds": "0.000517074",
+      "shared_seconds": "0.000587534"
+    },
+    {
+      "n": "512",
+      "primes": "2",
+      "digit_bits": "16",
+      "selectors": "3",
+      "trial": "0",
+      "residues": "153600",
+      "original_seconds": "0.001095563",
+      "shared_seconds": "0.001262615"
+    },
+    {
+      "n": "512",
+      "primes": "2",
+      "digit_bits": "16",
+      "selectors": "3",
+      "trial": "1",
+      "residues": "153600",
+      "original_seconds": "0.001074583",
+      "shared_seconds": "0.001141486"
+    },
+    {
+      "n": "512",
+      "primes": "2",
+      "digit_bits": "16",
+      "selectors": "3",
+      "trial": "2",
+      "residues": "153600",
+      "original_seconds": "0.001031287",
+      "shared_seconds": "0.001149467"
+    },
+    {
+      "n": "512",
+      "primes": "2",
+      "digit_bits": "48",
+      "selectors": "3",
+      "trial": "0",
+      "residues": "55296",
+      "original_seconds": "0.00049157",
+      "shared_seconds": "0.000462382"
+    },
+    {
+      "n": "512",
+      "primes": "2",
+      "digit_bits": "48",
+      "selectors": "3",
+      "trial": "1",
+      "residues": "55296",
+      "original_seconds": "0.000431475",
+      "shared_seconds": "0.000406097"
+    },
+    {
+      "n": "512",
+      "primes": "2",
+      "digit_bits": "48",
+      "selectors": "3",
+      "trial": "2",
+      "residues": "55296",
+      "original_seconds": "0.000417003",
+      "shared_seconds": "0.000458761"
+    },
+    {
+      "n": "16384",
+      "primes": "2",
+      "digit_bits": "48",
+      "selectors": "40",
+      "trial": "0",
+      "residues": "23592960",
+      "original_seconds": "0.189551174",
+      "shared_seconds": "0.174131104"
+    },
+    {
+      "n": "16384",
+      "primes": "2",
+      "digit_bits": "48",
+      "selectors": "40",
+      "trial": "1",
+      "residues": "23592960",
+      "original_seconds": "0.243714933",
+      "shared_seconds": "0.173660051"
+    },
+    {
+      "n": "16384",
+      "primes": "2",
+      "digit_bits": "48",
+      "selectors": "40",
+      "trial": "2",
+      "residues": "23592960",
+      "original_seconds": "0.237114552",
+      "shared_seconds": "0.253979716"
+    }
+  ],
+  "source_sha256": "50b0e02312f4731c5b738ade81dbf804597d44b29f8d539ce00a08012cce7358",
+  "executable_sha256": "a880b0e06d961c270206e34e1e64a9d6aa816d1b0625c90bbad4397f75072299",
+  "header_sha256": "92263043a3b366fa9494330a34ef7731750e01da7a2d9c9af9feb6245782a4bd",
+  "whole_refresh_with_shared_plans_validated": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "full_ring_component_medians": {
+    "original_seconds": 0.237114552,
+    "shared_seconds": 0.174131104,
+    "shared_over_original": 0.734375442296768
+  },
+  "timing_limitations": "Three interleaved public-data trials with independent jobs running; no end-to-end speedup inferred."
+}

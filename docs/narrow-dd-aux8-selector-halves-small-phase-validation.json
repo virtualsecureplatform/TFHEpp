@@ -1,0 +1,19 @@
+{
+  "isolated_real_component_max_error": 1.220112788580252e-09,
+  "isolated_imaginary_component_max_error": 1.1158476920236637e-09,
+  "real_component_max_error": 1.220121892409054e-09,
+  "imaginary_component_max_error": 1.1158373669495347e-09,
+  "real_component_rms_error": 5.881981180619612e-10,
+  "imaginary_component_rms_error": 5.725259471456843e-10,
+  "function": "sigmoid",
+  "n": 512,
+  "prefix_bytes": 176225,
+  "phase_arithmetic": "integer scalar convolution",
+  "fresh_input_max_error": 8.603562567773713e-12,
+  "max_error": 1.3615935682817904e-09,
+  "rms_error": 8.208306684369779e-10,
+  "sparse_key_geometry_passed": true,
+  "evaluation_key_suffix_validated": false,
+  "retained_square_validated": false,
+  "scope": "Retained encrypted N512 same-selector control; independent integer component split and fixed23bit checks; no evaluation-key suffix validation"
+}

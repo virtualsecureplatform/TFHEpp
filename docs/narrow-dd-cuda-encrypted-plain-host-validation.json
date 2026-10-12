@@ -1,0 +1,80 @@
+{
+  "observed_at_utc": "2026-10-08T22:17:46.558916+00:00",
+  "scope": "Small-ring encrypted native CPU plaintext multiply compared to independent coefficient convolution and portable transparent-tensor/NTT/CRT/native-Q rescale arithmetic. Device/plaintext primitive not executed; full S2C integration unverified.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_cuda_setup.cpp": "c57512e602d0958eb37c176700fd5536299f7c59f04fc0cd923156d523b908e6",
+    "include/ckks/narrow_cuda.hpp": "ace90d093d7b42377682a92aa262ec22ced06fce75c1c0d3df0420814e40435c",
+    "src/ckks/narrow_cuda.cu": "b0a2707e22186413895e36a960ad65412b246de0e3d2698bf41c09f04edbb5dc"
+  },
+  "points": 16,
+  "native_bits": 448,
+  "balanced_base_bits": 4,
+  "profiles": [
+    {
+      "q": 217,
+      "delta": 37,
+      "plain_drop": 28,
+      "output_q": 189
+    },
+    {
+      "q": 64,
+      "delta": 23,
+      "plain_drop": 16,
+      "output_q": 48
+    }
+  ],
+  "columns": [
+    1,
+    3
+  ],
+  "prime_modes": [
+    "first prime",
+    "second prime",
+    "two-prime CRT"
+  ],
+  "portable_profile_column_prime_cases": 12,
+  "fresh_encryptions": 8,
+  "gaussian_sigma_floor": 3.2,
+  "phase_gate": 3.814697265625e-06,
+  "native_cpu_coefficient_oracle_comparisons": 256,
+  "native_cpu_coefficient_oracle_word_comparisons": 1792,
+  "portable_ciphertext_coefficient_comparisons": 768,
+  "portable_ciphertext_native_word_comparisons": 5376,
+  "portable_zero_quadratic_coefficient_comparisons": 384,
+  "portable_zero_quadratic_native_word_comparisons": 2688,
+  "fresh_phase_coefficients": 128,
+  "product_phase_coefficients": 128,
+  "reference": "Fresh encrypted known coefficient polynomials and signed public plaintexts with three nonzero coefficients. Independent exact signed coefficient convolutions, native CKKSPlainMulRescaleTRLWE, and portable balanced decomposition/NTT/contraction/one-or-two-prime CRT/native-Q projection followed by one native-level signed drop all match. Ciphertext decryptions reproduce independent plaintext convolution; transparent RHS produces zero quadratic output.",
+  "portable_tensor_reference_shared_with_existing_cpu_and_dd_checks": true,
+  "host_cpu_api_validated": true,
+  "host_encrypted_phase_reference_validated": true,
+  "host_ubsan_validated": true,
+  "device_encrypted_fixture_present": false,
+  "device_evaluations_executed": 0,
+  "device_validated": false,
+  "full_fft_profile_validated": false,
+  "s2c_graph_connected": false,
+  "full_gpu_refresh_integrated": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "cmake_build_exit_code": 0,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-encrypted-plain-host-final-build.log",
+  "ubsan_build_exit_code": 0,
+  "ubsan_build_log": "/tmp/ckks-narrow-cuda-encrypted-plain-host-ubsan-build.log",
+  "ubsan_build_argv": "/tmp/ckks-narrow-cuda-encrypted-plain-host-ubsan-argv.json",
+  "ubsan_scope": "Current C++ test/inline native crypto, setup and portable helpers instrumented; current plaintext-multiply host-instrumented CUDA object and unchanged Tensor Core object reused. BLAKE3/runtime/device code uninstrumented; GPU branches unexecuted.",
+  "cmake_test_actual_exit_code": 0,
+  "ubsan_test_actual_exit_code": 0,
+  "max_phase_error": {
+    "cmake_q217": 2.9103830456733704e-11,
+    "cmake_q64": 2.384185791015625e-07,
+    "ubsan_q217": 2.1827872842550278e-11,
+    "ubsan_q64": 3.5762786865234375e-07
+  },
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-encrypted-plain-host-cmake-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-plain-host-cmake-test.stderr",
+  "cmake_test_stderr_bytes": 0,
+  "ubsan_test_log": "/tmp/ckks-narrow-cuda-encrypted-plain-host-ubsan-test.log",
+  "ubsan_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-plain-host-ubsan-test.stderr",
+  "ubsan_test_stderr_bytes": 0
+}

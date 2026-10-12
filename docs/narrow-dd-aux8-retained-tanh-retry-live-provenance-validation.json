@@ -1,0 +1,33 @@
+{
+  "observed_at_utc": "2026-10-09T20:06:05.859071+00:00",
+  "session": 55609,
+  "process": {
+    "observed_at_utc": "2026-10-09T20:06:05.859071+00:00",
+    "pid": 1865842,
+    "start_ticks": 222290519,
+    "state": "R",
+    "cpu_ticks": 11910,
+    "rss_bytes": 8600760320,
+    "cmdline": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_auxiliary_functions tanh /home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin /home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1 /home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/retained-tanh-retry-v2/tanh ",
+    "terminal": false,
+    "io": {
+      "rchar": 6449449827,
+      "wchar": 70,
+      "syscr": 513946,
+      "syscw": 2,
+      "read_bytes": 0,
+      "write_bytes": 4096,
+      "cancelled_write_bytes": 0
+    },
+    "io_observed_at_utc": "2026-10-09T20:06:05.859071+00:00"
+  },
+  "time_pid": 1865841,
+  "source_sha256": "88932b57c0350feab5d8a18fe7d8bc40b50033afc570c0a24ef58dab5c77503b",
+  "executable_sha256": "d3ae9f224bfa549522957da7605ab5c40df8736b4871a7ee44f191f01b801066",
+  "state_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "mapped_executable_matches_validated_build": true,
+  "retry_validation": "narrow-dd-aux8-retained-tanh-retry-validation.json",
+  "completed_gelu_validation": "narrow-dd-aux8-full-retained-gelu-completion-validation.json",
+  "fresh_keys_generated": false,
+  "terminal": false
+}

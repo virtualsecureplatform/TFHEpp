@@ -1,0 +1,18 @@
+{
+  "observed_at_utc": "2026-10-09T03:36:04.971773+00:00",
+  "scope": "Single Sage process bounded to 2GiB for exact block-count/fixed-parameter hybrid-cost probe; 4GiB auxiliary reserve",
+  "existing_full_process": {
+    "pid": 1756575,
+    "state": "R (running)",
+    "rss_bytes": 17687748608,
+    "virtual_limit_bytes": 68719476736,
+    "remaining_growth_bytes": 51031728128
+  },
+  "available_memory_bytes": 113934127104,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_reserve_bytes": 4294967296,
+  "per_process_virtual_limit_bytes": 2147483648,
+  "required_available_memory_bytes": 66064113664,
+  "launch_margin_bytes": 47870013440,
+  "launch_eligible": true
+}

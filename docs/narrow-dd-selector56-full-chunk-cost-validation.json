@@ -1,0 +1,211 @@
+{
+  "scope": "N32768 selector56 head30/tail4 40-record raw-load+NTT versus prepared-load+raw fingerprint+payload/canonical validation. Four alternating trials each; warm selected chunks and concurrent full replay. No complete cache or standalone refresh speedup. Existing raw archives are read only; full payload integrity is covered by the running full replay, not this chunk control.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "new_full_cache_generated": false,
+  "omp_num_threads": 4,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-full-chunk-cost-20261011/control.cpp": "3d7d65b6c6e07c98b124bcfdd10bcb9b13675bddab27425f986e60423fe1aee2",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_ntt_file.hpp": "8f51ed4e9b910ef553dbbefaec54e0df64d7b8af7d1d9e7e78e062353ee008ff",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320"
+  },
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "count": 40,
+      "cached": false,
+      "seconds": 0.356238429,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "count": 40,
+      "cached": true,
+      "seconds": 3.036911338,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "count": 40,
+      "cached": true,
+      "seconds": 0.370532357,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "count": 40,
+      "cached": false,
+      "seconds": 0.308588325,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "count": 40,
+      "cached": false,
+      "seconds": 0.335963527,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "count": 40,
+      "cached": true,
+      "seconds": 0.361910192,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "count": 40,
+      "cached": true,
+      "seconds": 0.356713569,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "count": 40,
+      "cached": false,
+      "seconds": 0.302743734,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "count": 40,
+      "cached": false,
+      "seconds": 0.318964643,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "count": 40,
+      "cached": true,
+      "seconds": 2.34621875,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "count": 40,
+      "cached": true,
+      "seconds": 0.359731002,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "count": 40,
+      "cached": false,
+      "seconds": 0.304939702,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "count": 40,
+      "cached": false,
+      "seconds": 0.297986316,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "count": 40,
+      "cached": true,
+      "seconds": 0.37301593,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "count": 40,
+      "cached": true,
+      "seconds": 0.353268646,
+      "exact_words": 52428800,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "count": 40,
+      "cached": false,
+      "seconds": 0.338921017,
+      "exact_words": 52428800,
+      "passed": true
+    }
+  ],
+  "exact_words_compared": 838860800,
+  "groups": [
+    {
+      "tail": false,
+      "raw_median_seconds": 0.322275926,
+      "cached_median_seconds": 0.36622127449999997,
+      "cached_time_ratio": 1.1363593894382293
+    },
+    {
+      "tail": true,
+      "raw_median_seconds": 0.31195217249999996,
+      "cached_median_seconds": 0.366373466,
+      "cached_time_ratio": 1.174453965375093
+    }
+  ],
+  "sources_unchanged": true,
+  "prepared_chunks": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-full-chunk-cost-20261011/head/chunk.bin": {
+      "bytes": 419433113,
+      "sha256": "40a799b74c525f3250e9820a378ac08e11618edced9b52e2c199964f7468fdbe"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-full-chunk-cost-20261011/tail/chunk.bin": {
+      "bytes": 419433113,
+      "sha256": "62231c159e0fd3481061b14347da2f12f7310d21f4b509a114f72a1c82f0bd98"
+    }
+  },
+  "controller_actual_exit_code": 0,
+  "completed_utc": "2026-10-11T14:48:59.378811+00:00",
+  "unique_spectrum_words_checked": 104857600,
+  "decision": "Keep the current raw+NTT selector path on this host. Warm bounded prepared chunk loading including raw and payload verification is slower at both measured groups; do not build a complete 399GB cache on this evidence.",
+  "full_cache_creation_supported_by_timing": false,
+  "original_full_payload_integrity_pending_in_replay": true
+}

@@ -1,0 +1,63 @@
+{
+  "observed_at_utc": "2026-10-09T05:07:20.302947+00:00",
+  "scope": "Actual N16384 h31 one-per-block support, saturated5 prefix guessing mask, exact guessed weight11; joint secret rotation events only",
+  "source": "python/estimates/narrow_ckks_block_rotation_probability.py",
+  "source_sha256": "b53cdf25d75c0ff218cc28aa30665140d45a0781c4f36763abf8aad616d052c1",
+  "exact_self_test": "256 exhaustive toy mask/weight cases: exact marginals, signed projections, posterior path probabilities and union identity",
+  "estimator_identity": "Pr[K>0]=sum_r Pr[event_r] E[1/K|event_r]; rotation drawn proportional to exact event mass",
+  "independence_assumed": false,
+  "controls_identical_exact_marginals": true,
+  "independent_seed_standard_error_separation": 0.5165800140521314,
+  "runs": [
+    {
+      "session": 81055,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "report": "python/estimates/narrow_ckks_ll14_block_rotation_probability.json",
+      "report_sha256": "4d36aa82a35d113a0795d4378ba3e011879339eefd0af0e1e8449f3150877d8f",
+      "seed": 2119,
+      "samples": 4000,
+      "union_probability": 1.9499449386525694e-10,
+      "mc95": [
+        1.878542776329357e-10,
+        2.0213471009757818e-10
+      ],
+      "iid_hoeffding95": [
+        1.6960824913829825e-10,
+        2.2038073859221563e-10
+      ],
+      "independence_overestimate_ratio": 6.062808847201543,
+      "max_fft_integer_residual": 1.0658141036401503e-14,
+      "matching_rotations_median": 10.0,
+      "peak_rss_kib": 69096
+    },
+    {
+      "session": 79173,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "report": "python/estimates/narrow_ckks_ll14_block_rotation_probability_control.json",
+      "report_sha256": "6e6af553e2baed41d796cb7cbde0d74e7e25072c6434ebd70f54644c482b37b9",
+      "seed": 21190,
+      "samples": 4000,
+      "union_probability": 1.9237353690228145e-10,
+      "mc95": [
+        1.85451954589872e-10,
+        1.992951192146909e-10
+      ],
+      "iid_hoeffding95": [
+        1.6698729217532276e-10,
+        2.1775978162924015e-10
+      ],
+      "independence_overestimate_ratio": 6.145410442613983,
+      "max_fft_integer_residual": 8.881784197001252e-15,
+      "matching_rotations_median": 10.0,
+      "peak_rss_kib": 68304
+    }
+  ],
+  "security_validated": false,
+  "limitations": [
+    "Monte Carlo and iid Hoeffding intervals concern secret-weight events only, not security",
+    "Joint nearest-plane/error/MITM success across simultaneous matching rotations is not modeled",
+    "One mask and guessed weight; guessing dictionaries and full attack optimization remain unqualified"
+  ]
+}

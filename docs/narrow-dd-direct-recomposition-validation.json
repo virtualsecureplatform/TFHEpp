@@ -1,0 +1,82 @@
+{
+  "observed_at_utc": "2026-10-10T09:46:37.015087+00:00",
+  "scope": "Direct torus factor recomposition; N512 retained packed checkpoint replay and focused one/two auxiliary-prime coefficient-reference controls",
+  "implementation": "Retain exact modular sums through full group, inverse-transform one digit at a time and accumulate directly into result owned by table/component/column",
+  "final_benchmark_build_session": 99895,
+  "final_benchmark_build_actual_exit_code": 0,
+  "encrypted_replay_session": 45819,
+  "encrypted_replay_actual_exit_code": 0,
+  "focused_controls_build_session": 39953,
+  "focused_controls_build_actual_exit_code": 0,
+  "focused_controls_session": 54999,
+  "focused_controls_actual_exit_code": 0,
+  "focused_controls_source": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/direct-recomposition-replay-20261010/recomposition-controls.cpp",
+  "focused_controls_source_sha256": "6765b08547f5ad028a6824eb890d68a6f73626da509b3038da62270b537416c6",
+  "focused_controls_method": "Extract current TestParam/ActiveDigitRingParam/GaussianActiveDigitRingParam/testSelectorChunks definitions; invoke existing plain18 and plain40 tests including new independent coefficient-reference equality assertions",
+  "focused_controls_key_scope": "Tiny N512 test keys generated once per distinct modulus profile; full retained replay generates no keys",
+  "focused_control_columns": [
+    1,
+    3
+  ],
+  "focused_control_chunk_sizes": [
+    1,
+    3,
+    9,
+    17,
+    32
+  ],
+  "focused_control_prime_counts": [
+    1,
+    2
+  ],
+  "coefficient_reference_and_chunk_equality_passed": true,
+  "identity": {
+    "retained_files_unchanged": true,
+    "retained_files": 37,
+    "refresh_and_square_ciphertexts_identical": true,
+    "refresh_keys_reused": true,
+    "square_key_reused": true,
+    "refresh_seconds": 3.333488026
+  },
+  "independent_phase_evidence": "TFHEpp/docs/narrow-dd-direct-recomposition-independent-phase-validation.json",
+  "source_sha256": {
+    "include/ckks/narrow_bootstrapping.hpp": "411fcc96b59531d9934f0b8b56a366511ac4119304823a5913af0929525efd66",
+    "include/ckks/prepared_auto.hpp": "7106c632b9c880c3cabe2fc6eed37608b92045f3018e32b322d09e88b3b2fb5c",
+    "test/ckks/ckks_narrow_bootstrapping.cpp": "da1d9ee16524f7da9adbcc45999c05833d798a2bbdbe52e7cd8fe3c31e96ef05"
+  },
+  "benchmark_executable_sha256": "f52edaf03ca1cfc5dcdd8a8ace7c1fa101e6629e4080e48bbaaccd3e763c83f0",
+  "artifacts": {
+    "replay.json": {
+      "path": "TFHEpp/docs/narrow-dd-direct-recomposition-replay.json",
+      "sha256": "a5a0af2f16e48d25b3e0b2d4b91e153609039872b834f88c40d1a659d367ec04"
+    },
+    "replay.log": {
+      "path": "TFHEpp/docs/narrow-dd-direct-recomposition-replay.log",
+      "sha256": "107de498c9911e9ca93a1e670fa4a49bdb76ae2f5ac8a72de11e01fb7d4968b3"
+    },
+    "replay-time.log": {
+      "path": "TFHEpp/docs/narrow-dd-direct-recomposition-replay-time.log",
+      "sha256": "51c5127b6eb3b20125ddc6329663da07972ca228b89d9a908127a403ee7f7f78"
+    },
+    "controls.log": {
+      "path": "TFHEpp/docs/narrow-dd-direct-recomposition-controls.log",
+      "sha256": "13144082796cb844bd845ea7b48d187d2e20e94736ae0b2107e3670ed895e86c"
+    },
+    "controls-time.log": {
+      "path": "TFHEpp/docs/narrow-dd-direct-recomposition-controls-time.log",
+      "sha256": "10ad11387db4755c9178f0c2487ca2bb07a4f62a8b6746dfa987c1d531b3763a"
+    }
+  },
+  "memory_accounting_evidence": "TFHEpp/docs/narrow-dd-direct-recomposition-memory-budget.json",
+  "full_ring_optimization_validated": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "goal_complete": false,
+  "hardware_profiler": "perf blocked by perf_event_paranoid=4; no kernel setting changed",
+  "limitations": [
+    "Memory savings are static payload accounting, not measured full-ring RSS",
+    "Small-ring replay timing is not a full-ring speedup measurement",
+    "Prepared path now retains all modular sums; added allocation is smaller than removed torus digit storage for supported parameters",
+    "Live full checkpoint uses pre-change pinned executable"
+  ]
+}

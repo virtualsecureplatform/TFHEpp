@@ -1,0 +1,76 @@
+{
+  "scope": "Public retained automorphism modulus reduction, N512: independent integer encrypted-gadget phases, raw/prepared exact switching, 23-bit conjugation checks. Same secret/ring/radix; no larger-modulus or full-refresh qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "675a6f3737a29bac61a5696a59f9a1f6a7d9c6fbdcd3d2953807d995f1ce6907",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_auto_key_reduce_exact.cpp": "e122d7819d83dbd1b1507d208b6ba9459c14715e7e7ad1b1173a036d86633269",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81"
+  },
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "report": {
+    "n": 512,
+    "fresh_keys_generated": false,
+    "cases": [
+      {
+        "source_log_q": 197,
+        "target_log_q": 101,
+        "ciphertext_log_delta": 47,
+        "coefficient_checks": 13312,
+        "independent_phase_checks": 6656,
+        "max_integer_gadget_noise": 12,
+        "conjugation_max_error": 7.058530920128998e-09,
+        "raw_prepared_identical": true
+      },
+      {
+        "source_log_q": 197,
+        "target_log_q": 100,
+        "ciphertext_log_delta": 47,
+        "coefficient_checks": 13312,
+        "independent_phase_checks": 6656,
+        "max_integer_gadget_noise": 12,
+        "conjugation_max_error": 6.586944664281369e-09,
+        "raw_prepared_identical": true
+      },
+      {
+        "source_log_q": 197,
+        "target_log_q": 197,
+        "ciphertext_log_delta": 47,
+        "coefficient_checks": 25600,
+        "independent_phase_checks": 12800,
+        "max_integer_gadget_noise": 12,
+        "conjugation_max_error": 8.777978193799316e-09,
+        "raw_prepared_identical": true
+      },
+      {
+        "source_log_q": 523,
+        "target_log_q": 345,
+        "ciphertext_log_delta": 47,
+        "coefficient_checks": 45056,
+        "independent_phase_checks": 22528,
+        "max_integer_gadget_noise": 13,
+        "conjugation_max_error": 1.3726981993055247e-08,
+        "raw_prepared_identical": true
+      }
+    ],
+    "all_checks_passed": true
+  },
+  "checkpoint_unchanged": true,
+  "sources_unchanged": true,
+  "completed_utc": "2026-10-11T15:24:53.669914+00:00",
+  "public_header_compile_actual_exit_code": 0,
+  "lower_scale_trial": {
+    "ciphertext_log_delta": 41,
+    "target_log_q": 101,
+    "precision_gate_passed": false,
+    "actual_exit_code": 1,
+    "evidence": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-key-modulus-reuse-20261011/scale41-failure.json",
+    "interpretation": "Does not invalidate public gadget projection; this retained radix8 key and scale41 input failed the 23-bit conjugation gate. Lower-budget refresh accuracy remains unqualified."
+  },
+  "key_coefficient_checks": 97280,
+  "independent_integer_phase_checks": 48640,
+  "public_header_sha256": "425d45fa18f18075476a9bfc55dbf4c573281a9c5b4d8727107de10373dbb64f"
+}

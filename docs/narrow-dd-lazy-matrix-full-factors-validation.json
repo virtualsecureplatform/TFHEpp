@@ -1,0 +1,105 @@
+{
+  "observed_at_utc": "2026-10-10T19:22:48.367585+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Current lazy matrix N32768 head30/tail4,22 columns, two trials each and independent slot accuracy. Compare factor archives to preceding canonical accumulation build. No complete refresh, key generation or paper timing claim.",
+  "process": {
+    "pid": 1968226,
+    "start_ticks": 230643885
+  },
+  "session_id": 34569,
+  "memory_cap_bytes": 3221225472,
+  "fresh_keys_generated": false,
+  "frozen_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-lazy-matrix-20261010/full-factor-frozen",
+  "frozen_executable_sha256": "2ecef44a5928e8c2c245fe7b0c76cb4e93feb72eca4564b7ef094c0d78df0a2e",
+  "qualified_source_sha256": {
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "9ebff42776f1c47b375dfb3a3113c96cd218df300d4906fd530dda366b80d3cc",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "e31b0efd092820f7ff88955d49a6beac5bcc77d31547697820ed2bed564a7c45"
+  },
+  "head_reference_cross_version_byte_identity": true,
+  "head_reference_ciphertext_coefficients": 1441792,
+  "tail_reference_cross_version_byte_identity": true,
+  "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-lazy-matrix-20261010/full.log",
+  "time": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-lazy-matrix-20261010/full.time",
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-lazy-matrix-20261010",
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 22,
+      "seconds": 56.726536571,
+      "cache_setup_seconds": 1.73e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 15.491637834999992,
+      "matrix_seconds": 35.59079496500001,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 22,
+      "seconds": 79.764394098,
+      "cache_setup_seconds": 1.73e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 18.837427642999998,
+      "matrix_seconds": 54.88731158900001,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 22,
+      "seconds": 66.943572583,
+      "cache_setup_seconds": 1.18e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 16.692367102999988,
+      "matrix_seconds": 43.755680677000015,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 22,
+      "seconds": 56.60198736,
+      "cache_setup_seconds": 1.18e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 15.275766255999999,
+      "matrix_seconds": 34.461566805000004,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "actual_exit_code": 0,
+  "stage": "complete current full22 factor control",
+  "columns": 22,
+  "slots_checked": 720896,
+  "unique_repeated_ciphertext_coefficients": 2883584,
+  "cross_version_ciphertext_coefficients": 2883584,
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "complete head30/tail4 raw selector groups and public/secret prefix; not entire key suffix",
+  "maximum_resident_kib": 1943076,
+  "complete_current_refresh_qualified": false,
+  "paper_performance_reproduced": false
+}

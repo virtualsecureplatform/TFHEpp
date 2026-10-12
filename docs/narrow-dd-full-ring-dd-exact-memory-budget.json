@@ -1,0 +1,30 @@
+{
+  "observed_at_utc": "2026-10-08T23:29:45.909305+00:00",
+  "scope": "Full-ring independent exact DD check; reserve existing jobs remaining growth up to VM limits plus 10GiB host and 4GiB new test.",
+  "existing_processes": [
+    {
+      "pid": 1789289,
+      "virtual_limit_bytes": 34359738368,
+      "rss_bytes": 11887570944,
+      "remaining_growth_bytes": 22472167424,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-checkpoint sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008 TFHEpp/docs/narrow-dd-ll14-plain37-checkpoint-reproduction-2.json"
+    },
+    {
+      "pid": 1756575,
+      "virtual_limit_bytes": 68719476736,
+      "rss_bytes": 17785008128,
+      "remaining_growth_bytes": 50934468608,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json"
+    }
+  ],
+  "available_memory_bytes": 101977026560,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 4294967296,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 88439021568,
+  "launch_margin_bytes": 13538004992,
+  "launch_eligible": true,
+  "test_terminal": true,
+  "test_actual_exit_code": 0,
+  "test_peak_rss_kib": 2460904
+}

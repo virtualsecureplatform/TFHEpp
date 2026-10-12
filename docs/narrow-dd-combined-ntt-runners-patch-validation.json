@@ -1,0 +1,22 @@
+{
+  "scope": "Prepared repository runner patch from isolated combined real/complex evaluators, changing only benchmark include to a relative path and adding both targets to the GNU IPA-ICF workaround list. Full combined qualification pending; patch not applied.",
+  "updated_utc": "2026-10-12T00:39:54.878862+00:00",
+  "dry_run_actual_exit_code": 0,
+  "patch_sha256": "fec081d7a2d2155afb3d6656a99f0825cd86730fbd7e6739a24119ac72e63897",
+  "runners": {
+    "test/ckks/ckks_narrow_ll14_ntt_fbs.cpp": {
+      "qualified_runner_source": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-mask42-combined-ntt-fbs-20261012/replay.cpp",
+      "source_sha256": "51297d87fa0c49d69ab52d401a32f64bf8d369df47013d9d419e8571385a2fef",
+      "relative_include_only_change": true,
+      "new_sha256": "03be3d87311ceeabffbcf274c0dba2566ae364ff7d01cec448075602d51de140"
+    },
+    "test/ckks/ckks_narrow_ll14_ntt_complex_fbs.cpp": {
+      "qualified_runner_source": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-mask42-combined-ntt-complex-fbs-20261012/replay.cpp",
+      "source_sha256": "3c95e0376b54e9603a335c984e422ef8761ad2faf78974b5d0e1b3599cf9ecec",
+      "relative_include_only_change": true,
+      "new_sha256": "387f8f7a94330e9d49e5d370046aeaa28502f5bf2996e625d7b0513f14766627"
+    }
+  },
+  "cmake_before_sha256": "876e9a17474fbafeb6dfdec56d497ec8efc55899deb679dfbed8cefc202a2c78",
+  "production_promoted": false
+}

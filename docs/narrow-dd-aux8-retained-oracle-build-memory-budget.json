@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-09T10:11:37.912735+00:00",
+  "scope": "Build retained auxiliary8 exact DD/factor/conjugation reader, one compile job",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17781551104,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 13767643136,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 100103299072,
+  "required_bytes": 90857373696,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_aggregate_budget_bytes": 8589934592,
+  "per_process_limit_bytes": 6442450944,
+  "eligible": true
+}

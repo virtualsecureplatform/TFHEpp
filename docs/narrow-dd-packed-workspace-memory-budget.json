@@ -1,0 +1,29 @@
+{
+  "observed_at_utc": "2026-10-09T01:19:50.857323+00:00",
+  "scope": "N512 pre-change public packed ciphertext fixture, reused-workspace exact comparisons and packed-selector regression alongside two capped full jobs.",
+  "existing_processes": [
+    {
+      "pid": 1756575,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json ",
+      "virtual_limit_bytes": 68719476736,
+      "rss_bytes": 17785925632,
+      "remaining_growth_bytes": 50933551104
+    },
+    {
+      "pid": 1800980,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-file sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-original-style-capture-20261009-8hzeszxg/selectors TFHEpp/docs/narrow-dd-ll14-plain37-post-evaluation-capture.json ",
+      "virtual_limit_bytes": 34359738368,
+      "rss_bytes": 9100664832,
+      "remaining_growth_bytes": 25259073536
+    }
+  ],
+  "available_memory_bytes": 103059533824,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 4294967296,
+  "test_stack_limit_bytes": 67108864,
+  "baseline_implementation_sha256": "6174ee3a0bede45851ccb2fe745f85795e8b2906dddfbec48e561b6c4b1cc903",
+  "required_available_memory_bytes": 91225010176,
+  "launch_margin_bytes": 11834523648,
+  "launch_eligible": true,
+  "fixture_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-workspace-fixture-20261009-rlckh00b/pre-change"
+}

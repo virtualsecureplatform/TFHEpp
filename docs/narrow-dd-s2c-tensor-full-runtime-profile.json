@@ -1,0 +1,208 @@
+{
+  "scope": "Combined prepared S2C and native64 tensor N32768 all-function saved-key/input replay. Unchanged component controls carried forward by explicit byte-for-byte source projection. Full output identity, independent accuracy and all37 retained-file checks pass. Runtime includes host and concurrent-work variation.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "process_identities": {
+    "controller": {
+      "pid": 2040285,
+      "start_ticks": 237573659
+    },
+    "wrapper": {
+      "pid": 2040287,
+      "start_ticks": 237573762
+    },
+    "evaluator": {
+      "pid": 2040288,
+      "start_ticks": 237573763
+    }
+  },
+  "qualification_session_id": 36946,
+  "fresh_keys_generated": false,
+  "previous_shared_preparation_and_roots_seconds": 2012.363153188,
+  "full_refresh_qualified": true,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "additional_qualification_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-tensor-full-replay-20261011/additional-qualification/source-projection.json": "7a4d618f8e3f8514a31fd91762992dd77c28a3b8bbc2b667275122efd11c3db6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-tensor-full-replay-20261011/additional-qualification/narrow-dd-s2c-prepared-adapter-full-validation.json": "82177fb45803a4ee2687c1bf5880bf56e2331a8bc3198d662b4da65e3fda1bef",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-tensor-full-replay-20261011/additional-qualification/narrow-dd-tensor-native-products-integration-validation.json": "e5714cb13652aa856620f04f5a8208ac944464d3fbcacf49f24becbe8d48447d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-tensor-full-replay-20261011/additional-qualification/narrow-dd-tensor-native-products-timing-validation.json": "83fb310ad02622eda80e9c9a75a4ec836c9a832b3adf2e78b3ab57768416b0bf"
+  },
+  "observed_utc": "2026-10-11T15:19:49.220067+00:00",
+  "observer_session_id": 35267,
+  "observer_samples": 59,
+  "latest_process_observation": {
+    "observed_utc": "2026-10-11T15:02:41.514689+00:00",
+    "observation_elapsed_seconds": 1740.663560969755,
+    "stage": "replay",
+    "validation_terminal": false,
+    "validation_passed": false,
+    "processes": {
+      "controller": {
+        "pid": 2040285,
+        "start_ticks": 237573659,
+        "state": "S",
+        "cpu_seconds": 0.13,
+        "rss_bytes": 19636224
+      },
+      "wrapper": {
+        "pid": 2040287,
+        "start_ticks": 237573762,
+        "state": "S",
+        "cpu_seconds": 0.0,
+        "rss_bytes": 1376256
+      },
+      "evaluator": {
+        "pid": 2040288,
+        "start_ticks": 237573763,
+        "state": "R",
+        "cpu_seconds": 5414.76,
+        "rss_bytes": 14191382528
+      }
+    },
+    "log_bytes": 2967
+  },
+  "progress_confirmed": true,
+  "setup_generation_count": 0,
+  "key_setup_seconds": 6.96966,
+  "concurrent_diagnostic": "FMA49 matrix prototype used one lower-priority worker while part of the replay ran; runtime comparison includes host variation. Diagnostic has exited0.",
+  "completed_factor_groups_logged": 36,
+  "latest_factor_progress": "basis sigmoid completed tail group=4 factor_groups=36 elapsed_seconds=1108.66",
+  "concurrent_chunk_diagnostic": "Completed selector56 head/tail 40-record cost control ran four lower-priority workers briefly during replay. Runtime includes host/concurrent-work variation.",
+  "completed_head_groups": 31,
+  "completed_tail_groups": 5,
+  "head_factor_generation_complete": true,
+  "evaluator_cpu_growth_seconds": 99.98000000000002,
+  "observed_interval_seconds": 30.014839002862573,
+  "all_factor_generation_complete": true,
+  "previous_observer_session_id": 5387,
+  "previous_observer_actual_exit_code": 0,
+  "previous_observer_summary": {
+    "samples": 61,
+    "last": {
+      "observed_utc": "2026-10-11T15:03:41.521698+00:00",
+      "observation_elapsed_seconds": 1800.6705573266372,
+      "stage": "replay",
+      "validation_terminal": false,
+      "validation_passed": false,
+      "processes": {
+        "controller": {
+          "pid": 2040285,
+          "start_ticks": 237573659,
+          "state": "S",
+          "cpu_seconds": 0.13,
+          "rss_bytes": 19636224
+        },
+        "wrapper": {
+          "pid": 2040287,
+          "start_ticks": 237573762,
+          "state": "S",
+          "cpu_seconds": 0.0,
+          "rss_bytes": 1376256
+        },
+        "evaluator": {
+          "pid": 2040288,
+          "start_ticks": 237573763,
+          "state": "R",
+          "cpu_seconds": 5540.62,
+          "rss_bytes": 12728422400
+        }
+      },
+      "log_bytes": 2967
+    },
+    "observation_finished": true,
+    "computation_stopped_by_observer": false
+  },
+  "observer_expiration_stopped_compute": false,
+  "observation_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-tensor-full-replay-20261011/live-progress-2.jsonl",
+  "latest_evaluation_log": "mm:ss or m:ss): 32:12.67\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 17900012\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 327317800\n\tVoluntary context switches: 312638\n\tInvoluntary context switches: 24722\n\tSwaps: 0\n\tFile system inputs: 258659952\n\tFile system outputs: 83304\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+  "evaluator_actual_exit_code": 0,
+  "evaluator_finished": true,
+  "shared_coefficient_prepare_seconds": 142.780961856,
+  "shared_root_generation_seconds": 1767.351582812,
+  "shared_preparation_and_roots_seconds": 1910.132544668,
+  "observed_shared_phase_reduction_fraction": 0.05080127230417908,
+  "reconstruction_seconds": {
+    "sigmoid": 2.34790247,
+    "gelu": 2.36987288,
+    "tanh": 6.749107295
+  },
+  "root_tile_stage_seconds": {
+    "input_and_factor_cache": 1.811399744,
+    "leaf_factors_and_inline_alignment": 1106.919931378,
+    "bounded_tail_alignment": 383.292629506,
+    "dd_cache_preparation": 13.328310434,
+    "dd_trees_and_beta": 261.94085502
+  },
+  "factor_stage_seconds": {
+    "selector_load": 127.50085843500001,
+    "table_ntt": 13.539707330999997,
+    "selector_ntt": 221.95790824400004,
+    "matrix": 636.2368288559999,
+    "inverse_crt": 15.408201047,
+    "conjugation": 90.639992435
+  },
+  "evaluator_wall_time_reported": "32:12.67",
+  "maximum_rss_kib": 17900012,
+  "reported_accuracy_passed": true,
+  "ciphertext_identity": {
+    "sigmoid": true,
+    "gelu": true,
+    "tanh": true
+  },
+  "independent_phase_checks": {
+    "sigmoid": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 32768,
+      "function": "sigmoid",
+      "metrics": {
+        "fresh_input_max_error": 9.033599188412621e-11,
+        "max_error": 5.263058323660706e-09,
+        "post_refresh_product_max_error": 9.472418715013627e-09,
+        "square_normalization_max_error": 2.692538244943504e-09
+      },
+      "product_tolerance": 4.50319595316329e-07,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    },
+    "gelu": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 32768,
+      "function": "gelu",
+      "metrics": {
+        "fresh_input_max_error": 9.033599188412621e-11,
+        "max_error": 1.5541199769161976e-08,
+        "post_refresh_product_max_error": 1.262155845454321e-07,
+        "square_normalization_max_error": 2.15174226503516e-09
+      },
+      "product_tolerance": 1.4678657411332307e-06,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    },
+    "tanh": {
+      "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+      "n": 32768,
+      "function": "tanh",
+      "metrics": {
+        "fresh_input_max_error": 9.033599188412621e-11,
+        "max_error": 2.0760775289823365e-08,
+        "post_refresh_product_max_error": 5.73710758396451e-08,
+        "square_normalization_max_error": 2.3742523121777745e-09
+      },
+      "product_tolerance": 4.5615794863043815e-07,
+      "independent_phase_accuracy_passed": true,
+      "security_validated": false
+    }
+  },
+  "retained_file_integrity_pending": false,
+  "validation_terminal": true,
+  "validation_all_checks_passed": true,
+  "all_three_output_archives_identical": true,
+  "independent_phase_checks_passed": true,
+  "checkpoint_files_checked": 37,
+  "checkpoint_files_unchanged": true,
+  "controller_actual_exit_code": 0,
+  "observer_actual_exit_code": 0,
+  "canonical_validation_sha256": "7aa05923dfbd7312c3c043027be4f51c60e0e855c3eeccffe0065e9e8db95fb6"
+}

@@ -1,0 +1,394 @@
+{
+  "scope": "N32768 576-bit tensor products at all seven active tree levels with LogScale0. Four alternating measurements each, exact repeated results; includes allocation and cache work. Component result only.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "integrated": false,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "rows": [
+    {
+      "q": 479,
+      "native": false,
+      "seconds": 0.227095358,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 479,
+      "native": true,
+      "seconds": 0.208250955,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 479,
+      "native": true,
+      "seconds": 0.203449081,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 479,
+      "native": false,
+      "seconds": 0.218257151,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 479,
+      "native": false,
+      "seconds": 0.222369158,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 479,
+      "native": true,
+      "seconds": 0.209361084,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 479,
+      "native": true,
+      "seconds": 0.209915839,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 479,
+      "native": false,
+      "seconds": 0.226677097,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 432,
+      "native": false,
+      "seconds": 0.191755846,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 432,
+      "native": true,
+      "seconds": 0.181242331,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 432,
+      "native": true,
+      "seconds": 0.181222539,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 432,
+      "native": false,
+      "seconds": 0.196294799,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 432,
+      "native": false,
+      "seconds": 0.198221775,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 432,
+      "native": true,
+      "seconds": 0.176798882,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 432,
+      "native": true,
+      "seconds": 0.177703078,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 432,
+      "native": false,
+      "seconds": 0.19631168,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 385,
+      "native": false,
+      "seconds": 0.18111492,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 385,
+      "native": true,
+      "seconds": 0.163686912,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 385,
+      "native": true,
+      "seconds": 0.164869751,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 385,
+      "native": false,
+      "seconds": 0.180993722,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 385,
+      "native": false,
+      "seconds": 0.178475588,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 385,
+      "native": true,
+      "seconds": 0.162762066,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 385,
+      "native": true,
+      "seconds": 0.165075669,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 385,
+      "native": false,
+      "seconds": 0.177972586,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 338,
+      "native": false,
+      "seconds": 0.161570137,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 338,
+      "native": true,
+      "seconds": 0.146988641,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 338,
+      "native": true,
+      "seconds": 0.151028179,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 338,
+      "native": false,
+      "seconds": 0.15529285,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 338,
+      "native": false,
+      "seconds": 0.149972462,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 338,
+      "native": true,
+      "seconds": 0.143592786,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 338,
+      "native": true,
+      "seconds": 0.139404506,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 338,
+      "native": false,
+      "seconds": 0.150003765,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 291,
+      "native": false,
+      "seconds": 0.128073668,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 291,
+      "native": true,
+      "seconds": 0.12200788,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 291,
+      "native": true,
+      "seconds": 0.122682482,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 291,
+      "native": false,
+      "seconds": 0.127903907,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 291,
+      "native": false,
+      "seconds": 0.128267485,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 291,
+      "native": true,
+      "seconds": 0.119371517,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 291,
+      "native": true,
+      "seconds": 0.119659283,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 291,
+      "native": false,
+      "seconds": 0.12811851,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 244,
+      "native": false,
+      "seconds": 0.11092617,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 244,
+      "native": true,
+      "seconds": 0.099593631,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 244,
+      "native": true,
+      "seconds": 0.099603268,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 244,
+      "native": false,
+      "seconds": 0.10968904,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 244,
+      "native": false,
+      "seconds": 0.112261661,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 244,
+      "native": true,
+      "seconds": 0.111523996,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 244,
+      "native": true,
+      "seconds": 0.104050928,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 244,
+      "native": false,
+      "seconds": 0.105519066,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 197,
+      "native": false,
+      "seconds": 0.084745846,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 197,
+      "native": true,
+      "seconds": 0.080022862,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 197,
+      "native": true,
+      "seconds": 0.080728478,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 197,
+      "native": false,
+      "seconds": 0.084041386,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 197,
+      "native": false,
+      "seconds": 0.084986896,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 197,
+      "native": true,
+      "seconds": 0.081135489,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 197,
+      "native": true,
+      "seconds": 0.084308054,
+      "coefficients_checked": 98304
+    },
+    {
+      "q": 197,
+      "native": false,
+      "seconds": 0.084486472,
+      "coefficients_checked": 98304
+    }
+  ],
+  "coefficients_checked": 5505024,
+  "levels": [
+    {
+      "q": 479,
+      "legacy_median_seconds": 0.2245231275,
+      "native_median_seconds": 0.2088060195,
+      "native_time_ratio": 0.9299978217166068
+    },
+    {
+      "q": 432,
+      "legacy_median_seconds": 0.1963032395,
+      "native_median_seconds": 0.1794628085,
+      "native_time_ratio": 0.9142121594992831
+    },
+    {
+      "q": 385,
+      "legacy_median_seconds": 0.179734655,
+      "native_median_seconds": 0.16427833149999999,
+      "native_time_ratio": 0.9140047671941729
+    },
+    {
+      "q": 338,
+      "legacy_median_seconds": 0.15264830750000002,
+      "native_median_seconds": 0.1452907135,
+      "native_time_ratio": 0.9518003565155806
+    },
+    {
+      "q": 291,
+      "legacy_median_seconds": 0.128096089,
+      "native_median_seconds": 0.12083358150000001,
+      "native_time_ratio": 0.9433042214114751
+    },
+    {
+      "q": 244,
+      "legacy_median_seconds": 0.110307605,
+      "native_median_seconds": 0.101827098,
+      "native_time_ratio": 0.9231194712277544
+    },
+    {
+      "q": 197,
+      "legacy_median_seconds": 0.084616159,
+      "native_median_seconds": 0.0809319835,
+      "native_time_ratio": 0.9564601425597681
+    }
+  ],
+  "candidate_sha256": "e5055a1dc25e5f24a16413a2be88fd7850dabd7cb5e573701271cdf236cf622f",
+  "controller_actual_exit_code": 0
+}

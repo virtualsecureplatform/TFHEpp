@@ -1,0 +1,28 @@
+{
+  "scope": "Observational same-key N32768 selector56 four-worker head30/tail4 raw-prefetch factor comparison. Not controlled full-refresh timing; synchronous first trial overlapped replay compilation and is excluded from this comparison.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "full_refresh_qualified": false,
+  "comparisons": [
+    {
+      "tail": false,
+      "previous_seconds": 34.371073824,
+      "current_seconds": 27.609394704,
+      "previous_selector_ntt_seconds": 12.403454176,
+      "current_selector_ntt_seconds": 6.067218493999997,
+      "previous_matrix_seconds": 17.058669350000002,
+      "current_matrix_seconds": 16.907566926
+    },
+    {
+      "tail": true,
+      "previous_seconds": 34.280631531,
+      "current_seconds": 27.484307345,
+      "previous_selector_ntt_seconds": 12.361996161000002,
+      "current_selector_ntt_seconds": 6.082744762,
+      "previous_matrix_seconds": 17.004403956999994,
+      "current_matrix_seconds": 16.713964712
+    }
+  ],
+  "proof": "narrow-dd-ntt-avx2-full-factors-validation.json"
+}

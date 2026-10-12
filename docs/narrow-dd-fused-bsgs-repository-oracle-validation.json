@@ -1,0 +1,33 @@
+{
+  "observed_at_utc": "2026-10-10T12:22:06.959430+00:00",
+  "scope": "Repository-owned independent cpp_int fused BSGS oracle, no encryption or keys; native N16384 sparse signed/dense max/rounding-boundary groups at Q81/93/413/448",
+  "configure_actual_exit_code": 0,
+  "configure_session": 7614,
+  "build_actual_exit_code": 0,
+  "build_session": 10181,
+  "actual_exit_code": 0,
+  "all_checks_passed": true,
+  "coefficients_checked": 393216,
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_fused_bsgs_exact.cpp": "cbe6e4f6a42d22c00c39fb92344404c9473173883d9177b4c2fc7ef9a333a5b3",
+    "TFHEpp/include/ckks/ckks.hpp": "9ff45d5d7ec32abcf1430770bdf9c0d6369f0f4e3e104eadadb1b9f69d6c05d9"
+  },
+  "executable_sha256": "5669128f0f37aedd472ec55c43ee4a1fa4a91c6eb5f58349825314f9c1c997ae",
+  "results": [
+    "exact fused BSGS passed N=16384 Q=81 drop=20 mode=0 terms=33 coefficients=32768 seconds=0.0810602",
+    "exact fused BSGS passed N=16384 Q=93 drop=20 mode=0 terms=33 coefficients=32768 seconds=0.0516118",
+    "exact fused BSGS passed N=16384 Q=413 drop=48 mode=0 terms=33 coefficients=32768 seconds=0.149206",
+    "exact fused BSGS passed N=16384 Q=448 drop=48 mode=0 terms=33 coefficients=32768 seconds=0.123695",
+    "exact fused BSGS passed N=16384 Q=81 drop=20 mode=1 terms=33 coefficients=32768 seconds=0.0470268",
+    "exact fused BSGS passed N=16384 Q=93 drop=20 mode=1 terms=33 coefficients=32768 seconds=0.0429536",
+    "exact fused BSGS passed N=16384 Q=413 drop=48 mode=1 terms=33 coefficients=32768 seconds=0.217221",
+    "exact fused BSGS passed N=16384 Q=448 drop=48 mode=1 terms=33 coefficients=32768 seconds=0.103875",
+    "exact fused BSGS passed N=16384 Q=81 drop=20 mode=2 terms=1 coefficients=32768 seconds=0.0136776",
+    "exact fused BSGS passed N=16384 Q=93 drop=20 mode=2 terms=1 coefficients=32768 seconds=0.0121859",
+    "exact fused BSGS passed N=16384 Q=413 drop=48 mode=2 terms=1 coefficients=32768 seconds=0.0410855",
+    "exact fused BSGS passed N=16384 Q=448 drop=48 mode=2 terms=1 coefficients=32768 seconds=0.0308228"
+  ],
+  "fresh_keys_generated": false,
+  "whole_full_ring_refresh_validated": false,
+  "superseded_by_expanded_ring_matrix": "narrow-dd-fused-bsgs-all-rings-oracle-validation.json"
+}

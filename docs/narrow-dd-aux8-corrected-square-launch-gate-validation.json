@@ -1,0 +1,53 @@
+{
+  "utc": "2026-10-09T14:54:38.121021+00:00",
+  "scope": "Corrected retained-square launcher terminal/profile/independent-metric guards; no square process launched",
+  "source_sha256": "2c5739a9e40e249d12ffc12e984690824a2f30a1d67c6a124e54a8ba3b51c7fc",
+  "passing_refresh_accepted": true,
+  "failed_refresh_accepted_as_negative_control": true,
+  "rejection_controls": [
+    {
+      "control": "live replay",
+      "rejected": true,
+      "reason": "corrected replay is incomplete or has the wrong profile"
+    },
+    {
+      "control": "nonzero exit",
+      "rejected": true,
+      "reason": "corrected replay is incomplete or has the wrong profile"
+    },
+    {
+      "control": "wrong profile",
+      "rejected": true,
+      "reason": "corrected replay is incomplete or has the wrong profile"
+    },
+    {
+      "control": "missing independent metric",
+      "rejected": true,
+      "reason": "independent replay metrics missing or invalid"
+    },
+    {
+      "control": "nonfinite metric",
+      "rejected": true,
+      "reason": "independent replay metrics missing or invalid"
+    },
+    {
+      "control": "mismatched metrics",
+      "rejected": true,
+      "reason": "independent replay metrics disagree"
+    },
+    {
+      "control": "false accuracy claim",
+      "rejected": true,
+      "reason": "corrected replay accuracy gate disagrees with metrics"
+    },
+    {
+      "control": "actual pending corrected replay",
+      "rejected": true,
+      "reason": "corrected replay is incomplete or has the wrong profile"
+    }
+  ],
+  "controls_passed": true,
+  "actual_corrected_square_validated": false,
+  "queue_process_identity_controls_passed": true,
+  "queue_behavior": "Matching launcher process must terminate, then all terminal/profile/independent metric and provenance gates run before child launch"
+}

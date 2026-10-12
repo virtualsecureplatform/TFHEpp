@@ -1,0 +1,28 @@
+{
+  "observed_at_utc": "2026-10-08T15:04:43.745355+00:00",
+  "focused_command": "ckks_narrow_bootstrapping --packed-selectors",
+  "focused_session": 81980,
+  "focused_exit_code": 0,
+  "focused_wall_time": "4:54.66",
+  "focused_peak_rss_kib": 116548,
+  "n": 512,
+  "h": 31,
+  "checks": {
+    "all_head_and_tail_selectors_bit_exact_vs_in_memory": true,
+    "raw_and_two_depth_prepared_substitutions": true,
+    "uneven_final_block_and_zero_padding": true,
+    "expanded_vectors_and_ntt_caches_released": true,
+    "temporary_accumulator_removed_before_publication": true,
+    "existing_directory_rejected_and_previous_source_preserved": true,
+    "owned_files_and_directory_cleanup": true
+  },
+  "small_encrypted_report": "narrow-dd-small-high-packed-bounded-file.json",
+  "small_encrypted_session": 35867,
+  "small_encrypted_exit_code": 0,
+  "small_encrypted_metadata_and_fixed_gates_independently_verified": true,
+  "small_encrypted_owner_cleanup_verified": true,
+  "small_encrypted_peak_rss_kib": 394048,
+  "small_encrypted_wall_time": "2:46.96",
+  "full_packed_validation_passed": false,
+  "security_qualified": false
+}

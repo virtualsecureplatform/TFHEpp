@@ -1,0 +1,113 @@
+{
+  "observed_at_utc": "2026-10-10T09:59:43.690318+00:00",
+  "scope": "Same retained N16384 aux8 factor groups and normalized tables, plaintext-table Shoup quotient experiment",
+  "variant": "Prepare Shoup quotient for each public table spectrum entry; apply it to each selector instead of preparing per-selector quotient",
+  "build_actual_exit_code": 0,
+  "test_session": 79661,
+  "actual_exit_code": 0,
+  "terminal": true,
+  "retained_files_unchanged": true,
+  "fresh_keys_generated": false,
+  "focused_controls_build_actual_exit_code": 0,
+  "focused_controls_session": 20700,
+  "focused_controls_actual_exit_code": 0,
+  "coefficient_reference_controls_passed": true,
+  "cases": [
+    {
+      "tail": false,
+      "group": 30,
+      "columns": 12,
+      "slots_checked": 98304,
+      "max_error": 1.2863243180697105e-09,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true,
+      "timings": {
+        "selector_load_seconds": 0.328213244,
+        "table_ntt_seconds": 0.143445585,
+        "selector_ntt_seconds": 8.201034042000002,
+        "matrix_seconds": 13.935814312,
+        "inverse_crt_seconds": 0.392704237,
+        "conjugation_seconds": 2.747778498
+      }
+    },
+    {
+      "tail": true,
+      "group": 4,
+      "columns": 12,
+      "slots_checked": 98304,
+      "max_error": 1.3537631754169615e-09,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true,
+      "timings": {
+        "selector_load_seconds": 0.334801091,
+        "table_ntt_seconds": 0.142251435,
+        "selector_ntt_seconds": 7.634533953999999,
+        "matrix_seconds": 12.594367348000002,
+        "inverse_crt_seconds": 0.396442483,
+        "conjugation_seconds": 2.823662949
+      }
+    }
+  ],
+  "comparison": [
+    {
+      "tail": false,
+      "group": 30,
+      "baseline_matrix_seconds": 11.720578574999998,
+      "variant_matrix_seconds": 13.935814312,
+      "variant_to_baseline_ratio": 1.1890039576821831
+    },
+    {
+      "tail": true,
+      "group": 4,
+      "baseline_matrix_seconds": 11.748870705000002,
+      "variant_matrix_seconds": 12.594367348000002,
+      "variant_to_baseline_ratio": 1.0719640775891917
+    }
+  ],
+  "decision": "Rejected and reverted; both observed matrix stages were slower",
+  "current_header_exactly_restored_to_validated_baseline": true,
+  "restored_build_session": 49374,
+  "restored_build_actual_exit_code": 0,
+  "restored_executable_sha256": "74517c376d88ff31b06aa96aeabd672225bed4172c9df4a2b0bc37c4524757b1",
+  "launch": {
+    "observed_at_utc": "2026-10-10T09:54:53.276979+00:00",
+    "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/table-multiplier-20261010",
+    "time_pid": 1922480,
+    "exe_sha256": "376a89ffdab8601f16e18934a718afde419155a293f1d018bda7145a04125c77",
+    "available_memory_bytes": 113672634368,
+    "required_available_memory_bytes": 105226698752,
+    "child_address_space_limit_bytes": 25769803776,
+    "fresh_keys_generated": false,
+    "terminal": true,
+    "build_actual_exit_code": 0,
+    "actual_exit_code": 0,
+    "retained_files_unchanged": true
+  },
+  "artifacts": {
+    "test.log": {
+      "path": "TFHEpp/docs/narrow-dd-table-multiplier-test.log",
+      "sha256": "858caa550f36530e1f11e842379bdf05446f018f4a227a08e2ddb5469ceb20cc"
+    },
+    "time.log": {
+      "path": "TFHEpp/docs/narrow-dd-table-multiplier-time.log",
+      "sha256": "63bbdb4f4f599577c0566c8cae27542dd5d902906e1cb829b8c2a3be07a1a313"
+    },
+    "controls.log": {
+      "path": "TFHEpp/docs/narrow-dd-table-multiplier-controls.log",
+      "sha256": "13144082796cb844bd845ea7b48d187d2e20e94736ae0b2107e3670ed895e86c"
+    },
+    "controls-time.log": {
+      "path": "TFHEpp/docs/narrow-dd-table-multiplier-controls-time.log",
+      "sha256": "cc3f87547cf8dc642236ea699cb311000f48ab43aba8e575f530b3759b0d581b"
+    }
+  },
+  "limitations": [
+    "Single trial per path under concurrent CPU load; not a statistical throughput claim",
+    "Increased table entry storage is a plausible cause of slowdown, not proved by hardware sampling",
+    "Full-ring ciphertext byte identity against baseline not captured; variant passes reference controls and same full-ring slot metrics"
+  ],
+  "paper_performance_reproduced": false,
+  "goal_complete": false
+}

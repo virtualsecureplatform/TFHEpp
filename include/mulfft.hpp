@@ -87,7 +87,9 @@ inline auto &UInt128DigitFFTProcessor()
 template <class P>
 inline constexpr bool is_multilimb_digit_fft_compatible_v =
     is_multilimb_uint_v<typename P::T> &&
-    ((P::nbit == 14 && P::n == (1U << 14)) ||
+    ((P::nbit == 9 && P::n == (1U << 9)) ||
+     (P::nbit == 13 && P::n == (1U << 13)) ||
+     (P::nbit == 14 && P::n == (1U << 14)) ||
      (P::nbit == 15 && P::n == (1U << 15)));
 
 template <class P>
@@ -115,8 +117,11 @@ inline auto &MultilimbDigitFFTProcessor()
         return fftplvl5;
     else if constexpr (P::nbit == 15 && P::n == (1U << 15))
         return fftplvl6;
-    else
-        static_assert(false_v<P>, "Undefined multi-limb digit FFT processor");
+    else {
+        // Narrow SHIP profiles use their own ring-sized transform and scratch.
+        static thread_local std::remove_reference_t<decltype(fftplvl5)> processor(P::n);
+        return processor;
+    }
 }
 #endif
 
@@ -347,19 +352,19 @@ inline void TwistIFFTDigit(PolynomialInFD<P> &res, const Polynomial<P> &a)
 #endif
 }
 
+// Digit convolutions fit the signed 64-bit output of the FFT backend. Keep
+// that representation until torus recombination rather than expanding every
+// secondary row to a full-width multi-limb polynomial.
 template <class P>
-inline void TwistFFTDigitProduct(Polynomial<P> &res, PolynomialInFD<P> &a)
+inline void TwistFFTDigitProduct64(std::array<uint64_t, P::n> &res,
+                                  PolynomialInFD<P> &a)
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "TwistFFTDigitProduct is only for multi-limb digit polynomials");
 #if TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT
     if constexpr (use_multilimb_digit_fft_v<P>) {
-        auto temp = std::make_unique<std::array<uint64_t, P::n>>();
         MultilimbDigitFFTProcessor<P>().execute_direct_torus64_rescale(
-            temp->data(), a.data(), 1.0);
-        for (uint32_t i = 0; i < P::n; i++)
-            res[i] = static_cast<typename P::T>(
-                static_cast<int64_t>((*temp)[i]));
+            res.data(), a.data(), 1.0);
     }
     else {
         static_assert(false_v<P>, "Undefined multi-limb digit TwistFFT!");
@@ -368,6 +373,15 @@ inline void TwistFFTDigitProduct(Polynomial<P> &res, PolynomialInFD<P> &a)
     static_assert(false_v<P>,
                   "Multi-limb digit FFT currently requires a SPQLIOS backend");
 #endif
+}
+
+template <class P>
+inline void TwistFFTDigitProduct(Polynomial<P> &res, PolynomialInFD<P> &a)
+{
+    auto temp = std::make_unique<std::array<uint64_t, P::n>>();
+    TwistFFTDigitProduct64<P>(*temp, a);
+    for (uint32_t i = 0; i < P::n; i++)
+        res[i] = static_cast<typename P::T>(static_cast<int64_t>((*temp)[i]));
 }
 
 template <class P>
@@ -401,7 +415,7 @@ inline void PolyMulDigit(Polynomial<P> &res, const Polynomial<P> &a,
     }
 }
 
-template <class P>
+template <class P, std::uint32_t ActiveBits = std::numeric_limits<typename P::T>::digits>
 inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
                                 const Polynomial<P> &digit)
 {
@@ -412,6 +426,11 @@ inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
 
     using T = typename P::T;
     constexpr int width = std::numeric_limits<T>::digits;
+    static_assert(ActiveBits > 0 && ActiveBits <= width);
+    // Terms shifted by at least ActiveBits vanish modulo 2^ActiveBits.
+    // Keep the original centered decomposition offset: its carries into the
+    // retained digits are needed even when the active level is unaligned.
+    constexpr int first_digit = (width - ActiveBits) / P::B̅gbit;
     constexpr T half = T{1} << (P::B̅gbit - 1);
     constexpr T mask = (T{1} << P::B̅gbit) - T{1};
     constexpr T offset = [] {
@@ -433,7 +452,7 @@ inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
     if constexpr (use_multilimb_digit_fft_v<P>)
         TwistIFFTDigit<P>(*digit_fft, digit);
 
-    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+    for (int j = first_digit; j < static_cast<int>(P::l̅); j++) {
         const int shift = width - (j + 1) * P::B̅gbit;
         for (int n = 0; n < static_cast<int>(P::n); n++) {
             const T adjusted = torus[n] + offset;
@@ -453,7 +472,22 @@ inline void PolyMulTorusByDigit(Polynomial<P> &res, const Polynomial<P> &torus,
     }
 }
 
-template <class P, int PlainBits>
+// ActiveBits selects the coefficient modulus needed by the caller. Terms
+// shifted above it cannot affect the low bits; the default retains full-width
+// torus multiplication for existing callers.
+// This radix is computational; it does not change encrypted gadget rows.
+template <class P>
+inline constexpr int torus_unsigned_digit_bits_v = [] {
+    if constexpr (use_multilimb_digit_fft_v<P> && P::B̅gbit < 16 &&
+        std::numeric_limits<typename P::T>::digits % 16 == 0 &&
+        2 * 16 + static_cast<int>(P::nbit) + 3 < std::numeric_limits<double>::digits)
+        return 16;
+    else return static_cast<int>(P::B̅gbit);
+}();
+
+template <class P, int PlainBits,
+          int ActiveBits = std::numeric_limits<typename P::T>::digits,
+          int DigitBits = torus_unsigned_digit_bits_v<P>>
 inline void PolyMulTorusByUnsignedBits(Polynomial<P> &res,
                                        const Polynomial<P> &torus,
                                        const std::array<uint64_t, P::n> &plain)
@@ -461,28 +495,40 @@ inline void PolyMulTorusByUnsignedBits(Polynomial<P> &res,
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "PolyMulTorusByUnsignedBits is only for multi-limb torus types");
     static_assert(PlainBits > 0 && PlainBits <= 64);
-    static_assert(P::l̅ * P::B̅gbit == std::numeric_limits<typename P::T>::digits,
-                  "PolyMulTorusByUnsignedBits expects Bbar digits to cover the torus");
-    static_assert(2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3 <
+    static_assert(ActiveBits > 0 && ActiveBits <= std::numeric_limits<typename P::T>::digits);
+    static_assert(DigitBits > 0 && DigitBits <= 32 &&
+                  std::numeric_limits<typename P::T>::digits % DigitBits == 0,
+                  "computational digit width must divide the torus width");
+    static_assert(use_multilimb_digit_fft_v<P> || DigitBits == P::B̅gbit,
+                  "alternate computational digits require the digit FFT backend");
+    static_assert(2 * static_cast<int>(DigitBits) + static_cast<int>(P::nbit) + 3 <
                       std::numeric_limits<double>::digits,
                   "unsigned digit products must fit exactly in double");
 
     using T = typename P::T;
     constexpr int width = std::numeric_limits<T>::digits;
+    // Preserve the original rounded plaintext coverage, including callers
+    // supplying unused upper bits, when computational boundaries change.
+    constexpr int plain_coverage_bits = std::min(64,
+        ((PlainBits + static_cast<int>(P::B̅gbit) - 1) / static_cast<int>(P::B̅gbit)) *
+            static_cast<int>(P::B̅gbit));
+    constexpr uint64_t plain_coverage_mask = plain_coverage_bits == 64
+        ? std::numeric_limits<uint64_t>::max()
+        : ((uint64_t{1} << plain_coverage_bits) - 1);
     constexpr int plain_digits =
-        (PlainBits + static_cast<int>(P::B̅gbit) - 1) /
-        static_cast<int>(P::B̅gbit);
+        (plain_coverage_bits + static_cast<int>(DigitBits) - 1) /
+        static_cast<int>(DigitBits);
     constexpr uint64_t plain_mask =
-        P::B̅gbit == 64 ? std::numeric_limits<uint64_t>::max()
-                        : ((uint64_t{1} << P::B̅gbit) - 1);
-    constexpr T half = T{1} << (P::B̅gbit - 1);
-    constexpr T torus_mask = (T{1} << P::B̅gbit) - T{1};
+        DigitBits == 64 ? std::numeric_limits<uint64_t>::max()
+                        : ((uint64_t{1} << DigitBits) - 1);
+    constexpr T half = T{1} << (DigitBits - 1);
+    constexpr T torus_mask = (T{1} << DigitBits) - T{1};
     constexpr T offset = [] {
         constexpr int local_width = std::numeric_limits<T>::digits;
-        constexpr T local_half = T{1} << (P::B̅gbit - 1);
+        constexpr T local_half = T{1} << (DigitBits - 1);
         T value = 0;
-        for (int j = 0; j < static_cast<int>(P::l̅); j++)
-            value += local_half << (local_width - (j + 1) * P::B̅gbit);
+        for (int j = 0; j < local_width / DigitBits; j++)
+            value += local_half << (local_width - (j + 1) * DigitBits);
         return value;
     }();
 
@@ -492,21 +538,27 @@ inline void PolyMulTorusByUnsignedBits(Polynomial<P> &res,
     auto plain_fft = std::make_unique<std::array<PolynomialInFD<P>, plain_digits>>();
     auto torus_digit_fft = std::make_unique<PolynomialInFD<P>>();
     auto prod_fft = std::make_unique<PolynomialInFD<P>>();
+    std::array<bool, plain_digits> nonzero;
+    nonzero.fill(true);
 
     for (int n = 0; n < static_cast<int>(P::n); n++) res[n] = 0;
 
     if constexpr (use_multilimb_digit_fft_v<P>) {
         for (int d = 0; d < plain_digits; d++) {
-            const int plain_shift = d * static_cast<int>(P::B̅gbit);
-            for (int n = 0; n < static_cast<int>(P::n); n++)
+            const int plain_shift = d * static_cast<int>(DigitBits);
+            nonzero[d] = false;
+            for (int n = 0; n < static_cast<int>(P::n); n++) {
                 (*plain_digit)[n] =
-                    static_cast<T>((plain[n] >> plain_shift) & plain_mask);
-            TwistIFFTDigit<P>((*plain_fft)[d], *plain_digit);
+                    static_cast<T>(((plain[n] & plain_coverage_mask) >> plain_shift) & plain_mask);
+                nonzero[d] = nonzero[d] || (*plain_digit)[n] != T{};
+            }
+            if (nonzero[d]) TwistIFFTDigit<P>((*plain_fft)[d], *plain_digit);
         }
     }
 
-    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
-        const int torus_shift = width - (j + 1) * P::B̅gbit;
+    constexpr int first_row = (width - ActiveBits) / static_cast<int>(DigitBits);
+    for (int j = first_row; j < width / DigitBits; j++) {
+        const int torus_shift = width - (j + 1) * DigitBits;
         for (int n = 0; n < static_cast<int>(P::n); n++) {
             const T adjusted = torus[n] + offset;
             (*torus_digit)[n] = ((adjusted >> torus_shift) & torus_mask) - half;
@@ -516,9 +568,9 @@ inline void PolyMulTorusByUnsignedBits(Polynomial<P> &res,
             TwistIFFTDigit<P>(*torus_digit_fft, *torus_digit);
 
         for (int d = 0; d < plain_digits; d++) {
-            const int plain_shift = d * static_cast<int>(P::B̅gbit);
+            const int plain_shift = d * static_cast<int>(DigitBits);
             const int shift = torus_shift + plain_shift;
-            if (shift >= width) continue;
+            if (shift >= ActiveBits || !nonzero[d]) continue;
 
             if constexpr (use_multilimb_digit_fft_v<P>) {
                 MulInFD<P::n>(*prod_fft, *torus_digit_fft, (*plain_fft)[d]);
@@ -527,7 +579,7 @@ inline void PolyMulTorusByUnsignedBits(Polynomial<P> &res,
             else {
                 for (int n = 0; n < static_cast<int>(P::n); n++)
                     (*plain_digit)[n] = static_cast<T>(
-                        (plain[n] >> plain_shift) & plain_mask);
+                        ((plain[n] & plain_coverage_mask) >> plain_shift) & plain_mask);
                 PolyMulDigit<P>(*digit_prod, *torus_digit, *plain_digit);
             }
 

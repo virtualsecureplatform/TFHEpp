@@ -1,0 +1,97 @@
+{
+  "observed_at_utc": "2026-10-09T00:06:16.023256+00:00",
+  "scope": "Existing generated-key full-ring DD modes revalidated after factoring shared checks and adding retained-checkpoint suffix loading.",
+  "active_moduli": [
+    348,
+    300,
+    252,
+    204,
+    156,
+    108
+  ],
+  "key_phase_checks": [
+    {
+      "active_modulus": 348,
+      "coefficients": 1425408,
+      "maximum_noise": 16
+    },
+    {
+      "active_modulus": 300,
+      "coefficients": 1228800,
+      "maximum_noise": 16
+    },
+    {
+      "active_modulus": 252,
+      "coefficients": 1032192,
+      "maximum_noise": 16
+    },
+    {
+      "active_modulus": 204,
+      "coefficients": 835584,
+      "maximum_noise": 15
+    },
+    {
+      "active_modulus": 156,
+      "coefficients": 638976,
+      "maximum_noise": 15
+    },
+    {
+      "active_modulus": 108,
+      "coefficients": 442368,
+      "maximum_noise": 14
+    }
+  ],
+  "switched_phase_checks": [
+    {
+      "active_modulus": 348,
+      "coefficients": 16384,
+      "maximum_error": 64889,
+      "convolution_bound": 182452224
+    },
+    {
+      "active_modulus": 300,
+      "coefficients": 16384,
+      "maximum_error": 61689,
+      "convolution_bound": 157286400
+    },
+    {
+      "active_modulus": 252,
+      "coefficients": 16384,
+      "maximum_error": 51943,
+      "convolution_bound": 132120576
+    },
+    {
+      "active_modulus": 204,
+      "coefficients": 16384,
+      "maximum_error": 59453,
+      "convolution_bound": 100270080
+    },
+    {
+      "active_modulus": 156,
+      "coefficients": 16384,
+      "maximum_error": 42742,
+      "convolution_bound": 76677120
+    },
+    {
+      "active_modulus": 108,
+      "coefficients": 16384,
+      "maximum_error": 34629,
+      "convolution_bound": 49545216
+    }
+  ],
+  "key_phase_coefficients": 5603328,
+  "switched_phase_coefficients": 98304,
+  "fft_ntt_coefficients_compared": 196608,
+  "all_checks_passed": true,
+  "actual_exit_code": 0,
+  "terminal": true,
+  "session": 51347,
+  "stderr_bytes": 0,
+  "wall_time": "1:25.71",
+  "peak_rss_kib": 2462380,
+  "source_sha256": {
+    "test/ckks/ckks_narrow_dd_exact.cpp": "c573dc93883c792a72c1544550c02c428f0f4a2b3d3b31ed1b29ac8f3a44ece5"
+  },
+  "test_log": "/tmp/ckks-narrow-generated-dd-revalidation-test.log",
+  "time_log": "/tmp/ckks-narrow-generated-dd-revalidation-time.log"
+}

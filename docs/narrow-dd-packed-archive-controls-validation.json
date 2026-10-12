@@ -1,0 +1,85 @@
+{
+  "scope": "Retained public N512 packed archive controls; no encryption-key generation. Tests profile/length rejection, byte-identical roundtrip, absent derived caches, and publication without overwrite. Does not validate selector phases, arbitrary payload corruption or full-ring benchmark retention.",
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "runs": [
+    {
+      "label": "validate retained",
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "stdout": "{\"n\":512,\"fresh_keys_generated\":false,\"derived_caches_empty\":true,\"archive_validated\":true}",
+      "stderr": ""
+    },
+    {
+      "label": "copy retained",
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "stdout": "{\"n\":512,\"fresh_keys_generated\":false,\"derived_caches_empty\":true,\"archive_validated\":true}",
+      "stderr": ""
+    },
+    {
+      "label": "validate published",
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "stdout": "{\"n\":512,\"fresh_keys_generated\":false,\"derived_caches_empty\":true,\"archive_validated\":true}",
+      "stderr": ""
+    },
+    {
+      "label": "refuse overwrite",
+      "actual_exit_code": 2,
+      "expected_exit_code": 2,
+      "stdout": "",
+      "stderr": "packed archive already exists"
+    },
+    {
+      "label": "wrong-profile",
+      "actual_exit_code": 2,
+      "expected_exit_code": 2,
+      "stdout": "",
+      "stderr": "packed archive profile mismatch"
+    },
+    {
+      "label": "truncated",
+      "actual_exit_code": 2,
+      "expected_exit_code": 2,
+      "stdout": "",
+      "stderr": "packed archive length mismatch"
+    },
+    {
+      "label": "extended",
+      "actual_exit_code": 2,
+      "expected_exit_code": 2,
+      "stdout": "",
+      "stderr": "packed archive length mismatch"
+    },
+    {
+      "label": "refuse existing staging",
+      "actual_exit_code": 2,
+      "expected_exit_code": 2,
+      "stdout": "",
+      "stderr": "packed archive staging directory already exists"
+    }
+  ],
+  "retained_files_before": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "retained_files_after": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "published_archive_identical": true,
+  "published_mode_octal": "0o600",
+  "staging_removed_after_publication": true,
+  "existing_staging_preserved": true,
+  "source_sha256": {
+    "include/ckks/narrow_packed_file.hpp": "66ea433a16f90301dffd89d5c767a2c79f5fc850cef22d10cd20d003ee20b882",
+    "test/ckks/ckks_narrow_packed_archive.cpp": "6da129dcc73f591e9e25821b2f9741e1b2dea1b8719732ad50cea57fe7002ffc",
+    "test/ckks/ckks_narrow_benchmark.cpp": "1b917b0b8577aff7008f22d0149348a630cf57920a716de35a90502ffac716fe"
+  },
+  "exe_sha256": "5adc38cd941c0ce34b05659dd6bb7059c33ee06db851b41913bf87533bbc6386",
+  "benchmark_build_actual_exit_code": 0,
+  "benchmark_exe_sha256": "b8f405fb6539f5ad1947112ac9bb6d025061de14475022c593c65710dfaeaec6",
+  "benchmark_storage_report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-archive-controls-20261010/storage.json",
+  "fresh_packed_checkpoint_execution_validated": false
+}

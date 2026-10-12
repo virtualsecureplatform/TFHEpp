@@ -1,0 +1,222 @@
+{
+  "observed_at_utc": "2026-10-09T00:55:01.362143+00:00",
+  "scope": "Every stored Q376 factor automorphism key from the second retained full plain37 sigmoid checkpoint, independent exact integer NTT key-message validation.",
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008/checkpoint.bin",
+  "checkpoint_bytes": 6854643214,
+  "checkpoint_mtime_ns": 1791500932795412679,
+  "checkpoint_unchanged_since_retained_dd_phase_check": true,
+  "prefix_bytes_read": 917592,
+  "factor_key_offset": 3507424498,
+  "factor_key_bytes": 2587361280,
+  "factor_key_sha256": "35865189222b501e0c7fb26ab1439c3739a73ce6f312789e886c59db67b86e58",
+  "adjacent_first_dd_header_checked": true,
+  "cache_mode_checked": 1,
+  "points": 16384,
+  "native_bits": 448,
+  "factor_log_q": 348,
+  "factor_key_log_q": 376,
+  "key_rows": 94,
+  "stored_keys": 15,
+  "cases": [
+    {
+      "factor_key_index": 0,
+      "automorphism_exponent": 5,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 1,
+      "automorphism_exponent": 25,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 2,
+      "automorphism_exponent": 625,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 3,
+      "automorphism_exponent": 30177,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 15,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 4,
+      "automorphism_exponent": 28609,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 5,
+      "automorphism_exponent": 28545,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 6,
+      "automorphism_exponent": 7937,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 7,
+      "automorphism_exponent": 15873,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 15,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 8,
+      "automorphism_exponent": 31745,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 9,
+      "automorphism_exponent": 30721,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 15,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 10,
+      "automorphism_exponent": 28673,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 11,
+      "automorphism_exponent": 24577,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 12,
+      "automorphism_exponent": 16385,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 13,
+      "automorphism_exponent": 1,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 15,
+      "phase_passed": true
+    },
+    {
+      "factor_key_index": 14,
+      "automorphism_exponent": 32767,
+      "phase_coefficients_checked": 1540096,
+      "maximum_noise": 16,
+      "phase_passed": true
+    }
+  ],
+  "phase_coefficients_checked": 23101440,
+  "maximum_noise": 16,
+  "noise_limit": 39,
+  "noise_limit_is_diagnostic_12_sigma": true,
+  "phase_oracle": "Independently permute secret coefficients by n*d modulo 2N, applying the negacyclic sign; exact NTT mask-secret multiplication, gadget shifts 372-4*row, independent low-Q subtraction. No production Automorphism or key-generation/decryption helper.",
+  "controls": [
+    {
+      "case": "wrong_magic",
+      "actual_exit_code": 2,
+      "stderr": "unsupported full plain37 DD checkpoint profile",
+      "synthetic_only": true
+    },
+    {
+      "case": "truncated_prefix",
+      "actual_exit_code": 2,
+      "stderr": "Failed to read 56 bytes from input stream! Read 0",
+      "synthetic_only": true
+    },
+    {
+      "case": "wrong_dd_anchor",
+      "actual_exit_code": 2,
+      "stderr": "invalid DD anchor after output conjugation key",
+      "synthetic_only": true
+    },
+    {
+      "case": "invalid_cache_mode",
+      "actual_exit_code": 2,
+      "stderr": "invalid output conjugation checkpoint termination",
+      "synthetic_only": true
+    },
+    {
+      "case": "synthetic_excess_key_noise",
+      "actual_exit_code": 2,
+      "stderr": "retained factor Galois key phase outside 12-sigma envelope",
+      "synthetic_only": true
+    }
+  ],
+  "controls_write_no_saved_secrets": true,
+  "source_sha256": {
+    "test/ckks/ckks_narrow_dd_exact.cpp": "0120b8aca0d5678bb73d2f06918efe46024131d1d7cddac25c8243d1ad16958b",
+    "include/ckks/ckks.hpp": "d5ea7b4dbd3b60fc278814b5e6a9ade66fe34700a4773aa31afed8a255020371",
+    "include/ckks/narrow_bootstrapping.hpp": "6174ee3a0bede45851ccb2fe745f85795e8b2906dddfbec48e561b6c4b1cc903",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a"
+  },
+  "build_actual_exit_code": 0,
+  "build_terminal": true,
+  "build_log": "/tmp/ckks-narrow-retained-factor-galois-build.log",
+  "test_actual_exit_code": 0,
+  "test_terminal": true,
+  "test_log": "/tmp/ckks-narrow-retained-factor-galois-test.log",
+  "test_stderr_bytes": 0,
+  "test_time_log": "/tmp/ckks-narrow-retained-factor-galois-time.log",
+  "elapsed_wall_time": "0:50.48",
+  "peak_rss_kib": 686208,
+  "memory_budget": "narrow-dd-retained-factor-galois-memory-budget.json",
+  "output_conjugation_reader_compatibility_check": {
+    "test_actual_exit_code": 0,
+    "test_terminal": true,
+    "test_log": "/tmp/ckks-narrow-output-conjugation-after-factor-galois.log",
+    "test_stderr_bytes": 0,
+    "elapsed_wall_time": "0:01.11",
+    "peak_rss_kib": 686208,
+    "cases": [
+      {
+        "output_conjugation_kind": 0,
+        "slots_checked": 8192,
+        "maximum_error": 8.163515833190105e-11,
+        "rms_error": 1.3827050853360585e-11,
+        "accuracy_passed": true
+      },
+      {
+        "output_conjugation_kind": 1,
+        "slots_checked": 8192,
+        "maximum_error": 8.44804961011104e-11,
+        "rms_error": 1.387856229126552e-11,
+        "accuracy_passed": true
+      },
+      {
+        "output_conjugation_kind": 2,
+        "slots_checked": 8192,
+        "maximum_error": 7.740403739255317e-11,
+        "rms_error": 1.3773864742571961e-11,
+        "accuracy_passed": true
+      }
+    ]
+  },
+  "limits": [
+    "Verifies stored key messages, not FFT cache preparation, composed tail rotations or live evaluator buffers.",
+    "Reader validates the known full plain37 archive prefix and tail anchors; skipped linear and selector archive data are outside this check.",
+    "An unused compact-chain container contributes to peak RSS while computing suffix length.",
+    "The earlier unsaved failing trial keys are unavailable; this passing checkpoint does not resolve their cause."
+  ],
+  "security_qualified": false,
+  "original_sigmoid_failure_resolved": false,
+  "goal_complete": false
+}

@@ -1,0 +1,6 @@
+{
+  "duplicate_live_controller_resume_rejected": true,
+  "actual_exit_code": 2,
+  "existing_controller_live": true,
+  "scope": "Resume guard protects waiting retained-key runner from duplicate launch."
+}

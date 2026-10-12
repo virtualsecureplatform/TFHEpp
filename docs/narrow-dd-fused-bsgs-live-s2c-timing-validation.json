@@ -1,0 +1,36 @@
+{
+  "observed_at_utc": "2026-10-10T12:21:44.133910+00:00",
+  "scope": "Completed S2C transform stage timing from live latest-source N16384 retained-key sigmoid refresh; whole refresh correctness and latency pending",
+  "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/fused-bsgs-full-refresh-20261010",
+  "log_snapshot_sha256": "5dbe0074f56b75589dcd4675db6147b5fc4d968989f03354730e28ef0ed30ab9",
+  "completed_transforms": [
+    {
+      "event_count": 387,
+      "group_finalize_events": 128,
+      "event_ms": {
+        "baby_rotation_table": 12945.6,
+        "baby_digit_fft": 117.432,
+        "plain_digit_fft": 4854.4494,
+        "fused_digit_products": 5393.355,
+        "group_finalize": 27937.785574000016,
+        "linear_transform_total": 51320.6
+      }
+    },
+    {
+      "event_count": 387,
+      "group_finalize_events": 128,
+      "event_ms": {
+        "baby_rotation_table": 10547.8,
+        "baby_digit_fft": 97.1998,
+        "plain_digit_fft": 3126.3743000000018,
+        "fused_digit_products": 5265.314300000001,
+        "group_finalize": 26653.035655999996,
+        "linear_transform_total": 45965.3
+      }
+    }
+  ],
+  "completed_s2c_transform_seconds": 97.2859,
+  "whole_refresh_completed": false,
+  "paper_performance_reproduced": false,
+  "fresh_keys_generated": false
+}

@@ -1,0 +1,56 @@
+{
+  "shared_public_setup": true, "shared_encrypted_input": true,
+  "setup_generation_count": 1, "results": [
+{
+  "profile": "frequency-basis-staged-dd", "n": 512, "h": 31, "gaussian_sigma": 3.2, "storage_bits": 640,
+  "function": "sigmoid", "degree": 12, "basis_size": 4,
+  "source_log_q": 48, "input_log_q": 85, "input_log_delta": 44, "selector_log_q": 536,
+  "root_plain_log_delta": 39, "root_log_delta": 49, "coefficient_bits": 32,
+  "output_log_q": 203, "output_log_delta": 81, "gadget_bits": 4, "auxiliary_switch_bits": 44,
+  "staged_fft": true, "selector_chunk_size_requested": 40, "selector_chunk_size": 17, "series_tile_size": 4, "message_bound": 4,
+  "target_tolerance": 1.1920928955078125e-07, "approximation_uniform_bound": 1.0813569365872264e-09,
+  "max_error": 2.1168504367780774e-09, "evaluation_max_error": 1.3278656583990635e-09,
+  "post_refresh_product_max_error": 4.0244380287373364e-09, "post_refresh_product_evaluation_max_error": 2.4999903877214533e-09,
+  "product_tolerance": 4.5031959531632899e-07, "product_evaluation_tolerance": 4.5031959506006621e-07,
+  "square_normalization_max_error": 2.1984783574381464e-11,
+  "square_normalization_scope": "Dense ciphertext scale/modulus adapter only; a repeated nonlinear refresh also requires its message-domain bound",
+  "key_setup_seconds": 5.7267731130000001, "refresh_seconds": 54.985072129000002,
+  "accuracy_passed": true, "security_validated": false
+}
+,
+{
+  "profile": "frequency-basis-staged-dd", "n": 512, "h": 31, "gaussian_sigma": 3.2, "storage_bits": 640,
+  "function": "gelu", "degree": 12, "basis_size": 4,
+  "source_log_q": 48, "input_log_q": 85, "input_log_delta": 44, "selector_log_q": 536,
+  "root_plain_log_delta": 39, "root_log_delta": 49, "coefficient_bits": 32,
+  "output_log_q": 203, "output_log_delta": 81, "gadget_bits": 4, "auxiliary_switch_bits": 44,
+  "staged_fft": true, "selector_chunk_size_requested": 40, "selector_chunk_size": 17, "series_tile_size": 4, "message_bound": 4,
+  "target_tolerance": 1.1920928955078125e-07, "approximation_uniform_bound": 5.8837618009357256e-10,
+  "max_error": 1.82218537187526e-09, "evaluation_max_error": 1.4784569714797664e-09,
+  "post_refresh_product_max_error": 1.9373807159164072e-08, "post_refresh_product_evaluation_max_error": 1.369333709538651e-08,
+  "product_tolerance": 1.4678657411332307e-06, "product_evaluation_tolerance": 1.4678657409967672e-06,
+  "square_normalization_max_error": 3.2520397874780757e-11,
+  "square_normalization_scope": "Dense ciphertext scale/modulus adapter only; a repeated nonlinear refresh also requires its message-domain bound",
+  "key_setup_seconds": 5.7267731130000001, "refresh_seconds": 48.092455164,
+  "accuracy_passed": true, "security_validated": false
+}
+,
+{
+  "profile": "frequency-basis-staged-dd", "n": 512, "h": 31, "gaussian_sigma": 3.2, "storage_bits": 640,
+  "function": "tanh", "degree": 40, "basis_size": 9,
+  "source_log_q": 48, "input_log_q": 85, "input_log_delta": 44, "selector_log_q": 536,
+  "root_plain_log_delta": 39, "root_log_delta": 49, "coefficient_bits": 32,
+  "output_log_q": 203, "output_log_delta": 81, "gadget_bits": 4, "auxiliary_switch_bits": 44,
+  "staged_fft": true, "selector_chunk_size_requested": 40, "selector_chunk_size": 17, "series_tile_size": 9, "message_bound": 4,
+  "target_tolerance": 1.1920928955078125e-07, "approximation_uniform_bound": 1.5300144120715163e-08,
+  "max_error": 1.6124239475604175e-08, "evaluation_max_error": 2.4063442624133083e-09,
+  "post_refresh_product_max_error": 4.4857077528343131e-08, "post_refresh_product_evaluation_max_error": 6.6928200109784623e-09,
+  "product_tolerance": 4.5615794863043815e-07, "product_evaluation_tolerance": 4.5615794645224607e-07,
+  "square_normalization_max_error": 2.4974943859018735e-11,
+  "square_normalization_scope": "Dense ciphertext scale/modulus adapter only; a repeated nonlinear refresh also requires its message-domain bound",
+  "key_setup_seconds": 5.7267731130000001, "refresh_seconds": 116.512557801,
+  "accuracy_passed": true, "security_validated": false
+}
+
+  ], "accuracy_passed": true, "security_validated": false
+}

@@ -1,0 +1,40 @@
+{
+  "utc": "2026-10-09T10:29:52.310121+00:00",
+  "scope": "Actual retained full N16384 aux8 failure S2C and encapsulation diagnosis",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17682984960,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 12548055040,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 100961304576,
+  "required_bytes": 100765462528,
+  "host_reserve_bytes": 10737418240,
+  "process_limit_bytes": 17179869184,
+  "stack_bytes": 67108864,
+  "omp_threads": 4,
+  "eligible": true,
+  "build_session": 11542,
+  "build_actual_exit_code": 0,
+  "small_session": 50962,
+  "small_actual_exit_code": 0,
+  "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin",
+  "state_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "selector_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/selectors",
+  "destination": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/prepare-diagnostic-v1",
+  "source_sha256": "4e6452a258685493cabf5a57fcd909ac37d5ccc008361d92709367f3f39cb915",
+  "executable_sha256": "bf55514427cb68909f6ea97859b02814ca0ced1a83e5131379d9db12c75a5470",
+  "cmake_sha256": "40a24936b65974969e4c11507904c8eb3c813cf7fcd35c0b530d96cf5418f544",
+  "launched": true,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "completion_utc": "2026-10-09T10:42:05.414179+00:00"
+}

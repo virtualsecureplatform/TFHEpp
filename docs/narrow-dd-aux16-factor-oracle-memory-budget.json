@@ -1,0 +1,32 @@
+{
+  "utc": "2026-10-09T06:33:44.654446+00:00",
+  "scope": "Sequential Q364 all15 factor key exact phase/FFT evaluation and retained Q376 phase regression",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17685442560,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1823852,
+      "start_ticks": 217158705,
+      "rss_bytes": 12799700992,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 100439359488,
+  "required_bytes": 87626457088,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_cap_bytes": 4294967296,
+  "eligible": true,
+  "build_session": 20578,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "test_session": 54734,
+  "test_terminal": true,
+  "current_aux16_pid": 1828816,
+  "source_sha256": "113ab94390596dff6ae7405d3eb55ae6539eefeb28ffca925a204ea1f0531ef6",
+  "executable_sha256": "8fcae9bc984405359f5a787139d36970699965889fab7543078f98cca66c041e",
+  "test_actual_exit_code": 0
+}

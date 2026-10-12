@@ -1,0 +1,76 @@
+{
+  "scope": "Replay the original retained aux8 state without root instrumentation.\n\nChecks provenance and memory before loading keys. Reports ciphertext identity\nand independently decoded accuracy separately from diagnostic process success.\n",
+  "terminal": true,
+  "mode": "--replay",
+  "fresh_keys_generated": false,
+  "failure_cause_established": false,
+  "security_validated": false,
+  "state_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "source_sha256": "4e6452a258685493cabf5a57fcd909ac37d5ccc008361d92709367f3f39cb915",
+  "executable_sha256": "bf55514427cb68909f6ea97859b02814ca0ced1a83e5131379d9db12c75a5470",
+  "destination": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/untraced-baseline-v1",
+  "selectors": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/selectors",
+  "budget": {
+    "utc": "2026-10-09T12:39:52.758337+00:00",
+    "jobs": [
+      {
+        "pid": 1756575,
+        "start_ticks": 211884551,
+        "state": "R",
+        "rss_bytes": 16675631104,
+        "cpu_ticks": 25530025,
+        "cap_bytes": 68719476736
+      },
+      {
+        "pid": 1836219,
+        "start_ticks": 218187280,
+        "state": "R",
+        "rss_bytes": 12485574656,
+        "cpu_ticks": 6097210,
+        "cap_bytes": 34359738368
+      }
+    ],
+    "available_bytes": 102212591616,
+    "required_bytes": 101969514496,
+    "host_reserve_bytes": 10737418240,
+    "child_limit_bytes": 17179869184,
+    "parent_limit_bytes": 134217728,
+    "eligible": true
+  },
+  "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/untraced-baseline-v1.log",
+  "stderr": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/untraced-baseline-v1.stderr",
+  "time_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/untraced-baseline-v1.time",
+  "child_pid": 1846174,
+  "stage": "original untraced replay terminal",
+  "actual_exit_code": 0,
+  "utc": "2026-10-09T13:54:52.080223+00:00",
+  "report": {
+    "n": 16384,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--replay",
+    "fresh_keys_generated": false,
+    "fresh_input_max_error": 6.054536509709368e-11,
+    "saved_max_error": 1.7331694525132082e+20,
+    "saved_rms_error": 4.235902733671335e+19,
+    "max_error": 1.3212045850306164e+20,
+    "rms_error": 4.264512319580799e+19,
+    "saved_output_equal": false,
+    "accuracy_passed": false,
+    "retained_square_validated": false
+  },
+  "independent_prefix": {
+    "function": "sigmoid",
+    "n": 16384,
+    "prefix_bytes": 5636193,
+    "phase_arithmetic": "exact 15-bit limbs with one bounded 31-bit NTT prime",
+    "fresh_input_max_error": 6.113455435669392e-11,
+    "max_error": 1.3212045850307636e+20,
+    "rms_error": 4.2645123195811275e+19,
+    "sparse_key_geometry_passed": true,
+    "evaluation_key_suffix_validated": false,
+    "retained_square_validated": false
+  },
+  "saved_output_equal": false,
+  "fixed_23bit_refresh_passed": false
+}

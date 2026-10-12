@@ -1,0 +1,19 @@
+{
+  "scope": "Conservative resumption envelope after basis and LL13 released memory; counts all existing packed virtual mappings as resident, future FFT caches, full-group NTT cache, and shared host/runtime reserve; no credit for freed buffers",
+  "packed_pid": 1599409,
+  "current_packed_state": "resumed",
+  "current_packed_virtual_bytes": 92851597312,
+  "current_packed_resident_bytes": 82526056448,
+  "current_packed_swap_bytes": 8323985408,
+  "future_fft_cache_bytes": 17693933568,
+  "future_full_group_ntt_cache_bytes": 6656360448,
+  "concurrent_ll13_payload_bytes": 0,
+  "shared_host_and_runtime_reserve_bytes": 10737418240,
+  "resumption_envelope_bytes": 127939309568,
+  "host_memory_bytes": 134843355136,
+  "remaining_margin_bytes": 6904045568,
+  "precondition": "Verified basis terminal and selector cleanup, LL13 terminal, and fresh memory budget before SIGCONT; packed PID1599409 resumed without restarting.",
+  "resume_mem_available_bytes": 49452609536,
+  "resume_required_available_bytes": 45413253120,
+  "basis_terminal_exit_code": 0
+}

@@ -1,0 +1,26 @@
+{
+  "utc": "2026-10-09T10:26:13.823400+00:00",
+  "scope": "Small retained auxiliary8 replay/preparation controls after compiler completion",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17977364480,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 11433992192,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 102308843520,
+  "required_bytes": 86552760320,
+  "host_reserve_bytes": 10737418240,
+  "process_limit_bytes": 2147483648,
+  "stack_bytes": 67108864,
+  "omp_threads": 2,
+  "eligible": true,
+  "requires_build_terminal": true
+}

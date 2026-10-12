@@ -1,0 +1,58 @@
+{
+  "utc": "2026-10-09T07:47:54.891954+00:00",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17685303296,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1831156,
+      "start_ticks": 217652148,
+      "rss_bytes": 11182624768,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 102013263872,
+  "required_bytes": 89243672576,
+  "auxiliary_cap_bytes": 4294967296,
+  "host_reserve_bytes": 10737418240,
+  "eligible": true,
+  "build_session": 99412,
+  "build_actual_exit_code": 0,
+  "probe_session": 81251,
+  "probe_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v",
+  "probe_source_sha256": "08f14b24a6b7a12b24fc28e2edeaf2152997731ce0ff29edc328a3f5bc88070f",
+  "probe_executable_sha256": "cc76c89970bdc1f4cc326212cbd0c5b9159bc3162d7190a2d319c02950261266",
+  "probe_pid": 1833757,
+  "probe_start_ticks": 217875249,
+  "probe_terminal": true,
+  "capture_control_budget": {
+    "utc": "2026-10-09T07:53:31.129858+00:00",
+    "jobs": [
+      {
+        "pid": 1756575,
+        "start_ticks": 211884551,
+        "rss_bytes": 17979830272,
+        "cap_bytes": 68719476736
+      },
+      {
+        "pid": 1831156,
+        "start_ticks": 217652148,
+        "rss_bytes": 11791233024,
+        "cap_bytes": 34359738368
+      }
+    ],
+    "available_bytes": 101524467712,
+    "required_bytes": 92635504640,
+    "combined_auxiliary_caps_bytes": 8589934592,
+    "host_reserve_bytes": 10737418240,
+    "eligible": true
+  },
+  "probe_actual_exit_code": 0,
+  "capture_control_session": 48206,
+  "capture_control_terminal": true,
+  "capture_control_actual_exit_code": 1,
+  "capture_control_expected_exit_code": 1
+}

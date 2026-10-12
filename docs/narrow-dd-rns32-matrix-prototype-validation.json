@@ -1,0 +1,92 @@
+{
+  "observed_at_utc": "2026-10-10T20:03:54.231158+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Isolated development prototype: AVX2 eight-lane30-bit modular matrix plus scalar SIMD tails, independent modular oracle at N512/N32768, publicly certified four scratch primes. No CRT, NTT, encrypted factors, source integration or whole-refresh claim. Concurrent host jobs; timing observations are not isolated.",
+  "public_primes": {
+    "scope": "Public candidate auxiliary primes, trial-division prime certification and primitive-root factor checks; no cryptographic modulus change or production integration",
+    "primes": [
+      {
+        "value": 1073479681,
+        "primitive_root": 11,
+        "factors_of_p_minus_one": [
+          2,
+          3,
+          5,
+          7,
+          13
+        ]
+      },
+      {
+        "value": 1072496641,
+        "primitive_root": 11,
+        "factors_of_p_minus_one": [
+          2,
+          3,
+          5,
+          1091
+        ]
+      },
+      {
+        "value": 1071513601,
+        "primitive_root": 23,
+        "factors_of_p_minus_one": [
+          2,
+          3,
+          5,
+          109
+        ]
+      },
+      {
+        "value": 1070727169,
+        "primitive_root": 11,
+        "factors_of_p_minus_one": [
+          2,
+          3,
+          7,
+          389
+        ]
+      }
+    ],
+    "product_bits": 119.99092050688118
+  },
+  "oracle_controls": 80,
+  "unique_modular_sums_checked": 48664576,
+  "multiplier_quotients_checked": 400016,
+  "invalid_moduli_rejected": 3,
+  "maximum_residues_and_nonzero_initial_sums_checked": true,
+  "partial_simd_tails_checked": true,
+  "zero_padded_columns_checked": true,
+  "current_two_prime64_total_mean_seconds": 0.127462475,
+  "four_prime32_total_mean_seconds": {
+    "22": 0.19541825,
+    "24": 0.11968735
+  },
+  "observed_current_over_candidate_ratios": {
+    "22": 0.6522547152069983,
+    "24": 1.0649619613100298
+  },
+  "production_integrated": false,
+  "decision": "Keep current kernel: padded matrix-only observation offers roughly6.5percent, while extra NTT/CRT cost and actual encrypted path are unqualified. Unpadded22-column candidate is slower.",
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-rns32-prototype-20261010/matrix32.cpp": "f592caebecf2dff9b47645e9c9e17ed6fd2b43b98a88be9879f6873e8527470b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-rns32-prototype-20261010/baseline64.cpp": "48cae9bad4dca80de908f45860f6004b3ca268c5343e7647ab9831ff661d838d"
+  },
+  "production_source_hashes_unchanged": true,
+  "production_source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "5b6a77e75b5ffeaee48e3c9acfb171e60623ba04ad5f5c2b595b0e7c66e98c4d",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5d9dc333cfba0b7e0d28a9e1207e926b1956eca68bcddf188a75dc93507b0d7e",
+    "TFHEpp/include/ckks/narrow_selector_ntt_file.hpp": "8f51ed4e9b910ef553dbbefaec54e0df64d7b8af7d1d9e7e78e062353ee008ff",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/include/ckks/narrow_frequency_basis.hpp": "65fc51d26f988f9cd49c154384c15ad46b19d189e085ac21101861fc275c6208",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "068580d2ce29a3b43f299f89abee1753774c11f2ae2561158ff66fb4ce9dc85c",
+    "TFHEpp/test/ckks/ckks_narrow_basis_replay.cpp": "6cb6dfc1c46a1b0d4ab02dd3913e59d6d8b4d0040017e2b5def0bd704a3941ae",
+    "TFHEpp/test/ckks/ckks_narrow_basis_batch_checkpoint.cpp": "82898886af3d0a8abeb575a0d2434e95f962001a520d9ea2fcd4f235a341ea67"
+  },
+  "fresh_keys_generated": false,
+  "crt_reconstruction_qualified": false,
+  "encrypted_factor_qualified": false,
+  "whole_refresh_speedup_qualified": false,
+  "paper_performance_reproduced": false,
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-rns32-prototype-20261010"
+}

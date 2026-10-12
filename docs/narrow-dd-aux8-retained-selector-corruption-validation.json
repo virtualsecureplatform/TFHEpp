@@ -1,0 +1,21 @@
+{
+  "n": 16384,
+  "group": 19,
+  "tail": false,
+  "record": 466,
+  "record_sha256": "16250cc82dc19ab664b24b93f2dab0ab9db78f6bc5a9ae8a8f0bfd67b8a17c93",
+  "phase_coefficients_checked": 16384,
+  "maximum_phase_bits": 152,
+  "large_error_coefficients": 10816,
+  "low_residual_maximum": 14,
+  "high_error_gcd_bits": 152,
+  "high_error_gcd_is_power_of_two": true,
+  "high_error_matches_single_mask_impulse": true,
+  "intended_plaintext_and_noise_bound_compatible": true,
+  "phase_arithmetic": "independent exact 15-bit limb NTT",
+  "failure_cause_established": false,
+  "security_validated": false,
+  "in_memory_corrected_maximum_phase": 14,
+  "in_memory_corrected_phase_equals_low_residual": true,
+  "mask_correction_changes_one_bit": true
+}

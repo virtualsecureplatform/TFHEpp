@@ -1,0 +1,112 @@
+--- a/include/ckks/narrow_bootstrapping.hpp
++++ b/include/ckks/narrow_bootstrapping.hpp
+@@ -215,6 +215,10 @@
+     CKKSGaloisKey<P, Schedule::factor_key_log_q> factor_galois;
+     CKKSAutoKey<P, Schedule::output_key_log_q> output_conjugation;
+     typename Schedule::RelinKeys relin;
++    // Optional prepared backend; derived state is never archived.
++    std::function<void(typename Schedule::TreeResult &,
++        std::vector<typename Schedule::Factor>, const typename Schedule::RelinKeys &)>
++        product_tree_evaluator;
+     std::unique_ptr<typename Schedule::PreparedRelinKeys> relin_fft;
+     static constexpr std::uint32_t projected_relin_primary_bits = 8 % P::Bgbit == 0 ? 8 : P::Bgbit;
+     using ProjectedRelinKeys = CKKSPreparedDDRelinKeyChainFFT<P,
+@@ -247,6 +251,7 @@
+         if constexpr (Archive::is_loading::value) {
+             selector_source.reset();
+             factor_source.reset();
++            product_tree_evaluator = {};
+             relin_fft.reset();
+             relin_projected_fft.reset();
+             factor_conjugation_fft.reset();
+@@ -317,6 +322,7 @@
+         key.output_conjugation_projected_fft.reset();
+         key.relin_fft.reset();
+         key.relin_projected_fft.reset();
++        key.product_tree_evaluator = {};
+         key.staged_fft_caches = true;
+     }
+     else throw std::invalid_argument("staged FFT caches require a digit FFT backend");
+@@ -326,7 +332,9 @@
+ inline void CKKSNarrowPrepareRelinearization(CKKSNarrowBootstrapKey<Schedule> &key)
+ {
+     if constexpr (use_multilimb_digit_fft_v<typename Schedule::Param>) {
+-        key.relin_fft = CKKSNarrowMakePreparedRelinearization<Schedule>(key.relin);
++        auto prepared = CKKSNarrowMakePreparedRelinearization<Schedule>(key.relin);
++        key.relin_fft = std::move(prepared);
++        key.product_tree_evaluator = {};
+         key.relin_projected_fft.reset();
+         key.staged_fft_caches = false;
+     }
+@@ -344,6 +352,7 @@
+     auto projected = makeCKKSCompactDDRelinKeyChainWithPrimaryBase<8>(key.relin);
+     auto prepared = makeCKKSPreparedDDRelinKeyChainFFTWithSecondaryBase<
+         Schedule::prepared_relin_bbarbit>(*projected);
++    key.product_tree_evaluator = {};
+     key.relin_projected_fft = std::move(prepared);
+     key.relin_fft.reset();
+ }
+@@ -1230,6 +1239,7 @@
+     result.bounded_tail_rotation_fft = false;
+     result.selector_ntt_chunk_size = 0;
+     result.staged_fft_caches = false;
++    result.product_tree_evaluator = {};
+     result.relin_fft.reset();
+     result.relin_projected_fft.reset();
+     CKKSGaloisKeyGen<P, Schedule::factor_key_log_q>(result.factor_galois, evaluation, noise);
+@@ -1533,7 +1543,7 @@
+         finish_root_stage(root_times.bounded_tail_alignment_seconds);
+         std::unique_ptr<typename Schedule::PreparedRelinKeys> staged_relin;
+         if constexpr (use_multilimb_digit_fft_v<P>)
+-            if (key.staged_fft_caches && !key.relin_projected_fft)
++            if (key.staged_fft_caches && !key.relin_projected_fft && !key.product_tree_evaluator)
+                 staged_relin = CKKSNarrowMakePreparedRelinearization<Schedule>(key.relin);
+         const auto *tree_keys = staged_relin ? staged_relin.get() : key.relin_fft.get();
+         finish_root_stage(root_times.dd_cache_preparation_seconds);
+@@ -1556,7 +1566,11 @@
+                 narrow_detail::productTree<Schedule>(results[begin + column], std::move(head[column]), key.relin, prepared);
+                 narrow_detail::productTree<Schedule>(*tail_result, std::move(tail[column]), key.relin, prepared);
+             };
+-            if (key.relin_projected_fft) evaluate_trees(key.relin_projected_fft.get());
++            if (key.product_tree_evaluator) {
++                key.product_tree_evaluator(results[begin + column], std::move(head[column]), key.relin);
++                key.product_tree_evaluator(*tail_result, std::move(tail[column]), key.relin);
++            }
++            else if (key.relin_projected_fft) evaluate_trees(key.relin_projected_fft.get());
+             else evaluate_trees(tree_keys);
+             CKKSAddInPlace<P>(results[begin + column], *tail_result);
+             if (observer) (*observer)(request, results[begin + column]);
+--- /dev/null
++++ b/include/ckks/narrow_dd_ntt.hpp
+@@ -0,0 +1,31 @@
++#pragma once
++#include "narrow_bootstrapping.hpp"
++#include "prepared_dd_ntt_chain.hpp"
++
++#ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
++namespace TFHEpp {
++// Reuse a saved public wide-primary key without changing its encryption.
++// The auxiliary lift protects switching precision; data rescale count stays
++// equal to the existing before-rescale product tree's count.
++template <std::uint32_t Auxiliary = 100, std::uint32_t Secondary = 32,
++          class Schedule, std::uint32_t MasterQ, std::uint32_t Primary,
++          std::uint32_t MasterSecondary>
++inline void CKKSNarrowUseAuxiliaryNTTDD(CKKSNarrowBootstrapKey<Schedule> &key,
++    const CKKSCompactDDRelinKey<typename Schedule::Param, MasterQ, Primary,
++        MasterSecondary> &master)
++{
++    static_assert(Schedule::relinearize_before_rescale);
++    using Chain=CKKSPreparedAuxiliaryDDRelinKeyChainNTT<typename Schedule::Param,
++        Schedule::factor_log_q, Schedule::log_delta, Schedule::tree_depth,
++        Auxiliary, Primary, Secondary>;
++    auto prepared=std::make_shared<Chain>(master);
++    key.product_tree_evaluator=[prepared](typename Schedule::TreeResult &result,
++        std::vector<typename Schedule::Factor> factors,
++        const typename Schedule::RelinKeys &raw) {
++        narrow_detail::productTree<Schedule>(result,std::move(factors),raw,prepared.get());
++    };
++    key.relin_fft.reset();
++    key.relin_projected_fft.reset();
++}
++} // namespace TFHEpp
++#endif

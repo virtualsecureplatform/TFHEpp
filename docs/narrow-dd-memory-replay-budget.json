@@ -1,0 +1,259 @@
+{
+  "observed_at_utc": "2026-10-09T04:06:23.729191+00:00",
+  "scope": "One-profile ASan/UBSan replay build; sequential runtime reserves 4GiB physical payload/quarantine envelope, ASan shadow virtual mapping excluded from resident estimate",
+  "existing_processes": [
+    {
+      "pid": 1756575,
+      "rss_bytes": 17687748608,
+      "virtual_limit_bytes": 68719476736
+    },
+    {
+      "pid": 1812584,
+      "rss_bytes": 9107783680,
+      "virtual_limit_bytes": 34359738368
+    }
+  ],
+  "available_memory_bytes": 104904110080,
+  "host_reserve_bytes": 10737418240,
+  "build_virtual_limit_bytes": 8589934592,
+  "runtime_reserve_bytes": 4294967296,
+  "required_build_available_bytes": 95611035648,
+  "runtime_asan_quarantine_mb": 64,
+  "launch_eligible": true,
+  "build_argv": [
+    "/usr/bin/c++",
+    "-DUSE_BLAKE3",
+    "-DUSE_INTERLEAVED_FORMAT",
+    "-DUSE_SPQLIOS_INTL",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/concrete-fft",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl",
+    "-isystem",
+    "/tmp/ckks-build-deps/root/usr/include",
+    "-O1",
+    "-g1",
+    "-march=native",
+    "-fopenmp",
+    "-std=gnu++20",
+    "-fno-ipa-icf",
+    "-fsanitize=address,undefined",
+    "-fno-sanitize-recover=all",
+    "-fno-omit-frame-pointer",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_memory_replay.cpp",
+    "-o",
+    "/tmp/ckks-narrow-memory-replay",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a"
+  ],
+  "sanitized_build_session": 1790,
+  "sanitized_build_actual_exit_code": 0,
+  "sanitized_build_terminal": true,
+  "runtime_session": 20444,
+  "runtime_pid": 1813389,
+  "runtime_terminal": true,
+  "runtime_asan_options": "quarantine_size_mb=64:detect_leaks=0:max_allocation_size_mb=256",
+  "runtime_ubsan_options": "halt_on_error=1",
+  "runtime_omp_threads": 2,
+  "runtime_stack_limit_bytes": 67108864,
+  "runtime_virtual_limit": "unlimited for ASan shadow mapping; resident payload envelope reserved separately",
+  "fixture_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-failure-capture-test-20261009-bspmxo36/selectors.failed-state-1",
+  "source_sha256": "849b3d026bc57ba902a2a5c49648b57c924379b725915934609fa39a52e580a1",
+  "sanitized_executable_sha256": "304ad4885cca1290138d38e56d54c71c46b8bcc7c328426cf78190a004356371",
+  "instrumentation_scope": "Fixed one-profile translation unit and its instantiated headers; prebuilt libraries and FFT assembly uninstrumented, leak detection disabled",
+  "actual_function": "Deterministic degree12 real periodic series with complex positive-frequency weights, evaluated componentwise",
+  "normal_build_session": 84716,
+  "normal_build_log": "/tmp/ckks-memory-replay-normal-build.log",
+  "normal_build_virtual_limit_bytes": 4294967296,
+  "normal_build_terminal": true,
+  "cmake_configure_session": 24144,
+  "cmake_configure_terminal": true,
+  "cmake_configure_actual_exit_code": 0,
+  "normal_replay_resource_check": {
+    "observed_at_utc": "2026-10-09T04:18:53.960383+00:00",
+    "available_memory_bytes": 103823335424,
+    "required_bytes_including_main_growth_host_sanitizer_and_normal_replay": 95381524480,
+    "eligible": true,
+    "normal_runtime_limit_bytes": 4294967296
+  },
+  "fixture_inventory_before_normal_replay": {
+    "checkpoint.bin": {
+      "bytes": 108482446,
+      "sha256": "d2d460d4465fe00410de26c05504c5c171c522cc7f7de3095cde6f23a7b53e89"
+    },
+    "failure.txt": {
+      "bytes": 78,
+      "sha256": "11fc0b13f7094ba30846714878aef6d95d32ff069a5c35554bc70f3756346d2f"
+    },
+    "output.ciphertext": {
+      "bytes": 57345,
+      "sha256": "7c97220b83cabbb496211c774227a46ea305125c72e0945555b3838712fb7128"
+    },
+    "selectors/head-0.bin": {
+      "bytes": 974921,
+      "sha256": "59a35a48a355bc9ea9c7e4bed1536730a968fbcbde6f4473333116ab4070f7cb"
+    },
+    "selectors/head-1.bin": {
+      "bytes": 974921,
+      "sha256": "92961bb531f6c05b83ac33e422c019ebfe4ac0c163351eb7843edee365dd77f0"
+    },
+    "selectors/head-10.bin": {
+      "bytes": 974921,
+      "sha256": "6a200cc68a538bfa92db44233c3c0c79ffd186748d86683ee26fb282f3f02153"
+    },
+    "selectors/head-11.bin": {
+      "bytes": 974921,
+      "sha256": "d06b8c80acb89b5ee668fa7ddb9c75c728a00e61e80107688872d9f785b26562"
+    },
+    "selectors/head-12.bin": {
+      "bytes": 974921,
+      "sha256": "bf9bfd133ef61307f5295ef46e3d8060dcc839ea5f58080fe3b1701dd102c6f2"
+    },
+    "selectors/head-13.bin": {
+      "bytes": 974921,
+      "sha256": "5f2bed54fbe03fab3d630acce21999e2b875857624f7e9b6bff8e1033279e492"
+    },
+    "selectors/head-14.bin": {
+      "bytes": 974921,
+      "sha256": "2cd898b2df8301d8ac18ed8823c2a63af4cc61ac43aae19ac0dadb761ac5590b"
+    },
+    "selectors/head-15.bin": {
+      "bytes": 974921,
+      "sha256": "e99279fea230944c4706a327bf310d577ac9df6a1e07540356dfd58cfc23ca12"
+    },
+    "selectors/head-16.bin": {
+      "bytes": 974921,
+      "sha256": "2c7c4916563c2e418c935d00dc51aa03621699e783b337239e5a05cbfe39246e"
+    },
+    "selectors/head-17.bin": {
+      "bytes": 974921,
+      "sha256": "b11b882e4142ba88a6412bd70b30b2bbadbfd6fea24e4acf622d9b41e62d82c9"
+    },
+    "selectors/head-18.bin": {
+      "bytes": 974921,
+      "sha256": "f7e64d111420323bca156bd38e979ffedd4c6e268e888656483dbdd092a177f3"
+    },
+    "selectors/head-19.bin": {
+      "bytes": 974921,
+      "sha256": "01e412aa6f663426bd0897e9f696ea8def30112a7c87b78b21621f072a23d0a3"
+    },
+    "selectors/head-2.bin": {
+      "bytes": 974921,
+      "sha256": "7a052f4a29e5aa6ff5ae66236abaad4f434419dff2edb3f09ab7ea3a239a9406"
+    },
+    "selectors/head-20.bin": {
+      "bytes": 974921,
+      "sha256": "19879220b39de8da78e839f63342ff69a58453e1065d80d7cf99cc1b80d99401"
+    },
+    "selectors/head-21.bin": {
+      "bytes": 974921,
+      "sha256": "d942f9ea436ee80c75278bd2e30358172f20157bebfeabe1e8a746105f091ace"
+    },
+    "selectors/head-22.bin": {
+      "bytes": 974921,
+      "sha256": "1b6ed3c7481eac20b73229fdbfa3b8f888ee8d26c6eb19b79068b2f8533fdc4f"
+    },
+    "selectors/head-23.bin": {
+      "bytes": 974921,
+      "sha256": "3604b0238509166193f3398f34a84e1d1c9d17bd981b8a989d33efe337ce4ff9"
+    },
+    "selectors/head-24.bin": {
+      "bytes": 974921,
+      "sha256": "6a3f100f66e648e0e4ed5a318c644a35e911216453407fb262656a801d49e68a"
+    },
+    "selectors/head-25.bin": {
+      "bytes": 974921,
+      "sha256": "7895c936131cf5ce4b024d6f0577d2e8a2611e544c7ed736107d947233103e50"
+    },
+    "selectors/head-26.bin": {
+      "bytes": 974921,
+      "sha256": "65b9dab6850ea7db9e6a2d92fac049d076190f0de097ded6893139d420980b4b"
+    },
+    "selectors/head-27.bin": {
+      "bytes": 974921,
+      "sha256": "a37f12a87a5b5d5cd4de85019e2f7247e58df69dede33c19cd1e3863d9d8ec7d"
+    },
+    "selectors/head-28.bin": {
+      "bytes": 974921,
+      "sha256": "67eccd8c4d9c05e97d3d216b155e1ebb0896cfd251e89f2cec1a0e389ee6f85f"
+    },
+    "selectors/head-29.bin": {
+      "bytes": 974921,
+      "sha256": "f7d65c29e5c93c7a59351693cb3a50eced579e32c7d2d1cafb78be784767446d"
+    },
+    "selectors/head-3.bin": {
+      "bytes": 974921,
+      "sha256": "43c31b570940b013f38037f0f4f49c34b0bb9df1845ae8f48ea742156180f379"
+    },
+    "selectors/head-30.bin": {
+      "bytes": 974921,
+      "sha256": "2c2e0f89adfedbc33a9f0c5669b4d44d46e3e01cb7a5e52e7344ea84ac1c96f4"
+    },
+    "selectors/head-4.bin": {
+      "bytes": 974921,
+      "sha256": "14e0ceb66dffd42832c000350a4ce089901abf7465bc328bef3390e581dd711e"
+    },
+    "selectors/head-5.bin": {
+      "bytes": 974921,
+      "sha256": "1518eaa84757374b8de63d798be0d8285750488494a5b9af517a4208cbc97e1b"
+    },
+    "selectors/head-6.bin": {
+      "bytes": 974921,
+      "sha256": "d3a1e314c5b96ef623c68c151aaf583ee0f50d842b9d4b868c076e6cac67dd73"
+    },
+    "selectors/head-7.bin": {
+      "bytes": 974921,
+      "sha256": "b972d032906260eba4597c8260a9dccbf010b687b977af483e8c15aebf5b61b6"
+    },
+    "selectors/head-8.bin": {
+      "bytes": 974921,
+      "sha256": "ff99c0c87f91b82e2aec0395ef8d8bee0d1dc49e408f378af3fd61b9ad36b5fa"
+    },
+    "selectors/head-9.bin": {
+      "bytes": 974921,
+      "sha256": "13ed67dd3cd25882023041b479cc7754d2b65059271107c3f2789ffe62e60da3"
+    },
+    "selectors/tail-0.bin": {
+      "bytes": 974921,
+      "sha256": "5d8106c1f800059ee20fbbbd58eed2a1a48fc08ae887c163ea0bbb9d7ddd73c1"
+    },
+    "selectors/tail-1.bin": {
+      "bytes": 974921,
+      "sha256": "b0e45ad86e4e1e8c9f6fb418c6c22d2f726dee469fcf49905ef712a51f20b8ea"
+    },
+    "selectors/tail-2.bin": {
+      "bytes": 974921,
+      "sha256": "96d84c60b07a3da57d4dc9fc6b0830cbe929585ecb10b33ebd512a77716d6f89"
+    },
+    "selectors/tail-3.bin": {
+      "bytes": 974921,
+      "sha256": "740333c73c3b921de3e6443974dd7bd47584c198de5ae01a22722cd825aa37bb"
+    }
+  },
+  "normal_build_actual_exit_code": 0,
+  "normal_runtime_session": 29490,
+  "normal_runtime_terminal": true,
+  "normal_runtime_log": "/tmp/ckks-memory-replay-normal.log",
+  "normal_runtime_stderr": "/tmp/ckks-memory-replay-normal.stderr",
+  "normal_runtime_time_log": "/tmp/ckks-memory-replay-normal-time.log",
+  "normal_executable_sha256": "df9ef98caf9a3ccc314080bd36cfbbd3c911e92083c1776d088f693b6f6b3cd3",
+  "normal_runtime_pid": 1814157,
+  "normal_runtime_actual_exit_code": 0,
+  "normal_fixture_hashes_unchanged": true,
+  "normal_completed_at_utc": "2026-10-09T04:24:33.611062+00:00",
+  "runtime_actual_exit_code": 0,
+  "sanitizer_completed_at_utc": "2026-10-09T04:27:40.297157+00:00",
+  "fixture_hashes_unchanged_after_sanitizer": true
+}

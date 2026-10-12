@@ -1,0 +1,214 @@
+{
+  "observed_at_utc": "2026-10-09T05:07:20.302947+00:00",
+  "source": "python/estimates/narrow_ckks_block_ring_cost.py",
+  "source_sha256": "0f8e0813a81bdffb516dd5b40f5491110dc13230ed946d3bb94a0c138e1b0150",
+  "probability_evidence": "narrow-dd-block-rotation-validation.json",
+  "runs": [
+    {
+      "session": 11852,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "report": "python/estimates/narrow_ckks_ll14_block_ring_cost.json",
+      "report_sha256": "3c01113b57331a7bcb5ec75284e09332f3bbc7201a087a81dff6b9aa8dc58b23",
+      "models": {
+        "BDGL16": {
+          "points": 56,
+          "best_central": {
+            "bits": 129.02023022091214,
+            "cost": "         rop: \u22482^129.0\n         red: \u22482^126.0\n         svp: \u22482^128.8\n           \u03b2:      206\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3223\n        prob: \u22482^-32.6\n           \u21bb: \u22482^34.8",
+            "parameters": {
+              "beta": 206,
+              "zeta": 14688,
+              "d": 3223,
+              "eta": 2
+            },
+            "beta": 206,
+            "d": 3223
+          },
+          "best_iid95_attacker_favorable": {
+            "bits": 128.84366547050547,
+            "cost": "         rop: \u22482^128.8\n         red: \u22482^125.8\n         svp: \u22482^128.7\n           \u03b2:      206\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3223\n        prob: \u22482^-32.4\n           \u21bb: \u22482^34.6",
+            "parameters": {
+              "beta": 206,
+              "zeta": 14688,
+              "d": 3223,
+              "eta": 2
+            },
+            "beta": 206,
+            "d": 3223
+          }
+        },
+        "MATZOV": {
+          "points": 56,
+          "best_central": {
+            "bits": 128.97363081551615,
+            "cost": "         rop: \u22482^129.0\n         red: \u22482^125.5\n         svp: \u22482^128.8\n           \u03b2:      206\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3223\n        prob: \u22482^-32.6\n           \u21bb: \u22482^34.8",
+            "parameters": {
+              "beta": 206,
+              "zeta": 14688,
+              "d": 3223,
+              "eta": 2
+            },
+            "beta": 206,
+            "d": 3223
+          },
+          "best_iid95_attacker_favorable": {
+            "bits": 128.79706606510945,
+            "cost": "         rop: \u22482^128.8\n         red: \u22482^125.3\n         svp: \u22482^128.7\n           \u03b2:      206\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3223\n        prob: \u22482^-32.4\n           \u21bb: \u22482^34.6",
+            "parameters": {
+              "beta": 206,
+              "zeta": 14688,
+              "d": 3223,
+              "eta": 2
+            },
+            "beta": 206,
+            "d": 3223
+          }
+        }
+      }
+    },
+    {
+      "session": 30086,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "report": "python/estimates/narrow_ckks_ll14_block_ring_cost_control_grid.json",
+      "report_sha256": "17b25a851672aa321ecfddecc7939b0abce4b8189a28e2de5f9b63b21dde883c",
+      "models": {
+        "BDGL16": {
+          "points": 20,
+          "best_central": {
+            "bits": 129.83840853852848,
+            "cost": "         rop: \u22482^129.8\n         red: \u22482^119.8\n         svp: \u22482^129.8\n           \u03b2:      182\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3479\n        prob: \u22482^-33.3\n           \u21bb: \u22482^35.5",
+            "parameters": {
+              "beta": 182,
+              "zeta": 14688,
+              "d": 3479,
+              "eta": 2
+            },
+            "beta": 182,
+            "d": 3479
+          },
+          "best_iid95_attacker_favorable": {
+            "bits": 129.65958136747383,
+            "cost": "         rop: \u22482^129.7\n         red: \u22482^119.7\n         svp: \u22482^129.7\n           \u03b2:      182\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3479\n        prob: \u22482^-33.2\n           \u21bb: \u22482^35.4",
+            "parameters": {
+              "beta": 182,
+              "zeta": 14688,
+              "d": 3479,
+              "eta": 2
+            },
+            "beta": 182,
+            "d": 3479
+          }
+        },
+        "MATZOV": {
+          "points": 20,
+          "best_central": {
+            "bits": 129.83837937443946,
+            "cost": "         rop: \u22482^129.8\n         red: \u22482^119.8\n         svp: \u22482^129.8\n           \u03b2:      182\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3479\n        prob: \u22482^-33.3\n           \u21bb: \u22482^35.5",
+            "parameters": {
+              "beta": 182,
+              "zeta": 14688,
+              "d": 3479,
+              "eta": 2
+            },
+            "beta": 182,
+            "d": 3479
+          },
+          "best_iid95_attacker_favorable": {
+            "bits": 129.6595522033848,
+            "cost": "         rop: \u22482^129.7\n         red: \u22482^119.6\n         svp: \u22482^129.7\n           \u03b2:      182\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3479\n        prob: \u22482^-33.2\n           \u21bb: \u22482^35.4",
+            "parameters": {
+              "beta": 182,
+              "zeta": 14688,
+              "d": 3479,
+              "eta": 2
+            },
+            "beta": 182,
+            "d": 3479
+          }
+        }
+      }
+    },
+    {
+      "session": 60109,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "report": "python/estimates/narrow_ckks_ll14_block_ring_cost_boundary.json",
+      "report_sha256": "00ed1d3a9a2eca4dd015bcf05819f8861edaf20f255dba39d0ee70bb27016c99",
+      "models": {
+        "BDGL16": {
+          "points": 15,
+          "best_central": {
+            "bits": 129.00773209034247,
+            "cost": "         rop: \u22482^129.0\n         red: \u22482^126.0\n         svp: \u22482^128.8\n           \u03b2:      206\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3159\n        prob: \u22482^-32.6\n           \u21bb: \u22482^34.8",
+            "parameters": {
+              "beta": 206,
+              "zeta": 14688,
+              "d": 3159,
+              "eta": 2
+            },
+            "beta": 206,
+            "d": 3159
+          },
+          "best_iid95_attacker_favorable": {
+            "bits": 128.83116733991415,
+            "cost": "         rop: \u22482^128.8\n         red: \u22482^125.8\n         svp: \u22482^128.6\n           \u03b2:      206\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3159\n        prob: \u22482^-32.4\n           \u21bb: \u22482^34.6",
+            "parameters": {
+              "beta": 206,
+              "zeta": 14688,
+              "d": 3159,
+              "eta": 2
+            },
+            "beta": 206,
+            "d": 3159
+          }
+        },
+        "MATZOV": {
+          "points": 15,
+          "best_central": {
+            "bits": 128.9598942549671,
+            "cost": "         rop: \u22482^129.0\n         red: \u22482^125.6\n         svp: \u22482^128.8\n           \u03b2:      206\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3095\n        prob: \u22482^-32.7\n           \u21bb: \u22482^34.9",
+            "parameters": {
+              "beta": 206,
+              "zeta": 14688,
+              "d": 3095,
+              "eta": 2
+            },
+            "beta": 206,
+            "d": 3095
+          },
+          "best_iid95_attacker_favorable": {
+            "bits": 128.78332950449007,
+            "cost": "         rop: \u22482^128.8\n         red: \u22482^125.4\n         svp: \u22482^128.6\n           \u03b2:      206\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^141.5\n           d:     3095\n        prob: \u22482^-32.5\n           \u21bb: \u22482^34.7",
+            "parameters": {
+              "beta": 206,
+              "zeta": 14688,
+              "d": 3095,
+              "eta": 2
+            },
+            "beta": 206,
+            "d": 3095
+          }
+        }
+      }
+    }
+  ],
+  "security_validated": false,
+  "complete_attack_optimization": false,
+  "limitations": [
+    "Monte Carlo and iid Hoeffding intervals concern secret-weight events only, not security",
+    "Joint nearest-plane/error/MITM success across simultaneous matching rotations is not modeled",
+    "One mask and guessed weight; guessing dictionaries and full attack optimization remain unqualified",
+    "Full square-root work on rotation-labelled dictionaries remains an unconstructed heuristic",
+    "Scalar GSA geometry and correlated evaluation keys remain unqualified"
+  ],
+  "finite_cost_evaluations": 394,
+  "lowest_searched_central_bits": 128.9598942549671,
+  "lowest_searched_iid95_attacker_favorable_bits": 128.78332950449007,
+  "next_actions": [
+    "Optimize guessed weight/zeta/layout and expand lattice grid boundaries",
+    "Model joint decoding/error success across simultaneous secret-weight matches",
+    "Construct compatible rotation-labelled MITM dictionaries before qualifying port security"
+  ]
+}

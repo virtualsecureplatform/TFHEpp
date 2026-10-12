@@ -1,0 +1,17 @@
+{
+  "scope": "Conservative full N32768 frequency-basis process estimate from compiled payloads; combines some disjoint factor-phase buffers and adds runtime reserve; not a measured RSS",
+  "profile": "selector536-rootDelta49-plain39-coeff32-aux44-native640",
+  "frequency_columns": 9,
+  "selector_chunk_size": 40,
+  "persistent_key_and_plan_bytes": 29290332400,
+  "conservative_factor_phase_payload_bytes": 62899814640,
+  "product_phase_payload_bytes": 59410153712,
+  "additional_factor_accum_bytes": 94371840,
+  "permutation_bytes": 277348352,
+  "temporary_and_runtime_reserve_bytes": 10737418240,
+  "estimated_process_envelope_bytes": 73637232880,
+  "proposed_virtual_address_space_limit_bytes": 85899345920,
+  "file_selector_payload_bytes": 199690813440,
+  "full_size_validation_passed": false,
+  "job_launched": false
+}

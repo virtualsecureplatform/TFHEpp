@@ -1,0 +1,76 @@
+{
+  "scope": "Validate current full-ring root reuse against a completed retained checkpoint.\n\nFreeze the small-qualified executable and independent decoder before waiting.\nWait for the original basis validation and termination of preceding large tests.\nReuse the checkpoint, compare all output bytes, decode phases independently and\ncheck retained payload integrity. No fresh key generation or security claim.\n",
+  "terminal": true,
+  "all_checks_passed": false,
+  "stage": "superseded while idle by qualified raw-chunk streamed union replay",
+  "fresh_keys_generated": false,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+  "reference_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010",
+  "child_cap_bytes": 42949672960,
+  "parent_soft_cap_bytes": 134217728,
+  "host_reserve_bytes": 10737418240,
+  "full_encrypted_root_reuse_validated": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "small_qualification_sha256": "3da31394fdc1be1ba4401078ba60f0ae9a3fdd6f203dc9c7bf4c1c1831b44ae3",
+  "shared_input_tiles": true,
+  "shared_basis_union": true,
+  "factor_qualification_sha256": "a16091accc6b3731598d3f199d1a44348bc496d99d92967d5cf6db11c5a1beff",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_frequency_basis.hpp": "65fc51d26f988f9cd49c154384c15ad46b19d189e085ac21101861fc275c6208",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "068580d2ce29a3b43f299f89abee1753774c11f2ae2561158ff66fb4ce9dc85c",
+    "TFHEpp/test/ckks/ckks_narrow_basis_replay.cpp": "24b433491ecd9efdbd9ae87d333a26388925746d4d1c98b895b1a94e18a0dfef",
+    "TFHEpp/test/ckks/ckks_narrow_basis_batch_checkpoint.cpp": "976c339ae85ddab8393210db7a1f338a1abeca7c0cba4178daebd3005c5b3dd8",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "9ebff42776f1c47b375dfb3a3113c96cd218df300d4906fd530dda366b80d3cc",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "3e57ace782eeaecc01f14d50b765e6adf0cf85c02a0fd5506154666a857900e7",
+    "TFHEpp/include/ckks/narrow_selector_ntt_file.hpp": "8f51ed4e9b910ef553dbbefaec54e0df64d7b8af7d1d9e7e78e062353ee008ff"
+  },
+  "executable_source_path": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_basis_replay",
+  "small_qualification_frozen_path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-full-20261010/frozen/narrow-dd-basis-frequency-union-validation.json",
+  "factor_stage_profiled": true,
+  "frozen_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-full-20261010/frozen/ckks_narrow_basis_replay": "2562d50ff88e3dba72c3a8964bba6e70f5d43a356f920c5ffd384441eaf2df86",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-full-20261010/frozen/narrow-dd-basis-frequency-union-validation.json": "3da31394fdc1be1ba4401078ba60f0ae9a3fdd6f203dc9c7bf4c1c1831b44ae3",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-full-20261010/frozen/narrow-dd-basis-frequency-union-full-factors-validation.json": "a16091accc6b3731598d3f199d1a44348bc496d99d92967d5cf6db11c5a1beff",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-full-20261010/frozen/narrow_ckks_basis_checkpoint_validate.py": "1fa76656f8c9a2ae6e5b1f71b192ba6e6b4fea08fdbc49b8b5aa472cfcbeb2c8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-full-20261010/frozen/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-full-20261010/frozen/narrow_ckks_basis_root_reuse_run.py": "63442fade37312bb0ddcd36f5dd20a37bf6b1902a2cc6f452798852b5395a918"
+  },
+  "controller": {
+    "pid": 1967635,
+    "start_ticks": 230621697
+  },
+  "controller_sha256": "63442fade37312bb0ddcd36f5dd20a37bf6b1902a2cc6f452798852b5395a918",
+  "controller_frozen_path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-full-20261010/frozen/narrow_ckks_basis_root_reuse_run.py",
+  "original_basis_validated": false,
+  "preceding_test_terminal": false,
+  "preceding_tests": {
+    "TFHEpp/docs/narrow-dd-auto-primary8-full-refresh-validation.json": {
+      "idle": false,
+      "accuracy_passed": false
+    },
+    "TFHEpp/docs/narrow-dd-primary8-dd-full-refresh-validation.json": {
+      "idle": false,
+      "accuracy_passed": false
+    }
+  },
+  "packed_process": {
+    "pid": 1910341,
+    "start_ticks": 225941687,
+    "state": "R",
+    "rss_bytes": 17749553152,
+    "cpu_ticks": 11191150
+  },
+  "budget": {
+    "available_bytes": 92554194944,
+    "required_bytes": 104791232512,
+    "packed_remaining_reservation_bytes": 50969923584,
+    "free_disk_bytes": 66133396815872,
+    "required_disk_bytes": 2147483648
+  },
+  "updated_utc": "2026-10-10T19:41:11.356990+00:00",
+  "superseded": true,
+  "superseded_at_utc": "2026-10-10T19:41:33.214446+00:00",
+  "superseded_by": "narrow-dd-raw-chunk-streaming-full-validation.json",
+  "evaluator_launched": false
+}

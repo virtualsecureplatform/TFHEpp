@@ -1,0 +1,40 @@
+{
+  "utc": "2026-10-09T11:17:41.473145+00:00",
+  "controls": [
+    {
+      "control": "wrong-frequency",
+      "rejected": true,
+      "error": "unexpected root order or frequency"
+    },
+    {
+      "control": "negative-error",
+      "rejected": true,
+      "error": "invalid root metric sign"
+    },
+    {
+      "control": "nonfinite-weight",
+      "rejected": true,
+      "error": "nonfinite or nonnumeric root trace metric"
+    },
+    {
+      "control": "impossible-amplitude",
+      "rejected": true,
+      "error": "root amplitude contradicts reported error"
+    },
+    {
+      "control": "wrong-halves-weight",
+      "rejected": true,
+      "error": "real/imaginary root weights differ"
+    },
+    {
+      "control": "truncated-final-line",
+      "rejected": true,
+      "error": "unfinished root trace line"
+    }
+  ],
+  "all_rejected": true,
+  "partial_truncated_line_count": 23,
+  "first_failed_root_identified": true,
+  "empty_trace_not_passed": true,
+  "source_sha256": "e9e9edfd8ce00a155d7ef49ceeb01963fc0e14b2afc1bb8b519f970f0a5e1af0"
+}

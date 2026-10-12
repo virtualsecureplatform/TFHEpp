@@ -1,0 +1,80 @@
+{
+  "scope": "Selected full-ring retained head0 factor profile, columns1/12/40/1, current default CPU arithmetic. Saved selectors387/57 and keys/coefficients reused. Each frequency1 factor must byte-match independently qualified root44 head0. Other frequencies are timing workload, not new accuracy qualification. Concurrent reconstruction makes timings preliminary. No new keys or encryption.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "controller_pid": 2066457,
+  "new_keys_generated": 0,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-retained-factor-work-profile-20261011/profile.cpp": "0c3a6887befe70d8117893b8021fe1235a0db2fa2bc8cbc8eb05a6340f7ce5b9",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-retained-factor-work-profile-20261011/profile": "649bcfc0bae3d7a5e0d757400966f263f0f6530277ca53c28da8861b20b18184",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-retained-factor-work-profile-20261011/run.py": "5051f82e9ad29746b834b28f5d7815893da355729c9ab15261211524a66df489",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "b8cc6294d5b5a613c4e136aea0094189a97290d12c78a72f37d42a85d26dcd5b",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_projection.hpp": "37ca3c8bbb9815e8321e3acbc03daf7479f924d3bac3cf7d6292e615d6078309",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_file.hpp": "e05f6af47c068c4d7a419a5739d29eafd509e7896bfbdd7050fe1a172fb89265",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_plain.hpp": "d4a29304ce32840e8681e31d06d1263ebfc81cc7a7a62ae2f4713737afef055f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320"
+  },
+  "stage": "complete",
+  "updated_utc": "2026-10-11T21:33:33.630943+00:00",
+  "artifacts_before": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint/checkpoint.bin": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin": "f60352ab8b2d61b623681055f98380bfaef250f7230f2c3f8ff3ee3c8f418f98",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-deferred-fbs-20261011/sigmoid-outputs.bin": "b1145357e963a0ebc727a449accb686dad7e4ce00153f95851daf73ac2b0414f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011/outputs.bin": "7ffe8f05b76e67e71e396cc38ec4a8841b120a65e6859f27017abacb47fdd2f3",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-0.bin": "6903013119b87490bf315ad41733ab8eccaabd22c51d7616440362b69d585e82"
+  },
+  "evaluator_pid": 2066465,
+  "evaluator_start_ticks": 240095473,
+  "test_actual_exit_code": 0,
+  "rows": [
+    {
+      "columns": 1,
+      "wall_seconds": 1.992105003,
+      "selector_load_seconds": 0.148104926,
+      "table_ntt_seconds": 0.012319306,
+      "selector_ntt_seconds": 1.2799869860000002,
+      "matrix_seconds": 0.4336612569999998,
+      "inverse_crt_seconds": 0.007277348,
+      "conjugation_seconds": 0.107896769,
+      "first_factor_byte_identical": true
+    },
+    {
+      "columns": 12,
+      "wall_seconds": 5.025655123,
+      "selector_load_seconds": 0.029799930999999998,
+      "table_ntt_seconds": 0.132542564,
+      "selector_ntt_seconds": 1.2570842999999998,
+      "matrix_seconds": 2.3061354750000005,
+      "inverse_crt_seconds": 0.118147024,
+      "conjugation_seconds": 1.148520845,
+      "first_factor_byte_identical": true
+    },
+    {
+      "columns": 40,
+      "wall_seconds": 13.754405186,
+      "selector_load_seconds": 0.03848965399999999,
+      "table_ntt_seconds": 0.451291171,
+      "selector_ntt_seconds": 1.2059394559999999,
+      "matrix_seconds": 7.557020865000001,
+      "inverse_crt_seconds": 0.427074249,
+      "conjugation_seconds": 3.959832976,
+      "first_factor_byte_identical": true
+    },
+    {
+      "columns": 1,
+      "wall_seconds": 1.888197591,
+      "selector_load_seconds": 0.16873923,
+      "table_ntt_seconds": 0.011370856,
+      "selector_ntt_seconds": 1.217416439,
+      "matrix_seconds": 0.3874897970000001,
+      "inverse_crt_seconds": 0.009673222,
+      "conjugation_seconds": 0.090398584,
+      "first_factor_byte_identical": true
+    }
+  ],
+  "artifacts_unchanged": true,
+  "sources_unchanged": true
+}

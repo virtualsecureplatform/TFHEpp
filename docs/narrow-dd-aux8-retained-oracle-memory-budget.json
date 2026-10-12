@@ -1,0 +1,31 @@
+{
+  "utc": "2026-10-09T10:13:06.369724+00:00",
+  "scope": "Sequential retained aux8 exact output-conjugation/DD/factor-key checks and parser controls",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17682931712,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 13430046720,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 100310822912,
+  "required_bytes": 86998622208,
+  "host_reserve_bytes": 10737418240,
+  "process_limit_bytes": 4294967296,
+  "stack_bytes": 67108864,
+  "omp_threads": 2,
+  "eligible": true,
+  "session_id": 83951,
+  "launched": true,
+  "live_processes": [],
+  "terminal": true,
+  "latest_observation_utc": "2026-10-09T10:15:30.962230+00:00",
+  "actual_exit_code": 0
+}

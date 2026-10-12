@@ -1,0 +1,97 @@
+{
+  "observed_at_utc": "2026-10-10T18:27:54.863470+00:00",
+  "scope": "Current implicit-index, invariant-divisor and point-blocked N32768 head/tail factors with retained keys, eight columns, chunk4, two repeated fresh-selector-transform trials per group. No complete refresh or cached full-size evaluation claim.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "actual_exit_code": 0,
+  "stage": "complete current-source full-degree factors and retained-group/prefix hash checks passed",
+  "memory_cap_bytes": 2147483648,
+  "peak_rss_kib": 1788912,
+  "fresh_keys_generated": false,
+  "prepared_disk_cache_created": false,
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 8,
+      "seconds": 41.06048705,
+      "cache_setup_seconds": 1.86e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 18.709859107999993,
+      "matrix_seconds": 19.909186677000005,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 8,
+      "seconds": 35.738450804,
+      "cache_setup_seconds": 1.86e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 17.430477869999983,
+      "matrix_seconds": 16.193607829000015,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 131072,
+      "maximum_error": 8.013204379982934e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 8,
+      "seconds": 39.321152065,
+      "cache_setup_seconds": 1.09e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 18.481525144000006,
+      "matrix_seconds": 18.49092961199999,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 8,
+      "seconds": 35.856391215,
+      "cache_setup_seconds": 1.09e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 16.98545874500001,
+      "matrix_seconds": 16.262842709999987,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 131072,
+      "maximum_error": 7.311383704379468e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "slots_checked": 262144,
+  "unique_repeated_trial_ciphertext_coefficients_compared": 1048576,
+  "cross_version_ciphertext_identity_qualified": false,
+  "decoded_maximum_errors_equal_prior_control": true,
+  "selected_complete_groups_and_prefix_unchanged": true,
+  "full_key_suffix_hash_qualified": false,
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-matrix-blocks-20261010",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "9ebff42776f1c47b375dfb3a3113c96cd218df300d4906fd530dda366b80d3cc",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "3e57ace782eeaecc01f14d50b765e6adf0cf85c02a0fd5506154666a857900e7",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "c8391bae1f512b21c4da72c194b2c88358c507afd440890e9eba322dd958883e"
+  },
+  "frozen_executable_sha256": "ff5ce29c42f10d6fee5c0f39382ca18f1607b58c1c6bb330f2b76cd4e17539a9",
+  "full_refresh_qualified": false,
+  "whole_refresh_speedup_established": false,
+  "paper_performance_reproduced": false,
+  "timings_isolated": false
+}

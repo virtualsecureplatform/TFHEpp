@@ -1,0 +1,80 @@
+{
+  "observed_at_utc": "2026-10-08T22:21:50.010560+00:00",
+  "scope": "Encrypted plaintext-multiply GPU fixtures compiled from exact CPU inputs/expected ciphertexts. Twelve same-builder host-only layouts pass normal and UBSan preflight, CPU coefficient/portable NTT references rechecked. Device arithmetic and cleanup unexecuted; complete S2C integration remains outstanding.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_cuda_setup.cpp": "6ac50088b58595019f1765e32dc1dbce6a76667acb3628b12a653879257592a0",
+    "include/ckks/narrow_cuda.hpp": "ace90d093d7b42377682a92aa262ec22ced06fce75c1c0d3df0420814e40435c",
+    "src/ckks/narrow_cuda.cu": "b0a2707e22186413895e36a960ad65412b246de0e3d2698bf41c09f04edbb5dc"
+  },
+  "points": 16,
+  "native_bits": 448,
+  "base_bits": 4,
+  "profiles": [
+    {
+      "q": 217,
+      "delta": 37,
+      "plain_drop": 28,
+      "output_q": 189
+    },
+    {
+      "q": 64,
+      "delta": 23,
+      "plain_drop": 16,
+      "output_q": 48
+    }
+  ],
+  "columns": [
+    1,
+    3
+  ],
+  "prime_modes": [
+    "first prime",
+    "second prime",
+    "two-prime CRT"
+  ],
+  "device_fixtures_compiled": 12,
+  "host_exact_descriptor_layouts_validated": 12,
+  "resident_device_evaluations_compiled": 36,
+  "resident_device_evaluations_executed": 0,
+  "pending_work_cleanup_submissions_compiled": 12,
+  "ciphertext_native_word_comparisons_compiled": 16128,
+  "zero_quadratic_word_comparisons_compiled": 8064,
+  "plaintext_phase_coefficient_comparisons_compiled": 1152,
+  "resident_input_plaintext_ntt_offset_preservation_checks_compiled": true,
+  "phase_gate": 3.814697265625e-06,
+  "gaussian_sigma_floor": 3.2,
+  "reference": "Upload encrypted ciphertexts, signed public polynomials, balanced offsets and NTT tables once. Prepare transparent operand and evaluate native plaintext graph three times on one nonblocking stream. Compare exact CPU plaintext-multiply output words, require zero quadratic component, decrypt against independent plaintext convolution and verify every read-only upload unchanged. One extra unsynchronized submission tests scope cleanup before buffers/uploads expire.",
+  "host_layout_scope": "Same builder reserves disjoint non-dereferenced addresses and prepares real NTT/offset vectors; runs full PlainMultiply/Tensor preflight without any device allocation, transfer, stream creation or kernel execution.",
+  "host_cpu_api_reference_validated": true,
+  "host_encrypted_phase_reference_validated": true,
+  "host_ubsan_validated": true,
+  "device_fixture_present": true,
+  "device_validated": false,
+  "device_lifecycle_validated": false,
+  "full_fft_profile_validated": false,
+  "s2c_graph_connected": false,
+  "full_gpu_refresh_integrated": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "cmake_build_exit_code": 0,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-encrypted-plain-device-cases-build.log",
+  "ubsan_build_exit_code": 0,
+  "ubsan_build_log": "/tmp/ckks-narrow-cuda-encrypted-plain-device-cases-host-ubsan-build.log",
+  "ubsan_build_argv": "/tmp/ckks-narrow-cuda-encrypted-plain-device-cases-host-ubsan-argv.json",
+  "ubsan_scope": "Current C++ fixture/inline crypto and portable helpers instrumented; current plaintext-multiply host-instrumented CUDA object and unchanged Tensor Core object reused. BLAKE3/runtime/device code uninstrumented; GPU branches unexecuted.",
+  "cmake_test_actual_exit_code": 0,
+  "ubsan_test_actual_exit_code": 0,
+  "max_phase_error": {
+    "cmake_q217": 1.4551915228366852e-11,
+    "cmake_q64": 3.5762786865234375e-07,
+    "ubsan_q217": 2.1827872842550278e-11,
+    "ubsan_q64": 4.76837158203125e-07
+  },
+  "gpu_skip_reason": "no CUDA-capable device is detected",
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-encrypted-plain-device-cases-cmake-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-plain-device-cases-cmake-test.stderr",
+  "cmake_test_stderr_bytes": 0,
+  "ubsan_test_log": "/tmp/ckks-narrow-cuda-encrypted-plain-device-cases-ubsan-test.log",
+  "ubsan_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-plain-device-cases-ubsan-test.stderr",
+  "ubsan_test_stderr_bytes": 0
+}

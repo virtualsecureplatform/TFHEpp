@@ -1,0 +1,22 @@
+{
+  "scope": "Dense LWE proxy screen for highest exposed packed-key modulus435 at N16384, using analytic integer RMS of the actual historical truncating sampler. DiscreteGaussian variance proxy only; exact truncation distribution, structured secret, ring/correlated keys and circular security not qualified.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "actual_exit_code": 0,
+  "noise_input_invalid_controls": [
+    "zero",
+    "negative",
+    "nan",
+    "infinity"
+  ],
+  "noise_input_invalid_controls_passed": true,
+  "integer_noise_rms": 2.828301687834186,
+  "log_q": 435,
+  "n": 16384,
+  "weakest_generic_attack_bits": 128.95829839375767,
+  "security_validated": false,
+  "results_path": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_ll14_actual_noise_dense_security.json",
+  "results_sha256": "8cbe0f2e35f873a39f63e723a1306a93221adb78ec1601f99367d034f941b214",
+  "script_sha256": "9d70fcda0c3ef3c324ad959118576ebf4565b92d281495d69815217d76447024",
+  "updated_utc": "2026-10-11T19:55:19.991055+00:00"
+}

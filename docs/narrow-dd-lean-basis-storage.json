@@ -1,0 +1,23 @@
+{
+  "scope": "Compiled public payloads; excludes workspaces, allocator overhead and process reserve",
+  "n": 32768, "storage_bits": 576, "selector_bits": 518, "primary_bits": 18, "secondary_bits": 8,
+  "output_bits": 197, "output_scale_bits": 78,
+  "compact_setup_bytes": 7755268336,
+  "compact_s2c_polynomial_bytes": 8590196736,
+  "basis_public_key_bytes": 146407424,
+  "retained_dd_key_bytes": 18022400,
+  "expanded_selector_bytes": 179721732096,
+  "one_selector_group_bytes": 4992270336,
+  "selector_ntt_chunk_bytes": 1384120320,
+  "factor_fft_bytes": 2283798528,
+  "bounded_rotation_fft_bytes": 2283798528,
+  "dd_tree_fft_bytes": 2852126720,
+  "basis_product_fft_bytes": 227540992,
+  "basis_output_fft_bytes": 327680000,
+  "retained_dd_fft_bytes": 144179200,
+  "maximum_frequency_columns": 9,
+  "factor_digit_workspace_bytes": 2802843648,
+  "factor_modular_sum_bytes": 622854144,
+  "head_tail_factor_capacity_bytes": 2717908992,
+  "full_validation_passed": false
+}

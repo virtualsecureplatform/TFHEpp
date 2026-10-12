@@ -1,0 +1,87 @@
+{
+  "observed_at_utc": "2026-10-08T17:35:24.502147+00:00",
+  "scope": "Assembled device automorphism arithmetic: native torus substitution/public auxiliary lift, per-mask-source key switching, body-minus-switched-components assembly, and one final signed auxiliary-scale drop. Typed TFHEpp key adapters, encrypted GPU execution and full DD refresh remain unverified/incomplete.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "949dc4324b089f828c412e1c10c7ac9a41b6cd46c6d8a671ede82664f3919711",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "b9866d147a244372400f4ebde8962f252b88786f2808203dfe50b59649d88a47",
+    "src/ckks/narrow_cuda.cu": "58e7ce845221ee89611a15dc8da196e39da4deae936d9e99bf819ed51b9c5a1f",
+    "src/ckks/cuda/CMakeLists.txt": "b0123e5ffddd2cbdb69903497b6a2c4cebf37aec92d0ebcdb747cc3464579e0f",
+    "test/ckks/ckks_narrow_cuda.cu": "8bef80b33185bb1a0923bffeb633ce59222524805e3511800ea209c871fd4fc0"
+  },
+  "cmake_build_exit_code": 0,
+  "cmake_final_build_session": 48746,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-auto-build.log",
+  "cuda_test_actual_exit_code": 77,
+  "cuda_test_log": "/tmp/ckks-narrow-cuda-auto-test.log",
+  "host_auto_rejection_cases_passed": 8,
+  "host_auto_valid_metadata_cases_passed": 1,
+  "host_total_rejection_cases_passed": 98,
+  "host_auto_reference_consistency_cases_passed": 8,
+  "reference_scope": "CPU spectral key-row evaluation and body subtraction/auxiliary rounding must match independent full-torus raw-key products of directly substituted/lifted mask coefficients. Raw key-row polynomials are deterministic, not encrypted evaluation keys; no CUDA kernel executed.",
+  "profile": {
+    "input_log_q": 348,
+    "key_switch_log_q": 376,
+    "native_limbs": 7,
+    "auxiliary_lift_and_drop": 28,
+    "primary_base_bits": 4,
+    "secondary_base_bits": 4,
+    "points": 16,
+    "components": 2,
+    "mask_sources_in_reference": 1,
+    "columns": [
+      1,
+      3
+    ],
+    "exponents": [
+      5,
+      31
+    ],
+    "prime_counts": [
+      1,
+      2
+    ]
+  },
+  "pipeline_order": [
+    "mask active input level and substitute/lift all components",
+    "initialize result with substituted body and zero masks",
+    "evaluate every mask source using its resident row-key spectra",
+    "subtract all switched components modulo the enlarged level",
+    "round once at the end to the original signed level"
+  ],
+  "preflight_scope": "Primitive/KS shape checks plus source-slice/level compatibility and cross-descriptor mutable/read-only buffer aliases. Uses host metadata vectors; no device allocations or tensor transfers.",
+  "multiple_mask_source_loop_present": true,
+  "multiple_mask_sources_in_reference_tests": false,
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 72823,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-auto-host-ubsan-build.log",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_session": 58338,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-auto-host-ubsan-test.log",
+  "host_ubsan_all_host_checks_passed": true,
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "NVCC -O1 -g -Xcompiler=-fsanitize=undefined,-fno-sanitize-recover=all,-fno-omit-frame-pointer instruments both source/test host routines and inline CPU arithmetic. Device kernels are not instrumented or executed.",
+  "prior_host_checks_repeated_and_passed": {
+    "rejections": 90,
+    "ntt_tables": 4,
+    "packed_valid_metadata": 4,
+    "key_switch_valid_metadata": 2,
+    "crt_recomposition_rounding": 90,
+    "packed_reference_consistency": 4,
+    "balanced_decomposition": 27,
+    "torus_substitution_lift": 42,
+    "key_switch_reference_consistency": 12
+  },
+  "gpu_device_count": 0,
+  "gpu_auto_cases_present": 8,
+  "gpu_auto_cases_executed": false,
+  "cuda_automorphism_arithmetic_pipeline_source_implemented": true,
+  "tfhepp_typed_key_adapter_implemented": false,
+  "encrypted_gpu_automorphism_validated": false,
+  "gpu_arithmetic_validated": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_path_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "latest_native_setup_validation_evidence": "narrow-dd-cuda-setup-validation.json",
+  "historical_scope_note": "Hashes/builds above describe the automorphism arithmetic revision. A later host setup adapter converts native keys/ciphertext layouts; GPU upload ownership and encrypted evaluation remain unverified."
+}

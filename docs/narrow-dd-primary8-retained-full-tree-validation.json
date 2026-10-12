@@ -1,0 +1,117 @@
+{
+  "scope": "Full N16384 primary8/secondary16 retained-key five-level DD product trees: head-only, tail-only and all-slot complex targets. Independent integer phases and canonical decode of public ciphertexts. Reuses retained keys; newly encrypts known test plaintexts. Not a complete refresh, paper timing comparison or security qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "new_test_plaintexts_encrypted": true,
+  "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin",
+  "child_cap_bytes": 2147483648,
+  "stage": "complete",
+  "build_actual_exit_code": 0,
+  "source_sha256": {
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "3e0b0d7f3aa8f4bfb3ede55ba51bb8fdb7210b7924ddba8ad2aea94692b9515d",
+    "TFHEpp/test/ckks/ckks_narrow_dd_exact.cpp": "7f8573a5fa3c0ea21180559d65f51b2985eddf08b287156d156b142f72150c52"
+  },
+  "updated_utc": "2026-10-10T15:28:26.753074+00:00",
+  "frozen_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-bounded-20261010/frozen/ckks_narrow_dd_exact": "ed4e2f2b8a596c3124d2548c70dd49d54adef3625fc790da78b550f4e63d7a15",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-bounded-20261010/frozen/narrow_ckks_dd_tree_validate.py": "7b42a775b32e9357f1b7d2eab08646a2839273f7af7e04d6f643d419b8f9c4a8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-bounded-20261010/frozen/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "state_sha256_before": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "child_pid": 1951909,
+  "child_start_ticks": 229267216,
+  "tree_actual_exit_code": 0,
+  "cpp_cases": [
+    {
+      "tree_kind": 0,
+      "projected_primary8_dd": true,
+      "fresh_keys_generated": false,
+      "encrypted_leaves": 31,
+      "transparent_beta_leaves": 1,
+      "depth": 5,
+      "output_log_q": 108,
+      "output_log_delta": 48,
+      "slots_checked": 8192,
+      "maximum_error": 1.9318485649120186e-10,
+      "rms_error": 3.4986918796076526e-11,
+      "accuracy_passed": true
+    },
+    {
+      "tree_kind": 1,
+      "projected_primary8_dd": true,
+      "fresh_keys_generated": false,
+      "encrypted_leaves": 31,
+      "transparent_beta_leaves": 1,
+      "depth": 5,
+      "output_log_q": 108,
+      "output_log_delta": 48,
+      "slots_checked": 8192,
+      "maximum_error": 1.2840576568885288e-10,
+      "rms_error": 1.549062547723778e-11,
+      "accuracy_passed": true
+    },
+    {
+      "tree_kind": 2,
+      "projected_primary8_dd": true,
+      "fresh_keys_generated": false,
+      "encrypted_leaves": 31,
+      "transparent_beta_leaves": 1,
+      "depth": 5,
+      "output_log_q": 108,
+      "output_log_delta": 48,
+      "slots_checked": 8192,
+      "maximum_error": 5.730177322480186e-10,
+      "rms_error": 8.550090237491486e-11,
+      "accuracy_passed": true
+    }
+  ],
+  "independent_tree_actual_exit_code": 0,
+  "independent_validation": {
+    "scope": "Independently decode public DD product-tree outputs with a retained key.\n\nReads only the original private ternary secret prefix. Public outputs contain\nknown plaintext targets and ciphertexts, never secrets or evaluation keys.\nThis checks tree precision, not complete refresh performance or security.\n",
+    "n": 16384,
+    "samples": [
+      {
+        "tree_kind": 0,
+        "maximum_error": 1.9313987533944574e-10,
+        "rms_error": 3.4987117202723605e-11,
+        "fixed_23bit_passed": true
+      },
+      {
+        "tree_kind": 1,
+        "maximum_error": 1.2840576585689752e-10,
+        "rms_error": 1.5490625479095584e-11,
+        "fixed_23bit_passed": true
+      },
+      {
+        "tree_kind": 2,
+        "maximum_error": 5.728720693816637e-10,
+        "rms_error": 8.550193388221667e-11,
+        "fixed_23bit_passed": true
+      }
+    ],
+    "slots_checked": 24576,
+    "independent_integer_phases_validated": true,
+    "cpp_metrics_match": true,
+    "all_checks_passed": true,
+    "fresh_keys_generated": false,
+    "security_validated": false
+  },
+  "state_sha256_after": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "original_state_unchanged": true,
+  "frozen_artifacts_unchanged": true,
+  "public_ciphertext_sha256": "52fc4f36cad22c28f69460fafe47b37deb1aa71d39822865e35871d1ce8904da",
+  "maximum_independent_slot_error": 5.728720693816637e-10,
+  "peak_rss_kib": 1780816,
+  "verifier_negative_controls": "narrow-dd-primary8-full-tree-verifier-controls-validation.json",
+  "initial_thread_limit_failure": "narrow-dd-primary8-retained-full-tree-thread-limit-validation.json",
+  "temporary_projected_coefficient_key_released_before_evaluation": true,
+  "performance_scope": "C++ wall time includes retained-key loading, cache preparation, new test plaintext encryption, three trees and production decryption; not a matched paper or refresh timing.",
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-bounded-20261010/tree.log": "029cc816c76868bef089ee0d536aa6776dd746fa9040c005b1bdd3279341b45e",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-bounded-20261010/cpp-report.json": "c43103ff5755c85ba7e13ba1408508860673815523142bc3e5c89a06160b0974",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-bounded-20261010/independent-tree.json": "2cc4ad8796d9c69193b132a2dd241dc4712933e03bf4b8a5ccd586be748e8242",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-tree-bounded-20261010/build.log": "d6bb32128fa00988a3c11f919367c08e01e484f7bc67d87216c6b1dc383daa90"
+  }
+}

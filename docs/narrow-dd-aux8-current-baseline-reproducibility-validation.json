@@ -1,0 +1,47 @@
+{
+  "scope": "Frozen reader current baseline reproducibility across traced and untraced modes; archived output differs",
+  "current_prefixes_identical": true,
+  "archived_output_reproduced": false,
+  "records": {
+    "trace-diagnostic-v1": {
+      "prefix_sha256": "fb91743b6e29997baf88f753f8cb83c2eaa4c1c4ad3f831d39fc7665220b3a28",
+      "prefix_bytes": 5636193,
+      "report": {
+        "n": 16384,
+        "function": "sigmoid",
+        "auxiliary_bits": 8,
+        "mode": "--trace",
+        "fresh_keys_generated": false,
+        "fresh_input_max_error": 6.054536509709368e-11,
+        "saved_max_error": 1.7331694525132082e+20,
+        "saved_rms_error": 4.235902733671335e+19,
+        "max_error": 1.3212045850306164e+20,
+        "rms_error": 4.264512319580799e+19,
+        "saved_output_equal": false,
+        "accuracy_passed": false,
+        "retained_square_validated": false
+      }
+    },
+    "untraced-baseline-v1": {
+      "prefix_sha256": "fb91743b6e29997baf88f753f8cb83c2eaa4c1c4ad3f831d39fc7665220b3a28",
+      "prefix_bytes": 5636193,
+      "report": {
+        "n": 16384,
+        "function": "sigmoid",
+        "auxiliary_bits": 8,
+        "mode": "--replay",
+        "fresh_keys_generated": false,
+        "fresh_input_max_error": 6.054536509709368e-11,
+        "saved_max_error": 1.7331694525132082e+20,
+        "saved_rms_error": 4.235902733671335e+19,
+        "max_error": 1.3212045850306164e+20,
+        "rms_error": 4.264512319580799e+19,
+        "saved_output_equal": false,
+        "accuracy_passed": false,
+        "retained_square_validated": false
+      }
+    }
+  },
+  "failure_cause_established": false,
+  "security_validated": false
+}

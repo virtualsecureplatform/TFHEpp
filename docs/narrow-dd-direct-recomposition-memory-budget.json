@@ -1,0 +1,18 @@
+{
+  "observed_at_utc": "2026-10-10T09:41:18.329662+00:00",
+  "scope": "Static N16384 LL14 packed factor recomposition payload accounting; does not include keys, selectors, allocation overhead or other stages",
+  "n": 16384,
+  "columns": 12,
+  "digits": 24,
+  "torus_coefficient_bytes": 56,
+  "removed_digit_accum_payload_bytes": 1056964608,
+  "bounded_worker_inverse_spectra_payload_bytes": 1048576,
+  "chunked_path_payload_reduction_bytes": 1055916032,
+  "prepared_path_added_persistent_modular_sums_bytes": 301989888,
+  "chunked_existing_modular_sums_unchanged": true,
+  "new_ciphertexts_or_keys_generated": false,
+  "measured_peak_rss_available": false,
+  "encrypted_replay_validated": true,
+  "goal_complete": false,
+  "encrypted_replay_scope": "N512 only"
+}

@@ -1,0 +1,22 @@
+{
+  "observed_utc": "2026-10-11T16:10:11.395036+00:00",
+  "qualification_session_id": 63497,
+  "stage": "terminal failed original per-selector rescaling Sigmoid",
+  "controller": {
+    "pid": 2045368,
+    "start_ticks": 238132925
+  },
+  "evaluator": {
+    "pid": 2045394,
+    "start_ticks": 238134192,
+    "cpu_ticks": 44326,
+    "rss_bytes": 8054616064
+  },
+  "completed_factor_groups_logged": 27,
+  "latest_factor_progress": "sigmoid completed head group=26 factor_groups=27",
+  "live_handle_confirmed": false,
+  "fresh_keys_generated": false,
+  "paper_performance_reproduced": false,
+  "full_refresh_qualified": false,
+  "terminal": true
+}

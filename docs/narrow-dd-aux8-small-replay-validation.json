@@ -1,0 +1,112 @@
+{
+  "utc": "2026-10-09T10:26:13.983271+00:00",
+  "scope": "Small N512 retained auxiliary8 replay reader validation; does not establish full failure replay",
+  "build_session": 11542,
+  "build_actual_exit_code": 0,
+  "source_sha256": "4e6452a258685493cabf5a57fcd909ac37d5ccc008361d92709367f3f39cb915",
+  "executable_sha256": "bf55514427cb68909f6ea97859b02814ca0ced1a83e5131379d9db12c75a5470",
+  "cmake_sha256": "40a24936b65974969e4c11507904c8eb3c813cf7fcd35c0b530d96cf5418f544",
+  "private_parent": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/replay-reader-rp8b_jbs",
+  "state_sha256": "946e15e6c42c663f042d147d2669a89ed0687285f53243623c3f83a0ac6cfc11",
+  "points": [
+    {
+      "mode": "prepare",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/replay-reader-rp8b_jbs/prepare",
+      "log": "/tmp/ckks-aux8-small-prepare.log",
+      "stderr": "/tmp/ckks-aux8-small-prepare.stderr",
+      "time_log": "/tmp/ckks-aux8-small-prepare.time",
+      "report": {
+        "n": 512,
+        "function": "sigmoid",
+        "auxiliary_bits": 8,
+        "mode": "--prepare",
+        "fresh_keys_generated": false,
+        "fresh_input_max_error": 8.612885499260468e-12,
+        "saved_max_error": 1.3615911225947476e-09,
+        "saved_rms_error": 8.208303918710317e-10,
+        "s2c_max_error": 3.989575336760254e-10,
+        "encapsulation_max_error": 3.990137109610714e-10,
+        "prepared_max_error": 3.9894842984722345e-10,
+        "prepare_accuracy_passed": true
+      }
+    },
+    {
+      "mode": "replay",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/replay-reader-rp8b_jbs/replay",
+      "log": "/tmp/ckks-aux8-small-replay.log",
+      "stderr": "/tmp/ckks-aux8-small-replay.stderr",
+      "time_log": "/tmp/ckks-aux8-small-replay.time",
+      "report": {
+        "n": 512,
+        "function": "sigmoid",
+        "auxiliary_bits": 8,
+        "mode": "--replay",
+        "fresh_keys_generated": false,
+        "fresh_input_max_error": 8.612885499260468e-12,
+        "saved_max_error": 1.3615911225947476e-09,
+        "saved_rms_error": 8.208303918710317e-10,
+        "max_error": 1.3615911225947476e-09,
+        "rms_error": 8.208303918710317e-10,
+        "saved_output_equal": true,
+        "accuracy_passed": true,
+        "retained_square_validated": false
+      },
+      "independent_prefix_validation": "TFHEpp/docs/narrow-dd-aux8-small-replay-prefix-validation.json"
+    },
+    {
+      "mode": "trace",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/replay-reader-rp8b_jbs/trace",
+      "log": "/tmp/ckks-aux8-small-trace.log",
+      "stderr": "/tmp/ckks-aux8-small-trace.stderr",
+      "time_log": "/tmp/ckks-aux8-small-trace.time",
+      "report": {
+        "n": 512,
+        "function": "sigmoid",
+        "auxiliary_bits": 8,
+        "mode": "--trace",
+        "fresh_keys_generated": false,
+        "fresh_input_max_error": 8.612885499260468e-12,
+        "saved_max_error": 1.3615911225947476e-09,
+        "saved_rms_error": 8.208303918710317e-10,
+        "max_error": 1.3615911225947476e-09,
+        "rms_error": 8.208303918710317e-10,
+        "saved_output_equal": true,
+        "accuracy_passed": true,
+        "retained_square_validated": false
+      },
+      "independent_prefix_validation": "TFHEpp/docs/narrow-dd-aux8-small-trace-prefix-validation.json",
+      "root_count": 24,
+      "maximum_root_error": 2.8151101511792325e-10
+    }
+  ],
+  "terminal": true,
+  "full_failure_replay_validated": false,
+  "security_validated": false,
+  "actual_exit_code": 0,
+  "original_state_unchanged": true,
+  "selector_files_retained": 35,
+  "session_id": 50962,
+  "malformed_controls": [
+    {
+      "name": "wrong-magic",
+      "actual_exit_code": 2,
+      "error": "wrong retained probe magic"
+    },
+    {
+      "name": "unfinished",
+      "actual_exit_code": 2,
+      "error": "replay requires a finished auxiliary8 sigmoid probe state"
+    },
+    {
+      "name": "wrong-function",
+      "actual_exit_code": 2,
+      "error": "replay requires a finished auxiliary8 sigmoid probe state"
+    }
+  ]
+}

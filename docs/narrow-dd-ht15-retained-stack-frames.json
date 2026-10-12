@@ -1,0 +1,78 @@
+{
+  "scope": "Explicit compiled prologue allocations; excludes pushes, benchmark caller and deeper callees. No crash backtrace was available.",
+  "profile": "ht15-lean-dd",
+  "binary_stage": "before retainedUnitProduct frame split",
+  "stack_limit_bytes": 67108864,
+  "frames": [
+    {
+      "remaining_products": 9,
+      "input_log_q": 393,
+      "address": "0x17d2e0",
+      "explicit_frame_bytes": 22544936
+    },
+    {
+      "remaining_products": 6,
+      "input_log_q": 276,
+      "address": "0x5a9fc0",
+      "explicit_frame_bytes": 22544936
+    },
+    {
+      "remaining_products": 3,
+      "input_log_q": 159,
+      "address": "0xa3fda0",
+      "explicit_frame_bytes": 22544936
+    }
+  ],
+  "nested_explicit_frame_bytes": 67634808,
+  "exceeds_stack_limit": true,
+  "observed_crash_stage": "entry to retained product 7 after products 1 through 6 completed",
+  "cause_status": "Compiled nested allocations exceed the limit; consistent with stack exhaustion, without a captured fault backtrace.",
+  "after_split_frames": [
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 120u, 39u, 120u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 120u, 39u, 120u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 120u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 120u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0xbb3a40",
+      "explicit_frame_bytes": 320
+    },
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 159u, 39u, 159u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 159u, 39u, 159u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 159u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 159u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0xad0820",
+      "explicit_frame_bytes": 320
+    },
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 198u, 39u, 198u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 198u, 39u, 198u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 198u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 198u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0x9d67a0",
+      "explicit_frame_bytes": 320
+    },
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 237u, 39u, 237u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 237u, 39u, 237u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 237u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 237u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0x899fd0",
+      "explicit_frame_bytes": 320
+    },
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 276u, 39u, 276u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 276u, 39u, 276u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 276u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 276u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0x6f3b40",
+      "explicit_frame_bytes": 320
+    },
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 315u, 39u, 315u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 315u, 39u, 315u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 315u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 315u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0x54f0d0",
+      "explicit_frame_bytes": 320
+    },
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 354u, 39u, 354u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 354u, 39u, 354u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 354u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 354u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0x3a0c60",
+      "explicit_frame_bytes": 320
+    },
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 393u, 39u, 393u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 393u, 39u, 393u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 393u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 393u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0x28d1a0",
+      "explicit_frame_bytes": 320
+    },
+    {
+      "symbol": "std::unique_ptr<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 81u, 39u, 81u, 39u>::Ciphertext, std::default_delete<TFHEpp::CKKSMultTraits<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 81u, 39u, 81u, 39u>::Ciphertext> > (anonymous namespace)::retainedUnitProduct<true, (anonymous namespace)::LeanBasisParam<15u, 14ul>, 81u, 39u>(TFHEpp::CKKSCiphertext<(anonymous namespace)::LeanBasisParam<15u, 14ul>, 81u, 39u> const&, std::array<(anonymous namespace)::LeanBasisParam<15u, 14ul>::T, (anonymous namespace)::LeanBasisParam<15u, 14ul>::k*(anonymous namespace)::LeanBasisParam<15u, 14ul>::n> const&, TFHEpp::CKKSNoise, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::array<std::complex<double>, (anonymous namespace)::LeanBasisParam<15u, 14ul>::n/(2)> const&, std::vector<(anonymous namespace)::RetainedUnitStep, std::allocator<(anonymous namespace)::RetainedUnitStep> >&) [clone .lto_priv.0]",
+      "address": "0xc76dd0",
+      "explicit_frame_bytes": 256
+    }
+  ],
+  "after_split_scope": "Product helper is noinline and returns before the recursive next-level driver; excludes caller/deeper frames."
+}

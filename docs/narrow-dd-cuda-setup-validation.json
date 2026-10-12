@@ -1,0 +1,102 @@
+{
+  "observed_at_utc": "2026-10-08T17:54:06.634791+00:00",
+  "scope": "Host setup conversion from native TFHEpp CKKSAutoKey/CKKSCiphertext types to natural-order auxiliary-prime spectra/Shoup quotients, and native ciphertext word-layout export/import. No GPU upload owner or end-to-end encrypted GPU evaluation is validated.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "949dc4324b089f828c412e1c10c7ac9a41b6cd46c6d8a671ede82664f3919711",
+    "include/ckks/narrow_cuda_setup.hpp": "658ab374073a4c35244c387360e8043b4605cb3142faed2245a4d1b191f76e16",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "b9866d147a244372400f4ebde8962f252b88786f2808203dfe50b59649d88a47",
+    "src/ckks/narrow_cuda.cu": "58e7ce845221ee89611a15dc8da196e39da4deae936d9e99bf819ed51b9c5a1f",
+    "src/ckks/cuda/CMakeLists.txt": "0eb695e69e8edd68fb75bad5094b2e91c3b293ee7693298e2f8e2761516c06d6",
+    "test/ckks/ckks_narrow_cuda.cu": "8bef80b33185bb1a0923bffeb633ce59222524805e3511800ea209c871fd4fc0",
+    "test/ckks/ckks_narrow_cuda_setup.cpp": "458f739a6eec948a8fad1cf259ddd2cd629670ff9c991309e22456b34665a521",
+    "test/CMakeLists.txt": "68883e704bd0f2b047f1e70747be7cdaf32063b230ca713924a1178d5ba621f1"
+  },
+  "cuda_cmake_configure_exit_code": 0,
+  "cuda_cmake_configure_log": "/tmp/ckks-narrow-cuda-setup-configure.log",
+  "host_setup_cmake_build_exit_code": 0,
+  "host_setup_cmake_build_session": 56686,
+  "host_setup_cmake_build_log": "/tmp/ckks-narrow-cuda-setup-build.log",
+  "host_setup_target": "ckks_narrow_cuda_setup",
+  "host_setup_test_actual_exit_code": 0,
+  "host_setup_test_log": "/tmp/ckks-narrow-cuda-setup-test.log",
+  "prime_profile_cases_passed": 14,
+  "auto_key_profiles": [
+    {
+      "log_q": 376,
+      "native_bits": 448,
+      "base_bits": 4
+    },
+    {
+      "log_q": 385,
+      "native_bits": 448,
+      "base_bits": 4
+    },
+    {
+      "log_q": 385,
+      "native_bits": 448,
+      "base_bits": 8
+    },
+    {
+      "log_q": 842,
+      "native_bits": 896,
+      "base_bits": 8
+    }
+  ],
+  "selector_profiles": [
+    {
+      "log_q": 217,
+      "native_bits": 448
+    },
+    {
+      "log_q": 385,
+      "native_bits": 448
+    },
+    {
+      "log_q": 669,
+      "native_bits": 896
+    }
+  ],
+  "points": 16,
+  "mask_rank": 1,
+  "auxiliary_primes": [
+    2301972608560791553,
+    2295217002959732737
+  ],
+  "key_reference": "Inverse-transform each prepared spectrum and compare every recovered coefficient against the actual ckks_detail::baseBbarDecomposePolynomialRows output, with the CPU secondary row order reversed only in storage.",
+  "raw_key_offset_preserved": true,
+  "raw_key_coefficients_include_native_garbage_above_log_q": true,
+  "selector_reference": "Inverse-transform every selector/component/unsigned 16-bit digit and compare against actual ckks_detail::reduceToLevel followed by digit extraction.",
+  "shoup_reference": "Independent unsigned __int128 division for every spectrum entry.",
+  "ciphertext_layout_roundtrips_passed": 3,
+  "ciphertext_columns": 3,
+  "ciphertext_layout_checks": "Export words must match direct native .limb access at each component/point/column/limb index; import must reproduce each coefficient reduced by the actual CPU reduceToLevel function.",
+  "invalid_requests_passed": 13,
+  "typed_objects_are_actual_tfhepp_classes": true,
+  "test_coefficients_are_deterministic_random_not_encrypted_keys": true,
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 86200,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-setup-host-ubsan-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-setup-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 0,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-setup-host-ubsan-test.log",
+  "host_ubsan_all_setup_checks_passed": true,
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "g++ -O1 -g1 -fsanitize=undefined -fno-sanitize-recover=all instruments the C++ setup test and inline native/setup arithmetic. No device kernels or CUDA runtime calls are executed.",
+  "default_cpu_configure_exit_code": 0,
+  "default_cpu_configure_session": 54519,
+  "default_cpu_configure_log": "/tmp/ckks-narrow-cuda-setup-default-cpu-configure.log",
+  "default_cpu_cuda_flag": false,
+  "default_cpu_generated_build_excludes_cuda_targets_verified": true,
+  "device_test_actual_exit_code": 77,
+  "device_test_log": "/tmp/ckks-narrow-cuda-setup-device-test.log",
+  "gpu_device_count": 0,
+  "gpu_arithmetic_validated": false,
+  "tfhepp_typed_key_setup_conversion_implemented": true,
+  "tfhepp_typed_ciphertext_layout_conversion_implemented": true,
+  "tfhepp_typed_end_to_end_gpu_adapter_implemented": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "security_qualified": false,
+  "latest_device_ownership_evidence": "narrow-dd-cuda-device-ownership-validation.json",
+  "historical_scope_note": "Source hashes and false typed adapter field describe the setup-only revision. A later typed automorphism owner is compiled in the linked evidence; device execution remains unverified.",
+  "latest_native_dd_relin_setup_evidence": "narrow-dd-cuda-dd-relin-setup-validation.json"
+}

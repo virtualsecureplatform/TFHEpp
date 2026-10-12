@@ -1,0 +1,22 @@
+{
+  "scope": "Validate frozen square CLI on existing passed N512 outputs and exercise bounded-parent/larger-child resource limits. No key generation or new refresh.",
+  "actual_exit_code": 0,
+  "passed": true,
+  "parent_soft_limit_bytes": 134217728,
+  "parent_hard_limit_bytes": 21474836480,
+  "child_limit_bytes": 2147483648,
+  "independent_square": {
+    "n": 512,
+    "function": "sigmoid",
+    "log_q": 60,
+    "log_delta": 48,
+    "post_refresh_product_max_error": 3.1450901746204564e-09,
+    "rms_error": 1.427709029227958e-09,
+    "target_amplitude": 1.3887772203090152,
+    "product_tolerance": 4.50319595316329e-07,
+    "product_accuracy_passed": true,
+    "independent_phase_validated": true,
+    "security_validated": false,
+    "retained_key_coefficients_validated": false
+  }
+}

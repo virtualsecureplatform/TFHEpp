@@ -1,0 +1,49 @@
+{
+  "utc": "2026-10-09T10:59:02.370840+00:00",
+  "scope": "Independent scalar negacyclic convolution verifies mask impulse inference including both signs and wrap",
+  "points": [
+    {
+      "index": 0,
+      "sign": -1,
+      "passed": true
+    },
+    {
+      "index": 0,
+      "sign": 1,
+      "passed": true
+    },
+    {
+      "index": 1,
+      "sign": -1,
+      "passed": true
+    },
+    {
+      "index": 1,
+      "sign": 1,
+      "passed": true
+    },
+    {
+      "index": 16,
+      "sign": -1,
+      "passed": true
+    },
+    {
+      "index": 16,
+      "sign": 1,
+      "passed": true
+    },
+    {
+      "index": 31,
+      "sign": -1,
+      "passed": true
+    },
+    {
+      "index": 31,
+      "sign": 1,
+      "passed": true
+    }
+  ],
+  "zero_control_rejected": true,
+  "nonmatching_control_rejected": true,
+  "source_sha256": "aa65c8fab7824d2b99435969025c6af8223414dcb24722f340ebdd1df32ee613"
+}

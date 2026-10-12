@@ -1,0 +1,56 @@
+{
+  "utc": "2026-10-09T11:10:09.293122+00:00",
+  "scope": "Corrected replay launcher must reject failed/nonmatching/wrong-profile baselines before loading keys",
+  "points": [
+    {
+      "control": "failed-baseline",
+      "exit_code": 1,
+      "rejected_before_state_read": true,
+      "result": {
+        "scope": "Run the retained one-bit selector experiment after a matching baseline.\n\nWaits for the original process to terminate and for its authoritative completion\nreport. Refuses a nonmatching baseline. Rechecks frozen executable/source,\nretained state, corrected selector hash and available memory before launching.\nNo keys or inputs are generated. Diagnostic accuracy is separate from exit code.\n",
+        "terminal": true,
+        "stage": "diagnostic launcher failed",
+        "baseline_pid": 0,
+        "baseline_start_ticks": 0,
+        "fresh_keys_generated": false,
+        "failure_cause_established": false,
+        "security_validated": false,
+        "error": "baseline did not complete with identical saved ciphertext"
+      }
+    },
+    {
+      "control": "nonmatching-baseline",
+      "exit_code": 1,
+      "rejected_before_state_read": true,
+      "result": {
+        "scope": "Run the retained one-bit selector experiment after a matching baseline.\n\nWaits for the original process to terminate and for its authoritative completion\nreport. Refuses a nonmatching baseline. Rechecks frozen executable/source,\nretained state, corrected selector hash and available memory before launching.\nNo keys or inputs are generated. Diagnostic accuracy is separate from exit code.\n",
+        "terminal": true,
+        "stage": "diagnostic launcher failed",
+        "baseline_pid": 0,
+        "baseline_start_ticks": 0,
+        "fresh_keys_generated": false,
+        "failure_cause_established": false,
+        "security_validated": false,
+        "error": "baseline did not complete with identical saved ciphertext"
+      }
+    },
+    {
+      "control": "wrong-profile-baseline",
+      "exit_code": 1,
+      "rejected_before_state_read": true,
+      "result": {
+        "scope": "Run the retained one-bit selector experiment after a matching baseline.\n\nWaits for the original process to terminate and for its authoritative completion\nreport. Refuses a nonmatching baseline. Rechecks frozen executable/source,\nretained state, corrected selector hash and available memory before launching.\nNo keys or inputs are generated. Diagnostic accuracy is separate from exit code.\n",
+        "terminal": true,
+        "stage": "diagnostic launcher failed",
+        "baseline_pid": 0,
+        "baseline_start_ticks": 0,
+        "fresh_keys_generated": false,
+        "failure_cause_established": false,
+        "security_validated": false,
+        "error": "baseline did not complete with identical saved ciphertext"
+      }
+    }
+  ],
+  "all_rejected": true,
+  "source_sha256": "3e2e683be712a19732baa4e24c4bdbb4eddd98b47446bd0f7ead238edaab4199"
+}

@@ -1,0 +1,26 @@
+{
+  "observed_at_utc": "2026-10-09T06:04:44.302362+00:00",
+  "scope": "Additional2GiB Sage public-mask q64 probes alongside existing2GiB seven-attack job; both main CPU jobs unchanged",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "rss_bytes": 17785925632,
+      "limit_bytes": 68719476736
+    },
+    {
+      "pid": 1823852,
+      "rss_bytes": 6863077376,
+      "limit_bytes": 34359738368
+    }
+  ],
+  "available_memory_bytes": 106736439296,
+  "required_available_memory_bytes": 95610081280,
+  "host_reserve_bytes": 10737418240,
+  "total_auxiliary_reserve_bytes": 6442450944,
+  "launch_eligible": true,
+  "process_pool_reserve_note": "Uniform-proxy --jobs1 has a Sage parent and one capped worker: reserve4GiB there plus2GiB for the separate mask probe",
+  "session_id": 79605,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "completion_observed_at_utc": "2026-10-09T06:16:31.462843+00:00"
+}

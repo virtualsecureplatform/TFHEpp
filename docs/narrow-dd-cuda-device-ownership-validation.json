@@ -1,0 +1,89 @@
+{
+  "observed_at_utc": "2026-10-08T18:20:28.810497+00:00",
+  "scope": "Owning resident CUDA automorphism plan and typed native TFHEpp wrapper: host preflight and source compilation only; device allocation, residency, repeated evaluation and pending-work destruction unexecuted.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda_device.hpp": "6dadd94a4b097ed92262c2e255debd8b9722f56f4509fed8e7fa93021ea8b734",
+    "include/ckks/narrow_cuda_setup.hpp": "d79ea13c213005bc32ba4813307dd02b096901ca4cf5e50faaeb6c211949e7a5",
+    "include/ckks/narrow_cuda.hpp": "949dc4324b089f828c412e1c10c7ac9a41b6cd46c6d8a671ede82664f3919711",
+    "src/ckks/narrow_cuda.cu": "58e7ce845221ee89611a15dc8da196e39da4deae936d9e99bf819ed51b9c5a1f",
+    "src/ckks/cuda/CMakeLists.txt": "34b3488f250758b2b3ce3d4015da3efc22450da50cc96aa161e40c6998377a23",
+    "test/ckks/ckks_narrow_cuda_device.cpp": "916a855d35edbc97863042e6fa8b308712918ac06f41852455a01fa3aece35b3",
+    "test/CMakeLists.txt": "20c3481b3e6e4224b6a3f68da9309699e1e3af489dc8ff0990b98d365dcf6fec"
+  },
+  "source_implemented": true,
+  "typed_native_automorphism_wrapper_implemented": true,
+  "resident_key_workspace_plan_source_implemented": true,
+  "dedicated_stream_and_exception_cleanup_source_implemented": true,
+  "device_affinity_contract": "Use and destroy on the creation CUDA device; external producers/consumers must coordinate stream dependencies.",
+  "evaluation_device_allocations_or_tensor_transfers": false,
+  "cuda_cmake_build_session": 50544,
+  "cuda_cmake_build_exit_code": 0,
+  "cuda_cmake_build_log": "/tmp/ckks-narrow-cuda-device-build.log",
+  "host_invalid_requests_passed": 9,
+  "host_valid_layouts_passed": 1,
+  "invalid_crt_pair": {
+    "moduli": [
+      17,
+      1649
+    ],
+    "primitive_roots": [
+      3,
+      105
+    ],
+    "points": 2,
+    "both_ntt_table_preconditions_verified": true,
+    "rejected_before_cuda_stream_allocation": true
+  },
+  "test_actual_exit_code": 77,
+  "test_log": "/tmp/ckks_narrow_cuda_device-final-test.log",
+  "gpu_device_count": 0,
+  "host_ubsan_build_session": 19606,
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-device-host-ubsan-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-device-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-device-host-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-device-host-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "C++ owner test, inline metadata/native arithmetic and typed wrapper instrumented. Separately compiled CUDA library and kernels uninstrumented. No device allocation or kernel executed.",
+  "default_cpu_configure_session": 27415,
+  "default_cpu_configure_exit_code": 0,
+  "default_cpu_configure_log": "/tmp/ckks-narrow-cuda-device-default-cpu-configure.log",
+  "default_cpu_cuda_flag": false,
+  "default_cpu_optional_cuda_targets_absent_verified": true,
+  "native_setup_recheck_actual_exit_code": 0,
+  "native_setup_recheck_log": "/tmp/ckks_narrow_cuda_setup-final-test.log",
+  "compiled_device_test": {
+    "points": 16,
+    "native_bits": 448,
+    "input_log_q": 37,
+    "log_delta": 23,
+    "auxiliary_bits": 16,
+    "base_bits": 4,
+    "mask_rank": 1,
+    "columns": 3,
+    "prime_counts": [
+      1,
+      2
+    ],
+    "exponents": [
+      5,
+      31
+    ],
+    "fresh_input_evaluations": 8,
+    "pending_work_destructor_cases": 4,
+    "stale_output_and_uninitialized_submit_guards": true,
+    "reference": "Actual CPU centered Bbar decomposition, direct coefficient-space native key-row negacyclic products and roundedLevelRightShift<P,53,16>.",
+    "raw_deterministic_coefficients_not_encrypted_keys": true,
+    "executed": false
+  },
+  "gpu_arithmetic_validated": false,
+  "device_ownership_runtime_validated": false,
+  "encrypted_gpu_evaluation_validated": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "latest_encrypted_key_test_evidence": "narrow-dd-cuda-encrypted-auto-validation.json",
+  "historical_test_scope_note": "Raw-key owner test scope and hashes are retained. The later test adds actual encrypted native keys and CPU spectral/phase checks; device execution remains unverified."
+}

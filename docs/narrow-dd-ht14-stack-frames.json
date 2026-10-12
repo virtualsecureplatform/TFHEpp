@@ -1,0 +1,13 @@
+{
+  "ht14_benchmark": {
+    "address": "0x11a87e0",
+    "explicit_frame_bytes": 5509376
+  },
+  "ht14_factors": {
+    "address": "0x15de40",
+    "explicit_frame_bytes": 2229536
+  },
+  "scope": "Explicit prologue stack allocation; excludes pushes and deeper callees.",
+  "old_combined_explicit_frame_bytes": 9311616,
+  "new_combined_explicit_frame_bytes": 7738912
+}

@@ -1,0 +1,93 @@
+{
+  "observed_at_utc": "2026-10-08T22:46:54.254013+00:00",
+  "user_instruction": "CUDA is out of scope. Remove CUDA codes.",
+  "removed_sources": [
+    {
+      "path": "include/ckks/narrow_cuda_tensor_core.hpp",
+      "sha256": "594dcd0a3d0bd91ea8aa3b3d49ec49749a246b673123da33f844fcdc253bc1a3"
+    },
+    {
+      "path": "include/ckks/narrow_cuda_device.hpp",
+      "sha256": "6dadd94a4b097ed92262c2e255debd8b9722f56f4509fed8e7fa93021ea8b734"
+    },
+    {
+      "path": "include/ckks/narrow_cuda_multiply_device.hpp",
+      "sha256": "79b4e9a77b702e5d81555d2b33cc07f591c4e166d8fb3e0c327f03fbcf0291f1"
+    },
+    {
+      "path": "include/ckks/narrow_cuda.hpp",
+      "sha256": "51593a9a042eaf81e2a59331740dfca3cf986e4400cb245cec4d424bd426465d"
+    },
+    {
+      "path": "include/ckks/narrow_cuda_setup.hpp",
+      "sha256": "d03a5e111f8b91d5981f4eda5543b8bc621ff617436799aac41ba199d0843fff"
+    },
+    {
+      "path": "include/ckks/detail/narrow_cuda_arithmetic.hpp",
+      "sha256": "561db59a5490bca2a6d4141b1e4ce33569b1039d9859b6578793f5dea13b006d"
+    },
+    {
+      "path": "src/ckks/narrow_cuda_tensor_core.cu",
+      "sha256": "5edae42540903da28226488780ceca0a1540f4c15a1deea9eb727318202fb102"
+    },
+    {
+      "path": "src/ckks/narrow_cuda.cu",
+      "sha256": "9864b4f1999b8e47d189293794ad03db2fb0abaf0a969ea415cf81a5feb6033e"
+    },
+    {
+      "path": "src/ckks/cuda/CMakeLists.txt",
+      "sha256": "e79a8a1f274bd229968b683bf9276dee24bd74053ffee56e8b6b23a486c264be"
+    },
+    {
+      "path": "test/ckks/ckks_narrow_cuda_tensor_core.cu",
+      "sha256": "5897868c0df34d77e0becc6396bfb2f8bde54674dfd586b9c83e8eb4554e1a5a"
+    },
+    {
+      "path": "test/ckks/ckks_narrow_cuda.cu",
+      "sha256": "610ea013dc3353dd0cd8f7cdc865cc87b5a94e9ac939bd2535d0764d8763af8f"
+    },
+    {
+      "path": "test/ckks/ckks_narrow_cuda_device.cpp",
+      "sha256": "c518d864020ba360eff4b63a548e138006d64ed6fdf07414036b0b92581630b3"
+    },
+    {
+      "path": "test/ckks/ckks_narrow_cuda_setup.cpp",
+      "sha256": "54aa448620baffd2bdcb02ff31d2a7eaeaeb6cd929bd68c6bbc8977649080da5"
+    }
+  ],
+  "removed_build_option": "ENABLE_NARROW_CUDA",
+  "removed_targets": [
+    "tfhepp_narrow_cuda_matrix",
+    "ckks_narrow_cuda",
+    "ckks_narrow_cuda_setup",
+    "ckks_narrow_cuda_device",
+    "ckks_narrow_cuda_tensor_core"
+  ],
+  "historical_validation_records_retained": true,
+  "cpu_validation_pending": false,
+  "source_reference_scan_passed": true,
+  "removed_file_absence_check_passed": true,
+  "cpu_build_log": "/tmp/ckks-narrow-cuda-removal-cpu-build.log",
+  "cpu_build_session": 1803,
+  "cpu_regression_log": "/tmp/ckks-narrow-cuda-removal-cpu-test.log",
+  "cpu_regression_stderr": "/tmp/ckks-narrow-cuda-removal-cpu-test.stderr",
+  "cpu_regression_session": 70191,
+  "regenerated_default_build_has_no_cuda_targets": true,
+  "cpu_build_exit_code": 0,
+  "cpu_build_session_terminal": true,
+  "cpu_post_build_auxiliary_auto_exit_code": 0,
+  "cpu_post_build_auxiliary_auto_log": "/tmp/ckks-narrow-cpu-post-removal-auxiliary-auto.log",
+  "cpu_post_build_finiteness_exit_code": 0,
+  "cpu_post_build_finiteness_log": "/tmp/ckks-narrow-cpu-post-removal-finiteness.log",
+  "cpu_regression_terminal": true,
+  "cpu_regression_actual_exit_code": 0,
+  "cpu_regression_session_terminal": true,
+  "cpu_regression_stderr_bytes": 0,
+  "remaining_cuda_compiler_guard_removed": "include/raintt.hpp",
+  "source_reference_scan_scope": [
+    "CMakeLists.txt",
+    "src",
+    "include",
+    "test"
+  ]
+}

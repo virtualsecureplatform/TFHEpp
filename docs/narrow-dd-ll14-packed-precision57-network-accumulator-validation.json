@@ -1,0 +1,28 @@
+{
+  "scope": "Full N16384 coefficient-packed reconstruction from retained public packed435 primary8/delta57 archive, all14 substitution depths cached once. No secrets loaded and no key generation. New output selectors retained for reuse after qualification. Two-hour wall-time cap. Does not qualify full functional accuracy or paper performance/security.",
+  "terminal": true,
+  "all_checks_passed": false,
+  "stage": "reconstruction failed",
+  "controller_pid": 2057204,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-reconstruction-20261011/run.py": "139942006dbae0880875b542dcbd5ea5c520bd7607225a15ddb8cc3ac81b18b2",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_packed_archive.cpp": "b8ede8b5b829ab2293a6371c3c25ea4daf1b6702e0c8841af4296ee0a7a0f8c3",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "636aaa5b5ebf3a02c851db136c4a200188f5c1e088fdaa8925ab83ac65167619",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_file.hpp": "15e4008f78a0d69eb0dc620aca8c310c59ee55afa349a385c394fef21221ff9c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_packed_file.hpp": "66ea433a16f90301dffd89d5c767a2c79f5fc850cef22d10cd20d003ee20b882",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81"
+  },
+  "completed_terms": 512,
+  "total_terms": 65536,
+  "new_keys_generated": 0,
+  "wall_time_cap_seconds": 7200,
+  "updated_utc": "2026-10-11T18:31:12.447902+00:00",
+  "packed_archive_sha256": "edabb5da09912a47adc71d22bca73ad1cc14336b384b973d96c03e4ce4545878",
+  "evaluator_pid": 2057208,
+  "evaluator_start_ticks": 238993159,
+  "extraction_elapsed_seconds": 81.3712,
+  "extraction_linear_total_estimate_seconds": 10415.5136,
+  "test_actual_exit_code": -15,
+  "error": "",
+  "intentional_stop_reason": "Measured network-accumulator extraction512/65536 in81.3712 s projects about2.9 h, exceeding2 h cap. Owned evaluator stopped to qualify local accumulator placement; public packed archive retained for reuse."
+}

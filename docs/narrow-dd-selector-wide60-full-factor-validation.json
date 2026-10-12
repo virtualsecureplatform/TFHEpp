@@ -1,0 +1,149 @@
+{
+  "observed_at_utc": "2026-10-10T16:18:34.759977+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "controller_pid": 1956409,
+  "memory_cap_bytes": 2147483648,
+  "host_reserve_includes_control": true,
+  "fresh_keys_generated": false,
+  "scope": "N16384 retained auxiliary8 head30/tail4 factors, three columns each; wider60 vs16 exact ciphertexts and decrypt gates. No whole refresh or paper performance claim.",
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector-wide60-full-factor-20261010",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "6919bd1c260f5be280e4a2fcf46f09811e304339856d53bbeaf441968e868200",
+    "TFHEpp/test/ckks/ckks_narrow_factor_checkpoint.cpp": "6ab2f1d5ec8996e313fe8b0dc322eb69f346de8e7ebce56efe2dec089cf14684"
+  },
+  "frozen_executable_sha256": "c320aed5dcabd56a8b1489fdb8abbcbef65ee999ea5b02be6bfeb892b813a3b7",
+  "default_width_changed": false,
+  "goal_complete": false,
+  "before": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/head-30.bin": "449d2d5b6cae767497839c3c1e77388b4d344ca11c3dea5074aca22e77fe064f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/tail-4.bin": "a2177535add9da1f678470abd4231b248a6b2658bbd1283d78c263273e9a3f81"
+  },
+  "child_time_pid": 1956418,
+  "actual_exit_code": 0,
+  "child_completed": true,
+  "after": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/head-30.bin": "449d2d5b6cae767497839c3c1e77388b4d344ca11c3dea5074aca22e77fe064f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/tail-4.bin": "a2177535add9da1f678470abd4231b248a6b2658bbd1283d78c263273e9a3f81"
+  },
+  "retained_files_unchanged": true,
+  "full_factors": [
+    {
+      "tail": false,
+      "group": 30,
+      "columns": 3,
+      "slots_checked": 24576,
+      "max_error": 1.2522476022539664e-09,
+      "chunk_size": 8,
+      "alternate_chunk_size": 5,
+      "chunks_exact": true,
+      "single_columns_first_middle_last_exact": true,
+      "accuracy_passed": true,
+      "ntt_digit_bits": 60,
+      "ntt_digits": 7,
+      "baseline16_ciphertexts_exact": true,
+      "baseline16_timings": {
+        "selector_ntt_seconds": 11.419278977999998,
+        "matrix_seconds": 5.644934857000003,
+        "inverse_crt_seconds": 0.138846346,
+        "conjugation_seconds": 0.500905415
+      },
+      "timings": {
+        "selector_load_seconds": 0.497362844,
+        "table_ntt_seconds": 0.056031771,
+        "selector_ntt_seconds": 2.9076290190000007,
+        "matrix_seconds": 1.4585118329999993,
+        "inverse_crt_seconds": 0.033292703,
+        "conjugation_seconds": 0.467154615
+      }
+    },
+    {
+      "tail": true,
+      "group": 4,
+      "columns": 3,
+      "slots_checked": 24576,
+      "max_error": 1.0728227448417034e-09,
+      "chunk_size": 8,
+      "alternate_chunk_size": 5,
+      "chunks_exact": true,
+      "single_columns_first_middle_last_exact": true,
+      "accuracy_passed": true,
+      "ntt_digit_bits": 60,
+      "ntt_digits": 7,
+      "baseline16_ciphertexts_exact": true,
+      "baseline16_timings": {
+        "selector_ntt_seconds": 10.071996951000006,
+        "matrix_seconds": 4.975632815999994,
+        "inverse_crt_seconds": 0.171086172,
+        "conjugation_seconds": 0.413729609
+      },
+      "timings": {
+        "selector_load_seconds": 0.569951797,
+        "table_ntt_seconds": 0.062739974,
+        "selector_ntt_seconds": 3.318280043000001,
+        "matrix_seconds": 1.7461731539999987,
+        "inverse_crt_seconds": 0.031938335,
+        "conjugation_seconds": 0.433652443
+      }
+    }
+  ],
+  "peak_rss_kib": 1818840,
+  "fixed_23bit_slots_checked": 49152,
+  "unique_exact_ciphertext_coefficients_checked": 196608,
+  "maximum_full_factor_error": 1.2522476022539664e-09,
+  "bounded_loader_negative_controls": {
+    "all_rejected": true,
+    "controls": [
+      {
+        "control": "wrong-square-anchor",
+        "returncode": 2,
+        "rejection": "invalid retained square anchor"
+      },
+      {
+        "control": "truncated-suffix",
+        "returncode": 2,
+        "rejection": "invalid retained square anchor"
+      }
+    ]
+  },
+  "default_refresh_regression": {
+    "prefix_sha256": "fb28516def3cc36e2e88e3fa2ae8f3642a71b9210224dee7bd0c88f6b877c52b",
+    "previous_prefix_exact": true,
+    "retained_files_checked": 36,
+    "retained_files_unchanged": true,
+    "fresh_keys_generated": false,
+    "independent_fixed_23bit_passed": true,
+    "executable_sha256": "61c0657547257d0bea71d28d1ff2740aa107bf9c3b8283e44ab586dace258ece"
+  },
+  "independent_default_refresh_validation": {
+    "isolated_real_component_max_error": 1.220112788580252e-09,
+    "isolated_imaginary_component_max_error": 1.1158476920236637e-09,
+    "real_component_max_error": 1.220121892409054e-09,
+    "imaginary_component_max_error": 1.1158373669495347e-09,
+    "real_component_rms_error": 5.881981180619612e-10,
+    "imaginary_component_rms_error": 5.725259471456843e-10,
+    "function": "sigmoid",
+    "n": 512,
+    "prefix_bytes": 176225,
+    "phase_arithmetic": "integer scalar convolution",
+    "fresh_input_max_error": 8.603562567773713e-12,
+    "max_error": 1.3615935682817904e-09,
+    "rms_error": 8.208306684369779e-10,
+    "sparse_key_geometry_passed": true,
+    "evaluation_key_suffix_validated": false,
+    "retained_square_validated": false,
+    "scope": "Inspect auxiliary8 N512/N16384 prefixes using independent phase arithmetic.\n\nReads secrets only from a private diagnostic file. Outputs metrics, never key\nmaterial. Does not inspect evaluation-key suffixes or retained-square keys.\n",
+    "state_bytes": 176225,
+    "report_sha256": "b027569788f5a7b3c11c048ba15e1cc79a2f9f0b7db7a3c96c306bef0e396bb6",
+    "comparison_relative_tolerance": 1e-11,
+    "comparison_absolute_tolerance": 1e-11,
+    "fixed_23bit_refresh_passed": true
+  },
+  "component_qualification_only": true,
+  "complete_refresh_wide60_qualified": false,
+  "full_key_archive_suffix_phase_validation": false,
+  "loader_validation_scope": "Known retained auxiliary8 profile: prefix geometry, terminal square/DD metadata and cache-mode anchors, exact conjugation length, selected-key factor behavior. Unused payloads are skipped, not validated."
+}

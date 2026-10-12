@@ -1,0 +1,37 @@
+{
+  "utc": "2026-10-09T08:03:38.094211+00:00",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17685303296,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1831156,
+      "start_ticks": 217652148,
+      "rss_bytes": 13287890944,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 100238729216,
+  "required_bytes": 91433373696,
+  "auxiliary_build_or_small_cap_bytes": 4294967296,
+  "security_parent_plus_worker_cap_bytes": 4294967296,
+  "host_reserve_bytes": 10737418240,
+  "eligible": true,
+  "build_session": 38911,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "small_regression_session": 25811,
+  "security_session": 22837,
+  "source_sha256": "03b094ba5f50b6c39f141a45c4937adc5fb164559f0740f739906f69a7424e0d",
+  "executable_sha256": "78f4a04befffb56af429819cca417e3c2244042850b25c2e82ef6c8e365ad8ee",
+  "gcc_ipa_icf_disabled_compile_and_link": true,
+  "full_run_launched": true,
+  "small_regression_terminal": true,
+  "small_regression_actual_exit_code": 0,
+  "security_terminal": true,
+  "security_actual_exit_code": 0,
+  "full_session": 71054
+}

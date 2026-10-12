@@ -1,0 +1,178 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "scope": "N32768 head30/tail4 22-column exact default48/schedule-configured56bit scratch-decomposition factor controls. Not a full refresh or controlled performance comparison.",
+  "fresh_keys_generated": false,
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "memory_cap_bytes": 4294967296,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+  "baseline_evidence": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-parallel-secondary11-full-resumed-validation.json",
+  "baseline_evidence_sha256": "78554178fdf267cb0e0b643a3c752e939df60a70dfc1d8d72f70b73a4e344643",
+  "selected_before": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "prehash_reused_from_completed_baseline": true,
+  "mandatory_selected_post_hash": true,
+  "packed_live_identity": [
+    1910341,
+    225941687
+  ],
+  "mem_available_bytes": 113648926720,
+  "reserved_headroom_required_bytes": 66220986368,
+  "qualified_source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "13300b26c74f9fb7f3354f2763d22b689dba8605ed9c80caa3af2248546f062c",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "c741aaecf05cc374f5dc9dc8809f0d4b4da05f99fc21d27e4c954993119f25ae",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "small_qualification_sha256": "08721389d3b8a33a87938b4457734172e24e8345d1b74cfde45bdb66b534c845",
+  "default_width_changed": false,
+  "frozen_executable_sha256": "2527d0097c83cf9af95c615cd3b3ece842d53d57d9d31ed1ef530fbb0d95cccb",
+  "command": [
+    "/usr/bin/time",
+    "-v",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-schedule-factors-20261011/ckks_narrow_basis_factor_cache_checkpoint",
+    "--full-union-wide",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-schedule-factors-20261011/factors"
+  ],
+  "child_pid": 2008252,
+  "actual_exit_code": 0,
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 48,
+      "schedule_configured_width": false,
+      "selector_digits": 11,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 49.614739589,
+      "cache_setup_seconds": 1.58e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.7522674970000003,
+      "selector_ntt_seconds": 14.562006739000001,
+      "matrix_seconds": 27.664659606,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 41.485289546,
+      "cache_setup_seconds": 1.58e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.782716403,
+      "selector_ntt_seconds": 12.842248047999998,
+      "matrix_seconds": 22.693184263000006,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 48,
+      "schedule_configured_width": false,
+      "selector_digits": 11,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 47.060032807,
+      "cache_setup_seconds": 1.12e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.8126239199999996,
+      "selector_ntt_seconds": 14.606352260000003,
+      "matrix_seconds": 26.726306123,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 41.08189686,
+      "cache_setup_seconds": 1.12e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.7992758679999996,
+      "selector_ntt_seconds": 12.913360339999997,
+      "matrix_seconds": 22.432662452000006,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "cross_version_archive_identity": {
+    "head-reference.bin": true,
+    "tail-reference.bin": true
+  },
+  "slots_checked": 720896,
+  "selected_after": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "Complete checkpoint.bin and selected head30/tail4 files. Other selector files are not read by this component test.",
+  "columns": 22,
+  "controller_actual_exit_code": 0,
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-schedule-factors-20261011/run.py": "7037b025a288e4cc49713d57a9ed1dddfed2ec6582b71b6809769ad59b9f642f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-schedule-factors-20261011/build.log": "a23f2e5d728e91178fb48c0653b378612495cf12d720f45cc341ed964507d785",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-schedule-factors-20261011/factors.log": "95cc0ecb519ac4cceafd40cefd93fe105c9fd6bfedd7c0448ca9831d0a034a4b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-schedule-factors-20261011/factors.time": "0012ee2fb180894aa3b7459bafc314339c67f500ae279a1e1686ee84cf517ef5"
+  }
+}

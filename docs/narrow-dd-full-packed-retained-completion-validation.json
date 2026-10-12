@@ -1,0 +1,49 @@
+{
+  "observed_utc": "2026-10-11T10:33:01.161098+00:00",
+  "scope": "Completed frozen N16384 packed public-key reconstruction, standard refresh and retained-key replay; not Table7 functional timing or security qualification",
+  "terminal": true,
+  "all_checks_passed": true,
+  "controller_actual_exit_code": 0,
+  "reference_validation_sha256": "0d13a7f0d19207c6509003686c95930462055024e95cad64796382bca2aa3aa4",
+  "checkpoint_file_count": 38,
+  "checkpoint_files_unchanged": true,
+  "refresh_and_square_ciphertexts_identical": true,
+  "full_ring_independent_phase_validated": true,
+  "runs": [
+    {
+      "label": "retained",
+      "actual_exit_code": 0,
+      "independent_phase_metrics": {
+        "fresh_input_max_error": 4.911206931974722e-10,
+        "max_error": 4.6876697864815724e-06,
+        "rms_error": 1.1194193286553253e-06,
+        "post_refresh_product_max_error": 1.6635640541809998e-06
+      },
+      "key_setup_seconds": 98396.314540611,
+      "refresh_seconds": 900.433054735,
+      "packed_setup_seconds": 74.614845791,
+      "selector_reconstruction_seconds": 97118.641575441,
+      "refresh_keys_reused": false,
+      "post_refresh_square_key_reused": false
+    },
+    {
+      "label": "replay",
+      "actual_exit_code": 0,
+      "independent_phase_metrics": {
+        "fresh_input_max_error": 4.911206931974722e-10,
+        "max_error": 4.6876697864815724e-06,
+        "rms_error": 1.1194193286553253e-06,
+        "post_refresh_product_max_error": 1.6635640541809998e-06
+      },
+      "key_setup_seconds": 869.456227827,
+      "refresh_seconds": 875.334680983,
+      "packed_setup_seconds": 0,
+      "selector_reconstruction_seconds": 0,
+      "refresh_keys_reused": true,
+      "post_refresh_square_key_reused": true
+    }
+  ],
+  "raw_packed_key_archive_present": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false
+}

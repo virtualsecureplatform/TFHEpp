@@ -1,0 +1,29 @@
+{
+  "observed_at_utc": "2026-10-09T01:59:31.955136+00:00",
+  "scope": "Sparse proxy block-size limit 4096 sensitivity plus default dense control, executed sequentially with one worker",
+  "existing_processes": [
+    {
+      "pid": 1756575,
+      "state": "R (running)",
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json ",
+      "rss_bytes": 17687748608,
+      "virtual_limit_bytes": 68719476736,
+      "remaining_growth_bytes": 51031728128
+    },
+    {
+      "pid": 1800980,
+      "state": "R (running)",
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-file sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-original-style-capture-20261009-8hzeszxg/selectors TFHEpp/docs/narrow-dd-ll14-plain37-post-evaluation-capture.json ",
+      "rss_bytes": 14340632576,
+      "virtual_limit_bytes": 34359738368,
+      "remaining_growth_bytes": 20019105792
+    }
+  ],
+  "available_memory_bytes": 99322241024,
+  "host_reserve_bytes": 10737418240,
+  "test_total_virtual_reserve_bytes": 4294967296,
+  "per_process_virtual_limit_bytes": 2147483648,
+  "required_available_memory_bytes": 86083219456,
+  "launch_margin_bytes": 13239021568,
+  "launch_eligible": true
+}

@@ -1,0 +1,25 @@
+{
+  "observed_at_utc": "2026-10-10T17:26:24.714461+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Retained replay controller accepts qualified standalone executable and rejects wrong binary/failed original validation before launching evaluation. Not encrypted full-ring qualification.",
+  "controls": [
+    {
+      "control": "qualified-executable",
+      "actual_exit_code": 2,
+      "error": "original basis validation did not pass",
+      "evaluation_child_launched": false
+    },
+    {
+      "control": "wrong-executable",
+      "actual_exit_code": 2,
+      "error": "artifact differs from qualification: /tmp/ckks_narrow_matrix_pair_avx2_exact",
+      "evaluation_child_launched": false
+    }
+  ],
+  "tested_controller_sha256": "176427058e33776524913c416b3234daec8d28f4007b936ffeaba1e809102128",
+  "qualification_sha256": "f0b4653b8fe6d76fc3163577272401b4a7b31d7a7c8640afc47707698354f4ad",
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-profiled-controller-controls-20261010",
+  "fresh_keys_generated": false,
+  "goal_complete": false
+}

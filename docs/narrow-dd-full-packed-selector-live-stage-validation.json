@@ -1,0 +1,22 @@
+{
+  "observed_at_utc": "2026-10-10T05:53:17.556067+00:00",
+  "pid": 1756575,
+  "start_ticks": 211884551,
+  "source": "original running benchmark stdout",
+  "log_path": "/tmp/ckks-narrow-ll14-packed-bounded-file.log",
+  "selector_reconstruction_seconds_rounded_stdout": 137256.0,
+  "selector_max_error_rounded_stdout": 1.04922e-08,
+  "selector_tolerance": 9.5367431640625e-07,
+  "selector_stdout_error_within_tolerance": true,
+  "fresh_input_max_error_rounded_stdout": 5.15302e-10,
+  "observed_stage": "completed",
+  "extraction_and_reconstruction_returned": true,
+  "full_refresh_and_square_validated": true,
+  "actual_terminal_exit_code": 0,
+  "final_report_present": true,
+  "independent_decryption_qualification": false,
+  "security_qualified": false,
+  "s2c_max_error_rounded_stdout": 2.31186e-06,
+  "first_packed_factor_max_error_rounded_stdout": 1.50491e-08,
+  "completion_evidence": "narrow-dd-full-packed-completion-validation.json"
+}

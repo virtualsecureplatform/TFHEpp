@@ -1,0 +1,70 @@
+{
+  "scope": "Opt-in integer NTT Double Decomposition with64-bit primary/32-bit secondary digits and100-bit auxiliary scale. N16384 one-level encrypted multiplication at333/43; new public DD433 generated once under retained dense key, now saved and reused. All7 raw key rows independently checked against exact s^2 gadget; full integer result phases and rounding bounds checked. Generic multiplication API replay produces identical archived ciphertexts to qualified manual sequence. Synthetic N128 signed64 edge/convolution and malformed-cache controls separately recorded. No full FBS, security or paper timing claim; timings preliminary while reconstruction runs concurrently.",
+  "all_checks_passed": true,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent full-ring integer phases for retained input tensor, NTT64/32 DD433 relinearization with100-bit public auxiliary lift/rescale,333/86 unscaled product,290/43 one-level output, baseline FFT4/16 control, and all7 new public DD encryption rows against exact s^2 gadget. No private key generation; one new public DD433 key saved. Component arithmetic/noise validation only; timings measured concurrently with selector reconstruction and are preliminary.",
+    "n": 16384,
+    "metrics": {
+      "relin433_186_max_slot_error": 0.0,
+      "lifted_relin_max_integer_phase_error": 18124305023612446648665,
+      "unscaled333_86_max_slot_error": 0.0,
+      "after_auxiliary_max_integer_phase_error": 126,
+      "component_rounding_integer_phase_bound": 5433,
+      "output290_43_max_slot_error": 2.2908387278587564e-09,
+      "baseline290_43_max_slot_error": 2.3963080142748326e-09,
+      "raw_dd_noise_max_integer_abs": 17,
+      "raw_dd_noise_rms": 2.8269146359267667
+    },
+    "raw_dd_key_rows_checked": 7,
+    "raw_dd_key_phase_coefficients_checked": 114688,
+    "input_tensor_phase_coefficients_checked": 16384,
+    "result_phase_coefficients_checked": 65536,
+    "fixed_slot_error_gate": 1.1920928955078125e-07,
+    "all_checks_passed": true
+  },
+  "prototype_timing": {
+    "n": 16384,
+    "private_keys_generated": 0,
+    "new_public_dd_keys_generated": 1,
+    "public_dd_archive_reused": false,
+    "wide_key_log_q": 433,
+    "primary_bits": 64,
+    "secondary_bits": 32,
+    "auxiliary_log_scale": 100,
+    "ntt_cache_bytes": 102760448,
+    "ntt_preparation_seconds": 0.061804374,
+    "ntt_switch_seconds_per_call": 0.01423102925,
+    "baseline_fft_switch_seconds_per_call": 0.0846288095,
+    "switch_speedup": 5.94678065889015
+  },
+  "repository_replay_timing": {
+    "n": 16384,
+    "private_keys_generated": 0,
+    "new_public_dd_keys_generated": 0,
+    "public_dd_archive_reused": true,
+    "wide_key_log_q": 433,
+    "primary_bits": 64,
+    "secondary_bits": 32,
+    "auxiliary_log_scale": 100,
+    "ntt_cache_bytes": 102760448,
+    "ntt_preparation_seconds": 0.064666224,
+    "ntt_switch_seconds_per_call": 0.014363591625,
+    "baseline_fft_switch_seconds_per_call": 0.08064487925,
+    "switch_speedup": 5.6145343974856985
+  },
+  "generic_multiplication_archives_byte_identical": true,
+  "private_keys_generated": 0,
+  "public_dd_keys_generated_once": 1,
+  "keys_generated_on_repository_replay": 0,
+  "public_dd_key_artifact": {
+    "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/wide-dd-ntt-20261011/dd433-primary64.bin",
+    "bytes": 12845185,
+    "sha256": "78e146fa149609184199ed2b0f696140ed466b6375392cd1dd1925497af48f21"
+  },
+  "repository_header_sha256": "bc92c1b9cb101c8e393e1bdf20f7c420f2640096834dfdcb067ffd71e0b15b13",
+  "repository_test_sha256": "fa7a40a03dc0392304a4d0122f14c9c67753b2fdc8ec38ac3d3b797bfcfbbcc4",
+  "default_backend_unchanged": true
+}

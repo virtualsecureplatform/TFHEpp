@@ -1,0 +1,20 @@
+{
+  "n": 16384,
+  "function": "sigmoid",
+  "prepared_max_error": 2.7956730264122598e-09,
+  "phase_coefficients_checked": 16384,
+  "state_prefix_bytes_read": 1966177,
+  "prepared_bytes": 1835009,
+  "prepared_sha256": "8902bd8e56ccb4a3b44e7f2f69682c99f6eb88bb05406881d72fd80f2c7db732",
+  "sparse_key_geometry_passed": true,
+  "log_q": 48,
+  "log_delta": 44,
+  "fixed_23bit_prepared_phase_passed": true,
+  "phase_arithmetic": "exact integer negacyclic convolution",
+  "decoding": "coefficient real/imaginary halves; no canonical FFT",
+  "evaluation_keys_validated": false,
+  "full_refresh_validated": false,
+  "security_validated": false,
+  "report_sha256": "4e1b2474aff3736e65819e1174839681eaf8ed995a354ea864ef50c150ef93e6",
+  "comparison_absolute_tolerance": 1e-13
+}

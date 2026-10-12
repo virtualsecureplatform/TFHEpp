@@ -1,0 +1,68 @@
+{
+  "scope": "Observed retained N32768 same-key shared22-root all-function comparison. Includes plan reuse and AVX2 transforms, host/compiler/runtime variation; not an isolated controlled speedup or standalone Table7 latency.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "evaluator_actual_exit_code": 0,
+  "controller_actual_exit_code": 0,
+  "retained_file_integrity_pending": false,
+  "fresh_keys_generated": false,
+  "n": 32768,
+  "omp_threads": 4,
+  "shared_coefficient_prepare_seconds": 308.9953132,
+  "shared_root_generation_seconds": 1872.403787831,
+  "shared_preparation_and_roots_seconds": 2181.399101031,
+  "previous_shared_preparation_and_roots_seconds": 2873.073082945,
+  "reconstruction_seconds": {
+    "sigmoid": 3.201590653,
+    "gelu": 3.233490517,
+    "tanh": 11.701050307
+  },
+  "root_tile_stage_seconds": {
+    "input_and_factor_cache": 2.521498884,
+    "leaf_factors_and_inline_alignment": 1104.25988515,
+    "bounded_tail_alignment": 355.681614653,
+    "dd_cache_preparation": 11.766531441,
+    "dd_trees_and_beta": 398.079046664
+  },
+  "factor_stage_seconds": {
+    "selector_load": 142.935503522,
+    "table_ntt": 13.222647188000002,
+    "selector_ntt": 220.800189283,
+    "matrix": 623.8212204769999,
+    "inverse_crt": 14.953122647999995,
+    "conjugation": 86.763815818
+  },
+  "evaluator_wall_seconds": 2210.7,
+  "maximum_rss_kib": 17552128,
+  "all_three_output_archives_identical": true,
+  "independent_phase_checks_passed": true,
+  "independent_phase_metrics": {
+    "sigmoid": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 5.263058323660706e-09,
+      "post_refresh_product_max_error": 9.472418715013627e-09,
+      "square_normalization_max_error": 2.692538244943504e-09
+    },
+    "gelu": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 1.5541199769161976e-08,
+      "post_refresh_product_max_error": 1.262155845454321e-07,
+      "square_normalization_max_error": 2.15174226503516e-09
+    },
+    "tanh": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 2.0760775289823365e-08,
+      "post_refresh_product_max_error": 5.73710758396451e-08,
+      "square_normalization_max_error": 2.3742523121777745e-09
+    }
+  },
+  "full_refresh_qualified": true,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "observed_utc": "2026-10-11T12:41:45.949214+00:00",
+  "checkpoint_files_checked": 37,
+  "checkpoint_files_unchanged": true,
+  "validation_sha256": "367c652e52e6bda75788d8faea78f84754244bdb85231c5f73b3e5183737b592",
+  "completed_utc": "2026-10-11T12:54:17.380688+00:00",
+  "observed_shared_phase_reduction_fraction": 0.24074360865370326
+}

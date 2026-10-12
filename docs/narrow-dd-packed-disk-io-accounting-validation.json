@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-10T06:19:57.352842+00:00",
+  "scope": "Full packed storage geometry versus cumulative fixed-record write traffic; not encrypted accuracy or measured physical disk allocation.",
+  "n": 16384,
+  "groups": 36,
+  "records": 19044,
+  "record_bytes": 1835009,
+  "accumulator_maximum_logical_extent_bytes": 34945911396,
+  "final_selector_archives_bytes": 34945894980,
+  "combined_maximum_logical_extent_bytes": 69891806376,
+  "extraction_callbacks": 65536,
+  "cumulative_fixed_record_write_bytes": 120259149824,
+  "original_full_character_write_accounting_agrees": true,
+  "retained_n512_group_sizes_checked": 35,
+  "small_group_bytes": 974921,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "baa876f1d73f170a62117ce6fb27fb4aaf32866106243d7ae8e0d07dcc5e13c8",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "60ffcdbd18d5ea4057e6eb7348ce83c687816e46938bef014d01a9efa8217f8d"
+  },
+  "all_passed": true,
+  "security_validated": false,
+  "goal_complete": false
+}

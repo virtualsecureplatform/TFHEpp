@@ -1,0 +1,43 @@
+{
+  "observed_at_utc": "2026-10-10T11:07:44.022755+00:00",
+  "scope": "Explicit16-bit secondary auto FFT cache; N512 Q422 depths0/3/8 plus public primary-row modulus reduction toQ17/85/356/416, four saved encrypted indicators per case",
+  "actual_exit_code": 0,
+  "build_actual_exit_code": 0,
+  "fixture_sha256": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+  "fixture_unchanged": true,
+  "fresh_keys_generated": false,
+  "expected_ciphertexts_compared": 28,
+  "expected_coefficients_compared": 28672,
+  "production_default_secondary_bits": 4,
+  "tested_secondary_bits": 16,
+  "full_ring_validated": false,
+  "all_checks_passed": true,
+  "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-secondary-modulus-controls-20261010/test.log",
+  "source_sha256": {
+    "TFHEpp/include/ckks/prepared_auto.hpp": "4927bd0b611bf54b6c3feb42067ac521bb8232458bab7d73d073edc460b54783",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-secondary-modulus-controls-20261010/controls.cpp": "656d820b90672b2078a060d99f58a2039f76ea0109d3b8beefa96ddda07d753f"
+  },
+  "build_session": 87895,
+  "earlier_successful_build_session": 48532,
+  "initial_512MiB_compile_exit_code": 1,
+  "initial_compile_failure": "Compiler exhausted its explicit512MiBaddress-space cap; rebuilt under1GiBcap after memory budget verification",
+  "test_session": 68369,
+  "public_modulus_reduction_levels": [
+    17,
+    85,
+    356,
+    416
+  ],
+  "raw_reference_comparison_passed": true,
+  "original_q422_depths": [
+    0,
+    3,
+    8
+  ],
+  "production_test_added": "testPreparedAuto compares explicit16-bit FFT with its existing raw reference; broader target execution pending",
+  "limitations": [
+    "Projected ciphertexts test arithmetic equality, not low-modulus cryptographic accuracy",
+    "Full-ring explicit16-bit auto caches and production integration remain pending"
+  ],
+  "goal_complete": false
+}

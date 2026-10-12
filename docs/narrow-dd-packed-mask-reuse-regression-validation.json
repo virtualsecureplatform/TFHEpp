@@ -1,0 +1,12 @@
+{
+  "scope": "Current-source backward compatibility of extraction after adding independent packed reconstruction precision. Saved N512 packed public key and full reference terms; no key generation. First/last/nonaligned/empty/full intervals, exact ciphertext comparison, invalid ranges.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "terms_checked": 2120,
+  "invalid_ranges_rejected": 2,
+  "new_keys_generated": 0,
+  "header_sha256": "b8cc6294d5b5a613c4e136aea0094189a97290d12c78a72f37d42a85d26dcd5b",
+  "run_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-mask-reuse-regression-20261011/run.log"
+}

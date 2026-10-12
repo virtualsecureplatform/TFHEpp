@@ -1,0 +1,162 @@
+{
+  "observed_at_utc": "2026-10-10T10:07:56.424808+00:00",
+  "scope": "Adaptive exact auxiliary NTT selector limbs; N16384 retained aux8 final head/tail factor groups compared coefficient-for-coefficient with explicit16-bit baseline; focused independent coefficient-reference controls",
+  "implementation": "Default16 below N4096; larger rings select48 when its worst-case convolution fits two-prime CRT, otherwise32 or16; explicit DigitBits override supported",
+  "ciphertext_moduli_and_keys_unchanged": true,
+  "derived_ntt_caches_rebuilt": true,
+  "ntt_caches_serialized": false,
+  "digit_range_static_guard": true,
+  "worst_case_bound_static_guard": true,
+  "runtime_table_convolution_bound_guard": true,
+  "full_build_session": 29519,
+  "full_build_actual_exit_code": 0,
+  "full_test_session": 90141,
+  "full_test_actual_exit_code": 0,
+  "full_test_terminal": true,
+  "retained_files_unchanged": true,
+  "fresh_full_keys_generated": false,
+  "retained_files_checked": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin": {
+      "bytes": 6449139279,
+      "sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/head-30.bin": {
+      "bytes": 970719305,
+      "sha256": "449d2d5b6cae767497839c3c1e77388b4d344ca11c3dea5074aca22e77fe064f"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/tail-4.bin": {
+      "bytes": 970719305,
+      "sha256": "a2177535add9da1f678470abd4231b248a6b2658bbd1283d78c263273e9a3f81"
+    }
+  },
+  "cases": [
+    {
+      "tail": false,
+      "group": 30,
+      "columns": 12,
+      "slots_checked": 98304,
+      "max_error": 1.2863243180697105e-09,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true,
+      "ntt_digit_bits": 48,
+      "ntt_digits": 9,
+      "baseline16_ciphertexts_exact": true,
+      "baseline16_timings": {
+        "selector_ntt_seconds": 7.869519975999999,
+        "matrix_seconds": 12.122144369,
+        "inverse_crt_seconds": 0.410699197,
+        "conjugation_seconds": 2.275037237
+      },
+      "timings": {
+        "selector_load_seconds": 0.344979565,
+        "table_ntt_seconds": 0.146072879,
+        "selector_ntt_seconds": 2.826258049,
+        "matrix_seconds": 4.156551123,
+        "inverse_crt_seconds": 0.141598439,
+        "conjugation_seconds": 2.275503913
+      }
+    },
+    {
+      "tail": true,
+      "group": 4,
+      "columns": 12,
+      "slots_checked": 98304,
+      "max_error": 1.3537631754169615e-09,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true,
+      "ntt_digit_bits": 48,
+      "ntt_digits": 9,
+      "baseline16_ciphertexts_exact": true,
+      "baseline16_timings": {
+        "selector_ntt_seconds": 7.723584315999999,
+        "matrix_seconds": 11.745069722,
+        "inverse_crt_seconds": 0.380736092,
+        "conjugation_seconds": 2.348517591
+      },
+      "timings": {
+        "selector_load_seconds": 0.334501951,
+        "table_ntt_seconds": 0.141356444,
+        "selector_ntt_seconds": 2.8205597370000004,
+        "matrix_seconds": 4.092918086999999,
+        "inverse_crt_seconds": 0.146517727,
+        "conjugation_seconds": 2.528291986
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "tail": false,
+      "group": 30,
+      "matrix_ratio16_to48": 2.916394869275857,
+      "selector_ntt_ratio16_to48": 2.7844308055255005
+    },
+    {
+      "tail": true,
+      "group": 4,
+      "matrix_ratio16_to48": 2.8696078133850036,
+      "selector_ntt_ratio16_to48": 2.7383161628106296
+    }
+  ],
+  "baseline16_factor_coefficients_compared": 786432,
+  "chunk_comparison_factor_coefficients_compared": 786432,
+  "single_column_factor_coefficients_compared": 196608,
+  "decoded_slots_checked": 196608,
+  "fixed23_bit_accuracy_passed": true,
+  "focused_controls_build_session": 92920,
+  "focused_controls_build_actual_exit_code": 0,
+  "focused_controls_test_session": 61591,
+  "focused_controls_actual_exit_code": 0,
+  "focused_controls_source": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/wide-ntt-factor-20261010/controls.cpp",
+  "focused_controls_source_sha256": "14b78c44aa135509ab735abb1f17e92aba9707d20bd8074e141043cf246cd6f0",
+  "focused_controls_cases": "N512 plain18/plain40, default16 and forced48, columns1/3, chunks1/3/9/17/32, coefficient-reference equality; static N65536 plain50 h4 auto fallback32 with48 rejected by range screen",
+  "source_sha256": {
+    "include/ckks/narrow_bootstrapping.hpp": "0a0525810a7f617518f8088970c39dde66fb100f7cd463c1c21f090adb5d2652",
+    "test/ckks/ckks_narrow_factor_checkpoint.cpp": "2de85ede2a28940489d4c981fccaa14de41fbfedca5be40693357f782313c76e",
+    "test/ckks/ckks_narrow_bootstrapping.cpp": "97b8bd9f26adb7f90e7be86a93a59b3ae25ffcd8f1806242c1129b6f5f30f6ff"
+  },
+  "launch": {
+    "observed_at_utc": "2026-10-10T10:02:29.555285+00:00",
+    "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/wide-ntt-factor-20261010",
+    "time_pid": 1923008,
+    "exe_sha256": "237029ece8838959615ee28e2daa4ed8894bb26d62a7f0640c710688916dc828",
+    "available_memory_bytes": 114026856448,
+    "required_available_memory_bytes": 105226698752,
+    "child_address_space_limit_bytes": 25769803776,
+    "fresh_keys_generated": false,
+    "terminal": true,
+    "build_actual_exit_code": 0,
+    "actual_exit_code": 0,
+    "retained_files_unchanged": true
+  },
+  "artifacts": {
+    "test.log": {
+      "path": "TFHEpp/docs/narrow-dd-wide-ntt-test.log",
+      "sha256": "8553e76356ff64b7a344842ad0557edb33ba99af6bfa295efa4d1b34dcc5ca35"
+    },
+    "time.log": {
+      "path": "TFHEpp/docs/narrow-dd-wide-ntt-time.log",
+      "sha256": "3bf85d150c7ef53be507efaaddefd56e6ee9cd23315198c261b6d8c92128e8ca"
+    },
+    "controls.log": {
+      "path": "TFHEpp/docs/narrow-dd-wide-ntt-controls.log",
+      "sha256": "b112b09655130bb80e19f2550a94b33bbcb423ddc3a4f8e633eacb8a7aa3635e"
+    },
+    "controls-time.log": {
+      "path": "TFHEpp/docs/narrow-dd-wide-ntt-controls-time.log",
+      "sha256": "124f0a584fd269518a28c8507ccab53eace2b4bf1628c2ac9f9bf0f10a68969c"
+    }
+  },
+  "full_ring_factor_validation_passed": true,
+  "whole_refresh_performance_measured": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "goal_complete": false,
+  "limitations": [
+    "Only final head/tail groups, not full current-source refresh",
+    "Timing ratios are paired sequential stage observations under concurrent CPU load",
+    "Q385 plain37 aux8 runtime fixture; Q379 plain34 has proved bounds but no new full encrypted runtime result",
+    "Live full packed checkpoint remains pinned to earlier16-bit implementation"
+  ]
+}

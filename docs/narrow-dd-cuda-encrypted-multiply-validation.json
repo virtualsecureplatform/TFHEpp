@@ -1,0 +1,121 @@
+{
+  "observed_at_utc": "2026-10-08T19:59:59.922399+00:00",
+  "scope": "Generated encrypted DD keys and encrypted inputs through joined portable host arithmetic, compared word-for-word with actual CPU multiplication and independently decrypted coefficient phase. N16/noFFT only; CUDA graph execution, device lifecycle/full refresh/performance/security remain unverified.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_cuda_setup.cpp": "bc01f2d751c45b0f118c0a612dd51f2b8dac0cd9af03b3258e3fbedbbd4c6393",
+    "src/ckks/cuda/CMakeLists.txt": "07a6151455b5769a6afa3eb0a96c0bbb8e6563e848970cd6576572aabf8eef15",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/ckks/narrow_cuda_setup.hpp": "575cd7dcd966f57faa3a00dea9cd651281f16bc560cedbccd04a6d95df6ca23e",
+    "include/ckks/narrow_cuda.hpp": "d60fe2228d51e4a825e578fa23cfc6448cc2a794c58444f6103f284841ff8526",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "561db59a5490bca2a6d4141b1e4ce33569b1039d9859b6578793f5dea13b006d",
+    "src/ckks/narrow_cuda.cu": "bdf2958dad1ca65a6986c9ac3ad8f30444ded80ff785eb551ab63fe0ca1f164c"
+  },
+  "generated_key_api": "makeCKKSDDRelinKey",
+  "encrypted_input_api": "ckksEncrypt",
+  "actual_cpu_apis": [
+    "CKKSMult",
+    "CKKSMultRelinThenRescale"
+  ],
+  "gaussian_sigma_floor": 3.2,
+  "sigma_floor_checked_at_input_and_key_levels": true,
+  "points": 16,
+  "columns": [
+    1,
+    3
+  ],
+  "prime_modes": [
+    "first auxiliary prime",
+    "second auxiliary prime",
+    "two auxiliary primes"
+  ],
+  "stage_prime_choice": "Same tensor and DD choice per comparison",
+  "encrypted_case_count": 24,
+  "generated_dd_keys_per_run": 24,
+  "actual_input_encryptions_per_run": 24,
+  "fresh_input_positions_checked_including_squaring_aliases": 32,
+  "decrypted_output_ciphertexts_checked": 48,
+  "decrypted_output_coefficients_checked": 768,
+  "output_mask_body_coefficients_compared": 1536,
+  "native_output_words_compared": 16128,
+  "plaintext_phase_gate": 3.814697265625e-06,
+  "plaintext_oracle": "Independent exact native body-minus-mask*secret coefficient decryption; known plaintext negacyclic polynomial products. All decoded values/errors checked finite.",
+  "profiles": [
+    {
+      "native_bits": 448,
+      "lhs_q": 217,
+      "rhs_q": 379,
+      "input_delta": 37,
+      "drop": 37,
+      "dd_bg": 4,
+      "dd_bbar": 4,
+      "key_levels": [
+        217,
+        180
+      ],
+      "orders": [
+        "before",
+        "after"
+      ],
+      "square": false
+    },
+    {
+      "native_bits": 896,
+      "lhs_q": 842,
+      "rhs_q": 842,
+      "input_delta": 49,
+      "drop": 49,
+      "dd_bg": 18,
+      "dd_bbar": 8,
+      "key_levels": [
+        842,
+        793
+      ],
+      "orders": [
+        "before",
+        "after"
+      ],
+      "square": true
+    }
+  ],
+  "metrics": {
+    "cmake": {
+      "fresh_max_error": 5.093170329928398e-11,
+      "product_max_error": 3.369684264953321e-08
+    },
+    "ubsan": {
+      "fresh_max_error": 7.275957614183426e-11,
+      "product_max_error": 3.16368673480838e-08
+    }
+  },
+  "cmake_final_build_exit_code": 0,
+  "cmake_final_build_session": 70427,
+  "cmake_final_build_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-metrics-build.log",
+  "cmake_test_actual_exit_code": 0,
+  "cmake_test_session": 40227,
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-cmake-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-cmake-test.stderr",
+  "host_ubsan_cuda_object_build_session": 12269,
+  "host_ubsan_cuda_object_build_exit_code": 0,
+  "host_ubsan_initial_build_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-host-ubsan-build.log",
+  "host_ubsan_final_cpp_build_session": 76961,
+  "host_ubsan_final_cpp_build_exit_code": 0,
+  "host_ubsan_final_cpp_build_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-host-ubsan-metrics-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-encrypted-multiply-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 0,
+  "host_ubsan_test_session": 12936,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "C++ inline encrypted CPU keygen/encryption/multiplication/phase and portable arithmetic plus CUDA source host routines instrumented. Linked BLAKE3 generator and CUDA runtime uninstrumented; device kernels uninstrumented/unexecuted. N16 avoids FFT backend.",
+  "all_prior_native_setup_and_tensor_and_synthetic_joined_checks_rechecked": true,
+  "host_encrypted_portable_multiply_validated": true,
+  "joined_cuda_graph_execution_validated": false,
+  "encrypted_gpu_multiply_validated": false,
+  "full_profile_fft_multiplication_compared": false,
+  "typed_native_multiply_device_owner_implemented": false,
+  "encrypted_dd_tree_connected": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

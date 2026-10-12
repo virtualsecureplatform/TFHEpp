@@ -1,0 +1,18 @@
+{
+  "scope": "Exclusive root-tile controller timing validation: three real retained N512 report rows pass; six malformed scope/time controls reject. No encrypted evaluation or new keys.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "actual_exit_code": 0,
+  "updated_utc": "2026-10-11T03:07:11.109238+00:00",
+  "valid_real_rows": 3,
+  "rejected_controls": {
+    "missing_stage": "invalid exclusive root-tile timings: sigmoid",
+    "negative_time": "invalid exclusive root-tile timings: sigmoid",
+    "nan_time": "invalid exclusive root-tile timings: sigmoid",
+    "overlapping_total": "root-tile timings exceed root generation: sigmoid",
+    "reused_work": "reused roots report new tile work: gelu",
+    "factor_outside_leaf": "factor timings exceed leaf scope: sigmoid"
+  },
+  "controller_sha256": "dc6a31fef32474feb6967ef2b592674bd65ec10ec342925dff6d578722af43a1",
+  "fresh_keys_generated": false
+}

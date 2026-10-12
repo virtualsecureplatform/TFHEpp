@@ -1,0 +1,117 @@
+{
+  "observed_at_utc": "2026-10-09T05:44:51.553955+00:00",
+  "scope": "Candidate sparse64 vs actual sparse76; same exact events, retained layout; bounded grid, not security qualification",
+  "source": "Parameter-Selection/python/estimates/narrow_ckks_block_ring_joint_decode.py",
+  "source_sha256": "7c6c6bacd218bfcfb41074d9ec9e2901f58e8664a3cf4984c11afd64004d7259",
+  "session": 77063,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "stderr_bytes": 0,
+  "runs": [
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_q64_weight9.json",
+      "sha256": "26b42af330a054d9249a98cbb81a6f071fa986ea8b965fe7f34236058985dfb1",
+      "weight": 9,
+      "finite_costs": 924,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 145.8410969774754,
+          "independent_decoder": 143.64791945363032,
+          "optimistic_joint_bound": 143.55584077026498,
+          "common_decoder_iid95": 145.6974781605582,
+          "independent_decoder_iid95": 143.6152703118533,
+          "optimistic_joint_bound_iid95": 143.55584077026498
+        },
+        "MATZOV": {
+          "common_decoder": 145.13603138456725,
+          "independent_decoder": 142.9428538607222,
+          "optimistic_joint_bound": 142.85077517735684,
+          "common_decoder_iid95": 144.99241256765006,
+          "independent_decoder_iid95": 142.91020471894515,
+          "optimistic_joint_bound_iid95": 142.85077517735684
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_q64_weight10.json",
+      "sha256": "e0cf6bd05e39825920fbdbe1fd375f64518c3d2e623d84453b4938c2ec19603f",
+      "weight": 10,
+      "finite_costs": 924,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 140.9653925256949,
+          "independent_decoder": 138.6604377099178,
+          "optimistic_joint_bound": 138.5441900797898,
+          "common_decoder_iid95": 140.80832861352613,
+          "independent_decoder_iid95": 138.62724329911046,
+          "optimistic_joint_bound_iid95": 138.5441900797898
+        },
+        "MATZOV": {
+          "common_decoder": 140.2651969543635,
+          "independent_decoder": 137.96024213858638,
+          "optimistic_joint_bound": 137.8439945084584,
+          "common_decoder_iid95": 140.1081330421947,
+          "independent_decoder_iid95": 137.92704772777904,
+          "optimistic_joint_bound_iid95": 137.8439945084584
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_q64_weight11.json",
+      "sha256": "96d26c15fb073ff1b7aa60035c40aa8e630cb29e88b987671520c3b659099940",
+      "weight": 11,
+      "finite_costs": 924,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 136.77634734967,
+          "independent_decoder": 134.3690085813639,
+          "optimistic_joint_bound": 134.17636101198627,
+          "common_decoder_iid95": 136.59978259927092,
+          "independent_decoder_iid95": 134.3351227618072,
+          "optimistic_joint_bound_iid95": 134.17636101198627
+        },
+        "MATZOV": {
+          "common_decoder": 136.00214249790932,
+          "independent_decoder": 133.86196683078524,
+          "optimistic_joint_bound": 133.40215616022556,
+          "common_decoder_iid95": 135.82557774751024,
+          "independent_decoder_iid95": 133.82808101122856,
+          "optimistic_joint_bound_iid95": 133.40215616022556
+        }
+      }
+    },
+    {
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_q64_weight12.json",
+      "sha256": "b84dac89540fe1146a3cfd86065c6d7ea9832dd940debcb0cdba39d7623926d2",
+      "weight": 12,
+      "finite_costs": 924,
+      "best": {
+        "BDGL16": {
+          "common_decoder": 134.25453328619972,
+          "independent_decoder": 132.32032676208235,
+          "optimistic_joint_bound": 131.5816356816965,
+          "common_decoder_iid95": 134.05120979214735,
+          "independent_decoder_iid95": 132.27424010157915,
+          "optimistic_joint_bound_iid95": 131.4539155226227
+        },
+        "MATZOV": {
+          "common_decoder": 133.73062100170338,
+          "independent_decoder": 132.00753799961385,
+          "optimistic_joint_bound": 131.04549704389316,
+          "common_decoder_iid95": 133.5272975080383,
+          "independent_decoder_iid95": 131.94433875798623,
+          "optimistic_joint_bound_iid95": 130.92883608227578
+        }
+      }
+    }
+  ],
+  "security_validated": false,
+  "cpp_candidate_validation_pending": true,
+  "weight12_and_default_regression_session": 4251,
+  "weight12_and_default_regression_terminal": true,
+  "weight12_and_default_regression_actual_exit_code": 0,
+  "default_q76_cost_comparisons_exactly_preserved": 12,
+  "lowest_searched_optimistic_dkw95_endpoint_bits": 130.92883608227578,
+  "finite_cost_evaluations": 3696,
+  "completion_observed_at_utc": "2026-10-09T05:48:29.639331+00:00"
+}

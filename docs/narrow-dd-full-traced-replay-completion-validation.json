@@ -1,0 +1,33 @@
+{
+  "observed_at_utc": "2026-10-08T21:26:35.387684+00:00",
+  "scope": "Full N16384 retained PASS sigmoid checkpoint exact same input/secrets/setup keys/public selectors replay with root tracing. Original failure cases remain unreproduced (their keys were not saved).",
+  "source_report": "narrow-dd-ll14-plain37-checkpoint-traced-replay.json",
+  "original_report": "narrow-dd-ll14-plain37-checkpoint.json",
+  "actual_exit_code": 0,
+  "exit_evidence": "Original PID1776509 now terminal; /usr/bin/time log exit0 with no termination signal, final report and public sidecar present.",
+  "root_diagnostics_count": 24,
+  "root_max_error_from_log": 1.90303e-09,
+  "refresh_output_bitwise_equal": true,
+  "public_refresh_ciphertext_sha256": "394e4d31cff7be3c891da361346f54809f2e053525fe1bd53cc233f765361bcf",
+  "public_refresh_ciphertext_bytes": 1835009,
+  "metrics": {
+    "max_error": 3.9497631131273335e-09,
+    "rms_error": 1.4121876612855677e-09,
+    "evaluation_max_error": 3.681368232984773e-09,
+    "post_refresh_product_max_error": 9.785643921153364e-09,
+    "post_refresh_product_evaluation_max_error": 9.212757328186325e-09,
+    "refresh_seconds": 3882.679350035,
+    "key_setup_seconds": 27.481810251
+  },
+  "refresh_metrics_equal_to_untraced_original": true,
+  "post_refresh_product_scope": "Refresh sidecar saved before fresh product-key generation; product error can differ due to that later new key.",
+  "elapsed_wall": "1:14:32",
+  "maximum_rss_kib": 14084832,
+  "checkpoint_private_directory_retained": true,
+  "original_sigmoid_failure_resolved": false,
+  "security_qualified": false,
+  "independent_importer_exit_code": 0,
+  "independent_importer_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_plain37_traced_checkpoint_validation.json",
+  "independent_importer_log": "/tmp/ckks-narrow-plain37-traced-checkpoint-import.log",
+  "imported_all_three_functions_passed_for_this_report_set": true
+}

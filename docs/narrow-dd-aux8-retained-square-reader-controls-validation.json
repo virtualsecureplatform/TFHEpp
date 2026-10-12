@@ -1,0 +1,28 @@
+{
+  "scope": "Independent square reader zero-ciphertext algebra control and malformed archive rejection; no retained multiplication evaluated",
+  "zero_ciphertext_target_identity_passed": true,
+  "controls": [
+    {
+      "control": "truncated",
+      "rejected": true,
+      "error": "truncated square diagnostic input"
+    },
+    {
+      "control": "trailing",
+      "rejected": true,
+      "error": "unexpected square ciphertext suffix"
+    },
+    {
+      "control": "endian",
+      "rejected": true,
+      "error": "invalid portable archive byte order"
+    },
+    {
+      "control": "wrong-profile",
+      "rejected": true,
+      "error": "unsupported retained square profile"
+    }
+  ],
+  "passed": true,
+  "actual_retained_square_phase_validated": false
+}

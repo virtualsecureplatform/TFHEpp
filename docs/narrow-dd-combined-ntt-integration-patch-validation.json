@@ -1,0 +1,22 @@
+{
+  "updated_utc": "2026-10-12T00:25:02.151588+00:00",
+  "scope": "Prepared combined CPU integration patch from the isolated headers. Dry-run only; production unchanged. Full combined real/complex qualification pending.",
+  "dry_run_actual_exit_code": 0,
+  "patch_sha256": "c565e97ee1bffac55fe99a1dde3f39d7fdc7b8af68a26b2ba4609f2d897674c1",
+  "production_before_sha256": {
+    "narrow_bootstrapping.hpp": "b8cc6294d5b5a613c4e136aea0094189a97290d12c78a72f37d42a85d26dcd5b",
+    "narrow_selector_projection.hpp": "37ca3c8bbb9815e8321e3acbc03daf7479f924d3bac3cf7d6292e615d6078309",
+    "narrow_dd_ntt.hpp": null,
+    "narrow_auto_ntt.hpp": null,
+    "public_auto_ntt.hpp": null
+  },
+  "isolated_after_sha256": {
+    "narrow_bootstrapping.hpp": "b0d7644937d1d585cf385463aa72eb3dec890ec40e3d44115f7bba5bea54feda",
+    "narrow_selector_projection.hpp": "c6cdb7d4c5b7cbae0216fc6bb790a746f68d324cc1473bbfd17d33707b5f0420",
+    "narrow_dd_ntt.hpp": "f5bf7818e43c4d5bcc7eefc31c0a54920078ca7be21a858c8b81a23b89e06cde",
+    "narrow_auto_ntt.hpp": "0ffad925553faa230e6e68bfe12d0e49152a8c2add3945f959bf3e26c29849ea",
+    "public_auto_ntt.hpp": "84790360f1e0818b306382a909cf1d67ab366266bfc82629ed2bfed51eca44a2"
+  },
+  "production_unchanged": true,
+  "production_promoted": false
+}

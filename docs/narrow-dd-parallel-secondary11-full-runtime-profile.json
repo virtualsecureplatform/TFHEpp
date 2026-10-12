@@ -1,0 +1,57 @@
+{
+  "observed_at_utc": "2026-10-11T06:06:32.690752+00:00",
+  "scope": "Measured completed frozen parallel secondary11 all-function retained replay; parent retained-file hashes pending at capture.",
+  "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-parallel-secondary11-full-resumed-20261011/replay.json",
+  "report_sha256": "ca7cdb7da8f624b4b5e51c108bd0fe64c068216c67e77504e6fe8d720ba8a3d7",
+  "parent_evidence": "TFHEpp/docs/narrow-dd-parallel-secondary11-full-resumed-validation.json",
+  "parent_evidence_sha256_at_capture": "84a97bdf24e2174aa5bcac455719bfde73b678f7455d3b150a1c46f2a7791d63",
+  "replay_actual_exit_code": 0,
+  "all_three_independent_phase_checks_passed": true,
+  "retained_file_post_hash_complete_at_capture": false,
+  "setup_generation_count": 0,
+  "newly_evaluated_roots": [
+    22,
+    0,
+    0
+  ],
+  "reused_roots": [
+    0,
+    8,
+    18
+  ],
+  "root_generation_seconds": 3462.141862928,
+  "shared_coefficient_prepare_seconds": 417.008431295,
+  "root_tile_stage_seconds": {
+    "input_and_factor_cache": 2.88035185,
+    "leaf_factors_and_inline_alignment": 2495.842449558,
+    "bounded_tail_alignment": 471.499535834,
+    "dd_cache_preparation": 12.131869684,
+    "dd_trees_and_beta": 479.700544614
+  },
+  "root_tile_stage_sum_seconds": 3462.0547515400003,
+  "root_unattributed_seconds": 0.087111387999812,
+  "factor_stage_seconds": {
+    "selector_load": 901.1425943739999,
+    "table_ntt": 15.800132001,
+    "selector_ntt": 481.3361717249999,
+    "matrix": 962.0604961679998,
+    "inverse_crt": 26.185667816000002,
+    "conjugation": 107.54686997900001
+  },
+  "factor_stages_nested_in": "leaf_factors_and_inline_alignment",
+  "factor_stage_sum_seconds": 2494.0719320629996,
+  "function_reconstruction_seconds": {
+    "sigmoid": 3.654465726,
+    "gelu": 3.686160093,
+    "tanh": 13.020627679
+  },
+  "independent_max_refresh_error": {
+    "sigmoid": 5.263058323660706e-09,
+    "gelu": 1.5541199769161976e-08,
+    "tanh": 2.0760775289823365e-08
+  },
+  "standalone_paper_latency_comparable": false,
+  "controlled_speedup_established": false,
+  "current_source_requalified": false,
+  "security_validated": false
+}

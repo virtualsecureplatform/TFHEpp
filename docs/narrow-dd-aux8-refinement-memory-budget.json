@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-09T07:40:37.735240+00:00",
+  "scope": "q56 single-mask scalar-GSA local refinement; no C++ changes",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17783480320,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1831156,
+      "start_ticks": 217652148,
+      "rss_bytes": 11482951680,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 102534316032,
+  "required_bytes": 86697684992,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_cap_bytes": 2147483648,
+  "eligible": true
+}

@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-09T23:49:48.899296+00:00",
+  "available_bytes": 115079430144,
+  "required_bytes": 62614061056,
+  "child_limit_bytes": 134217728,
+  "packed_pid": 1756575,
+  "packed_start_ticks": 211884551,
+  "packed_cap_bytes": 68719476736,
+  "packed_rss_bytes": 16977051648,
+  "host_reserve_bytes": 10737418240,
+  "eligible": true
+}

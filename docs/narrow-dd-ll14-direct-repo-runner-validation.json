@@ -1,0 +1,16 @@
+{
+  "scope": "Repository direct expanded selector runner has identical tested body after equivalent benchmark-header include normalization; compiled diagnostic passed independent all-function accuracy and remaining-level tests. Final retained-artifact integrity check passed in original controller. No claim of coefficient-packed high-precision or paper performance/security qualification.",
+  "source_body_identity_passed": true,
+  "repository_runner": "TFHEpp/test/ckks/ckks_narrow_ll14_retained_fbs.cpp",
+  "repository_sha256": "7aed1718c3df180ba39c1a1d6c9a589075babb97ccdab7bf9922f0a87e965f86",
+  "compiled_diagnostic_sha256": "cf7a6fad151f20269663fb24c5f1cfe45c7553cbfc1f9a36f369a207f0e99f90",
+  "functional_evidence": "narrow-dd-ll14-direct-fbs-validation.json",
+  "functions_accuracy_and_remaining_level_passed": [
+    "gelu",
+    "tanh",
+    "sigmoid"
+  ],
+  "cli": "checkpoint-directory dd-chain-file switch56-file sigmoid|gelu|tanh output-directory direct-selector-directory",
+  "retained_artifact_integrity_passed": true,
+  "functional_controller_terminal": true
+}

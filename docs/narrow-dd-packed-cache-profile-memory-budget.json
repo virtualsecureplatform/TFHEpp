@@ -1,0 +1,38 @@
+{
+  "utc": "2026-10-09T07:09:07.933118+00:00",
+  "scope": "Sequential same-key N512 Q422 cache depths2/3/4, exact ordered term comparison",
+  "private_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-depths-20261009-l0em3r_0",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17683296256,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1823852,
+      "start_ticks": 217158705,
+      "rss_bytes": 13445554176,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 100369760256,
+  "required_bytes": 86982750208,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_cap_bytes": 4294967296,
+  "threads": 2,
+  "eligible": true,
+  "source_sha256": "4431e4205c068bddd24bb34dbde9c1686df4acd11eb72a4e1690ba946571fecd",
+  "build_session": 8563,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "test_session": 52217,
+  "test_terminal": true,
+  "executable_sha256": "479d99ebe2dd7c6b6e4001273c461004be5c6b6ee2813cdba80d9381016292fc",
+  "study_terminal": true,
+  "study_actual_exit_code": 0,
+  "guard_build_session": 34718,
+  "guard_build_terminal": true,
+  "guard_build_actual_exit_code": 0,
+  "test_actual_exit_code": 0
+}

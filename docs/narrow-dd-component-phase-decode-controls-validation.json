@@ -1,0 +1,83 @@
+{
+  "cases": [
+    {
+      "n": 16,
+      "direct": true,
+      "large_imaginary": true,
+      "small_component_max_error": 1.1102230246251565e-16,
+      "large_component_max_relative_error": 2.220446049250313e-16
+    },
+    {
+      "n": 16,
+      "direct": false,
+      "large_imaginary": true,
+      "small_component_max_error": 1.1102230246251565e-16,
+      "large_component_max_relative_error": 1.1102230246251565e-16
+    },
+    {
+      "n": 16,
+      "direct": true,
+      "large_imaginary": false,
+      "small_component_max_error": 1.3877787807814457e-17,
+      "large_component_max_relative_error": 2.220446049250313e-16
+    },
+    {
+      "n": 16,
+      "direct": false,
+      "large_imaginary": false,
+      "small_component_max_error": 6.938893903907228e-18,
+      "large_component_max_relative_error": 1.1102230246251565e-16
+    },
+    {
+      "n": 512,
+      "direct": true,
+      "large_imaginary": true,
+      "small_component_max_error": 1.8984813721090177e-14,
+      "large_component_max_relative_error": 7.571721027943568e-14
+    },
+    {
+      "n": 512,
+      "direct": false,
+      "large_imaginary": true,
+      "small_component_max_error": 1.1102230246251565e-15,
+      "large_component_max_relative_error": 4.440892098500626e-15
+    },
+    {
+      "n": 512,
+      "direct": true,
+      "large_imaginary": false,
+      "small_component_max_error": 4.73232564246473e-15,
+      "large_component_max_relative_error": 7.571721027943568e-14
+    },
+    {
+      "n": 512,
+      "direct": false,
+      "large_imaginary": false,
+      "small_component_max_error": 2.7755575615628914e-16,
+      "large_component_max_relative_error": 4.440892098500626e-15
+    },
+    {
+      "n": 16384,
+      "direct": false,
+      "large_imaginary": true,
+      "small_component_max_error": 3.985700658404312e-14,
+      "large_component_max_relative_error": 1.5920598173124745e-13
+    },
+    {
+      "n": 16384,
+      "direct": false,
+      "large_imaginary": false,
+      "small_component_max_error": 9.950373858202965e-15,
+      "large_component_max_relative_error": 1.5920598173124745e-13
+    }
+  ],
+  "all_passed": true,
+  "invalid_dimensions_rejected": [
+    0,
+    2,
+    3,
+    6
+  ],
+  "scope": "Analytical constant and cosine phase polynomials with extreme component scale separation; not encrypted refresh accuracy.",
+  "security_validated": false
+}

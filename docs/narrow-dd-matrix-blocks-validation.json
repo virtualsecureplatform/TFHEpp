@@ -1,0 +1,347 @@
+{
+  "observed_at_utc": "2026-10-10T18:22:48.257747+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "256-point selector matrix blocking against unblocked traversal, plus independent N512 modular oracle and retained N512 all-function raw/cached ciphertext identity. Full current-source N32768 factors/refresh remain pending.",
+  "matrix_trials": [
+    {
+      "n": 512,
+      "prime": 0,
+      "columns": 5,
+      "selector_rows": 3,
+      "tile": 512,
+      "seconds": 0.000385103,
+      "exact_coefficients": 15360,
+      "passed": true
+    },
+    {
+      "n": 512,
+      "prime": 0,
+      "columns": 5,
+      "selector_rows": 3,
+      "tile": 37,
+      "seconds": 0.000107295,
+      "exact_coefficients": 15360,
+      "passed": true
+    },
+    {
+      "n": 512,
+      "prime": 0,
+      "columns": 5,
+      "selector_rows": 3,
+      "tile": 37,
+      "seconds": 0.000102427,
+      "exact_coefficients": 15360,
+      "passed": true
+    },
+    {
+      "n": 512,
+      "prime": 0,
+      "columns": 5,
+      "selector_rows": 3,
+      "tile": 512,
+      "seconds": 0.000102109,
+      "exact_coefficients": 15360,
+      "passed": true
+    },
+    {
+      "n": 512,
+      "prime": 1,
+      "columns": 5,
+      "selector_rows": 3,
+      "tile": 512,
+      "seconds": 0.000103462,
+      "exact_coefficients": 15360,
+      "passed": true
+    },
+    {
+      "n": 512,
+      "prime": 1,
+      "columns": 5,
+      "selector_rows": 3,
+      "tile": 37,
+      "seconds": 0.000103678,
+      "exact_coefficients": 15360,
+      "passed": true
+    },
+    {
+      "n": 512,
+      "prime": 1,
+      "columns": 5,
+      "selector_rows": 3,
+      "tile": 37,
+      "seconds": 0.000108326,
+      "exact_coefficients": 15360,
+      "passed": true
+    },
+    {
+      "n": 512,
+      "prime": 1,
+      "columns": 5,
+      "selector_rows": 3,
+      "tile": 512,
+      "seconds": 0.000105577,
+      "exact_coefficients": 15360,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 0,
+      "columns": 8,
+      "selector_rows": 4,
+      "tile": 32768,
+      "seconds": 0.331193,
+      "exact_coefficients": 11534336,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 0,
+      "columns": 8,
+      "selector_rows": 4,
+      "tile": 256,
+      "seconds": 0.251567,
+      "exact_coefficients": 11534336,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 0,
+      "columns": 8,
+      "selector_rows": 4,
+      "tile": 256,
+      "seconds": 0.263453,
+      "exact_coefficients": 11534336,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 0,
+      "columns": 8,
+      "selector_rows": 4,
+      "tile": 32768,
+      "seconds": 0.365753,
+      "exact_coefficients": 11534336,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 1,
+      "columns": 8,
+      "selector_rows": 4,
+      "tile": 32768,
+      "seconds": 0.3527,
+      "exact_coefficients": 11534336,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 1,
+      "columns": 8,
+      "selector_rows": 4,
+      "tile": 256,
+      "seconds": 0.300231,
+      "exact_coefficients": 11534336,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 1,
+      "columns": 8,
+      "selector_rows": 4,
+      "tile": 256,
+      "seconds": 0.244337,
+      "exact_coefficients": 11534336,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 1,
+      "columns": 8,
+      "selector_rows": 4,
+      "tile": 32768,
+      "seconds": 0.426303,
+      "exact_coefficients": 11534336,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 0,
+      "columns": 18,
+      "selector_rows": 40,
+      "tile": 32768,
+      "seconds": 2.43548,
+      "exact_coefficients": 25952256,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 0,
+      "columns": 18,
+      "selector_rows": 40,
+      "tile": 256,
+      "seconds": 1.5278,
+      "exact_coefficients": 25952256,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 0,
+      "columns": 18,
+      "selector_rows": 40,
+      "tile": 256,
+      "seconds": 3.95021,
+      "exact_coefficients": 25952256,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 0,
+      "columns": 18,
+      "selector_rows": 40,
+      "tile": 32768,
+      "seconds": 4.68554,
+      "exact_coefficients": 25952256,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 1,
+      "columns": 18,
+      "selector_rows": 40,
+      "tile": 32768,
+      "seconds": 4.97574,
+      "exact_coefficients": 25952256,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 1,
+      "columns": 18,
+      "selector_rows": 40,
+      "tile": 256,
+      "seconds": 1.74575,
+      "exact_coefficients": 25952256,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 1,
+      "columns": 18,
+      "selector_rows": 40,
+      "tile": 256,
+      "seconds": 1.72953,
+      "exact_coefficients": 25952256,
+      "passed": true
+    },
+    {
+      "n": 32768,
+      "prime": 1,
+      "columns": 18,
+      "selector_rows": 40,
+      "tile": 32768,
+      "seconds": 2.96683,
+      "exact_coefficients": 25952256,
+      "passed": true
+    }
+  ],
+  "unique_modular_sums_compared": 75003904,
+  "independent_small_modular_sum_checks": 122880,
+  "paired_component_observations": [
+    {
+      "n": 512,
+      "columns": 5,
+      "selector_rows": 3,
+      "prime": 0,
+      "original_median_seconds": 0.000243606,
+      "blocked_median_seconds": 0.000104861,
+      "observed_component_ratio": 2.323132527822546
+    },
+    {
+      "n": 512,
+      "columns": 5,
+      "selector_rows": 3,
+      "prime": 1,
+      "original_median_seconds": 0.0001045195,
+      "blocked_median_seconds": 0.000106002,
+      "observed_component_ratio": 0.9860144148223619
+    },
+    {
+      "n": 32768,
+      "columns": 8,
+      "selector_rows": 4,
+      "prime": 0,
+      "original_median_seconds": 0.34847300000000003,
+      "blocked_median_seconds": 0.25751,
+      "observed_component_ratio": 1.3532406508485109
+    },
+    {
+      "n": 32768,
+      "columns": 8,
+      "selector_rows": 4,
+      "prime": 1,
+      "original_median_seconds": 0.3895015,
+      "blocked_median_seconds": 0.272284,
+      "observed_component_ratio": 1.4304972014514257
+    },
+    {
+      "n": 32768,
+      "columns": 18,
+      "selector_rows": 40,
+      "prime": 0,
+      "original_median_seconds": 3.56051,
+      "blocked_median_seconds": 2.739005,
+      "observed_component_ratio": 1.299928258619462
+    },
+    {
+      "n": 32768,
+      "columns": 18,
+      "selector_rows": 40,
+      "prime": 1,
+      "original_median_seconds": 3.971285,
+      "blocked_median_seconds": 1.7376399999999999,
+      "observed_component_ratio": 2.285447503510509
+    }
+  ],
+  "timings_isolated": false,
+  "ciphertext_identity": {
+    "replay": {
+      "sigmoid": {
+        "exact": true,
+        "sha256": "5f305d3359263666cafa2ecf6126483f3c3cfa68284ee272c35eb7767a2772c4"
+      },
+      "gelu": {
+        "exact": true,
+        "sha256": "d229ade2aba24954149111818305f7fae045cc70e13a5abcf5c674460c2e3663"
+      },
+      "tanh": {
+        "exact": true,
+        "sha256": "69c3992958693cceb8c460fcf8e3ce751455a596669aeaa4ce2134b469541112"
+      }
+    },
+    "raw-replay": {
+      "sigmoid": {
+        "exact": true,
+        "sha256": "5f305d3359263666cafa2ecf6126483f3c3cfa68284ee272c35eb7767a2772c4"
+      },
+      "gelu": {
+        "exact": true,
+        "sha256": "d229ade2aba24954149111818305f7fae045cc70e13a5abcf5c674460c2e3663"
+      },
+      "tanh": {
+        "exact": true,
+        "sha256": "69c3992958693cceb8c460fcf8e3ce751455a596669aeaa4ce2134b469541112"
+      }
+    }
+  },
+  "fresh_keys_generated": false,
+  "full_current_source_factors_qualified": false,
+  "whole_refresh_speedup_established": false,
+  "paper_performance_reproduced": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "9ebff42776f1c47b375dfb3a3113c96cd218df300d4906fd530dda366b80d3cc",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "3e57ace782eeaecc01f14d50b765e6adf0cf85c02a0fd5506154666a857900e7",
+    "TFHEpp/test/ckks/ckks_narrow_matrix_blocks_exact.cpp": "4a66ff62e9405f389bf6c219957236915f61c1de8780c07be3f04ee593be3f60"
+  },
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-matrix-blocks-20261010"
+}

@@ -1,0 +1,39 @@
+{
+  "n": 512,
+  "metrics": {
+    "fresh_input_max_error": 6.425916590990133e-11,
+    "max_error": 1.1839592284083153e-06,
+    "rms_error": 4.3521162003621303e-07,
+    "post_refresh_product_max_error": 4.185404876517042e-07
+  },
+  "tolerance": 1.52587890625e-05,
+  "checkpoint_prefix_bytes_read": 118869,
+  "checkpoint_prefix_sha256": "106c0c88c387ca05f0d718e72a4f630eef59e4340813d14f0b73d10fce6c04b3",
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/checkpoint/checkpoint.bin",
+  "independent_phase_validated": true,
+  "evaluation_keys_loaded": false,
+  "selector_phases_validated": false,
+  "security_validated": false,
+  "full_ring_phase_validated": false,
+  "accuracy_passed": true,
+  "artifacts": {
+    "refresh": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/square-key-replay.json.ciphertext",
+      "sha256": "570829d0f4cefa0f74e912543ac4c6485e37ec10e956cfd0db06515194ce3a25"
+    },
+    "square": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/square-key-replay.json.square.ciphertext",
+      "sha256": "0994b73ae30e8514f33f1d641fdfa6cc0a4b16c93d90ec43a05de74e4fd84f24"
+    },
+    "report": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/square-key-replay.json",
+      "sha256": "03d49dac4faa8a524700a948b024fe65c79c2cc3263b6e413225c09cfc982727"
+    }
+  },
+  "utc": "2026-10-10T06:10:48.975940+00:00",
+  "source_sha256": {
+    "narrow_ckks_packed_checkpoint_validate.py": "7047681affca5e818e15a4c8a5041908abfe6c9808270cf640af1ae064495918",
+    "narrow_ckks_packed_checkpoint_controls.py": "735c6bc64d00e436ee3d7b1459c29fe45c7fe070fd9ad538a3faaa43a4382317",
+    "narrow_ckks_prefix_arithmetic.py": "7f552abcef41d0d87b3031759505e1ff00190267e4754c8e10bed234d7f8d044"
+  }
+}

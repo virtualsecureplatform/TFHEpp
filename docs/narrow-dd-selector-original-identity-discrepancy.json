@@ -1,0 +1,43 @@
+{
+  "scope": "Current read-only observation of the original-labelled and diagnostic corrected head19 group; historical original identity is no longer reproduced. Does not attribute a cause or certify other groups.",
+  "observed_at_utc": "2026-10-10T16:50:13.052833+00:00",
+  "historical_original_group_sha256": "a60720b0849afef9979ccdc8693aca780381eb859310e361ce8d3e453d685f75",
+  "historical_original_record_sha256": "16250cc82dc19ab664b24b93f2dab0ab9db78f6bc5a9ae8a8f0bfd67b8a17c93",
+  "current_observations": {
+    "original": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/selectors/head-19.bin",
+      "record_sha256": "e9d2fbe12fa00ef67cfc98db454c11db9b06274aee1a04c28afd400aef1ade2a",
+      "group_sha256": "69abb7c833536ce43b1eb05d83cecedd6205d1c53148e6c0f350cf594de75aa6"
+    },
+    "corrected": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/head-19.bin",
+      "record_sha256": "e9d2fbe12fa00ef67cfc98db454c11db9b06274aee1a04c28afd400aef1ade2a",
+      "group_sha256": "69abb7c833536ce43b1eb05d83cecedd6205d1c53148e6c0f350cf594de75aa6"
+    }
+  },
+  "historical_original_identity_reproduced": false,
+  "current_corrected_identity_matches_baseline": true,
+  "known_one_bit_reversal": {
+    "direct_reads": [
+      {
+        "name": "original",
+        "direct_read_succeeded": true,
+        "bit151": 1
+      },
+      {
+        "name": "corrected",
+        "direct_read_succeeded": true,
+        "bit151": 1
+      }
+    ],
+    "in_memory_reversal_sha256": "a60720b0849afef9979ccdc8693aca780381eb859310e361ce8d3e453d685f75",
+    "in_memory_reversal_matches_historical_original": true,
+    "original_file_written": false,
+    "cause_established": false,
+    "scope": "Current original-labelled group differs from the historical original by exactly the known diagnostic bit; direct read only observes current storage and cannot establish prior writes or cache faults."
+  },
+  "these_controls_wrote_original": false,
+  "no_dependent_run_was_started_with_an_unverified_fixture": true,
+  "cause_established": false,
+  "goal_complete": false
+}

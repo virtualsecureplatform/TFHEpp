@@ -1,0 +1,110 @@
+{
+  "observed_at_utc": "2026-10-08T19:40:53.031530+00:00",
+  "scope": "Raw native tensor words: actual CKKSTensorProductRescale at N16 compared word-for-word with portable CUDA host arithmetic and CPU modular NTT, including one/two-prime CRT. No encrypted input, GPU execution, full-profile FFT path or DD tree claim.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_cuda_setup.cpp": "f2ab33f135e63bc90f1a98c759c190cbf5429b07a366dcede6733bbad249bf46",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/ckks/narrow_cuda.hpp": "98c3f21484c707292edc9d0f8894994ea7c408d5aa7c51b9416351a0fd6ffa56",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "561db59a5490bca2a6d4141b1e4ce33569b1039d9859b6578793f5dea13b006d",
+    "src/ckks/narrow_cuda.cu": "9b059d6d7d077b7706f06dd2ea9b22cec1979967ee00c9770513a0558a7eb040",
+    "include/mulfft.hpp": "aa65978f25165392b3b42a06e5a69c80bf6c42687cef5ee219baf5e823b6ff6d",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a"
+  },
+  "actual_cpu_api": "CKKSTensorProductRescale<P,LhsQ,RhsQ,Drop>",
+  "actual_cpu_digit_backend": "PolyMulDigit native small-degree path; static_assert excludes FFT-backed parameters.",
+  "points": 16,
+  "columns": [
+    1,
+    3
+  ],
+  "prime_modes": [
+    "first actual auxiliary prime",
+    "second actual auxiliary prime",
+    "two actual auxiliary primes together"
+  ],
+  "parameter_profiles": [
+    {
+      "native_bits": 448,
+      "bbar_bits": 4,
+      "lhs_q": 217,
+      "rhs_q": 379,
+      "drops": [
+        0,
+        37
+      ],
+      "square": false
+    },
+    {
+      "native_bits": 896,
+      "bbar_bits": 8,
+      "lhs_q": 842,
+      "rhs_q": 842,
+      "drops": [
+        0,
+        49
+      ],
+      "square": true
+    },
+    {
+      "native_bits": 448,
+      "bbar_bits": 4,
+      "lhs_q": 64,
+      "rhs_q": 64,
+      "drops": [
+        0,
+        1
+      ],
+      "square": true
+    }
+  ],
+  "host_tensor_api_cases_passed": 36,
+  "host_tensor_coefficients_compared": 3456,
+  "host_tensor_native_words_compared": 32256,
+  "comparison_order": [
+    "actual native CPU tensor reference",
+    "native flattened mask/body words",
+    "portable center/offset/balanced digit extraction",
+    "CPU forward NTT",
+    "portable Shoup and tensor spectral contraction",
+    "CPU inverse NTT",
+    "portable centered CRT and wide recomposition",
+    "portable signed ties-away projection",
+    "exact comparison of every native output word"
+  ],
+  "boundary_scope": "Random full-native lhs/rhs words plus lhs centered-sign boundary/neighbors, zero/unit/all-ones, scale-half and 64-bit limb boundaries, with arbitrary upper storage bits. Equal-level profiles use exact squaring.",
+  "native_upper_output_padding_compared": true,
+  "mixed_active_levels_compared": true,
+  "two_prime_host_reconstruction_compared_against_actual_cpu_tensor": true,
+  "all_prior_native_setup_host_checks_rechecked": true,
+  "prior_native_auto_selector_prime_profiles_passed": 14,
+  "prior_ciphertext_layout_roundtrips_passed": 3,
+  "prior_native_setup_invalid_requests_passed": 13,
+  "prior_dd_relin_prime_profiles_passed": 6,
+  "prior_dd_relin_invalid_requests_passed": 9,
+  "cmake_final_build_exit_code": 0,
+  "cmake_final_build_session": 77339,
+  "cmake_final_build_log": "/tmp/ckks-narrow-cuda-native-tensor-cpu-final-build.log",
+  "cmake_test_actual_exit_code": 0,
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-native-tensor-cpu-cmake-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-native-tensor-cpu-cmake-test.stderr",
+  "initial_standalone_ubsan_build_exit_code": 1,
+  "initial_standalone_build_failure_resolved": "Undefined offset-table builder reference; subsequently compile instrumented CUDA source object and link it into C++ UBSan test.",
+  "host_ubsan_final_build_exit_code": 0,
+  "host_ubsan_final_build_session": 8766,
+  "host_ubsan_final_build_log": "/tmp/ckks-narrow-cuda-native-tensor-cpu-host-ubsan-final-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-native-tensor-cpu-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 0,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-native-tensor-cpu-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-native-tensor-cpu-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "C++ test, inline actual CPU tensor/PolyMulDigit routines, portable arithmetic and CUDA source host routines instrumented. CUDA device kernels uninstrumented/unexecuted; no FFT backend is used.",
+  "gpu_cases_executed": false,
+  "encrypted_native_tensor_input_validated": false,
+  "full_profile_cpu_fft_tensor_compared": false,
+  "full_device_native_tensor_validated": false,
+  "encrypted_dd_tree_connected": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

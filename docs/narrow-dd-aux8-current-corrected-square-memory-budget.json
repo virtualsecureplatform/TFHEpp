@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-09T15:06:37.094559+00:00",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "state": "R",
+      "rss_bytes": 16676110336,
+      "cpu_ticks": 28389631,
+      "cap_bytes": 68719476736
+    }
+  ],
+  "available_bytes": 115047587840,
+  "required_bytes": 65062486016,
+  "host_reserve_bytes": 10737418240,
+  "child_limit_bytes": 2147483648,
+  "parent_limit_bytes": 134217728,
+  "eligible": true
+}

@@ -1,0 +1,34 @@
+{
+  "scope": "Verify actual-block rotation counts with bit masks and grouped binomials.\n\nThis independent oracle does not use the sampler's NumPy correlations or\nlinear-factor dynamic program. It verifies exact event masses and labelled\nsigned projection counts, not decoding probabilities or security.\n",
+  "source_sha256": "9df8dfdaecee44e2c58c65b4540a1c148e4773be27682c591ffa1eb007cc921e",
+  "exhaustive_toy_cases": 576,
+  "n": 16384,
+  "weights": [
+    9,
+    10,
+    11,
+    12
+  ],
+  "rotations_checked": 16384,
+  "exact_mass_sums": {
+    "9": "4038759755456825178011323463638876832360885016672226836495400350585937500",
+    "10": "124640809466024916102092366479405449541102629627955924451231467582324218750",
+    "11": "3071351374025429768442365933628021987197891157919752564896143344063466796875",
+    "12": "61930072463315126594518332668058377309103256446944689803420578147505458984375"
+  },
+  "exact_signed_labelled_support_sums": {
+    "9": "344519357596480786172787924740004352",
+    "10": "1315935788622783250403310766739157015552",
+    "11": "4062252945708787112349016479429622926825472",
+    "12": "10346514973619262865441602622725216156658380800"
+  },
+  "reports": {
+    "python/estimates/narrow_ckks_ll14_block_rotation_weight9_seed2119.json": "602252aacd9e4d0b2e4ff0c0cca7f6b0342fa59e7bbf3d6eb0a4153fd72f778a",
+    "python/estimates/narrow_ckks_ll14_block_rotation_weight10.json": "b839058897a1f1ddfeea12e045a9adfb5d589ed1ebb9d87153bf26a97db35eda",
+    "python/estimates/narrow_ckks_ll14_block_rotation_weight10_seed21190.json": "daa884c2533490e4301b2522d11c730ac77a36b1aa164de0956b4a32866a6383",
+    "python/estimates/narrow_ckks_ll14_block_rotation_histogram.json": "22b55047cc5eef032cc7db894630d1cf64c720d65a2ff1316d30bd73509eb10e",
+    "python/estimates/narrow_ckks_ll14_block_rotation_weight12.json": "27391db776fdb33efe39bab655ae162df52bfeac1006c59a685f31473c23a797"
+  },
+  "passed": true,
+  "security_validated": false
+}

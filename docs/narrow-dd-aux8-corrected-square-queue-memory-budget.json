@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-09T14:54:54.269995+00:00",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "state": "R",
+      "rss_bytes": 16773660672,
+      "cpu_ticks": 28177090,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1849709,
+      "start_ticks": 220083075,
+      "state": "R",
+      "rss_bytes": 12413255680,
+      "cpu_ticks": 1062920,
+      "cap_bytes": 17179869184
+    }
+  ],
+  "available_bytes": 102097735680,
+  "required_bytes": 67584065536,
+  "host_reserve_bytes": 10737418240,
+  "queue_parent_limit_bytes": 134217728,
+  "eligible": true,
+  "scope": "Queue parent only; retained-square child requires a new budget after corrected replay terminates"
+}

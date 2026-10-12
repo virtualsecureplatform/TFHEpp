@@ -1,0 +1,13 @@
+{
+  "scope": "Bounded coefficient extraction prunes only unrequested branches; N512 saved public packed fixture and previously qualified full term reference reused. No key generation. Full-range, single first/last coefficient, nonaligned interval, empty interval and invalid interval controls. Byte-identical terms against saved full reference. Does not qualify full-ring higher-precision reconstruction.",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "all_checks_passed": true,
+  "terms_checked": 2120,
+  "invalid_ranges_rejected": 2,
+  "fresh_keys_generated": false,
+  "prior_header_sha256": "179cd5c6134d6be529e659530b02c6f4c1d189d9a8bae946240d623e4638b3fc",
+  "qualified_header_sha256": "636aaa5b5ebf3a02c851db136c4a200188f5c1e088fdaa8925ab83ac65167619",
+  "repository_test_sha256": "393aaa80de12c03204fad851540ed7f1f2c93279971e754748cf843a46d3c1f4",
+  "run_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-range-extraction-20261011/run.log"
+}

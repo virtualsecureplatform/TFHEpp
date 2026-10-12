@@ -1,0 +1,95 @@
+{
+  "observed_at_utc": "2026-10-08T17:03:50.942588+00:00",
+  "scope": "Connected device portion of Equation (25): encoded two-channel table residues -> forward NTT -> all resident selector chunks -> inverse NTT -> centered CRT -> torus digit recomposition -> signed rounding. Conjugation/key switching and full refresh remain unimplemented on device.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "a115e1816684ec57e61775194c21f74bc3950032756b1582b851c05b0a3cb265",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "0ae2611b10816495087cec50fa7a0d99b5bf8c3217c361eb449faecc04c9a91e",
+    "src/ckks/narrow_cuda.cu": "87144c7d262824ee64c66b4a1f289cdb5fcc9f4520c696eefd39579ccc4019a4",
+    "src/ckks/cuda/CMakeLists.txt": "b0123e5ffddd2cbdb69903497b6a2c4cebf37aec92d0ebcdb747cc3464579e0f",
+    "test/ckks/ckks_narrow_cuda.cu": "d81539fd6800de0fe2d2239699bbe91b47b2ec966856c77a44ac1184ed279649"
+  },
+  "cmake_build_exit_code": 0,
+  "cmake_final_build_session": 45568,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-packed-matrix-build.log",
+  "cuda_standard": 20,
+  "architecture": "80",
+  "cuda_test_actual_exit_code": 77,
+  "cuda_test_log": "/tmp/ckks-narrow-cuda-packed-matrix-test.log",
+  "host_packed_matrix_rejection_cases_passed": 16,
+  "host_packed_matrix_valid_metadata_cases_passed": 4,
+  "rejection_case_checks": [
+    "metadata validation returns invalid value",
+    "evaluation returns invalid value before submitting any device work"
+  ],
+  "validated_metadata": [
+    "one/two-prime NTT dimensions and directions",
+    "same selector counts per prime and channel/component/digit layout",
+    "disjoint mutable buffers, resident key buffers and NTT setup tables",
+    "overflow-safe strict centered CRT bound: coefficient_bound*65535*N*selectors < half auxiliary product"
+  ],
+  "coefficient_bound_is_caller_provided": true,
+  "buffer_content_and_semantic_bounds_checked_on_device": false,
+  "host_packed_matrix_reference_consistency_cases_passed": 4,
+  "host_reference_scope": "CPU spectral matrix with modular arithmetic, CPU inverse NTT and CRT must match independent coefficient-space substitutions, direct negacyclic products, MultiLimbUInt digit recomposition and signed rounding. These are CPU oracle/layout consistency checks, not executed CUDA kernels.",
+  "cases": {
+    "points": 32,
+    "components": 2,
+    "selectors": 9,
+    "selector_chunks": [
+      4,
+      4,
+      1
+    ],
+    "columns": [
+      1,
+      3
+    ],
+    "auxiliary_primes": [
+      2301972608560791553,
+      2295217002959732737
+    ],
+    "profiles": [
+      {
+        "prime_count": 1,
+        "log_q": 217,
+        "limbs": 4,
+        "drop_bits": 27,
+        "absolute_table_bound": 1024
+      },
+      {
+        "prime_count": 2,
+        "log_q": 385,
+        "limbs": 7,
+        "drop_bits": 37,
+        "absolute_table_bound": 35184372088832
+      }
+    ],
+    "second_profile_exceeds_one_prime_centered_capacity": true,
+    "key_digit_coefficients": "unsigned 16-bit, including zero and 65535",
+    "table_coefficients": "signed, including zero and both bound endpoints",
+    "permutations": "scheduled powers of 5 acting on natural NTT points; coefficient oracle substitutes monomials directly modulo X^N+1"
+  },
+  "host_total_rejection_cases_passed": 57,
+  "host_ntt_table_reference_cases_passed": 4,
+  "host_crt_recomposition_rounding_cases_passed": 90,
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 9954,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-packed-host-ubsan-build.log",
+  "host_ubsan_binary": "/tmp/ckks-narrow-cuda-packed-host-ubsan",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-packed-host-ubsan-test.log",
+  "host_ubsan_all_host_checks_passed": true,
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_instrumentation_scope": "NVCC -O1 -g with -Xcompiler=-fsanitize=undefined,-fno-sanitize-recover=all,-fno-omit-frame-pointer compiled both narrow_cuda.cu and the test .cu. CUDA source host validation/submission routines, test host code and inline host arithmetic/reference routines instrumented. Device kernels are not UBSan instrumented; they were not executed.",
+  "host_ubsan_callback_symbols_verified": true,
+  "gpu_device_count": 0,
+  "gpu_connected_matrix_cases_present": 4,
+  "gpu_connected_matrix_cases_executed": false,
+  "gpu_arithmetic_validated": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_path_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "latest_extended_validation_evidence": "narrow-dd-cuda-torus-validation.json",
+  "historical_scope_note": "Hashes/builds above describe the connected-matrix revision. Latest torus-primitives revision repeats these checks; GPU execution remains skipped."
+}

@@ -1,0 +1,156 @@
+{
+  "scope": "Reusable signed plaintext mask FFTs: independent N16384 integer products, exact retained N512 packed extraction, and exploratory repeated old/new timings during concurrent work. No cryptographic parameter changes; no full encrypted reconstruction or security claim.",
+  "terminal": true,
+  "fresh_keys_generated": false,
+  "retained_files_before": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "runs": [
+    {
+      "label": "integer-oracle",
+      "actual_exit_code": 0,
+      "stdout": "signed plaintext exact N=16384 Q=81 zero=0 coefficients=16384\nsigned plaintext exact N=16384 Q=413 zero=0 coefficients=16384\nsigned plaintext exact N=16384 Q=448 zero=0 coefficients=16384\nsigned plaintext exact N=16384 Q=81 zero=1 coefficients=16384\nprepared dense signed exact N=16384 Q=413 alternating=0 coefficients=16384\nprepared dense signed exact N=16384 Q=413 alternating=1 coefficients=16384\nprepared dense signed exact N=16384 Q=448 alternating=1 coefficients=16384\n"
+    },
+    {
+      "label": "exact-packed",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "packed_log_q": 422,
+        "cached_depths": 2,
+        "cache_bytes": 46891008,
+        "prepare_seconds": 0.037412351,
+        "extraction_seconds": 11.588379974,
+        "terms": 2048,
+        "coefficients": 2097152,
+        "reference_written": false,
+        "ordered_terms_identical": true
+      }
+    },
+    {
+      "label": "timing-0-old",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 4,
+        "rows": 106,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.036569467,
+        "extraction_and_validation_seconds": 14.89283755,
+        "validation_seconds": 1.4126233699999977,
+        "extraction_seconds_excluding_callbacks": 13.48021418,
+        "ciphertexts_identical": true,
+        "max_slot_difference": 0,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    },
+    {
+      "label": "timing-1-new",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 4,
+        "rows": 106,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.034785503,
+        "extraction_and_validation_seconds": 12.655081302,
+        "validation_seconds": 1.4893066900000005,
+        "extraction_seconds_excluding_callbacks": 11.165774611999998,
+        "ciphertexts_identical": true,
+        "max_slot_difference": 0,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    },
+    {
+      "label": "timing-2-new",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 4,
+        "rows": 106,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.034156178,
+        "extraction_and_validation_seconds": 11.668818448,
+        "validation_seconds": 1.4754150430000017,
+        "extraction_seconds_excluding_callbacks": 10.193403404999998,
+        "ciphertexts_identical": true,
+        "max_slot_difference": 0,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    },
+    {
+      "label": "timing-3-old",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 4,
+        "rows": 106,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.033944209,
+        "extraction_and_validation_seconds": 13.692441931,
+        "validation_seconds": 1.3799838370000022,
+        "extraction_seconds_excluding_callbacks": 12.312458093999997,
+        "ciphertexts_identical": true,
+        "max_slot_difference": 0,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    },
+    {
+      "label": "projected-primary8",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 8,
+        "rows": 53,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.017750356,
+        "extraction_and_validation_seconds": 8.792170596,
+        "validation_seconds": 1.574652650999999,
+        "extraction_seconds_excluding_callbacks": 7.217517945000001,
+        "ciphertexts_identical": false,
+        "max_slot_difference": 2.030767446803211e-10,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    }
+  ],
+  "source_sha256": {
+    "include/ckks/prepared_plain.hpp": "7f28ee58fe329b10a7d9dd91388bb55ba8d44d8673380ce066ef958e84a0e3bc",
+    "include/ckks/narrow_bootstrapping.hpp": "fffe7fe43daa378ef28318f631e1fe6cf9d8879286520cdfaa4150bf980d665a",
+    "test/ckks/ckks_prepared_plain_exact.cpp": "6657304a9eabca34c5fd678b3243ad885aad6111b0605a0bfd37027a5eaa54b8",
+    "test/ckks/ckks_narrow_packed_primary_projection.cpp": "2593d5c675e5d922d582b0c3cc81f6c492e2de77c7bc3526cc13647daa08799f",
+    "test/ckks/ckks_narrow_packed_cache_profile.cpp": "4431e4205c068bddd24bb34dbde9c1686df4acd11eb72a4e1690ba946571fecd"
+  },
+  "executable_sha256": {
+    "ckks_prepared_plain_exact": "4d4db190ea5164c173cbe96cf2cf6acd35a9539426e942f48eea386c1e854aec",
+    "ckks_narrow_packed_cache_profile": "c81140a07c315f0764911b317d451414dcb04738735c443030bf67ed0c06d348",
+    "ckks_narrow_packed_primary_projection": "e36de90c2bf4ab018feaa60da4ad91184f5253fb0ad956bfb020550a816dd196"
+  },
+  "old_executable_sha256": "f0285ddd2ffa1511fa4c0d05748d23f03ebe03733959b51013f7650c9f6a3d26",
+  "retained_files_after": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "retained_files_unchanged": true,
+  "all_checks_passed": true,
+  "median_extraction_seconds_excluding_callbacks": {
+    "old": 12.896336136999999,
+    "new": 10.679589008499999
+  },
+  "exploratory_observed_ratio_old_over_new": 1.207568580282974
+}

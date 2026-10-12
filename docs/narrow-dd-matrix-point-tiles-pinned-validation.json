@@ -1,0 +1,56 @@
+{
+  "observed_at_utc": "2026-10-10T20:24:48.945764+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Repeat same public matrix tile prototype pinned to CPU8. Exact equality to current256-point-tile outputs over two actual61bit primes; not independent oracle or full factor/refresh proof. Host still has concurrent full evaluations.",
+  "cpu_affinity": [
+    8
+  ],
+  "cpuinfo_max_freq_khz": 5200000,
+  "omp_threads": 1,
+  "memory_cap_bytes": 268435456,
+  "trials": 20,
+  "unique_destination_residues": 11534336,
+  "per_prime_timing_summary": {
+    "0": {
+      "median_seconds": {
+        "32": 0.400667,
+        "64": 0.451457,
+        "128": 0.4946835,
+        "256": 0.4104905,
+        "512": 0.39460249999999997
+      },
+      "relative_to_256": {
+        "32": 0.9760688737010966,
+        "64": 1.0997988991219043,
+        "128": 1.2051034067779889,
+        "256": 1.0,
+        "512": 0.9612950847827172
+      }
+    },
+    "1": {
+      "median_seconds": {
+        "32": 0.7158335,
+        "64": 0.7324835,
+        "128": 0.662963,
+        "256": 0.67949,
+        "512": 0.7324135
+      },
+      "relative_to_256": {
+        "32": 1.0534864383581803,
+        "64": 1.077990110229731,
+        "128": 0.9756773462449777,
+        "256": 1.0,
+        "512": 1.0778870917894303
+      }
+    }
+  },
+  "raw_results": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-point-tiles-20261010/pinned-cpu8-results.jsonl",
+  "raw_results_sha256": "9b77aea9bcd1796af6fca861d87e6ea79b0cf7245b28ff17930b19d30d3bba64",
+  "executable_sha256": "23fb02a54e49c102586a00b2d34d456474cc15ad64a894df697e4a1fe42f70e0",
+  "production_modified": false,
+  "fresh_keys_generated": false,
+  "decision": "No production change while frozen full validation is pending; pinned per-prime observations are component-only.",
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false
+}

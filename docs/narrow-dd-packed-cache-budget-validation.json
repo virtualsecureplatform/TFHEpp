@@ -1,0 +1,113 @@
+{
+  "scope": "Budgeted packed substitution cache; retained N512 all-term equality and N16384 allocation-free spectrum estimate. No full-size reconstruction or speedup qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "fixture": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-depths-20261009-l0em3r_0/fixture",
+  "retained_files_before": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "exe_sha256": "464afb9e4a142513acf0830ec3ba72414a5e6f58f145187241d3f74c811107eb",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "dae3a45d1a6e11a7838fc555629f5bbef03f2eb13fd56c6893f34866e52f9844",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/test/ckks/ckks_narrow_packed_cache_profile.cpp": "37c1de55898e021b772736067c502819fcd5bdc70e1fbafa3a9cf0a7ade2a90d"
+  },
+  "build_actual_exit_codes": [
+    2,
+    0
+  ],
+  "build_first_failure": "local estimate parameter class moved to namespace scope",
+  "runs": [
+    {
+      "depth": 0,
+      "actual_exit_code": 0,
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-budget-20261011/depth-0.log",
+      "report": {
+        "n": 512,
+        "packed_log_q": 422,
+        "cached_depths": 0,
+        "cache_bytes": 0,
+        "cache_bytes_per_depth": 23445504,
+        "prepare_seconds": 1.62e-07,
+        "extraction_seconds": 16.563247025,
+        "terms": 2048,
+        "coefficients": 2097152,
+        "reference_written": false,
+        "ordered_terms_identical": true
+      }
+    },
+    {
+      "depth": 2,
+      "actual_exit_code": 0,
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-budget-20261011/depth-2.log",
+      "report": {
+        "n": 512,
+        "packed_log_q": 422,
+        "cached_depths": 2,
+        "cache_bytes": 46891008,
+        "cache_bytes_per_depth": 23445504,
+        "prepare_seconds": 0.027368024,
+        "extraction_seconds": 7.49462607,
+        "terms": 2048,
+        "coefficients": 2097152,
+        "reference_written": false,
+        "ordered_terms_identical": true
+      }
+    },
+    {
+      "depth": 4,
+      "actual_exit_code": 0,
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-budget-20261011/depth-4.log",
+      "report": {
+        "n": 512,
+        "packed_log_q": 422,
+        "cached_depths": 4,
+        "cache_bytes": 93782016,
+        "cache_bytes_per_depth": 23445504,
+        "prepare_seconds": 0.055831852,
+        "extraction_seconds": 5.156379922,
+        "terms": 2048,
+        "coefficients": 2097152,
+        "reference_written": false,
+        "ordered_terms_identical": true
+      }
+    },
+    {
+      "depth": 9,
+      "actual_exit_code": 0,
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-budget-20261011/depth-9.log",
+      "report": {
+        "n": 512,
+        "packed_log_q": 422,
+        "cached_depths": 9,
+        "cache_bytes": 211009536,
+        "cache_bytes_per_depth": 23445504,
+        "prepare_seconds": 0.119420306,
+        "extraction_seconds": 4.359997247,
+        "terms": 2048,
+        "coefficients": 2097152,
+        "reference_written": false,
+        "ordered_terms_identical": true
+      }
+    }
+  ],
+  "omp_threads": 4,
+  "child_cap_bytes": 2147483648,
+  "full_reconstruction_executed": false,
+  "security_validated": false,
+  "updated_utc": "2026-10-11T11:15:52.560518+00:00",
+  "full_ring_estimate": {
+    "n": 16384,
+    "budget_bytes": 17179869184,
+    "cache_bytes_per_depth": 757334016,
+    "cached_depths": 14,
+    "cache_bytes": 10602676224,
+    "full_reconstruction_executed": false
+  },
+  "retained_files_unchanged": true,
+  "controller_actual_exit_code": 0,
+  "controller_sha256": "31766e0818b888c10ff803a22f901a3c7f8b12051376f15d1d2ec7acd50a8528"
+}

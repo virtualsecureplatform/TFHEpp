@@ -1,0 +1,29 @@
+{
+  "observed_at_utc": "2026-10-10T11:22:14.825700+00:00",
+  "scope": "Code inspection of PolyMulTorusByUnsignedBits; potential computational radix widening, no cryptographic gadget change",
+  "source": "TFHEpp/include/mulfft.hpp:471",
+  "current_digit_width": "P::Bbarbit;4for actual profiles",
+  "candidate_digit_width": 16,
+  "n16384_double_guard_bits": 49,
+  "required_less_than": 53,
+  "cases": [
+    {
+      "stage": "aux8 S2C input",
+      "active_bits": 93,
+      "assumed_nonzero_plain_bits": 37,
+      "base4_product_upper_count": 195,
+      "base16_product_upper_count": 15
+    },
+    {
+      "stage": "LL14 packed leaf mask",
+      "active_bits": 413,
+      "assumed_nonzero_plain_bits": 34,
+      "base4_product_upper_count": 900,
+      "base16_product_upper_count": 75
+    }
+  ],
+  "implementation_changed": false,
+  "exact_arithmetic_verified": false,
+  "speedup_measured": false,
+  "next_action": "Validate16-bit plaintext polynomial products against current4-bit results using retained public inputs before integration"
+}

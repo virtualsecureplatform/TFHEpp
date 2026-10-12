@@ -1,0 +1,81 @@
+{
+  "observed_at_utc": "2026-10-08T23:56:17.437282+00:00",
+  "scope": "Full N16384 plain37 factor stage using actual retained expanded selectors for final head/tail groups, fresh conjugation key under saved dense secret, and frequencies 1..12 with separate random normalized-mask tables.",
+  "n": 16384,
+  "native_storage_bits": 448,
+  "selector_log_q": 385,
+  "factor_log_q": 348,
+  "factor_log_delta": 48,
+  "plain_log_delta": 37,
+  "factor_conjugation_key_log_q": 376,
+  "auxiliary_log_scale": 28,
+  "primary_digit_bits": 4,
+  "secondary_digit_bits": 4,
+  "columns": 12,
+  "selector_chunk_sizes": [
+    40,
+    17
+  ],
+  "single_columns_compared": [
+    0,
+    5,
+    11
+  ],
+  "cases": [
+    {
+      "tail": false,
+      "group": 30,
+      "columns": 12,
+      "slots_checked": 98304,
+      "max_error": 1.2646254667522158e-09,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true
+    },
+    {
+      "tail": true,
+      "group": 4,
+      "columns": 12,
+      "slots_checked": 98304,
+      "max_error": 1.2440237975559772e-09,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true
+    }
+  ],
+  "decoded_slots_checked": 196608,
+  "maximum_slot_error": 1.2646254667522158e-09,
+  "target_tolerance": 1.1920928955078125e-07,
+  "chunk_comparison_ciphertext_coefficients": 786432,
+  "single_column_comparison_ciphertext_coefficients": 196608,
+  "all_checks_passed": true,
+  "actual_exit_code": 0,
+  "terminal": true,
+  "session": 15136,
+  "stderr_bytes": 0,
+  "wall_time": "2:30.39",
+  "peak_rss_kib": 8095236,
+  "configured_gaussian_noise_stddev": 3.2,
+  "checkpoint_evaluation_keys_loaded": false,
+  "checkpoint_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008",
+  "expected_slots": "Signed rotation of each provided table at saved sparse-key position, restricted to explicit head/tail indicator windows; zero elsewhere.",
+  "normal_key_container_unused_fields": "Tree and non-conjugation rotation keys remain zero but their normal container allocation is included in measured memory.",
+  "build_log": "/tmp/ckks-narrow-factor-checkpoint-build.log",
+  "test_log": "/tmp/ckks-narrow-factor-checkpoint-test.log",
+  "time_log": "/tmp/ckks-narrow-factor-checkpoint-time.log",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_factor_checkpoint.cpp": "29f5a0a0e9ed8cbabe7a25a64a1d358de661d29332461c45dc5e84c8f66ef88b",
+    "include/ckks/narrow_bootstrapping.hpp": "6174ee3a0bede45851ccb2fe745f85795e8b2906dddfbec48e561b6c4b1cc903",
+    "include/ckks/narrow_selector_file.hpp": "baa876f1d73f170a62117ce6fb27fb4aaf32866106243d7ae8e0d07dcc5e13c8",
+    "include/ckks/prepared_auto.hpp": "f8e1a2b97bb60dcbdf3eddedb0d04d03f2f5de9e25190c8db8441fd39b9a26a4",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a"
+  },
+  "limitations": [
+    "Fresh conjugation key, not the checkpoint evaluation-key suffix/cache.",
+    "Uses production table generation and slot decryption; target is the algebraic signed table rotation, not an independent end-to-end exponent/FBS oracle.",
+    "This passing sample does not resolve original/O1 sigmoid failures or qualify security."
+  ],
+  "original_sigmoid_failures_resolved": false,
+  "goal_complete": false
+}

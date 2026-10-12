@@ -1,0 +1,43 @@
+{
+  "observed_at_utc": "2026-10-09T01:04:37.736159+00:00",
+  "scope": "New original-style full-ring plain37 sigmoid file-selector run; no pre-evaluation checkpoint. Automatic post-evaluation failure capture is enabled.",
+  "existing_process_pid": 1756575,
+  "existing_process_cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json ",
+  "existing_process_virtual_limit_bytes": 68719476736,
+  "existing_process_rss_bytes": 17686831104,
+  "remaining_growth_bytes": 51032645632,
+  "available_memory_bytes": 113876295680,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 34359738368,
+  "test_stack_limit_bytes": 67108864,
+  "omp_threads": 8,
+  "required_available_memory_bytes": 96129802240,
+  "launch_margin_bytes": 17746493440,
+  "launch_eligible": true,
+  "test_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-original-style-capture-20261009-8hzeszxg",
+  "selector_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-original-style-capture-20261009-8hzeszxg/selectors",
+  "report_path": "TFHEpp/docs/narrow-dd-ll14-plain37-post-evaluation-capture.json",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_benchmark.cpp": "2af067dd11f1ad84f7974b97cb1b25f668c58a48a83b1ec169d4ca816b713f11",
+    "include/ckks/ckks.hpp": "d5ea7b4dbd3b60fc278814b5e6a9ade66fe34700a4773aa31afed8a255020371",
+    "include/ckks/narrow_bootstrapping.hpp": "6174ee3a0bede45851ccb2fe745f85795e8b2906dddfbec48e561b6c4b1cc903",
+    "include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79"
+  },
+  "test_pid": 1800980,
+  "test_session_id": 82270,
+  "test_terminal": true,
+  "launch_observation": {
+    "pid": 1800980,
+    "live": true,
+    "state": "R (running)",
+    "rss_kib": 5218956,
+    "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-file sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-original-style-capture-20261009-8hzeszxg/selectors TFHEpp/docs/narrow-dd-ll14-plain37-post-evaluation-capture.json ",
+    "startticks": 215445770,
+    "observed_at_utc": "2026-10-09T01:05:11.869183+00:00"
+  },
+  "test_actual_exit_code": 0,
+  "completion_evidence": "narrow-dd-original-style-capture-completion-validation.json",
+  "accuracy_passed": true,
+  "owned_selectors_cleaned": true,
+  "failure_reproduced": false
+}

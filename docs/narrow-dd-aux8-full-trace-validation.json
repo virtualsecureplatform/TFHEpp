@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-09T12:37:59.725411+00:00",
+  "scope": "Full retained aux8 traced functional replay with unchanged selectors",
+  "terminal": true,
+  "actual_exit_code": 0,
+  "directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/trace-diagnostic-v1",
+  "log": "/tmp/ckks-aux8-full-trace.log",
+  "stderr": "/tmp/ckks-aux8-full-trace.stderr",
+  "time_log": "/tmp/ckks-aux8-full-trace.time",
+  "fresh_keys_generated": false,
+  "failure_cause_established": false,
+  "security_validated": false,
+  "report": {
+    "n": 16384,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--trace",
+    "fresh_keys_generated": false,
+    "fresh_input_max_error": 6.054536509709368e-11,
+    "saved_max_error": 1.7331694525132082e+20,
+    "saved_rms_error": 4.235902733671335e+19,
+    "max_error": 1.3212045850306164e+20,
+    "rms_error": 4.264512319580799e+19,
+    "saved_output_equal": false,
+    "accuracy_passed": false,
+    "retained_square_validated": false
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "utc": "2026-10-09T08:47:37.994558+00:00",
+  "scope": "Full N16384 aux16 sigmoid completion; independent fixed23bit refresh and retained-square gates",
+  "function": "sigmoid",
+  "report": "docs/narrow-dd-ll14-plain37-aux16-sigmoid.json",
+  "report_sha256": "711eaebe4e8588f79feb501165dd38377a2f1288607b8dfc8192d0f76e36af3d",
+  "checked_accuracy": {
+    "report": "docs/narrow-dd-ll14-plain37-aux16-sigmoid.json",
+    "target_precision_bits": 23,
+    "accuracy_passed": true,
+    "max_error": 3.6567016303228672e-09,
+    "evaluation_max_error": 3.4899911193011994e-09,
+    "fresh_input_max_error": 6.615279229667004e-11,
+    "approximation_uniform_bound": 7.646348227439392e-10,
+    "post_refresh_product_max_error": 9.485200806513974e-09,
+    "post_refresh_product_evaluation_max_error": 9.101235989536151e-09,
+    "rms_error": 1.4045663615418532e-09,
+    "target_tolerance": 1.1920928955078125e-07,
+    "product_tolerance": 4.50319595316329e-07,
+    "product_evaluation_tolerance_lower_bound": 4.503195950585134e-07
+  },
+  "full_runner_session": 50626,
+  "full_runner_terminal": false,
+  "sigmoid_pid": 1831156,
+  "sigmoid_terminal": true,
+  "sigmoid_actual_exit_code": 0,
+  "normal_time_exit": true,
+  "stderr_bytes": 0,
+  "owned_selector_cleanup": true,
+  "failure_snapshot_present": false,
+  "wall_time": "1:29:11",
+  "peak_rss_kib": 14135112,
+  "source_sha256": {
+    "test/ckks/ckks_narrow_benchmark.cpp": "7b26c8346bc50ff1f65c4f6011f6e7997d666df7e7ac7ae461e573acd6c1b9d3",
+    "test/ckks/ckks_narrow_checkpoint_inspect.cpp": "3cf275d95f408ae0bd291e8e00489e47a08500ce6428d0e073b08216cea03028",
+    "include/ckks/ckks.hpp": "4e11d00df1c72f505f6635cf115810ec21299d85d19f538c73b1c2b0653c2372",
+    "include/mulfft.hpp": "0b9b7c957e57ffff0262c2a11160fab99ed1af095cc1b64d4979a761b7e14c2f",
+    "include/ckks/narrow_bootstrapping.hpp": "60ffcdbd18d5ea4057e6eb7348ce83c687816e46938bef014d01a9efa8217f8d",
+    "include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79",
+    "include/ckks/narrow_selector_file.hpp": "baa876f1d73f170a62117ce6fb27fb4aaf32866106243d7ae8e0d07dcc5e13c8",
+    "include/ckks/compact_dd.hpp": "59aad7215838b861168d54e50355db4c19c4cb3d9aaaad6ec01b38724288c5ce",
+    "include/ckks/compact_linear.hpp": "f46bce3180291c3bdbbea66a44326b0c6929773cde1078952c74d74a9ab0fc9f"
+  },
+  "executable_sha256": "30737489e19f92fa0d4c92822903cc958febde31fb5fe1cb52851aaaa4c39a4e",
+  "next_function": "tanh",
+  "next_pid": 1836219,
+  "next_start_ticks": 218187280,
+  "all_functions_validated": false,
+  "full_functions_passed": [
+    "gelu",
+    "sigmoid"
+  ],
+  "missing_functions": [
+    "tanh"
+  ],
+  "security_validated": false,
+  "parameter_importer_actual_exit_code": 0,
+  "parameter_importer_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_plain37_aux16_gelu_sigmoid_validated.json",
+  "parameter_importer_report_sha256": "3fb0d48687872e095e6524406e13010d2299b136f550a7dbcb3cc2f29bc41237"
+}

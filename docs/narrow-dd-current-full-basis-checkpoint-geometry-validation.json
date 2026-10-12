@@ -1,0 +1,140 @@
+{
+  "scope": "Inspect retained basis checkpoint geometry and optional payload integrity.\n\nReads public metadata and streams hashes without decoding or printing secrets.\nChecks portable headers and fixed selector lengths. It does not validate the\ncheckpoint's evaluation-key suffix or ciphertext phases; successful encrypted\nreplay and independent accuracy gates remain required.\n",
+  "n": 32768,
+  "storage_bits": 576,
+  "profile": [
+    5638878721697067057,
+    32768,
+    576,
+    518,
+    47,
+    31,
+    85,
+    44,
+    18,
+    8,
+    44,
+    37
+  ],
+  "selector_groups_checked": 36,
+  "geometry_checked": true,
+  "payloads_hashed": false,
+  "files": {
+    "checkpoint.bin": {
+      "bytes": 16519466671
+    },
+    "selectors/head-0.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-1.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-2.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-3.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-4.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-5.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-6.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-7.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-8.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-9.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-10.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-11.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-12.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-13.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-14.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-15.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-16.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-17.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-18.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-19.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-20.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-21.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-22.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-23.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-24.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-25.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-26.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-27.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-28.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-29.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/head-30.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/tail-0.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/tail-1.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/tail-2.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/tail-3.bin": {
+      "bytes": 4992270409
+    },
+    "selectors/tail-4.bin": {
+      "bytes": 4992270409
+    }
+  },
+  "fresh_keys_generated": false,
+  "files_modified": false,
+  "encrypted_replay_validated": false,
+  "evaluation_key_suffix_validated": false,
+  "security_validated": false
+}

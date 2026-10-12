@@ -1,0 +1,20 @@
+{
+  "observed_at_utc": "2026-10-09T05:31:45.613517+00:00",
+  "scope": "Sequential exact-weight10/12 posterior histograms and joint-decoder grids; same mask and pinned estimator; 2GiB cap",
+  "live_job_pid": 1756575,
+  "live_job_rss_bytes": 17687748608,
+  "live_job_limit_bytes": 68719476736,
+  "available_memory_bytes": 114034499584,
+  "required_available_memory_bytes": 63916630016,
+  "auxiliary_limit_bytes": 2147483648,
+  "launch_eligible": true,
+  "sessions": [
+    37030,
+    73785,
+    74203
+  ],
+  "all_sessions_terminal": true,
+  "all_actual_exit_codes_zero": true,
+  "completion_evidence": "narrow-dd-block-weight-joint-decode-validation.json",
+  "completion_observed_at_utc": "2026-10-09T05:38:08.442300+00:00"
+}

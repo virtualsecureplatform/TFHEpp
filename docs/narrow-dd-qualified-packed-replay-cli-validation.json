@@ -1,0 +1,22 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "source_sha256": "d1de93f768ae15503dee0c57867cab475c7ce1cb6cc17c75cd344974f2f2bf2f",
+  "trials": [
+    {
+      "invalid_wait_runner": "0:0",
+      "actual_exit_code": 2,
+      "no_run_artifacts_created": true
+    },
+    {
+      "invalid_wait_runner": "-1:2",
+      "actual_exit_code": 2,
+      "no_run_artifacts_created": true
+    },
+    {
+      "invalid_wait_runner": "123:x",
+      "actual_exit_code": 2,
+      "no_run_artifacts_created": true
+    }
+  ]
+}

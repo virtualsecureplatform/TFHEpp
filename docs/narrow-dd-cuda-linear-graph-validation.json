@@ -1,0 +1,45 @@
+{
+  "observed_at_utc": "2026-10-08T22:36:45.520394+00:00",
+  "scope": "Ordered resident linear primitive graph for automorphism, public polynomial multiplication and native addition. Host metadata/lifetime validation only; complete S2C translator and encrypted graph validation outstanding.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "51593a9a042eaf81e2a59331740dfca3cf986e4400cb245cec4d424bd426465d",
+    "src/ckks/narrow_cuda.cu": "9864b4f1999b8e47d189293794ad03db2fb0abaf0a969ea415cf81a5feb6033e",
+    "test/ckks/ckks_narrow_cuda.cu": "610ea013dc3353dd0cd8f7cdc865cc87b5a94e9ac939bd2535d0764d8763af8f"
+  },
+  "apis": [
+    "CKKSNarrowCUDAValidateLinear",
+    "CKKSNarrowCUDAEvaluateLinear"
+  ],
+  "host_valid_metadata_cases": 2,
+  "host_invalid_metadata_cases": 22,
+  "kernel_host_rejection_cases_total": 369,
+  "host_metadata_validated": true,
+  "host_ubsan_validated": true,
+  "cases": "Five-step plain/add/plain/add/auto graph with reused tensor workspace, reused intermediate storage and exact last-use in-place addition; four-step selected in-place root. Reject malformed topology/descriptors, Q/delta mismatches, overflow, live-value overwrite, selected-output overwrite and corruption of future public plaintext/key tables.",
+  "evaluation_contract": "Prevalidate all children/edges/global immutable buffers and live intermediates before launch; sequential child evaluations on one caller stream. No device allocation, transfer or synchronization; host metadata may allocate. Caller must synchronize after partial errors.",
+  "encrypted_graph_reference_validated": false,
+  "device_cases_executed": 0,
+  "device_validated": false,
+  "s2c_schedule_translator_present": false,
+  "full_gpu_refresh_integrated": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "cmake_build_exit_code": 0,
+  "ubsan_build_exit_code": 0,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-linear-graph-build.log",
+  "ubsan_build_log": "/tmp/ckks-narrow-cuda-linear-graph-ubsan-build.log",
+  "ubsan_build_argv": "/tmp/ckks-narrow-cuda-linear-graph-ubsan-argv.json",
+  "ubsan_scope": "Current host CUDA source/test instrumented, unchanged host-instrumented Tensor Core object reused. Device/runtime code uninstrumented and device branches unexecuted.",
+  "cmake_test_actual_exit_code": 77,
+  "ubsan_test_actual_exit_code": 77,
+  "gpu_skip_reason": "no CUDA-capable device is detected",
+  "ubsan_test_environment": {
+    "LD_LIBRARY_PATH": "/tmp/ckks-cuda-toolchain/toolkit/lib"
+  },
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-linear-graph-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-linear-graph-test.stderr",
+  "cmake_test_stderr_bytes": 0,
+  "ubsan_test_log": "/tmp/ckks-narrow-cuda-linear-graph-ubsan-test.log",
+  "ubsan_test_stderr_log": "/tmp/ckks-narrow-cuda-linear-graph-ubsan-test.stderr",
+  "ubsan_test_stderr_bytes": 0
+}

@@ -1,0 +1,38 @@
+{
+  "observed_at_utc": "2026-10-10T22:35:33.859634+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Completed GeLU output from original frozen N32768 retained-key all-function replay. Independent saved-input/refresh/square/normalized-square decoding and exact archive identity to initial GeLU. Tanh and parent all-function replay remain pending; not latest-source full refresh, complete retained-payload integrity, matched paper latency or security.",
+  "fresh_keys_generated": false,
+  "input_reused": true,
+  "refresh_seconds": 4803.120858271,
+  "key_setup_seconds": 72.244943141,
+  "initial_refresh_seconds": 5945.511110851,
+  "initial_key_setup_seconds": 2937.07852543,
+  "initial_replay_ciphertext_archives_identical": true,
+  "archive_sha256": "2be8223e47c35ed9ae57299aaae1d75f78fa7e8d93d9ed4b372a793c823e124f",
+  "independent_phase_checks": {
+    "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+    "n": 32768,
+    "function": "gelu",
+    "metrics": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 1.5541199769161976e-08,
+      "post_refresh_product_max_error": 1.262155845454321e-07,
+      "square_normalization_max_error": 2.15174226503516e-09
+    },
+    "product_tolerance": 1.4678657411332307e-06,
+    "independent_phase_accuracy_passed": true,
+    "security_validated": false
+  },
+  "executable_sha256": "13ef030801b5a9c28d470290cf4d0630964bcf6dac6030fe6065bb3e92e59970",
+  "completed_report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/gelu-replay-completed-report.json",
+  "completed_report_sha256": "233a016eb922a14818b552f7c622688002e57834efca724c7dcf5598da4a8e49",
+  "independent_output": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/gelu-replay-independent.json",
+  "independent_output_sha256": "69393d3da39cb37ad81fe07793546c7661da39618c973025b5d788645e78952f",
+  "all_function_replay_complete": false,
+  "current_source_full_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "actual_independent_decoder_exit_code": 0
+}

@@ -1,0 +1,187 @@
+{
+  "utc": "2026-10-09T11:15:31.682095+00:00",
+  "previous_goal_turn_classification": "progress: guarded corrected-selector replay implemented and queued",
+  "current_goal_turn_classification": "verified wait: original packed, aux16 tanh, original traced replay and guarded corrected queue remain live",
+  "initial_observation": {
+    "utc": "2026-10-09T11:14:31.551803+00:00",
+    "rows": [
+      {
+        "pid": 1756575,
+        "start_ticks": 211884551,
+        "state": "R",
+        "cpu_ticks": 23684337,
+        "rss_bytes": 17683038208,
+        "io": {
+          "rchar": 28686703178,
+          "wchar": 58751483389,
+          "syscr": 31279,
+          "syscw": 32021,
+          "read_bytes": 39226093568,
+          "write_bytes": 58882605056,
+          "cancelled_write_bytes": 0
+        }
+      },
+      {
+        "pid": 1836219,
+        "start_ticks": 218187280,
+        "state": "R",
+        "cpu_ticks": 4070039,
+        "rss_bytes": 13782863872,
+        "io": {
+          "rchar": 140754306706,
+          "wchar": 34945895443,
+          "syscr": 448,
+          "syscw": 46,
+          "read_bytes": 0,
+          "write_bytes": 34946056192,
+          "cancelled_write_bytes": 0
+        }
+      },
+      {
+        "pid": 1841995,
+        "start_ticks": 219001048,
+        "state": "R",
+        "cpu_ticks": 375231,
+        "rss_bytes": 11168051200,
+        "io": {
+          "rchar": 11303046353,
+          "wchar": 118,
+          "syscr": 513962,
+          "syscw": 3,
+          "read_bytes": 4853616640,
+          "write_bytes": 4096,
+          "cancelled_write_bytes": 0
+        }
+      },
+      {
+        "pid": 1842797,
+        "start_ticks": 219080390,
+        "state": "S",
+        "cpu_ticks": 4,
+        "rss_bytes": 18284544,
+        "io": {
+          "rchar": 1283588,
+          "wchar": 8093,
+          "syscr": 193,
+          "syscw": 13,
+          "read_bytes": 0,
+          "write_bytes": 40960,
+          "cancelled_write_bytes": 0
+        }
+      }
+    ]
+  },
+  "latest_observations": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "state": "R",
+      "cpu_ticks": 23701173,
+      "cpu_ticks_delta": 16836,
+      "rss_bytes": 17682755584,
+      "io": {
+        "rchar": 28739918439,
+        "wchar": 58804698650,
+        "syscr": 31337,
+        "syscw": 32050,
+        "read_bytes": 39317676032,
+        "write_bytes": 58935939072,
+        "cancelled_write_bytes": 0
+      },
+      "io_delta": {
+        "rchar": 53215261,
+        "wchar": 53215261,
+        "syscr": 58,
+        "syscw": 29,
+        "read_bytes": 91582464,
+        "write_bytes": 53334016,
+        "cancelled_write_bytes": 0
+      },
+      "terminal": false
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "state": "R",
+      "cpu_ticks": 4081348,
+      "cpu_ticks_delta": 11309,
+      "rss_bytes": 13649801216,
+      "io": {
+        "rchar": 140754306706,
+        "wchar": 34945895443,
+        "syscr": 448,
+        "syscw": 46,
+        "read_bytes": 0,
+        "write_bytes": 34946056192,
+        "cancelled_write_bytes": 0
+      },
+      "io_delta": {
+        "rchar": 0,
+        "wchar": 0,
+        "syscr": 0,
+        "syscw": 0,
+        "read_bytes": 0,
+        "write_bytes": 0,
+        "cancelled_write_bytes": 0
+      },
+      "terminal": false
+    },
+    {
+      "pid": 1841995,
+      "start_ticks": 219001048,
+      "state": "R",
+      "cpu_ticks": 388727,
+      "cpu_ticks_delta": 13496,
+      "rss_bytes": 11168014336,
+      "io": {
+        "rchar": 13244484963,
+        "wchar": 118,
+        "syscr": 513968,
+        "syscw": 3,
+        "read_bytes": 6795063296,
+        "write_bytes": 4096,
+        "cancelled_write_bytes": 0
+      },
+      "io_delta": {
+        "rchar": 1941438610,
+        "wchar": 0,
+        "syscr": 6,
+        "syscw": 0,
+        "read_bytes": 1941446656,
+        "write_bytes": 0,
+        "cancelled_write_bytes": 0
+      },
+      "terminal": false
+    },
+    {
+      "pid": 1842797,
+      "start_ticks": 219080390,
+      "state": "S",
+      "cpu_ticks": 5,
+      "cpu_ticks_delta": 1,
+      "rss_bytes": 18284544,
+      "io": {
+        "rchar": 1284290,
+        "wchar": 9743,
+        "syscr": 197,
+        "syscw": 15,
+        "read_bytes": 0,
+        "write_bytes": 49152,
+        "cancelled_write_bytes": 0
+      },
+      "io_delta": {
+        "rchar": 702,
+        "wchar": 1650,
+        "syscr": 4,
+        "syscw": 2,
+        "read_bytes": 0,
+        "write_bytes": 8192,
+        "cancelled_write_bytes": 0
+      },
+      "terminal": false
+    }
+  ],
+  "no_jobs_restarted": true,
+  "full_accuracy_newly_established": false,
+  "goal_complete": false
+}

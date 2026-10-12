@@ -1,0 +1,36 @@
+{
+  "scope": "Explicit current traced/untraced reproducibility gate; default archived-identity gate remains strict",
+  "actual_current_pair_accepted": {
+    "archived_output_reproduced": false,
+    "current_traced_untraced_prefixes_identical": true,
+    "prefix_sha256": "fb91743b6e29997baf88f753f8cb83c2eaa4c1c4ad3f831d39fc7665220b3a28"
+  },
+  "controls": [
+    {
+      "control": "failed-baseline",
+      "rejected": true,
+      "error": "baseline terminal status or profile mismatch"
+    },
+    {
+      "control": "wrong-matching-profile",
+      "rejected": true,
+      "error": "matching baseline terminal status or profile mismatch"
+    },
+    {
+      "control": "missing-independent-metric",
+      "rejected": true,
+      "error": "baseline independent metric missing or nonfinite"
+    },
+    {
+      "control": "strict-archived-gate",
+      "rejected": true,
+      "error": "baseline did not complete with identical saved ciphertext"
+    },
+    {
+      "control": "different-current-ciphertexts",
+      "rejected": true,
+      "error": "current baseline replay ciphertexts differ"
+    }
+  ],
+  "passed": true
+}

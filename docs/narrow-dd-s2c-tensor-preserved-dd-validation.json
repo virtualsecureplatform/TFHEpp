@@ -1,0 +1,489 @@
+{
+  "terminal": true,
+  "all_component_checks_passed": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "fresh_keys_generated": false,
+  "scope": "Carry forward completed retained DD-switch and head/tail-factor controls only. Replacing the newly oracle-qualified tensor function with its frozen predecessor and removing the separately qualified lazy Galois adapter restores entire prerequisite headers byte-for-byte. All other prerequisite source hashes match. Existing DD switching and factor code is unchanged. Current narrow S2C wiring is covered by current all-function small replay and the separately qualified N32768 adapter. This source provenance check does not qualify full integrated N32768 refresh.",
+  "levels": [
+    {
+      "q": 479,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "a2feec326bf33ccf52c19c91c7dce5c46b84ac00d58b60ef51a970cc841d4aa0",
+      "report": {
+        "n": 32768,
+        "q": 479,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1769472,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 622854144,
+        "new_cache_bytes": 622854144,
+        "conversion_seconds": 3.561189265,
+        "old_prepare_seconds": 0.586922701,
+        "new_prepare_seconds": 0.578641982,
+        "coefficient_reference_seconds": 6.826305328,
+        "old_switch_seconds": 0.363995185,
+        "new_switch_seconds": 0.176083313,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.470413033
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.211735459
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.210815495
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.471423042
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.213110616
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.469821344
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.469394099
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.212515496
+          }
+        ]
+      }
+    },
+    {
+      "q": 432,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "68cc50684c6024ef68a8ef7ce0033b6e0ab2c1cbeb1fb757267a62fd090cb3ca",
+      "report": {
+        "n": 32768,
+        "q": 432,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1572864,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 503316480,
+        "new_cache_bytes": 503316480,
+        "conversion_seconds": 2.876035218,
+        "old_prepare_seconds": 0.47723753,
+        "new_prepare_seconds": 0.470545758,
+        "coefficient_reference_seconds": 5.509515663,
+        "old_switch_seconds": 0.317212355,
+        "new_switch_seconds": 0.142063943,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.414185568
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.179886657
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.183756805
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.417157414
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.176101644
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.413856601
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.411556794
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.175231781
+          }
+        ]
+      }
+    },
+    {
+      "q": 385,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "88615bc46111c3445a7cdd158cc546bcbef31b0412799890571a1758072c62c3",
+      "report": {
+        "n": 32768,
+        "q": 385,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1441792,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 403701760,
+        "new_cache_bytes": 403701760,
+        "conversion_seconds": 2.341858557,
+        "old_prepare_seconds": 0.383427887,
+        "new_prepare_seconds": 0.378578431,
+        "coefficient_reference_seconds": 4.596384007,
+        "old_switch_seconds": 0.27805811,
+        "new_switch_seconds": 0.123008927,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.362540535
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.155873833
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.154742563
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.36144433
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.154900424
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.365035009
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.36492492
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.154866612
+          }
+        ]
+      }
+    },
+    {
+      "q": 338,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "89d790a2034636b1891126b1ba8a1fc6e6aafab38f59162d68bbd171dc33f977",
+      "report": {
+        "n": 32768,
+        "q": 338,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1245184,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 308805632,
+        "new_cache_bytes": 308805632,
+        "conversion_seconds": 1.793443793,
+        "old_prepare_seconds": 0.296113227,
+        "new_prepare_seconds": 0.292042588,
+        "coefficient_reference_seconds": 3.5082352400000003,
+        "old_switch_seconds": 0.237840043,
+        "new_switch_seconds": 0.10204902699999999,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.314766309
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.129257284
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.128579357
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.310542783
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.12687322
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.311372993
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.313748865
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.129041582
+          }
+        ]
+      }
+    },
+    {
+      "q": 291,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "349e77cf1216d815787c294827a7bcf74e4f44f8975a5da936ca8a007a012686",
+      "report": {
+        "n": 32768,
+        "q": 291,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 1114112,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 240648192,
+        "new_cache_bytes": 240648192,
+        "conversion_seconds": 1.379428648,
+        "old_prepare_seconds": 0.229192134,
+        "new_prepare_seconds": 0.224876448,
+        "coefficient_reference_seconds": 2.7171371850000003,
+        "old_switch_seconds": 0.207300343,
+        "new_switch_seconds": 0.084888887,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.267553308
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.107226257
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.107562356
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.268438238
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.108617771
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.269017076
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.268089193
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.107950845
+          }
+        ]
+      }
+    },
+    {
+      "q": 244,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "4ae29b85557f8e5e41e08bc3ef9f3bace85f91e1c745bdee438de8e00d40d572",
+      "report": {
+        "n": 32768,
+        "q": 244,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 917504,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 168820736,
+        "new_cache_bytes": 168820736,
+        "conversion_seconds": 0.976991696,
+        "old_prepare_seconds": 0.161390037,
+        "new_prepare_seconds": 0.159286829,
+        "coefficient_reference_seconds": 1.899726094,
+        "old_switch_seconds": 0.160269479,
+        "new_switch_seconds": 0.043479998000000006,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.202401248
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.056912021
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.055029578
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.201467562
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.055843958
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.200358308
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.202220959
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.056382891
+          }
+        ]
+      }
+    },
+    {
+      "q": 197,
+      "build_actual_exit_code": 0,
+      "run_actual_exit_code": 0,
+      "executable_sha256": "a9f6b5fe99570273d485b459cc6f179e9ba9aaf9f39e662263aa08c0bca19008",
+      "report": {
+        "n": 32768,
+        "q": 197,
+        "primary_bits": 18,
+        "old_secondary_bits": 11,
+        "new_secondary_bits": 11,
+        "samples": 3,
+        "row_coefficients_checked": 720896,
+        "switch_coefficients_checked": 196608,
+        "old_cache_bytes": 103809024,
+        "new_cache_bytes": 103809024,
+        "conversion_seconds": 0.59775441,
+        "old_prepare_seconds": 0.100550751,
+        "new_prepare_seconds": 0.097917103,
+        "coefficient_reference_seconds": 1.230583382,
+        "old_switch_seconds": 0.11577604899999999,
+        "new_switch_seconds": 0.028405226999999998,
+        "all_coefficients_equal": true,
+        "retained_public_key_rows_used": true,
+        "whole_refresh_qualified": false,
+        "paired_timings": [
+          {
+            "native": false,
+            "four_switches_seconds": 0.14649112
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.036630738
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.035434296
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.149917022
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.035957541
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.14752283
+          },
+          {
+            "native": false,
+            "four_switches_seconds": 0.151765068
+          },
+          {
+            "native": true,
+            "four_switches_seconds": 0.036627342
+          }
+        ]
+      }
+    }
+  ],
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/test/ckks/ckks_dd_recombine_exact.cpp": "13c58c5c69e0c3f13e25b8508b3d8f50e0d4b8bf93b773f9017b728ab4277fcf",
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c"
+  },
+  "public_key_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q479.bin": "ea06bce9aeab7b29105a8024218c087cbee8e2f71a8dda0a17b3fb2c2f1e42a9",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q432.bin": "750c2acec2b433010c843350731b0ccc1a52ec89c3364e7a9423668c9fbdb3d6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q385.bin": "62bc3817e6ffb392e07fcb2b618e570c4c7ec4b1175ad04eefa5254a45bf1fe6",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q338.bin": "1c814f76ad96382002b138e6e8d9ec26bef06f52f9bf58035e3efc40e2eb3aee",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q291.bin": "4413889ba323f874ffd5d57de8ba118e89f39f8c606d4a75b2994cd1360daa0b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q244.bin": "a5e47be5dd4a0deeced38b520ead6898bdcaebcae9c80777bc9fa4af65d11d9c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-secondary11-retained-20261011/key-q197.bin": "a2da314a725538931572721eaef0b807718b349cbc0553de791d4d20e67a8562"
+  },
+  "build_inputs_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a": "d5fe98dbe264fdb5881e1405c4515e4710f3e4102f9f4d1e688957bac6e47f3c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a": "a1b3b4f6fdb2b9e200d18a4052f2ae8dd876ae1bb4689dd3bf5b72f43aaae6e9",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a": "e4cf740aa473cebf2e2679f148dcadf21ea7034ec9a3f71b4cbb66205c8f0064",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a": "e00b2d38402e510d6c8abed808c4404d3299c034d5bef73ea7f8b15819e13cf8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-products-current-dd-levels-20261011/integrated-control.cpp": "82aa6d1d8828d6e91f19065274efeb366fbfbea620382a669cede31600f92e02",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-products-current-dd-levels-20261011/reference-switch.hpp": "1fd644511e27349158a23484360d2ce0f308252d08e044d6abeedce4ad6a3b28"
+  },
+  "native_product_storage_ratio": 0.1111111111111111,
+  "extracted_public_key_files_unchanged": true,
+  "public_key_files_unchanged": true,
+  "validation_controller_actual_exit_code": 0,
+  "controller_actual_exit_code": 0,
+  "preceding_source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27",
+    "TFHEpp/test/ckks/ckks_dd_recombine_exact.cpp": "13c58c5c69e0c3f13e25b8508b3d8f50e0d4b8bf93b773f9017b728ab4277fcf",
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "a088e1fc57791a9de7d7cb621e3bc23083a424aac10835aeab9f8ae2dcc7d0c9",
+    "TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c"
+  },
+  "validation_kind": "source_projection_carry_forward",
+  "preceding_receipt": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-native-products-current-dd-levels-validation.json",
+  "preceding_receipt_sha256": "54703cdec41bd4eafebe0bc6d014f19018703ec2c506e30515db7a9614aa4e9a",
+  "test_execution": "Actual test exits and level/factor measurements are reused from the preceding receipt; no new component evaluation claimed.",
+  "source_projection_evidence": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-tensor-full-qualification-20261011/source-projection.json",
+  "projection_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "a088e1fc57791a9de7d7cb621e3bc23083a424aac10835aeab9f8ae2dcc7d0c9"
+  },
+  "full_integrated_refresh_qualified": false
+}

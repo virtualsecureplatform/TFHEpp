@@ -1,0 +1,64 @@
+{
+  "scope": "Saved N32768 compact S2C raw/prepared comparison including derived-cache construction; no integration, standalone full refresh or paper-performance claim. One timed trial per path.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "fresh_keys_generated": false,
+  "integrated": false,
+  "paper_performance_reproduced": false,
+  "controller": {
+    "pid": 2038803,
+    "start_ticks": 237434638
+  },
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-full-20261011/candidate.hpp": "1273ff3ef206617651a619f2292b0f5b3dc25dca1a28528c426f43d52887a76d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-full-20261011/control.cpp": "df90e8c87ba1a7cf6801c5578ed4b1cbf250e7e7d1c2f0fc206b02969b8131bb",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-full-20261011/run.py": "4204b19d9afd95e7abdff2287586df1b17e10438c4c19a4f65385a56af92a665",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "a088e1fc57791a9de7d7cb621e3bc23083a424aac10835aeab9f8ae2dcc7d0c9",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_linear.hpp": "f46bce3180291c3bdbbea66a44326b0c6929773cde1078952c74d74a9ab0fc9f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_refresh.hpp": "18974af4ddd430b1f96efbd065ebe154be659fc4ae66ef9d8a5b26fc05b4aa94",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c"
+  },
+  "updated_utc": "2026-10-11T14:20:00.675727+00:00",
+  "build_actual_exit_code": 0,
+  "checkpoint_baseline": {
+    "bytes": 16519466671,
+    "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+  },
+  "executable_sha256": "7b582d2423f60c74cf69bafcda9659737a80ecf5e511bffd9ba6362336aca278",
+  "runtime_wrapper": {
+    "pid": 2038825,
+    "start_ticks": 237435077
+  },
+  "test_actual_exit_code": 0,
+  "rows": [
+    {
+      "n": 32768,
+      "prepared": false,
+      "seconds_including_cache_construction": 409.119818032,
+      "prepared_key_builds": 0,
+      "sum_cache_peaks_bytes": 0,
+      "dense_coefficients_exact": true,
+      "encapsulated_coefficients_exact": true,
+      "coefficients_checked": 131072
+    },
+    {
+      "n": 32768,
+      "prepared": true,
+      "seconds_including_cache_construction": 198.115350141,
+      "prepared_key_builds": 22,
+      "sum_cache_peaks_bytes": 905969664,
+      "dense_coefficients_exact": true,
+      "encapsulated_coefficients_exact": true,
+      "coefficients_checked": 131072
+    }
+  ],
+  "checkpoint_unchanged": true,
+  "sources_unchanged": true,
+  "raw_seconds": 409.119818032,
+  "prepared_seconds": 198.115350141,
+  "prepared_time_ratio": 0.48424774701455325,
+  "coefficients_checked": 262144,
+  "controller_actual_exit_code": 0
+}

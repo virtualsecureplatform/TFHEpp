@@ -1,0 +1,27 @@
+{
+  "observed_at_utc": "2026-10-09T05:58:58.277399+00:00",
+  "scope": "Sequential 2GiB Sage additional weight13/14/15 q64 histograms/grids and seven uniform-proxy attacks",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "rss_bytes": 17762689024,
+      "limit_bytes": 68719476736
+    },
+    {
+      "pid": 1823852,
+      "rss_bytes": 7622082560,
+      "limit_bytes": 34359738368
+    }
+  ],
+  "available_memory_bytes": 106208595968,
+  "required_available_memory_bytes": 90579345408,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_limit_bytes": 2147483648,
+  "launch_eligible": true,
+  "process_pool_phase_total_reserve_bytes": 4294967296,
+  "process_pool_phase_required_available_memory_bytes": 92726829056,
+  "session_id": 95642,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "completion_observed_at_utc": "2026-10-09T06:16:31.462843+00:00"
+}

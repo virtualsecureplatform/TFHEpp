@@ -1,0 +1,112 @@
+{
+  "observed_at_utc": "2026-10-09T00:44:50.614261+00:00",
+  "scope": "Saved Q136 output-conjugation key from the second retained full plain37 sigmoid trial, exact key-message verification and cached auxiliary-scale conjugation of fresh ciphertexts.",
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008/checkpoint.bin",
+  "checkpoint_bytes": 6854643214,
+  "checkpoint_mtime_ns": 1791500932795412679,
+  "checkpoint_unchanged_since_retained_dd_phase_check": true,
+  "checkpoint_prefix_bytes_read": 917592,
+  "output_key_offset": 6094785778,
+  "output_key_bytes": 62390272,
+  "output_key_sha256": "a8dd051bb4f9a6adf5b21d2f2a7f32497cfaf6114e62fdd43faf735ab84f6fc7",
+  "adjacent_dd_header_checked": true,
+  "cache_mode_checked": 1,
+  "reader_endianness": "Original cereal PortableBinaryInputArchive preserves its conversion across seeks.",
+  "points": 16384,
+  "native_bits": 448,
+  "output_log_q": 108,
+  "output_log_delta": 48,
+  "auxiliary_log_scale": 28,
+  "key_log_q": 136,
+  "key_rows": 34,
+  "key_phase_coefficients_checked": 557056,
+  "key_phase_maximum_noise": 15,
+  "key_phase_noise_limit": 39,
+  "key_phase_noise_limit_is_diagnostic_12_sigma": true,
+  "phase_oracle": "Exact independent integer NTT multiplication and low-Q subtraction; explicit s[0], -s[N-n] transformation; gadget shifts 132-4*row.",
+  "evaluation_cases": [
+    {
+      "output_conjugation_kind": 0,
+      "slots_checked": 8192,
+      "maximum_error": 8.430842827813531e-11,
+      "rms_error": 1.385408461804543e-11,
+      "accuracy_passed": true
+    },
+    {
+      "output_conjugation_kind": 1,
+      "slots_checked": 8192,
+      "maximum_error": 7.020121040611795e-11,
+      "rms_error": 1.3964365953350507e-11,
+      "accuracy_passed": true
+    },
+    {
+      "output_conjugation_kind": 2,
+      "slots_checked": 8192,
+      "maximum_error": 7.907443894901614e-11,
+      "rms_error": 1.3779734546808623e-11,
+      "accuracy_passed": true
+    }
+  ],
+  "output_slots_checked": 24576,
+  "fixed_accuracy_bits": 23,
+  "controls": [
+    {
+      "case": "wrong_magic",
+      "actual_exit_code": 2,
+      "stderr": "unsupported full plain37 DD checkpoint profile",
+      "synthetic_only": true
+    },
+    {
+      "case": "truncated_prefix",
+      "actual_exit_code": 2,
+      "stderr": "Failed to read 56 bytes from input stream! Read 0",
+      "synthetic_only": true
+    },
+    {
+      "case": "wrong_dd_anchor",
+      "actual_exit_code": 2,
+      "stderr": "invalid DD anchor after output conjugation key",
+      "synthetic_only": true
+    },
+    {
+      "case": "invalid_cache_mode",
+      "actual_exit_code": 2,
+      "stderr": "invalid output conjugation checkpoint termination",
+      "synthetic_only": true
+    },
+    {
+      "case": "synthetic_excess_key_noise",
+      "actual_exit_code": 2,
+      "stderr": "retained output conjugation key phase outside 12-sigma envelope",
+      "synthetic_only": true
+    }
+  ],
+  "controls_write_no_saved_secrets": true,
+  "source_sha256": {
+    "test/ckks/ckks_narrow_dd_exact.cpp": "72cbb45b1aa6699de0cfd03ccb237e5e43b2c7810fb7e7b890b7bb69403c5d8d",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/ckks/narrow_bootstrapping.hpp": "6174ee3a0bede45851ccb2fe745f85795e8b2906dddfbec48e561b6c4b1cc903",
+    "include/ckks/prepared_auto.hpp": "f8e1a2b97bb60dcbdf3eddedb0d04d03f2f5de9e25190c8db8441fd39b9a26a4",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a"
+  },
+  "build_actual_exit_code": 0,
+  "build_terminal": true,
+  "build_log": "/tmp/ckks-narrow-retained-output-conjugation-build.log",
+  "test_actual_exit_code": 0,
+  "test_terminal": true,
+  "test_log": "/tmp/ckks-narrow-retained-output-conjugation-test.log",
+  "test_stderr_bytes": 0,
+  "test_time_log": "/tmp/ckks-narrow-retained-output-conjugation-time.log",
+  "elapsed_wall_time": "0:02.17",
+  "peak_rss_kib": 686016,
+  "memory_budget": "narrow-dd-retained-output-conjugation-memory-budget.json",
+  "limits": [
+    "Conjugation evaluations use fresh encrypted slots and fresh FFT cache preparation, not captured failing evaluator buffers.",
+    "Phase oracle is independent; slot encoding/decryption and cached evaluation use production code.",
+    "Only the dense prefix, selected raw key, adjacent first DD metadata and final mode are read; skipped archive is not validated.",
+    "Initial unused chain allocation contributes to observed peak RSS."
+  ],
+  "original_sigmoid_failure_resolved": false,
+  "security_qualified": false,
+  "goal_complete": false
+}

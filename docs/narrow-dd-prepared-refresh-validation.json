@@ -1,0 +1,81 @@
+{
+  "observed_utc": "2026-10-11T10:03:23.149507+00:00",
+  "scope": "Prepared-coefficient refresh API and elimination of duplicate benchmark S2C; small retained replay and full-size qualification are distinct gates.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_refresh.hpp": "18974af4ddd430b1f96efbd065ebe154be659fc4ae66ef9d8a5b26fc05b4aa94",
+    "TFHEpp/test/ckks/ckks_narrow_bootstrapping.cpp": "2e38a34af913a3e3a8fb9d14c53e5df29aaee531372cdd2c145d12dccfdb9171",
+    "TFHEpp/test/ckks/ckks_narrow_benchmark.cpp": "12bf5816b2c1f22da86364baedde98a7c8c11af07a7b31dcf5733b5ccf5021d1"
+  },
+  "unit_actual_exit_code": 0,
+  "unit_mode": "--prepared-refresh",
+  "unit_omp_threads": 4,
+  "unit_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/prepared-refresh-20261011/unit.log",
+  "unit_log_sha256": "d4b6f69265a5e0169bc6521e178d3a8d973520e9be066f60b56e5e3f183480f0",
+  "unit_configurations": [
+    "direct selectors",
+    "packed selectors, late rescale, compact DD and compact S2C"
+  ],
+  "unit_exact_checks": [
+    "standard refresh ciphertext equality",
+    "complex functional refresh ciphertext equality",
+    "real-only functional refresh ciphertext equality",
+    "prepared input preservation"
+  ],
+  "timing_contract": "refresh_seconds = coefficient_preparation_seconds + prepared_evaluation_seconds; diagnostics excluded",
+  "benchmark_build_attempts": [
+    {
+      "cap_gib": 6,
+      "actual_exit_code": 2,
+      "reason": "compiler virtual memory exhausted"
+    },
+    {
+      "cap_gib": 8,
+      "actual_exit_code": 2,
+      "reason": "compiler virtual memory exhausted"
+    },
+    {
+      "cap_gib": 16,
+      "session_id": 8229,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/prepared-refresh-20261011/build-retry-16g.log"
+    }
+  ],
+  "benchmark_replay_validated": true,
+  "fresh_large_keys_generated": false,
+  "full_size_new_api_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "benchmark_exe_sha256": "c156523f185745cb82ca4515e0cac9e61db295ceb938602e6d067ecf665353fb",
+  "benchmark_replay_session_id": 30702,
+  "benchmark_replay_controller_actual_exit_code": 0,
+  "retained_file_count": 37,
+  "retained_files_unchanged": true,
+  "independent_phase_checks_passed": true,
+  "earlier_executable_archive_identities": {
+    ".ciphertext": true,
+    ".square.ciphertext": true
+  },
+  "earlier_reference_report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/square-key-replay.json",
+  "reports": [
+    {
+      "n": 512,
+      "refresh_seconds": 1.269724245,
+      "coefficient_preparation_seconds": 0.138394816,
+      "prepared_evaluation_seconds": 1.131329429,
+      "diagnostic_preparation_reused": true,
+      "max_error": 1.1839592261364745e-06
+    },
+    {
+      "n": 512,
+      "refresh_seconds": 1.248798682,
+      "coefficient_preparation_seconds": 0.136913346,
+      "prepared_evaluation_seconds": 1.111885336,
+      "diagnostic_preparation_reused": true,
+      "max_error": 1.1839592261364745e-06
+    }
+  ],
+  "replay_validation_sha256": "b9cef1eb5344e29d8b26278b63f38634150ec15452275e9595b9ba96f41ef74e"
+}

@@ -1,0 +1,142 @@
+{
+  "scope": "N16384 head30/tail4 table-encoding precision isolation: same original379/49 selectors, plain34 vs37, same conjugation345 key with public auxiliary3 for factor342. Original scale49 and post-rescale41. No keys generated. Independent output phases compare measured errors; no23-bit or full-refresh qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_private_keys_generated": false,
+  "new_evaluation_keys_generated": 0,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-factor-plain37-isolation-20261011/control.cpp": "e2c6d431a460b1614c8f52d9a81de50dea390cf25fece6779b7e4ba41b774e93",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-factor-plain37-isolation-20261011/validate.py": "352bc9afeda3e802036ff9a5b517624bbbea9ddd3552a88da10e4ea00fd15290",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f43a66fefc46f4f8228c50ca43c8e2b511b5f891b8ef24234262b7922048f48",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_projection.hpp": "b84a0c001509fc69ffcec293b858c218c1ebda600952f58b092112c3f024215a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_refresh.hpp": "f07bbe5c1796c31345a554480c8477c80124b917acef23a5ce072bf0996a82a7",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_linear.hpp": "7dc89ec7a6455a3487b23ecf5d47b4fa4f44654e940daac7e2b2e79da72fff2b",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "297e7d6632e63102c9b45ea987de060c74363858c28dfdcdeff260c9a762009f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "stage": "complete",
+  "reference_sha256_before": "aaa401903a8cdca0a7c5b01eccbeb14818c37f992155568572c14a2121e07a17",
+  "checkpoint_baseline_sha256": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "baseline_receipt_sha256": "6fbd5747a1361e76025a995600d84cc9d758029584524fa59212324fea09b69c",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "fresh_keys_generated": false,
+    "rows": [
+      {
+        "tail": false,
+        "group": 30,
+        "frequency": 1,
+        "plain34_factor_error": 2.1393579410843052e-08,
+        "plain37_factor_error": 8.980085309747762e-09,
+        "plain37_postscale41_error": 1.191554405842289e-08
+      },
+      {
+        "tail": false,
+        "group": 30,
+        "frequency": 3,
+        "plain34_factor_error": 2.035806727451581e-08,
+        "plain37_factor_error": 1.1915020486092456e-08,
+        "plain37_postscale41_error": 1.207220652565515e-08
+      },
+      {
+        "tail": false,
+        "group": 30,
+        "frequency": 12,
+        "plain34_factor_error": 1.8744399521734246e-08,
+        "plain37_factor_error": 1.2686362100166908e-08,
+        "plain37_postscale41_error": 1.2745045680130887e-08
+      },
+      {
+        "tail": true,
+        "group": 4,
+        "frequency": 1,
+        "plain34_factor_error": 2.535777113392222e-08,
+        "plain37_factor_error": 1.4319536447872566e-08,
+        "plain37_postscale41_error": 1.555072734045524e-08
+      },
+      {
+        "tail": true,
+        "group": 4,
+        "frequency": 3,
+        "plain34_factor_error": 2.3196829066342536e-08,
+        "plain37_factor_error": 1.2578934917426745e-08,
+        "plain37_postscale41_error": 1.379582079664497e-08
+      },
+      {
+        "tail": true,
+        "group": 4,
+        "frequency": 12,
+        "plain34_factor_error": 2.324576154004807e-08,
+        "plain37_factor_error": 1.2269830438895075e-08,
+        "plain37_postscale41_error": 1.2749677787775435e-08
+      }
+    ]
+  },
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent integer phases for six sampled full-ring head30/tail4 factors, table scales34 and37; original49 and post-rescale41 ciphertext scales. Comparison/measurement only; does not assert a23-bit accuracy gate or full-refresh qualification.",
+    "phase_coefficients_checked": 294912,
+    "decoded_slots_checked": 147456,
+    "rows": [
+      {
+        "tail": false,
+        "group": 30,
+        "frequency": 1,
+        "plain34_factor_error": 2.1393579543646585e-08,
+        "plain37_factor_error": 8.980118174869078e-09,
+        "plain37_postscale41_error": 1.1915596359495676e-08
+      },
+      {
+        "tail": false,
+        "group": 30,
+        "frequency": 3,
+        "plain34_factor_error": 2.0358067217897933e-08,
+        "plain37_factor_error": 1.1915043377844512e-08,
+        "plain37_postscale41_error": 1.2072240442169255e-08
+      },
+      {
+        "tail": false,
+        "group": 30,
+        "frequency": 12,
+        "plain34_factor_error": 1.8744399391487538e-08,
+        "plain37_factor_error": 1.268638922499509e-08,
+        "plain37_postscale41_error": 1.2745073342605547e-08
+      },
+      {
+        "tail": true,
+        "group": 4,
+        "frequency": 1,
+        "plain34_factor_error": 2.5357771229590693e-08,
+        "plain37_factor_error": 1.4319574435455304e-08,
+        "plain37_postscale41_error": 1.555076514329273e-08
+      },
+      {
+        "tail": true,
+        "group": 4,
+        "frequency": 3,
+        "plain34_factor_error": 2.3196829005839443e-08,
+        "plain37_factor_error": 1.2578924405642227e-08,
+        "plain37_postscale41_error": 1.3795960586299471e-08
+      },
+      {
+        "tail": true,
+        "group": 4,
+        "frequency": 12,
+        "plain34_factor_error": 2.324576157127276e-08,
+        "plain37_factor_error": 1.2269833969639806e-08,
+        "plain37_postscale41_error": 1.2749679882987911e-08
+      }
+    ],
+    "comparison_checks_passed": true
+  },
+  "checkpoint_sha256_after": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "checkpoint_unchanged": true,
+  "sampled_selector_files_unchanged": true,
+  "sources_unchanged": true,
+  "reference_unchanged": true,
+  "completed_utc": "2026-10-11T16:47:38.457881+00:00"
+}

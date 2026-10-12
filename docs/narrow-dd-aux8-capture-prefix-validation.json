@@ -1,0 +1,25 @@
+{
+  "function": "sigmoid",
+  "prefix_bytes": 176225,
+  "fresh_input_max_error": 9.196094577937798e-12,
+  "max_error": 1.3444037941214642e-09,
+  "rms_error": 8.029159655255902e-10,
+  "sparse_key_geometry_passed": true,
+  "evaluation_key_suffix_validated": false,
+  "retained_square_validated": false,
+  "scope": "Inspect the auxiliary8 probe prefix with integer convolution and direct evaluation.\n\nReads secrets only from a private diagnostic file. Outputs metrics, never key\nmaterial. Does not inspect evaluation-key suffixes or retained-square keys.\n",
+  "state_bytes": 100111311,
+  "report_sha256": "a06640b5fd5e5fc8ea3c55dd74dd5580b7a97474c11a37bb76ca85ef013ae42b",
+  "fixed_23bit_refresh_passed": true,
+  "inspector_source_sha256": "3404996fb2182ae39524c804513e2827ef4eb7b1f1275d7a4dc776ff558d682f",
+  "rejected_corruption_controls": [
+    "wrong_magic",
+    "unfinished_refresh",
+    "nonternary_secret",
+    "missing_sparse_block",
+    "nonfinite_slot",
+    "truncated_prefix"
+  ],
+  "actual_exit_code": 0,
+  "state_sha256": "cd407beb492de16ec05519544a2d74041523f33a55a9889d1e1b9bf9d0ad4915"
+}

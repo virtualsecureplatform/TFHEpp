@@ -1,0 +1,78 @@
+{
+  "observed_at_utc": "2026-10-09T04:27:40.297157+00:00",
+  "scope": "Focused N512 native448 retained small plain37 memory/cache replay; deterministic degree12 periodic curve, distinct from the saved sigmoid curve",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_memory_replay.cpp": "849b3d026bc57ba902a2a5c49648b57c924379b725915934609fa39a52e580a1",
+    "include/ckks/narrow_bootstrapping.hpp": "60ffcdbd18d5ea4057e6eb7348ce83c687816e46938bef014d01a9efa8217f8d",
+    "include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79",
+    "include/mulfft.hpp": "0b9b7c957e57ffff0262c2a11160fab99ed1af095cc1b64d4979a761b7e14c2f"
+  },
+  "resource_budget": "narrow-dd-memory-replay-budget.json",
+  "standard_cmake_build": {
+    "target": "ckks_narrow_memory_replay",
+    "session": 84716,
+    "actual_exit_code": 0,
+    "terminal": true,
+    "log": "/tmp/ckks-memory-replay-normal-build.log"
+  },
+  "normal_replay": {
+    "session": 29490,
+    "pid": 1814157,
+    "terminal": true,
+    "actual_exit_code": 0,
+    "log": "/tmp/ckks-memory-replay-normal.log",
+    "stderr": "/tmp/ckks-memory-replay-normal.stderr",
+    "time_log": "/tmp/ckks-memory-replay-normal-time.log",
+    "tiles": [
+      12,
+      1
+    ],
+    "ciphertexts_identical": true,
+    "slots": 256,
+    "max_error": 2.84317e-11,
+    "fixed_gate_bits": 23,
+    "gate_passed": true,
+    "fixture_hashes_unchanged": true,
+    "stderr_bytes": 0,
+    "public_key_fft_cache_pointers_empty": true,
+    "wall_time": "5:03.46",
+    "peak_rss_kib": 343244
+  },
+  "sanitizer_replay": {
+    "session": 20444,
+    "pid": 1813389,
+    "terminal": true,
+    "instrumentation": "ASan/UBSan focused translation unit and instantiated headers; prebuilt libraries and FFT assembly uninstrumented; leaks disabled; no race detection",
+    "actual_exit_code": 0,
+    "log": "/tmp/ckks-narrow-memory-replay.log",
+    "stderr": "/tmp/ckks-narrow-memory-replay.stderr",
+    "time_log": "/tmp/ckks-narrow-memory-replay-time.log",
+    "slots": 256,
+    "max_error": 2.84317e-11,
+    "gate_passed": true,
+    "ciphertexts_identical_across_tiles": true,
+    "fixture_hashes_unchanged": true,
+    "stderr_bytes": 0,
+    "wall_time": "17:15.09",
+    "peak_rss_kib": 536020
+  },
+  "checks": [
+    "all 256 complex slots finite and below 2^-23 error against independently evaluated real/imaginary periodic curve",
+    "tile12 and tile1 output ciphertext coefficients identical",
+    "staged public-key relin, factor/output-conjugation and tail-rotation FFT pointers remain empty",
+    "retained fixture file hashes unchanged after evaluation"
+  ],
+  "static_lifetime_review": {
+    "staged_factor": "Per-tile unique_ptr owns factor cache across synchronous evaluate_group calls; reset before construction of staged_relin",
+    "loaded_selectors": "Group-local selector/cache vectors survive synchronous packedFactorsBatch calls",
+    "staged_relin": "Per-tile unique_ptr spans both product trees and completion of that tile",
+    "series_inputs": "Requests point into the fixed input span; results are separately initialized with transparent zero",
+    "fft_processors": "Generic FFT processors in mulfft.hpp are thread_local"
+  },
+  "limitations": [
+    "Static review found no concrete lifetime defect; it does not prove absence of races",
+    "Small-ring replay does not qualify full-ring correctness or explain historical unsaved sigmoid failures",
+    "A running process with empty stderr is not a completed sanitizer pass"
+  ],
+  "goal_complete": false
+}

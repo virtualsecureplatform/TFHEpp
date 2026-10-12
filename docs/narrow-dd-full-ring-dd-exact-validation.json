@@ -1,0 +1,61 @@
+{
+  "observed_at_utc": "2026-10-08T23:31:24.134315+00:00",
+  "scope": "Full-ring FFT Double Decomposition switch against exact integer NTT using the same generated encrypted compact key and input at every LL14 plain37 tree/retained-square modulus.",
+  "n": 16384,
+  "native_storage_bits": 448,
+  "primary_digit_bits": 4,
+  "secondary_digit_bits": 4,
+  "active_moduli": [
+    348,
+    300,
+    252,
+    204,
+    156,
+    108
+  ],
+  "integer_gaussian_noise_stddev": 3.2,
+  "secret_distribution": "dense ternary; generated in memory only",
+  "input_patterns": [
+    "uniform random native 448-bit words including inactive high bits",
+    "zero",
+    "native minus one",
+    "active sign bit",
+    "balanced decomposition threshold minus/equal/plus one",
+    "last coefficient one for negacyclic wrap"
+  ],
+  "reference": {
+    "arithmetic": "exact single-prime integer negacyclic NTT; independent radix-16 extraction and power-of-two recomposition/reduction",
+    "prime": 4611686018427322369,
+    "primitive_root": 7,
+    "coefficient_bound": "rows*N*8*8 < prime/2, checked statically per modulus",
+    "uses_production_decomposition": false,
+    "uses_production_recomposition": false,
+    "uses_fft": false,
+    "key_spectra": "streamed per primary/secondary/component row; no full secondary spectral cache"
+  },
+  "cases_passed": 6,
+  "coefficients_compared": 196608,
+  "native_words_compared": 1376256,
+  "all_coefficients_exact": true,
+  "actual_exit_code": 0,
+  "terminal": true,
+  "stderr_bytes": 0,
+  "peak_rss_kib": 2460904,
+  "wall_time": "1:17.91",
+  "build_log": "/tmp/ckks-narrow-dd-exact-build.log",
+  "test_log": "/tmp/ckks-narrow-dd-exact-test.log",
+  "time_log": "/tmp/ckks-narrow-dd-exact-time.log",
+  "session": 34473,
+  "source_sha256": {
+    "test/ckks/ckks_narrow_dd_exact.cpp": "91253b00595f43b7dbf5d97230e28a05ca1c12448a5d63ae84148e9f1dbd83ae",
+    "include/ckks/compact_dd.hpp": "33322058094889f5f117b38638e2237430eeb9c7f6300919003b0da4a391ad3b",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/mulfft.hpp": "aa65978f25165392b3b42a06e5a69c80bf6c42687cef5ee219baf5e823b6ff6d",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a"
+  },
+  "limitations": [
+    "Checks switching arithmetic with generated encrypted keys; not a full FBS phase/accuracy or security proof.",
+    "Original and O1 end-to-end sigmoid failures remain unresolved.",
+    "This generated-key sample does not cover the unsaved failing keys."
+  ]
+}

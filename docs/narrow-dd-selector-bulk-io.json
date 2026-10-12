@@ -1,0 +1,12 @@
+{
+  "n": 512,
+  "native_bits": 576,
+  "group_bytes": 1253376,
+  "loads_per_path": 64,
+  "legacy_seconds": 0.0143651,
+  "bulk_seconds": 0.00640158,
+  "ciphertexts_equal": true,
+  "scope": "Small warm-cache I/O fixture; excludes cryptography and full refresh performance",
+  "legacy_over_bulk_ratio": 2.2439928892554653,
+  "measurement_source": "/tmp/ckks-selector-io.cpp"
+}

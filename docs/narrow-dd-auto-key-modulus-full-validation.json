@@ -1,0 +1,55 @@
+{
+  "scope": "N16384 retained radix4 factor-conjugation key345 projected to101 and109, scale41 plain versus auxiliary8 switching. Exact raw/prepared comparison and independent output phases. No new keys; lower-budget conjugation only, not a complete functional-refresh or security qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-key-modulus-full-20261011/control.cpp": "4bce608320c451a50feba0f7f0c9442f3b1b28177d6318ae6c5dbe58550f1c43",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-key-modulus-full-20261011/validate.py": "a40988d6a3e5334439af1ffea735cafc297fa284e4c0f4133006b4fd61b50c0f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "675a6f3737a29bac61a5696a59f9a1f6a7d9c6fbdcd3d2953807d995f1ce6907",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "stage": "complete",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "log_q": 101,
+    "log_delta": 41,
+    "retained_source_key_log_q": 345,
+    "auxiliary_key_log_q": 109,
+    "auxiliary_bits": 8,
+    "fresh_keys_generated": false,
+    "retained_secret_reused": true,
+    "coefficient_checks": 1769472,
+    "raw_prepared_identical": true,
+    "input_max_error": 4.863158976498075e-10,
+    "plain_conjugation_max_error": 1.7067803072012624e-06,
+    "lifted_conjugation_max_error": 9.473797729475935e-09,
+    "plain_seconds": 0.017696613,
+    "lifted_seconds": 0.019001097,
+    "plain_23bit_gate_passed": false,
+    "lifted_23bit_gate_passed": true
+  },
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "n": 16384,
+    "scope": "Independent integer NTT phase arithmetic and canonical slot decoding of all16384 coefficients/all8192 slots for input/plain/lifted conjugation. No key values printed.",
+    "metrics": {
+      "input_max_error": 4.863252992836509e-10,
+      "plain_max_error": 1.70678032346981e-06,
+      "lifted_max_error": 9.473787289380885e-09
+    },
+    "phase_coefficients_checked": 49152,
+    "decoded_slots_checked": 24576,
+    "lifted_23bit_gate_passed": true,
+    "plain_23bit_gate_passed": false
+  },
+  "checkpoint_sha256_before": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "checkpoint_sha256_after": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "checkpoint_unchanged": true,
+  "sources_unchanged": true,
+  "completed_utc": "2026-10-11T15:30:28.841182+00:00"
+}

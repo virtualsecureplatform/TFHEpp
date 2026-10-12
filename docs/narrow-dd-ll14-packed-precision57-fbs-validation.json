@@ -1,0 +1,196 @@
+{
+  "scope": "Full N16384 real GeLU/Tanh/Sigmoid functional refresh using reconstructed coefficient-packed selectors387/57, public mask normalization, table42/scratch54, factor332/44 and DD332/288/244/200/156, S2C auxiliary8, output101/44 and subsequent square57/44. Reuses saved private/evaluation keys and input; no reconstruction or encryption here. Independent all-slot integer phase checks. Experimental CPU accuracy/remaining-level qualification, not paper security/performance qualification. Waits for the existing root controller and stops on any failed gate.",
+  "terminal": true,
+  "all_checks_passed": false,
+  "stage": "packed functional validation failed",
+  "controller_pid": 2060333,
+  "new_private_keys_generated": 0,
+  "new_encrypted_evaluation_keys_generated": 0,
+  "functions": {
+    "gelu": {
+      "test_actual_exit_code": 1
+    }
+  },
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_ll14_packed_fbs.cpp": "d5106e5dc5b750d3cb1d8433aadc863e17c877d88bd5a948d09c4968bce7b750",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-fbs-20261011/run.py": "51c5a7a2787e4fcfcda9ed7f456b2eaddecb4d4e07261072fbca29e4734a21bc",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-fbs-20261011/validate.py": "9fc4eb380cc1c267bcbcc17b9ccc9e74edf4734a64a0b33b0e5f247a7088c782",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-fbs-20261011/replay": "3ea00aa646ca3a928d778003bed75bfa0e51ec2051d9e568b0ed372970f2eb12",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_refresh.hpp": "f07bbe5c1796c31345a554480c8477c80124b917acef23a5ce072bf0996a82a7",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "636aaa5b5ebf3a02c851db136c4a200188f5c1e088fdaa8925ab83ac65167619",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_projection.hpp": "37ca3c8bbb9815e8321e3acbc03daf7479f924d3bac3cf7d6292e615d6078309",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_file.hpp": "87c159a4bc5142e680a2624d89cee23b8bfa12250918ccedc1654b241eaae11a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "297e7d6632e63102c9b45ea987de060c74363858c28dfdcdeff260c9a762009f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_linear.hpp": "7dc89ec7a6455a3487b23ecf5d47b4fa4f44654e940daac7e2b2e79da72fff2b",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_dd.hpp": "890fdfe6def7d1bcc03272930769494ff1cbf0b3120b8cf61406af6f472fa5c8",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_plain.hpp": "d4a29304ce32840e8681e31d06d1263ebfc81cc7a7a62ae2f4713737afef055f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_approximation.hpp": "cf1875973b73b5375879672924271ba696b0cc8814ff1ec061b44148c8d721a0",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_basis_checkpoint_validate.py": "1fa76656f8c9a2ae6e5b1f71b192ba6e6b4fea08fdbc49b8b5aa472cfcbeb2c8"
+  },
+  "updated_utc": "2026-10-11T20:36:21.742033+00:00",
+  "awaited_root_controller_pid": 2058209,
+  "awaited_root_start_ticks": 239120823,
+  "root_receipt_sha256": "ae129c3541af332a8e8496b1e3621282912bba656f25197452aeac7d8447d852",
+  "consumed_selector_artifacts": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-0.bin": {
+      "bytes": 970719305,
+      "sha256": "6903013119b87490bf315ad41733ab8eccaabd22c51d7616440362b69d585e82"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-1.bin": {
+      "bytes": 970719305,
+      "sha256": "2a46a8e4fc25c30ddc122e2a45c265f9323f8b9c2b65017e53b874f3d9eccc76"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-2.bin": {
+      "bytes": 970719305,
+      "sha256": "f480c3e5b6e82aea68e1ee3025411889ed83a8c1ce36c06ce089a45947fc5e6a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-3.bin": {
+      "bytes": 970719305,
+      "sha256": "99f4d541cbfafb3e91524f70b6cf2a26502fbd35c0ae23bb4dbeeb57497df493"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-4.bin": {
+      "bytes": 970719305,
+      "sha256": "c376052885d985b873fb02a7447106db07fbedee0b94585f7eabd6d0a9426826"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-5.bin": {
+      "bytes": 970719305,
+      "sha256": "d99078c420f18c3d01f150876bc5882d246a8045eed331a235322a8e2a5e8a18"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-6.bin": {
+      "bytes": 970719305,
+      "sha256": "972400cdc0a75f220b1eb8d33d1f9e74b2cf762b90ee7ee3f62847f3b675e43a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-7.bin": {
+      "bytes": 970719305,
+      "sha256": "6b0cb401f698a130fd9abf5caaf99f167fbbc96b74847fddcafecd883ed92874"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-8.bin": {
+      "bytes": 970719305,
+      "sha256": "0bfd8105fde127d5f8b093c5f0d28e2f213cc250d004e52b6105d296462aead5"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-9.bin": {
+      "bytes": 970719305,
+      "sha256": "628a828128d66d77c2774cbf1bf4879e9f3bdf9d23df9bf877386d9a49976cd1"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-10.bin": {
+      "bytes": 970719305,
+      "sha256": "5db5d6431fd7d9135b66ebdb343ce7cadec90b50663f22eabaa98a38bfe160e2"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-11.bin": {
+      "bytes": 970719305,
+      "sha256": "3f40f8e5b7ae4f91ce438157045e926e51ac6c08d59eb317196753863aa1d38a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-12.bin": {
+      "bytes": 970719305,
+      "sha256": "850247dd4ccd966bb11cc76df3a9c2b068edc12c932262f851d4f89bde50d1a8"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-13.bin": {
+      "bytes": 970719305,
+      "sha256": "44c75e4effae049172fbf6f62c95f42a7021be990c9e6a95134c23af9a9b6132"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-14.bin": {
+      "bytes": 970719305,
+      "sha256": "f3ef1e8d95938a99c4268d630805d0a6f4cd91b55ff8e19b90d300f39fbdabcc"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-15.bin": {
+      "bytes": 970719305,
+      "sha256": "d595bfa7c4b3f31991d94c22836bb39ffa2083a2d270a281a658117f3d7b317d"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-16.bin": {
+      "bytes": 970719305,
+      "sha256": "c166f84d71247e0f8892246ffce70b2624f9266329149ed3f47ef2bcc32bfcc0"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-17.bin": {
+      "bytes": 970719305,
+      "sha256": "4eb6d717349f5a685fcf9072e6e5b09aa3eb4561386e93c673eb9334ae1c2cb4"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-18.bin": {
+      "bytes": 970719305,
+      "sha256": "3bde2730f50cd597e4b3d058fdf0b85aebb56121205e6f652b8c669830705482"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-19.bin": {
+      "bytes": 970719305,
+      "sha256": "31abc8fa43035b7657a191befa662804c0904dfdb612ea06ec11cdb5f0fb2ad1"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-20.bin": {
+      "bytes": 970719305,
+      "sha256": "498293533859de753be22cdf30781eb8a659926ba1f0fa362bb3d42dc232948e"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-21.bin": {
+      "bytes": 970719305,
+      "sha256": "931e4c6b7ec1f97bbdb6774d79029483bd672fb724d90261c972b98360d48d94"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-22.bin": {
+      "bytes": 970719305,
+      "sha256": "dba3c3d93efb29a77b757e804b6a5c514c5ab8b59ca2c6902c44297c8ac4aea8"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-23.bin": {
+      "bytes": 970719305,
+      "sha256": "694166ff657620927b61c50df4cc9d3abfb04e90de5c8ad7b9142b091af896a2"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-24.bin": {
+      "bytes": 970719305,
+      "sha256": "4c54993472d682a2778f6376fa021f62c657a299aa9ff5afe7b75261064d87e2"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-25.bin": {
+      "bytes": 970719305,
+      "sha256": "ec6fcc5215b7b134ad7a6beff3c0fa8fa38e4c3141841b10631450673c75900b"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-26.bin": {
+      "bytes": 970719305,
+      "sha256": "588de798d0e2511f8ab9e1e9f5ed667ef31c102988e0cf4d43f1c6be46bcf8d3"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-27.bin": {
+      "bytes": 970719305,
+      "sha256": "c1d5a2390d21b00ad71db79bd287e5e5ebf7edf9a7d52bf46409a55e3ba5032e"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-28.bin": {
+      "bytes": 970719305,
+      "sha256": "7303a88ecfffe0b7c30f5e093656c340627e6f7dd866b69a8084bf16b374e79d"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-29.bin": {
+      "bytes": 970719305,
+      "sha256": "48a43aa7f916185ed6c75afe2187049cac7b6f9b3203697885fdde069227274b"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/head-30.bin": {
+      "bytes": 970719305,
+      "sha256": "27ca06a7bd26f180441687dbfc12ba231337a5189febc61fb4e99493d6a9634a"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-0.bin": {
+      "bytes": 970719305,
+      "sha256": "df8a54236e9dcba2ac0623bad01b93db13a81ff4fed3a190849c77bbe99fcf33"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-1.bin": {
+      "bytes": 970719305,
+      "sha256": "ee472f0326d173793d9f965d80da1c0bc309a17eca06025f4b39aa204ac82635"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-2.bin": {
+      "bytes": 970719305,
+      "sha256": "48b8db878ae20f5241c87f0efaf3ee93d73669278e2b7917a69eeb74f930ed4f"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-3.bin": {
+      "bytes": 970719305,
+      "sha256": "9b01ecb6de02628e17bd96ffd4b203e1e35735f2eade4d2b3a05a7ada2a28b3b"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-reconstruction-20261011/selectors/tail-4.bin": {
+      "bytes": 970719305,
+      "sha256": "4280b920ce09e30b0a3bf89852e314a400a54d7692a94cb1629ea18c85e79521"
+    }
+  },
+  "saved_artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint/checkpoint.bin": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011/projected-dd-chain.bin": "d55baace9801dc7f48eec737362fb406d17729a1a875a55622877709ffa89cc2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin": "f60352ab8b2d61b623681055f98380bfaef250f7230f2c3f8ff3ee3c8f418f98",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-retained-fbs-20261011/candidate-input.bin": "3e75952101cfa804ee94edc690838c0b79a5d543d89c605cbd8dc4029cf3475f"
+  },
+  "evaluator_pid": 2063516,
+  "evaluator_start_ticks": 239715724,
+  "error": "AssertionError('gelu evaluator failed')"
+}

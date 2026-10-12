@@ -1,0 +1,145 @@
+{
+  "scope": "Run one retained packed setup (or reuse one), replay it, and check saved phases.\n\nPrivate keys/selectors remain in the checkpoint directory. This diagnostic does\nnot qualify security or independently inspect all selector/key coefficients.\n",
+  "utc": "2026-10-10T06:13:17.906807+00:00",
+  "n": 512,
+  "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010",
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/checkpoint",
+  "fresh_setup_required": false,
+  "terminal": true,
+  "all_passed": true,
+  "runner": {
+    "pid": 1910281,
+    "start_ticks": 225936763
+  },
+  "exe_sha256": "f33a4d07ba3dc8100e64820b807b899d17bfc5f91b530704ac47cf3fc748947c",
+  "runs": [
+    {
+      "label": "retained",
+      "actual_exit_code": 0,
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/retained.json",
+      "time_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/retained-time.log",
+      "independent_phase_validation": {
+        "n": 512,
+        "metrics": {
+          "fresh_input_max_error": 6.425916590990133e-11,
+          "max_error": 1.1839592284083153e-06,
+          "rms_error": 4.3521162003621303e-07,
+          "post_refresh_product_max_error": 4.185404876517042e-07
+        },
+        "tolerance": 1.52587890625e-05,
+        "checkpoint_prefix_bytes_read": 118869,
+        "checkpoint_prefix_sha256": "106c0c88c387ca05f0d718e72a4f630eef59e4340813d14f0b73d10fce6c04b3",
+        "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/checkpoint/checkpoint.bin",
+        "independent_phase_validated": true,
+        "evaluation_keys_loaded": false,
+        "selector_phases_validated": false,
+        "security_validated": false,
+        "full_ring_phase_validated": false,
+        "accuracy_passed": true,
+        "artifacts": {
+          "refresh": {
+            "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/retained.json.ciphertext",
+            "sha256": "570829d0f4cefa0f74e912543ac4c6485e37ec10e956cfd0db06515194ce3a25"
+          },
+          "square": {
+            "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/retained.json.square.ciphertext",
+            "sha256": "0994b73ae30e8514f33f1d641fdfa6cc0a4b16c93d90ec43a05de74e4fd84f24"
+          },
+          "report": {
+            "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/retained.json",
+            "sha256": "eb99436b5afea21a355cbdbfa0ae7a020bba2dd0ef5bc756194e9a6b8d176e4e"
+          }
+        }
+      }
+    },
+    {
+      "label": "replay",
+      "actual_exit_code": 0,
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/replay.json",
+      "time_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/replay-time.log",
+      "independent_phase_validation": {
+        "n": 512,
+        "metrics": {
+          "fresh_input_max_error": 6.425916590990133e-11,
+          "max_error": 1.1839592284083153e-06,
+          "rms_error": 4.3521162003621303e-07,
+          "post_refresh_product_max_error": 4.185404876517042e-07
+        },
+        "tolerance": 1.52587890625e-05,
+        "checkpoint_prefix_bytes_read": 118869,
+        "checkpoint_prefix_sha256": "106c0c88c387ca05f0d718e72a4f630eef59e4340813d14f0b73d10fce6c04b3",
+        "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/checkpoint/checkpoint.bin",
+        "independent_phase_validated": true,
+        "evaluation_keys_loaded": false,
+        "selector_phases_validated": false,
+        "security_validated": false,
+        "full_ring_phase_validated": false,
+        "accuracy_passed": true,
+        "artifacts": {
+          "refresh": {
+            "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/replay.json.ciphertext",
+            "sha256": "570829d0f4cefa0f74e912543ac4c6485e37ec10e956cfd0db06515194ce3a25"
+          },
+          "square": {
+            "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/replay.json.square.ciphertext",
+            "sha256": "0994b73ae30e8514f33f1d641fdfa6cc0a4b16c93d90ec43a05de74e4fd84f24"
+          },
+          "report": {
+            "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-runner-reuse-control-20261010/replay.json",
+            "sha256": "c1851f3fcfb23977886f455534d9def10ada2395fba39b10e65a61f29bab2652"
+          }
+        }
+      }
+    }
+  ],
+  "omp_threads": 4,
+  "address_space_limit_bytes": 4294967296,
+  "security_validated": false,
+  "goal_complete": false,
+  "updated_utc": "2026-10-10T06:13:28.286827+00:00",
+  "stage": "completed",
+  "checkpoint_file_count": 37,
+  "checkpoint_hashes": {
+    "checkpoint.bin": "b2d2db248b7584d980b936677341a5658611119551e76b291b05ec845c6e628a",
+    "selectors/head-0.bin": "e522fc4bb21cd4579d7e26340638146e87d0349ccebf73bde834920bf2fe490e",
+    "selectors/head-1.bin": "0a25b5f6f7c0000ebca07a75470f5a7bcf5069168ddab3f59e147fc4cbbb95af",
+    "selectors/head-10.bin": "ad4f8d82eba044227fbae9141edbd22f0f38b7774f96408327caefccceee817b",
+    "selectors/head-11.bin": "36173f61d65716c279fd0f3fd025ebd9c881b67c08b03ae4faec5d171b5f4c24",
+    "selectors/head-12.bin": "b36f4a2fd3625636689297f88edc37e8a72a52db6929b4352f005956d7658382",
+    "selectors/head-13.bin": "54f0a3a16df1d5bcc7bd93ee7c6305c2b1ed6fd02df5c5da0ab5b0dd15181138",
+    "selectors/head-14.bin": "feb7788d5a9d5130e1867758cba5e6b3b5d74f22f9a1ec9172a25a39fe1daf32",
+    "selectors/head-15.bin": "a2254b442630da2f7b4dd907d9b754a32b3190e95aef8748e61fd5ba8aaf55b1",
+    "selectors/head-16.bin": "a532f776ab05336753a20caaae4518ed06620ea0bc81b4d880588fcee94480fe",
+    "selectors/head-17.bin": "f2b9b4cdc62f252c88b8adf9a52373a73599028729f98b2ad399c4301eaba477",
+    "selectors/head-18.bin": "ecb766fd6c6310cefb3f787a604461f4105bfc755082eb11cb7c741a3bd40d14",
+    "selectors/head-19.bin": "33ee8392bfe236f5a8c93d6adbea5d05795f3a7099978f167b5dcd7172bc9272",
+    "selectors/head-2.bin": "04089a7ec0f129533fd7c7eea9e6fd1ec9db4b5ae2a5f107f85f81b63c53904d",
+    "selectors/head-20.bin": "95ec8550a77a4075a7acb564e608fbd8139aa7e1603e00801f11a8408ad1338d",
+    "selectors/head-21.bin": "3212d43a2c201a9a2df23b64ceaa8fd4268c851196bd2fa0181bd597756bfbce",
+    "selectors/head-22.bin": "804a4ad9abe7f6f4cb1e01f6bcd881d5c40976c465209cc0d7ec3f23302c0338",
+    "selectors/head-23.bin": "e97308702c8ef1a6a3fe25cf98a10e091d985ea5cb67d74f8475ce6050eb2009",
+    "selectors/head-24.bin": "0c1d0ce3750667d01eaa4f3135d615bf0d9e78a8c83ac7faef6c978d0624bdcc",
+    "selectors/head-25.bin": "c02cbe735f910519fe5c67c38992d1f27c82cedc3adb3b86793c5553e9e5382f",
+    "selectors/head-26.bin": "c92a21b3b476b33e3e3fbb961bc7da14a4b274860d5172d913ce7c03bdc8e182",
+    "selectors/head-27.bin": "cdd3e611eb507bcec7f68495c976c710525159d89b0f43e03546d3acbf85dd71",
+    "selectors/head-28.bin": "767f893fe2331201dc899e93d6ef43ecbef58a4f14ef7ae7749b1324f4cb4ec6",
+    "selectors/head-29.bin": "ccfc34b312d4aac8cdb8caf0708fce5227bb94360fcb8603b340aa6c7c3ceaca",
+    "selectors/head-3.bin": "c6df6dda2b1eadf58e2a0aafa8e8f4723c4ca4025fba0c78125e138c426082de",
+    "selectors/head-30.bin": "05d5b13c0f6aa5c224f267e5e91ceeb568ff037d4c297563c73ca1f741d6fc8e",
+    "selectors/head-4.bin": "4a1053b2975212086e811e29999ca025065ad9b9fdfadb389b2a9d1783693a93",
+    "selectors/head-5.bin": "87694432c840391f04223c811245df3cc46ffd359cde664c7b93137e3952ec3c",
+    "selectors/head-6.bin": "c899581e55cfde6f18dacb3a338dcd8d3163a5d428f786d4c19053fff58cedd5",
+    "selectors/head-7.bin": "c83f425ce35f802715ad5d3b6c6a87221fe09a178dc40b46c92aee09364283ac",
+    "selectors/head-8.bin": "eb19b17f0ee686b744af3983b645c261fdee75e31df4dfc0242b3024bc9c1280",
+    "selectors/head-9.bin": "f0749ecd90350f9ca4f45c709215a88f9e207f7542c4389cc4a8b34fef0a17ae",
+    "selectors/tail-0.bin": "c60b65a146bd83ef1fdf22800cd10007c423435eadf5e98c0648b879aed28b72",
+    "selectors/tail-1.bin": "32a16152ca923a0123f28449d95275119c5dea6cce64eb03e570cc07ff51dcc1",
+    "selectors/tail-2.bin": "9b2fd10068030a8ae7253eef38e38374c6e0e34218712c27f4a3bcc0c6f61f89",
+    "selectors/tail-3.bin": "34f4a252736ea000e48562c1b5530a1e8b1c60521337de54590f8bb7b8a4519f",
+    "square-key.bin": "ac64ba9906cb9fec25366830cb5ff0f391bc56bb940fd88b0fb77d7ea30af6b6"
+  },
+  "checkpoint_files_unchanged": true,
+  "refresh_and_square_ciphertexts_identical": true,
+  "refresh_and_square_keys_reused": true,
+  "full_ring_independent_phase_validated": false
+}

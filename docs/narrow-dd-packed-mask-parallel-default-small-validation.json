@@ -1,0 +1,11 @@
+{
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "all_checks_passed": true,
+  "groups_byte_identical": true,
+  "groups_checked": 35,
+  "local_scratch_removed": true,
+  "fresh_keys_generated": false,
+  "prepared_plain_sha256": "d4a29304ce32840e8681e31d06d1263ebfc81cc7a7a62ae2f4713737afef055f",
+  "scope": "N512 legacy serial mask branch, default saved public packed archive with9 cached depths and local scratch. All group files exact against previously qualified reference. Full-ring parallel mask branch separately qualified by ciphertext comparisons."
+}

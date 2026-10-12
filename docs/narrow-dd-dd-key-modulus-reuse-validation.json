@@ -1,0 +1,101 @@
+{
+  "scope": "N512 retained compact DD key244 projected to197/132/101/100/244, independent signed integer recomposition, raw/prepared exact before-rescale squares and independent phases. No fresh keys; no full-ring profile qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-key-modulus-reuse-20261011/control.cpp": "a7112ee6ed4ae9dd1e610ecd64fdeb8e8007818acd2794279d90d54a15889ba8",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-key-modulus-reuse-20261011/validate.py": "4739acd300c817253116caabcbd6e560d1f080be823aa099cf06fc0d06cf6f22",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "297e7d6632e63102c9b45ea987de060c74363858c28dfdcdeff260c9a762009f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "stage": "complete",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "report": {
+    "n": 512,
+    "fresh_keys_generated": false,
+    "cases": [
+      {
+        "source_log_q": 244,
+        "target_log_q": 197,
+        "integer_coefficients_checked": 11264,
+        "max_square_error": 1.986759289545296e-10,
+        "raw_prepared_identical": true
+      },
+      {
+        "source_log_q": 244,
+        "target_log_q": 132,
+        "integer_coefficients_checked": 8192,
+        "max_square_error": 1.9176492502035961e-10,
+        "raw_prepared_identical": true
+      },
+      {
+        "source_log_q": 244,
+        "target_log_q": 101,
+        "integer_coefficients_checked": 6144,
+        "max_square_error": 2.1247729259648479e-10,
+        "raw_prepared_identical": true
+      },
+      {
+        "source_log_q": 244,
+        "target_log_q": 100,
+        "integer_coefficients_checked": 6144,
+        "max_square_error": 2.781896175648457e-10,
+        "raw_prepared_identical": true
+      },
+      {
+        "source_log_q": 244,
+        "target_log_q": 244,
+        "integer_coefficients_checked": 14336,
+        "max_square_error": 2.1517598232445766e-10,
+        "raw_prepared_identical": true
+      }
+    ],
+    "all_checks_passed": true
+  },
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent integer phases and direct canonical polynomial evaluation for five projected DD before-rescale products at N512. No key values printed; not full-ring profile qualification.",
+    "phase_coefficients_checked": 5120,
+    "decoded_slots_checked": 2560,
+    "rows": [
+      {
+        "log_q": 197,
+        "fresh_input_max_error": 6.887916094782097e-11,
+        "square_max_error": 1.986755833645785e-10
+      },
+      {
+        "log_q": 132,
+        "fresh_input_max_error": 8.308748541330089e-11,
+        "square_max_error": 1.9176103894196796e-10
+      },
+      {
+        "log_q": 101,
+        "fresh_input_max_error": 8.539382546063427e-11,
+        "square_max_error": 2.124199937489587e-10
+      },
+      {
+        "log_q": 100,
+        "fresh_input_max_error": 7.729671140262108e-11,
+        "square_max_error": 2.7818942718176835e-10
+      },
+      {
+        "log_q": 244,
+        "fresh_input_max_error": 7.237897417329453e-11,
+        "square_max_error": 2.1517822273456337e-10
+      }
+    ],
+    "all_checks_passed": true
+  },
+  "checkpoint_sha256_before": "0963cb52856c1c564bd80edf3f0b0a9c4533a87530307ab63619167cce98dcd4",
+  "checkpoint_sha256_after": "0963cb52856c1c564bd80edf3f0b0a9c4533a87530307ab63619167cce98dcd4",
+  "checkpoint_unchanged": true,
+  "sources_unchanged": true,
+  "completed_utc": "2026-10-11T15:48:37.011307+00:00",
+  "public_header_compile_actual_exit_code": 0,
+  "public_header_sha256": "fc53ae814e0309dde3b843ede929260c6747f17a37f9c3fd04d9a0182cb82497",
+  "integer_key_coefficients_checked": 46080
+}

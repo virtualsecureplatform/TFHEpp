@@ -1,0 +1,35 @@
+{
+  "scope": "Six full-ring deferred factor outputs compared exactly with independently qualified post-factor rescaling control. No full refresh qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_private_keys_generated": false,
+  "new_evaluation_keys_generated": 0,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-deferred-factor-integration-20261011/control.cpp": "67efdb62791d12400729d76d688ead20e114c629cdbe41afbaed395c787e7d95",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f43a66fefc46f4f8228c50ca43c8e2b511b5f891b8ef24234262b7922048f48",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_projection.hpp": "b84a0c001509fc69ffcec293b858c218c1ebda600952f58b092112c3f024215a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_refresh.hpp": "f07bbe5c1796c31345a554480c8477c80124b917acef23a5ce072bf0996a82a7",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_linear.hpp": "7dc89ec7a6455a3487b23ecf5d47b4fa4f44654e940daac7e2b2e79da72fff2b",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/key_projection.hpp": "297e7d6632e63102c9b45ea987de060c74363858c28dfdcdeff260c9a762009f",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "stage": "complete",
+  "reference_sha256_before": "aaa401903a8cdca0a7c5b01eccbeb14818c37f992155568572c14a2121e07a17",
+  "checkpoint_baseline_sha256": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "baseline_receipt_sha256": "6fbd5747a1361e76025a995600d84cc9d758029584524fa59212324fea09b69c",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "report": {
+    "ciphertext_coefficients_checked": 196608,
+    "exact_control_match": true,
+    "fresh_keys_generated": false
+  },
+  "checkpoint_sha256_after": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "checkpoint_unchanged": true,
+  "sampled_selector_files_unchanged": true,
+  "sources_unchanged": true,
+  "reference_unchanged": true,
+  "completed_utc": "2026-10-11T16:30:16.191445+00:00"
+}

@@ -1,0 +1,16 @@
+{
+  "scope": "Optional caller-owned new scratch directory for packed reconstruction accumulator. N512 retained public packed key, all9 cache depths, final outputs on network filesystem, scratch on local disk. Compare every group against previously qualified default files and verify scratch cleanup. No key generation.",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "group_files_checked": 35,
+  "group_files_byte_identical": true,
+  "scratch_removed": true,
+  "all_checks_passed": true,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "87c159a4bc5142e680a2624d89cee23b8bfa12250918ccedc1654b241eaae11a",
+    "TFHEpp/test/ckks/ckks_narrow_packed_archive.cpp": "a49982b6129d0fdb399cfba811e8f456a5660c727aa5c1e897cfbc957c3f23a8"
+  },
+  "existing_scratch_rejected": true,
+  "existing_scratch_marker_unchanged": true,
+  "rejected_output_directory_cleaned": true
+}

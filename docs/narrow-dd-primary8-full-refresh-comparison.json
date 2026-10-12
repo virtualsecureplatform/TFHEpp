@@ -1,0 +1,54 @@
+{
+  "observed_utc": "2026-10-11T01:59:42.971959+00:00",
+  "scope": "Two completed retained N16384 sigmoid refreshes on the same diagnostically corrected fixture: projected primary8 conjugation alone and projected primary8 DD alone. Concurrent packed reconstruction, separate frozen executables, single observation per policy. These are not controlled speedup measurements or a combined-mode full-ring qualification.",
+  "all_independent_output_and_integrity_checks_passed": true,
+  "dd_controller_actual_exit_code": 0,
+  "fresh_keys_generated": false,
+  "combined_full_ring_validated": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "runs": {
+    "projected_conjugation": {
+      "evidence": "TFHEpp/docs/narrow-dd-auto-primary8-full-refresh-validation.json",
+      "evidence_sha256": "4ac7e14a961313c261427994a3315724c8173327b64e680d29a5cc65a45e16e9",
+      "mode": "--replay-primary8",
+      "refresh_seconds": 988.89490463,
+      "factor_stage_seconds": {
+        "selector_load": 25.491388115000007,
+        "table_ntt": 9.726113880000002,
+        "selector_ntt": 191.53463720599993,
+        "matrix": 293.15659907300005,
+        "inverse_crt": 10.249700845000003,
+        "conjugation": 44.669138249
+      },
+      "reported_factor_seconds_sum": 574.827577368,
+      "refresh_minus_reported_factor_timers_seconds": 414.06732726200005,
+      "independent_refresh_max_error": 5.433376001925557e-09,
+      "independent_product_max_error": 1.0987972278681344e-08,
+      "retained_files_checked": 37,
+      "retained_files_unchanged": true,
+      "same_retained_secrets_slots_and_input": true
+    },
+    "projected_dd": {
+      "evidence": "TFHEpp/docs/narrow-dd-primary8-dd-full-refresh-validation.json",
+      "evidence_sha256": "572ca6e5040617605b4ea702b30afeb6c52174b359e8943c0e99487e6c940db4",
+      "mode": "--replay-dd-primary8",
+      "refresh_seconds": 950.707489177,
+      "factor_stage_seconds": {
+        "selector_load": 25.339412259000003,
+        "table_ntt": 9.822183355999998,
+        "selector_ntt": 188.72406655099994,
+        "matrix": 265.1386003650001,
+        "inverse_crt": 9.730855001000004,
+        "conjugation": 67.93476067400002
+      },
+      "reported_factor_seconds_sum": 566.6898782060001,
+      "refresh_minus_reported_factor_timers_seconds": 384.01761097099984,
+      "independent_refresh_max_error": 4.441126383834508e-09,
+      "independent_product_max_error": 1.0058911898542565e-08,
+      "retained_files_checked": 37,
+      "retained_files_unchanged": true,
+      "same_retained_secrets_slots_and_input": true
+    }
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "scope": "Primary4 to primary8 row projection using original retained encrypted Q356 conjugation keys; exact-zero-phase diagnostic inputs under original dense secret. Independent integer validation for all input/old/new ciphertexts. Component control only; no packed-tree, fresh input noise or security qualification.",
+  "terminal": true,
+  "fresh_keys_generated": false,
+  "runs": [
+    {
+      "n": 512,
+      "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/sigmoid-failure.bin",
+      "before_sha256": "946e15e6c42c663f042d147d2669a89ed0687285f53243623c3f83a0ac6cfc11",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "log_q": 356,
+        "log_delta": 49,
+        "samples": 3,
+        "raw_key_offset": 70802043,
+        "raw_key_bytes": 5103616,
+        "old_primary_rows": 89,
+        "new_primary_rows": 45,
+        "old_max_slot_error": 2.7264684353908545e-10,
+        "new_max_slot_error": 3.551562349152515e-09,
+        "max_slot_difference": 3.54298532856416e-09,
+        "old_switch_seconds": 0.009681841,
+        "new_switch_seconds": 0.004175514,
+        "fresh_keys_generated": false,
+        "accuracy_passed": true
+      },
+      "independent_actual_exit_code": 0,
+      "independent": {
+        "scope": "Independent exact integer phases from public diagnostic ciphertexts and original private retained ternary key; N512 scalar convolution or N16384 bounded 15-bit NTT. No key material serialized. Tests primary8 switching at Q356/scale49, not full packed reconstruction, nonzero input noise, or security.",
+        "n": 512,
+        "samples": [
+          {
+            "sample": 0,
+            "input_integer_phase_zero": true,
+            "old_max_slot_error": 2.475915158342195e-10,
+            "new_max_slot_error": 3.4907398008996712e-09,
+            "max_slot_difference": 3.453289523332863e-09
+          },
+          {
+            "sample": 1,
+            "input_integer_phase_zero": true,
+            "old_max_slot_error": 2.7264684353908493e-10,
+            "new_max_slot_error": 3.551562349152503e-09,
+            "max_slot_difference": 3.5429853285641485e-09
+          },
+          {
+            "sample": 2,
+            "input_integer_phase_zero": true,
+            "old_max_slot_error": 2.4996657173600554e-10,
+            "new_max_slot_error": 3.20602709290627e-09,
+            "max_slot_difference": 3.2578865171909017e-09
+          }
+        ],
+        "old_max_slot_error": 2.7264684353908493e-10,
+        "new_max_slot_error": 3.551562349152503e-09,
+        "max_slot_difference": 3.5429853285641485e-09,
+        "fixed_23bit_passed": true,
+        "cpp_metrics_match": true,
+        "fresh_keys_generated": false
+      },
+      "after_sha256": "946e15e6c42c663f042d147d2669a89ed0687285f53243623c3f83a0ac6cfc11",
+      "retained_state_unchanged": true,
+      "ciphertexts_sha256": "6b5609ce5ed16f7954216c5962ebe840290d26a8eeb84cd2e3bdf7021dc96a94"
+    },
+    {
+      "n": 16384,
+      "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin",
+      "before_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+      "actual_exit_code": 2,
+      "stderr": "",
+      "report": {
+        "n": 16384,
+        "log_q": 356,
+        "log_delta": 49,
+        "samples": 3,
+        "raw_key_offset": 5511253243,
+        "raw_key_bytes": 163315712,
+        "old_primary_rows": 89,
+        "new_primary_rows": 45,
+        "old_max_slot_error": 4.35990950728044e-08,
+        "new_max_slot_error": 1.3304590910987568e-07,
+        "max_slot_difference": 1.3130719279904973e-07,
+        "old_switch_seconds": 0.426781477,
+        "new_switch_seconds": 0.264296242,
+        "fresh_keys_generated": false,
+        "accuracy_passed": false
+      },
+      "independent": {
+        "scope": "Independent exact integer phases from public diagnostic ciphertexts and original private retained ternary key; N512 scalar convolution or N16384 bounded 15-bit NTT. No key material serialized. Tests primary8 switching at Q356/scale49, not full packed reconstruction, nonzero input noise, or security.",
+        "n": 16384,
+        "samples": [
+          {
+            "sample": 0,
+            "input_integer_phase_zero": true,
+            "old_max_slot_error": 4.046925371035557e-08,
+            "new_max_slot_error": 1.250680448908549e-07,
+            "max_slot_difference": 1.2491453885824327e-07
+          },
+          {
+            "sample": 1,
+            "input_integer_phase_zero": true,
+            "old_max_slot_error": 4.35990950728044e-08,
+            "new_max_slot_error": 1.3304590910988487e-07,
+            "max_slot_difference": 1.313071927990587e-07
+          },
+          {
+            "sample": 2,
+            "input_integer_phase_zero": true,
+            "old_max_slot_error": 4.146380518192853e-08,
+            "new_max_slot_error": 1.2863148670242208e-07,
+            "max_slot_difference": 1.2754378600099652e-07
+          }
+        ],
+        "old_max_slot_error": 4.35990950728044e-08,
+        "new_max_slot_error": 1.3304590910988487e-07,
+        "max_slot_difference": 1.313071927990587e-07,
+        "fixed_23bit_passed": false,
+        "cpp_metrics_match": true,
+        "fresh_keys_generated": false
+      },
+      "independent_actual_exit_code": 2,
+      "after_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+      "retained_state_unchanged": true,
+      "ciphertexts_sha256": "b0f5a5be5fe3b2ae249f1163f19cf097ee1c71dcbc31c6c3ff31a010d02ffe16"
+    }
+  ],
+  "build_actual_exit_code": 0,
+  "initial_build_exit_code": 1,
+  "initial_build_failure": "Dependent P::T expression needed a local typename alias; fixed before running.",
+  "source_sha256": "594157376231c2cf47077ade55fbeeaf40818936a1f1539b6eb7f861c952e67b",
+  "exe_sha256": "2ef8ae684428c1773f3a9b7170091e6b8a422d824118cb505140de64dd8c5e84",
+  "error": "Full N16384 primary8 Q356/scale49 diagnostic exceeds fixed 23-bit accuracy bound; independently confirmed.",
+  "all_checks_passed": false,
+  "experiment_accuracy_passed": false,
+  "independent_arithmetic_verification_completed": true,
+  "primary8_general_adoption_supported": false,
+  "validation_completed": true,
+  "independent_helper_sha256": "d0690fa5b842f7fc02763d49669fc022daa87a144d76e5121cc9dd5f58d087c6",
+  "repository_independent_helper": "Parameter-Selection/python/estimates/narrow_ckks_auto_primary_projection_validate.py",
+  "repository_independent_helper_sha256": "cb1ded68cf27a78cc4bc02cecadf70ac9a08fdc61119c8060541e122997fa674"
+}

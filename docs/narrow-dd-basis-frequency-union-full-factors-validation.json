@@ -1,0 +1,254 @@
+{
+  "observed_at_utc": "2026-10-10T19:13:44.580133+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "actual_exit_code": 0,
+  "scope": "N32768 head30/tail4,22-column factor control, repeated ciphertext equality and independent slot decoding; not complete union refresh or matched paper timing",
+  "columns": 22,
+  "slots_checked": 720896,
+  "unique_repeated_ciphertext_coefficients": 2883584,
+  "memory_cap_bytes": 3221225472,
+  "maximum_resident_kib": 1943208,
+  "fresh_keys_generated": false,
+  "prepared_selector_cache_created": false,
+  "reference_archives": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/full22-reference-3g/tail-reference.bin": {
+      "bytes": 103809049,
+      "mode": "0o600"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/full22-reference-3g/head-reference.bin": {
+      "bytes": 103809049,
+      "mode": "0o600"
+    }
+  },
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "complete head30/tail4 raw groups and public/secret prefix, not entire checkpoint key suffix",
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 22,
+      "seconds": 72.626015168,
+      "cache_setup_seconds": 9.9e-08,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 17.385520037999992,
+      "matrix_seconds": 47.341601184,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 22,
+      "seconds": 70.414746006,
+      "cache_setup_seconds": 9.9e-08,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 17.255211269999993,
+      "matrix_seconds": 45.97639708300001,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 22,
+      "seconds": 71.482650894,
+      "cache_setup_seconds": 1.32e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 17.455441109999995,
+      "matrix_seconds": 46.727593618,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 22,
+      "seconds": 74.393131453,
+      "cache_setup_seconds": 1.32e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 17.860777936999998,
+      "matrix_seconds": 48.38872774000001,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "qualified_source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "9ebff42776f1c47b375dfb3a3113c96cd218df300d4906fd530dda366b80d3cc",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "3e57ace782eeaecc01f14d50b765e6adf0cf85c02a0fd5506154666a857900e7",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "e31b0efd092820f7ff88955d49a6beac5bcc77d31547697820ed2bed564a7c45"
+  },
+  "attempt_history": {
+    "observed_at_utc": "2026-10-10T19:08:06.029030+00:00",
+    "terminal": true,
+    "all_checks_passed": false,
+    "stage": "first full22 head factor passed; second trial failed std::bad_alloc while retaining first-trial ciphertext reference",
+    "scope": "22-column full-degree factor control for shared-frequency batching; retained keys and raw selectors, two repeated trials per group. No complete union refresh, cached evaluation, security or paper timing claim.",
+    "process": {
+      "pid": 1966656,
+      "start_ticks": 230524410
+    },
+    "session_id": 47790,
+    "memory_cap_bytes": 2147483648,
+    "fresh_keys_generated": false,
+    "prepared_disk_cache_created": false,
+    "frozen_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/full22-frozen-executable",
+    "frozen_executable_sha256": "4785b79f6591d25a9f0717ad07becb9939401a401167a4f49d94625e6351e1ee",
+    "source_sha256": {
+      "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "9ebff42776f1c47b375dfb3a3113c96cd218df300d4906fd530dda366b80d3cc",
+      "TFHEpp/include/ckks/narrow_matrix.hpp": "3e57ace782eeaecc01f14d50b765e6adf0cf85c02a0fd5506154666a857900e7",
+      "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "3e3d3a8926d2cf421f6726cdf9020e634723b1b5e525f3a9d49b9b631060d1af"
+    },
+    "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010",
+    "complete_union_refresh_qualified": false,
+    "paper_performance_reproduced": false,
+    "actual_exit_code": 2,
+    "completed_rows": [
+      {
+        "n": 32768,
+        "tail": false,
+        "group": 30,
+        "cached": false,
+        "columns": 22,
+        "seconds": 64.274987684,
+        "cache_setup_seconds": 2.03e-07,
+        "reused_prepared_chunks": 0,
+        "selector_provider_seconds": 16.907556298,
+        "matrix_seconds": 41.514687815,
+        "ciphertexts_exact": true
+      }
+    ],
+    "retry": {
+      "terminal": true,
+      "all_checks_passed": false,
+      "stage": "second head trial failed std::bad_alloc despite streaming reference; 2GiB diagnostic address-space limit exhausted",
+      "process": {
+        "pid": 1966978,
+        "start_ticks": 230556829
+      },
+      "session_id": 10548,
+      "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/full22-reference",
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/full22-reference.log",
+      "time": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/full22-reference.time",
+      "memory_cap_bytes": 2147483648,
+      "fresh_keys_generated": false,
+      "prepared_selector_disk_cache_created": false,
+      "reference_storage": "private portable factor archive; compare and decrypt one reference ciphertext at a time",
+      "small22_reference_control_passed": true,
+      "reference_archives_mode": "0600",
+      "frozen_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/ckks_narrow_basis_factor_cache_checkpoint-reference",
+      "frozen_executable_sha256": "f0942362e2cb89614660c71469857b4c30e898c02d5c9f534820cdd85ea36ff4",
+      "source_sha256": "e31b0efd092820f7ff88955d49a6beac5bcc77d31547697820ed2bed564a7c45",
+      "actual_exit_code": 2,
+      "maximum_resident_kib": 1890184,
+      "elapsed_seconds": 141.18
+    },
+    "retry_3g": {
+      "terminal": true,
+      "all_checks_passed": true,
+      "process": {
+        "pid": 1967171,
+        "start_ticks": 230586519
+      },
+      "session_id": 98660,
+      "memory_cap_bytes": 3221225472,
+      "fresh_keys_generated": false,
+      "frozen_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/ckks_narrow_basis_factor_cache_checkpoint-reference",
+      "frozen_executable_sha256": "f0942362e2cb89614660c71469857b4c30e898c02d5c9f534820cdd85ea36ff4",
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/full22-reference-3g.log",
+      "time": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-frequency-union-20261010/full22-reference-3g.time",
+      "stage": "same22-column factor calculation,3GiB diagnostic address-space limit; previous2GiB failures retained",
+      "completed_rows": [
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 30,
+          "cached": false,
+          "columns": 22,
+          "seconds": 72.626015168,
+          "cache_setup_seconds": 9.9e-08,
+          "reused_prepared_chunks": 0,
+          "selector_provider_seconds": 17.385520037999992,
+          "matrix_seconds": 47.341601184,
+          "ciphertexts_exact": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 30,
+          "cached": false,
+          "columns": 22,
+          "seconds": 70.414746006,
+          "cache_setup_seconds": 9.9e-08,
+          "reused_prepared_chunks": 0,
+          "selector_provider_seconds": 17.255211269999993,
+          "matrix_seconds": 45.97639708300001,
+          "ciphertexts_exact": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "slots_checked": 360448,
+          "maximum_error": 8.269519992781059e-10,
+          "accuracy_passed": true
+        },
+        {
+          "n": 32768,
+          "tail": true,
+          "group": 4,
+          "cached": false,
+          "columns": 22,
+          "seconds": 71.482650894,
+          "cache_setup_seconds": 1.32e-07,
+          "reused_prepared_chunks": 0,
+          "selector_provider_seconds": 17.455441109999995,
+          "matrix_seconds": 46.727593618,
+          "ciphertexts_exact": true
+        },
+        {
+          "n": 32768,
+          "tail": true,
+          "group": 4,
+          "cached": false,
+          "columns": 22,
+          "seconds": 74.393131453,
+          "cache_setup_seconds": 1.32e-07,
+          "reused_prepared_chunks": 0,
+          "selector_provider_seconds": 17.860777936999998,
+          "matrix_seconds": 48.38872774000001,
+          "ciphertexts_exact": true
+        },
+        {
+          "n": 32768,
+          "tail": true,
+          "slots_checked": 360448,
+          "maximum_error": 7.825667000879669e-10,
+          "accuracy_passed": true
+        }
+      ],
+      "retained_payload_hashes_match": true,
+      "retained_hash_scope": "complete head30/tail4 raw selector groups and public/secret checkpoint prefix",
+      "actual_exit_code": 0
+    }
+  },
+  "complete_union_refresh_qualified": false,
+  "paper_performance_reproduced": false
+}

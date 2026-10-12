@@ -1,0 +1,30 @@
+{
+  "observed_at_utc": "2026-10-09T06:15:07.173590+00:00",
+  "scope": "Generic LWE and uniform-sparse proxies; excludes public block constraints, ring structure, and circular/KDM security",
+  "session": 95642,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "stderr_bytes": 0,
+  "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_aux16_sparse_security.json",
+  "report_sha256": "fa8237c27d72702cbbff0a9218e9e7bd8c17584f0a6ae8dbb63b9af42a75f960",
+  "source": "Parameter-Selection/python/estimates/narrow_ckks_security.py",
+  "source_sha256": "7cc943ef7204012dd79f0b1473f0731fae4a43b2fb26266a2bf7b47a22b91fe3",
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "n": 16384,
+  "log_q": 64,
+  "sigma": 3.2,
+  "secret": "uniform sparse ternary proxy (16 positive, 15 negative)",
+  "attacks": {
+    "primal_usvp": 1070.543063492005,
+    "primal_bdd": 1078.6184870712293,
+    "dual": 1077.2779917498492,
+    "dual_hybrid": 1020.4417477788485,
+    "mitm": 189.88264304936183,
+    "bdd_hybrid": 369.31176712267876,
+    "bdd_mitm_hybrid": 139.94388914187635
+  },
+  "weakest_bits": 139.94388914187635,
+  "all_seven_attacks_finite": true,
+  "structured_ring_security_validated": false,
+  "global_hybrid_optimization_qualified": false
+}

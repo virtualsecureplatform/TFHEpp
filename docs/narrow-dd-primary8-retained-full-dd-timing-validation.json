@@ -1,0 +1,95 @@
+{
+  "scope": "Paired N16384 Q348 retained-key DD switch timing: current primary4/secondary16 cache versus projected primary8/secondary16. Exact independent integer-NTT coefficient oracles for each mode. Uniform active input with native-width garbage and carry/sign/wrap edges. No key generation, no full-refresh or isolated paper timing claim.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "build_actual_exit_code": 0,
+  "source_sha256": {
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/test/ckks/ckks_narrow_dd_exact.cpp": "914fd5d831d1f41be8b375d574f6826b6bdc80c2fe3d9ae7fdb88c45b3d9e9f0"
+  },
+  "exe_sha256": "e9fe442ab52b762e0afed06bd5ceb85ab70e4db473520e45ee7ff2d692832e48",
+  "state_sha256_before": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "child_pid": 1954844,
+  "actual_exit_code": 0,
+  "profile": {
+    "timing_profile": "retained-dd",
+    "n": 16384,
+    "log_q": 348,
+    "secondary_bits": 16,
+    "old_primary_rows": 87,
+    "new_primary_rows": 44,
+    "old_cache_bytes": 501743616,
+    "new_cache_bytes": 253755392,
+    "old_cache_prepare_seconds": 2.951262447,
+    "new_cache_prepare_seconds": 1.541386341,
+    "fresh_keys_generated": false
+  },
+  "trials": [
+    {
+      "primary_bits": 4,
+      "repetitions": 8,
+      "seconds": 0.798469621,
+      "exact_coefficients": 32768
+    },
+    {
+      "primary_bits": 8,
+      "repetitions": 8,
+      "seconds": 0.488673818,
+      "exact_coefficients": 32768
+    },
+    {
+      "primary_bits": 8,
+      "repetitions": 8,
+      "seconds": 0.4816109,
+      "exact_coefficients": 32768
+    },
+    {
+      "primary_bits": 4,
+      "repetitions": 8,
+      "seconds": 0.912540473,
+      "exact_coefficients": 32768
+    },
+    {
+      "primary_bits": 4,
+      "repetitions": 8,
+      "seconds": 0.69134469,
+      "exact_coefficients": 32768
+    },
+    {
+      "primary_bits": 8,
+      "repetitions": 8,
+      "seconds": 0.435358985,
+      "exact_coefficients": 32768
+    },
+    {
+      "primary_bits": 8,
+      "repetitions": 8,
+      "seconds": 0.503194082,
+      "exact_coefficients": 32768
+    },
+    {
+      "primary_bits": 4,
+      "repetitions": 8,
+      "seconds": 0.680457725,
+      "exact_coefficients": 32768
+    }
+  ],
+  "median_switch_seconds": {
+    "4": 0.0931133944375,
+    "8": 0.060642794875
+  },
+  "observed_median_speed_ratio": 1.5354403541167592,
+  "state_sha256_after": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "original_state_unchanged": true,
+  "frozen_executable_unchanged": true,
+  "peak_rss_kib": 1252780,
+  "distinct_independently_checked_coefficients": 65536,
+  "exact_comparison_coefficients_including_repeated_results": 327680,
+  "timing_environment": "OMP_NUM_THREADS=4; the DD switch itself uses its existing serial row loop. Concurrent packed and basis jobs were active. No isolated or whole-refresh speedup claim.",
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-timing-20261010/build.log": "d6bb32128fa00988a3c11f919367c08e01e484f7bc67d87216c6b1dc383daa90",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-timing-20261010/test.log": "49ef8f0d2cab5bf10ee742eb8f511f090fab508acfcc8094ac2cf3febe9f1767",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-primary8-retained-full-timing-20261010/ckks_narrow_dd_exact": "e9fe442ab52b762e0afed06bd5ceb85ab70e4db473520e45ee7ff2d692832e48"
+  }
+}

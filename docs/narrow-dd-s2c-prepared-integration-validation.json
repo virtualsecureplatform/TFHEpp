@@ -1,0 +1,22 @@
+{
+  "scope": "Default narrow S2C uses evaluation-owned lazy prepared Galois FFT keys when its FFT guard permits; legacy path otherwise. Serialized keys unchanged. Tested standalone N512/N32768 adapter source is preserved under a type rename; existing prepared DD/auto switching source is unchanged. Integrated N512 all-function retained replay qualified; integrated N32768 all-function refresh not yet qualified.",
+  "integrated": true,
+  "all_checks_passed": true,
+  "terminal": true,
+  "small_refresh_evidence": "TFHEpp/docs/narrow-dd-s2c-prepared-integration-small-refresh-validation.json",
+  "full_adapter_evidence": "TFHEpp/docs/narrow-dd-s2c-prepared-adapter-full-validation.json",
+  "source_provenance": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-integration-20261011/source-provenance.json",
+  "small_output_archives_identical": true,
+  "small_checkpoint_files_checked": 36,
+  "small_checkpoint_files_unchanged": true,
+  "fresh_keys_generated": false,
+  "full_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_refresh.hpp": "d4e9dfcd82629aff1bc60fb3de0dbac64181b1bd6422701d0708e846a40984b4",
+    "TFHEpp/include/ckks/prepared_auto.hpp": "e0e1735d7697c50ee0c347fa7458b7c5017b993cf10919d7160cbcfbe8e91d81"
+  },
+  "build_actual_exit_code": 0,
+  "controller_actual_exit_code": 0
+}

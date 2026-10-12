@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-09T13:00:30.892231+00:00",
+  "scope": "Negative control: saved full-ring traced failing output squared with original retained key",
+  "session": 84467,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "function": "sigmoid",
+    "fresh_keys_generated": false,
+    "log_q": 60,
+    "log_delta": 48,
+    "retained_square_evaluated": true,
+    "independent_phase_validated": false,
+    "post_refresh_product_max_error": 437621.84319615527,
+    "rms_error": 150899.78710747705,
+    "target_amplitude": 1.3887772203090152,
+    "product_tolerance": 4.50319595316329e-07,
+    "product_accuracy_passed": false
+  },
+  "independent_phase_evidence": "narrow-dd-aux8-full-trace-retained-square-phase-validation.json",
+  "square_sha256": "7872f88504b5bf49dc05083a5d30181271d14cd3f369fc45da5f32e93f8401ff",
+  "fresh_keys_generated": false,
+  "expected_product_gate_failure_observed": true,
+  "corrected_selector_square_validated": false,
+  "failure_cause_established": false,
+  "security_validated": false
+}

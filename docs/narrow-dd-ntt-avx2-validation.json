@@ -1,0 +1,91 @@
+{
+  "scope": "AVX2 lazy radix2 NTT butterflies for p<2^61; exact frozen scalar-reference spectrum/inverse comparisons at all23 selector primes and sizes2..65536; repository direct-evaluation/convolution tests and scalar fallback build. No full-factor/refresh speedup qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "build_actual_exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "test_actual_exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "coefficients_checked": 36175320,
+  "prime_count": 23,
+  "ring_sizes": [
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024,
+    2048,
+    4096,
+    8192,
+    16384,
+    32768,
+    65536
+  ],
+  "input_patterns": [
+    "uniform canonical",
+    "all p-1",
+    "alternating zero/p-1",
+    "ascending coefficients"
+  ],
+  "independent_random_inverse_checked": true,
+  "source_sha256": {
+    "TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "TFHEpp/test/common/modular_ntt.cpp": "2076f8974df2733db2969cb301a179b7d7e3e47986482a9ab99cc61ff9557c06"
+  },
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/original.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/reference.hpp": "7285de92f01d39ecf9a1e7649b6a9dbd153369a2d2aa264caa0800cfcdb99b67",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/candidate.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/control.cpp": "b6e192b9a15c6547acca48e633ca15cf02fd31e13121ccb37371dd959c4fa21e",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/control": "c86a221de892a8a2b24ba90dcc75bd2dfb12db28140db716e7b9d71a21905aa7",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/modular_ntt_scalar": "7aa1590f319e15ed7d6acbc8352d1b3a0eeb2e35b3e94946e6a44a25665c5cd5",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/all-primes-timing.log": "817cee8adcba03ef4521be6ad1d7e1bfb22530a108f9d942ed57fd7f91cca590",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/repository-unit.log": "03b94bada0ff387e8b4a51adc052c57b5dd524bf7add7f5e9b8ae208cf86d8c1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ntt-avx2-prototype-20261011/scalar-unit.log": "03b94bada0ff387e8b4a51adc052c57b5dd524bf7add7f5e9b8ae208cf86d8c1"
+  },
+  "benchmark": {
+    "n": 32768,
+    "prime_index": 0,
+    "roundtrips_per_trial": 200,
+    "trials": [
+      {
+        "trial": 0,
+        "reference_seconds": 0.373502,
+        "candidate_seconds": 0.166611
+      },
+      {
+        "trial": 1,
+        "reference_seconds": 0.367784,
+        "candidate_seconds": 0.166359
+      },
+      {
+        "trial": 2,
+        "reference_seconds": 0.368641,
+        "candidate_seconds": 0.16694
+      },
+      {
+        "trial": 3,
+        "reference_seconds": 0.369121,
+        "candidate_seconds": 0.167094
+      }
+    ],
+    "order": "reference/candidate then candidate/reference, alternating",
+    "median_component_speed_ratio": 2.209923537216609,
+    "scope": "In-memory transform-only single-thread benchmark; not full refresh."
+  },
+  "full_factor_qualified": false,
+  "full_refresh_qualified": false,
+  "paper_performance_reproduced": false
+}

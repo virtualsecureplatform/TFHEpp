@@ -1,0 +1,90 @@
+{
+  "observed_at_utc": "2026-10-10T12:08:50.396621+00:00",
+  "scope": "Streamed raw-auto secondary radix16, unchanged primary encrypted gadget and serialized keys; N16384 public synthetic coefficient controls plus retained encrypted public N512 packed-key ordered extraction",
+  "build_actual_exit_code": 0,
+  "build_session": 77369,
+  "all_checks_passed": true,
+  "new_encrypted_keys_generated": false,
+  "full_ring_synthetic": {
+    "actual_exit_code": 0,
+    "ring_n": 16384,
+    "moduli": [
+      422,
+      356,
+      17
+    ],
+    "datasets": [
+      "random full-width raw coefficients",
+      "dense maximum positive balanced16 raw digits"
+    ],
+    "probes": [
+      "random full-width input",
+      "alternating sign/wrap boundaries",
+      "dense maximum primary4 digits"
+    ],
+    "reference_paths": [
+      "explicit original4 prepared cache",
+      "explicit original4 streamed switch"
+    ],
+    "coefficients_compared": 589824,
+    "results": [
+      "PASS n=16384 q=422 dataset=0 probe=0 coefficients=32768 stream4_seconds=3.5802 stream16_seconds=0.981112",
+      "PASS n=16384 q=422 dataset=0 probe=1 coefficients=32768 stream4_seconds=3.12924 stream16_seconds=0.811944",
+      "PASS n=16384 q=422 dataset=0 probe=2 coefficients=32768 stream4_seconds=3.57653 stream16_seconds=1.10884",
+      "PASS n=16384 q=422 dataset=1 probe=0 coefficients=32768 stream4_seconds=3.07807 stream16_seconds=1.02668",
+      "PASS n=16384 q=422 dataset=1 probe=1 coefficients=32768 stream4_seconds=3.10059 stream16_seconds=0.987755",
+      "PASS n=16384 q=422 dataset=1 probe=2 coefficients=32768 stream4_seconds=3.42015 stream16_seconds=0.943445",
+      "PASS n=16384 q=356 dataset=0 probe=0 coefficients=32768 stream4_seconds=2.26971 stream16_seconds=0.699559",
+      "PASS n=16384 q=356 dataset=0 probe=1 coefficients=32768 stream4_seconds=2.55019 stream16_seconds=0.741207",
+      "PASS n=16384 q=356 dataset=0 probe=2 coefficients=32768 stream4_seconds=2.74184 stream16_seconds=0.749584",
+      "PASS n=16384 q=356 dataset=1 probe=0 coefficients=32768 stream4_seconds=2.49673 stream16_seconds=0.765081",
+      "PASS n=16384 q=356 dataset=1 probe=1 coefficients=32768 stream4_seconds=2.35028 stream16_seconds=0.614232",
+      "PASS n=16384 q=356 dataset=1 probe=2 coefficients=32768 stream4_seconds=2.16586 stream16_seconds=0.586648",
+      "PASS n=16384 q=17 dataset=0 probe=0 coefficients=32768 stream4_seconds=0.0144279 stream16_seconds=0.008781",
+      "PASS n=16384 q=17 dataset=0 probe=1 coefficients=32768 stream4_seconds=0.0141933 stream16_seconds=0.00798877",
+      "PASS n=16384 q=17 dataset=0 probe=2 coefficients=32768 stream4_seconds=0.0148479 stream16_seconds=0.00810366",
+      "PASS n=16384 q=17 dataset=1 probe=0 coefficients=32768 stream4_seconds=0.017557 stream16_seconds=0.00889346",
+      "PASS n=16384 q=17 dataset=1 probe=1 coefficients=32768 stream4_seconds=0.0181829 stream16_seconds=0.00897328",
+      "PASS n=16384 q=17 dataset=1 probe=2 coefficients=32768 stream4_seconds=0.0176492 stream16_seconds=0.0103121"
+    ],
+    "source_sha256": "e2e8dd46dab8ab2aadfff4179613d9e9bb9325924eca1c4f7e2f665099cedd29",
+    "executable_sha256": "b731b7dbc6b27d4ad25de829aa9d064a3ac5e179ce24cbd899a1ad9712e1880e",
+    "actual_encrypted_packed_accuracy_validated": false
+  },
+  "retained_packed_fixture": {
+    "actual_exit_code": 0,
+    "ring_n": 512,
+    "cached_depths": 2,
+    "report": {
+      "n": 512,
+      "packed_log_q": 422,
+      "cached_depths": 2,
+      "cache_bytes": 46891008,
+      "prepare_seconds": 0.035000715,
+      "extraction_seconds": 15.746852241,
+      "terms": 2048,
+      "coefficients": 2097152,
+      "reference_written": false,
+      "ordered_terms_identical": true
+    },
+    "fixture_unchanged": true,
+    "fixture_sha256": {
+      "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+      "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+    },
+    "executable_sha256": "2e9bdb97abe18e53f901d633c2f6f79612c8b32e5b86173fed5441d53cd263dd"
+  },
+  "source_sha256": {
+    "TFHEpp/include/ckks/prepared_auto.hpp": "0cb764815a6152fde7d9ff5a57b56977390328e9de3fa056fc6824d4db816322",
+    "TFHEpp/test/ckks/ckks_narrow_packed_cache_profile.cpp": "4431e4205c068bddd24bb34dbde9c1686df4acd11eb72a4e1690ba946571fecd",
+    "TFHEpp/test/ckks/ckks_narrow_bootstrapping.cpp": "14ae1e16566ce8f161a4f6dd1c60f7abfe30fdabd3bd54fa56a0d8cdbfa72956"
+  },
+  "full_ring_reconstruction_with_new_streamed_path_validated": false,
+  "paper_performance_reproduced": false,
+  "performance_scope": "Concurrent individual full-ring switch trials and one N512 ordered extraction; not a matched full packed reconstruction speedup measurement",
+  "initial_control_build_failed_then_corrected": true,
+  "final_regression_target_build_actual_exit_code": 0,
+  "final_regression_target_build_session": 23509,
+  "final_regression_target_sha256": "e2419030f0a39fe771bb28bf100a1fee458da32020293791ee8922db49f1fad6",
+  "standard_fresh_key_regression_run": false
+}

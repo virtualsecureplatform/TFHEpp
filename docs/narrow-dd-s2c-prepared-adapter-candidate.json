@@ -1,0 +1,51 @@
+{
+  "scope": "Diagnostic S2C prepared public Galois adapter outside active source and frozen replay. Compact S2C instantiates for N512/N32768. Arithmetic and performance remain untested.",
+  "candidate_path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/candidate.hpp",
+  "candidate_sha256": "1273ff3ef206617651a619f2292b0f5b3dc25dca1a28528c426f43d52887a76d",
+  "compile_checked": true,
+  "arithmetic_checked": true,
+  "integrated": true,
+  "fresh_keys_generated": false,
+  "purpose": "Route existing S2C binary rotations and conjugation through evaluation-owned FFT caches derived from retained raw keys. Preserve binary order and BSGS cache-release hooks.",
+  "required_checks": [
+    "Compile and instantiate the compact real transform with both candidate adapters.",
+    "Compare prepared coefficients exactly against retained raw S2C for saved N512/N32768 input.",
+    "Check cache release and raw-key immutability.",
+    "Measure complete preparation including cache construction with an alternating-order component control after the active full replay finishes."
+  ],
+  "created_utc": "2026-10-11T13:32:25.205197+00:00",
+  "compile_n_values": [
+    512,
+    32768
+  ],
+  "compile_actual_exit_codes": [
+    0,
+    0
+  ],
+  "performance_checked": true,
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/candidate.hpp": "1273ff3ef206617651a619f2292b0f5b3dc25dca1a28528c426f43d52887a76d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/compile.cpp": "18194256dc2d51911f1e6aa33b5c8593f5ae0a4ed9ac73a82152f273c86b0df1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/compile.o": "5b521d24f2a327bc52f6b2bb4a894ed6981f00b7c087a5bd02966f674e04dc21",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/compile-result.json": "788db44bb6975f4cc2a6d3fd352b43aa351291ea9acaa8dcc7b48b376f9203a5",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/compile-32768.cpp": "07ff3762bfb84859b1f9aa4c28241f3f4a5106af352ba0710828ba153d5d1700",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/compile-32768.o": "09c4f562582bcc1db02ecef2347d0a4067a630c1b10d7630835c9feec7653369",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/compile-32768.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-prepared-adapter-20261011/compile-32768-result.json": "077c65a6a8382fe04e9e0dda8821ad9c1e0108ed32e7234ac48d7556166d0fa2"
+  },
+  "updated_utc": "2026-10-11T13:36:41.697593+00:00",
+  "arithmetic_n_values": [
+    512
+  ],
+  "full_ring_arithmetic_checked": true,
+  "performance_n_values": [
+    512
+  ],
+  "small_evidence": "TFHEpp/docs/narrow-dd-s2c-prepared-adapter-small-validation.json",
+  "full_component_validation": "TFHEpp/docs/narrow-dd-s2c-prepared-adapter-full-validation.json",
+  "full_ring_component_performance_checked": true,
+  "full_ring_prepared_time_ratio": 0.48424774701455325,
+  "integration_validation": "TFHEpp/docs/narrow-dd-s2c-prepared-integration-validation.json",
+  "integrated_full_refresh_qualified": false
+}

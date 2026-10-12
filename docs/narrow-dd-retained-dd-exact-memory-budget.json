@@ -1,0 +1,36 @@
+{
+  "observed_at_utc": "2026-10-09T00:00:22.936309+00:00",
+  "scope": "Exact NTT check of retained plain37 DD chain from its fixed-size suffix; one prepared key at a time.",
+  "existing_processes": [
+    {
+      "pid": 1789289,
+      "virtual_limit_bytes": 34359738368,
+      "rss_bytes": 11888205824,
+      "remaining_growth_bytes": 22471532544,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-checkpoint sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008 TFHEpp/docs/narrow-dd-ll14-plain37-checkpoint-reproduction-2.json"
+    },
+    {
+      "pid": 1756575,
+      "virtual_limit_bytes": 68719476736,
+      "rss_bytes": 17686831104,
+      "remaining_growth_bytes": 51032645632,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json"
+    }
+  ],
+  "available_memory_bytes": 101929238528,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 6442450944,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 90684047360,
+  "launch_margin_bytes": 11245191168,
+  "launch_eligible": true,
+  "test_terminal": true,
+  "estimated_peak_components_bytes": {
+    "compact_dd_chain": 697466880,
+    "largest_dd_fft_cache": 1984167936,
+    "workspace_allowance": 1073741824,
+    "stack_reservation": 536870912
+  },
+  "test_actual_exit_code": 0,
+  "test_peak_rss_kib": 2896636
+}

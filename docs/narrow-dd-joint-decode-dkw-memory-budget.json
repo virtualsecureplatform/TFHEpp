@@ -1,0 +1,28 @@
+{
+  "observed_at_utc": "2026-10-09T05:27:04.738113+00:00",
+  "scope": "2GiB Sage rerun with uniform posterior-CDF confidence metadata after full sigmoid completion",
+  "live_job_pid": 1756575,
+  "live_job_rss_bytes": 17687748608,
+  "live_job_limit_bytes": 68719476736,
+  "available_memory_bytes": 114088464384,
+  "required_available_memory_bytes": 63916630016,
+  "auxiliary_limit_bytes": 2147483648,
+  "launch_eligible": true,
+  "completed_observed_at_utc": "2026-10-09T05:29:55.376278+00:00",
+  "runs": [
+    {
+      "session": 74513,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_dkw_external_copy.json",
+      "estimator_revision": "53da5982597709ba0fdf94ea37a84d822310fd84"
+    },
+    {
+      "session": 96269,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_block_joint_decode_dkw.json",
+      "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12"
+    }
+  ]
+}

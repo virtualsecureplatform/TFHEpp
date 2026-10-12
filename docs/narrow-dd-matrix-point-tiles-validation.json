@@ -1,0 +1,117 @@
+{
+  "scope": "Standalone point-tile controls at N32768, 22 columns, 40 selectors, 4/20 destination rows and four workers. Full output equivalence and sampled independent unsigned128 oracle. Not integrated full factor/refresh timing.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "build_actual_exit_codes": [
+    0,
+    0
+  ],
+  "test_actual_exit_codes": [
+    0,
+    0
+  ],
+  "omp_threads": 4,
+  "paired_tile_order": [
+    256,
+    64,
+    128,
+    512,
+    1024,
+    1024,
+    512,
+    128,
+    64,
+    256
+  ],
+  "comparisons": 693411840,
+  "independent_oracle_checks": 4055040,
+  "summary": [
+    {
+      "destination_rows": 4,
+      "prime": 0,
+      "median_seconds": {
+        "64": 0.1223613585,
+        "128": 0.121725423,
+        "256": 0.122810006,
+        "512": 0.121815597,
+        "1024": 0.1184047305
+      },
+      "ratio_to_current_256": {
+        "64": 0.9963468163986573,
+        "128": 0.9911686104795077,
+        "256": 1.0,
+        "512": 0.9919028666116994,
+        "1024": 0.9641293438256163
+      }
+    },
+    {
+      "destination_rows": 4,
+      "prime": 1,
+      "median_seconds": {
+        "64": 0.12046209199999999,
+        "128": 0.12097757249999999,
+        "256": 0.122457416,
+        "512": 0.11861368,
+        "1024": 0.11985053600000001
+      },
+      "ratio_to_current_256": {
+        "64": 0.9837059766147604,
+        "128": 0.9879154440103488,
+        "256": 1.0,
+        "512": 0.9686116519068146,
+        "1024": 0.978711946690105
+      }
+    },
+    {
+      "destination_rows": 20,
+      "prime": 0,
+      "median_seconds": {
+        "64": 0.6088778265000001,
+        "128": 0.604715323,
+        "256": 0.6023555604999999,
+        "512": 0.5942480175,
+        "1024": 0.592822352
+      },
+      "ratio_to_current_256": {
+        "64": 1.0108279335789416,
+        "128": 1.0039175574274457,
+        "256": 1.0,
+        "512": 0.9865402703458568,
+        "1024": 0.9841734531476946
+      }
+    },
+    {
+      "destination_rows": 20,
+      "prime": 1,
+      "median_seconds": {
+        "64": 0.612691463,
+        "128": 0.60492685,
+        "256": 0.5966551744999999,
+        "512": 0.6003267265000001,
+        "1024": 0.5976995605
+      },
+      "ratio_to_current_256": {
+        "64": 1.0268769788403136,
+        "128": 1.0138634103138915,
+        "256": 1.0,
+        "512": 1.006153557627447,
+        "1024": 1.0017504013115703
+      }
+    }
+  ],
+  "decision": "Keep current 256-point tile pending evidence of a repeatable material improvement. No core modification or full replay launched.",
+  "fresh_keys_generated": false,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-tiles-20261011/results-20rows.jsonl": "3851cbd4188e2d41000f80ddb8efdabaee39f60cbe637c70594966abd4b31c3c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-tiles-20261011/time.log": "68e359881754b6cc87141cecfdccb568169f8abe5a18ed2bc02c4500e4ca1337",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-tiles-20261011/control-20rows.cpp": "3a82e5e2273fba9fe477ce1ec8e4d20bfbfed07294bf913c02e3f18b2184baf2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-tiles-20261011/control": "fe75da468c0c81b9ade4e658d85923dc65556af1f08e36d1d544f9caf1b1100e",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-tiles-20261011/results.jsonl": "e4b68ced89fe89b346c05ccfb519a2e698180c5dd33cb3cc96edaae6d53c9d69",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-tiles-20261011/time-20rows.log": "4d73ca6265439dfc059abed75b008688f871dcc29376187d2a9b299e2c01a958",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-tiles-20261011/control.cpp": "8707bd3ed5e9f27a2d3e63339a1d5f8e0d486f775016ef2d91dc81ad305524ef",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-tiles-20261011/control-20rows": "90a5efd6c0dc3a25ada9950bd2988c3828fc344a6f2b0585ac1e9770b89f5cd3",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320"
+  },
+  "completed_utc": "2026-10-11T13:00:46.995265+00:00"
+}

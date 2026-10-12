@@ -1,0 +1,23 @@
+{
+  "scope": "Static source audit of remaining tensor-product FFT temporaries. No timing measurement or implementation change.",
+  "source_path": "TFHEpp/include/ckks/ckks.hpp",
+  "source_sha256": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+  "observed_utc": "2026-10-11T13:51:02.677554+00:00",
+  "call_path": [
+    "narrow_detail::productTree",
+    "CKKSMultRelinThenRescale",
+    "CKKSTensorProductRescale with LogScale=0",
+    "TensorArithmeticDigits16 for the current profile",
+    "Digit-sum FFT accumulation",
+    "TwistFFTDigitProduct expands backend signed64 output to multi-limb polynomial",
+    "accumulate immediately reads multilimb_to_signed_i64 and adds shifted integers to WideSignedLimbAccumulator"
+  ],
+  "candidate": "Use TwistFFTDigitProduct64 for the FFT branch and pass native signed64 products directly to the existing shifted accumulator. Keep non-FFT fallback, digit-sum order, FMA grouping, truncation, signed rounding and decomposition parameters unchanged.",
+  "required_validation": [
+    "Exact tensor-product equivalence at all retained tree levels, including rescale ties and negative/carry-heavy inputs.",
+    "Independent integer convolution/recomposition controls.",
+    "Saved-key refresh comparison after integration."
+  ],
+  "runtime_gain_proven": false,
+  "candidate_integrated": false
+}

@@ -1,0 +1,35 @@
+{
+  "utc": "2026-10-09T11:03:44.224877+00:00",
+  "scope": "Concurrent bounded selector phase diagnostics alongside original packed/aux16 and full aux8 traced replay",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17781161984,
+      "cap_bytes": 68719476736,
+      "cpu_ticks": 23445227,
+      "state": "R"
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 12743311360,
+      "cap_bytes": 34359738368,
+      "cpu_ticks": 3842548,
+      "state": "R"
+    },
+    {
+      "pid": 1841995,
+      "start_ticks": 219001048,
+      "rss_bytes": 8599121920,
+      "cap_bytes": 17179869184,
+      "cpu_ticks": 148768,
+      "state": "R"
+    }
+  ],
+  "available_bytes": 92748369920,
+  "required_bytes": 92409778176,
+  "aggregate_selector_budget_bytes": 536870912,
+  "per_selector_process_bytes": 134217728,
+  "eligible": true
+}

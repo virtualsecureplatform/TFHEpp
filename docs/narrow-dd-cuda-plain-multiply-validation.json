@@ -1,0 +1,75 @@
+{
+  "observed_at_utc": "2026-10-08T22:12:24.844355+00:00",
+  "scope": "Native public polynomial multiplication primitive for S2C diagonals compiled. Prepare transparent RHS -> existing exact tensor/NTT/CRT -> reduce to input level -> native-level signed rescale once. Host metadata, portable arithmetic and adversarial tie references pass normal/UBSan. Device arithmetic and complete S2C integration unverified.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "ace90d093d7b42377682a92aa262ec22ced06fce75c1c0d3df0420814e40435c",
+    "src/ckks/narrow_cuda.cu": "b0a2707e22186413895e36a960ad65412b246de0e3d2698bf41c09f04edbb5dc",
+    "test/ckks/ckks_narrow_cuda.cu": "ed1602e3be24449839da9cc5a763a1606962b85f98dfd5fd0af1b70af1fbf148"
+  },
+  "apis": [
+    "CKKSNarrowCUDAValidatePlainMultiply",
+    "CKKSNarrowCUDAPlainMultiply"
+  ],
+  "layout": "Public polynomial [point][column][limb]; transparent workspace [zero mask][public body] modulo input Q; native output first two components of full three-component tensor projection, third zero.",
+  "rounding": "Project wide convolution to input Q with zero drop, then round centered native-Q coefficients to nearest with ties away from zero and reduce to Q-drop. This matches the CPU plaintext multiplication rescale order; rounding wide-product sign directly can differ at wraparound ties.",
+  "input_q_profiles": [
+    23,
+    217
+  ],
+  "native_limb_profiles": [
+    1,
+    7
+  ],
+  "base_profiles": [
+    8,
+    4
+  ],
+  "points": 32,
+  "columns": [
+    1,
+    3
+  ],
+  "prime_reference_profiles": [
+    "first prime",
+    "second prime"
+  ],
+  "host_valid_metadata_cases": 2,
+  "host_invalid_metadata_cases": 14,
+  "kernel_host_rejection_cases_total": 335,
+  "host_plain_reference_profiles": 6,
+  "host_plain_scale_drop_cases": 18,
+  "host_coefficient_comparisons_including_zero_quadratic": 2880,
+  "host_native_word_comparisons_including_zero_quadratic": 6336,
+  "host_ciphertext_word_comparisons": 4224,
+  "host_adversarial_signed_wrap_tie_cases": 6,
+  "reference": "Independent 2048-bit coefficient-space negacyclic products versus portable balanced digits/NTT/contraction/CRT/wide recomposition, then native-Q projection/rescale. Transparent RHS mask is zero. Separate signed integer wrap/tie cases explicitly distinguish wide sign from reduced native-level sign.",
+  "host_metadata_validated": true,
+  "host_portable_arithmetic_validated": true,
+  "host_ubsan_validated": true,
+  "cpu_plain_multiply_api_compared": false,
+  "encrypted_phase_reference_present": false,
+  "device_plain_evaluations_compiled": 18,
+  "device_plain_evaluations_executed": 0,
+  "device_validated": false,
+  "s2c_graph_connected": false,
+  "full_gpu_refresh_integrated": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "no_device_allocation_or_host_transfer_in_evaluation": true,
+  "tensor_footprint_shared_with_product_tree_validation": true,
+  "cmake_build_exit_code": 0,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-plain-multiply-final-build.log",
+  "ubsan_build_exit_code": 0,
+  "ubsan_build_log": "/tmp/ckks-narrow-cuda-plain-multiply-ubsan-build.log",
+  "ubsan_build_argv": "/tmp/ckks-narrow-cuda-plain-multiply-ubsan-argv.json",
+  "ubsan_scope": "Current CUDA host source and test instrumented; unchanged host-instrumented Tensor Core object reused. Device/runtime code uninstrumented; device branches unexecuted.",
+  "cmake_test_actual_exit_code": 77,
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-plain-multiply-final-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-plain-multiply-final-test.stderr",
+  "ubsan_test_actual_exit_code": 77,
+  "ubsan_test_log": "/tmp/ckks-narrow-cuda-plain-multiply-ubsan-test.log",
+  "ubsan_test_stderr_log": "/tmp/ckks-narrow-cuda-plain-multiply-ubsan-test.stderr",
+  "gpu_skip_reason": "no CUDA-capable device is detected",
+  "cmake_test_stderr_bytes": 0,
+  "ubsan_test_stderr_bytes": 0
+}

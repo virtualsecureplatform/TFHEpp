@@ -1,0 +1,192 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "complete",
+  "scope": "N32768 head30/tail4 22-column exact schedule-configured56bit synchronous/read-ahead native-limb extraction and parallel prepared automorphism factor controls. Eight-worker retained-key component experiment. Not a full refresh or controlled performance comparison.",
+  "fresh_keys_generated": false,
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "memory_cap_bytes": 4294967296,
+  "omp_num_threads": 8,
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+  "baseline_evidence": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-parallel-secondary11-full-resumed-validation.json",
+  "baseline_evidence_sha256": "78554178fdf267cb0e0b643a3c752e939df60a70dfc1d8d72f70b73a4e344643",
+  "selected_before": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "prehash_reused_from_completed_baseline": true,
+  "mandatory_selected_post_hash": true,
+  "packed_live_identity": [
+    1910341,
+    225941687
+  ],
+  "mem_available_bytes": 121696055296,
+  "reserved_headroom_required_bytes": 73614188544,
+  "qualified_source_sha256": {
+    "TFHEpp/include/ckks/prepared_auto.hpp": "99bc67e971b357db8c5f4c194996ae7eb032a75ca702838255d819323096ca8f",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "1f960a87c6bc3f95d055b49bd8c8c320b07f01af54afbab5070f797e128f52b8",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "3b228b8c6da5b5349ba8347de26babbf3484f0caf3ede819ce4af680d5053031",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "small_qualification_sha256": "6a02519a7951e2f5685559a0557f1b731ed068db50af526448d0cc86a3a2086a",
+  "default_width_changed": false,
+  "frozen_executable_sha256": "7bd380b4f5cefec9bb531e46199a59282db74ae1174f0cb4809fd2dd101d7b34",
+  "command": [
+    "/usr/bin/time",
+    "-v",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-prefetch-full-factors-20261011/ckks_narrow_basis_factor_cache_checkpoint",
+    "--full-union-wide-prefetch",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-prefetch-full-factors-20261011/factors"
+  ],
+  "child_pid": 2018891,
+  "actual_exit_code": 0,
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 24.672604327,
+      "cache_setup_seconds": 7.13e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 2.0051648920000003,
+      "selector_ntt_seconds": 6.701466669999999,
+      "matrix_seconds": 11.338732148000002,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "raw_prefetch": true,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 23.644001108,
+      "cache_setup_seconds": 7.13e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 0.06890723199999998,
+      "selector_ntt_seconds": 6.675456587000002,
+      "matrix_seconds": 12.112858053999997,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": false,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 31.323924604,
+      "cache_setup_seconds": 1.83e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 1.8196434110000002,
+      "selector_ntt_seconds": 8.317205869,
+      "matrix_seconds": 16.289398978999998,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "raw_prefetch": true,
+      "matrix_digit_bits": 56,
+      "schedule_configured_width": true,
+      "selector_digits": 10,
+      "selector_chunk_size": 40,
+      "columns": 22,
+      "seconds": 28.82682751,
+      "cache_setup_seconds": 1.83e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 0.07315642900000002,
+      "selector_ntt_seconds": 8.232229897999998,
+      "matrix_seconds": 15.559131404,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "cross_version_archive_identity": {
+    "head-reference.bin": true,
+    "tail-reference.bin": true
+  },
+  "slots_checked": 720896,
+  "selected_after": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/checkpoint.bin": {
+      "bytes": 16519466671,
+      "sha256": "6ced14b532ac07084beafc078d4efc76cf4b45ca8a3e28d9bb042186a400de25"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/head-30.bin": {
+      "bytes": 4992270409,
+      "sha256": "154024b53f5288872650b12a7cb95789d0e9a3ce5dde237f7b3d3fb9cf2e14a6"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/checkpoint/selectors/tail-4.bin": {
+      "bytes": 4992270409,
+      "sha256": "27aed9050e3de2e430a60935bc26324684cfbae82756adf1f3650f62fa4a9384"
+    }
+  },
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "Complete checkpoint.bin and selected head30/tail4 files. Other selector files are not read by this component test.",
+  "controller_actual_exit_code": 0,
+  "columns": 22,
+  "raw_file_refresh_already_enables_prefetch": true,
+  "material_full_refresh_speedup_demonstrated": false,
+  "controller_source_sha256": "9c15fb6d87a11f8ffc226b412062e894d30663bc56bc130587455a687918932a",
+  "artifact_sha256": {
+    "factors.log": "4ac072993f37e1f1997e0afcfabf987a573e70196393d3fa7a75f42120b7af83",
+    "factors.time": "882aa36382183d2215a1772490e437432c024fe0cb19efd0fe05f13daf91abf6",
+    "controller.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "observational_synchronous_vs_prefetch": {
+    "False": {
+      "synchronous_seconds": 24.672604327,
+      "prefetch_seconds": 23.644001108
+    },
+    "True": {
+      "synchronous_seconds": 31.323924604,
+      "prefetch_seconds": 28.82682751
+    }
+  }
+}

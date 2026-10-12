@@ -1,0 +1,15 @@
+{
+  "observed_at_utc": "2026-10-09T03:45:49.221953+00:00",
+  "scope": "Single 2GiB Sage process: conditional-residual-variance hybrid sensitivity using saved baseline points",
+  "existing_pid": 1756575,
+  "existing_state": "R (running)",
+  "existing_rss_bytes": 17982275584,
+  "existing_virtual_limit_bytes": 68719476736,
+  "available_memory_bytes": 113952067584,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_reserve_bytes": 4294967296,
+  "per_process_virtual_limit_bytes": 2147483648,
+  "required_available_memory_bytes": 65769586688,
+  "launch_margin_bytes": 48182480896,
+  "launch_eligible": true
+}

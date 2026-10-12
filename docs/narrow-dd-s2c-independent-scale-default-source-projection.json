@@ -1,0 +1,9 @@
+{
+  "scope": "Byte-for-byte restoration of preceding narrow_refresh.hpp by removing the new optional S2C auxiliary parameter and restoring its preceding default expression. Existing evaluator/key-generation bodies are unchanged. Fresh default N512 all-function accuracy/archive/integrity regression also passed; no new full default replay is claimed.",
+  "current_narrow_refresh_sha256": "f07bbe5c1796c31345a554480c8477c80124b917acef23a5ce072bf0996a82a7",
+  "restored_preceding_narrow_refresh_sha256": "d4e9dfcd82629aff1bc60fb3de0dbac64181b1bd6422701d0708e846a40984b4",
+  "source_restoration_passed": true,
+  "preceding_full_validation": "narrow-dd-s2c-tensor-full-replay-validation.json",
+  "fresh_default_small_validation": "narrow-dd-s2c-independent-scale-default-small-validation.json",
+  "new_candidate_full_s2c_validation": "narrow-dd-s2c-independent-scale-aux8-full-validation.json"
+}

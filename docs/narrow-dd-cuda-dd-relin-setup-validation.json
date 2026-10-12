@@ -1,0 +1,75 @@
+{
+  "observed_at_utc": "2026-10-08T18:32:06.867556+00:00",
+  "scope": "Host native CKKSDDRelinKey two-axis spectra setup and CPU exact spectral contraction; no native DD key device upload/owner, relinearization assembly, tensor product, product tree or GPU refresh executed.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda_setup.hpp": "575cd7dcd966f57faa3a00dea9cd651281f16bc560cedbccd04a6d95df6ca23e",
+    "test/ckks/ckks_narrow_cuda_setup.cpp": "c181c255483237ad62d0dccf379f7adaa68abd13aa34b84cdac62074b0aa974d",
+    "src/ckks/cuda/CMakeLists.txt": "410500deb440b2b3eb500f29d3977f06483f397ccbd653deb164ca1ddce8bb8d",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/ckks/narrow_cuda.hpp": "949dc4324b089f828c412e1c10c7ac9a41b6cd46c6d8a671ede82664f3919711"
+  },
+  "native_dd_relin_adapter_implemented": true,
+  "primary_axis_order": "Native descending physical shifts unchanged",
+  "secondary_axis_order": "Native descending storage reversed; uploaded digit d retains physical shift d*Bbarbit",
+  "key_digit_conversion": "Actual signed native DD digits converted directly to canonical RNS; no additional torus offset or balanced decomposition applied",
+  "separate_axis_metadata": true,
+  "profiles": [
+    {
+      "log_q": 217,
+      "native_bits": 448,
+      "primary_bits": 4,
+      "secondary_bits": 4
+    },
+    {
+      "log_q": 376,
+      "native_bits": 448,
+      "primary_bits": 18,
+      "secondary_bits": 8
+    },
+    {
+      "log_q": 842,
+      "native_bits": 896,
+      "primary_bits": 18,
+      "secondary_bits": 8
+    }
+  ],
+  "points": 16,
+  "mask_rank": 1,
+  "auxiliary_primes": [
+    2301972608560791553,
+    2295217002959732737
+  ],
+  "prime_profile_spectral_contractions_passed": 6,
+  "inverse_spectra_every_key_digit_checked": true,
+  "shoup_every_quotient_checked_against_wide_division": true,
+  "reference": "Actual native activeBaseDecomposePolynomialRows primary digits; independent exact coefficient-space integer negacyclic products of stored secondary digits; actual CPU activeBaseRecombineTRLWERows; exact ciphertext comparison against adapter spectra/NTT contraction/ascending physical-shift recomposition.",
+  "input_noncanonical_upper_words_and_centering_boundaries_covered": true,
+  "raw_signed_key_digits_not_encrypted_generated_keys": true,
+  "invalid_requests_passed": 9,
+  "invalid_requests": "Each profile rejects too-small prime, positive upper digit boundary, and noncanonical signed native digit with garbage bit100",
+  "cmake_build_exit_code": 0,
+  "cmake_build_session": 15436,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-dd-setup-final-build.log",
+  "host_test_actual_exit_code": 0,
+  "host_test_log": "/tmp/ckks-narrow-cuda-dd-ckks_narrow_cuda_setup-test.log",
+  "previous_setup_cases_rechecked": {
+    "prime_profile_cases": 14,
+    "ciphertext_roundtrips": 3,
+    "invalid_requests": 13
+  },
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 17864,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-dd-setup-host-ubsan-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-dd-setup-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 0,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-dd-setup-host-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-dd-setup-host-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "C++ native setup/reference test and inline CPU DD decomposition/recomposition/NTT adapter arithmetic instrumented; no CUDA runtime or device kernels executed.",
+  "native_encrypted_auto_recheck_actual_exit_code": 77,
+  "native_encrypted_auto_recheck_log": "/tmp/ckks-narrow-cuda-dd-ckks_narrow_cuda_device-test.log",
+  "native_dd_device_validation_passed": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "security_qualified": false
+}

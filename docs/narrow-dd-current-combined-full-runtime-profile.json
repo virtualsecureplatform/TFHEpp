@@ -1,0 +1,66 @@
+{
+  "observed_utc": "2026-10-11T08:05:19.906116+00:00",
+  "scope": "Completed four-worker retained-key ALL replay, all three independent phase decoders/archive identities, and all 37 post-evaluation file hashes. Concurrent-run performance comparison is observational.",
+  "evaluator_actual_exit_code": 0,
+  "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/current-combined-full-replay-20261011/replay.json",
+  "report_sha256": "5b801c81fc04ffa6616400c133fd6fd236e99dceeaf4651070282ab098550756",
+  "timing_containment_passed": true,
+  "shared_coefficient_prepare_seconds": 418.791389289,
+  "shared_root_generation_seconds": 2454.281693656,
+  "exclusive_root_stages": {
+    "input_and_factor_cache": 2.749454377,
+    "leaf_factors_and_inline_alignment": 1579.326654217,
+    "bounded_tail_alignment": 395.021327458,
+    "dd_cache_preparation": 10.594237175,
+    "dd_trees_and_beta": 466.49236909
+  },
+  "nested_factor_stages": {
+    "selector_load": 100.00496715599998,
+    "table_ntt": 15.614024810000002,
+    "selector_ntt": 465.96839341299994,
+    "matrix": 879.29519126,
+    "inverse_crt": 24.273859322000003,
+    "conjugation": 92.20208937999999
+  },
+  "root_stage_residual_seconds": 0.09765133899963985,
+  "function_reconstruction_seconds": {
+    "sigmoid": 3.718416161,
+    "gelu": 3.499604704,
+    "tanh": 13.222620765
+  },
+  "setup_generation_count": 0,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "full_controller_terminal": true,
+  "independent_phase_checks_passed": true,
+  "ciphertext_identity": {
+    "sigmoid": true,
+    "gelu": true,
+    "tanh": true
+  },
+  "independent_metrics": {
+    "sigmoid": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 5.263058323660706e-09,
+      "post_refresh_product_max_error": 9.472418715013627e-09,
+      "square_normalization_max_error": 2.692538244943504e-09
+    },
+    "gelu": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 1.5541199769161976e-08,
+      "post_refresh_product_max_error": 1.262155845454321e-07,
+      "square_normalization_max_error": 2.15174226503516e-09
+    },
+    "tanh": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 2.0760775289823365e-08,
+      "post_refresh_product_max_error": 5.73710758396451e-08,
+      "square_normalization_max_error": 2.3742523121777745e-09
+    }
+  },
+  "retained_files_postcheck_pending": false,
+  "full_controller_actual_exit_code": 0,
+  "checkpoint_files_checked": 37,
+  "checkpoint_files_unchanged": true,
+  "validation_evidence_sha256": "9c3deb0bde2e8de8ecbecf0d4f0116c3d8c791f6fac5929c2a8cb72b67ca92a7"
+}

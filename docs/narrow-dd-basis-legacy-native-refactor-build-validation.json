@@ -1,0 +1,52 @@
+{
+  "observed_at_utc": "2026-10-10T17:32:40.274429+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Native all-profile benchmark refactor build and retained N512 regression before prepared-NTT-source additions. All3 ciphertext archives match independently validated dedicated runner; no full refresh performance/security claim.",
+  "stage": "complete",
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-avx2-profiled-replay-20261010",
+  "budget": {
+    "available_bytes": 89432256512,
+    "required_bytes": 87087534080,
+    "compiler_cap_bytes": 15032385536,
+    "additional_host_reserve_bytes": 2147483648,
+    "live_reservations": [
+      {
+        "pid": 1910341,
+        "start_ticks": 225941687,
+        "cap_bytes": 68719476736,
+        "rss_bytes": 17651642368,
+        "remaining_bytes": 51067834368
+      },
+      {
+        "pid": 1945583,
+        "start_ticks": 228786841,
+        "cap_bytes": 42949672960,
+        "rss_bytes": 24109842432,
+        "remaining_bytes": 18839830528
+      }
+    ]
+  },
+  "fresh_keys_generated": false,
+  "legacy_build_qualified": true,
+  "goal_complete": false,
+  "build": {
+    "actual_exit_code": 0,
+    "elapsed_seconds": 536.7273283428513,
+    "address_space_cap_bytes": 15032385536
+  },
+  "monolithic_all3_ciphertext_identity": {
+    "sigmoid": true,
+    "gelu": true,
+    "tanh": true
+  },
+  "finiteness_actual_exit_code": 0,
+  "retained_all3_replay_actual_exit_code": 0,
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_narrow_benchmark.cpp": "002bac19ea5dde07c840e5a66b3a46f7f43b681ad6b70e7890cce8affb820199",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "0df97ec98b1665dfdbd84eaa113ab783958eec314c124e50f06c991e5872977c",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "2b413328cd3adc2ec58a860bd2c8435fc3ca07e9a6a221eeb106fa7287cacf59"
+  },
+  "peak_compiler_rss_kib": 12317968,
+  "executable_sha256": "6bdc1c17fd8ab5e03dac87559457e68ccb0a90dcfd3ae511a0467716c2bdfafc"
+}

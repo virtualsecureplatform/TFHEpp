@@ -1,0 +1,441 @@
+{
+  "observed_at_utc": "2026-10-10T18:39:54.168593+00:00",
+  "scope": "Current repository CMake native O3/debug/unroll/LTO targets: build, exact arithmetic, raw/cached N512 all-function replay identity and N32768 repeated fresh-transform factor accuracy. Does not qualify complete current-source N32768 refresh, paper performance or security.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "stage": "current CMake targeted build, arithmetic, raw/cached all3 small replay and full factors passed",
+  "cmake_configure_exit_code": 0,
+  "cmake_build_exit_code": 0,
+  "build_memory_cap_bytes": 6442450944,
+  "build_peak_rss_kib": 1427672,
+  "built_targets": [
+    "ckks_narrow_basis_replay",
+    "ckks_narrow_basis_factor_cache_checkpoint",
+    "ckks_narrow_permutation_exact",
+    "ckks_narrow_selector_quotient_exact",
+    "ckks_narrow_matrix_blocks_exact"
+  ],
+  "tests": {
+    "ckks_narrow_permutation_exact": {
+      "actual_exit_code": 0,
+      "rows": [
+        {
+          "independent_ntt_points_checked": 15968256,
+          "passed": true
+        }
+      ]
+    },
+    "ckks_narrow_selector_quotient_exact": {
+      "actual_exit_code": 0,
+      "rows": [
+        {
+          "exact_quotients_checked": 3000180,
+          "independent_modular_products_checked": 234014040,
+          "passed": true
+        },
+        {
+          "reciprocal": false,
+          "seconds": 0.0583962,
+          "exact_coefficients": 2097152
+        },
+        {
+          "reciprocal": true,
+          "seconds": 0.0578591,
+          "exact_coefficients": 2097152
+        },
+        {
+          "reciprocal": true,
+          "seconds": 0.0604839,
+          "exact_coefficients": 2097152
+        },
+        {
+          "reciprocal": false,
+          "seconds": 0.0579638,
+          "exact_coefficients": 2097152
+        },
+        {
+          "reciprocal": false,
+          "seconds": 0.0589458,
+          "exact_coefficients": 2097152
+        },
+        {
+          "reciprocal": true,
+          "seconds": 0.0445426,
+          "exact_coefficients": 2097152
+        }
+      ]
+    },
+    "ckks_narrow_matrix_blocks_exact": {
+      "actual_exit_code": 0,
+      "rows": [
+        {
+          "n": 512,
+          "prime": 0,
+          "columns": 5,
+          "selector_rows": 3,
+          "tile": 512,
+          "seconds": 0.000401025,
+          "exact_coefficients": 15360,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "prime": 0,
+          "columns": 5,
+          "selector_rows": 3,
+          "tile": 37,
+          "seconds": 0.000278157,
+          "exact_coefficients": 15360,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "prime": 0,
+          "columns": 5,
+          "selector_rows": 3,
+          "tile": 37,
+          "seconds": 0.000275183,
+          "exact_coefficients": 15360,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "prime": 0,
+          "columns": 5,
+          "selector_rows": 3,
+          "tile": 512,
+          "seconds": 0.000257641,
+          "exact_coefficients": 15360,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "prime": 1,
+          "columns": 5,
+          "selector_rows": 3,
+          "tile": 512,
+          "seconds": 0.00013505,
+          "exact_coefficients": 15360,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "prime": 1,
+          "columns": 5,
+          "selector_rows": 3,
+          "tile": 37,
+          "seconds": 9.7188e-05,
+          "exact_coefficients": 15360,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "prime": 1,
+          "columns": 5,
+          "selector_rows": 3,
+          "tile": 37,
+          "seconds": 9.5269e-05,
+          "exact_coefficients": 15360,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "prime": 1,
+          "columns": 5,
+          "selector_rows": 3,
+          "tile": 512,
+          "seconds": 9.0796e-05,
+          "exact_coefficients": 15360,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 0,
+          "columns": 8,
+          "selector_rows": 4,
+          "tile": 32768,
+          "seconds": 0.262109,
+          "exact_coefficients": 11534336,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 0,
+          "columns": 8,
+          "selector_rows": 4,
+          "tile": 256,
+          "seconds": 0.183516,
+          "exact_coefficients": 11534336,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 0,
+          "columns": 8,
+          "selector_rows": 4,
+          "tile": 256,
+          "seconds": 0.213342,
+          "exact_coefficients": 11534336,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 0,
+          "columns": 8,
+          "selector_rows": 4,
+          "tile": 32768,
+          "seconds": 0.240717,
+          "exact_coefficients": 11534336,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 1,
+          "columns": 8,
+          "selector_rows": 4,
+          "tile": 32768,
+          "seconds": 0.356477,
+          "exact_coefficients": 11534336,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 1,
+          "columns": 8,
+          "selector_rows": 4,
+          "tile": 256,
+          "seconds": 0.185127,
+          "exact_coefficients": 11534336,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 1,
+          "columns": 8,
+          "selector_rows": 4,
+          "tile": 256,
+          "seconds": 0.155774,
+          "exact_coefficients": 11534336,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 1,
+          "columns": 8,
+          "selector_rows": 4,
+          "tile": 32768,
+          "seconds": 0.186477,
+          "exact_coefficients": 11534336,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 0,
+          "columns": 18,
+          "selector_rows": 40,
+          "tile": 32768,
+          "seconds": 1.61661,
+          "exact_coefficients": 25952256,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 0,
+          "columns": 18,
+          "selector_rows": 40,
+          "tile": 256,
+          "seconds": 0.679083,
+          "exact_coefficients": 25952256,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 0,
+          "columns": 18,
+          "selector_rows": 40,
+          "tile": 256,
+          "seconds": 0.714686,
+          "exact_coefficients": 25952256,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 0,
+          "columns": 18,
+          "selector_rows": 40,
+          "tile": 32768,
+          "seconds": 1.1972,
+          "exact_coefficients": 25952256,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 1,
+          "columns": 18,
+          "selector_rows": 40,
+          "tile": 32768,
+          "seconds": 2.32351,
+          "exact_coefficients": 25952256,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 1,
+          "columns": 18,
+          "selector_rows": 40,
+          "tile": 256,
+          "seconds": 1.75062,
+          "exact_coefficients": 25952256,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 1,
+          "columns": 18,
+          "selector_rows": 40,
+          "tile": 256,
+          "seconds": 1.53152,
+          "exact_coefficients": 25952256,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "prime": 1,
+          "columns": 18,
+          "selector_rows": 40,
+          "tile": 32768,
+          "seconds": 1.89878,
+          "exact_coefficients": 25952256,
+          "passed": true
+        }
+      ]
+    }
+  },
+  "ciphertext_identity": {
+    "raw-replay": {
+      "sigmoid": {
+        "exact": true,
+        "sha256": "5f305d3359263666cafa2ecf6126483f3c3cfa68284ee272c35eb7767a2772c4"
+      },
+      "gelu": {
+        "exact": true,
+        "sha256": "d229ade2aba24954149111818305f7fae045cc70e13a5abcf5c674460c2e3663"
+      },
+      "tanh": {
+        "exact": true,
+        "sha256": "69c3992958693cceb8c460fcf8e3ce751455a596669aeaa4ce2134b469541112"
+      }
+    },
+    "cached-replay": {
+      "sigmoid": {
+        "exact": true,
+        "sha256": "5f305d3359263666cafa2ecf6126483f3c3cfa68284ee272c35eb7767a2772c4"
+      },
+      "gelu": {
+        "exact": true,
+        "sha256": "d229ade2aba24954149111818305f7fae045cc70e13a5abcf5c674460c2e3663"
+      },
+      "tanh": {
+        "exact": true,
+        "sha256": "69c3992958693cceb8c460fcf8e3ce751455a596669aeaa4ce2134b469541112"
+      }
+    }
+  },
+  "fresh_keys_generated": false,
+  "full_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-current-cmake-build-20261010",
+  "source_sha256": {
+    "TFHEpp/test/CMakeLists.txt": "6c62a2197a9af7e83c7b5f4acacde1a98693d1bd3dff36e3c34c5c2ebd9cf9cb",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "9ebff42776f1c47b375dfb3a3113c96cd218df300d4906fd530dda366b80d3cc",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "3e57ace782eeaecc01f14d50b765e6adf0cf85c02a0fd5506154666a857900e7",
+    "TFHEpp/test/ckks/ckks_narrow_basis_replay.cpp": "0b54453e976ed6f26f970d3edcfebf1094b2e16e5f484968c00809c0d1fd998b",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "c8391bae1f512b21c4da72c194b2c88358c507afd440890e9eba322dd958883e"
+  },
+  "runner_compile_flags": "# CMAKE generated file: DO NOT EDIT!\n# Generated by \"Unix Makefiles\" Generator, CMake Version 3.28\n\n# compile CXX with /usr/bin/c++\nCXX_DEFINES = -DUSE_BLAKE3 -DUSE_INTERLEAVED_FORMAT -DUSE_SPQLIOS_INTL\n\nCXX_INCLUDES = -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/concrete-fft -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64 -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64 -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c -I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl -isystem /tmp/ckks-build-deps/root/usr/include\n\nCXX_FLAGS = -march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare -fopenmp -std=gnu++20 -flto=auto -fno-fat-lto-objects -fno-ipa-icf\n\n",
+  "runner_link_command": "/usr/bin/c++ -march=native -O3 -g -funroll-loops -Wall -Wextra -pedantic -Wno-sign-compare -fopenmp -flto=auto -fno-fat-lto-objects -fno-ipa-icf CMakeFiles/ckks_narrow_basis_replay.dir/ckks/ckks_narrow_basis_replay.cpp.o -o ckks/ckks_narrow_basis_replay  ../src/libtfhe++.a ../thirdparties/AES/libAES.a ../thirdparties/BLAKE3/c/libblake3.a ../thirdparties/spqlios-intl/libspqlios-intl.a \n",
+  "built_executable_sha256": {
+    "ckks_narrow_basis_replay": "294876327a61f1b53a64bb47b1945f7ef274c03aeb702437a437c5990dd6d0ed",
+    "ckks_narrow_basis_factor_cache_checkpoint": "8a50a9f40e293a3538c7e5fcc02af1770a32ef59026861b6fa81c0837a6cba0d"
+  },
+  "actual_exit_code": 0,
+  "small_checkpoint_files_unchanged": 36,
+  "full_selected_complete_groups_and_prefix_unchanged": true,
+  "full_factor_control": {
+    "actual_exit_code": 0,
+    "memory_cap_bytes": 2147483648,
+    "peak_rss_kib": 1784352,
+    "rows": [
+      {
+        "n": 32768,
+        "tail": false,
+        "group": 30,
+        "cached": false,
+        "columns": 8,
+        "seconds": 42.97433689,
+        "cache_setup_seconds": 1.66e-07,
+        "reused_prepared_chunks": 0,
+        "selector_provider_seconds": 19.484855768,
+        "matrix_seconds": 21.371909402000004,
+        "ciphertexts_exact": true
+      },
+      {
+        "n": 32768,
+        "tail": false,
+        "group": 30,
+        "cached": false,
+        "columns": 8,
+        "seconds": 41.337343894,
+        "cache_setup_seconds": 1.66e-07,
+        "reused_prepared_chunks": 0,
+        "selector_provider_seconds": 18.90409219599999,
+        "matrix_seconds": 19.488289227000013,
+        "ciphertexts_exact": true
+      },
+      {
+        "n": 32768,
+        "tail": false,
+        "slots_checked": 131072,
+        "maximum_error": 8.013204379982934e-10,
+        "accuracy_passed": true
+      },
+      {
+        "n": 32768,
+        "tail": true,
+        "group": 4,
+        "cached": false,
+        "columns": 8,
+        "seconds": 33.213131063,
+        "cache_setup_seconds": 1.5e-07,
+        "reused_prepared_chunks": 0,
+        "selector_provider_seconds": 16.584475541000014,
+        "matrix_seconds": 13.666653325999985,
+        "ciphertexts_exact": true
+      },
+      {
+        "n": 32768,
+        "tail": true,
+        "group": 4,
+        "cached": false,
+        "columns": 8,
+        "seconds": 43.283172873,
+        "cache_setup_seconds": 1.5e-07,
+        "reused_prepared_chunks": 0,
+        "selector_provider_seconds": 19.770632829000004,
+        "matrix_seconds": 21.509679409999993,
+        "ciphertexts_exact": true
+      },
+      {
+        "n": 32768,
+        "tail": true,
+        "slots_checked": 131072,
+        "maximum_error": 7.311383704379468e-10,
+        "accuracy_passed": true
+      }
+    ],
+    "slots_checked": 262144,
+    "unique_repeated_trial_ciphertext_coefficients_compared": 1048576,
+    "cross_version_ciphertext_identity_qualified": false
+  }
+}

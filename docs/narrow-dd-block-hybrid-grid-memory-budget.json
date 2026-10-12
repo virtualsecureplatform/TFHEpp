@@ -1,0 +1,29 @@
+{
+  "observed_at_utc": "2026-10-09T04:26:59.383209+00:00",
+  "scope": "Sequential 2GiB Sage exact-weight block-hybrid anchor control and bounded parameter grid; reserve 4GiB resident envelope for live sanitizer plus 2GiB auxiliary margin",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "rss_bytes": 17785925632,
+      "virtual_limit_bytes": 68719476736
+    },
+    {
+      "pid": 1812584,
+      "rss_bytes": 11854839808,
+      "virtual_limit_bytes": 34359738368
+    }
+  ],
+  "available_memory_bytes": 101757349888,
+  "required_available_memory_bytes": 92765802496,
+  "per_process_virtual_limit_bytes": 2147483648,
+  "launch_eligible": true,
+  "anchor_session": 73926,
+  "anchor_terminal": true,
+  "anchor_actual_exit_code": 0,
+  "grid_session": 13426,
+  "grid_terminal": true,
+  "grid_actual_exit_code": 0,
+  "refined_grid_session": 90783,
+  "refined_grid_terminal": true,
+  "refined_grid_actual_exit_code": 0
+}

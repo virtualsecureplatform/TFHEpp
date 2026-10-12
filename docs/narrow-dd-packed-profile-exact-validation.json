@@ -1,0 +1,137 @@
+{
+  "observed_at_utc": "2026-10-09T00:41:38.084506+00:00",
+  "scope": "Independent full-ring integer NTT tensor and generated-key DD validation of the active packed after-rescale modulus chain.",
+  "points": 16384,
+  "native_bits": 448,
+  "dd_digit_bits": [
+    4,
+    4
+  ],
+  "scale_drop_bits": 49,
+  "source_sha256": {
+    "test/ckks/ckks_narrow_tensor_exact.cpp": "0090155067258c6cfdacdd27cd4fe47726e5bb86eefefdc1c8f3e12808a9a7fd",
+    "test/ckks/ckks_narrow_dd_exact.cpp": "60b462bdfb701764ec937e06896fa45ca969c74ff87dc37b942c238d44c92ad4",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/ckks/compact_dd.hpp": "33322058094889f5f117b38638e2237430eeb9c7f6300919003b0da4a391ad3b",
+    "include/mulfft.hpp": "aa65978f25165392b3b42a06e5a69c80bf6c42687cef5ee219baf5e823b6ff6d",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a"
+  },
+  "tensor": {
+    "random_pairs": [
+      [
+        345,
+        345
+      ],
+      [
+        345,
+        296
+      ],
+      [
+        296,
+        296
+      ],
+      [
+        247,
+        247
+      ],
+      [
+        198,
+        198
+      ],
+      [
+        149,
+        149
+      ]
+    ],
+    "boundary_pairs": [
+      [
+        345,
+        345
+      ],
+      [
+        247,
+        247
+      ],
+      [
+        198,
+        198
+      ],
+      [
+        149,
+        149
+      ]
+    ],
+    "scale_drops": [
+      0,
+      49
+    ],
+    "cases_passed": 20,
+    "coefficient_comparisons": 983040,
+    "native_word_comparisons": 6881280,
+    "oracle": "Independent unsigned 16-bit chunk products with integer NTT, 1024-bit accumulation and signed ties-away rescale; partial-nibble Q uses centered active-Q integers, full nibble Q uses balanced [-8,7] wrap threshold.",
+    "test_actual_exit_code": 0,
+    "test_terminal": true,
+    "test_log": "/tmp/ckks-narrow-packed-tensor-test.log",
+    "test_stderr_bytes": 0,
+    "elapsed_wall_time": "0:08.99",
+    "peak_rss_kib": 477124
+  },
+  "dd": {
+    "active_moduli": [
+      296,
+      247,
+      198,
+      149,
+      100
+    ],
+    "generated_compact_keys": 5,
+    "key_row_phase_coefficients_checked": 4079616,
+    "fft_ntt_coefficients_compared": 163840,
+    "switched_phase_coefficients_checked": 81920,
+    "oracle": "Independent low-Q masking and sign extension, radix-16 extraction, integer NTT key products, row recomposition and phase subtraction.",
+    "key_noise_limit": 39,
+    "limit_is_diagnostic_12_sigma_envelope": true,
+    "test_actual_exit_code": 0,
+    "test_terminal": true,
+    "test_log": "/tmp/ckks-narrow-packed-dd-test.log",
+    "test_stderr_bytes": 0,
+    "elapsed_wall_time": "0:50.03",
+    "peak_rss_kib": 1820500
+  },
+  "build_actual_exit_code": 0,
+  "build_log": "/tmp/ckks-narrow-packed-exact-final-build.log",
+  "build_terminal": true,
+  "memory_budget": "narrow-dd-packed-exact-memory-budget.json",
+  "test_virtual_limit_bytes": 4294967296,
+  "test_stack_limit_bytes": 67108864,
+  "omp_threads": 8,
+  "limits": [
+    "Generated DD keys, not the live packed job keys.",
+    "Tensor inputs are raw polynomial samples, not full encrypted refresh.",
+    "Full packed selector reconstruction and refresh still pending.",
+    "Original/O1 sigmoid failures remain unresolved."
+  ],
+  "security_qualified": false,
+  "original_sigmoid_failure_resolved": false,
+  "goal_complete": false,
+  "plain37_revalidation_after_oracle_change": {
+    "tensor": {
+      "test_actual_exit_code": 0,
+      "test_terminal": true,
+      "cases_passed": 16,
+      "test_log": "/tmp/ckks-narrow-packed-oracle-plain37-revalidation.log",
+      "test_stderr_bytes": 0,
+      "elapsed_wall_time": "0:07.13",
+      "peak_rss_kib": 476996
+    },
+    "dd": {
+      "test_actual_exit_code": 0,
+      "test_terminal": true,
+      "cases_passed": 6,
+      "test_log": "/tmp/ckks-narrow-dd-partial-digit-plain37-revalidation.log",
+      "test_stderr_bytes": 0,
+      "elapsed_wall_time": "1:14.64",
+      "peak_rss_kib": 2463168
+    }
+  }
+}

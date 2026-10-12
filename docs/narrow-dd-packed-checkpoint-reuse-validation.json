@@ -1,0 +1,75 @@
+{
+  "utc": "2026-10-10T05:57:42.948821+00:00",
+  "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f",
+  "exe_sha256": "d92bb57681ff978fa2f70bb76c78bdba02431ffdc30eda39e42faa05fb012f02",
+  "source_sha256": "f2a05f8ca4af8986410315f121038fc11f16685628825d4bb0b076bbf6eb1a23",
+  "scope": "N512 packed checkpoint creation and exact-input replay; no full-ring replay claim",
+  "terminal": true,
+  "runs": [
+    {
+      "label": "create",
+      "returncode": 0,
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/create.log",
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/create.json"
+    },
+    {
+      "label": "replay",
+      "returncode": 0,
+      "log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/replay.log",
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/replay.json"
+    }
+  ],
+  "live_label": "replay",
+  "all_passed": true,
+  "checkpoint_files_unchanged": true,
+  "refresh_ciphertexts_identical": true,
+  "refresh_ciphertext_sha256": "570829d0f4cefa0f74e912543ac4c6485e37ec10e956cfd0db06515194ce3a25",
+  "checkpoint_sha256": "b2d2db248b7584d980b936677341a5658611119551e76b291b05ec845c6e628a",
+  "checkpoint_file_count": 36,
+  "creation_key_setup_seconds": 78.717821972,
+  "replay_key_setup_seconds": 0.759577295,
+  "replay_refresh_max_error": 1.1839592261364745e-06,
+  "replay_square_max_error": 4.186151150452276e-07,
+  "full_ring_replay_validated": false,
+  "negative_controls": [
+    {
+      "name": "wrong-magic",
+      "exit_code": -6,
+      "expected_reason_observed": true
+    },
+    {
+      "name": "wrong-ring-size",
+      "exit_code": -6,
+      "expected_reason_observed": true
+    },
+    {
+      "name": "truncated-key-payload",
+      "exit_code": -6,
+      "expected_reason_observed": true
+    },
+    {
+      "name": "existing-checkpoint-directory",
+      "exit_code": -6,
+      "expected_reason_observed": true
+    },
+    {
+      "name": "packed-as-plain37",
+      "exit_code": -6,
+      "expected_reason_observed": true
+    },
+    {
+      "name": "missing-selector-group",
+      "exit_code": -6,
+      "expected_reason_observed": true
+    }
+  ],
+  "negative_controls_passed": true,
+  "build_actual_exit_code": 0,
+  "encrypted_test_runner_actual_exit_code": 0,
+  "child_address_space_limit_bytes": 4294967296,
+  "omp_threads": 4,
+  "negative_controls_preserved_checkpoint": true,
+  "goal_complete": false,
+  "security_validated": false,
+  "post_refresh_square_diagnostic_key_reused": false
+}

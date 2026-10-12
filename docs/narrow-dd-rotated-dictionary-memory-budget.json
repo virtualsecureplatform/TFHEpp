@@ -1,0 +1,29 @@
+{
+  "utc": "2026-10-09T06:47:54.305486+00:00",
+  "scope": "Exact rotated dictionary counts and signed coefficient maps",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17686138880,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1823852,
+      "start_ticks": 217158705,
+      "rss_bytes": 11481010176,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 101561270272,
+  "required_bytes": 86796967936,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_cap_bytes": 2147483648,
+  "eligible": true,
+  "study_session": 44140,
+  "study_terminal": true,
+  "study_actual_exit_code": 0,
+  "independent_validation_session": 75207,
+  "independent_validation_terminal": true,
+  "independent_validation_actual_exit_code": 0
+}

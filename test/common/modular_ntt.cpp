@@ -431,6 +431,14 @@ int main()
             return 1;
         }
     }
+    // Exercise the narrow selector primes, including AVX2 lazy butterflies,
+    // against direct evaluation and schoolbook negacyclic convolution.
+    for (const auto prime : TFHEpp::modular_ntt::degree65536_primes)
+        if (!checkRadix2(prime) || !checkNegacyclic(prime)) {
+            std::cerr << "selector NTT regression failed for " << prime.value
+                      << std::endl;
+            return 1;
+        }
     if (!checkMultiplyAddVector({17, 3}) ||
         !checkMultiplyAddVectorBatch({17, 3}) || !checkCRT() ||
         !checkThreePrimeCRT() || !benchmarkMultiplyAddVector()) {

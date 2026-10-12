@@ -1,0 +1,80 @@
+{
+  "scope": "Integrated native64 prepared automorphism inverse-FFT products using retained N512/N32768 Q523 keys. Exact previous FFT output checks; N512 coefficient-domain reference; N32768 22-column head30/tail4 factors at widths48/56, archives and 720896 decoded slots; saved-input N512 all-function refresh. Not complete N32768 refresh or paper/security qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "controller_actual_exit_code": 0,
+  "direct_build_actual_exit_code": 0,
+  "direct_test_actual_exit_codes": [
+    0,
+    0
+  ],
+  "fresh_keys_generated": false,
+  "direct_exact_coefficients": 199680,
+  "coefficient_oracle_checks": 3072,
+  "summary": [
+    {
+      "nbit": 9,
+      "report": {
+        "n": 512,
+        "q": 523,
+        "exact_coefficients": 3072,
+        "oracle_coefficients": 3072,
+        "product_bytes_before": 2433024,
+        "product_bytes_after": 270336,
+        "passed": true
+      },
+      "median_four_switches_seconds": {
+        "False": 0.0071042675,
+        "True": 0.0034068609999999997
+      },
+      "native_time_ratio": 0.4795513400924163
+    },
+    {
+      "nbit": 15,
+      "report": {
+        "n": 32768,
+        "q": 523,
+        "exact_coefficients": 196608,
+        "oracle_coefficients": 0,
+        "product_bytes_before": 155713536,
+        "product_bytes_after": 17301504,
+        "passed": true
+      },
+      "median_four_switches_seconds": {
+        "False": 0.6205018535,
+        "True": 0.446255435
+      },
+      "native_time_ratio": 0.7191846929752966
+    }
+  ],
+  "full_factor_qualified": true,
+  "full_factor_slots_checked": 720896,
+  "selected_full_checkpoint_files_unchanged": true,
+  "small_refresh_qualified": true,
+  "small_all_three_output_archives_identical": true,
+  "small_checkpoint_files_checked": 36,
+  "small_checkpoint_files_unchanged": true,
+  "full_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/prepared_auto.hpp": "a088e1fc57791a9de7d7cb621e3bc23083a424aac10835aeab9f8ae2dcc7d0c9",
+    "TFHEpp/include/ckks/ckks.hpp": "3dfa688cb9b52651b65640aa5b37375f192bf418d797d2eacf1b88b18b062987",
+    "TFHEpp/include/mulfft.hpp": "9bc79a86fa87f64fca08bd1bb55146ef9d9baa816282475008c64c5478b7aa9c",
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "0f6982a19b328fe778b8e0e339e2c52edb11bdda1d6184079f762f916935e95f",
+    "TFHEpp/include/modular_ntt.hpp": "f4809d87867cad7e3a9a141275699c43c5175ce28ca31a2553a2f121319c4320"
+  },
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/integrated/control.cpp": "1039f06fb870d1d4dd235851344e11c2c4e8c80c3032e2d5e313b7a49a4a76ed",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/integrated/control": "fcfe5cf5352c49a129dd871956c8a76a74c59be6994f1afbad240e76d251fb28",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/integrated/run-9.log": "c150c158a21e21a9583e7397f4baa77adfedc44f1e01bd09f2b880484e704420",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/integrated/run-15.log": "6b6afa32e52ebbc2d8700aa5dbe890c8e0f97ab3b961c9394253a5da9525e053",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/reference.hpp": "e52ecbae85b58cd60d67ade9b1a9ed9b4008cf84e8bd1e70978e31fcd7ae8c07",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/integrated-run.py": "ce415fe09dcca15c779eea3d8a9902206d5b3ab7fa1a7107bc5b7440a377798a",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auto-native-products-20261011/integrated-build-results.json": "2c22dd9f3aa04e9b2c3171a71795eb79b4eff4c88256a0e17537fab6578292eb",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-auto-native-products-small-factors-validation.json": "31d17dea5b8fe4b9af3611afc3483ddfb3efa07e65b8f272ded7d995b778ae64",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-auto-native-products-full-factors-validation.json": "f1d157eb4c9129304986fa9d03b4e3af50263a3d5e4bbf4766d4152c56e7d058",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/docs/narrow-dd-auto-native-products-small-refresh-validation.json": "e57b4b0132a0a6bfceca04b99a0dfeccabf9779e5a1306d7bd337b341202333e"
+  },
+  "completed_utc": "2026-10-11T13:19:55.786570+00:00"
+}

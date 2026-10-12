@@ -1,0 +1,153 @@
+{
+  "observed_at_utc": "2026-10-10T16:13:05.031706+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Explicit wider selector NTT widths: independent full-ring integer convolution, retained N512 encrypted head/tail factors, retained N16384 selector preparation timing. Default width policy unchanged.",
+  "fresh_keys_generated": false,
+  "default_adopted": false,
+  "full_encrypted_factor_validated": false,
+  "complete_refresh_validated": false,
+  "paper_performance_reproduced": false,
+  "security_qualified": false,
+  "public_arithmetic": [
+    {
+      "n": 16384,
+      "q": 385,
+      "plain_scale": 37,
+      "digit_bits": 60,
+      "digits": 7,
+      "coefficients_checked": 65536,
+      "dense_signed_boundary_and_sparse_wrap_exact": true
+    },
+    {
+      "n": 16384,
+      "q": 379,
+      "plain_scale": 34,
+      "digit_bits": 60,
+      "digits": 7,
+      "coefficients_checked": 65536,
+      "dense_signed_boundary_and_sparse_wrap_exact": true
+    },
+    {
+      "n": 32768,
+      "q": 518,
+      "plain_scale": 39,
+      "digit_bits": 56,
+      "digits": 10,
+      "coefficients_checked": 131072,
+      "dense_signed_boundary_and_sparse_wrap_exact": true
+    }
+  ],
+  "retained_small_factors": [
+    {
+      "tail": false,
+      "group": 30,
+      "columns": 12,
+      "slots_checked": 3072,
+      "max_error": 1.9846869992911684e-10,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true,
+      "ntt_digit_bits": 60,
+      "ntt_digits": 7,
+      "baseline16_ciphertexts_exact": true,
+      "baseline16_timings": {
+        "selector_ntt_seconds": 0.006114618,
+        "matrix_seconds": 0.008452605000000002,
+        "inverse_crt_seconds": 0.007734649,
+        "conjugation_seconds": 0.015210245
+      },
+      "timings": {
+        "selector_load_seconds": 0.000371467,
+        "table_ntt_seconds": 0.003294905,
+        "selector_ntt_seconds": 0.001789946,
+        "matrix_seconds": 0.002840029,
+        "inverse_crt_seconds": 0.002441078,
+        "conjugation_seconds": 0.018183629
+      }
+    },
+    {
+      "tail": true,
+      "group": 3,
+      "columns": 12,
+      "slots_checked": 3072,
+      "max_error": 1.7861534370641796e-10,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true,
+      "ntt_digit_bits": 60,
+      "ntt_digits": 7,
+      "baseline16_ciphertexts_exact": true,
+      "baseline16_timings": {
+        "selector_ntt_seconds": 0.005665437,
+        "matrix_seconds": 0.007426471,
+        "inverse_crt_seconds": 0.008114515,
+        "conjugation_seconds": 0.015641296
+      },
+      "timings": {
+        "selector_load_seconds": 0.000296149,
+        "table_ntt_seconds": 0.003204825,
+        "selector_ntt_seconds": 0.001624359,
+        "matrix_seconds": 0.0023426870000000004,
+        "inverse_crt_seconds": 0.002214301,
+        "conjugation_seconds": 0.015216235
+      }
+    }
+  ],
+  "retained_small_files_checked": 36,
+  "retained_small_files_unchanged": true,
+  "retained_full_group_identity": {
+    "returncode": 0,
+    "file": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/head-30.bin",
+    "before": "449d2d5b6cae767497839c3c1e77388b4d344ca11c3dea5074aca22e77fe064f",
+    "after": "449d2d5b6cae767497839c3c1e77388b4d344ca11c3dea5074aca22e77fe064f",
+    "unchanged": true
+  },
+  "paired_full_group_trials": [
+    {
+      "retained_selector_count": 529,
+      "digit_bits": 48,
+      "digits": 9,
+      "selector_ntt_seconds": 3.71623
+    },
+    {
+      "retained_selector_count": 529,
+      "digit_bits": 60,
+      "digits": 7,
+      "selector_ntt_seconds": 2.57284
+    },
+    {
+      "retained_selector_count": 529,
+      "digit_bits": 60,
+      "digits": 7,
+      "selector_ntt_seconds": 2.27686
+    },
+    {
+      "retained_selector_count": 529,
+      "digit_bits": 48,
+      "digits": 9,
+      "selector_ntt_seconds": 3.01693
+    }
+  ],
+  "median_selector_ntt_seconds": {
+    "48": 3.36658,
+    "60": 2.42485
+  },
+  "observed_preparation_ratio": 1.3883662906983936,
+  "timing_limit": "Four threads under concurrent packed and basis load; forward selector NTT only. Neither complete factor nor whole refresh speedup.",
+  "limb_changes": {
+    "auxiliary8_Q385_N16384": "48/9 digits -> explicit60/7",
+    "packed_Q379_N16384": "48/8 digits -> explicit60/7",
+    "basis_Q518_N32768": "48/11 digits -> explicit56/10; width60 exceeds bound"
+  },
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector-wide60-exact-20261010",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "af133d4096e3e83a1f2efe98dd83b19c8f694756b247384d7126d3595a65d102",
+    "TFHEpp/test/ckks/ckks_narrow_selector_wide_exact.cpp": "50c698df035d1e869953263048f6841d57d56238f04b3d06409b6f135f9e8f62",
+    "TFHEpp/test/ckks/ckks_narrow_factor_checkpoint.cpp": "7ef4a0eb48bf098505489d8c4d08e7324ca8e5d53b99e3f62424b5a3e5808102"
+  },
+  "goal_complete": false,
+  "qualified_factor_executable_sha256": "6799c91f8dd29987f1566bb257d2ed63df165a0a65c701d2caa1e8133eaf89e7",
+  "qualified_public_executable_sha256": "0b645be8e5c16eff9f050775d71ade90eaaf1a11e102ab8d65cdb03e28b4df78",
+  "final_build_retained_small_recheck_passed": true
+}

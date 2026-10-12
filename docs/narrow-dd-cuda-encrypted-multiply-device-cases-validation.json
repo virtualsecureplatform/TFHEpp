@@ -1,0 +1,112 @@
+{
+  "observed_at_utc": "2026-10-08T20:07:53.030321+00:00",
+  "scope": "Compiled encrypted reference tests for actual CKKSNarrowCUDAMultiply graph, both scale-drop orders, generated native DD keys, native inputs, natural NTT/CRT and repeated resident evaluation. Device unavailable: all GPU allocation/launch/comparison/cleanup branches unexecuted. Host encrypted and synthetic checks revalidated.",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_cuda_setup.cpp": "d9078fba99b52320eb654331176a2edbef3ff5f3f2c7c5174b8e4e43c3776ac5",
+    "src/ckks/cuda/CMakeLists.txt": "07a6151455b5769a6afa3eb0a96c0bbb8e6563e848970cd6576572aabf8eef15",
+    "include/ckks/narrow_cuda.hpp": "d60fe2228d51e4a825e578fa23cfc6448cc2a794c58444f6103f284841ff8526",
+    "include/ckks/narrow_cuda_setup.hpp": "575cd7dcd966f57faa3a00dea9cd651281f16bc560cedbccd04a6d95df6ca23e",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "561db59a5490bca2a6d4141b1e4ce33569b1039d9859b6578793f5dea13b006d",
+    "src/ckks/narrow_cuda.cu": "bdf2958dad1ca65a6986c9ac3ad8f30444ded80ff785eb551ab63fe0ca1f164c"
+  },
+  "gpu_entry_point": "CKKSNarrowCUDAMultiply",
+  "compiled_encrypted_device_fixtures": 24,
+  "repeated_evaluations_per_fixture": 3,
+  "compiled_encrypted_device_evaluations": 72,
+  "gpu_fixture_reference": "Actual CPU CKKSMult/CKKSMultRelinThenRescale output, compared every native word; independent plaintext coefficient phase gate.",
+  "supported_test_orders": [
+    "relinearization-before-rescale",
+    "relinearization-after-rescale"
+  ],
+  "compiled_profiles": [
+    {
+      "native_bits": 448,
+      "lhs_q": 217,
+      "rhs_q": 379,
+      "drop": 37,
+      "dd_axes": [
+        4,
+        4
+      ]
+    },
+    {
+      "native_bits": 896,
+      "lhs_q": 842,
+      "rhs_q": 842,
+      "drop": 49,
+      "dd_axes": [
+        18,
+        8
+      ],
+      "square": true
+    }
+  ],
+  "points": 16,
+  "columns": [
+    1,
+    3
+  ],
+  "prime_modes": [
+    "first prime",
+    "second prime",
+    "two primes"
+  ],
+  "generated_key_and_input_gaussian_sigma_floor": 3.2,
+  "device_keys_tables_workspaces_allocated_before_launch": true,
+  "no_device_allocation_or_tensor_transfer_inside_evaluation_call": true,
+  "key_and_workspace_reuse_checks_present": true,
+  "read_only_native_squaring_alias_present": true,
+  "input_preservation_checks_present": true,
+  "device_full_native_word_comparison_present": true,
+  "device_plaintext_phase_comparison_present": true,
+  "phase_gate": 3.814697265625e-06,
+  "fixture_stream_synchronization_before_buffer_free_source_implemented": true,
+  "fixture_exception_path_cleanup_runtime_validated": false,
+  "host_encrypted_cases_rechecked": 24,
+  "host_synthetic_joined_cases_rechecked": 36,
+  "host_tensor_only_baseline_cases_rechecked": 36,
+  "prior_auto_selector_dd_host_checks_rechecked": true,
+  "host_metrics": {
+    "cmake": {
+      "fresh_max_error": 7.275957614183426e-11,
+      "product_max_error": 2.9150204028383087e-08
+    },
+    "ubsan": {
+      "fresh_max_error": 7.275957614183426e-11,
+      "product_max_error": 3.156921479785524e-08
+    }
+  },
+  "cmake_build_exit_code": 0,
+  "cmake_build_session": 29070,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-device-cases-build.log",
+  "cmake_test_actual_exit_code": 0,
+  "cmake_test_session": 66432,
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-device-cases-cmake-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-device-cases-cmake-test.stderr",
+  "host_ubsan_cpp_build_exit_code": 0,
+  "host_ubsan_cpp_build_session": 17052,
+  "host_ubsan_cpp_build_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-device-cases-host-ubsan-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-encrypted-multiply-device-cases-host-ubsan-argv.json",
+  "host_ubsan_cuda_object_reused_from": "/tmp/ckks-narrow-cuda-encrypted-multiply-host-ubsan-cuda.o",
+  "host_ubsan_test_actual_exit_code": 0,
+  "host_ubsan_test_session": 95809,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-device-cases-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-encrypted-multiply-device-cases-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "C++ host test/inline crypto/portable arithmetic instrumented, instrumented CUDA host object reused. BLAKE3 and CUDA runtime uninstrumented; device kernels uninstrumented/unexecuted.",
+  "gpu_device_count": 0,
+  "gpu_skip_status": "no CUDA-capable device is detected",
+  "gpu_evaluations_executed": 0,
+  "test_exit_zero_means_host_checks_only_on_this_machine": true,
+  "joined_device_reference_case_present": true,
+  "joined_cuda_graph_execution_validated": false,
+  "encrypted_gpu_multiply_validated": false,
+  "device_resident_key_reuse_validated": false,
+  "typed_native_multiply_device_owner_implemented": false,
+  "full_profile_fft_multiplication_compared": false,
+  "encrypted_dd_tree_connected": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

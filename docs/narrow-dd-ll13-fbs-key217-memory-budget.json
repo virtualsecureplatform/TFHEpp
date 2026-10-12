@@ -1,0 +1,30 @@
+{
+  "scope": "Conservative compiled payloads plus disjoint workspaces and runtime reserve; not measured RSS",
+  "profile": "ll13-fbs-key217-dd",
+  "n": 8192,
+  "batch_columns": 12,
+  "selector_chunk_size": 40,
+  "persistent_setup_and_compact_s2c_bytes": 1295089904,
+  "conservative_factor_phase_payload_bytes": 3040706800,
+  "product_phase_payload_bytes": 2570420464,
+  "digit_accumulation_workspace_bytes": 176160768,
+  "head_tail_factor_capacity_bytes": 402653184,
+  "additional_factor_accum_bytes": 12582912,
+  "permutation_bytes": 67108864,
+  "temporary_and_runtime_reserve_bytes": 10737418240,
+  "estimated_process_envelope_bytes": 13857816816,
+  "proposed_virtual_address_limit_bytes": 17179869184,
+  "file_selector_payload_bytes": 5001707520,
+  "full_size_job_launched": true,
+  "full_size_validation_passed": true,
+  "job_session_id": 40670,
+  "job_pid": 1657621,
+  "completed_functions": [
+    "sigmoid",
+    "gelu",
+    "tanh"
+  ],
+  "active_function": null,
+  "job_exit_code": 0,
+  "measured_tanh_peak_rss_kib": 2682004
+}

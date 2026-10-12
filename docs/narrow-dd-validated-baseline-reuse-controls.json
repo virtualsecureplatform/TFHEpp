@@ -1,0 +1,17 @@
+{
+  "scope": "Tiny public-file controls for reusing a completed prerequisite payload manifest. Post-evaluation full hashing remains mandatory; no encrypted evaluation or key generation.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "source_sha256": "96b7576ef832b3a063c16a6ba3ef6b9a4071274d6e9e1571a82325c7bd2a9cc6",
+  "controls": [
+    "completed matching prerequisite accepted",
+    "nonterminal rejected",
+    "failed validation rejected",
+    "failed integrity rejected",
+    "wrong checkpoint rejected",
+    "wrong count rejected",
+    "wrong hashes rejected",
+    "same-size content change detected by mandatory post-evaluation digest",
+    "size change rejected before evaluation"
+  ]
+}

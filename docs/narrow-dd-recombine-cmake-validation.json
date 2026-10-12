@@ -1,0 +1,46 @@
+{
+  "scope": "Normal CMake target registration/build and arbitrary-precision integer oracle for coefficient-local DD digit recomposition; no keys, full refresh or timing qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "updated_utc": "2026-10-11T03:04:16.505626+00:00",
+  "configure_actual_exit_code": 0,
+  "build_actual_exit_code": 0,
+  "run_actual_exit_code": 0,
+  "target": "ckks_dd_recombine_exact",
+  "OMP_NUM_THREADS": 4,
+  "virtual_memory_cap_bytes": 536870912,
+  "cases": [
+    {
+      "n": 512,
+      "q": 479,
+      "base": 8,
+      "oracle_coefficients": 3072
+    },
+    {
+      "n": 8192,
+      "q": 479,
+      "base": 8,
+      "oracle_coefficients": 49152
+    },
+    {
+      "n": 8192,
+      "q": 197,
+      "base": 11,
+      "oracle_coefficients": 49152
+    }
+  ],
+  "total_oracle_coefficients": 101376,
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_dd_recombine_exact.cpp": "b8f5b81ee2b4b00302ce0a7c04d7b76c87988d47cbf157ec8442d4cd9e1eccf6",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34"
+  },
+  "executable_sha256": "996dc78e2bcd155bbbcd50ea945ed760327120f34bfb86459ef5126d34022e8d",
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-switch-20261011/cmake-configure.log": "237be8d5fdac0715530e857a78cb7130f56e9ba647b1a58162c6e337f8ece0c2",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-switch-20261011/oracle-cmake-build.log": "6fb6c4bcbfcef884f0d56c08d639bcc6d483cb5bc2735cb06fda1622eea50a7c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-switch-20261011/oracle-cmake-run.log": "3b6f7b01ad8dd0b83465399448c933dd2323e86a877d1b09876bf5c4c43a4a67"
+  },
+  "fresh_keys_generated": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false
+}

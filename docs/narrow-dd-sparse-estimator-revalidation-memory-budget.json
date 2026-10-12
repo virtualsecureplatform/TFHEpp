@@ -1,0 +1,31 @@
+{
+  "observed_at_utc": "2026-10-09T01:08:25.877070+00:00",
+  "scope": "Pinned sparse LWE proxy revalidation, one estimator worker plus parent under separate 2GiB address-space limits; combined reserve 4GiB.",
+  "existing_processes": [
+    {
+      "pid": 1756575,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json ",
+      "virtual_limit_bytes": 68719476736,
+      "rss_bytes": 17785925632,
+      "remaining_growth_bytes": 50933551104
+    },
+    {
+      "pid": 1800980,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-file sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-original-style-capture-20261009-8hzeszxg/selectors TFHEpp/docs/narrow-dd-ll14-plain37-post-evaluation-capture.json ",
+      "virtual_limit_bytes": 34359738368,
+      "rss_bytes": 7881297920,
+      "remaining_growth_bytes": 26478440448
+    }
+  ],
+  "available_memory_bytes": 106052325376,
+  "host_reserve_bytes": 10737418240,
+  "test_total_virtual_reserve_bytes": 4294967296,
+  "per_process_virtual_limit_bytes": 2147483648,
+  "required_available_memory_bytes": 92444377088,
+  "launch_margin_bytes": 13607948288,
+  "launch_eligible": true,
+  "sparse_terminal": true,
+  "sparse_actual_exit_code": 1,
+  "dense_control_terminal": true,
+  "dense_control_actual_exit_code": 0
+}

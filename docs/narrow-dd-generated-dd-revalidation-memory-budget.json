@@ -1,0 +1,36 @@
+{
+  "observed_at_utc": "2026-10-09T00:02:28.823284+00:00",
+  "scope": "Revalidate original generated-key --full workload after factoring the oracle to support retained checkpoint keys.",
+  "existing_processes": [
+    {
+      "pid": 1789289,
+      "virtual_limit_bytes": 34359738368,
+      "rss_bytes": 11888205824,
+      "remaining_growth_bytes": 22471532544,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-plain37-fbs-checkpoint sigmoid /home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008 TFHEpp/docs/narrow-dd-ll14-plain37-checkpoint-reproduction-2.json"
+    },
+    {
+      "pid": 1756575,
+      "virtual_limit_bytes": 68719476736,
+      "rss_bytes": 17686831104,
+      "remaining_growth_bytes": 51032645632,
+      "cmdline": "TFHEpp/build/test/ckks/ckks_narrow_benchmark --ll14-packed-bounded-file .ckks-ll14-packed-bounded-file-selectors TFHEpp/docs/narrow-dd-ll14-packed-bounded-file.json"
+    }
+  ],
+  "available_memory_bytes": 102073282560,
+  "host_reserve_bytes": 10737418240,
+  "test_virtual_limit_bytes": 4294967296,
+  "test_stack_limit_bytes": 67108864,
+  "required_available_memory_bytes": 88536563712,
+  "launch_margin_bytes": 13536718848,
+  "launch_eligible": true,
+  "test_terminal": true,
+  "estimated_peak_components_bytes": {
+    "largest_compact_key": 248020992,
+    "largest_dd_fft_cache": 1984167936,
+    "workspace_allowance": 536870912,
+    "stack_reservation": 536870912
+  },
+  "test_actual_exit_code": 0,
+  "test_peak_rss_kib": 2462380
+}

@@ -1,0 +1,153 @@
+{
+  "scope": "Primary8 conjugation with actual auxiliary8 lift/switch/rescale: Q348 scale48, original Q356 encrypted key, three nonzero Gaussian-noise encrypted inputs per ring. Independent integer phases and known conjugate targets. Native primary8 cache also must match explicit retained-row projection coefficient for coefficient. Component control only; no full packed-tree/refresh or security qualification.",
+  "terminal": true,
+  "fresh_keys_generated": false,
+  "runs": [
+    {
+      "n": 512,
+      "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/capture-v2/sigmoid-failure.bin",
+      "before_sha256": "946e15e6c42c663f042d147d2669a89ed0687285f53243623c3f83a0ac6cfc11",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "log_q": 348,
+        "log_delta": 48,
+        "samples": 3,
+        "auxiliary_bits": 8,
+        "input_max_slot_error": 5.774961851159159e-13,
+        "native_primary_projection_identical": true,
+        "raw_key_offset": 70802043,
+        "raw_key_bytes": 5103616,
+        "old_primary_rows": 89,
+        "new_primary_rows": 45,
+        "old_max_slot_error": 2.9122788558683536e-12,
+        "new_max_slot_error": 2.6840582802211398e-11,
+        "max_slot_difference": 2.7949727457652998e-11,
+        "old_switch_seconds": 0.005973513000000001,
+        "new_switch_seconds": 0.002850072,
+        "fresh_keys_generated": false,
+        "accuracy_passed": true
+      },
+      "independent_actual_exit_code": 0,
+      "independent": {
+        "scope": "Independent exact integer phases from public diagnostic ciphertexts and original private retained ternary key; N512 scalar convolution or N16384 bounded 15-bit NTT. No key material serialized. Tests primary8 direct switching or the auxiliary8 path on nonzero encrypted inputs; not full packed reconstruction, whole refresh, or security.",
+        "n": 512,
+        "samples": [
+          {
+            "sample": 0,
+            "input_integer_phase_zero": false,
+            "old_max_slot_error": 2.91670079271461e-12,
+            "new_max_slot_error": 2.106872744599882e-11,
+            "max_slot_difference": 2.175345786279466e-11,
+            "input_max_slot_error": 5.73104674434231e-13
+          },
+          {
+            "sample": 1,
+            "input_integer_phase_zero": false,
+            "old_max_slot_error": 2.7922685077104564e-12,
+            "new_max_slot_error": 2.6240243089329147e-11,
+            "max_slot_difference": 2.7949727457652982e-11,
+            "input_max_slot_error": 5.624718588239158e-13
+          },
+          {
+            "sample": 2,
+            "input_integer_phase_zero": false,
+            "old_max_slot_error": 2.277861603980604e-12,
+            "new_max_slot_error": 2.68400062720236e-11,
+            "max_slot_difference": 2.738790165918529e-11,
+            "input_max_slot_error": 5.593200822154391e-13
+          }
+        ],
+        "old_max_slot_error": 2.91670079271461e-12,
+        "new_max_slot_error": 2.68400062720236e-11,
+        "max_slot_difference": 2.7949727457652982e-11,
+        "fixed_23bit_passed": true,
+        "input_max_slot_error": 5.73104674434231e-13,
+        "log_q": 348,
+        "log_delta": 48,
+        "auxiliary_bits": 8,
+        "cpp_metrics_match": true,
+        "fresh_keys_generated": false
+      },
+      "after_sha256": "946e15e6c42c663f042d147d2669a89ed0687285f53243623c3f83a0ac6cfc11",
+      "retained_state_unchanged": true,
+      "ciphertexts_sha256": "bf75a5a7e64e628159d6740a31832f0d0817c3642ec143c2d8e620e5a87d14be"
+    },
+    {
+      "n": 16384,
+      "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin",
+      "before_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+      "actual_exit_code": 0,
+      "report": {
+        "n": 16384,
+        "log_q": 348,
+        "log_delta": 48,
+        "samples": 3,
+        "auxiliary_bits": 8,
+        "input_max_slot_error": 4.21234173011412e-12,
+        "native_primary_projection_identical": true,
+        "raw_key_offset": 5511253243,
+        "raw_key_bytes": 163315712,
+        "old_primary_rows": 89,
+        "new_primary_rows": 45,
+        "old_max_slot_error": 3.5905176421140997e-10,
+        "new_max_slot_error": 1.045483264116303e-09,
+        "max_slot_difference": 1.0349903156302908e-09,
+        "old_switch_seconds": 0.275571118,
+        "new_switch_seconds": 0.166663627,
+        "fresh_keys_generated": false,
+        "accuracy_passed": true
+      },
+      "independent_actual_exit_code": 0,
+      "independent": {
+        "scope": "Independent exact integer phases from public diagnostic ciphertexts and original private retained ternary key; N512 scalar convolution or N16384 bounded 15-bit NTT. No key material serialized. Tests primary8 direct switching or the auxiliary8 path on nonzero encrypted inputs; not full packed reconstruction, whole refresh, or security.",
+        "n": 16384,
+        "samples": [
+          {
+            "sample": 0,
+            "input_integer_phase_zero": false,
+            "old_max_slot_error": 3.590517455124611e-10,
+            "new_max_slot_error": 1.0454354049423862e-09,
+            "max_slot_difference": 1.0138635883449894e-09,
+            "input_max_slot_error": 4.202004077245679e-12
+          },
+          {
+            "sample": 1,
+            "input_integer_phase_zero": false,
+            "old_max_slot_error": 3.519741816023283e-10,
+            "new_max_slot_error": 1.0231615440962677e-09,
+            "max_slot_difference": 1.0349903156303396e-09,
+            "input_max_slot_error": 4.202056445387914e-12
+          },
+          {
+            "sample": 2,
+            "input_integer_phase_zero": false,
+            "old_max_slot_error": 3.5753483323330686e-10,
+            "new_max_slot_error": 9.321063849659027e-10,
+            "max_slot_difference": 9.448815317002523e-10,
+            "input_max_slot_error": 3.955584772028312e-12
+          }
+        ],
+        "old_max_slot_error": 3.590517455124611e-10,
+        "new_max_slot_error": 1.0454354049423862e-09,
+        "max_slot_difference": 1.0349903156303396e-09,
+        "fixed_23bit_passed": true,
+        "input_max_slot_error": 4.202056445387914e-12,
+        "log_q": 348,
+        "log_delta": 48,
+        "auxiliary_bits": 8,
+        "cpp_metrics_match": true,
+        "fresh_keys_generated": false
+      },
+      "after_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+      "retained_state_unchanged": true,
+      "ciphertexts_sha256": "fbb83bc602cde64511a13c18d9b1a4e52ccfa5c84cc6afee24ba5ad3fe5372cb"
+    }
+  ],
+  "build_actual_exit_code": 0,
+  "source_sha256": "a5c47d40354ea631c67cd01ad7df2bf578fd333f6094c3c23f1e4869ff1c9b99",
+  "exe_sha256": "e9eac9f74f365e634a8d03bc12dc2037a7c42405cc7aefafc6f496da97ecdc7f",
+  "prepared_auto_sha256": "62a95a5dc0a089e2a710a905dc562d8f11176b4625605d2a4072147153b435b0",
+  "independent_helper_sha256": "ebc8c63ed4a9d8a7020e541057d5020e65a64f7e0553ac846e36b06bac236c45",
+  "all_checks_passed": true
+}

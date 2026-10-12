@@ -1,0 +1,73 @@
+{
+  "observed_at_utc": "2026-10-10T20:24:11.787437+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Single-thread public matrix microbenchmark, N32768,22 columns,40 selectors,4 destination rows,two actual61-bit CRT primes. Two reversed-order repetitions per tile/prime. Exact equality against first current256-point-tile result; not a new independent modular oracle, encrypted factor qualification or whole-refresh prediction. Concurrent host workloads.",
+  "memory_cap_bytes": 268435456,
+  "omp_threads": 1,
+  "fresh_keys_generated": false,
+  "production_modified": false,
+  "trials": 20,
+  "unique_destination_residues": 11534336,
+  "timings": {
+    "32": {
+      "samples_seconds": [
+        0.334436,
+        0.413995,
+        0.371174,
+        0.629423
+      ],
+      "median_seconds": 0.3925845,
+      "median_relative_to_256": 1.2041933717672066
+    },
+    "64": {
+      "samples_seconds": [
+        0.32885,
+        0.355973,
+        0.666654,
+        0.604553
+      ],
+      "median_seconds": 0.480263,
+      "median_relative_to_256": 1.4731338636778426
+    },
+    "128": {
+      "samples_seconds": [
+        0.586783,
+        0.329192,
+        0.611748,
+        0.670261
+      ],
+      "median_seconds": 0.5992655,
+      "median_relative_to_256": 1.8381559715902207
+    },
+    "256": {
+      "samples_seconds": [
+        0.319108,
+        0.329403,
+        0.322626,
+        0.612814
+      ],
+      "median_seconds": 0.3260145,
+      "median_relative_to_256": 1.0
+    },
+    "512": {
+      "samples_seconds": [
+        0.323826,
+        0.337035,
+        0.672087,
+        0.585184
+      ],
+      "median_seconds": 0.4611095,
+      "median_relative_to_256": 1.4143834093268859
+    }
+  },
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-point-tiles-20261010",
+  "artifact_sha256": {
+    "point_tiles.cpp": "b600a60374d82fdf74db3001084ea15b1b7abf23593462156392117a9ce4e8c5",
+    "point_tiles": "23fb02a54e49c102586a00b2d34d456474cc15ad64a894df697e4a1fe42f70e0",
+    "results.jsonl": "fa2fedceeed78139687e383b7fd04907f0500b69e0445aaa1b1f861b0e7c4384"
+  },
+  "decision": "Keep frozen production tile256 pending full validation. These noisy microbenchmarks alone do not justify replacing the queued executable.",
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false
+}

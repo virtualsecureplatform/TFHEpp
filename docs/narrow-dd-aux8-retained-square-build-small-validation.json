@@ -1,0 +1,32 @@
+{
+  "utc": "2026-10-09T12:59:49.251688+00:00",
+  "scope": "N512 actual retained multiplication key applied to saved replay output; independent integer ciphertext phases",
+  "source_sha256": "7b021c81fdbf3759021593d4707ec27c0e753cdfff2b0855e09749fc200f98a3",
+  "executable_sha256": "253ebab139b8086570a791bafa160fec52cfc640ff43a483460d93f33a5b100e",
+  "build_session": 37757,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "build_log": "/tmp/ckks-aux8-square-build.log",
+  "fresh_keys_generated": false,
+  "small_diagnostic_actual_exit_code": 0,
+  "small_report": {
+    "n": 512,
+    "function": "sigmoid",
+    "fresh_keys_generated": false,
+    "log_q": 60,
+    "log_delta": 48,
+    "retained_square_evaluated": true,
+    "independent_phase_validated": false,
+    "post_refresh_product_max_error": 3.166084881486226e-09,
+    "rms_error": 1.4252961015876496e-09,
+    "target_amplitude": 1.3887772203090152,
+    "product_tolerance": 4.50319595316329e-07,
+    "product_accuracy_passed": true
+  },
+  "small_square_sha256": "2d9974a9ad3851249be133ab87631bc75a6256d4c93d8e2d44d61b17b00273de",
+  "independent_phase_evidence": "narrow-dd-aux8-small-retained-square-phase-validation.json",
+  "cpp_control_evidence": "narrow-dd-aux8-retained-square-cpp-controls-validation.json",
+  "small_retained_square_accuracy_passed": true,
+  "full_corrected_square_validated": false,
+  "security_validated": false
+}

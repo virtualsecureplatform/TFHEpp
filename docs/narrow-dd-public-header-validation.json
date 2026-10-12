@@ -1,0 +1,22 @@
+{
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Public tfhe++.hpp exports packed-key persistence and optional prepared selector cache. Syntax-only consumer checks in BLAKE3 and non-BLAKE3 configurations; no encrypted execution or performance claim.",
+  "actual_exit_codes": {
+    "blake3": 0,
+    "no-blake3": 0
+  },
+  "fresh_keys_generated": false,
+  "source_sha256": {
+    "TFHEpp/include/tfhe++.hpp": "9742383c3bea3ba5653bde3318fdaed0e1f39e62fabf393aaef1c6fb4bf48bd1",
+    "TFHEpp/include/ckks/narrow_packed_file.hpp": "66ea433a16f90301dffd89d5c767a2c79f5fc850cef22d10cd20d003ee20b882",
+    "TFHEpp/include/ckks/narrow_selector_ntt_file.hpp": "8f51ed4e9b910ef553dbbefaec54e0df64d7b8af7d1d9e7e78e062353ee008ff"
+  },
+  "artifacts_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-public-header-20261011/control.cpp": "741fdd777068fa66737ff9403aa26b36f2c08ae25f7f51d14c74ed722b6fdac1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-public-header-20261011/blake3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-public-header-20261011/no-blake3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/narrow-public-header-20261011/actual-exits.json": "70ea0bd1bd7a641083d1d3addc1ce7bc29375f681a513f2ccb61c8a4f7f177d2"
+  },
+  "running_evaluator_unchanged": true
+}

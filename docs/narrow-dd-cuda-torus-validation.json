@@ -1,0 +1,116 @@
+{
+  "observed_at_utc": "2026-10-08T17:14:12.945649+00:00",
+  "scope": "Device balanced active-level decomposition and torus monomial substitution/public scale lift, as prerequisites for Double Decomposition and automorphism key switching. No device key switch or encrypted conjugation is implemented or validated by these primitives.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "c2fa2177dc894313eaa9baef1a58113ceba0e9ff346c8b4d15d747edb7387eb4",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "b9866d147a244372400f4ebde8962f252b88786f2808203dfe50b59649d88a47",
+    "src/ckks/narrow_cuda.cu": "9540f2fc21da083131d0db4c2b26297052359a04c33c1b20506e185c4e3b8892",
+    "src/ckks/cuda/CMakeLists.txt": "b0123e5ffddd2cbdb69903497b6a2c4cebf37aec92d0ebcdb747cc3464579e0f",
+    "test/ckks/ckks_narrow_cuda.cu": "b17da46c8bbd7619c7022be12511b83e8b5408ea138bf3c04ec733fea2a7b79d"
+  },
+  "cmake_build_exit_code": 0,
+  "cmake_build_session": 11879,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-torus-build.log",
+  "cuda_test_actual_exit_code": 77,
+  "cuda_test_log": "/tmp/ckks-narrow-cuda-torus-test.log",
+  "host_new_launch_rejection_cases_passed": 18,
+  "host_new_offset_table_rejection_cases_passed": 3,
+  "host_total_rejection_cases_passed": 78,
+  "host_balanced_decomposition_cases_passed": 27,
+  "host_torus_substitution_lift_cases_passed": 42,
+  "profiles": [
+    {
+      "log_q": 37,
+      "limbs": 1
+    },
+    {
+      "log_q": 63,
+      "limbs": 1
+    },
+    {
+      "log_q": 64,
+      "limbs": 2
+    },
+    {
+      "log_q": 217,
+      "limbs": 4
+    },
+    {
+      "log_q": 385,
+      "limbs": 7
+    },
+    {
+      "log_q": 518,
+      "limbs": 9
+    },
+    {
+      "log_q": 669,
+      "limbs": 14
+    }
+  ],
+  "decomposition": {
+    "base_bits": [
+      4,
+      8,
+      18,
+      32
+    ],
+    "rows": "ceil(log_q/base_bits), in descending physical-shift order",
+    "headroom": "rows*base_bits <= limbs*64 required; 63-bit input in 64-bit storage with base18 rejected",
+    "input_layout": "[group][point][column][limb]",
+    "output_layout": "[group][row][point][column] canonical residues",
+    "points": 16,
+    "columns": 3,
+    "groups": 2,
+    "prime": 2301972608560791553,
+    "reference": "CPU MultiLimbUInt centering at log_q, addition of the full native Bbar offset for bases dividing storage width or the active offset for base18, then exact row shifts/masks."
+  },
+  "substitution_lift": {
+    "exponents": [
+      1,
+      5,
+      63
+    ],
+    "points": 32,
+    "columns": 3,
+    "groups": 2,
+    "lift_bits": [
+      0,
+      28,
+      64
+    ],
+    "reference": "Direct coefficient-space X^exponent map modulo X^N+1, with CPU MultiLimbUInt level reduction/public lift/negation and output mask.",
+    "scope_note": "Polynomial substitution changes the ciphertext secret. A corresponding device key switch is still required."
+  },
+  "input_boundaries": [
+    "zero and -1",
+    "maximum signed positive and minimum signed negative active-level values",
+    "carries across 63/64 and 127/128 bit boundaries",
+    "random native words with garbage bits above log_q"
+  ],
+  "prior_host_checks_repeated_and_passed": {
+    "matrix_ntt_crt_packed_rejections": 57,
+    "ntt_table_checks": 4,
+    "packed_valid_metadata_checks": 4,
+    "crt_recomposition_rounding_cases": 90,
+    "packed_reference_consistency_cases": 4
+  },
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 37638,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-torus-host-ubsan-build.log",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-torus-host-ubsan-test.log",
+  "host_ubsan_all_host_checks_passed": true,
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "NVCC -O1 -g and -Xcompiler=-fsanitize=undefined,-fno-sanitize-recover=all,-fno-omit-frame-pointer instruments both source/test host routines and portable inline arithmetic. Device kernels are not UBSan instrumented and were not executed.",
+  "gpu_device_count": 0,
+  "gpu_new_arithmetic_cases_present": 69,
+  "gpu_new_arithmetic_cases_executed": false,
+  "gpu_arithmetic_validated": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_path_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "latest_extended_validation_evidence": "narrow-dd-cuda-key-switch-validation.json",
+  "historical_scope_note": "Hashes/builds above describe the torus-primitives revision. Latest key-switch contraction revision repeats these host checks; device execution remains skipped."
+}

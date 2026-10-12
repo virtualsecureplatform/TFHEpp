@@ -1,0 +1,96 @@
+{
+  "observed_at_utc": "2026-10-08T17:24:54.670532+00:00",
+  "scope": "Exact device key-switch row contraction/recomposition for one source polynomial, using centered primary decomposition, NTT of digits, resident balanced secondary key spectra, spectral contraction, inverse NTT and centered CRT/torus recomposition. Full automorphism body/subtraction/auxiliary-scale assembly and full DD refresh remain incomplete.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "e3c2e3b0ea88c7c0564faa89ab4222108aa7e58b4fefc51d1de272242910c7a8",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "b9866d147a244372400f4ebde8962f252b88786f2808203dfe50b59649d88a47",
+    "src/ckks/narrow_cuda.cu": "c0aced247c51fec26fc63d35ef7e5d472c6b3f44bc31df73f325509794066e91",
+    "src/ckks/cuda/CMakeLists.txt": "b0123e5ffddd2cbdb69903497b6a2c4cebf37aec92d0ebcdb747cc3464579e0f",
+    "test/ckks/ckks_narrow_cuda.cu": "d8da814ee4fdedbeb50e78058a827d0d2b8ba4c215052ade0ee82db456a500b9"
+  },
+  "cmake_build_exit_code": 0,
+  "cmake_build_session": 65986,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-key-switch-build.log",
+  "cuda_test_actual_exit_code": 77,
+  "cuda_test_log": "/tmp/ckks-narrow-cuda-key-switch-test.log",
+  "host_key_switch_rejection_cases_passed": 12,
+  "host_key_switch_valid_metadata_cases_passed": 2,
+  "host_total_rejection_cases_passed": 90,
+  "host_key_switch_reference_consistency_cases_passed": 12,
+  "reference_scope": "CPU spectral contraction and CRT/secondary-digit recomposition must equal independent direct full-torus negacyclic products of raw key rows with centered primary digits. Key-row coefficients are deterministic random torus polynomials, not freshly encrypted evaluation keys. CUDA kernels are not executed.",
+  "profiles": [
+    {
+      "log_q": 217,
+      "limbs": 4,
+      "primary_base_bits": 4,
+      "secondary_base_bits": 4
+    },
+    {
+      "log_q": 376,
+      "limbs": 7,
+      "primary_base_bits": 4,
+      "secondary_base_bits": 4
+    },
+    {
+      "log_q": 518,
+      "limbs": 9,
+      "primary_base_bits": 18,
+      "secondary_base_bits": 8
+    }
+  ],
+  "points": 16,
+  "components": 2,
+  "columns": [
+    1,
+    3
+  ],
+  "prime_counts": [
+    1,
+    2
+  ],
+  "auxiliary_primes": [
+    2301972608560791553,
+    2295217002959732737
+  ],
+  "key_spectra_layout": "[descending primary row][component][ascending secondary digit][point]",
+  "input_digit_spectra_layout": "[descending primary row][point][column]",
+  "output_layout": "[component][point][column][limb]",
+  "key_setup_order_note": "Reversing the secondary CPU row order retains physical shift digit*secondary_base_bits. Raw key coefficients use the CPU balanced offset; final torus reduction preserves unaligned levels.",
+  "matrix_extension": "selector_tables=true gives a distinct N*columns table per primary row; identity_permutation=true avoids loading an explicit identity-index array. Equation (25) defaults retain the shared table and scheduled permutations.",
+  "preflight_checks": [
+    "every primitive dimension/direction and prime match",
+    "one shared input polynomial for both auxiliary primes",
+    "native signed top-digit headroom",
+    "mutable, input, offset, NTT table and resident key buffer aliases",
+    "overflow-safe half_primary*half_secondary*N*primary_rows < half auxiliary product"
+  ],
+  "host_ubsan_build_exit_code": 0,
+  "host_ubsan_build_session": 6841,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-key-switch-host-ubsan-build.log",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-key-switch-host-ubsan-test.log",
+  "host_ubsan_all_host_checks_passed": true,
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "NVCC -O1 -g -Xcompiler=-fsanitize=undefined,-fno-sanitize-recover=all,-fno-omit-frame-pointer instruments source/test host code, including inline arithmetic/reference functions. Device kernels are not UBSan instrumented and remain unexecuted.",
+  "prior_host_checks_repeated_and_passed": {
+    "rejection_cases": 78,
+    "ntt_table_cases": 4,
+    "packed_valid_metadata_cases": 4,
+    "crt_recomposition_rounding_cases": 90,
+    "packed_reference_consistency_cases": 4,
+    "balanced_decomposition_cases": 27,
+    "torus_substitution_lift_cases": 42
+  },
+  "gpu_device_count": 0,
+  "gpu_key_switch_cases_present": 12,
+  "gpu_key_switch_cases_executed": false,
+  "gpu_arithmetic_validated": false,
+  "encrypted_gpu_key_switch_validated": false,
+  "full_cuda_automorphism_implemented": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_path_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "latest_extended_validation_evidence": "narrow-dd-cuda-auto-validation.json",
+  "historical_scope_note": "Hashes/builds above describe the key-switch row revision. Latest automorphism arithmetic revision repeats these checks; device execution remains skipped."
+}

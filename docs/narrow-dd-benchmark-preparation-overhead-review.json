@@ -1,0 +1,17 @@
+{
+  "observed_utc": "2026-10-11T09:52:35.162596+00:00",
+  "scope": "Source review of benchmark overhead, not a runtime speedup qualification",
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_narrow_benchmark.cpp": "002bac19ea5dde07c840e5a66b3a46f7f43b681ad6b70e7890cce8affb820199",
+    "TFHEpp/include/ckks/narrow_refresh.hpp": "59924a0a582074aa2819074945a5c888c8065e909d04dc700c3c9ad709a96f79"
+  },
+  "benchmark_diagnostic_preparation": "ckks_narrow_benchmark.cpp: CKKSNarrowPrepareCoefficients before first-factor diagnostics",
+  "full_refresh_preparation": "Both CKKSNarrowRefresh and CKKSNarrowFunctionalRefresh call CKKSNarrowPrepareCoefficients internally",
+  "diagnostic_preparation_repeated_in_full_refresh": true,
+  "production_full_refresh_automatically_duplicates_preparation": false,
+  "live_run_restarted": false,
+  "implementation_changed": false,
+  "accuracy_validated_by_review": false,
+  "speedup_validated": false,
+  "next_action": "Use a prepared-coefficient evaluation entry point in the diagnostic benchmark and report preparation plus evaluation as full refresh time; validate exact output equivalence on retained fixtures before full-size use."
+}

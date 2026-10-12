@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-09T10:52:49.447831+00:00",
+  "scope": "Build native aux8 selector phase diagnostic with failure metrics",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17682792448,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 11355725824,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 102693031936,
+  "required_bytes": 89073082368,
+  "aggregate_budget_bytes": 4294967296,
+  "process_limit_bytes": 2147483648,
+  "host_reserve_bytes": 10737418240,
+  "eligible": true,
+  "session": 57390,
+  "terminal": true,
+  "actual_exit_code": 0
+}

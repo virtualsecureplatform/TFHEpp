@@ -1,0 +1,110 @@
+{
+  "scope": "Current-source N32768 22-column raw-chunk head30/tail4 factor controls, two trials each, cross-version exact ciphertexts, 23-bit phase checks and retained selected selector/prefix hashes. Not whole refresh, all37 key-file integrity or paper latency qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "actual_exit_code": 0,
+  "build_actual_exit_code": 0,
+  "updated_utc": "2026-10-11T03:11:42.867566+00:00",
+  "columns": 22,
+  "slots_checked": 720896,
+  "fresh_keys_generated": false,
+  "completed_rows": [
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 22,
+      "seconds": 53.536952726,
+      "cache_setup_seconds": 4.73e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 0.8774913080000003,
+      "selector_ntt_seconds": 14.125504816000017,
+      "matrix_seconds": 32.79318420099998,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "group": 30,
+      "cached": false,
+      "columns": 22,
+      "seconds": 55.146846283,
+      "cache_setup_seconds": 4.73e-07,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 0.8931238260000001,
+      "selector_ntt_seconds": 14.394451384000002,
+      "matrix_seconds": 34.15107556,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": false,
+      "slots_checked": 360448,
+      "maximum_error": 8.269519992781059e-10,
+      "accuracy_passed": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 22,
+      "seconds": 54.249674008,
+      "cache_setup_seconds": 4.4e-08,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 0.8979016039999997,
+      "selector_ntt_seconds": 14.283206890999997,
+      "matrix_seconds": 33.450708113000005,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "group": 4,
+      "cached": false,
+      "columns": 22,
+      "seconds": 54.661089037,
+      "cache_setup_seconds": 4.4e-08,
+      "reused_prepared_chunks": 0,
+      "selector_provider_seconds": 0.8876849190000002,
+      "selector_ntt_seconds": 14.269684109000018,
+      "matrix_seconds": 33.50291708199998,
+      "ciphertexts_exact": true
+    },
+    {
+      "n": 32768,
+      "tail": true,
+      "slots_checked": 360448,
+      "maximum_error": 7.825667000879669e-10,
+      "accuracy_passed": true
+    }
+  ],
+  "head_reference_cross_version_byte_identity": true,
+  "tail_reference_cross_version_byte_identity": true,
+  "unique_repeated_ciphertext_coefficients": 2883584,
+  "cross_version_ciphertext_coefficients": 2883584,
+  "memory_cap_bytes": 3221225472,
+  "maximum_resident_kib": 1943132,
+  "retained_payload_hashes_match": true,
+  "retained_hash_scope": "Complete head30/tail4 groups and public-profile/secret prefix match the original qualified hashes; other checkpoint suffixes not hashed by this component control.",
+  "qualified_source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "e58c4eb90ff30499fabf225fd2e7ae9f27ad7a534a87f3f4bc36f6792dd1e26b",
+    "TFHEpp/include/ckks/ckks.hpp": "070f2a67ac6274950b914d45c2300770d8b8da822c4578a585805a64c68ebb34",
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "5d9dc333cfba0b7e0d28a9e1207e926b1956eca68bcddf188a75dc93507b0d7e",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "d1cf1cba5eb35456149ffd7a6b4802432e7bf59f1b7ba15f88534233bb5b0df2",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "7886c40e1204bc4b36a09dd153c2f5d4f4d0f171985871c1eeb0b82182a52b12"
+  },
+  "frozen_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-full-levels-20261011/factor-frozen",
+  "frozen_executable_sha256": "b04951f601bed4d34a2c501c1a5a4acdcbdc70e9438dfbcf3bf6065e28eda771",
+  "artifact_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-full-levels-20261011/factors.log": "cd2734b8e64cfd95b0ff7d5a92bd77833376ec854d8e6d97c7e9df24f551a9e3",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-full-levels-20261011/factors.time": "4c06c51a43514f771e1fee87453cfbe7064490018551465c1089f1cb3673913f",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-full-levels-20261011/factor-retained-hashes.json": "c7f8c030c56f06def62b11fa351d6ffb153d5e3ae2c1b8ac717349af7b7d197a",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-full-levels-20261011/factors/head-reference.bin": "194d62c86005bed29e10fca8e9ebf8e5a1359d76d6e8631b4f1985bc4ec51ec0",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-parallel-full-levels-20261011/factors/tail-reference.bin": "1a5a5cd9b2df1081f7e69e6105468cf123266b80a27e78437154ec8cca1849c9"
+  },
+  "whole_current_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false
+}

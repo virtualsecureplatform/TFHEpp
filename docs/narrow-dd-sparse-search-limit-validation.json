@@ -1,0 +1,113 @@
+{
+  "observed_at_utc": "2026-10-09T03:29:31.434792+00:00",
+  "scope": "Pinned uniform sparse Q76 proxy search-limit diagnosis, three additional sparse attacks, and final-source dense Q436 control",
+  "wrapper_source_sha256": "c27bbf9a17b0e1e5621fc245e20ab34670eb7e77ea82133aba783e0a3123d4b8",
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "estimator_checkout_clean": true,
+  "sage_version": "10.6",
+  "report_files": {
+    "sparse_original_four": {
+      "path": "../Parameter-Selection/python/estimates/narrow_ckks_ll14_sparse_max_beta4096.json",
+      "sha256": "cd91c312a65184e99c573bd3b84bfc657ea007a03278955d4664ead9b78d3c3c"
+    },
+    "sparse_hybrid_variants": {
+      "path": "../Parameter-Selection/python/estimates/narrow_ckks_ll14_sparse_hybrid_proxy.json",
+      "sha256": "c1b3b4887dfeb605729ba6a193f8f6578c32bccf27bad602b1e15f4aeb274cfa"
+    },
+    "dense_final_control": {
+      "path": "../Parameter-Selection/python/estimates/narrow_ckks_ll14_dense_final_security_control.json",
+      "sha256": "c500b725240eba3cfd4b2b6d9ec5f136cd8663e7bd26c27e3f7b04a2bbf9b82f"
+    }
+  },
+  "original_default_max_beta": 1754,
+  "expanded_max_beta": 4096,
+  "imported_primal_dual_limits_verified_in_each_worker": true,
+  "default_four_infinities_explained_by_search_limit": true,
+  "sparse_original_four_actual_exit_code": 0,
+  "sparse_original_four_session": 50362,
+  "sparse_hybrid_actual_exit_code": 0,
+  "sparse_hybrid_session": 5491,
+  "dense_final_control_actual_exit_code": 0,
+  "dense_final_control_session": 65729,
+  "all_sessions_terminal": true,
+  "combined_proxy_attacks": {
+    "primal_usvp": {
+      "bits": 894.4917774151719,
+      "cost": "         rop: \u22482^894.5\n         red: \u22482^894.5\n           \u03b4: 1.000875\n           \u03b2:     2946\n           d:    29733\n         tag:     usvp",
+      "estimator_module_max_beta": {
+        "lwe_primal": 4096,
+        "lwe_dual": 4096
+      }
+    },
+    "primal_bdd": {
+      "bits": 878.7211320801596,
+      "cost": "         rop: \u22482^878.7\n         red: \u22482^878.7\n         svp: \u22482^538.8\n           \u03b2:     2859\n           \u03b7:     1755\n           d:    29703\n         tag:      bdd",
+      "estimator_module_max_beta": {
+        "lwe_primal": 4096,
+        "lwe_dual": 4096
+      }
+    },
+    "dual": {
+      "bits": 899.1846357879085,
+      "cost": "         rop: \u22482^899.2\n         mem: \u22482^626.1\n           m: \u22482^13.8\n           \u03b2:     2962\n           d:    30166\n           \u21bb:        1\n         tag:     dual",
+      "estimator_module_max_beta": {
+        "lwe_primal": 4096,
+        "lwe_dual": 4096
+      }
+    },
+    "dual_hybrid": {
+      "bits": 857.2345998082819,
+      "cost": "         rop: \u22482^857.2\n         red: \u22482^857.2\n       guess: \u22482^850.7\n           \u03b2:     2818\n           p:        2\n           \u03b6:        0\n           t:      830\n          \u03b2':     2818\n           N: \u22482^578.8\n           m: \u22482^14.0",
+      "estimator_module_max_beta": {
+        "lwe_primal": 4096,
+        "lwe_dual": 4096
+      }
+    },
+    "mitm": {
+      "bits": 189.88264304936183,
+      "cost": "         rop: \u22482^189.9\n         mem: \u22482^183.1\n           m: \u22482^14.4\n           k: \u22482^13.0\n           \u21bb:      118",
+      "estimator_module_max_beta": {
+        "lwe_primal": 4096,
+        "lwe_dual": 4096
+      }
+    },
+    "bdd_hybrid": {
+      "bits": 153.30636260086652,
+      "cost": "         rop: \u22482^153.3\n         red: \u22482^152.2\n         svp: \u22482^152.4\n           \u03b2:      162\n           \u03b7:       17\n           \u03b6: \u22482^13.8\n         |S|: \u22482^54.7\n           d:     3536\n        prob: \u22482^-71.5\n           \u21bb: \u22482^73.7\n         tag:   hybrid",
+      "estimator_module_max_beta": {
+        "lwe_primal": 4096,
+        "lwe_dual": 4096
+      }
+    },
+    "bdd_mitm_hybrid": {
+      "bits": 134.67162119260712,
+      "cost": "         rop: \u22482^134.7\n         red: \u22482^132.8\n         svp: \u22482^134.2\n           \u03b2:      186\n           \u03b7:        2\n           \u03b6: \u22482^13.8\n         |S|: \u22482^126.6\n           d:     3607\n        prob: \u22482^-45.1\n           \u21bb: \u22482^47.3\n         tag:   hybrid",
+      "estimator_module_max_beta": {
+        "lwe_primal": 4096,
+        "lwe_dual": 4096
+      }
+    }
+  },
+  "combined_proxy_weakest_bits": 134.67162119260712,
+  "uniform_proxy_margin_above_128_bits": 6.67162119260712,
+  "combination_is_matching_input_reports_not_new_estimator_run": true,
+  "original_four_report_precedes_optional_attack_selection_extension": true,
+  "dense_four_costs_exactly_match_previous_control": true,
+  "dense_default_limit_restored_in_separate_process": true,
+  "selected_subset_does_not_claim_original_four_complete": true,
+  "memory_budget": "narrow-dd-sparse-search-limit-memory-budget.json",
+  "logs": [
+    "/tmp/ckks-sparse-max-beta4096.log",
+    "/tmp/ckks-sparse-hybrid-proxy.log",
+    "/tmp/ckks-dense-final-security-control.log"
+  ],
+  "limitations": [
+    "Uniform sparse fixed 16-positive/15-negative proxy does not model public one-per-block constraints or random sign counts",
+    "All costs are heuristic estimates; ring-specific and circular/correlated-key attacks remain outside scope",
+    "Four high lattice-only costs cannot replace the lower sparse hybrid costs",
+    "A 6.67-bit proxy margin is not an actual structured-secret security guarantee",
+    "Expanded reduction blocks extrapolate beyond the default at-most-512-bit search range; lower hybrid optima lie within it"
+  ],
+  "security_qualified": false,
+  "goal_complete": false
+}

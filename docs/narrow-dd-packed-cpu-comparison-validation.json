@@ -1,0 +1,166 @@
+{
+  "scope": "Validate a small-ring comparison of the running old and current CPU builds.",
+  "passed": true,
+  "old": {
+    "report": "../TFHEpp/docs/narrow-dd-packed-cpu-old-small.json",
+    "report_sha256": "9af46d5263b658f5925f7aa84fd438953b3fbc530a6d8491d03ccd471a9540a4",
+    "phase_seconds": {
+      "selector_reconstruction_seconds": 160.219811034,
+      "key_setup_seconds": 163.490554614,
+      "refresh_seconds": 6.112303223
+    },
+    "max_error": 1.1953391708402349e-06,
+    "selector_max_error": 1.5878147409418892e-09,
+    "post_refresh_product_max_error": 4.226075337101302e-07,
+    "cpu_seconds": 245.88,
+    "peak_rss_kib": 393420,
+    "time_log": "/tmp/ckks-packed-cpu-old-time.log",
+    "time_log_sha256": "3872b1e624ae28aa479e4917222d6e27b34d9d2563e4f5845700554df7698c49",
+    "actual_exit_code": 0,
+    "stderr_bytes": 0
+  },
+  "current": {
+    "report": "../TFHEpp/docs/narrow-dd-packed-cpu-current-small.json",
+    "report_sha256": "5137cd6aec48a7253685aa7691fcf07bc46cb680df94572de8e2e4a14982a36d",
+    "phase_seconds": {
+      "selector_reconstruction_seconds": 132.986120614,
+      "key_setup_seconds": 136.898196891,
+      "refresh_seconds": 4.45964108
+    },
+    "max_error": 1.1523259811685175e-06,
+    "selector_max_error": 1.8363121523319172e-09,
+    "post_refresh_product_max_error": 4.073794129192731e-07,
+    "cpu_seconds": 216.81,
+    "peak_rss_kib": 393092,
+    "time_log": "/tmp/ckks-packed-cpu-current-time.log",
+    "time_log_sha256": "26528539602b9dc43026b25e52e9591b818034e3f1266299d7cea463c76821a7",
+    "actual_exit_code": 0,
+    "stderr_bytes": 0
+  },
+  "profile": {
+    "profile": "ll14-inspired-dd-streamed",
+    "function": "identity",
+    "n": 512,
+    "h": 31,
+    "source_log_q": 48,
+    "selector_log_q": 379,
+    "packed_log_q": 422,
+    "input_log_q": 85,
+    "input_log_delta": 41,
+    "output_log_q": 100,
+    "output_log_delta": 49,
+    "root_plain_log_delta": 34,
+    "s2c_plain_log_delta": 37,
+    "storage_bits": 448,
+    "gaussian_sigma": 3.2,
+    "gadget_bits": 4,
+    "secondary_digit_bits": 4,
+    "packed_selectors": true,
+    "file_backed_selectors": true,
+    "packed_fft_levels": 2,
+    "compact_dd": true,
+    "compact_s2c": true,
+    "bounded_rotation_fft": true,
+    "staged_fft_caches": true,
+    "relinearize_before_rescale": false,
+    "auxiliary_switch_bits": 0,
+    "factor_key_log_q": 345,
+    "structured_switch_key_log_q": 48,
+    "s2c_input_key_log_q": 85,
+    "cache_mode": "streamed",
+    "tree_depth": 5,
+    "selector_ntt_chunk_size": 17,
+    "message_bound": 0.125,
+    "input_pattern": "random-with-endpoints"
+  },
+  "launch_budget": "../TFHEpp/docs/narrow-dd-packed-cpu-comparison-memory-budget.json",
+  "launch_budget_sha256": "1ad4df57d93b20536a4d81cb14ce40930f6d51d0befb399fad79c9f8c016c70b",
+  "binaries": {
+    "old-mapped": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cpu-comparison-20261009-_2_51_72/old-mapped",
+      "sha256": "adb3e8de06776453bbdff609187fc9bbcba44994b64aac18a292e7179fab9556",
+      "source": "/proc/1756575/exe",
+      "bytes": 240970704
+    },
+    "current": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cpu-comparison-20261009-_2_51_72/current",
+      "sha256": "30737489e19f92fa0d4c92822903cc958febde31fb5fe1cb52851aaaa4c39a4e",
+      "source": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_benchmark",
+      "bytes": 249032912
+    }
+  },
+  "validator_sha256": "d4adbd448d72d8fc0303fb821bb623c21ac968e929c69c28f7dc28a5c4869c0c",
+  "observed_selector_reconstruction_ratio": 1.2047859603262463,
+  "observed_total_cpu_ratio": 1.1340805313408053,
+  "limitations": [
+    "N512 identity profile only; no N16384 speed or completion claim",
+    "One sample per build, independent keys/inputs, concurrent full CPU jobs",
+    "Builds differ beyond packed workspace changes; no isolated causal attribution",
+    "Old workspace source was not recovered; executable hash identifies the baseline"
+  ],
+  "security_validated": false,
+  "full_packed_validation_complete": false,
+  "utc": "2026-10-09T07:04:33.898186+00:00",
+  "test_session": 73093,
+  "test_terminal": true,
+  "test_actual_exit_code": 0,
+  "independent_validator_actual_exit_code": 0,
+  "full_packed_live_progress": {
+    "pid": 1756575,
+    "start_ticks": 211884551,
+    "baseline": {
+      "utc": "2026-10-09T07:00:29.647857+00:00",
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "cpu_ticks": 18301791,
+      "io": {
+        "rchar": 17850975033,
+        "wchar": 47915755244,
+        "syscr": 19469,
+        "syscw": 26116,
+        "read_bytes": 26964791296,
+        "write_bytes": 48022695936,
+        "cancelled_write_bytes": 0
+      }
+    },
+    "observed_at_utc": "2026-10-09T07:04:33.898186+00:00",
+    "cpu_tick_delta": 80343,
+    "io_deltas": {
+      "rchar": 203685999,
+      "wchar": 203685999,
+      "syscr": 222,
+      "syscw": 111,
+      "read_bytes": 56832000,
+      "write_bytes": 204140544,
+      "cancelled_write_bytes": 0
+    },
+    "percent_complete_inferred": false
+  },
+  "full_ring_cache_operation_counts": [
+    {
+      "cached_depths": 2,
+      "derived_fft_bytes": 6002573312,
+      "cached_automorphisms": 49152,
+      "uncached_automorphisms": 16380
+    },
+    {
+      "cached_depths": 3,
+      "derived_fft_bytes": 9003859968,
+      "cached_automorphisms": 57344,
+      "uncached_automorphisms": 8188
+    },
+    {
+      "cached_depths": 4,
+      "derived_fft_bytes": 12005146624,
+      "cached_automorphisms": 61440,
+      "uncached_automorphisms": 4092
+    },
+    {
+      "cached_depths": 5,
+      "derived_fft_bytes": 15006433280,
+      "cached_automorphisms": 63488,
+      "uncached_automorphisms": 2044
+    }
+  ],
+  "cache_count_scope": "Source-derived call/payload counts only; no full-ring timing prediction or cache-policy change"
+}

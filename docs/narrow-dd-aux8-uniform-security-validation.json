@@ -1,0 +1,16 @@
+{
+  "utc": "2026-10-09T08:08:15.288446+00:00",
+  "scope": "Seven generic LWE/uniform-sparse proxy attacks only; actual public blocks, ring structure and correlated keys excluded",
+  "session": 22837,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "stderr_bytes": 0,
+  "report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_aux8_uniform_security.json",
+  "report_sha256": "26eba506bd136975927ac0062973002bb71d0b05cb6151657f578a48dad12115",
+  "source_sha256": "529022871973ec19ed6db3524e336b2198f3f2bdd1c4653ff46660c59642885a",
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "max_beta": 4096,
+  "weakest_requested_attack_bits": 143.9888568183254,
+  "all_seven_finite": true,
+  "security_validated": false
+}

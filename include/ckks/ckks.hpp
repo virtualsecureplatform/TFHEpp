@@ -1683,13 +1683,13 @@ inline void polyMulTorusBySmallSigned(Polynomial<P> &res,
         }
 
         if (has_pos)
-            PolyMulTorusByUnsignedBits<P, 64>(res, torus, *pos);
+            PolyMulTorusByUnsignedBits<P, 64, PlainLogQ>(res, torus, *pos);
         else
             for (std::uint32_t i = 0; i < P::n; i++) res[i] = 0;
 
         if (has_neg) {
             auto tmp = std::make_unique<Polynomial<P>>();
-            PolyMulTorusByUnsignedBits<P, 64>(*tmp, torus, *neg);
+            PolyMulTorusByUnsignedBits<P, 64, PlainLogQ>(*tmp, torus, *neg);
             for (std::uint32_t i = 0; i < P::n; i++) res[i] -= (*tmp)[i];
         }
     }
@@ -1757,8 +1757,9 @@ inline void encodeRealPolynomial(Polynomial<P> &poly,
 // Exact negacyclic multiplication of an active CKKS torus polynomial by a
 // small signed polynomial.  Floating FFT multiplication is normally adequate
 // for CKKS noise margins, but loses low active-level bits needed by an exact
-// cross-scheme extraction.  The NTT bound covers 16-bit torus chunks times
-// Bbar digits through 20 bits for rings through degree 2^15.
+// cross-scheme extraction. Choose unsigned torus chunks using the actual
+// small polynomial's L1 norm, keeping every convolution in the centered NTT
+// range. The small polynomial's transform is shared by all chunks.
 template <class P, std::uint32_t LogQ>
 inline void exactActiveTorusMulBySmall(Polynomial<P> &res,
                                        const Polynomial<P> &torus,
@@ -1776,29 +1777,40 @@ inline void exactActiveTorusMulBySmall(Polynomial<P> &res,
     static constexpr modular_ntt::PrimeModulus exact_prime{
         4611686018427322369ULL, 7};
     static const modular_ntt::NegacyclicNTTPlan plan(P::n, exact_prime);
-    constexpr std::uint32_t chunk_bits = 16;
-    constexpr std::uint32_t chunk_count =
-        (LogQ + chunk_bits - 1) / chunk_bits;
-    constexpr std::uint64_t chunk_mask =
-        (std::uint64_t{1} << chunk_bits) - 1;
     const std::uint64_t modulus = plan.modulus();
 
-    for (std::uint32_t i = 0; i < P::n; i++) res[i] = 0;
     std::vector<std::uint64_t> lhs(P::n);
     std::vector<std::uint64_t> rhs(P::n);
+    unsigned __int128 small_norm = 0;
+    for (std::uint32_t i = 0; i < P::n; i++) {
+        const std::int64_t value = multilimb_to_signed_i64(small[i]);
+        if (P::T::from_signed_i64(value) != small[i])
+            throw std::invalid_argument("exact CKKS multiplier exceeds signed int64");
+        const auto magnitude = value < 0 ? std::uint64_t{0} - static_cast<std::uint64_t>(value)
+                                         : static_cast<std::uint64_t>(value);
+        small_norm += magnitude;
+        if (magnitude >= modulus)
+            throw std::invalid_argument("exact CKKS multiplier exceeds NTT modulus");
+        rhs[i] = value < 0 && magnitude != 0 ? modulus - magnitude : magnitude;
+    }
+    if (small_norm == 0) { res.fill(typename P::T{}); return; }
+    const unsigned __int128 budget = (modulus / 2 - 1) / small_norm;
+    if (budget == 0) throw std::invalid_argument("exact CKKS convolution exceeds centered NTT range");
+    // Width <=56 keeps all extracted chunks in uint64 and below this prime.
+    std::uint32_t chunk_bits = std::min<std::uint32_t>(56, LogQ);
+    while ((static_cast<unsigned __int128>(1) << chunk_bits) - 1 > budget) --chunk_bits;
+    const auto chunk_count = (LogQ + chunk_bits - 1) / chunk_bits;
+    const auto chunk_mask = (std::uint64_t{1} << chunk_bits) - 1;
+    plan.forward(rhs);
+    for (std::uint32_t i = 0; i < P::n; i++) res[i] = 0;
     for (std::uint32_t chunk = 0; chunk < chunk_count; chunk++) {
         const std::uint32_t shift = chunk * chunk_bits;
         for (std::uint32_t i = 0; i < P::n; i++) {
             const auto active = reduceToLevel<P, LogQ>(torus[i]);
             lhs[i] = static_cast<std::uint64_t>(
                 (active >> shift) & typename P::T{chunk_mask});
-            const std::int64_t value = multilimb_to_signed_i64(small[i]);
-            rhs[i] = value < 0
-                         ? modulus - static_cast<std::uint64_t>(-value)
-                         : static_cast<std::uint64_t>(value);
         }
         plan.forward(lhs);
-        plan.forward(rhs);
         for (std::uint32_t i = 0; i < P::n; i++)
             lhs[i] = modular_ntt::multiply(lhs[i], rhs[i], modulus);
         plan.inverse(lhs);
@@ -1945,13 +1957,13 @@ inline void encryptPolynomialAtLevel(CKKSSeededKeySwitchRow<P, LogQ> &row,
     }
 }
 
-template <class P>
+template <class P, std::uint32_t LogQ = std::numeric_limits<typename P::T>::digits>
 inline void polyMulTorusByBbarDigit(Polynomial<P> &res,
                                     const Polynomial<P> &torus,
                                     const Polynomial<P> &digit)
 {
     if constexpr (is_multilimb_uint_v<typename P::T>) {
-        PolyMulTorusByDigit<P>(res, torus, digit);
+        PolyMulTorusByDigit<P, LogQ>(res, torus, digit);
     }
     else {
         static_assert(std::is_same_v<typename P::T, __uint128_t>);
@@ -2135,21 +2147,42 @@ inline void activeBaseRecombineTRLWERows(
                   "active recomposition needs enough storage headroom for the "
                   "top signed digit");
 
+    // Keep each coefficient's sum local, instead of reading and writing the
+    // entire torus ciphertext once per digit. Coefficients are independent.
+#pragma omp parallel for collapse(2) schedule(static) if(P::n >= 8192)
     for (int c = 0; c <= static_cast<int>(P::k); c++)
-        for (std::uint32_t n = 0; n < P::n; n++)
-            res[static_cast<std::size_t>(c)][n] = 0;
-
-    for (std::size_t row = 0; row < RowCount; row++) {
-        const int shift = static_cast<int>((RowCount - row - 1) * BaseBit);
-        for (int c = 0; c <= static_cast<int>(P::k); c++) {
-            for (std::uint32_t n = 0; n < P::n; n++) {
-                res[static_cast<std::size_t>(c)][n] +=
-                    rows[row][static_cast<std::size_t>(c)][n] << shift;
+        for (std::uint32_t n = 0; n < P::n; n++) {
+            typename P::T sum{};
+            for (std::size_t row = 0; row < RowCount; row++) {
+                const int shift = static_cast<int>((RowCount - row - 1) * BaseBit);
+                sum += rows[row][static_cast<std::size_t>(c)][n] << shift;
             }
+            res[static_cast<std::size_t>(c)][n] = reduceToLevel<P, LogQ>(sum);
         }
-    }
+}
 
-    reduceTRLWEToLevel<P, LogQ>(res);
+// Native FFT outputs are signed integers represented by their low 64 bits.
+// Sign-extend before shifting so negative products retain the original torus
+// arithmetic, including carries across limbs and an unaligned top digit.
+template <class P, std::uint32_t LogQ, std::uint32_t BaseBit,
+          std::size_t RowCount>
+inline void activeBaseRecombineDigitRows(
+    TRLWE<P> &res,
+    const std::array<std::array<std::array<std::uint64_t, P::n>, P::k + 1>, RowCount> &rows)
+{
+    static_assert(is_multilimb_uint_v<typename P::T>);
+    static_assert(LogQ > 0 && LogQ <= torus_width_v<P>);
+    static_assert(BaseBit > 0 && RowCount == (LogQ + BaseBit - 1) / BaseBit);
+    static_assert(RowCount * BaseBit <= torus_width_v<P>);
+#pragma omp parallel for collapse(2) schedule(static) if(P::n >= 8192)
+    for (std::size_t c = 0; c <= P::k; c++)
+        for (std::uint32_t n = 0; n < P::n; n++) {
+            typename P::T sum{};
+            for (std::size_t row = 0; row < RowCount; row++)
+                sum += static_cast<typename P::T>(static_cast<std::int64_t>(rows[row][c][n]))
+                    << ((RowCount - row - 1) * BaseBit);
+            res[c][n] = reduceToLevel<P, LogQ>(sum);
+        }
 }
 
 }  // namespace ckks_detail
@@ -2649,7 +2682,7 @@ inline void CKKSKeySwitchRows(TRLWE<P> &res, const Polynomial<P> &poly,
         for (int j = 0; j < static_cast<int>(row_count); j++) {
             const Polynomial<P> &digit = (*decomposed)[j];
             for (int c = 0; c <= static_cast<int>(P::k); c++) {
-                ckks_detail::polyMulTorusByBbarDigit<P>(*product, rows[j][c],
+                ckks_detail::polyMulTorusByBbarDigit<P, LogQ>(*product, rows[j][c],
                                                         digit);
                 for (std::uint32_t n = 0; n < P::n; n++)
                     (*local)[c][n] += (*product)[n];
@@ -2708,12 +2741,12 @@ inline void CKKSKeySwitchRows(
             for (int c = 0; c < static_cast<int>(P::k); c++) {
                 ckks_detail::fillSeededUniformPolynomialAtLevel<P, LogQ>(
                     *mask, row.mask_seeds[static_cast<std::size_t>(c)]);
-                ckks_detail::polyMulTorusByBbarDigit<P>(*product, *mask,
+                ckks_detail::polyMulTorusByBbarDigit<P, LogQ>(*product, *mask,
                                                         digit);
                 for (std::uint32_t n = 0; n < P::n; n++)
                     (*local)[c][n] += (*product)[n];
             }
-            ckks_detail::polyMulTorusByBbarDigit<P>(*product, row.body, digit);
+            ckks_detail::polyMulTorusByBbarDigit<P, LogQ>(*product, row.body, digit);
             for (std::uint32_t n = 0; n < P::n; n++)
                 (*local)[P::k][n] += (*product)[n];
         }
@@ -4644,7 +4677,8 @@ inline void maybe_clear_cached_keys(const GaloisKey &gk)
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,
           std::uint32_t PlainLogDelta, class InputGaloisKey,
-          class OutputGaloisKey, class GroupProvider>
+          class OutputGaloisKey, class GroupProvider,
+          std::uint32_t ArithmeticBits = torus_unsigned_digit_bits_v<P>>
 inline void CKKSLinearTransformBSGSWithGroupProvider(
     CKKSPlainMulResult<P, LogQ, LogDelta, PlainLogDelta> &res,
     const CKKSCiphertext<P, LogQ, LogDelta> &ct,
@@ -4676,31 +4710,35 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                   use_multilimb_digit_fft_v<P>) {
         using T = typename P::T;
         constexpr int width = std::numeric_limits<T>::digits;
+        static_assert(ArithmeticBits > 0 && ArithmeticBits <= 32);
+        static_assert(width % ArithmeticBits == 0);
+        constexpr int torus_digits = (LogQ + ArithmeticBits - 1) / ArithmeticBits;
+        constexpr int torus_first = width / ArithmeticBits - torus_digits;
         constexpr int plain_digits =
-            (64 + static_cast<int>(P::B̅gbit) - 1) /
-            static_cast<int>(P::B̅gbit);
+            (64 + static_cast<int>(ArithmeticBits) - 1) /
+            static_cast<int>(ArithmeticBits);
         constexpr uint64_t plain_mask =
-            P::B̅gbit == 64 ? std::numeric_limits<uint64_t>::max()
-                            : ((uint64_t{1} << P::B̅gbit) - 1);
-        constexpr T half_digit = T{1} << (P::B̅gbit - 1);
-        constexpr T torus_mask = (T{1} << P::B̅gbit) - T{1};
+            ArithmeticBits == 64 ? std::numeric_limits<uint64_t>::max()
+                            : ((uint64_t{1} << ArithmeticBits) - 1);
+        constexpr T half_digit = T{1} << (ArithmeticBits - 1);
+        constexpr T torus_mask = (T{1} << ArithmeticBits) - T{1};
         constexpr T offset = [] {
             constexpr int local_width = std::numeric_limits<T>::digits;
-            constexpr T local_half_digit = T{1} << (P::B̅gbit - 1);
+            constexpr T local_half_digit = T{1} << (ArithmeticBits - 1);
             T value = 0;
-            for (int j = 0; j < static_cast<int>(P::l̅); j++)
+            for (int j = 0; j < local_width / ArithmeticBits; j++)
                 value += local_half_digit
-                         << (local_width - (j + 1) * P::B̅gbit);
+                         << (local_width - (j + 1) * ArithmeticBits);
             return value;
         }();
         constexpr int fd_margin =
             std::numeric_limits<double>::digits -
-            (2 * static_cast<int>(P::B̅gbit) + static_cast<int>(P::nbit) + 3);
+            (2 * static_cast<int>(ArithmeticBits) + static_cast<int>(P::nbit) + 3);
         static_assert(fd_margin > 0,
                       "fused CKKS BSGS digit products must fit in double");
-        constexpr int max_fused_terms = 1 << (fd_margin - 1);
+        constexpr int max_fused_terms = 1 << std::min(fd_margin - 1, 30);
 
-        using BabyComponentFFT = std::array<PolynomialInFD<P>, P::l̅>;
+        using BabyComponentFFT = std::array<PolynomialInFD<P>, torus_digits>;
         using BabyFFT = std::array<BabyComponentFFT, P::k + 1>;
         auto baby_fft =
             std::make_unique<std::vector<std::unique_ptr<BabyFFT>>>(
@@ -4721,9 +4759,9 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                 auto &baby_out =
                     *(*baby_fft)[static_cast<std::size_t>(j1)];
                 for (int c = 0; c <= static_cast<int>(P::k); c++) {
-                    for (int j = 0; j < static_cast<int>(P::l̅); j++) {
+                    for (int j = 0; j < torus_digits; j++) {
                         const int torus_shift =
-                            width - (j + 1) * static_cast<int>(P::B̅gbit);
+                            width - (torus_first + j + 1) * static_cast<int>(ArithmeticBits);
                         for (uint32_t n = 0; n < P::n; n++) {
                             const T adjusted =
                                 ckks_detail::centeredLevelToTorus<P, LogQ>(
@@ -4767,7 +4805,7 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                             group.terms[static_cast<std::size_t>(t)]
                                 .plain.poly;
                         const int plain_shift =
-                            d * static_cast<int>(P::B̅gbit);
+                            d * static_cast<int>(ArithmeticBits);
                         for (uint32_t n = 0; n < P::n; n++) {
                             const auto [negative, magnitude] =
                                 ckks_detail::smallSignedMagnitude<P, LogQ>(
@@ -4795,7 +4833,7 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                 for (uint32_t n = 0; n < P::n; n++) (*inner)[c][n] = 0;
 
             const int component_count = static_cast<int>(P::k) + 1;
-            const int aux_row_count = static_cast<int>(P::l̅);
+            const int aux_row_count = torus_digits;
 #pragma omp parallel
             {
                 auto local_inner = std::make_unique<TRLWE<P>>();
@@ -4808,11 +4846,13 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                         for (int d = 0; d < plain_digits; d++) {
                             const int torus_shift =
                                 width -
-                                (j + 1) * static_cast<int>(P::B̅gbit);
+                                (torus_first + j + 1) * static_cast<int>(ArithmeticBits);
                             const int plain_shift =
-                                d * static_cast<int>(P::B̅gbit);
+                                d * static_cast<int>(ArithmeticBits);
                             const int shift = torus_shift + plain_shift;
-                            if (shift >= width) continue;
+                            // The group is reduced modulo active Q before signed
+                            // rescaling, so higher terms cannot affect rounding.
+                            if (shift >= static_cast<int>(LogQ)) continue;
 
                             for (std::size_t batch_begin = 0;
                                  batch_begin < group.terms.size();
@@ -7136,13 +7176,16 @@ template <class P, std::uint32_t LogQ,
           std::uint32_t RelinBbarbit = P::B̅gbit>
 inline std::unique_ptr<CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>>
 makeCKKSDDRelinKeyFFT(
-    const Key<P> &key, CKKSNoise noise = {P::α, 0})
+    const CKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit> &coeff_key)
 {
     static_assert(use_multilimb_digit_fft_v<P>,
                   "CKKS DD relin FFT key requires a compatible multi-limb "
                   "digit FFT backend");
-    auto coeff_key =
-        makeCKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>(key, noise);
+    static_assert(RelinBgbit + RelinBbarbit + P::nbit +
+                      std::bit_width(CKKSDDRelinPrimaryRowCountForLevel<
+                          P, LogQ, RelinBgbit>()) + 3 <
+                      std::numeric_limits<double>::digits,
+                  "CKKS DD relin FFT accumulation needs mantissa headroom");
     auto relinkey =
         std::make_unique<
             CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>>();
@@ -7157,11 +7200,22 @@ makeCKKSDDRelinKeyFFT(
             for (int c = 0; c <= static_cast<int>(P::k); c++) {
                 TwistIFFTDigit<P>(
                     relinkey->data[i][j][static_cast<std::size_t>(c)],
-                    coeff_key->data[i][j][static_cast<std::size_t>(c)]);
+                    coeff_key.data[i][j][static_cast<std::size_t>(c)]);
             }
         }
     }
     return relinkey;
+}
+
+template <class P, std::uint32_t LogQ,
+          std::uint32_t RelinBgbit = P::Bgbit,
+          std::uint32_t RelinBbarbit = P::B̅gbit>
+inline std::unique_ptr<CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>>
+makeCKKSDDRelinKeyFFT(const Key<P> &key, CKKSNoise noise = {P::α, 0})
+{
+    auto coeff_key =
+        makeCKKSDDRelinKey<P, LogQ, RelinBgbit, RelinBbarbit>(key, noise);
+    return makeCKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>(*coeff_key);
 }
 
 namespace ckks_detail {
@@ -7484,9 +7538,13 @@ inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
 {
     static_assert(is_multilimb_uint_v<typename P::T>,
                   "CKKS DD relin currently targets multi-limb torus params");
-    static_assert(RelinBgbit + RelinBbarbit + P::nbit + 3 <
+    // Every primary-row convolution is accumulated before the inverse FFT.
+    // A directly supplied FFT key needs the same bound as the key factories.
+    static_assert(RelinBgbit + RelinBbarbit + P::nbit +
+                      std::bit_width(CKKSDDRelinPrimaryRowCountForLevel<
+                          P, LogQ, RelinBgbit>()) + 3 <
                       std::numeric_limits<double>::digits,
-                  "CKKS DD relin digit products need exact FFT headroom");
+                  "CKKS DD relin FFT accumulation needs mantissa headroom");
     constexpr std::uint32_t primary_rows =
         CKKSDDRelinKeyFFT<P, LogQ, RelinBgbit, RelinBbarbit>::primary_rows;
     constexpr std::uint32_t bbar_rows =
@@ -7498,32 +7556,29 @@ inline void CKKSRelinKeySwitch(TRLWE<P> &res, const Polynomial<P> &poly,
                                                    primary_rows>(
         *primary_digits, poly);
 
-    auto acc = std::make_unique<std::array<TRLWEInFD<P>, bbar_rows>>();
-    for (std::uint32_t j = 0; j < bbar_rows; j++)
-        for (int c = 0; c <= static_cast<int>(P::k); c++)
-            for (std::uint32_t n = 0; n < P::n; n++)
-                (*acc)[j][static_cast<std::size_t>(c)][n] = 0.0;
-
-    auto digit_fft = std::make_unique<PolynomialInFD<P>>();
-    for (std::uint32_t i = 0; i < primary_rows; i++) {
-        TwistIFFTDigit<P>(*digit_fft, (*primary_digits)[i]);
-        for (std::uint32_t j = 0; j < bbar_rows; j++) {
+    auto transformed = std::make_unique<std::array<PolynomialInFD<P>, primary_rows>>();
+#pragma omp parallel for schedule(static) if(P::n >= 8192)
+    for (std::uint32_t i = 0; i < primary_rows; i++)
+        TwistIFFTDigit<P>((*transformed)[i], (*primary_digits)[i]);
+    primary_digits.reset();
+    auto digit_rows = std::make_unique<std::array<std::array<std::array<std::uint64_t, P::n>, P::k + 1>, bbar_rows>>();
+#pragma omp parallel if(P::n >= 8192)
+    {
+        // Each output row owns its accumulator. Keep the primary-row FMA
+        // order unchanged, and retain only one spectrum per worker.
+        auto accumulated = std::make_unique<PolynomialInFD<P>>();
+#pragma omp for collapse(2) schedule(static)
+        for (std::uint32_t j = 0; j < bbar_rows; j++)
             for (int c = 0; c <= static_cast<int>(P::k); c++) {
-                FMAInFD<P::n>((*acc)[j][static_cast<std::size_t>(c)],
-                              *digit_fft,
-                              relinkey.data[i][j][static_cast<std::size_t>(c)]);
+                accumulated->fill(0.0);
+                for (std::uint32_t i = 0; i < primary_rows; i++)
+                    FMAInFD<P::n>(*accumulated, (*transformed)[i],
+                        relinkey.data[i][j][static_cast<std::size_t>(c)]);
+                TwistFFTDigitProduct64<P>((*digit_rows)[j][static_cast<std::size_t>(c)],
+                    *accumulated);
             }
-        }
     }
-
-    auto digit_rows = std::make_unique<std::array<TRLWE<P>, bbar_rows>>();
-    for (std::uint32_t j = 0; j < bbar_rows; j++) {
-        for (int c = 0; c <= static_cast<int>(P::k); c++) {
-            TwistFFTDigitProduct<P>((*digit_rows)[j][static_cast<std::size_t>(c)],
-                                    (*acc)[j][static_cast<std::size_t>(c)]);
-        }
-    }
-    ckks_detail::activeBaseRecombineTRLWERows<P, LogQ, RelinBbarbit,
+    ckks_detail::activeBaseRecombineDigitRows<P, LogQ, RelinBbarbit,
                                               bbar_rows>(res, *digit_rows);
 }
 
@@ -7559,6 +7614,42 @@ inline void CKKSRelinearization(TRLWE<P> &res, const TRLWE3<P> &mult,
                                                         (*squareterm)[1][i]);
 }
 
+namespace ckks_detail {
+// Arithmetic digits do not change the encrypted gadget or its serialized keys.
+template <class P>
+struct TensorArithmeticDigits16 : P {
+    static constexpr std::uint32_t B̅gbit = 16;
+    static constexpr std::uint32_t l̅ = P::T::digits / B̅gbit;
+};
+
+template <class P, std::uint32_t Drop, std::size_t Limbs>
+inline typename P::T rescaleLimbAccumulator(
+    WideSignedLimbAccumulator<Limbs> value)
+{
+    using Torus = typename P::T;
+    static_assert(Drop + Torus::digits <= Limbs * 64);
+    Torus result{};
+    if constexpr (Drop == 0) {
+        // Division by one preserves the low two's-complement limbs directly.
+        std::copy_n(value.limb.begin(), Torus::limbs, result.limb.begin());
+        return result;
+    }
+    else {
+        value.add_shifted_i64(value.is_negative() ? -1 : 1, Drop - 1);
+        const bool negative = value.is_negative();
+        if (negative) detail::twos_complement(value.limb);
+        constexpr auto first = Drop / 64;
+        constexpr auto bits = Drop % 64;
+        for (std::size_t i = 0; i < Torus::limbs; ++i) {
+            result.limb[i] = value.limb[first + i] >> bits;
+            if constexpr (bits != 0)
+                result.limb[i] |= value.limb[first + i + 1] << (64 - bits);
+        }
+        return negative ? -result : result;
+    }
+}
+}  // namespace ckks_detail
+
 template <class P, std::uint32_t LhsLogQ, std::uint32_t RhsLogQ,
           std::uint32_t LogScale>
 inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
@@ -7569,6 +7660,17 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
     static_assert(P::l̅ * P::B̅gbit == width,
                   "CKKS FullDD multiply requires Bbar digits to cover T");
     static_assert(LogScale < static_cast<std::uint32_t>(width));
+    // With no rescaling, changing balanced digits changes representatives only
+    // by multiples of the input moduli, which vanish modulo min(lhsQ,rhsQ).
+    // Preserve the original radix when rounding: its asymmetric wrap threshold
+    // determines the sign used at rescale ties.
+    if constexpr (LogScale == 0 && use_multilimb_digit_fft_v<P> &&
+                  P::B̅gbit < 16 && width % 16 == 0 &&
+                  2 * 16 + P::nbit + 4 < std::numeric_limits<double>::digits) {
+        using ArithmeticP = ckks_detail::TensorArithmeticDigits16<P>;
+        CKKSTensorProductRescale<ArithmeticP, LhsLogQ, RhsLogQ, 0>(res, a, b);
+        return;
+    }
     constexpr std::uint32_t base_log_q =
         ckks_detail::static_min_v<LhsLogQ, RhsLogQ>;
     static_assert(base_log_q > LogScale);
@@ -7687,7 +7789,10 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
     }
     else {
         using Torus = typename P::T;
-        using Acc = WideSignedLimbAccumulator<2 * Torus::limbs + 2>;
+        // Without rescaling only the low torus limbs are observable; wrapping
+        // the accumulator modulo the storage width preserves every active Q.
+        using Acc = WideSignedLimbAccumulator<
+            LogScale == 0 ? Torus::limbs : 2 * Torus::limbs + 2>;
         auto acc = std::make_unique<std::array<std::array<Acc, P::n>, 3>>();
 
         auto accumulate = [](std::array<std::array<Acc, P::n>, 3> &accum,
@@ -7721,7 +7826,7 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
             constexpr int fd_batch_size =
                 std::min(static_cast<int>(ckks_detail::static_min_v<
                              lhs_row_count, rhs_row_count>),
-                         1 << fd_batch_slack);
+                         1 << std::min(fd_batch_slack, 30));
 
             auto a_fd =
                 std::make_unique<std::array<TRLWEInFD<P>, lhs_row_count>>();
@@ -7744,7 +7849,9 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
                     std::make_unique<std::array<std::array<Acc, P::n>, 3>>();
                 auto sum_fd =
                     std::make_unique<std::array<PolynomialInFD<P>, 3>>();
-                auto prod = std::make_unique<Polynomial<P>>();
+                // The inverse FFT already yields signed 64-bit products.
+                // Accumulate them directly without expanding torus limbs.
+                auto prod = std::make_unique<std::array<std::uint64_t, P::n>>();
 #pragma omp for schedule(dynamic)
                 for (int digit_sum = 0;
                      digit_sum <=
@@ -7763,6 +7870,12 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
                         2 * width -
                         (full_digit_sum + 2) * static_cast<int>(P::B̅gbit);
 
+                    // These terms are exact multiples of the output modulus.
+                    // With rescaling they can affect signed rounding, so keep
+                    // the full integer product in that case.
+                    if constexpr (LogScale == 0)
+                        if (shift >= static_cast<int>(out_log_q)) continue;
+
                     for (int batch_begin = i_begin; batch_begin <= i_end;
                          batch_begin += fd_batch_size) {
                         for (int c = 0; c < 3; c++) (*sum_fd)[c].fill(0.0);
@@ -7780,8 +7893,10 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
                                           (*b_fd)[j][0]);
                         }
                         for (int c = 0; c < 3; c++) {
-                            TwistFFTDigitProduct<P>(*prod, (*sum_fd)[c]);
-                            accumulate(*local_acc, c, *prod, shift);
+                            TwistFFTDigitProduct64<P>(*prod, (*sum_fd)[c]);
+                            for (std::uint32_t n = 0; n < P::n; ++n)
+                                (*local_acc)[c][n].add_shifted_i64(
+                                    static_cast<std::int64_t>((*prod)[n]), shift);
                         }
                     }
                 }
@@ -7805,6 +7920,9 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
                             2 * width -
                             (digit_sum + 2) * static_cast<int>(P::B̅gbit);
 
+                        if constexpr (LogScale == 0)
+                            if (shift >= static_cast<int>(out_log_q)) continue;
+
                         PolyMulDigit<P>(*prod, (*a_dec)[i][0],
                                         (*b_dec)[j][0]);
                         accumulate(*local_acc, 2, *prod, shift);
@@ -7824,17 +7942,11 @@ inline void CKKSTensorProductRescale(TRLWE3<P> &res, const TRLWE<P> &a,
             }
         }
 
-        const Torus divisor =
-            LogScale == 0 ? Torus{1} : (Torus{1} << LogScale);
         for (int c = 0; c < 3; c++) {
             for (std::uint32_t n = 0; n < P::n; n++) {
-                if constexpr (LogScale > 0) {
-                    (*acc)[c][n].add_shifted_i64(
-                        (*acc)[c][n].is_negative() ? -1 : 1,
-                        static_cast<int>(LogScale) - 1);
-                }
                 res[c][n] = ckks_detail::reduceToLevel<P, out_log_q>(
-                    (*acc)[c][n].template div_to_torus<Torus::limbs>(divisor));
+                    ckks_detail::rescaleLimbAccumulator<P, LogScale>(
+                        (*acc)[c][n]));
             }
         }
     }
@@ -7901,6 +8013,31 @@ inline void CKKSMult(
             "mult_total", LhsLogQ, RhsLogQ, Traits::log_q,
             ckks_detail::ckks_trace_elapsed_ms(trace_total_start));
     }
+}
+
+// Relinearize the exact modular tensor before rounding its two components.
+// This requires a key at the input modulus, rather than the output modulus
+// used by CKKSMult. Keeping enough headroom for the unscaled product avoids
+// amplifying component-wise rounding by the squared secret.
+template <class P, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta, class RelinKey>
+    requires(RelinKey::log_q ==
+             ckks_detail::static_min_v<LhsLogQ, RhsLogQ>)
+inline void CKKSMultRelinThenRescale(
+    CKKSMultResult<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta> &res,
+    const CKKSCiphertext<P, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<P, RhsLogQ, RhsLogDelta> &rhs,
+    const RelinKey &relinkey)
+{
+    using Traits = CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
+    constexpr auto product_log_delta = LhsLogDelta + RhsLogDelta;
+    static_assert(product_log_delta < Traits::base_log_q,
+                  "relinearization before rescale needs unscaled product headroom");
+    auto tensor = std::make_unique<TRLWE3<P>>();
+    auto unscaled = std::make_unique<CKKSCiphertext<P, Traits::base_log_q, product_log_delta>>();
+    CKKSTensorProductRescale<P, LhsLogQ, RhsLogQ, 0>(*tensor, lhs.ct, rhs.ct);
+    CKKSRelinearization<P, Traits::base_log_q>(unscaled->ct, *tensor, relinkey);
+    CKKSScaleDown<P, Traits::base_log_q, product_log_delta, Traits::log_scale>(res, *unscaled);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta, class RelinKey>

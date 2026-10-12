@@ -1,0 +1,679 @@
+{
+  "observed_at_utc": "2026-10-10T17:04:26.174469+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Sample all active indicator records and one zero record in each retained basis selector group. Exact fixed16 integer-NTT phase reference compared with adaptive production product. Does not check all ciphertext records, full evaluation-key suffix, security or performance.",
+  "fresh_keys_generated": false,
+  "noise_bound": 39,
+  "noise_sigma": 3.2,
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-selector-phase-samples-20261010",
+  "results": {
+    "small": {
+      "groups_checked": 35,
+      "selectors_checked": 92,
+      "phase_coefficients_checked": 47104,
+      "maximum_noise": 13,
+      "rows": [
+        {
+          "n": 512,
+          "tail": false,
+          "group": 0,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 1,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 2,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 3,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 4,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 5,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 6,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 7,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 8,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 9,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 10,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 11,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 9,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 12,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 13,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 14,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 15,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 16,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 17,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 18,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 19,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 12,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 20,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 21,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 22,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 23,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 24,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 9,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 25,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 26,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 27,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 28,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 29,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 10,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": false,
+          "group": 30,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 1024,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": true,
+          "group": 0,
+          "selectors_checked": 7,
+          "phase_coefficients_checked": 3584,
+          "maximum_noise": 12,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": true,
+          "group": 1,
+          "selectors_checked": 9,
+          "phase_coefficients_checked": 4608,
+          "maximum_noise": 11,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": true,
+          "group": 2,
+          "selectors_checked": 9,
+          "phase_coefficients_checked": 4608,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 512,
+          "tail": true,
+          "group": 3,
+          "selectors_checked": 5,
+          "phase_coefficients_checked": 2560,
+          "maximum_noise": 10,
+          "passed": true
+        }
+      ],
+      "exit_code": 0
+    },
+    "full": {
+      "groups_checked": 36,
+      "selectors_checked": 98,
+      "phase_coefficients_checked": 3211264,
+      "maximum_noise": 16,
+      "rows": [
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 0,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 1,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 2,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 15,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 3,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 4,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 5,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 6,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 15,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 7,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 12,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 8,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 16,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 9,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 10,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 11,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 12,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 15,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 13,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 14,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 15,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 16,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 12,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 17,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 18,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 19,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 12,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 20,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 16,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 21,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 22,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 12,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 23,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 24,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 25,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 26,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 27,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 28,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 29,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": false,
+          "group": 30,
+          "selectors_checked": 2,
+          "phase_coefficients_checked": 65536,
+          "maximum_noise": 13,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": true,
+          "group": 0,
+          "selectors_checked": 8,
+          "phase_coefficients_checked": 262144,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": true,
+          "group": 1,
+          "selectors_checked": 8,
+          "phase_coefficients_checked": 262144,
+          "maximum_noise": 15,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": true,
+          "group": 2,
+          "selectors_checked": 8,
+          "phase_coefficients_checked": 262144,
+          "maximum_noise": 15,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": true,
+          "group": 3,
+          "selectors_checked": 8,
+          "phase_coefficients_checked": 262144,
+          "maximum_noise": 14,
+          "passed": true
+        },
+        {
+          "n": 32768,
+          "tail": true,
+          "group": 4,
+          "selectors_checked": 4,
+          "phase_coefficients_checked": 131072,
+          "maximum_noise": 15,
+          "passed": true
+        }
+      ],
+      "exit_code": 0
+    }
+  },
+  "negative_control": {
+    "copied_body_bit100_rejected": true,
+    "returncode": 2,
+    "rejection": "sampled selector phase failed 12-sigma noise bound",
+    "original_group_unchanged": true,
+    "original_group_sha256": "70989f6ee4e4b5abd2cfe849aad80f3a7d626f1c313530ce6d6764b18d742738"
+  },
+  "goal_complete": false,
+  "test_source_sha256": "64533dc1343e185840b25025d14e402784654b4ee25179e87190a727a265d985",
+  "frozen_executable_sha256": "eb0423e09255aafd7c25c23fe43b823c38c4a145727d30f20b6f075eebb8e382"
+}

@@ -1,0 +1,31 @@
+{
+  "observed_at_utc": "2026-10-09T04:59:04.331876+00:00",
+  "scope": "Sequential 2GiB Sage/NumPy actual-block rotation posterior samples; two independent seeds",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "rss_bytes": 17785925632,
+      "limit_bytes": 68719476736
+    },
+    {
+      "pid": 1812584,
+      "rss_bytes": 12902322176,
+      "limit_bytes": 34359738368
+    }
+  ],
+  "available_memory_bytes": 101084585984,
+  "required_available_memory_bytes": 87423352832,
+  "launch_eligible": true,
+  "probability_sessions": [
+    81055,
+    79173
+  ],
+  "probability_runs_terminal": true,
+  "cost_sessions": [
+    11852,
+    30086,
+    60109
+  ],
+  "cost_runs_terminal": true,
+  "all_actual_exit_codes_zero": true
+}

@@ -1,0 +1,32 @@
+{
+  "observed_at_utc": "2026-10-10T18:07:28.689416+00:00",
+  "scope": "Early release of matrix-only permutation and base-spectrum buffers before inverse CRT/conjugation; retained N512 all-function replay qualification. Full N32768 component retry pending.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "setup_generation_count": 0,
+  "ciphertext_identity": {
+    "sigmoid": {
+      "exact": true,
+      "sha256": "5f305d3359263666cafa2ecf6126483f3c3cfa68284ee272c35eb7767a2772c4"
+    },
+    "gelu": {
+      "exact": true,
+      "sha256": "d229ade2aba24954149111818305f7fae045cc70e13a5abcf5c674460c2e3663"
+    },
+    "tanh": {
+      "exact": true,
+      "sha256": "69c3992958693cceb8c460fcf8e3ce751455a596669aeaa4ce2134b469541112"
+    }
+  },
+  "accuracy_passed": true,
+  "previous_independent_phase_evidence": "narrow-dd-prepared-selector-ntt-cache-validation.json",
+  "full_n32768_component_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false,
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "fa01caba7151e261b5e63d37c78bc6257ffd89a6fea446764a5b868cc1910d09",
+    "TFHEpp/test/ckks/ckks_narrow_basis_factor_cache_checkpoint.cpp": "56cd968f8d07a6b9feda08ac2d06f1c73acb3cc34bc7187372f75aa4e6019044",
+    "TFHEpp/test/ckks/ckks_narrow_basis_replay.cpp": "0b54453e976ed6f26f970d3edcfebf1094b2e16e5f484968c00809c0d1fd998b"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "scope": "Exercise the independent packed phase validator with synthetic archive controls.\n\nThese files have no evaluation keys and are not encrypted refresh evaluations.\nRetained production ciphertext validation is separate evidence.\n",
+  "all_passed": true,
+  "synthetic_archive_cases": [
+    {
+      "n": 512,
+      "endian": "<",
+      "maximum_error": 2.7755624404683795e-15
+    },
+    {
+      "n": 512,
+      "endian": ">",
+      "maximum_error": 2.7755624404683795e-15
+    },
+    {
+      "n": 16384,
+      "endian": "<",
+      "maximum_error": 1.0842021724855044e-19
+    }
+  ],
+  "rejected_controls": [
+    "bad-byte-order",
+    "truncated-header",
+    "wrong-magic",
+    "wrong-function",
+    "nonternary-secret",
+    "invalid-structured-secret",
+    "truncated-input",
+    "truncated-refresh",
+    "square-suffix",
+    "refresh-used-as-square",
+    "square-used-as-refresh",
+    "reported-metric",
+    "reported-ring",
+    "reported-accuracy",
+    "changed-gate",
+    "nonfinite-square"
+  ],
+  "rejection_count": 16,
+  "production_full_ring_accuracy_validated": false,
+  "security_validated": false,
+  "utc": "2026-10-10T06:10:48.975940+00:00",
+  "source_sha256": {
+    "narrow_ckks_packed_checkpoint_validate.py": "7047681affca5e818e15a4c8a5041908abfe6c9808270cf640af1ae064495918",
+    "narrow_ckks_packed_checkpoint_controls.py": "735c6bc64d00e436ee3d7b1459c29fe45c7fe070fd9ad538a3faaa43a4382317",
+    "narrow_ckks_prefix_arithmetic.py": "7f552abcef41d0d87b3031759505e1ff00190267e4754c8e10bed234d7f8d044"
+  }
+}

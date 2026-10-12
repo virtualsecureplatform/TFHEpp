@@ -1,0 +1,241 @@
+{
+  "utc": "2026-10-09T06:24:32.529923+00:00",
+  "scope": "Validate MPFR repair of pinned hybrid probability underflow, not security.",
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "sources": {
+    "/workspace/Parameter-Selection/python/estimates/narrow_ckks_joint_probability_validate.py": "4d18be3675b3b4a8978ef2fdfb3435dcd5fd4232ca8dab212906622d8ef8eb42",
+    "/workspace/Parameter-Selection/python/estimates/narrow_ckks_block_ring_joint_decode.py": "1cbe05e0c37e6503cd530c697de01449f8d9ac2bb967a10088db712cd84a59b1",
+    "/workspace/Parameter-Selection/python/estimates/narrow_ckks_ll14_rotation_z14560-s5.json": "f72d1361b2ef2b99a793cb84e3b3cd6da09abdefb3ce5f10827e879ec5c01bd8"
+  },
+  "amplification": [
+    {
+      "probability": "0.25",
+      "trial_bits": 4.087462841250339,
+      "relative_log2_error": 0.0
+    },
+    {
+      "probability": "0.5",
+      "trial_bits": 2.807354922057604,
+      "relative_log2_error": 0.0
+    },
+    {
+      "probability": "0.99",
+      "trial_bits": 0.0,
+      "relative_log2_error": 0.0
+    },
+    {
+      "probability": "1",
+      "trial_bits": 0.0,
+      "relative_log2_error": 0.0
+    },
+    {
+      "probability": "1e-332",
+      "trial_bits": 1105.083381975304,
+      "relative_log2_error": 9.670888009157977e-155
+    }
+  ],
+  "points": [
+    {
+      "model": "BDGL16",
+      "beta": 174,
+      "d": 3671,
+      "joint": "8.48548807177396816545135807532114414473255778187933172875989471269778615849313921271621411227743640774923389547002181798576869599746477865214058531259883e-332",
+      "backend_probability": "0.0",
+      "backend_probability_parent": "Real Double Field",
+      "backend_missing": true,
+      "repaired_bits": 1202.0670647035831,
+      "finite_control_log2_difference": null,
+      "independent_reference_bits": 1202.0670647035831
+    },
+    {
+      "model": "BDGL16",
+      "beta": 182,
+      "d": 3415,
+      "joint": "1.50860300870790296294633840404360150817317656573065351644373564762086224940090151653716057992152091539799033367221200608603187787761037457112057073314918e-195",
+      "backend_probability": "1.5086030087079028e-195",
+      "backend_probability_parent": "Real Double Field",
+      "backend_missing": false,
+      "repaired_bits": 749.2461491196609,
+      "finite_control_log2_difference": 0.0,
+      "independent_reference_bits": 749.2461491196609
+    },
+    {
+      "model": "BDGL16",
+      "beta": 206,
+      "d": 3351,
+      "joint": "2.88914000704191166452610548366311973682055428400703813958215206757180691729861441322547417640388151567651008437240229629127428944388141423058202229652819e-44",
+      "backend_probability": "2.8891400070419113e-44",
+      "backend_probability_parent": "Real Double Field",
+      "backend_missing": false,
+      "repaired_bits": 246.64682497394563,
+      "finite_control_log2_difference": 0.0,
+      "independent_reference_bits": 246.64682497394563
+    },
+    {
+      "model": "BDGL16",
+      "beta": 230,
+      "d": 3223,
+      "joint": "1.60918460782573109227999009382989122476077193750036886639968287550947157476641336620899419745083580491454689467201021646583650506870704115793910876368699e-15",
+      "backend_probability": "1.6091846078257311e-15",
+      "backend_probability_parent": "Real Double Field",
+      "backend_missing": false,
+      "repaired_bits": 151.4812633464676,
+      "finite_control_log2_difference": 0.0,
+      "independent_reference_bits": 151.4812633464676
+    },
+    {
+      "model": "MATZOV",
+      "beta": 174,
+      "d": 3671,
+      "joint": "8.48548807177396816545135807532114414473255778187933172875989471269778615849313921271621411227743640774923389547002181798576869599746477865214058531259883e-332",
+      "backend_probability": "0.0",
+      "backend_probability_parent": "Real Double Field",
+      "backend_missing": true,
+      "repaired_bits": 1202.0670651382975,
+      "finite_control_log2_difference": null,
+      "independent_reference_bits": 1202.0670651382975
+    },
+    {
+      "model": "MATZOV",
+      "beta": 182,
+      "d": 3415,
+      "joint": "1.50860300870790296294633840404360150817317656573065351644373564762086224940090151653716057992152091539799033367221200608603187787761037457112057073314918e-195",
+      "backend_probability": "1.5086030087079028e-195",
+      "backend_probability_parent": "Real Double Field",
+      "backend_missing": false,
+      "repaired_bits": 749.2461484822054,
+      "finite_control_log2_difference": 0.0,
+      "independent_reference_bits": 749.2461484822054
+    },
+    {
+      "model": "MATZOV",
+      "beta": 206,
+      "d": 3351,
+      "joint": "2.88914000704191166452610548366311973682055428400703813958215206757180691729861441322547417640388151567651008437240229629127428944388141423058202229652819e-44",
+      "backend_probability": "2.8891400070419113e-44",
+      "backend_probability_parent": "Real Double Field",
+      "backend_missing": false,
+      "repaired_bits": 246.6458107716434,
+      "finite_control_log2_difference": 0.0,
+      "independent_reference_bits": 246.6458107716434
+    },
+    {
+      "model": "MATZOV",
+      "beta": 230,
+      "d": 3223,
+      "joint": "1.60918460782573109227999009382989122476077193750036886639968287550947157476641336620899419745083580491454689467201021646583650506870704115793910876368699e-15",
+      "backend_probability": "1.6091846078257311e-15",
+      "backend_probability_parent": "Real Double Field",
+      "backend_missing": false,
+      "repaired_bits": 151.30191098104714,
+      "finite_control_log2_difference": 0.0,
+      "independent_reference_bits": 151.30191098104714
+    }
+  ],
+  "passed": true,
+  "security_validated": false,
+  "cause": "Sage multiplication with Real Double Field coerces the positive MPFR joint probability to double zero",
+  "repair": "Preserve backend result; use the same geometry and cost formula with MPFR joint probability and log1p only when backend multiplication is zero",
+  "adapter_run_session": 54485,
+  "adapter_run_terminal": true,
+  "adapter_run_actual_exit_code": 0,
+  "validator_session": 53981,
+  "validator_terminal": true,
+  "validator_actual_exit_code": 0,
+  "historical_grid_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_joint_q64_z14560-s5.json",
+  "historical_grid_sha256": "c14c04a80dbb1a3da4732465fb5f7e880f3abc5fc23cbec10d8d5ad16e0b1ab5",
+  "repaired_grid_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_joint_q64_z14560-s5_underflow_repair.json",
+  "repaired_grid_sha256": "59fe83a212ac54ccce5a4151f2c541b7d0b72d73c5f9a0b9f68776404de82c47",
+  "repaired_costs": [
+    {
+      "model": "BDGL16",
+      "beta": 174,
+      "d": 3671,
+      "case": "common_decoder",
+      "bits": 1202.0670647035831
+    },
+    {
+      "model": "BDGL16",
+      "beta": 174,
+      "d": 3671,
+      "case": "independent_decoder",
+      "bits": 1199.0888522545667
+    },
+    {
+      "model": "BDGL16",
+      "beta": 174,
+      "d": 3671,
+      "case": "optimistic_joint_bound",
+      "bits": 1199.0888522545667
+    },
+    {
+      "model": "BDGL16",
+      "beta": 174,
+      "d": 3671,
+      "case": "common_decoder_iid95",
+      "bits": 1201.841527027699
+    },
+    {
+      "model": "BDGL16",
+      "beta": 174,
+      "d": 3671,
+      "case": "independent_decoder_iid95",
+      "bits": 1199.0888522545667
+    },
+    {
+      "model": "BDGL16",
+      "beta": 174,
+      "d": 3671,
+      "case": "optimistic_joint_bound_iid95",
+      "bits": 1199.0888522545667
+    },
+    {
+      "model": "MATZOV",
+      "beta": 174,
+      "d": 3671,
+      "case": "common_decoder",
+      "bits": 1202.0670651382975
+    },
+    {
+      "model": "MATZOV",
+      "beta": 174,
+      "d": 3671,
+      "case": "independent_decoder",
+      "bits": 1199.0888526892813
+    },
+    {
+      "model": "MATZOV",
+      "beta": 174,
+      "d": 3671,
+      "case": "optimistic_joint_bound",
+      "bits": 1199.0888526892813
+    },
+    {
+      "model": "MATZOV",
+      "beta": 174,
+      "d": 3671,
+      "case": "common_decoder_iid95",
+      "bits": 1201.8415274624133
+    },
+    {
+      "model": "MATZOV",
+      "beta": 174,
+      "d": 3671,
+      "case": "independent_decoder_iid95",
+      "bits": 1199.0888526892813
+    },
+    {
+      "model": "MATZOV",
+      "beta": 174,
+      "d": 3671,
+      "case": "optimistic_joint_bound_iid95",
+      "bits": 1199.0888526892813
+    }
+  ],
+  "previous_missing_costs": 12,
+  "remaining_missing_costs": 0,
+  "finite_unchanged_or_repaired_costs": 12936,
+  "lowest_searched_optimistic_endpoint_bits": 130.8559031670172,
+  "historical_raw_reports_preserved": true,
+  "initial_validator_serialization_failure": "Direct float evaluation of symbolic log of a huge integer produced infinity; validator now explicitly converts trial counts to MPFR before logarithms"
+}

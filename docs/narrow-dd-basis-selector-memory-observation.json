@@ -1,0 +1,22 @@
+{
+  "observed_at_utc": "2026-10-10T17:24:27.314516+00:00",
+  "scope": "Compiled N32768 lean-basis current default48-bit selector payload planning, compared with host memory and paper Section8.2. Not a measured timing breakdown or proof of cause for the whole runtime gap.",
+  "source_storage_profile": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-joint-input-tiles-20261010/full-storage.json",
+  "n": 32768,
+  "selector_count": 38088,
+  "raw_selector_bytes": 179721732096,
+  "ntt_bytes_per_selector": 11534336,
+  "complete_default_ntt_selector_payload_bytes": 439319789568,
+  "complete_default_ntt_selector_payload_gib": 409.1484375,
+  "host_physical_memory_bytes": 134843355136,
+  "host_physical_memory_gib": 125.58266067504883,
+  "host_effective_cpu_set": "0-23",
+  "paper_setup": "Section8.2: dual-socket AMD EPYC7K62,1TB DDR4-3200, SMT disabled. Table7 high precision measurements use48 CPU cores.",
+  "raw_selectors_exceed_host_physical_memory": true,
+  "full_default_ntt_cache_exceeds_host_physical_memory": true,
+  "evaluation_implementation": "Current file-backed factors load raw selector groups and prepare exact NTT chunks on each selector pass; compatible-key reuse skips key generation but does not eliminate these per-pass NTT transforms.",
+  "paper_storage_observation": "Section5 says sparse-operator nonzero values are the NTT coefficients stored in the corresponding selector components; the torus port instead reconstructs exact convolutions from small limbs.",
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "goal_complete": false
+}

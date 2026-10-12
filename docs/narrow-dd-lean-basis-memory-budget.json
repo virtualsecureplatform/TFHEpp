@@ -1,0 +1,31 @@
+{
+  "scope": "Conservative full N32768 process envelope from compiled payloads; combines disjoint buffers and adds runtime reserve; not measured RSS",
+  "profile": "selector518-rootDelta47-plain39-coeff31-aux44-native576-Bg18-Bbar8",
+  "frequency_columns": 9,
+  "selector_chunk_size": 40,
+  "persistent_key_and_plan_bytes": 16509894896,
+  "conservative_factor_phase_payload_bytes": 33597489392,
+  "product_phase_payload_bytes": 22079930608,
+  "additional_factor_accum_bytes": 84934656,
+  "permutation_bytes": 277348352,
+  "temporary_and_runtime_reserve_bytes": 10737418240,
+  "estimated_process_envelope_bytes": 44697190640,
+  "proposed_virtual_address_space_limit_bytes": 51539607552,
+  "file_selector_payload_bytes": 179721732096,
+  "full_size_validation_passed": true,
+  "job_launched": true,
+  "job_session_id": 37497,
+  "job_pid": 1643002,
+  "virtual_address_limit_kib": 50331648,
+  "launch_mem_available_kib": 47297240,
+  "completed_functions": [
+    "sigmoid",
+    "gelu",
+    "tanh"
+  ],
+  "active_function": null,
+  "job_exit_code": 0,
+  "measured_peak_rss_kib": 29744128,
+  "selector_cleanup_verified": true,
+  "elapsed_wall_time": "8:45:48"
+}

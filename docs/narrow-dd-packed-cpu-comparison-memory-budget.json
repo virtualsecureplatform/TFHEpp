@@ -1,0 +1,52 @@
+{
+  "utc": "2026-10-09T06:57:18.604299+00:00",
+  "scope": "Sequential N512 CPU packed-file comparison; independent keys/inputs, two threads, one sample each",
+  "private_root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cpu-comparison-20261009-_2_51_72",
+  "binaries": {
+    "old-mapped": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cpu-comparison-20261009-_2_51_72/old-mapped",
+      "sha256": "adb3e8de06776453bbdff609187fc9bbcba44994b64aac18a292e7179fab9556",
+      "source": "/proc/1756575/exe",
+      "bytes": 240970704
+    },
+    "current": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cpu-comparison-20261009-_2_51_72/current",
+      "sha256": "30737489e19f92fa0d4c92822903cc958febde31fb5fe1cb52851aaaa4c39a4e",
+      "source": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_benchmark",
+      "bytes": 249032912
+    }
+  },
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17784176640,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1823852,
+      "start_ticks": 217158705,
+      "rss_bytes": 12648435712,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 100929761280,
+  "required_bytes": 87678988288,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_cap_bytes": 4294967296,
+  "threads": 2,
+  "eligible": true,
+  "current_source_sha256": {
+    "test/ckks/ckks_narrow_benchmark.cpp": "7b26c8346bc50ff1f65c4f6011f6e7997d666df7e7ac7ae461e573acd6c1b9d3",
+    "include/ckks/narrow_bootstrapping.hpp": "60ffcdbd18d5ea4057e6eb7348ce83c687816e46938bef014d01a9efa8217f8d",
+    "include/ckks/ckks.hpp": "4e11d00df1c72f505f6635cf115810ec21299d85d19f538c73b1c2b0653c2372",
+    "include/mulfft.hpp": "0b9b7c957e57ffff0262c2a11160fab99ed1af095cc1b64d4979a761b7e14c2f"
+  },
+  "old_workspace_sources_not_recovered": true,
+  "no_full_job_restart": true,
+  "no_cuda_code_restored": true,
+  "hardware_sampling_unavailable": "perf_event_paranoid=4; perf stat access denied",
+  "test_session": 73093,
+  "test_terminal": true,
+  "test_actual_exit_code": 0
+}

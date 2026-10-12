@@ -1,0 +1,72 @@
+{
+  "observed_utc": "2026-10-11T09:12:18.551625+00:00",
+  "scope": "Completed eight-worker ALL retained-key evaluation, all independent decoders/archive identities, and all37 post-evaluation file hashes. Concurrent I/O/cache conditions prevent controlled performance comparison.",
+  "evaluator_actual_exit_code": 0,
+  "report_sha256": "7c8948940eccea9ceacb07dea2253154c2bedaedc81057686d61ae790cc6df70",
+  "timing_containment_passed": true,
+  "omp_num_threads": 8,
+  "shared_coefficient_prepare_seconds": 497.342807442,
+  "shared_root_generation_seconds": 2420.288122248,
+  "exclusive_root_stages": {
+    "input_and_factor_cache": 3.223585909,
+    "leaf_factors_and_inline_alignment": 1597.98229039,
+    "bounded_tail_alignment": 364.402589597,
+    "dd_cache_preparation": 10.140318345,
+    "dd_trees_and_beta": 444.45658805
+  },
+  "nested_factor_stages": {
+    "selector_load": 423.882939684,
+    "table_ntt": 15.643751133999999,
+    "selector_ntt": 296.4173814390001,
+    "matrix": 744.3441529330001,
+    "inverse_crt": 17.207189549,
+    "conjugation": 98.67853511999998
+  },
+  "root_stage_residual_seconds": 0.08274995700003274,
+  "function_reconstruction_seconds": {
+    "sigmoid": 3.447453225,
+    "gelu": 3.47771454,
+    "tanh": 12.632516542
+  },
+  "comparison_with_four_workers": {
+    "four_worker_shared_prepare_plus_roots_seconds": 2873.073082945,
+    "eight_worker_shared_prepare_plus_roots_seconds": 2917.63092969,
+    "observed_fractional_increase": 0.015508775954744092,
+    "controlled_speedup_demonstrated": false
+  },
+  "full_controller_terminal": true,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "default_worker_count_changed": false,
+  "independent_phase_checks_passed": true,
+  "ciphertext_identity": {
+    "sigmoid": true,
+    "gelu": true,
+    "tanh": true
+  },
+  "independent_metrics": {
+    "sigmoid": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 5.263058323660706e-09,
+      "post_refresh_product_max_error": 9.472418715013627e-09,
+      "square_normalization_max_error": 2.692538244943504e-09
+    },
+    "gelu": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 1.5541199769161976e-08,
+      "post_refresh_product_max_error": 1.262155845454321e-07,
+      "square_normalization_max_error": 2.15174226503516e-09
+    },
+    "tanh": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 2.0760775289823365e-08,
+      "post_refresh_product_max_error": 5.73710758396451e-08,
+      "square_normalization_max_error": 2.3742523121777745e-09
+    }
+  },
+  "retained_files_postcheck_pending": false,
+  "full_controller_actual_exit_code": 0,
+  "checkpoint_files_checked": 37,
+  "checkpoint_files_unchanged": true,
+  "validation_evidence_sha256": "f116a96bbb4589884b144bc8731e6585bbdcf1333f9063e744db3eaa7f7f8d45"
+}

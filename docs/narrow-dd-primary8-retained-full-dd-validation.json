@@ -1,0 +1,99 @@
+{
+  "scope": "N16384 retained primary4 DD chain projected to primary8 with unchanged secondary4 rows; independent exact key phases, switch coefficients and phase-noise bounds at all five tree levels. No new keys; not a full refresh, propagated product-tree accuracy, security or paper performance qualification.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin",
+  "child_cap_bytes": 2147483648,
+  "stage": "complete",
+  "build_actual_exit_code": 0,
+  "source_sha256": {
+    "TFHEpp/include/ckks/compact_dd.hpp": "ac8e139f80ab5255d4574fb4bf0aa1529d104866faa272fa92cef684c41c3d76",
+    "TFHEpp/test/ckks/ckks_narrow_dd_exact.cpp": "6532760cf0597a8b91f68053db4be6b5e42b3e5f196e9bdf4769f5cc6fc2920a"
+  },
+  "first_build_failed_due_to_outdated_tree_cache_type": true,
+  "tree_cache_type_corrected_to_schedule_factory": true,
+  "updated_utc": "2026-10-10T15:17:51.645037+00:00",
+  "exe_sha256": "33e34536ef6dde6292f2270f990750a43717282dbb6af4a1ac19d1411ffe2bd0",
+  "state_sha256_before": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "child_pid": 1950928,
+  "child_start_ticks": 229202013,
+  "actual_exit_code": 0,
+  "completed_levels": [
+    348,
+    300,
+    252,
+    204,
+    156
+  ],
+  "exact_switched_coefficients_checked": 163840,
+  "independent_switched_phase_coefficients_checked": 81920,
+  "state_sha256_after": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "original_state_unchanged": true,
+  "frozen_exe_unchanged": true,
+  "levels": [
+    {
+      "log_q": 348,
+      "primary_rows_before": 87,
+      "primary_rows_after": 44,
+      "secondary_rows": 87,
+      "independent_key_phase_coefficients_checked": 720896,
+      "maximum_retained_key_noise": 14,
+      "independent_switch_phase_coefficients_checked": 16384,
+      "maximum_switch_phase_noise": 704459,
+      "switch_phase_convolution_bound": 1291845632
+    },
+    {
+      "log_q": 300,
+      "primary_rows_before": 75,
+      "primary_rows_after": 38,
+      "secondary_rows": 75,
+      "independent_key_phase_coefficients_checked": 622592,
+      "maximum_retained_key_noise": 14,
+      "independent_switch_phase_coefficients_checked": 16384,
+      "maximum_switch_phase_noise": 654318,
+      "switch_phase_convolution_bound": 1115684864
+    },
+    {
+      "log_q": 252,
+      "primary_rows_before": 63,
+      "primary_rows_after": 32,
+      "secondary_rows": 63,
+      "independent_key_phase_coefficients_checked": 524288,
+      "maximum_retained_key_noise": 14,
+      "independent_switch_phase_coefficients_checked": 16384,
+      "maximum_switch_phase_noise": 557971,
+      "switch_phase_convolution_bound": 939524096
+    },
+    {
+      "log_q": 204,
+      "primary_rows_before": 51,
+      "primary_rows_after": 26,
+      "secondary_rows": 51,
+      "independent_key_phase_coefficients_checked": 425984,
+      "maximum_retained_key_noise": 14,
+      "independent_switch_phase_coefficients_checked": 16384,
+      "maximum_switch_phase_noise": 535463,
+      "switch_phase_convolution_bound": 763363328
+    },
+    {
+      "log_q": 156,
+      "primary_rows_before": 39,
+      "primary_rows_after": 20,
+      "secondary_rows": 39,
+      "independent_key_phase_coefficients_checked": 327680,
+      "maximum_retained_key_noise": 14,
+      "independent_switch_phase_coefficients_checked": 16384,
+      "maximum_switch_phase_noise": 497232,
+      "switch_phase_convolution_bound": 587202560
+    }
+  ],
+  "selected_compact_digits_compared": 353894400,
+  "primary_rows_before": 315,
+  "primary_rows_after": 160,
+  "independent_key_phase_coefficients_checked": 2621440,
+  "max_rss_kib": 1562300,
+  "test_log_sha256": "0ce0f416e8ba7a9890eb44bb81c2bdc5599c9a2c9a07dd570c4f122165d8f328",
+  "default_primary_parameters_changed": false,
+  "full_refresh_projected_dd_validated": false
+}

@@ -1,0 +1,210 @@
+{
+  "scope": "CPU reconstruction replay from retained public N512 packed archive, independent arbitrary-precision sums of all original ordered reference terms; two derived-cache depths. No encryption keys generated. N16384 CLI is compiled but full encrypted reconstruction remains pending.",
+  "terminal": true,
+  "fresh_keys_generated": false,
+  "runs": [
+    {
+      "label": "reconstruct-depth2",
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "report": {
+        "n": 512,
+        "fresh_keys_generated": false,
+        "archive_validated": true,
+        "reconstructed": true,
+        "cached_depths": 2,
+        "prepare_seconds": 0.035469306,
+        "reconstruction_seconds": 12.738946649
+      }
+    },
+    {
+      "label": "oracle-depth2",
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "report": {
+        "n": 512,
+        "reference_terms": 2048,
+        "selectors": 595,
+        "coefficients_checked": 609280,
+        "independent_integer_sums_passed": true
+      }
+    },
+    {
+      "label": "reconstruct-depth3",
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "report": {
+        "n": 512,
+        "fresh_keys_generated": false,
+        "archive_validated": true,
+        "reconstructed": true,
+        "cached_depths": 3,
+        "prepare_seconds": 0.053224538,
+        "reconstruction_seconds": 11.419272022
+      }
+    },
+    {
+      "label": "oracle-depth3",
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "report": {
+        "n": 512,
+        "reference_terms": 2048,
+        "selectors": 595,
+        "coefficients_checked": 609280,
+        "independent_integer_sums_passed": true
+      }
+    },
+    {
+      "label": "refuse-existing-destination",
+      "actual_exit_code": 2,
+      "expected_exit_code": 2,
+      "stdout": "",
+      "stderr": "destination already exists\n"
+    },
+    {
+      "label": "refuse-invalid-cache-depth",
+      "actual_exit_code": 2,
+      "expected_exit_code": 2,
+      "stdout": "",
+      "stderr": "supported cache depths are 0 through 4\n"
+    }
+  ],
+  "retained_files_before": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "source_sha256": {
+    "include/ckks/narrow_packed_file.hpp": "66ea433a16f90301dffd89d5c767a2c79f5fc850cef22d10cd20d003ee20b882",
+    "include/ckks/narrow_selector_file.hpp": "07ab48242d9a0114392045207c3c82d6bad17a5e321f95ce4a8edd52f905645e",
+    "include/ckks/narrow_bootstrapping.hpp": "fffe7fe43daa378ef28318f631e1fe6cf9d8879286520cdfaa4150bf980d665a",
+    "include/ckks/prepared_plain.hpp": "7f28ee58fe329b10a7d9dd91388bb55ba8d44d8673380ce066ef958e84a0e3bc",
+    "test/ckks/ckks_narrow_packed_archive.cpp": "b49d4c5a5a2c0207a70566c1c3f78b2482b39d1feb68930ebffb52ab98017431",
+    "test/ckks/ckks_narrow_packed_reconstruction_exact.cpp": "0f8697bd51951f3a5e92b76ff1d84ed6aaabb6eaed7285fa95e7e4591cefb9f0"
+  },
+  "executable_sha256": {
+    "ckks_narrow_packed_archive": "6459b873d16913555a4a78875ed32bd6316a13257ed4b960b6dbc924f3fa9d76",
+    "ckks_narrow_packed_reconstruction_exact": "f86c4a3ad42bc455bf7865e74fb61ef8093381d650f6db25aa0dcf9af3a9efce"
+  },
+  "selector_file_hashes_by_cached_depth": {
+    "2": {
+      "head-0.bin": "3aae5220da24eca4352aa52cd1b12ed8403a8c9224e7193a6fc30ab38727aa31",
+      "head-1.bin": "b52e6a5907267698b18bc2ff5df2412d3be67fd4c5598f2bb6e74c78984f3be5",
+      "head-10.bin": "eb8df7207afc574fc96e99ebebd469e6c4c87847d5b451987352e1cb61493c44",
+      "head-11.bin": "0948b4926f7e2ebdd80c35852a2085c2d0ce78d0b0008f72701ad4077bf59244",
+      "head-12.bin": "722c6034496cf38bb072029c6ff2ba2247a84b620e7f02ddb73d35e888dd832a",
+      "head-13.bin": "ae999bcd7b7d2d1d4f7e019924bfb8e847f158b71be6e7d7e3366e9eb7b0c83d",
+      "head-14.bin": "c1c6a722acadf14ef11d4304bba4e3801ba4a4549c304320c78b28c7104b1f8a",
+      "head-15.bin": "c9c2720efff79607e8e8e4a0541e495c22558e3e7847c2ac02eae08706589934",
+      "head-16.bin": "2a9498e916c95c52d424b99f8fa277b01b7929e214f8c9e16dce6855cce1d210",
+      "head-17.bin": "ac1052afca74ab3dfc3c42d53a0265aaced16fea170ecd49df3ee94f7303b8c0",
+      "head-18.bin": "7eb0c4480f3693d253f94ea8357b0a1d5c81491659655059faf0ebf0e87812b9",
+      "head-19.bin": "13a4f973b9489b02f8a2645d1ec3a0d3b205aa4d0a5b8d9ab11748787102e1b3",
+      "head-2.bin": "92669e1730a85ee6c58cd698e1d555d18f8c9d765b582357193e2bccc0fcf411",
+      "head-20.bin": "877d6a9d807f34a0cf21485b978384de04c4d92a6631ec59ed9b815b75525fdc",
+      "head-21.bin": "c37bc1fbba555119a736b2b3a5fee3452f4c4fecdb39967f6c0cde8926208fce",
+      "head-22.bin": "6cfedd3a105498a1985fc232db171f76b551885deb6eb283e83fa0572daa2fb7",
+      "head-23.bin": "0e542f38ff4b929b4f27d68de26b754bfdf3353907209c7e5ead5a5355bbbf39",
+      "head-24.bin": "a744d997f7cbd0b0bfcdc2294c1d03bd0682982e86a6e5548a9938dd7a4b3660",
+      "head-25.bin": "43fd8fb329d2028230223b87096f11c92c52b3efcf2877c927b3de7246fa7ad8",
+      "head-26.bin": "8fade334cc411be17203368db024001b49214c57cd538c8b45b2dcf6eb210850",
+      "head-27.bin": "b03a93ebfefbc3540db3c7cfab1bdb5d3e2267f107be6449985b6d2b2965a69e",
+      "head-28.bin": "917133693e9f3da82206aa822c40955cd71a69ee72f987a25d5e12ea8283a00b",
+      "head-29.bin": "2676ca329b6f7cb538feeae98e2cfd4e1fdace474567a5285be3264e8853d1ec",
+      "head-3.bin": "5315f60f9fa05df77e063891baff23989a1e95e2db693e99dacb2acc08d74056",
+      "head-30.bin": "785925f29c64374fe0facb1adbab430a0101916cfe1faa10ddff8b5983ff7e39",
+      "head-4.bin": "d25d87780d8c82416811d54244872bab66b0b29aa8c93945314b57c528be0956",
+      "head-5.bin": "65a19a2f5b620eb21ed98d56e30ad0fe0d9512369c1f1c873d09374d4e5dabef",
+      "head-6.bin": "e7f38e82833d866f79499aecdeb1bb01fafe1a0c579acceba09f0a557db00c50",
+      "head-7.bin": "8c093c00ebca665b83aa06b37286b9ad8ad2d1a33c7e1da376868ef64eec98ca",
+      "head-8.bin": "00befd2cdc81afb852eb05f3f3cf8152a5cb3ec36ddbcf8df40b845ac5d77f58",
+      "head-9.bin": "192ca3e69b23bf2e3f332153829589298bf60fb1897f3f85863bab4bffdb6626",
+      "tail-0.bin": "43579b1b965ac444490433805251ab94dff7f4146d03f41a9865470a54635ea8",
+      "tail-1.bin": "f9c1602430f7a20a47b05a914875ccbd5cd83c1c0c3501f5ba2e426e4d86f3ef",
+      "tail-2.bin": "255c26df924c5b81f344bdad4e97f1dcbe0a6e3e1b1a5064d9e2b0f186ad9cfb",
+      "tail-3.bin": "2004848ddde0642afd0e1e45eb3c5c2cd83c8d5d644b9170e0a47f9363a0981f"
+    },
+    "3": {
+      "head-0.bin": "3aae5220da24eca4352aa52cd1b12ed8403a8c9224e7193a6fc30ab38727aa31",
+      "head-1.bin": "b52e6a5907267698b18bc2ff5df2412d3be67fd4c5598f2bb6e74c78984f3be5",
+      "head-10.bin": "eb8df7207afc574fc96e99ebebd469e6c4c87847d5b451987352e1cb61493c44",
+      "head-11.bin": "0948b4926f7e2ebdd80c35852a2085c2d0ce78d0b0008f72701ad4077bf59244",
+      "head-12.bin": "722c6034496cf38bb072029c6ff2ba2247a84b620e7f02ddb73d35e888dd832a",
+      "head-13.bin": "ae999bcd7b7d2d1d4f7e019924bfb8e847f158b71be6e7d7e3366e9eb7b0c83d",
+      "head-14.bin": "c1c6a722acadf14ef11d4304bba4e3801ba4a4549c304320c78b28c7104b1f8a",
+      "head-15.bin": "c9c2720efff79607e8e8e4a0541e495c22558e3e7847c2ac02eae08706589934",
+      "head-16.bin": "2a9498e916c95c52d424b99f8fa277b01b7929e214f8c9e16dce6855cce1d210",
+      "head-17.bin": "ac1052afca74ab3dfc3c42d53a0265aaced16fea170ecd49df3ee94f7303b8c0",
+      "head-18.bin": "7eb0c4480f3693d253f94ea8357b0a1d5c81491659655059faf0ebf0e87812b9",
+      "head-19.bin": "13a4f973b9489b02f8a2645d1ec3a0d3b205aa4d0a5b8d9ab11748787102e1b3",
+      "head-2.bin": "92669e1730a85ee6c58cd698e1d555d18f8c9d765b582357193e2bccc0fcf411",
+      "head-20.bin": "877d6a9d807f34a0cf21485b978384de04c4d92a6631ec59ed9b815b75525fdc",
+      "head-21.bin": "c37bc1fbba555119a736b2b3a5fee3452f4c4fecdb39967f6c0cde8926208fce",
+      "head-22.bin": "6cfedd3a105498a1985fc232db171f76b551885deb6eb283e83fa0572daa2fb7",
+      "head-23.bin": "0e542f38ff4b929b4f27d68de26b754bfdf3353907209c7e5ead5a5355bbbf39",
+      "head-24.bin": "a744d997f7cbd0b0bfcdc2294c1d03bd0682982e86a6e5548a9938dd7a4b3660",
+      "head-25.bin": "43fd8fb329d2028230223b87096f11c92c52b3efcf2877c927b3de7246fa7ad8",
+      "head-26.bin": "8fade334cc411be17203368db024001b49214c57cd538c8b45b2dcf6eb210850",
+      "head-27.bin": "b03a93ebfefbc3540db3c7cfab1bdb5d3e2267f107be6449985b6d2b2965a69e",
+      "head-28.bin": "917133693e9f3da82206aa822c40955cd71a69ee72f987a25d5e12ea8283a00b",
+      "head-29.bin": "2676ca329b6f7cb538feeae98e2cfd4e1fdace474567a5285be3264e8853d1ec",
+      "head-3.bin": "5315f60f9fa05df77e063891baff23989a1e95e2db693e99dacb2acc08d74056",
+      "head-30.bin": "785925f29c64374fe0facb1adbab430a0101916cfe1faa10ddff8b5983ff7e39",
+      "head-4.bin": "d25d87780d8c82416811d54244872bab66b0b29aa8c93945314b57c528be0956",
+      "head-5.bin": "65a19a2f5b620eb21ed98d56e30ad0fe0d9512369c1f1c873d09374d4e5dabef",
+      "head-6.bin": "e7f38e82833d866f79499aecdeb1bb01fafe1a0c579acceba09f0a557db00c50",
+      "head-7.bin": "8c093c00ebca665b83aa06b37286b9ad8ad2d1a33c7e1da376868ef64eec98ca",
+      "head-8.bin": "00befd2cdc81afb852eb05f3f3cf8152a5cb3ec36ddbcf8df40b845ac5d77f58",
+      "head-9.bin": "192ca3e69b23bf2e3f332153829589298bf60fb1897f3f85863bab4bffdb6626",
+      "tail-0.bin": "43579b1b965ac444490433805251ab94dff7f4146d03f41a9865470a54635ea8",
+      "tail-1.bin": "f9c1602430f7a20a47b05a914875ccbd5cd83c1c0c3501f5ba2e426e4d86f3ef",
+      "tail-2.bin": "255c26df924c5b81f344bdad4e97f1dcbe0a6e3e1b1a5064d9e2b0f186ad9cfb",
+      "tail-3.bin": "2004848ddde0642afd0e1e45eb3c5c2cd83c8d5d644b9170e0a47f9363a0981f"
+    }
+  },
+  "selector_files_identical_across_cache_depths": true,
+  "selector_files_unchanged_after_rejection": true,
+  "retained_files_after": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "retained_files_unchanged": true,
+  "all_checks_passed": true,
+  "cmake_configure_actual_exit_code": 0,
+  "cmake_build_actual_exit_code": 0,
+  "cmake_built_replay_runs": [
+    {
+      "name": "ckks_narrow_packed_archive",
+      "actual_exit_code": 0,
+      "exe_sha256": "cec98746fc30ecd29b4648840f17a58d08ad1e2098983c0e7c5309ba8d9db369",
+      "report": {
+        "n": 512,
+        "fresh_keys_generated": false,
+        "archive_validated": true,
+        "reconstructed": true,
+        "cached_depths": 2,
+        "prepare_seconds": 0.034482916,
+        "reconstruction_seconds": 25.245990089
+      }
+    },
+    {
+      "name": "ckks_narrow_packed_reconstruction_exact",
+      "actual_exit_code": 0,
+      "exe_sha256": "1c5d1d0840ea31be6904be7ffbdfbfbfe6a03b72ad6b49c9ec08bdec61d51494",
+      "report": {
+        "n": 512,
+        "reference_terms": 2048,
+        "selectors": 595,
+        "coefficients_checked": 609280,
+        "independent_integer_sums_passed": true
+      }
+    }
+  ],
+  "cmake_built_selector_files_match_diagnostic": true,
+  "oracle_negative_control": {
+    "actual_exit_code": 2,
+    "stderr": "reconstructed selector differs from independent sum",
+    "copied_selector_payload_bit_flip_rejected": true,
+    "original_selector_files_unchanged": true
+  }
+}

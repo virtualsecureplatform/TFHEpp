@@ -1,0 +1,122 @@
+{
+  "observed_at_utc": "2026-10-10T09:53:14.521287+00:00",
+  "scope": "N16384 Q385 scale48 plain37 aux8 retained evaluation-key factor checks and stage timings; head30/tail4, frequencies1..12 on independent deterministic normalized tables",
+  "n": 16384,
+  "selector_log_q": 385,
+  "factor_log_q": 348,
+  "factor_key_log_q": 356,
+  "auxiliary_bits": 8,
+  "columns": 12,
+  "omp_threads": 4,
+  "build_session": 32538,
+  "build_actual_exit_code": 0,
+  "test_session": 42088,
+  "actual_exit_code": 0,
+  "terminal": true,
+  "fresh_keys_generated": false,
+  "retained_evaluation_keys_loaded": true,
+  "retained_files_checked": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin": {
+      "bytes": 6449139279,
+      "sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/head-30.bin": {
+      "bytes": 970719305,
+      "sha256": "449d2d5b6cae767497839c3c1e77388b4d344ca11c3dea5074aca22e77fe064f"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selectors-one-bit-diagnostic-v1/tail-4.bin": {
+      "bytes": 970719305,
+      "sha256": "a2177535add9da1f678470abd4231b248a6b2658bbd1283d78c263273e9a3f81"
+    }
+  },
+  "retained_files_unchanged": true,
+  "cases": [
+    {
+      "tail": false,
+      "group": 30,
+      "columns": 12,
+      "slots_checked": 98304,
+      "max_error": 1.2863243180697105e-09,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true,
+      "timings": {
+        "selector_load_seconds": 0.411281033,
+        "table_ntt_seconds": 0.139496768,
+        "selector_ntt_seconds": 7.795699456000001,
+        "matrix_seconds": 11.720578574999998,
+        "inverse_crt_seconds": 0.399659804,
+        "conjugation_seconds": 2.353569632
+      }
+    },
+    {
+      "tail": true,
+      "group": 4,
+      "columns": 12,
+      "slots_checked": 98304,
+      "max_error": 1.3537631754169615e-09,
+      "chunks_40_and_17_exact": true,
+      "single_columns_0_5_11_exact": true,
+      "accuracy_passed": true,
+      "timings": {
+        "selector_load_seconds": 0.342279352,
+        "table_ntt_seconds": 0.144205738,
+        "selector_ntt_seconds": 7.783660439999999,
+        "matrix_seconds": 11.748870705000002,
+        "inverse_crt_seconds": 0.411553703,
+        "conjugation_seconds": 2.323423397
+      }
+    }
+  ],
+  "decoded_slots_checked": 196608,
+  "chunk_ciphertext_coefficients_compared": 786432,
+  "single_column_ciphertext_coefficients_compared": 196608,
+  "target_tolerance": 1.1920928955078125e-07,
+  "metadata_negative_control": {
+    "expected_exit_code": 2,
+    "actual_exit_code": 2,
+    "invalid_metadata_rejected": true,
+    "evaluation_started": false
+  },
+  "source_sha256": {
+    "include/ckks/narrow_bootstrapping.hpp": "9e48c08100696bbcb8aa39f546fa8f884af55f0aea61c1b31a3932a131ce1102",
+    "include/ckks/prepared_auto.hpp": "7106c632b9c880c3cabe2fc6eed37608b92045f3018e32b322d09e88b3b2fb5c",
+    "test/ckks/ckks_narrow_factor_checkpoint.cpp": "74f48cad4eb8cac3866422f455d660667a9ba516f7c631882172d80ca45f71d1"
+  },
+  "launch": {
+    "observed_at_utc": "2026-10-10T09:49:40.227334+00:00",
+    "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/retained-factor-profile-20261010",
+    "time_pid": 1922107,
+    "exe_sha256": "33771090a876239af19d5c1b0770e11eae05dfd811c2cbc44446b06e8ffbbd51",
+    "available_memory_bytes": 114039726080,
+    "required_available_memory_bytes": 105226698752,
+    "child_address_space_limit_bytes": 25769803776,
+    "fresh_keys_generated": false,
+    "terminal": true,
+    "build_actual_exit_code": 0,
+    "actual_exit_code": 0,
+    "retained_files_unchanged": true
+  },
+  "artifacts": {
+    "test.log": {
+      "path": "TFHEpp/docs/narrow-dd-retained-factor-profile-test.log",
+      "sha256": "b4e4b5aeeb31fee48d2003663590f9fc18c182e1d4e1921751ef37f7c1a948e0"
+    },
+    "time.log": {
+      "path": "TFHEpp/docs/narrow-dd-retained-factor-profile-time.log",
+      "sha256": "3416f0fe61c7f7f5f29dca874cf8bc740c14231a404d616bf75cffecc542f7aa"
+    }
+  },
+  "stage_time_scope": "First chunk40 call per group only; selector load separate; no key-load/FFT-key preparation/chunk17/single-column/decryption time in reported stage values",
+  "recomposition_full_ring_validation_passed": true,
+  "performance_claim": "Observed factor-stage breakdown only; no controlled before/after speedup or whole-refresh timing",
+  "limitations": [
+    "Retained aux8 profile differs from packed Q379 scale49 profile",
+    "Expected slot target uses production table rotations/decryption, not independent end-to-end phase validation",
+    "Only final head/tail groups; does not prove every full refresh output under current source",
+    "Does not establish original selector-bit corruption origin or qualify security"
+  ],
+  "paper_performance_reproduced": false,
+  "goal_complete": false,
+  "next_optimization": "Precompute Shoup quotient for the repeatedly used plaintext-table entries rather than recomputing a quotient for every selector entry inside matrix multiplication; verify exact modular products and retained factors."
+}

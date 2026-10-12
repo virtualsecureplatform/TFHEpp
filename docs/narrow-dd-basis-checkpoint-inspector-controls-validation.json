@@ -1,0 +1,11 @@
+{
+  "scope": "Read-only N512 retained basis checkpoint inspector: profile/header/length checks, full payload hash manifest, tampered copied payload/header rejection; original fixture independently rechecked unchanged; not ciphertext phase or full-ring encrypted validation",
+  "all_checks_passed": true,
+  "selector_groups_checked": 35,
+  "reference_manifest_matches": true,
+  "payload_bit_flip_rejected": true,
+  "header_corruption_rejected": true,
+  "original_files_unchanged": true,
+  "fresh_keys_generated": false,
+  "inspector_sha256": "00b1f5cb9e0691be45a5639fde903b4885da9d4508a7ff21c3313861c2a94544"
+}

@@ -1,0 +1,53 @@
+{
+  "observed_at_utc": "2026-10-10T12:28:58.153081+00:00",
+  "scope": "Latest-source N16384 post-refresh square with original retained square key and previously passing corrected-selector sigmoid ciphertext; exact prior passing square and independent integer phase oracle",
+  "build_actual_exit_code": 0,
+  "actual_exit_code": 0,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "original_files_unchanged": true,
+  "input_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/untraced-one-bit-diagnostic-v1/replayed-prefix.bin": "95ec6468e2f634bf8368887719a2501f9c66db61967ff41c47de2e82e52a2782",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/square-untraced-one-bit-diagnostic-v1/square.bin": "7d784c049ef6547ca9cfbaa5d1b3b09949b83eccfa7c8cda3d4be585c5cdf321"
+  },
+  "report": {
+    "n": 16384,
+    "function": "sigmoid",
+    "fresh_keys_generated": false,
+    "log_q": 60,
+    "log_delta": 48,
+    "retained_square_evaluated": true,
+    "independent_phase_validated": false,
+    "post_refresh_product_max_error": 9.216953019217234e-09,
+    "rms_error": 2.4462853625423155e-09,
+    "target_amplitude": 1.3887772203090152,
+    "product_tolerance": 4.50319595316329e-07,
+    "product_accuracy_passed": true
+  },
+  "independent_phase": {
+    "n": 16384,
+    "function": "sigmoid",
+    "log_q": 60,
+    "log_delta": 48,
+    "post_refresh_product_max_error": 9.216969118541319e-09,
+    "rms_error": 2.4462852306032912e-09,
+    "target_amplitude": 1.3887772203090152,
+    "product_tolerance": 4.50319595316329e-07,
+    "product_accuracy_passed": true,
+    "independent_phase_validated": true,
+    "security_validated": false,
+    "retained_key_coefficients_validated": false
+  },
+  "square_sha256": "7d784c049ef6547ca9cfbaa5d1b3b09949b83eccfa7c8cda3d4be585c5cdf321",
+  "baseline_square_identical": true,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "9ff45d5d7ec32abcf1430770bdf9c0d6369f0f4e3e104eadadb1b9f69d6c05d9",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/compact_dd.hpp": "9ee1886deaa51d4faebbd47308f92754ff9c404c25f29aa2aaf9835e0ba296ab",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_auxiliary_square.cpp": "7b021c81fdbf3759021593d4707ec27c0e753cdfff2b0855e09749fc200f98a3"
+  },
+  "executable_sha256": "47623ab54e30d8bb7105fbaa7fa49db099326acbbb50d5b9551ec427192db615",
+  "latest_refresh_output_checked": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false
+}

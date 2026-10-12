@@ -1,0 +1,19 @@
+{
+  "observed_at_utc": "2026-10-09T05:15:02.193422+00:00",
+  "scope": "Sequential 2GiB Sage posterior histogram and joint-decoder sensitivity grids",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "rss_bytes": 17785925632,
+      "limit_bytes": 68719476736
+    },
+    {
+      "pid": 1812584,
+      "rss_bytes": 13758717952,
+      "limit_bytes": 34359738368
+    }
+  ],
+  "available_memory_bytes": 100122488832,
+  "required_available_memory_bytes": 86566957056,
+  "launch_eligible": true
+}

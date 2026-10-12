@@ -1,0 +1,981 @@
+{
+  "scope": "Candidate next CPU high-precision real functional profile using retained N16384 packed-key checkpoint. Explicit research plan, not a qualified profile or paper reproduction.",
+  "created_utc": "2026-10-11T15:37:17.584286+00:00",
+  "implemented": true,
+  "full_refresh_qualified": false,
+  "security_validated": false,
+  "paper_performance_reproduced": false,
+  "n": 16384,
+  "h": 31,
+  "storage_bits": 448,
+  "source_input_log_q": 48,
+  "input_log_delta": 44,
+  "s2c_plain_log_delta": 37,
+  "proposed_s2c_auxiliary_bits": 8,
+  "selector_log_q": 371,
+  "root_log_delta": 41,
+  "root_plain_log_delta": 34,
+  "factor_log_q": 337,
+  "factor_auxiliary_bits": 8,
+  "factor_key_log_q": 345,
+  "tree_depth": 5,
+  "relinearize_before_rescale": true,
+  "tree_dd_key_levels": [
+    337,
+    296,
+    255,
+    214,
+    173
+  ],
+  "root_output_log_q": 132,
+  "direct_series": true,
+  "proposed_final_level_reduce_log_q": 101,
+  "proposed_output_log_delta": 41,
+  "post_product_log_q": 60,
+  "post_product_log_delta": 41,
+  "verified_components": {
+    "retained_auto_reduction_aux8": "narrow-dd-auto-key-modulus-full-validation.json",
+    "sampled_selector_rescale": "narrow-dd-selector-rescale-reuse-full-validation.json",
+    "s2c": "narrow-dd-s2c-independent-scale-aux8-full-validation.json",
+    "default_compatibility": "narrow-dd-s2c-independent-scale-default-small-validation.json",
+    "compact_dd_modulus_projection_small": "narrow-dd-dd-key-modulus-reuse-validation.json",
+    "dd_full_tree": "narrow-dd-dd-retained-tree-full-validation.json"
+  },
+  "retained_key_reuse": {
+    "secret_keys": "Reuse dense and structured secrets; no fresh private keys required.",
+    "selectors": "Retained379/49 selectors used without per-selector rescaling. Compute factor345/49 using retained345 conjugation key, then rescale completed factors to337/41. Source matrix scratch digit60; no packed reconstruction.",
+    "factor_galois": "Existing345 matches proposed factor337+aux8 exactly.",
+    "output_conjugation": "Can publicly reduce retained factor-conjugation345 to140 for output132+aux8; lower109 already component-qualified, target140 still needs check.",
+    "s2c": "Separate S2C auxiliary scale implemented. Zero lift rejected at3.11e-7; aux8 passes2.63e-9 at input scale44. Reuse encoded old plan after public rebinding, project retained dense factor Galois345 to93/56. One new structured-switch EVALUATION key56 under retained dense/structured PRIVATE secrets was generated and saved for future reuse.",
+    "dd": "N16384 retained296->296/255/214/173/101 projections pass8585216 independent encrypted-coefficient checks. One required337 evaluation key generated under retained dense private key, saved and qualified by full32-leaf/five-level production DD tree. Complete tree raw/prepared identical, independent maxerror4.8656e-8. Functional runner loads the saved chain and generates no keys.",
+    "post_product": "N16384 retained296->101 projected key and before-rescale post-product independently qualified; saved with candidate chain."
+  },
+  "remaining_gates": [],
+  "s2c_input_key_log_q": 93,
+  "s2c_output_and_switch_key_log_q": 56,
+  "s2c_component_qualified": true,
+  "retained_s2c_switch56": {
+    "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+    "bytes": 25690145,
+    "sha256": "f60352ab8b2d61b623681055f98380bfaef250f7230f2c3f8ff3ee3c8f418f98",
+    "private_keys_generated": 0,
+    "evaluation_keys_generated": 1
+  },
+  "updated_utc": "2026-10-12T02:01:47.295829+00:00",
+  "implementation_scope": "Deferred factor rescaling integrated and sampled exact; complete Sigmoid error improved but still fails2^-23. No GeLU/Tanh launched after failure. Independent root noise isolation pending.",
+  "selector_matrix_digit_bits": 60,
+  "dd_tree_component_qualified": true,
+  "retained_dd_artifacts": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-retained-tree-full-20261011/dd337.bin": {
+      "bytes": 236748929,
+      "sha256": "047c43398f39db4bf3029bff32014e5530ebb4ef06bf1e1370279f19f1df91d1"
+    },
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-retained-tree-full-20261011/candidate-dd-chain.bin": {
+      "bytes": 731546057,
+      "sha256": "20abdbaf9faf63155f31cb9babd6271df451b5f776ddc77332126115a0961ad4"
+    }
+  },
+  "new_evaluation_keys_generated_since_original_checkpoint": 2,
+  "fresh_private_keys_generated": false,
+  "full_replay": {
+    "validation": "narrow-dd-ll14-retained-fbs-validation.json",
+    "session_id": 63497,
+    "state": "failed Sigmoid accuracy gate; terminal",
+    "source": "TFHEpp/test/ckks/ckks_narrow_ll14_retained_fbs.cpp",
+    "measured_seconds": 418.633324412,
+    "independent_max_error": 6.607062634211432e-07
+  },
+  "factor_scale_isolation": {
+    "validation": "narrow-dd-ll14-factor-scale-isolation-validation.json",
+    "state": "complete; independently confirmed",
+    "selector_prescale_max_sampled_error": 2.8230034896875436e-07,
+    "factor_postscale_max_sampled_error": 2.544779048951866e-08,
+    "deferred_rescale_integrated": true,
+    "full_refresh_qualified": false
+  },
+  "deferred_factor_integration": {
+    "validation": "narrow-dd-ll14-deferred-factor-integration-validation.json",
+    "ciphertext_coefficients_checked": 196608,
+    "exact_control_match": true,
+    "full_refresh_qualified": false
+  },
+  "retained_selector_log_q": 379,
+  "retained_selector_log_delta": 49,
+  "factor_before_rescale_log_q": 345,
+  "factor_before_rescale_log_delta": 49,
+  "corrected_full_replay": {
+    "validation": "narrow-dd-ll14-deferred-fbs-validation.json",
+    "session_id": 25760,
+    "state": "terminal failed Sigmoid accuracy",
+    "keys_generated": 0,
+    "input_reused": true,
+    "independent_max_error": 1.8779980296945628e-07,
+    "evaluation_seconds": 273.370467601
+  },
+  "default_small_regression": {
+    "validation": "narrow-dd-deferred-factor-default-small-validation.json",
+    "all_checks_passed": true,
+    "all_three_archives_identical": true,
+    "independent_accuracy_passed": true,
+    "checkpoint_files_checked": 36
+  },
+  "root_noise_isolation": {
+    "validation": "narrow-dd-ll14-root-noise-isolation-validation.json",
+    "session_id": 18655,
+    "state": "complete corrected independent measurement",
+    "metrics": {
+      "factor_product_vs_exact_phase_max_error": 3.2306199519744467e-07,
+      "evaluated_root_vs_factor_product_max_error": 9.284311166302363e-08,
+      "evaluated_root_vs_exact_phase_max_error": 3.217988056024047e-07
+    },
+    "full_refresh_qualified": false
+  },
+  "table_precision_isolation": {
+    "validation": "narrow-dd-ll14-factor-plain37-isolation-validation.json",
+    "session_id": 55983,
+    "state": "complete; independently confirmed sampled improvement",
+    "keys_generated": 0,
+    "all_checks_passed": true,
+    "max_original_error": 2.5357771229590693e-08,
+    "max_plain37_postscale41_error": 1.555076514329273e-08,
+    "integrated": false,
+    "full_refresh_qualified": false
+  },
+  "next_profile_component": {
+    "validation": "narrow-dd-ll14-plain37-scale42-root-validation.json",
+    "session_id": 66553,
+    "state": "complete measurement; unnormalized root fails accuracy",
+    "table_precision": 37,
+    "root_precision": 42,
+    "factor_log_q": 335,
+    "factor_auxiliary": 10,
+    "source_factor_log_q": 342,
+    "source_factor_auxiliary": 3,
+    "tree_key_levels": [
+      335,
+      293,
+      251,
+      209,
+      167
+    ],
+    "tree_output_log_q": 125,
+    "keys_generated": 0,
+    "full_functional_qualified": false
+  },
+  "public_mask_normalization": {
+    "implemented": true,
+    "prediction": "narrow-dd-ll14-public-mask-normalization-validation.json",
+    "encrypted_validation": "narrow-dd-ll14-normalized-root-validation.json",
+    "state": "component qualified; full Sigmoid passes; full GeLU fails",
+    "predicted_root_error": 7.658078511042717e-08,
+    "full_functional_qualified": false,
+    "encrypted_root_max_error": 7.670712720534593e-08,
+    "default_validation": "narrow-dd-public-mask-default-small-validation.json",
+    "default_all_checks_passed": true
+  },
+  "normalized_full_replay": {
+    "validation": "narrow-dd-ll14-plain37-scale42-fbs-validation.json",
+    "session_id": 75307,
+    "state": "terminal: Sigmoid passes; GeLU fails; Tanh not launched",
+    "source": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-plain37-scale42-fbs-20261011/replay.cpp",
+    "fresh_keys_generated": false,
+    "input_reused": true,
+    "full_refresh_qualified": false,
+    "repository_source": "TFHEpp/test/ckks/ckks_narrow_ll14_retained_fbs.cpp",
+    "sigmoid_qualified": true,
+    "sigmoid_independent_error": 6.131495672967217e-08,
+    "sigmoid_seconds": 273.897058871,
+    "all_checks_passed": false,
+    "gelu_independent_error": 1.84553768876719e-07
+  },
+  "normalized_profile": {
+    "root_log_delta": 42,
+    "table_plain_log_delta": 37,
+    "factor_log_q": 335,
+    "factor_auxiliary": 10,
+    "factor_key_log_q": 345,
+    "tree_key_levels": [
+      335,
+      293,
+      251,
+      209,
+      167
+    ],
+    "output_log_q": 125,
+    "output_level_reduced_log_q": 101,
+    "post_product_log_q": 59,
+    "public_mask_gain_correction": true
+  },
+  "next_component_profile": {
+    "validation": "narrow-dd-ll14-plain40-scale43-root-validation.json",
+    "session_id": 52306,
+    "state": "complete; normalized root residual remains8.10e-8",
+    "plain_precision": 40,
+    "root_precision": 43,
+    "matrix_digit_bits": 56,
+    "factor_log_q": 333,
+    "factor_auxiliary": 12,
+    "factor_key_log_q": 345,
+    "tree_key_levels": [
+      333,
+      290,
+      247,
+      204,
+      161
+    ],
+    "root_output_log_q": 118,
+    "keys_generated": 0,
+    "full_functional_qualified": false
+  },
+  "direct_selector_setup": {
+    "validation": "narrow-dd-ll14-direct-selector-setup-validation.json",
+    "session_id": 50909,
+    "pilot_validation": "narrow-dd-ll14-direct-selector-pilot-validation.json",
+    "pilot_all_checks_passed": true,
+    "new_public_selector_groups_planned": 34,
+    "reused_public_selector_groups": 2,
+    "new_private_keys": 0,
+    "new_automorphism_or_dd_keys": 0,
+    "state": "complete; all36 saved groups validated and reused",
+    "all_checks_passed": true,
+    "new_public_selector_groups": 34
+  },
+  "direct_full_replay": {
+    "validation": "narrow-dd-ll14-direct-fbs-validation.json",
+    "session_id": 54012,
+    "state": "complete",
+    "order": [
+      "gelu",
+      "tanh",
+      "sigmoid"
+    ],
+    "full_refresh_qualified": true,
+    "full_functional_qualified": true,
+    "completed_functions": {
+      "gelu": {
+        "max_error": 6.431479930813828e-08,
+        "precision_bits": 23.890274008609858,
+        "functional_evaluation_seconds": 271.455568213,
+        "remaining_level_verified": true
+      },
+      "tanh": {
+        "max_error": 6.979543207930684e-08,
+        "precision_bits": 23.772292140030434,
+        "functional_evaluation_seconds": 710.182669713,
+        "remaining_level_verified": true
+      },
+      "sigmoid": {
+        "max_error": 3.0995988684162995e-08,
+        "precision_bits": 24.943343236499892,
+        "functional_evaluation_seconds": 272.317250979,
+        "remaining_level_verified": true
+      }
+    },
+    "all_function_accuracy_and_remaining_level_passed": true,
+    "repository_runner_validation": "narrow-dd-ll14-direct-repo-runner-validation.json",
+    "retained_artifacts_unchanged": true
+  },
+  "packed_high_precision_pilot": {
+    "validation": "narrow-dd-ll14-packed-precision57-pilot-validation.json",
+    "all_checks_passed": true,
+    "packed_log_q": 435,
+    "selector_log_q": 387,
+    "selector_log_delta": 57,
+    "primary_bits": 8,
+    "sampled_terms": 16,
+    "independent_max_encoded_mask_error": 5.31991151960459e-12,
+    "private_keys_generated": 0,
+    "public_substitution_keys_generated_once": 14,
+    "public_indicator_ciphertexts_generated_once": 4,
+    "packed_archive": {
+      "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-pilot-20261011/packed435-primary8.bin",
+      "bytes": 1420296265,
+      "sha256": "edabb5da09912a47adc71d22bca73ad1cc14336b384b973d96c03e4ce4545878"
+    },
+    "full_functional_qualified": false
+  },
+  "packed_high_precision_reconstruction": {
+    "validation": "narrow-dd-ll14-packed-precision57-reconstruction-validation.json",
+    "session_id": 88587,
+    "controller_pid": 2057859,
+    "evaluator_pid": 2057861,
+    "evaluator_start_ticks": 239065886,
+    "state": "full cached reconstruction",
+    "cached_depths": 14,
+    "scratch_directory": "/tmp/ckks-packed-ll14-parallel-20261011",
+    "new_keys_generated": 0,
+    "wall_time_cap_seconds": 7200,
+    "prior_network_attempt": "narrow-dd-ll14-packed-precision57-network-accumulator-validation.json",
+    "full_reconstruction_qualified": false,
+    "parallel_mask_kernel": true,
+    "prior_local_attempt": "narrow-dd-ll14-packed-precision57-local-accumulator-validation.json",
+    "completed_terms": 2304,
+    "extraction_elapsed_seconds": 116.992,
+    "extraction_linear_total_estimate_seconds": 6010.055111111111
+  },
+  "packed_parallel_masks": {
+    "validation": "narrow-dd-packed-mask-parallel-profile-validation.json",
+    "all_checks_passed": true,
+    "full_ring_mask_ciphertexts_byte_identical": 12,
+    "mask_speedup": 2.582081189117643,
+    "parallel_extraction_validation": "narrow-dd-ll14-packed-precision57-parallel-pilot-validation.json",
+    "sampled_full_extraction_output_byte_identical": true,
+    "new_keys_generated_in_replay": 0,
+    "default_small_validation": "narrow-dd-packed-mask-parallel-default-small-validation.json",
+    "default_group_files_byte_identical": 35
+  },
+  "next_packed_root_component": {
+    "directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-root44-20261011",
+    "state": "compiled and queued behind original reconstruction",
+    "selector_log_q": 387,
+    "selector_log_delta": 57,
+    "plain_log_delta": 42,
+    "factor_source_log_q": 345,
+    "factor_log_q": 332,
+    "root_log_delta": 44,
+    "auxiliary_scale": 13,
+    "dd_chain": [
+      332,
+      288,
+      244,
+      200,
+      156
+    ],
+    "tree_output_log_q": 112,
+    "output_log_q": 101,
+    "post_product_log_q": 57,
+    "reuses_original_conjugation_key_log_q": 345,
+    "selector_matrix_digit_bits": 54,
+    "build_actual_exit_code": 0,
+    "output_conjugation_key_log_q": 125,
+    "validation": "narrow-dd-ll14-packed-precision57-root44-validation.json",
+    "session_id": 43723
+  },
+  "wide_primary_dd_ntt_component": {
+    "validation": "narrow-dd-wide-primary-ntt-component-validation.json",
+    "all_checks_passed": true,
+    "public_dd_keys_generated_once": 1,
+    "private_keys_generated": 0,
+    "repository_replay_new_keys": 0,
+    "primary_bits": 64,
+    "secondary_bits": 32,
+    "auxiliary_log_scale": 100,
+    "data_log_q": 333,
+    "key_log_q": 433,
+    "one_level_output_log_q": 290,
+    "log_delta": 43,
+    "max_output_error": 2.2908387278587564e-09,
+    "preliminary_switch_speedup": 5.6145343974856985,
+    "full_fbs_qualified": false
+  },
+  "actual_integer_noise_observation": {
+    "validation": "narrow-dd-integer-noise-model-observation.json",
+    "configured_continuous_sigma": 3.2,
+    "observed_integer_rms": 2.8269146359267667,
+    "expected_truncated_integer_sigma": 2.828301687834186,
+    "security_qualified": false
+  },
+  "packed_full_function_validation": {
+    "receipt": "narrow-dd-ll14-packed-precision57-fbs-validation.json",
+    "status": "packed functional validation failed",
+    "session_id": 87335,
+    "controller_pid": 2060333,
+    "new_private_keys": 0,
+    "new_encrypted_evaluation_keys": 0,
+    "fixed_max_error_gate": 1.1920928955078125e-07,
+    "functions": [
+      "gelu",
+      "tanh",
+      "sigmoid"
+    ],
+    "output_log_q": 101,
+    "output_log_delta": 44,
+    "remaining_product_log_q": 57,
+    "terminal": true,
+    "all_checks_passed": false,
+    "error": "AssertionError('gelu evaluator failed')"
+  },
+  "wide_primary_dd_ntt_tree": {
+    "receipt": "narrow-dd-wide-primary-ntt-tree-validation.json",
+    "status": "terminal/all checks passed; independent557056 phase coefficients, both full outputs and saved artifact integrity",
+    "session_id": 70820,
+    "new_private_keys": 0,
+    "new_encrypted_evaluation_keys": 0,
+    "key_moduli": [
+      433,
+      390,
+      347,
+      304,
+      261
+    ],
+    "data_moduli": [
+      333,
+      290,
+      247,
+      204,
+      161
+    ],
+    "primary_bits": 64,
+    "secondary_bits": 32,
+    "auxiliary_bits": 100,
+    "full_fbs_qualified": false,
+    "ntt_tree_max_error": 1.5006928584549752e-08
+  },
+  "actual_noise_dense_security_screen": {
+    "receipt": "narrow-dd-actual-noise-dense-security-validation.json",
+    "sigma": 2.828301687834186,
+    "n": 16384,
+    "log_q": 435,
+    "weakest_generic_bits": 128.95829839375767,
+    "exact_sampler_distribution_modeled": false,
+    "structured_secret_security_validated": false,
+    "security_validated": false
+  },
+  "packed_complex_function_validation": {
+    "receipt": "narrow-dd-ll14-packed-precision57-complex-fbs-validation.json",
+    "status": "packed functional validation failed",
+    "session_id": 79163,
+    "controller_pid": 2061099,
+    "new_private_keys": 0,
+    "new_encrypted_evaluation_keys": 0,
+    "expected_mapping": "f(real)+i*f(imaginary)",
+    "remaining_product": "complex square at57/44",
+    "fixed_error_gate": 1.1920928955078125e-07,
+    "tile_size": "2*degree; both input halves share selector transforms",
+    "child_memory_cap_gib": 28,
+    "terminal": true,
+    "all_checks_passed": false,
+    "error": "AssertionError('real packed FBS did not qualify')"
+  },
+  "wide_primary_dd_ntt_root_integration": {
+    "receipt": "narrow-dd-wide-primary-ntt-root-integration-validation.json",
+    "status": "terminal/all checks passed, independent root accuracy and all consumed source/key/ciphertext integrity",
+    "session_id": 48196,
+    "production_core_headers_changed": false,
+    "new_private_keys": 0,
+    "new_encrypted_evaluation_keys": 0,
+    "full_fbs_qualified": false,
+    "independent_root_max_error": 7.999021091581557e-08,
+    "unchanged_prepared_input_and_factor_ciphertexts": 37,
+    "final_integrity_passed": true
+  },
+  "packed_worker_profile": {
+    "receipt": "narrow-dd-packed-workers-profile-validation.json",
+    "status": "all13 full ciphertext outputs identical for4/8/12/4 workers",
+    "new_keys": 0,
+    "eight_worker_mask_speedup": 1.2100250920282665,
+    "scope": "preliminary concurrent kernel sensitivity, no live-run/default change"
+  },
+  "packed_ntt_full_function_validation": {
+    "receipt": "narrow-dd-ll14-packed-precision57-ntt-fbs-validation.json",
+    "status": "packed functional validation failed",
+    "session_id": 48159,
+    "controller_pid": 2061822,
+    "new_private_keys": 0,
+    "new_encrypted_evaluation_keys": 0,
+    "ntt_primary_bits": 64,
+    "ntt_secondary_bits": 32,
+    "ntt_auxiliary_bits": 100,
+    "conjugation_primary_bits": 8,
+    "omp_workers": 8,
+    "production_core_headers_changed": false,
+    "full_fbs_qualified": false,
+    "terminal": true,
+    "all_checks_passed": false,
+    "error": "AssertionError('prerequisite failed: narrow-dd-ll14-packed-precision57-fbs-validation.json')"
+  },
+  "ntt_backend_lifecycle": {
+    "receipt": "narrow-dd-ntt-backend-lifecycle-v2-validation.json",
+    "status": "isolated revision passes move, load and staged/default/projected FFT selection ownership controls; archive bytes match original",
+    "regeneration_reset_source_checked": true,
+    "regeneration_runtime_tested": false,
+    "no_new_keys": true,
+    "production_promotion_patch": "docs/narrow-dd-ntt-integration.patch",
+    "production_patch_applied": false,
+    "only_cache_lifecycle_changes_relative_to_qualified_root": true,
+    "production_patch_applies_cleanly": true
+  },
+  "high_precision_packed_reconstruction": {
+    "receipt": "narrow-dd-ll14-packed-precision57-reconstruction-validation.json",
+    "status": "terminal/all checks passed",
+    "completed_terms": 65536,
+    "selector_groups": 36,
+    "selector_bytes": 34945894980,
+    "packed_archive_unchanged": true,
+    "sources_unchanged": true,
+    "new_keys": 0,
+    "extraction_seconds": 5830.4,
+    "reconstruction_seconds": 6129.890596261,
+    "full_functional_accuracy_qualified": false
+  },
+  "previous_packed_precision57_functional_failure": {
+    "receipt": "narrow-dd-ll14-packed-precision57-fbs-validation.json",
+    "terminal": true,
+    "all_checks_passed": false,
+    "status": "GeLU evaluator and independent integer phase check fail fixed2^-23 accuracy; dependent complex/NTT evaluations did not run",
+    "independent_report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-fbs-20261011/gelu-independent.json",
+    "independent_max_error": 1.973818294218054e-07,
+    "new_keys": 0
+  },
+  "higher_public_mask_precision_reuse": {
+    "extraction_api": "CKKSNarrowPackedReconstructionSchedule<PackedSchedule,42>, extraction and file reconstruction accept retained PackedSchedule separately",
+    "saved_public_key_reused": true,
+    "new_keys": 0,
+    "pilot_receipt": "narrow-dd-ll14-packed-mask42-pilot-validation.json",
+    "pilot_terminal": true,
+    "pilot_all_checks_passed": true,
+    "sampled_terms": 16,
+    "independent_max_ideal_mask_error": 3.7643761460499614e-11,
+    "baseline_max_ideal_mask_error": 1.041155411092868e-08,
+    "improvement_ratio": 276.5811307632937,
+    "regression_receipt": "narrow-dd-packed-mask-reuse-regression-validation.json",
+    "regression_terms_byte_identical": 2120,
+    "selectors_log_q": 379,
+    "selectors_log_delta": 57,
+    "mask_log_delta": 42,
+    "factor_before_rescale_log_q": 337,
+    "factor_log_q": 324,
+    "dd_levels": [
+      324,
+      280,
+      236,
+      192,
+      148
+    ],
+    "root_log_q": 104,
+    "output_log_q": 101,
+    "output_log_delta": 44,
+    "remaining_square_log_q": 57,
+    "full_functional_accuracy_qualified": true,
+    "jobs": {
+      "reconstruction": {
+        "receipt": "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+        "controller_pid": 2065804,
+        "controller_present": false,
+        "terminal": true,
+        "stage": "complete",
+        "session_id": 9500,
+        "controller_start_ticks": 240023680,
+        "all_checks_passed": true
+      },
+      "root44": {
+        "receipt": "narrow-dd-ll14-packed-mask42-root44-validation.json",
+        "controller_pid": 2065913,
+        "controller_present": false,
+        "terminal": true,
+        "stage": "complete",
+        "session_id": 23918,
+        "controller_start_ticks": 240033690,
+        "all_checks_passed": true
+      },
+      "fbs": {
+        "receipt": "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+        "controller_pid": 2065961,
+        "controller_present": false,
+        "terminal": true,
+        "stage": "complete",
+        "session_id": 31205,
+        "controller_start_ticks": 240036112,
+        "all_checks_passed": true
+      },
+      "complex-fbs": {
+        "receipt": "narrow-dd-ll14-packed-mask42-complex-fbs-validation.json",
+        "controller_pid": 2065990,
+        "controller_present": false,
+        "terminal": true,
+        "stage": "complete",
+        "session_id": null,
+        "controller_start_ticks": 240040501,
+        "all_checks_passed": true
+      }
+    },
+    "ntt_pipeline": {
+      "receipt": "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+      "session_id": 57851,
+      "controller_pid": 2066170,
+      "controller_start_ticks": 240055215,
+      "status": "complete",
+      "isolated_integration": true,
+      "ntt_primary_bits": 64,
+      "ntt_secondary_bits": 32,
+      "ntt_auxiliary_bits": 100,
+      "dd_data_levels": [
+        324,
+        280,
+        236,
+        192,
+        148
+      ],
+      "dd_key_levels": [
+        424,
+        380,
+        336,
+        292,
+        248
+      ],
+      "saved_master_q": 433,
+      "post_product_key_q": 201,
+      "new_keys_generated": 0,
+      "lifecycle_receipt": "narrow-dd-ntt-mask42-lifecycle-validation.json",
+      "lifecycle_all_checks_passed": true,
+      "full_functional_accuracy_qualified": true,
+      "production_backend_promoted": true,
+      "terminal": true,
+      "all_checks_passed": true,
+      "controller_present": false
+    },
+    "full_reconstruction": {
+      "receipt": "narrow-dd-ll14-packed-mask42-reconstruction-validation.json",
+      "terminal": true,
+      "all_checks_passed": true,
+      "completed_terms": 65536,
+      "selector_groups": 36,
+      "selector_bytes": 34945894980,
+      "reconstruction_seconds": 5742.459063455,
+      "extraction_seconds": 5185.53,
+      "packed_archive_unchanged": true,
+      "sources_unchanged": true,
+      "new_keys_generated": 0,
+      "full_functional_accuracy_qualified": false
+    },
+    "root_validation": {
+      "receipt": "narrow-dd-ll14-packed-mask42-root44-validation.json",
+      "terminal": true,
+      "all_checks_passed": true,
+      "independent_max_root_error": 8.833973758200312e-09,
+      "precision_bits": 26.75429030720594,
+      "prior_mask34_root_error": 7.992210319195988e-08,
+      "observed_root_error_improvement": 9.047129341738264,
+      "profile_change_scope": "Mask34/selector387/sourcefactor345/data332 to mask42/selector379/sourcefactor337/data324, same packed435/57 archive and prepared input; public key reductions. This is a profile comparison, not a proof that masks alone cause every error.",
+      "saved_artifacts_unchanged": true,
+      "selector_files_unchanged": true,
+      "sources_unchanged": true,
+      "new_keys_generated": 0,
+      "projected_dd_chain_artifact": {
+        "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-mask42-root44-20261011/projected-dd-chain.bin",
+        "bytes": 632127945,
+        "sha256": "b5efee0b7bda360b35193b700729ad7f5307d97e93121dbbe0a8e1e7de4fa0aa"
+      },
+      "full_functional_accuracy_qualified": false
+    },
+    "gelu_validation": {
+      "receipt": "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+      "function": "gelu",
+      "independent_accuracy_passed": true,
+      "max_error": 2.9000368719288825e-08,
+      "precision_bits": 25.039353515889456,
+      "remaining_level_square_error": 1.6927691943253974e-07,
+      "remaining_level_square_passed": true,
+      "functional_seconds": 336.000210696,
+      "input_reused": true,
+      "new_keys_generated": 0,
+      "full_all_function_validation_complete": false,
+      "artifact_postflight_pending": true
+    },
+    "tanh_validation": {
+      "receipt": "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+      "function": "tanh",
+      "independent_accuracy_passed": true,
+      "max_error": 3.948762555301668e-08,
+      "precision_bits": 24.59402413999344,
+      "remaining_level_square_error": 7.904371421073225e-08,
+      "remaining_level_square_passed": true,
+      "functional_seconds": 874.654263666,
+      "input_reused": true,
+      "new_keys_generated": 0,
+      "full_all_function_validation_complete": false,
+      "artifact_postflight_pending": true
+    },
+    "full_real_function_validation": {
+      "receipt": "narrow-dd-ll14-packed-mask42-fbs-validation.json",
+      "terminal": true,
+      "all_checks_passed": true,
+      "functions": {
+        "gelu": {
+          "independent_max_error": 2.9000368719288825e-08,
+          "precision_bits": 25.039353515889456,
+          "post_product_max_error": 1.6927691943253974e-07,
+          "functional_seconds": 336.000210696
+        },
+        "tanh": {
+          "independent_max_error": 3.948762555301668e-08,
+          "precision_bits": 24.59402413999344,
+          "post_product_max_error": 7.904371421073225e-08,
+          "functional_seconds": 874.654263666
+        },
+        "sigmoid": {
+          "independent_max_error": 1.906609427873386e-08,
+          "precision_bits": 25.644415423670978,
+          "post_product_max_error": 3.689128303206944e-08,
+          "functional_seconds": 335.023867933
+        }
+      },
+      "phase_coefficients_checked": 196608,
+      "decoded_slots_checked": 73728,
+      "retained_multiplication_level_qualified": true,
+      "output_profile": "101/44, square57/44",
+      "all_saved_artifacts_and_selectors_and_input_and_sources_unchanged": true,
+      "new_private_keys": 0,
+      "new_encrypted_evaluation_keys": 0,
+      "complex_and_full_ntt_accuracy_qualified": false,
+      "paper_performance_matched": false
+    },
+    "full_real_functional_accuracy_qualified": true,
+    "full_complex_function_validation": {
+      "receipt": "narrow-dd-ll14-packed-mask42-complex-fbs-validation.json",
+      "terminal": true,
+      "all_checks_passed": true,
+      "maximum_errors": {
+        "gelu": 3.6814714132871296e-08,
+        "tanh": 4.0513773825926896e-08,
+        "sigmoid": 2.1180906709805668e-08
+      },
+      "remaining_complex_square_passed": true,
+      "saved_artifacts_and_selectors_unchanged": true,
+      "new_keys_generated": 0
+    },
+    "full_complex_functional_accuracy_qualified": true,
+    "full_ntt_dd_function_validation": {
+      "receipt": "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+      "terminal": true,
+      "all_checks_passed": true,
+      "production_promoted": false,
+      "new_keys_generated": 0,
+      "saved_input_keys_selectors_and_sources_unchanged": true,
+      "independent_phase_coefficients_checked": 196608,
+      "functions": {
+        "gelu": {
+          "max_error": 3.170758298402191e-08,
+          "square_max_error": 1.3660027763580542e-07,
+          "functional_evaluation_seconds": 294.21619588299995
+        },
+        "tanh": {
+          "max_error": 3.835561652198469e-08,
+          "square_max_error": 7.598303717300724e-08,
+          "functional_evaluation_seconds": 719.202698196
+        },
+        "sigmoid": {
+          "max_error": 1.774063834973403e-08,
+          "square_max_error": 3.1039265736470576e-08,
+          "functional_evaluation_seconds": 266.006432025
+        }
+      }
+    },
+    "full_ntt_dd_functional_accuracy_qualified": true
+  },
+  "current_goal_turn_classification": "progress: mapped existing security evidence to actual current mask42 exposed moduli and noise, recording proxy mismatches",
+  "previous_goal_turn_classification": "progress",
+  "retained_ll14_factor_performance_profile": {
+    "factor_stage_profile_receipt": "narrow-dd-ll14-retained-factor-work-profile-validation.json",
+    "tile_receipt": "narrow-dd-ll14-matrix-smaller-tiles-validation.json",
+    "all_checks_passed": true,
+    "new_keys": 0,
+    "matrix40_fraction": 0.5494254940731248,
+    "conjugation40_fraction": 0.287895617618604,
+    "production_tile_changed": false,
+    "decision": {
+      "production_default_retained": 256,
+      "prototype_promoted": false,
+      "reason": "Both candidates regress12-column factor wall time. Their mean40-column gains are only4.7-5.5%, smaller than8.3% baseline wall drift; this does not support a default change. Exact oracles and retained frequency1 identity pass.",
+      "baseline40_wall_drift_ratio": 1.0833684275448694,
+      "baseline40_matrix_drift_ratio": 1.121799654384643,
+      "next_performance_direction": "Use the already queued wide-primary NTT DD and primary8 conjugation path; matrix tile prototypes do not justify promotion."
+    }
+  },
+  "public_derived_automorphism_root_integration": {
+    "receipt": "narrow-dd-public-auto-ntt-root-integration-validation.json",
+    "terminal": true,
+    "all_checks_passed": true,
+    "phase_coefficients_checked": 622592,
+    "root_max_error": 9.201866931105627e-09,
+    "all_tail_rotations_tested": 7,
+    "new_keys_generated": 0,
+    "full_function_qualification": false
+  },
+  "combined_public_derived_auto_and_dd_ntt_validation": {
+    "real": {
+      "receipt": "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+      "compiled_actual_exit_code": 0,
+      "full_accuracy_qualified": true,
+      "saved_keys_and_input_reused": true,
+      "production_promoted": true
+    },
+    "complex": {
+      "receipt": "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+      "compiled_actual_exit_code": 0,
+      "full_accuracy_qualified": true,
+      "saved_keys_and_input_reused": true,
+      "production_promoted": true
+    }
+  },
+  "prepared_combined_integration_patch": "narrow-dd-combined-ntt-integration-patch-validation.json",
+  "current_parameter_security_scope_review": "narrow-dd-mask42-security-scope-review.json",
+  "standalone_ntt_dd_mask42_function_progress": {
+    "receipt": "narrow-dd-ll14-packed-mask42-ntt-fbs-validation.json",
+    "terminal": true,
+    "all_checks_passed": true,
+    "production_promoted": false,
+    "new_keys_generated": 0,
+    "saved_input_keys_selectors_and_sources_unchanged": true,
+    "independent_phase_coefficients_checked": 196608,
+    "functions": {
+      "gelu": {
+        "max_error": 3.170758298402191e-08,
+        "square_max_error": 1.3660027763580542e-07,
+        "functional_evaluation_seconds": 294.21619588299995
+      },
+      "tanh": {
+        "max_error": 3.835561652198469e-08,
+        "square_max_error": 7.598303717300724e-08,
+        "functional_evaluation_seconds": 719.202698196
+      },
+      "sigmoid": {
+        "max_error": 1.774063834973403e-08,
+        "square_max_error": 3.1039265736470576e-08,
+        "functional_evaluation_seconds": 266.006432025
+      }
+    }
+  },
+  "packed_cmake_gcc_workaround_evidence": "narrow-dd-packed-cmake-workaround-validation.json",
+  "prepared_combined_runners_patch": "narrow-dd-combined-ntt-runners-patch-validation.json",
+  "combined_ntt_gelu_progress": {
+    "receipt": "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+    "function": "gelu",
+    "independent_max_error": 3.4784390529014666e-08,
+    "square_max_error": 1.4835682734042118e-07,
+    "functional_evaluation_seconds": 167.653949181,
+    "public_automorphism_setup_seconds": 24.503603931,
+    "all_function_and_postflight_qualification": false,
+    "production_promoted": false
+  },
+  "combined_ntt_real_function_progress": {
+    "receipt": "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+    "terminal": true,
+    "all_checks_passed": true,
+    "production_promoted": true,
+    "new_keys_generated": 0,
+    "saved_keys_input_selectors_and_sources_unchanged": true,
+    "independent_phase_coefficients_checked": 196608,
+    "functions": {
+      "gelu": {
+        "max_error": 3.4784390529014666e-08,
+        "square_max_error": 1.4835682734042118e-07,
+        "functional_evaluation_seconds": 167.653949181,
+        "automorphism_setup_seconds": 24.503603931
+      },
+      "tanh": {
+        "max_error": 3.767713926889644e-08,
+        "square_max_error": 7.485549464294569e-08,
+        "functional_evaluation_seconds": 406.165041444,
+        "automorphism_setup_seconds": 25.775418945
+      },
+      "sigmoid": {
+        "max_error": 1.7123314148661295e-08,
+        "square_max_error": 2.547064896898639e-08,
+        "functional_evaluation_seconds": 169.825926757,
+        "automorphism_setup_seconds": 24.816230719
+      }
+    }
+  },
+  "combined_ntt_real_function_validation": {
+    "receipt": "narrow-dd-ll14-packed-mask42-combined-ntt-fbs-validation.json",
+    "terminal": true,
+    "all_checks_passed": true,
+    "production_promoted": true,
+    "new_keys_generated": 0,
+    "saved_keys_input_selectors_and_sources_unchanged": true,
+    "independent_phase_coefficients_checked": 196608,
+    "functions": {
+      "gelu": {
+        "max_error": 3.4784390529014666e-08,
+        "square_max_error": 1.4835682734042118e-07,
+        "functional_evaluation_seconds": 167.653949181,
+        "automorphism_setup_seconds": 24.503603931
+      },
+      "tanh": {
+        "max_error": 3.767713926889644e-08,
+        "square_max_error": 7.485549464294569e-08,
+        "functional_evaluation_seconds": 406.165041444,
+        "automorphism_setup_seconds": 25.775418945
+      },
+      "sigmoid": {
+        "max_error": 1.7123314148661295e-08,
+        "square_max_error": 2.547064896898639e-08,
+        "functional_evaluation_seconds": 169.825926757,
+        "automorphism_setup_seconds": 24.816230719
+      }
+    }
+  },
+  "combined_backend_default_regression_validation": {
+    "receipt": "narrow-dd-combined-default-regression-validation.json",
+    "terminal": true,
+    "all_checks_passed": true,
+    "actual_exit_code": 0,
+    "wall_seconds": 289.6775201149285,
+    "sources_unchanged": true,
+    "scope": "Existing full default CPU regression against isolated proposed headers, including default FFT paths; production promotion pending."
+  },
+  "combined_ntt_complex_gelu_progress": {
+    "receipt": "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+    "function": "gelu",
+    "independent_max_error": 3.946932716784779e-08,
+    "square_max_error": 2.0299320465866936e-07,
+    "functional_evaluation_seconds": 317.877838532,
+    "all_function_and_postflight_qualification": false,
+    "production_promoted": false
+  },
+  "combined_ntt_complex_function_progress": {
+    "receipt": "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+    "terminal": true,
+    "all_checks_passed": true,
+    "production_promoted": true,
+    "independent_phase_coefficients_checked": 196608,
+    "all_artifacts_unchanged_at_qualification": true,
+    "functions": {
+      "gelu": {
+        "max_error": 3.946932716784779e-08,
+        "square_max_error": 2.0299320465866936e-07,
+        "functional_evaluation_seconds": 317.877838532
+      },
+      "tanh": {
+        "max_error": 4.7555636976565675e-08,
+        "square_max_error": 1.1036614449359454e-07,
+        "functional_evaluation_seconds": 836.168508166
+      },
+      "sigmoid": {
+        "max_error": 1.8698354736626302e-08,
+        "square_max_error": 4.306965598113892e-08,
+        "functional_evaluation_seconds": 266.90969168000004
+      }
+    }
+  },
+  "combined_ntt_complex_function_validation": {
+    "receipt": "narrow-dd-ll14-packed-mask42-combined-ntt-complex-fbs-validation.json",
+    "terminal": true,
+    "all_checks_passed": true,
+    "production_promoted": true,
+    "independent_phase_coefficients_checked": 196608,
+    "all_artifacts_unchanged_at_qualification": true,
+    "functions": {
+      "gelu": {
+        "max_error": 3.946932716784779e-08,
+        "square_max_error": 2.0299320465866936e-07,
+        "functional_evaluation_seconds": 317.877838532
+      },
+      "tanh": {
+        "max_error": 4.7555636976565675e-08,
+        "square_max_error": 1.1036614449359454e-07,
+        "functional_evaluation_seconds": 836.168508166
+      },
+      "sigmoid": {
+        "max_error": 1.8698354736626302e-08,
+        "square_max_error": 4.306965598113892e-08,
+        "functional_evaluation_seconds": 266.90969168000004
+      }
+    }
+  },
+  "production_integration_evidence": "narrow-dd-combined-ntt-production-integration-validation.json",
+  "final_implementation_audit": "narrow-dd-final-implementation-audit.json",
+  "implementation_complete": true,
+  "completed_utc": "2026-10-12T02:17:06.476618+00:00"
+}

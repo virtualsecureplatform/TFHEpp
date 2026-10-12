@@ -1,0 +1,115 @@
+{
+  "observed_at_utc": "2026-10-09T00:15:25.047304+00:00",
+  "scope": "Complete N16384 five-level DD product trees with the actual retained plain37 chain, 31 freshly encrypted unit-root leaves and one transparent beta.",
+  "n": 16384,
+  "encrypted_leaves_per_tree": 31,
+  "transparent_beta_leaves_per_tree": 1,
+  "tree_depth": 5,
+  "multiplication_nodes_per_tree": 31,
+  "total_multiplication_nodes": 93,
+  "input_log_q": 348,
+  "input_log_delta": 48,
+  "output_log_q": 108,
+  "output_log_delta": 48,
+  "relinearization_order": "before rescale",
+  "dd_key_levels": [
+    348,
+    300,
+    252,
+    204,
+    156
+  ],
+  "primary_digit_bits": 4,
+  "secondary_digit_bits": 4,
+  "configured_gaussian_noise_stddev": 3.2,
+  "beta_weights": [
+    [
+      0.125,
+      -0.25
+    ],
+    [
+      1e-06,
+      2e-06
+    ],
+    [
+      1,
+      0.5
+    ]
+  ],
+  "masks": [
+    "head slots; zero tail",
+    "tail slots; zero head",
+    "all slots"
+  ],
+  "cases": [
+    {
+      "tree_kind": 0,
+      "encrypted_leaves": 31,
+      "transparent_beta_leaves": 1,
+      "depth": 5,
+      "output_log_q": 108,
+      "output_log_delta": 48,
+      "slots_checked": 8192,
+      "maximum_error": 2.082119751143461e-10,
+      "rms_error": 3.549445512818105e-11,
+      "accuracy_passed": true
+    },
+    {
+      "tree_kind": 1,
+      "encrypted_leaves": 31,
+      "transparent_beta_leaves": 1,
+      "depth": 5,
+      "output_log_q": 108,
+      "output_log_delta": 48,
+      "slots_checked": 8192,
+      "maximum_error": 1.2072385099458138e-10,
+      "rms_error": 1.5383954445407712e-11,
+      "accuracy_passed": true
+    },
+    {
+      "tree_kind": 2,
+      "encrypted_leaves": 31,
+      "transparent_beta_leaves": 1,
+      "depth": 5,
+      "output_log_q": 108,
+      "output_log_delta": 48,
+      "slots_checked": 8192,
+      "maximum_error": 5.446128780928189e-10,
+      "rms_error": 8.560543412613221e-11,
+      "accuracy_passed": true
+    }
+  ],
+  "total_output_slots_checked": 24576,
+  "maximum_error": 5.446128780928189e-10,
+  "fixed_target_tolerance": 1.1920928955078125e-07,
+  "all_cases_passed": true,
+  "actual_exit_code": 0,
+  "terminal": true,
+  "session": 85130,
+  "stderr_bytes": 0,
+  "wall_time": "1:56.17",
+  "peak_rss_kib": 6687348,
+  "checkpoint_file": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008/checkpoint.bin",
+  "dd_chain_and_mode_sha256": "123856a3eaae2a2943a98aab9866f1ce500ba4f805b914c8ef9a9049ef400fb9",
+  "matches_independently_validated_stored_dd_chain": true,
+  "stored_key_phase_evidence": "narrow-dd-retained-dd-exact-validation.json",
+  "build_log": "/tmp/ckks-narrow-retained-dd-tree-final-build.log",
+  "test_log": "/tmp/ckks-narrow-retained-dd-tree-test.log",
+  "time_log": "/tmp/ckks-narrow-retained-dd-tree-time.log",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_dd_exact.cpp": "8dc4ab726bddbebf3215c50f673e5e2654d3f2a6d8da071b040330345cd39453",
+    "include/ckks/narrow_bootstrapping.hpp": "6174ee3a0bede45851ccb2fe745f85795e8b2906dddfbec48e561b6c4b1cc903",
+    "include/ckks/compact_dd.hpp": "33322058094889f5f117b38638e2237430eeb9c7f6300919003b0da4a391ad3b",
+    "include/ckks/prepared_dd.hpp": "890fdfe6def7d1bcc03272930769494ff1cbf0b3120b8cf61406af6f472fa5c8",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/mulfft.hpp": "aa65978f25165392b3b42a06e5a69c80bf6c42687cef5ee219baf5e823b6ff6d"
+  },
+  "limitations": [
+    "Fresh encrypted unit-root leaves and fresh FFT preparation; not the live evaluator factor buffers or derived cache.",
+    "Production slot encryption/decryption used, with independent slot-product target calculation.",
+    "Does not replace full packed reconstruction/refresh validation or resolve unsaved original/O1 sigmoid failures."
+  ],
+  "original_sigmoid_failures_resolved": false,
+  "security_qualified": false,
+  "goal_complete": false
+}

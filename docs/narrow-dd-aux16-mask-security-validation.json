@@ -1,0 +1,441 @@
+{
+  "observed_at_utc": "2026-10-09T06:15:07.129116+00:00",
+  "scope": "Additional q64 public masks/zeta, weight12; scalar-GSA joint-decoder sensitivities only",
+  "session": 79605,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "stderr_bytes": 0,
+  "source": "Parameter-Selection/python/estimates/narrow_ckks_block_guessing_geometry.py",
+  "source_sha256": "835b60e3423bfbc1a049d48bc902484f8a9b245685a05de1b83ff8a3d5a8f7b1",
+  "default_geometry_control_exact": true,
+  "runs": [
+    {
+      "tag": "z14560-s5",
+      "zeta": 14560,
+      "layout": "saturated-5-prefix",
+      "weight": 12,
+      "profile_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_geometry_z14560-s5.json",
+      "profile_sha256": "e032cb186acb50e6547481ad65b5848038632e2f1273e96a0344e14ed282114b",
+      "probability_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_rotation_z14560-s5.json",
+      "probability_sha256": "f72d1361b2ef2b99a793cb84e3b3cd6da09abdefb3ce5f10827e879ec5c01bd8",
+      "cost_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_joint_q64_z14560-s5.json",
+      "cost_report_sha256": "c14c04a80dbb1a3da4732465fb5f7e880f3abc5fc23cbec10d8d5ad16e0b1ab5",
+      "finite_costs": 1308,
+      "nonfinite_costs": [
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3671,
+          "case": "common_decoder",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3671,
+          "case": "independent_decoder",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3671,
+          "case": "optimistic_joint_bound",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3671,
+          "case": "common_decoder_iid95",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3671,
+          "case": "independent_decoder_iid95",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "BDGL16",
+          "beta": 174,
+          "d": 3671,
+          "case": "optimistic_joint_bound_iid95",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3671,
+          "case": "common_decoder",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3671,
+          "case": "independent_decoder",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3671,
+          "case": "optimistic_joint_bound",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3671,
+          "case": "common_decoder_iid95",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3671,
+          "case": "independent_decoder_iid95",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        },
+        {
+          "model": "MATZOV",
+          "beta": 174,
+          "d": 3671,
+          "case": "optimistic_joint_bound_iid95",
+          "decode_marginal": "7.57334845100193411675449212754751861017953154537488428237740936239712996298522183406142875977951351451810307771643924875085263535688987546648526120604320e-324",
+          "raw_cost": "         rop:  \u22482^inf"
+        }
+      ],
+      "independent_count_evidence": "narrow-dd-aux16-count-z14560-s5.json",
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 138.95061381363834,
+            "beta": 254,
+            "d": 3671
+          },
+          "independent_decoder": {
+            "bits": 136.2342030133419,
+            "beta": 246,
+            "d": 3671
+          },
+          "optimistic_joint_bound": {
+            "bits": 135.9724013640691,
+            "beta": 254,
+            "d": 3671
+          },
+          "common_decoder_iid95": {
+            "bits": 138.72507613762173,
+            "beta": 254,
+            "d": 3671
+          },
+          "independent_decoder_iid95": {
+            "bits": 136.20158810681406,
+            "beta": 246,
+            "d": 3671
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 135.9724013640691,
+            "beta": 254,
+            "d": 3671
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 137.77478168669865,
+            "beta": 254,
+            "d": 3671
+          },
+          "independent_decoder": {
+            "bits": 135.1806966791321,
+            "beta": 254,
+            "d": 3671
+          },
+          "optimistic_joint_bound": {
+            "bits": 134.79656923712938,
+            "beta": 254,
+            "d": 3671
+          },
+          "common_decoder_iid95": {
+            "bits": 137.549244010682,
+            "beta": 254,
+            "d": 3671
+          },
+          "independent_decoder_iid95": {
+            "bits": 135.14082219058074,
+            "beta": 254,
+            "d": 3671
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 134.79656923712938,
+            "beta": 254,
+            "d": 3671
+          }
+        }
+      }
+    },
+    {
+      "tag": "z14816-s5",
+      "zeta": 14816,
+      "layout": "saturated-5-prefix",
+      "weight": 12,
+      "profile_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_geometry_z14816-s5.json",
+      "profile_sha256": "f98e3cb0a94f906bb97ab0dfbe486d635e68bd2962c6c974b65b4a0fbf0e0b52",
+      "probability_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_rotation_z14816-s5.json",
+      "probability_sha256": "5677ed638612a612852705d37d4b2fe66d8784c37346b7e6eb0097df30de4271",
+      "cost_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_joint_q64_z14816-s5.json",
+      "cost_report_sha256": "1b3b7227fe35673eaabbc07f1244dc8890f74df10e2da33b584c8fd5ef0ce2c8",
+      "finite_costs": 1320,
+      "nonfinite_costs": [],
+      "independent_count_evidence": "narrow-dd-aux16-count-z14816-s5.json",
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 133.25774458393423,
+            "beta": 230,
+            "d": 3095
+          },
+          "independent_decoder": {
+            "bits": 132.36002919930107,
+            "beta": 222,
+            "d": 3095
+          },
+          "optimistic_joint_bound": {
+            "bits": 131.89771172350675,
+            "beta": 214,
+            "d": 3095
+          },
+          "common_decoder_iid95": {
+            "bits": 133.07627449327117,
+            "beta": 230,
+            "d": 3095
+          },
+          "independent_decoder_iid95": {
+            "bits": 132.26624556643327,
+            "beta": 222,
+            "d": 3095
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 131.7162416324327,
+            "beta": 214,
+            "d": 3095
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 133.08044057562043,
+            "beta": 230,
+            "d": 3095
+          },
+          "independent_decoder": {
+            "bits": 132.32282279620074,
+            "beta": 222,
+            "d": 3095
+          },
+          "optimistic_joint_bound": {
+            "bits": 131.8911799741854,
+            "beta": 214,
+            "d": 3095
+          },
+          "common_decoder_iid95": {
+            "bits": 132.89897048495735,
+            "beta": 230,
+            "d": 3095
+          },
+          "independent_decoder_iid95": {
+            "bits": 132.22903916333294,
+            "beta": 222,
+            "d": 3095
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 131.7097098831114,
+            "beta": 214,
+            "d": 3095
+          }
+        }
+      }
+    },
+    {
+      "tag": "z14688-s4",
+      "zeta": 14688,
+      "layout": "saturated-4-prefix",
+      "weight": 12,
+      "profile_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_geometry_z14688-s4.json",
+      "profile_sha256": "bd2633fc6a80f0f3913fa692a25d37f486cf93d467e36be2a166f808e3ce3295",
+      "probability_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_rotation_z14688-s4.json",
+      "probability_sha256": "d8cd2b4736a885b0a7341c999e65586a9be86af99cb8ddf5b6026faba911e2de",
+      "cost_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_joint_q64_z14688-s4.json",
+      "cost_report_sha256": "4da98969a258c9885107e6b1f20d77c090493b4e52a03fe009333ea048141eb0",
+      "finite_costs": 1320,
+      "nonfinite_costs": [],
+      "independent_count_evidence": "narrow-dd-aux16-count-z14688-s4.json",
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 134.11035523090067,
+            "beta": 238,
+            "d": 3415
+          },
+          "independent_decoder": {
+            "bits": 132.37741732051478,
+            "beta": 238,
+            "d": 3351
+          },
+          "optimistic_joint_bound": {
+            "bits": 131.4288872792182,
+            "beta": 238,
+            "d": 3287
+          },
+          "common_decoder_iid95": {
+            "bits": 133.89508974521735,
+            "beta": 238,
+            "d": 3415
+          },
+          "independent_decoder_iid95": {
+            "bits": 132.31053371853173,
+            "beta": 238,
+            "d": 3415
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 131.25545562893544,
+            "beta": 238,
+            "d": 3351
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 133.71588174172712,
+            "beta": 238,
+            "d": 3415
+          },
+          "independent_decoder": {
+            "bits": 131.97786485859655,
+            "beta": 238,
+            "d": 3351
+          },
+          "optimistic_joint_bound": {
+            "bits": 131.02411110864927,
+            "beta": 238,
+            "d": 3287
+          },
+          "common_decoder_iid95": {
+            "bits": 133.50061625604377,
+            "beta": 238,
+            "d": 3415
+          },
+          "independent_decoder_iid95": {
+            "bits": 131.91128822876942,
+            "beta": 238,
+            "d": 3351
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 130.8559031670172,
+            "beta": 238,
+            "d": 3351
+          }
+        }
+      }
+    },
+    {
+      "tag": "z14688-s6",
+      "zeta": 14688,
+      "layout": "saturated-6-prefix",
+      "weight": 12,
+      "profile_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_geometry_z14688-s6.json",
+      "profile_sha256": "43468689b2836ca4fa9406a23b1df7abb034145677218225fcb7e1c9489f9d5b",
+      "probability_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_rotation_z14688-s6.json",
+      "probability_sha256": "f71688133fdeb1d559b35b1a70d5b7930d080903c84b0b093085d60055e07d85",
+      "cost_report": "Parameter-Selection/python/estimates/narrow_ckks_ll14_joint_q64_z14688-s6.json",
+      "cost_report_sha256": "6f14b4d19b64c014423d912345887b62394fd384127ca3b07b06b97ddaf6625d",
+      "finite_costs": 1320,
+      "nonfinite_costs": [],
+      "independent_count_evidence": "narrow-dd-aux16-count-z14688-s6.json",
+      "best": {
+        "BDGL16": {
+          "common_decoder": {
+            "bits": 134.57738319593045,
+            "beta": 230,
+            "d": 3415
+          },
+          "independent_decoder": {
+            "bits": 132.37171805857744,
+            "beta": 230,
+            "d": 3415
+          },
+          "optimistic_joint_bound": {
+            "bits": 131.80342545886816,
+            "beta": 230,
+            "d": 3415
+          },
+          "common_decoder_iid95": {
+            "bits": 134.37967552965432,
+            "beta": 230,
+            "d": 3415
+          },
+          "independent_decoder_iid95": {
+            "bits": 132.3264985431808,
+            "beta": 230,
+            "d": 3415
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 131.80342545886816,
+            "beta": 230,
+            "d": 3415
+          }
+        },
+        "MATZOV": {
+          "common_decoder": {
+            "bits": 133.95834588713666,
+            "beta": 238,
+            "d": 3415
+          },
+          "independent_decoder": {
+            "bits": 132.11335814042405,
+            "beta": 230,
+            "d": 3415
+          },
+          "optimistic_joint_bound": {
+            "bits": 131.30328848010285,
+            "beta": 238,
+            "d": 3287
+          },
+          "common_decoder_iid95": {
+            "bits": 133.76063822101892,
+            "beta": 238,
+            "d": 3415
+          },
+          "independent_decoder_iid95": {
+            "bits": 132.0681386250274,
+            "beta": 230,
+            "d": 3415
+          },
+          "optimistic_joint_bound_iid95": {
+            "bits": 131.18438814972913,
+            "beta": 238,
+            "d": 3415
+          }
+        }
+      }
+    }
+  ],
+  "finite_cost_evaluations": 5268,
+  "nonfinite_cost_evaluations": 12,
+  "nonfinite_costs_establish_security": false,
+  "lowest_searched_optimistic_endpoint_bits": 130.8559031670172,
+  "confidence_scope": "Each histogram separately; no combined95 claim across masks/weights/seeds",
+  "security_validated": false,
+  "complete_attack_optimization": false
+}

@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-09T23:50:29.249231+00:00",
+  "scope": "Retained corrected N16384 aux8 selector cache observed after completed evaluations; baseline begins now, not at generation",
+  "manifest": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/corrected-selectors-integrity-20261009.json",
+  "manifest_sha256": "cba18d7e8be79aaae0d3a0e3587ba34fcb546bf8b3ae7b2e145fc3b7318d2463",
+  "source_sha256": "c92f6e6eed240473a30768426ee22b33aa4d442cdb346b0cdc2c549c0b631831",
+  "validation": {
+    "utc": "2026-10-09T23:50:29.248598+00:00",
+    "n": 16384,
+    "groups_checked": 36,
+    "payloads_match_snapshot": true,
+    "selector_phases_validated": false,
+    "error_origin_established": false,
+    "security_validated": false
+  },
+  "corrected_group_matches_phase_checked_payload": true,
+  "all_payloads_match": true,
+  "error_origin_established": false,
+  "security_validated": false,
+  "runner_session": 96884,
+  "terminal": true,
+  "actual_exit_code": 0,
+  "memory_budget": "narrow-dd-selector-integrity-full-memory-budget.json"
+}

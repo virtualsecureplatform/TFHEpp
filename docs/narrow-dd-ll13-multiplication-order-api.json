@@ -1,0 +1,12 @@
+{
+  "diagnostic": "dd-relinearization-rescale-order",
+  "n": 8192,
+  "input_log_q": 64,
+  "output_log_q": 44,
+  "log_delta": 20,
+  "samples_per_noise_mode": 8,
+  "modes": [
+    {"sigma": 0, "early_rescale_rms": 0.19835848183836427, "early_rescale_max": 2.1911493135181797, "late_rescale_rms": 0.001832605208083514, "late_rescale_max": 0.010520103465753656},
+    {"sigma": 3.2000000000000002, "early_rescale_rms": 0.39282721383327247, "early_rescale_max": 2.7230723431730879, "late_rescale_rms": 0.0018373226453730435, "late_rescale_max": 0.012157675213045038}
+  ]
+}

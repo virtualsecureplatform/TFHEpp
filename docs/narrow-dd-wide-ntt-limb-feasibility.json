@@ -1,0 +1,39 @@
+{
+  "observed_at_utc": "2026-10-10T09:59:43.690318+00:00",
+  "scope": "Integer-bound feasibility for proposed 48-bit auxiliary NTT limbs, actual N16384 block width529 profiles; no code change or runtime speedup proof",
+  "bounds": [
+    {
+      "selector_log_q": 385,
+      "plain_log_delta": 37,
+      "candidate_digit_bits": 48,
+      "baseline_digit_bits": 16,
+      "baseline_digit_count": 25,
+      "candidate_digit_count": 9,
+      "worst_case_integer_convolution_bound": "335293583762805067397524637859840",
+      "two_prime_centered_limit": "2641763335758148997568331107023585280",
+      "bound_fits": true,
+      "bound_bits": 108.04712391212452,
+      "centered_limit_bits": 120.99091264346035
+    },
+    {
+      "selector_log_q": 379,
+      "plain_log_delta": 34,
+      "candidate_digit_bits": 48,
+      "baseline_digit_bits": 16,
+      "baseline_digit_count": 24,
+      "candidate_digit_count": 8,
+      "worst_case_integer_convolution_bound": "41911697972485267590470149324800",
+      "two_prime_centered_limit": "2641763335758148997568331107023585280",
+      "bound_fits": true,
+      "bound_bits": 105.047123912198,
+      "centered_limit_bits": 120.99091264346035
+    }
+  ],
+  "cryptographic_modulus_unchanged": true,
+  "implementation_complete": true,
+  "correctness_validated": false,
+  "security_validated": false,
+  "goal_complete": false,
+  "correctness_validation_scope": "N16384 Q385/plain37 final head/tail groups plus focused coefficient reference controls; no full Q379 refresh",
+  "validation_evidence": "TFHEpp/docs/narrow-dd-wide-ntt-validation.json"
+}

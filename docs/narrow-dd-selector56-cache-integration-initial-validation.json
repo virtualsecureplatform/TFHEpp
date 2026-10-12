@@ -1,0 +1,31 @@
+{
+  "terminal": true,
+  "all_checks_passed": false,
+  "stage": "wide-sample",
+  "scope": "Retained N512 selector56 cache producer/reopen/sample and complete cached all-function replay. Exact comparison to current independently decoded raw replay; no full-size cache or speedup claim.",
+  "fresh_keys_generated": false,
+  "build_actual_exit_code": 0,
+  "actual_exit_codes": {
+    "wide-create": 0,
+    "wide-sample": 2
+  },
+  "source_sha256": {
+    "TFHEpp/test/ckks/ckks_narrow_selector_ntt_file.cpp": "9f9523c249ee68c7fd68f58ca446743edd5610d9b06d76c613d8208a1e60fa13",
+    "TFHEpp/include/ckks/narrow_selector_ntt_file.hpp": "8f51ed4e9b910ef553dbbefaec54e0df64d7b8af7d1d9e7e78e062353ee008ff",
+    "TFHEpp/test/ckks/ckks_narrow_basis_benchmark.hpp": "328ce9f84a4e577b94ddf39587cc750aa97f32f98524edf5839a428858900f27"
+  },
+  "raw_replay_qualification_sha256": "238dc585247aa5770a61a7a88270ccf846d9c551c0c27c533794919d091125e9",
+  "frozen_executable_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-cache-integration-20261011/ckks_narrow_selector_ntt_file": "181e34c775d7c0056e04f4691a99ba292ae5575fdf9949cb24bb1fe786266f96",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector56-cache-integration-20261011/ckks_narrow_basis_replay": "4c03bbaeee460948600b8f2b126f03f422038a95bd77a71896b2a145acd42afe"
+  },
+  "wide_creation_report": {
+    "n": 512,
+    "exact_spectrum_words": 12185600,
+    "matrix_digit_bits": 56,
+    "selector_digits": 10,
+    "fresh_keys_generated": false,
+    "passed": true
+  },
+  "error": "('wide-sample', 2)"
+}

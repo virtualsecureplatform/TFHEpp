@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-09T15:24:17.157138+00:00",
+  "scope": "Read-only source review of actual aux8 selector generation, serialization and read path; does not establish the bit error origin",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_selector_file.hpp": "baa876f1d73f170a62117ce6fb27fb4aaf32866106243d7ae8e0d07dcc5e13c8",
+    "TFHEpp/include/ckks/ckks.hpp": "4e11d00df1c72f505f6635cf115810ec21299d85d19f538c73b1c2b0653c2372",
+    "TFHEpp/include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a",
+    "TFHEpp/include/utils.hpp": "2e4facb02b844102b5bc07e7b4669bcbb07736cc6d7a2bcb1957df31c61e339c",
+    "TFHEpp/test/ckks/ckks_narrow_auxiliary_probe.cpp": "03b094ba5f50b6c39f141a45c4937adc5fb164559f0740f739906f69a7424e0d"
+  },
+  "build_backend": {
+    "USE_HEXL": false,
+    "cache_evidence": "build/CMakeCache.txt"
+  },
+  "observations": [
+    "Each OpenMP iteration writes a distinct group[y] ciphertext; group serialization follows the implicit loop barrier.",
+    "Mask generation uses thread-local RNG state; exact active torus multiplication reads the mask as const.",
+    "Non-HEXL NTT transforms use local caller vectors and read-only precomputed plan tables.",
+    "Selector archive checks validate metadata, fixed shape and EOF; no payload hash is stored in this format."
+  ],
+  "limitations": [
+    "Source review does not exclude an implementation defect, hardware or storage fault, or later external modification.",
+    "No trusted hash of the original head-19 payload before the failed evaluation is available in the retained evidence.",
+    "Corrected current-fixture accuracy establishes the intervention effect, not the error origin or original archived mismatch cause."
+  ],
+  "selector_bit_error_origin_established": false,
+  "security_validated": false
+}

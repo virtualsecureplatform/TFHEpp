@@ -1,0 +1,74 @@
+{
+  "scope": "Public chunked rescale of retained N16384 selectors379/49 to371/41, sampled four head30/tail4 edge records. Independent signed coefficient rounding, integer NTT phases and slot perturbation. Not all-selector/full-refresh/security qualification. No selector/key reconstruction or keys generated.",
+  "terminal": true,
+  "all_checks_passed": true,
+  "fresh_keys_generated": false,
+  "source_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector-rescale-reuse-full-20261011/control.cpp": "f651f94cfa2b678fa2a3a572ddfe96bd2ea0d78e4aedaf375c79afb8a805a9b1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/selector-rescale-reuse-full-20261011/validate.py": "689d1e5e15de2670242b866547c3f8f905edf268caca9e54d40d7f350988739a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_projection.hpp": "712b74236f5ccfab0743f1f7772b2bf1a2a884a638bd8d134b6a61eae654dfac",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/ckks.hpp": "18aa1b041e6c4161ba51c1a91cfe949e6984eda2d7d65c2a3c5df77d8422b336",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/narrow_selector_file.hpp": "5ace9d50be88cbcc65aa88773ecfcf8709693e08151d59aaec8499c999509d71",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_prefix_arithmetic.py": "9d7bb0c4bdbe304ca74b11d50007b5eca001a74cf6b3b86df24424ea0b9c58a0"
+  },
+  "stage": "complete",
+  "baseline_sha256": "9593dc4ece8d862763322c10bea2e59444e80ef47c82805174127465cf71f7d0",
+  "original_selector_file_sha256": {
+    "selectors/head-30.bin": "9fdabfc447ce2fdf3c8c0bba10638f0fabba7b7e7acf3b8a9e1ac4e11ee84115",
+    "selectors/tail-4.bin": "a9d16b7cc45830a8ec36ae38e9bbfb193a600ab280687522039be1188475305f"
+  },
+  "checkpoint_dense_prefix_sha256_before": "5caab93a8a4056bc57a951cbea4d973211cafec2bfa9ab8705f95fb2d29ca0f1",
+  "build_actual_exit_code": 0,
+  "test_actual_exit_code": 0,
+  "report": {
+    "n": 16384,
+    "source_log_q": 379,
+    "target_log_q": 371,
+    "source_log_delta": 49,
+    "target_log_delta": 41,
+    "selectors_checked": 4,
+    "independent_coefficient_checks": 131072,
+    "chunk_size": 1,
+    "fresh_keys_generated": false,
+    "all_checks_passed": true
+  },
+  "independent_actual_exit_code": 0,
+  "independent": {
+    "scope": "Independent integer NTT phases and canonical decoding, sampled four full-ring retained head/tail selectors. Measures rescale perturbation, not all selectors or complete refresh accuracy.",
+    "phase_coefficients_checked": 131072,
+    "decoded_slots_checked": 65536,
+    "rows": [
+      {
+        "tail": false,
+        "group": 30,
+        "index": 0,
+        "public_rescale_max_slot_difference": 9.45322575348367e-09
+      },
+      {
+        "tail": false,
+        "group": 30,
+        "index": 528,
+        "public_rescale_max_slot_difference": 0.0
+      },
+      {
+        "tail": true,
+        "group": 4,
+        "index": 0,
+        "public_rescale_max_slot_difference": 9.590719915500828e-09
+      },
+      {
+        "tail": true,
+        "group": 4,
+        "index": 528,
+        "public_rescale_max_slot_difference": 9.306297181526155e-09
+      }
+    ],
+    "all_checks_passed": true
+  },
+  "selected_files_unchanged": true,
+  "checkpoint_dense_prefix_unchanged": true,
+  "sources_unchanged": true,
+  "completed_utc": "2026-10-11T15:34:43.526494+00:00",
+  "public_header_compile_actual_exit_code": 0,
+  "public_header_sha256": "fc53ae814e0309dde3b843ede929260c6747f17a37f9c3fd04d9a0182cb82497"
+}

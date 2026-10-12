@@ -1,0 +1,106 @@
+{
+  "observed_at_utc": "2026-10-10T18:18:14.080398+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Invariant-divisor selector Shoup quotients and prepared matrix accumulation; independent exact division/modular arithmetic, six bounded paired N16384 matrix trials, retained N512 complete all-function replay identity. Full latest-source N32768 refresh not qualified.",
+  "independent_arithmetic": {
+    "exact_quotients_checked": 3000180,
+    "independent_modular_products_checked": 234014040,
+    "passed": true
+  },
+  "runtime_modulus_paired_trials": [
+    {
+      "reciprocal": false,
+      "seconds": 0.0345525,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": true,
+      "seconds": 0.0238742,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": true,
+      "seconds": 0.0352982,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": false,
+      "seconds": 0.0239148,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": false,
+      "seconds": 0.0373254,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": true,
+      "seconds": 0.0239507,
+      "exact_coefficients": 2097152
+    }
+  ],
+  "runtime_modulus_median_seconds": {
+    "False": 0.0345525,
+    "True": 0.0239507
+  },
+  "observed_component_ratio": 1.442650945483848,
+  "compile_time_modulus_paired_trials": [
+    {
+      "reciprocal": false,
+      "seconds": 0.0720069,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": true,
+      "seconds": 0.0821487,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": true,
+      "seconds": 0.082197,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": false,
+      "seconds": 0.0815138,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": false,
+      "seconds": 0.0708227,
+      "exact_coefficients": 2097152
+    },
+    {
+      "reciprocal": true,
+      "seconds": 0.0786568,
+      "exact_coefficients": 2097152
+    }
+  ],
+  "timings_isolated": false,
+  "performance_claim": "Runtime-modulus control is noisy and the compile-time-modulus control was slower with the factory; no whole-factor or refresh speedup is established.",
+  "ciphertext_identity": {
+    "sigmoid": {
+      "exact": true,
+      "sha256": "5f305d3359263666cafa2ecf6126483f3c3cfa68284ee272c35eb7767a2772c4"
+    },
+    "gelu": {
+      "exact": true,
+      "sha256": "d229ade2aba24954149111818305f7fae045cc70e13a5abcf5c674460c2e3663"
+    },
+    "tanh": {
+      "exact": true,
+      "sha256": "69c3992958693cceb8c460fcf8e3ce751455a596669aeaa4ce2134b469541112"
+    }
+  },
+  "fresh_keys_generated": false,
+  "setup_generation_count": 0,
+  "full_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "artifact_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-selector-reciprocal-20261010",
+  "source_sha256": {
+    "TFHEpp/include/ckks/narrow_bootstrapping.hpp": "fdeb05a002a45897a23bf24bdf9cedac095fcd77cf0c2294a6ffe44581dfb05d",
+    "TFHEpp/include/ckks/narrow_matrix.hpp": "897799ea2fc65db77f788c932bb00b79c4ad3ae389725d4c67164a7a3ad6df63",
+    "TFHEpp/test/ckks/ckks_narrow_selector_quotient_exact.cpp": "23148df065cf5dbfde071ed375c45b79b71637f60814ff964abede0eda6c3ac2"
+  }
+}

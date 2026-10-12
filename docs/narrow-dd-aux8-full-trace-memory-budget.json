@@ -1,0 +1,30 @@
+{
+  "utc": "2026-10-09T10:57:17.054720+00:00",
+  "scope": "Full retained aux8 sigmoid traced replay; original selectors and keys",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17683365888,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 11480829952,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 102475694080,
+  "required_bytes": 102234959872,
+  "aggregate_budget_bytes": 17314086912,
+  "selector_driver_budget_bytes": 268435456,
+  "process_limit_bytes": 17179869184,
+  "host_reserve_bytes": 10737418240,
+  "eligible": true,
+  "omp_threads": 4,
+  "stack_bytes": 67108864,
+  "terminal": true,
+  "driver_child_pid": 1841994,
+  "actual_exit_code": 0
+}

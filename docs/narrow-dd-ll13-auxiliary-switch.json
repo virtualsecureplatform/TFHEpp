@@ -1,0 +1,15 @@
+{
+  "diagnostic": "dd-auxiliary-scale-switch",
+  "n": 8192,
+  "input_output_log_q": 45,
+  "log_delta": 21,
+  "auxiliary_scale_bits": 28,
+  "evaluation_key_log_q": 73,
+  "sigma": 3.2,
+  "samples": 32,
+  "all_raw_prepared_equal": true,
+  "ordinary_switch_rms": 0.17017156636255348,
+  "ordinary_switch_max": 0.99311140521402697,
+  "auxiliary_switch_rms": 0.00092346099586908593,
+  "auxiliary_switch_max": 0.0062718367156731755
+}

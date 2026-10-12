@@ -1,0 +1,25 @@
+{
+  "utc": "2026-10-09T23:51:04.109159+00:00",
+  "source_sha256": "24ac6faad1bd62120d9c85f7e94409dd6a690f830b22aa8b50705925899fd1ec",
+  "scope": "Retained-function manifest and provenance rejection gates; full payload snapshot/verify exercised separately",
+  "controls": {
+    "small_manifest_rejected_for_full_runner": true,
+    "manifest_mutation_rejected": true,
+    "invalid_manifest_json_rejected": true,
+    "missing_selector_files_rejected": true,
+    "existing_valid_provenance_accepted": true,
+    "pending_build": true,
+    "failed_build": true,
+    "incomplete_small_functions": true,
+    "pending_retained": true,
+    "failed_retained": true,
+    "failed_refresh": true,
+    "multiple_corrected_bits": true,
+    "failed_corrected_phase": true
+  },
+  "all_controls_passed": true,
+  "full_payload_evidence": "narrow-dd-selector-integrity-retained-full-validation.json",
+  "encrypted_function_rerun": false,
+  "error_origin_established": false,
+  "security_validated": false
+}

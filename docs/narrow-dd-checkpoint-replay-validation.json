@@ -1,0 +1,110 @@
+{
+  "observed_at_utc": "2026-10-08T18:45:00.976000+00:00",
+  "scope": "Exact small encrypted plain37 checkpoint/replay across generation, untraced replay and root-traced replay; retained selector ownership/header/length checks. Full failure replay not yet proven.",
+  "source_sha256": {
+    "include/ckks/narrow_selector_file.hpp": "baa876f1d73f170a62117ce6fb27fb4aaf32866106243d7ae8e0d07dcc5e13c8",
+    "test/ckks/ckks_narrow_benchmark.cpp": "3544e916c71b351be35e8a56c76780e0576a2122cd4aec2edd3c3236e3d5691b",
+    "test/ckks/ckks_narrow_selector_replay.cpp": "e2339c357acb7ade63d1c6a99316126ab6da9eacb3e21076700cb0d401a6396a"
+  },
+  "benchmark_build_session": 72799,
+  "benchmark_build_exit_code": 0,
+  "benchmark_build_log": "/tmp/ckks-narrow-checkpoint-build.log",
+  "checkpoint_case_session": 66097,
+  "checkpoint_case_actual_exit_code": 0,
+  "sequential_replay_driver_session": 73200,
+  "sequential_replay_driver_exit_code": 0,
+  "untraced_replay_actual_exit_code": 0,
+  "traced_replay_actual_exit_code": 0,
+  "small_checkpoint_directory": "/tmp/ckks-small-plain37-replay-checkpoint",
+  "small_checkpoint_directory_mode": "0o700",
+  "small_checkpoint_archive_bytes": 108482446,
+  "small_checkpoint_archive_sha256": "6c73b0ea49711f4a8bc08774a271c4ec89f5bfcf4aeb290db193843a972e673d",
+  "checkpoint_payload": "Versioned profile/function metadata, both native secrets, plaintext slots, input ciphertext and complete serialized native refresh setup keys. Public selector files retained separately in the same directory. Derived FFT/NTT caches rebuilt on replay.",
+  "publication": "Archive flushed and closed, selectors retained, pending archive renamed to checkpoint.bin before evaluation. Replay requires completed archive and matching profile/function; selectors reopened without deletion ownership.",
+  "checkpoint_contains_private_keys": true,
+  "small_report_metrics": {
+    "checkpoint": {
+      "n": 512,
+      "h": 31,
+      "checkpoint_written": true,
+      "checkpoint_replayed": false,
+      "root_diagnostics": false,
+      "max_error": 1.2812528949196806e-09,
+      "evaluation_max_error": 5.787215483851105e-10,
+      "rms_error": 7.571149902876981e-10,
+      "post_refresh_product_max_error": 3.2456074222550623e-09,
+      "post_refresh_product_evaluation_max_error": 1.1055036808506744e-09,
+      "refresh_seconds": 38.412493998
+    },
+    "untraced_replay": {
+      "n": 512,
+      "h": 31,
+      "checkpoint_written": false,
+      "checkpoint_replayed": true,
+      "root_diagnostics": false,
+      "max_error": 1.2812528949196806e-09,
+      "evaluation_max_error": 5.787215483851105e-10,
+      "rms_error": 7.571149902876981e-10,
+      "post_refresh_product_max_error": 3.2453743020091494e-09,
+      "post_refresh_product_evaluation_max_error": 1.1056320800893767e-09,
+      "refresh_seconds": 39.498226493
+    },
+    "traced_replay": {
+      "n": 512,
+      "h": 31,
+      "checkpoint_written": false,
+      "checkpoint_replayed": true,
+      "root_diagnostics": true,
+      "max_error": 1.2812528949196806e-09,
+      "evaluation_max_error": 5.787215483851105e-10,
+      "rms_error": 7.571149902876981e-10,
+      "post_refresh_product_max_error": 3.245613433395854e-09,
+      "post_refresh_product_evaluation_max_error": 1.1055924271764481e-09,
+      "refresh_seconds": 39.999159231
+    }
+  },
+  "all_three_refresh_ciphertexts_byte_identical": true,
+  "all_three_refresh_ciphertext_sha256": "8a8ac8ec3b1a547456600bd9dd3ca8e2dc9ac0c65460f04316c8995c0bf1a10d",
+  "refreshed_ciphertexts_written_before_fresh_post_refresh_product_key_generation": true,
+  "root_trace_count": 24,
+  "max_root_trace_error_rounded_from_log": 2.56873e-10,
+  "selector_source_cmake_configure_session": 44476,
+  "selector_source_cmake_configure_exit_code": 0,
+  "selector_source_cmake_configure_log": "/tmp/ckks-narrow-selector-replay-default-configure.log",
+  "selector_source_cmake_build_session": 73751,
+  "selector_source_cmake_build_exit_code": 0,
+  "selector_source_cmake_build_log": "/tmp/ckks-narrow-selector-replay-cmake-build.log",
+  "selector_source_cmake_test_actual_exit_code": 0,
+  "selector_source_cmake_test_log": "/tmp/ckks-narrow-selector-replay-cmake-test.log",
+  "selector_source_exact_group_roundtrips": 3,
+  "selector_source_malformed_cases_rejected": 4,
+  "selector_source_malformed_cases": [
+    "wrong N metadata",
+    "truncated payload",
+    "trailing byte",
+    "missing group"
+  ],
+  "selector_source_retention_read_only_lifetime_and_normal_owned_cleanup_verified": true,
+  "selector_source_ubsan_build_session": 19830,
+  "selector_source_ubsan_build_exit_code": 0,
+  "selector_source_ubsan_test_actual_exit_code": 0,
+  "selector_source_ubsan_argv": "/tmp/ckks-narrow-selector-replay-ubsan-argv.json",
+  "selector_source_ubsan_test_log": "/tmp/ckks-narrow-selector-replay-ubsan-test.log",
+  "selector_source_ubsan_no_diagnostics": true,
+  "selector_source_ubsan_scope": "Standalone C++ selector file retention/reopen/layout/cleanup test and inline code instrumented. Encrypted checkpoint benchmark and linked FFT/native libraries are outside this sanitizer check.",
+  "checkpoint_cli_rejections": {
+    "wrong_function": {
+      "actual_exit_code": -6,
+      "expected_message_present": true,
+      "original_checkpoint_intact": true
+    },
+    "existing_directory": {
+      "actual_exit_code": -6,
+      "expected_message_present": true,
+      "original_checkpoint_intact": true
+    }
+  },
+  "original_full_sigmoid_failure_resolved": false,
+  "full_checkpoint_replay_validated": false,
+  "security_qualified": false
+}

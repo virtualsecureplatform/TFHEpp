@@ -1,0 +1,110 @@
+{
+  "scope": "Paired N512 packed primary4 vs projected primary8; extraction time excludes validation callbacks; concurrent large CPU jobs mean this is exploratory, not an isolated benchmark or full-ring speedup.",
+  "terminal": true,
+  "fresh_keys_generated": false,
+  "omp_threads": 4,
+  "address_space_limit_bytes": 2147483648,
+  "retained_files_before": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "runs": [
+    {
+      "trial": 0,
+      "primary_bits": 4,
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 4,
+        "rows": 106,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.037706477,
+        "extraction_and_validation_seconds": 15.514600956,
+        "validation_seconds": 1.5078027639999987,
+        "extraction_seconds_excluding_callbacks": 14.006798192000002,
+        "ciphertexts_identical": true,
+        "max_slot_difference": 0,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    },
+    {
+      "trial": 1,
+      "primary_bits": 8,
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 8,
+        "rows": 53,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.017787277,
+        "extraction_and_validation_seconds": 12.002254969,
+        "validation_seconds": 1.5644771270000013,
+        "extraction_seconds_excluding_callbacks": 10.437777842,
+        "ciphertexts_identical": false,
+        "max_slot_difference": 2.030767446803211e-10,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    },
+    {
+      "trial": 2,
+      "primary_bits": 8,
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 8,
+        "rows": 53,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.019541216,
+        "extraction_and_validation_seconds": 12.765159989,
+        "validation_seconds": 1.8126715309999966,
+        "extraction_seconds_excluding_callbacks": 10.952488458000005,
+        "ciphertexts_identical": false,
+        "max_slot_difference": 2.030767446803211e-10,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    },
+    {
+      "trial": 3,
+      "primary_bits": 4,
+      "actual_exit_code": 0,
+      "report": {
+        "n": 512,
+        "primary_bits": 4,
+        "rows": 106,
+        "fresh_keys_generated": false,
+        "terms": 2048,
+        "prepare_seconds": 0.029692385,
+        "extraction_and_validation_seconds": 14.255407193,
+        "validation_seconds": 1.3927400920000017,
+        "extraction_seconds_excluding_callbacks": 12.862667100999998,
+        "ciphertexts_identical": true,
+        "max_slot_difference": 0,
+        "direct_phase_terms": 16,
+        "direct_phase_max_difference": 0,
+        "accuracy_passed": true
+      }
+    }
+  ],
+  "retained_files_after": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "retained_files_unchanged": true,
+  "source_sha256": "2593d5c675e5d922d582b0c3cc81f6c492e2de77c7bc3526cc13647daa08799f",
+  "executable_sha256": "f0285ddd2ffa1511fa4c0d05748d23f03ebe03733959b51013f7650c9f6a3d26",
+  "all_checks_passed": true,
+  "median_extraction_seconds_by_primary_bits": {
+    "4": 13.434732646499999,
+    "8": 10.695133150000002
+  },
+  "observed_median_ratio_primary4_over_primary8": 1.2561538466213482
+}

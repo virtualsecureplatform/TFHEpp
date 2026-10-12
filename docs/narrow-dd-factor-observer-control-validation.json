@@ -1,0 +1,37 @@
+{
+  "scope": "Retained N512 replay with factor observer; saved ciphertext and prefix unchanged",
+  "actual_exit_code": 0,
+  "build_actual_exit_code": 0,
+  "result": {
+    "n": 512,
+    "function": "sigmoid",
+    "auxiliary_bits": 8,
+    "mode": "--replay",
+    "fresh_keys_generated": false,
+    "fresh_input_max_error": 8.612885499260468e-12,
+    "saved_max_error": 1.3615911225947476e-09,
+    "saved_rms_error": 8.208303918710317e-10,
+    "refresh_seconds": 33.869525688,
+    "selector_ntt_digit_bits": 16,
+    "factor_groups_completed": 70,
+    "factor_stage_seconds": {
+      "selector_load": 0.022105889000000014,
+      "table_ntt": 0.22444177300000004,
+      "selector_ntt": 0.40968258800000007,
+      "matrix": 0.642050812,
+      "inverse_crt": 0.5448848179999999,
+      "conjugation": 3.1933201210000006
+    },
+    "max_error": 1.3615911225947476e-09,
+    "rms_error": 8.208303918710317e-10,
+    "saved_output_equal": true,
+    "accuracy_passed": true,
+    "retained_square_validated": false,
+    "selector_halves_mixed": false,
+    "selector_group_loads": 0
+  },
+  "prefix_identical_to_unobserved_control": true,
+  "prefix_sha256": "fb28516def3cc36e2e88e3fa2ae8f3642a71b9210224dee7bd0c88f6b877c52b",
+  "fresh_keys_generated": false,
+  "full_ring_validated": false
+}

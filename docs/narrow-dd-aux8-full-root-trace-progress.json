@@ -1,0 +1,22 @@
+{
+  "scope": "Check the 24 weighted roots of an auxiliary8 degree12 complex sigmoid replay.\n\nThe C++ observer measures roots against the actual prepared sparse phase.\nThis checks trace consistency, not independent decryption or final accuracy.\n",
+  "root_count": 16,
+  "expected_root_count": 24,
+  "trace_complete": false,
+  "ignored_unfinished_bytes": 0,
+  "complete_prefix_sha256": "ad6c4680383b2bc03ac092a0084158c430c17b18947614c93be706a0ae5f22f6",
+  "maximum_observed_root_error": 1.4532656218999151e+20,
+  "maximum_observed_root_amplitude": 1.4532656218999151e+20,
+  "first_root_exceeding_23bit_gate": {
+    "observation": 0,
+    "frequency": 1,
+    "weight_abs": 0.2699818048968007,
+    "max_error": 1.2607399722319741e+20,
+    "max_abs": 1.2607399722319741e+20
+  },
+  "observed_roots_below_23bit": false,
+  "independent_phase_validated": false,
+  "final_refresh_accuracy_validated": false,
+  "failure_cause_established": false,
+  "security_validated": false
+}

@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-09T23:48:43.473390+00:00",
+  "scope": "Synthetic N512 structurally valid public selector files; no encrypted selector correctness claim",
+  "source": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/estimates/narrow_ckks_selector_integrity.py",
+  "source_sha256": "c92f6e6eed240473a30768426ee22b33aa4d442cdb346b0cdc2c549c0b631831",
+  "controls": {
+    "unchanged_all_groups": true,
+    "single_payload_bit_changed_same_length": true,
+    "truncated_group": true,
+    "trailing_data": true,
+    "wrong_selector_modulus": true,
+    "missing_group": true,
+    "symlink_group": true,
+    "symlink_directory": true,
+    "incomplete_manifest": true,
+    "wrong_manifest_format": true,
+    "unsupported_ring": true,
+    "identical_replacement_allowed": true,
+    "baseline_not_overwritten": true,
+    "cli_verify": true
+  },
+  "all_controls_passed": true,
+  "groups_checked": 35,
+  "full_retained_files_snapshotted": false,
+  "selector_phases_validated": false,
+  "error_origin_established": false,
+  "security_validated": false
+}

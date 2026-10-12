@@ -1,0 +1,102 @@
+{
+  "observed_at_utc": "2026-10-08T19:05:23.358105+00:00",
+  "scope": "Modular CUDA tensor-product spectral contraction and dynamic Shoup quotients. Host arithmetic/layout checks pass; no device kernel execution or complete wide tensor recomposition/rescale/relinearization/tree validation.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "b2e4c8e869899fbf07f4c22ac0da132ac89157230c7b3a6ba88ab1cc72901040",
+    "include/ckks/detail/narrow_cuda_arithmetic.hpp": "de9b4423e30560d09e95448ca7e02c2f5a9a686ba9aefd2592053fc6442ac2ba",
+    "src/ckks/narrow_cuda.cu": "e206a19e2a464397866a08efdae252d715f726c1b6188760533105f488c73a68",
+    "test/ckks/ckks_narrow_cuda.cu": "456dc503860bb7f72915fbd1e6af3030f7c5cf124537b6cdff443e9687292ab5"
+  },
+  "cuda_tensor_spectral_contraction_source_implemented": true,
+  "dynamic_shoup_device_quotient_source_implemented": true,
+  "input_layout": "[mask/body][descending physical digit row][natural NTT point][column], same digit base for both inputs",
+  "output_layout": "[cross mask/body/quadratic mask][ascending physical digit sum][natural NTT point][column]",
+  "output_digit_rows": "lhs_rows+rhs_rows-1",
+  "products": "cross=lhs_mask*rhs_body+lhs_body*rhs_mask; body=lhs_body*rhs_body; quadratic=lhs_mask*rhs_mask",
+  "dynamic_shoup_arithmetic": "Exact binary long division for floor(canonical_value*2^64/prime), 64 uint64 steps, with prime<2^63; no host transfer or floating computation.",
+  "output_overwrites_every_residue": true,
+  "read_only_operand_aliasing_allowed_for_squares": true,
+  "output_disjoint_from_all_operand_and_quotient_buffers": true,
+  "canonical_residues_and_matching_quotients_are_caller_preconditions": true,
+  "no_per_row_rounding": true,
+  "no_centered_integer_crt_capacity_claim_at_spectral_stage": true,
+  "caller_must_prove_wide_recomposition_and_crt_capacity_for_full_product": true,
+  "device_allocation_or_tensor_transfer_during_operations": false,
+  "cuda_cmake_final_build_exit_code": 0,
+  "cuda_cmake_final_build_session": 96999,
+  "cuda_cmake_build_log": "/tmp/ckks-narrow-cuda-tensor-spectra-final-build.log",
+  "cuda_test_actual_exit_code": 77,
+  "cuda_test_log": "/tmp/ckks-narrow-cuda-tensor-spectra-cmake-test.log",
+  "host_tensor_invalid_requests_passed": 16,
+  "host_tensor_valid_layouts_passed": 2,
+  "host_dynamic_shoup_invalid_requests_passed": 7,
+  "host_dynamic_shoup_quotient_and_product_cases_passed": 105,
+  "host_dynamic_shoup_moduli": [
+    3,
+    193,
+    2301972608560791553,
+    2295217002959732737,
+    9223372036854775783
+  ],
+  "host_dynamic_shoup_reference": "Independent unsigned __int128 division and modular multiplication; zero,one,half,p-2,p-1 and sixteen random values per modulus.",
+  "host_tensor_coefficient_product_cases_passed": 16,
+  "host_tensor_reference": "Independent signed integer coefficient-space negacyclic products, grouped by ascending physical digit sum for all three native tensor components, then CPU natural NTT; exact equality to the portable spectral contraction used by the device kernel. Every RHS Shoup quotient compared independently against wide division.",
+  "points": [
+    2,
+    32
+  ],
+  "lhs_rhs_row_pairs": [
+    [
+      1,
+      1
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      5,
+      3
+    ],
+    [
+      3,
+      3
+    ]
+  ],
+  "square_shared_spectra_cases": 4,
+  "columns": [
+    1,
+    3
+  ],
+  "auxiliary_primes": [
+    2301972608560791553,
+    2295217002959732737
+  ],
+  "coefficient_digit_range": [
+    -128,
+    127
+  ],
+  "host_ubsan_final_build_exit_code": 0,
+  "host_ubsan_final_build_session": 58926,
+  "host_ubsan_build_log": "/tmp/ckks-narrow-cuda-tensor-spectra-host-ubsan-build.log",
+  "host_ubsan_argv": "/tmp/ckks-narrow-cuda-tensor-spectra-host-ubsan-argv.json",
+  "host_ubsan_test_actual_exit_code": 77,
+  "host_ubsan_test_driver_session": 34903,
+  "host_ubsan_test_driver_exit_code": 0,
+  "host_ubsan_test_log": "/tmp/ckks-narrow-cuda-tensor-spectra-ubsan-test.log",
+  "host_ubsan_stderr_log": "/tmp/ckks-narrow-cuda-tensor-spectra-ubsan-test.stderr",
+  "host_ubsan_no_diagnostics": true,
+  "host_ubsan_scope": "Both CUDA source and test host routines plus portable quotient/product/tensor helpers instrumented. Device kernels not instrumented or executed.",
+  "previous_kernel_host_checks_rechecked": true,
+  "total_kernel_host_rejections_passed": 133,
+  "compiled_matching_tensor_device_cases": 16,
+  "compiled_device_checks_include_actual_dynamic_quotient_kernel_and_shared_operand_squaring": true,
+  "device_cases_executed": false,
+  "gpu_device_count": 0,
+  "gpu_tensor_spectral_contraction_validated": false,
+  "complete_cuda_tensor_product_implemented": false,
+  "complete_cuda_refresh_backend_implemented": false,
+  "tensor_core_backend_implemented": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false
+}

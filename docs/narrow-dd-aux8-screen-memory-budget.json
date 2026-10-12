@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-09T07:30:50.008553+00:00",
+  "scope": "Single-mask q56 scalar-GSA joint-decoder sensitivity using the existing exact posterior",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17683124224,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1831156,
+      "start_ticks": 217652148,
+      "rss_bytes": 8838942720,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 104914997248,
+  "required_bytes": 89442050048,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_cap_bytes": 2147483648,
+  "eligible": true
+}

@@ -1,0 +1,31 @@
+{
+  "scope": "N32768 fused BSGS public arithmetic at basis storage widths576/640, actual S2C level129/drop37 plus high and full-storage levels; independent cpp_int exact signed negacyclic convolution and rounding; no keys/encryption, not whole encrypted basis accuracy",
+  "build_actual_exit_code": 0,
+  "actual_exit_code": 0,
+  "all_checks_passed": true,
+  "coefficient_checks": 1179648,
+  "groups_checked": 18,
+  "source_sha256": "3dae33363373742ce9615dcc72e73b57d71f45c83796305ddddcfb5a2ffaa394",
+  "exe_sha256": "aefb4340c74dc6a0e6f6bf20c33b25f4b70b2dddb021e5667bfe9922b707f0a5",
+  "fresh_keys_generated": false,
+  "records": [
+    "exact fused BSGS passed N=32768 Q=129 storage_bits=576 drop=37 mode=0 terms=33 coefficients=65536 seconds=0.688826",
+    "exact fused BSGS passed N=32768 Q=518 storage_bits=576 drop=47 mode=0 terms=33 coefficients=65536 seconds=1.68163",
+    "exact fused BSGS passed N=32768 Q=576 storage_bits=576 drop=48 mode=0 terms=33 coefficients=65536 seconds=1.69092",
+    "exact fused BSGS passed N=32768 Q=129 storage_bits=640 drop=37 mode=0 terms=33 coefficients=65536 seconds=0.575553",
+    "exact fused BSGS passed N=32768 Q=536 storage_bits=640 drop=49 mode=0 terms=33 coefficients=65536 seconds=1.914",
+    "exact fused BSGS passed N=32768 Q=640 storage_bits=640 drop=48 mode=0 terms=33 coefficients=65536 seconds=2.11015",
+    "exact fused BSGS passed N=32768 Q=129 storage_bits=576 drop=37 mode=1 terms=33 coefficients=65536 seconds=0.503964",
+    "exact fused BSGS passed N=32768 Q=518 storage_bits=576 drop=47 mode=1 terms=33 coefficients=65536 seconds=1.67127",
+    "exact fused BSGS passed N=32768 Q=576 storage_bits=576 drop=48 mode=1 terms=33 coefficients=65536 seconds=1.73979",
+    "exact fused BSGS passed N=32768 Q=129 storage_bits=640 drop=37 mode=1 terms=33 coefficients=65536 seconds=0.522166",
+    "exact fused BSGS passed N=32768 Q=536 storage_bits=640 drop=49 mode=1 terms=33 coefficients=65536 seconds=1.38199",
+    "exact fused BSGS passed N=32768 Q=640 storage_bits=640 drop=48 mode=1 terms=33 coefficients=65536 seconds=1.02841",
+    "exact fused BSGS passed N=32768 Q=129 storage_bits=576 drop=37 mode=2 terms=1 coefficients=65536 seconds=0.0357535",
+    "exact fused BSGS passed N=32768 Q=518 storage_bits=576 drop=47 mode=2 terms=1 coefficients=65536 seconds=0.105158",
+    "exact fused BSGS passed N=32768 Q=576 storage_bits=576 drop=48 mode=2 terms=1 coefficients=65536 seconds=0.122976",
+    "exact fused BSGS passed N=32768 Q=129 storage_bits=640 drop=37 mode=2 terms=1 coefficients=65536 seconds=0.0676298",
+    "exact fused BSGS passed N=32768 Q=536 storage_bits=640 drop=49 mode=2 terms=1 coefficients=65536 seconds=0.213246",
+    "exact fused BSGS passed N=32768 Q=640 storage_bits=640 drop=48 mode=2 terms=1 coefficients=65536 seconds=0.11079"
+  ]
+}

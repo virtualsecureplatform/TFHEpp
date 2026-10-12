@@ -1,0 +1,34 @@
+{
+  "observed_at_utc": "2026-10-09T05:42:09.609355+00:00",
+  "scope": "Aux16 candidate: concurrent2GiB Sage sparse64 sensitivity grids and16GiB compiler reserve; unchanged live packed run",
+  "live_job_pid": 1756575,
+  "live_job_rss_bytes": 17687748608,
+  "live_job_limit_bytes": 68719476736,
+  "available_memory_bytes": 114079965184,
+  "required_available_memory_bytes": 81096499200,
+  "auxiliary_limit_bytes": 2147483648,
+  "compiler_reserve_bytes": 17179869184,
+  "launch_eligible": true,
+  "security_sessions": [
+    77063,
+    4251
+  ],
+  "security_sessions_terminal": true,
+  "security_actual_exit_codes": [
+    0,
+    0
+  ],
+  "build_session": 41050,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "small_sessions": [
+    54643,
+    55521
+  ],
+  "small_sessions_terminal": true,
+  "small_actual_exit_codes": [
+    0,
+    0
+  ],
+  "completion_evidence": "narrow-dd-aux16-small-validation.json"
+}

@@ -1,0 +1,16 @@
+{
+  "classification": "verified wait",
+  "observed_utc": "2026-10-11T21:40:38.042304+00:00",
+  "evaluator_pid": 2065807,
+  "evaluator_start_ticks": 240023784,
+  "same_evaluator_live": true,
+  "cpu_tick_delta": 16204,
+  "wall_observation_seconds": 45.892334728036076,
+  "completed_terms_before": 13824,
+  "completed_terms_after": 14592,
+  "terminal": false,
+  "controller_pid": 2065804,
+  "estimated_extraction_minutes": 87.33941520467836,
+  "no_restart": true,
+  "new_keys_generated": 0
+}

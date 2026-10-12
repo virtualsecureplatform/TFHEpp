@@ -1,0 +1,202 @@
+{
+  "observed_at_utc": "2026-10-10T11:56:33.664293+00:00",
+  "scope": "Power-of-two tensor rescale by exact limb extraction/sign handling; independent full-ring integer NTT tensor oracle and independent cpp_int accumulator oracle; no keys generated",
+  "build_actual_exit_code": 0,
+  "build_session": 47416,
+  "full_ring_actual_exit_codes": [
+    {
+      "mode": "--full",
+      "exit_code": 0
+    },
+    {
+      "mode": "--packed",
+      "exit_code": 0
+    }
+  ],
+  "all_checks_passed": true,
+  "ring_n": 16384,
+  "full_ring_coefficients_checked": 2359296,
+  "independent_accumulator_samples": 2992,
+  "accumulator_drops": [
+    0,
+    1,
+    48,
+    49,
+    63,
+    64,
+    65,
+    127,
+    128,
+    256,
+    447
+  ],
+  "helper_control_executable_sha256": "2b6f3ee7ba1d678273a5fbe2e2a66ad8c08924857c86f0cadf0f888b4379db46",
+  "helper_control_source_sha256": "76b073f08910daeee495967d0dc1eec8c7cfe64e47c13f753b8b339a15df1ece",
+  "source_sha256": {
+    "TFHEpp/include/ckks/ckks.hpp": "edbfb68f66e5d2965a5b0605b1cc7e54dc2179ac501220d5b81b26df8cd20a10",
+    "NTT_test_before_new_rescale_mode": "a687a648b17638ddf18a4886adcec012fca24ec7e698d19aef8916dd932a4632"
+  },
+  "accumulator_results": [
+    "PASS drop=0 samples=272 seconds=0.00260976",
+    "PASS drop=1 samples=272 seconds=0.00260521",
+    "PASS drop=48 samples=272 seconds=0.00333411",
+    "PASS drop=49 samples=272 seconds=0.00330002",
+    "PASS drop=63 samples=272 seconds=0.00328934",
+    "PASS drop=64 samples=272 seconds=0.00323068",
+    "PASS drop=65 samples=272 seconds=0.00315023",
+    "PASS drop=127 samples=272 seconds=0.00310314",
+    "PASS drop=128 samples=272 seconds=0.00305601",
+    "PASS drop=256 samples=272 seconds=0.00285494",
+    "PASS drop=447 samples=272 seconds=0.00231678"
+  ],
+  "full_ring_results": {
+    "full": [
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=348 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=348 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=300 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=300 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=300 rhsQ=300 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=300 rhsQ=300 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=252 rhsQ=252 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=252 rhsQ=252 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=204 rhsQ=204 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=204 rhsQ=204 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=156 rhsQ=156 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=156 rhsQ=156 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=108 rhsQ=108 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=108 rhsQ=108 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=348 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=348 rhsQ=348 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=300 rhsQ=300 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=300 rhsQ=300 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=252 rhsQ=252 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=252 rhsQ=252 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=204 rhsQ=204 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=204 rhsQ=204 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=156 rhsQ=156 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=156 rhsQ=156 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=108 rhsQ=108 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=108 rhsQ=108 drop=48 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=448 rhsQ=448 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=448 rhsQ=448 drop=48 coefficients=49152"
+    ],
+    "packed": [
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=345 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=345 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=296 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=296 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=296 rhsQ=296 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=296 rhsQ=296 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=247 rhsQ=247 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=247 rhsQ=247 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=198 rhsQ=198 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=198 rhsQ=198 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=149 rhsQ=149 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=149 rhsQ=149 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=345 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=345 rhsQ=345 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=247 rhsQ=247 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=247 rhsQ=247 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=198 rhsQ=198 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=198 rhsQ=198 drop=49 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=149 rhsQ=149 drop=0 coefficients=49152",
+      "exact full-ring tensor passed N=16384 lhsQ=149 rhsQ=149 drop=49 coefficients=49152"
+    ]
+  },
+  "component_timing_control": [
+    {
+      "lhs_q": 348,
+      "rhs_q": 348,
+      "boundary": false,
+      "original4_seconds": 1.10802,
+      "original16_seconds": 0.55469,
+      "adaptive16_shift_seconds": 0.201721,
+      "explicit16_shift_seconds": 0.201317
+    },
+    {
+      "lhs_q": 348,
+      "rhs_q": 300,
+      "boundary": false,
+      "original4_seconds": 1.00119,
+      "original16_seconds": 0.565857,
+      "adaptive16_shift_seconds": 0.180776,
+      "explicit16_shift_seconds": 0.203892
+    },
+    {
+      "lhs_q": 300,
+      "rhs_q": 300,
+      "boundary": false,
+      "original4_seconds": 0.786509,
+      "original16_seconds": 0.493043,
+      "adaptive16_shift_seconds": 0.338116,
+      "explicit16_shift_seconds": 0.397641
+    },
+    {
+      "lhs_q": 252,
+      "rhs_q": 252,
+      "boundary": false,
+      "original4_seconds": 0.855351,
+      "original16_seconds": 0.452022,
+      "adaptive16_shift_seconds": 0.250097,
+      "explicit16_shift_seconds": 0.300404
+    },
+    {
+      "lhs_q": 204,
+      "rhs_q": 204,
+      "boundary": false,
+      "original4_seconds": 0.710479,
+      "original16_seconds": 0.414029,
+      "adaptive16_shift_seconds": 0.176107,
+      "explicit16_shift_seconds": 0.251044
+    },
+    {
+      "lhs_q": 156,
+      "rhs_q": 156,
+      "boundary": false,
+      "original4_seconds": 0.559508,
+      "original16_seconds": 0.363667,
+      "adaptive16_shift_seconds": 0.187906,
+      "explicit16_shift_seconds": 0.171258
+    },
+    {
+      "lhs_q": 108,
+      "rhs_q": 108,
+      "boundary": false,
+      "original4_seconds": 0.435445,
+      "original16_seconds": 0.301243,
+      "adaptive16_shift_seconds": 0.0841924,
+      "explicit16_shift_seconds": 0.107773
+    },
+    {
+      "lhs_q": 348,
+      "rhs_q": 348,
+      "boundary": true,
+      "original4_seconds": 0.722623,
+      "original16_seconds": 0.300458,
+      "adaptive16_shift_seconds": 0.329035,
+      "explicit16_shift_seconds": 0.325336
+    }
+  ],
+  "timing_scope": "Sequential single component trials under other concurrent full-ring CPU jobs; no matched paper timing or whole-refresh speedup claim",
+  "whole_current_source_refresh_validated": false,
+  "paper_performance_reproduced": false,
+  "fresh_keys_generated": false,
+  "production_rescale_mode_passed": true,
+  "production_rescale_results": [
+    "exact accumulator rescale passed drop=0 samples=272",
+    "exact accumulator rescale passed drop=1 samples=272",
+    "exact accumulator rescale passed drop=48 samples=272",
+    "exact accumulator rescale passed drop=49 samples=272",
+    "exact accumulator rescale passed drop=63 samples=272",
+    "exact accumulator rescale passed drop=64 samples=272",
+    "exact accumulator rescale passed drop=65 samples=272",
+    "exact accumulator rescale passed drop=127 samples=272",
+    "exact accumulator rescale passed drop=128 samples=272",
+    "exact accumulator rescale passed drop=256 samples=272",
+    "exact accumulator rescale passed drop=447 samples=272"
+  ],
+  "final_test_build_actual_exit_code": 0,
+  "final_test_build_session": 80509,
+  "final_test_executable_sha256": "78421d871b48ab080e159c4a980085f440085dce8141a0770232fdb0f5fdbdd5",
+  "final_test_source_sha256": "6ffad54405daf1682bafb12114f12beaa1953da69ca668e10b63d28c2b2de7be"
+}

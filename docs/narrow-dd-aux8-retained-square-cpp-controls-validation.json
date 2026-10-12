@@ -1,0 +1,24 @@
+{
+  "scope": "Retained square reader rejects trailing/mixed replay prefixes and missing retained key",
+  "controls": [
+    {
+      "control": "trailing-prefix",
+      "actual_exit_code": 2,
+      "error": "unexpected replay prefix suffix",
+      "rejected_before_square_evaluation": true
+    },
+    {
+      "control": "mixed-target",
+      "actual_exit_code": 2,
+      "error": "replay prefix does not match retained state",
+      "rejected_before_square_evaluation": true
+    },
+    {
+      "control": "missing-square",
+      "actual_exit_code": 2,
+      "error": "missing retained square key",
+      "rejected_before_square_evaluation": true
+    }
+  ],
+  "passed": true
+}

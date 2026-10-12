@@ -1,0 +1,47 @@
+{
+  "scope": "N512 existing packed checkpoint; square key persisted then reused",
+  "runs": [
+    {
+      "label": "square-key-create",
+      "returncode": 0,
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/square-key-create.json",
+      "square_key_reused": false,
+      "refresh_max_error": 1.1839592261364745e-06,
+      "square_max_error": 4.185404874163791e-07
+    },
+    {
+      "label": "square-key-replay",
+      "returncode": 0,
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-checkpoint-reuse-20261010-nv_h8q8f/square-key-replay.json",
+      "square_key_reused": true,
+      "refresh_max_error": 1.1839592261364745e-06,
+      "square_max_error": 4.185404874163791e-07
+    }
+  ],
+  "terminal": true,
+  "all_passed": true,
+  "original_checkpoint_files_unchanged": true,
+  "square_key_unchanged": true,
+  "square_key_sha256": "ac64ba9906cb9fec25366830cb5ff0f391bc56bb940fd88b0fb77d7ea30af6b6",
+  "refresh_and_square_ciphertexts_identical": true,
+  "full_ring_replay_validated": false,
+  "source_sha256": "15050404e075dcdf361b4c4d413b1ce2e0fea5bc0125f1040f36506ed84d42d7",
+  "cpu_build_exit_code": 0,
+  "invalid_saved_key_controls": [
+    {
+      "case": "wrong-profile",
+      "returncode": -6,
+      "rejected": true
+    },
+    {
+      "case": "wrong-secret",
+      "returncode": -6,
+      "rejected": true
+    },
+    {
+      "case": "truncated",
+      "returncode": -6,
+      "rejected": true
+    }
+  ]
+}

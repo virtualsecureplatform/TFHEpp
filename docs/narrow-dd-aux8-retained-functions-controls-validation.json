@@ -1,0 +1,64 @@
+{
+  "utc": "2026-10-09T15:15:29.456665+00:00",
+  "scope": "Retained-function profile, original input identity, archive and target guards",
+  "controls": [
+    {
+      "control": "wrong function",
+      "rejected": true
+    },
+    {
+      "control": "wrong degree",
+      "rejected": true
+    },
+    {
+      "control": "fresh keys claim",
+      "rejected": true
+    },
+    {
+      "control": "missing metric",
+      "rejected": true
+    },
+    {
+      "control": "nonfinite metric",
+      "rejected": true
+    },
+    {
+      "control": "negative metric",
+      "rejected": true
+    },
+    {
+      "control": "zero product bound",
+      "rejected": true
+    },
+    {
+      "control": "changed input",
+      "rejected": true
+    },
+    {
+      "control": "trailing prefix",
+      "rejected": true
+    },
+    {
+      "control": "invalid CLI function",
+      "rejected": true,
+      "actual_exit_code": 2
+    },
+    {
+      "control": "wrong archive magic",
+      "rejected": true,
+      "actual_exit_code": 2
+    },
+    {
+      "control": "unsupported ring",
+      "rejected": true,
+      "actual_exit_code": 2
+    },
+    {
+      "control": "unsupported independent square target",
+      "rejected": true
+    }
+  ],
+  "controls_passed": true,
+  "small_original_input_identity_passed": true,
+  "full_functions_validated": false
+}

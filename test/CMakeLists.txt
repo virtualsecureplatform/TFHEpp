@@ -58,6 +58,23 @@ foreach(test_source ${test_sources})
         continue()
     endif()
     add_executable(${test_name} ${test_source})
+    if((test_name STREQUAL "ckks_narrow_benchmark" OR
+        test_name STREQUAL "ckks_narrow_basis_replay" OR
+        test_name STREQUAL "ckks_narrow_ll14_retained_fbs" OR
+        test_name STREQUAL "ckks_narrow_ll14_packed_fbs" OR
+        test_name STREQUAL "ckks_narrow_ll14_packed_complex_fbs" OR
+        test_name STREQUAL "ckks_narrow_ll14_ntt_fbs" OR
+        test_name STREQUAL "ckks_narrow_ll14_ntt_complex_fbs" OR
+        test_name STREQUAL "ckks_narrow_auxiliary_probe" OR
+        test_name STREQUAL "ckks_narrow_auxiliary_functions" OR
+        test_name STREQUAL "ckks_narrow_auxiliary_replay") AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        # This executable instantiates S2C for several parameter types sharing
+        # coefficient storage. GCC 13 IPA-ICF reproducibly loses the HT wider-DD
+        # S2C signal; otherwise identical builds with ICF disabled pass. Keep
+        # these instantiations distinct in both compilation and LTO linking.
+        target_compile_options(${test_name} PRIVATE -fno-ipa-icf)
+        target_link_options(${test_name} PRIVATE -fno-ipa-icf)
+    endif()
     if(test_dir STREQUAL "")
         set(test_output_dir "${CMAKE_CURRENT_BINARY_DIR}")
     else()

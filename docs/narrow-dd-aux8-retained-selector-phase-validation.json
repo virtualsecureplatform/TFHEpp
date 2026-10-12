@@ -1,0 +1,422 @@
+{
+  "utc": "2026-10-09T10:41:57.866088+00:00",
+  "scope": "All actual retained full aux8 sigmoid failure selectors, exact independent Q385 phase against signed indicator masks; production slot encoding supplies expected plaintext",
+  "n": 16384,
+  "selector_log_q": 385,
+  "selector_log_delta": 48,
+  "auxiliary_bits": 8,
+  "secret_prefix_view_evidence": "narrow-dd-aux8-selector-prefix-view-validation.json",
+  "original_state_sha256": "4f0b6991c45dc8e5cdf21edd46506fc0aa65b5c7ed4d721d162804908cef8d93",
+  "key_payload_sha256": "8a605ba6e197a9f55779573af88aaa37808bc7ee555d57f42e51e5d3ffedac23",
+  "private_executable": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/selector-phase-view-er01n8zu/inspector-original",
+  "executable_sha256": "22969b4c91fdbd39f07707a94fe8d81ba0f4ab4c2ffe80c27939616a3aa60ea9",
+  "evaluation_keys_loaded": false,
+  "selectors_modified": false,
+  "keys_generated": false,
+  "noise_envelope": 39,
+  "points": [
+    {
+      "name": "head-0",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "result": {
+        "n": 16384,
+        "group": 0,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 16,
+        "phase_accuracy_passed": true
+      },
+      "log": "/tmp/ckks-aux8-selector-head0.log"
+    },
+    {
+      "name": "head-1",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-1.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-1.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-1.time",
+      "result": {
+        "n": 16384,
+        "group": 1,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 16,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-2",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-2.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-2.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-2.time",
+      "result": {
+        "n": 16384,
+        "group": 2,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-3",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-3.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-3.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-3.time",
+      "result": {
+        "n": 16384,
+        "group": 3,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 16,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-4",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-4.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-4.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-4.time",
+      "result": {
+        "n": 16384,
+        "group": 4,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-5",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-5.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-5.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-5.time",
+      "result": {
+        "n": 16384,
+        "group": 5,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-6",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-6.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-6.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-6.time",
+      "result": {
+        "n": 16384,
+        "group": 6,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 18,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-7",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-7.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-7.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-7.time",
+      "result": {
+        "n": 16384,
+        "group": 7,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-8",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-8.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-8.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-8.time",
+      "result": {
+        "n": 16384,
+        "group": 8,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-9",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-9.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-9.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-9.time",
+      "result": {
+        "n": 16384,
+        "group": 9,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 18,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-10",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-10.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-10.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-10.time",
+      "result": {
+        "n": 16384,
+        "group": 10,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-11",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-11.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-11.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-11.time",
+      "result": {
+        "n": 16384,
+        "group": 11,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 18,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-12",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-12.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-12.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-12.time",
+      "result": {
+        "n": 16384,
+        "group": 12,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-13",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-13.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-13.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-13.time",
+      "result": {
+        "n": 16384,
+        "group": 13,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 18,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-14",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-14.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-14.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-14.time",
+      "result": {
+        "n": 16384,
+        "group": 14,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 16,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-15",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-15.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-15.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-15.time",
+      "result": {
+        "n": 16384,
+        "group": 15,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-16",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-16.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-16.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-16.time",
+      "result": {
+        "n": 16384,
+        "group": 16,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 19,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-17",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-17.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-17.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-17.time",
+      "result": {
+        "n": 16384,
+        "group": 17,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 18,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-18",
+      "actual_exit_code": 0,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-18.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-18.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-18.time",
+      "result": {
+        "n": 16384,
+        "group": 18,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 0,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": true
+      }
+    },
+    {
+      "name": "head-19",
+      "actual_exit_code": 1,
+      "terminal": true,
+      "log": "/tmp/ckks-aux8-selector-head-19.log",
+      "stderr": "/tmp/ckks-aux8-selector-head-19.stderr",
+      "time_log": "/tmp/ckks-aux8-selector-head-19.time",
+      "result": {
+        "n": 16384,
+        "group": 19,
+        "tail": false,
+        "selectors_checked": 529,
+        "phase_coefficients_checked": 8667136,
+        "checkpoint_prefix_bytes_read": 1835096,
+        "evaluation_keys_loaded": false,
+        "failed_selectors": 1,
+        "maximum_bounded_noise": 17,
+        "phase_accuracy_passed": false
+      }
+    }
+  ],
+  "terminal": true,
+  "all_groups_passed": false,
+  "security_validated": false,
+  "failure_cause_established": false,
+  "actual_exit_code": 1
+}

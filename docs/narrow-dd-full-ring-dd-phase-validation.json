@@ -1,0 +1,128 @@
+{
+  "observed_at_utc": "2026-10-08T23:36:47.987784+00:00",
+  "scope": "Independent exact full-ring DD encrypted-key message and switched-ciphertext phase validation, alongside FFT/NTT equality.",
+  "n": 16384,
+  "native_storage_bits": 448,
+  "active_moduli": [
+    348,
+    300,
+    252,
+    204,
+    156,
+    108
+  ],
+  "primary_digit_bits": 4,
+  "secondary_digit_bits": 4,
+  "configured_gaussian_stddev": 3.2,
+  "key_generation_phase_checks": [
+    {
+      "active_modulus": 348,
+      "coefficients": 1425408,
+      "maximum_noise": 16
+    },
+    {
+      "active_modulus": 300,
+      "coefficients": 1228800,
+      "maximum_noise": 18
+    },
+    {
+      "active_modulus": 252,
+      "coefficients": 1032192,
+      "maximum_noise": 15
+    },
+    {
+      "active_modulus": 204,
+      "coefficients": 835584,
+      "maximum_noise": 16
+    },
+    {
+      "active_modulus": 156,
+      "coefficients": 638976,
+      "maximum_noise": 16
+    },
+    {
+      "active_modulus": 108,
+      "coefficients": 442368,
+      "maximum_noise": 14
+    }
+  ],
+  "key_phase_coefficients": 5603328,
+  "switched_phase_checks": [
+    {
+      "active_modulus": 348,
+      "coefficients": 16384,
+      "maximum_error": 64830,
+      "convolution_bound": 182452224
+    },
+    {
+      "active_modulus": 300,
+      "coefficients": 16384,
+      "maximum_error": 62097,
+      "convolution_bound": 176947200
+    },
+    {
+      "active_modulus": 252,
+      "coefficients": 16384,
+      "maximum_error": 50548,
+      "convolution_bound": 123863040
+    },
+    {
+      "active_modulus": 204,
+      "coefficients": 16384,
+      "maximum_error": 44954,
+      "convolution_bound": 106954752
+    },
+    {
+      "active_modulus": 156,
+      "coefficients": 16384,
+      "maximum_error": 39391,
+      "convolution_bound": 81788928
+    },
+    {
+      "active_modulus": 108,
+      "coefficients": 16384,
+      "maximum_error": 34871,
+      "convolution_bound": 49545216
+    }
+  ],
+  "switched_phase_coefficients": 98304,
+  "fft_ntt_coefficients_compared": 196608,
+  "all_checks_passed": true,
+  "phase_sign": "b-a*s",
+  "expected_key_message": "s*s shifted by 4*(primary_rows-i-1), modulo 2^Q",
+  "expected_switched_message": "input*(s*s) modulo 2^Q",
+  "reference": {
+    "arithmetic": "unsigned 16-bit chunks with exact integer negacyclic NTT, direct low-Q masking and centered error magnitudes",
+    "prime": 4611686018427322369,
+    "primitive_root": 7,
+    "secret_square": "exact NTT pointwise square; recovered signed coefficients bounded by N",
+    "chunk_convolution_bound": "N*N*65535 < prime/2, checked statically",
+    "key_phase_gate": "absolute noise <=39, a diagnostic ceil(12*3.2) envelope",
+    "switched_phase_gate": "absolute error <= primary_rows*N*8*maximum_observed_key_noise",
+    "uses_production_secret_multiplication": false,
+    "uses_production_decryption": false
+  },
+  "terminal": true,
+  "actual_exit_code": 0,
+  "stderr_bytes": 0,
+  "session": 31775,
+  "build_log": "/tmp/ckks-narrow-dd-exact-phase-build.log",
+  "test_log": "/tmp/ckks-narrow-dd-exact-phase-test.log",
+  "time_log": "/tmp/ckks-narrow-dd-exact-phase-time.log",
+  "wall_time": "1:30.87",
+  "peak_rss_kib": 2462284,
+  "source_sha256": {
+    "test/ckks/ckks_narrow_dd_exact.cpp": "bbe408119de9d526d979df2176323eb8fd5bc9a87ffa260067fd484d955377c7",
+    "include/ckks/compact_dd.hpp": "33322058094889f5f117b38638e2237430eeb9c7f6300919003b0da4a391ad3b",
+    "include/ckks/ckks.hpp": "e2bac3ef492d17c34686e7045ee30ed52d1ece744f03f4165dbdb00735ddbd4f",
+    "include/mulfft.hpp": "aa65978f25165392b3b42a06e5a69c80bf6c42687cef5ee219baf5e823b6ff6d",
+    "include/modular_ntt.hpp": "84be16def818a54d91c34cd4540185c7ebc943af2fcaeca65fd7bf8c7da89f2a"
+  },
+  "limitations": [
+    "A generated dense-ternary key per active modulus; the unsaved failing keys cannot be checked.",
+    "Noise envelope is a diagnostic accuracy gate, not a proof of distribution or security.",
+    "Does not establish complete packed refresh accuracy or resolve original/O1 sigmoid failures."
+  ],
+  "original_sigmoid_failures_resolved": false,
+  "security_qualified": false
+}

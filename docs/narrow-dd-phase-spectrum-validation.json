@@ -1,0 +1,105 @@
+{
+  "observed_at_utc": "2026-10-09T04:39:43.951919+00:00",
+  "scope": "Full N16384 Q108 scale48 retained passing sigmoid ciphertext; exact phase statistics with explicit incorrect-key controls",
+  "source": "test/ckks/ckks_narrow_checkpoint_inspect.cpp",
+  "source_sha256": "aa9b634cbc9577e407d634ef7801a8d59ffcbf3df583268cbeec8393f253026a",
+  "build_session": 68590,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "executable_sha256": "2d3b3b5a9b83429648cd55272128721f1e9e0f250431fa58163baef8b46df1df",
+  "checkpoint": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-sigmoid-checkpoint-reproduction-2-20261008/checkpoint.bin",
+  "checkpoint_prefix_sha256": "28e1bc970d34c583904603cc8b56b7f6cb573b1c0290fa64c2f230c9d833bbf9",
+  "ciphertext": "docs/narrow-dd-ll14-plain37-checkpoint-reproduction-2.json.ciphertext",
+  "ciphertext_sha256": "5850c01e152015d01f6edd32ffc66c59557c0184eed4a499fa56621711054ed6",
+  "evaluation_key_suffix_loaded": false,
+  "exact_product": {
+    "prime": 4611686018427322369,
+    "primitive_root": 7,
+    "digit_bits": 16,
+    "secret_ternary_validated": true,
+    "convolution_absolute_bound": 1073725440,
+    "prime_signed_capacity": 2305843009213661184
+  },
+  "phase_spectrum_actual_exit_code": 0,
+  "metrics": {
+    "n": 16384,
+    "log_q": 108,
+    "log_delta": 48,
+    "checkpoint_prefix_bytes_read": 3801176,
+    "evaluation_keys_loaded": false,
+    "uniform_phase_predicted_slot_rms": 4.260093062651337e+19,
+    "cases": [
+      {
+        "key": "correct_dense",
+        "normalized_phase_mean": 1.0234190568114537e-22,
+        "normalized_phase_variance": 3.4535641521091033e-41,
+        "uniform_cdf_max_deviation": 0.5,
+        "slot_rms_error": 1.403895881686259e-09,
+        "maximum_error": 3.91157128339502e-09,
+        "rms_to_uniform_prediction": 3.295458247131629e-29,
+        "parseval_relative_error": 1.01872875009191e-17,
+        "accuracy_passed": true
+      },
+      {
+        "key": "incorrect_sparse",
+        "normalized_phase_mean": -0.0018655739808838717,
+        "normalized_phase_variance": 0.08261136046102263,
+        "uniform_cdf_max_deviation": 0.007411696842312273,
+        "slot_rms_error": 4.241688235937044e+19,
+        "maximum_error": 1.2447609702441768e+20,
+        "rms_to_uniform_prediction": 0.9956797125218578,
+        "parseval_relative_error": 2.904503894374111e-17,
+        "accuracy_passed": false
+      },
+      {
+        "key": "one_dense_coefficient_changed",
+        "normalized_phase_mean": -0.002884244713101695,
+        "normalized_phase_variance": 0.08366721898247116,
+        "uniform_cdf_max_deviation": 0.006877509872301567,
+        "slot_rms_error": 4.26883103984164e+19,
+        "maximum_error": 1.2646268560123624e+20,
+        "rms_to_uniform_prediction": 1.002051123546316,
+        "parseval_relative_error": 3.073440920371192e-17,
+        "accuracy_passed": false
+      }
+    ],
+    "control_checks_passed": true
+  },
+  "prefix_regression_actual_exit_code": 0,
+  "prefix_regression": {
+    "n": 16384,
+    "function": "sigmoid",
+    "checkpoint_prefix_bytes_read": 3801176,
+    "evaluation_keys_loaded": false,
+    "fresh_input_max_error": 7.46812795398667e-11,
+    "refresh_max_error": 3.91157128339502e-09,
+    "refresh_rms_error": 1.403895881686259e-09,
+    "target_tolerance": 1.1920928955078125e-07,
+    "refresh_accuracy_passed": true
+  },
+  "small_ring_rejected_exit_code": 2,
+  "stderr_bytes": 0,
+  "wall_time": "0:00.13",
+  "peak_rss_kib": 15276,
+  "historical_failures": {
+    "narrow-dd-ll14-plain37-sigmoid.json": {
+      "report_sha256": "999270b8ec227d60f1e5a472d5fa935416e7a2f69c5d47c362e2069f67cbb876",
+      "rms_error": 4.262954455391171e+19,
+      "rms_to_uniform_phase_prediction": 1.000671673763402,
+      "max_to_rms_ratio": 4.206427306329771
+    },
+    "narrow-dd-ll14-plain37-sigmoid-ubsan.json": {
+      "report_sha256": "56b23fc0fd71237918dd338d0d321154bac3fa782dd4eac3ba4542c07bf354bb",
+      "rms_error": 4.253671322349943e+19,
+      "rms_to_uniform_phase_prediction": 0.9984925821556121,
+      "max_to_rms_ratio": 2.8277794513028045
+    }
+  },
+  "interpretation": "Historical RMS scale is consistent with loss of phase correlation; controlled incorrect keys reproduce that scale. This does not identify the historical failure cause or establish that incorrect keys were used.",
+  "limitations": [
+    "Original failing keys/ciphertexts were not retained; no retrospective cause proof",
+    "Slot transform uses the existing FFT decoder; Parseval is independently checked against exact integer phase coefficient norms",
+    "New diagnostic reads a checkpoint prefix and saved ciphertext, not live evaluator buffers or evaluation-key suffix"
+  ],
+  "goal_complete": false
+}

@@ -1,0 +1,32 @@
+{
+  "scope": "N512 primary8 projection from existing primary4 packed automorphism rows; all selectors compared by decrypted slot difference; sixteen direct integer phase controls. Diagnostic only, no full-ring speed or security claim.",
+  "actual_exit_code": 0,
+  "wall_seconds": 12.45742623694241,
+  "fresh_keys_generated": false,
+  "fixture": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-cache-depths-20261009-l0em3r_0/fixture",
+  "retained_files_before": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "retained_files_after": {
+    "packed.bin": "0067a17eb8a4022e80d035ab75ec9b3a245b1f3b068c935d85ac0def6f2d7bc2",
+    "terms.bin": "4c922c519be6237dc23763824b01f91cb3381c97b9890f69f2a7acbce37b6a6f"
+  },
+  "retained_files_unchanged": true,
+  "source_sha256": "176bbd1b03c9811612b4715ab74ec79b30709a24268d724c2a7b9439dacba100",
+  "executable_sha256": "6f26e1d3a0837af600f8be2e728de319f3f48ed283f79d751fe5005c28274265",
+  "report": {
+    "n": 512,
+    "primary_bits": 8,
+    "rows": 53,
+    "fresh_keys_generated": false,
+    "terms": 2048,
+    "prepare_seconds": 0.018092842,
+    "extraction_and_validation_seconds": 12.157736661,
+    "max_slot_difference": 2.030767446803211e-10,
+    "direct_phase_terms": 16,
+    "direct_phase_max_difference": 0,
+    "accuracy_passed": true
+  },
+  "all_checks_passed": true
+}

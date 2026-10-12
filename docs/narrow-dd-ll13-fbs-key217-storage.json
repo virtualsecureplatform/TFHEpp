@@ -1,0 +1,28 @@
+{
+  "profiles": [
+    {
+      "profile": "ll13-fbs-key217-dd",
+      "n": 8192,
+      "selector_bits": 217,
+      "root_scale_bits": 27,
+      "root_plain_bits": 24,
+      "primary_bits": 4,
+      "secondary_bits": 4,
+      "raw_setup_bytes": 4139778288,
+      "raw_dd_chain_bytes": 3490709504,
+      "compact_dd_setup_bytes": 758153456,
+      "compact_dd_chain_bytes": 109084672,
+      "dense_s2c_term_bytes": 2147549184,
+      "compact_s2c_term_bytes": 536936448,
+      "prepared_factor_auto_bytes": 396492800,
+      "prepared_output_auto_bytes": 57802752,
+      "prepared_dd_chain_bytes": 872677376,
+      "tail_rotation_binary_keys": 6,
+      "prepared_tail_rotation_bytes": 2378956800,
+      "bounded_tail_rotation_peak_bytes": 396492800,
+      "one_selector_group_ntt_bytes": 972554240,
+      "expanded_selector_bytes": 5001707520,
+      "one_selector_group_bytes": 138936320
+    }
+  ]
+}

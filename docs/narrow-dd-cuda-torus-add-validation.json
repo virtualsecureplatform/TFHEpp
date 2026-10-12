@@ -1,0 +1,89 @@
+{
+  "observed_at_utc": "2026-10-08T22:26:48.719809+00:00",
+  "scope": "Native modular addition primitive for S2C term/group accumulation compiled. Exact disjoint/in-place semantics, host metadata and portable wide-reference arithmetic pass normal/UBSan. All device execution and complete S2C integration unverified.",
+  "source_sha256": {
+    "include/ckks/narrow_cuda.hpp": "13037f4acedadc07497e80987e050d303fc2ed8f21d25fc51a2c56c5932ea935",
+    "src/ckks/narrow_cuda.cu": "041ad34fa0598d0497071c9bb551929bd537c56b54184cfc7968c420e6c86c2c",
+    "test/ckks/ckks_narrow_cuda.cu": "cd29c2e266841ebe9bf2bcaa37e81e260bd2a8279d9efb99506d0d4d4323ac17"
+  },
+  "apis": [
+    "CKKSNarrowCUDAValidateTorusAdd",
+    "CKKSNarrowCUDATorusAdd"
+  ],
+  "implementation": "Reuses existing native sum kernel with zero scale drop. Output is canonical modulo input Q, unchanged scale. Exact complete output/input aliases accepted, partial aliases rejected. Read-only inputs may share storage.",
+  "q_limb_profiles": [
+    [
+      1,
+      1
+    ],
+    [
+      37,
+      1
+    ],
+    [
+      64,
+      1
+    ],
+    [
+      65,
+      2
+    ],
+    [
+      217,
+      4
+    ],
+    [
+      385,
+      7
+    ],
+    [
+      842,
+      14
+    ],
+    [
+      896,
+      14
+    ]
+  ],
+  "coefficients_per_profile": 96,
+  "alias_modes": [
+    "disjoint output",
+    "output equals left",
+    "output equals right",
+    "left/right/output identical"
+  ],
+  "host_arithmetic_profile_alias_cases": 32,
+  "host_coefficient_comparisons": 3072,
+  "host_native_word_comparisons": 16896,
+  "host_valid_metadata_cases": 4,
+  "host_invalid_metadata_cases": 12,
+  "kernel_host_rejection_cases_total": 347,
+  "reference": "Independent 896-bit MultiLimbUInt addition masked to Q versus portable carry/torus addition, including random noncanonical upper storage, all-ones carry boundaries and every exact in-place alias mode. Device fixtures call actual native addition API with same vectors.",
+  "host_metadata_validated": true,
+  "host_portable_arithmetic_validated": true,
+  "host_ubsan_validated": true,
+  "device_cases_compiled": 32,
+  "device_cases_executed": 0,
+  "device_validated": false,
+  "s2c_graph_connected": false,
+  "full_gpu_refresh_integrated": false,
+  "gpu_performance_validated": false,
+  "security_qualified": false,
+  "no_device_allocation_or_host_transfer_in_evaluation": true,
+  "no_rescale": true,
+  "cmake_build_exit_code": 0,
+  "cmake_build_log": "/tmp/ckks-narrow-cuda-torus-add-build.log",
+  "ubsan_build_exit_code": 0,
+  "ubsan_build_log": "/tmp/ckks-narrow-cuda-torus-add-ubsan-build.log",
+  "ubsan_build_argv": "/tmp/ckks-narrow-cuda-torus-add-ubsan-argv.json",
+  "ubsan_scope": "Current CUDA host source and test instrumented; unchanged host-instrumented Tensor Core object reused. Device/runtime code uninstrumented; device branches unexecuted.",
+  "cmake_test_actual_exit_code": 77,
+  "cmake_test_log": "/tmp/ckks-narrow-cuda-torus-add-test.log",
+  "cmake_test_stderr_log": "/tmp/ckks-narrow-cuda-torus-add-test.stderr",
+  "ubsan_test_actual_exit_code": 77,
+  "ubsan_test_log": "/tmp/ckks-narrow-cuda-torus-add-ubsan-test.log",
+  "ubsan_test_stderr_log": "/tmp/ckks-narrow-cuda-torus-add-ubsan-test.stderr",
+  "gpu_skip_reason": "no CUDA-capable device is detected",
+  "cmake_test_stderr_bytes": 0,
+  "ubsan_test_stderr_bytes": 0
+}

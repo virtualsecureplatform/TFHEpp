@@ -1,0 +1,24 @@
+{
+  "scope": "Retained packed435 primary8 full-ring mask-kernel profile. Twelve cases (4 ciphertext channels x real head/imaginary head/real tail masks) plus automorphism control. Optimized prototype parallelizes independent primary digit rows and recombines exact torus sums. All13 complete ciphertext archives byte-identical. Repository preserves the original serial body for n<8192; full-ring branch is exactly the qualified prototype body after whitespace normalization. No full reconstruction or online-speed claim.",
+  "build_actual_exit_codes": [
+    0,
+    0
+  ],
+  "test_actual_exit_codes": [
+    0,
+    0
+  ],
+  "ciphertexts_byte_identical": true,
+  "mask_ciphertext_coefficients_compared": 393216,
+  "automorphism_ciphertext_coefficients_compared": 32768,
+  "all_checks_passed": true,
+  "baseline_mask_seconds_per_call": 0.08287951591666669,
+  "parallel_mask_seconds_per_call": 0.03209795116666666,
+  "mask_kernel_speedup": 2.582081189117643,
+  "prior_prepared_plain_sha256": "7f28ee58fe329b10a7d9dd91388bb55ba8d44d8673380ce066ef958e84a0e3bc",
+  "qualified_repository_prepared_plain_sha256": "d4a29304ce32840e8681e31d06d1263ebfc81cc7a7a62ae2f4713737afef055f",
+  "retained_public_keys_reused": true,
+  "new_private_or_public_keys_generated": 0,
+  "small_ring_legacy_body_preserved": true,
+  "repository_full_ring_body_identity_passed": true
+}

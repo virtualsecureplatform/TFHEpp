@@ -1,0 +1,88 @@
+{
+  "scope": "Check auxiliary8 encrypted probes against fixed 23-bit gates.\n\nSmall-ring diagnostics do not establish full-ring accuracy or key security.\n",
+  "n": 512,
+  "small_encrypted_validation_passed": true,
+  "full_encrypted_validation_passed": false,
+  "security_validated": false,
+  "functions": {
+    "sigmoid": {
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/run-v2/sigmoid.json",
+      "report_sha256": "d1f7cfc216f5a04a62ac87c3b070cd8a71fc160f75321d04d4c46fd1ba713b57",
+      "accuracy_passed": true,
+      "max_error": 1.3175518046255012e-09,
+      "evaluation_max_error": 4.936028859909842e-10,
+      "fresh_input_max_error": 8.463684517506683e-12,
+      "rms_error": 8.029039710180692e-10,
+      "complex_uniform_bound": 1.0813569365872264e-09,
+      "post_refresh_product_max_error": 3.3198911117357115e-09,
+      "post_refresh_product_evaluation_max_error": 1.2595381264155629e-09,
+      "refresh_seconds": 49.536509141,
+      "product_tolerance": 4.50319595316329e-07,
+      "evaluation_product_tolerance_lower_bound": 4.503195950585134e-07
+    },
+    "gelu": {
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/run-v2/gelu.json",
+      "report_sha256": "e15952f3e8ab8e8322df7db30cb0cc602b37db2abad74cc85929f8e5f1ac06c1",
+      "accuracy_passed": true,
+      "max_error": 2.5945127872973596e-09,
+      "evaluation_max_error": 2.796265699394521e-09,
+      "fresh_input_max_error": 7.484281185192082e-12,
+      "rms_error": 1.1792230515971457e-09,
+      "complex_uniform_bound": 5.883761800935726e-10,
+      "post_refresh_product_max_error": 1.9282279921657658e-08,
+      "post_refresh_product_evaluation_max_error": 1.7782181801379517e-08,
+      "refresh_seconds": 51.61417083,
+      "product_tolerance": 1.467865741133231e-06,
+      "evaluation_product_tolerance_lower_bound": 1.467865740992951e-06
+    },
+    "tanh": {
+      "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/run-v2/tanh.json",
+      "report_sha256": "9169a7a7e226cf43f4bdba437d8e23d395dfa86dfd444a8ed4a6151761c3229f",
+      "accuracy_passed": true,
+      "max_error": 1.564561014957248e-08,
+      "evaluation_max_error": 1.0918512463329035e-09,
+      "fresh_input_max_error": 7.784491150413236e-12,
+      "rms_error": 1.0837293120148603e-08,
+      "complex_uniform_bound": 1.5300144120715163e-08,
+      "post_refresh_product_max_error": 4.282303008329326e-08,
+      "post_refresh_product_evaluation_max_error": 3.07082312032152e-09,
+      "refresh_seconds": 188.521797497,
+      "product_tolerance": 4.5615794863043815e-07,
+      "evaluation_product_tolerance_lower_bound": 4.5615794498259955e-07
+    }
+  },
+  "utc": "2026-10-09T08:14:02.273343+00:00",
+  "runners": [
+    {
+      "tag": "probe-v2",
+      "session": 25811,
+      "terminal": true,
+      "actual_exit_code": 0,
+      "expected_exit_code": 0,
+      "normal_exit": true,
+      "stderr_bytes": 0,
+      "wall_time": "4:56.69",
+      "peak_rss_kib": 334116
+    },
+    {
+      "tag": "capture-v2",
+      "session": 25266,
+      "terminal": true,
+      "actual_exit_code": 1,
+      "expected_exit_code": 1,
+      "normal_exit": true,
+      "stderr_bytes": 0,
+      "wall_time": "1:14.87",
+      "peak_rss_kib": 334032
+    }
+  ],
+  "probe_source_sha256": "03b094ba5f50b6c39f141a45c4937adc5fb164559f0740f739906f69a7424e0d",
+  "probe_executable_sha256": "78f4a04befffb56af429819cca417e3c2244042850b25c2e82ef6c8e365ad8ee",
+  "validator_source_sha256": "cb07fc683250710ab0fbfcfd5cb92615e02be76ce50b9be797adf01985039adb",
+  "validator_actual_exit_code": 0,
+  "functions_share_one_key_set": true,
+  "successful_selector_cleanup": true,
+  "failure_selector_files_retained": 35,
+  "old_validated_source_archive": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/probe-v1.cpp",
+  "old_validated_executable_archive": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-small-20261009-d493m19v/probe-v1"
+}

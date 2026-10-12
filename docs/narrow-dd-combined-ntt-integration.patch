@@ -1,0 +1,321 @@
+--- a/include/ckks/narrow_bootstrapping.hpp
++++ b/include/ckks/narrow_bootstrapping.hpp
+@@ -215,6 +215,13 @@
+     CKKSGaloisKey<P, Schedule::factor_key_log_q> factor_galois;
+     CKKSAutoKey<P, Schedule::output_key_log_q> output_conjugation;
+     typename Schedule::RelinKeys relin;
++    // Publicly derived runtime backend; never serialized with raw keys.
++    std::function<void(TRLWE<P>&, const TRLWE<P>&, uint32_t, uint32_t)>
++        automorphism_evaluator;
++    // Optional prepared backend; derived state is never archived.
++    std::function<void(typename Schedule::TreeResult &,
++        std::vector<typename Schedule::Factor>, const typename Schedule::RelinKeys &)>
++        product_tree_evaluator;
+     std::unique_ptr<typename Schedule::PreparedRelinKeys> relin_fft;
+     static constexpr std::uint32_t projected_relin_primary_bits = 8 % P::Bgbit == 0 ? 8 : P::Bgbit;
+     using ProjectedRelinKeys = CKKSPreparedDDRelinKeyChainFFT<P,
+@@ -247,6 +254,8 @@
+         if constexpr (Archive::is_loading::value) {
+             selector_source.reset();
+             factor_source.reset();
++            product_tree_evaluator = {};
++            automorphism_evaluator = {};
+             relin_fft.reset();
+             relin_projected_fft.reset();
+             factor_conjugation_fft.reset();
+@@ -317,6 +326,8 @@
+         key.output_conjugation_projected_fft.reset();
+         key.relin_fft.reset();
+         key.relin_projected_fft.reset();
++        key.product_tree_evaluator = {};
++        key.automorphism_evaluator = {};
+         key.staged_fft_caches = true;
+     }
+     else throw std::invalid_argument("staged FFT caches require a digit FFT backend");
+@@ -326,7 +337,9 @@
+ inline void CKKSNarrowPrepareRelinearization(CKKSNarrowBootstrapKey<Schedule> &key)
+ {
+     if constexpr (use_multilimb_digit_fft_v<typename Schedule::Param>) {
+-        key.relin_fft = CKKSNarrowMakePreparedRelinearization<Schedule>(key.relin);
++        auto prepared = CKKSNarrowMakePreparedRelinearization<Schedule>(key.relin);
++        key.relin_fft = std::move(prepared);
++        key.product_tree_evaluator = {};
+         key.relin_projected_fft.reset();
+         key.staged_fft_caches = false;
+     }
+@@ -344,6 +357,7 @@
+     auto projected = makeCKKSCompactDDRelinKeyChainWithPrimaryBase<8>(key.relin);
+     auto prepared = makeCKKSPreparedDDRelinKeyChainFFTWithSecondaryBase<
+         Schedule::prepared_relin_bbarbit>(*projected);
++    key.product_tree_evaluator = {};
+     key.relin_projected_fft = std::move(prepared);
+     key.relin_fft.reset();
+ }
+@@ -356,6 +370,7 @@
+     if constexpr (use_multilimb_digit_fft_v<P>) {
+         auto factor = makeCKKSPreparedAutoKeyFFT<P, Schedule::factor_key_log_q>(key.factor_galois[P::nbit]);
+         auto output = makeCKKSPreparedAutoKeyFFT<P, Schedule::output_key_log_q>(key.output_conjugation);
++        key.automorphism_evaluator = {};
+         key.factor_conjugation_fft = std::move(factor);
+         key.output_conjugation_fft = std::move(output);
+         key.factor_conjugation_projected_fft.reset();
+@@ -374,6 +389,7 @@
+     if constexpr (use_multilimb_digit_fft_v<P> && P::B̅gbit <= 8 && 8 % P::B̅gbit == 0 && Schedule::auxiliary_log_scale >= 8) {
+         auto factor = makeCKKSPreparedAutoKeyFFT<P, Schedule::factor_key_log_q, 16, 8>(key.factor_galois[P::nbit]);
+         auto output = makeCKKSPreparedAutoKeyFFT<P, Schedule::output_key_log_q, 16, 8>(key.output_conjugation);
++        key.automorphism_evaluator = {};
+         key.factor_conjugation_projected_fft = std::move(factor);
+         key.output_conjugation_projected_fft = std::move(output);
+         key.factor_conjugation_fft.reset();
+@@ -421,6 +437,11 @@
+     auto apply = [&](const auto &auto_key) {
+         conjugateWithKey<Schedule, Factor>(result, input, auto_key);
+     };
++    if constexpr (requires { key.automorphism_evaluator; })
++        if (key.automorphism_evaluator) {
++            key.automorphism_evaluator(result, input, level, 2*P::n-1);
++            return;
++        }
+     if constexpr (use_multilimb_digit_fft_v<P>) {
+         if (override_cache) { apply(*override_cache); return; }
+         const auto &projected = [&]() -> const auto & {
+@@ -1267,6 +1288,8 @@
+     result.bounded_tail_rotation_fft = false;
+     result.selector_ntt_chunk_size = 0;
+     result.staged_fft_caches = false;
++    result.product_tree_evaluator = {};
++    result.automorphism_evaluator = {};
+     result.relin_fft.reset();
+     result.relin_projected_fft.reset();
+     CKKSGaloisKeyGen<P, Schedule::factor_key_log_q>(result.factor_galois, evaluation, noise);
+@@ -1448,7 +1471,7 @@
+         // Factor and product-tree caches have disjoint lifetimes per tile.
+         std::unique_ptr<CKKSPreparedAutoKeyFFT<P, Schedule::factor_key_log_q>> staged_factor;
+         if constexpr (use_multilimb_digit_fft_v<P>)
+-            if (key.staged_fft_caches && !key.factor_conjugation_projected_fft)
++            if (key.staged_fft_caches && !key.factor_conjugation_projected_fft && !key.automorphism_evaluator)
+                 staged_factor = makeCKKSPreparedAutoKeyFFT<P, Schedule::factor_key_log_q>(key.factor_galois[P::nbit]);
+         auto evaluate_group = [&](const auto &selectors, const auto &prepared, std::size_t offset, bool is_tail) {
+             CKKSNarrowFactorTimings timings;
+@@ -1538,6 +1561,11 @@
+                     tail[column].emplace_back();
+                     auto &aligned = tail[column].back();
+                     const int right = Schedule::slots - 2 * (ell + 1) * Schedule::tail_width;
++                    if (key.automorphism_evaluator) {
++                        key.automorphism_evaluator(aligned.ct, packed[column].ct,
++                            Schedule::factor_log_q, ckks_detail::rotationAutomorphismForSteps<P>(-right));
++                        continue;
++                    }
+                     if constexpr (use_multilimb_digit_fft_v<P>) {
+                         if (key.tail_rotations_fft) {
+                             narrow_detail::rotate<Schedule>(aligned.ct, packed[column].ct,
+@@ -1561,7 +1589,14 @@
+                     for (std::size_t x = 0; x < Schedule::blocks; x++)
+                         steps[column * Schedule::blocks + x] = -static_cast<int>(Schedule::slots -
+                             2 * (x % Schedule::tail_blocks_per_pack + 1) * Schedule::tail_width);
+-                CKKSRotateSlotsBatchWithBoundedFFT<P, Schedule::factor_log_q, Schedule::auxiliary_log_scale>(
++                if (key.automorphism_evaluator) {
++                    for (size_t i=0;i<steps.size();++i) {
++                        auto &cipher=tail[i/Schedule::blocks][i%Schedule::blocks].ct;
++                        key.automorphism_evaluator(cipher, cipher, Schedule::factor_log_q,
++                            ckks_detail::rotationAutomorphismForSteps<P>(steps[i]));
++                    }
++                }
++                else CKKSRotateSlotsBatchWithBoundedFFT<P, Schedule::factor_log_q, Schedule::auxiliary_log_scale>(
+                     steps, [&](std::size_t i) -> auto & {
+                         return tail[i / Schedule::blocks][i % Schedule::blocks].ct;
+                     }, key.factor_galois);
+@@ -1570,7 +1605,7 @@
+         finish_root_stage(root_times.bounded_tail_alignment_seconds);
+         std::unique_ptr<typename Schedule::PreparedRelinKeys> staged_relin;
+         if constexpr (use_multilimb_digit_fft_v<P>)
+-            if (key.staged_fft_caches && !key.relin_projected_fft)
++            if (key.staged_fft_caches && !key.relin_projected_fft && !key.product_tree_evaluator)
+                 staged_relin = CKKSNarrowMakePreparedRelinearization<Schedule>(key.relin);
+         const auto *tree_keys = staged_relin ? staged_relin.get() : key.relin_fft.get();
+         finish_root_stage(root_times.dd_cache_preparation_seconds);
+@@ -1593,7 +1628,11 @@
+                 narrow_detail::productTree<Schedule>(results[begin + column], std::move(head[column]), key.relin, prepared);
+                 narrow_detail::productTree<Schedule>(*tail_result, std::move(tail[column]), key.relin, prepared);
+             };
+-            if (key.relin_projected_fft) evaluate_trees(key.relin_projected_fft.get());
++            if (key.product_tree_evaluator) {
++                key.product_tree_evaluator(results[begin + column], std::move(head[column]), key.relin);
++                key.product_tree_evaluator(*tail_result, std::move(tail[column]), key.relin);
++            }
++            else if (key.relin_projected_fft) evaluate_trees(key.relin_projected_fft.get());
+             else evaluate_trees(tree_keys);
+             CKKSAddInPlace<P>(results[begin + column], *tail_result);
+             if (observer) (*observer)(request, results[begin + column]);
+--- a/include/ckks/narrow_selector_projection.hpp
++++ b/include/ckks/narrow_selector_projection.hpp
+@@ -99,6 +99,7 @@
+     struct FactorKeys {
+         const CKKSGaloisKey<P, SourceSchedule::factor_key_log_q> &factor_galois;
+         bool staged_fft_caches;
++        const decltype(CKKSNarrowBootstrapKey<TargetSchedule>::automorphism_evaluator) &automorphism_evaluator;
+         const decltype(CKKSNarrowBootstrapKey<SourceSchedule>::factor_conjugation_fft) &factor_conjugation_fft;
+         const decltype(CKKSNarrowBootstrapKey<SourceSchedule>::factor_conjugation_projected_fft) &factor_conjugation_projected_fft;
+     };
+@@ -118,7 +119,7 @@
+     {
+         if (key.selector_ntt_chunk_size == 0 || key.cache_mode == CKKSNarrowCacheMode::Reference)
+             throw std::invalid_argument("deferred factor rescaling requires chunked matrix evaluation");
+-        FactorKeys view{key.factor_galois, key.staged_fft_caches,
++        FactorKeys view{key.factor_galois, key.staged_fft_caches, key.automorphism_evaluator,
+             key.factor_conjugation_fft, key.factor_conjugation_projected_fft};
+         const std::function<void(std::size_t, std::size_t,
+             std::vector<typename SourceSchedule::Selector> &)> loader =
+--- /dev/null
++++ b/include/ckks/narrow_dd_ntt.hpp
+@@ -0,0 +1,31 @@
++#pragma once
++#include "narrow_bootstrapping.hpp"
++#include "prepared_dd_ntt_chain.hpp"
++
++#ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
++namespace TFHEpp {
++// Reuse a saved public wide-primary key without changing its encryption.
++// The auxiliary lift protects switching precision; data rescale count stays
++// equal to the existing before-rescale product tree's count.
++template <std::uint32_t Auxiliary = 100, std::uint32_t Secondary = 32,
++          class Schedule, std::uint32_t MasterQ, std::uint32_t Primary,
++          std::uint32_t MasterSecondary>
++inline void CKKSNarrowUseAuxiliaryNTTDD(CKKSNarrowBootstrapKey<Schedule> &key,
++    const CKKSCompactDDRelinKey<typename Schedule::Param, MasterQ, Primary,
++        MasterSecondary> &master)
++{
++    static_assert(Schedule::relinearize_before_rescale);
++    using Chain=CKKSPreparedAuxiliaryDDRelinKeyChainNTT<typename Schedule::Param,
++        Schedule::factor_log_q, Schedule::log_delta, Schedule::tree_depth,
++        Auxiliary, Primary, Secondary>;
++    auto prepared=std::make_shared<Chain>(master);
++    key.product_tree_evaluator=[prepared](typename Schedule::TreeResult &result,
++        std::vector<typename Schedule::Factor> factors,
++        const typename Schedule::RelinKeys &raw) {
++        narrow_detail::productTree<Schedule>(result,std::move(factors),raw,prepared.get());
++    };
++    key.relin_fft.reset();
++    key.relin_projected_fft.reset();
++}
++} // namespace TFHEpp
++#endif
+--- /dev/null
++++ b/include/ckks/narrow_auto_ntt.hpp
+@@ -0,0 +1,33 @@
++#pragma once
++#include "public_auto_ntt.hpp"
++#include <map>
++namespace TFHEpp {
++template<uint32_t HighFactorQ, class Schedule, class PackedSchedule>
++inline void CKKSNarrowUsePublicNTTAutomorphisms(CKKSNarrowBootstrapKey<Schedule>& key,
++    const CKKSNarrowPackedKey<PackedSchedule>& packed) {
++ using P=typename Schedule::Param;constexpr auto Q=CKKSNarrowPackedKey<PackedSchedule>::log_q;
++ static_assert(Q>HighFactorQ && Q>Schedule::factor_log_q && Q>Schedule::output_log_q);
++ using Cache=PreparedPublicAutoNTT<P,Q>;
++ auto prepared=std::make_shared<std::map<uint32_t,std::shared_ptr<Cache>>>();
++ PublicPackedAutoDeriver<P,PackedSchedule> derive(packed);
++ auto attach=[&](uint32_t exponent) {
++  if(prepared->contains(exponent))return;
++  auto [rows,steps]=derive.derive(exponent);
++  prepared->emplace(exponent,std::make_shared<Cache>(*rows));
++ };
++ attach(2*P::n-1);
++ for(size_t ell=0;ell<Schedule::tail_blocks_per_pack;++ell)
++  attach(ckks_detail::rotationAutomorphismForSteps<P>(2*(ell+1)*Schedule::tail_width));
++ key.automorphism_evaluator=[prepared](TRLWE<P>& result,const TRLWE<P>& input,uint32_t level,uint32_t exponent) {
++  const auto found=prepared->find(exponent);if(found==prepared->end())throw std::invalid_argument("unprepared narrow automorphism exponent");
++  const auto& cache=*found->second;
++  if(level==Schedule::factor_log_q)cache.template apply<Schedule::factor_log_q>(result,input);
++  else if(level==Schedule::output_log_q)cache.template apply<Schedule::output_log_q>(result,input);
++  else if(level==HighFactorQ)cache.template apply<HighFactorQ>(result,input);
++  else throw std::invalid_argument("unexpected narrow automorphism data level");
++ };
++ key.factor_conjugation_fft.reset();key.factor_conjugation_projected_fft.reset();
++ key.output_conjugation_fft.reset();key.output_conjugation_projected_fft.reset();
++ key.tail_rotations_fft.reset();
++}
++}
+--- /dev/null
++++ b/include/ckks/public_auto_ntt.hpp
+@@ -0,0 +1,80 @@
++#pragma once
++#include <ckks/narrow_packed_file.hpp>
++#include <ckks/prepared_dd_ntt.hpp>
++namespace TFHEpp {
++// Publicly derived encryptions of gadget*s^exponent; never a relinearization key.
++template<class P, uint32_t Q, uint32_t Bits=64>
++struct PublicAutoGadgetRows {
++ static_assert(P::k==1 && is_multilimb_uint_v<typename P::T>);
++ static_assert(P::T::digits%Bits==0);
++ static constexpr size_t rows=(Q+Bits-1)/Bits;
++ uint32_t exponent=1;
++ std::array<TRLWE<P>,rows> ciphertexts{};
++};
++template<class TargetP, class PackedSchedule, uint32_t Bits=64>
++class PublicPackedAutoDeriver {
++ using SourceP=typename PackedSchedule::Param;
++ static constexpr uint32_t Q=CKKSNarrowPackedKey<PackedSchedule>::log_q;
++ static_assert(TargetP::n==SourceP::n && TargetP::k==SourceP::k);
++ static_assert(std::is_same_v<typename TargetP::T,typename SourceP::T>);
++ const CKKSNarrowPackedKey<PackedSchedule>& packed_;
++ std::array<std::unique_ptr<CKKSPreparedAutoKeyFFT<SourceP,Q>>,SourceP::nbit> caches_;
++public:
++ explicit PublicPackedAutoDeriver(const CKKSNarrowPackedKey<PackedSchedule>& packed):packed_(packed){}
++ auto derive(uint32_t exponent) {
++  if(exponent==0 || exponent>=2*SourceP::n || !(exponent&1))throw std::invalid_argument("invalid public automorphism exponent");
++  std::vector<size_t> depths;uint32_t product=1;
++  for(size_t bit=1;bit<=SourceP::nbit;++bit)if(((product^exponent)>>bit)&1) {
++   depths.push_back(SourceP::nbit-bit);
++   product=(uint64_t(product)*(1+(uint32_t{1}<<bit)))%(2*SourceP::n);
++  }
++  if(product!=exponent)throw std::logic_error("automorphism factorization failed");
++  for(auto depth:depths)if(!caches_[depth])caches_[depth]=makeCKKSPreparedAutoKeyFFT<SourceP,Q>(packed_.substitutions[depth]);
++  auto result=std::make_unique<PublicAutoGadgetRows<TargetP,Q,Bits>>();result->exponent=exponent;
++  auto current=std::make_unique<TRLWE<SourceP>>(),next=std::make_unique<TRLWE<SourceP>>();
++  for(size_t row=0;row<result->rows;++row) {
++   for(auto& c:*current)c.fill({});
++   (*current)[0][0]=ckks_detail::reduceToLevel<SourceP,Q>(-typename SourceP::T{1}<<((result->rows-row-1)*Bits));
++   for(auto depth:depths) {
++    CKKSEvalAuto<SourceP,Q>(*next,*current,1+(SourceP::n>>depth),*caches_[depth]);
++    current.swap(next);
++   }
++   for(size_t c=0;c<=TargetP::k;++c)for(size_t i=0;i<TargetP::n;++i)result->ciphertexts[row][c][i]=(*current)[c][i];
++  }
++  return std::pair{std::move(result),depths.size()};
++ }
++};
++template<class P,uint32_t Q,uint32_t Bits=64,uint32_t Secondary=32>
++class PreparedPublicAutoNTT {
++ using Cache=CKKSPreparedDDRelinKeyNTT<P,Q,Bits,Secondary>;
++ uint32_t exponent_;
++ std::shared_ptr<Cache> cache_;
++public:
++ explicit PreparedPublicAutoNTT(const PublicAutoGadgetRows<P,Q,Bits>& rows):exponent_(rows.exponent) {
++  if(!exponent_ || exponent_>=2*P::n || !(exponent_&1))throw std::invalid_argument("invalid derived automorphism exponent");
++  // Reuse only the generic encrypted-gadget multiplication arithmetic.
++  using Matrix=CKKSCompactDDRelinKey<P,Q,Bits,16>;
++  static_assert(Matrix::primary_rows==rows.rows);
++  auto matrix=std::make_unique<Matrix>();
++  auto digits=std::make_unique<std::array<TRLWE<P>,Matrix::bbar_rows>>();
++  for(size_t row=0;row<rows.rows;++row) {
++   ckks_detail::activeBaseDecomposeTRLWERows<P,Q,16,Matrix::bbar_rows>(*digits,rows.ciphertexts[row]);
++   for(size_t secondary=0;secondary<Matrix::bbar_rows;++secondary)
++    for(size_t c=0;c<=P::k;++c)for(size_t i=0;i<P::n;++i)matrix->data[row][secondary][c][i]=Matrix::pack((*digits)[secondary][c][i]);
++  }
++  cache_=makeCKKSDDRelinKeyNTT<Secondary>(*matrix);
++ }
++ size_t byteSize()const{return cache_->byteSize();}
++ template<uint32_t DataQ> void apply(TRLWE<P>& result,const TRLWE<P>& input)const {
++  static_assert(DataQ<Q);constexpr auto auxiliary=Q-DataQ;
++  auto transformed=std::make_unique<Polynomial<P>>();auto body=std::make_unique<Polynomial<P>>();
++  Automorphism<P>(*transformed,input[0],exponent_);Automorphism<P>(*body,input[1],exponent_);
++  for(auto& coefficient:*transformed)coefficient=ckks_detail::reduceToLevel<P,DataQ>(coefficient)<<auxiliary;
++  auto switched=std::make_unique<TRLWE<P>>();cache_->apply(*switched,*transformed);
++  for(size_t i=0;i<P::n;++i) {
++   result[0][i]=ckks_detail::reduceToLevel<P,DataQ>(-ckks_detail::roundedLevelRightShift<P,Q,auxiliary>((*switched)[0][i]));
++   result[1][i]=ckks_detail::reduceToLevel<P,DataQ>((*body)[i]-ckks_detail::roundedLevelRightShift<P,Q,auxiliary>((*switched)[1][i]));
++  }
++ }
++};
++}

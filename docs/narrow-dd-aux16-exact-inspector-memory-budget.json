@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-09T06:29:34.565896+00:00",
+  "scope": "Sequential full aux16 output-conjugation exact oracle and baseline checkpoint regression",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17685610496,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1823852,
+      "start_ticks": 217158705,
+      "rss_bytes": 12337127424,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 101111930880,
+  "required_bytes": 88088862720,
+  "host_reserve_bytes": 10737418240,
+  "auxiliary_cap_bytes": 4294967296,
+  "eligible": true
+}

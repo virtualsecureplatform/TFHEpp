@@ -1,0 +1,37 @@
+{
+  "observed_at_utc": "2026-10-10T21:15:25.469487+00:00",
+  "terminal": true,
+  "all_checks_passed": true,
+  "scope": "Completed Sigmoid output from live original frozen N32768 retained-key all-function replay. Independent saved-input/refresh/square/normalized-square decoding and exact archive identity to initial Sigmoid. GeLU/Tanh and parent all-function replay remain pending; not latest-source full refresh, complete retained-payload integrity, matched paper latency or security.",
+  "fresh_keys_generated": false,
+  "input_reused": true,
+  "refresh_seconds": 4231.094612951,
+  "key_setup_seconds": 72.244943141,
+  "initial_refresh_seconds": 4717.938392383,
+  "initial_key_setup_seconds": 2937.07852543,
+  "initial_replay_ciphertext_archives_identical": true,
+  "archive_sha256": "759fae5d322137f8ad39f2b341a0db357dbbe4b3af4cb8c4de9808ca709cc614",
+  "independent_phase_checks": {
+    "scope": "Decode basis-checkpoint outputs with independent integer phase arithmetic.\n\nReads diagnostic secrets without printing them. Checks the refresh, square and\nnormalized square; evaluation/approximation bounds remain C++ report metrics.\nDoes not qualify evaluation-key coefficients or security.\n",
+    "n": 32768,
+    "function": "sigmoid",
+    "metrics": {
+      "fresh_input_max_error": 9.033599188412621e-11,
+      "max_error": 5.263058323660706e-09,
+      "post_refresh_product_max_error": 9.472418715013627e-09,
+      "square_normalization_max_error": 2.692538244943504e-09
+    },
+    "product_tolerance": 4.50319595316329e-07,
+    "independent_phase_accuracy_passed": true,
+    "security_validated": false
+  },
+  "executable_sha256": "13ef030801b5a9c28d470290cf4d0630964bcf6dac6030fe6065bb3e92e59970",
+  "completed_report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/sigmoid-replay-completed-report.json",
+  "completed_report_sha256": "bfa67145f24284e6a8079fa9c09d33a1e51275cf823a1d866cad053f8344279a",
+  "independent_output": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-full-current-checkpoint-20261010/sigmoid-replay-independent.json",
+  "independent_output_sha256": "460dd941edffb51472a349fcda7e3a88f1d7bd4c3a4e9e18548ca7b1eb684cd0",
+  "all_function_replay_complete": false,
+  "current_source_full_refresh_qualified": false,
+  "paper_performance_reproduced": false,
+  "security_validated": false
+}

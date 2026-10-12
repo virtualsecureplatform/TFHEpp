@@ -1,0 +1,67 @@
+{
+  "observed_at_utc": "2026-10-09T01:11:37.100447+00:00",
+  "scope": "Preserve raw nonfinite optimizer results instead of erasing them behind the generic wrapper error; revalidate the full LL14 Q76 sparse proxy and Q436 dense positive control.",
+  "source_sha256": {
+    "python/estimates/narrow_ckks_security.py": "b71dcd2ed86061a409f0efe48adf7e468d85bc7c6e72301f5a870f547d9e8b21",
+    "python/lattice-estimator/estimator/conf.py": "b8270fcc702ef72e00308fc691112f374da4d0d0395665b7c244c9b99b77f7dd",
+    "python/lattice-estimator/estimator/lwe_primal.py": "f46e682a3eb0b7e3b175c326f96244caee5df6f07df78974cdb834e1d6f006d1",
+    "python/lattice-estimator/estimator/lwe_dual.py": "8f6a077589393f907fbcc87b9ef812beafc73bf5cc78abc4f857924b80a21a8b"
+  },
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "estimator_checkout_clean": true,
+  "sage_version": "10.6",
+  "global_configured_max_beta": 1754,
+  "search_limit_interpretation": "Pinned primal and dual implementations read this global bound. A +Infinity optimizer result is not a finite attack estimate or a cryptographic security bound.",
+  "sparse_report": "python/estimates/narrow_ckks_ll14_sparse_raw_optimizer_results.json",
+  "sparse_report_sha256": "8850666ef9ffa2c2ac44281761726ab567cb38bc421ef3d3aa703cb0071da619",
+  "sparse_terminal": true,
+  "sparse_actual_exit_code": 1,
+  "sparse_exit_1_is_expected_incomplete_screen": true,
+  "sparse_attacks": {
+    "primal_usvp": {
+      "error": "ValueError: nonfinite attack cost",
+      "status": "nonfinite_optimizer_result",
+      "nonfinite_kind": "positive_infinity",
+      "rop": "+Infinity",
+      "cost": "         rop:  \u22482^inf\n         tag:     usvp"
+    },
+    "primal_bdd": {
+      "error": "ValueError: nonfinite attack cost",
+      "status": "nonfinite_optimizer_result",
+      "nonfinite_kind": "positive_infinity",
+      "rop": "+Infinity",
+      "cost": "         rop:  \u22482^inf\n         tag:      bdd"
+    },
+    "dual": {
+      "error": "ValueError: nonfinite attack cost",
+      "status": "nonfinite_optimizer_result",
+      "nonfinite_kind": "positive_infinity",
+      "rop": "+Infinity",
+      "cost": "         rop:  \u22482^inf\n         mem:  \u22482^inf\n           m:  \u22482^inf\n           \u03b2:       47\n         tag:     dual"
+    },
+    "dual_hybrid": {
+      "error": "ValueError: nonfinite attack cost",
+      "status": "nonfinite_optimizer_result",
+      "nonfinite_kind": "positive_infinity",
+      "rop": "+Infinity",
+      "cost": "         rop:  \u22482^inf\n         red:  \u22482^inf\n       guess: \u22482^6314279255357723.0\n           \u03b2:     1753\n           p:        2\n           \u03b6:        0\n           t:        0\n          \u03b2':     1753\n           N: \u22482^6314279255357714.0\n           m: \u22482^14.0"
+    }
+  },
+  "sparse_generic_security_complete": false,
+  "dense_control_report": "python/estimates/narrow_ckks_ll14_dense_raw_optimizer_control.json",
+  "dense_control_report_sha256": "867fa531f8801a6bf687a92ea9c6534522f5a606b5fe780ea07a5cfd3700f978",
+  "dense_terminal": true,
+  "dense_actual_exit_code": 0,
+  "dense_weakest_bits": 128.6704442945677,
+  "dense_finite_costs_match_previous_record": true,
+  "py_compile_exit_code": 0,
+  "memory_budget": "narrow-dd-sparse-estimator-revalidation-memory-budget.json",
+  "limits": [
+    "Uniform sparse fixed 16-positive/15-negative secret proxy excludes the public one-per-block constraint and random sign-count distribution.",
+    "Both screens exclude ring-specific and circular/correlated evaluation-key attacks.",
+    "Positive infinity remains incomplete; no security claim is inferred from it."
+  ],
+  "security_qualified": false,
+  "original_sigmoid_failure_resolved": false,
+  "goal_complete": false
+}

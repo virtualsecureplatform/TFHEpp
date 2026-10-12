@@ -1,0 +1,12 @@
+{
+  "scope": "Repository LL14 experimental runner uses the same source as current normalized functional replay, except equivalent relative benchmark-header include. Full replay qualification remains function-specific and pending GeLU/Tanh.",
+  "repository_source": "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_ll14_retained_fbs.cpp",
+  "repository_source_sha256": "495b5c8cc2db7d54771a1aa3ddbad40c746dd22392046b8131864f01a7ebddd8",
+  "replay_source": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-plain37-scale42-fbs-20261011/replay.cpp",
+  "replay_source_sha256": "575ecfc403cee200c7287ab6f903a72b6f1107dbe87f0bad0d32e49d0e0362a8",
+  "source_identical_after_equivalent_include_resolution": true,
+  "sigmoid_full_validation": "narrow-dd-ll14-plain37-scale42-fbs-validation.json",
+  "all_functions_qualified": false,
+  "current_functional_state": "Sigmoid passes; GeLU fails; Tanh not launched",
+  "superseded_repository_profile": "Historical normalized packed-selector profile; current runner uses direct expanded selectors, see narrow-dd-ll14-direct-repo-runner-validation.json"
+}

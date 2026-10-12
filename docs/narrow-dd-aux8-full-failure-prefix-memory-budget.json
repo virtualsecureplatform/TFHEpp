@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-09T10:07:03.650030+00:00",
+  "scope": "Independent exact phase inspection of retained full aux8 sigmoid failure prefix",
+  "jobs": [
+    {
+      "pid": 1756575,
+      "start_ticks": 211884551,
+      "rss_bytes": 17683390464,
+      "cap_bytes": 68719476736
+    },
+    {
+      "pid": 1836219,
+      "start_ticks": 218187280,
+      "rss_bytes": 14282108928,
+      "cap_bytes": 34359738368
+    }
+  ],
+  "available_bytes": 99151327232,
+  "required_bytes": 81985351680,
+  "host_reserve_bytes": 10737418240,
+  "process_limit_bytes": 134217728,
+  "eligible": true,
+  "state": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid-failure.bin",
+  "report": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/auxiliary8-full-20261009-rokb9dhe/run/sigmoid.json",
+  "capture_writer_may_still_be_live": true,
+  "reads_prefix_only": true
+}

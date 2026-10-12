@@ -1,0 +1,17 @@
+{
+  "root": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/plain37-aux16-small-20261009-cwo2_t8e",
+  "observed_at_utc": "2026-10-09T05:46:37.390603+00:00",
+  "source_sha256": {
+    "test/ckks/ckks_narrow_benchmark.cpp": "7b26c8346bc50ff1f65c4f6011f6e7997d666df7e7ac7ae461e573acd6c1b9d3",
+    "test/ckks/ckks_narrow_checkpoint_inspect.cpp": "3cf275d95f408ae0bd291e8e00489e47a08500ce6428d0e073b08216cea03028"
+  },
+  "executable_sha256": "30737489e19f92fa0d4c92822903cc958febde31fb5fe1cb52851aaaa4c39a4e",
+  "inspector_executable_sha256": "22969b4c91fdbd39f07707a94fe8d81ba0f4ab4c2ffe80c27939616a3aa60ea9",
+  "build_session": 41050,
+  "build_terminal": true,
+  "build_actual_exit_code": 0,
+  "small_session": 54643,
+  "small_terminal": true,
+  "small_actual_exit_code": 0,
+  "completion_evidence": "narrow-dd-aux16-small-validation.json"
+}

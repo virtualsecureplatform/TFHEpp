@@ -1,0 +1,49 @@
+{
+  "utc": "2026-10-09T15:18:41.878294+00:00",
+  "scope": "Retained-function launcher preconditions; synthetic complete-build schema acceptance and eight rejection controls",
+  "source_sha256": "d8477d07c0249c63a6ff0c398662aab8969e2c03519dcfa255fc8d3e9f30bd24",
+  "controls": [
+    {
+      "control": "incomplete small run",
+      "rejected": true,
+      "reason": "retained-function build and small validation incomplete"
+    },
+    {
+      "control": "missing small function",
+      "rejected": true,
+      "reason": "retained-function build and small validation incomplete"
+    },
+    {
+      "control": "failed build",
+      "rejected": true,
+      "reason": "retained-function build and small validation incomplete"
+    },
+    {
+      "control": "failed full sigmoid",
+      "rejected": true,
+      "reason": "validated full retained sigmoid fixture missing"
+    },
+    {
+      "control": "wrong full ring",
+      "rejected": true,
+      "reason": "validated full retained sigmoid fixture missing"
+    },
+    {
+      "control": "fresh key claim",
+      "rejected": true,
+      "reason": "validated full retained sigmoid fixture missing"
+    },
+    {
+      "control": "missing corrected phase",
+      "rejected": true,
+      "reason": "full corrected selector phase evidence missing"
+    },
+    {
+      "control": "wrong intervention",
+      "rejected": true,
+      "reason": "full corrected selector phase evidence missing"
+    }
+  ],
+  "controls_passed": true,
+  "full_functions_launched": false
+}
