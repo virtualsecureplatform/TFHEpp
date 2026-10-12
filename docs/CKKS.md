@@ -66,6 +66,21 @@ CKKSNarrowUseAuxiliaryNTTDD(key.narrow, master);
 CKKSNarrowUsePublicNTTAutomorphisms<337>(key.narrow, packed);
 ```
 
+To evaluate independent DD product-tree pairs concurrently, opt in with
+`CKKSNarrowUseAuxiliaryNTTDD<100, 32, true>(key.narrow, master)`.
+The real saved-fixture runner accepts `--parallel-pairs` after its eight
+arguments. Use `OMP_NUM_THREADS=8 OMP_MAX_ACTIVE_LEVELS=1` for the recorded
+comparison: lower tree levels distribute independent multiplications across
+the team, while a single remaining pair uses its internal parallelism.
+The prepared keys are shared read-only and failures propagate after joining
+the workers. The existing sequential pair schedule remains the default.
+See `narrow-dd-cpu-gap-optimization-validation.json` for the measured scope.
+In a saved-fixture GeLU comparison, the tree stage drops from 33.0 s to 16.8 s
+and the full refresh from 134.1 s to 112.0 s. Both full output archives are
+byte-identical, including the subsequent multiplication. These are single
+observations with host variability, not a matched paper benchmark or a 10x
+speedup. Selector matrix work and transforms remain the largest costs.
+
 Here `master` is the matching saved public DD433 key and `packed` is the matching
 saved packed435 key. Keep `key` alive across evaluations to reuse all caches.
 Call `CKKSNarrowPrepareCoefficients` once per input when several functions share

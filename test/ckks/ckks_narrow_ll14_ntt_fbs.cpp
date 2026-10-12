@@ -36,7 +36,9 @@ struct SourceLinear {
  CKKSSecretKeySwitchKey<P,48> sparse;
 };
 int main(int argc,char**argv)try {
- if(argc!=9)throw std::runtime_error("usage: checkpoint-directory dd-chain-file switch56-file sigmoid|gelu|tanh output-directory reconstructed-selector-directory saved-dd433 saved-packed435");
+ if(argc!=9 && argc!=10)throw std::runtime_error("usage: checkpoint-directory dd-chain-file switch56-file sigmoid|gelu|tanh output-directory reconstructed-selector-directory saved-dd433 saved-packed435 [--parallel-pairs]");
+ const bool parallel_pairs=argc==10;
+ if(parallel_pairs && std::string(argv[9])!="--parallel-pairs")throw std::invalid_argument("unknown benchmark option");
  const auto checkpoint=std::filesystem::path(argv[1]),root=std::filesystem::path(argv[5]);const std::string function=argv[4];
  if(function!="sigmoid" && function!="gelu" && function!="tanh")throw std::invalid_argument("unsupported function");
  if(!std::filesystem::is_directory(root))throw std::runtime_error("output directory missing");
@@ -63,7 +65,8 @@ int main(int argc,char**argv)try {
  auto master=std::make_unique<CKKSCompactDDRelinKey<P,433,64,16>>();
  if(std::filesystem::file_size(argv[7])!=1+8+64+56+sizeof(master->data))throw std::runtime_error("DD433 length mismatch");
  {std::ifstream f(argv[7],std::ios::binary);cereal::PortableBinaryInputArchive ar(f);uint64_t length;ar(length);if(length!=64)throw std::runtime_error("DD433 origin length mismatch");std::string stored(64,' ');ar(cereal::binary_data(stored.data(),stored.size()),*master);if(stored!=origin||f.peek()!=std::char_traits<char>::eof())throw std::runtime_error("DD433 origin mismatch");}
- CKKSNarrowUseAuxiliaryNTTDD(key->narrow,*master);
+ if(parallel_pairs)CKKSNarrowUseAuxiliaryNTTDD<100,32,true>(key->narrow,*master);
+ else CKKSNarrowUseAuxiliaryNTTDD(key->narrow,*master);
  auto autoStart=std::chrono::steady_clock::now();
  auto packed=CKKSNarrowLoadPackedKey<PackedSource>(argv[8]);
  CKKSNarrowUsePublicNTTAutomorphisms<337>(key->narrow,*packed);packed.reset();
@@ -78,7 +81,10 @@ int main(int argc,char**argv)try {
  auto curvature=[&](double x){double y=target(x);if(function=="sigmoid")return y*(1-y)*(1-2*y);if(function=="gelu")return (2-x*x)*std::exp(-x*x/2)/std::sqrt(2*std::acos(-1.0));return -2*y*(1-y*y);};
  const uint32_t degree=function=="tanh"?40:12;
  auto approx=function=="tanh"?CKKSBuildNarrowWindowedTrigonometricApproximation(target,[](double x){double y=std::tanh(x);return 1-y*y;},curvature,{1,1,2,4,40},4,16,degree):CKKSBuildNarrowTrigonometricApproximation(target,4,16,degree,function=="gelu"?2.0:1.0,65536,40,2.0,curvature,160.0);
- size_t groups=0;key->narrow.factor_observer=[&](bool tail,size_t group,const auto&){++groups;std::cout<<function<<" completed "<<(tail?"tail":"head")<<" group="<<group<<" factor_groups="<<groups<<std::endl;};
+ size_t groups=0;key->narrow.factor_observer=[&](bool tail,size_t group,const auto& timing){++groups;std::cout<<function<<" completed "<<(tail?"tail":"head")<<" group="<<group<<" factor_groups="<<groups
+  <<" load="<<timing.selector_load_seconds<<" table_ntt="<<timing.table_ntt_seconds
+  <<" selector_ntt="<<timing.selector_ntt_seconds<<" matrix="<<timing.matrix_seconds
+  <<" inverse_crt="<<timing.inverse_crt_seconds<<" conjugation="<<timing.conjugation_seconds<<std::endl;};
  auto prepared=std::make_unique<Refresh::Coefficients>();auto t=std::chrono::steady_clock::now();CKKSNarrowPrepareCoefficients<Refresh>(*prepared,*input,*key);const auto s2c_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();std::cout<<function<<" S2C completed seconds="<<s2c_seconds<<std::endl;
  key->narrow.root_stage_observer=[&](const auto&t){std::cout<<function<<" stages factor="<<t.leaf_factors_and_inline_alignment_seconds<<" align="<<t.bounded_tail_alignment_seconds<<" dd_cache="<<t.dd_cache_preparation_seconds<<" trees="<<t.dd_trees_and_beta_seconds<<std::endl;};
  auto originalout=std::make_unique<Refresh::Output>();t=std::chrono::steady_clock::now();CKKSNarrowFunctionalRefreshPrepared<Refresh>(*originalout,*prepared,*key,approx.coefficients,false,degree);const auto blind_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();
@@ -88,6 +94,6 @@ int main(int argc,char**argv)try {
  ckksSlotDecrypt<P>(*decoded,*square,*dense);double product_error=0;for(size_t i=0;i<P::n/2;++i){double v=target((*slots)[i].real());product_error=narrow_benchmark::finiteMaximum(product_error,std::abs((*decoded)[i]-std::complex<double>{v*v,0}));}
  const auto tolerance=std::ldexp(1.0,-23),product_tolerance=(2*amplitude+1)*tolerance+tolerance*tolerance;bool passed=error<tolerance && product_error<product_tolerance;
  {std::ofstream f(root/(function+"-outputs.bin"),std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);const std::array<uint64_t,9> meta{0x4c4c313446425331ULL,P::n,448,85,44,48,101,44,57};ar(meta,function,*slots,*input,*prepared,*out,*square);}
- {std::ofstream f(root/(function+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"dd_primary_bits\":64,\"dd_secondary_bits\":32,\"dd_auxiliary_bits\":100,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":64,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":54,\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":101,\"output_log_delta\":44,\"post_product_log_q\":57,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
+ {std::ofstream f(root/(function+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"dd_primary_bits\":64,\"dd_secondary_bits\":32,\"dd_auxiliary_bits\":100,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":64,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":54,\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":101,\"output_log_delta\":44,\"post_product_log_q\":57,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
  std::cout<<function<<" error="<<error<<" square error="<<product_error<<" seconds="<<s2c_seconds+blind_seconds<<std::endl;if(!passed)throw std::runtime_error("functional accuracy gate failed");
 } catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}

@@ -9,6 +9,7 @@
 #include <functional>
 #include <chrono>
 #include <future>
+#include <exception>
 
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 namespace TFHEpp {
@@ -1053,7 +1054,8 @@ inline typename Schedule::Factor packedFactor(
 }
 
 template <class Schedule, std::size_t Level = 0,
-          class PreparedKeys = typename Schedule::PreparedRelinKeys>
+          class PreparedKeys = typename Schedule::PreparedRelinKeys,
+          bool ParallelPairs = false>
 inline void productTree(
     typename Schedule::TreeResult &result,
     std::vector<CKKSCiphertext<typename Schedule::Param,
@@ -1070,7 +1072,7 @@ inline void productTree(
         using Next = CKKSCiphertext<P, Schedule::factor_log_q -
             (Level + 1) * Schedule::log_delta, Schedule::log_delta>;
         std::vector<Next> next((factors.size() + 1) / 2);
-        for (std::size_t pair = 0; pair < factors.size() / 2; pair++) {
+        const auto multiply_pair = [&](std::size_t pair) {
             auto multiply = [&](const auto &relin) {
                 if constexpr (Schedule::relinearize_before_rescale)
                     CKKSMultRelinThenRescale<P>(next[pair], factors[2 * pair], factors[2 * pair + 1], relin);
@@ -1079,14 +1081,29 @@ inline void productTree(
             if constexpr (use_multilimb_digit_fft_v<P>) {
                 if (prepared) {
                     multiply(prepared->template get<Level>());
-                    continue;
+                    return;
                 }
             }
             multiply(keys.template get<Level>());
+        };
+        if constexpr (ParallelPairs) {
+            // Independent pairs share immutable prepared keys. A single pair
+            // keeps the multiplication's internal team. Propagate failures
+            // after joining rather than throwing across an OpenMP boundary.
+            std::vector<std::exception_ptr> errors(factors.size() / 2);
+#pragma omp parallel for if(factors.size() / 2 > 1) schedule(static)
+            for (std::size_t pair = 0; pair < factors.size() / 2; ++pair)
+                try { multiply_pair(pair); }
+                catch (...) { errors[pair] = std::current_exception(); }
+            for (const auto &error : errors)
+                if (error) std::rethrow_exception(error);
         }
+        else
+            for (std::size_t pair = 0; pair < factors.size() / 2; ++pair)
+                multiply_pair(pair);
         if (factors.size() % 2 != 0)
             CKKSLevelReduce<P>(next.back(), factors.back());
-        productTree<Schedule, Level + 1>(result, std::move(next), keys, prepared);
+        productTree<Schedule, Level + 1, PreparedKeys, ParallelPairs>(result, std::move(next), keys, prepared);
     }
 }
 

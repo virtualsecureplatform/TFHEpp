@@ -27,6 +27,12 @@ int main(int argc,char **argv)try {
  auto result=std::make_unique<Schedule::TreeResult>(),baseline=std::make_unique<Schedule::TreeResult>();
  auto t=std::chrono::steady_clock::now();narrow_detail::productTree<Schedule>(*result,factors,*keys,&ntt);
  const double ntt_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();
+ auto parallel=std::make_unique<Schedule::TreeResult>();
+ t=std::chrono::steady_clock::now();
+ narrow_detail::productTree<Schedule,0,decltype(ntt),true>(*parallel,factors,*keys,&ntt);
+ const double parallel_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();
+ if(parallel->ct!=result->ct)throw std::runtime_error("parallel NTT tree differs from serial NTT tree");
+ std::cout<<"parallel tree byte-identical; serial="<<ntt_seconds<<" parallel="<<parallel_seconds<<std::endl;
  t=std::chrono::steady_clock::now();narrow_detail::productTree<Schedule>(*baseline,factors,*keys,fft.get());
  const double fft_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();
  {std::ofstream f(root/"outputs.bin",std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);ar(std::array<uint64_t,8>{0x44444e5454524531ULL,P::n,448,333,43,118,5,factors.size()});for(const auto &factor:factors)ar(factor);ar(*result,*baseline);}

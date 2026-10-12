@@ -1,0 +1,123 @@
+{
+  "scope": "CPU optimization experiments with saved N16384 LL14 GeLU fixture, 8 OpenMP threads. No private/evaluation key generation or selector reconstruction. Same compiler settings for matched baseline and candidates; isolated component experiments are not whole-refresh speedups. Paper hardware and latency are not reproduced.",
+  "terminal": true,
+  "new_private_keys_generated": 0,
+  "new_encrypted_evaluation_keys_generated": 0,
+  "selector_reconstructions": 0,
+  "omp_threads": 8,
+  "experiments": {
+    "matched-baseline": {
+      "functional_evaluation_seconds": 134.143647582,
+      "s2c_seconds": 14.271728504,
+      "root_stages_seconds": {
+        "factor": 83.2212,
+        "align": 3.43911,
+        "trees": 32.9575
+      },
+      "factor_substages_seconds": {
+        "load": 1.0264655,
+        "table_ntt": 3.8945890000000007,
+        "selector_ntt": 23.938632000000002,
+        "matrix": 44.77789,
+        "inverse_crt": 2.0869688,
+        "conjugation": 6.05721
+      },
+      "accuracy_passed": true,
+      "max_error": 3.478441033692788e-08,
+      "post_product_max_error": 1.4835759168591816e-07,
+      "output_sha256": "a3812ad10019c3c72e0f5bf84f66568c2646b19b1c06f0550b8dc1522f388063"
+    },
+    "optimized": {
+      "functional_evaluation_seconds": 128.391518913,
+      "s2c_seconds": 15.394099751,
+      "root_stages_seconds": {
+        "factor": 76.0442,
+        "align": 3.26862,
+        "trees": 33.3181
+      },
+      "factor_substages_seconds": {
+        "load": 1.0603711999999998,
+        "table_ntt": 3.831598999999999,
+        "selector_ntt": 21.830597,
+        "matrix": 40.08088100000001,
+        "inverse_crt": 1.9555270000000002,
+        "conjugation": 5.883873
+      },
+      "accuracy_passed": true,
+      "max_error": 3.478441033692788e-08,
+      "post_product_max_error": 1.4835759168591816e-07,
+      "output_sha256": "a3812ad10019c3c72e0f5bf84f66568c2646b19b1c06f0550b8dc1522f388063",
+      "disposition": "Rejected: contiguous SIMD accumulation did not show a consistent paired component improvement; production arithmetic restored."
+    },
+    "parallel": {
+      "functional_evaluation_seconds": 115.986678304,
+      "s2c_seconds": 15.168126233,
+      "root_stages_seconds": {
+        "factor": 80.2996,
+        "align": 3.27137,
+        "trees": 16.8816
+      },
+      "factor_substages_seconds": {
+        "load": 0.9597033999999998,
+        "table_ntt": 3.843991,
+        "selector_ntt": 23.063501999999996,
+        "matrix": 42.868899000000006,
+        "inverse_crt": 2.0527782000000006,
+        "conjugation": 6.0855049999999995
+      },
+      "accuracy_passed": true,
+      "max_error": 3.478441033692788e-08,
+      "post_product_max_error": 1.4835759168591816e-07,
+      "output_sha256": "a3812ad10019c3c72e0f5bf84f66568c2646b19b1c06f0550b8dc1522f388063",
+      "scope": "Independent pair scheduling plus rejected SIMD experiment; final scalar pair-scheduling qualification pending."
+    },
+    "qualified-parallel": {
+      "scope": "Final opt-in pair scheduling with original scalar NTT accumulation. New report flag serialization was added after this build; evaluated arithmetic matches the production headers.",
+      "functional_evaluation_seconds": 112.017659191,
+      "s2c_seconds": 14.279286885,
+      "root_stages_seconds": {
+        "factor": 77.4193,
+        "align": 3.30306,
+        "trees": 16.7629
+      },
+      "factor_substages_seconds": {
+        "load": 0.9799768999999999,
+        "table_ntt": 3.8239359999999993,
+        "selector_ntt": 22.172424999999997,
+        "matrix": 41.306869999999996,
+        "inverse_crt": 1.8931023999999996,
+        "conjugation": 5.826282000000001
+      },
+      "accuracy_passed": true,
+      "max_error": 3.478441033692788e-08,
+      "post_product_max_error": 1.4835759168591816e-07,
+      "output_sha256": "a3812ad10019c3c72e0f5bf84f66568c2646b19b1c06f0550b8dc1522f388063",
+      "byte_identical_to_matched_baseline": true
+    }
+  },
+  "remaining_work": [
+    "Measure and implement faster selector matrix arithmetic; it dominates online factor work.",
+    "Avoid repeated selector transforms using reusable derived public caches with an explicit memory budget.",
+    "Evaluate a CPU RNS representation/backend against the current wide native-limb port.",
+    "Use matched hardware/thread pinning and repeat timings before extrapolating to paper results."
+  ],
+  "tenfold_speedup_achieved": false,
+  "updated_utc": "2026-10-12T11:20:09.910836+00:00",
+  "observed_full_refresh_speedup": 1.197522324165632,
+  "observed_tree_stage_speedup": 1.9660977515823639,
+  "timing_limitations": "Single full-function observations, no fixed CPU affinity; host/compiler variability remains. The SIMD trial was rejected. No extrapolated speedup or matched paper performance claim.",
+  "retained_implementation": "Opt-in parallel independent product-tree pairs; original scalar NTT accumulation retained.",
+  "source_sha256": {
+    "include/ckks/narrow_bootstrapping.hpp": "e6262f547078159b42fefa95813731ef5bea1db7b44c65f139bd0e2d6116a932",
+    "include/ckks/narrow_dd_ntt.hpp": "6e4f74e42929288f830a8be6ec9a739e0807b5b90d3cd25bf01a66aba11031fd",
+    "test/ckks/ckks_narrow_dd_ntt_tree.cpp": "b9636abbede9c7a5b04ba36dec7787c232ca3ae01cfdb52019e1475522904046",
+    "test/ckks/ckks_narrow_ll14_ntt_fbs.cpp": "422505ed0a3caf0be1b50226f83f977e80a0bd452e7e1c170b5456656631ccac"
+  },
+  "all_checks_passed": true,
+  "normal_cmake_build_exit_code": 0,
+  "retained_tree_exact_comparison_exit_code": 0,
+  "retained_tree_byte_identical": true,
+  "modular_ntt_regression_passed": true,
+  "completed_utc": "2026-10-12T11:22:03.898228+00:00",
+  "retained_tree_timing_scope": "Correctness comparison at a second saved five-level profile; build work overlapped, so its timings are not a controlled performance claim."
+}
