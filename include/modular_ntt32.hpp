@@ -92,17 +92,21 @@ public:
         std::size_t column = 0;
 #if defined(__AVX2__)
         const auto fixed = _mm256_set1_epi32(selector);
-        if (columns == 4) {
+        const auto pair_four = [&](std::size_t offset) {
+            const auto *left_first = first + offset;
+            const auto *left_second = second + offset;
+            const auto *table_first = left + offset;
+            const auto *table_second = right + offset;
             const auto pack = [](const std::uint32_t *a, const std::uint32_t *b) {
                 return _mm256_inserti128_si256(_mm256_castsi128_si256(
                     _mm_loadu_si128(reinterpret_cast<const __m128i *>(a))),
                     _mm_loadu_si128(reinterpret_cast<const __m128i *>(b)), 1);
             };
-            const auto result = accumulateVector(pack(first, second), pack(left, right), fixed);
-            _mm_storeu_si128(reinterpret_cast<__m128i *>(first), _mm256_castsi256_si128(result));
-            _mm_storeu_si128(reinterpret_cast<__m128i *>(second), _mm256_extracti128_si256(result, 1));
-            return;
-        }
+            const auto result = accumulateVector(pack(left_first, left_second), pack(table_first, table_second), fixed);
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(first + offset), _mm256_castsi256_si128(result));
+            _mm_storeu_si128(reinterpret_cast<__m128i *>(second + offset), _mm256_extracti128_si256(result, 1));
+        };
+        if (columns == 4) { pair_four(0); return; }
         for (; column + 8 <= columns; column += 8)
             for (auto pair : {std::pair{first, left}, std::pair{second, right}}) {
                 const auto result = accumulateVector(
@@ -110,6 +114,7 @@ public:
                     _mm256_loadu_si256(reinterpret_cast<const __m256i *>(pair.second + column)), fixed);
                 _mm256_storeu_si256(reinterpret_cast<__m256i *>(pair.first + column), result);
             }
+        if (columns - column == 4) { pair_four(column); return; }
 #endif
         for (; column < columns; ++column) {
             auto a = first[column] + multiplyLazy(left[column], selector);

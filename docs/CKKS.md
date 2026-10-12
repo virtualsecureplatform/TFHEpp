@@ -81,6 +81,25 @@ byte-identical, including the subsequent multiplication. These are single
 observations with host variability, not a matched paper benchmark or a 10x
 speedup. Selector matrix work and transforms remain the largest costs.
 
+The real runner also accepts `--small-prime-factors`. This opt-in backend uses
+four primes below 2^30, 52-bit selector digits, native AVX2 Montgomery products,
+and exact signed CRT. It preserves the ciphertext modulus, scale, saved keys,
+selectors and approximation. Derived spectrum payload is unchanged. Four-column
+remainders stay vectorized, and raw reads overlap the current chunk's evaluation.
+Include `ckks/narrow_factor_ntt32.hpp` and use
+`CKKSNarrowDeferredRescaleFactorSource32<TargetSchedule, TableSchedule, SelectorSchedule>`
+in place of the corresponding deferred factor source; retain the public-mask
+normalization wrapper.
+
+Saved-fixture real GeLU/Tanh/Sigmoid refreshes with parallel DD pairs take
+98.0/249.2/99.8 seconds in the recorded runs and preserve all output bytes,
+including the subsequent multiplication. GeLU's preceding wide-prime paired
+run took 112.0 s. These are unpinned observations; the 10x gap remains open.
+The first synchronous integration was slower and remains recorded separately.
+See `narrow-dd-small-prime-arithmetic-validation.json`,
+`narrow-dd-small-prime-factor-validation.json`, and
+`narrow-dd-small-prime-factor-synchronous-observation.json`.
+
 Here `master` is the matching saved public DD433 key and `packed` is the matching
 saved packed435 key. Keep `key` alive across evaluations to reuse all caches.
 Call `CKKSNarrowPrepareCoefficients` once per input when several functions share

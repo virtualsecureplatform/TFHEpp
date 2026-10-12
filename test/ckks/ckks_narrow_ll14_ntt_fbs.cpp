@@ -6,6 +6,7 @@
 #include <ckks/narrow_auto_ntt.hpp>
 #include <ckks/key_projection.hpp>
 #include <ckks/narrow_selector_projection.hpp>
+#include <ckks/narrow_factor_ntt32.hpp>
 #include <iomanip>
 using namespace TFHEpp;
 using P=narrow_benchmark::BenchmarkParam<14,7>;
@@ -36,9 +37,14 @@ struct SourceLinear {
  CKKSSecretKeySwitchKey<P,48> sparse;
 };
 int main(int argc,char**argv)try {
- if(argc!=9 && argc!=10)throw std::runtime_error("usage: checkpoint-directory dd-chain-file switch56-file sigmoid|gelu|tanh output-directory reconstructed-selector-directory saved-dd433 saved-packed435 [--parallel-pairs]");
- const bool parallel_pairs=argc==10;
- if(parallel_pairs && std::string(argv[9])!="--parallel-pairs")throw std::invalid_argument("unknown benchmark option");
+ if(argc<9 || argc>11)throw std::runtime_error("usage: checkpoint-directory dd-chain-file switch56-file sigmoid|gelu|tanh output-directory reconstructed-selector-directory saved-dd433 saved-packed435 [--parallel-pairs] [--small-prime-factors]");
+ bool parallel_pairs=false,small_prime_factors=false;
+ for(int i=9;i<argc;++i) {
+  const std::string option=argv[i];
+  if(option=="--parallel-pairs" && !parallel_pairs)parallel_pairs=true;
+  else if(option=="--small-prime-factors" && !small_prime_factors)small_prime_factors=true;
+  else throw std::invalid_argument("unknown or duplicate benchmark option");
+ }
  const auto checkpoint=std::filesystem::path(argv[1]),root=std::filesystem::path(argv[5]);const std::string function=argv[4];
  if(function!="sigmoid" && function!="gelu" && function!="tanh")throw std::invalid_argument("unsupported function");
  if(!std::filesystem::is_directory(root))throw std::runtime_error("output directory missing");
@@ -59,7 +65,9 @@ int main(int argc,char**argv)try {
  auto post=std::make_unique<CKKSCompactDDRelinKey<P,101>>();
  {std::ifstream f(argv[2],std::ios::binary);if(!f)throw std::runtime_error("saved DD chain missing");cereal::PortableBinaryInputArchive ar(f);std::array<uint64_t,6> meta;std::string stored;ar(meta,stored,key->narrow.relin,*post);if(meta!=std::array<uint64_t,6>{0x4444434841494e31ULL,P::n,448,368,44,5} || stored!=origin || f.peek()!=std::char_traits<char>::eof())throw std::runtime_error("DD chain origin/metadata/length mismatch");}
  using File=CKKSNarrowSelectorFile<SelectorArchive>;auto raw=std::make_shared<File>(argv[6],File::Existing{});
- auto source=std::make_shared<CKKSNarrowDeferredRescaleFactorSource<Narrow,TableSource,SelectorArchive>>(raw);
+ std::shared_ptr<CKKSNarrowFactorSource<Narrow>> source;
+ if(small_prime_factors)source=std::make_shared<CKKSNarrowDeferredRescaleFactorSource32<Narrow,TableSource,SelectorArchive>>(raw);
+ else source=std::make_shared<CKKSNarrowDeferredRescaleFactorSource<Narrow,TableSource,SelectorArchive>>(raw);
  key->narrow.factor_source=std::make_shared<CKKSNarrowPublicMaskNormalizedFactorSource<Narrow,SelectorArchive>>(source);
  CKKSNarrowUseStagedFFT(key->narrow,40);
  auto master=std::make_unique<CKKSCompactDDRelinKey<P,433,64,16>>();
@@ -94,6 +102,6 @@ int main(int argc,char**argv)try {
  ckksSlotDecrypt<P>(*decoded,*square,*dense);double product_error=0;for(size_t i=0;i<P::n/2;++i){double v=target((*slots)[i].real());product_error=narrow_benchmark::finiteMaximum(product_error,std::abs((*decoded)[i]-std::complex<double>{v*v,0}));}
  const auto tolerance=std::ldexp(1.0,-23),product_tolerance=(2*amplitude+1)*tolerance+tolerance*tolerance;bool passed=error<tolerance && product_error<product_tolerance;
  {std::ofstream f(root/(function+"-outputs.bin"),std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);const std::array<uint64_t,9> meta{0x4c4c313446425331ULL,P::n,448,85,44,48,101,44,57};ar(meta,function,*slots,*input,*prepared,*out,*square);}
- {std::ofstream f(root/(function+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"dd_primary_bits\":64,\"dd_secondary_bits\":32,\"dd_auxiliary_bits\":100,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":64,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":54,\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":101,\"output_log_delta\":44,\"post_product_log_q\":57,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
+ {std::ofstream f(root/(function+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"small_prime_factors\":"<<(small_prime_factors?"true":"false")<<",\"dd_primary_bits\":64,\"dd_secondary_bits\":32,\"dd_auxiliary_bits\":100,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":64,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":"<<(small_prime_factors?52:54)<<",\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":101,\"output_log_delta\":44,\"post_product_log_q\":57,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
  std::cout<<function<<" error="<<error<<" square error="<<product_error<<" seconds="<<s2c_seconds+blind_seconds<<std::endl;if(!passed)throw std::runtime_error("functional accuracy gate failed");
 } catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}

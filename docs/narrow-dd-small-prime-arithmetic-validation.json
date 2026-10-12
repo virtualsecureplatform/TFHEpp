@@ -26,9 +26,9 @@
   "selector_modulus_bits": 379,
   "selector_digit_count": 8,
   "source_table_scale_bits": 42,
-  "full_group_selector_count": 512,
+  "full_group_selector_count": 529,
   "full_group_ring_degree": 16384,
-  "full_group_convolution_bound": "166153499473152226151350692269260800",
+  "full_group_convolution_bound": "171670314885346733660282258223513600",
   "centered_crt_limit": "657821220234910467805273421263929344",
   "spectrum_payload_bytes_per_coefficient": 16,
   "previous_spectrum_payload_bytes_per_coefficient": 16,
@@ -169,8 +169,51 @@
     ]
   },
   "source_sha256": {
-    "include/modular_ntt32.hpp": "626d53be54c6a26cf62eea006c89ec90289627e34269de31701ddd060551ab33",
+    "include/modular_ntt32.hpp": "1d52339d4dad1dda5ee59c9e960cb45afba63c5000702ffd6c848acf5fb37dfd",
     "test/common/modular_ntt32.cpp": "cbf691656b1bc1a371b27929ed93cab8c3f6b0fc26dfef80505e0f4afb8a6ede"
   },
-  "completed_utc": "2026-10-12T12:30:48.081135+00:00"
+  "completed_utc": "2026-10-12T12:30:48.081135+00:00",
+  "tail_vectorization_regression": [
+    {
+      "oracle_checks": 1079688,
+      "passed": true
+    },
+    {
+      "small_primes": false,
+      "transform_seconds": 0.0527619
+    },
+    {
+      "small_primes": true,
+      "transform_seconds": 0.0452983
+    },
+    {
+      "small_primes": true,
+      "transform_seconds": 0.0453684
+    },
+    {
+      "small_primes": false,
+      "transform_seconds": 0.0526329
+    },
+    {
+      "small_primes": false,
+      "matrix_seconds": 0.0951715
+    },
+    {
+      "small_primes": true,
+      "matrix_seconds": 0.0494509
+    },
+    {
+      "small_primes": true,
+      "matrix_seconds": 0.044362
+    },
+    {
+      "small_primes": false,
+      "matrix_seconds": 0.0841677
+    },
+    {
+      "matrix_crt_coefficients": 2097152,
+      "passed": true
+    }
+  ],
+  "tail_vectorization_native_test_exit_code": 0
 }
