@@ -1,4 +1,4 @@
-#include <modular_ntt32.hpp>
+#include <modular_rns32.hpp>
 #include <ckks/narrow_matrix.hpp>
 #include <chrono>
 #include <iostream>
@@ -11,7 +11,7 @@ int main()
 {
     std::mt19937_64 random(20262119);
     std::size_t checked = 0;
-    for (const auto prime : modular_ntt32::primes) {
+    for (const auto prime : modular_rns32::primes) {
         const auto p = prime.value;
         for (std::uint64_t divisor = 2; divisor*divisor <= p; ++divisor)
             if (p % divisor == 0) throw std::runtime_error("small NTT modulus is composite");
@@ -84,6 +84,42 @@ int main()
             for (std::size_t i = 0; i < n; ++i)
                 if (data[i] != expected[i] || arithmetic.decode(encoded[i]) != expected[i])
                     throw std::runtime_error("small-prime NTT natural order differs from reference");
+            auto reversed=original, reversed_encoded=original;
+            for(auto&v:reversed_encoded)v=arithmetic.encode(v);
+            small.forwardBitReversed(reversed);
+            small.forwardBitReversed(reversed_encoded);
+            for(std::size_t i=0;i<n;++i) {
+                std::size_t index=0,bits=i;
+                for(std::size_t width=n;width>1;width>>=1){index=(index<<1)|(bits&1);bits>>=1;}
+                if(reversed[index]!=expected[i] || arithmetic.decode(reversed_encoded[index])!=expected[i])
+                    throw std::runtime_error("bit-reversed NTT differs from independent natural-order reference");
+            }
+            small.inverseBitReversed(reversed);
+            small.inverseBitReversed(reversed_encoded);
+            if(reversed!=original)throw std::runtime_error("bit-reversed NTT roundtrip mismatch");
+            for(std::size_t i=0;i<n;++i)if(arithmetic.decode(reversed_encoded[i])!=original[i])
+                throw std::runtime_error("Montgomery bit-reversed roundtrip mismatch");
+            // Exercise zero and extremal canonical residues as well as random inputs.
+            for(auto edge:{std::uint32_t{0},std::uint32_t(p-1)}) {
+                std::vector<std::uint32_t> values(n,edge),natural=values;
+                small.forward(natural);small.forwardBitReversed(values);
+                for(std::size_t i=0;i<n;++i) {
+                    std::size_t index=0,bits=i;
+                    for(std::size_t width=n;width>1;width>>=1){index=(index<<1)|(bits&1);bits>>=1;}
+                    if(values[index]!=natural[i])throw std::runtime_error("bit-reversed endpoint spectrum differs from reference");
+                }
+                small.inverseBitReversed(values);
+                if(values!=std::vector<std::uint32_t>(n,edge))throw std::runtime_error("bit-reversed endpoint roundtrip mismatch");
+            }
+            std::vector<std::uint32_t> short_input(n-1);
+            for(bool inverse:{false,true}) {
+                bool rejected=false;
+                try {
+                    if(inverse)small.inverseBitReversed(short_input);
+                    else small.forwardBitReversed(short_input);
+                } catch(const std::invalid_argument&) {rejected=true;}
+                if(!rejected)throw std::runtime_error("bit-reversed NTT accepted invalid length");
+            }
             small.inverse(data);
             if (data != original) throw std::runtime_error("small-prime NTT roundtrip mismatch");
             checked += n;
@@ -120,9 +156,15 @@ int main()
         auto residue = [&](std::int64_t x) { return std::uint32_t(x < 0 ? (p-std::uint64_t(-x)%p)%p : std::uint64_t(x)%p); };
         std::vector<std::uint32_t> a(degree), b(degree);
         for (std::size_t i = 0; i < degree; ++i) { a[i] = plan.arithmetic().encode(residue(left[i])); b[i] = residue(right[i]); }
+        auto reversed_a=a,reversed_b=b;
+        plan.forwardBitReversed(reversed_a);plan.forwardBitReversed(reversed_b);
+        for(std::size_t i=0;i<degree;++i)reversed_b[i]=plan.arithmetic().multiply(reversed_a[i],reversed_b[i]);
+        plan.inverseBitReversed(reversed_b);
         plan.forward(a); plan.forward(b);
         for (std::size_t i = 0; i < degree; ++i) b[i] = plan.arithmetic().multiply(a[i], b[i]);
-        plan.inverse(b); products[prime] = std::move(b);
+        plan.inverse(b);
+        if(b!=reversed_b)throw std::runtime_error("permutation-free convolution differs from natural-order convolution");
+        products[prime] = std::move(b);
     }
     for (std::size_t i = 0; i < degree; ++i)
         if (crt.reconstructSigned({products[0][i],products[1][i],products[2][i],products[3][i]}) != expected[i])

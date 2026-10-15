@@ -184,9 +184,11 @@ class NegacyclicNTTPlan {
     std::vector<std::pair<std::size_t, std::size_t>> swaps_;
     std::vector<std::vector<std::uint32_t>> forward_, inverse_;
     std::vector<std::uint32_t> twist_, untwist_;
-    void transform(std::span<std::uint32_t> values, bool inverse) const
+    void transform(std::span<std::uint32_t> values, bool inverse,
+                   bool permute = true) const
     {
-        for (auto [a, b] : swaps_) std::swap(values[a], values[b]);
+        if (permute)
+            for (auto [a, b] : swaps_) std::swap(values[a], values[b]);
         const auto modulus = arithmetic_.modulus();
         const auto &stages = inverse ? inverse_ : forward_;
         std::size_t stage = 0;
@@ -213,6 +215,38 @@ class NegacyclicNTTPlan {
                     const auto odd = arithmetic_.multiply(values[block+j+half], stages[stage][j]);
                     values[block+j] = arithmetic_.canonical(even+odd);
                     values[block+j+half] = arithmetic_.canonical(even+modulus-odd);
+                }
+            }
+        }
+    }
+    // Decimation in frequency leaves the spectrum in bit-reversed order.
+    // Pair with the unpermuted inverse DIT to avoid both permutation passes.
+    void transformForwardBitReversed(std::span<std::uint32_t> values) const
+    {
+        const auto modulus = arithmetic_.modulus();
+        std::size_t stage = forward_.size();
+        for (std::size_t length = size_; length >= 2; length >>= 1) {
+            --stage;
+            const auto half = length / 2;
+            for (std::size_t block = 0; block < size_; block += length) {
+                std::size_t j = 0;
+#if defined(__AVX2__)
+                const auto prime = _mm256_set1_epi32(modulus);
+                for (; j + 8 <= half; j += 8) {
+                    const auto even = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(values.data()+block+j));
+                    const auto odd = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(values.data()+block+j+half));
+                    const auto sum = arithmetic_.canonicalVector(_mm256_add_epi32(even,odd));
+                    const auto difference = _mm256_sub_epi32(_mm256_add_epi32(even,prime),odd);
+                    const auto product = arithmetic_.canonicalVector(arithmetic_.multiplyLazyVector(
+                        difference,_mm256_loadu_si256(reinterpret_cast<const __m256i*>(forward_[stage].data()+j))));
+                    _mm256_storeu_si256(reinterpret_cast<__m256i*>(values.data()+block+j),sum);
+                    _mm256_storeu_si256(reinterpret_cast<__m256i*>(values.data()+block+j+half),product);
+                }
+#endif
+                for (; j < half; ++j) {
+                    const auto even=values[block+j],odd=values[block+j+half];
+                    values[block+j]=arithmetic_.canonical(even+odd);
+                    values[block+j+half]=arithmetic_.multiply(even+modulus-odd,forward_[stage][j]);
                 }
             }
         }
@@ -279,6 +313,21 @@ public:
         if (values.size() != size_) throw std::invalid_argument("NTT input length mismatch");
         transform(values, true); multiplyRows(values, untwist_);
     }
+    // Canonical inputs; spectra retain their ordinary/Montgomery domain.
+    // These methods must be paired: only the intermediate order changes.
+    void forwardBitReversed(std::span<std::uint32_t> values) const
+    {
+        if(values.size()!=size_)throw std::invalid_argument("NTT input length mismatch");
+        multiplyRows(values,twist_);
+        transformForwardBitReversed(values);
+    }
+    void inverseBitReversed(std::span<std::uint32_t> values) const
+    {
+        if(values.size()!=size_)throw std::invalid_argument("NTT input length mismatch");
+        transform(values,true,false);
+        multiplyRows(values,untwist_);
+    }
+
 };
 
 class FourPrimeCRT {

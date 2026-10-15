@@ -83,7 +83,7 @@ class CKKSPreparedGadgetRNS32 {
             const auto &arithmetic=plans()[p].arithmetic();
             auto values=std::span(spectra_[p]).subspan(((chunk*rows+r)*2+c)*P::n,P::n);
             for(std::size_t i=0;i<P::n;++i)values[i]=arithmetic.encode(encoder.residue(ckks_detail::reduceToLevel<P,Q>(coefficient(r,c,i))>>(chunk*chunk_bits),p));
-            plans()[p].forward(values);
+            plans()[p].forwardBitReversed(values);
         }
     }
 public:
@@ -124,7 +124,7 @@ public:
                 const auto magnitude=v<0?std::uint64_t{0}-std::uint64_t(v):std::uint64_t(v);
                 const auto reduced=magnitude%modulus;values[i]=v<0&&reduced?modulus-reduced:reduced;
             }
-            plans()[p].forward(values);
+            plans()[p].forwardBitReversed(values);
         }
         digits.reset();
         std::array<std::array<std::vector<std::uint32_t>,count>,chunks*2> sums;
@@ -147,7 +147,7 @@ public:
 #pragma omp parallel for collapse(2) schedule(static)
         for(std::size_t c=0;c<chunks*2;++c)for(std::size_t p=0;p<count;++p){
             for(auto &v:sums[c][p])v=plans()[p].arithmetic().canonical(v);
-            plans()[p].inverse(sums[c][p]);
+            plans()[p].inverseBitReversed(sums[c][p]);
         }
         static const modular_rns32::CenteredCRT<Small::limbs,count> crt;
         for(auto&c:result)c.fill({});

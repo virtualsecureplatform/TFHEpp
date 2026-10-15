@@ -1,0 +1,120 @@
+{
+  "scope": "CPU RNS gadget spectra in bit-reversed order; forward DIF paired with inverse DIT, removing permutation passes.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "fixtures": "Deterministic noncryptographic random gadget ciphertext rows and polynomials.",
+  "transform_checks": {
+    "primes": 17,
+    "sizes": [
+      2,
+      8,
+      512,
+      16384,
+      65536
+    ],
+    "oracle": "Independent 64-bit natural-order NTT, with explicit bit-reversal mapping.",
+    "domains": [
+      "ordinary",
+      "Montgomery"
+    ],
+    "cases": [
+      "random canonical input",
+      "zero",
+      "p-1",
+      "invalid input length rejected"
+    ],
+    "convolution": "Signed negacyclic convolution checked against original natural-order path and independent int128 schoolbook oracle.",
+    "oracle_checks": 5325354
+  },
+  "gadget_checks": "N=16 and 512 plus full N=16384 retained-gadget arithmetic fixtures; primary20 and regrouped40 match independent digit-NTT output exactly; zero input clears output.",
+  "commands": [
+    "OMP_NUM_THREADS=8 build/test/common/modular_ntt32",
+    "OMP_NUM_THREADS=8 build/test/ckks/ckks_dd_gadget_rns32 full"
+  ],
+  "exit_codes": [
+    0,
+    0
+  ],
+  "isolated_profile": {
+    "directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/gadget-stage-profile-20261017",
+    "method": "30 calls per process; omit first2. Baseline/variant/variant/baseline at each thread count; identical fixture and output checksum. Stage timing diagnostics kept outside production headers.",
+    "stage_means": {
+      "1": {
+        "baseline": {
+          "total_seconds": 0.02649570410714286,
+          "stage_seconds": {
+            "decomposition": 0.0013577462499999998,
+            "forward": 0.013616167857142857,
+            "multiply": 0.005277581071428571,
+            "inverse": 0.0046919025,
+            "crt": 0.0015523064285714286
+          }
+        },
+        "bitrev": {
+          "total_seconds": 0.023430525,
+          "stage_seconds": {
+            "decomposition": 0.0013408541071428571,
+            "forward": 0.011321344642857143,
+            "multiply": 0.005270711071428571,
+            "inverse": 0.003932903571428571,
+            "crt": 0.0015647116071428571
+          }
+        },
+        "fractional_reduction": 0.11568588986153916
+      },
+      "8": {
+        "baseline": {
+          "total_seconds": 0.007665127910714285,
+          "stage_seconds": {
+            "decomposition": 0.0015546280357142857,
+            "forward": 0.0032876507142857144,
+            "multiply": 0.0018788164285714285,
+            "inverse": 0.0006532218571428572,
+            "crt": 0.000290810875
+          }
+        },
+        "bitrev": {
+          "total_seconds": 0.007097056142857143,
+          "stage_seconds": {
+            "decomposition": 0.00155532625,
+            "forward": 0.002971595892857143,
+            "multiply": 0.0017644119642857142,
+            "inverse": 0.00053081525,
+            "crt": 0.00027490678571428573
+          }
+        },
+        "fractional_reduction": 0.07411119220373263
+      },
+      "24": {
+        "baseline": {
+          "total_seconds": 0.007214068464285715,
+          "stage_seconds": {
+            "decomposition": 0.0015424794642857143,
+            "forward": 0.0028400157142857143,
+            "multiply": 0.001962280714285714,
+            "inverse": 0.0005777491964285713,
+            "crt": 0.00029154337500000003
+          }
+        },
+        "bitrev": {
+          "total_seconds": 0.006813266178571429,
+          "stage_seconds": {
+            "decomposition": 0.0015374017857142856,
+            "forward": 0.00256402375,
+            "multiply": 0.0019376539285714286,
+            "inverse": 0.00046350805357142855,
+            "crt": 0.0003106786607142857
+          }
+        },
+        "fractional_reduction": 0.0555584255539735
+      }
+    },
+    "source_sha256": {
+      "profile.hpp": "83fb83878bab585f2a18f75934c7055570f5bf10bcf14c6b3ec0c3fb2a0a3eca",
+      "profile.cpp": "8916778cf0d6e2f2a600363b6a4fc9fcd30e74cf211727b2e88172a399548775",
+      "profile-bitrev.hpp": "ba198f6195d979b5138c9586103b3fac86696563c2674a9b7b1a13e0d9f95135",
+      "profile-bitrev.cpp": "d878db506a348206ec8406d119de77e884b6ea0dc25142096d52a0b903ca2297"
+    }
+  },
+  "security_validated": false
+}
