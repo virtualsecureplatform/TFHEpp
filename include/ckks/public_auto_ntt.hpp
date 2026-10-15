@@ -6,7 +6,7 @@ namespace TFHEpp {
 template<class P, uint32_t Q, uint32_t Bits=64>
 struct PublicAutoGadgetRows {
  static_assert(P::k==1 && is_multilimb_uint_v<typename P::T>);
- static_assert(P::T::digits%Bits==0);
+ static_assert(Bits>0 && Bits<=64 && ((Q+Bits-1)/Bits)*Bits<=P::T::digits);
  static constexpr size_t rows=(Q+Bits-1)/Bits;
  uint32_t exponent=1;
  std::array<TRLWE<P>,rows> ciphertexts{};

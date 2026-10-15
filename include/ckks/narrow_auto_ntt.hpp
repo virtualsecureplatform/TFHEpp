@@ -2,14 +2,15 @@
 #include "public_auto_ntt.hpp"
 #include <map>
 namespace TFHEpp {
-template<uint32_t HighFactorQ, class Schedule, class PackedSchedule>
+template<uint32_t HighFactorQ, uint32_t Primary=64, uint32_t Secondary=32,
+         class Schedule, class PackedSchedule>
 inline void CKKSNarrowUsePublicNTTAutomorphisms(CKKSNarrowBootstrapKey<Schedule>& key,
     const CKKSNarrowPackedKey<PackedSchedule>& packed) {
  using P=typename Schedule::Param;constexpr auto Q=CKKSNarrowPackedKey<PackedSchedule>::log_q;
  static_assert(Q>HighFactorQ && Q>Schedule::factor_log_q && Q>Schedule::output_log_q);
- using Cache=PreparedPublicAutoNTT<P,Q>;
+ using Cache=PreparedPublicAutoNTT<P,Q,Primary,Secondary>;
  auto prepared=std::make_shared<std::map<uint32_t,std::shared_ptr<Cache>>>();
- PublicPackedAutoDeriver<P,PackedSchedule> derive(packed);
+ PublicPackedAutoDeriver<P,PackedSchedule,Primary> derive(packed);
  auto attach=[&](uint32_t exponent) {
   if(prepared->contains(exponent))return;
   auto [rows,steps]=derive.derive(exponent);

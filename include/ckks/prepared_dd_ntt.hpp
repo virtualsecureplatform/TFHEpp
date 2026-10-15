@@ -24,7 +24,14 @@ struct CKKSPreparedDDRelinKeyNTT {
     static_assert(primary_rows * Bg <= P::T::digits);
     static_assert(secondary_rows * Bbar <= P::T::digits);
 
-    std::array<std::unique_ptr<modular_ntt::NegacyclicNTTPlan>, 2> plans;
+    static constexpr bool fitsSinglePrime()
+    {
+        const auto limit = modular_ntt::degree65536_primes[0].value / 2;
+        return (static_cast<unsigned __int128>(1) << (Bg-1)) <=
+            (limit-1)/(static_cast<unsigned __int128>(1) << (Bbar-1))/P::n/primary_rows;
+    }
+    static constexpr std::size_t prime_count = fitsSinglePrime() ? 1 : 2;
+    std::array<std::unique_ptr<modular_ntt::NegacyclicNTTPlan>, prime_count> plans;
     std::vector<modular_ntt::ShoupMultiplier> spectra;
 
     static constexpr bool fitsCRT()
@@ -45,17 +52,17 @@ struct CKKSPreparedDDRelinKeyNTT {
             2 + component) * P::n + coefficient);
     }
     explicit CKKSPreparedDDRelinKeyNTT(const Key &key)
-        : spectra(2 * primary_rows * secondary_rows * 2 * P::n)
+        : spectra(prime_count * primary_rows * secondary_rows * 2 * P::n)
     {
         const auto &primes = modular_ntt::degree65536_primes;
-        for (std::size_t prime = 0; prime < 2; ++prime)
+        for (std::size_t prime = 0; prime < prime_count; ++prime)
             plans[prime] = std::make_unique<modular_ntt::NegacyclicNTTPlan>(
                 P::n, primes[prime]);
 #pragma omp parallel
         {
             std::vector<std::uint64_t> values(P::n);
 #pragma omp for collapse(4) schedule(static)
-            for (std::size_t prime = 0; prime < 2; ++prime)
+            for (std::size_t prime = 0; prime < prime_count; ++prime)
                 for (std::size_t row = 0; row < primary_rows; ++row)
                     for (std::size_t secondary = 0; secondary < secondary_rows; ++secondary)
                         for (std::size_t component = 0; component < 2; ++component) {
@@ -87,15 +94,15 @@ struct CKKSPreparedDDRelinKeyNTT {
     }
     void apply(TRLWE<P> &result, const Polynomial<P> &input) const
     {
-        if (spectra.size() != 2 * primary_rows * secondary_rows * 2 * P::n ||
-            !plans[0] || !plans[1])
+        if (spectra.size() != prime_count * primary_rows * secondary_rows * 2 * P::n ||
+            !plans[0] || (prime_count == 2 && !plans[1]))
             throw std::invalid_argument("invalid NTT DD cache");
         auto digits = std::make_unique<std::array<Polynomial<P>, primary_rows>>();
         ckks_detail::activeBaseDecomposePolynomialRows<P, Q, Bg, primary_rows>(
             *digits, input);
-        std::vector<std::uint64_t> transformed(2 * primary_rows * P::n);
+        std::vector<std::uint64_t> transformed(prime_count * primary_rows * P::n);
 #pragma omp parallel for collapse(2) schedule(static)
-        for (std::size_t prime = 0; prime < 2; ++prime)
+        for (std::size_t prime = 0; prime < prime_count; ++prime)
             for (std::size_t row = 0; row < primary_rows; ++row) {
                 const auto modulus = plans[prime]->modulus();
                 auto values = std::span<std::uint64_t>(transformed.data() +
@@ -109,13 +116,13 @@ struct CKKSPreparedDDRelinKeyNTT {
                 }
                 plans[prime]->forward(values);
             }
-        std::vector<std::uint64_t> products(2 * secondary_rows * 2 * P::n);
+        std::vector<std::uint64_t> products(prime_count * secondary_rows * 2 * P::n);
         const auto position = [](std::size_t prime, std::size_t secondary,
                                   std::size_t component, std::size_t i) {
             return ((prime * secondary_rows + secondary) * 2 + component) * P::n + i;
         };
 #pragma omp parallel for collapse(3) schedule(static)
-        for (std::size_t prime = 0; prime < 2; ++prime)
+        for (std::size_t prime = 0; prime < prime_count; ++prime)
             for (std::size_t secondary = 0; secondary < secondary_rows; ++secondary)
                 for (std::size_t component = 0; component < 2; ++component) {
                     const auto modulus = plans[prime]->modulus();
@@ -138,9 +145,17 @@ struct CKKSPreparedDDRelinKeyNTT {
             for (std::size_t i = 0; i < P::n; ++i) {
                 typename P::T sum{};
                 for (std::size_t secondary = 0; secondary < secondary_rows; ++secondary)
-                    sum += signedTorus(crt.reconstructSigned(products[position(0,
-                        secondary, component, i)], products[position(1, secondary,
-                        component, i)])) << ((secondary_rows - secondary - 1) * Bbar);
+                    {
+                        __int128 exact;
+                        const auto first = products[position(0,secondary,component,i)];
+                        if constexpr (prime_count == 1) {
+                            const auto modulus = modular_ntt::degree65536_primes[0].value;
+                            exact = first <= modulus/2 ? static_cast<__int128>(first)
+                                : -static_cast<__int128>(modulus-first);
+                        }
+                        else exact = crt.reconstructSigned(first,products[position(1,secondary,component,i)]);
+                        sum += signedTorus(exact) << ((secondary_rows-secondary-1)*Bbar);
+                    }
                 result[component][i] = ckks_detail::reduceToLevel<P, Q>(sum);
             }
     }
