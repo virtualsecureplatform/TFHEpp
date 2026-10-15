@@ -77,6 +77,25 @@ int main()
             if (actual->ct!=reference->ct) throw std::runtime_error("prepared compact transform differs from reference");
         }
     }
+    for(std::size_t terms:{3,4,5,7,8,9}){
+        auto varied=plan;varied.has_direct=true;varied.has_conjugate=true;
+        for(auto*part:{&varied.direct,&varied.conjugate})for(auto&group:part->groups){
+            group.terms.clear();
+            for(std::size_t j=0;j<terms;++j){
+                decltype(group.terms)::value_type term;term.baby_step=j%2;
+                for(std::size_t i=0;i<P::n;++i)term.coefficients[i]=((i+j)%2?-1:1)*std::int64_t((std::uint64_t{1}<<39)+j+1);
+                group.terms.push_back(term);
+            }
+        }
+        Prepared prepared(varied,4*terms*Prepared::term_spectrum_bytes);
+        auto reference=std::make_unique<CKKSPlainMulResult<P,93,52,37>>(),fused=std::make_unique<CKKSPlainMulResult<P,93,52,37>>(),unfused=std::make_unique<CKKSPlainMulResult<P,93,52,37>>();
+        CKKSLazyPreparedGaloisKeyFFT<P,93> transient_input(*input_key);
+        CKKSLazyPreparedGaloisKeyFFT<P,56> transient_output(*output_key);
+        CKKSRealLinearTransform<P,93,52,37>(*reference,*input,varied,transient_input,transient_output);
+        prepared.apply(*fused,*input,retained_input,retained_output,nullptr,true);
+        prepared.apply(*unfused,*input,retained_input,retained_output,nullptr,false);
+        if(fused->ct!=unfused->ct || fused->ct!=reference->ct)throw std::runtime_error("four-term S2C matrix batch or remainder changed exact output");
+    }
     bool bound_rejected=false;
     try { CKKSPreparedCompactRealLinearTransformRNS32<P,93,52,37,2> insufficient(plan,budget); }
     catch(const std::invalid_argument&){bound_rejected=true;}

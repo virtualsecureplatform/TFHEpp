@@ -95,7 +95,7 @@ public:
     }
 private:
     template<class InputKey,class OutputKey>
-    void applyPart(Result&result,const Input&input,const Plan&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings)const {
+    void applyPart(Result&result,const Input&input,const Plan&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings,bool fused_terms)const {
         using Clock=std::chrono::steady_clock;
         auto start=Clock::now();std::vector<bool> used(plan.k_step,false);
         for(const auto &g:plan.groups)for(const auto &t:g.terms)used[t.baby_step]=true;
@@ -125,7 +125,30 @@ private:
             for(std::size_t c=0;c<=P::k;++c)for(std::size_t p=0;p<Count;++p)for(std::size_t begin=0;begin<P::n;begin+=1024){
                 const auto &arithmetic=plans()[p].arithmetic();auto *out=sums[c][p].data();
                 const auto end=std::min(begin+1024,std::size_t(P::n));
-                for(std::size_t t=0;t<group.terms.size();++t){
+                std::size_t first=0;
+                if(fused_terms)for(;first+4<=group.terms.size();first+=4){
+                    std::array<const std::uint32_t*,4> left,right;
+                    for(std::size_t t=0;t<4;++t){
+                        left[t]=transformed[group.terms[first+t].baby_step][c][p].data();
+                        right[t]=group.spectra[p].data()+(first+t)*P::n;
+                    }
+                    std::size_t i=begin;
+#if defined(__AVX2__)
+                    for(;i+8<=end;i+=8){
+                        const auto sum=arithmetic.accumulateDot4Vector(
+                            _mm256_loadu_si256(reinterpret_cast<const __m256i*>(out+i)),
+                            [&](std::size_t t){return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(left[t]+i));},
+                            [&](std::size_t t){return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(right[t]+i));});
+                        _mm256_storeu_si256(reinterpret_cast<__m256i*>(out+i),sum);
+                    }
+#endif
+                    for(;i<end;++i){
+                        std::uint64_t dot=0;for(std::size_t t=0;t<4;++t)dot+=std::uint64_t(left[t][i])*right[t][i];
+                        const auto sum=out[i]+arithmetic.reduceLazy(dot);
+                        out[i]=sum>=2*arithmetic.modulus()?sum-2*arithmetic.modulus():sum;
+                    }
+                }
+                for(std::size_t t=first;t<group.terms.size();++t){
                     const auto *left=transformed[group.terms[t].baby_step][c][p].data();const auto *right=group.spectra[p].data()+t*P::n;std::size_t i=begin;
 #if defined(__AVX2__)
                     for(;i+8<=end;i+=8){
@@ -160,10 +183,10 @@ private:
     }
 public:
     template<class InputKey,class OutputKey>
-    void apply(Result&result,const Input&input,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr)const {
+    void apply(Result&result,const Input&input,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool fused_terms=true)const {
         if(!has_direct&&!has_conjugate){for(auto &component:result.ct)component.fill({});return;}
-        auto term=std::make_unique<Result>();if(has_direct){applyPart(*term,input,direct,ik,ok,timings);result=*term;}
-        if(has_conjugate){auto ct=std::make_unique<Input>();CKKSConjugateSlots<P,Q>(ct->ct,input.ct,ik);applyPart(*term,*ct,conjugate,ik,ok,timings);if(!has_direct)result=*term;else CKKSAddTRLWEInPlace<P,output_q>(result.ct,term->ct);}
+        auto term=std::make_unique<Result>();if(has_direct){applyPart(*term,input,direct,ik,ok,timings,fused_terms);result=*term;}
+        if(has_conjugate){auto ct=std::make_unique<Input>();CKKSConjugateSlots<P,Q>(ct->ct,input.ct,ik);applyPart(*term,*ct,conjugate,ik,ok,timings,fused_terms);if(!has_direct)result=*term;else CKKSAddTRLWEInPlace<P,output_q>(result.ct,term->ct);}
     }
 };
 template<class P,std::uint32_t Q,std::uint32_t Delta,std::uint32_t PlainDelta,std::size_t Count,class InputKey,class OutputKey>
