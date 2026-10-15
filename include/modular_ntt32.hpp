@@ -176,6 +176,37 @@ public:
         const std::array<const std::uint32_t*,8>&right,
         const std::array<std::uint32_t,8>&selectors,std::size_t columns)const
     {addDotPair<8>(first,second,left,right,selectors,columns);}
+    // Four columns of both signed tables are adjacent in each eight-word
+    // row. Load them together instead of assembling two half vectors.
+    template<std::size_t Terms>
+    void addPackedDotPair(std::uint32_t *first,std::uint32_t *second,
+        const std::array<const std::uint32_t*,Terms>&tables,
+        const std::array<std::uint32_t,Terms>&selectors)const
+    {
+        static_assert(Terms==4 || Terms==8);
+#if defined(__AVX2__)
+        auto even=_mm256_setzero_si256(),odd=even;
+        for(std::size_t t=0;t<Terms;++t){
+            const auto row=_mm256_loadu_si256(reinterpret_cast<const __m256i*>(tables[t]));
+            const auto fixed=_mm256_set1_epi32(selectors[t]);
+            even=_mm256_add_epi64(even,_mm256_mul_epu32(row,fixed));
+            odd=_mm256_add_epi64(odd,_mm256_mul_epu32(_mm256_srli_epi64(row,32),fixed));
+        }
+        auto value=reduceWideVector(even,odd);
+        if constexpr(Terms==8)value=canonicalVector(value);
+        const auto destination=_mm256_inserti128_si256(_mm256_castsi128_si256(
+            _mm_loadu_si128(reinterpret_cast<const __m128i*>(first))),
+            _mm_loadu_si128(reinterpret_cast<const __m128i*>(second)),1);
+        const auto sum=_mm256_add_epi32(destination,value);
+        const auto reduced=_mm256_min_epu32(sum,_mm256_sub_epi32(sum,_mm256_set1_epi32(2*modulus_)));
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(first),_mm256_castsi256_si128(reduced));
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(second),_mm256_extracti128_si256(reduced,1));
+#else
+        std::array<const std::uint32_t*,Terms> right;
+        for(std::size_t t=0;t<Terms;++t)right[t]=tables[t]+4;
+        addDotPair<Terms>(first,second,tables,right,selectors,4);
+#endif
+    }
     // Tables are ordinary residues; the selector is in Montgomery form.
     // Destinations remain in [0,2p); canonicalize at a matrix tile boundary.
     void addPair(std::uint32_t *first, std::uint32_t *second,

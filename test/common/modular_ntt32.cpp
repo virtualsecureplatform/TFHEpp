@@ -74,6 +74,11 @@ int main()
             std::array<const std::uint32_t*,Terms> lp,rp;
             for(std::size_t t=0;t<Terms;++t){left[t].resize(columns);right[t].resize(columns);lp[t]=left[t].data();rp[t]=right[t].data();}
             std::vector<std::uint32_t> first(columns),second(columns);
+            std::array<std::array<std::uint32_t,8>,Terms> packed;
+            std::array<const std::uint32_t*,Terms> packed_rows;
+            for(std::size_t t=0;t<Terms;++t)packed_rows[t]=packed[t].data();
+            std::array<std::uint32_t,4> packed_first,packed_second;
+            packed_first.fill(2*p-1);packed_second.fill(2*p-1);
             std::vector<std::uint64_t> a(columns,p-1),b(columns,p-1);
             std::fill(first.begin(),first.end(),2*p-1);
             std::fill(second.begin(),second.end(),2*p-1);
@@ -91,6 +96,12 @@ int main()
                     }
                 }
                 arithmetic.template addDotPair<Terms>(first.data(),second.data(),lp,rp,selectors,columns);
+                if(columns==4){
+                    for(std::size_t t=0;t<Terms;++t)for(std::size_t c=0;c<4;++c){packed[t][c]=left[t][c];packed[t][c+4]=right[t][c];}
+                    arithmetic.template addPackedDotPair<Terms>(packed_first.data(),packed_second.data(),packed_rows,selectors);
+                    for(std::size_t c=0;c<4;++c)
+                        if(packed_first[c]!=first[c] || packed_second[c]!=second[c])throw std::runtime_error("packed table dot differs from separate tables");
+                }
                 for(std::size_t c=0;c<columns;++c){
                     if(first[c]>=2*p || second[c]>=2*p || first[c]%p!=a[c] || second[c]%p!=b[c])throw std::runtime_error("batched Montgomery dot differs from integer oracle");
                     ++checked;
