@@ -4,6 +4,44 @@
 
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 namespace TFHEpp {
+namespace ckks_detail {
+// Emit the same balanced digits as activeBaseDecomposePolynomialRows, keeping
+// only their signed 64-bit values rather than full torus coefficients.
+template<class P, std::uint32_t Q, std::uint32_t Bits, std::size_t Rows>
+void activeBaseDecomposeSignedRows(
+    std::array<std::array<std::int64_t, P::n>, Rows>& result,
+    const Polynomial<P>& input)
+{
+    using T = typename P::T;
+    static_assert(is_multilimb_uint_v<T>);
+    static_assert(Q > 0 && Q <= T::digits && Bits > 0 && Bits <= 64);
+    static_assert(Rows == (Q + Bits - 1) / Bits && Rows * Bits <= T::digits);
+    constexpr T offset = [] {
+        T value{};
+        for (std::size_t row = 0; row < Rows; ++row)
+            value += (T{1} << (Bits - 1)) << ((Rows - row - 1) * Bits);
+        return value;
+    }();
+    constexpr std::uint64_t mask = [] {
+        if constexpr (Bits == 64) return ~std::uint64_t{0};
+        else return (std::uint64_t{1} << Bits) - 1;
+    }();
+    constexpr auto half = std::uint64_t{1} << (Bits - 1);
+    for (std::size_t i = 0; i < P::n; ++i) {
+        const T a = centeredLevelToTorus<P, Q>(input[i]) + offset;
+        for (std::size_t row = 0; row < Rows; ++row) {
+            const auto shift = (Rows - row - 1) * Bits;
+            const auto word = shift / 64, bit = shift % 64;
+            auto digit = a.limb[word] >> bit;
+            if (bit && word + 1 < T::limbs)
+                digit |= a.limb[word + 1] << (64 - bit);
+            // Unsigned subtraction also handles the full-width INT64_MIN digit.
+            result[row][i] = std::bit_cast<std::int64_t>((digit & mask) - half);
+        }
+    }
+}
+} // namespace ckks_detail
+
 // Exact encrypted-gadget multiplication using wide canonical key chunks.
 // The primary gadget and its balanced input decomposition stay unchanged.
 template<class P,std::uint32_t Q,std::uint32_t Bits,std::uint32_t ChunkBits=80>
@@ -71,10 +109,10 @@ public:
     }
     std::size_t byteSize()const{return count*chunks*rows*2*P::n*sizeof(std::uint32_t);}
     void apply(TRLWE<P>&result,const Polynomial<P>&input)const{
-        auto digits=std::make_unique<std::array<Polynomial<P>,rows>>();
-        ckks_detail::activeBaseDecomposePolynomialRows<P,Q,Bits,rows>(*digits,input);
+        auto digits=std::make_unique_for_overwrite<std::array<std::array<std::int64_t,P::n>,rows>>();
+        ckks_detail::activeBaseDecomposeSignedRows<P,Q,Bits,rows>(*digits,input);
         std::array<bool,rows> active{};
-        for(std::size_t r=0;r<rows;++r)active[r]=std::any_of((*digits)[r].begin(),(*digits)[r].end(),[](const auto&v){return v!=typename P::T{};});
+        for(std::size_t r=0;r<rows;++r)active[r]=std::any_of((*digits)[r].begin(),(*digits)[r].end(),[](const auto&v){return v!=0;});
         std::array<std::vector<std::uint32_t>,count> transformed;
         for(auto &row:transformed)row.resize(rows*P::n);
 #pragma omp parallel for collapse(2) schedule(static)
@@ -82,7 +120,7 @@ public:
             auto values=std::span(transformed[p]).subspan(r*P::n,P::n);
             const auto modulus=modular_rns32::primes[p].value;
             for(std::size_t i=0;i<P::n;++i){
-                const auto v=std::bit_cast<std::int64_t>((*digits)[r][i].limb[0]);
+                const auto v=(*digits)[r][i];
                 const auto magnitude=v<0?std::uint64_t{0}-std::uint64_t(v):std::uint64_t(v);
                 const auto reduced=magnitude%modulus;values[i]=v<0&&reduced?modulus-reduced:reduced;
             }

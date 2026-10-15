@@ -1,0 +1,48 @@
+{
+  "scope": "Exact signed 64-bit gadget digits in the CPU RNS32 encrypted-gadget backend; original wide decomposition retained as reference.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "fixtures": "Deterministic noncryptographic random gadget rows and polynomial coefficients.",
+  "decomposition_cases": 32,
+  "q_bits": [
+    85,
+    209,
+    257,
+    385,
+    433,
+    435,
+    448
+  ],
+  "primary_bits": [
+    1,
+    20,
+    40,
+    44,
+    64
+  ],
+  "storage_constraint": "ceil(Q/Bits)*Bits <= 448; invalid padded combinations skipped at compile time.",
+  "digit_checks": [
+    "Each signed digit equals the low-limb signed bit pattern of the original wide decomposition.",
+    "Reconstruction modulo Q equals the original polynomial.",
+    "Random full-width and reduced representatives, zero, plus/minus one, modulus midpoint, and balanced carry boundaries."
+  ],
+  "gadget_checks": "N=16,512,16384; data Q=385,341,297,253,209; 20- and regrouped 40-bit primary digits match independent digit-NTT output exactly; zero input clears output.",
+  "factor_checks": "direct RNS and digit-CRT cached head/tail factors byte-identical; no online reads or selector transforms; retained bytes=41674640",
+  "commands": [
+    "OMP_NUM_THREADS=8 build/test/ckks/ckks_dd_gadget_rns32 full",
+    "OMP_NUM_THREADS=8 build/test/ckks/ckks_narrow_factor_rns32"
+  ],
+  "exit_codes": [
+    0,
+    0
+  ],
+  "storage_example": {
+    "n": 16384,
+    "q": 433,
+    "primary_bits": 20,
+    "rows": 22,
+    "wide_bytes": 20185088,
+    "compact_bytes": 2883584
+  },
+  "security_validated": false
+}
