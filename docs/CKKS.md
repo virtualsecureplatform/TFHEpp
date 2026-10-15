@@ -4217,3 +4217,43 @@ Public setup took 236.52 seconds in this run; it was excluded from the online
 timers and reused across functions. Evidence, compiler commands, sampling
 scope and the rejected matrix-register experiment are recorded in
 `narrow-dd-grouped-ntt-products-validation.json`. The 10x goal remains open.
+
+
+The CPU basis replay now prepares the public S2C plaintext and Galois spectra
+once, before the online timer. `--s2c-cache-gib 9` is the default spectrum
+budget; `--s2c-cache-gib 0` uses the evaluation-local path. This budget is
+separate from `--cache-gib`, which controls the selector cache. Neither budget
+is a cap on total process memory. The retained LL14 profile uses
+4,269,801,472 bytes of plaintext spectra plus 734,003,200 bytes of Galois spectra
+(about 4.66 GiB combined), excluding small container overhead.
+
+Only high plaintext digits proved zero from the public compact coefficients
+are omitted. The prepared plan still supports the entire signed int64 range.
+All input-dependent baby rotations, digit transforms, fused products, giant
+rotations, sparse-key encapsulation, and rescaling are recomputed online.
+The library's existing three-argument coefficient preparation API retains its
+evaluation-local behavior; the explicit transform overload permits prepared
+public backends without duplicating the lift/switch/rescale pipeline.
+
+The S2C component measured 14.57 seconds on the baseline and
+8.17/8.24/8.27 seconds with prepared spectra, after 3.01 seconds of one-time
+public preparation. All three coefficient ciphertexts were byte-identical;
+28 prepared Galois spectra were reused without rebuilding any online.
+`ckks_prepared_compact_linear` covers direct-only, conjugate-only, combined,
+full signed-int64 coefficients, omitted zero digits, all-zero plans, budget
+rejection, and repeated cache reuse. See
+`narrow-dd-prepared-s2c-component-validation.json` for measurement scope and
+the pre-existing scalar linear-transform test compilation failure, reproduced
+at the baseline commit.
+
+
+The integrated full replay passed GeLU/Tanh/Sigmoid at
+34.96/72.61/35.18 seconds, with S2C at 8.75/8.83/8.78 seconds. All three
+ciphertext files, including the remaining-level square, are byte-identical
+to the independently decoded reference. The one-time public preparation and
+key loading remain separately reported. A live process observation during
+Tanh recorded a peak RSS so far of about 103.4 GiB. Full timings are single
+unpinned trials and include host variation; the 10x objective remains open.
+See `narrow-dd-prepared-s2c-full-validation.json` for the command, complete
+reports, output hashes and memory observation. The same saved private keys,
+public evaluation keys and input were reused throughout.
