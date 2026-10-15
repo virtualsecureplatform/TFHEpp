@@ -1,0 +1,438 @@
+{
+  "scope": "CPU-only public factor-matrix row lookup reuse across ciphertext components; opt-in --matrix-joint 1. Defaults remain unchanged.",
+  "implementation_and_tests_commit": "e970cbd",
+  "controls_and_benchmark_commit": "d955759",
+  "algorithm": "Each prime/digit/point tile processes all ciphertext components together. Public table permutation addresses and row data are reused across components. Each component accumulates the same selector terms in the same order with the same Montgomery reduction and canonicalization boundaries. Retained and streamed rows, packed signed tables, SIMD columns and scalar tails use the same arithmetic as before.",
+  "memory": "No new retained residues or additional table-sized workspace. Per-tile scalar addresses and selectors only; fewer independent component tasks, with disjoint output tiles.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "key_archive_hashes": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/23681.bin": "91b25e31ced7b1ffb31cffb7b6ea2249802ddbc0c9b6f9f80a8d444299e3ce3d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/23937.bin": "5171c5cd2151d3dde4bc6f630bb0bd2f1add9934ee275d5d8f09e51b0ed36b30",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/24193.bin": "fa4d2516bb6ea7a96b8d2cd804dc653f61aef62cb2be1aeef9a9bce6c90808c1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/24449.bin": "b6931c884d039758a457abdd6c163a1f18626a86b123fe2073594c2537384436",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32001.bin": "c720dca522e60c9be22ac47c67de021d4099d992cde11d105bdfc2887b44883c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32257.bin": "428e98d54308321f80c10a62cc580908952b9dbabb53b3f059074e15525b1f03",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32513.bin": "2471fa95a7a50ae755ec18ff3f7be368bfa5f268a1bf99a3507f7589ca9da39b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32767.bin": "12f6c13a4bdb60729f02800a959c4b51051894b8bea20b037482870305339c0d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin": "c8233129eda049f4e4141a55a3a302292b172d3070e7563ec22ab0fc4770b998"
+  },
+  "all_checked_key_hashes_unchanged": true,
+  "unit": {
+    "exit": {
+      "exit_code": 0,
+      "wall_seconds": 4.0737128257751465
+    },
+    "log_sha256": "3eec8b6a3de29a4a18241bd7f4dc0f08fb292c689162abb9ac213eb516ff9ee2",
+    "coverage": "N512 random nonzero mask component and encoded message component; joint retained and streamed matrices compared byte-for-byte against separate components and the independent digit-CRT path for head/tail groups, columns1/2/3/4/5/6/7/9, chunks3/4/5/8/9/12/17/40. Includes packed4/8-term dots, ordinary rows and scalar remainder terms. Existing tree and factor tests also pass."
+  },
+  "synthetic": {
+    "source": "test/ckks/tools/joint_matrix_bench.cpp",
+    "log_sha256": "9193ebf4316b9e4ad13fdb46ebd64fbe70732abf2f55892950b373b0a9948a44",
+    "configuration": "N16384,528 selector rows,17primes,2components,8columns,4-term dots,256-point tiles; deterministic public residues, no keys; first two serial trials excluded as warmup. Tool prints joint_components; raw development log prints terms for that same 0/1 field.",
+    "trials": [
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 0,
+        "seconds": 0.0798747
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 1,
+        "seconds": 0.0788341
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 0,
+        "seconds": 0.0791754
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 1,
+        "seconds": 0.079061
+      },
+      {
+        "stride": 8,
+        "joint_components": true,
+        "trial": 0,
+        "seconds": 0.0693245
+      },
+      {
+        "stride": 8,
+        "joint_components": true,
+        "trial": 1,
+        "seconds": 0.0698738
+      },
+      {
+        "stride": 8,
+        "joint_components": true,
+        "trial": 0,
+        "seconds": 0.0695312
+      },
+      {
+        "stride": 8,
+        "joint_components": true,
+        "trial": 1,
+        "seconds": 0.0697193
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 0,
+        "seconds": 0.0793372
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 1,
+        "seconds": 0.0785313
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 0,
+        "seconds": 0.0793387
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 1,
+        "seconds": 0.0789255
+      },
+      {
+        "stride": 8,
+        "joint_components": true,
+        "trial": 0,
+        "seconds": 0.0696937
+      },
+      {
+        "stride": 8,
+        "joint_components": true,
+        "trial": 1,
+        "seconds": 0.0704094
+      },
+      {
+        "stride": 8,
+        "joint_components": true,
+        "trial": 0,
+        "seconds": 0.0690408
+      },
+      {
+        "stride": 8,
+        "joint_components": true,
+        "trial": 1,
+        "seconds": 0.0699077
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 0,
+        "seconds": 0.0791723
+      },
+      {
+        "stride": 8,
+        "joint_components": false,
+        "trial": 1,
+        "seconds": 0.0784829
+      }
+    ],
+    "mean_seconds": {
+      "False": 0.0790030375,
+      "True": 0.06968755
+    },
+    "fractional_reduction": 0.11791302960977923
+  },
+  "timing_method": "One retained original-degree40 Tanh process, warm separate then separate/joint/joint/separate. Fixed DD40 per-level chunks, retained whole-row matrices, native44 automorphisms, Horner S2C and8 baby workers. No compilation/unit tests/decoding overlap timing. Factor and matrix stage totals summed from per-group output (six significant digits).",
+  "paired_trials": [
+    {
+      "matrix_joint": false,
+      "matrix_joint_pair_warmup": true,
+      "functional_evaluation_seconds": 11.978294071999999,
+      "blind_rotation_and_series_seconds": 10.592394909,
+      "s2c_seconds": 1.385899163,
+      "matrix_seconds": 2.6344497,
+      "factor_seconds": 6.01253
+    },
+    {
+      "matrix_joint": false,
+      "matrix_joint_pair_warmup": false,
+      "functional_evaluation_seconds": 11.41559421,
+      "blind_rotation_and_series_seconds": 10.054031553,
+      "s2c_seconds": 1.361562657,
+      "matrix_seconds": 2.5984204,
+      "factor_seconds": 5.49888
+    },
+    {
+      "matrix_joint": true,
+      "matrix_joint_pair_warmup": false,
+      "functional_evaluation_seconds": 11.14191128,
+      "blind_rotation_and_series_seconds": 9.779833589,
+      "s2c_seconds": 1.362077691,
+      "matrix_seconds": 2.3586711,
+      "factor_seconds": 5.25895
+    },
+    {
+      "matrix_joint": true,
+      "matrix_joint_pair_warmup": false,
+      "functional_evaluation_seconds": 11.135861634000001,
+      "blind_rotation_and_series_seconds": 9.771685307,
+      "s2c_seconds": 1.364176327,
+      "matrix_seconds": 2.3596481,
+      "factor_seconds": 5.24946
+    },
+    {
+      "matrix_joint": false,
+      "matrix_joint_pair_warmup": false,
+      "functional_evaluation_seconds": 11.37216996,
+      "blind_rotation_and_series_seconds": 10.007760199,
+      "s2c_seconds": 1.364409761,
+      "matrix_seconds": 2.5988626999999997,
+      "factor_seconds": 5.49666
+    }
+  ],
+  "mean_seconds": {
+    "False": {
+      "functional_evaluation_seconds": 11.393882085000001,
+      "blind_rotation_and_series_seconds": 10.030895875999999,
+      "s2c_seconds": 1.362986209,
+      "matrix_seconds": 2.59864155,
+      "factor_seconds": 5.49777
+    },
+    "True": {
+      "functional_evaluation_seconds": 11.138886457000002,
+      "blind_rotation_and_series_seconds": 9.775759448,
+      "s2c_seconds": 1.363127009,
+      "matrix_seconds": 2.3591596,
+      "factor_seconds": 5.254205
+    }
+  },
+  "fractional_reduction": {
+    "functional_evaluation_seconds": 0.022380048002752284,
+    "blind_rotation_and_series_seconds": 0.025435058957240297,
+    "s2c_seconds": -0.00010330258594715147,
+    "matrix_seconds": 0.09215659235495566,
+    "factor_seconds": 0.04430250810783287
+  },
+  "artifacts": [
+    {
+      "artifact": "paired/tanh-trial0-outputs.bin",
+      "sha256": "d16b42690f11dc9dbb4660e1474cb3f7e8c59624871285a165096d6c9841cd5a",
+      "report_sha256": "c12c2f60b7a546991e9577b94c008efdb3ae2ae309e929069cbc1a4d4b1c4324",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full/tanh-outputs.bin",
+      "byte_identical_to_independent_reference": true,
+      "joint_components": false,
+      "degree": 40,
+      "functional_seconds": 11.978294071999999,
+      "max_error": 3.016542135222527e-08
+    },
+    {
+      "artifact": "paired/tanh-trial1-outputs.bin",
+      "sha256": "d16b42690f11dc9dbb4660e1474cb3f7e8c59624871285a165096d6c9841cd5a",
+      "report_sha256": "744f8317b37483eda7e7790d4f3c2c7ee9f9193707f137364c96b7ee98c6f713",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full/tanh-outputs.bin",
+      "byte_identical_to_independent_reference": true,
+      "joint_components": false,
+      "degree": 40,
+      "functional_seconds": 11.41559421,
+      "max_error": 3.016542135222527e-08
+    },
+    {
+      "artifact": "paired/tanh-trial2-outputs.bin",
+      "sha256": "d16b42690f11dc9dbb4660e1474cb3f7e8c59624871285a165096d6c9841cd5a",
+      "report_sha256": "3b84ed30c63ca275970107623f894c30e645b55d4bbda0f8591d9cf5fca06ba0",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full/tanh-outputs.bin",
+      "byte_identical_to_independent_reference": true,
+      "joint_components": true,
+      "degree": 40,
+      "functional_seconds": 11.14191128,
+      "max_error": 3.016542135222527e-08
+    },
+    {
+      "artifact": "paired/tanh-trial3-outputs.bin",
+      "sha256": "d16b42690f11dc9dbb4660e1474cb3f7e8c59624871285a165096d6c9841cd5a",
+      "report_sha256": "42bb116e8efd114a4e9f0aaddea407635963dfc1de981efc822f917c1df3bfd0",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full/tanh-outputs.bin",
+      "byte_identical_to_independent_reference": true,
+      "joint_components": true,
+      "degree": 40,
+      "functional_seconds": 11.135861634000001,
+      "max_error": 3.016542135222527e-08
+    },
+    {
+      "artifact": "paired/tanh-trial4-outputs.bin",
+      "sha256": "d16b42690f11dc9dbb4660e1474cb3f7e8c59624871285a165096d6c9841cd5a",
+      "report_sha256": "604acbc08bcdf52397e0d34a36e3e4ab0fa08ee598125e958526f6c34df08e79",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full/tanh-outputs.bin",
+      "byte_identical_to_independent_reference": true,
+      "joint_components": false,
+      "degree": 40,
+      "functional_seconds": 11.37216996,
+      "max_error": 3.016542135222527e-08
+    },
+    {
+      "artifact": "full/gelu-outputs.bin",
+      "sha256": "fce6ca9a8224a87a2f9d99c98f9d458add2cf5e39e97f429af9ae6f9d75c267b",
+      "report_sha256": "27bd8b8e54428c303b1537495431a66c6503f41c2ca29ecdaa48dbe89c3714b5",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full/gelu-outputs.bin",
+      "byte_identical_to_independent_reference": true,
+      "joint_components": true,
+      "degree": 12,
+      "functional_seconds": 7.053530846,
+      "max_error": 3.296266268452831e-08
+    },
+    {
+      "artifact": "full/sigmoid-outputs.bin",
+      "sha256": "50a2c5b6ef8ad3a37c2cea9eb0336a828810e5c4fe7856693fa2da8aa07e41bb",
+      "report_sha256": "392a1b8324640f606717eb47b1ee9599219977d56b9f497e3ec85625fff8c552",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full/sigmoid-outputs.bin",
+      "byte_identical_to_independent_reference": true,
+      "joint_components": true,
+      "degree": 12,
+      "functional_seconds": 7.019277471,
+      "max_error": 1.8292274053323418e-08
+    },
+    {
+      "artifact": "full/tanh-outputs.bin",
+      "sha256": "d16b42690f11dc9dbb4660e1474cb3f7e8c59624871285a165096d6c9841cd5a",
+      "report_sha256": "23a2d8e2578a560a87dd6645d89836257557d9d4dd70fb297ae9cf0cbe72ae83",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full/tanh-outputs.bin",
+      "byte_identical_to_independent_reference": true,
+      "joint_components": true,
+      "degree": 40,
+      "functional_seconds": 11.19285069,
+      "max_error": 3.016542135222527e-08
+    }
+  ],
+  "independent_validation": "All8 output archives byte-identical to original-degree GeLU/Tanh/Sigmoid references independently decoded in docs/narrow-s2c-horner-giants-validation.json; reuse those proofs. Accuracy and remaining-product gates unchanged and passing.",
+  "commands": {
+    "paired": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "tanh",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-joint-20261017/paired",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--matrix-joint-pair",
+      "1",
+      "--s2c-baby-workers",
+      "8"
+    ],
+    "full": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "all",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-joint-20261017/full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--matrix-joint",
+      "1",
+      "--s2c-baby-workers",
+      "8"
+    ]
+  },
+  "exits": {
+    "paired": {
+      "exit_code": 0,
+      "wall_seconds": 101.25937700271606
+    },
+    "full": {
+      "exit_code": 0,
+      "wall_seconds": 66.94595909118652
+    }
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "binary_sha256": "f9fc2778753cb841f87e313a3adea9b8d3c1dac1b9bafefa06dc2e28bdeb4f24",
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-joint-20261017",
+  "limitations": "Two measured paired trials per policy on one CPU; full all-function run qualifies correctness, not per-function speedup. Small gain rather than10x closure. Parameter and hardware differences from the paper remain. Keep opt-in pending broader evidence.",
+  "security_validated": false,
+  "performance_gap_closed": false
+}
