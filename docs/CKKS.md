@@ -4323,3 +4323,38 @@ functions. These are single unpinned OMP8 timings; host and filesystem-cache
 variation prevent attributing the whole difference to the DD change.
 `narrow-dd-small-prime-dd-full-validation.json` records exact timings, cache
 selection, output hashes and scope. The remaining 10x goal is still open.
+
+
+Prepared compact S2C plans now omit exactly zero public branches, giant groups,
+and diagonals before allocating their spectra. Valid all-zero operators
+explicitly overwrite the result with zero. The retained LL14 source contains
+128 completely zero conjugate groups; their rotations and products previously
+consumed about 3.4 seconds despite contributing zero. The prepared plan keeps
+128 direct groups and no conjugate groups, with byte-identical coefficients.
+
+Prepared FFT batches also use the maximum per-term plaintext digit L1 norm
+in each public group, with the balanced top ciphertext-digit bound. A batch
+coefficient is bounded by its term count times the input digit magnitude bound
+times that public norm. Qualified N512/N16384 profiles use a 2^47 coefficient
+budget, giving more headroom than the prior fixed-size worst case. Low-norm
+digits may be fused more widely; large-norm digits receive smaller batches.
+The optional third prepared-plan constructor argument `false` retains fixed
+batching for diagnostics. A 512-term constant-polynomial stress test checks
+all coefficients against independent uint128 multiplication and signed
+rescaling: the bounded path passes, while the old fixed control has an observed
+rounding difference. This synthetic control is separate from the retained
+normal-input runs, whose coefficient ciphertexts match in every trial.
+
+The integrated full GeLU/Tanh/Sigmoid replay measures
+24.31/51.68/24.09 seconds, with S2C at 4.94/5.42/5.08 seconds. All saved output
+ciphertext bytes, including the subsequent square, equal the independently
+decoded reference. Public plaintext spectra drop by exactly 1 GiB to
+3,196,059,648 bytes; Galois spectra remain 734,003,200 bytes. A 4 GiB public
+S2C spectrum budget is demonstrated (`--s2c-cache-gib 4`), separate from the
+45 GiB selector-cache budget. The runner releases the copied compact source
+plan after prepared spectra own everything they need. A live Tanh observation
+records VmHWM of about 54.9 GiB. Single unpinned OMP8 full timings include host
+variation, and the 10x objective remains open. Exact reports and measurement
+scope are in `narrow-dd-pruned-bounded-s2c-full-validation.json`; component
+controls and the stress-reference correction are in
+`narrow-dd-pruned-bounded-s2c-component-validation.json`.
