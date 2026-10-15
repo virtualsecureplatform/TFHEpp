@@ -1,0 +1,115 @@
+{
+  "scope": "CPU-only eight-term Montgomery matrix dots selected only for four-column paired SIMD layout. Wider rows retain four-term dots. No changes to keys, scales, convolution bound, rounding or final accuracy gates.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "arithmetic_bound": "Canonical factors below p<2^30: sum of 8 products t<8p^2<2^63. REDC numerator t+m*p<3*2^62<2^64; result<3p fits uint32. One conditional subtraction of p puts result below2p. Adding a destination below2p gives below4p<2^32; subtraction of2p restores below2p.",
+  "oracle": {
+    "primes": 17,
+    "terms": [
+      4,
+      8
+    ],
+    "column_widths": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      8,
+      9,
+      12,
+      17
+    ],
+    "updates_per_shape": 1024,
+    "cases": [
+      "maximum raw product p-1 times p-1",
+      "maximum lazy accumulator2p-1",
+      "random canonical residues",
+      "scalar and SIMD remainder widths"
+    ],
+    "checks": {
+      "oracle_checks": 6387242,
+      "passed": true
+    }
+  },
+  "factor_checks": {
+    "ring_degree": 512,
+    "columns": [
+      1,
+      4,
+      5,
+      6,
+      7,
+      9
+    ],
+    "chunk_sizes": [
+      3,
+      4,
+      5,
+      8,
+      9,
+      12,
+      17,
+      40
+    ],
+    "cases": [
+      "head and tail",
+      "eight versus four term policies",
+      "independent digit-CRT factors",
+      "coarse and dynamic matrix schedules",
+      "parallel conjugation",
+      "retained and streamed selectors"
+    ],
+    "result": "direct RNS and digit-CRT cached head/tail factors byte-identical; no online reads or selector transforms; retained bytes=41674640"
+  },
+  "commands": [
+    "OMP_NUM_THREADS=8 build/test/common/modular_ntt32",
+    "OMP_NUM_THREADS=8 build/test/ckks/ckks_narrow_factor_rns32"
+  ],
+  "exit_codes": [
+    0,
+    0
+  ],
+  "microbenchmark": {
+    "directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dot8-factor-matrix-20261017",
+    "source": "matrix.cpp",
+    "source_sha256": "364a8e49ac424b058581219af687d824dfe1c6d5934ba8eaeae998110dd579b4",
+    "geometry": {
+      "n": 16384,
+      "primes": 17,
+      "selector_chunk": 40,
+      "components": 2,
+      "tile_points": 256,
+      "threads": 24
+    },
+    "method": "Four/eight/eight/four sequence,5 calls per phase,omit phase-first calls; all output arrays exact matches. Eight-term kernel refined to one subtraction below2p; initial double-subtraction run retained externally.",
+    "results": {
+      "4": {
+        "mean_seconds": {
+          "4": 0.00427104625,
+          "8": 0.00402948625
+        },
+        "fractional_reduction": 0.056557570642087995,
+        "selected_eight_terms": true
+      },
+      "8": {
+        "mean_seconds": {
+          "4": 0.00661524,
+          "8": 0.0068271775
+        },
+        "fractional_reduction": -0.03203776431391758,
+        "selected_eight_terms": false
+      },
+      "9": {
+        "mean_seconds": {
+          "4": 0.00814264875,
+          "8": 0.00833589625
+        },
+        "fractional_reduction": -0.02373275649400952,
+        "selected_eight_terms": false
+      }
+    },
+    "limitation": "Isolated hot matrix with one selector chunk; does not establish full FBS speedup."
+  },
+  "security_validated": false
+}

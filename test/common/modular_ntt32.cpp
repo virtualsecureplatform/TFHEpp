@@ -46,15 +46,18 @@ int main()
                 }
             }
         }
+        const auto check_dot=[&]<std::size_t Terms>() {
         for(std::size_t columns:{1,2,3,4,5,8,9,12,17}){
-            std::array<std::vector<std::uint32_t>,4> left,right;
-            std::array<const std::uint32_t*,4> lp,rp;
-            for(std::size_t t=0;t<4;++t){left[t].resize(columns);right[t].resize(columns);lp[t]=left[t].data();rp[t]=right[t].data();}
+            std::array<std::vector<std::uint32_t>,Terms> left,right;
+            std::array<const std::uint32_t*,Terms> lp,rp;
+            for(std::size_t t=0;t<Terms;++t){left[t].resize(columns);right[t].resize(columns);lp[t]=left[t].data();rp[t]=right[t].data();}
             std::vector<std::uint32_t> first(columns),second(columns);
-            std::vector<std::uint64_t> a(columns),b(columns);
+            std::vector<std::uint64_t> a(columns,p-1),b(columns,p-1);
+            std::fill(first.begin(),first.end(),2*p-1);
+            std::fill(second.begin(),second.end(),2*p-1);
             for(std::size_t repeat=0;repeat<1024;++repeat){
-                std::array<std::uint32_t,4> selectors;
-                for(std::size_t t=0;t<4;++t){
+                std::array<std::uint32_t,Terms> selectors;
+                for(std::size_t t=0;t<Terms;++t){
                     // First trial forces the largest raw products, including
                     // a Montgomery residue p-1 rather than its encoding.
                     selectors[t]=repeat?random()%p:p-1;
@@ -65,13 +68,15 @@ int main()
                         b[c]=(b[c]+static_cast<unsigned __int128>(right[t][c])*ordinary)%p;
                     }
                 }
-                arithmetic.addDot4Pair(first.data(),second.data(),lp,rp,selectors,columns);
+                arithmetic.template addDotPair<Terms>(first.data(),second.data(),lp,rp,selectors,columns);
                 for(std::size_t c=0;c<columns;++c){
-                    if(first[c]>=2*p || second[c]>=2*p || first[c]%p!=a[c] || second[c]%p!=b[c])throw std::runtime_error("four-term Montgomery dot differs from integer oracle");
+                    if(first[c]>=2*p || second[c]>=2*p || first[c]%p!=a[c] || second[c]%p!=b[c])throw std::runtime_error("batched Montgomery dot differs from integer oracle");
                     ++checked;
                 }
             }
         }
+        };
+        check_dot.template operator()<4>();check_dot.template operator()<8>();
         for (std::size_t n : {2, 8, 512, 16384, 65536}) {
             modular_ntt32::NegacyclicNTTPlan small(n, prime);
             modular_ntt::NegacyclicNTTPlan reference(n, prime);

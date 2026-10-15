@@ -86,11 +86,16 @@ public:
     // Four canonical products sum to <4p^2<p*2^32 because p<2^30.
     // REDC therefore returns <2p, just as for a single product. Reduce once
     // per four terms; the destination remains in [0,2p).
-    void addDot4Pair(std::uint32_t *first,std::uint32_t *second,
-        const std::array<const std::uint32_t*,4>&left,
-        const std::array<const std::uint32_t*,4>&right,
-        const std::array<std::uint32_t,4>&selectors,std::size_t columns)const
+    // Eight products have t<8p^2<2^63 and t+m*p<3*2^62, so REDC
+    // cannot overflow uint64. Its result is below 3p; one subtraction
+    // reduces it below 2p before adding the lazy destination (then below 4p).
+    template<std::size_t Terms>
+    void addDotPair(std::uint32_t *first,std::uint32_t *second,
+        const std::array<const std::uint32_t*,Terms>&left,
+        const std::array<const std::uint32_t*,Terms>&right,
+        const std::array<std::uint32_t,Terms>&selectors,std::size_t columns)const
     {
+        static_assert(Terms==4 || Terms==8);
         std::size_t column=0;
 #if defined(__AVX2__)
         const auto inverse=_mm256_set1_epi32(negative_inverse_);
@@ -98,7 +103,7 @@ public:
         const auto twice=_mm256_set1_epi32(2*modulus_);
         const auto dot=[&](const auto&load){
             auto even=_mm256_setzero_si256(),odd=even;
-            for(std::size_t t=0;t<4;++t){
+            for(std::size_t t=0;t<Terms;++t){
                 const auto values=load(t),fixed=_mm256_set1_epi32(selectors[t]);
                 even=_mm256_add_epi64(even,_mm256_mul_epu32(values,fixed));
                 odd=_mm256_add_epi64(odd,_mm256_mul_epu32(_mm256_srli_epi64(values,32),fixed));
@@ -106,7 +111,9 @@ public:
             const auto em=_mm256_mul_epu32(even,inverse),om=_mm256_mul_epu32(odd,inverse);
             even=_mm256_srli_epi64(_mm256_add_epi64(even,_mm256_mul_epu32(em,prime)),32);
             odd=_mm256_srli_epi64(_mm256_add_epi64(odd,_mm256_mul_epu32(om,prime)),32);
-            return _mm256_or_si256(even,_mm256_slli_epi64(odd,32));
+            auto value=_mm256_or_si256(even,_mm256_slli_epi64(odd,32));
+            if constexpr(Terms==8)value=canonicalVector(value);
+            return value;
         };
         const auto add=[&](__m256i old,__m256i value){
             const auto sum=_mm256_add_epi32(old,value);
@@ -130,12 +137,24 @@ public:
 #endif
         for(;column<columns;++column){
             std::uint64_t a=0,b=0;
-            for(std::size_t t=0;t<4;++t){a+=std::uint64_t(left[t][column])*selectors[t];b+=std::uint64_t(right[t][column])*selectors[t];}
-            const auto av=first[column]+reduceLazy(a),bv=second[column]+reduceLazy(b);
+            for(std::size_t t=0;t<Terms;++t){a+=std::uint64_t(left[t][column])*selectors[t];b+=std::uint64_t(right[t][column])*selectors[t];}
+            auto ar=reduceLazy(a),br=reduceLazy(b);
+            if constexpr(Terms==8){ar=canonical(ar);br=canonical(br);}
+            const auto av=first[column]+ar,bv=second[column]+br;
             first[column]=av>=2*modulus_?av-2*modulus_:av;
             second[column]=bv>=2*modulus_?bv-2*modulus_:bv;
         }
     }
+    void addDot4Pair(std::uint32_t *first,std::uint32_t *second,
+        const std::array<const std::uint32_t*,4>&left,
+        const std::array<const std::uint32_t*,4>&right,
+        const std::array<std::uint32_t,4>&selectors,std::size_t columns)const
+    {addDotPair<4>(first,second,left,right,selectors,columns);}
+    void addDot8Pair(std::uint32_t *first,std::uint32_t *second,
+        const std::array<const std::uint32_t*,8>&left,
+        const std::array<const std::uint32_t*,8>&right,
+        const std::array<std::uint32_t,8>&selectors,std::size_t columns)const
+    {addDotPair<8>(first,second,left,right,selectors,columns);}
     // Tables are ordinary residues; the selector is in Montgomery form.
     // Destinations remain in [0,2p); canonicalize at a matrix tile boundary.
     void addPair(std::uint32_t *first, std::uint32_t *second,
