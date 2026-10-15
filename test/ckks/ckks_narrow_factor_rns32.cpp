@@ -218,6 +218,8 @@ int main()
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> simd_short(raw,direct_cache,true,false,true,true);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> four_term(raw,direct_cache,true,false,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> unpacked(raw,direct_cache,true,false,true,false,false);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> joint(raw,direct_cache,true,false,true,false,true,true,true);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> joint_streamed(raw,{},true,false,true,false,true,true,true);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> chunked(raw,direct_cache,true,false,true,false,true,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source,Source,false> garner(raw,direct_cache);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> untiled(raw,direct_cache,false);
@@ -265,6 +267,9 @@ int main()
             for(std::size_t chunk:{3,4,5,8,9,12,17,40}){
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto shared=joint.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto shared_streamed=joint_streamed.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                for(std::size_t c=0;c<columns;++c)if(shared[c].ct!=actual[c].ct || shared_streamed[c].ct!=actual[c].ct)throw std::runtime_error("joint matrix components differ from separate components");
                 const auto control=four_term.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto separate=unpacked.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto split=chunked.evaluate(variants,tail,0,*key,nullptr,nullptr);

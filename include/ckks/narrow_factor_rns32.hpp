@@ -78,7 +78,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     CKKSNarrowFactorTimings *timings, bool prefetch_raw = false,
     std::span<const FactorSelectorRNS32<Schedule>> retained = {}, bool tiled_matrix = true,
     bool parallel_conjugation = false, bool dot8_matrix = true, bool vector_short_stages = false,
-    bool packed_matrix = true,bool all_retained_rows = true)
+    bool packed_matrix = true,bool all_retained_rows = true,bool joint_components = false)
 {
     using P = typename Schedule::Param;
     using Cache = FactorSelectorRNS32<Schedule>;
@@ -182,7 +182,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
             cache=transient;
         }
         start = Clock::now();
-        const auto tile=[&](std::size_t prime,std::size_t component,std::size_t digit,std::size_t begin){
+        const auto tile=[&]<bool Joint>(std::size_t prime,std::size_t component,std::size_t digit,std::size_t begin){
             const auto &arithmetic=plans[prime].arithmetic();
             auto *first=sums[index(0,component,digit)][prime].data();
             auto *second=sums[index(1,component,digit)][prime].data();
@@ -202,6 +202,16 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                                 }
                                 if constexpr(Packed)arithmetic.template addPackedDotPair<Terms>(first+i*4,second+i*4,left,values);
                                 else arithmetic.template addDotPair<Terms>(first+i*stride,second+i*stride,left,right,values,stride);
+                                // The public row addresses are shared by all ciphertext
+                                // components; reuse them while their data is hot.
+                                if constexpr(Joint)for(std::size_t c=component+1;c<=P::k;++c){
+                                    for(std::size_t t=0;t<Terms;++t)
+                                        values[t]=cache[local+t].spectra[prime][(c*Cache::digits+digit)*P::n+i];
+                                    auto*a=sums[index(0,c,digit)][prime].data()+i*stride;
+                                    auto*b=sums[index(1,c,digit)][prime].data()+i*stride;
+                                    if constexpr(Packed)arithmetic.template addPackedDotPair<Terms>(a,b,left,values);
+                                    else arithmetic.template addDotPair<Terms>(a,b,left,right,values,stride);
+                                }
                             }
                         };
                         // Four columns pack both signed tables in one AVX2 vector.
@@ -219,27 +229,39 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                             const auto *selector = cache[local].spectra[prime].data()+(component*Cache::digits+digit)*P::n;
                             for (std::size_t i = begin; i < end; ++i) {
                                 const auto position = narrowNTTPermutationIndex<P::n>(exponents[first_y+local],i)*(packed_four?8:stride);
-                                arithmetic.addPair(first+i*stride,second+i*stride,
-                                    base[0][prime].data()+position,packed_four?base[0][prime].data()+position+4:
-                                        base[1][prime].data()+position,stride,selector[i]);
+                                for(std::size_t c=component;c<(Joint?P::k+1:component+1);++c)
+                                    arithmetic.addPair(sums[index(0,c,digit)][prime].data()+i*stride,
+                                        sums[index(1,c,digit)][prime].data()+i*stride,
+                                        base[0][prime].data()+position,packed_four?base[0][prime].data()+position+4:
+                                        base[1][prime].data()+position,stride,
+                                        c==component?selector[i]:cache[local].spectra[prime][(c*Cache::digits+digit)*P::n+i]);
                             }
                         }
                         for (std::size_t i = begin*stride; i < end*stride; ++i) {
-                            first[i] = arithmetic.canonical(first[i]); second[i] = arithmetic.canonical(second[i]);
+                            for(std::size_t c=component;c<(Joint?P::k+1:component+1);++c){
+                                auto&a=sums[index(0,c,digit)][prime][i];auto&b=sums[index(1,c,digit)][prime][i];
+                                a=arithmetic.canonical(a);b=arithmetic.canonical(b);
+                            }
                         }
         };
         if(tiled_matrix){
 #pragma omp parallel for collapse(4) schedule(dynamic,1)
             for(std::size_t prime=0;prime<Cache::prime_count;++prime)
-                for(std::size_t component=0;component<=P::k;++component)
+                for(std::size_t component=0;component<(joint_components?1:P::k+1);++component)
                     for(std::size_t digit=0;digit<Cache::digits;++digit)
-                        for(std::size_t begin=0;begin<P::n;begin+=256)tile(prime,component,digit,begin);
+                        for(std::size_t begin=0;begin<P::n;begin+=256){
+                            if(joint_components)tile.template operator()<true>(prime,component,digit,begin);
+                            else tile.template operator()<false>(prime,component,digit,begin);
+                        }
         }else{
 #pragma omp parallel for collapse(3) schedule(static)
             for(std::size_t prime=0;prime<Cache::prime_count;++prime)
-                for(std::size_t component=0;component<=P::k;++component)
+                for(std::size_t component=0;component<(joint_components?1:P::k+1);++component)
                     for(std::size_t digit=0;digit<Cache::digits;++digit)
-                        for(std::size_t begin=0;begin<P::n;begin+=256)tile(prime,component,digit,begin);
+                        for(std::size_t begin=0;begin<P::n;begin+=256){
+                            if(joint_components)tile.template operator()<true>(prime,component,digit,begin);
+                            else tile.template operator()<false>(prime,component,digit,begin);
+                        }
         }
         if (timings) timings->matrix_seconds += std::chrono::duration<double>(Clock::now()-start).count();
         first_y += count;
@@ -381,7 +403,7 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
     static_assert(SourceSchedule::tail_blocks_per_pack == TargetSchedule::tail_blocks_per_pack && SourceSchedule::tail_blocks_per_pack == SelectorSchedule::tail_blocks_per_pack);
     std::shared_ptr<const Source> source_;
     std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained_;
-    bool tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_;
+    bool tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_,joint_components_;
     struct FactorKeys {
         const CKKSGaloisKey<P,SourceSchedule::factor_key_log_q> &factor_galois;
         bool staged_fft_caches;
@@ -392,8 +414,8 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
 public:
     explicit CKKSNarrowDeferredRescaleFactorSourceRNS32(std::shared_ptr<const Source> source,
         std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained={},bool tiled_matrix=true,
-        bool parallel_conjugation=false,bool dot8_matrix=true,bool vector_short_stages=false,bool packed_matrix=true,bool all_retained_rows=true)
-        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix),parallel_conjugation_(parallel_conjugation),dot8_matrix_(dot8_matrix),vector_short_stages_(vector_short_stages),packed_matrix_(packed_matrix),all_retained_rows_(all_retained_rows)
+        bool parallel_conjugation=false,bool dot8_matrix=true,bool vector_short_stages=false,bool packed_matrix=true,bool all_retained_rows=true,bool joint_components=false)
+        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix),parallel_conjugation_(parallel_conjugation),dot8_matrix_(dot8_matrix),vector_short_stages_(vector_short_stages),packed_matrix_(packed_matrix),all_retained_rows_(all_retained_rows),joint_components_(joint_components)
     {
         if (!source_ || !source_->hasRawChunks()) throw std::invalid_argument("direct RNS factor source requires raw chunks");
         if (retained_ && retained_->source()!=source_.get())
@@ -411,7 +433,7 @@ public:
         auto factors = narrow_detail::packedFactorsBatchRNS32<SourceSchedule,DirectCRT>(tables,view,key.selector_ntt_chunk_size,
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
             source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):
-                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_);
+                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_,joint_components_);
         std::vector<typename TargetSchedule::Factor> result(factors.size());
         for (std::size_t i = 0; i < factors.size(); ++i)
             CKKSScaleDown<P,SourceSchedule::factor_log_q,SourceSchedule::log_delta,drop>(result[i],factors[i]);
