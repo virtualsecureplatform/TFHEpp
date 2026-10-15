@@ -1,6 +1,7 @@
 #include "ckks_narrow_basis_benchmark.hpp"
 #include <ckks/prepared_gadget_rns32.hpp>
 #include <ckks/prepared_dd_ntt.hpp>
+#include <ckks/key_projection.hpp>
 #include <iostream>
 using namespace TFHEpp;
 template<std::uint32_t Nbit,std::uint32_t DataQ>void check(){
@@ -25,6 +26,16 @@ template<std::uint32_t Nbit,std::uint32_t DataQ>void check(){
   if(*actual!=*expected)throw std::runtime_error("wide DD gadget differs from digit NTT");
   std::cout<<"N="<<P::n<<" data_q="<<DataQ<<" trial="<<trial<<" old="<<old_time<<" rns="<<new_time<<" old_bytes="<<old.byteSize()<<" rns_bytes="<<direct.byteSize()<<" identical\n";
  }
+ auto grouped=makeCKKSCompactDDRelinKeyWithPrimaryBase<40>(*key);
+ using Grouped=CKKSCompactDDRelinKey<P,Q,40,20>;
+ for(std::size_t r=0;r<Grouped::primary_rows;++r){
+  const auto power=(Grouped::primary_rows-r-1)*40;
+  if(grouped->data[r]!=key->data[Compact::primary_rows-1-power/20])throw std::runtime_error("primary regrouping changed encrypted row bytes");
+ }
+ CKKSPreparedDDRelinKeyNTT<P,Q,40,20> grouped_reference(*grouped);
+ CKKSPreparedGadgetRNS32<P,Q,40> grouped_direct(*grouped);
+ grouped_reference.apply(*expected,*input);grouped_direct.apply(*actual,*input);
+ if(*actual!=*expected)throw std::runtime_error("forty-bit grouped gadget differs from digit NTT");
  input->fill({});direct.apply(*actual,*input);for(auto&c:*actual)for(auto&v:c)if(v!=typename P::T{})throw std::runtime_error("zero input retained stale output");
 }
 int main(int argc,char**){check<4,385>();check<9,385>();check<9,341>();check<9,297>();check<9,253>();check<9,209>();if(argc>1){check<14,385>();check<14,341>();check<14,297>();check<14,253>();check<14,209>();}}
