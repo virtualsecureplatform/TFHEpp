@@ -3,7 +3,7 @@
 // keys here. The supplied public key artifacts must match the checkpoint.
 #include "ckks_narrow_basis_benchmark.hpp"
 #include <ckks/narrow_basis_prepared.hpp>
-#include <ckks/prepared_compact_linear.hpp>
+#include <ckks/prepared_compact_linear_rns32.hpp>
 #include <ckks/narrow_dd_ntt.hpp>
 #include <ckks/narrow_auto_ntt.hpp>
 #include <ckks/key_projection.hpp>
@@ -41,13 +41,14 @@ struct SourceLinear {
  CKKSSecretKeySwitchKey<P,48> sparse;
 };
 int main(int argc,char**argv)try {
- if(argc<8 || (argc-8)%2)throw std::runtime_error("usage: checkpoint-directory switch56-file sigmoid|gelu|tanh|all output-directory direct440-selectors saved-dd433-primary20 saved-packed435 [--cache-gib 90] [--s2c-cache-gib 9] [--direct-rns 1]");
- uint64_t cache_gib=90,s2c_cache_gib=9;bool direct_rns=true;
+ if(argc<8 || (argc-8)%2)throw std::runtime_error("usage: checkpoint-directory switch56-file sigmoid|gelu|tanh|all output-directory direct440-selectors saved-dd433-primary20 saved-packed435 [--cache-gib 90] [--s2c-cache-gib 9] [--direct-rns 1] [--s2c-rns 1]");
+ uint64_t cache_gib=90,s2c_cache_gib=9;bool direct_rns=true,s2c_rns=true;
  for(int i=8;i<argc;i+=2){
   const std::string option=argv[i];const auto value=std::stoull(argv[i+1]);
   if(value>1024)throw std::invalid_argument("cache budget exceeds supported range");
   if(option=="--cache-gib")cache_gib=value;
   else if(option=="--s2c-cache-gib")s2c_cache_gib=value;
+  else if(option=="--s2c-rns"){if(value>1)throw std::invalid_argument("S2C RNS flag must be 0 or 1");s2c_rns=value;}
   else if(option=="--direct-rns"){if(value>1)throw std::invalid_argument("direct RNS flag must be 0 or 1");direct_rns=value;}
   else throw std::invalid_argument("unknown option");
  }
@@ -68,6 +69,8 @@ int main(int argc,char**argv)try {
  {std::ifstream f(argv[2],std::ios::binary);if(!f)throw std::runtime_error("saved switch key missing");cereal::PortableBinaryInputArchive ar(f);std::array<uint64_t,4> meta;ar(meta,key->to_sparse);if(meta!=std::array<uint64_t,4>{0x5332435357303031ULL,P::n,448,56} || f.peek()!=std::char_traits<char>::eof())throw std::runtime_error("switch key metadata/length mismatch");}
  using PreparedS2C=CKKSPreparedCompactRealLinearTransformFFT<P,93,52,37>;
  std::unique_ptr<PreparedS2C> prepared_s2c;
+ using PreparedS2CRNS=CKKSPreparedCompactRealLinearTransformRNS32<P,93,52,37,5>;
+ std::unique_ptr<PreparedS2CRNS> prepared_s2c_rns;
  std::unique_ptr<CKKSRetainedPreparedGaloisKeyFFT<P,93>> s2c_input_cache;
  std::unique_ptr<CKKSRetainedPreparedGaloisKeyFFT<P,56>> s2c_output_cache;
  auto s2c_setup_start=std::chrono::steady_clock::now();
@@ -76,13 +79,15 @@ int main(int argc,char**argv)try {
    (CKKSPreparedAutoKeyFFT<P,93>::spectrum_count+CKKSPreparedAutoKeyFFT<P,56>::spectrum_count);
   const uint64_t budget=s2c_cache_gib<<30;
   if(budget<galois_bytes)throw std::invalid_argument("S2C spectrum budget too small");
-  prepared_s2c=std::make_unique<PreparedS2C>(key->s2c_plan,budget-galois_bytes);
+  if(s2c_rns)prepared_s2c_rns=std::make_unique<PreparedS2CRNS>(key->s2c_plan,budget-galois_bytes);
+  else prepared_s2c=std::make_unique<PreparedS2C>(key->s2c_plan,budget-galois_bytes);
   s2c_input_cache=std::make_unique<CKKSRetainedPreparedGaloisKeyFFT<P,93>>(key->s2c_input_galois);
   s2c_output_cache=std::make_unique<CKKSRetainedPreparedGaloisKeyFFT<P,56>>(key->s2c_output_galois);
  }
- if(prepared_s2c)key->s2c_plan={};
+ const bool have_prepared_s2c=bool(prepared_s2c)||bool(prepared_s2c_rns);
+ if(have_prepared_s2c)key->s2c_plan={};
  const auto s2c_setup_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-s2c_setup_start).count();
- const uint64_t s2c_retained_bytes=prepared_s2c?prepared_s2c->spectrum_bytes+s2c_input_cache->spectrum_bytes()+s2c_output_cache->spectrum_bytes():0;
+ const uint64_t s2c_retained_bytes=have_prepared_s2c?(prepared_s2c_rns?prepared_s2c_rns->spectrum_bytes:prepared_s2c->spectrum_bytes)+s2c_input_cache->spectrum_bytes()+s2c_output_cache->spectrum_bytes():0;
  std::cout<<"public S2C setup seconds="<<s2c_setup_seconds<<" spectrum bytes="<<s2c_retained_bytes<<std::endl;
  using File=CKKSNarrowSelectorFile<TableSource>;auto raw=std::make_shared<File>(argv[5],File::Existing{});
  uint64_t selector_retained_bytes=0;
@@ -128,7 +133,11 @@ int main(int argc,char**argv)try {
   <<" load="<<timing.selector_load_seconds<<" table_ntt="<<timing.table_ntt_seconds
   <<" selector_ntt="<<timing.selector_ntt_seconds<<" matrix="<<timing.matrix_seconds
   <<" inverse_crt="<<timing.inverse_crt_seconds<<" conjugation="<<timing.conjugation_seconds<<std::endl;};
- auto prepared=std::make_unique<Refresh::Coefficients>();auto t=std::chrono::steady_clock::now();if(prepared_s2c)
+ auto prepared=std::make_unique<Refresh::Coefficients>();auto t=std::chrono::steady_clock::now();if(prepared_s2c_rns)
+ CKKSNarrowPrepareCoefficients<Refresh>(*prepared,*input,*key,[&](auto &result,const auto &ct){
+  CKKSRealLinearTransform<P,93,52,37>(result,ct,*prepared_s2c_rns,*s2c_input_cache,*s2c_output_cache);
+ });
+ else if(prepared_s2c)
  CKKSNarrowPrepareCoefficients<Refresh>(*prepared,*input,*key,[&](auto &result,const auto &ct){
   CKKSRealLinearTransform<P,93,52,37>(result,ct,*prepared_s2c,*s2c_input_cache,*s2c_output_cache);
  });
@@ -146,7 +155,7 @@ int main(int argc,char**argv)try {
  ckksSlotDecrypt<P>(*decoded,*square,*dense);double product_error=0;for(size_t i=0;i<P::n/2;++i){double v=target((*slots)[i].real());product_error=narrow_benchmark::finiteMaximum(product_error,std::abs((*decoded)[i]-std::complex<double>{v*v,0}));}
  const auto tolerance=std::ldexp(1.0,-23),product_tolerance=(2*amplitude+1)*tolerance+tolerance*tolerance;bool passed=error<tolerance && product_error<product_tolerance;
  {std::ofstream f(root/(function+"-outputs.bin"),std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);const std::array<uint64_t,9> meta{0x4c4c313446425331ULL,P::n,448,85,44,48,93,44,49};ar(meta,function,*slots,*input,*prepared,*out,*square);}
- {std::ofstream f(root/(function+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"small_prime_factors\":"<<(small_prime_factors?"true":"false")<<",\"dd_small_prime_backend\":"<<(CKKSPreparedDDRelinKeyNTT<P,433,20,20>::uses_small_primes?"true":"false")<<",\"dd_convolution_primes\":"<<CKKSPreparedDDRelinKeyNTT<P,433,20,20>::prime_count<<",\"dd_primary_bits\":20,\"dd_secondary_bits\":20,\"dd_auxiliary_bits\":48,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":20,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"direct_rns_factors\":"<<(direct_rns?"true":"false")<<",\"selector_residue_rows\":"<<(direct_rns?17:36)<<",\"frequency_basis\":true,\"selector_cache_retained_bytes\":"<<selector_retained_bytes<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":"<<(direct_rns?0:52)<<",\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_public_setup_seconds\":"<<s2c_setup_seconds<<",\"s2c_prepared_direct_groups\":"<<(prepared_s2c?prepared_s2c->direct.groups.size():0)<<",\"s2c_prepared_conjugate_groups\":"<<(prepared_s2c?prepared_s2c->conjugate.groups.size():0)<<",\"s2c_retained_spectrum_bytes\":"<<s2c_retained_bytes<<",\"s2c_public_keys_prepared\":"<<(prepared_s2c?s2c_input_cache->prepared_keys+s2c_output_cache->prepared_keys:0)<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":93,\"output_log_delta\":44,\"post_product_log_q\":49,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
+ {std::ofstream f(root/(function+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"small_prime_factors\":"<<(small_prime_factors?"true":"false")<<",\"dd_small_prime_backend\":"<<(CKKSPreparedDDRelinKeyNTT<P,433,20,20>::uses_small_primes?"true":"false")<<",\"dd_convolution_primes\":"<<CKKSPreparedDDRelinKeyNTT<P,433,20,20>::prime_count<<",\"dd_primary_bits\":20,\"dd_secondary_bits\":20,\"dd_auxiliary_bits\":48,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":20,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"direct_rns_factors\":"<<(direct_rns?"true":"false")<<",\"selector_residue_rows\":"<<(direct_rns?17:36)<<",\"frequency_basis\":true,\"selector_cache_retained_bytes\":"<<selector_retained_bytes<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":"<<(direct_rns?0:52)<<",\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_rns\":"<<(prepared_s2c_rns?"true":"false")<<",\"s2c_rns_primes\":"<<(prepared_s2c_rns?5:0)<<",\"s2c_public_setup_seconds\":"<<s2c_setup_seconds<<",\"s2c_prepared_direct_groups\":"<<(prepared_s2c_rns?prepared_s2c_rns->direct.groups.size():prepared_s2c?prepared_s2c->direct.groups.size():0)<<",\"s2c_prepared_conjugate_groups\":"<<(prepared_s2c_rns?prepared_s2c_rns->conjugate.groups.size():prepared_s2c?prepared_s2c->conjugate.groups.size():0)<<",\"s2c_retained_spectrum_bytes\":"<<s2c_retained_bytes<<",\"s2c_public_keys_prepared\":"<<(have_prepared_s2c?s2c_input_cache->prepared_keys+s2c_output_cache->prepared_keys:0)<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":93,\"output_log_delta\":44,\"post_product_log_q\":49,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
  std::cout<<function<<" error="<<error<<" square error="<<product_error<<" seconds="<<s2c_seconds+blind_seconds<<std::endl;if(!passed)throw std::runtime_error("functional accuracy gate failed");
 }
 } catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}
