@@ -1,0 +1,408 @@
+{
+  "scope": "Statistical per-thread CPU-time samples from the complete retained CPU FBS replay; identify actual arithmetic hotspots and separate them from OpenMP runtime work.",
+  "profiled_commit": "0fa7da7",
+  "profiled_binary_sha256": "6588ad9bedc3b3c3c9f4233c9ff8fe0003adcaae482bced858e60c64c1b5f24a",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "native_key_archive_hashes_unchanged": true,
+  "native_key_archives_checked": 8,
+  "sampler": {
+    "platform": "Linux x86-64, POSIX CLOCK_THREAD_CPUTIME_ID timers with SIGEV_THREAD_ID; does not need perf_event counters.",
+    "interval_cpu_ns": 2000000,
+    "bucket_wall_ns": 100000000,
+    "metadata": {
+      "start_ns": 2728385261513758,
+      "bucket_ns": 100000000,
+      "interval_cpu_ns": 2000000,
+      "threads": 3189,
+      "failures": 0,
+      "active": 23,
+      "dropped": 0
+    },
+    "total_samples": 582742,
+    "approximate_all_process_cpu_coverage": 0.9914535707585913,
+    "selection": "Warmed batched Tanh trials2/3. Include only100ms buckets wholly inside each algorithm phase; setup, remaining-square validation and serialization excluded.",
+    "captures": "Instruction addresses, counts and module maps; no operand or key contents.",
+    "smoke": {
+      "threads": 5,
+      "cpu_seconds_per_thread": 0.3,
+      "expected_samples": 750,
+      "actual_samples": 746,
+      "timer_failures": 0,
+      "dropped": 0,
+      "exit_code": 0
+    },
+    "published_source": "test/ckks/tools/cpu_sample_preload.c",
+    "source_provenance": {
+      "diagnostic_source_sha256": "40ab09dbd480a24880bd47d2f115a943173ebcc3a12feda2920c512ff52ef303",
+      "published_source_sha256": "21443eeb49708ab55dd381e75daa7d049853da94abfcc01256c86a6525a45dd2",
+      "published_change": "Make the initialization timestamp atomic; sampling algorithm unchanged. Published sampler passed the five-thread smoke test."
+    }
+  },
+  "categories": {
+    "functional": [
+      {
+        "category": "factor matrix dot",
+        "samples": 58291,
+        "percent": 29.626937738246507
+      },
+      {
+        "category": "gadget outside NTT/CRT",
+        "samples": 35359,
+        "percent": 17.9715374841169
+      },
+      {
+        "category": "other",
+        "samples": 32583,
+        "percent": 16.560609911054637
+      },
+      {
+        "category": "NTT",
+        "samples": 24186,
+        "percent": 12.292757306226175
+      },
+      {
+        "category": "coefficient RNS encoding",
+        "samples": 9899,
+        "percent": 5.031257941550191
+      },
+      {
+        "category": "CRT reconstruction",
+        "samples": 8194,
+        "percent": 4.164675984752224
+      },
+      {
+        "category": "S2C matrix outside NTT",
+        "samples": 8117,
+        "percent": 4.125540025412961
+      },
+      {
+        "category": "libc (symbols incomplete)",
+        "samples": 7286,
+        "percent": 3.703176620076239
+      },
+      {
+        "category": "FFT arithmetic",
+        "samples": 5788,
+        "percent": 2.9418043202033037
+      },
+      {
+        "category": "tensor outside NTT/CRT/encoding",
+        "samples": 5157,
+        "percent": 2.621092757306226
+      },
+      {
+        "category": "libm",
+        "samples": 1343,
+        "percent": 0.682592121982211
+      },
+      {
+        "category": "OpenMP runtime",
+        "samples": 547,
+        "percent": 0.2780177890724269
+      }
+    ],
+    "s2c": [
+      {
+        "category": "S2C matrix outside NTT",
+        "samples": 8117,
+        "percent": 49.46977084349098
+      },
+      {
+        "category": "FFT arithmetic",
+        "samples": 4874,
+        "percent": 29.705021940516822
+      },
+      {
+        "category": "other",
+        "samples": 1901,
+        "percent": 11.585811799122379
+      },
+      {
+        "category": "libc (symbols incomplete)",
+        "samples": 831,
+        "percent": 5.064602632862019
+      },
+      {
+        "category": "OpenMP runtime",
+        "samples": 258,
+        "percent": 1.5724037055095075
+      },
+      {
+        "category": "NTT",
+        "samples": 141,
+        "percent": 0.8593369088249634
+      },
+      {
+        "category": "libm",
+        "samples": 134,
+        "percent": 0.8166747927840078
+      },
+      {
+        "category": "coefficient RNS encoding",
+        "samples": 105,
+        "percent": 0.6399317406143344
+      },
+      {
+        "category": "CRT reconstruction",
+        "samples": 47,
+        "percent": 0.2864456362749878
+      }
+    ],
+    "factors": [
+      {
+        "category": "factor matrix dot",
+        "samples": 57996,
+        "percent": 62.59214090678524
+      },
+      {
+        "category": "other",
+        "samples": 21794,
+        "percent": 23.521158682020786
+      },
+      {
+        "category": "NTT",
+        "samples": 5291,
+        "percent": 5.710307909817931
+      },
+      {
+        "category": "gadget outside NTT/CRT",
+        "samples": 2766,
+        "percent": 2.985203492450651
+      },
+      {
+        "category": "CRT reconstruction",
+        "samples": 2216,
+        "percent": 2.3916163916379767
+      },
+      {
+        "category": "libc (symbols incomplete)",
+        "samples": 1289,
+        "percent": 1.3911523144500686
+      },
+      {
+        "category": "libm",
+        "samples": 1104,
+        "percent": 1.1914911987221688
+      },
+      {
+        "category": "OpenMP runtime",
+        "samples": 201,
+        "percent": 0.2169291041151775
+      }
+    ],
+    "alignment": [
+      {
+        "category": "gadget outside NTT/CRT",
+        "samples": 6714,
+        "percent": 62.3456216918934
+      },
+      {
+        "category": "NTT",
+        "samples": 1650,
+        "percent": 15.321756894790603
+      },
+      {
+        "category": "other",
+        "samples": 1147,
+        "percent": 10.650942520196862
+      },
+      {
+        "category": "CRT reconstruction",
+        "samples": 780,
+        "percent": 7.243012350264649
+      },
+      {
+        "category": "libc (symbols incomplete)",
+        "samples": 476,
+        "percent": 4.42009471631535
+      },
+      {
+        "category": "OpenMP runtime",
+        "samples": 2,
+        "percent": 0.018571826539140125
+      }
+    ],
+    "trees": [
+      {
+        "category": "gadget outside NTT/CRT",
+        "samples": 24162,
+        "percent": 36.06376309740589
+      },
+      {
+        "category": "NTT",
+        "samples": 15945,
+        "percent": 23.799217887101108
+      },
+      {
+        "category": "coefficient RNS encoding",
+        "samples": 9749,
+        "percent": 14.55118063225768
+      },
+      {
+        "category": "tensor outside NTT/CRT/encoding",
+        "samples": 5113,
+        "percent": 7.631571091674378
+      },
+      {
+        "category": "CRT reconstruction",
+        "samples": 4881,
+        "percent": 7.28529209827159
+      },
+      {
+        "category": "other",
+        "samples": 4856,
+        "percent": 7.247977551568703
+      },
+      {
+        "category": "libc (symbols incomplete)",
+        "samples": 2258,
+        "percent": 3.3702498582047227
+      },
+      {
+        "category": "OpenMP runtime",
+        "samples": 23,
+        "percent": 0.03432938296665572
+      },
+      {
+        "category": "libm",
+        "samples": 11,
+        "percent": 0.01641840054927013
+      }
+    ],
+    "series": [
+      {
+        "category": "libc (symbols incomplete)",
+        "samples": 2024,
+        "percent": 37.516218721038
+      },
+      {
+        "category": "other",
+        "samples": 1999,
+        "percent": 37.05282669138091
+      },
+      {
+        "category": "FFT arithmetic",
+        "samples": 753,
+        "percent": 13.957367933271549
+      },
+      {
+        "category": "NTT",
+        "samples": 493,
+        "percent": 9.138090824837812
+      },
+      {
+        "category": "OpenMP runtime",
+        "samples": 60,
+        "percent": 1.1121408711770158
+      },
+      {
+        "category": "libm",
+        "samples": 56,
+        "percent": 1.0379981464318813
+      },
+      {
+        "category": "gadget outside NTT/CRT",
+        "samples": 10,
+        "percent": 0.18535681186283595
+      }
+    ]
+  },
+  "interpretation": [
+    "Factor-matrix dots account for about30% of evaluation CPU samples; gadget work outside NTT/CRT about18%; NTT about12%.",
+    "OpenMP runtime accounts for about0.3% of evaluation CPU samples. These samples do not support prioritizing OpenMP wait-policy tuning.",
+    "The gadget and S2C matrix loops reduce each individual product; use the canonical four-product bound to reduce arithmetic and destination traffic."
+  ],
+  "limits": [
+    "CPU samples are not wall-time percentages or hardware cache-miss counters.",
+    "Inline-frame categories are heuristic; retain raw PC/module data and source locations for audit. Stripped libc nearest-symbol labels are unreliable, so use only its module count.",
+    "Exclude phase-boundary buckets; phase sample totals therefore differ slightly from whole-evaluation totals.",
+    "Profiling runs do not qualify performance gains; use separate uninstrumented comparisons."
+  ],
+  "artifacts": [
+    {
+      "name": "tanh-trial0-outputs.bin",
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "name": "tanh-trial1-outputs.bin",
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "name": "tanh-trial2-outputs.bin",
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "name": "tanh-trial3-outputs.bin",
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "name": "tanh-trial4-outputs.bin",
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    }
+  ],
+  "command": [
+    "taskset",
+    "-c",
+    "0-23",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+    "tanh",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/thread-cpu-profile-20261017/profile-output",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+    "unused-with-native-auto",
+    "--cache-gib",
+    "45",
+    "--s2c-cache-gib",
+    "4",
+    "--direct-rns",
+    "1",
+    "--s2c-rns",
+    "1",
+    "--tensor-rns",
+    "1",
+    "--auto-rns",
+    "1",
+    "--signed-basis",
+    "1",
+    "--dd-wide-rns",
+    "1",
+    "--matrix-tiled",
+    "1",
+    "--parallel-conjugation",
+    "1",
+    "--parallel-tail-alignment",
+    "1",
+    "--parallel-root-columns",
+    "1",
+    "--native-auto-directory",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+    "--batch-trees-pair",
+    "1"
+  ],
+  "environment": {
+    "LD_PRELOAD": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/thread-cpu-profile-20261017/cpu_sample_preload.so",
+    "CKKS_CPU_SAMPLES": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/thread-cpu-profile-20261017/profile",
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/thread-cpu-profile-20261017",
+  "raw_sha256": {
+    "profile.csv": "2b96483438b18b777d85ace876eaa51dd9451e371cdd848c43c28369a3c3cfb6",
+    "profile.maps": "2a8785ca5dbd0bc75273da3c625aa790f350d68facb513e1a8f86d67b5e56c48",
+    "timestamps.jsonl": "69a5e140559dc48bf216a7175580bc87dd822ce6d042ea333f26fd3fc01a7c85",
+    "resolved.json": "9ba9975f53cce8936fd56067e35dcfc0300cecd3ae1089077aa08d7025ec869f"
+  },
+  "security_validated": false
+}
