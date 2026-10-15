@@ -1,0 +1,119 @@
+{
+  "scope": "CPU-only four-row Montgomery dot fusion in prepared RNS gadget and S2C matrices.",
+  "commits": {
+    "arithmetic": "e0c47cb",
+    "gadget": "91f0336",
+    "s2c": "eb01dfa"
+  },
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "fixtures": "Deterministic noncryptographic gadget rows and zero-initialized Galois fixture keys; same prepared spectra shared by fused and unfused controls.",
+  "bound": "Canonical operands <p<2^30 imply sum of four raw products <4p^2<p*2^32. Montgomery reduction returns <2p; addition to lazy destination stays <4p<2^32 and reduction restores <2p.",
+  "checks": [
+    "AVX2 eight-lane dot versus independent uint128 modular oracle: all 17 primes, 1024 updates, maximal operands and lazy destinations.",
+    "Gadget fused/unfused/independent digit-NTT equality: N=2,4,16,512,16384; zero and sparse nonconsecutive active rows; multiple row-count remainders; primary20 and regrouped40.",
+    "S2C fused/unfused/original FFT equality: direct/conjugate, term counts3,4,5,7,8,9, signed int64 and large integer stress.",
+    "Factor direct-RNS and digit-CRT byte equality."
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fused-gadget-arithmetic-test.log",
+      "sha256": "c26470e1bcac6153b3ba8fdc7bf941a7a739fcfc6a570f9ae2d659df2aab3480"
+    },
+    {
+      "path": "/tmp/fused-gadget-final-unit.log",
+      "sha256": "5e06854abc6b520a001188703d0d5a03be62abbf80d35fae3995d1581486adec"
+    },
+    {
+      "path": "/tmp/fused-s2c-unit.log",
+      "sha256": "c1c741fa6d3faf7fa6a0776d50eb9e58026c0a728b6b4a93a2696e298410d79e"
+    },
+    {
+      "path": "/tmp/fused-row-factor-unit.log",
+      "sha256": "3eec8b6a3de29a4a18241bd7f4dc0f08fb292c689162abb9ac213eb516ff9ee2"
+    }
+  ],
+  "microbenchmarks": {
+    "one": [
+      {
+        "q": 433,
+        "bits": 20,
+        "chunk": 80,
+        "lift": 48,
+        "unfused_seconds": 0.0196250875,
+        "fused_seconds": 0.0165519125,
+        "fractional_reduction": 0.15659420626787002
+      },
+      {
+        "q": 257,
+        "bits": 20,
+        "chunk": 80,
+        "lift": 48,
+        "unfused_seconds": 0.0083231,
+        "fused_seconds": 0.0079516225,
+        "fractional_reduction": 0.044632108228905065
+      },
+      {
+        "q": 435,
+        "bits": 44,
+        "chunk": 112,
+        "lift": 37,
+        "unfused_seconds": 0.012408225,
+        "fused_seconds": 0.0121669375,
+        "fractional_reduction": 0.01944577084957755
+      },
+      {
+        "q": 435,
+        "bits": 44,
+        "chunk": 112,
+        "lift": 270,
+        "unfused_seconds": 0.00785441,
+        "fused_seconds": 0.007569875,
+        "fractional_reduction": 0.03622614556663062
+      }
+    ],
+    "eight": [
+      {
+        "q": 433,
+        "bits": 20,
+        "chunk": 80,
+        "lift": 48,
+        "unfused_seconds": 0.0065012312499999995,
+        "fused_seconds": 0.0063773575,
+        "fractional_reduction": 0.019053890753386038
+      },
+      {
+        "q": 257,
+        "bits": 20,
+        "chunk": 80,
+        "lift": 48,
+        "unfused_seconds": 0.00223801,
+        "fused_seconds": 0.0021304212500000003,
+        "fractional_reduction": 0.04807340002949034
+      },
+      {
+        "q": 435,
+        "bits": 44,
+        "chunk": 112,
+        "lift": 37,
+        "unfused_seconds": 0.0026315875,
+        "fused_seconds": 0.00249043375,
+        "fractional_reduction": 0.053638250675685395
+      },
+      {
+        "q": 435,
+        "bits": 44,
+        "chunk": 112,
+        "lift": 270,
+        "unfused_seconds": 0.00186176,
+        "fused_seconds": 0.0017779937499999999,
+        "fractional_reduction": 0.04499304421622563
+      }
+    ]
+  },
+  "timing_method": "Unfused/fused/fused/unfused phases, five calls per phase, first omitted, same prepared fixture and input. One P core or eight P cores; sequential runs with no concurrent build. One-core OpenMP places were reduced to the sole allowed core by libgomp.",
+  "timing_limitations": "Microbenchmarks only. Full-workload qualification recorded separately; these results do not establish total FBS speedup or close the remaining gap.",
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/fused-gadget-rows-20261017",
+  "security_validated": false,
+  "performance_gap_closed": false
+}
