@@ -218,6 +218,7 @@ int main()
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> simd_short(raw,direct_cache,true,false,true,true);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> four_term(raw,direct_cache,true,false,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> unpacked(raw,direct_cache,true,false,true,false,false);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> chunked(raw,direct_cache,true,false,true,false,true,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source,Source,false> garner(raw,direct_cache);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> untiled(raw,direct_cache,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> parallel(raw,direct_cache,true,true);
@@ -266,6 +267,8 @@ int main()
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto control=four_term.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto separate=unpacked.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto split=chunked.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                for(std::size_t c=0;c<columns;++c)if(split[c].ct!=actual[c].ct)throw std::runtime_error("retained whole-row tiles differ from chunked tiles");
                 for(std::size_t c=0;c<columns;++c)if(separate[c].ct!=actual[c].ct)throw std::runtime_error("packed tables differ from separate table layout");
                 const auto alternate=simd_short.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 for(std::size_t c=0;c<columns;++c)if(alternate[c].ct!=actual[c].ct)throw std::runtime_error("SIMD factor short stages differ from scalar short stages");
