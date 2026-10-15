@@ -1,0 +1,343 @@
+{
+  "scope": "CPU-only interleaved signed public table spectra for four-column RNS factor matrices; one contiguous AVX2 load per term replaces two half loads and vector insertion. Other widths use existing layout.",
+  "baseline_commit": "6c6331c",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "native_key_archives_checked": 8,
+  "native_key_hashes_unchanged": true,
+  "workspace_bytes_unchanged": true,
+  "checks": [
+    "AVX2 and -mno-avx2 arithmetic binaries passed all 17 prime oracles: maximal operands and lazy destinations, 1024 updates, four/eight terms. Packed outputs byte-identical to separate tables, also checked against uint128 oracle.",
+    "Factor tests: N512, head/tail, widths1/4/5/6/7/9, chunks3/4/5/8/9/12/17/40. Packed/separate, four/eight-term, streamed/retained and independent digit-CRT outputs identical."
+  ],
+  "test_logs": [
+    {
+      "path": "/tmp/packed-factor-arithmetic.log",
+      "sha256": "988fb53d0fdd296d783452db3f0fcde100cdfe29ab41e7bae6a558e104450b04"
+    },
+    {
+      "path": "/tmp/packed-factor-scalar-arithmetic.log",
+      "sha256": "4ee12a9fe2265e49fcddddcbd96a8470577d7c4f80f2105dcbcd84df0429f6ad"
+    },
+    {
+      "path": "/tmp/packed-factor-unit.log",
+      "sha256": "3eec8b6a3de29a4a18241bd7f4dc0f08fb292c689162abb9ac213eb516ff9ee2"
+    }
+  ],
+  "microbenchmarks": {
+    "mode_labels": {
+      "8": "separate tables",
+      "18": "contiguous signed tables",
+      "28": "also share tables across ciphertext components, rejected",
+      "38": "also retain output across selector rows, rejected"
+    },
+    "means_seconds": {
+      "register-one": {
+        "8": 0.030073725,
+        "18": 0.0252336625,
+        "28": 0.0223425625,
+        "38": 0.0256379625
+      },
+      "register-all": {
+        "8": 0.00401616375,
+        "18": 0.00387067,
+        "28": 0.00385965875,
+        "38": 0.00418388125
+      }
+    },
+    "shape": "N16384, 17 primes, 40 selectors, two ciphertext components and four columns; eight-term dots; phase order8/18/28/38/38/28/18/8, five trials per phase, first omitted."
+  },
+  "method": "Sequential saved-parent and candidate GeLU five-trial runs, warmup then four/eight/eight/four-term dots. Compare eight-term trials2/3 across binaries. Candidate all-function replay follows. No builds, component tests or CPU instrumentation overlap full timing.",
+  "mean_seconds": {
+    "baseline-dot-pair": {
+      "false": {
+        "functional_evaluation_seconds": 10.065751693,
+        "s2c_seconds": 3.5622834015000002,
+        "blind_rotation_and_series_seconds": 6.5034682915
+      },
+      "true": {
+        "functional_evaluation_seconds": 9.9945751725,
+        "s2c_seconds": 3.5712700555,
+        "blind_rotation_and_series_seconds": 6.423305117
+      }
+    },
+    "packed-dot-pair": {
+      "false": {
+        "functional_evaluation_seconds": 9.1403848785,
+        "s2c_seconds": 2.631852974,
+        "blind_rotation_and_series_seconds": 6.5085319045
+      },
+      "true": {
+        "functional_evaluation_seconds": 9.143526986,
+        "s2c_seconds": 2.669282965,
+        "blind_rotation_and_series_seconds": 6.4742440210000005
+      }
+    }
+  },
+  "eight_term_stage_means": {
+    "baseline-dot-pair": {
+      "factor": 3.9317349999999998,
+      "alignment": 0.34423499999999996,
+      "dd_cache": 4.485e-07,
+      "trees": 1.7757450000000001
+    },
+    "packed-dot-pair": {
+      "factor": 3.853745,
+      "alignment": 0.3495695,
+      "dd_cache": 4.1500000000000005e-07,
+      "trees": 1.835655
+    }
+  },
+  "interpretation": "Factor stage locally improves about2%. Full GeLU mean falls about8%, but most of that comes from unrelated S2C timing (about3.57s to2.67s); do not attribute that full difference to table packing. Cross-binary timing is sensitive to execution context. Two measured samples per dot policy do not establish statistical significance. No claim of paper parity or closing the full gap.",
+  "artifacts": [
+    {
+      "run": "baseline-dot-pair",
+      "artifact": "gelu-trial0-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.518399018,
+      "s2c_seconds": 2.854525705
+    },
+    {
+      "run": "baseline-dot-pair",
+      "artifact": "gelu-trial1-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 10.085909209,
+      "s2c_seconds": 3.578438049
+    },
+    {
+      "run": "baseline-dot-pair",
+      "artifact": "gelu-trial2-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.993676116,
+      "s2c_seconds": 3.567287859
+    },
+    {
+      "run": "baseline-dot-pair",
+      "artifact": "gelu-trial3-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.995474229,
+      "s2c_seconds": 3.575252252
+    },
+    {
+      "run": "baseline-dot-pair",
+      "artifact": "gelu-trial4-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 10.045594177,
+      "s2c_seconds": 3.546128754
+    },
+    {
+      "run": "packed-dot-pair",
+      "artifact": "gelu-trial0-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.416512425,
+      "s2c_seconds": 2.85142225
+    },
+    {
+      "run": "packed-dot-pair",
+      "artifact": "gelu-trial1-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.134836982,
+      "s2c_seconds": 2.63493593
+    },
+    {
+      "run": "packed-dot-pair",
+      "artifact": "gelu-trial2-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.094267055,
+      "s2c_seconds": 2.622126773
+    },
+    {
+      "run": "packed-dot-pair",
+      "artifact": "gelu-trial3-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.192786917,
+      "s2c_seconds": 2.716439157
+    },
+    {
+      "run": "packed-dot-pair",
+      "artifact": "gelu-trial4-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.145932775,
+      "s2c_seconds": 2.628770018
+    },
+    {
+      "run": "packed-full",
+      "artifact": "gelu-outputs.bin",
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.279540488,
+      "s2c_seconds": 2.833731397
+    },
+    {
+      "run": "packed-full",
+      "artifact": "sigmoid-outputs.bin",
+      "sha256": "6abcba2ff691ecc6a543f28acd68fe853997998e2dc0511e9cafc1b4920a9e36",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 9.073692176,
+      "s2c_seconds": 2.626035023
+    },
+    {
+      "run": "packed-full",
+      "artifact": "tanh-outputs.bin",
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true,
+      "functional_evaluation_seconds": 14.00545791,
+      "s2c_seconds": 2.765701879
+    }
+  ],
+  "commands": {
+    "baseline-dot-pair": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-factor-tables-20261017/baseline-fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "gelu",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-factor-tables-20261017/baseline-dot-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--matrix-dot8-pair",
+      "1"
+    ],
+    "packed-dot-pair": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "gelu",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-factor-tables-20261017/packed-dot-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--matrix-dot8-pair",
+      "1"
+    ],
+    "packed-full": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "all",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-factor-tables-20261017/packed-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1"
+    ]
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "binary_sha256": {
+    "baseline": "7324600c79ea687e8a5c7946b10c211489f48e251df4ad4c2f665abdefdc0372",
+    "candidate": "59239d94bac7cf6abe2b0053b3b1fd00a0d3426a46e64b19325c439e642bd592"
+  },
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-factor-tables-20261017",
+  "reference_accuracy_receipt": "narrow-dd-native-auto-full-validation.json",
+  "security_validated": false,
+  "performance_gap_closed": false
+}
