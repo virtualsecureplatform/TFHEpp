@@ -1,0 +1,130 @@
+{
+  "scope": "Integrate integer-certified direct CRT into factor construction and compact tensor diagonals when the CRT basis has at least8 primes. Smaller bases retain Garner conversion.",
+  "crt_implementation_commit": "70eaf4a",
+  "arithmetic_receipt": "narrow-direct-centered-crt-component-validation.json",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "checks": {
+    "tensor_shapes": 21,
+    "tensor_cases_per_shape": 5,
+    "tensor_ring_degrees": [
+      16,
+      512,
+      16384
+    ],
+    "tensor_controls": [
+      "compact Garner CRT",
+      "full-width Garner CRT",
+      "independent exact FFT",
+      "schoolbook oracle for N16"
+    ],
+    "tensor_cases": [
+      "random full-width coefficients",
+      "all-minus-one",
+      "modulus-midpoint plus1",
+      "zero",
+      "low-chunk carry maximum"
+    ],
+    "factor_controls": [
+      "explicit Garner policy on the same retained selector cache",
+      "independent digit-CRT factors"
+    ],
+    "factor_cases": "Head/tail, scalar and SIMD columns1/4/5/6/7/9, chunks3/4/5/8/9/12/17/40, coarse/tiled schedules and concurrent conjugation.",
+    "all_match": true
+  },
+  "timing_diagnostic": {
+    "method": "Three tensor backends per case; compact Garner runs in the middle, while full Garner and selected direct reverse order by case. First case excluded. Separate single-worker and eight-worker runs, after compilation.",
+    "component_means": {
+      "one-worker": {
+        "165": {
+          "compact_garner_seconds": 0.013584875,
+          "compact_selected_crt_seconds": 0.01376405,
+          "observed_fractional_reduction": -0.013189300600852105
+        },
+        "209": {
+          "compact_garner_seconds": 0.016279575,
+          "compact_selected_crt_seconds": 0.016511825,
+          "observed_fractional_reduction": -0.014266342948141997
+        },
+        "253": {
+          "compact_garner_seconds": 0.020337025,
+          "compact_selected_crt_seconds": 0.020651525,
+          "observed_fractional_reduction": -0.015464405437865203
+        },
+        "297": {
+          "compact_garner_seconds": 0.024045375,
+          "compact_selected_crt_seconds": 0.023697225000000002,
+          "observed_fractional_reduction": 0.01447887587529817
+        },
+        "341": {
+          "compact_garner_seconds": 0.02755495,
+          "compact_selected_crt_seconds": 0.0270313,
+          "observed_fractional_reduction": 0.019003845044175405
+        },
+        "385": {
+          "compact_garner_seconds": 0.033177475,
+          "compact_selected_crt_seconds": 0.03200435,
+          "observed_fractional_reduction": 0.035359080219335426
+        }
+      },
+      "eight-workers": {
+        "165": {
+          "compact_garner_seconds": 0.0022841375,
+          "compact_selected_crt_seconds": 0.0024466125,
+          "observed_fractional_reduction": -0.07113188238448864
+        },
+        "209": {
+          "compact_garner_seconds": 0.0024055574999999997,
+          "compact_selected_crt_seconds": 0.00258895,
+          "observed_fractional_reduction": -0.07623700535115052
+        },
+        "253": {
+          "compact_garner_seconds": 0.0029982825000000003,
+          "compact_selected_crt_seconds": 0.0031993575,
+          "observed_fractional_reduction": -0.06706339379294635
+        },
+        "297": {
+          "compact_garner_seconds": 0.003832765,
+          "compact_selected_crt_seconds": 0.00394704,
+          "observed_fractional_reduction": -0.029815290006039996
+        },
+        "341": {
+          "compact_garner_seconds": 0.004087555,
+          "compact_selected_crt_seconds": 0.004158835,
+          "observed_fractional_reduction": -0.017438297466333852
+        },
+        "385": {
+          "compact_garner_seconds": 0.0048574099999999995,
+          "compact_selected_crt_seconds": 0.00490115,
+          "observed_fractional_reduction": -0.009004798853710305
+        }
+      }
+    },
+    "limitation": "Call positions and separate template instantiations affect timings. Q165 uses Garner in both compact controls, yet still varies, so these results do not establish every apparent component gain or regression. Full workload timing remains a separate gate."
+  },
+  "factor_result": "direct RNS and digit-CRT cached head/tail factors byte-identical; no online reads or selector transforms; retained bytes=41674640",
+  "commands": [
+    {
+      "executable": "build/test/ckks/ckks_tensor_rns32 full",
+      "OMP_NUM_THREADS": 1,
+      "taskset": "0"
+    },
+    {
+      "executable": "build/test/ckks/ckks_tensor_rns32 full",
+      "OMP_NUM_THREADS": 8,
+      "taskset": "0,2,4,6,8,10,12,14"
+    },
+    {
+      "executable": "build/test/ckks/ckks_narrow_factor_rns32",
+      "OMP_NUM_THREADS": 8,
+      "taskset": "0,2,4,6,8,10,12,14"
+    }
+  ],
+  "exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/direct-centered-crt-20261017",
+  "security_validated": false
+}

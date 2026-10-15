@@ -216,6 +216,7 @@ int main()
     auto direct_cache=std::make_shared<DirectCache>(raw,DirectCache::retained_bytes,4);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> direct(raw,direct_cache),direct_streamed(raw);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> four_term(raw,direct_cache,true,false,false);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source,Source,false> garner(raw,direct_cache);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> untiled(raw,direct_cache,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> parallel(raw,direct_cache,true,true);
     auto key=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
@@ -262,6 +263,8 @@ int main()
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto control=four_term.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto previous=garner.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                for(std::size_t c=0;c<columns;++c)if(previous[c].ct!=actual[c].ct)throw std::runtime_error("direct CRT factors differ from Garner CRT");
                 for(std::size_t c=0;c<columns;++c)if(control[c].ct!=actual[c].ct)throw std::runtime_error("eight-term dots differ from four-term dots");
                 conjugation_team_size.store(0);
                 const auto concurrent=parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);

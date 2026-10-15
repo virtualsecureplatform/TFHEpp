@@ -70,7 +70,7 @@ inline void prepareFactorSelectorsRNS32(std::vector<FactorSelectorRNS32<Schedule
 
 // Same public tables, selector coefficients, torus modulus and final
 // rounding as packedFactorsBatch; only the exact convolution basis changes.
-template <class Schedule, class FactorKeys, class Loader>
+template <class Schedule, bool DirectCRT=true, class FactorKeys, class Loader>
 inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     std::span<const CKKSSlotVector<typename Schedule::Param>> tables,
     const FactorKeys &key, std::size_t chunk_size, Loader load,
@@ -92,7 +92,10 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     // zero workspace; only actual columns are inverse transformed and returned.
     const auto stride=columns>4 && columns<8?std::size_t{8}:columns;
     const auto &plans = factorPlansRNS32<P,Cache::prime_count>();
-    const modular_rns32::CenteredCRT<P::T::limbs,Cache::prime_count> crt;
+    using CRT=std::conditional_t<DirectCRT && Cache::prime_count>=8,
+        modular_rns32::DirectCenteredCRT<P::T::limbs,Cache::prime_count>,
+        modular_rns32::CenteredCRT<P::T::limbs,Cache::prime_count>>;
+    static const CRT crt;
     auto start = Clock::now();
     std::array<std::array<std::vector<std::uint32_t>,Cache::prime_count>,2> base;
     for (auto &signed_tables : base)
@@ -340,7 +343,7 @@ public:
     }
 };
 
-template <class TargetSchedule,class SourceSchedule,class SelectorSchedule=SourceSchedule>
+template <class TargetSchedule,class SourceSchedule,class SelectorSchedule=SourceSchedule,bool DirectCRT=true>
 class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactorSource<TargetSchedule> {
     using P = typename TargetSchedule::Param;
     using Source = CKKSNarrowSelectorSource<SelectorSchedule>;
@@ -386,7 +389,7 @@ public:
     {
         FactorKeys view{key.factor_galois,key.staged_fft_caches,key.automorphism_evaluator,
             key.factor_conjugation_fft,key.factor_conjugation_projected_fft};
-        auto factors = narrow_detail::packedFactorsBatchRNS32<SourceSchedule>(tables,view,key.selector_ntt_chunk_size,
+        auto factors = narrow_detail::packedFactorsBatchRNS32<SourceSchedule,DirectCRT>(tables,view,key.selector_ntt_chunk_size,
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
             source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):
                 std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_,dot8_matrix_);

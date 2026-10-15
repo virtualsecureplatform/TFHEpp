@@ -6,7 +6,7 @@
 namespace TFHEpp {
 // Exact unscaled tensor modulo 2^Q. Split canonical coefficients at ceil(Q/2):
 // the high*high contribution vanishes, leaving two convolution diagonals.
-template<class P,std::uint32_t Q,bool CompactCRT=true>
+template<class P,std::uint32_t Q,bool CompactCRT=true,bool DirectCRT=true>
 void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&rhs)
 {
     static_assert(P::k==1 && is_multilimb_uint_v<typename P::T>);
@@ -56,7 +56,10 @@ void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&r
         // omitted bit would lie at or above Q after shifting.
         constexpr auto output_bits=CompactCRT?Q-Diagonal*split:P::T::digits;
         using Recovered=MultiLimbUInt<std::max<std::size_t>(1,(output_bits+63)/64)>;
-        static const modular_rns32::CenteredCRT<Recovered::limbs,count> crt;
+        using CRT=std::conditional_t<DirectCRT && count>=8,
+            modular_rns32::DirectCenteredCRT<Recovered::limbs,count>,
+            modular_rns32::CenteredCRT<Recovered::limbs,count>>;
+        static const CRT crt;
         std::array<Rows,3> sums;
 #pragma omp parallel for collapse(2) schedule(static)
         for(std::size_t c=0;c<3;++c)for(std::size_t p=0;p<count;++p){
