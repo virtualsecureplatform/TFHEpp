@@ -99,6 +99,30 @@ int main()
         }
         };
         check_dot.template operator()<4>();check_dot.template operator()<8>();
+#if defined(__AVX2__)
+        {
+            alignas(32) std::array<std::array<std::uint32_t,8>,4> left,right;
+            alignas(32) std::array<std::uint32_t,8> destination;
+            std::array<std::uint64_t,8> expected;
+            destination.fill(2*p-1);expected.fill(p-1);
+            const auto inverse=modular_ntt::invert((std::uint64_t{1}<<32)%p,p);
+            for(std::size_t repeat=0;repeat<1024;++repeat){
+                for(std::size_t t=0;t<4;++t)for(std::size_t i=0;i<8;++i){
+                    left[t][i]=repeat?random()%p:p-1;right[t][i]=repeat?random()%p:p-1;
+                    expected[i]=(expected[i]+static_cast<unsigned __int128>(left[t][i])*right[t][i]*inverse)%p;
+                }
+                const auto value=arithmetic.accumulateDot4Vector(
+                    _mm256_load_si256(reinterpret_cast<const __m256i*>(destination.data())),
+                    [&](std::size_t t){return _mm256_load_si256(reinterpret_cast<const __m256i*>(left[t].data()));},
+                    [&](std::size_t t){return _mm256_load_si256(reinterpret_cast<const __m256i*>(right[t].data()));});
+                _mm256_store_si256(reinterpret_cast<__m256i*>(destination.data()),value);
+                for(std::size_t i=0;i<8;++i){
+                    if(destination[i]>=2*p || destination[i]%p!=expected[i])throw std::runtime_error("vector-vector four-term dot differs from integer oracle");
+                    ++checked;
+                }
+            }
+        }
+#endif
         for (std::size_t n : {2, 4, 8, 16, 32, 512, 16384, 65536}) {
             modular_ntt32::NegacyclicNTTPlan small(n, prime);
             modular_ntt::NegacyclicNTTPlan reference(n, prime);

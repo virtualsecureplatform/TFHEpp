@@ -88,6 +88,21 @@ public:
         return _mm256_min_epu32(sum,
             _mm256_sub_epi32(sum, _mm256_set1_epi32(2 * modulus_)));
     }
+    // Canonical vector operands: four raw products sum below4p^2<p*2^32.
+    // One REDC yields a lazy product below2p, then restores the lazy sum.
+    template<class Left,class Right>
+    __m256i accumulateDot4Vector(__m256i destination,Left left,Right right)const
+    {
+        auto even=_mm256_setzero_si256(),odd=even;
+        for(std::size_t t=0;t<4;++t){
+            const auto x=left(t),y=right(t);
+            even=_mm256_add_epi64(even,_mm256_mul_epu32(x,y));
+            odd=_mm256_add_epi64(odd,_mm256_mul_epu32(_mm256_srli_epi64(x,32),_mm256_srli_epi64(y,32)));
+        }
+        const auto sum=_mm256_add_epi32(destination,reduceWideVector(even,odd));
+        return _mm256_min_epu32(sum,_mm256_sub_epi32(sum,_mm256_set1_epi32(2*modulus_)));
+    }
+
 #endif
     // Four canonical products sum to <4p^2<p*2^32 because p<2^30.
     // REDC therefore returns <2p, just as for a single product. Reduce once
