@@ -8077,7 +8077,10 @@ inline void CKKSMultRelinThenRescale(
                   "relinearization before rescale needs unscaled product headroom");
     auto tensor = std::make_unique<TRLWE3<P>>();
     auto unscaled = std::make_unique<CKKSCiphertext<P, Traits::base_log_q, product_log_delta>>();
-    CKKSTensorProductRescale<P, LhsLogQ, RhsLogQ, 0>(*tensor, lhs.ct, rhs.ct);
+    if constexpr (requires { relinkey.tensorProduct(*tensor, lhs.ct, rhs.ct); })
+        relinkey.tensorProduct(*tensor, lhs.ct, rhs.ct);
+    else
+        CKKSTensorProductRescale<P, LhsLogQ, RhsLogQ, 0>(*tensor, lhs.ct, rhs.ct);
     CKKSRelinearization<P, Traits::base_log_q>(unscaled->ct, *tensor, relinkey);
     CKKSScaleDown<P, Traits::base_log_q, product_log_delta, Traits::log_scale>(res, *unscaled);
 }

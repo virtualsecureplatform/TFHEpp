@@ -1,0 +1,288 @@
+{
+  "scope": "CPU-only exact unscaled ciphertext tensor product modulo 2^Q. Canonical two-chunk split; high*high vanishes modulo 2^Q. Existing encryption and evaluation keys unchanged.",
+  "baseline_commit": "66b7842",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "threads": 8,
+  "physical_cpu_ids": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14
+  ],
+  "bound": "Choose the shortest prefix whose product exceeds 2^(2*ceil(Q/2)+nbit+3), covering four products per coefficient and centered reconstruction. Reject unsupported bounds at compile time.",
+  "oracle": "N16 Q93, Q385 and Q440: independently compute all four negacyclic schoolbook products using multi-limb modular integer multiplication. All coefficients match.",
+  "controls": "FFT reference at every tested size/level. Seeded full-width random coefficients, all bits set, and a centered-boundary value. Covers odd and even Q and all five retained product-tree input levels.",
+  "trials": [
+    {
+      "n": 16,
+      "log_q": 93,
+      "trial": 0,
+      "fft_seconds": 0.000501877,
+      "rns_seconds": 7.346e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "log_q": 93,
+      "trial": 1,
+      "fft_seconds": 5.0501e-05,
+      "rns_seconds": 3.6164e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "log_q": 93,
+      "trial": 2,
+      "fft_seconds": 4.3981e-05,
+      "rns_seconds": 3.2912e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "log_q": 385,
+      "trial": 0,
+      "fft_seconds": 0.000651828,
+      "rns_seconds": 8.1578e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "log_q": 385,
+      "trial": 1,
+      "fft_seconds": 0.000409534,
+      "rns_seconds": 4.0215e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "log_q": 385,
+      "trial": 2,
+      "fft_seconds": 0.000389139,
+      "rns_seconds": 4.0231e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "log_q": 440,
+      "trial": 0,
+      "fft_seconds": 0.000745661,
+      "rns_seconds": 8.4463e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "log_q": 440,
+      "trial": 1,
+      "fft_seconds": 0.000485602,
+      "rns_seconds": 4.4468e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "log_q": 440,
+      "trial": 2,
+      "fft_seconds": 0.000485634,
+      "rns_seconds": 4.0112e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 93,
+      "trial": 0,
+      "fft_seconds": 0.00061085,
+      "rns_seconds": 0.000122759,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 93,
+      "trial": 1,
+      "fft_seconds": 0.000311129,
+      "rns_seconds": 7.8032e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 93,
+      "trial": 2,
+      "fft_seconds": 0.00027748,
+      "rns_seconds": 7.6583e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 165,
+      "trial": 0,
+      "fft_seconds": 0.000702168,
+      "rns_seconds": 0.000164841,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 165,
+      "trial": 1,
+      "fft_seconds": 0.000527629,
+      "rns_seconds": 9.8693e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 165,
+      "trial": 2,
+      "fft_seconds": 0.000550333,
+      "rns_seconds": 9.9612e-05,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 209,
+      "trial": 0,
+      "fft_seconds": 0.000914593,
+      "rns_seconds": 0.000248529,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 209,
+      "trial": 1,
+      "fft_seconds": 0.00066252,
+      "rns_seconds": 0.000122317,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 209,
+      "trial": 2,
+      "fft_seconds": 0.000703967,
+      "rns_seconds": 0.000121907,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 253,
+      "trial": 0,
+      "fft_seconds": 0.0010385,
+      "rns_seconds": 0.000277575,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 253,
+      "trial": 1,
+      "fft_seconds": 0.000822365,
+      "rns_seconds": 0.000137279,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 253,
+      "trial": 2,
+      "fft_seconds": 0.000851938,
+      "rns_seconds": 0.000137199,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 297,
+      "trial": 0,
+      "fft_seconds": 0.00121049,
+      "rns_seconds": 0.000276254,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 297,
+      "trial": 1,
+      "fft_seconds": 0.000951019,
+      "rns_seconds": 0.000161547,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 297,
+      "trial": 2,
+      "fft_seconds": 0.000954052,
+      "rns_seconds": 0.000161002,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 341,
+      "trial": 0,
+      "fft_seconds": 0.00134366,
+      "rns_seconds": 0.00032399,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 341,
+      "trial": 1,
+      "fft_seconds": 0.0010625,
+      "rns_seconds": 0.000180917,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 341,
+      "trial": 2,
+      "fft_seconds": 0.00113731,
+      "rns_seconds": 0.000174948,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 385,
+      "trial": 0,
+      "fft_seconds": 0.00155016,
+      "rns_seconds": 0.000410693,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 385,
+      "trial": 1,
+      "fft_seconds": 0.00133192,
+      "rns_seconds": 0.000205753,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "log_q": 385,
+      "trial": 2,
+      "fft_seconds": 0.00128005,
+      "rns_seconds": 0.000212932,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "log_q": 385,
+      "trial": 0,
+      "fft_seconds": 0.0735203,
+      "rns_seconds": 0.012233,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "log_q": 385,
+      "trial": 1,
+      "fft_seconds": 0.0560453,
+      "rns_seconds": 0.00557731,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "log_q": 385,
+      "trial": 2,
+      "fft_seconds": 0.0535041,
+      "rns_seconds": 0.00565499,
+      "all_coefficients_identical": true
+    }
+  ],
+  "timing_limit": "Single random-input comparison per size/level followed by two structured inputs; FFT then RNS order. Includes first-use plan preparation. Component evidence only; full replay is separate.",
+  "tenfold_goal_achieved": false
+}
