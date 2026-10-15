@@ -1,0 +1,169 @@
+{
+  "scope": "Integer-certified direct centered CRT with exact Garner fallback. No floating-point arithmetic or restrictions on the represented centered integer.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "proof": [
+    "Let R=2^64, M=product(p_i), B_i=M/p_i, gamma_i=(residue_i*inverse(B_i mod p_i)) mod p_i. The centered representative is sum(gamma_i*B_i)-round(sum(gamma_i/p_i))*M.",
+    "With rho_i=floor(R/p_i), S=sum(gamma_i*rho_i), E=sum(gamma_i), we have S<=R*sum(gamma_i/p_i)<=S+E. Products gamma_i*rho_i<R; S<17R and E<17*2^30, so uint64 products and uint128 sums cannot overflow.",
+    "The two integer quotients floor((S+R/2)/R) and floor((S+E+R/2)/R) enclose the exact rounded quotient. If equal, reconstruct directly modulo the requested output width; otherwise call original Garner CRT on the original residues.",
+    "Canonical residues, immutable precomputed CRT bases and integer reciprocals, block-local workspace, and exact boundary fallback preserve thread safety and arbitrary output torus widths."
+  ],
+  "checks": {
+    "direct_shapes": 45,
+    "values_per_shape": 521,
+    "prime_counts_at_128_bits": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "extra_prime_counts": [
+      4,
+      6,
+      7,
+      9,
+      12,
+      14,
+      17
+    ],
+    "extra_output_bits": [
+      64,
+      192,
+      448,
+      576
+    ],
+    "oracle": "Boost arbitrary-precision integer conversion and centering, independent of either CRT implementation.",
+    "cases": [
+      "uniform full-basis random centered representatives",
+      "zero and plus/minus1",
+      "both centering endpoints and neighbors",
+      "40 more near-half boundary cases",
+      "maximal gamma via minusM/p_i",
+      "block-boundary endpoints at255/256",
+      "empty reconstruction",
+      "inconsistent residue lengths rejected"
+    ],
+    "boundary_shapes_with_fallback": 44,
+    "total_boundary_fallbacks": 2024
+  },
+  "microbenchmark": {
+    "values": 16389,
+    "primes": 17,
+    "output_bits": 448,
+    "method": "Garner/direct/direct/Garner;5 calls per phase,omit first call per phase; input copies excluded; outputs exact matches. Pinned CPU0.",
+    "mean_seconds": {
+      "garner": 0.0016650625,
+      "direct": 0.000914615875
+    },
+    "fractional_reduction": 0.45070177545887924,
+    "direct_fallbacks_per_call": [
+      4
+    ]
+  },
+  "shape_benchmark": {
+    "source": "shape-benchmark.cpp",
+    "source_sha256": "3a37768faf8bb3b80bf26f46b6edf8b3208229984234849765c94335a9305158",
+    "results": [
+      {
+        "limbs": 2,
+        "primes": 8,
+        "garner_seconds": 0.00021703675,
+        "direct_seconds": 0.000160760375,
+        "fractional_reduction": 0.25929422090959253
+      },
+      {
+        "limbs": 2,
+        "primes": 10,
+        "garner_seconds": 0.00028234375,
+        "direct_seconds": 0.000202853375,
+        "fractional_reduction": 0.2815375760929717
+      },
+      {
+        "limbs": 3,
+        "primes": 11,
+        "garner_seconds": 0.000393134125,
+        "direct_seconds": 0.00031598525,
+        "fractional_reduction": 0.1962405960052438
+      },
+      {
+        "limbs": 3,
+        "primes": 12,
+        "garner_seconds": 0.000445565125,
+        "direct_seconds": 0.00033992,
+        "fractional_reduction": 0.2371036669443103
+      },
+      {
+        "limbs": 3,
+        "primes": 14,
+        "garner_seconds": 0.00058625675,
+        "direct_seconds": 0.00036168125,
+        "fractional_reduction": 0.38306680477452926
+      },
+      {
+        "limbs": 4,
+        "primes": 8,
+        "garner_seconds": 0.000321568875,
+        "direct_seconds": 0.00031485175,
+        "fractional_reduction": 0.020888604346425144
+      },
+      {
+        "limbs": 4,
+        "primes": 10,
+        "garner_seconds": 0.000412962125,
+        "direct_seconds": 0.000372054,
+        "fractional_reduction": 0.09906023464016211
+      },
+      {
+        "limbs": 5,
+        "primes": 11,
+        "garner_seconds": 0.00055193275,
+        "direct_seconds": 0.00045043725,
+        "fractional_reduction": 0.18389106281517087
+      },
+      {
+        "limbs": 6,
+        "primes": 12,
+        "garner_seconds": 0.000737551875,
+        "direct_seconds": 0.00055364925,
+        "fractional_reduction": 0.24934195306601314
+      },
+      {
+        "limbs": 7,
+        "primes": 14,
+        "garner_seconds": 0.001063065,
+        "direct_seconds": 0.0007418570000000001,
+        "fractional_reduction": 0.3021527376030627
+      },
+      {
+        "limbs": 7,
+        "primes": 17,
+        "garner_seconds": 0.00137668,
+        "direct_seconds": 0.00088909275,
+        "fractional_reduction": 0.3541761702065839
+      }
+    ],
+    "limitation": "Isolated conversions; does not establish a tensor or full FBS performance gain."
+  },
+  "command": [
+    "taskset",
+    "-c",
+    "0",
+    "build/test/common/modular_rns32"
+  ],
+  "exit_code": 0,
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/direct-centered-crt-20261017",
+  "security_validated": false
+}

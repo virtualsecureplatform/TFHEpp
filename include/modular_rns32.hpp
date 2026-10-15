@@ -157,4 +157,96 @@ public:
         }
     }
 };
+// Direct CRT with an integer-certified centering quotient. For gamma_i<p_i,
+// gamma_i*floor(2^64/p_i) underestimates 2^64*gamma_i/p_i by less than
+// gamma_i. Thus the sum and sum+sum(gamma_i) enclose the exact quotient.
+// Round both ends; if they disagree, use the original exact Garner method.
+// This avoids quadratic mixed-radix conversion in the usual case without
+// floating point, a bound on the represented integer, or a precision loss.
+template<std::size_t Limbs,std::size_t Count=prime_count>
+class DirectCenteredCRT {
+    static_assert(Count>0 && Count<=prime_count);
+    using T=MultiLimbUInt<Limbs>;
+    static constexpr std::size_t block_size=256;
+    CenteredCRT<Limbs,Count> fallback_;
+    std::array<T,Count> basis_;
+    std::array<T,Count+1> multiples_{};
+    std::array<Multiplier,Count> inverse_;
+    std::array<std::uint32_t,Count> inverse_mont_;
+    std::array<std::uint64_t,Count> reciprocal_;
+    std::vector<modular_ntt32::Montgomery> arithmetic_;
+public:
+    DirectCenteredCRT(){
+        const auto full_modulus=basisProduct<Count>();
+        T modulus{};
+        std::copy_n(full_modulus.limb.begin(),std::min(Limbs,full_modulus.limbs),modulus.limb.begin());
+        for(std::size_t q=1;q<=Count;++q)multiples_[q]=multiples_[q-1]+modulus;
+        arithmetic_.reserve(Count);
+        for(std::size_t i=0;i<Count;++i){
+            MultiLimbUInt<8> basis{1};
+            for(std::size_t j=0;j<Count;++j)if(j!=i)basis=multiplySmall(basis,primes[j].value);
+            basis_[i]={};
+            std::copy_n(basis.limb.begin(),std::min(Limbs,basis.limbs),basis_[i].limb.begin());
+            const auto p=std::uint32_t(primes[i].value);
+            std::uint64_t residue=0;
+            for(std::size_t limb=basis.limbs;limb-->0;)
+                residue=((static_cast<unsigned __int128>(residue)<<64)|basis.limb[limb])%p;
+            const auto inverse=modular_ntt::invert(residue,p);
+            inverse_[i]=Multiplier(inverse,p);
+            arithmetic_.emplace_back(p);
+            inverse_mont_[i]=arithmetic_[i].encode(inverse);
+            reciprocal_[i]=(static_cast<unsigned __int128>(1)<<64)/p;
+        }
+    }
+    // Canonical input rows are consumed (the fallback may overwrite entries).
+    // Return the number of coefficients requiring exact Garner conversion.
+    std::size_t reconstruct(std::array<std::span<std::uint32_t>,Count> residues,
+                            std::span<T> output)const {
+        for(auto row:residues)if(row.size()!=output.size())throw std::invalid_argument("direct CRT lengths differ");
+        std::size_t fallbacks=0;
+        std::array<std::array<std::uint32_t,block_size>,Count> gamma;
+        for(std::size_t begin=0;begin<output.size();begin+=block_size){
+            const auto length=std::min(block_size,output.size()-begin);
+            for(std::size_t p=0;p<Count;++p){
+                std::size_t k=0;
+#if defined(__AVX2__)
+                const auto fixed=_mm256_set1_epi32(inverse_mont_[p]);
+                for(;k+8<=length;k+=8){
+                    const auto input=_mm256_loadu_si256(reinterpret_cast<const __m256i*>(residues[p].data()+begin+k));
+                    const auto value=arithmetic_[p].canonicalVector(arithmetic_[p].multiplyLazyVector(input,fixed));
+                    _mm256_storeu_si256(reinterpret_cast<__m256i*>(gamma[p].data()+k),value);
+                }
+#endif
+                for(;k<length;++k)gamma[p][k]=inverse_[p].apply(residues[p][begin+k],primes[p].value);
+            }
+            for(std::size_t k=0;k<length;++k){
+                T sum{};
+                unsigned __int128 fraction=0;
+                std::uint64_t error=0;
+                for(std::size_t p=0;p<Count;++p){
+                    const auto digit=gamma[p][k];
+                    // digit<p, so this product is strictly below 2^64.
+                    fraction+=std::uint64_t(digit)*reciprocal_[p];
+                    error+=digit;
+                    unsigned __int128 carry=0;
+                    for(std::size_t limb=0;limb<Limbs;++limb){
+                        const auto value=static_cast<unsigned __int128>(basis_[p].limb[limb])*digit+sum.limb[limb]+carry;
+                        sum.limb[limb]=std::uint64_t(value);carry=value>>64;
+                    }
+                }
+                constexpr auto half=static_cast<unsigned __int128>(1)<<63;
+                const auto lower=std::size_t((fraction+half)>>64);
+                const auto upper=std::size_t((fraction+half+error)>>64);
+                if(lower==upper)output[begin+k]=sum-multiples_[lower];
+                else {
+                    std::array<std::span<std::uint32_t>,Count> single;
+                    for(std::size_t p=0;p<Count;++p)single[p]=residues[p].subspan(begin+k,1);
+                    fallback_.reconstruct(single,output.subspan(begin+k,1));
+                    ++fallbacks;
+                }
+            }
+        }
+        return fallbacks;
+    }
+};
 } // namespace TFHEpp::modular_rns32
