@@ -1,0 +1,33 @@
+{
+  "scope": "CPU-only level-batched product trees sharing the existing prepared DD chain. Pairing, rounded rescaling and odd-leaf reduction match the original per-tree evaluator.",
+  "command": "OMP_NUM_THREADS=8 OMP_MAX_ACTIVE_LEVELS=1 build/test/ckks/ckks_narrow_factor_rns32",
+  "terminal_exit_status": 0,
+  "ring_dimensions": [
+    16,
+    512
+  ],
+  "tree_depths": [
+    3,
+    5
+  ],
+  "tree_counts": [
+    0,
+    1,
+    7,
+    14
+  ],
+  "checks": [
+    "Random nonzero gadget fixtures and full, odd-sized and single-leaf trees produce byte-identical results to individual productTree calls.",
+    "Empty batches return no roots and invalid empty/overlong trees are rejected before multiplication.",
+    "Prepared-backend lookup failures propagate after joining parallel pair work.",
+    "Batched mode rejects a missing backend, stays outside key archives, resets on load, and clears when the staged policy replaces the backend.",
+    "Existing exact factor, tail alignment and bounded column tests remain passing."
+  ],
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "key_cache_policy": "Single-tree and batch evaluators capture the same prepared chain; no duplicate preparation or encryption occurs.",
+  "memory_policy": "Release completed input levels before recursing into the next batch level.",
+  "full_function_replay_covered": false,
+  "performance_claim": null,
+  "security_validated": false
+}

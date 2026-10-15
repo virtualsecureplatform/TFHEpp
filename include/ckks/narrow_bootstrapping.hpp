@@ -226,6 +226,10 @@ struct CKKSNarrowBootstrapKey {
     std::function<void(typename Schedule::TreeResult &,
         std::vector<typename Schedule::Factor>, const typename Schedule::RelinKeys &)>
         product_tree_evaluator;
+    std::function<void(std::vector<typename Schedule::TreeResult>&,
+        std::vector<std::vector<typename Schedule::Factor>>,const typename Schedule::RelinKeys&)>
+        product_tree_batch_evaluator;
+    bool batch_product_trees = false;
     std::unique_ptr<typename Schedule::PreparedRelinKeys> relin_fft;
     static constexpr std::uint32_t projected_relin_primary_bits = 8 % P::Bgbit == 0 ? 8 : P::Bgbit;
     using ProjectedRelinKeys = CKKSPreparedDDRelinKeyChainFFT<P,
@@ -263,6 +267,8 @@ struct CKKSNarrowBootstrapKey {
             selector_source.reset();
             factor_source.reset();
             product_tree_evaluator = {};
+            product_tree_batch_evaluator = {};
+            batch_product_trees = false;
             automorphism_evaluator = {};
             relin_fft.reset();
             relin_projected_fft.reset();
@@ -337,6 +343,8 @@ inline void CKKSNarrowUseStagedFFT(CKKSNarrowBootstrapKey<Schedule> &key,
         key.relin_fft.reset();
         key.relin_projected_fft.reset();
         key.product_tree_evaluator = {};
+        key.product_tree_batch_evaluator = {};
+        key.batch_product_trees = false;
         key.automorphism_evaluator = {};
         key.staged_fft_caches = true;
     }
@@ -350,6 +358,8 @@ inline void CKKSNarrowPrepareRelinearization(CKKSNarrowBootstrapKey<Schedule> &k
         auto prepared = CKKSNarrowMakePreparedRelinearization<Schedule>(key.relin);
         key.relin_fft = std::move(prepared);
         key.product_tree_evaluator = {};
+        key.product_tree_batch_evaluator = {};
+        key.batch_product_trees = false;
         key.relin_projected_fft.reset();
         key.staged_fft_caches = false;
     }
@@ -368,6 +378,8 @@ inline void CKKSNarrowPrepareProjectedRelinearization(CKKSNarrowBootstrapKey<Sch
     auto prepared = makeCKKSPreparedDDRelinKeyChainFFTWithSecondaryBase<
         Schedule::prepared_relin_bbarbit>(*projected);
     key.product_tree_evaluator = {};
+    key.product_tree_batch_evaluator = {};
+    key.batch_product_trees = false;
     key.relin_projected_fft = std::move(prepared);
     key.relin_fft.reset();
 }
@@ -1116,6 +1128,59 @@ inline void productTree(
     }
 }
 
+inline int columnThreads(std::size_t columns);
+
+// Keep each tree's pairing and rounding order, but schedule all products at a
+// level together. Prepared keys are shared; tensor and switch work is local.
+template<class Schedule,std::size_t Level=0,
+    class PreparedKeys=typename Schedule::PreparedRelinKeys,bool ParallelPairs=true>
+inline void productTreeBatch(std::vector<typename Schedule::TreeResult>&results,
+    std::vector<std::vector<CKKSCiphertext<typename Schedule::Param,
+        Schedule::factor_log_q-Level*Schedule::log_delta,Schedule::log_delta>>> factors,
+    const typename Schedule::RelinKeys&keys,const PreparedKeys*prepared=nullptr)
+{
+    using P=typename Schedule::Param;
+    constexpr auto maximum=std::size_t{1}<<(Schedule::tree_depth-Level);
+    for(const auto&tree:factors)
+        if(tree.empty()||tree.size()>maximum)throw std::invalid_argument("invalid batched narrow product tree");
+    if(factors.empty()){results.clear();return;}
+    if constexpr(Level==Schedule::tree_depth){
+        results.resize(factors.size());
+        for(std::size_t tree=0;tree<factors.size();++tree)results[tree]=std::move(factors[tree].front());
+    }else{
+        using Next=CKKSCiphertext<P,Schedule::factor_log_q-(Level+1)*Schedule::log_delta,Schedule::log_delta>;
+        std::vector<std::vector<Next>> next(factors.size());
+        std::vector<std::pair<std::size_t,std::size_t>> pairs;
+        for(std::size_t tree=0;tree<factors.size();++tree){
+            next[tree].resize((factors[tree].size()+1)/2);
+            for(std::size_t pair=0;pair<factors[tree].size()/2;++pair)pairs.emplace_back(tree,pair);
+        }
+        const auto multiply_pair=[&](std::size_t work){
+            const auto [tree,pair]=pairs[work];
+            const auto multiply=[&](const auto&relin){
+                if constexpr(Schedule::relinearize_before_rescale)
+                    CKKSMultRelinThenRescale<P>(next[tree][pair],factors[tree][2*pair],factors[tree][2*pair+1],relin);
+                else CKKSMult<P>(next[tree][pair],factors[tree][2*pair],factors[tree][2*pair+1],relin);
+            };
+            if constexpr(use_multilimb_digit_fft_v<P>)if(prepared){multiply(prepared->template get<Level>());return;}
+            multiply(keys.template get<Level>());
+        };
+        if constexpr(ParallelPairs){
+            std::vector<std::exception_ptr> errors(pairs.size());
+            [[maybe_unused]] const auto threads=columnThreads(pairs.size());
+#pragma omp parallel for if(pairs.size()>1) schedule(dynamic,1) num_threads(threads)
+            for(std::size_t work=0;work<pairs.size();++work){
+                try{multiply_pair(work);}catch(...){errors[work]=std::current_exception();}
+            }
+            for(const auto&error:errors)if(error)std::rethrow_exception(error);
+        }else for(std::size_t work=0;work<pairs.size();++work)multiply_pair(work);
+        for(std::size_t tree=0;tree<factors.size();++tree)
+            if(factors[tree].size()%2)CKKSLevelReduce<P>(next[tree].back(),factors[tree].back());
+        factors.clear(); // Completed input levels need not remain live during recursion.
+        productTreeBatch<Schedule,Level+1,PreparedKeys,ParallelPairs>(results,std::move(next),keys,prepared);
+    }
+}
+
 }  // namespace narrow_detail
 
 template <class Schedule>
@@ -1315,6 +1380,8 @@ inline void generateNarrowEvaluationKeys(CKKSNarrowBootstrapKey<Schedule> &resul
     result.selector_ntt_chunk_size = 0;
     result.staged_fft_caches = false;
     result.product_tree_evaluator = {};
+    result.product_tree_batch_evaluator = {};
+    result.batch_product_trees = false;
     result.automorphism_evaluator = {};
     result.relin_fft.reset();
     result.relin_projected_fft.reset();
@@ -1518,6 +1585,8 @@ inline void CKKSNarrowBlindRotateBatch(
 {
     using P = typename Schedule::Param;
     if (tile_size == 0) throw std::invalid_argument("narrow batch tile size must be positive");
+    if(key.batch_product_trees&&!key.product_tree_batch_evaluator)
+        throw std::invalid_argument("batched product trees require a prepared batch backend");
     for (const auto &request : requests)
         if (!request.input || request.frequency == 0 || !std::isfinite(request.weight.real()) ||
             !std::isfinite(request.weight.imag()))
@@ -1699,6 +1768,8 @@ inline void CKKSNarrowBlindRotateBatch(
         const auto *tree_keys = staged_relin ? staged_relin.get() : key.relin_fft.get();
         finish_root_stage(root_times.dd_cache_preparation_seconds);
         const bool parallel_roots=key.parallel_root_columns && columns>1;
+        const bool batch_trees=key.batch_product_trees;
+        std::vector<std::vector<typename Schedule::Factor>> forests(batch_trees?2*columns:0);
         narrow_detail::evaluateRootColumns(columns,parallel_roots,[&](std::size_t column) {
             const auto &request = requests[begin + column];
             CKKSSlotVector<P> head_beta{}, tail_beta{};
@@ -1713,6 +1784,9 @@ inline void CKKSNarrowBlindRotateBatch(
             auto &transparent_tail = tail[column].back();
             ckksSlotEncode<P, Schedule::factor_log_q, Schedule::log_delta>(transparent_head.ct[P::k], head_beta);
             ckksSlotEncode<P, Schedule::factor_log_q, Schedule::log_delta>(transparent_tail.ct[P::k], tail_beta);
+            if(batch_trees){
+                forests[2*column]=std::move(head[column]);forests[2*column+1]=std::move(tail[column]);return;
+            }
             auto tail_result = std::make_unique<typename Schedule::TreeResult>();
             auto evaluate_trees = [&](const auto *prepared) {
                 narrow_detail::productTree<Schedule>(results[begin + column], std::move(head[column]), key.relin, prepared);
@@ -1727,7 +1801,16 @@ inline void CKKSNarrowBlindRotateBatch(
             CKKSAddInPlace<P>(results[begin + column], *tail_result);
             if (observer && !parallel_roots) (*observer)(request, results[begin + column]);
         });
-        if(observer && parallel_roots)
+        if(batch_trees){
+            std::vector<typename Schedule::TreeResult> products;
+            key.product_tree_batch_evaluator(products,std::move(forests),key.relin);
+            if(products.size()!=2*columns)throw std::runtime_error("batched product backend returned the wrong root count");
+            for(std::size_t column=0;column<columns;++column){
+                results[begin+column]=std::move(products[2*column]);
+                CKKSAddInPlace<P>(results[begin+column],products[2*column+1]);
+            }
+        }
+        if(observer && (parallel_roots||batch_trees))
             for(std::size_t column=0;column<columns;++column)
                 (*observer)(requests[begin+column],results[begin+column]);
         finish_root_stage(root_times.dd_trees_and_beta_seconds);

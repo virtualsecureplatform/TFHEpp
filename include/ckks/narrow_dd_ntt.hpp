@@ -25,6 +25,10 @@ inline void CKKSNarrowUseAuxiliaryNTTDD(CKKSNarrowBootstrapKey<Schedule> &key,
         const typename Schedule::RelinKeys &raw) {
         narrow_detail::productTree<Schedule, 0, Chain, ParallelPairs>(result,std::move(factors),raw,prepared.get());
     };
+    key.product_tree_batch_evaluator=[prepared](std::vector<typename Schedule::TreeResult>&result,
+        std::vector<std::vector<typename Schedule::Factor>> factors,const typename Schedule::RelinKeys&raw){
+        narrow_detail::productTreeBatch<Schedule,0,Chain,ParallelPairs>(result,std::move(factors),raw,prepared.get());
+    };
     key.relin_fft.reset();
     key.relin_projected_fft.reset();
 }

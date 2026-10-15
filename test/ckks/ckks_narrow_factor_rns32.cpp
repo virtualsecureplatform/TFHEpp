@@ -1,6 +1,7 @@
 #include "ckks_narrow_basis_benchmark.hpp"
 #include <ckks/narrow_factor_ntt32.hpp>
 #include <ckks/narrow_factor_rns32.hpp>
+#include <ckks/narrow_dd_ntt.hpp>
 #include <iostream>
 #include <atomic>
 #include <sstream>
@@ -47,6 +48,56 @@ public:
         }
     }
 };
+template<class Chain>
+struct FailingBatchKeys {
+    template<std::size_t Level>
+    auto get()const -> decltype(std::declval<const Chain&>().template get<Level>())
+    {throw std::runtime_error("batch tree backend test failure");}
+};
+
+template<uint32_t Nbit,std::size_t H>
+void checkBatchTrees()
+{
+    using BP=narrow_benchmark::BenchmarkParam<Nbit,7>;
+    using S=CKKSNarrowBootstrapSchedule<BP,48,427,44,42,H,true,13,true>;
+    using Chain=CKKSPreparedAuxiliaryDDRelinKeyChainNTT<BP,S::factor_log_q,44,S::tree_depth,48,20,20,true,true>;
+    auto master=std::make_unique<CKKSCompactDDRelinKey<BP,433,20,20>>();
+    std::mt19937_64 random(20261017+Nbit);
+    for(auto&row:master->data)for(auto&digit:row)for(auto&component:digit)for(auto&value:component)value=int32_t(random()&((1U<<20)-1))-(1<<19);
+    Chain prepared(*master);auto raw=std::make_unique<typename S::RelinKeys>();
+    const auto maximum=std::size_t{1}<<S::tree_depth;
+    for(std::size_t count:{0,1,7,14}){
+        std::vector<std::vector<typename S::Factor>> factors(count);
+        for(std::size_t tree=0;tree<count;++tree){
+            const std::size_t lengths[]={maximum,maximum-1,maximum/2+1,1};
+            factors[tree].resize(lengths[tree%4]);
+            for(auto&factor:factors[tree])for(auto&component:factor.ct)for(auto&value:component){
+                for(auto&word:value.limb)word=random();
+                value=ckks_detail::reduceToLevel<BP,S::factor_log_q>(value);
+            }
+        }
+        std::vector<typename S::TreeResult> expected(count),actual;
+        for(std::size_t tree=0;tree<count;++tree)narrow_detail::productTree<S,0,Chain>(expected[tree],factors[tree],*raw,&prepared);
+        narrow_detail::productTreeBatch<S,0,Chain>(actual,std::move(factors),*raw,&prepared);
+        if(actual.size()!=expected.size())throw std::runtime_error("batched tree changed result count");
+        for(std::size_t tree=0;tree<count;++tree)if(actual[tree].ct!=expected[tree].ct)throw std::runtime_error("batched tree changed paired arithmetic or odd-leaf carry");
+    }
+    if constexpr(use_multilimb_digit_fft_v<BP>){
+        FailingBatchKeys<Chain> failing;bool rejected=false;
+        std::vector<typename S::TreeResult> result;
+        try{narrow_detail::productTreeBatch<S,0,FailingBatchKeys<Chain>>(result,
+            std::vector<std::vector<typename S::Factor>>(2,std::vector<typename S::Factor>(2)),*raw,&failing);}
+        catch(const std::runtime_error&error){rejected=std::string(error.what())=="batch tree backend test failure";}
+        if(!rejected)throw std::runtime_error("batched tree did not propagate backend failure");
+    }
+    for(std::size_t length:{std::size_t{0},maximum+1}){
+        bool rejected=false;std::vector<typename S::TreeResult> result;
+        try{narrow_detail::productTreeBatch<S,0,Chain>(result,{std::vector<typename S::Factor>(length)},*raw,&prepared);}
+        catch(const std::invalid_argument&){rejected=true;}
+        if(!rejected)throw std::runtime_error("invalid batched tree shape accepted");
+    }
+}
+
 void checkRootColumnDispatch()
 {
     for(std::size_t columns:{0,1,4,7}){
@@ -82,6 +133,12 @@ void checkRootColumnDispatch()
 void checkTailAlignment()
 {
     auto key=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
+    key->batch_product_trees=true;
+    bool missing_rejected=false;std::vector<Target::Output> unused;
+    try{CKKSNarrowBlindRotateBatch<Target,44>(unused,{},*key);}
+    catch(const std::invalid_argument&error){missing_rejected=std::string(error.what())=="batched product trees require a prepared batch backend";}
+    if(!missing_rejected)throw std::runtime_error("missing prepared batch backend accepted");
+    key->batch_product_trees=false;
     std::atomic<std::size_t> parallel_calls{0};
     key->automorphism_evaluator=[&](auto& out,const auto& in,uint32_t level,uint32_t exponent){
         if(level!=Target::factor_log_q)throw std::runtime_error("incorrect public tail level");
@@ -111,15 +168,19 @@ void checkTailAlignment()
 #endif
     // Archive only zero-valued public rows; no selector-key fixture generation.
     std::stringstream serial_payload,payload;
-    key->parallel_public_tail_alignment=false;key->parallel_root_columns=false;
+    key->parallel_public_tail_alignment=false;key->parallel_root_columns=false;key->batch_product_trees=false;
     {cereal::PortableBinaryOutputArchive archive(serial_payload);archive(*key);}
-    key->parallel_public_tail_alignment=true;key->parallel_root_columns=true;
+    key->parallel_public_tail_alignment=true;key->parallel_root_columns=true;key->batch_product_trees=true;
+    key->product_tree_batch_evaluator=[](auto&,auto,const auto&){};
     {cereal::PortableBinaryOutputArchive archive(payload);archive(*key);}
     if(serial_payload.str()!=payload.str())throw std::runtime_error("runtime tail policy changed public archive bytes");
     auto loaded=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
-    loaded->parallel_public_tail_alignment=true;loaded->parallel_root_columns=true;
+    loaded->parallel_public_tail_alignment=true;loaded->parallel_root_columns=true;loaded->batch_product_trees=true;loaded->product_tree_batch_evaluator=key->product_tree_batch_evaluator;
     {cereal::PortableBinaryInputArchive archive(payload);archive(*loaded);}
-    if(loaded->parallel_public_tail_alignment || loaded->parallel_root_columns)throw std::runtime_error("key archive retained a runtime parallel alignment policy");
+    if(loaded->parallel_public_tail_alignment || loaded->parallel_root_columns || loaded->batch_product_trees || loaded->product_tree_batch_evaluator)throw std::runtime_error("key archive retained a runtime parallel alignment policy");
+    loaded->batch_product_trees=true;loaded->product_tree_batch_evaluator=key->product_tree_batch_evaluator;
+    CKKSNarrowUseStagedFFT(*loaded,4);
+    if(loaded->batch_product_trees||loaded->product_tree_batch_evaluator)throw std::runtime_error("staged policy retained an incompatible batch backend");
     std::vector<std::vector<Target::Factor>> tail(1,std::vector<Target::Factor>(Target::blocks));
     std::vector<int> steps(Target::blocks,1);
     key->automorphism_evaluator=[](auto&,const auto&,uint32_t,uint32_t){throw std::runtime_error("tail alignment test failure");};
@@ -137,6 +198,8 @@ int main()
 {
     checkTailAlignment();
     checkRootColumnDispatch();
+    checkBatchTrees<4,4>();
+    checkBatchTrees<9,31>();
     auto raw=std::make_shared<TransparentSource>();
     using Cache=CKKSNarrowFactorSelectorCache32<Source>;
     bool rejected=false;
