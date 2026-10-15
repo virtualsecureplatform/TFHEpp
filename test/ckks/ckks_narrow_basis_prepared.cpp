@@ -50,6 +50,37 @@ int main()
         maximum = std::max(maximum,std::abs((*slots)[i]-expected));
     }
     if (maximum >= std::ldexp(1.0,-23)) throw std::runtime_error("independent basis series gate failed");
+    {
+        CKKSNarrowFrequencyBasis three(10,{2,4,5},true),four(10,{1,3,5,6});
+        std::vector<Basis::Root> small_roots(3),control_roots(4);
+        const auto angle=[&](std::size_t i){return -std::acos(-1.0)/2+std::acos(-1.0)*i/(P::n/2-1);};
+        for(auto pair:{std::pair{&three,&small_roots},std::pair{&four,&control_roots}})
+            for(std::size_t j=0;j<pair.second->size();++j){
+                for(std::size_t i=0;i<P::n/2;++i)(*slots)[i]=std::polar(1.0,pair.first->frequencies()[j]*angle(i));
+                ckksSlotEncode<P,Basis::root_log_q,Basis::root_log_delta>((*pair.second)[j].ct[1],*slots);
+            }
+        auto small_coefficients=coefficients;small_coefficients.resize(11);
+        std::size_t conjugations=0;
+        CKKSNarrowEvalSeriesFromBasisRootsPrepared<Basis>(*integer,small_roots,three,small_coefficients,auxiliary,conjugate,
+            [&](auto&output,const auto&input){
+                ++conjugations;
+                for(std::size_t c=0;c<2;++c)Automorphism<P>(output[c],input[c],2*P::n-1);
+                ckks_detail::reduceTRLWEToLevel<P,Basis::root_log_q>(output);
+            });
+        if(conjugations!=2)throw std::runtime_error("three-root conjugations were not shared");
+        CKKSNarrowEvalSeriesFromBasisRootsPrepared<Basis>(*prepared,control_roots,four,small_coefficients,auxiliary,conjugate);
+        auto control=std::make_unique<CKKSSlotVector<P>>();
+        ckksSlotDecode<P,Basis::output_log_q,Basis::log_delta>(*slots,integer->ct[1]);
+        ckksSlotDecode<P,Basis::output_log_q,Basis::log_delta>(*control,prepared->ct[1]);
+        double error=0;
+        for(std::size_t i=0;i<P::n/2;++i){
+            double expected=small_coefficients[0].real();
+            for(std::size_t k=1;k<=10;++k)expected+=2*(small_coefficients[k]*std::polar(1.0,k*angle(i))).real();
+            error=std::max({error,std::abs((*slots)[i]-expected),std::abs((*control)[i]-expected),std::abs((*slots)[i]-(*control)[i])});
+        }
+        if(error>=std::ldexp(1.0,-23))throw std::runtime_error("three-root reconstruction differs from independent series or four-root control");
+        std::cout<<"three-root degree10 independent series error="<<error<<'\n';
+    }
     CKKSNarrowFrequencyBasis signed_plan(40,{6,12,15,16,17,19,20},true);
     if(!signed_plan.usesDifferences())throw std::runtime_error("difference plan was not recognized");
     bool rejected=false;

@@ -89,9 +89,9 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     if (!retained.empty()) prefetch_raw=false;
     const auto columns = tables.size();
     if (!columns) return {};
-    // Five to seven real columns share one full SIMD row. Padding is public
+    // Three or five to seven real columns share one full SIMD row. Padding is public
     // zero workspace; only actual columns are inverse transformed and returned.
-    const auto stride=columns>4 && columns<8?std::size_t{8}:columns;
+    const auto stride=columns==3?std::size_t{4}:columns>4 && columns<8?std::size_t{8}:columns;
     const bool packed_four=packed_matrix && stride==4;
     const auto &plans = vector_short_stages?factorPlansRNS32<P,Cache::prime_count,true>()
                                            :factorPlansRNS32<P,Cache::prime_count,false>();
