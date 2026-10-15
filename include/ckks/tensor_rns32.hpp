@@ -6,7 +6,9 @@
 namespace TFHEpp {
 // Exact unscaled tensor modulo 2^Q. Split canonical coefficients at ceil(Q/2):
 // the high*high contribution vanishes, leaving two convolution diagonals.
-template<class P,std::uint32_t Q,bool CompactCRT=true,bool DirectCRT=true,bool BatchEncode=true>
+// Intermediate spectra are only multiplied pointwise, so matched bit-reversed
+// transforms avoid explicit permutations without changing coefficients.
+template<class P,std::uint32_t Q,bool CompactCRT=true,bool DirectCRT=true,bool BatchEncode=true,bool BitReversed=true>
 void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&rhs)
 {
     static_assert(P::k==1 && is_multilimb_uint_v<typename P::T>);
@@ -54,7 +56,11 @@ void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&r
             right[row][p][i]=arithmetic.encode(encoder.residue(b,p));
         }
         }
-        plans[p].forward(left[row][p]);plans[p].forward(right[row][p]);
+        if constexpr(BitReversed){
+            plans[p].forwardBitReversed(left[row][p]);plans[p].forwardBitReversed(right[row][p]);
+        }else{
+            plans[p].forward(left[row][p]);plans[p].forward(right[row][p]);
+        }
     }
     for(auto &component:result)component.fill({});
     // Row mapping matches CKKS tensor convention: cross, constant, square.
@@ -90,7 +96,8 @@ void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&r
                 accumulate(a,b);if(c==0)accumulate(2*components[c][1]+high,2*components[c][0]+Diagonal-high);
             }
             for(auto &value:out)value=arithmetic.canonical(value);
-            plans[p].inverse(out);
+            if constexpr(BitReversed)plans[p].inverseBitReversed(out);
+            else plans[p].inverse(out);
         }
 #pragma omp parallel
         {
