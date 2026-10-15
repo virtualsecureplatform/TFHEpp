@@ -1,0 +1,488 @@
+{
+  "scope": "CPU-only wide-chunk exact RNS public automorphism switching from unchanged public gadget rows; no encryption or new keys.",
+  "baseline_commit": "b0a3d43",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "key_log_q": 435,
+  "primary_digit_bits": 20,
+  "key_chunk_bits": 80,
+  "rns_primes": 4,
+  "chunks": 6,
+  "proof": "Each primary digit has magnitude at most 2^(Bits-1); every canonical key chunk is below 2^ChunkBits. Twice the absolute convolution bound is at most 2^(ChunkBits+Bits)*N*primary_rows. Choose a prime prefix strictly above that bound. Recover each signed chunk product in enough limbs for this bound, sign extend, shift and sum modulo 2^Q before the existing auxiliary rounding. Exactly zero input digit rows are skipped.",
+  "independent_oracle": "N16 direct gadget multiplication matched schoolbook negacyclic integer multiplication.",
+  "switch_controls": "N16, N512 and N16384 at data Q385, Q398 and Q121 match the existing digit-NTT automorphism. Seeded full-width random inputs, zero input after a nonzero result and centered-boundary values. Native AVX2 and scalar -mno-avx2 small-ring tests pass.",
+  "threads": 8,
+  "physical_cpu_ids": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14
+  ],
+  "trial_meaning": {
+    "0": "random input, first-use costs",
+    "1": "same random input, RNS evaluated first",
+    "2": "same random input, old evaluated first",
+    "3": "zero input",
+    "4": "centered-boundary input"
+  },
+  "trials": [
+    {
+      "n": 16,
+      "data_log_q": 385,
+      "trial": 0,
+      "old_seconds": 3.0423e-05,
+      "rns_seconds": 4.3581e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 385,
+      "trial": 1,
+      "old_seconds": 2.6505e-05,
+      "rns_seconds": 3.9402e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 385,
+      "trial": 2,
+      "old_seconds": 2.5363e-05,
+      "rns_seconds": 3.5736e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 385,
+      "trial": 3,
+      "old_seconds": 2.4696e-05,
+      "rns_seconds": 3.6269e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 385,
+      "trial": 4,
+      "old_seconds": 2.484e-05,
+      "rns_seconds": 3.4039e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 398,
+      "trial": 0,
+      "old_seconds": 2.5228e-05,
+      "rns_seconds": 3.5468e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 398,
+      "trial": 1,
+      "old_seconds": 5.102e-05,
+      "rns_seconds": 4.0705e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 398,
+      "trial": 2,
+      "old_seconds": 2.6218e-05,
+      "rns_seconds": 4.0831e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 398,
+      "trial": 3,
+      "old_seconds": 2.8869e-05,
+      "rns_seconds": 3.6841e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 398,
+      "trial": 4,
+      "old_seconds": 2.5377e-05,
+      "rns_seconds": 3.438e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 121,
+      "trial": 0,
+      "old_seconds": 2.5187e-05,
+      "rns_seconds": 3.5857e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 121,
+      "trial": 1,
+      "old_seconds": 2.4896e-05,
+      "rns_seconds": 3.5206e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 121,
+      "trial": 2,
+      "old_seconds": 2.4327e-05,
+      "rns_seconds": 3.5061e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 121,
+      "trial": 3,
+      "old_seconds": 2.4302e-05,
+      "rns_seconds": 3.2295e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16,
+      "data_log_q": 121,
+      "trial": 4,
+      "old_seconds": 2.5035e-05,
+      "rns_seconds": 3.4139e-05,
+      "old_spectrum_bytes": 123904,
+      "rns_spectrum_bytes": 67584,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 385,
+      "trial": 0,
+      "old_seconds": 0.000759764,
+      "rns_seconds": 0.000324692,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 385,
+      "trial": 1,
+      "old_seconds": 0.00030838,
+      "rns_seconds": 0.000312529,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 385,
+      "trial": 2,
+      "old_seconds": 0.000291293,
+      "rns_seconds": 0.000307936,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 385,
+      "trial": 3,
+      "old_seconds": 0.000260047,
+      "rns_seconds": 0.000301802,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 385,
+      "trial": 4,
+      "old_seconds": 0.000277351,
+      "rns_seconds": 0.000303109,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 398,
+      "trial": 0,
+      "old_seconds": 0.000299598,
+      "rns_seconds": 0.000305259,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 398,
+      "trial": 1,
+      "old_seconds": 0.000295166,
+      "rns_seconds": 0.000299555,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 398,
+      "trial": 2,
+      "old_seconds": 0.00029821,
+      "rns_seconds": 0.000302318,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 398,
+      "trial": 3,
+      "old_seconds": 0.000265467,
+      "rns_seconds": 0.000342934,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 398,
+      "trial": 4,
+      "old_seconds": 0.000285458,
+      "rns_seconds": 0.000302957,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 121,
+      "trial": 0,
+      "old_seconds": 0.000288593,
+      "rns_seconds": 0.00032358,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 121,
+      "trial": 1,
+      "old_seconds": 0.000284176,
+      "rns_seconds": 0.000339862,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 121,
+      "trial": 2,
+      "old_seconds": 0.000283435,
+      "rns_seconds": 0.000318642,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 121,
+      "trial": 3,
+      "old_seconds": 0.000261994,
+      "rns_seconds": 0.000289381,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 512,
+      "data_log_q": 121,
+      "trial": 4,
+      "old_seconds": 0.000276267,
+      "rns_seconds": 0.000319404,
+      "old_spectrum_bytes": 3964928,
+      "rns_spectrum_bytes": 2162688,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 0,
+      "old_seconds": 0.0190874,
+      "rns_seconds": 0.0115287,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 1,
+      "old_seconds": 0.012681,
+      "rns_seconds": 0.0119016,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 2,
+      "old_seconds": 0.0128133,
+      "rns_seconds": 0.0115314,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 3,
+      "old_seconds": 0.0120639,
+      "rns_seconds": 0.0092739,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 4,
+      "old_seconds": 0.0120341,
+      "rns_seconds": 0.0093449,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 398,
+      "trial": 0,
+      "old_seconds": 0.0130142,
+      "rns_seconds": 0.011439,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 398,
+      "trial": 1,
+      "old_seconds": 0.0131479,
+      "rns_seconds": 0.0115065,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 398,
+      "trial": 2,
+      "old_seconds": 0.0125342,
+      "rns_seconds": 0.0116533,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 398,
+      "trial": 3,
+      "old_seconds": 0.0116304,
+      "rns_seconds": 0.00935961,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 398,
+      "trial": 4,
+      "old_seconds": 0.0123794,
+      "rns_seconds": 0.00959226,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 121,
+      "trial": 0,
+      "old_seconds": 0.0125209,
+      "rns_seconds": 0.0106067,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 121,
+      "trial": 1,
+      "old_seconds": 0.0128012,
+      "rns_seconds": 0.0103885,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 121,
+      "trial": 2,
+      "old_seconds": 0.0127379,
+      "rns_seconds": 0.010797,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 121,
+      "trial": 3,
+      "old_seconds": 0.0117402,
+      "rns_seconds": 0.00917203,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 121,
+      "trial": 4,
+      "old_seconds": 0.0122257,
+      "rns_seconds": 0.0101087,
+      "old_spectrum_bytes": 126877696,
+      "rns_spectrum_bytes": 69206016,
+      "all_ciphertext_coefficients_identical": true
+    }
+  ],
+  "tuning": "Full-width CRT was exact but slower and was rejected. Checked 50-, 80-, 110-bit chunks in both orders; 80 bits was selected as a balance between measured time and retained bytes. Full timing is recorded separately.",
+  "timing_limit": "Synthetic gadget rows test arithmetic only; they are not valid encrypted keys for accuracy claims. Final accuracy requires the saved-key full replay.",
+  "tenfold_goal_achieved": false,
+  "legacy_default_constructor_control_passed": true
+}

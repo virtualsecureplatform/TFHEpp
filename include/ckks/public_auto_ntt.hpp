@@ -1,6 +1,7 @@
 #pragma once
 #include <ckks/narrow_packed_file.hpp>
 #include <ckks/prepared_dd_ntt.hpp>
+#include <ckks/prepared_gadget_rns32.hpp>
 namespace TFHEpp {
 // Publicly derived encryptions of gadget*s^exponent; never a relinearization key.
 template<class P, uint32_t Q, uint32_t Bits=64>
@@ -44,14 +45,16 @@ public:
   return std::pair{std::move(result),depths.size()};
  }
 };
-template<class P,uint32_t Q,uint32_t Bits=64,uint32_t Secondary=32>
+template<class P,uint32_t Q,uint32_t Bits=64,uint32_t Secondary=32,bool DirectRNS=false>
 class PreparedPublicAutoNTT {
- using Cache=CKKSPreparedDDRelinKeyNTT<P,Q,Bits,Secondary>;
+ using Cache=std::conditional_t<DirectRNS,CKKSPreparedGadgetRNS32<P,Q,Bits>,CKKSPreparedDDRelinKeyNTT<P,Q,Bits,Secondary>>;
  uint32_t exponent_;
  std::shared_ptr<Cache> cache_;
 public:
  explicit PreparedPublicAutoNTT(const PublicAutoGadgetRows<P,Q,Bits>& rows):exponent_(rows.exponent) {
   if(!exponent_ || exponent_>=2*P::n || !(exponent_&1))throw std::invalid_argument("invalid derived automorphism exponent");
+  if constexpr(DirectRNS){cache_=std::make_shared<Cache>(rows);}
+  else {
   // Reuse only the generic encrypted-gadget multiplication arithmetic.
   using Matrix=CKKSCompactDDRelinKey<P,Q,Bits,16>;
   static_assert(Matrix::primary_rows==rows.rows);
@@ -63,6 +66,7 @@ public:
     for(size_t c=0;c<=P::k;++c)for(size_t i=0;i<P::n;++i)matrix->data[row][secondary][c][i]=Matrix::pack((*digits)[secondary][c][i]);
   }
   cache_=makeCKKSDDRelinKeyNTT<Secondary>(*matrix);
+  }
  }
  size_t byteSize()const{return cache_->byteSize();}
  template<uint32_t DataQ> void apply(TRLWE<P>& result,const TRLWE<P>& input)const {
