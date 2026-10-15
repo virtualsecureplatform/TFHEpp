@@ -247,10 +247,11 @@ inline void CKKSCompactDDRelinKeyGenForNTT(CKKSCompactDDRelinKey<P, Q, Bg, Bbar>
 }
 
 template <class P, std::uint32_t DataQ, std::uint32_t AuxiliaryLogScale,
-          std::uint32_t Bg = 64, std::uint32_t Bbar = 32, bool WideRNS = false>
+          std::uint32_t Bg = 64, std::uint32_t Bbar = 32, bool WideRNS = false,
+          std::uint32_t ChunkBits = 80>
 struct CKKSAuxiliaryDDRelinKeyNTT {
     static_assert(AuxiliaryLogScale > 0);
-    using Cache = std::conditional_t<WideRNS, CKKSPreparedGadgetRNS32<P, DataQ + AuxiliaryLogScale, Bg>,
+    using Cache = std::conditional_t<WideRNS, CKKSPreparedGadgetRNS32<P, DataQ + AuxiliaryLogScale, Bg,ChunkBits>,
         CKKSPreparedDDRelinKeyNTT<P, DataQ + AuxiliaryLogScale, Bg, Bbar>>;
     static constexpr auto log_q = DataQ;
     std::shared_ptr<const Cache> cache;
@@ -261,17 +262,17 @@ struct CKKSAuxiliaryDDRelinKeyNTT {
 
 namespace ckks_detail {
 template <class P, std::uint32_t Q, std::uint32_t Auxiliary,
-          std::uint32_t Bg, std::uint32_t Bbar, bool WideRNS>
-struct is_ckks_dd_relin_key<CKKSAuxiliaryDDRelinKeyNTT<P, Q, Auxiliary, Bg, Bbar, WideRNS>>
+          std::uint32_t Bg, std::uint32_t Bbar, bool WideRNS,std::uint32_t ChunkBits>
+struct is_ckks_dd_relin_key<CKKSAuxiliaryDDRelinKeyNTT<P, Q, Auxiliary, Bg, Bbar, WideRNS,ChunkBits>>
     : std::true_type {};
 }
 
 // Lift and rescale the nonlinear switched term, then let the standard
 // relinearization add the tensor's unchanged linear terms at DataQ.
 template <class P, std::uint32_t DataQ, std::uint32_t AuxiliaryLogScale,
-          std::uint32_t Bg, std::uint32_t Bbar, bool WideRNS>
+          std::uint32_t Bg, std::uint32_t Bbar, bool WideRNS,std::uint32_t ChunkBits>
 inline void CKKSRelinKeySwitch(TRLWE<P> &result, const Polynomial<P> &input,
-    const CKKSAuxiliaryDDRelinKeyNTT<P, DataQ, AuxiliaryLogScale, Bg, Bbar, WideRNS> &key)
+    const CKKSAuxiliaryDDRelinKeyNTT<P, DataQ, AuxiliaryLogScale, Bg, Bbar, WideRNS,ChunkBits> &key)
 {
     constexpr auto key_q = DataQ + AuxiliaryLogScale;
     auto lifted = std::make_unique<Polynomial<P>>();

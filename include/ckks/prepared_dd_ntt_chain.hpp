@@ -11,23 +11,26 @@ namespace TFHEpp {
 // changes the public representation only; this constructor never encrypts.
 template <class P, std::uint32_t StartDataQ, std::uint32_t LogDelta,
           std::size_t Levels, std::uint32_t AuxiliaryLogScale = 100,
-          std::uint32_t Bg = 64, std::uint32_t Bbar = 32, bool RNSTensor = false, bool WideRNS = false>
+          std::uint32_t Bg = 64, std::uint32_t Bbar = 32, bool RNSTensor = false, bool WideRNS = false,
+          class ChunkPolicy = CKKSUniformGadgetChunks<80>>
 class CKKSPreparedAuxiliaryDDRelinKeyChainNTT {
     static_assert(Levels > 0 && LogDelta > 0);
     static_assert(StartDataQ > (Levels - 1) * LogDelta);
+    template<std::uint32_t DataQ>
+    using Key=CKKSAuxiliaryDDRelinKeyNTT<P,DataQ,AuxiliaryLogScale,Bg,Bbar,WideRNS,
+        ChunkPolicy::template bits<P,DataQ+AuxiliaryLogScale,Bg>>;
     template <std::size_t... I>
     static auto type(std::index_sequence<I...>) -> std::tuple<
-        CKKSAuxiliaryDDRelinKeyNTT<P, StartDataQ - I * LogDelta,
-            AuxiliaryLogScale, Bg, Bbar, WideRNS>...>;
+        Key<StartDataQ-I*LogDelta>...>;
     using Keys = decltype(type(std::make_index_sequence<Levels>{}));
     Keys keys;
 
     template<std::uint32_t DataQ,std::uint32_t MasterQ,std::uint32_t MasterBbar>
     static auto prepareLevel(const CKKSCompactDDRelinKey<P,MasterQ,Bg,MasterBbar>&master){
-        using Key=CKKSAuxiliaryDDRelinKeyNTT<P,DataQ,AuxiliaryLogScale,Bg,Bbar,WideRNS>;
+        using LevelKey=Key<DataQ>;
         auto projected=makeCKKSCompactDDRelinKeyAtLevel<DataQ+AuxiliaryLogScale>(master);
-        if constexpr(WideRNS)return Key(std::make_shared<typename Key::Cache>(*projected));
-        else return Key(makeCKKSDDRelinKeyNTT<Bbar>(*projected));
+        if constexpr(WideRNS)return LevelKey(std::make_shared<typename LevelKey::Cache>(*projected));
+        else return LevelKey(makeCKKSDDRelinKeyNTT<Bbar>(*projected));
     }
     template <std::uint32_t MasterQ, std::uint32_t MasterBbar, std::size_t... I>
     static Keys prepare(const CKKSCompactDDRelinKey<P, MasterQ, Bg, MasterBbar> &master,

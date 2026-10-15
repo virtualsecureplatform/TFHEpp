@@ -4,6 +4,7 @@
 #include <ckks/key_projection.hpp>
 #include <iostream>
 using namespace TFHEpp;
+template<std::uint32_t Q> constexpr auto tunedChunkBits=CKKSNarrowLL14GadgetChunks::bits<narrow_benchmark::BenchmarkParam<14,7>,Q,40>;
 template<std::uint32_t Q, std::uint32_t Bits> void checkSignedDigits() {
  using P=narrow_benchmark::BenchmarkParam<11,7>;
  constexpr auto rows=(Q+Bits-1)/Bits;
@@ -84,12 +85,54 @@ template<std::uint32_t Nbit,std::uint32_t DataQ>void check(){
  }
  CKKSPreparedDDRelinKeyNTT<P,Q,40,20> grouped_reference(*grouped);
  CKKSPreparedGadgetRNS32<P,Q,40> grouped_direct(*grouped);
+ CKKSPreparedGadgetRNS32<P,Q,40,112> grouped112(*grouped);
+ CKKSPreparedGadgetRNS32<P,Q,40,145> grouped145(*grouped);
+ CKKSPreparedGadgetRNS32<P,Q,40,tunedChunkBits<Q>> grouped_tuned(*grouped);
  grouped_reference.apply(*expected,*input);grouped_direct.apply(*actual,*input);
  if(*actual!=*expected)throw std::runtime_error("forty-bit grouped gadget differs from digit NTT");
+ for(int trial=0;trial<3;++trial){
+  if(trial==1)input->fill(typename P::T{1}<<(Q-1));
+  if(trial==2)input->fill(-typename P::T{1});
+  grouped_reference.apply(*expected,*input);
+  grouped112.apply(*actual,*input);if(*actual!=*expected)throw std::runtime_error("112-bit key chunks differ from digit NTT");
+  grouped145.apply(*actual,*input);if(*actual!=*expected)throw std::runtime_error("145-bit key chunks differ from digit NTT");
+  grouped_tuned.apply(*actual,*input);if(*actual!=*expected)throw std::runtime_error("level-selected key chunks differ from digit NTT");
+ }
+ input->fill({});grouped112.apply(*actual,*input);grouped145.apply(*unfused,*input);
+ if(*actual!=*unfused)throw std::runtime_error("chunk widths differ on zero input");
+ for(auto&c:*actual)for(auto&v:c)if(v!=typename P::T{})throw std::runtime_error("wide chunks retained stale output");
  input->fill({});direct.apply(*actual,*input);for(auto&c:*actual)for(auto&v:c)if(v!=typename P::T{})throw std::runtime_error("zero input retained stale output");
 }
 template<class P,std::uint32_t Q,std::uint32_t Bits>
 struct FixtureRows {static constexpr std::size_t rows=(Q+Bits-1)/Bits;std::array<TRLWE<P>,rows> ciphertexts;};
+template<std::uint32_t Q,bool Batch=false> void benchmarkChunks(){
+ using P=narrow_benchmark::BenchmarkParam<14,7>;
+ auto rows=std::make_unique<FixtureRows<P,Q,40>>();std::mt19937_64 random(20261021+Q);
+ for(auto&r:rows->ciphertexts)for(auto&c:r)for(auto&v:c){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,Q>(v);}
+ CKKSPreparedGadgetRNS32<P,Q,40,80> narrow(*rows);
+ CKKSPreparedGadgetRNS32<P,Q,40,112> wide(*rows);
+ CKKSPreparedGadgetRNS32<P,Q,40,145> widest(*rows);
+ CKKSPreparedGadgetRNS32<P,Q,40,tunedChunkBits<Q>> tuned(*rows);
+ auto input=std::make_unique<Polynomial<P>>();auto reference=std::make_unique<TRLWE<P>>(),out=std::make_unique<TRLWE<P>>();
+ for(auto&v:*input){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,Q>(v<<48);}
+ narrow.apply(*reference,*input);
+ std::vector<TRLWE<P>> batch(Batch?32:0);
+ const auto run=[&](const auto&prepared){
+  if constexpr(Batch){
+#pragma omp parallel for schedule(dynamic,1)
+   for(std::size_t j=0;j<batch.size();++j)prepared.apply(batch[j],*input);
+  }else prepared.apply(*out,*input);
+ };
+ for(int chunk:{80,145,0,0,145,80})for(int trial=0;trial<5;++trial){
+  const auto start=std::chrono::steady_clock::now();
+  if(chunk==80)run(narrow);else if(chunk==145)run(widest);else run(tuned);
+  const auto seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+  if constexpr(Batch){for(const auto&v:batch)if(v!=*reference)throw std::runtime_error("batched gadget chunk width changed exact output");}
+  else if(*out!=*reference)throw std::runtime_error("timed gadget chunk width changed exact output");
+  std::cout<<"chunks q="<<Q<<" batch="<<Batch<<" bits=40 chunk="<<chunk<<" selected="<<(chunk?chunk:tunedChunkBits<Q>)<<" trial="<<trial<<" seconds="<<seconds<<" identical\n";
+ }
+ std::cout<<"chunk-bytes q="<<Q<<" narrow="<<narrow.byteSize()<<" wide="<<wide.byteSize()<<" widest="<<widest.byteSize()<<" tuned="<<tuned.byteSize()<<"\n";
+}
 template<std::uint32_t Q,std::uint32_t Bits,std::uint32_t Chunk,std::uint32_t Lift>
 void benchmarkFusedRows(){
  using P=narrow_benchmark::BenchmarkParam<14,7>;
@@ -106,4 +149,4 @@ void benchmarkFusedRows(){
   std::cout<<"gadget q="<<Q<<" bits="<<Bits<<" chunk="<<Chunk<<" lift="<<Lift<<" fused="<<fused<<" trial="<<trial<<" seconds="<<seconds<<" identical\n";
  }
 }
-int main(int argc,char**){if(argc>2){benchmarkFusedRows<433,20,80,48>();benchmarkFusedRows<257,20,80,48>();benchmarkFusedRows<435,44,112,37>();benchmarkFusedRows<435,44,112,270>();return 0;}checkSignedBases<85>();checkSignedBases<209>();checkSignedBases<257>();checkSignedBases<385>();checkSignedBases<433>();checkSignedBases<435>();checkSignedBases<448>();check<1,385>();check<2,385>();check<4,385>();check<9,385>();check<9,341>();check<9,297>();check<9,253>();check<9,209>();if(argc>1){check<14,385>();check<14,341>();check<14,297>();check<14,253>();check<14,209>();}}
+int main(int argc,char**){if(argc>4){benchmarkChunks<433,true>();benchmarkChunks<389,true>();benchmarkChunks<345,true>();benchmarkChunks<301,true>();benchmarkChunks<257,true>();return 0;}if(argc>3){benchmarkChunks<433>();benchmarkChunks<389>();benchmarkChunks<345>();benchmarkChunks<301>();benchmarkChunks<257>();return 0;}if(argc>2){benchmarkFusedRows<433,20,80,48>();benchmarkFusedRows<257,20,80,48>();benchmarkFusedRows<435,44,112,37>();benchmarkFusedRows<435,44,112,270>();return 0;}checkSignedBases<85>();checkSignedBases<209>();checkSignedBases<257>();checkSignedBases<385>();checkSignedBases<433>();checkSignedBases<435>();checkSignedBases<448>();check<1,385>();check<2,385>();check<4,385>();check<9,385>();check<9,341>();check<9,297>();check<9,253>();check<9,209>();if(argc>1){check<14,385>();check<14,341>();check<14,297>();check<14,253>();check<14,209>();}}

@@ -42,6 +42,19 @@ void activeBaseDecomposeSignedRows(
 }
 } // namespace ckks_detail
 
+template<std::uint32_t ChunkBits=80> struct CKKSUniformGadgetChunks {
+    template<class P,std::uint32_t Q,std::uint32_t Bits>
+    static constexpr auto bits=ChunkBits;
+};
+
+// Opt-in CPU layout for the qualified LL14, primary40, auxiliary48 tree.
+// Other rings, primary bases and levels retain the uniform80 layout.
+struct CKKSNarrowLL14GadgetChunks {
+    template<class P,std::uint32_t Q,std::uint32_t Bits>
+    static constexpr auto bits=P::nbit==14 && Bits==40?
+        (Q==433 || Q==257?145:Q==345?115:80):80;
+};
+
 // Exact encrypted-gadget multiplication using wide canonical key chunks.
 // The primary gadget and its balanced input decomposition stay unchanged.
 template<class P,std::uint32_t Q,std::uint32_t Bits,std::uint32_t ChunkBits=80>
