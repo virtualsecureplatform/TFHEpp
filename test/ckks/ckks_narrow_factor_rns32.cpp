@@ -53,15 +53,24 @@ void checkRootColumnDispatch()
         std::vector<std::size_t> expected(columns),actual(columns);
         narrow_detail::evaluateRootColumns(columns,false,[&](std::size_t column){expected[column]=column*column+17;});
         std::atomic<std::size_t> parallel_calls{0};
+        std::atomic<int> team_size{0};
+#ifdef _OPENMP
+        const auto caller_threads=omp_get_max_threads();
+#endif
         narrow_detail::evaluateRootColumns(columns,true,[&](std::size_t column){
 #ifdef _OPENMP
-            if(omp_in_parallel())parallel_calls.fetch_add(1,std::memory_order_relaxed);
+            if(omp_in_parallel()){
+                parallel_calls.fetch_add(1,std::memory_order_relaxed);
+                team_size.store(omp_get_num_threads(),std::memory_order_relaxed);
+            }
 #endif
             actual[column]=column*column+17;
         });
         if(expected!=actual)throw std::runtime_error("root column dispatch changed indexed outputs");
 #ifdef _OPENMP
         if(columns>1 && omp_get_max_threads()>1 && !parallel_calls.load())throw std::runtime_error("root column callbacks did not enter an active team");
+        if(std::size_t(team_size.load())>columns)throw std::runtime_error("root column team exceeds available work");
+        if(omp_get_max_threads()!=caller_threads)throw std::runtime_error("root column dispatch changed caller thread budget");
 #endif
     }
     bool rejected=false;
@@ -148,9 +157,13 @@ int main()
     auto key=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
     key->selector_ntt_chunk_size=4;
     std::atomic<std::size_t> parallel_callbacks{0};
+    std::atomic<int> conjugation_team_size{0};
     key->automorphism_evaluator=[&](auto &result,const auto &input,uint32_t,uint32_t exponent) {
 #ifdef _OPENMP
-        if(omp_in_parallel())parallel_callbacks.fetch_add(1,std::memory_order_relaxed);
+        if(omp_in_parallel()){
+            parallel_callbacks.fetch_add(1,std::memory_order_relaxed);
+            conjugation_team_size.store(omp_get_num_threads(),std::memory_order_relaxed);
+        }
 #endif
         for(std::size_t c=0;c<2;++c)Automorphism<P>(result[c],input[c],exponent);
     };
@@ -184,7 +197,9 @@ int main()
             for(std::size_t chunk:{3,4,5}){
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                conjugation_team_size.store(0);
                 const auto concurrent=parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                if(std::size_t(conjugation_team_size.load())>columns)throw std::runtime_error("factor conjugation team exceeds available columns");
                 const auto coarse=untiled.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 for(std::size_t c=0;c<columns;++c)if(concurrent[c].ct!=reference[c].ct)throw std::runtime_error("parallel factor conjugations differ from digit CRT");
                 for(std::size_t c=0;c<columns;++c)if(coarse[c].ct!=reference[c].ct)throw std::runtime_error("coarse RNS matrix differs from digit CRT");

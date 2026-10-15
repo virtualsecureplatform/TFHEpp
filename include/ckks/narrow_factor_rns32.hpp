@@ -263,7 +263,8 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     // caller's nesting policy (one active level avoids oversubscription).
     if (parallel_conjugation && columns > 1) {
         std::exception_ptr error;
-#pragma omp parallel for schedule(dynamic,1)
+        [[maybe_unused]] const auto threads=columnThreads(columns);
+#pragma omp parallel for schedule(dynamic,1) num_threads(threads)
         for (std::size_t column = 0; column < columns; ++column) {
             try { finish_column(column); }
             catch (...) {

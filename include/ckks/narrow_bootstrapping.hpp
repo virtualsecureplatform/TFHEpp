@@ -10,6 +10,9 @@
 #include <chrono>
 #include <future>
 #include <exception>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 namespace TFHEpp {
@@ -1437,13 +1440,25 @@ using CKKSNarrowRootObserver = std::function<void(
     const typename Schedule::Output &)>;
 
 namespace narrow_detail {
+// A column team needs no more workers than independent columns. A clause on
+// the region preserves the caller's thread budget for the subsequent stages.
+inline int columnThreads(std::size_t columns)
+{
+#ifdef _OPENMP
+    return static_cast<int>(std::max(std::size_t{1},std::min(columns,std::size_t(omp_get_max_threads()))));
+#else
+    return 1;
+#endif
+}
+
 // The caller retains ordering of observers after the independent work joins.
 template<class Evaluate>
 inline void evaluateRootColumns(std::size_t columns,bool parallel,Evaluate &&evaluate)
 {
     if(parallel && columns>1){
         std::exception_ptr error;
-#pragma omp parallel for schedule(dynamic,1)
+        [[maybe_unused]] const auto threads=columnThreads(columns);
+#pragma omp parallel for schedule(dynamic,1) num_threads(threads)
         for(std::size_t column=0;column<columns;++column){
             try{evaluate(column);}
             catch(...){
