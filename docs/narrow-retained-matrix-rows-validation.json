@@ -1,0 +1,300 @@
+{
+  "scope": "CPU-only factor matrix loop order: retained spectra are consumed completely per256-point tile; streaming and offline preparation keep bounded40-row chunks. Retained mode defaults to whole-row tiles, with --matrix-retained-rows 0 as control.",
+  "commits": [
+    "fcf1e46",
+    "8746626"
+  ],
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "key_archives_checked": 9,
+  "all_key_hashes_unchanged": true,
+  "retained_bytes_unchanged": 42442068672,
+  "exactness": "Each four/eight-term dot restores its destination to[0,2p), independent of total row count. The complete selector sum was already covered by the static CRT bound. Row order, rotations, key coefficients, rounding and moduli stay unchanged; canonicalization moves from every I/O chunk boundary to the end of the complete tile.",
+  "unit": {
+    "exit_code": 0,
+    "observed_tool_session": 91910,
+    "log": "/tmp/retained-matrix-rows-unit.log",
+    "log_sha256": "3eec8b6a3de29a4a18241bd7f4dc0f08fb292c689162abb9ac213eb516ff9ee2",
+    "cases": "N512, head/tail, columns1/4/5/6/7/9, chunks3/4/5/8/9/12/17/40: whole-row, chunked, streamed, packed/separate, four/eight-term, scalar/SIMD stages and digit-CRT factors byte-identical; cached paths perform no online reads or selector NTTs."
+  },
+  "microbenchmark": {
+    "source": "test/ckks/tools/retained_matrix_bench.cpp",
+    "published_source_sha256": "977ef12d40a9e54e86f1246bdccb3785b9bd247a86b39806f3f599b3f9288934",
+    "diagnostic_source_sha256": "f47af4704d5e8dbc57e4431838b8538d8fffd143e75cd361e635337625990c64",
+    "published_change": "Comments with build instructions only; body identical to measured diagnostic source. Published source compiled successfully.",
+    "shape": "N16384,528 selectors,17 primes,two ciphertext components,two signed tables,eight padded columns; canonical public residue fixtures. Four-term dots in every mode. Mode0 processes40-row chunks; other modes consume all528 rows per point tile of the reported size.",
+    "phase_order": [
+      0,
+      256,
+      128,
+      64,
+      32,
+      32,
+      64,
+      128,
+      256,
+      0
+    ],
+    "trials_per_phase": 5,
+    "first_trial_omitted": true,
+    "mean_seconds": {
+      "all": {
+        "0": 0.0908398875,
+        "256": 0.0793685875,
+        "128": 0.08105745,
+        "64": 0.08641913749999999,
+        "32": 0.09986558749999999
+      },
+      "one": {
+        "0": 0.933766875,
+        "256": 0.870719125,
+        "128": 0.89003475,
+        "64": 0.90908025,
+        "32": 0.921759875
+      }
+    }
+  },
+  "method": "One uninstrumented retained Tanh process: warmup chunked, then chunked/whole/whole/chunked. Both sources share selector spectra and all other keys/caches. Primary40, selected DD chunks and native primary44 automorphisms held fixed. No compilation or component tests overlap timing.",
+  "mean_seconds": {
+    "false": {
+      "functional_evaluation_seconds": 13.1222699255,
+      "s2c_seconds": 2.6230079785,
+      "blind_rotation_and_series_seconds": 10.499261947
+    },
+    "true": {
+      "functional_evaluation_seconds": 12.860226458500001,
+      "s2c_seconds": 2.6199978760000002,
+      "blind_rotation_and_series_seconds": 10.2402285825
+    }
+  },
+  "stage_means": {
+    "false": {
+      "factor": 5.91974,
+      "alignment": 0.5757945,
+      "dd_cache": 5.88e-07,
+      "trees": 2.593295
+    },
+    "true": {
+      "factor": 5.515895,
+      "alignment": 0.5895735,
+      "dd_cache": 4.6550000000000003e-07,
+      "trees": 2.695375
+    }
+  },
+  "factor_substage_means": {
+    "false": {
+      "load": 0.0,
+      "table_ntt": 0.6316443,
+      "selector_ntt": 0.0,
+      "matrix": 3.0465516,
+      "inverse_crt": 0.43607735,
+      "conjugation": 0.9571369
+    },
+    "true": {
+      "load": 0.0,
+      "table_ntt": 0.6346735,
+      "selector_ntt": 0.0,
+      "matrix": 2.64677735,
+      "inverse_crt": 0.4252274,
+      "conjugation": 0.9616709
+    }
+  },
+  "fractional_functional_runtime_reduction": 0.01996937027570045,
+  "fractional_factor_runtime_reduction": 0.0682200569619611,
+  "artifacts": [
+    {
+      "run": "matrix-pair",
+      "artifact": "tanh-trial0-outputs.bin",
+      "seconds": 13.879512563,
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5"
+    },
+    {
+      "run": "matrix-pair",
+      "artifact": "tanh-trial1-outputs.bin",
+      "seconds": 13.085497269,
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5"
+    },
+    {
+      "run": "matrix-pair",
+      "artifact": "tanh-trial2-outputs.bin",
+      "seconds": 12.74107683,
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5"
+    },
+    {
+      "run": "matrix-pair",
+      "artifact": "tanh-trial3-outputs.bin",
+      "seconds": 12.979376087,
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5"
+    },
+    {
+      "run": "matrix-pair",
+      "artifact": "tanh-trial4-outputs.bin",
+      "seconds": 13.159042582,
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5"
+    },
+    {
+      "run": "retained-full",
+      "artifact": "gelu-outputs.bin",
+      "seconds": 8.688036146,
+      "sha256": "34e3ae0528f6739a3a5aed555d2b2cbbdecb6199b5a4ef0e7e871adb13151fb5"
+    },
+    {
+      "run": "retained-full",
+      "artifact": "sigmoid-outputs.bin",
+      "seconds": 9.082122099,
+      "sha256": "a5ca1648daf890cea50525a83834f843bf207e30095a8a71098be9f2e1a5a60b"
+    },
+    {
+      "run": "retained-full",
+      "artifact": "tanh-outputs.bin",
+      "seconds": 13.687117383,
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5"
+    }
+  ],
+  "reference_accuracy_receipt": "narrow-dd-primary40-batched-validation.json",
+  "full_output_validation": "All eight outputs byte-match the independently decoded primary40 reference outputs. All three standalone all-function reports passed their accuracy gates; no redundant independent decode required.",
+  "exit_evidence": {
+    "paired": {
+      "exit_code": 0,
+      "wall_seconds": 110.24198269844055
+    },
+    "standalone_all_functions": "Launcher was lost during a continuation; same live PID3538516 was observed continuing and later confirmed absent. All three complete artifacts, reports and final success log lines were verified. Exit status was not captured; no exit0 claim for this run.",
+    "process_observation": {
+      "pid": 3538516,
+      "observed_live_at": 1792102347.4953854,
+      "launcher_lost": true,
+      "already_terminal": true
+    }
+  },
+  "cli_preflight": [
+    {
+      "case": "flag-range",
+      "exit_code": 1,
+      "message": "matrix retained rows flag must be 0 or 1"
+    },
+    {
+      "case": "pair-range",
+      "exit_code": 1,
+      "message": "matrix retained pair flag must be 0 or 1"
+    },
+    {
+      "case": "needs-cache",
+      "exit_code": 1,
+      "message": "matrix retained comparison requires retained direct RNS spectra"
+    },
+    {
+      "case": "exclusive",
+      "exit_code": 1,
+      "message": "paired replay controls must be separate"
+    }
+  ],
+  "commands": {
+    "matrix-pair": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "tanh",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/retained-matrix-rows-20261017/matrix-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-pair",
+      "1"
+    ],
+    "retained-full": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "all",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/retained-matrix-rows-20261017/retained-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1"
+    ]
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "binary_sha256": "b04786c63df7d3214c8e5be7189b810dbae4b51e0d61e276cdeaa8dfb8d58946",
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/retained-matrix-rows-20261017",
+  "timing_limitations": "Two measured trials per policy. One whole-row trial had a slower tree stage, while factor-stage improvements repeated. Standalone all-function S2C timing varied; use paired timing for local attribution. No statistical-significance, paper-parity or total10x claim.",
+  "performance_gap_closed": false,
+  "security_validated": false
+}
