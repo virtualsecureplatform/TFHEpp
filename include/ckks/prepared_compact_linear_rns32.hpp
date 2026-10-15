@@ -189,7 +189,7 @@ private:
             if(timings)timings->inverse_crt+=std::chrono::duration<double>(Clock::now()-start).count();start=Clock::now();
             if(horner_giants){
                 // Maintain sum_h Rot((h-g)*k,inner_h) at the current g.
-                // Adjacent dense groups need just one fixed binary key.
+                // Adjacent dense groups reuse the same k-step rotation.
                 if(initialized && previous_giant!=group.giant_step){
                     rotate(*rotated,result.ct,plan.k_step*(previous_giant-group.giant_step));result.ct=*rotated;
                 }
@@ -208,7 +208,7 @@ private:
     }
 public:
     // Horner preserves per-group rounding but changes switching noise.
-    // Dense giant steps reuse one binary key; sparse plans remain opt-in.
+    // Dense groups with power-of-two k_step reuse one binary key.
     template<class InputKey,class OutputKey>
     void apply(Result&result,const Input&input,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool fused_terms=true,bool horner_giants=false)const {
         if(!has_direct&&!has_conjugate){for(auto &component:result.ct)component.fill({});return;}

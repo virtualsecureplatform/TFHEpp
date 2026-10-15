@@ -1,0 +1,606 @@
+{
+  "scope": "CPU S2C giant-step accumulation through descending Horner rotations. The LL14 retained replay enables it automatically for retained RNS S2C; --s2c-horner 0 keeps the original path. Non-RNS and uncached fallbacks keep their previous behavior. The generic prepared linear-transform API remains opt-in.",
+  "kernel_commit": "5da6f2e",
+  "replay_controls_and_default_commit": "76023b1",
+  "identity": "For descending giant indices g, maintain A=sum_h Rot((h-g)*k,inner_h). Move from previous p to g via A=Rot((p-g)*k,A)+inner_g. Rotate by the final smallest g*k after the last group. Duplicate indices require no rotation, and gaps remain valid. Each inner group is reconstructed and rounded exactly where it was before; no rounding is moved across a sum.",
+  "key_switch_work": "For the retained binary rotation keys, giant_rotation_bits equals binary key-switch calls. Dense128-group S2C drops from448 to127 while giant rotation calls stay127. Adjacent dense groups with power-of-two k_step reuse one binary key; arbitrary sparse schedules are not asserted to be faster.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "native_and_dd_key_archives_checked": 9,
+  "all_checked_key_hashes_unchanged": true,
+  "s2c_prepared_keys_unchanged": 28,
+  "s2c_retained_spectrum_bytes_unchanged": 3418357760,
+  "unit": {
+    "exit_code": 0,
+    "log_sha256": "c1c741fa6d3faf7fa6a0776d50eb9e58026c0a728b6b4a93a2696e298410d79e",
+    "scope": "N512, independent original FFT and direct RNS controls, direct/conjugate/both plans, zero pruning, signed int64 and integer stress. Dense, shuffled, repeated and sparse giant indices including nonzero minimum; power-of-two and non-power-of-two step sizes. With zero-key fixtures all ciphertext bytes match; dense8-group binary bits fall12 to7."
+  },
+  "timing_method": "One uninstrumented Tanh process, warmup then original/Horner/Horner/original, shared retained input and keys. Reduced-degree32, DD primary40 with level chunks, whole-row factor matrices and native primary44 automorphisms held fixed. No compilation, component tests or decoding overlap measured evaluation. Both paths collect the same timing counters.",
+  "mean_seconds": {
+    "false": {
+      "functional_evaluation_seconds": 11.800042579500001,
+      "s2c_seconds": 2.6288547675,
+      "blind_rotation_and_series_seconds": 9.171187812,
+      "s2c_baby_rotations_seconds": 0.4945484095,
+      "s2c_baby_ntt_seconds": 0.012466264000000001,
+      "s2c_matrix_seconds": 0.34788956000000004,
+      "s2c_inverse_crt_seconds": 0.0562816675,
+      "s2c_giant_rotations_seconds": 1.6416970560000004
+    },
+    "true": {
+      "functional_evaluation_seconds": 10.732633603,
+      "s2c_seconds": 1.5491009304999999,
+      "blind_rotation_and_series_seconds": 9.1835326725,
+      "s2c_baby_rotations_seconds": 0.4846062975,
+      "s2c_baby_ntt_seconds": 0.0122999435,
+      "s2c_matrix_seconds": 0.34238364750000005,
+      "s2c_inverse_crt_seconds": 0.05779340899999999,
+      "s2c_giant_rotations_seconds": 0.5735540015
+    }
+  },
+  "fractional_s2c_runtime_reduction": 0.4107316426714699,
+  "fractional_functional_runtime_reduction": 0.09045806142720125,
+  "independent_validation": {
+    "reduced": {
+      "gelu": {
+        "degree": 10,
+        "roots": 3,
+        "functional_seconds": 6.8068181,
+        "s2c_seconds": 1.788654997,
+        "proof": {
+          "function": "gelu",
+          "n": 16384,
+          "output_log_q": 93,
+          "output_log_delta": 44,
+          "post_product_log_q": 49,
+          "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+          "phase_coefficients_checked": 65536,
+          "decoded_output_slots_checked": 24576,
+          "metrics": {
+            "fresh_input_max_error": 6.263338240405094e-11,
+            "s2c_max_error": 2.789553477100526e-09,
+            "max_error": 6.760288722992289e-08,
+            "post_product_max_error": 4.1560885007507074e-07
+          },
+          "accuracy_passed": true
+        }
+      },
+      "sigmoid": {
+        "degree": 10,
+        "roots": 3,
+        "functional_seconds": 6.525003894,
+        "s2c_seconds": 1.545962198,
+        "proof": {
+          "function": "sigmoid",
+          "n": 16384,
+          "output_log_q": 93,
+          "output_log_delta": 44,
+          "post_product_log_q": 49,
+          "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+          "phase_coefficients_checked": 65536,
+          "decoded_output_slots_checked": 24576,
+          "metrics": {
+            "fresh_input_max_error": 6.263338240405094e-11,
+            "s2c_max_error": 2.789553477100526e-09,
+            "max_error": 3.2694165521988743e-08,
+            "post_product_max_error": 5.154278262332835e-08
+          },
+          "accuracy_passed": true
+        }
+      },
+      "tanh": {
+        "degree": 32,
+        "roots": 6,
+        "functional_seconds": 11.213966915,
+        "s2c_seconds": 1.535640067,
+        "proof": {
+          "function": "tanh",
+          "n": 16384,
+          "output_log_q": 93,
+          "output_log_delta": 44,
+          "post_product_log_q": 49,
+          "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+          "phase_coefficients_checked": 65536,
+          "decoded_output_slots_checked": 24576,
+          "metrics": {
+            "fresh_input_max_error": 6.263338240405094e-11,
+            "s2c_max_error": 2.789553477100526e-09,
+            "max_error": 9.742125959844143e-08,
+            "post_product_max_error": 1.8565905724152062e-07
+          },
+          "accuracy_passed": true
+        }
+      }
+    },
+    "original": {
+      "gelu": {
+        "degree": 12,
+        "roots": 4,
+        "functional_seconds": 7.4690310570000005,
+        "s2c_seconds": 1.800688153,
+        "proof": {
+          "function": "gelu",
+          "n": 16384,
+          "output_log_q": 93,
+          "output_log_delta": 44,
+          "post_product_log_q": 49,
+          "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+          "phase_coefficients_checked": 65536,
+          "decoded_output_slots_checked": 24576,
+          "metrics": {
+            "fresh_input_max_error": 6.263338240405094e-11,
+            "s2c_max_error": 2.789553477100526e-09,
+            "max_error": 3.2962232817616455e-08,
+            "post_product_max_error": 2.1180890921025436e-07
+          },
+          "accuracy_passed": true
+        }
+      },
+      "sigmoid": {
+        "degree": 12,
+        "roots": 4,
+        "functional_seconds": 7.151388924,
+        "s2c_seconds": 1.543876561,
+        "proof": {
+          "function": "sigmoid",
+          "n": 16384,
+          "output_log_q": 93,
+          "output_log_delta": 44,
+          "post_product_log_q": 49,
+          "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+          "phase_coefficients_checked": 65536,
+          "decoded_output_slots_checked": 24576,
+          "metrics": {
+            "fresh_input_max_error": 6.263338240405094e-11,
+            "s2c_max_error": 2.789553477100526e-09,
+            "max_error": 1.8292264191289944e-08,
+            "post_product_max_error": 3.2820793426441176e-08
+          },
+          "accuracy_passed": true
+        }
+      },
+      "tanh": {
+        "degree": 40,
+        "roots": 7,
+        "functional_seconds": 11.593197386,
+        "s2c_seconds": 1.547050516,
+        "proof": {
+          "function": "tanh",
+          "n": 16384,
+          "output_log_q": 93,
+          "output_log_delta": 44,
+          "post_product_log_q": 49,
+          "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+          "phase_coefficients_checked": 65536,
+          "decoded_output_slots_checked": 24576,
+          "metrics": {
+            "fresh_input_max_error": 6.263338240405094e-11,
+            "s2c_max_error": 2.789553477100526e-09,
+            "max_error": 3.016542953755261e-08,
+            "post_product_max_error": 5.981439397024034e-08
+          },
+          "accuracy_passed": true
+        }
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "run": "horner-pair",
+      "artifact": "tanh-trial0-outputs.bin",
+      "sha256": "52415a1db8e88d271e7bde272e1c8c2e1025fd182db9220f320faa33bddb921a",
+      "horner": false,
+      "seconds": 12.657298364
+    },
+    {
+      "run": "horner-pair",
+      "artifact": "tanh-trial1-outputs.bin",
+      "sha256": "52415a1db8e88d271e7bde272e1c8c2e1025fd182db9220f320faa33bddb921a",
+      "horner": false,
+      "seconds": 11.809945478000001
+    },
+    {
+      "run": "horner-pair",
+      "artifact": "tanh-trial2-outputs.bin",
+      "sha256": "600ed6e6b41b61f9b0c15719ff1b58e72eac8403d0fa51156da4fed0c1f2eecd",
+      "horner": true,
+      "seconds": 10.725607134999999
+    },
+    {
+      "run": "horner-pair",
+      "artifact": "tanh-trial3-outputs.bin",
+      "sha256": "600ed6e6b41b61f9b0c15719ff1b58e72eac8403d0fa51156da4fed0c1f2eecd",
+      "horner": true,
+      "seconds": 10.739660071
+    },
+    {
+      "run": "horner-pair",
+      "artifact": "tanh-trial4-outputs.bin",
+      "sha256": "52415a1db8e88d271e7bde272e1c8c2e1025fd182db9220f320faa33bddb921a",
+      "horner": false,
+      "seconds": 11.790139681
+    },
+    {
+      "run": "horner-full",
+      "artifact": "gelu-outputs.bin",
+      "sha256": "7467aeb33fadd9feb037c7b4d4feb6fa739ca44751d05dd34a73f7635cd3a03d",
+      "horner": true,
+      "seconds": 6.8068181
+    },
+    {
+      "run": "horner-full",
+      "artifact": "sigmoid-outputs.bin",
+      "sha256": "baf334e02acd3aa7aafd4f4fc0ddf5ffcf1eca9d4e48c71a9310298b5ea58b6d",
+      "horner": true,
+      "seconds": 6.525003894
+    },
+    {
+      "run": "horner-full",
+      "artifact": "tanh-outputs.bin",
+      "sha256": "600ed6e6b41b61f9b0c15719ff1b58e72eac8403d0fa51156da4fed0c1f2eecd",
+      "horner": true,
+      "seconds": 11.213966915
+    },
+    {
+      "run": "implicit-horner-full",
+      "artifact": "gelu-outputs.bin",
+      "sha256": "fce6ca9a8224a87a2f9d99c98f9d458add2cf5e39e97f429af9ae6f9d75c267b",
+      "horner": true,
+      "seconds": 7.4690310570000005
+    },
+    {
+      "run": "implicit-horner-full",
+      "artifact": "sigmoid-outputs.bin",
+      "sha256": "50a2c5b6ef8ad3a37c2cea9eb0336a828810e5c4fe7856693fa2da8aa07e41bb",
+      "horner": true,
+      "seconds": 7.151388924
+    },
+    {
+      "run": "implicit-horner-full",
+      "artifact": "tanh-outputs.bin",
+      "sha256": "d16b42690f11dc9dbb4660e1474cb3f7e8c59624871285a165096d6c9841cd5a",
+      "horner": true,
+      "seconds": 11.593197386
+    }
+  ],
+  "proof_by_output_sha256": {
+    "52415a1db8e88d271e7bde272e1c8c2e1025fd182db9220f320faa33bddb921a": {
+      "reused_receipt": "narrow-reduced-degree-frequency-validation.json",
+      "function": "tanh"
+    },
+    "600ed6e6b41b61f9b0c15719ff1b58e72eac8403d0fa51156da4fed0c1f2eecd": {
+      "function": "tanh",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.789553477100526e-09,
+        "max_error": 9.742125959844143e-08,
+        "post_product_max_error": 1.8565905724152062e-07
+      },
+      "accuracy_passed": true
+    },
+    "7467aeb33fadd9feb037c7b4d4feb6fa739ca44751d05dd34a73f7635cd3a03d": {
+      "function": "gelu",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.789553477100526e-09,
+        "max_error": 6.760288722992289e-08,
+        "post_product_max_error": 4.1560885007507074e-07
+      },
+      "accuracy_passed": true
+    },
+    "baf334e02acd3aa7aafd4f4fc0ddf5ffcf1eca9d4e48c71a9310298b5ea58b6d": {
+      "function": "sigmoid",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.789553477100526e-09,
+        "max_error": 3.2694165521988743e-08,
+        "post_product_max_error": 5.154278262332835e-08
+      },
+      "accuracy_passed": true
+    },
+    "fce6ca9a8224a87a2f9d99c98f9d458add2cf5e39e97f429af9ae6f9d75c267b": {
+      "function": "gelu",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.789553477100526e-09,
+        "max_error": 3.2962232817616455e-08,
+        "post_product_max_error": 2.1180890921025436e-07
+      },
+      "accuracy_passed": true
+    },
+    "50a2c5b6ef8ad3a37c2cea9eb0336a828810e5c4fe7856693fa2da8aa07e41bb": {
+      "function": "sigmoid",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.789553477100526e-09,
+        "max_error": 1.8292264191289944e-08,
+        "post_product_max_error": 3.2820793426441176e-08
+      },
+      "accuracy_passed": true
+    },
+    "d16b42690f11dc9dbb4660e1474cb3f7e8c59624871285a165096d6c9841cd5a": {
+      "function": "tanh",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.789553477100526e-09,
+        "max_error": 3.016542953755261e-08,
+        "post_product_max_error": 5.981439397024034e-08
+      },
+      "accuracy_passed": true
+    }
+  },
+  "output_coverage": "Eleven artifacts form seven byte-identical classes. One original Tanh class reuses its independently decoded reduced-degree reference; six new Horner classes, covering original and reduced degrees for all three functions, were independently decoded across every coefficient and output slot, including remaining products.",
+  "default_verification": "The implicit-Horner command includes neither --s2c-horner nor --reduced-degree. Reports confirm Horner enabled and original degrees12/40, with the same accuracy and remaining-product gates. Explicit false override and automatic FFT/no-cache fallback preflight cases pass.",
+  "default_preflight": [
+    {
+      "case": "auto-fft-fallback",
+      "exit_code": 1,
+      "message": "output directory missing"
+    },
+    {
+      "case": "auto-no-cache",
+      "exit_code": 1,
+      "message": "output directory missing"
+    },
+    {
+      "case": "explicit-control",
+      "exit_code": 1,
+      "message": "output directory missing"
+    }
+  ],
+  "explicit_preflight": [
+    {
+      "case": "flag-range",
+      "exit_code": 1,
+      "message": "S2C Horner flag must be 0 or 1"
+    },
+    {
+      "case": "pair-range",
+      "exit_code": 1,
+      "message": "S2C Horner pair flag must be 0 or 1"
+    },
+    {
+      "case": "requires-rns",
+      "exit_code": 1,
+      "message": "S2C Horner requires a retained RNS linear plan"
+    },
+    {
+      "case": "requires-cache",
+      "exit_code": 1,
+      "message": "S2C Horner requires a retained RNS linear plan"
+    },
+    {
+      "case": "exclusive",
+      "exit_code": 1,
+      "message": "paired replay controls must be separate"
+    },
+    {
+      "case": "single-function",
+      "exit_code": 1,
+      "message": "S2C Horner pair requires a single function"
+    }
+  ],
+  "exit_evidence": {
+    "horner-pair": {
+      "exit_code": 0,
+      "wall_seconds": 100.73905944824219
+    },
+    "horner-full": {
+      "exit_code": 0,
+      "wall_seconds": 66.01137971878052
+    },
+    "implicit-horner-full": {
+      "exit_code": 0,
+      "wall_seconds": 67.76083302497864
+    }
+  },
+  "commands": {
+    "horner-pair": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "tanh",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/horner-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--reduced-degree",
+      "1",
+      "--s2c-horner-pair",
+      "1"
+    ],
+    "horner-full": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "all",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/horner-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--reduced-degree",
+      "1",
+      "--s2c-horner",
+      "1"
+    ],
+    "implicit-horner-full": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "all",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017/implicit-horner-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1"
+    ]
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "binary_sha256": {
+    "paired": "2711f968b5bec38ffe0d6b0f36fe2f9ab6dc8c0bafea2e701d0d472132439562",
+    "default": "40a2688c7125224dd98f55d80d17d57ab31e44d31fb4570b344fe470cb3b17f8"
+  },
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-horner-20261017",
+  "limitations": "Two measured trials per policy; standalone all-function runs qualify outputs rather than per-function speedups. Generic Horner evaluation changes switching noise and can cost more binary bits for sparse schedules. No claim of matched paper hardware, security qualification or closing the full10x gap.",
+  "security_validated": false,
+  "performance_gap_closed": false
+}
