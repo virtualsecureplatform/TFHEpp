@@ -1,0 +1,766 @@
+{
+  "scope": "Opt-in CPU reduced-degree trigonometric profiles: --reduced-degree 1 uses degree10 with three roots for GeLU/Sigmoid and degree32 with six roots for Tanh. Defaults retain degree12/four roots and degree40/seven roots.",
+  "commits": [
+    "631e57a",
+    "a15f06c"
+  ],
+  "accuracy_contract": "Same target functions on[-4,4], period16, end-to-end maximum-error gate2^-23, output93/44 and remaining-product49/44 gates. Lower-degree fits intentionally consume more of the previous precision margin; this is not unchanged measured precision. No change to keys, moduli, scales, coefficient precision, sparse-secret weight or tree depth.",
+  "basis": {
+    "gelu_sigmoid": [
+      2,
+      4,
+      5
+    ],
+    "tanh": [
+      5,
+      7,
+      12,
+      13,
+      15,
+      16
+    ],
+    "differences": "Conjugate unweighted roots at their input level. Reconstruction remains depth one, preserving the existing remaining multiplication level."
+  },
+  "offline_analysis": {
+    "source": "test/ckks/tools/frequency_budget.cpp",
+    "source_sha256": "0a933798682b288fedfbc924abae072d76f7d609573ea7e54420563b5dd003c7",
+    "coverage": [
+      {
+        "roots": 3,
+        "tested": 9880,
+        "range": 10,
+        "basis": [
+          2,
+          4,
+          5
+        ]
+      },
+      {
+        "roots": 4,
+        "tested": 91390,
+        "range": 16,
+        "basis": [
+          3,
+          6,
+          7,
+          8
+        ]
+      },
+      {
+        "roots": 5,
+        "tested": 658008,
+        "range": 24,
+        "basis": [
+          4,
+          8,
+          10,
+          11,
+          13
+        ]
+      },
+      {
+        "roots": 6,
+        "tested": 3838380,
+        "range": 32,
+        "basis": [
+          5,
+          7,
+          12,
+          13,
+          15,
+          16
+        ]
+      }
+    ],
+    "fresh_tanh_fits": [
+      {
+        "remez_degree": 28,
+        "sampled": 2.496915166849689e-07,
+        "uniform_bound": 2.4971878992842306e-07,
+        "l1": 1.6115016213896307
+      },
+      {
+        "remez_degree": 30,
+        "sampled": 1.391999240318853e-07,
+        "uniform_bound": 1.3922363956194325e-07,
+        "l1": 1.6115015418071243
+      },
+      {
+        "remez_degree": 32,
+        "sampled": 7.743380503466568e-08,
+        "uniform_bound": 7.745120099547028e-08,
+        "l1": 1.6115014572811788
+      },
+      {
+        "remez_degree": 34,
+        "sampled": 4.349638484696275e-08,
+        "uniform_bound": 4.350737645215376e-08,
+        "l1": 1.6115012866081917
+      },
+      {
+        "remez_degree": 36,
+        "sampled": 2.7393014926638173e-08,
+        "uniform_bound": 2.740596611184137e-08,
+        "l1": 1.6115014206582214
+      },
+      {
+        "remez_degree": 38,
+        "sampled": 1.65232233360305e-08,
+        "uniform_bound": 1.6532018135533022e-08,
+        "l1": 1.6115013034693348
+      },
+      {
+        "remez_degree": 40,
+        "sampled": 1.0808029818343279e-08,
+        "uniform_bound": 1.0818835660889178e-08,
+        "l1": 1.6115013833929777
+      }
+    ],
+    "interpretation": "Exhaustive positive roots1..40: three roots can cover1..10 and six can cover1..32. Five roots cover at most1..24, so six are necessary for degree32 within this model. Six cannot cover degree40; seven remain necessary there. Fresh degree32 Remez fitting, rather than truncating degree40 coefficients, provides the acceptable error bound."
+  },
+  "approximation_uniform_error_bounds": {
+    "gelu": {
+      "12": 4.160447868328025e-10,
+      "10": 3.9115942599751326e-08
+    },
+    "sigmoid": {
+      "12": 7.646348227439392e-10,
+      "10": 2.1456999737988068e-08
+    },
+    "tanh": {
+      "40": 1.0818835660889178e-08,
+      "32": 7.745120099547028e-08
+    }
+  },
+  "reserved_approximation_budget": "At most0.5*2^-23 for reduced GeLU/Sigmoid and0.75*2^-23 for reduced Tanh; the unchanged final encrypted gate remains authoritative.",
+  "matrix_change": "Pad three public columns to four, keeping both signed tables in the existing paired AVX2 layout. Only actual columns are inverse-transformed and returned; extra workspace values are zero.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "key_archives_checked": 9,
+  "all_key_hashes_unchanged": true,
+  "unit_checks": {
+    "basis": "Zero-secret degree10 three-root reconstruction, shared conjugations, full interval angles, independent series and four-root control: maximum error8.28068e-10. Existing degree40 signed and mixed-scale checks also pass.",
+    "factor": "Columns1/2/3/4/5/6/7/9; head/tail, chunk boundaries, streamed/cached, packed/separate and independent digit-CRT outputs byte-identical.",
+    "logs": [
+      {
+        "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/frequency-budget-20261017/basis-unit.log",
+        "sha256": "d1430aece4f9cc3be972694e1fcfdfdb0a562e7d94198643cf4862c6306726c0"
+      },
+      {
+        "path": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/frequency-budget-20261017/factor-unit.log",
+        "sha256": "3eec8b6a3de29a4a18241bd7f4dc0f08fb292c689162abb9ac213eb516ff9ee2"
+      }
+    ]
+  },
+  "timing_method": "Separate uninstrumented process per function, shared retained keys/input/caches, warmup then original/reduced/reduced/original. Warmup omitted. Same DD primary40, level-specific chunks, retained whole-row matrices, native primary44 automorphisms and24-thread binding in both policies. Standalone reduced all-function replay follows. No compilation, component tests, offline searches or decoding overlap full timing.",
+  "mean_seconds": {
+    "gelu": {
+      "false": {
+        "functional_evaluation_seconds": 8.1936357035,
+        "s2c_seconds": 2.587545979,
+        "blind_rotation_and_series_seconds": 5.6060897245
+      },
+      "true": {
+        "functional_evaluation_seconds": 7.639868912,
+        "s2c_seconds": 2.684369686,
+        "blind_rotation_and_series_seconds": 4.955499226
+      }
+    },
+    "sigmoid": {
+      "false": {
+        "functional_evaluation_seconds": 8.400543776,
+        "s2c_seconds": 2.8609335810000003,
+        "blind_rotation_and_series_seconds": 5.539610195
+      },
+      "true": {
+        "functional_evaluation_seconds": 7.7581028215,
+        "s2c_seconds": 2.857772841,
+        "blind_rotation_and_series_seconds": 4.9003299805000005
+      }
+    },
+    "tanh": {
+      "false": {
+        "functional_evaluation_seconds": 12.612403949,
+        "s2c_seconds": 2.6128625435000004,
+        "blind_rotation_and_series_seconds": 9.9995414055
+      },
+      "true": {
+        "functional_evaluation_seconds": 11.701730918500001,
+        "s2c_seconds": 2.618213958,
+        "blind_rotation_and_series_seconds": 9.083516960499999
+      }
+    }
+  },
+  "stage_means": {
+    "gelu": {
+      "false": {
+        "factor": 3.3658799999999998,
+        "alignment": 0.34121650000000003,
+        "dd_cache": 6.299999999999999e-07,
+        "trees": 1.48828
+      },
+      "true": {
+        "factor": 3.1713649999999998,
+        "alignment": 0.25836499999999996,
+        "dd_cache": 5.89e-07,
+        "trees": 1.17178
+      }
+    },
+    "sigmoid": {
+      "false": {
+        "factor": 3.3595800000000002,
+        "alignment": 0.3424435,
+        "dd_cache": 3.9650000000000004e-07,
+        "trees": 1.47084
+      },
+      "true": {
+        "factor": 3.1548499999999997,
+        "alignment": 0.25942149999999997,
+        "dd_cache": 3.72e-07,
+        "trees": 1.168285
+      }
+    },
+    "tanh": {
+      "false": {
+        "factor": 5.46976,
+        "alignment": 0.586581,
+        "dd_cache": 5.939999999999999e-07,
+        "trees": 2.54796
+      },
+      "true": {
+        "factor": 5.19896,
+        "alignment": 0.4952135,
+        "dd_cache": 5.41e-07,
+        "trees": 2.24131
+      }
+    }
+  },
+  "fractional_functional_runtime_reduction": {
+    "gelu": 0.06758499053887068,
+    "sigmoid": 0.07647611531237142,
+    "tanh": 0.07220455625925337
+  },
+  "independent_validation": {
+    "gelu": {
+      "function": "gelu",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.7822775194863425e-09,
+        "max_error": 8.543799157557482e-08,
+        "post_product_max_error": 4.2862458120775863e-07
+      },
+      "accuracy_passed": true
+    },
+    "sigmoid": {
+      "function": "sigmoid",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.7822775194863425e-09,
+        "max_error": 3.2468607969781086e-08,
+        "post_product_max_error": 5.1990526879527394e-08
+      },
+      "accuracy_passed": true
+    },
+    "tanh": {
+      "function": "tanh",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.7822775194863425e-09,
+        "max_error": 9.811414264203254e-08,
+        "post_product_max_error": 1.881716305716454e-07
+      },
+      "accuracy_passed": true
+    }
+  },
+  "independent_proof_by_output_sha256": {
+    "34e3ae0528f6739a3a5aed555d2b2cbbdecb6199b5a4ef0e7e871adb13151fb5": {
+      "reused_receipt": "narrow-dd-primary40-batched-validation.json",
+      "function": "gelu"
+    },
+    "e1a70879e4781adf9ad1ec98d2a40cfb78c94ae93511e1e5002e4d716e15a3d0": {
+      "function": "gelu",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.7822775194863425e-09,
+        "max_error": 8.543799157557482e-08,
+        "post_product_max_error": 4.2862458120775863e-07
+      },
+      "accuracy_passed": true
+    },
+    "a5ca1648daf890cea50525a83834f843bf207e30095a8a71098be9f2e1a5a60b": {
+      "reused_receipt": "narrow-dd-primary40-batched-validation.json",
+      "function": "sigmoid"
+    },
+    "96c90bf763721253fd0df81484c8c15d01508efceed1b6a3ac2d2cbf549152d8": {
+      "function": "sigmoid",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.7822775194863425e-09,
+        "max_error": 3.2468607969781086e-08,
+        "post_product_max_error": 5.1990526879527394e-08
+      },
+      "accuracy_passed": true
+    },
+    "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5": {
+      "reused_receipt": "narrow-dd-primary40-batched-validation.json",
+      "function": "tanh"
+    },
+    "52415a1db8e88d271e7bde272e1c8c2e1025fd182db9220f320faa33bddb921a": {
+      "function": "tanh",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.7822775194863425e-09,
+        "max_error": 9.811414264203254e-08,
+        "post_product_max_error": 1.881716305716454e-07
+      },
+      "accuracy_passed": true
+    }
+  },
+  "artifacts": [
+    {
+      "run": "gelu-pair",
+      "artifact": "gelu-trial0-outputs.bin",
+      "sha256": "34e3ae0528f6739a3a5aed555d2b2cbbdecb6199b5a4ef0e7e871adb13151fb5",
+      "degree": 12,
+      "roots": 4,
+      "seconds": 8.534069801000001
+    },
+    {
+      "run": "gelu-pair",
+      "artifact": "gelu-trial1-outputs.bin",
+      "sha256": "34e3ae0528f6739a3a5aed555d2b2cbbdecb6199b5a4ef0e7e871adb13151fb5",
+      "degree": 12,
+      "roots": 4,
+      "seconds": 8.214143423
+    },
+    {
+      "run": "gelu-pair",
+      "artifact": "gelu-trial2-outputs.bin",
+      "sha256": "e1a70879e4781adf9ad1ec98d2a40cfb78c94ae93511e1e5002e4d716e15a3d0",
+      "degree": 10,
+      "roots": 3,
+      "seconds": 7.731989007999999
+    },
+    {
+      "run": "gelu-pair",
+      "artifact": "gelu-trial3-outputs.bin",
+      "sha256": "e1a70879e4781adf9ad1ec98d2a40cfb78c94ae93511e1e5002e4d716e15a3d0",
+      "degree": 10,
+      "roots": 3,
+      "seconds": 7.547748816
+    },
+    {
+      "run": "gelu-pair",
+      "artifact": "gelu-trial4-outputs.bin",
+      "sha256": "34e3ae0528f6739a3a5aed555d2b2cbbdecb6199b5a4ef0e7e871adb13151fb5",
+      "degree": 12,
+      "roots": 4,
+      "seconds": 8.173127984
+    },
+    {
+      "run": "sigmoid-pair",
+      "artifact": "sigmoid-trial0-outputs.bin",
+      "sha256": "a5ca1648daf890cea50525a83834f843bf207e30095a8a71098be9f2e1a5a60b",
+      "degree": 12,
+      "roots": 4,
+      "seconds": 8.532901368
+    },
+    {
+      "run": "sigmoid-pair",
+      "artifact": "sigmoid-trial1-outputs.bin",
+      "sha256": "a5ca1648daf890cea50525a83834f843bf207e30095a8a71098be9f2e1a5a60b",
+      "degree": 12,
+      "roots": 4,
+      "seconds": 8.409273105
+    },
+    {
+      "run": "sigmoid-pair",
+      "artifact": "sigmoid-trial2-outputs.bin",
+      "sha256": "96c90bf763721253fd0df81484c8c15d01508efceed1b6a3ac2d2cbf549152d8",
+      "degree": 10,
+      "roots": 3,
+      "seconds": 7.7571375940000005
+    },
+    {
+      "run": "sigmoid-pair",
+      "artifact": "sigmoid-trial3-outputs.bin",
+      "sha256": "96c90bf763721253fd0df81484c8c15d01508efceed1b6a3ac2d2cbf549152d8",
+      "degree": 10,
+      "roots": 3,
+      "seconds": 7.759068049
+    },
+    {
+      "run": "sigmoid-pair",
+      "artifact": "sigmoid-trial4-outputs.bin",
+      "sha256": "a5ca1648daf890cea50525a83834f843bf207e30095a8a71098be9f2e1a5a60b",
+      "degree": 12,
+      "roots": 4,
+      "seconds": 8.391814447
+    },
+    {
+      "run": "tanh-pair",
+      "artifact": "tanh-trial0-outputs.bin",
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5",
+      "degree": 40,
+      "roots": 7,
+      "seconds": 13.411001252999998
+    },
+    {
+      "run": "tanh-pair",
+      "artifact": "tanh-trial1-outputs.bin",
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5",
+      "degree": 40,
+      "roots": 7,
+      "seconds": 12.6127938
+    },
+    {
+      "run": "tanh-pair",
+      "artifact": "tanh-trial2-outputs.bin",
+      "sha256": "52415a1db8e88d271e7bde272e1c8c2e1025fd182db9220f320faa33bddb921a",
+      "degree": 32,
+      "roots": 6,
+      "seconds": 11.715860041
+    },
+    {
+      "run": "tanh-pair",
+      "artifact": "tanh-trial3-outputs.bin",
+      "sha256": "52415a1db8e88d271e7bde272e1c8c2e1025fd182db9220f320faa33bddb921a",
+      "degree": 32,
+      "roots": 6,
+      "seconds": 11.687601796000001
+    },
+    {
+      "run": "tanh-pair",
+      "artifact": "tanh-trial4-outputs.bin",
+      "sha256": "1b08f63979907bfe2cfa407dc65656173714f6e2ddecaa0671ab005ebdac0db5",
+      "degree": 40,
+      "roots": 7,
+      "seconds": 12.612014098
+    },
+    {
+      "run": "reduced-full",
+      "artifact": "gelu-outputs.bin",
+      "sha256": "e1a70879e4781adf9ad1ec98d2a40cfb78c94ae93511e1e5002e4d716e15a3d0",
+      "degree": 10,
+      "roots": 3,
+      "seconds": 7.87333078
+    },
+    {
+      "run": "reduced-full",
+      "artifact": "sigmoid-outputs.bin",
+      "sha256": "96c90bf763721253fd0df81484c8c15d01508efceed1b6a3ac2d2cbf549152d8",
+      "degree": 10,
+      "roots": 3,
+      "seconds": 7.620935289
+    },
+    {
+      "run": "reduced-full",
+      "artifact": "tanh-outputs.bin",
+      "sha256": "52415a1db8e88d271e7bde272e1c8c2e1025fd182db9220f320faa33bddb921a",
+      "degree": 32,
+      "roots": 6,
+      "seconds": 12.300029118
+    }
+  ],
+  "output_validation": "Eighteen complete artifacts form six byte-identical output classes. Three original-degree classes reuse independently decoded primary40 references. All three new reduced-degree classes were independently decoded across every coefficient/output slot, including the remaining multiplication.",
+  "exit_evidence": {
+    "gelu-pair": {
+      "exit_code": 0,
+      "wall_seconds": 83.61252903938293
+    },
+    "sigmoid-pair": {
+      "exit_code": 0,
+      "wall_seconds": 83.88420629501343
+    },
+    "tanh-pair": {
+      "exit_code": 0,
+      "wall_seconds": 105.95873618125916
+    },
+    "reduced-full": {
+      "exit_code": 0,
+      "wall_seconds": 69.2105598449707
+    }
+  },
+  "cli_preflight": [
+    {
+      "case": "flag-range",
+      "exit_code": 1,
+      "message": "reduced degree flag must be 0 or 1"
+    },
+    {
+      "case": "pair-range",
+      "exit_code": 1,
+      "message": "reduced degree pair flag must be 0 or 1"
+    },
+    {
+      "case": "needs-signed",
+      "exit_code": 1,
+      "message": "reduced degrees require the signed frequency basis"
+    },
+    {
+      "case": "exclusive",
+      "exit_code": 1,
+      "message": "paired replay requires tanh"
+    },
+    {
+      "case": "single-function",
+      "exit_code": 1,
+      "message": "reduced degree pair requires a single function"
+    }
+  ],
+  "commands": {
+    "gelu-pair": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "gelu",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/frequency-budget-20261017/gelu-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--reduced-degree-pair",
+      "1"
+    ],
+    "sigmoid-pair": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "sigmoid",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/frequency-budget-20261017/sigmoid-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--reduced-degree-pair",
+      "1"
+    ],
+    "tanh-pair": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "tanh",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/frequency-budget-20261017/tanh-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--reduced-degree-pair",
+      "1"
+    ],
+    "reduced-full": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "all",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/frequency-budget-20261017/reduced-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--reduced-degree",
+      "1"
+    ]
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "binary_sha256": "674149fdf705da1c68aa502ac427bb14f6a29c774479c0246c5daddfaba7093f",
+  "checkpoint_sha256": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "input_sha256": "3e75952101cfa804ee94edc690838c0b79a5d543d89c605cbd8dc4029cf3475f",
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/frequency-budget-20261017",
+  "limitations": "Two measured trials per policy. Opt-in precision/performance tradeoff qualified on the retained LL14 fixture; it preserves the23-bit gate but gives less precision margin than the original approximants. Other inputs/keys, security and paper-matched hardware/precision are not qualified by this receipt. No total10x claim.",
+  "security_validated": false,
+  "performance_gap_closed": false
+}
