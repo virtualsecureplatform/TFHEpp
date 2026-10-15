@@ -1,8 +1,9 @@
 #include "ckks_narrow_basis_benchmark.hpp"
-#include <ckks/public_auto_ntt.hpp>
+#include <ckks/narrow_auto_ntt.hpp>
 #include <iostream>
 #include <random>
 using namespace TFHEpp;
+template<class P>struct DispatchSchedule{using Param=P;static constexpr std::uint32_t factor_log_q=385,output_log_q=165;};
 template<std::uint32_t Nbit>void check(){
  using P=narrow_benchmark::BenchmarkParam<Nbit,7>;using T=typename P::T;
  constexpr std::uint32_t Q=435,Bits=20;
@@ -31,6 +32,20 @@ template<std::uint32_t Nbit>void check(){
   *input=*saved;
  };
  compare.template operator()<385>();compare.template operator()<398>();compare.template operator()<121>();
+ reference.template apply<165>(*expected,*input);
+ narrow_detail::applyPublicAutoAtLevel<DispatchSchedule<P>,398,121>(*actual,*input,165,direct);
+ if(*actual!=*expected)throw std::runtime_error("shared root-level cache differs");
+ reference.template apply<121>(*expected,*input);
+ narrow_detail::applyPublicAutoAtLevel<DispatchSchedule<P>,398,121>(*actual,*input,121,direct);
+ if(*actual!=*expected)throw std::runtime_error("shared series-level cache differs");
+ bool rejected=false;
+ try{narrow_detail::applyPublicAutoAtLevel<DispatchSchedule<P>,398>(*actual,*input,121,direct);}
+ catch(const std::invalid_argument&){rejected=true;}
+ if(!rejected)throw std::runtime_error("unregistered extra level accepted");
+ rejected=false;
+ try{narrow_detail::applyPublicAutoAtLevel<DispatchSchedule<P>,398,121>(*actual,*input,122,direct);}
+ catch(const std::invalid_argument&){rejected=true;}
+ if(!rejected)throw std::runtime_error("unexpected extra level accepted");
  if constexpr(Nbit<=4){
   // Compile and construct the existing default wide-primary backend too.
   PublicAutoGadgetRows<P,Q,64> legacy_rows;

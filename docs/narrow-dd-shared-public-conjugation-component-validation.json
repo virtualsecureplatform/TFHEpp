@@ -1,0 +1,26 @@
+{
+  "scope": "CPU-only reuse of the existing public Q435 conjugation cache for factor, root and series levels. Optional extra-level registration preserves rejection of unregistered levels. No new encrypted keys or key conversion at evaluation time.",
+  "baseline_commit": "0179c3c",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "registered_levels": [
+    398,
+    385,
+    165,
+    121
+  ],
+  "new_extra_level": 121,
+  "unit_validation": "Native N16/N512 cache arithmetic comparisons still pass. Shared dispatcher at Q165 and Q121 matches the separately prepared reference. With no extra-level registration, Q121 is rejected; registered Q121 still rejects Q122. Existing N16 schoolbook gadget oracle and legacy key constructor checks remain enabled.",
+  "unit_stdout_sha256": "76e30cdfbc1415d5bc806ad35b6a9158534c410deb1d988885a00b2f367eab0a",
+  "eliminated_retained_payload": {
+    "derivation_fft_cache_count": 4,
+    "fft_spectrum_bytes": 1614807040,
+    "raw_gadget_row_bytes": 40370176,
+    "duplicate_prepared_basis_bytes": 126877696,
+    "eliminated_retained_payload_bytes": 1782054912
+  },
+  "payload_formula": "Four PackedP(Q435, primary8, secondary16) FFT derivation caches, 22 ordinary Q435 gadget ciphertext rows and the duplicate 20/20 two-prime prepared basis cache. Sizes evaluated from the actual C++ types. Allocation bookkeeping and process RSS are separate.",
+  "lifetime_fix": "The replay no longer retains a second PublicPackedAutoDeriver, its source FFT caches, ordinary gadget rows or a separate basis cache after setup. The existing public callback owns its immutable cache and survives packed-key release.",
+  "timing_limit": "Setup savings and full ciphertext equality are qualified separately. Removing duplicate setup does not establish the paper functional-latency target.",
+  "tenfold_goal_achieved": false
+}
