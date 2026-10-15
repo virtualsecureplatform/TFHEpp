@@ -21,6 +21,8 @@ struct CKKSPreparedCompactRealLinearTransformFFT {
         int giant_step;
         std::vector<Term> terms;
         std::size_t prepared_plain_digits;
+        std::vector<std::uint64_t> prepared_plain_l1;
+        bool prepared_adaptive_batches=true;
         std::vector<std::vector<PolynomialInFD<P>>> prepared_plain_fft;
     };
     struct Plan { int k_step; std::vector<Group> groups; };
@@ -30,69 +32,87 @@ struct CKKSPreparedCompactRealLinearTransformFFT {
 
     CKKSPreparedCompactRealLinearTransformFFT(
         const CKKSCompactRealLinearTransformPlan<P,Q,Delta,PlainDelta> &source,
-        std::uint64_t budget_bytes)
+        std::uint64_t budget_bytes,bool adaptive_batches=true)
         : has_direct(source.has_direct), has_conjugate(source.has_conjugate)
     {
         if (!has_direct && !has_conjugate)
             throw std::invalid_argument("empty prepared compact CKKS plan");
-        const auto validate = [&](const auto &plan) {
+        struct Work { std::size_t group; std::vector<std::size_t> terms; std::size_t digits,bits; };
+        const auto shape = [&](const auto &plan) {
+            std::vector<Work> work;
             if (plan.k_step <= 0 || plan.k_step > P::n/2 || plan.groups.empty())
                 throw std::invalid_argument("invalid prepared compact CKKS schedule");
-            for (const auto &group : plan.groups) {
+            for (std::size_t g=0;g<plan.groups.size();++g) {
+                const auto &group=plan.groups[g];
                 if (group.giant_step < 0 || std::int64_t(group.giant_step)*plan.k_step >= P::n/2 || group.terms.empty())
                     throw std::invalid_argument("invalid prepared compact CKKS giant step");
-                std::uint64_t maximum=0;
-                for (const auto &term:group.terms)
-                    for (const auto value:term.coefficients)
-                        maximum=std::max(maximum,value<0?std::uint64_t{0}-std::uint64_t(value):std::uint64_t(value));
-                const auto digits=std::max<std::size_t>(1,(std::bit_width(maximum)+Bits-1)/Bits);
-                const auto term_bytes=digits*sizeof(PolynomialInFD<P>);
-                for (const auto &term : group.terms) {
+                Work item{g,{},0,0}; std::uint64_t maximum=0;
+                for (std::size_t t=0;t<group.terms.size();++t) {
+                    const auto &term=group.terms[t];
                     if (term.baby_step < 0 || term.baby_step >= plan.k_step)
                         throw std::invalid_argument("invalid prepared compact CKKS baby step");
-                    if (spectrum_bytes > budget_bytes || term_bytes > budget_bytes-spectrum_bytes)
-                        throw std::invalid_argument("prepared compact CKKS spectrum budget exceeded");
-                    spectrum_bytes += term_bytes;
-                }
-            }
-        };
-        if (has_direct) validate(source.direct);
-        if (has_conjugate) validate(source.conjugate);
-        const auto prepare = [&](auto &out,const auto &plan) {
-            out.k_step=plan.k_step; out.groups.resize(plan.groups.size());
-            for (std::size_t g=0;g<plan.groups.size();++g) {
-                const auto &raw=plan.groups[g]; auto &group=out.groups[g];
-                group.giant_step=raw.giant_step;
-                group.terms.resize(raw.terms.size());
-                std::uint64_t maximum=0;
-                for (const auto &term:raw.terms)
+                    std::uint64_t term_maximum=0;
                     for (const auto value:term.coefficients)
-                        maximum=std::max(maximum,value<0?std::uint64_t{0}-std::uint64_t(value):std::uint64_t(value));
-                group.prepared_plain_digits=std::max<std::size_t>(1,(std::bit_width(maximum)+Bits-1)/Bits);
-                group.prepared_plain_fft.resize(raw.terms.size());
+                        term_maximum=std::max(term_maximum,value<0?std::uint64_t{0}-std::uint64_t(value):std::uint64_t(value));
+                    if (term_maximum) item.terms.push_back(t);
+                    maximum=std::max(maximum,term_maximum);
+                }
+                if (!maximum) continue;
+                item.bits=std::bit_width(maximum);
+                item.digits=(item.bits+Bits-1)/Bits;
+                const auto term_bytes=item.digits*sizeof(PolynomialInFD<P>);
+                for (std::size_t i=0;i<item.terms.size();++i) {
+                    if (spectrum_bytes>budget_bytes || term_bytes>budget_bytes-spectrum_bytes)
+                        throw std::invalid_argument("prepared compact CKKS spectrum budget exceeded");
+                    spectrum_bytes+=term_bytes;
+                }
+                work.push_back(std::move(item));
+            }
+            return work;
+        };
+        std::vector<Work> direct_work,conjugate_work;
+        if (has_direct) direct_work=shape(source.direct);
+        if (has_conjugate) conjugate_work=shape(source.conjugate);
+        has_direct=!direct_work.empty();has_conjugate=!conjugate_work.empty();
+        const auto prepare = [&](auto &out,const auto &plan,const auto &work) {
+            out.k_step=plan.k_step; out.groups.resize(work.size());
+            for (std::size_t g=0;g<work.size();++g) {
+                const auto &item=work[g];const auto &raw=plan.groups[item.group];auto &group=out.groups[g];
+                group.giant_step=raw.giant_step;
+                group.terms.resize(item.terms.size());
+                group.prepared_plain_digits=item.digits;
+                group.prepared_adaptive_batches=adaptive_batches;
+                group.prepared_plain_fft.resize(item.terms.size());
+                group.prepared_plain_l1.resize(item.digits);
+                std::vector<std::vector<std::uint64_t>> norms(item.terms.size(),std::vector<std::uint64_t>(item.digits));
                 for (auto &term:group.prepared_plain_fft) term.resize(group.prepared_plain_digits);
-                for (std::size_t t=0;t<raw.terms.size();++t)
-                    group.terms[t].baby_step=raw.terms[t].baby_step;
+                for (std::size_t t=0;t<item.terms.size();++t)
+                    group.terms[t].baby_step=raw.terms[item.terms[t]].baby_step;
 #pragma omp parallel
                 {
                     auto digit=std::make_unique<Polynomial<P>>();
 #pragma omp for collapse(2) schedule(static)
-                    for (std::size_t t=0;t<raw.terms.size();++t)
+                    for (std::size_t t=0;t<item.terms.size();++t)
                         for (std::size_t d=0;d<group.prepared_plain_digits;++d) {
+                            std::uint64_t norm=0;
                             for (std::size_t i=0;i<P::n;++i) {
                                 const auto value=ckks_detail::reduceToLevel<P,Q>(
-                                    P::T::from_signed_i64(raw.terms[t].coefficients[i]));
+                                    P::T::from_signed_i64(raw.terms[item.terms[t]].coefficients[i]));
                                 const auto [negative,magnitude]=ckks_detail::smallSignedMagnitude<P,Q>(value);
                                 const typename P::T part{(magnitude>>(d*Bits)) & ((std::uint64_t{1}<<Bits)-1)};
+                                norm+=std::uint64_t(part);
                                 (*digit)[i]=negative ? typename P::T{}-part : part;
                             }
+                            norms[t][d]=norm;
                             TwistIFFTDigit<P>(group.prepared_plain_fft[t][d],*digit);
                         }
                 }
+                for(const auto &term:norms)for(std::size_t d=0;d<item.digits;++d)
+                    group.prepared_plain_l1[d]=std::max(group.prepared_plain_l1[d],term[d]);
             }
         };
-        if (has_direct) prepare(direct,source.direct);
-        if (has_conjugate) prepare(conjugate,source.conjugate);
+        if (has_direct) prepare(direct,source.direct,direct_work);
+        if (has_conjugate) prepare(conjugate,source.conjugate,conjugate_work);
     }
 };
 
@@ -104,6 +124,10 @@ inline void CKKSRealLinearTransform(
     const CKKSPreparedCompactRealLinearTransformFFT<P,Q,Delta,PlainDelta,Bits> &plan,
     const InputKey &input_key,const OutputKey &output_key)
 {
+    if (!plan.has_direct && !plan.has_conjugate) {
+        for (auto &component:result.ct) component.fill({});
+        return;
+    }
     const auto evaluate=[&](auto &out,const auto &ct,const auto &part) {
         std::vector<bool> used(part.k_step,false);
         for (const auto &group:part.groups)

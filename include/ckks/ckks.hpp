@@ -4803,6 +4803,13 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                 for (const auto &term:group.prepared_plain_fft)
                     if (term.size()!=active_plain_digits)
                         throw std::invalid_argument("prepared CKKS plaintext digit count mismatch");
+                if constexpr (requires { group.prepared_plain_l1; }) {
+                    if(group.prepared_plain_l1.size()!=active_plain_digits)
+                        throw std::invalid_argument("prepared CKKS plaintext norm count mismatch");
+                    for(const auto norm:group.prepared_plain_l1)
+                        if(norm>std::uint64_t{P::n}*((std::uint64_t{1}<<ArithmeticBits)-1))
+                            throw std::invalid_argument("prepared CKKS plaintext norm exceeds digit range");
+                }
             }
             else {
                 transient_plain_fft = std::make_unique<std::vector<PlainTermFFT>>(group.terms.size());
@@ -4871,13 +4878,29 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                             // rescaling, so higher terms cannot affect rounding.
                             if (shift >= static_cast<int>(LogQ)) continue;
 
+                            std::size_t fused_terms=max_fused_terms;
+                            if constexpr (requires { group.prepared_plain_l1; }) {
+                                if (group.prepared_adaptive_batches) {
+                                    // |a*b|_infinity <= |a|_infinity * |b|_1.
+                                    // Scan public plaintext digit norms once;
+                                    // the balanced top ciphertext digit needs
+                                    // only Q-(rows-1)*Bits magnitude bits.
+                                    const int input_bits=j==0?LogQ-(torus_digits-1)*ArithmeticBits:ArithmeticBits;
+                                    const auto norm=group.prepared_plain_l1[d];
+                                    if(!norm)continue;
+                                    constexpr int budget_bits=std::max(47,int(2*ArithmeticBits+P::nbit)-1);
+                                    const auto per_term=(std::uint64_t{1}<<(input_bits-1))*norm;
+                                    fused_terms=std::min<std::uint64_t>(std::uint64_t{1}<<30,
+                                        (std::uint64_t{1}<<budget_bits)/per_term);
+                                }
+                            }
                             for (std::size_t batch_begin = 0;
                                  batch_begin < group.terms.size();
-                                 batch_begin += max_fused_terms) {
+                                 batch_begin += fused_terms) {
                                 const std::size_t batch_end =
                                     std::min<std::size_t>(
                                         group.terms.size(),
-                                        batch_begin + max_fused_terms);
+                                        batch_begin + fused_terms);
                                 const int first_j1 =
                                     group.terms[batch_begin].baby_step;
                                 assert(first_j1 >= 0 &&

@@ -1,0 +1,82 @@
+{
+  "scope": "CPU-only retained N16384 S2C. Remove exactly zero public branches/groups/diagonals and size prepared FFT batches by public plaintext digit L1 bounds. No private/evaluation-key generation.",
+  "baseline_commit": "f4ae244",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "public_scan_histogram": {
+    "zero_coefficient_groups": 128,
+    "maximum_coefficient_bits_32_groups": 3,
+    "maximum_coefficient_bits_33_groups": 125
+  },
+  "zero_only_unpinned_seconds": [
+    4.80193,
+    4.71456,
+    4.73896
+  ],
+  "pinned_comparison": {
+    "threads": 8,
+    "physical_cpu_ids": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14
+    ],
+    "trials": [
+      {
+        "adaptive": false,
+        "seconds": 4.649992379
+      },
+      {
+        "adaptive": true,
+        "seconds": 4.551823484
+      },
+      {
+        "adaptive": true,
+        "seconds": 4.531478246
+      },
+      {
+        "adaptive": false,
+        "seconds": 4.676284067
+      }
+    ],
+    "order": [
+      "fixed",
+      "L1 bounded",
+      "L1 bounded",
+      "fixed"
+    ],
+    "all_coefficients_byte_identical": true
+  },
+  "retained_plaintext_spectrum_bytes": 3196059648,
+  "previous_plaintext_spectrum_bytes": 4269801472,
+  "retained_galois_spectrum_bytes": 734003200,
+  "prepared_galois_count_each_trial": [
+    28,
+    28,
+    28,
+    28
+  ],
+  "exact_output_sha256": "17a9b309505fb92933f30585355c64bfa5cf3a7c4c0a2c813aa0dc98d6c488c8",
+  "bound": "Each negacyclic coefficient is bounded by max_abs_input_digit * plaintext_digit_L1. Use the maximum per-term public L1 norm in each giant group. Balanced top ciphertext digits have Q-(rows-1)*Bits magnitude bits, including lower-row carry. Each batch is limited to 2^47 for the qualified N512/N16384 profiles, one extra bit of headroom over the prior worst-case bound. Larger supported degrees retain at least the single-product bound.",
+  "unit_controls": [
+    "Direct-only/conjugate-only/combined transforms match the raw reference",
+    "Complete zero operators overwrite an already nonzero result with zero",
+    "Mixed zero/nonzero branches, groups and diagonals preserve step indices and exact outputs",
+    "Full signed-int64 coefficient range and budget rejection",
+    "512-term constant-polynomial convolution at N512 checked against independent uint128 modular multiplication and signed rescaling",
+    "Public Galois spectra are not rebuilt online"
+  ],
+  "stress_observation": {
+    "old_fixed_batch_matches_integer_oracle": false,
+    "new_L1_bounded_batch_matches_integer_oracle": true,
+    "scope": "Synthetic dense maximal-digit stress; old fixed control has an observed FFT rounding difference. New default is required to match all coefficients. This is distinct from retained normal inputs, which match the original ciphertext bytes in every trial."
+  },
+  "reference_correction": "The initial stress oracle counted one too few positive negacyclic terms. Corrected multiplicity is 2*i+2-N; signed ties round away from zero. The old fixed batching difference persists after both corrections.",
+  "timing_limit": "Three zero-only trials are unpinned. The four same-process L1 comparisons are pinned in both orders. Neither constitutes a full-refresh speedup claim.",
+  "tenfold_goal_achieved": false
+}
