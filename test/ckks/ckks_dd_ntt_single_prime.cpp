@@ -8,7 +8,7 @@ struct P : narrow_benchmark::BenchmarkParam<9,7> {
     static constexpr std::uint32_t nbit=4,n=16;
 };
 
-template <std::uint32_t Bg,std::uint32_t Bbar>
+template <std::uint32_t Bg,std::uint32_t Bbar,bool Small=true>
 void check(std::mt19937_64 &random)
 {
     using K=CKKSCompactDDRelinKey<P,433,Bg,Bbar>;
@@ -17,8 +17,8 @@ void check(std::mt19937_64 &random)
         for(auto &coefficient:component)
             coefficient=K::pack(P::T::from_signed_i64(
                 std::int64_t(random()%(std::uint64_t{1}<<Bbar))-(std::int64_t{1}<<(Bbar-1))));
-    CKKSPreparedDDRelinKeyNTT<P,433,Bg,Bbar> prepared(*key);
-    static_assert((Bg==20 && decltype(prepared)::prime_count==1) ||
+    CKKSPreparedDDRelinKeyNTT<P,433,Bg,Bbar,Small> prepared(*key);
+    static_assert((Bg==20 && decltype(prepared)::prime_count==(Small?2:1)) ||
                   (Bg==64 && decltype(prepared)::prime_count==2));
     auto input=std::make_unique<Polynomial<P>>();
     auto digits=std::make_unique<std::array<Polynomial<P>,K::primary_rows>>();
@@ -52,5 +52,5 @@ void check(std::mt19937_64 &random)
 int main()
 {
     std::mt19937_64 random(20262119);
-    check<20,20>(random);check<64,32>(random);
+    check<20,20>(random);check<20,20,false>(random);check<64,32>(random);
 }

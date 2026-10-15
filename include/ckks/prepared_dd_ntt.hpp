@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compact_dd.hpp"
+#include "prepared_dd_ntt32.hpp"
 #include <modular_ntt.hpp>
 #include <span>
 
@@ -12,7 +13,7 @@ namespace TFHEpp {
 // A wider primary gadget still needs adequate ciphertext scale or auxiliary
 // headroom; changing the arithmetic backend does not remove switching noise.
 template <class P, std::uint32_t Q, std::uint32_t Bg = 64,
-          std::uint32_t Bbar = 32>
+          std::uint32_t Bbar = 32, bool SmallPrimes = true>
 struct CKKSPreparedDDRelinKeyNTT {
     static_assert(P::k == 1 && is_multilimb_uint_v<typename P::T>);
     static_assert(P::T::limbs >= 2 && Bg > 0 && Bg <= 64);
@@ -30,7 +31,10 @@ struct CKKSPreparedDDRelinKeyNTT {
         return (static_cast<unsigned __int128>(1) << (Bg-1)) <=
             (limit-1)/(static_cast<unsigned __int128>(1) << (Bbar-1))/P::n/primary_rows;
     }
-    static constexpr std::size_t prime_count = fitsSinglePrime() ? 1 : 2;
+    static constexpr bool uses_small_primes=SmallPrimes && CKKSFitsDDNTT32<P,Q,Bg,Bbar>();
+    using SmallCache=std::conditional_t<uses_small_primes,CKKSPreparedDDRelinKeyNTT32<P,Q,Bg,Bbar>,std::nullptr_t>;
+    std::unique_ptr<SmallCache> small_cache;
+    static constexpr std::size_t prime_count = uses_small_primes ? 2 : (fitsSinglePrime() ? 1 : 2);
     std::array<std::unique_ptr<modular_ntt::NegacyclicNTTPlan>, prime_count> plans;
     std::vector<modular_ntt::ShoupMultiplier> spectra;
 
@@ -52,8 +56,9 @@ struct CKKSPreparedDDRelinKeyNTT {
             2 + component) * P::n + coefficient);
     }
     explicit CKKSPreparedDDRelinKeyNTT(const Key &key)
-        : spectra(prime_count * primary_rows * secondary_rows * 2 * P::n)
+        : spectra(uses_small_primes ? 0 : prime_count * primary_rows * secondary_rows * 2 * P::n)
     {
+        if constexpr(uses_small_primes){small_cache=std::make_unique<SmallCache>(key);return;}
         const auto &primes = modular_ntt::degree65536_primes;
         for (std::size_t prime = 0; prime < prime_count; ++prime)
             plans[prime] = std::make_unique<modular_ntt::NegacyclicNTTPlan>(
@@ -79,7 +84,10 @@ struct CKKSPreparedDDRelinKeyNTT {
                         }
         }
     }
-    std::size_t byteSize() const { return spectra.size() * sizeof(spectra.front()); }
+    std::size_t byteSize() const {
+        if constexpr(uses_small_primes)return small_cache?small_cache->byteSize():0;
+        else return spectra.size()*sizeof(spectra.front());
+    }
 
     static typename P::T signedTorus(__int128 value)
     {
@@ -94,6 +102,10 @@ struct CKKSPreparedDDRelinKeyNTT {
     }
     void apply(TRLWE<P> &result, const Polynomial<P> &input) const
     {
+        if constexpr(uses_small_primes){
+            if(!small_cache)throw std::invalid_argument("missing small-prime DD cache");
+            small_cache->apply(result,input);return;
+        }
         if (spectra.size() != prime_count * primary_rows * secondary_rows * 2 * P::n ||
             !plans[0] || (prime_count == 2 && !plans[1]))
             throw std::invalid_argument("invalid NTT DD cache");
@@ -182,8 +194,8 @@ struct CKKSPreparedDDRelinKeyNTT {
 };
 
 namespace ckks_detail {
-template <class P, std::uint32_t Q, std::uint32_t Bg, std::uint32_t Bbar>
-struct is_ckks_dd_relin_key<CKKSPreparedDDRelinKeyNTT<P, Q, Bg, Bbar>>
+template <class P, std::uint32_t Q, std::uint32_t Bg, std::uint32_t Bbar, bool Small>
+struct is_ckks_dd_relin_key<CKKSPreparedDDRelinKeyNTT<P, Q, Bg, Bbar, Small>>
     : std::true_type {};
 }
 
@@ -199,9 +211,9 @@ inline auto makeCKKSDDRelinKeyNTT(const CKKSCompactDDRelinKey<P, Q, Bg, OldBbar>
     }
 }
 
-template <class P, std::uint32_t Q, std::uint32_t Bg, std::uint32_t Bbar>
+template <class P, std::uint32_t Q, std::uint32_t Bg, std::uint32_t Bbar, bool Small>
 inline void CKKSRelinKeySwitch(TRLWE<P> &result, const Polynomial<P> &input,
-    const CKKSPreparedDDRelinKeyNTT<P, Q, Bg, Bbar> &key)
+    const CKKSPreparedDDRelinKeyNTT<P, Q, Bg, Bbar, Small> &key)
 { key.apply(result, input); }
 
 // Generation does not multiply primary and secondary digits. The existing
