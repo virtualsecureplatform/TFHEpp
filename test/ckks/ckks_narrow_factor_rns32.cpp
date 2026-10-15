@@ -8,6 +8,9 @@ using P=narrow_benchmark::BenchmarkParam<9,7>;
 using Source=CKKSNarrowBootstrapSchedule<P,48,440,57,42,31,false,0,true>;
 using Target=CKKSNarrowBootstrapSchedule<P,48,427,44,42,31,true,13,true>;
 
+struct ReducedSource:CKKSNarrowBootstrapSchedule<P,48,397,57,42,31,false,0,true>{static constexpr std::size_t selector_rns_prime_count=16;};
+using LeanTarget=CKKSNarrowBootstrapSchedule<P,48,377,37,42,31,true,20,true>;
+
 class TransparentSource final:public CKKSNarrowSelectorSource<Source> {
 public:
     mutable std::size_t reads=0;
@@ -97,6 +100,22 @@ int main()
                 for(std::size_t c=0;c<columns;++c)if(actual[c].ct!=reference[c].ct)throw std::runtime_error("fused dot or remainder differs from single-term factors");
             }
         }
+    }
+    auto reduced=std::make_shared<CKKSNarrowReducedSelectorSource<ReducedSource,Source>>(raw);
+    std::vector<Source::Selector> original_chunk;std::vector<ReducedSource::Selector> reduced_chunk;
+    raw->loadChunk(false,0,0,3,original_chunk);reduced->loadChunk(false,0,0,3,reduced_chunk);
+    for(std::size_t j=0;j<3;++j)for(std::size_t c=0;c<2;++c)for(std::size_t i=0;i<P::n;++i)
+        if(reduced_chunk[j].ct[c][i]!=ckks_detail::reduceToLevel<P,397>(original_chunk[j].ct[c][i]))throw std::runtime_error("selector reduction changed scale or coefficients");
+    using ReducedCache=CKKSNarrowFactorSelectorCacheRNS32<ReducedSource>;
+    auto reduced_cache=std::make_shared<ReducedCache>(reduced,ReducedCache::retained_bytes,4);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<LeanTarget,ReducedSource> lean(reduced,reduced_cache);
+    CKKSNarrowDeferredRescaleFactorSource32<LeanTarget,ReducedSource> lean_reference(reduced);
+    auto lean_key=std::make_unique<CKKSNarrowBootstrapKey<LeanTarget>>();lean_key->selector_ntt_chunk_size=4;
+    lean_key->automorphism_evaluator=[](auto&out,const auto&in,uint32_t,uint32_t exponent){for(std::size_t c=0;c<2;++c)Automorphism<P>(out[c],in[c],exponent);};
+    for(bool tail:{false,true}){
+        const auto expected=lean_reference.evaluate(tables,tail,0,*lean_key,nullptr,nullptr);
+        const auto actual=lean.evaluate(tables,tail,0,*lean_key,nullptr,nullptr);
+        for(std::size_t c=0;c<tables.size();++c)if(actual[c].ct!=expected[c].ct)throw std::runtime_error("sixteen-prime projected factors differ from independent digit CRT");
     }
     auto invalid=tables;
     std::fill(invalid[0].begin(),invalid[0].end(),std::complex<double>{8,0});

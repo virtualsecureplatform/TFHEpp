@@ -8,13 +8,13 @@
 namespace TFHEpp {
 namespace narrow_detail {
 
-template <class P>
+template <class P,std::size_t Count=modular_rns32::prime_count>
 inline const auto &factorPlansRNS32()
 {
     static const auto plans=[] {
         std::vector<modular_ntt32::NegacyclicNTTPlan> result;
-        result.reserve(modular_rns32::prime_count);
-        for(auto prime:modular_rns32::primes) result.emplace_back(P::n,prime);
+        result.reserve(Count);
+        for(std::size_t p=0;p<Count;++p) result.emplace_back(P::n,modular_rns32::primes[p]);
         return result;
     }();
     return plans;
@@ -25,7 +25,11 @@ struct FactorSelectorRNS32 {
     using P = typename Schedule::Param;
     static constexpr std::size_t digits=1;
     static_assert(Schedule::plain_log_delta<64);
-    static_assert(modular_rns32::prime_count==17);
+    static constexpr std::size_t prime_count=[] {
+        if constexpr(requires{Schedule::selector_rns_prime_count;})return std::size_t(Schedule::selector_rns_prime_count);
+        else return modular_rns32::prime_count;
+    }();
+    static_assert(prime_count>0 && prime_count<=modular_rns32::prime_count);
     static_assert(Schedule::selector_log_q+Schedule::plain_log_delta+P::nbit+
         std::bit_width(std::uint32_t(Schedule::block_width))+1<512);
     static constexpr auto bound=[] {
@@ -35,8 +39,8 @@ struct FactorSelectorRNS32 {
         value=modular_rns32::multiplySmall(value,Schedule::block_width);
         return modular_rns32::multiplySmall(value,2);
     }();
-    static_assert(bound<modular_rns32::product,"direct selector convolution exceeds CRT range");
-    std::array<std::vector<std::uint32_t>,17> spectra;
+    static_assert(bound<modular_rns32::basisProduct<prime_count>(),"direct selector convolution exceeds CRT range");
+    std::array<std::vector<std::uint32_t>,prime_count> spectra;
 };
 
 template <class Schedule>
@@ -45,12 +49,12 @@ inline void prepareFactorSelectorsRNS32(std::vector<FactorSelectorRNS32<Schedule
 {
     using P = typename Schedule::Param;
     using Cache = FactorSelectorRNS32<Schedule>;
-    const auto &plans = factorPlansRNS32<P>();
-    static const modular_rns32::CanonicalEncoder<P::T::limbs,Schedule::selector_log_q> encoder;
+    const auto &plans = factorPlansRNS32<P,Cache::prime_count>();
+    static const modular_rns32::CanonicalEncoder<P::T::limbs,Schedule::selector_log_q,Cache::prime_count> encoder;
     prepared.resize(selectors.size());
 #pragma omp parallel for schedule(static)
     for (std::size_t j = 0; j < selectors.size(); ++j)
-        for (std::size_t prime = 0; prime < 17; ++prime) {
+        for (std::size_t prime = 0; prime < Cache::prime_count; ++prime) {
             auto &spectrum = prepared[j].spectra[prime];
             spectrum.resize((P::k+1)*Cache::digits*P::n);
             for (std::size_t component = 0; component <= P::k; ++component)
@@ -86,10 +90,10 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     // Five to seven real columns share one full SIMD row. Padding is public
     // zero workspace; only actual columns are inverse transformed and returned.
     const auto stride=columns>4 && columns<8?std::size_t{8}:columns;
-    const auto &plans = factorPlansRNS32<P>();
-    const modular_rns32::CenteredCRT<P::T::limbs> crt;
+    const auto &plans = factorPlansRNS32<P,Cache::prime_count>();
+    const modular_rns32::CenteredCRT<P::T::limbs,Cache::prime_count> crt;
     auto start = Clock::now();
-    std::array<std::array<std::vector<std::uint32_t>,17>,2> base;
+    std::array<std::array<std::vector<std::uint32_t>,Cache::prime_count>,2> base;
     for (auto &signed_tables : base)
         for (auto &spectrum : signed_tables) spectrum.resize(stride*P::n);
     std::exception_ptr table_error;
@@ -105,7 +109,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                 }
                 auto polynomial = std::make_unique<Polynomial<P>>();
                 ckksSlotEncode<P,Schedule::selector_log_q,Schedule::plain_log_delta>(*polynomial,transformed);
-                for (std::size_t prime = 0; prime < 17; ++prime) {
+                for (std::size_t prime = 0; prime < Cache::prime_count; ++prime) {
                     const auto modulus = modular_rns32::primes[prime].value;
                     std::vector<std::uint32_t> spectrum(P::n);
                     for (std::size_t i = 0; i < P::n; ++i) {
@@ -129,7 +133,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     std::vector<std::size_t> exponents(Schedule::block_width);
     for (std::size_t y = 0; y < exponents.size(); ++y)
         exponents[y] = modular_ntt::power(5,(Schedule::slots-y)%Schedule::slots,2*P::n);
-    using Sums = std::array<std::vector<std::uint32_t>,17>;
+    using Sums = std::array<std::vector<std::uint32_t>,Cache::prime_count>;
     std::vector<Sums> sums(2*(P::k+1)*Cache::digits);
     auto index = [](std::size_t t,std::size_t component,std::size_t digit) {
         return (t*(P::k+1)+component)*Cache::digits+digit;
@@ -197,13 +201,13 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
         };
         if(tiled_matrix){
 #pragma omp parallel for collapse(4) schedule(dynamic,1)
-            for(std::size_t prime=0;prime<17;++prime)
+            for(std::size_t prime=0;prime<Cache::prime_count;++prime)
                 for(std::size_t component=0;component<=P::k;++component)
                     for(std::size_t digit=0;digit<Cache::digits;++digit)
                         for(std::size_t begin=0;begin<P::n;begin+=256)tile(prime,component,digit,begin);
         }else{
 #pragma omp parallel for collapse(3) schedule(static)
-            for(std::size_t prime=0;prime<17;++prime)
+            for(std::size_t prime=0;prime<Cache::prime_count;++prime)
                 for(std::size_t component=0;component<=P::k;++component)
                     for(std::size_t digit=0;digit<Cache::digits;++digit)
                         for(std::size_t begin=0;begin<P::n;begin+=256)tile(prime,component,digit,begin);
@@ -218,15 +222,15 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     for (std::size_t t = 0; t < 2; ++t)
         for (std::size_t component = 0; component <= P::k; ++component)
             for (std::size_t column = 0; column < columns; ++column) {
-                std::array<std::vector<std::uint32_t>,17> spectra;
-                for (std::size_t prime = 0; prime < 17; ++prime) {
+                std::array<std::vector<std::uint32_t>,Cache::prime_count> spectra;
+                for (std::size_t prime = 0; prime < Cache::prime_count; ++prime) {
                     auto &spectrum=spectra[prime];spectrum.resize(P::n);
                     const auto &sum=sums[index(t,component,0)][prime];
                     for(std::size_t i=0;i<P::n;++i)spectrum[i]=sum[i*stride+column];
                     plans[prime].inverse(spectrum);
                 }
-                std::array<std::span<std::uint32_t>,17> residues;
-                for(std::size_t prime=0;prime<17;++prime)residues[prime]=spectra[prime];
+                std::array<std::span<std::uint32_t>,Cache::prime_count> residues;
+                for(std::size_t prime=0;prime<Cache::prime_count;++prime)residues[prime]=spectra[prime];
                 std::vector<typename P::T> coefficients(P::n);
                 crt.reconstruct(residues,coefficients);
                 for(std::size_t i=0;i<P::n;++i)
@@ -269,7 +273,7 @@ class CKKSNarrowFactorSelectorCacheRNS32 {
     std::shared_ptr<const Source> source_;
     std::vector<std::vector<Cache>> groups_;
 public:
-    static constexpr std::uint64_t payload_bytes=std::uint64_t{17}*sizeof(std::uint32_t)*
+    static constexpr std::uint64_t payload_bytes=std::uint64_t{Cache::prime_count}*sizeof(std::uint32_t)*
         (P::k+1)*Cache::digits*P::n*Schedule::block_width*(Schedule::blocks+Schedule::tail_packs);
     // Includes vector object overhead; allocation bookkeeping and temporary
     // preparation buffers remain additional bounded process workspace.

@@ -5,6 +5,39 @@
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 namespace TFHEpp {
 
+// Public coefficient reduction preserves the selector scale. No per-selector
+// rounding is introduced before the weighted sum, and no keys are generated.
+template<class TargetSchedule,class SourceSchedule>
+class CKKSNarrowReducedSelectorSource final:public CKKSNarrowSelectorSource<TargetSchedule>{
+    using P=typename TargetSchedule::Param;
+    using Source=CKKSNarrowSelectorSource<SourceSchedule>;
+    using Selector=typename TargetSchedule::Selector;
+    static_assert(std::is_same_v<P,typename SourceSchedule::Param>);
+    static_assert(TargetSchedule::selector_log_q<SourceSchedule::selector_log_q);
+    static_assert(TargetSchedule::log_delta==SourceSchedule::log_delta);
+    static_assert(TargetSchedule::input_log_q==SourceSchedule::input_log_q);
+    static_assert(TargetSchedule::blocks==SourceSchedule::blocks && TargetSchedule::block_width==SourceSchedule::block_width);
+    static_assert(TargetSchedule::tail_packs==SourceSchedule::tail_packs);
+    std::shared_ptr<const Source> source_;
+    static void convert(std::vector<Selector>&out,const std::vector<typename SourceSchedule::Selector>&raw){
+        out.resize(raw.size());
+        for(std::size_t i=0;i<raw.size();++i)CKKSLevelReduce<P>(out[i],raw[i]);
+    }
+public:
+    explicit CKKSNarrowReducedSelectorSource(std::shared_ptr<const Source> source):source_(std::move(source)){
+        if(!source_)throw std::invalid_argument("missing source for reduced selectors");
+    }
+    std::size_t size(bool tail)const override{return source_->size(tail);}
+    bool hasRawChunks()const override{return source_->hasRawChunks();}
+    bool supportsRawChunkPrefetch()const override{return source_->supportsRawChunkPrefetch();}
+    void load(bool tail,std::size_t group,std::vector<Selector>&out)const override{
+        std::vector<typename SourceSchedule::Selector> raw;source_->load(tail,group,raw);convert(out,raw);
+    }
+    void loadChunk(bool tail,std::size_t group,std::size_t first,std::size_t count,std::vector<Selector>&out)const override{
+        std::vector<typename SourceSchedule::Selector> raw;source_->loadChunk(tail,group,first,count,raw);convert(out,raw);
+    }
+};
+
 // Reuse higher-scale selectors without reconstructing a packed blind-rotation
 // key. Conversion is public rounded rescaling, performed one requested chunk
 // at a time. The selector geometry and encoded plaintext are unchanged.
