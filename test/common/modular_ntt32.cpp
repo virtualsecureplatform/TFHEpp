@@ -17,7 +17,9 @@ int main()
             if (p % divisor == 0) throw std::runtime_error("small NTT modulus is composite");
         modular_ntt32::Montgomery arithmetic(p);
         for (std::size_t i = 0; i < 100000; ++i) {
-            const auto wide = i == 0 ? (std::uint64_t{1} << 52)-1 : random() % (std::uint64_t{1} << 52);
+            const auto wide = i == 0 ? (std::uint64_t{1} << 52)-1 :
+                i == 1 ? (std::uint64_t{1} << 60)-1 :
+                i == 2 ? (p << 32)-1 : random() % (std::uint64_t{1} << 60);
             const auto encoded = arithmetic.encode(wide);
             if (arithmetic.decode(encoded) != wide % p) throw std::runtime_error("wide Montgomery encoding mismatch");
             const auto input = i == 0 ? p-1 : random() % p;

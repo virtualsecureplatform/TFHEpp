@@ -21,7 +21,12 @@ inline const auto &factorPlans32()
 template <class Schedule>
 struct FactorSelector32 {
     using P = typename Schedule::Param;
-    static constexpr std::size_t digit_bits = 52;
+    static constexpr std::size_t digit_bits = [] {
+        if constexpr (requires { Schedule::selector_small_digit_bits; })
+            return std::size_t{Schedule::selector_small_digit_bits};
+        else return std::size_t{52};
+    }();
+    static_assert(digit_bits > 0 && digit_bits <= 60);
     static constexpr std::size_t digits = (Schedule::selector_log_q+digit_bits-1)/digit_bits;
     static constexpr std::uint64_t mask = (std::uint64_t{1} << digit_bits)-1;
     static constexpr unsigned __int128 bound =
@@ -61,12 +66,16 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatch32(
     std::span<const CKKSSlotVector<typename Schedule::Param>> tables,
     const FactorKeys &key, std::size_t chunk_size, Loader load,
     const CKKSPreparedAutoKeyFFT<typename Schedule::Param,Schedule::factor_key_log_q> *factor_fft,
-    CKKSNarrowFactorTimings *timings, bool prefetch_raw = false)
+    CKKSNarrowFactorTimings *timings, bool prefetch_raw = false,
+    std::span<const FactorSelector32<Schedule>> retained = {})
 {
     using P = typename Schedule::Param;
     using Cache = FactorSelector32<Schedule>;
     using Clock = std::chrono::steady_clock;
     if (!chunk_size) throw std::invalid_argument("small-prime selector chunk must be nonzero");
+    if (!retained.empty() && retained.size()!=Schedule::block_width)
+        throw std::invalid_argument("retained small-prime selector group size mismatch");
+    if (!retained.empty()) prefetch_raw=false;
     const auto columns = tables.size();
     if (!columns) return {};
     const auto &plans = factorPlans32<P>();
@@ -120,17 +129,23 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatch32(
     if (prefetch_raw) begin_read(0);
     for (std::size_t first_y = 0; first_y < Schedule::block_width;) {
         const auto count = std::min(chunk_size,Schedule::block_width-first_y);
-        std::vector<typename Schedule::Selector> raw;
-        start = Clock::now();
-        if (prefetch_raw) raw = pending.get();
-        else load(first_y,count,raw);
-        if (raw.size() != count) throw std::invalid_argument("small-prime selector chunk count mismatch");
-        if (timings) timings->selector_load_seconds += std::chrono::duration<double>(Clock::now()-start).count();
-        start = Clock::now();
-        std::vector<Cache> cache; prepareFactorSelectors32<Schedule>(cache,raw);
-        std::vector<typename Schedule::Selector>{}.swap(raw);
-        if (prefetch_raw && first_y+count < Schedule::block_width) begin_read(first_y+count);
-        if (timings) timings->selector_ntt_seconds += std::chrono::duration<double>(Clock::now()-start).count();
+        std::vector<Cache> transient;
+        std::span<const Cache> cache;
+        if (!retained.empty()) cache=retained.subspan(first_y,count);
+        else {
+            std::vector<typename Schedule::Selector> raw;
+            start = Clock::now();
+            if (prefetch_raw) raw = pending.get();
+            else load(first_y,count,raw);
+            if (raw.size() != count) throw std::invalid_argument("small-prime selector chunk count mismatch");
+            if (timings) timings->selector_load_seconds += std::chrono::duration<double>(Clock::now()-start).count();
+            start = Clock::now();
+            prepareFactorSelectors32<Schedule>(transient,raw);
+            std::vector<typename Schedule::Selector>{}.swap(raw);
+            if (prefetch_raw && first_y+count < Schedule::block_width) begin_read(first_y+count);
+            if (timings) timings->selector_ntt_seconds += std::chrono::duration<double>(Clock::now()-start).count();
+            cache=transient;
+        }
         start = Clock::now();
 #pragma omp parallel for collapse(3) schedule(static)
         for (std::size_t prime = 0; prime < 4; ++prime)
@@ -189,13 +204,73 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatch32(
                 result[column].ct[component][i] = ckks_detail::roundedLevelRightShift<P,Schedule::selector_log_q,Schedule::plain_log_delta>(accum[column][0][component][i]);
                 second->ct[component][i] = ckks_detail::roundedLevelRightShift<P,Schedule::selector_log_q,Schedule::plain_log_delta>(accum[column][1][component][i]);
             }
-        conjugate<Schedule,true>(conjugated->ct,second->ct,key,factor_fft);
+        if constexpr (Schedule::factor_log_q <= Schedule::factor_key_log_q)
+            conjugate<Schedule,true>(conjugated->ct,second->ct,key,factor_fft);
+        else {
+            if (!key.automorphism_evaluator)
+                throw std::invalid_argument("high-scale factors require a public automorphism backend");
+            key.automorphism_evaluator(conjugated->ct,second->ct,Schedule::factor_log_q,2*P::n-1);
+        }
         CKKSAddInPlace<P>(result[column],*conjugated);
     }
     if (timings) timings->conjugation_seconds += std::chrono::duration<double>(Clock::now()-start).count();
     return result;
 }
 } // namespace narrow_detail
+
+// Key-dependent spectra only. The caller chooses a byte budget before any
+// group is loaded; input tables and evaluated factors are never cached here.
+template <class Schedule,class SelectorSchedule=Schedule>
+class CKKSNarrowFactorSelectorCache32 {
+    using P=typename Schedule::Param;
+    using Source=CKKSNarrowSelectorSource<SelectorSchedule>;
+    using Cache=narrow_detail::FactorSelector32<Schedule>;
+    static_assert(std::is_same_v<typename Schedule::Selector,typename SelectorSchedule::Selector>);
+    std::shared_ptr<const Source> source_;
+    std::vector<std::vector<Cache>> groups_;
+public:
+    static constexpr std::uint64_t payload_bytes=std::uint64_t{4}*sizeof(std::uint32_t)*
+        (P::k+1)*Cache::digits*P::n*Schedule::block_width*(Schedule::blocks+Schedule::tail_packs);
+    // Includes vector object overhead; allocation bookkeeping and temporary
+    // preparation buffers remain additional bounded process workspace.
+    static constexpr std::uint64_t retained_bytes=payload_bytes+
+        sizeof(Cache)*std::uint64_t(Schedule::block_width)*(Schedule::blocks+Schedule::tail_packs)+
+        sizeof(std::vector<Cache>)*(Schedule::blocks+Schedule::tail_packs);
+    CKKSNarrowFactorSelectorCache32(std::shared_ptr<const Source> source,
+        std::uint64_t budget_bytes,std::size_t chunk_size,
+        std::function<void(bool,std::size_t)> observer={}) : source_(std::move(source))
+    {
+        if (!source_ || !source_->hasRawChunks() || !chunk_size || budget_bytes<retained_bytes)
+            throw std::invalid_argument("invalid small-prime cache source, chunk or memory budget");
+        if (source_->size(false)!=Schedule::blocks*Schedule::block_width ||
+            source_->size(true)!=Schedule::tail_packs*Schedule::block_width)
+            throw std::invalid_argument("small-prime cache source geometry mismatch");
+        groups_.resize(Schedule::blocks+Schedule::tail_packs);
+        for (bool tail:{false,true})
+            for (std::size_t group=0;group<(tail?Schedule::tail_packs:Schedule::blocks);++group) {
+                auto &destination=groups_[(tail?Schedule::blocks:0)+group];
+                destination.resize(Schedule::block_width);
+                for (std::size_t first=0;first<Schedule::block_width;) {
+                    const auto count=std::min(chunk_size,Schedule::block_width-first);
+                    std::vector<typename Schedule::Selector> raw;
+                    source_->loadChunk(tail,group,first,count,raw);
+                    if (raw.size()!=count) throw std::invalid_argument("small-prime cache raw count mismatch");
+                    std::vector<Cache> prepared;
+                    narrow_detail::prepareFactorSelectors32<Schedule>(prepared,raw);
+                    std::move(prepared.begin(),prepared.end(),destination.begin()+first);
+                    first+=count;
+                }
+                if (observer) observer(tail,group);
+            }
+    }
+    const Source *source() const { return source_.get(); }
+    std::span<const Cache> group(bool tail,std::size_t index) const
+    {
+        if (index>=(tail?Schedule::tail_packs:Schedule::blocks))
+            throw std::out_of_range("retained small-prime group");
+        return groups_[(tail?Schedule::blocks:0)+index];
+    }
+};
 
 template <class TargetSchedule,class SourceSchedule,class SelectorSchedule=SourceSchedule>
 class CKKSNarrowDeferredRescaleFactorSource32 final : public CKKSNarrowFactorSource<TargetSchedule> {
@@ -215,6 +290,7 @@ class CKKSNarrowDeferredRescaleFactorSource32 final : public CKKSNarrowFactorSou
     static_assert(SourceSchedule::tail_packs == TargetSchedule::tail_packs && SourceSchedule::tail_packs == SelectorSchedule::tail_packs);
     static_assert(SourceSchedule::tail_blocks_per_pack == TargetSchedule::tail_blocks_per_pack && SourceSchedule::tail_blocks_per_pack == SelectorSchedule::tail_blocks_per_pack);
     std::shared_ptr<const Source> source_;
+    std::shared_ptr<const CKKSNarrowFactorSelectorCache32<SourceSchedule,SelectorSchedule>> retained_;
     struct FactorKeys {
         const CKKSGaloisKey<P,SourceSchedule::factor_key_log_q> &factor_galois;
         bool staged_fft_caches;
@@ -223,8 +299,14 @@ class CKKSNarrowDeferredRescaleFactorSource32 final : public CKKSNarrowFactorSou
         const decltype(CKKSNarrowBootstrapKey<SourceSchedule>::factor_conjugation_projected_fft) &factor_conjugation_projected_fft;
     };
 public:
-    explicit CKKSNarrowDeferredRescaleFactorSource32(std::shared_ptr<const Source> source) : source_(std::move(source))
-    { if (!source_ || !source_->hasRawChunks()) throw std::invalid_argument("small-prime factor source requires raw chunks"); }
+    explicit CKKSNarrowDeferredRescaleFactorSource32(std::shared_ptr<const Source> source,
+        std::shared_ptr<const CKKSNarrowFactorSelectorCache32<SourceSchedule,SelectorSchedule>> retained={})
+        : source_(std::move(source)),retained_(std::move(retained))
+    {
+        if (!source_ || !source_->hasRawChunks()) throw std::invalid_argument("small-prime factor source requires raw chunks");
+        if (retained_ && retained_->source()!=source_.get())
+            throw std::invalid_argument("small-prime cache belongs to another source");
+    }
     std::size_t size(bool tail) const override { return source_->size(tail); }
     std::vector<typename TargetSchedule::Factor> evaluate(
         std::span<const CKKSSlotVector<P>> tables,bool tail,std::size_t group,
@@ -236,7 +318,8 @@ public:
             key.factor_conjugation_fft,key.factor_conjugation_projected_fft};
         auto factors = narrow_detail::packedFactorsBatch32<SourceSchedule>(tables,view,key.selector_ntt_chunk_size,
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
-            source_->supportsRawChunkPrefetch());
+            source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):
+                std::span<const narrow_detail::FactorSelector32<SourceSchedule>>{});
         std::vector<typename TargetSchedule::Factor> result(factors.size());
         for (std::size_t i = 0; i < factors.size(); ++i)
             CKKSScaleDown<P,SourceSchedule::factor_log_q,SourceSchedule::log_delta,drop>(result[i],factors[i]);
