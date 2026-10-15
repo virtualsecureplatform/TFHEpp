@@ -5,7 +5,7 @@
   "changes": [
     "Outline the length2/4/8 dispatcher and require DIT transform inlining into forward/inverse.",
     "Keep scalar/SIMD factor plan sets as immutable static derived data; selector spectra remain identical and shared.",
-    "Add --factor-short-ntt and exclusive warmed --factor-short-ntt-pair. Default SIMD selected from local measurements; scalar remains available."
+    "Add --factor-short-ntt and exclusive warmed --factor-short-ntt-pair. Retain scalar factor stages as default after complete-configuration runs failed to reproduce the within-pair SIMD gain; tensor, gadget and other plan defaults retain SIMD."
   ],
   "private_keys_generated": 0,
   "evaluation_keys_generated": 0,
@@ -66,8 +66,9 @@
       "true": 13.7423825565
     },
     "fractional_reduction": 0.007244699479920125,
-    "limitation": "Two measurements per policy. Small total effect; use together with factor-stage timings."
+    "limitation": "Two measurements per policy. The small within-pair gain did not reproduce with SIMD factors as the complete default; final policy qualification is in the full receipt."
   },
   "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/simd-short-ntt-20261017",
-  "security_validated": false
+  "security_validated": false,
+  "default_factor_short_stages": false
 }

@@ -77,7 +77,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     const CKKSPreparedAutoKeyFFT<typename Schedule::Param,Schedule::factor_key_log_q> *factor_fft,
     CKKSNarrowFactorTimings *timings, bool prefetch_raw = false,
     std::span<const FactorSelectorRNS32<Schedule>> retained = {}, bool tiled_matrix = true,
-    bool parallel_conjugation = false, bool dot8_matrix = true, bool vector_short_stages = true)
+    bool parallel_conjugation = false, bool dot8_matrix = true, bool vector_short_stages = false)
 {
     using P = typename Schedule::Param;
     using Cache = FactorSelectorRNS32<Schedule>;
@@ -374,7 +374,7 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
 public:
     explicit CKKSNarrowDeferredRescaleFactorSourceRNS32(std::shared_ptr<const Source> source,
         std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained={},bool tiled_matrix=true,
-        bool parallel_conjugation=false,bool dot8_matrix=true,bool vector_short_stages=true)
+        bool parallel_conjugation=false,bool dot8_matrix=true,bool vector_short_stages=false)
         : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix),parallel_conjugation_(parallel_conjugation),dot8_matrix_(dot8_matrix),vector_short_stages_(vector_short_stages)
     {
         if (!source_ || !source_->hasRawChunks()) throw std::invalid_argument("direct RNS factor source requires raw chunks");

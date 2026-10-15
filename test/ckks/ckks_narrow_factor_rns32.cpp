@@ -215,7 +215,7 @@ int main()
     if(!rejected || raw->reads!=prior_reads)throw std::runtime_error("direct RNS budget guard failed");
     auto direct_cache=std::make_shared<DirectCache>(raw,DirectCache::retained_bytes,4);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> direct(raw,direct_cache),direct_streamed(raw);
-    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> scalar_short(raw,direct_cache,true,false,true,false);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> simd_short(raw,direct_cache,true,false,true,true);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> four_term(raw,direct_cache,true,false,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source,Source,false> garner(raw,direct_cache);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> untiled(raw,direct_cache,false);
@@ -264,7 +264,7 @@ int main()
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto control=four_term.evaluate(variants,tail,0,*key,nullptr,nullptr);
-                const auto alternate=scalar_short.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto alternate=simd_short.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 for(std::size_t c=0;c<columns;++c)if(alternate[c].ct!=actual[c].ct)throw std::runtime_error("SIMD factor short stages differ from scalar short stages");
                 const auto previous=garner.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 for(std::size_t c=0;c<columns;++c)if(previous[c].ct!=actual[c].ct)throw std::runtime_error("direct CRT factors differ from Garner CRT");
