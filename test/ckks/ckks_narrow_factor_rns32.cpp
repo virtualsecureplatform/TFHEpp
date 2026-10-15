@@ -82,12 +82,12 @@ int main()
     }
     // Exercise scalar tails, the four-column paired SIMD layout and the
     // nine-column vector/scalar boundary with non-multiple-of-four chunks.
-    for(std::size_t columns:{1,4,9}){
+    for(std::size_t columns:{1,4,5,6,7,9}){
         std::vector<CKKSSlotVector<P>> variants(columns);
         for(std::size_t c=0;c<columns;++c)for(std::size_t i=0;i<P::n/2;++i)variants[c][i]=std::polar(1.0,0.017*(c+1)*i);
         for(bool tail:{false,true}){
             key->selector_ntt_chunk_size=1;
-            const auto reference=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
+            const auto reference=streamed.evaluate(variants,tail,0,*key,nullptr,nullptr);
             for(std::size_t chunk:{3,4,5}){
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);

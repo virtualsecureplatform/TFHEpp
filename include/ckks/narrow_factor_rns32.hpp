@@ -83,12 +83,15 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     if (!retained.empty()) prefetch_raw=false;
     const auto columns = tables.size();
     if (!columns) return {};
+    // Five to seven real columns share one full SIMD row. Padding is public
+    // zero workspace; only actual columns are inverse transformed and returned.
+    const auto stride=columns>4 && columns<8?std::size_t{8}:columns;
     const auto &plans = factorPlansRNS32<P>();
     const modular_rns32::CenteredCRT<P::T::limbs> crt;
     auto start = Clock::now();
     std::array<std::array<std::vector<std::uint32_t>,17>,2> base;
     for (auto &signed_tables : base)
-        for (auto &spectrum : signed_tables) spectrum.resize(columns*P::n);
+        for (auto &spectrum : signed_tables) spectrum.resize(stride*P::n);
     std::exception_ptr table_error;
 #pragma omp parallel for collapse(2) schedule(static)
     for (std::size_t t = 0; t < 2; ++t)
@@ -113,7 +116,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                         spectrum[i] = negative && value ? modulus-value : value;
                     }
                     plans[prime].forward(spectrum);
-                    for (std::size_t i = 0; i < P::n; ++i) base[t][prime][i*columns+column] = spectrum[i];
+                    for (std::size_t i = 0; i < P::n; ++i) base[t][prime][i*stride+column] = spectrum[i];
                 }
             }
             catch(...) {
@@ -131,7 +134,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     auto index = [](std::size_t t,std::size_t component,std::size_t digit) {
         return (t*(P::k+1)+component)*Cache::digits+digit;
     };
-    for (auto &row : sums) for (auto &spectrum : row) spectrum.resize(columns*P::n);
+    for (auto &row : sums) for (auto &spectrum : row) spectrum.resize(stride*P::n);
     std::future<std::vector<typename Schedule::Selector>> pending;
     const auto begin_read = [&](std::size_t first) {
         const auto count = std::min(chunk_size,Schedule::block_width-first);
@@ -178,21 +181,21 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                                 std::array<const std::uint32_t*,4> left,right;
                                 std::array<std::uint32_t,4> values;
                                 for(std::size_t t=0;t<4;++t){
-                                    const auto position=narrowNTTPermutationIndex<P::n>(exponents[first_y+local+t],i)*columns;
+                                    const auto position=narrowNTTPermutationIndex<P::n>(exponents[first_y+local+t],i)*stride;
                                     left[t]=base[0][prime].data()+position;right[t]=base[1][prime].data()+position;values[t]=selectors[t][i];
                                 }
-                                arithmetic.addDot4Pair(first+i*columns,second+i*columns,left,right,values,columns);
+                                arithmetic.addDot4Pair(first+i*stride,second+i*stride,left,right,values,stride);
                             }
                         }
                         for (; local < count; ++local) {
                             const auto *selector = cache[local].spectra[prime].data()+(component*Cache::digits+digit)*P::n;
                             for (std::size_t i = begin; i < end; ++i) {
-                                const auto position = narrowNTTPermutationIndex<P::n>(exponents[first_y+local],i)*columns;
-                                arithmetic.addPair(first+i*columns,second+i*columns,
-                                    base[0][prime].data()+position,base[1][prime].data()+position,columns,selector[i]);
+                                const auto position = narrowNTTPermutationIndex<P::n>(exponents[first_y+local],i)*stride;
+                                arithmetic.addPair(first+i*stride,second+i*stride,
+                                    base[0][prime].data()+position,base[1][prime].data()+position,stride,selector[i]);
                             }
                         }
-                        for (std::size_t i = begin*columns; i < end*columns; ++i) {
+                        for (std::size_t i = begin*stride; i < end*stride; ++i) {
                             first[i] = arithmetic.canonical(first[i]); second[i] = arithmetic.canonical(second[i]);
                         }
                     }
@@ -211,7 +214,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                 for (std::size_t prime = 0; prime < 17; ++prime) {
                     auto &spectrum=spectra[prime];spectrum.resize(P::n);
                     const auto &sum=sums[index(t,component,0)][prime];
-                    for(std::size_t i=0;i<P::n;++i)spectrum[i]=sum[i*columns+column];
+                    for(std::size_t i=0;i<P::n;++i)spectrum[i]=sum[i*stride+column];
                     plans[prime].inverse(spectrum);
                 }
                 std::array<std::span<std::uint32_t>,17> residues;

@@ -1,0 +1,33 @@
+{
+  "scope": "CPU-only direct RNS matrix workspace padding for five to seven actual columns, using an eight-column SIMD stride. Only actual columns are encoded, inverse transformed, reconstructed and returned. No key or input changes.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "unit_control": "N512 head/tail factors for columns1,4,5,6,7,9 and chunks3,4,5 match the independent streamed digit-CRT implementation using chunk1. Budget, no-online-read and table bound controls remain enabled.",
+  "full_control": {
+    "function": "tanh",
+    "n": 16384,
+    "basis_roots": 7,
+    "unpadded_seconds": 30.858329852,
+    "padded_seconds": 29.357732984,
+    "all_output_bytes_identical": true,
+    "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61",
+    "independent_validation": {
+      "function": "tanh",
+      "n": 16384,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.7822775194863425e-09,
+        "max_error": 3.224807103201693e-08,
+        "post_product_max_error": 5.753231254278988e-08
+      },
+      "accuracy_passed": true
+    }
+  },
+  "extra_temporary_elements_bytes_for_seven_columns": 6684672,
+  "memory_limit": "Padding adds public zero columns to two table buffers and four sum buffers. Selector key spectra and budgets are unchanged; process RSS remains separate.",
+  "timing_limit": "One unpinned trial before and after padding. Other stages vary; whole-function paired pinned controls are recorded separately.",
+  "tenfold_goal_achieved": false
+}
