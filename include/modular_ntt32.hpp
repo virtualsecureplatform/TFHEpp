@@ -205,10 +205,63 @@ public:
 
 class NegacyclicNTTPlan {
     std::size_t size_;
+    bool vector_short_stages_;
     Montgomery arithmetic_;
     std::vector<std::pair<std::size_t, std::size_t>> swaps_;
     std::vector<std::vector<std::uint32_t>> forward_, inverse_;
     std::vector<std::uint32_t> twist_, untwist_;
+#if defined(__AVX2__)
+    // Pack independent length2/4 butterflies together, or one length8 block.
+    // Every lane enters and leaves canonical, in either residue domain.
+    template<std::size_t Length,bool DIF>
+    void shortStage(std::span<std::uint32_t> values,
+                    const std::vector<std::uint32_t>&twiddles)const
+    {
+        static_assert(Length==2 || Length==4 || Length==8);
+        const auto prime=_mm256_set1_epi32(arithmetic_.modulus());
+        [[maybe_unused]] const auto fixed=[&]{
+            if constexpr(Length==4)
+                return _mm256_setr_epi32(twiddles[0],twiddles[1],twiddles[0],twiddles[1],twiddles[0],twiddles[1],twiddles[0],twiddles[1]);
+            else if constexpr(Length==8)
+                return _mm256_broadcastsi128_si256(_mm_loadu_si128(reinterpret_cast<const __m128i*>(twiddles.data())));
+            else return _mm256_setzero_si256();
+        }();
+        for(std::size_t i=0;i<size_;i+=8){
+            const auto input=_mm256_loadu_si256(reinterpret_cast<const __m256i*>(values.data()+i));
+            if constexpr(Length==2){
+                // The sole twiddle is Montgomery one; skip its multiplication.
+                const auto swapped=_mm256_shuffle_epi32(input,_MM_SHUFFLE(2,3,0,1));
+                const auto sum=arithmetic_.canonicalVector(_mm256_add_epi32(input,swapped));
+                const auto difference=arithmetic_.canonicalVector(_mm256_sub_epi32(_mm256_add_epi32(swapped,prime),input));
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(values.data()+i),_mm256_blend_epi32(sum,difference,0xaa));
+            }else{
+                const auto even=[&]{
+                    if constexpr(Length==4)return _mm256_shuffle_epi32(input,_MM_SHUFFLE(1,0,1,0));
+                    else return _mm256_permute2x128_si256(input,input,0x00);
+                }();
+                auto odd=[&]{
+                    if constexpr(Length==4)return _mm256_shuffle_epi32(input,_MM_SHUFFLE(3,2,3,2));
+                    else return _mm256_permute2x128_si256(input,input,0x11);
+                }();
+                if constexpr(!DIF)odd=arithmetic_.canonicalVector(arithmetic_.multiplyLazyVector(odd,fixed));
+                const auto sum=arithmetic_.canonicalVector(_mm256_add_epi32(even,odd));
+                auto difference=_mm256_sub_epi32(_mm256_add_epi32(even,prime),odd);
+                if constexpr(DIF)difference=arithmetic_.canonicalVector(arithmetic_.multiplyLazyVector(difference,fixed));
+                else difference=arithmetic_.canonicalVector(difference);
+                constexpr auto mask=Length==4?0xcc:0xf0;
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(values.data()+i),_mm256_blend_epi32(sum,difference,mask));
+            }
+        }
+    }
+    template<bool DIF>
+    void shortStage(std::span<std::uint32_t> values,std::size_t length,
+                    const std::vector<std::uint32_t>&twiddles)const
+    {
+        if(length==2)shortStage<2,DIF>(values,twiddles);
+        else if(length==4)shortStage<4,DIF>(values,twiddles);
+        else shortStage<8,DIF>(values,twiddles);
+    }
+#endif
     void transform(std::span<std::uint32_t> values, bool inverse,
                    bool permute = true) const
     {
@@ -218,6 +271,12 @@ class NegacyclicNTTPlan {
         const auto &stages = inverse ? inverse_ : forward_;
         std::size_t stage = 0;
         for (std::size_t length = 2; length <= size_; length <<= 1, ++stage) {
+#if defined(__AVX2__)
+            if(vector_short_stages_ && size_>=8 && length<=8){
+                shortStage<false>(values,length,stages[stage]);
+                continue;
+            }
+#endif
             const auto half = length / 2;
             for (std::size_t block = 0; block < size_; block += length) {
                 std::size_t j = 0;
@@ -252,6 +311,12 @@ class NegacyclicNTTPlan {
         std::size_t stage = forward_.size();
         for (std::size_t length = size_; length >= 2; length >>= 1) {
             --stage;
+#if defined(__AVX2__)
+            if(vector_short_stages_ && size_>=8 && length<=8){
+                shortStage<true>(values,length,forward_[stage]);
+                continue;
+            }
+#endif
             const auto half = length / 2;
             for (std::size_t block = 0; block < size_; block += length) {
                 std::size_t j = 0;
@@ -293,8 +358,10 @@ class NegacyclicNTTPlan {
 public:
     // Values must be canonical. Ordinary and Montgomery residues both keep
     // their representation through these linear transforms.
-    NegacyclicNTTPlan(std::size_t size, modular_ntt::PrimeModulus prime)
-        : size_(size), arithmetic_(prime.value), twist_(size), untwist_(size)
+    NegacyclicNTTPlan(std::size_t size, modular_ntt::PrimeModulus prime,
+                      bool vector_short_stages=true)
+        : size_(size), vector_short_stages_(vector_short_stages),
+          arithmetic_(prime.value), twist_(size), untwist_(size)
     {
         const auto modulus = arithmetic_.modulus();
         if (!modular_ntt::isPowerOfTwo(size) || size < 2 || (modulus-1) % (2*size))

@@ -1,0 +1,136 @@
+{
+  "scope": "CPU AVX2 length2/4/8 NTT butterflies in both DIT and forward DIF. Larger stages use the existing SIMD loops. Degrees2/4 and builds without AVX2 retain scalar stages.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "layout": [
+    "Length2 packs4 independent butterflies; Montgomery-one twiddle multiplication omitted exactly.",
+    "Length4 packs2 butterflies blocks, repeating each half and its twiddles within128-bit lanes.",
+    "Length8 packs one block, repeating low/high128-bit halves and four twiddles.",
+    "DIT multiplies the odd half before sum/difference; DIF multiplies the difference after the butterfly. Canonical outputs stay below p in either residue domain."
+  ],
+  "controls": "NegacyclicNTTPlan(size,prime,false) disables only these new short-stage kernels. Existing large-stage vectorization remains enabled.",
+  "correctness": {
+    "primes": 17,
+    "degrees": [
+      2,
+      4,
+      8,
+      16,
+      32,
+      512,
+      16384,
+      65536
+    ],
+    "domains": [
+      "ordinary",
+      "Montgomery"
+    ],
+    "transform_orders": [
+      "natural",
+      "bit-reversed"
+    ],
+    "oracles": [
+      "Independent64-bit natural-order NTT with explicit bit-reversal comparison",
+      "Scalar short-stage control",
+      "Independent int128 signed convolution",
+      "Full-size exact FFT tensors and schoolbook tensors at N16",
+      "DD digit-NTT reference at N16/512/16384",
+      "Factor digit-CRT reference and existing policy/geometry guards"
+    ],
+    "cases": [
+      "random canonical values",
+      "zero and p-1 endpoints",
+      "inverse round trips",
+      "invalid lengths",
+      "full tensor tree moduli",
+      "zero tensor/gadget input",
+      "head/tail factor SIMD tails and chunk remainders"
+    ],
+    "ntt_checks": {
+      "oracle_checks": 6388126,
+      "passed": true
+    },
+    "factor_result": "direct RNS and digit-CRT cached head/tail factors byte-identical; no online reads or selector transforms; retained bytes=41674640",
+    "all_passed": true
+  },
+  "benchmark": {
+    "method": "Scalar-short/SIMD-short/SIMD-short/scalar-short,5 calls per phase. Each sample32 forward/inverse round trips; omit phase-first calls. Single pinned P core0; all result arrays unchanged. Compilation completed before timing.",
+    "prime_index": 0,
+    "results": [
+      {
+        "n": 512,
+        "bit_reversed": false,
+        "scalar_short_seconds": 0.00022053175,
+        "simd_short_seconds": 8.796962500000001e-05,
+        "fractional_reduction": 0.6011022222423755
+      },
+      {
+        "n": 512,
+        "bit_reversed": true,
+        "scalar_short_seconds": 0.00013420225,
+        "simd_short_seconds": 4.9283125e-05,
+        "fractional_reduction": 0.6327697560957435
+      },
+      {
+        "n": 16384,
+        "bit_reversed": false,
+        "scalar_short_seconds": 0.0060491075,
+        "simd_short_seconds": 0.00325892875,
+        "fractional_reduction": 0.4612546148336759
+      },
+      {
+        "n": 16384,
+        "bit_reversed": true,
+        "scalar_short_seconds": 0.00445302625,
+        "simd_short_seconds": 0.00204403625,
+        "fractional_reduction": 0.5409781718668288
+      },
+      {
+        "n": 65536,
+        "bit_reversed": false,
+        "scalar_short_seconds": 0.03007895,
+        "simd_short_seconds": 0.01915515,
+        "fractional_reduction": 0.36317092185731215
+      },
+      {
+        "n": 65536,
+        "bit_reversed": true,
+        "scalar_short_seconds": 0.018696475,
+        "simd_short_seconds": 0.0090646425,
+        "fractional_reduction": 0.5151683672991835
+      }
+    ],
+    "limitation": "Isolated transform improvements do not establish full FBS gains."
+  },
+  "commands": [
+    {
+      "command": "taskset -c 0 build/test/common/modular_ntt32",
+      "OMP_NUM_THREADS": 1
+    },
+    {
+      "command": "taskset -c 0,2,4,6,8,10,12,14 build/test/common/modular_ntt32",
+      "OMP_NUM_THREADS": 8
+    },
+    {
+      "command": "build/test/ckks/ckks_tensor_rns32 full",
+      "OMP_NUM_THREADS": 8
+    },
+    {
+      "command": "build/test/ckks/ckks_dd_gadget_rns32 full",
+      "OMP_NUM_THREADS": 8
+    },
+    {
+      "command": "build/test/ckks/ckks_narrow_factor_rns32",
+      "OMP_NUM_THREADS": 8
+    }
+  ],
+  "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/simd-short-ntt-20261017",
+  "security_validated": false
+}

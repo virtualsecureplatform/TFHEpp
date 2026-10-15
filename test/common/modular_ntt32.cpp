@@ -7,8 +7,30 @@
 using namespace TFHEpp;
 using Clock = std::chrono::steady_clock;
 
+void benchmarkShortStages()
+{
+    std::mt19937_64 random(20261020);
+    for(std::size_t n:{512,16384,65536}){
+        modular_ntt32::NegacyclicNTTPlan scalar(n,modular_ntt32::primes[0],false),simd(n,modular_ntt32::primes[0],true);
+        std::vector<std::uint32_t> original(n);
+        for(auto&v:original)v=random()%modular_ntt32::primes[0].value;
+        for(bool reversed:{false,true})for(bool optimized:{false,true,true,false})for(int trial=0;trial<5;++trial){
+            auto data=original;const auto&plan=optimized?simd:scalar;
+            const auto start=Clock::now();
+            for(int repeat=0;repeat<32;++repeat){
+                if(reversed){plan.forwardBitReversed(data);plan.inverseBitReversed(data);}
+                else{plan.forward(data);plan.inverse(data);}
+            }
+            const auto seconds=std::chrono::duration<double>(Clock::now()-start).count();
+            if(data!=original)throw std::runtime_error("timed SIMD short-stage roundtrip mismatch");
+            std::cout<<"short-stage n="<<n<<" reversed="<<reversed<<" simd="<<optimized<<" trial="<<trial<<" seconds="<<seconds<<" identical\n";
+        }
+    }
+}
+
 int main()
 {
+    benchmarkShortStages();
     std::mt19937_64 random(20262119);
     std::size_t checked = 0;
     for (const auto prime : modular_rns32::primes) {
@@ -77,7 +99,7 @@ int main()
         }
         };
         check_dot.template operator()<4>();check_dot.template operator()<8>();
-        for (std::size_t n : {2, 8, 512, 16384, 65536}) {
+        for (std::size_t n : {2, 4, 8, 16, 32, 512, 16384, 65536}) {
             modular_ntt32::NegacyclicNTTPlan small(n, prime);
             modular_ntt::NegacyclicNTTPlan reference(n, prime);
             std::vector<std::uint32_t> data(n), encoded(n);
@@ -125,6 +147,12 @@ int main()
                 } catch(const std::invalid_argument&) {rejected=true;}
                 if(!rejected)throw std::runtime_error("bit-reversed NTT accepted invalid length");
             }
+            modular_ntt32::NegacyclicNTTPlan scalar_short(n,prime,false);
+            auto control=original;
+            scalar_short.forward(control);
+            for(std::size_t i=0;i<n;++i)if(control[i]!=expected[i])throw std::runtime_error("scalar short-stage control differs from reference");
+            scalar_short.inverse(control);
+            if(control!=original)throw std::runtime_error("scalar short-stage control roundtrip mismatch");
             small.inverse(data);
             if (data != original) throw std::runtime_error("small-prime NTT roundtrip mismatch");
             checked += n;
