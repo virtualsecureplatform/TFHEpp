@@ -2,6 +2,7 @@
 
 #include "compact_dd.hpp"
 #include "prepared_dd_ntt32.hpp"
+#include "prepared_gadget_rns32.hpp"
 #include <modular_ntt.hpp>
 #include <span>
 
@@ -246,10 +247,11 @@ inline void CKKSCompactDDRelinKeyGenForNTT(CKKSCompactDDRelinKey<P, Q, Bg, Bbar>
 }
 
 template <class P, std::uint32_t DataQ, std::uint32_t AuxiliaryLogScale,
-          std::uint32_t Bg = 64, std::uint32_t Bbar = 32>
+          std::uint32_t Bg = 64, std::uint32_t Bbar = 32, bool WideRNS = false>
 struct CKKSAuxiliaryDDRelinKeyNTT {
     static_assert(AuxiliaryLogScale > 0);
-    using Cache = CKKSPreparedDDRelinKeyNTT<P, DataQ + AuxiliaryLogScale, Bg, Bbar>;
+    using Cache = std::conditional_t<WideRNS, CKKSPreparedGadgetRNS32<P, DataQ + AuxiliaryLogScale, Bg>,
+        CKKSPreparedDDRelinKeyNTT<P, DataQ + AuxiliaryLogScale, Bg, Bbar>>;
     static constexpr auto log_q = DataQ;
     std::shared_ptr<const Cache> cache;
     explicit CKKSAuxiliaryDDRelinKeyNTT(std::shared_ptr<const Cache> value)
@@ -259,17 +261,17 @@ struct CKKSAuxiliaryDDRelinKeyNTT {
 
 namespace ckks_detail {
 template <class P, std::uint32_t Q, std::uint32_t Auxiliary,
-          std::uint32_t Bg, std::uint32_t Bbar>
-struct is_ckks_dd_relin_key<CKKSAuxiliaryDDRelinKeyNTT<P, Q, Auxiliary, Bg, Bbar>>
+          std::uint32_t Bg, std::uint32_t Bbar, bool WideRNS>
+struct is_ckks_dd_relin_key<CKKSAuxiliaryDDRelinKeyNTT<P, Q, Auxiliary, Bg, Bbar, WideRNS>>
     : std::true_type {};
 }
 
 // Lift and rescale the nonlinear switched term, then let the standard
 // relinearization add the tensor's unchanged linear terms at DataQ.
 template <class P, std::uint32_t DataQ, std::uint32_t AuxiliaryLogScale,
-          std::uint32_t Bg, std::uint32_t Bbar>
+          std::uint32_t Bg, std::uint32_t Bbar, bool WideRNS>
 inline void CKKSRelinKeySwitch(TRLWE<P> &result, const Polynomial<P> &input,
-    const CKKSAuxiliaryDDRelinKeyNTT<P, DataQ, AuxiliaryLogScale, Bg, Bbar> &key)
+    const CKKSAuxiliaryDDRelinKeyNTT<P, DataQ, AuxiliaryLogScale, Bg, Bbar, WideRNS> &key)
 {
     constexpr auto key_q = DataQ + AuxiliaryLogScale;
     auto lifted = std::make_unique<Polynomial<P>>();

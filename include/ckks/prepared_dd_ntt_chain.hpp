@@ -11,26 +11,30 @@ namespace TFHEpp {
 // changes the public representation only; this constructor never encrypts.
 template <class P, std::uint32_t StartDataQ, std::uint32_t LogDelta,
           std::size_t Levels, std::uint32_t AuxiliaryLogScale = 100,
-          std::uint32_t Bg = 64, std::uint32_t Bbar = 32, bool RNSTensor = false>
+          std::uint32_t Bg = 64, std::uint32_t Bbar = 32, bool RNSTensor = false, bool WideRNS = false>
 class CKKSPreparedAuxiliaryDDRelinKeyChainNTT {
     static_assert(Levels > 0 && LogDelta > 0);
     static_assert(StartDataQ > (Levels - 1) * LogDelta);
     template <std::size_t... I>
     static auto type(std::index_sequence<I...>) -> std::tuple<
         CKKSAuxiliaryDDRelinKeyNTT<P, StartDataQ - I * LogDelta,
-            AuxiliaryLogScale, Bg, Bbar>...>;
+            AuxiliaryLogScale, Bg, Bbar, WideRNS>...>;
     using Keys = decltype(type(std::make_index_sequence<Levels>{}));
     Keys keys;
 
+    template<std::uint32_t DataQ,std::uint32_t MasterQ,std::uint32_t MasterBbar>
+    static auto prepareLevel(const CKKSCompactDDRelinKey<P,MasterQ,Bg,MasterBbar>&master){
+        using Key=CKKSAuxiliaryDDRelinKeyNTT<P,DataQ,AuxiliaryLogScale,Bg,Bbar,WideRNS>;
+        auto projected=makeCKKSCompactDDRelinKeyAtLevel<DataQ+AuxiliaryLogScale>(master);
+        if constexpr(WideRNS)return Key(std::make_shared<typename Key::Cache>(*projected));
+        else return Key(makeCKKSDDRelinKeyNTT<Bbar>(*projected));
+    }
     template <std::uint32_t MasterQ, std::uint32_t MasterBbar, std::size_t... I>
     static Keys prepare(const CKKSCompactDDRelinKey<P, MasterQ, Bg, MasterBbar> &master,
                         std::index_sequence<I...>)
     {
         static_assert(StartDataQ + AuxiliaryLogScale <= MasterQ);
-        return Keys{CKKSAuxiliaryDDRelinKeyNTT<P, StartDataQ - I * LogDelta,
-            AuxiliaryLogScale, Bg, Bbar>(makeCKKSDDRelinKeyNTT<Bbar>(
-                *makeCKKSCompactDDRelinKeyAtLevel<StartDataQ + AuxiliaryLogScale -
-                    I * LogDelta>(master)))...};
+        return Keys{prepareLevel<StartDataQ-I*LogDelta>(master)...};
     }
 public:
     template <std::uint32_t MasterQ, std::uint32_t MasterBbar>
