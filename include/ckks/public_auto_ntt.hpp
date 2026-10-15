@@ -12,6 +12,20 @@ struct PublicAutoGadgetRows {
  uint32_t exponent=1;
  std::array<TRLWE<P>,rows> ciphertexts{};
 };
+// Regroup retained encrypted gadget rows without deriving or encrypting again.
+template<uint32_t NewBits,class P,uint32_t Q,uint32_t OldBits>
+inline auto makePublicAutoGadgetRowsWithPrimaryBase(const PublicAutoGadgetRows<P,Q,OldBits>&source)
+{
+ static_assert(NewBits>=OldBits && NewBits%OldBits==0);
+ using Target=PublicAutoGadgetRows<P,Q,NewBits>;
+ auto result=std::make_unique<Target>();result->exponent=source.exponent;
+ for(std::size_t row=0;row<Target::rows;++row){
+  const auto power=(Target::rows-row-1)*NewBits;
+  result->ciphertexts[row]=source.ciphertexts[source.rows-1-power/OldBits];
+ }
+ return result;
+}
+
 template<class TargetP, class PackedSchedule, uint32_t Bits=64>
 class PublicPackedAutoDeriver {
  using SourceP=typename PackedSchedule::Param;

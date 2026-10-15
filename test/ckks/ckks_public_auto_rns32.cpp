@@ -4,15 +4,26 @@
 #include <random>
 using namespace TFHEpp;
 template<class P>struct DispatchSchedule{using Param=P;static constexpr std::uint32_t factor_log_q=385,output_log_q=165;};
-template<std::uint32_t Nbit>void check(){
+template<std::uint32_t Nbit,std::uint32_t Bits=20>void check(){
  using P=narrow_benchmark::BenchmarkParam<Nbit,7>;using T=typename P::T;
- constexpr std::uint32_t Q=435,Bits=20;
+ constexpr std::uint32_t Q=435;
  using Rows=PublicAutoGadgetRows<P,Q,Bits>;
  auto rows=std::make_unique<Rows>();rows->exponent=2*P::n-1;
  std::mt19937_64 random(20261016);
  for(auto &r:rows->ciphertexts)for(auto &c:r)for(auto &v:c){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,Q>(v);}
+ if constexpr(Bits==20){
+  auto grouped=makePublicAutoGadgetRowsWithPrimaryBase<40>(*rows);
+  if(grouped->exponent!=rows->exponent)throw std::runtime_error("public gadget regrouping changed exponent");
+  for(std::size_t r=0;r<grouped->rows;++r){
+   const auto power=(grouped->rows-r-1)*40;
+   if(grouped->ciphertexts[r]!=rows->ciphertexts[rows->rows-1-power/20])throw std::runtime_error("public gadget regrouping changed encrypted row bytes");
+  }
+ }
  PreparedPublicAutoNTT<P,Q,Bits,20> reference(*rows);
  PreparedPublicAutoNTT<P,Q,Bits,20,true> direct(*rows);
+ auto cache_map=std::make_shared<std::map<uint32_t,std::shared_ptr<decltype(direct)>>>();
+ cache_map->emplace(rows->exponent,std::make_shared<decltype(direct)>(direct));
+ auto dispatch=narrow_detail::makePublicAutoEvaluator<DispatchSchedule<P>,398,121>(cache_map);
  auto input=std::make_unique<TRLWE<P>>();
  for(auto &c:*input)for(auto &v:c){for(auto&w:v.limb)w=random();}
  auto expected=std::make_unique<TRLWE<P>>(),actual=std::make_unique<TRLWE<P>>();
@@ -27,17 +38,20 @@ template<std::uint32_t Nbit>void check(){
    const auto run_new=[&]{auto t=std::chrono::steady_clock::now();direct.template apply<DataQ>(*actual,*input);now=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();};
    if(trial%2){run_new();run_old();}else{run_old();run_new();}
    if(*actual!=*expected)throw std::runtime_error("wide-chunk RNS automorphism differs from digit NTT");
-   std::cout<<"N="<<P::n<<" data_q="<<DataQ<<" trial="<<trial<<" old="<<old<<" rns="<<now<<" old_bytes="<<reference.byteSize()<<" rns_bytes="<<direct.byteSize()<<" identical\n";
+   std::cout<<"N="<<P::n<<" bits="<<Bits<<" data_q="<<DataQ<<" trial="<<trial<<" old="<<old<<" rns="<<now<<" old_bytes="<<reference.byteSize()<<" rns_bytes="<<direct.byteSize()<<" identical\n";
   }
   *input=*saved;
  };
  compare.template operator()<385>();compare.template operator()<398>();compare.template operator()<121>();
  reference.template apply<165>(*expected,*input);
- narrow_detail::applyPublicAutoAtLevel<DispatchSchedule<P>,398,121>(*actual,*input,165,direct);
+ dispatch(*actual,*input,165,rows->exponent);
  if(*actual!=*expected)throw std::runtime_error("shared root-level cache differs");
  reference.template apply<121>(*expected,*input);
- narrow_detail::applyPublicAutoAtLevel<DispatchSchedule<P>,398,121>(*actual,*input,121,direct);
+ dispatch(*actual,*input,121,rows->exponent);
  if(*actual!=*expected)throw std::runtime_error("shared series-level cache differs");
+ bool missing_exponent=false;
+ try{dispatch(*actual,*input,121,1);}catch(const std::invalid_argument&){missing_exponent=true;}
+ if(!missing_exponent)throw std::runtime_error("unregistered public exponent accepted");
  bool rejected=false;
  try{narrow_detail::applyPublicAutoAtLevel<DispatchSchedule<P>,398>(*actual,*input,121,direct);}
  catch(const std::invalid_argument&){rejected=true;}
@@ -61,4 +75,4 @@ template<std::uint32_t Nbit>void check(){
   if(*actual!=*expected)throw std::runtime_error("full RNS gadget differs from schoolbook oracle");
  }
 }
-int main(int argc,char**){check<4>();check<9>();if(argc>1)check<14>();}
+int main(int argc,char**){check<4>();check<9>();check<4,40>();check<9,40>();if(argc>1){check<14>();check<14,40>();}}

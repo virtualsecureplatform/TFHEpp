@@ -1,0 +1,30 @@
+{
+  "scope": "CPU-only arithmetic checks for regrouped public automorphism gadgets and a shared registered-level dispatcher.",
+  "command": "OMP_NUM_THREADS=8 OMP_MAX_ACTIVE_LEVELS=1 build/test/ckks/ckks_public_auto_rns32",
+  "terminal_exit_status": 0,
+  "ring_dimensions": [
+    16,
+    512
+  ],
+  "primary_bits": [
+    20,
+    40
+  ],
+  "data_levels": [
+    398,
+    385,
+    165,
+    121
+  ],
+  "checks": [
+    "Regrouped 40-bit gadget rows and their automorphism exponent match the selected 20-bit encrypted rows byte for byte.",
+    "Direct RNS switching matches the independent digit-NTT backend for random, zero and centered-boundary inputs.",
+    "Small-ring gadget multiplication matches a coefficient schoolbook oracle for both primary widths.",
+    "The shared map dispatcher matches the independent backend at root and series levels, and rejects missing exponents or unsupported levels."
+  ],
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "full_function_accuracy_covered": false,
+  "performance_claim": null,
+  "security_validated": false
+}
