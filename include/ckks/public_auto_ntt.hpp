@@ -3,7 +3,7 @@
 #include <ckks/prepared_dd_ntt.hpp>
 #include <ckks/prepared_gadget_rns32.hpp>
 namespace TFHEpp {
-// Publicly derived encryptions of gadget*s^exponent; never a relinearization key.
+// Public encryptions of gadget*s^exponent; never a relinearization key.
 template<class P, uint32_t Q, uint32_t Bits=64>
 struct PublicAutoGadgetRows {
  static_assert(P::k==1 && is_multilimb_uint_v<typename P::T>);
@@ -59,9 +59,9 @@ public:
   return std::pair{std::move(result),depths.size()};
  }
 };
-template<class P,uint32_t Q,uint32_t Bits=64,uint32_t Secondary=32,bool DirectRNS=false>
+template<class P,uint32_t Q,uint32_t Bits=64,uint32_t Secondary=32,bool DirectRNS=false,uint32_t ChunkBits=80>
 class PreparedPublicAutoNTT {
- using Cache=std::conditional_t<DirectRNS,CKKSPreparedGadgetRNS32<P,Q,Bits>,CKKSPreparedDDRelinKeyNTT<P,Q,Bits,Secondary>>;
+ using Cache=std::conditional_t<DirectRNS,CKKSPreparedGadgetRNS32<P,Q,Bits,ChunkBits>,CKKSPreparedDDRelinKeyNTT<P,Q,Bits,Secondary>>;
  uint32_t exponent_;
  std::shared_ptr<Cache> cache_;
 public:

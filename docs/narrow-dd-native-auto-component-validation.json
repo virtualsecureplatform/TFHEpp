@@ -1,0 +1,25 @@
+{
+  "scope": "CPU-only direct automorphism-gadget setup, fixed-profile public archives, and the 44-bit / 112-bit-chunk exact RNS backend.",
+  "command": "OMP_NUM_THREADS=8 OMP_MAX_ACTIVE_LEVELS=1 build/test/ckks/ckks_public_auto_rns32",
+  "terminal_exit_status": 0,
+  "backend_test_ring_dimensions": [
+    16,
+    512
+  ],
+  "native_phase_oracle_ring_dimension": 16,
+  "native_primary_bits": 44,
+  "native_chunk_bits": 112,
+  "checks": [
+    "Directly generated gadget phases match a coefficient schoolbook decryption and independently constructed automorphed secret, with small sampled noise.",
+    "The 44-bit / 112-bit-chunk RNS backend matches digit NTT at every registered data level and a small-ring schoolbook multiplication oracle.",
+    "Native archive round trips preserve every encrypted row; wrong origin, exponent, noise profile, truncation and trailing bytes are rejected.",
+    "Existing 20-bit and 40-bit public-gadget arithmetic checks remain passing."
+  ],
+  "test_secret": "Fixed deterministic ternary fixture; no fresh private-key generation.",
+  "small_ring_encrypted_test_rows_generated": 10,
+  "full_size_private_keys_generated": 0,
+  "full_size_evaluation_keys_generated": 0,
+  "full_function_accuracy_covered": false,
+  "performance_claim": null,
+  "security_validated": false
+}

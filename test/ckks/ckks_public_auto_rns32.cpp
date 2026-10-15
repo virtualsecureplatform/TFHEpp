@@ -1,10 +1,12 @@
 #include "ckks_narrow_basis_benchmark.hpp"
 #include <ckks/narrow_auto_ntt.hpp>
+#include <ckks/native_auto_file.hpp>
+#include <sstream>
 #include <iostream>
 #include <random>
 using namespace TFHEpp;
 template<class P>struct DispatchSchedule{using Param=P;static constexpr std::uint32_t factor_log_q=385,output_log_q=165;};
-template<std::uint32_t Nbit,std::uint32_t Bits=20>void check(){
+template<std::uint32_t Nbit,std::uint32_t Bits=20,std::uint32_t ChunkBits=80>void check(){
  using P=narrow_benchmark::BenchmarkParam<Nbit,7>;using T=typename P::T;
  constexpr std::uint32_t Q=435;
  using Rows=PublicAutoGadgetRows<P,Q,Bits>;
@@ -20,7 +22,7 @@ template<std::uint32_t Nbit,std::uint32_t Bits=20>void check(){
   }
  }
  PreparedPublicAutoNTT<P,Q,Bits,20> reference(*rows);
- PreparedPublicAutoNTT<P,Q,Bits,20,true> direct(*rows);
+ PreparedPublicAutoNTT<P,Q,Bits,20,true,ChunkBits> direct(*rows);
  auto cache_map=std::make_shared<std::map<uint32_t,std::shared_ptr<decltype(direct)>>>();
  cache_map->emplace(rows->exponent,std::make_shared<decltype(direct)>(direct));
  auto dispatch=narrow_detail::makePublicAutoEvaluator<DispatchSchedule<P>,398,121>(cache_map);
@@ -64,7 +66,7 @@ template<std::uint32_t Nbit,std::uint32_t Bits=20>void check(){
   // Compile and construct the existing default wide-primary backend too.
   PublicAutoGadgetRows<P,Q,64> legacy_rows;
   PreparedPublicAutoNTT<P,Q,64> legacy(legacy_rows);
-  CKKSPreparedGadgetRNS32<P,Q,Bits> gadget(*rows);
+  CKKSPreparedGadgetRNS32<P,Q,Bits,ChunkBits> gadget(*rows);
   auto digits=std::make_unique<std::array<Polynomial<P>,Rows::rows>>();
   ckks_detail::activeBaseDecomposePolynomialRows<P,Q,Bits,Rows::rows>(*digits,(*input)[0]);
   gadget.apply(*actual,(*input)[0]);for(auto&c:*expected)c.fill({});
@@ -75,4 +77,37 @@ template<std::uint32_t Nbit,std::uint32_t Bits=20>void check(){
   if(*actual!=*expected)throw std::runtime_error("full RNS gadget differs from schoolbook oracle");
  }
 }
-int main(int argc,char**){check<4>();check<9>();check<4,40>();check<9,40>();if(argc>1){check<14>();check<14,40>();}}
+void checkNativeRows()
+{
+ using P=narrow_benchmark::BenchmarkParam<4,7>;constexpr uint32_t Q=435,Bits=44,exponent=2*P::n-1;
+ Key<P> fixed{};for(std::size_t i=0;i<P::n;++i)fixed[i]=P::T::from_signed_i64(int(i%3)-1);
+ auto rows=std::make_unique<PublicAutoGadgetRows<P,Q,Bits>>();CKKSGenerateNativeAutoGadgetRows(*rows,exponent,fixed);
+ for(std::size_t row=0;row<rows->rows;++row){
+  auto phase=rows->ciphertexts[row][1];Polynomial<P> expected{};
+  for(std::size_t i=0;i<P::n;++i)for(std::size_t j=0;j<P::n;++j){
+   const auto value=rows->ciphertexts[row][0][i]*fixed[j];phase[(i+j)%P::n]-=i+j<P::n?value:-value;
+  }
+  for(std::size_t i=0;i<P::n;++i){
+   const auto position=i*exponent%(2*P::n);const auto value=fixed[i]<<((rows->rows-row-1)*Bits);
+   expected[position%P::n]=position<P::n?value:-value;
+  }
+  for(std::size_t i=0;i<P::n;++i){
+   const auto error=ckks_detail::reduceToLevel<P,Q>(phase[i]-expected[i]);
+   const auto small=std::bit_cast<int64_t>(error.limb[0]);
+   if(error!=ckks_detail::reduceToLevel<P,Q>(P::T::from_signed_i64(small))||small>128||small< -128)throw std::runtime_error("native gadget phase differs from independent schoolbook oracle");
+  }
+ }
+ const std::string origin(64,'a');std::stringstream saved;
+ CKKSWriteNativeAutoRows(saved,*rows,origin,3.2);const auto bytes=saved.str();
+ auto loaded=CKKSReadNativeAutoRows<P,Q,Bits>(saved,exponent,origin,3.2);
+ if(loaded->exponent!=rows->exponent||loaded->ciphertexts!=rows->ciphertexts)throw std::runtime_error("native archive changed encrypted rows");
+ const auto reject=[&](std::string data,uint32_t target,const std::string&source,double sigma){
+  bool rejected=false;try{std::stringstream input(data);CKKSReadNativeAutoRows<P,Q,Bits>(input,target,source,sigma);}catch(const std::exception&){rejected=true;}
+  if(!rejected)throw std::runtime_error("invalid native archive accepted");
+ };
+ reject(bytes,1,origin,3.2);reject(bytes,exponent,std::string(64,'b'),3.2);reject(bytes,exponent,origin,6.4);
+ reject(bytes.substr(0,bytes.size()-1),exponent,origin,3.2);reject(bytes+"x",exponent,origin,3.2);
+ std::cout<<"native key phases match schoolbook; archive profile/origin/truncation guards pass\n";
+}
+
+int main(int argc,char**){check<4>();check<9>();check<4,40>();check<9,40>();check<4,44,112>();check<9,44,112>();checkNativeRows();if(argc>1){check<14>();check<14,40>();}}
