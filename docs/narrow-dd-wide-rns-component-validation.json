@@ -1,0 +1,439 @@
+{
+  "scope": "CPU-only exact wide-chunk RNS gadget switching from the existing compact DD key. Recompose balanced secondary digits modulo Q once at public-cache construction, then use the existing 80-bit-chunk gadget backend.",
+  "baseline_commit": "f31d6d8",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "primary_bits": 20,
+  "old_secondary_bits": 20,
+  "wide_chunk_bits": 80,
+  "auxiliary_bits": 48,
+  "data_levels": [
+    385,
+    341,
+    297,
+    253,
+    209
+  ],
+  "arithmetic_proof": "Recompose each compact public ciphertext as the sum of signed secondary digits times their radix powers modulo 2^Q. Wide gadget multiplication retains the same balanced primary decomposition and exact convolution bound; only its public key representation changes. The auxiliary input lift and output rounding code are shared with the existing backend.",
+  "tests": "Native and scalar coefficient comparisons at N16/N512 and all five levels; N16384 native at every level. Zero inputs overwrite previous nonzero outputs. Existing public automorphism tests, including schoolbook gadget convolution and legacy default construction, pass after the shared constructor refactor.",
+  "one_thread_trials": [
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 0,
+      "digit_seconds": 0.0464805,
+      "wide_seconds": 0.032273,
+      "digit_spectrum_bytes": 126877696,
+      "wide_spectrum_bytes": 69206016,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 1,
+      "digit_seconds": 0.0375908,
+      "wide_seconds": 0.0304507,
+      "digit_spectrum_bytes": 126877696,
+      "wide_spectrum_bytes": 69206016,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 2,
+      "digit_seconds": 0.0370548,
+      "wide_seconds": 0.0287831,
+      "digit_spectrum_bytes": 126877696,
+      "wide_spectrum_bytes": 69206016,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 3,
+      "digit_seconds": 0.0353796,
+      "wide_seconds": 0.0279115,
+      "digit_spectrum_bytes": 126877696,
+      "wide_spectrum_bytes": 69206016,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 341,
+      "trial": 0,
+      "digit_seconds": 0.0362749,
+      "wide_seconds": 0.0242594,
+      "digit_spectrum_bytes": 104857600,
+      "wide_spectrum_bytes": 52428800,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 341,
+      "trial": 1,
+      "digit_seconds": 0.0335262,
+      "wide_seconds": 0.0241219,
+      "digit_spectrum_bytes": 104857600,
+      "wide_spectrum_bytes": 52428800,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 341,
+      "trial": 2,
+      "digit_seconds": 0.033978,
+      "wide_seconds": 0.027153,
+      "digit_spectrum_bytes": 104857600,
+      "wide_spectrum_bytes": 52428800,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 341,
+      "trial": 3,
+      "digit_seconds": 0.0327158,
+      "wide_seconds": 0.0261006,
+      "digit_spectrum_bytes": 104857600,
+      "wide_spectrum_bytes": 52428800,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 297,
+      "trial": 0,
+      "digit_seconds": 0.0320363,
+      "wide_seconds": 0.0217373,
+      "digit_spectrum_bytes": 84934656,
+      "wide_spectrum_bytes": 47185920,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 297,
+      "trial": 1,
+      "digit_seconds": 0.027408,
+      "wide_seconds": 0.021135,
+      "digit_spectrum_bytes": 84934656,
+      "wide_spectrum_bytes": 47185920,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 297,
+      "trial": 2,
+      "digit_seconds": 0.0274779,
+      "wide_seconds": 0.021456,
+      "digit_spectrum_bytes": 84934656,
+      "wide_spectrum_bytes": 47185920,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 297,
+      "trial": 3,
+      "digit_seconds": 0.0273466,
+      "wide_seconds": 0.0215685,
+      "digit_spectrum_bytes": 84934656,
+      "wide_spectrum_bytes": 47185920,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 253,
+      "trial": 0,
+      "digit_seconds": 0.023519,
+      "wide_seconds": 0.0177084,
+      "digit_spectrum_bytes": 67108864,
+      "wide_spectrum_bytes": 33554432,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 253,
+      "trial": 1,
+      "digit_seconds": 0.0234591,
+      "wide_seconds": 0.0178961,
+      "digit_spectrum_bytes": 67108864,
+      "wide_spectrum_bytes": 33554432,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 253,
+      "trial": 2,
+      "digit_seconds": 0.0234796,
+      "wide_seconds": 0.0178671,
+      "digit_spectrum_bytes": 67108864,
+      "wide_spectrum_bytes": 33554432,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 253,
+      "trial": 3,
+      "digit_seconds": 0.0235133,
+      "wide_seconds": 0.0176767,
+      "digit_spectrum_bytes": 67108864,
+      "wide_spectrum_bytes": 33554432,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 209,
+      "trial": 0,
+      "digit_seconds": 0.0193859,
+      "wide_seconds": 0.015422,
+      "digit_spectrum_bytes": 44302336,
+      "wide_spectrum_bytes": 27262976,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 209,
+      "trial": 1,
+      "digit_seconds": 0.0185662,
+      "wide_seconds": 0.0147415,
+      "digit_spectrum_bytes": 44302336,
+      "wide_spectrum_bytes": 27262976,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 209,
+      "trial": 2,
+      "digit_seconds": 0.0185373,
+      "wide_seconds": 0.0144352,
+      "digit_spectrum_bytes": 44302336,
+      "wide_spectrum_bytes": 27262976,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 209,
+      "trial": 3,
+      "digit_seconds": 0.018107,
+      "wide_seconds": 0.014338,
+      "digit_spectrum_bytes": 44302336,
+      "wide_spectrum_bytes": 27262976,
+      "all_coefficients_identical": true
+    }
+  ],
+  "eight_thread_trials": [
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 0,
+      "digit_seconds": 0.0155239,
+      "wide_seconds": 0.0086084,
+      "digit_spectrum_bytes": 126877696,
+      "wide_spectrum_bytes": 69206016,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 1,
+      "digit_seconds": 0.00993856,
+      "wide_seconds": 0.00884336,
+      "digit_spectrum_bytes": 126877696,
+      "wide_spectrum_bytes": 69206016,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 2,
+      "digit_seconds": 0.00961515,
+      "wide_seconds": 0.00881574,
+      "digit_spectrum_bytes": 126877696,
+      "wide_spectrum_bytes": 69206016,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 385,
+      "trial": 3,
+      "digit_seconds": 0.0104819,
+      "wide_seconds": 0.00890633,
+      "digit_spectrum_bytes": 126877696,
+      "wide_spectrum_bytes": 69206016,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 341,
+      "trial": 0,
+      "digit_seconds": 0.0138788,
+      "wide_seconds": 0.00795111,
+      "digit_spectrum_bytes": 104857600,
+      "wide_spectrum_bytes": 52428800,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 341,
+      "trial": 1,
+      "digit_seconds": 0.0085033,
+      "wide_seconds": 0.00734691,
+      "digit_spectrum_bytes": 104857600,
+      "wide_spectrum_bytes": 52428800,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 341,
+      "trial": 2,
+      "digit_seconds": 0.00856199,
+      "wide_seconds": 0.00747134,
+      "digit_spectrum_bytes": 104857600,
+      "wide_spectrum_bytes": 52428800,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 341,
+      "trial": 3,
+      "digit_seconds": 0.00846575,
+      "wide_seconds": 0.0075222,
+      "digit_spectrum_bytes": 104857600,
+      "wide_spectrum_bytes": 52428800,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 297,
+      "trial": 0,
+      "digit_seconds": 0.0121478,
+      "wide_seconds": 0.0066835,
+      "digit_spectrum_bytes": 84934656,
+      "wide_spectrum_bytes": 47185920,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 297,
+      "trial": 1,
+      "digit_seconds": 0.00760611,
+      "wide_seconds": 0.0066333,
+      "digit_spectrum_bytes": 84934656,
+      "wide_spectrum_bytes": 47185920,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 297,
+      "trial": 2,
+      "digit_seconds": 0.00728538,
+      "wide_seconds": 0.00664641,
+      "digit_spectrum_bytes": 84934656,
+      "wide_spectrum_bytes": 47185920,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 297,
+      "trial": 3,
+      "digit_seconds": 0.0073297,
+      "wide_seconds": 0.00663208,
+      "digit_spectrum_bytes": 84934656,
+      "wide_spectrum_bytes": 47185920,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 253,
+      "trial": 0,
+      "digit_seconds": 0.00706314,
+      "wide_seconds": 0.00605857,
+      "digit_spectrum_bytes": 67108864,
+      "wide_spectrum_bytes": 33554432,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 253,
+      "trial": 1,
+      "digit_seconds": 0.00623546,
+      "wide_seconds": 0.00565289,
+      "digit_spectrum_bytes": 67108864,
+      "wide_spectrum_bytes": 33554432,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 253,
+      "trial": 2,
+      "digit_seconds": 0.00582447,
+      "wide_seconds": 0.00540414,
+      "digit_spectrum_bytes": 67108864,
+      "wide_spectrum_bytes": 33554432,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 253,
+      "trial": 3,
+      "digit_seconds": 0.00629861,
+      "wide_seconds": 0.00558344,
+      "digit_spectrum_bytes": 67108864,
+      "wide_spectrum_bytes": 33554432,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 209,
+      "trial": 0,
+      "digit_seconds": 0.00730757,
+      "wide_seconds": 0.00693117,
+      "digit_spectrum_bytes": 44302336,
+      "wide_spectrum_bytes": 27262976,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 209,
+      "trial": 1,
+      "digit_seconds": 0.00657614,
+      "wide_seconds": 0.00601482,
+      "digit_spectrum_bytes": 44302336,
+      "wide_spectrum_bytes": 27262976,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 209,
+      "trial": 2,
+      "digit_seconds": 0.00676986,
+      "wide_seconds": 0.00607969,
+      "digit_spectrum_bytes": 44302336,
+      "wide_spectrum_bytes": 27262976,
+      "all_coefficients_identical": true
+    },
+    {
+      "n": 16384,
+      "data_log_q": 209,
+      "trial": 3,
+      "digit_seconds": 0.00692525,
+      "wide_seconds": 0.00597614,
+      "digit_spectrum_bytes": 44302336,
+      "wide_spectrum_bytes": 27262976,
+      "all_coefficients_identical": true
+    }
+  ],
+  "spectrum_bytes_five_levels": {
+    "digit": 428081152,
+    "wide": 229638144
+  },
+  "timing_limit": "Synthetic ciphertext rows check arithmetic and memory, not encrypted accuracy. Old/new order alternates. Trial0 includes first-use effects. Small-ring timings need not improve; the library default remains the existing backend and the N16384 replay opts in. Full saved-key replay is recorded separately.",
+  "tenfold_goal_achieved": false,
+  "comparison_counts": {
+    "native_eight_threads": 44,
+    "native_one_thread": 44,
+    "scalar_small_ring": 24
+  },
+  "raw_log_sha256": {
+    "component.log": "c47b17b2c659c14d86b4e41a2cc06a3922e7309076e36d201835208690077d15",
+    "component-1thread.log": "69c895cd5a1452b2790bb97f4823e831bf0404596f45888512a3f8a26f8db897",
+    "scalar.log": "21c3c27db2440a67f22f036e1b5badbd209c0550415b42a71087acf0b854af53"
+  }
+}

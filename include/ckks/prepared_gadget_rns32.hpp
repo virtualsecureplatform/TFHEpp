@@ -37,19 +37,37 @@ class CKKSPreparedGadgetRNS32 {
         }();return value;
     }
     std::array<std::vector<std::uint32_t>,count> spectra_;
-public:
-    static constexpr auto prime_count=count;
-    template<class GadgetRows> explicit CKKSPreparedGadgetRNS32(const GadgetRows&key){
-        static_assert(GadgetRows::rows==rows);
+    template<class Loader> void prepare(Loader coefficient){
         static const modular_rns32::CanonicalEncoder<P::T::limbs,chunk_bits,count> encoder;
         (void)plans();for(auto &row:spectra_)row.resize(chunks*rows*2*P::n);
 #pragma omp parallel for collapse(4) schedule(static)
         for(std::size_t p=0;p<count;++p)for(std::size_t chunk=0;chunk<chunks;++chunk)for(std::size_t r=0;r<rows;++r)for(std::size_t c=0;c<2;++c){
             const auto &arithmetic=plans()[p].arithmetic();
             auto values=std::span(spectra_[p]).subspan(((chunk*rows+r)*2+c)*P::n,P::n);
-            for(std::size_t i=0;i<P::n;++i)values[i]=arithmetic.encode(encoder.residue(ckks_detail::reduceToLevel<P,Q>(key.ciphertexts[r][c][i])>>(chunk*chunk_bits),p));
+            for(std::size_t i=0;i<P::n;++i)values[i]=arithmetic.encode(encoder.residue(ckks_detail::reduceToLevel<P,Q>(coefficient(r,c,i))>>(chunk*chunk_bits),p));
             plans()[p].forward(values);
         }
+    }
+public:
+    static constexpr auto prime_count=count;
+    template<class GadgetRows> explicit CKKSPreparedGadgetRNS32(const GadgetRows&key){
+        static_assert(GadgetRows::rows==rows);
+        prepare([&](std::size_t r,std::size_t c,std::size_t i){return key.ciphertexts[r][c][i];});
+    }
+    template<std::uint32_t Secondary>
+    explicit CKKSPreparedGadgetRNS32(const CKKSCompactDDRelinKey<P,Q,Bits,Secondary>&key){
+        using Compact=CKKSCompactDDRelinKey<P,Q,Bits,Secondary>;
+        static_assert(Compact::primary_rows==rows);
+        auto ordinary=std::make_unique<std::array<TRLWE<P>,rows>>();
+#pragma omp parallel for collapse(2) schedule(static)
+        for(std::size_t r=0;r<rows;++r)for(std::size_t c=0;c<2;++c)
+            for(std::size_t i=0;i<P::n;++i){
+                typename P::T value{};
+                for(std::size_t digit=0;digit<Compact::bbar_rows;++digit)
+                    value+=P::T::from_signed_i64(key.data[r][digit][c][i])<<((Compact::bbar_rows-digit-1)*Secondary);
+                (*ordinary)[r][c][i]=ckks_detail::reduceToLevel<P,Q>(value);
+            }
+        prepare([&](std::size_t r,std::size_t c,std::size_t i){return (*ordinary)[r][c][i];});
     }
     std::size_t byteSize()const{return count*chunks*rows*2*P::n*sizeof(std::uint32_t);}
     void apply(TRLWE<P>&result,const Polynomial<P>&input)const{
