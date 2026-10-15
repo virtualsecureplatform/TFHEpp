@@ -1,0 +1,24 @@
+{
+  "scope": "CPU-only component validation for independent product rescale allocation in frequency-basis reconstruction.",
+  "test": "OMP_NUM_THREADS=8 build/test/ckks/ckks_narrow_basis_prepared",
+  "terminal_exit_status": 0,
+  "ring_dimension": 512,
+  "root_log_delta": 35,
+  "mixed_product_rescale_bits": 29,
+  "mixed_product_log_delta": 41,
+  "mixed_scale_signed_series_max_error": 1.5393e-09,
+  "default_signed_series_max_error": 1.56761e-09,
+  "default_unsigned_series_max_error": 6.45528e-10,
+  "required_max_error": 1.1920928955078125e-07,
+  "checks": [
+    "Legacy FFT and prepared FFT/auxiliary NTT remain byte-identical with the default drop.",
+    "Legacy and prepared reconstruction agree byte for byte with a nondefault product drop.",
+    "Nondefault reconstruction independently matches the plaintext series at every slot, including direct roots, sums, differences and the nonzero constant.",
+    "Seven-root signed degree-40 basis requires three root conjugations, reused across frequencies."
+  ],
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "full_encrypted_replay_covered": false,
+  "performance_claim": null,
+  "security_validated": false
+}

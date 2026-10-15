@@ -30,7 +30,7 @@ inline void CKKSNarrowEvalSeriesFromBasisRootsPrepared(
     for (std::size_t k = 1; k <= plan.degree(); ++k) {
         if (!weights[k][0] && !weights[k][1]) continue;
         const auto expression = plan.expression(k);
-        if (expression[1] == roots.size()) CKKSLevelReduce<P>(*product,roots[expression[0]]);
+        if (expression[1] == roots.size()) narrow_detail::liftFrequencyRoot<Schedule>(*product,roots[expression[0]]);
         else {
             const auto *rhs=&roots[expression[1]];
             if(plan.conjugatesSecond(k)){
@@ -40,7 +40,7 @@ inline void CKKSNarrowEvalSeriesFromBasisRootsPrepared(
                     rhs=negative.get();
                 }
             }
-            CKKSMultRelinThenRescale<P>(*product,roots[expression[0]],*rhs,product_key);
+            CKKSMultRelinThenRescaleBy<P, Schedule::product_rescale_bits>(*product,roots[expression[0]],*rhs,product_key);
         }
         narrow_detail::addFrequencyWeight<Schedule>(result,*product,weights[k][0],weights[k][1]);
     }
@@ -48,7 +48,7 @@ inline void CKKSNarrowEvalSeriesFromBasisRootsPrepared(
     conjugate(negative->ct,result.ct);
     CKKSAddInPlace<P>(result,*negative);
     result.ct[P::k][0] = ckks_detail::reduceToLevel<P,Schedule::output_log_q>(
-        result.ct[P::k][0]+(P::T::from_signed_i64(weights[0][0]) << Schedule::root_log_delta));
+        result.ct[P::k][0]+(P::T::from_signed_i64(weights[0][0]) << Schedule::product_log_delta));
 }
 } // namespace TFHEpp
 #endif

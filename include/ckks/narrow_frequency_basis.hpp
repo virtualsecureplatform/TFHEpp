@@ -94,20 +94,24 @@ inline void CKKSNarrowBlindRotateBasisPlansBatch(
     results.swap(evaluated);
 }
 
-template <class Narrow, std::uint32_t CoefficientBits = 32>
+template <class Narrow, std::uint32_t CoefficientBits = 32,
+          std::uint32_t ProductDrop = Narrow::log_delta>
 struct CKKSNarrowFrequencyBasisSchedule {
     using Base = Narrow;
     using Param = typename Base::Param;
     static constexpr auto coefficient_bits = CoefficientBits;
     static constexpr auto root_log_q = Base::output_log_q;
     static constexpr auto root_log_delta = Base::log_delta;
-    static constexpr auto output_log_q = root_log_q - root_log_delta;
-    static constexpr auto log_delta = root_log_delta + CoefficientBits;
+    static constexpr auto product_rescale_bits = ProductDrop;
+    static_assert(ProductDrop > 0 && ProductDrop <= root_log_delta);
+    static constexpr auto product_log_delta = 2 * root_log_delta - ProductDrop;
+    static constexpr auto output_log_q = root_log_q - ProductDrop;
+    static constexpr auto log_delta = product_log_delta + CoefficientBits;
     static_assert(CoefficientBits > 0 && CoefficientBits <= 40);
     static_assert(root_log_q > 2 * root_log_delta);
     static_assert(output_log_q > log_delta);
     using Root = typename Base::Output;
-    using Product = CKKSCiphertext<Param, output_log_q, root_log_delta>;
+    using Product = CKKSCiphertext<Param, output_log_q, product_log_delta>;
     using Output = CKKSCiphertext<Param, output_log_q, log_delta>;
 };
 
@@ -150,6 +154,18 @@ inline std::int64_t frequencyCoefficient(double value)
         rounded >= std::ldexp(1.0L, 63))
         throw std::invalid_argument("narrow frequency coefficient exceeds fixed-point range");
     return static_cast<std::int64_t>(rounded);
+}
+
+// Match direct roots to the product scale without rounding or consuming a level.
+template <class Schedule>
+inline void liftFrequencyRoot(typename Schedule::Product &out,
+                              const typename Schedule::Root &root)
+{
+    using P = typename Schedule::Param;
+    constexpr auto shift = Schedule::product_log_delta - Schedule::root_log_delta;
+    for (std::size_t c = 0; c <= P::k; ++c)
+        for (std::size_t i = 0; i < P::n; ++i)
+            out.ct[c][i] = ckks_detail::reduceToLevel<P, Schedule::output_log_q>(root.ct[c][i] << shift);
 }
 
 // All canonical slot exponents are powers of five, hence X^(N/2) evaluates
@@ -200,10 +216,10 @@ inline void CKKSNarrowEvalSeriesFromBasisRoots(
     for (std::size_t k = 1; k <= plan.degree(); k++) {
         if (weights[k][0] == 0 && weights[k][1] == 0) continue;
         const auto expression = plan.expression(k);
-        if (expression[1] == roots.size()) CKKSLevelReduce<P>(*product, roots[expression[0]]);
+        if (expression[1] == roots.size()) narrow_detail::liftFrequencyRoot<Schedule>(*product, roots[expression[0]]);
         else {
             auto multiply = [&](const auto &key) {
-                CKKSMultRelinThenRescale<P>(*product, roots[expression[0]], roots[expression[1]], key);
+                CKKSMultRelinThenRescaleBy<P, Schedule::product_rescale_bits>(*product, roots[expression[0]], roots[expression[1]], key);
             };
             if constexpr (use_multilimb_digit_fft_v<P>) {
                 if (prepared_product) multiply(*prepared_product);
@@ -225,7 +241,7 @@ inline void CKKSNarrowEvalSeriesFromBasisRoots(
     else CKKSEvalAuto<P, Schedule::output_log_q>(negative->ct, result.ct, 2 * P::n - 1, basis_key.conjugation);
     CKKSAddInPlace<P>(result, *negative);
     result.ct[P::k][0] = ckks_detail::reduceToLevel<P, Schedule::output_log_q>(
-        result.ct[P::k][0] + (P::T::from_signed_i64(weights[0][0]) << Schedule::root_log_delta));
+        result.ct[P::k][0] + (P::T::from_signed_i64(weights[0][0]) << Schedule::product_log_delta));
 }
 
 // Section7 optional basis path: unweighted blind rotations, one extra DD

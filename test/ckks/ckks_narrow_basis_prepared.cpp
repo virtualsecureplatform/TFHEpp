@@ -89,6 +89,35 @@ int main()
         signed_error=std::max(signed_error,std::abs((*slots)[i]-expected));
     }
     if(signed_error>=std::ldexp(1.0,-23))throw std::runtime_error("signed basis independent series gate failed");
+    // A six-bit smaller product drop retains six extra scale bits. Exercise
+    // direct roots, sums, differences and the nonzero constant independently.
+    using Mixed = CKKSNarrowFrequencyBasisSchedule<Narrow,32,29>;
+    static_assert(Mixed::product_log_delta == Basis::root_log_delta + 6);
+    auto mixed = std::make_unique<Mixed::Output>();
+    const auto mixed_conjugate = [&](auto& output,const auto& input) {
+        for(std::size_t c=0;c<2;++c)Automorphism<P>(output[c],input[c],2*P::n-1);
+        ckks_detail::reduceTRLWEToLevel<P,Mixed::output_log_q>(output);
+    };
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Mixed>(*mixed,signed_roots,signed_plan,signed_coefficients,auxiliary,mixed_conjugate,
+        [&](auto& output,const auto& input) {
+            for(std::size_t c=0;c<2;++c)Automorphism<P>(output[c],input[c],2*P::n-1);
+            ckks_detail::reduceTRLWEToLevel<P,Mixed::root_log_q>(output);
+        });
+    auto mixed_raw=std::make_unique<CKKSNarrowFrequencyBasisKey<Mixed>>();
+    auto mixed_legacy=std::make_unique<Mixed::Output>();
+    auto mixed_prepared=std::make_unique<Mixed::Output>();
+    CKKSNarrowEvalSeriesFromBasisRoots<Mixed>(*mixed_legacy,roots,*mixed_raw,plan,coefficients);
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Mixed>(*mixed_prepared,roots,plan,coefficients,auxiliary,mixed_conjugate);
+    if(mixed_legacy->ct!=mixed_prepared->ct)throw std::runtime_error("mixed-scale legacy and prepared backends differ");
+    ckksSlotDecode<P,Mixed::output_log_q,Mixed::log_delta>(*slots,mixed->ct[1]);
+    double mixed_error=0;
+    for(std::size_t i=0;i<P::n/2;++i){
+        double expected=signed_coefficients[0].real();
+        for(std::size_t k=1;k<=40;++k)expected+=2*(signed_coefficients[k]*std::polar(1.0,k*(0.3+0.7*i/(P::n/2)))).real();
+        mixed_error=std::max(mixed_error,std::abs((*slots)[i]-expected));
+    }
+    if(mixed_error>=std::ldexp(1.0,-23))throw std::runtime_error("mixed-scale independent series gate failed");
+    std::cout<<"mixed-scale signed basis series error="<<mixed_error<<'\n';
     std::cout<<"seven roots cover degree40 with one product level; root conjugations="<<root_conjugations<<" series error="<<signed_error<<'\n';
     std::cout << "prepared FFT and auxiliary NTT basis byte-identical; series error=" << maximum << '\n';
 }

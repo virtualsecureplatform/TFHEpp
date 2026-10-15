@@ -8061,12 +8061,13 @@ inline void CKKSMult(
 // This requires a key at the input modulus, rather than the output modulus
 // used by CKKSMult. Keeping enough headroom for the unscaled product avoids
 // amplifying component-wise rounding by the squared secret.
-template <class P, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
+template <class P, std::uint32_t Drop, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
           std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta, class RelinKey>
     requires(RelinKey::log_q ==
              ckks_detail::static_min_v<LhsLogQ, RhsLogQ>)
-inline void CKKSMultRelinThenRescale(
-    CKKSMultResult<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta> &res,
+inline void CKKSMultRelinThenRescaleBy(
+    CKKSCiphertext<P, ckks_detail::static_min_v<LhsLogQ, RhsLogQ> - Drop,
+                   LhsLogDelta + RhsLogDelta - Drop> &res,
     const CKKSCiphertext<P, LhsLogQ, LhsLogDelta> &lhs,
     const CKKSCiphertext<P, RhsLogQ, RhsLogDelta> &rhs,
     const RelinKey &relinkey)
@@ -8075,6 +8076,7 @@ inline void CKKSMultRelinThenRescale(
     constexpr auto product_log_delta = LhsLogDelta + RhsLogDelta;
     static_assert(product_log_delta < Traits::base_log_q,
                   "relinearization before rescale needs unscaled product headroom");
+    static_assert(Drop > 0 && Drop < product_log_delta && Drop < Traits::base_log_q);
     auto tensor = std::make_unique<TRLWE3<P>>();
     auto unscaled = std::make_unique<CKKSCiphertext<P, Traits::base_log_q, product_log_delta>>();
     if constexpr (requires { relinkey.tensorProduct(*tensor, lhs.ct, rhs.ct); })
@@ -8082,7 +8084,21 @@ inline void CKKSMultRelinThenRescale(
     else
         CKKSTensorProductRescale<P, LhsLogQ, RhsLogQ, 0>(*tensor, lhs.ct, rhs.ct);
     CKKSRelinearization<P, Traits::base_log_q>(unscaled->ct, *tensor, relinkey);
-    CKKSScaleDown<P, Traits::base_log_q, product_log_delta, Traits::log_scale>(res, *unscaled);
+    CKKSScaleDown<P, Traits::base_log_q, product_log_delta, Drop>(res, *unscaled);
+}
+
+// Preserve the usual scale allocation when no explicit drop is requested.
+template <class P, std::uint32_t LhsLogQ, std::uint32_t LhsLogDelta,
+          std::uint32_t RhsLogQ, std::uint32_t RhsLogDelta, class RelinKey>
+    requires(RelinKey::log_q == ckks_detail::static_min_v<LhsLogQ, RhsLogQ>)
+inline void CKKSMultRelinThenRescale(
+    CKKSMultResult<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta> &res,
+    const CKKSCiphertext<P, LhsLogQ, LhsLogDelta> &lhs,
+    const CKKSCiphertext<P, RhsLogQ, RhsLogDelta> &rhs,
+    const RelinKey &relinkey)
+{
+    using Traits = CKKSMultTraits<P, LhsLogQ, LhsLogDelta, RhsLogQ, RhsLogDelta>;
+    CKKSMultRelinThenRescaleBy<P, Traits::log_scale>(res, lhs, rhs, relinkey);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta, class RelinKey>
