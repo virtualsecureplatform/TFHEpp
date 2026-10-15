@@ -4297,3 +4297,29 @@ the prior profile's roughly 103.4 GiB observation. These are single unpinned
 OMP8 full trials, with host variation. The remaining 10x goal is not achieved.
 See `narrow-dd-direct-rns-full-validation.json` for exact reports, command,
 output hashes and the memory-observation scope.
+
+
+Prepared DD products now automatically use two roughly 30-bit NTT primes when
+the complete signed digit-convolution bound fits their centered CRT interval
+and both primes support the ring degree. Otherwise they retain the 61-bit
+backend. The existing primary and secondary gadgets, auxiliary lift and
+rounding are unchanged. The fifth `CKKSPreparedDDRelinKeyNTT` template argument
+can be set to `false` to force the 61-bit backend for component controls.
+Publicly derived automorphism caches and product-tree caches select the new
+path through the same existing factories; no key regeneration is required.
+
+Retained DD433/20/20 tests pinned to eight physical P cores, in both orders,
+measured about 27% less time per complete DD application. DD spectrum storage
+halved from 253,755,392 to 126,877,696 bytes. The independent coefficient tests
+cover the small-prime path, forced 61-bit single-prime path, and wide-gadget
+two-prime fallback; prepared FFT/NTT basis reconstruction remains byte-identical.
+See `narrow-dd-small-prime-dd-component-validation.json`.
+
+The full repository runner completed GeLU/Tanh/Sigmoid at
+28.26/55.25/27.43 seconds, with all saved ciphertext files byte-identical to
+the independently decoded reference, including the subsequent square.
+Public loading/preparation took 97.61 seconds in this run and was reused across
+functions. These are single unpinned OMP8 timings; host and filesystem-cache
+variation prevent attributing the whole difference to the DD change.
+`narrow-dd-small-prime-dd-full-validation.json` records exact timings, cache
+selection, output hashes and scope. The remaining 10x goal is still open.
