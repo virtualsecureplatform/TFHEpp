@@ -8,11 +8,13 @@ namespace TFHEpp {
 
 // Public order-two plan. Pair entries index the unweighted roots, never a
 // previously reconstructed product; consequently reconstruction has depth one.
+// Optional differences conjugate the second unweighted root at its input level.
 class CKKSNarrowFrequencyBasis {
     std::vector<std::uint32_t> frequencies_;
     std::vector<std::array<std::size_t, 2>> expressions_;
+    std::vector<bool> conjugate_second_;
 public:
-    CKKSNarrowFrequencyBasis(std::uint32_t degree, std::vector<std::uint32_t> frequencies)
+    CKKSNarrowFrequencyBasis(std::uint32_t degree, std::vector<std::uint32_t> frequencies, bool allow_differences=false)
         : frequencies_(std::move(frequencies))
     {
         if (degree == 0 || degree > 40 || frequencies_.empty() ||
@@ -20,6 +22,7 @@ public:
             !std::is_sorted(frequencies_.begin(), frequencies_.end()) ||
             std::adjacent_find(frequencies_.begin(), frequencies_.end()) != frequencies_.end())
             throw std::invalid_argument("invalid positive narrow frequency basis");
+        conjugate_second_.assign(degree,false);
         for (std::uint32_t k = 1; k <= degree; k++) {
             const auto direct = std::lower_bound(frequencies_.begin(), frequencies_.end(), k);
             if (direct != frequencies_.end() && *direct == k) {
@@ -35,9 +38,17 @@ public:
                         found = true;
                         break;
                     }
+            if (!found && allow_differences)
+                for(std::size_t a=0;a<frequencies_.size()&&!found;++a)
+                    for(std::size_t b=0;b<a;++b)
+                        if(frequencies_[a]-frequencies_[b]==k){
+                            expressions_.push_back({a,b});conjugate_second_[k-1]=true;found=true;break;
+                        }
             if (!found) throw std::invalid_argument("narrow frequency basis leaves a gap");
         }
     }
+    bool conjugatesSecond(std::size_t k)const{return conjugate_second_.at(k-1);}
+    bool usesDifferences()const{return std::any_of(conjugate_second_.begin(),conjugate_second_.end(),[](bool v){return v;});}
     std::size_t degree() const { return expressions_.size(); }
     const auto &frequencies() const { return frequencies_; }
     const auto &expression(std::size_t k) const { return expressions_.at(k - 1); }
@@ -173,6 +184,7 @@ inline void CKKSNarrowEvalSeriesFromBasisRoots(
     bool use_fft = true)
 {
     using P = typename Schedule::Param;
+    if(plan.usesDifferences())throw std::invalid_argument("frequency differences require a root conjugation backend");
     if (roots.size() != plan.frequencies().size() || coefficients.size() != plan.degree()+1 ||
         coefficients[0].imag() != 0)
         throw std::invalid_argument("invalid retained narrow basis roots or coefficients");
