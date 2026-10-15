@@ -1,0 +1,386 @@
+{
+  "scope": "CPU-only direct RNS factor matrices; fuse four canonical products before Montgomery reduction and output update. Same cached selector spectra, input-dependent public tables, exact CRT and key switching.",
+  "baseline_commit": "2f5f7b2",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "threads": 8,
+  "physical_cpu_ids": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14
+  ],
+  "proof": "Each canonical factor is below p<2^30, so the four-product sum is below 4*p^2<p*2^32. The existing Montgomery REDC bound therefore applies and returns below 2p. Adding the destination below 2p stays below 4p<2^32. No rounding or coefficient truncation introduced.",
+  "arithmetic_validation": "Native AVX2 and -mno-avx2 scalar builds pass 1,329,544 integer-oracle checks plus 2,097,152 matrix/CRT coefficients. Includes maximal canonical raw products, accumulated lazy outputs, columns 1,2,3,4,5,8,9,12,17 and vector/scalar tails.",
+  "factor_validation": "N512 full head/tail ciphertexts match digit-CRT and streamed controls. Retained direct RNS chunks 1,3,4,5 match for columns 1,4,9. Budget checks, input-dependent table bound rejection and no online source reads preserved.",
+  "paired_benchmark": [
+    {
+      "log": "benchmark.log",
+      "trials": [
+        {
+          "tail": false,
+          "columns": 4,
+          "seconds": 0.277295069,
+          "table": 0.025796466,
+          "matrix": 0.215949468,
+          "inverse_crt": 0.016647015,
+          "conjugation": 0.0138761,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": false,
+          "columns": 4,
+          "seconds": 0.161662593,
+          "table": 0.01789472,
+          "matrix": 0.114120187,
+          "inverse_crt": 0.014759037,
+          "conjugation": 0.010092364,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": false,
+          "columns": 4,
+          "seconds": 0.162915498,
+          "table": 0.016661476,
+          "matrix": 0.115350291,
+          "inverse_crt": 0.015659435,
+          "conjugation": 0.010562105,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": false,
+          "columns": 4,
+          "seconds": 0.276986348,
+          "table": 0.016610168,
+          "matrix": 0.22771007499999996,
+          "inverse_crt": 0.017514457,
+          "conjugation": 0.010459192,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": false,
+          "columns": 9,
+          "seconds": 0.658945296,
+          "table": 0.047042148,
+          "matrix": 0.5436789369999999,
+          "inverse_crt": 0.031675149,
+          "conjugation": 0.026035603,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": false,
+          "columns": 9,
+          "seconds": 0.394970762,
+          "table": 0.034663201,
+          "matrix": 0.28931446099999997,
+          "inverse_crt": 0.037824175,
+          "conjugation": 0.022245104,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": false,
+          "columns": 9,
+          "seconds": 0.49489153,
+          "table": 0.048780696,
+          "matrix": 0.37083927800000005,
+          "inverse_crt": 0.040922018,
+          "conjugation": 0.023143197,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": false,
+          "columns": 9,
+          "seconds": 0.63272965,
+          "table": 0.031861186,
+          "matrix": 0.528936065,
+          "inverse_crt": 0.037784522,
+          "conjugation": 0.023215994,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": true,
+          "columns": 4,
+          "seconds": 0.245188321,
+          "table": 0.018447222,
+          "matrix": 0.19495802699999998,
+          "inverse_crt": 0.017544566,
+          "conjugation": 0.010148009,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": true,
+          "columns": 4,
+          "seconds": 0.160276592,
+          "table": 0.016193784,
+          "matrix": 0.11862136599999999,
+          "inverse_crt": 0.014096141,
+          "conjugation": 0.010332859,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": true,
+          "columns": 4,
+          "seconds": 0.15781694,
+          "table": 0.016970331,
+          "matrix": 0.116872136,
+          "inverse_crt": 0.013348117,
+          "conjugation": 0.009643874,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": true,
+          "columns": 4,
+          "seconds": 0.313835269,
+          "table": 0.016492174,
+          "matrix": 0.26175853,
+          "inverse_crt": 0.023037809,
+          "conjugation": 0.011203468,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": true,
+          "columns": 9,
+          "seconds": 0.666662422,
+          "table": 0.063031494,
+          "matrix": 0.545249237,
+          "inverse_crt": 0.029493404,
+          "conjugation": 0.021991594,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": true,
+          "columns": 9,
+          "seconds": 0.293190732,
+          "table": 0.032629787,
+          "matrix": 0.19723794300000003,
+          "inverse_crt": 0.03022002,
+          "conjugation": 0.02177669,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": true,
+          "columns": 9,
+          "seconds": 0.293153674,
+          "table": 0.031880303,
+          "matrix": 0.19642614399999997,
+          "inverse_crt": 0.030424867,
+          "conjugation": 0.023257934,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": true,
+          "columns": 9,
+          "seconds": 0.488075748,
+          "table": 0.031506258,
+          "matrix": 0.393712078,
+          "inverse_crt": 0.029978681,
+          "conjugation": 0.021842771,
+          "byte_identical": true,
+          "four_term_reduction": false
+        }
+      ]
+    },
+    {
+      "log": "benchmark-quiet.log",
+      "trials": [
+        {
+          "tail": false,
+          "columns": 4,
+          "seconds": 0.263210722,
+          "table": 0.015464088,
+          "matrix": 0.209733023,
+          "inverse_crt": 0.018399201,
+          "conjugation": 0.01466262,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": false,
+          "columns": 4,
+          "seconds": 0.1607408,
+          "table": 0.018062773,
+          "matrix": 0.11264348199999999,
+          "inverse_crt": 0.015114248,
+          "conjugation": 0.010101591,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": false,
+          "columns": 4,
+          "seconds": 0.162104749,
+          "table": 0.016811287,
+          "matrix": 0.115962691,
+          "inverse_crt": 0.014398498,
+          "conjugation": 0.009888882,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": false,
+          "columns": 4,
+          "seconds": 0.25236322,
+          "table": 0.016376907,
+          "matrix": 0.20466064,
+          "inverse_crt": 0.016776622,
+          "conjugation": 0.009661563,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": false,
+          "columns": 9,
+          "seconds": 0.541646211,
+          "table": 0.038879379,
+          "matrix": 0.4329511519999999,
+          "inverse_crt": 0.033104408,
+          "conjugation": 0.026344764,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": false,
+          "columns": 9,
+          "seconds": 0.33107425,
+          "table": 0.035804398,
+          "matrix": 0.22788823400000002,
+          "inverse_crt": 0.034371995,
+          "conjugation": 0.021994878,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": false,
+          "columns": 9,
+          "seconds": 0.363427353,
+          "table": 0.043081556,
+          "matrix": 0.253164546,
+          "inverse_crt": 0.032686446,
+          "conjugation": 0.023049158,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": false,
+          "columns": 9,
+          "seconds": 0.62178439,
+          "table": 0.042985007,
+          "matrix": 0.5117674650000001,
+          "inverse_crt": 0.033360943,
+          "conjugation": 0.022221441,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": true,
+          "columns": 4,
+          "seconds": 0.262814601,
+          "table": 0.01873556,
+          "matrix": 0.21439498999999995,
+          "inverse_crt": 0.01587526,
+          "conjugation": 0.00961657,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": true,
+          "columns": 4,
+          "seconds": 0.151678213,
+          "table": 0.016212203,
+          "matrix": 0.11125769299999999,
+          "inverse_crt": 0.01343905,
+          "conjugation": 0.009655471,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": true,
+          "columns": 4,
+          "seconds": 0.150031208,
+          "table": 0.016206336,
+          "matrix": 0.11026315100000002,
+          "inverse_crt": 0.012276233,
+          "conjugation": 0.010167481,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": true,
+          "columns": 4,
+          "seconds": 0.250353491,
+          "table": 0.016173687,
+          "matrix": 0.21053259400000002,
+          "inverse_crt": 0.012095271,
+          "conjugation": 0.010463069,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": true,
+          "columns": 9,
+          "seconds": 0.552070593,
+          "table": 0.032465689,
+          "matrix": 0.4599506630000001,
+          "inverse_crt": 0.031369637,
+          "conjugation": 0.022148603,
+          "byte_identical": true,
+          "four_term_reduction": false
+        },
+        {
+          "tail": true,
+          "columns": 9,
+          "seconds": 0.391800562,
+          "table": 0.03188042,
+          "matrix": 0.28537313099999995,
+          "inverse_crt": 0.040726094,
+          "conjugation": 0.022024074,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": true,
+          "columns": 9,
+          "seconds": 0.395146681,
+          "table": 0.0435302,
+          "matrix": 0.28105599900000006,
+          "inverse_crt": 0.036617635,
+          "conjugation": 0.022419239,
+          "byte_identical": true,
+          "four_term_reduction": true
+        },
+        {
+          "tail": true,
+          "columns": 9,
+          "seconds": 0.661152849,
+          "table": 0.040516617,
+          "matrix": 0.547853522,
+          "inverse_crt": 0.039367022,
+          "conjugation": 0.021980861,
+          "byte_identical": true,
+          "four_term_reduction": false
+        }
+      ]
+    }
+  ],
+  "timing_limit": "Same-process baseline/new/new/baseline order, cached head and tail group0, 4 and 9 columns. Conjugation here is a transparent automorphism control. Concurrent compilation/arithmetic checks may affect host load; full replay measured separately.",
+  "tenfold_goal_achieved": false
+}

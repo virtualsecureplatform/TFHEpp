@@ -170,7 +170,21 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                     auto *second = sums[index(1,component,digit)][prime].data();
                     for (std::size_t begin = 0; begin < P::n; begin += 256) {
                         const auto end = std::min(begin+256,std::size_t(P::n));
-                        for (std::size_t local = 0; local < count; ++local) {
+                        std::size_t local=0;
+                        for(;local+4<=count;local+=4){
+                            std::array<const std::uint32_t*,4> selectors;
+                            for(std::size_t t=0;t<4;++t)selectors[t]=cache[local+t].spectra[prime].data()+(component*Cache::digits+digit)*P::n;
+                            for(std::size_t i=begin;i<end;++i){
+                                std::array<const std::uint32_t*,4> left,right;
+                                std::array<std::uint32_t,4> values;
+                                for(std::size_t t=0;t<4;++t){
+                                    const auto position=narrowNTTPermutationIndex<P::n>(exponents[first_y+local+t],i)*columns;
+                                    left[t]=base[0][prime].data()+position;right[t]=base[1][prime].data()+position;values[t]=selectors[t][i];
+                                }
+                                arithmetic.addDot4Pair(first+i*columns,second+i*columns,left,right,values,columns);
+                            }
+                        }
+                        for (; local < count; ++local) {
                             const auto *selector = cache[local].spectra[prime].data()+(component*Cache::digits+digit)*P::n;
                             for (std::size_t i = begin; i < end; ++i) {
                                 const auto position = narrowNTTPermutationIndex<P::n>(exponents[first_y+local],i)*columns;
