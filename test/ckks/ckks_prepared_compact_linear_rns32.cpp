@@ -1,0 +1,123 @@
+#include "ckks_narrow_basis_benchmark.hpp"
+#include <ckks/prepared_compact_linear_rns32.hpp>
+#include <iostream>
+#include <random>
+
+using namespace TFHEpp;
+using P=narrow_benchmark::BenchmarkParam<9,7>;
+using Plan=CKKSCompactRealLinearTransformPlan<P,93,52,37>;
+using Prepared=CKKSPreparedCompactRealLinearTransformRNS32<P,93,52,37>;
+
+int main()
+{
+    Plan plan; plan.has_direct=true; plan.has_conjugate=true;
+    for (auto *part:{&plan.direct,&plan.conjugate}) {
+        part->k_step=2;
+        for (int g=0;g<2;++g) {
+            typename decltype(part->groups)::value_type group;
+            group.giant_step=g;
+            for (int j=0;j<2;++j) {
+                typename decltype(group.terms)::value_type term;
+                term.baby_step=j;
+                for (std::size_t i=0;i<P::n;++i) {
+                    const std::array<std::int64_t,5> values{
+                        0,-1,std::numeric_limits<std::int64_t>::min(),
+                        std::numeric_limits<std::int64_t>::max(),(std::int64_t{1}<<39)+3};
+                    term.coefficients[i]=values[(i+j+g)%values.size()];
+                }
+                group.terms.push_back(term);
+            }
+            part->groups.push_back(std::move(group));
+        }
+    }
+    bool rejected=false;
+    try { Prepared bad(plan,0); } catch (const std::invalid_argument&) { rejected=true; }
+    if (!rejected) throw std::runtime_error("insufficient spectrum budget accepted");
+    const auto budget=std::uint64_t{8}*Prepared::term_spectrum_bytes;
+    auto input_key=std::make_unique<CKKSGaloisKey<P,93>>();
+    auto output_key=std::make_unique<CKKSGaloisKey<P,56>>();
+    CKKSRetainedPreparedGaloisKeyFFT<P,93> retained_input(*input_key);
+    CKKSRetainedPreparedGaloisKeyFFT<P,56> retained_output(*output_key);
+    const auto builds=retained_input.prepared_keys+retained_output.prepared_keys;
+    auto input=std::make_unique<CKKSCiphertext<P,93,52>>();
+    std::mt19937_64 random(20261015);
+    for (auto &component:input->ct) for (auto &value:component) {
+        for (auto &word:value.limb) word=random();
+        value=ckks_detail::reduceToLevel<P,93>(value);
+    }
+    for (int mode=0;mode<6;++mode) {
+        plan.has_direct=mode!=1; plan.has_conjugate=mode!=0;
+        if (mode>=3)
+            for (auto *part:{&plan.direct,&plan.conjugate})
+                for (auto &group:part->groups) for (auto &term:group.terms)
+                    for (std::size_t i=0;i<P::n;++i)
+                        term.coefficients[i]=mode==4?0:(i%2?-17:23);
+        if (mode==5) {
+            for(auto *part:{&plan.direct,&plan.conjugate})
+                for(auto &group:part->groups)for(auto &term:group.terms)term.coefficients.fill(0);
+            plan.direct.groups[1].terms[1].coefficients[0]=42;
+        }
+        Prepared prepared(plan,budget);
+        if(mode==5 && (!prepared.has_direct || prepared.has_conjugate ||
+            prepared.direct.groups.size()!=1 || prepared.direct.groups[0].terms.size()!=1 ||
+            prepared.direct.groups[0].giant_step!=1 || prepared.direct.groups[0].terms[0].baby_step!=1 ||
+            prepared.spectrum_bytes!=Prepared::term_spectrum_bytes))
+            throw std::runtime_error("zero groups or diagonals were not pruned correctly");
+        if ((mode==3 && prepared.spectrum_bytes!=8*Prepared::term_spectrum_bytes) ||
+            (mode==4 && (prepared.spectrum_bytes || prepared.has_direct || prepared.has_conjugate)))
+            throw std::runtime_error("zero high plaintext digits retained");
+        auto reference=std::make_unique<CKKSPlainMulResult<P,93,52,37>>();
+        CKKSLazyPreparedGaloisKeyFFT<P,93> transient_input(*input_key);
+        CKKSLazyPreparedGaloisKeyFFT<P,56> transient_output(*output_key);
+        CKKSRealLinearTransform<P,93,52,37>(*reference,*input,plan,transient_input,transient_output);
+        for (int repeat=0;repeat<2;++repeat) {
+            auto actual=std::make_unique<CKKSPlainMulResult<P,93,52,37>>();
+            for(auto &component:actual->ct)component.fill(P::T{12345});
+            CKKSRealLinearTransform<P,93,52,37>(*actual,*input,prepared,retained_input,retained_output);
+            if (actual->ct!=reference->ct) throw std::runtime_error("prepared compact transform differs from reference");
+        }
+    }
+    bool bound_rejected=false;
+    try { CKKSPreparedCompactRealLinearTransformRNS32<P,93,52,37,2> insufficient(plan,budget); }
+    catch(const std::invalid_argument&){bound_rejected=true;}
+    if(!bound_rejected)throw std::runtime_error("insufficient RNS product accepted");
+    // More terms than the N512 fixed FFT batch: stress signed digit maxima
+    // and verify the complete transform against a uint128 modular oracle.
+    Plan batched;batched.has_direct=true;batched.has_conjugate=false;
+    batched.direct.k_step=1;
+    decltype(batched.direct.groups)::value_type group;group.giant_step=0;
+    constexpr std::uint64_t coefficient=(std::uint64_t{1}<<22)-1;
+    for(std::size_t j=0;j<512;++j){
+        decltype(group.terms)::value_type term;term.baby_step=0;term.coefficients.fill(coefficient);
+        group.terms.push_back(std::move(term));
+    }
+    batched.direct.groups.push_back(std::move(group));
+    P::T value{};
+    for(std::size_t j=0;j<6;++j)value+=P::T::from_signed_i64(-32768)<<(16*j);
+    value=ckks_detail::reduceToLevel<P,93>(value);
+    for(auto &component:input->ct)component.fill(value);
+    const unsigned __int128 mask93=(static_cast<unsigned __int128>(1)<<93)-1;
+    const auto raw=(static_cast<unsigned __int128>(value.limb[1])<<64)|value.limb[0];
+    for(bool adaptive:{true}){
+        Prepared prepared(batched,std::uint64_t{512}*Prepared::term_spectrum_bytes);
+        auto actual=std::make_unique<CKKSPlainMulResult<P,93,52,37>>();
+        CKKSRealLinearTransform<P,93,52,37>(*actual,*input,prepared,retained_input,retained_output);
+        bool exact=true;
+        for(std::size_t i=0;i<P::n;++i){
+            const auto multiplicity=std::int64_t(2*i+2)-P::n;
+            const auto factor=static_cast<unsigned __int128>(static_cast<__int128>(multiplicity)*512*coefficient);
+            const auto product=(raw*factor)&mask93;
+            const bool negative=(product>>(93-1))!=0;
+            const auto magnitude=negative?(static_cast<unsigned __int128>(1)<<93)-product:product;
+            const auto rounded_magnitude=(magnitude+(static_cast<unsigned __int128>(1)<<36))>>37;
+            const auto rounded=std::uint64_t(negative?static_cast<unsigned __int128>(0)-rounded_magnitude:rounded_magnitude)&((std::uint64_t{1}<<56)-1);
+            for(const auto &component:actual->ct)
+                if(component[i]!=P::T{rounded})exact=false;
+        }
+        if(adaptive && !exact)throw std::runtime_error("exact RNS batch differs from independent constant-polynomial convolution");
+        std::cout<<"constant-polynomial stress adaptive="<<adaptive<<" exact="<<exact<<'\n';
+    }
+    if (retained_input.prepared_keys+retained_output.prepared_keys!=builds)
+        throw std::runtime_error("public Galois spectra rebuilt online");
+    std::cout<<"exact RNS direct/conjugate/both transforms match FFT; signed int64, zero operators, budget/bound guards and integer stress oracle passed\n";
+}
