@@ -67,10 +67,13 @@ class CanonicalEncoder {
     static_assert(Q>0 && Q<=64*Limbs);
     static constexpr std::size_t words=(Q+31)/32;
     std::array<std::array<Multiplier,words>,Count> radix_;
+    std::array<std::uint32_t,Count> squared_,cubed_;
 public:
     CanonicalEncoder(){
         for(std::size_t i=0;i<Count;++i){
             const auto p=primes[i].value;std::uint64_t radix=1;
+            const auto r=(std::uint64_t{1}<<32)%p;
+            squared_[i]=r*r%p;cubed_[i]=std::uint64_t(squared_[i])*r%p;
             for(auto &v:radix_[i]){v=Multiplier(radix,p);radix=(radix<<32)%p;}
         }
     }
@@ -84,6 +87,68 @@ public:
         }
         return sum%p;
     }
+    // Encode a coefficient batch after a public shift and source-level mask.
+    // The result may use ordinary or Montgomery residues. SourceQ/Shift make
+    // the odd-sized high tensor chunk exact for uncanonical input storage.
+    template<std::size_t SourceQ=64*Limbs,std::size_t Shift=0,bool Montgomery=false>
+    void residues(std::span<std::uint32_t> output,
+                  std::span<const MultiLimbUInt<Limbs>> input,std::size_t prime)const {
+        static_assert(Shift<=SourceQ && SourceQ<=64*Limbs);
+        static_assert(sizeof(MultiLimbUInt<Limbs>)==Limbs*sizeof(std::uint64_t));
+        constexpr auto active_bits=std::min(Q,SourceQ-Shift);
+        constexpr auto active_words=(active_bits+31)/32;
+        // Each Shoup residue is below 2p, so the wide sums stay below p*2^32.
+        static_assert(active_words<(std::uint64_t{1}<<31));
+        if(output.size()!=input.size())throw std::invalid_argument("RNS batch lengths differ");
+        if(prime>=Count)throw std::out_of_range("RNS batch prime index");
+        const auto p=std::uint32_t(primes[prime].value);
+        const modular_ntt32::Montgomery arithmetic(p);
+        std::size_t i=0;
+#if defined(__AVX2__)
+        const auto offsets=_mm256_setr_epi32(0,2*Limbs,4*Limbs,6*Limbs,8*Limbs,10*Limbs,12*Limbs,14*Limbs);
+        const auto modulus=_mm256_set1_epi32(p);
+        for(;i+8<=input.size();i+=8){
+            auto even=_mm256_setzero_si256(),odd=even;
+            const auto*data=reinterpret_cast<const int*>(input.data()+i);
+            for(std::size_t w=0;w<active_words;++w){
+                const auto word=Shift/32+w;
+                auto digit=_mm256_i32gather_epi32(data+word,offsets,4);
+                if constexpr(Shift%32){
+                    digit=_mm256_srli_epi32(digit,Shift%32);
+                    if(word+1<2*Limbs)digit=_mm256_or_si256(digit,
+                        _mm256_slli_epi32(_mm256_i32gather_epi32(data+word+1,offsets,4),32-Shift%32));
+                }
+                if constexpr(active_bits%32)if(w==active_words-1)
+                    digit=_mm256_and_si256(digit,_mm256_set1_epi32((std::uint32_t{1}<<(active_bits%32))-1));
+                const auto value=_mm256_set1_epi32(radix_[prime][w].value);
+                const auto quotient=_mm256_set1_epi32(radix_[prime][w].quotient);
+                const auto high=_mm256_srli_epi64(digit,32);
+                const auto eq=_mm256_srli_epi64(_mm256_mul_epu32(digit,quotient),32);
+                const auto oq=_mm256_srli_epi64(_mm256_mul_epu32(high,quotient),32);
+                even=_mm256_add_epi64(even,_mm256_sub_epi64(_mm256_mul_epu32(digit,value),_mm256_mul_epu32(eq,modulus)));
+                odd=_mm256_add_epi64(odd,_mm256_sub_epi64(_mm256_mul_epu32(high,value),_mm256_mul_epu32(oq,modulus)));
+            }
+            const auto reduced=arithmetic.canonicalVector(arithmetic.reduceWideVector(even,odd));
+            const auto radix=_mm256_set1_epi32(Montgomery?cubed_[prime]:squared_[prime]);
+            const auto result=arithmetic.canonicalVector(arithmetic.multiplyLazyVector(reduced,radix));
+            _mm256_storeu_si256(reinterpret_cast<__m256i*>(output.data()+i),result);
+        }
+#endif
+        for(;i<input.size();++i){
+            std::uint64_t sum=0;
+            for(std::size_t w=0;w<active_words;++w){
+                const auto bit=Shift+32*w,word=bit/64,offset=bit%64;
+                auto value=input[i].limb[word]>>offset;
+                if(offset>32 && word+1<Limbs)value|=input[i].limb[word+1]<<(64-offset);
+                auto digit=std::uint32_t(value);
+                if constexpr(active_bits%32)if(w==active_words-1)digit&=(std::uint32_t{1}<<(active_bits%32))-1;
+                sum+=radix_[prime][w].lazy(digit,p);
+            }
+            const auto value=std::uint32_t(sum%p);
+            output[i]=Montgomery?arithmetic.encode(value):value;
+        }
+    }
+
 };
 
 // Garner mixed radix with exact centering. The digits of floor(M/2) are

@@ -62,8 +62,46 @@ template<std::size_t Limbs,std::size_t Count>void checkDirect(){
 template<std::size_t Count>void checkDirectWidths(){
     checkDirect<1,Count>();checkDirect<3,Count>();checkDirect<7,Count>();checkDirect<9,Count>();
 }
+template<std::size_t Bits,std::size_t SourceQ=448,std::size_t Shift=0>
+void checkBatchEncoding(){
+    constexpr std::size_t n=521,active=std::min(Bits,SourceQ-Shift);
+    std::mt19937_64 random(20261019+Bits*1009+Shift);
+    std::vector<T> input(n+2);
+    for(auto&v:input)for(auto&w:v.limb)w=random();
+    input[1]={};input[2]=T{0}-T{1};input[3]=T{1}<<447;
+    modular_rns32::CanonicalEncoder<7,Bits> encoder;
+    const Integer mask=(Integer{1}<<active)-1;
+    for(std::size_t p=0;p<17;++p){
+        const auto modulus=modular_rns32::primes[p].value;
+        modular_ntt32::Montgomery arithmetic(modulus);
+        std::vector<std::uint32_t> expected(n);
+        for(std::size_t i=0;i<n;++i)expected[i]=(((integer(input[i+1])>>Shift)&mask)%modulus).convert_to<std::uint32_t>();
+        for(std::size_t length:{0,1,7,8,9,255,256,257,521}){
+            std::vector<std::uint32_t> ordinary(length+2,0xdeadbeef),montgomery=ordinary;
+            encoder.template residues<SourceQ,Shift>(std::span(ordinary).subspan(1,length),std::span<const T>(input).subspan(1,length),p);
+            encoder.template residues<SourceQ,Shift,true>(std::span(montgomery).subspan(1,length),std::span<const T>(input).subspan(1,length),p);
+            for(std::size_t i=0;i<length;++i)
+                if(ordinary[i+1]!=expected[i] || montgomery[i+1]!=arithmetic.encode(expected[i]))
+                    throw std::runtime_error("batched shifted RNS encoding differs from integer oracle");
+            if(ordinary.front()!=0xdeadbeef || ordinary.back()!=0xdeadbeef || montgomery.front()!=0xdeadbeef || montgomery.back()!=0xdeadbeef)
+                throw std::runtime_error("batched RNS encoding overwrote guard coefficients");
+        }
+    }
+    std::vector<std::uint32_t> output(n);bool rejected=false;
+    try{encoder.template residues<SourceQ,Shift>(output,std::span<const T>(input).first(n-1),0);}catch(const std::invalid_argument&){rejected=true;}
+    if(!rejected)throw std::runtime_error("batched RNS encoding accepted inconsistent lengths");
+    rejected=false;
+    try{encoder.template residues<SourceQ,Shift>(output,std::span<const T>(input).first(n),17);}catch(const std::out_of_range&){rejected=true;}
+    if(!rejected)throw std::runtime_error("batched RNS encoding accepted invalid prime");
+    std::cout<<"batch bits="<<Bits<<" source="<<SourceQ<<" shift="<<Shift<<" all primes/domains/tails passed\n";
+}
 int main(){
     checkPrefix<5>();checkPrefix<6>();
+    checkBatchEncoding<1>();checkBatchEncoding<20>();checkBatchEncoding<32>();checkBatchEncoding<44>();
+    checkBatchEncoding<64>();checkBatchEncoding<193>();checkBatchEncoding<440>();checkBatchEncoding<448>();
+    checkBatchEncoding<83,165,83>();checkBatchEncoding<105,209,105>();checkBatchEncoding<127,253,127>();
+    checkBatchEncoding<149,297,149>();checkBatchEncoding<171,341,171>();checkBatchEncoding<193,385,193>();
+    checkBatchEncoding<1,1,1>();checkBatchEncoding<20,448,440>();
     []<std::size_t... I>(std::index_sequence<I...>){(checkDirect<2,I+1>(),...);}(std::make_index_sequence<17>{});
     checkDirectWidths<4>();checkDirectWidths<6>();checkDirectWidths<7>();checkDirectWidths<9>();
     checkDirectWidths<12>();checkDirectWidths<14>();checkDirectWidths<17>();

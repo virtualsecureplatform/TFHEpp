@@ -52,13 +52,12 @@ public:
     std::uint32_t decode(std::uint32_t value) const
     { return canonical(reduceLazy(value)); }
 #if defined(__AVX2__)
-    __m256i multiplyLazyVector(__m256i input, __m256i constant) const
+    // Each 64-bit lane is below p*2^32. Return eight lazy 32-bit
+    // Montgomery reductions, interleaving even and odd coefficient lanes.
+    __m256i reduceWideVector(__m256i even, __m256i odd) const
     {
         const auto inverse = _mm256_set1_epi32(negative_inverse_);
         const auto prime = _mm256_set1_epi32(modulus_);
-        auto even = _mm256_mul_epu32(input, constant);
-        auto odd = _mm256_mul_epu32(_mm256_srli_epi64(input, 32),
-                                   _mm256_srli_epi64(constant, 32));
         const auto even_m = _mm256_mul_epu32(even, inverse);
         const auto odd_m = _mm256_mul_epu32(odd, inverse);
         even = _mm256_srli_epi64(_mm256_add_epi64(even,
@@ -66,6 +65,13 @@ public:
         odd = _mm256_srli_epi64(_mm256_add_epi64(odd,
             _mm256_mul_epu32(odd_m, prime)), 32);
         return _mm256_or_si256(even, _mm256_slli_epi64(odd, 32));
+    }
+    __m256i multiplyLazyVector(__m256i input, __m256i constant) const
+    {
+        const auto even = _mm256_mul_epu32(input, constant);
+        const auto odd = _mm256_mul_epu32(_mm256_srli_epi64(input, 32),
+                                          _mm256_srli_epi64(constant, 32));
+        return reduceWideVector(even, odd);
     }
     __m256i canonicalVector(__m256i value) const
     {

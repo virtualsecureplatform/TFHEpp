@@ -1,0 +1,126 @@
+{
+  "scope": "Exact batched unsigned RNS encoding after compile-time source-level clipping and right shift, with ordinary or Montgomery output. AVX2 processes8 coefficients; existing scalar residue API and scalar batch tail remain available.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "proof": [
+    "Extract active_bits=min(Bits,SourceQ-Shift). The 32-bit words represent the low active_bits of floor(input/2^Shift), with the last word masked.",
+    "For each coefficient, sum the Shoup residues of word_w*2^(32w). Each is below2p; fewer than2^31 words keeps the64-bit sum below p*2^32.",
+    "Montgomery-reduce the wide sum, then multiply by R^2 for ordinary output or R^3 for Montgomery output, with R=2^32. Both reductions are exact modulo p and canonicalized."
+  ],
+  "checks": {
+    "primes": 17,
+    "both_residue_domains": true,
+    "shapes": 16,
+    "coefficient_lengths": [
+      0,
+      1,
+      7,
+      8,
+      9,
+      255,
+      256,
+      257,
+      521
+    ],
+    "input": "Unaligned coefficient slices; random full448-bit representatives, zero, all ones, top storage bit.",
+    "shapes_bits_source_shift": [
+      [
+        1,
+        448,
+        0
+      ],
+      [
+        20,
+        448,
+        0
+      ],
+      [
+        32,
+        448,
+        0
+      ],
+      [
+        44,
+        448,
+        0
+      ],
+      [
+        64,
+        448,
+        0
+      ],
+      [
+        193,
+        448,
+        0
+      ],
+      [
+        440,
+        448,
+        0
+      ],
+      [
+        448,
+        448,
+        0
+      ],
+      [
+        83,
+        165,
+        83
+      ],
+      [
+        105,
+        209,
+        105
+      ],
+      [
+        127,
+        253,
+        127
+      ],
+      [
+        149,
+        297,
+        149
+      ],
+      [
+        171,
+        341,
+        171
+      ],
+      [
+        193,
+        385,
+        193
+      ],
+      [
+        1,
+        1,
+        1
+      ],
+      [
+        20,
+        448,
+        440
+      ]
+    ],
+    "oracle": "Boost arbitrary-precision shifted/masked values reduced modulo each prime; Montgomery output compared to independently tested scalar Montgomery encoding.",
+    "guards": [
+      "Output prefix/suffix sentinels unchanged",
+      "Length mismatch rejected",
+      "Invalid prime rejected"
+    ],
+    "existing_ntt_matrix_oracles_passed": true
+  },
+  "commands": [
+    "OMP_NUM_THREADS=8 build/test/common/modular_rns32",
+    "OMP_NUM_THREADS=8 build/test/common/modular_ntt32"
+  ],
+  "exit_codes": [
+    0,
+    0
+  ],
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/batched-tensor-encoder-20261017",
+  "security_validated": false
+}
