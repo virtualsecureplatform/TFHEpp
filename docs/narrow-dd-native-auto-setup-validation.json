@@ -1,0 +1,61 @@
+{
+  "scope": "One-time CPU-only generation of eight native Q435/primary44 automorphism evaluation-key sets from the retained dense secret, followed by a second invocation proving cache reuse.",
+  "library_dependency_commit": "109b4755995ccc7356344ead53b18dbba4a4841d",
+  "checkpoint_sha256": "f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af",
+  "checkpoint_digest_verified_by": "sha256sum on the retained checkpoint before setup",
+  "command": [
+    "taskset",
+    "-c",
+    "0-23",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_native_auto_setup",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys"
+  ],
+  "environment": {
+    "OMP_NUM_THREADS": "8",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14}",
+    "OMP_MAX_ACTIVE_LEVELS": "1"
+  },
+  "first_setup": {
+    "private_keys_generated": 0,
+    "private_key_reused": true,
+    "evaluation_key_sets_generated": 8,
+    "encrypted_gadget_rows_generated": 80,
+    "evaluation_key_sets_reused": 0,
+    "log_q": 435,
+    "primary_bits": 44,
+    "noise_stddev": 3.2,
+    "seconds": 2.180332782,
+    "security_validated": false
+  },
+  "reuse_setup": {
+    "private_keys_generated": 0,
+    "private_key_reused": true,
+    "evaluation_key_sets_generated": 0,
+    "encrypted_gadget_rows_generated": 0,
+    "evaluation_key_sets_reused": 8,
+    "log_q": 435,
+    "primary_bits": 44,
+    "noise_stddev": 3.2,
+    "seconds": 0.083328633,
+    "security_validated": false
+  },
+  "archive_sha256": {
+    "23937.bin": "5171c5cd2151d3dde4bc6f630bb0bd2f1add9934ee275d5d8f09e51b0ed36b30",
+    "24193.bin": "fa4d2516bb6ea7a96b8d2cd804dc653f61aef62cb2be1aeef9a9bce6c90808c1",
+    "24449.bin": "b6931c884d039758a457abdd6c163a1f18626a86b123fe2073594c2537384436",
+    "32001.bin": "c720dca522e60c9be22ac47c67de021d4099d992cde11d105bdfc2887b44883c",
+    "32513.bin": "2471fa95a7a50ae755ec18ff3f7be368bfa5f268a1bf99a3507f7589ca9da39b",
+    "32767.bin": "12f6c13a4bdb60729f02800a959c4b51051894b8bea20b037482870305339c0d",
+    "32257.bin": "428e98d54308321f80c10a62cc580908952b9dbabb53b3f059074e15525b1f03",
+    "23681.bin": "91b25e31ced7b1ffb31cffb7b6ea2249802ddbc0c9b6f9f80a8d444299e3ce3d"
+  },
+  "archive_hashes_unchanged_on_reuse": true,
+  "private_keys_generated": 0,
+  "private_key_reused": true,
+  "replay_policy": "The benchmark loads public archives only; native key generation is confined to the separate setup executable.",
+  "archive_contents": "Profile/origin header and encrypted gadget rows only; no private key values.",
+  "precision_and_performance_covered": false,
+  "security_validated": false
+}
