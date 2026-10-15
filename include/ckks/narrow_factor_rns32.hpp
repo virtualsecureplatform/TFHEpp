@@ -72,7 +72,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     const FactorKeys &key, std::size_t chunk_size, Loader load,
     const CKKSPreparedAutoKeyFFT<typename Schedule::Param,Schedule::factor_key_log_q> *factor_fft,
     CKKSNarrowFactorTimings *timings, bool prefetch_raw = false,
-    std::span<const FactorSelectorRNS32<Schedule>> retained = {})
+    std::span<const FactorSelectorRNS32<Schedule>> retained = {}, bool tiled_matrix = true)
 {
     using P = typename Schedule::Param;
     using Cache = FactorSelectorRNS32<Schedule>;
@@ -164,14 +164,10 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
             cache=transient;
         }
         start = Clock::now();
-#pragma omp parallel for collapse(3) schedule(static)
-        for (std::size_t prime = 0; prime < 17; ++prime)
-            for (std::size_t component = 0; component <= P::k; ++component)
-                for (std::size_t digit = 0; digit < Cache::digits; ++digit) {
-                    const auto &arithmetic = plans[prime].arithmetic();
-                    auto *first = sums[index(0,component,digit)][prime].data();
-                    auto *second = sums[index(1,component,digit)][prime].data();
-                    for (std::size_t begin = 0; begin < P::n; begin += 256) {
+        const auto tile=[&](std::size_t prime,std::size_t component,std::size_t digit,std::size_t begin){
+            const auto &arithmetic=plans[prime].arithmetic();
+            auto *first=sums[index(0,component,digit)][prime].data();
+            auto *second=sums[index(1,component,digit)][prime].data();
                         const auto end = std::min(begin+256,std::size_t(P::n));
                         std::size_t local=0;
                         for(;local+4<=count;local+=4){
@@ -198,8 +194,20 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                         for (std::size_t i = begin*stride; i < end*stride; ++i) {
                             first[i] = arithmetic.canonical(first[i]); second[i] = arithmetic.canonical(second[i]);
                         }
-                    }
-                }
+        };
+        if(tiled_matrix){
+#pragma omp parallel for collapse(4) schedule(dynamic,1)
+            for(std::size_t prime=0;prime<17;++prime)
+                for(std::size_t component=0;component<=P::k;++component)
+                    for(std::size_t digit=0;digit<Cache::digits;++digit)
+                        for(std::size_t begin=0;begin<P::n;begin+=256)tile(prime,component,digit,begin);
+        }else{
+#pragma omp parallel for collapse(3) schedule(static)
+            for(std::size_t prime=0;prime<17;++prime)
+                for(std::size_t component=0;component<=P::k;++component)
+                    for(std::size_t digit=0;digit<Cache::digits;++digit)
+                        for(std::size_t begin=0;begin<P::n;begin+=256)tile(prime,component,digit,begin);
+        }
         if (timings) timings->matrix_seconds += std::chrono::duration<double>(Clock::now()-start).count();
         first_y += count;
     }
@@ -323,6 +331,7 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
     static_assert(SourceSchedule::tail_blocks_per_pack == TargetSchedule::tail_blocks_per_pack && SourceSchedule::tail_blocks_per_pack == SelectorSchedule::tail_blocks_per_pack);
     std::shared_ptr<const Source> source_;
     std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained_;
+    bool tiled_matrix_;
     struct FactorKeys {
         const CKKSGaloisKey<P,SourceSchedule::factor_key_log_q> &factor_galois;
         bool staged_fft_caches;
@@ -332,8 +341,8 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
     };
 public:
     explicit CKKSNarrowDeferredRescaleFactorSourceRNS32(std::shared_ptr<const Source> source,
-        std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained={})
-        : source_(std::move(source)),retained_(std::move(retained))
+        std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained={},bool tiled_matrix=true)
+        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix)
     {
         if (!source_ || !source_->hasRawChunks()) throw std::invalid_argument("direct RNS factor source requires raw chunks");
         if (retained_ && retained_->source()!=source_.get())
@@ -351,7 +360,7 @@ public:
         auto factors = narrow_detail::packedFactorsBatchRNS32<SourceSchedule>(tables,view,key.selector_ntt_chunk_size,
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
             source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):
-                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{});
+                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_);
         std::vector<typename TargetSchedule::Factor> result(factors.size());
         for (std::size_t i = 0; i < factors.size(); ++i)
             CKKSScaleDown<P,SourceSchedule::factor_log_q,SourceSchedule::log_delta,drop>(result[i],factors[i]);

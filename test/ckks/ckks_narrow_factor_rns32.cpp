@@ -56,6 +56,7 @@ int main()
     if(!rejected || raw->reads!=prior_reads)throw std::runtime_error("direct RNS budget guard failed");
     auto direct_cache=std::make_shared<DirectCache>(raw,DirectCache::retained_bytes,4);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> direct(raw,direct_cache),direct_streamed(raw);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> untiled(raw,direct_cache,false);
     auto key=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
     key->selector_ntt_chunk_size=4;
     key->automorphism_evaluator=[](auto &result,const auto &input,uint32_t,uint32_t exponent) {
@@ -91,6 +92,8 @@ int main()
             for(std::size_t chunk:{3,4,5}){
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto coarse=untiled.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                for(std::size_t c=0;c<columns;++c)if(coarse[c].ct!=reference[c].ct)throw std::runtime_error("coarse RNS matrix differs from digit CRT");
                 for(std::size_t c=0;c<columns;++c)if(actual[c].ct!=reference[c].ct)throw std::runtime_error("fused dot or remainder differs from single-term factors");
             }
         }

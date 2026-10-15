@@ -1,0 +1,232 @@
+{
+  "scope": "CPU-only exact RNS factor matrices with dynamic work distribution over prime/component/digit/256-point tiles. Preserve input-dependent tables, selector cache, modular arithmetic and output shape.",
+  "baseline_commit": "ecba99a",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "unit_validation": "N512 head/tail factor ciphertexts for columns1,4,5,6,7,9 and chunks3,4,5 match the original streamed digit-CRT reference under both coarse and tiled RNS schedules. Existing budgets, zero padding, input table bounds and no online source reads remain checked.",
+  "component_benchmark": "Same retained N16384 selector group0 for head and tail, same input tables, same public cache. Baseline/tiled/tiled/baseline per profile, with 8/16/24/24/16/8 pinned profiles. Transparent automorphism control isolates matrix timing.",
+  "trials": [
+    {
+      "threads": 8,
+      "tail": false,
+      "columns": 4,
+      "coarse_matrix_seconds": [
+        0.08682865299999999,
+        0.08370114599999999,
+        0.083368553,
+        0.083066388
+      ],
+      "tiled_matrix_seconds": [
+        0.080626903,
+        0.079959131,
+        0.079790998,
+        0.07982749500000001
+      ],
+      "matrix_speedup_from_means": 1.0523422112642398
+    },
+    {
+      "threads": 8,
+      "tail": false,
+      "columns": 7,
+      "coarse_matrix_seconds": [
+        0.15696709900000003,
+        0.156671822,
+        0.15837336600000002,
+        0.15878802400000003
+      ],
+      "tiled_matrix_seconds": [
+        0.134427028,
+        0.134242674,
+        0.133833302,
+        0.134649779
+      ],
+      "matrix_speedup_from_means": 1.1743405804899274
+    },
+    {
+      "threads": 8,
+      "tail": true,
+      "columns": 4,
+      "coarse_matrix_seconds": [
+        0.086406353,
+        0.086517043,
+        0.086655231,
+        0.085677877
+      ],
+      "tiled_matrix_seconds": [
+        0.078971892,
+        0.07831051500000001,
+        0.07831364099999999,
+        0.07811825900000001
+      ],
+      "matrix_speedup_from_means": 1.1005443369849244
+    },
+    {
+      "threads": 8,
+      "tail": true,
+      "columns": 7,
+      "coarse_matrix_seconds": [
+        0.15638800400000002,
+        0.15602825900000003,
+        0.15548446500000002,
+        0.15515650900000003
+      ],
+      "tiled_matrix_seconds": [
+        0.13397034000000002,
+        0.133763272,
+        0.133443988,
+        0.133493254
+      ],
+      "matrix_speedup_from_means": 1.1653098954969408
+    },
+    {
+      "threads": 16,
+      "tail": false,
+      "columns": 4,
+      "coarse_matrix_seconds": [
+        0.114301476,
+        0.11654757800000001,
+        0.12034259299999998,
+        0.11758528099999999
+      ],
+      "tiled_matrix_seconds": [
+        0.06300756400000002,
+        0.06312796300000001,
+        0.06282299,
+        0.06338163500000002
+      ],
+      "matrix_speedup_from_means": 1.8577183388555616
+    },
+    {
+      "threads": 16,
+      "tail": false,
+      "columns": 7,
+      "coarse_matrix_seconds": [
+        0.22087598499999997,
+        0.220428412,
+        0.22423152999999998,
+        0.22355894399999998
+      ],
+      "tiled_matrix_seconds": [
+        0.09927469099999998,
+        0.099237927,
+        0.09926558899999999,
+        0.099167515
+      ],
+      "matrix_speedup_from_means": 2.239839911916219
+    },
+    {
+      "threads": 16,
+      "tail": true,
+      "columns": 4,
+      "coarse_matrix_seconds": [
+        0.115324188,
+        0.11496517000000002,
+        0.115852469,
+        0.115661345
+      ],
+      "tiled_matrix_seconds": [
+        0.063537056,
+        0.06444440500000001,
+        0.063716457,
+        0.064049652
+      ],
+      "matrix_speedup_from_means": 1.8056991587446947
+    },
+    {
+      "threads": 16,
+      "tail": true,
+      "columns": 7,
+      "coarse_matrix_seconds": [
+        0.22129539299999998,
+        0.218966734,
+        0.21963475499999996,
+        0.217774452
+      ],
+      "tiled_matrix_seconds": [
+        0.098336919,
+        0.098426698,
+        0.09822797000000001,
+        0.09822214499999998
+      ],
+      "matrix_speedup_from_means": 2.2320464993323275
+    },
+    {
+      "threads": 24,
+      "tail": false,
+      "columns": 4,
+      "coarse_matrix_seconds": [
+        0.094984713,
+        0.09122442800000001,
+        0.093590209,
+        0.09130372199999999
+      ],
+      "tiled_matrix_seconds": [
+        0.059802555,
+        0.060617833,
+        0.05971132299999999,
+        0.05979926599999999
+      ],
+      "matrix_speedup_from_means": 1.546707626668815
+    },
+    {
+      "threads": 24,
+      "tail": false,
+      "columns": 7,
+      "coarse_matrix_seconds": [
+        0.17266040500000002,
+        0.17225571899999997,
+        0.17351564499999997,
+        0.17330297200000003
+      ],
+      "tiled_matrix_seconds": [
+        0.09038884000000001,
+        0.089916505,
+        0.089813145,
+        0.09061316
+      ],
+      "matrix_speedup_from_means": 1.9175881600630273
+    },
+    {
+      "threads": 24,
+      "tail": true,
+      "columns": 4,
+      "coarse_matrix_seconds": [
+        0.09126942199999999,
+        0.088885456,
+        0.091964895,
+        0.09026055999999999
+      ],
+      "tiled_matrix_seconds": [
+        0.060141283999999996,
+        0.060714577000000006,
+        0.061291971,
+        0.06030243900000001
+      ],
+      "matrix_speedup_from_means": 1.4946583953292425
+    },
+    {
+      "threads": 24,
+      "tail": true,
+      "columns": 7,
+      "coarse_matrix_seconds": [
+        0.17587621700000003,
+        0.17598381500000002,
+        0.176430386,
+        0.17555395299999998
+      ],
+      "tiled_matrix_seconds": [
+        0.088936815,
+        0.088184893,
+        0.087843459,
+        0.08785127499999999
+      ],
+      "matrix_speedup_from_means": 1.9949307549561421
+    }
+  ],
+  "all_component_factor_ciphertexts_identical": true,
+  "raw_benchmark_sha256": "1c396c7c15b9fe8cba83d938c569e7a4c075e665c28e938170cf87404dd030fc",
+  "arithmetic_invariant": "Each output point belongs to exactly one tile. The ordered selector accumulation for that point and the barrier between selector chunks are unchanged. No atomic or floating reduction introduced.",
+  "memory": "Same table/sum buffers and selector spectra. Per-tile temporary pointer arrays stay on each worker stack; no per-tile heap allocation.",
+  "timing_limit": "Matrix component evidence only. Full paired comparison combines the old 8-P-core coarse configuration with tiled evaluation on all24 logical CPUs and is recorded separately. It must not be described as an isolated whole-function scheduler comparison.",
+  "tenfold_goal_achieved": false
+}
