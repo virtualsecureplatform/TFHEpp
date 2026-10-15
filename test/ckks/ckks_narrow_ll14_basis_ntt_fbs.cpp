@@ -9,6 +9,7 @@
 #include <ckks/key_projection.hpp>
 #include <ckks/narrow_selector_projection.hpp>
 #include <ckks/narrow_factor_ntt32.hpp>
+#include <ckks/narrow_factor_rns32.hpp>
 #include <iomanip>
 using namespace TFHEpp;
 using P=narrow_benchmark::BenchmarkParam<14,7>;
@@ -40,13 +41,14 @@ struct SourceLinear {
  CKKSSecretKeySwitchKey<P,48> sparse;
 };
 int main(int argc,char**argv)try {
- if(argc<8 || (argc-8)%2)throw std::runtime_error("usage: checkpoint-directory switch56-file sigmoid|gelu|tanh|all output-directory direct440-selectors saved-dd433-primary20 saved-packed435 [--cache-gib 90] [--s2c-cache-gib 9]");
- uint64_t cache_gib=90,s2c_cache_gib=9;
+ if(argc<8 || (argc-8)%2)throw std::runtime_error("usage: checkpoint-directory switch56-file sigmoid|gelu|tanh|all output-directory direct440-selectors saved-dd433-primary20 saved-packed435 [--cache-gib 90] [--s2c-cache-gib 9] [--direct-rns 1]");
+ uint64_t cache_gib=90,s2c_cache_gib=9;bool direct_rns=true;
  for(int i=8;i<argc;i+=2){
   const std::string option=argv[i];const auto value=std::stoull(argv[i+1]);
   if(value>1024)throw std::invalid_argument("cache budget exceeds supported range");
   if(option=="--cache-gib")cache_gib=value;
   else if(option=="--s2c-cache-gib")s2c_cache_gib=value;
+  else if(option=="--direct-rns"){if(value>1)throw std::invalid_argument("direct RNS flag must be 0 or 1");direct_rns=value;}
   else throw std::invalid_argument("unknown option");
  }
  const bool parallel_pairs=true,small_prime_factors=true;
@@ -82,10 +84,21 @@ int main(int argc,char**argv)try {
  const uint64_t s2c_retained_bytes=prepared_s2c?prepared_s2c->spectrum_bytes+s2c_input_cache->spectrum_bytes()+s2c_output_cache->spectrum_bytes():0;
  std::cout<<"public S2C setup seconds="<<s2c_setup_seconds<<" spectrum bytes="<<s2c_retained_bytes<<std::endl;
  using File=CKKSNarrowSelectorFile<TableSource>;auto raw=std::make_shared<File>(argv[5],File::Existing{});
- std::shared_ptr<const CKKSNarrowFactorSelectorCache32<TableSource>> selector_cache;
- if(cache_gib)selector_cache=std::make_shared<CKKSNarrowFactorSelectorCache32<TableSource>>(raw,cache_gib<<30,40,
- [&](bool tail,size_t group){std::cout<<"prepared selector cache "<<(tail?"tail":"head")<<" group="<<group<<std::endl;});
- key->narrow.factor_source=std::make_shared<CKKSNarrowDeferredRescaleFactorSource32<Narrow,TableSource,TableSource>>(raw,selector_cache);
+ uint64_t selector_retained_bytes=0;
+ if(direct_rns){
+  using Cache=CKKSNarrowFactorSelectorCacheRNS32<TableSource>;
+  std::shared_ptr<const Cache> retained;
+  if(cache_gib){retained=std::make_shared<Cache>(raw,cache_gib<<30,40,
+   [&](bool tail,size_t group){std::cout<<"prepared direct RNS cache "<<(tail?"tail":"head")<<" group="<<group<<std::endl;});selector_retained_bytes=Cache::retained_bytes;}
+  key->narrow.factor_source=std::make_shared<CKKSNarrowDeferredRescaleFactorSourceRNS32<Narrow,TableSource,TableSource>>(raw,retained);
+ }
+ else{
+  using Cache=CKKSNarrowFactorSelectorCache32<TableSource>;
+  std::shared_ptr<const Cache> retained;
+  if(cache_gib){retained=std::make_shared<Cache>(raw,cache_gib<<30,40,
+   [&](bool tail,size_t group){std::cout<<"prepared selector cache "<<(tail?"tail":"head")<<" group="<<group<<std::endl;});selector_retained_bytes=Cache::retained_bytes;}
+  key->narrow.factor_source=std::make_shared<CKKSNarrowDeferredRescaleFactorSource32<Narrow,TableSource,TableSource>>(raw,retained);
+ }
  CKKSNarrowUseStagedFFT(key->narrow,40);
  auto master=std::make_unique<CKKSCompactDDRelinKey<P,433,20,20>>();
  if(std::filesystem::file_size(argv[6])!=1+8+64+56+sizeof(master->data))throw std::runtime_error("DD433 length mismatch");
@@ -132,7 +145,7 @@ int main(int argc,char**argv)try {
  ckksSlotDecrypt<P>(*decoded,*square,*dense);double product_error=0;for(size_t i=0;i<P::n/2;++i){double v=target((*slots)[i].real());product_error=narrow_benchmark::finiteMaximum(product_error,std::abs((*decoded)[i]-std::complex<double>{v*v,0}));}
  const auto tolerance=std::ldexp(1.0,-23),product_tolerance=(2*amplitude+1)*tolerance+tolerance*tolerance;bool passed=error<tolerance && product_error<product_tolerance;
  {std::ofstream f(root/(function+"-outputs.bin"),std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);const std::array<uint64_t,9> meta{0x4c4c313446425331ULL,P::n,448,85,44,48,93,44,49};ar(meta,function,*slots,*input,*prepared,*out,*square);}
- {std::ofstream f(root/(function+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"small_prime_factors\":"<<(small_prime_factors?"true":"false")<<",\"dd_primary_bits\":20,\"dd_secondary_bits\":20,\"dd_auxiliary_bits\":48,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":20,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"frequency_basis\":true,\"selector_cache_retained_bytes\":"<<(selector_cache?CKKSNarrowFactorSelectorCache32<TableSource>::retained_bytes:0)<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":"<<(small_prime_factors?52:54)<<",\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_public_setup_seconds\":"<<s2c_setup_seconds<<",\"s2c_retained_spectrum_bytes\":"<<s2c_retained_bytes<<",\"s2c_public_keys_prepared\":"<<(prepared_s2c?s2c_input_cache->prepared_keys+s2c_output_cache->prepared_keys:0)<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":93,\"output_log_delta\":44,\"post_product_log_q\":49,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
+ {std::ofstream f(root/(function+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"small_prime_factors\":"<<(small_prime_factors?"true":"false")<<",\"dd_primary_bits\":20,\"dd_secondary_bits\":20,\"dd_auxiliary_bits\":48,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":20,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"direct_rns_factors\":"<<(direct_rns?"true":"false")<<",\"selector_residue_rows\":"<<(direct_rns?17:36)<<",\"frequency_basis\":true,\"selector_cache_retained_bytes\":"<<selector_retained_bytes<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":"<<(direct_rns?0:52)<<",\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_public_setup_seconds\":"<<s2c_setup_seconds<<",\"s2c_retained_spectrum_bytes\":"<<s2c_retained_bytes<<",\"s2c_public_keys_prepared\":"<<(prepared_s2c?s2c_input_cache->prepared_keys+s2c_output_cache->prepared_keys:0)<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":93,\"output_log_delta\":44,\"post_product_log_q\":49,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
  std::cout<<function<<" error="<<error<<" square error="<<product_error<<" seconds="<<s2c_seconds+blind_seconds<<std::endl;if(!passed)throw std::runtime_error("functional accuracy gate failed");
 }
 } catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}

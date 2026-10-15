@@ -4257,3 +4257,43 @@ unpinned trials and include host variation; the 10x objective remains open.
 See `narrow-dd-prepared-s2c-full-validation.json` for the command, complete
 reports, output hashes and memory observation. The same saved private keys,
 public evaluation keys and input were reused throughout.
+
+
+The retained LL14 CPU basis runner now defaults to direct small-prime selector
+convolutions (`--direct-rns 1`). This replaces nine 52-bit digit convolutions
+with a single exact convolution across 17 roughly 30-bit primes. It uses the
+same saved selector ciphertexts and evaluation keys. No encryption modulus,
+noise distribution, output scale, or rounding rule changes. A compile-time
+bound proves that twice the maximum complete signed convolution is smaller
+than the CRT product; runtime table checks enforce the public coefficient
+bound. The final centered integer is reconstructed exactly modulo the torus.
+
+The selector spectra require about 39.5 GiB, compared with about 83.7 GiB for
+the digit backend. `--cache-gib 45` fits the new retained cache; the separate
+S2C cache remains controlled by `--s2c-cache-gib 9`. Budgets cover retained
+spectra and documented container overhead, not all process memory.
+`--direct-rns 0` selects the previous digit backend, and `--cache-gib 0` uses
+streamed selectors with either backend. Public setup is reused across
+functions in one process; saved key artifacts are reused across process runs.
+
+`modular_rns32` checks the primes, root orders, complete selector encoding and
+exact centered CRT against arbitrary-precision integers, including boundary
+values and both SIMD and scalar paths. `ckks_narrow_factor_rns32` compares
+full-width random-mask head/tail factors byte for byte, rejects inadequate
+cache budgets and unsupported table bounds, and verifies zero online selector
+reads/transforms. Retained N16384 head0/tail0 four/nine-column component trials
+also match exactly. See `narrow-dd-direct-rns-arithmetic-validation.json` and
+`narrow-dd-direct-rns-factor-validation.json` for proof and timing scope.
+
+
+The integrated direct-RNS full replay completed GeLU/Tanh/Sigmoid at
+29.59/58.68/29.69 seconds. All saved ciphertext files, including the subsequent
+square, match the independently decoded reference byte for byte. The retained
+selector allocation is 42,442,068,672 bytes (about 39.53 GiB including vector
+objects). Public loading/preparation took 238.47 seconds once and was reused
+across all three functions; it is excluded from online timings. A live Tanh
+observation recorded VmHWM of 62,084,044 KiB (about 59.2 GiB), compared with
+the prior profile's roughly 103.4 GiB observation. These are single unpinned
+OMP8 full trials, with host variation. The remaining 10x goal is not achieved.
+See `narrow-dd-direct-rns-full-validation.json` for exact reports, command,
+output hashes and the memory-observation scope.
