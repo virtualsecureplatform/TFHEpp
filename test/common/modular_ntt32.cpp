@@ -46,6 +46,32 @@ int main()
                 }
             }
         }
+        for(std::size_t columns:{1,2,3,4,5,8,9,12,17}){
+            std::array<std::vector<std::uint32_t>,4> left,right;
+            std::array<const std::uint32_t*,4> lp,rp;
+            for(std::size_t t=0;t<4;++t){left[t].resize(columns);right[t].resize(columns);lp[t]=left[t].data();rp[t]=right[t].data();}
+            std::vector<std::uint32_t> first(columns),second(columns);
+            std::vector<std::uint64_t> a(columns),b(columns);
+            for(std::size_t repeat=0;repeat<1024;++repeat){
+                std::array<std::uint32_t,4> selectors;
+                for(std::size_t t=0;t<4;++t){
+                    // First trial forces the largest raw products, including
+                    // a Montgomery residue p-1 rather than its encoding.
+                    selectors[t]=repeat?random()%p:p-1;
+                    for(std::size_t c=0;c<columns;++c){
+                        left[t][c]=repeat?random()%p:p-1;right[t][c]=repeat?random()%p:0;
+                        const auto ordinary=arithmetic.decode(selectors[t]);
+                        a[c]=(a[c]+static_cast<unsigned __int128>(left[t][c])*ordinary)%p;
+                        b[c]=(b[c]+static_cast<unsigned __int128>(right[t][c])*ordinary)%p;
+                    }
+                }
+                arithmetic.addDot4Pair(first.data(),second.data(),lp,rp,selectors,columns);
+                for(std::size_t c=0;c<columns;++c){
+                    if(first[c]>=2*p || second[c]>=2*p || first[c]%p!=a[c] || second[c]%p!=b[c])throw std::runtime_error("four-term Montgomery dot differs from integer oracle");
+                    ++checked;
+                }
+            }
+        }
         for (std::size_t n : {2, 8, 512, 16384, 65536}) {
             modular_ntt32::NegacyclicNTTPlan small(n, prime);
             modular_ntt::NegacyclicNTTPlan reference(n, prime);

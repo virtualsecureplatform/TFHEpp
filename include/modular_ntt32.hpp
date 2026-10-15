@@ -83,6 +83,59 @@ public:
             _mm256_sub_epi32(sum, _mm256_set1_epi32(2 * modulus_)));
     }
 #endif
+    // Four canonical products sum to <4p^2<p*2^32 because p<2^30.
+    // REDC therefore returns <2p, just as for a single product. Reduce once
+    // per four terms; the destination remains in [0,2p).
+    void addDot4Pair(std::uint32_t *first,std::uint32_t *second,
+        const std::array<const std::uint32_t*,4>&left,
+        const std::array<const std::uint32_t*,4>&right,
+        const std::array<std::uint32_t,4>&selectors,std::size_t columns)const
+    {
+        std::size_t column=0;
+#if defined(__AVX2__)
+        const auto inverse=_mm256_set1_epi32(negative_inverse_);
+        const auto prime=_mm256_set1_epi32(modulus_);
+        const auto twice=_mm256_set1_epi32(2*modulus_);
+        const auto dot=[&](const auto&load){
+            auto even=_mm256_setzero_si256(),odd=even;
+            for(std::size_t t=0;t<4;++t){
+                const auto values=load(t),fixed=_mm256_set1_epi32(selectors[t]);
+                even=_mm256_add_epi64(even,_mm256_mul_epu32(values,fixed));
+                odd=_mm256_add_epi64(odd,_mm256_mul_epu32(_mm256_srli_epi64(values,32),fixed));
+            }
+            const auto em=_mm256_mul_epu32(even,inverse),om=_mm256_mul_epu32(odd,inverse);
+            even=_mm256_srli_epi64(_mm256_add_epi64(even,_mm256_mul_epu32(em,prime)),32);
+            odd=_mm256_srli_epi64(_mm256_add_epi64(odd,_mm256_mul_epu32(om,prime)),32);
+            return _mm256_or_si256(even,_mm256_slli_epi64(odd,32));
+        };
+        const auto add=[&](__m256i old,__m256i value){
+            const auto sum=_mm256_add_epi32(old,value);
+            return _mm256_min_epu32(sum,_mm256_sub_epi32(sum,twice));
+        };
+        const auto pack=[](const std::uint32_t*a,const std::uint32_t*b){
+            return _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128(reinterpret_cast<const __m128i*>(a))),_mm_loadu_si128(reinterpret_cast<const __m128i*>(b)),1);
+        };
+        if(columns==4){
+            const auto value=add(pack(first,second),dot([&](std::size_t t){return pack(left[t],right[t]);}));
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(first),_mm256_castsi256_si128(value));
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(second),_mm256_extracti128_si256(value,1));
+            return;
+        }
+        for(;column+8<=columns;column+=8){
+            const auto a=add(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(first+column)),dot([&](std::size_t t){return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(left[t]+column));}));
+            const auto b=add(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(second+column)),dot([&](std::size_t t){return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(right[t]+column));}));
+            _mm256_storeu_si256(reinterpret_cast<__m256i*>(first+column),a);
+            _mm256_storeu_si256(reinterpret_cast<__m256i*>(second+column),b);
+        }
+#endif
+        for(;column<columns;++column){
+            std::uint64_t a=0,b=0;
+            for(std::size_t t=0;t<4;++t){a+=std::uint64_t(left[t][column])*selectors[t];b+=std::uint64_t(right[t][column])*selectors[t];}
+            const auto av=first[column]+reduceLazy(a),bv=second[column]+reduceLazy(b);
+            first[column]=av>=2*modulus_?av-2*modulus_:av;
+            second[column]=bv>=2*modulus_?bv-2*modulus_:bv;
+        }
+    }
     // Tables are ordinary residues; the selector is in Montgomery form.
     // Destinations remain in [0,2p); canonicalize at a matrix tile boundary.
     void addPair(std::uint32_t *first, std::uint32_t *second,
