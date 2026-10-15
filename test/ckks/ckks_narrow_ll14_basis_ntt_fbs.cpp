@@ -2,6 +2,7 @@
 // component keys. Never reconstruct selectors or generate private/evaluation
 // keys here. The supplied public key artifacts must match the checkpoint.
 #include "ckks_narrow_basis_benchmark.hpp"
+#include "ckks_benchmark_affinity.hpp"
 #include <ckks/narrow_basis_prepared.hpp>
 #include <ckks/prepared_compact_linear_rns32.hpp>
 #include <ckks/narrow_dd_ntt.hpp>
@@ -41,13 +42,14 @@ struct SourceLinear {
  CKKSSecretKeySwitchKey<P,48> sparse;
 };
 int main(int argc,char**argv)try {
- if(argc<8 || (argc-8)%2)throw std::runtime_error("usage: checkpoint-directory switch56-file sigmoid|gelu|tanh|all output-directory direct440-selectors saved-dd433-primary20 saved-packed435 [--cache-gib 90] [--s2c-cache-gib 9] [--direct-rns 1] [--s2c-rns 1] [--tensor-rns 1] [--auto-rns 1] [--signed-basis 1] [--basis-pair 0] [--dd-wide-rns 1] [--dd-pair 0]");
- uint64_t cache_gib=90,s2c_cache_gib=9;bool direct_rns=true,s2c_rns=true,tensor_rns=true,auto_rns=true,signed_basis=true,basis_pair=false,dd_wide_rns=true,dd_pair=false;
+ if(argc<8 || (argc-8)%2)throw std::runtime_error("usage: checkpoint-directory switch56-file sigmoid|gelu|tanh|all output-directory direct440-selectors saved-dd433-primary20 saved-packed435 [--cache-gib 90] [--s2c-cache-gib 9] [--direct-rns 1] [--s2c-rns 1] [--tensor-rns 1] [--auto-rns 1] [--signed-basis 1] [--basis-pair 0] [--dd-wide-rns 1] [--dd-pair 0] [--thread-sweep 0]");
+ uint64_t cache_gib=90,s2c_cache_gib=9;bool direct_rns=true,s2c_rns=true,tensor_rns=true,auto_rns=true,signed_basis=true,basis_pair=false,dd_wide_rns=true,dd_pair=false,thread_sweep=false;
  for(int i=8;i<argc;i+=2){
   const std::string option=argv[i];const auto value=std::stoull(argv[i+1]);
   if(value>1024)throw std::invalid_argument("cache budget exceeds supported range");
   if(option=="--cache-gib")cache_gib=value;
   else if(option=="--s2c-cache-gib")s2c_cache_gib=value;
+  else if(option=="--thread-sweep"){if(value>1)throw std::invalid_argument("thread sweep flag must be 0 or 1");thread_sweep=value;}
   else if(option=="--dd-wide-rns"){if(value>1)throw std::invalid_argument("DD wide RNS flag must be 0 or 1");dd_wide_rns=value;}
   else if(option=="--dd-pair"){if(value>1)throw std::invalid_argument("DD pair flag must be 0 or 1");dd_pair=value;}
   else if(option=="--basis-pair"){if(value>1)throw std::invalid_argument("basis pair flag must be 0 or 1");basis_pair=value;}
@@ -61,8 +63,10 @@ int main(int argc,char**argv)try {
  const bool parallel_pairs=true,small_prime_factors=true;
  const auto checkpoint=std::filesystem::path(argv[1]),root=std::filesystem::path(argv[4]);const std::string requested=argv[3];
  if(requested!="all" && requested!="sigmoid" && requested!="gelu" && requested!="tanh")throw std::invalid_argument("unsupported function");
- if((basis_pair||dd_pair)&&requested!="tanh")throw std::invalid_argument("paired replay requires tanh");
- if(basis_pair&&dd_pair)throw std::invalid_argument("paired replay controls must be separate");
+ if((basis_pair||dd_pair||thread_sweep)&&requested!="tanh")throw std::invalid_argument("paired replay requires tanh");
+ if(int(basis_pair)+int(dd_pair)+int(thread_sweep)>1)throw std::invalid_argument("paired replay controls must be separate");
+ const auto cpu_profiles=thread_sweep?narrow_benchmark::coreSweepProfiles():std::vector<narrow_benchmark::CPUProfile>{};
+ if(thread_sweep)narrow_benchmark::applyCPUProfile(cpu_profiles.front());
  if(!std::filesystem::is_directory(root))throw std::runtime_error("output directory missing");
  const std::string origin="f70c9f110231eac0b4fffe300cccd9ba89a519809e1cc89c45e8814f8f7e53af";
  const auto start=std::chrono::steady_clock::now();
@@ -146,12 +150,14 @@ int main(int argc,char**argv)try {
  const auto setup_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
  auto functions=requested=="all"?std::vector<std::string>{"gelu","tanh","sigmoid"}:std::vector<std::string>{requested};
  if(basis_pair||dd_pair)functions.assign(4,"tanh");
+ if(thread_sweep)functions.assign(cpu_profiles.size(),"tanh");
  std::size_t trial_index=0;
  for(const auto& function:functions) {
+ if(thread_sweep)narrow_benchmark::applyCPUProfile(cpu_profiles[trial_index]);
  const bool use_signed_basis=basis_pair?(trial_index==1||trial_index==2):signed_basis;
  const bool use_dd_wide=dd_pair?(trial_index==1||trial_index==2):dd_wide_rns;
  if(dd_pair)key->narrow.product_tree_evaluator=use_dd_wide?wide_tree:digit_tree;
- const auto artifact=function+((basis_pair||dd_pair)?"-trial"+std::to_string(trial_index):"");
+ const auto artifact=function+((basis_pair||dd_pair||thread_sweep)?"-trial"+std::to_string(trial_index):"");
  auto target=[&](double x){if(function=="sigmoid")return 1/(1+std::exp(-x));if(function=="gelu")return 0.5*x*(1+std::erf(x/std::sqrt(2.0)));return std::tanh(x);};
  auto curvature=[&](double x){double y=target(x);if(function=="sigmoid")return y*(1-y)*(1-2*y);if(function=="gelu")return (2-x*x)*std::exp(-x*x/2)/std::sqrt(2*std::acos(-1.0));return -2*y*(1-y*y);};
  const uint32_t degree=function=="tanh"?40:12;
@@ -183,7 +189,7 @@ int main(int argc,char**argv)try {
  ckksSlotDecrypt<P>(*decoded,*square,*dense);double product_error=0;for(size_t i=0;i<P::n/2;++i){double v=target((*slots)[i].real());product_error=narrow_benchmark::finiteMaximum(product_error,std::abs((*decoded)[i]-std::complex<double>{v*v,0}));}
  const auto tolerance=std::ldexp(1.0,-23),product_tolerance=(2*amplitude+1)*tolerance+tolerance*tolerance;bool passed=error<tolerance && product_error<product_tolerance;
  {std::ofstream f(root/(artifact+"-outputs.bin"),std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);const std::array<uint64_t,9> meta{0x4c4c313446425331ULL,P::n,448,85,44,48,93,44,49};ar(meta,function,*slots,*input,*prepared,*out,*square);}
- {std::ofstream f(root/(artifact+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"small_prime_factors\":"<<(small_prime_factors?"true":"false")<<",\"dd_small_prime_backend\":"<<(CKKSPreparedDDRelinKeyNTT<P,433,20,20>::uses_small_primes?"true":"false")<<",\"dd_convolution_primes\":"<<(use_dd_wide?CKKSPreparedGadgetRNS32<P,433,20>::prime_count:CKKSPreparedDDRelinKeyNTT<P,433,20,20>::prime_count)<<",\"dd_cache_chunk_bits\":"<<(use_dd_wide?80:20)<<",\"dd_primary_bits\":20,\"dd_secondary_bits\":20,\"dd_auxiliary_bits\":48,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":20,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"auto_rns\":"<<(auto_rns?"true":"false")<<",\"tensor_rns\":"<<(tensor_rns?"true":"false")<<",\"direct_rns_factors\":"<<(direct_rns?"true":"false")<<",\"selector_residue_rows\":"<<(direct_rns?17:36)<<",\"dd_wide_rns\":"<<(use_dd_wide?"true":"false")<<",\"dd_pair_trial\":"<<(dd_pair?std::to_string(trial_index):"null")<<",\"basis_pair_trial\":"<<(basis_pair?std::to_string(trial_index):"null")<<",\"signed_frequency_basis\":"<<(plan.usesDifferences()?"true":"false")<<",\"basis_root_count\":"<<plan.frequencies().size()<<",\"frequency_basis\":true,\"selector_cache_retained_bytes\":"<<selector_retained_bytes<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":"<<(direct_rns?0:52)<<",\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_rns\":"<<(prepared_s2c_rns?"true":"false")<<",\"s2c_rns_primes\":"<<(prepared_s2c_rns?5:0)<<",\"s2c_public_setup_seconds\":"<<s2c_setup_seconds<<",\"s2c_prepared_direct_groups\":"<<(prepared_s2c_rns?prepared_s2c_rns->direct.groups.size():prepared_s2c?prepared_s2c->direct.groups.size():0)<<",\"s2c_prepared_conjugate_groups\":"<<(prepared_s2c_rns?prepared_s2c_rns->conjugate.groups.size():prepared_s2c?prepared_s2c->conjugate.groups.size():0)<<",\"s2c_retained_spectrum_bytes\":"<<s2c_retained_bytes<<",\"s2c_public_keys_prepared\":"<<(have_prepared_s2c?s2c_input_cache->prepared_keys+s2c_output_cache->prepared_keys:0)<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":93,\"output_log_delta\":44,\"post_product_log_q\":49,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
+ {std::ofstream f(root/(artifact+"-report.json"));f<<std::setprecision(17)<<"{\"function\":\""<<function<<"\",\"n\":"<<P::n<<",\"complex_input\":false,\"ntt_dd\":true,\"parallel_product_pairs\":"<<(parallel_pairs?"true":"false")<<",\"small_prime_factors\":"<<(small_prime_factors?"true":"false")<<",\"dd_small_prime_backend\":"<<(CKKSPreparedDDRelinKeyNTT<P,433,20,20>::uses_small_primes?"true":"false")<<",\"dd_convolution_primes\":"<<(use_dd_wide?CKKSPreparedGadgetRNS32<P,433,20>::prime_count:CKKSPreparedDDRelinKeyNTT<P,433,20,20>::prime_count)<<",\"dd_cache_chunk_bits\":"<<(use_dd_wide?80:20)<<",\"dd_primary_bits\":20,\"dd_secondary_bits\":20,\"dd_auxiliary_bits\":48,\"public_derived_ntt_automorphisms\":true,\"conjugation_primary_bits\":20,\"automorphism_setup_seconds\":"<<auto_setup_seconds<<",\"auto_rns\":"<<(auto_rns?"true":"false")<<",\"tensor_rns\":"<<(tensor_rns?"true":"false")<<",\"direct_rns_factors\":"<<(direct_rns?"true":"false")<<",\"selector_residue_rows\":"<<(direct_rns?17:36)<<",\"omp_threads\":"<<narrow_benchmark::benchmarkThreads()<<",\"thread_sweep_trial\":"<<(thread_sweep?std::to_string(trial_index):"null")<<",\"pinned_cpu_ids\":"<<(thread_sweep?narrow_benchmark::CPUProfileJSON(cpu_profiles[trial_index]):"null")<<",\"dd_wide_rns\":"<<(use_dd_wide?"true":"false")<<",\"dd_pair_trial\":"<<(dd_pair?std::to_string(trial_index):"null")<<",\"basis_pair_trial\":"<<(basis_pair?std::to_string(trial_index):"null")<<",\"signed_frequency_basis\":"<<(plan.usesDifferences()?"true":"false")<<",\"basis_root_count\":"<<plan.frequencies().size()<<",\"frequency_basis\":true,\"selector_cache_retained_bytes\":"<<selector_retained_bytes<<",\"degree\":"<<degree<<",\"selector_matrix_digit_bits\":"<<(direct_rns?0:52)<<",\"selector_chunk_size\":40,\"fresh_private_keys_generated\":false,\"new_evaluation_keys_generated\":0,\"input_reused\":"<<(reused?"true":"false")<<",\"key_load_and_input_setup_seconds\":"<<setup_seconds<<",\"s2c_rns\":"<<(prepared_s2c_rns?"true":"false")<<",\"s2c_rns_primes\":"<<(prepared_s2c_rns?5:0)<<",\"s2c_public_setup_seconds\":"<<s2c_setup_seconds<<",\"s2c_prepared_direct_groups\":"<<(prepared_s2c_rns?prepared_s2c_rns->direct.groups.size():prepared_s2c?prepared_s2c->direct.groups.size():0)<<",\"s2c_prepared_conjugate_groups\":"<<(prepared_s2c_rns?prepared_s2c_rns->conjugate.groups.size():prepared_s2c?prepared_s2c->conjugate.groups.size():0)<<",\"s2c_retained_spectrum_bytes\":"<<s2c_retained_bytes<<",\"s2c_public_keys_prepared\":"<<(have_prepared_s2c?s2c_input_cache->prepared_keys+s2c_output_cache->prepared_keys:0)<<",\"s2c_seconds\":"<<s2c_seconds<<",\"blind_rotation_and_series_seconds\":"<<blind_seconds<<",\"functional_evaluation_seconds\":"<<s2c_seconds+blind_seconds<<",\"output_log_q\":93,\"output_log_delta\":44,\"post_product_log_q\":49,\"max_error\":"<<error<<",\"post_product_max_error\":"<<product_error<<",\"product_tolerance\":"<<product_tolerance<<",\"accuracy_passed\":"<<(passed?"true":"false")<<",\"security_validated\":false}";}
  std::cout<<artifact<<" error="<<error<<" square error="<<product_error<<" seconds="<<s2c_seconds+blind_seconds<<std::endl;if(!passed)throw std::runtime_error("functional accuracy gate failed");
  ++trial_index;
 }

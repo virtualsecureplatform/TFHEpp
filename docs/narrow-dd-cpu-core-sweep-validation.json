@@ -1,0 +1,265 @@
+{
+  "scope": "CPU-only retained N16384 Tanh whole-function scaling on i9-12900K. Same cached keys/input, seven signed roots, wide DD and original coarse RNS matrix scheduling.",
+  "baseline_commit": "c87bcc1",
+  "terminal_exit_status": 0,
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "cgroup_cpu_quota": "max at every scope ancestor; zero throttled periods observed",
+  "machine": {
+    "physical_cores": 16,
+    "logical_cpus": 24,
+    "baseline": "One logical CPU on each of the first eight physical cores, the eight P cores on this machine",
+    "physical": "One logical CPU on all16 physical cores",
+    "logical": "All24 logical CPUs, physical-first then SMT siblings"
+  },
+  "worker_affinity_check": [
+    "[0,2,4,6,8,10,12,14] passed",
+    "[0,2,4,6,8,10,12,14,16,17,18,19,20,21,22,23] passed",
+    "[0,2,4,6,8,10,12,14,16,17,18,19,20,21,22,23,1,3,5,7,9,11,13,15] passed",
+    "[0,2,4,6,8,10,12,14,16,17,18,19,20,21,22,23,1,3,5,7,9,11,13,15] passed",
+    "[0,2,4,6,8,10,12,14,16,17,18,19,20,21,22,23] passed",
+    "[0,2,4,6,8,10,12,14] passed"
+  ],
+  "command": [
+    "taskset",
+    "-c",
+    "0-23",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+    "tanh",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/cpu-sweep-20261017/output",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-pilot-20261011/packed435-primary8.bin",
+    "--cache-gib",
+    "45",
+    "--s2c-cache-gib",
+    "4",
+    "--direct-rns",
+    "1",
+    "--s2c-rns",
+    "1",
+    "--tensor-rns",
+    "1",
+    "--auto-rns",
+    "1",
+    "--signed-basis",
+    "1",
+    "--dd-wide-rns",
+    "1",
+    "--thread-sweep",
+    "1"
+  ],
+  "environment": {
+    "OMP_NUM_THREADS": "8 for setup, varied per trial",
+    "OMP_PROC_BIND": "false"
+  },
+  "order": [
+    8,
+    16,
+    24,
+    24,
+    16,
+    8
+  ],
+  "trials": [
+    {
+      "trial": 0,
+      "threads": 8,
+      "pinned_cpu_ids": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14
+      ],
+      "functional_seconds": 23.741006804999998,
+      "s2c_seconds": 2.376371423,
+      "stages": {
+        "factor_seconds": 11.6936,
+        "tail_alignment_seconds": 2.32552,
+        "trees_and_beta_seconds": 6.23186
+      },
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61",
+      "all_output_bytes_identical_to_independently_decoded_reference": true
+    },
+    {
+      "trial": 1,
+      "threads": 16,
+      "pinned_cpu_ids": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "functional_seconds": 26.919997281,
+      "s2c_seconds": 2.557924039,
+      "stages": {
+        "factor_seconds": 14.1294,
+        "tail_alignment_seconds": 2.43499,
+        "trees_and_beta_seconds": 6.42838
+      },
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61",
+      "all_output_bytes_identical_to_independently_decoded_reference": true
+    },
+    {
+      "trial": 2,
+      "threads": 24,
+      "pinned_cpu_ids": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13,
+        15
+      ],
+      "functional_seconds": 24.936507897000002,
+      "s2c_seconds": 2.85631215,
+      "stages": {
+        "factor_seconds": 11.9101,
+        "tail_alignment_seconds": 2.30884,
+        "trees_and_beta_seconds": 6.44227
+      },
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61",
+      "all_output_bytes_identical_to_independently_decoded_reference": true
+    },
+    {
+      "trial": 3,
+      "threads": 24,
+      "pinned_cpu_ids": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        1,
+        3,
+        5,
+        7,
+        9,
+        11,
+        13,
+        15
+      ],
+      "functional_seconds": 24.931479951,
+      "s2c_seconds": 2.880187672,
+      "stages": {
+        "factor_seconds": 11.8787,
+        "tail_alignment_seconds": 2.30736,
+        "trees_and_beta_seconds": 6.44991
+      },
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61",
+      "all_output_bytes_identical_to_independently_decoded_reference": true
+    },
+    {
+      "trial": 4,
+      "threads": 16,
+      "pinned_cpu_ids": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "functional_seconds": 27.158078383000003,
+      "s2c_seconds": 2.806221057,
+      "stages": {
+        "factor_seconds": 14.1194,
+        "tail_alignment_seconds": 2.43463,
+        "trees_and_beta_seconds": 6.41951
+      },
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61",
+      "all_output_bytes_identical_to_independently_decoded_reference": true
+    },
+    {
+      "trial": 5,
+      "threads": 8,
+      "pinned_cpu_ids": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14
+      ],
+      "functional_seconds": 23.579520174000002,
+      "s2c_seconds": 2.565601309,
+      "stages": {
+        "factor_seconds": 11.1789,
+        "tail_alignment_seconds": 2.31902,
+        "trees_and_beta_seconds": 6.40135
+      },
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61",
+      "all_output_bytes_identical_to_independently_decoded_reference": true
+    }
+  ],
+  "mean_functional_seconds": {
+    "8": 23.6602634895,
+    "16": 27.039037832,
+    "24": 24.933993924
+  },
+  "finding": "Simply enabling more cores does not close the latency gap. Eight P cores are fastest for the current coarse scheduling; factor matrices regress on mixed physical cores. Test finer work tiling rather than adopting a larger thread count without evidence.",
+  "fresh_work_each_trial": "Fresh S2C, public input-dependent tables, factors, blind rotations and series reconstruction. Public/key-dependent caches and input ciphertext only are reused.",
+  "independent_reference_receipt": "narrow-dd-signed-frequency-basis-full-validation.json",
+  "security_validated": false,
+  "tenfold_goal_achieved": false
+}
