@@ -1,0 +1,150 @@
+{
+  "scope": "CPU-only alternating retained Tanh replay isolating independent public tail-alignment scheduling. Parallel factor conjugation stays enabled in all trials; no modulus, decomposition or frequency-basis change.",
+  "arithmetic_dependency_commit": "ab29cfae2346e4aa9de75901adc5fe73758b6477",
+  "component_receipt": "narrow-dd-parallel-tail-alignment-component-validation.json",
+  "terminal_exit_status": 0,
+  "command": [
+    "taskset",
+    "-c",
+    "0-23",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+    "tanh",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/parallel-tail-alignment-20261017/output",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-pilot-20261011/packed435-primary8.bin",
+    "--cache-gib",
+    "45",
+    "--s2c-cache-gib",
+    "4",
+    "--direct-rns",
+    "1",
+    "--s2c-rns",
+    "1",
+    "--tensor-rns",
+    "1",
+    "--auto-rns",
+    "1",
+    "--signed-basis",
+    "1",
+    "--dd-wide-rns",
+    "1",
+    "--matrix-tiled",
+    "1",
+    "--tail-alignment-pair",
+    "1",
+    "--parallel-conjugation",
+    "1"
+  ],
+  "environment": {
+    "OMP_NUM_THREADS": "8",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14}",
+    "OMP_MAX_ACTIVE_LEVELS": "1"
+  },
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "trial_order": [
+    "serial",
+    "parallel",
+    "parallel",
+    "serial"
+  ],
+  "common_profile": {
+    "n": 16384,
+    "degree": 40,
+    "basis_root_count": 7,
+    "dd_primary_bits": 20,
+    "dd_auxiliary_bits": 48,
+    "output_log_q": 93,
+    "output_log_delta": 44,
+    "post_product_log_q": 49,
+    "parallel_factor_conjugation": true,
+    "matrix_tiled": true
+  },
+  "trials": [
+    {
+      "trial": 0,
+      "parallel_public_tail_alignment": false,
+      "functional_evaluation_seconds": 35.291598057,
+      "factor_seconds": 15.8994,
+      "alignment_seconds": 3.6622,
+      "tree_seconds": 9.27523,
+      "max_error": 3.2248017779783846e-08,
+      "post_product_max_error": 5.753230916996571e-08,
+      "accuracy_passed": true,
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61"
+    },
+    {
+      "trial": 1,
+      "parallel_public_tail_alignment": true,
+      "functional_evaluation_seconds": 32.48053512,
+      "factor_seconds": 14.8107,
+      "alignment_seconds": 2.14928,
+      "tree_seconds": 9.24285,
+      "max_error": 3.2248017779783846e-08,
+      "post_product_max_error": 5.753230916996571e-08,
+      "accuracy_passed": true,
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61"
+    },
+    {
+      "trial": 2,
+      "parallel_public_tail_alignment": true,
+      "functional_evaluation_seconds": 32.842988624,
+      "factor_seconds": 15.0528,
+      "alignment_seconds": 2.26837,
+      "tree_seconds": 9.34922,
+      "max_error": 3.2248017779783846e-08,
+      "post_product_max_error": 5.753230916996571e-08,
+      "accuracy_passed": true,
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61"
+    },
+    {
+      "trial": 3,
+      "parallel_public_tail_alignment": false,
+      "functional_evaluation_seconds": 34.068925252,
+      "factor_seconds": 15.066,
+      "alignment_seconds": 3.59821,
+      "tree_seconds": 9.19627,
+      "max_error": 3.2248017779783846e-08,
+      "post_product_max_error": 5.753230916996571e-08,
+      "accuracy_passed": true,
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61"
+    }
+  ],
+  "means": {
+    "False": {
+      "functional_evaluation_seconds": 34.6802616545,
+      "factor_seconds": 15.482700000000001,
+      "alignment_seconds": 3.630205,
+      "tree_seconds": 9.23575
+    },
+    "True": {
+      "functional_evaluation_seconds": 32.661761872,
+      "factor_seconds": 14.931750000000001,
+      "alignment_seconds": 2.208825,
+      "tree_seconds": 9.296035
+    }
+  },
+  "observed_fractional_reductions": {
+    "functional_evaluation_seconds": 0.05820313014386058,
+    "factor_seconds": 0.03558487860644466,
+    "alignment_seconds": 0.3915426263806039,
+    "tree_seconds": -0.006527352949137866
+  },
+  "correctness": "All four complete ciphertext files, including S2C coefficients, functional output and remaining-level square, match the independently validated Tanh reference byte for byte.",
+  "reference_independent_validation": "narrow-dd-signed-frequency-basis-full-validation.json",
+  "original_reports_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/parallel-tail-alignment-20261017/output",
+  "timing_limits": "Unrelated CPU-heavy simulator and container jobs remained active. This is a relative comparison under contention, not an absolute paper latency comparison. Focused unit work overlapped only public setup; no agent compiler or decoder ran during timed trials. Some factor-stage drift also contributes to the observed total-time difference.",
+  "usage": "Use --parallel-tail-alignment 1 with --parallel-conjugation 1 to combine the independently qualified scheduling paths. --tail-alignment-pair 1 runs this alternating comparison. Library callers set parallel_public_tail_alignment on a key with a thread-safe public evaluator; one OpenMP active level avoids nested oversubscription.",
+  "default_parallel_public_tail_alignment": false,
+  "interpretation": "Tail alignment time falls by about 39%; observed end-to-end time falls by 5.8% with factor conjugation already parallel. This is incremental progress and does not close the remaining gap.",
+  "full_function_coverage": [
+    "tanh"
+  ],
+  "gap_closed": false,
+  "security_validated": false
+}
