@@ -1,0 +1,162 @@
+{
+  "scope": "Use batched exact coefficient-to-RNS conversion inside CPU tensor products, removing repeated wide reduction and shifts per prime. Retain BatchEncode=false compile-time scalar control.",
+  "api_receipt": "narrow-batched-rns-encoder-component-validation.json",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "tensor_controls": [
+    "Scalar coefficient encoding with identical CRT policies",
+    "Compact Garner tensor",
+    "Full-width Garner tensor",
+    "Independent exact FFT tensor",
+    "Schoolbook tensor for N16"
+  ],
+  "tensor_checks": "All21 shapes and5 cases per shape passed, including all full-size tree moduli and zero/carry/uncanonical inputs.",
+  "factor_result": "direct RNS and digit-CRT cached head/tail factors byte-identical; no online reads or selector transforms; retained bytes=41674640",
+  "benchmark": {
+    "ring_degree": 16384,
+    "q": [
+      165,
+      209,
+      253,
+      297,
+      341,
+      385
+    ],
+    "method": "Dedicated two-backend fixture; scalar/batched/batched/scalar,5 calls per phase. First call of each phase excluded. Same random noncryptographic inputs and exact output comparisons; no FFT or third backend in timed phases. Tests and timings run sequentially after compilation.",
+    "worker_profiles": {
+      "bench-one": {
+        "threads": 1,
+        "cpus": [
+          0
+        ]
+      },
+      "bench-eight": {
+        "threads": 8,
+        "cpus": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14
+        ]
+      }
+    },
+    "means": {
+      "bench-one": {
+        "165": {
+          "scalar_seconds": 0.015311525,
+          "batch_seconds": 0.0134207375,
+          "fractional_reduction": 0.12348786290065816
+        },
+        "209": {
+          "scalar_seconds": 0.0170015625,
+          "batch_seconds": 0.0148791375,
+          "fractional_reduction": 0.12483705541770063
+        },
+        "253": {
+          "scalar_seconds": 0.0211399625,
+          "batch_seconds": 0.01827,
+          "fractional_reduction": 0.1357600563387944
+        },
+        "297": {
+          "scalar_seconds": 0.024363687499999998,
+          "batch_seconds": 0.0205307375,
+          "fractional_reduction": 0.1573222444262593
+        },
+        "341": {
+          "scalar_seconds": 0.0276639875,
+          "batch_seconds": 0.022794487500000002,
+          "fractional_reduction": 0.17602306970388848
+        },
+        "385": {
+          "scalar_seconds": 0.032566225,
+          "batch_seconds": 0.0268111875,
+          "fractional_reduction": 0.1767179800544889
+        }
+      },
+      "bench-eight": {
+        "165": {
+          "scalar_seconds": 0.00257137375,
+          "batch_seconds": 0.002407305,
+          "fractional_reduction": 0.06380587419467898
+        },
+        "209": {
+          "scalar_seconds": 0.0022085475,
+          "batch_seconds": 0.0019502999999999999,
+          "fractional_reduction": 0.11693092405755379
+        },
+        "253": {
+          "scalar_seconds": 0.00278457375,
+          "batch_seconds": 0.00245432625,
+          "fractional_reduction": 0.1185989417590394
+        },
+        "297": {
+          "scalar_seconds": 0.00356033,
+          "batch_seconds": 0.003006765,
+          "fractional_reduction": 0.15548137391758632
+        },
+        "341": {
+          "scalar_seconds": 0.003752395,
+          "batch_seconds": 0.00313999875,
+          "fractional_reduction": 0.16320143534995657
+        },
+        "385": {
+          "scalar_seconds": 0.0044616075,
+          "batch_seconds": 0.003703145,
+          "fractional_reduction": 0.1699975849511639
+        }
+      }
+    },
+    "limitation": "Component timings do not establish a full FBS speedup."
+  },
+  "baseline_profile": {
+    "directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/tensor-stage-profile-20261017",
+    "method": "Temporary CPU stage instrumentation of parent tensor implementation; one pinned worker,12 calls per modulus,omit first2. Diagnostic sources and binary remain outside Git.",
+    "mean_seconds": {
+      "209": {
+        "total": 0.01683291,
+        "encode": 0.003977302,
+        "forward": 0.00564951,
+        "multiply": 0.000374541,
+        "inverse": 0.004268867,
+        "crt": 0.00169268
+      },
+      "297": {
+        "total": 0.02449477,
+        "encode": 0.006474125,
+        "forward": 0.007756124,
+        "multiply": 0.0005083788,
+        "inverse": 0.005885713,
+        "crt": 0.002625711
+      },
+      "385": {
+        "total": 0.03266522,
+        "encode": 0.00957644,
+        "forward": 0.009913064,
+        "multiply": 0.0006840476,
+        "inverse": 0.007460927,
+        "crt": 0.003704686
+      }
+    },
+    "source_sha256": {
+      "profile.hpp": "370bdc3eabe0ed023fe54ab3deac6320840ae62916afabfce0fac892dc2a4457",
+      "profile.cpp": "ab183294b32e13d5254af01e19f1c043b85328f124afa5f032f59e066174bf3d"
+    }
+  },
+  "commands": [
+    "build/test/ckks/ckks_tensor_rns32 full bench (OMP_NUM_THREADS1 or8, pinned profiles)",
+    "OMP_NUM_THREADS=8 build/test/ckks/ckks_tensor_rns32 full",
+    "OMP_NUM_THREADS=8 build/test/ckks/ckks_narrow_factor_rns32"
+  ],
+  "exit_codes": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/batched-tensor-encoder-20261017",
+  "security_validated": false
+}

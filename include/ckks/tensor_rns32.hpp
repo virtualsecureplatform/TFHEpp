@@ -6,7 +6,7 @@
 namespace TFHEpp {
 // Exact unscaled tensor modulo 2^Q. Split canonical coefficients at ceil(Q/2):
 // the high*high contribution vanishes, leaving two convolution diagonals.
-template<class P,std::uint32_t Q,bool CompactCRT=true,bool DirectCRT=true>
+template<class P,std::uint32_t Q,bool CompactCRT=true,bool DirectCRT=true,bool BatchEncode=true>
 void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&rhs)
 {
     static_assert(P::k==1 && is_multilimb_uint_v<typename P::T>);
@@ -37,12 +37,22 @@ void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&r
     for(std::size_t row=0;row<4;++row)for(std::size_t p=0;p<count;++p){
         left[row][p].resize(P::n);right[row][p].resize(P::n);
         const auto &arithmetic=plans[p].arithmetic();
+        if constexpr(BatchEncode){
+            if(row%2){
+                encoder.template residues<Q,split>(left[row][p],lhs[row/2],p);
+                encoder.template residues<Q,split,true>(right[row][p],rhs[row/2],p);
+            }else{
+                encoder.template residues<Q>(left[row][p],lhs[row/2],p);
+                encoder.template residues<Q,0,true>(right[row][p],rhs[row/2],p);
+            }
+        }else{
         for(std::size_t i=0;i<P::n;++i){
             auto a=ckks_detail::reduceToLevel<P,Q>(lhs[row/2][i]);
             auto b=ckks_detail::reduceToLevel<P,Q>(rhs[row/2][i]);
             if(row%2){a>>=split;b>>=split;}
             left[row][p][i]=encoder.residue(a,p);
             right[row][p][i]=arithmetic.encode(encoder.residue(b,p));
+        }
         }
         plans[p].forward(left[row][p]);plans[p].forward(right[row][p]);
     }
