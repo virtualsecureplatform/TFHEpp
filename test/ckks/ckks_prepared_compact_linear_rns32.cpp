@@ -45,6 +45,51 @@ int main()
         for (auto &word:value.limb) word=random();
         value=ckks_detail::reduceToLevel<P,93>(value);
     }
+    {
+        // Noncryptographic nonzero rows make FFT workspace corruption visible.
+        auto fixture=std::make_unique<CKKSGaloisKey<P,93>>();
+        for(std::size_t bit=0;bit<5;++bit)for(auto&source:(*fixture)[bit].data)for(auto&row:source)
+            for(auto&component:row)for(auto&v:component){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,93>(v);}
+        CKKSRetainedPreparedGaloisKeyFFT<P,93> cache(*fixture);
+        const auto prepared_count=cache.prepared_keys;
+#ifdef _OPENMP
+        const auto active_levels=omp_get_max_active_levels();omp_set_max_active_levels(2);
+#endif
+        for(int mode=0;mode<4;++mode){
+            std::vector<bool> used(32,false);
+            if(mode==0)std::fill(used.begin(),used.end(),true);
+            if(mode==1)for(auto i:{3,7,13,17,31})used[i]=true;
+            if(mode==2)used[1]=true;
+            ckks_detail::CKKSSparseBabyStepTable<P> serial(32);
+            ckks_detail::CKKSBuildSparseBabyStepRotationTable<P,93>(serial,input->ct,used,cache);
+            for(std::size_t threads:{2,8}){
+                ckks_detail::CKKSSparseBabyStepTable<P> concurrent(32);
+                std::size_t peak=0;
+                ckks_detail::CKKSBuildSparseBabyStepRotationTable<P,93>(concurrent,input->ct,used,cache,threads,&peak);
+#ifdef _OPENMP
+                if(mode==0 && !omp_get_dynamic() && omp_get_max_threads()>1 && omp_get_thread_limit()>1 && peak<2)throw std::runtime_error("baby table did not execute concurrent rotations");
+#endif
+                for(std::size_t i=0;i<serial.size();++i)
+                    if(bool(serial[i])!=bool(concurrent[i]) || (serial[i]&&*serial[i]!=*concurrent[i]))throw std::runtime_error("concurrent baby table differs from serial nonzero-row fixture");
+            }
+        }
+#ifdef _OPENMP
+        if(omp_get_max_active_levels()!=2)throw std::runtime_error("baby table changed caller OpenMP policy");
+        omp_set_max_active_levels(active_levels);
+#endif
+        std::vector<bool> used(8,true);bool rejected=false;
+        ckks_detail::CKKSSparseBabyStepTable<P> failed(8);
+        CKKSLazyPreparedGaloisKeyFFT<P,93> lazy(*fixture);
+        try{ckks_detail::CKKSBuildSparseBabyStepRotationTable<P,93>(failed,input->ct,used,lazy,8);}
+        catch(const std::invalid_argument&){rejected=true;}
+        if(!rejected || lazy.prepared_keys)throw std::runtime_error("parallel baby table accepted a mutable lazy cache");
+        auto saved=std::move(cache.keys[1]->spectra);cache.keys[1]->spectra.clear();rejected=false;
+        try{ckks_detail::CKKSBuildSparseBabyStepRotationTable<P,93>(failed,input->ct,used,cache,8);}
+        catch(const std::invalid_argument&error){rejected=std::string(error.what())=="invalid prepared auto key";}
+        cache.keys[1]->spectra=std::move(saved);
+        if(!rejected || cache.prepared_keys!=prepared_count)throw std::runtime_error("parallel baby table failed to propagate worker error or reused keys incorrectly");
+        std::cout<<"parallel baby tables match serial with nonzero rows; dependency gaps, worker errors and caller policy passed\n";
+    }
     for (int mode=0;mode<6;++mode) {
         plan.has_direct=mode!=1; plan.has_conjugate=mode!=0;
         if (mode>=3)

@@ -7,6 +7,7 @@ namespace TFHEpp {
 struct CKKSLinearRNSTimings {
     double baby_rotations=0,baby_ntt=0,matrix=0,inverse_crt=0,giant_rotations=0;
     std::size_t giant_rotation_calls=0,giant_rotation_bits=0;
+    std::size_t baby_peak_workers=0;
 };
 
 // The public diagonals use a complete residue representation. Each giant
@@ -96,12 +97,12 @@ public:
     }
 private:
     template<class InputKey,class OutputKey>
-    void applyPart(Result&result,const Input&input,const Plan&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings,bool fused_terms,bool horner_giants)const {
+    void applyPart(Result&result,const Input&input,const Plan&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings,bool fused_terms,bool horner_giants,std::size_t baby_threads)const {
         using Clock=std::chrono::steady_clock;
         auto start=Clock::now();std::vector<bool> used(plan.k_step,false);
         for(const auto &g:plan.groups)for(const auto &t:g.terms)used[t.baby_step]=true;
         auto baby=std::make_unique<ckks_detail::CKKSSparseBabyStepTable<P>>(plan.k_step);
-        ckks_detail::CKKSBuildSparseBabyStepRotationTable<P,Q>(*baby,input.ct,used,ik);
+        ckks_detail::CKKSBuildSparseBabyStepRotationTable<P,Q>(*baby,input.ct,used,ik,baby_threads,timings?&timings->baby_peak_workers:nullptr);
         ckks_detail::maybe_clear_cached_keys(ik);
         if(timings)timings->baby_rotations+=std::chrono::duration<double>(Clock::now()-start).count();start=Clock::now();
         using Rows=std::array<std::vector<std::uint32_t>,Count>;
@@ -210,15 +211,15 @@ public:
     // Horner preserves per-group rounding but changes switching noise.
     // Dense groups with power-of-two k_step reuse one binary key.
     template<class InputKey,class OutputKey>
-    void apply(Result&result,const Input&input,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool fused_terms=true,bool horner_giants=false)const {
+    void apply(Result&result,const Input&input,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool fused_terms=true,bool horner_giants=false,std::size_t baby_threads=0)const {
         if(!has_direct&&!has_conjugate){for(auto &component:result.ct)component.fill({});return;}
-        auto term=std::make_unique<Result>();if(has_direct){applyPart(*term,input,direct,ik,ok,timings,fused_terms,horner_giants);result=*term;}
-        if(has_conjugate){auto ct=std::make_unique<Input>();CKKSConjugateSlots<P,Q>(ct->ct,input.ct,ik);applyPart(*term,*ct,conjugate,ik,ok,timings,fused_terms,horner_giants);if(!has_direct)result=*term;else CKKSAddTRLWEInPlace<P,output_q>(result.ct,term->ct);}
+        auto term=std::make_unique<Result>();if(has_direct){applyPart(*term,input,direct,ik,ok,timings,fused_terms,horner_giants,baby_threads);result=*term;}
+        if(has_conjugate){auto ct=std::make_unique<Input>();CKKSConjugateSlots<P,Q>(ct->ct,input.ct,ik);applyPart(*term,*ct,conjugate,ik,ok,timings,fused_terms,horner_giants,baby_threads);if(!has_direct)result=*term;else CKKSAddTRLWEInPlace<P,output_q>(result.ct,term->ct);}
     }
 };
 template<class P,std::uint32_t Q,std::uint32_t Delta,std::uint32_t PlainDelta,std::size_t Count,class InputKey,class OutputKey>
 inline void CKKSRealLinearTransform(CKKSPlainMulResult<P,Q,Delta,PlainDelta>&result,const CKKSCiphertext<P,Q,Delta>&input,
-    const CKKSPreparedCompactRealLinearTransformRNS32<P,Q,Delta,PlainDelta,Count>&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool horner_giants=false)
-{plan.apply(result,input,ik,ok,timings,true,horner_giants);}
+    const CKKSPreparedCompactRealLinearTransformRNS32<P,Q,Delta,PlainDelta,Count>&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool horner_giants=false,std::size_t baby_threads=0)
+{plan.apply(result,input,ik,ok,timings,true,horner_giants,baby_threads);}
 } // namespace TFHEpp
 #endif

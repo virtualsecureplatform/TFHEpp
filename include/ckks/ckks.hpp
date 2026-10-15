@@ -14,6 +14,7 @@
 #include <complex>
 #include <cstdlib>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -28,6 +29,9 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "bfv/bfv++.hpp"
 #include "bfv/bfv-slots.hpp"
@@ -3369,10 +3373,12 @@ inline TRLWE<P> &CKKSEnsureSparseBabyStep(
 template <class P, std::uint32_t LogQ, class GaloisKey>
 inline void CKKSBuildSparseBabyStepRotationTable(
     CKKSSparseBabyStepTable<P> &baby, const TRLWE<P> &ct,
-    const std::vector<bool> &baby_used, const GaloisKey &gk)
+    const std::vector<bool> &baby_used, const GaloisKey &gk,
+    std::size_t parallel_threads=0,std::size_t*peak_workers=nullptr)
 {
     assert(!baby.empty());
     assert(baby.size() == baby_used.size());
+    if(peak_workers)*peak_workers=std::max(*peak_workers,std::size_t{1});
     CKKSEnsureSparseBabyStep<P>(baby, 0) = ct;
 
     std::vector<bool> needed(baby.size(), false);
@@ -3392,26 +3398,64 @@ inline void CKKSBuildSparseBabyStepRotationTable(
     for (std::size_t i = 1; i < needed.size(); i++)
         if (needed[i]) CKKSEnsureSparseBabyStep<P>(baby, i);
 
+    if(parallel_threads>1){
+        std::uint32_t mask=0;
+        for(int current=1;current<static_cast<int>(needed.size());++current)
+            if(needed[current])mask|=static_cast<std::uint32_t>(highestPowerOfTwoLE(current));
+        if(mask){
+            if constexpr(requires{gk.prepare_parallel_rotations(mask);})gk.prepare_parallel_rotations(mask);
+            else throw std::invalid_argument("parallel baby rotations require a prepared retained key cache");
+        }
+    }
+    const auto rotate_current=[&](int current){
+        const int bit=highestPowerOfTwoLE(current),parent=current-bit;
+        assert(baby[static_cast<std::size_t>(parent)]);
+        assert(baby[static_cast<std::size_t>(current)]);
+        if(CKKSHasDirectRotationKeyForSteps(gk,current))
+            CKKSRotateSlots<P,LogQ>(*baby[current],ct,current,gk);
+        else CKKSRotateSlots<P,LogQ>(*baby[current],*baby[parent],bit,gk);
+    };
     for (int depth = 1; depth <= static_cast<int>(P::nbit); depth++) {
+        std::vector<int> jobs;
         for (int current = 1; current < static_cast<int>(needed.size());
              current++) {
             if (!needed[static_cast<std::size_t>(current)] ||
                 static_cast<int>(popcountNonnegativeInt(current)) != depth)
                 continue;
-            const int bit = highestPowerOfTwoLE(current);
-            const int parent = current - bit;
-            assert(baby[static_cast<std::size_t>(parent)]);
-            assert(baby[static_cast<std::size_t>(current)]);
-            if (CKKSHasDirectRotationKeyForSteps(gk, current)) {
-                CKKSRotateSlots<P, LogQ>(
-                    *baby[static_cast<std::size_t>(current)], ct, current,
-                    gk);
+            jobs.push_back(current);
+        }
+        int team=1;
+#ifdef _OPENMP
+        if(parallel_threads>1 && !omp_in_parallel())
+            team=static_cast<int>(std::min({parallel_threads,jobs.size(),std::size_t(omp_get_max_threads())}));
+#endif
+        if(team>1){
+            std::exception_ptr error;
+            int active_workers=1;
+#pragma omp parallel num_threads(team)
+            {
+#ifdef _OPENMP
+#pragma omp master
+                {active_workers=omp_get_num_threads();}
+                const auto previous_levels=omp_get_max_active_levels();
+                omp_set_max_active_levels(omp_get_active_level());
+#endif
+#pragma omp for schedule(dynamic,1)
+                for(std::size_t j=0;j<jobs.size();++j){
+                    try{rotate_current(jobs[j]);}
+                    catch(...){
+#pragma omp critical(ckks_parallel_baby_rotation_error)
+                        {if(!error)error=std::current_exception();}
+                    }
+                }
+#ifdef _OPENMP
+                omp_set_max_active_levels(previous_levels);
+#endif
             }
-            else {
-                CKKSRotateSlots<P, LogQ>(
-                    *baby[static_cast<std::size_t>(current)],
-                    *baby[static_cast<std::size_t>(parent)], bit, gk);
-            }
+            if(error)std::rethrow_exception(error);
+            if(peak_workers)*peak_workers=std::max(*peak_workers,std::size_t(active_workers));
+        }else{
+            for(const auto current:jobs)rotate_current(current);
         }
     }
 }

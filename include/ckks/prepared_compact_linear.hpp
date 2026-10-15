@@ -151,7 +151,8 @@ inline void CKKSRealLinearTransform(
 
 // Explicit retention policy: default evaluation-local caches still clear at
 // BSGS boundaries. This adapter is prepared before use and retains all public
-// rotation/conjugation spectra across repeated serial evaluations.
+// rotation/conjugation spectra across evaluations. The explicit coordinator
+// hook makes subsequent concurrent rotation lookups read-only.
 template <class P,std::uint32_t Q>
 struct CKKSRetainedPreparedGaloisKeyFFT : CKKSLazyPreparedGaloisKeyFFT<P,Q> {
     using Base=CKKSLazyPreparedGaloisKeyFFT<P,Q>;
@@ -162,6 +163,12 @@ struct CKKSRetainedPreparedGaloisKeyFFT : CKKSLazyPreparedGaloisKeyFFT<P,Q> {
         this->get(P::nbit);
     }
     void clear_cached_keys() const {}
+    void prepare_parallel_rotations(std::uint32_t mask) const
+    {
+        constexpr auto allowed=(std::uint32_t{1}<<(P::nbit-1))-1;
+        if(mask&~allowed)throw std::invalid_argument("invalid retained rotation bit mask");
+        for(std::size_t bit=0;bit<P::nbit-1;++bit)if((mask>>bit)&1)this->get(bit);
+    }
 };
 } // namespace TFHEpp
 #endif
