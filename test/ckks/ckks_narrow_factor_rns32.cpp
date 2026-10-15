@@ -3,6 +3,7 @@
 #include <ckks/narrow_factor_rns32.hpp>
 #include <iostream>
 #include <atomic>
+#include <sstream>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -46,8 +47,63 @@ public:
         }
     }
 };
+void checkTailAlignment()
+{
+    auto key=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
+    std::atomic<std::size_t> parallel_calls{0};
+    key->automorphism_evaluator=[&](auto& out,const auto& in,uint32_t level,uint32_t exponent){
+        if(level!=Target::factor_log_q)throw std::runtime_error("incorrect public tail level");
+#ifdef _OPENMP
+        if(omp_in_parallel())parallel_calls.fetch_add(1,std::memory_order_relaxed);
+#endif
+        auto temporary=std::make_unique<TRLWE<P>>();
+        for(std::size_t c=0;c<2;++c)Automorphism<P>((*temporary)[c],in[c],exponent);
+        ckks_detail::reduceTRLWEToLevel<P,Target::factor_log_q>(*temporary);out=*temporary;
+    };
+    for(std::size_t columns:{0,1,4,7}){
+        std::vector<std::vector<Target::Factor>> source(columns,std::vector<Target::Factor>(Target::blocks));
+        std::vector<int> steps(columns*Target::blocks);
+        for(std::size_t column=0;column<columns;++column)for(std::size_t block=0;block<Target::blocks;++block){
+            steps[column*Target::blocks+block]=-int(Target::slots-2*(block%Target::tail_blocks_per_pack+1)*Target::tail_width);
+            for(std::size_t c=0;c<2;++c)for(std::size_t i=0;i<P::n;++i)
+                source[column][block].ct[c][i]=P::T{1}<<((column+block+c+i)%Target::factor_log_q);
+        }
+        auto serial=source,parallel=source;
+        key->parallel_public_tail_alignment=false;narrow_detail::alignPublicTail<Target>(serial,steps,*key);
+        key->parallel_public_tail_alignment=true;narrow_detail::alignPublicTail<Target>(parallel,steps,*key);
+        for(std::size_t column=0;column<columns;++column)for(std::size_t block=0;block<Target::blocks;++block)
+            if(serial[column][block].ct!=parallel[column][block].ct)throw std::runtime_error("parallel tail alignment changed ciphertexts");
+    }
+#ifdef _OPENMP
+    if(omp_get_max_threads()>1&&!parallel_calls.load())throw std::runtime_error("tail alignment callbacks did not enter an active team");
+#endif
+    // Archive only zero-valued public rows; no selector-key fixture generation.
+    std::stringstream serial_payload,payload;
+    key->parallel_public_tail_alignment=false;
+    {cereal::PortableBinaryOutputArchive archive(serial_payload);archive(*key);}
+    key->parallel_public_tail_alignment=true;
+    {cereal::PortableBinaryOutputArchive archive(payload);archive(*key);}
+    if(serial_payload.str()!=payload.str())throw std::runtime_error("runtime tail policy changed public archive bytes");
+    auto loaded=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
+    loaded->parallel_public_tail_alignment=true;
+    {cereal::PortableBinaryInputArchive archive(payload);archive(*loaded);}
+    if(loaded->parallel_public_tail_alignment)throw std::runtime_error("key archive retained a runtime parallel alignment policy");
+    std::vector<std::vector<Target::Factor>> tail(1,std::vector<Target::Factor>(Target::blocks));
+    std::vector<int> steps(Target::blocks,1);
+    key->automorphism_evaluator=[](auto&,const auto&,uint32_t,uint32_t){throw std::runtime_error("tail alignment test failure");};
+    bool rejected=false;
+    try{narrow_detail::alignPublicTail<Target>(tail,steps,*key);}
+    catch(const std::runtime_error& error){rejected=std::string(error.what())=="tail alignment test failure";}
+    if(!rejected)throw std::runtime_error("parallel tail alignment did not propagate an exception");
+    steps.pop_back();rejected=false;
+    try{narrow_detail::alignPublicTail<Target>(tail,steps,*key);}
+    catch(const std::invalid_argument&){rejected=true;}
+    if(!rejected)throw std::runtime_error("malformed public tail batch accepted");
+}
+
 int main()
 {
+    checkTailAlignment();
     auto raw=std::make_shared<TransparentSource>();
     using Cache=CKKSNarrowFactorSelectorCache32<Source>;
     bool rejected=false;

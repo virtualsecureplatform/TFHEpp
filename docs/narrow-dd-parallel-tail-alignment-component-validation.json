@@ -1,0 +1,28 @@
+{
+  "scope": "CPU-only component validation of opt-in independent public tail-alignment rotations, including runtime-policy archive compatibility.",
+  "command": "OMP_NUM_THREADS=8 OMP_MAX_ACTIVE_LEVELS=1 build/test/ckks/ckks_narrow_factor_rns32",
+  "terminal_exit_status": 0,
+  "ring_dimension": 512,
+  "column_counts": [
+    0,
+    1,
+    4,
+    7
+  ],
+  "checks": [
+    "Serial and parallel in-place public rotations match byte for byte across all tail blocks and tested column counts.",
+    "The evaluator receives the expected factor modulus and callbacks execute inside an active OpenMP team.",
+    "Backend exceptions are caught in workers and rethrown on the caller; malformed batch geometry is rejected.",
+    "A zero-valued public key archive resets the runtime parallel policy on load without changing the legacy serialized field list.",
+    "Existing exact-RNS and digit-CRT factor checks continue to pass.",
+    "Toggling the runtime policy leaves serialized public-key bytes identical."
+  ],
+  "scheduling": "Interleave columns of the same block to let adjacent workers share the prepared exponent cache.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "callback_contract": "Opt in only with a thread-safe public evaluator. OpenMP nesting follows the caller policy; this test uses one active level.",
+  "default_parallel_public_tail_alignment": false,
+  "full_retained_replay_covered": false,
+  "performance_claim": null,
+  "security_validated": false
+}

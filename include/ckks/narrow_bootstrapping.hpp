@@ -241,6 +241,8 @@ struct CKKSNarrowBootstrapKey {
     std::unique_ptr<CKKSPreparedRotationKeyFFT<P, Schedule::factor_key_log_q>> tail_rotations_fft;
     // Runtime cache policy, omitted from the legacy archive like derived keys.
     bool bounded_tail_rotation_fft = false;
+    // Opt-in parallel calls require a thread-safe public evaluator.
+    bool parallel_public_tail_alignment = false;
     std::size_t selector_ntt_chunk_size = 0;
     bool staged_fft_caches = false;
     // Optional caller-owned diagnostic observer, excluded from key archives.
@@ -265,6 +267,7 @@ struct CKKSNarrowBootstrapKey {
             output_conjugation_projected_fft.reset();
             tail_rotations_fft.reset();
             bounded_tail_rotation_fft = false;
+            parallel_public_tail_alignment = false;
             selector_ntt_chunk_size = 0;
             staged_fft_caches = false;
             factor_observer = {};
@@ -1430,6 +1433,42 @@ using CKKSNarrowRootObserver = std::function<void(
     const CKKSNarrowBlindRotationRequest<Schedule, InputLogDelta> &,
     const typename Schedule::Output &)>;
 
+namespace narrow_detail {
+// Each tail leaf is independent and may share the immutable public key cache.
+// No key preparation occurs here; OpenMP nesting follows the caller policy.
+template<class Schedule>
+inline void alignPublicTail(std::vector<std::vector<typename Schedule::Factor>> &tail,
+    std::span<const int> steps,const CKKSNarrowBootstrapKey<Schedule> &key)
+{
+    using P=typename Schedule::Param;
+    if(!key.automorphism_evaluator || steps.size()!=tail.size()*Schedule::blocks)
+        throw std::invalid_argument("invalid public tail alignment batch");
+    for(const auto &column:tail)
+        if(column.size()!=Schedule::blocks)throw std::invalid_argument("invalid public tail alignment column");
+    const auto align=[&](std::size_t i){
+        auto &cipher=tail[i/Schedule::blocks][i%Schedule::blocks].ct;
+        key.automorphism_evaluator(cipher,cipher,Schedule::factor_log_q,
+            ckks_detail::rotationAutomorphismForSteps<P>(steps[i]));
+    };
+    if(key.parallel_public_tail_alignment && steps.size()>1){
+        std::exception_ptr error;
+#pragma omp parallel for schedule(dynamic,1)
+        for(std::size_t work=0;work<steps.size();++work){
+            // Adjacent workers rotate different columns of the same block,
+            // sharing its prepared exponent cache instead of cycling caches.
+            const auto i=(work%tail.size())*Schedule::blocks+work/tail.size();
+            try{align(i);}
+            catch(...){
+#pragma omp critical(ckks_public_tail_alignment_error)
+                {if(!error)error=std::current_exception();}
+            }
+        }
+        if(error)std::rethrow_exception(error);
+    }
+    else for(std::size_t i=0;i<steps.size();++i)align(i);
+}
+} // namespace narrow_detail
+
 // Sections 5.2 and 7: input and frequency columns share the prepared W_x.
 // Tiling bounds temporary memory without changing the mathematical batch.
 template <class Schedule, std::uint32_t InputLogDelta>
@@ -1607,11 +1646,7 @@ inline void CKKSNarrowBlindRotateBatch(
                         steps[column * Schedule::blocks + x] = -static_cast<int>(Schedule::slots -
                             2 * (x % Schedule::tail_blocks_per_pack + 1) * Schedule::tail_width);
                 if (key.automorphism_evaluator) {
-                    for (size_t i=0;i<steps.size();++i) {
-                        auto &cipher=tail[i/Schedule::blocks][i%Schedule::blocks].ct;
-                        key.automorphism_evaluator(cipher, cipher, Schedule::factor_log_q,
-                            ckks_detail::rotationAutomorphismForSteps<P>(steps[i]));
-                    }
+                    narrow_detail::alignPublicTail<Schedule>(tail,steps,key);
                 }
                 else CKKSRotateSlotsBatchWithBoundedFFT<P, Schedule::factor_log_q, Schedule::auxiliary_log_scale>(
                     steps, [&](std::size_t i) -> auto & {
