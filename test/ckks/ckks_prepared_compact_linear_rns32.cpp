@@ -75,8 +75,36 @@ int main()
             for(auto &component:actual->ct)component.fill(P::T{12345});
             CKKSRealLinearTransform<P,93,52,37>(*actual,*input,prepared,retained_input,retained_output);
             if (actual->ct!=reference->ct) throw std::runtime_error("prepared compact transform differs from reference");
+            prepared.apply(*actual,*input,retained_input,retained_output,nullptr,true,true);
+            if (actual->ct!=reference->ct) throw std::runtime_error("Horner compact transform differs from reference");
         }
     }
+    for(const std::vector<int> giants:{std::vector<int>{0,1,2,3,4,5,6,7},std::vector<int>{5,1,4,5,3},std::vector<int>{2,6,3}})
+        for(int mode=0;mode<3;++mode){
+            Plan varied;varied.has_direct=mode!=1;varied.has_conjugate=mode!=0;
+            for(auto*part:{&varied.direct,&varied.conjugate}){
+                part->k_step=part==&varied.direct?2:3;
+                for(const auto giant:giants){
+                    decltype(part->groups)::value_type group;group.giant_step=giant;
+                    for(int j=0;j<3;++j){
+                        decltype(group.terms)::value_type term;term.baby_step=j%2;
+                        for(std::size_t i=0;i<P::n;++i)term.coefficients[i]=((i+j+giant)%2?-1:1)*std::int64_t((std::uint64_t{1}<<39)+i+j+1);
+                        group.terms.push_back(term);
+                    }
+                    part->groups.push_back(std::move(group));
+                }
+            }
+            Prepared prepared(varied,6*giants.size()*Prepared::term_spectrum_bytes);
+            auto reference=std::make_unique<CKKSPlainMulResult<P,93,52,37>>(),ordinary=std::make_unique<CKKSPlainMulResult<P,93,52,37>>(),horner=std::make_unique<CKKSPlainMulResult<P,93,52,37>>();
+            CKKSLazyPreparedGaloisKeyFFT<P,93> transient_input(*input_key);
+            CKKSLazyPreparedGaloisKeyFFT<P,56> transient_output(*output_key);
+            CKKSRealLinearTransform<P,93,52,37>(*reference,*input,varied,transient_input,transient_output);
+            CKKSLinearRNSTimings before,after;
+            prepared.apply(*ordinary,*input,retained_input,retained_output,&before,true,false);
+            prepared.apply(*horner,*input,retained_input,retained_output,&after,true,true);
+            if(horner->ct!=ordinary->ct || horner->ct!=reference->ct)throw std::runtime_error("dense, sparse or repeated giant steps changed the Horner result");
+            if(mode==0 && giants.size()==8 && (before.giant_rotation_bits!=12 || after.giant_rotation_bits!=7))throw std::runtime_error("dense Horner binary rotation counts differ");
+        }
     for(std::size_t terms:{3,4,5,7,8,9}){
         auto varied=plan;varied.has_direct=true;varied.has_conjugate=true;
         for(auto*part:{&varied.direct,&varied.conjugate})for(auto&group:part->groups){
