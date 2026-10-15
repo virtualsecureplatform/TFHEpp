@@ -1,0 +1,207 @@
+{
+  "scope": "Exact CPU tensor products reconstruct only coefficient bits surviving the diagonal shift and reduction modulo2^Q. All convolution primes and transforms are unchanged.",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "fixtures": "Deterministic noncryptographic polynomial coefficients.",
+  "proof": "For diagonal d, only Q-d*ceil(Q/2) low bits survive. CenteredCRT returns the exact signed representative modulo its output storage width. Round that width up to64 bits, zero-extend into the torus, shift by d*ceil(Q/2), and reduce modulo2^Q. Bits above the compact width cannot survive the final reduction, including sign extension. Q1 uses a minimum one-limb workspace.",
+  "controls": "CompactCRT=false retains full448-bit reconstruction in the same tensor function.",
+  "checks": {
+    "ring_degrees": [
+      16,
+      512,
+      16384
+    ],
+    "small_ring_q": [
+      1,
+      64,
+      93,
+      128,
+      256,
+      384,
+      385,
+      440
+    ],
+    "medium_ring_q": [
+      93,
+      165,
+      209,
+      253,
+      297,
+      341,
+      385
+    ],
+    "full_ring_q": [
+      165,
+      209,
+      253,
+      297,
+      341,
+      385
+    ],
+    "cases": [
+      "random full-width representatives",
+      "all-minus-one",
+      "modulus-midpoint plus1",
+      "zero",
+      "low-chunk maximum"
+    ],
+    "oracles": [
+      "full-width CRT tensor",
+      "independent exact FFT tensor",
+      "schoolbook negacyclic tensor at N16"
+    ],
+    "all_match": true
+  },
+  "component_commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "build/test/ckks/ckks_tensor_rns32",
+        "full"
+      ],
+      "OMP_NUM_THREADS": 1
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0,2,4,6,8,10,12,14",
+        "build/test/ckks/ckks_tensor_rns32",
+        "full"
+      ],
+      "OMP_NUM_THREADS": 8
+    },
+    {
+      "command": [
+        "build/test/ckks/ckks_narrow_factor_rns32"
+      ],
+      "OMP_NUM_THREADS": 8
+    }
+  ],
+  "component_exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "timing_method": "At each shape alternate full/compact and compact/full. Five fixture cases; omit first call. Timing runs started after compilation finished and ran sequentially.",
+  "timing_limit": "Four samples per shape and worker count. Component performance does not establish full FBS speedup.",
+  "component_means": {
+    "one-worker": {
+      "165": {
+        "wide_crt_seconds": 0.015393375,
+        "compact_crt_seconds": 0.013931575,
+        "fractional_reduction": 0.09496293048145721,
+        "reconstruction_limb_counts": [
+          3,
+          2
+        ]
+      },
+      "209": {
+        "wide_crt_seconds": 0.018220475,
+        "compact_crt_seconds": 0.0166035,
+        "fractional_reduction": 0.0887449421598504,
+        "reconstruction_limb_counts": [
+          4,
+          2
+        ]
+      },
+      "253": {
+        "wide_crt_seconds": 0.0233797,
+        "compact_crt_seconds": 0.021254575,
+        "fractional_reduction": 0.09089616205511608,
+        "reconstruction_limb_counts": [
+          4,
+          2
+        ]
+      },
+      "297": {
+        "wide_crt_seconds": 0.0260414,
+        "compact_crt_seconds": 0.024276875,
+        "fractional_reduction": 0.06775845384656742,
+        "reconstruction_limb_counts": [
+          5,
+          3
+        ]
+      },
+      "341": {
+        "wide_crt_seconds": 0.0295013,
+        "compact_crt_seconds": 0.02815345,
+        "fractional_reduction": 0.045687817147041065,
+        "reconstruction_limb_counts": [
+          6,
+          3
+        ]
+      },
+      "385": {
+        "wide_crt_seconds": 0.034892900000000004,
+        "compact_crt_seconds": 0.0335937,
+        "fractional_reduction": 0.03723393584368184,
+        "reconstruction_limb_counts": [
+          7,
+          3
+        ]
+      }
+    },
+    "eight-workers": {
+      "165": {
+        "wide_crt_seconds": 0.0027166424999999998,
+        "compact_crt_seconds": 0.0025191000000000002,
+        "fractional_reduction": 0.07271567753210062,
+        "reconstruction_limb_counts": [
+          3,
+          2
+        ]
+      },
+      "209": {
+        "wide_crt_seconds": 0.0028836975,
+        "compact_crt_seconds": 0.0026931775,
+        "fractional_reduction": 0.06606795615698247,
+        "reconstruction_limb_counts": [
+          4,
+          2
+        ]
+      },
+      "253": {
+        "wide_crt_seconds": 0.0035445225,
+        "compact_crt_seconds": 0.003243025,
+        "fractional_reduction": 0.08506011740650543,
+        "reconstruction_limb_counts": [
+          4,
+          2
+        ]
+      },
+      "297": {
+        "wide_crt_seconds": 0.0042315925,
+        "compact_crt_seconds": 0.0039972474999999995,
+        "fractional_reduction": 0.0553798599463442,
+        "reconstruction_limb_counts": [
+          5,
+          3
+        ]
+      },
+      "341": {
+        "wide_crt_seconds": 0.0045123049999999994,
+        "compact_crt_seconds": 0.00431951,
+        "fractional_reduction": 0.042726500092524544,
+        "reconstruction_limb_counts": [
+          6,
+          3
+        ]
+      },
+      "385": {
+        "wide_crt_seconds": 0.0054065549999999995,
+        "compact_crt_seconds": 0.005104595,
+        "fractional_reduction": 0.05585072194770968,
+        "reconstruction_limb_counts": [
+          7,
+          3
+        ]
+      }
+    }
+  },
+  "factor_result": "direct RNS and digit-CRT cached head/tail factors byte-identical; no online reads or selector transforms; retained bytes=41674640",
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/compact-tensor-crt-20261017",
+  "security_validated": false
+}

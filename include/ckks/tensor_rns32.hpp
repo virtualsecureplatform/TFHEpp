@@ -6,7 +6,7 @@
 namespace TFHEpp {
 // Exact unscaled tensor modulo 2^Q. Split canonical coefficients at ceil(Q/2):
 // the high*high contribution vanishes, leaving two convolution diagonals.
-template<class P,std::uint32_t Q>
+template<class P,std::uint32_t Q,bool CompactCRT=true>
 void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&rhs)
 {
     static_assert(P::k==1 && is_multilimb_uint_v<typename P::T>);
@@ -31,7 +31,6 @@ void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&r
         return out;
     }();
     static const modular_rns32::CanonicalEncoder<P::T::limbs,split,count> encoder;
-    static const modular_rns32::CenteredCRT<P::T::limbs,count> crt;
     using Rows=std::array<std::vector<std::uint32_t>,count>;
     std::array<Rows,4> left,right;
 #pragma omp parallel for collapse(2) schedule(static)
@@ -50,7 +49,14 @@ void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&r
     for(auto &component:result)component.fill({});
     // Row mapping matches CKKS tensor convention: cross, constant, square.
     constexpr std::array<std::array<int,2>,3> components{{{0,1},{1,1},{0,0}}};
-    for(std::size_t diagonal=0;diagonal<2;++diagonal){
+    const auto diagonal_product=[&]<std::size_t Diagonal>(){
+        // Only Q-Diagonal*split low bits survive the shift and reduction.
+        // CenteredCRT reconstructs modulo its output width, even when the
+        // complete CRT product is wider. No sign extension is needed: every
+        // omitted bit would lie at or above Q after shifting.
+        constexpr auto output_bits=CompactCRT?Q-Diagonal*split:P::T::digits;
+        using Recovered=MultiLimbUInt<std::max<std::size_t>(1,(output_bits+63)/64)>;
+        static const modular_rns32::CenteredCRT<Recovered::limbs,count> crt;
         std::array<Rows,3> sums;
 #pragma omp parallel for collapse(2) schedule(static)
         for(std::size_t c=0;c<3;++c)for(std::size_t p=0;p<count;++p){
@@ -66,26 +72,32 @@ void CKKSTensorProductRNS32(TRLWE3<P>&result,const TRLWE<P>&lhs,const TRLWE<P>&r
 #endif
                 for(;i<P::n;++i){const auto value=out[i]+arithmetic.multiplyLazy(x[i],y[i]);out[i]=value>=2*arithmetic.modulus()?value-2*arithmetic.modulus():value;}
             };
-            for(std::size_t high=0;high<=diagonal;++high){
-                const auto a=2*components[c][0]+high,b=2*components[c][1]+diagonal-high;
-                accumulate(a,b);if(c==0)accumulate(2*components[c][1]+high,2*components[c][0]+diagonal-high);
+            for(std::size_t high=0;high<=Diagonal;++high){
+                const auto a=2*components[c][0]+high,b=2*components[c][1]+Diagonal-high;
+                accumulate(a,b);if(c==0)accumulate(2*components[c][1]+high,2*components[c][0]+Diagonal-high);
             }
             for(auto &value:out)value=arithmetic.canonical(value);
             plans[p].inverse(out);
         }
 #pragma omp parallel
         {
-            std::vector<typename P::T> recovered(512);
+            std::vector<Recovered> recovered(512);
 #pragma omp for collapse(2) schedule(static)
             for(std::size_t c=0;c<3;++c)for(std::size_t begin=0;begin<P::n;begin+=512){
                 const auto length=std::min(std::size_t{512},std::size_t(P::n)-begin);
                 std::array<std::span<std::uint32_t>,count> residues;
                 for(std::size_t p=0;p<count;++p)residues[p]=std::span(sums[c][p]).subspan(begin,length);
                 crt.reconstruct(residues,std::span(recovered).first(length));
-                for(std::size_t i=0;i<length;++i)result[c][begin+i]=ckks_detail::reduceToLevel<P,Q>(result[c][begin+i]+(recovered[i]<<(diagonal*split)));
+                for(std::size_t i=0;i<length;++i){
+                    typename P::T value{};
+                    std::copy_n(recovered[i].limb.begin(),Recovered::limbs,value.limb.begin());
+                    result[c][begin+i]=ckks_detail::reduceToLevel<P,Q>(result[c][begin+i]+(value<<(Diagonal*split)));
+                }
             }
         }
-    }
+    };
+    diagonal_product.template operator()<0>();
+    diagonal_product.template operator()<1>();
 }
 // Borrow an immutable existing relinearization key; only tensor arithmetic
 // changes. Key switching and its auxiliary rounding remain unchanged.
