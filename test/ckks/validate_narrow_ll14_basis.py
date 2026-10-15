@@ -19,7 +19,7 @@ with outputs.open('rb') as f:
  meta=r.words(9)
  if meta[:6]!=(0x4c4c313446425331,n,448,85,44,48):raise ValueError('output metadata mismatch')
  output_q,output_scale,square_q=meta[6:]
- if (output_q,output_scale,square_q) not in ((93,44,49),(85,37,48)):raise ValueError('unsupported output profile')
+ if (output_q,output_scale,square_q) not in ((93,44,49),(85,37,48),(92,44,48)):raise ValueError('unsupported output profile')
  if (report['output_log_q'],report['output_log_delta'],report['post_product_log_q'])!=(output_q,output_scale,square_q):raise ValueError('output/report profile mismatch')
  length=r.words(1)[0]
  if length>8:raise ValueError('invalid function length')

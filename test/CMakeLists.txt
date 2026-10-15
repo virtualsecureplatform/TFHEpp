@@ -66,6 +66,7 @@ foreach(test_source ${test_sources})
         test_name STREQUAL "ckks_narrow_ll14_ntt_fbs" OR
         test_name STREQUAL "ckks_narrow_ll14_basis_ntt_fbs" OR
         test_name STREQUAL "ckks_narrow_ll14_lean37_fbs" OR
+        test_name STREQUAL "ckks_narrow_ll14_mixed_fbs" OR
         test_name STREQUAL "ckks_prepared_compact_linear_rns32" OR
         test_name STREQUAL "ckks_tensor_rns32" OR
         test_name STREQUAL "ckks_public_auto_rns32" OR
