@@ -108,11 +108,14 @@ public:
         prepare([&](std::size_t r,std::size_t c,std::size_t i){return (*ordinary)[r][c][i];});
     }
     std::size_t byteSize()const{return count*chunks*rows*2*P::n*sizeof(std::uint32_t);}
-    void apply(TRLWE<P>&result,const Polynomial<P>&input)const{
+    void apply(TRLWE<P>&result,const Polynomial<P>&input,bool fused_rows=true)const{
         auto digits=std::make_unique_for_overwrite<std::array<std::array<std::int64_t,P::n>,rows>>();
         ckks_detail::activeBaseDecomposeSignedRows<P,Q,Bits,rows>(*digits,input);
         std::array<bool,rows> active{};
         for(std::size_t r=0;r<rows;++r)active[r]=std::any_of((*digits)[r].begin(),(*digits)[r].end(),[](const auto&v){return v!=0;});
+        std::array<std::size_t,rows> active_rows;
+        std::size_t active_count=0;
+        for(std::size_t r=0;r<rows;++r)if(active[r])active_rows[active_count++]=r;
         std::array<std::vector<std::uint32_t>,count> transformed;
         for(auto &row:transformed)row.resize(rows*P::n);
 #pragma omp parallel for collapse(2) schedule(static)
@@ -133,7 +136,32 @@ public:
         for(std::size_t c=0;c<chunks*2;++c)for(std::size_t p=0;p<count;++p)for(std::size_t begin=0;begin<P::n;begin+=1024){
             const auto &arithmetic=plans()[p].arithmetic();auto*out=sums[c][p].data();
             const auto end=std::min(begin+1024,std::size_t(P::n));
-            for(std::size_t r=0;r<rows;++r)if(active[r]){
+            std::size_t first=0;
+            if(fused_rows)for(;first+4<=active_count;first+=4){
+                std::array<const std::uint32_t*,4> x,y;
+                for(std::size_t t=0;t<4;++t){
+                    const auto r=active_rows[first+t];
+                    x[t]=transformed[p].data()+r*P::n;
+                    y[t]=spectra_[p].data()+((c/2*rows+r)*2+c%2)*P::n;
+                }
+                std::size_t i=begin;
+#if defined(__AVX2__)
+                for(;i+8<=end;i+=8){
+                    const auto value=arithmetic.accumulateDot4Vector(
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(out+i)),
+                        [&](std::size_t t){return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(x[t]+i));},
+                        [&](std::size_t t){return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(y[t]+i));});
+                    _mm256_storeu_si256(reinterpret_cast<__m256i*>(out+i),value);
+                }
+#endif
+                for(;i<end;++i){
+                    std::uint64_t dot=0;for(std::size_t t=0;t<4;++t)dot+=std::uint64_t(x[t][i])*y[t][i];
+                    const auto value=out[i]+arithmetic.reduceLazy(dot);
+                    out[i]=value>=2*arithmetic.modulus()?value-2*arithmetic.modulus():value;
+                }
+            }
+            for(;first<active_count;++first){
+                const auto r=active_rows[first];
                 const auto*x=transformed[p].data()+r*P::n,*y=spectra_[p].data()+((c/2*rows+r)*2+c%2)*P::n;std::size_t i=begin;
 #if defined(__AVX2__)
                 for(;i+8<=end;i+=8){

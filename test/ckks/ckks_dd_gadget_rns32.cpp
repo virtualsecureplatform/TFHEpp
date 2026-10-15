@@ -53,16 +53,29 @@ template<std::uint32_t Nbit,std::uint32_t DataQ>void check(){
   for(std::size_t d=0;d<Compact::bbar_rows;++d)for(std::size_t c=0;c<2;++c)for(std::size_t i=0;i<P::n;++i)key->data[r][d][c][i]=Compact::pack((*digits)[d][c][i]);
  }
  CKKSPreparedDDRelinKeyNTT<P,Q,20,20> old(*key);CKKSPreparedGadgetRNS32<P,Q,20> direct(*key);
- auto input=std::make_unique<Polynomial<P>>();auto expected=std::make_unique<TRLWE<P>>(),actual=std::make_unique<TRLWE<P>>();
+ auto input=std::make_unique<Polynomial<P>>();auto expected=std::make_unique<TRLWE<P>>(),actual=std::make_unique<TRLWE<P>>(),unfused=std::make_unique<TRLWE<P>>();
  for(auto&v:*input){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,Q>(v<<48);}
  for(int trial=0;trial<4;++trial){
   double old_time=0,new_time=0;
   const auto run_old=[&]{auto t=std::chrono::steady_clock::now();old.apply(*expected,*input);old_time=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();};
   const auto run_new=[&]{auto t=std::chrono::steady_clock::now();direct.apply(*actual,*input);new_time=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();};
   if(trial%2){run_new();run_old();}else{run_old();run_new();}
+  direct.apply(*unfused,*input,false);
+  if(*actual!=*unfused)throw std::runtime_error("fused gadget rows differ from unfused rows");
   if(*actual!=*expected)throw std::runtime_error("wide DD gadget differs from digit NTT");
   std::cout<<"N="<<P::n<<" data_q="<<DataQ<<" trial="<<trial<<" old="<<old_time<<" rns="<<new_time<<" old_bytes="<<old.byteSize()<<" rns_bytes="<<direct.byteSize()<<" identical\n";
  }
+ // Nonconsecutive active rows and every four-row remainder, using exact
+ // sparse balanced digits instead of relying on random rows being active.
+ for(std::size_t active:{0,1,2,3,4,5,7,8,9}){
+  typename P::T value{};std::size_t selected=0;
+  for(std::size_t parity=0;parity<2;++parity)
+   for(std::size_t r=parity;r<Compact::primary_rows&&selected<active;r+=2,++selected)
+    value+=typename P::T{1}<<((Compact::primary_rows-r-1)*20);
+  input->fill(value);old.apply(*expected,*input);direct.apply(*actual,*input);direct.apply(*unfused,*input,false);
+  if(*actual!=*expected || *actual!=*unfused)throw std::runtime_error("sparse fused gadget row grouping differs");
+ }
+ for(auto&v:*input){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,Q>(v<<48);}
  auto grouped=makeCKKSCompactDDRelinKeyWithPrimaryBase<40>(*key);
  using Grouped=CKKSCompactDDRelinKey<P,Q,40,20>;
  for(std::size_t r=0;r<Grouped::primary_rows;++r){
@@ -75,4 +88,22 @@ template<std::uint32_t Nbit,std::uint32_t DataQ>void check(){
  if(*actual!=*expected)throw std::runtime_error("forty-bit grouped gadget differs from digit NTT");
  input->fill({});direct.apply(*actual,*input);for(auto&c:*actual)for(auto&v:c)if(v!=typename P::T{})throw std::runtime_error("zero input retained stale output");
 }
-int main(int argc,char**){checkSignedBases<85>();checkSignedBases<209>();checkSignedBases<257>();checkSignedBases<385>();checkSignedBases<433>();checkSignedBases<435>();checkSignedBases<448>();check<4,385>();check<9,385>();check<9,341>();check<9,297>();check<9,253>();check<9,209>();if(argc>1){check<14,385>();check<14,341>();check<14,297>();check<14,253>();check<14,209>();}}
+template<class P,std::uint32_t Q,std::uint32_t Bits>
+struct FixtureRows {static constexpr std::size_t rows=(Q+Bits-1)/Bits;std::array<TRLWE<P>,rows> ciphertexts;};
+template<std::uint32_t Q,std::uint32_t Bits,std::uint32_t Chunk,std::uint32_t Lift>
+void benchmarkFusedRows(){
+ using P=narrow_benchmark::BenchmarkParam<14,7>;
+ auto rows=std::make_unique<FixtureRows<P,Q,Bits>>();std::mt19937_64 random(20261020+Q+Bits);
+ for(auto&r:rows->ciphertexts)for(auto&c:r)for(auto&v:c){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,Q>(v);}
+ CKKSPreparedGadgetRNS32<P,Q,Bits,Chunk> prepared(*rows);
+ auto input=std::make_unique<Polynomial<P>>();auto expected=std::make_unique<TRLWE<P>>(),out=std::make_unique<TRLWE<P>>();
+ for(auto&v:*input){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,Q>(v<<Lift);}
+ prepared.apply(*expected,*input,false);
+ for(bool fused:{false,true,true,false})for(int trial=0;trial<5;++trial){
+  const auto start=std::chrono::steady_clock::now();prepared.apply(*out,*input,fused);
+  const auto seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+  if(*out!=*expected)throw std::runtime_error("timed fused gadget rows differ");
+  std::cout<<"gadget q="<<Q<<" bits="<<Bits<<" chunk="<<Chunk<<" lift="<<Lift<<" fused="<<fused<<" trial="<<trial<<" seconds="<<seconds<<" identical\n";
+ }
+}
+int main(int argc,char**){if(argc>2){benchmarkFusedRows<433,20,80,48>();benchmarkFusedRows<257,20,80,48>();benchmarkFusedRows<435,44,112,37>();benchmarkFusedRows<435,44,112,270>();return 0;}checkSignedBases<85>();checkSignedBases<209>();checkSignedBases<257>();checkSignedBases<385>();checkSignedBases<433>();checkSignedBases<435>();checkSignedBases<448>();check<1,385>();check<2,385>();check<4,385>();check<9,385>();check<9,341>();check<9,297>();check<9,253>();check<9,209>();if(argc>1){check<14,385>();check<14,341>();check<14,297>();check<14,253>();check<14,209>();}}
