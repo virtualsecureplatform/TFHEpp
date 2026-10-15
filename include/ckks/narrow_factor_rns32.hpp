@@ -76,7 +76,8 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     const FactorKeys &key, std::size_t chunk_size, Loader load,
     const CKKSPreparedAutoKeyFFT<typename Schedule::Param,Schedule::factor_key_log_q> *factor_fft,
     CKKSNarrowFactorTimings *timings, bool prefetch_raw = false,
-    std::span<const FactorSelectorRNS32<Schedule>> retained = {}, bool tiled_matrix = true)
+    std::span<const FactorSelectorRNS32<Schedule>> retained = {}, bool tiled_matrix = true,
+    bool parallel_conjugation = false)
 {
     using P = typename Schedule::Param;
     using Cache = FactorSelectorRNS32<Schedule>;
@@ -240,7 +241,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     if (timings) timings->inverse_crt_seconds += std::chrono::duration<double>(Clock::now()-start).count();
     start = Clock::now();
     std::vector<typename Schedule::Factor> result(columns);
-    for (std::size_t column = 0; column < columns; ++column) {
+    const auto finish_column = [&](std::size_t column) {
         auto second = std::make_unique<typename Schedule::Factor>();
         auto conjugated = std::make_unique<typename Schedule::Factor>();
         for (std::size_t component = 0; component <= P::k; ++component)
@@ -256,7 +257,23 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
             key.automorphism_evaluator(conjugated->ct,second->ct,Schedule::factor_log_q,2*P::n-1);
         }
         CKKSAddInPlace<P>(result[column],*conjugated);
+    };
+    // Public prepared caches may be shared by concurrent column evaluators.
+    // Opt in only with a thread-safe callback; inner OpenMP work follows the
+    // caller's nesting policy (one active level avoids oversubscription).
+    if (parallel_conjugation && columns > 1) {
+        std::exception_ptr error;
+#pragma omp parallel for schedule(dynamic,1)
+        for (std::size_t column = 0; column < columns; ++column) {
+            try { finish_column(column); }
+            catch (...) {
+#pragma omp critical(ckks_factor_conjugation_error)
+                { if (!error) error = std::current_exception(); }
+            }
+        }
+        if (error) std::rethrow_exception(error);
     }
+    else for (std::size_t column = 0; column < columns; ++column) finish_column(column);
     if (timings) timings->conjugation_seconds += std::chrono::duration<double>(Clock::now()-start).count();
     return result;
 }
@@ -335,7 +352,7 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
     static_assert(SourceSchedule::tail_blocks_per_pack == TargetSchedule::tail_blocks_per_pack && SourceSchedule::tail_blocks_per_pack == SelectorSchedule::tail_blocks_per_pack);
     std::shared_ptr<const Source> source_;
     std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained_;
-    bool tiled_matrix_;
+    bool tiled_matrix_,parallel_conjugation_;
     struct FactorKeys {
         const CKKSGaloisKey<P,SourceSchedule::factor_key_log_q> &factor_galois;
         bool staged_fft_caches;
@@ -345,8 +362,9 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
     };
 public:
     explicit CKKSNarrowDeferredRescaleFactorSourceRNS32(std::shared_ptr<const Source> source,
-        std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained={},bool tiled_matrix=true)
-        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix)
+        std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained={},bool tiled_matrix=true,
+        bool parallel_conjugation=false)
+        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix),parallel_conjugation_(parallel_conjugation)
     {
         if (!source_ || !source_->hasRawChunks()) throw std::invalid_argument("direct RNS factor source requires raw chunks");
         if (retained_ && retained_->source()!=source_.get())
@@ -364,7 +382,7 @@ public:
         auto factors = narrow_detail::packedFactorsBatchRNS32<SourceSchedule>(tables,view,key.selector_ntt_chunk_size,
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
             source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):
-                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_);
+                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_);
         std::vector<typename TargetSchedule::Factor> result(factors.size());
         for (std::size_t i = 0; i < factors.size(); ++i)
             CKKSScaleDown<P,SourceSchedule::factor_log_q,SourceSchedule::log_delta,drop>(result[i],factors[i]);

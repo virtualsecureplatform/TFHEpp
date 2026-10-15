@@ -2,6 +2,10 @@
 #include <ckks/narrow_factor_ntt32.hpp>
 #include <ckks/narrow_factor_rns32.hpp>
 #include <iostream>
+#include <atomic>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 using namespace TFHEpp;
 using P=narrow_benchmark::BenchmarkParam<9,7>;
@@ -60,9 +64,14 @@ int main()
     auto direct_cache=std::make_shared<DirectCache>(raw,DirectCache::retained_bytes,4);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> direct(raw,direct_cache),direct_streamed(raw);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> untiled(raw,direct_cache,false);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> parallel(raw,direct_cache,true,true);
     auto key=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
     key->selector_ntt_chunk_size=4;
-    key->automorphism_evaluator=[](auto &result,const auto &input,uint32_t,uint32_t exponent) {
+    std::atomic<std::size_t> parallel_callbacks{0};
+    key->automorphism_evaluator=[&](auto &result,const auto &input,uint32_t,uint32_t exponent) {
+#ifdef _OPENMP
+        if(omp_in_parallel())parallel_callbacks.fetch_add(1,std::memory_order_relaxed);
+#endif
         for(std::size_t c=0;c<2;++c)Automorphism<P>(result[c],input[c],exponent);
     };
     std::vector<CKKSSlotVector<P>> tables(4);
@@ -95,12 +104,24 @@ int main()
             for(std::size_t chunk:{3,4,5}){
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto concurrent=parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto coarse=untiled.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                for(std::size_t c=0;c<columns;++c)if(concurrent[c].ct!=reference[c].ct)throw std::runtime_error("parallel factor conjugations differ from digit CRT");
                 for(std::size_t c=0;c<columns;++c)if(coarse[c].ct!=reference[c].ct)throw std::runtime_error("coarse RNS matrix differs from digit CRT");
                 for(std::size_t c=0;c<columns;++c)if(actual[c].ct!=reference[c].ct)throw std::runtime_error("fused dot or remainder differs from single-term factors");
             }
         }
     }
+#ifdef _OPENMP
+    if(omp_get_max_threads()>1&&!parallel_callbacks.load())throw std::runtime_error("parallel factor callbacks did not enter an active OpenMP team");
+#endif
+    const auto original_auto=key->automorphism_evaluator;
+    key->automorphism_evaluator=[](auto&,const auto&,uint32_t,uint32_t){throw std::runtime_error("conjugation test failure");};
+    rejected=false;
+    try{parallel.evaluate(tables,false,0,*key,nullptr,nullptr);}
+    catch(const std::runtime_error& error){rejected=std::string(error.what())=="conjugation test failure";}
+    if(!rejected)throw std::runtime_error("parallel conjugation did not propagate backend exception");
+    key->automorphism_evaluator=original_auto;
     auto reduced=std::make_shared<CKKSNarrowReducedSelectorSource<ReducedSource,Source>>(raw);
     std::vector<Source::Selector> original_chunk;std::vector<ReducedSource::Selector> reduced_chunk;
     raw->loadChunk(false,0,0,3,original_chunk);reduced->loadChunk(false,0,0,3,reduced_chunk);
