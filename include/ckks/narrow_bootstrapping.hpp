@@ -243,6 +243,8 @@ struct CKKSNarrowBootstrapKey {
     bool bounded_tail_rotation_fft = false;
     // Opt-in parallel calls require a thread-safe public evaluator.
     bool parallel_public_tail_alignment = false;
+    // Opt in only with thread-safe beta adjustment and product-tree backends.
+    bool parallel_root_columns = false;
     std::size_t selector_ntt_chunk_size = 0;
     bool staged_fft_caches = false;
     // Optional caller-owned diagnostic observer, excluded from key archives.
@@ -268,6 +270,7 @@ struct CKKSNarrowBootstrapKey {
             tail_rotations_fft.reset();
             bounded_tail_rotation_fft = false;
             parallel_public_tail_alignment = false;
+            parallel_root_columns = false;
             selector_ntt_chunk_size = 0;
             staged_fft_caches = false;
             factor_observer = {};
@@ -1434,6 +1437,25 @@ using CKKSNarrowRootObserver = std::function<void(
     const typename Schedule::Output &)>;
 
 namespace narrow_detail {
+// The caller retains ordering of observers after the independent work joins.
+template<class Evaluate>
+inline void evaluateRootColumns(std::size_t columns,bool parallel,Evaluate &&evaluate)
+{
+    if(parallel && columns>1){
+        std::exception_ptr error;
+#pragma omp parallel for schedule(dynamic,1)
+        for(std::size_t column=0;column<columns;++column){
+            try{evaluate(column);}
+            catch(...){
+#pragma omp critical(ckks_root_column_error)
+                {if(!error)error=std::current_exception();}
+            }
+        }
+        if(error)std::rethrow_exception(error);
+    }
+    else for(std::size_t column=0;column<columns;++column)evaluate(column);
+}
+
 // Each tail leaf is independent and may share the immutable public key cache.
 // No key preparation occurs here; OpenMP nesting follows the caller policy.
 template<class Schedule>
@@ -1661,7 +1683,8 @@ inline void CKKSNarrowBlindRotateBatch(
                 staged_relin = CKKSNarrowMakePreparedRelinearization<Schedule>(key.relin);
         const auto *tree_keys = staged_relin ? staged_relin.get() : key.relin_fft.get();
         finish_root_stage(root_times.dd_cache_preparation_seconds);
-        for (std::size_t column = 0; column < columns; column++) {
+        const bool parallel_roots=key.parallel_root_columns && columns>1;
+        narrow_detail::evaluateRootColumns(columns,parallel_roots,[&](std::size_t column) {
             const auto &request = requests[begin + column];
             CKKSSlotVector<P> head_beta{}, tail_beta{};
             for (std::size_t i = 0; i < Schedule::slots; i++) {
@@ -1687,8 +1710,11 @@ inline void CKKSNarrowBlindRotateBatch(
             else if (key.relin_projected_fft) evaluate_trees(key.relin_projected_fft.get());
             else evaluate_trees(tree_keys);
             CKKSAddInPlace<P>(results[begin + column], *tail_result);
-            if (observer) (*observer)(request, results[begin + column]);
-        }
+            if (observer && !parallel_roots) (*observer)(request, results[begin + column]);
+        });
+        if(observer && parallel_roots)
+            for(std::size_t column=0;column<columns;++column)
+                (*observer)(requests[begin+column],results[begin+column]);
         finish_root_stage(root_times.dd_trees_and_beta_seconds);
         if (key.root_stage_observer) key.root_stage_observer(root_times);
     }

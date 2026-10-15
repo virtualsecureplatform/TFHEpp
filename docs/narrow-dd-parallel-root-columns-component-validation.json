@@ -1,0 +1,26 @@
+{
+  "scope": "CPU-only component checks for optional parallel evaluation of independent root columns. Actual encrypted trees and observer delivery are covered by the separate retained replay.",
+  "command": "OMP_NUM_THREADS=8 OMP_MAX_ACTIVE_LEVELS=1 build/test/ckks/ckks_narrow_factor_rns32",
+  "terminal_exit_status": 0,
+  "ring_dimension": 512,
+  "column_counts": [
+    0,
+    1,
+    4,
+    7
+  ],
+  "checks": [
+    "Serial and parallel dispatch preserve indexed outputs for empty, single-column and multi-column batches.",
+    "Multi-column callbacks execute in an active OpenMP team when multiple workers are available.",
+    "Backend exceptions propagate after joining the worker team.",
+    "Root and tail runtime policies leave public archive bytes unchanged and reset on load with a zero-key fixture.",
+    "Existing exact factor and public tail-alignment checks still pass."
+  ],
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "callback_contract": "Beta adjustment and product-tree backends must support concurrent calls. OpenMP nesting follows the caller configuration; this run uses one active level.",
+  "default_parallel_root_columns": false,
+  "full_encrypted_trees_covered": false,
+  "performance_claim": null,
+  "security_validated": false
+}

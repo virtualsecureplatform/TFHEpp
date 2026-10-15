@@ -47,6 +47,29 @@ public:
         }
     }
 };
+void checkRootColumnDispatch()
+{
+    for(std::size_t columns:{0,1,4,7}){
+        std::vector<std::size_t> expected(columns),actual(columns);
+        narrow_detail::evaluateRootColumns(columns,false,[&](std::size_t column){expected[column]=column*column+17;});
+        std::atomic<std::size_t> parallel_calls{0};
+        narrow_detail::evaluateRootColumns(columns,true,[&](std::size_t column){
+#ifdef _OPENMP
+            if(omp_in_parallel())parallel_calls.fetch_add(1,std::memory_order_relaxed);
+#endif
+            actual[column]=column*column+17;
+        });
+        if(expected!=actual)throw std::runtime_error("root column dispatch changed indexed outputs");
+#ifdef _OPENMP
+        if(columns>1 && omp_get_max_threads()>1 && !parallel_calls.load())throw std::runtime_error("root column callbacks did not enter an active team");
+#endif
+    }
+    bool rejected=false;
+    try{narrow_detail::evaluateRootColumns(7,true,[](std::size_t column){if(column==2)throw std::runtime_error("root column test failure");});}
+    catch(const std::runtime_error& error){rejected=std::string(error.what())=="root column test failure";}
+    if(!rejected)throw std::runtime_error("root column dispatch did not propagate an exception");
+}
+
 void checkTailAlignment()
 {
     auto key=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
@@ -79,15 +102,15 @@ void checkTailAlignment()
 #endif
     // Archive only zero-valued public rows; no selector-key fixture generation.
     std::stringstream serial_payload,payload;
-    key->parallel_public_tail_alignment=false;
+    key->parallel_public_tail_alignment=false;key->parallel_root_columns=false;
     {cereal::PortableBinaryOutputArchive archive(serial_payload);archive(*key);}
-    key->parallel_public_tail_alignment=true;
+    key->parallel_public_tail_alignment=true;key->parallel_root_columns=true;
     {cereal::PortableBinaryOutputArchive archive(payload);archive(*key);}
     if(serial_payload.str()!=payload.str())throw std::runtime_error("runtime tail policy changed public archive bytes");
     auto loaded=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
-    loaded->parallel_public_tail_alignment=true;
+    loaded->parallel_public_tail_alignment=true;loaded->parallel_root_columns=true;
     {cereal::PortableBinaryInputArchive archive(payload);archive(*loaded);}
-    if(loaded->parallel_public_tail_alignment)throw std::runtime_error("key archive retained a runtime parallel alignment policy");
+    if(loaded->parallel_public_tail_alignment || loaded->parallel_root_columns)throw std::runtime_error("key archive retained a runtime parallel alignment policy");
     std::vector<std::vector<Target::Factor>> tail(1,std::vector<Target::Factor>(Target::blocks));
     std::vector<int> steps(Target::blocks,1);
     key->automorphism_evaluator=[](auto&,const auto&,uint32_t,uint32_t){throw std::runtime_error("tail alignment test failure");};
@@ -104,6 +127,7 @@ void checkTailAlignment()
 int main()
 {
     checkTailAlignment();
+    checkRootColumnDispatch();
     auto raw=std::make_shared<TransparentSource>();
     using Cache=CKKSNarrowFactorSelectorCache32<Source>;
     bool rejected=false;
