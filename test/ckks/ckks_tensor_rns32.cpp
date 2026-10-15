@@ -7,6 +7,7 @@ template<std::uint32_t Nbit,std::uint32_t Q>void check(){
  using P=narrow_benchmark::BenchmarkParam<Nbit,7>;
  using T=typename P::T;
  auto a=std::make_unique<TRLWE<P>>(),b=std::make_unique<TRLWE<P>>();
+ auto natural=std::make_unique<TRLWE3<P>>();
  auto expected=std::make_unique<TRLWE3<P>>(),actual=std::make_unique<TRLWE3<P>>(),wide=std::make_unique<TRLWE3<P>>(),garner=std::make_unique<TRLWE3<P>>(),scalar=std::make_unique<TRLWE3<P>>();
  std::mt19937_64 random(20261016+Q);
  for(int trial=0;trial<5;++trial){
@@ -26,6 +27,8 @@ template<std::uint32_t Nbit,std::uint32_t Q>void check(){
   const auto previous=[&]{t=std::chrono::steady_clock::now();CKKSTensorProductRNS32<P,Q,true,false>(*garner,*a,*b);legacy=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();};
   if(trial%2){compact();previous();control();}else{control();previous();compact();}
   CKKSTensorProductRNS32<P,Q,true,true,false>(*scalar,*a,*b);
+  CKKSTensorProductRNS32<P,Q,true,true,true,false>(*natural,*a,*b);
+  if(*natural!=*actual)throw std::runtime_error("bit-reversed tensor differs from natural-order transforms");
   if(*scalar!=*actual)throw std::runtime_error("batched RNS tensor encoding differs from scalar encoding");
   if(*garner!=*actual)throw std::runtime_error("direct CRT tensor differs from compact Garner CRT");
   if(*wide!=*actual)throw std::runtime_error("compact CRT tensor differs from full-width CRT");
@@ -60,4 +63,26 @@ template<std::uint32_t Q>void benchmarkBatch(){
   std::cout<<"tensor q="<<Q<<" batch="<<batch<<" trial="<<trial<<" seconds="<<seconds<<" identical\n";
  }
 }
-int main(int argc,char**){if(argc>2){benchmarkBatch<165>();benchmarkBatch<209>();benchmarkBatch<253>();benchmarkBatch<297>();benchmarkBatch<341>();benchmarkBatch<385>();return 0;}check<4,1>();check<4,64>();check<4,128>();check<4,256>();check<4,384>();check<4,93>();check<4,385>();check<4,440>();check<9,93>();check<9,165>();check<9,209>();check<9,253>();check<9,297>();check<9,341>();check<9,385>();if(argc>1){check<14,165>();check<14,209>();check<14,253>();check<14,297>();check<14,341>();check<14,385>();}}
+template<std::uint32_t Q>void benchmarkOrdering(){
+ using P=narrow_benchmark::BenchmarkParam<14,7>;
+ auto a=std::make_unique<TRLWE<P>>(),b=std::make_unique<TRLWE<P>>();
+ auto reference=std::make_unique<TRLWE3<P>>(),out=std::make_unique<TRLWE3<P>>();
+ std::mt19937_64 random(20261017+Q);
+ for(auto*input:{a.get(),b.get()})for(auto&component:*input)for(auto&v:component)for(auto&w:v.limb)w=random();
+ CKKSTensorProductRNS32<P,Q,true,true,true,false>(*reference,*a,*b);
+ // Warm both schedules, then symmetric blocks of measured repetitions.
+ for(bool order:{false,true}){
+  if(order)CKKSTensorProductRNS32<P,Q>(*out,*a,*b);
+  else CKKSTensorProductRNS32<P,Q,true,true,true,false>(*out,*a,*b);
+  if(*out!=*reference)throw std::runtime_error("warm tensor order mismatch");
+ }
+ for(bool order:{false,true,true,false})for(int trial=0;trial<5;++trial){
+  const auto start=std::chrono::steady_clock::now();
+  if(order)CKKSTensorProductRNS32<P,Q>(*out,*a,*b);
+  else CKKSTensorProductRNS32<P,Q,true,true,true,false>(*out,*a,*b);
+  const auto seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+  if(*out!=*reference)throw std::runtime_error("timed tensor order mismatch");
+  std::cout<<"tensor q="<<Q<<" bit_reversed="<<order<<" trial="<<trial<<" seconds="<<seconds<<" identical\n";
+ }
+}
+int main(int argc,char**){if(argc>3){benchmarkOrdering<165>();benchmarkOrdering<209>();benchmarkOrdering<253>();benchmarkOrdering<297>();benchmarkOrdering<341>();benchmarkOrdering<385>();return 0;}if(argc>2){benchmarkBatch<165>();benchmarkBatch<209>();benchmarkBatch<253>();benchmarkBatch<297>();benchmarkBatch<341>();benchmarkBatch<385>();return 0;}check<4,1>();check<4,64>();check<4,128>();check<4,256>();check<4,384>();check<4,93>();check<4,385>();check<4,440>();check<9,93>();check<9,165>();check<9,209>();check<9,253>();check<9,297>();check<9,341>();check<9,385>();if(argc>1){check<14,165>();check<14,209>();check<14,253>();check<14,297>();check<14,341>();check<14,385>();}}
