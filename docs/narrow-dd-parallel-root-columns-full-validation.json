@@ -1,0 +1,149 @@
+{
+  "scope": "CPU-only full retained Tanh replay isolating independent frequency-root column scheduling. Parallel factor conjugation and public tail alignment remain enabled in every trial.",
+  "arithmetic_dependency_commit": "f0ee9034edea145cff08c123d889a7e7f0aa1ffe",
+  "component_receipt": "narrow-dd-parallel-root-columns-component-validation.json",
+  "terminal_exit_status": 0,
+  "command": [
+    "taskset",
+    "-c",
+    "0-23",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+    "tanh",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/parallel-root-columns-20261017/output",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ll14-packed-precision57-parallel-pilot-20261011/packed435-primary8.bin",
+    "--cache-gib",
+    "45",
+    "--s2c-cache-gib",
+    "4",
+    "--direct-rns",
+    "1",
+    "--s2c-rns",
+    "1",
+    "--tensor-rns",
+    "1",
+    "--auto-rns",
+    "1",
+    "--signed-basis",
+    "1",
+    "--dd-wide-rns",
+    "1",
+    "--matrix-tiled",
+    "1",
+    "--root-columns-pair",
+    "1",
+    "--parallel-conjugation",
+    "1",
+    "--parallel-tail-alignment",
+    "1"
+  ],
+  "environment": {
+    "OMP_NUM_THREADS": "8",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14}",
+    "OMP_MAX_ACTIVE_LEVELS": "1"
+  },
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "trial_order": [
+    "serial",
+    "parallel",
+    "parallel",
+    "serial"
+  ],
+  "trials": [
+    {
+      "trial": 0,
+      "parallel_root_columns": false,
+      "functional_evaluation_seconds": 21.089689708999998,
+      "factor_seconds": 9.8102,
+      "alignment_seconds": 1.66046,
+      "tree_seconds": 5.89514,
+      "max_error": 3.2248017779783846e-08,
+      "post_product_max_error": 5.753230916996571e-08,
+      "accuracy_passed": true,
+      "root_observer_order_validated": true,
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61"
+    },
+    {
+      "trial": 1,
+      "parallel_root_columns": true,
+      "functional_evaluation_seconds": 19.75339564,
+      "factor_seconds": 9.26297,
+      "alignment_seconds": 1.65788,
+      "tree_seconds": 5.2969,
+      "max_error": 3.2248017779783846e-08,
+      "post_product_max_error": 5.753230916996571e-08,
+      "accuracy_passed": true,
+      "root_observer_order_validated": true,
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61"
+    },
+    {
+      "trial": 2,
+      "parallel_root_columns": true,
+      "functional_evaluation_seconds": 19.693886479,
+      "factor_seconds": 9.25923,
+      "alignment_seconds": 1.65505,
+      "tree_seconds": 5.27906,
+      "max_error": 3.2248017779783846e-08,
+      "post_product_max_error": 5.753230916996571e-08,
+      "accuracy_passed": true,
+      "root_observer_order_validated": true,
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61"
+    },
+    {
+      "trial": 3,
+      "parallel_root_columns": false,
+      "functional_evaluation_seconds": 20.245327077,
+      "factor_seconds": 9.23628,
+      "alignment_seconds": 1.65466,
+      "tree_seconds": 5.88365,
+      "max_error": 3.2248017779783846e-08,
+      "post_product_max_error": 5.753230916996571e-08,
+      "accuracy_passed": true,
+      "root_observer_order_validated": true,
+      "output_sha256": "906cba16ca8f6d2776a8e7719d85913d3a62b3be02407e315582cd0ed3bffb61"
+    }
+  ],
+  "means": {
+    "False": {
+      "functional_evaluation_seconds": 20.667508393,
+      "factor_seconds": 9.523240000000001,
+      "alignment_seconds": 1.6575600000000001,
+      "tree_seconds": 5.889395
+    },
+    "True": {
+      "functional_evaluation_seconds": 19.7236410595,
+      "factor_seconds": 9.261099999999999,
+      "alignment_seconds": 1.6564649999999999,
+      "tree_seconds": 5.28798
+    }
+  },
+  "observed_fractional_reductions": {
+    "functional_evaluation_seconds": 0.04566913996365829,
+    "factor_seconds": 0.027526346075495534,
+    "alignment_seconds": 0.0006606095706944703,
+    "tree_seconds": 0.10211829907825853
+  },
+  "closing_control_fractional_reductions": {
+    "functional_evaluation_seconds": 0.025768218785295338,
+    "tree_seconds": 0.10124157623244079
+  },
+  "correctness": "All four complete ciphertext files match the independently validated seven-root Tanh reference byte for byte. Root observer delivery is separately checked in request order in every replay.",
+  "reference_independent_validation": "narrow-dd-signed-frequency-basis-full-validation.json",
+  "original_reports_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/parallel-root-columns-20261017/output",
+  "host_state": "No CPU-heavy simulator or container jobs were observed in pre/post process snapshots. Snapshot and aggregate CPU-stat records are retained with diagnostics; this does not guarantee exclusive use of the host throughout the run.",
+  "timing_limits": "The opening control has a slower factor stage than subsequent trials. All-trial means show a 4.6% total reduction; comparison with the closing warmed control shows 2.6%. Tree-stage reductions are about 10% under both comparisons. No compiler, unit test or independent decoder ran during timed trials.",
+  "usage": "For the qualified seven-root Tanh path, combine --parallel-root-columns 1 with --parallel-conjugation 1 --parallel-tail-alignment 1. --root-columns-pair 1 runs the alternating comparison. Library callers opt in with parallel_root_columns and thread-safe beta adjustment and tree backends. One OpenMP active level avoids nested oversubscription.",
+  "default_parallel_root_columns": false,
+  "full_function_coverage": [
+    "tanh"
+  ],
+  "interpretation": "Independent roots expose parallel work across the shrinking final product-tree levels. The observed incremental reduction is useful but the remaining performance gap is still substantial.",
+  "gap_closed": false,
+  "security_validated": false
+}
