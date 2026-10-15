@@ -4141,3 +4141,62 @@ Isolated full NTT packed real FBS compiled successfully and is queued in session
 Backend move/load lifecycle and73,917,741-byte portable archive compatibility pass with synthetic public-only N512 data. Audit additionally found that explicit FFT preparation and evaluation-key regeneration must detach the optional callback. Second isolated revision fixes staged/default/projected FFT selection and generation reset, constructs the replacement default FFT cache before committing the backend switch, and passes all three selection/released-ownership controls. Regeneration reset placement is source-checked, not runtime key-generation tested. Arithmetic is byte-for-byte unchanged relative to the qualified isolated root after removing lifecycle-only edits. Original production and queued NTT headers are unchanged. Reviewable promotion patch: docs/narrow-dd-ntt-integration.patch, not applied while original tests pin production headers. Evidence: narrow-dd-ntt-backend-lifecycle-validation.json and narrow-dd-ntt-backend-lifecycle-v2-validation.json. No key generation in these checks.
 
 2026-10-11: Full high-precision packed reconstruction is terminal/all_checks_passed with actual child exit0: all65536 terms, all36 retained selector group headers/lengths/hashes, source integrity and unchanged packed435 archive. New key generation0. Extraction5830.4 s (97.173 min), reconstruction including final selector writing6129.8906 s (102.165 min); cached14-depth preparation6.01072 s. Retained selector bytes34,945,894,980. Canonical root44 controller started automatically, reusing the reconstructed groups and existing keys/input. Root evaluation stages completed factor56.4929 s, alignment7.19428 s, DD-cache6.59481 s and trees5.44675 s; independent full factor/root phases are still running. This is reconstruction completion, not full FBS accuracy or paper runtime/security qualification. Evidence: narrow-dd-ll14-packed-precision57-reconstruction-validation.json and narrow-dd-ll14-packed-precision57-root44-validation.json. The lifecycle-v2 production promotion patch passes git apply --check and remains unapplied while original tests pin headers.
+
+
+### CPU frequency-basis replay with retained selector spectra
+
+The experimental `ckks_narrow_ll14_basis_ntt_fbs` runner evaluates real-input
+GeLU, Tanh, and Sigmoid with the Section 7 frequency basis and exact NTT
+products. One retained-input run per function measured **40.93, 77.55, and
+42.58 seconds**, respectively, on an i9-12900K with `OMP_NUM_THREADS=8`.
+S2C and all input-dependent root/series work are timed. Public key loading,
+automorphism preparation, and selector-spectrum preparation are setup costs.
+These measurements do not establish a controlled speedup against older O2 or
+other-machine results, and the remaining 10x performance goal is not achieved.
+
+`narrow-dd-basis-cached-cpu-validation.json` records the runs and independent
+integer-phase checks over every coefficient and slot. Each output passes the
+fixed 23-bit error gate and a subsequent-square gate. The final ciphertext is
+93/44; its square is 49/44. Private keys and the input were reused.
+
+This profile trades memory and new public setup for online time. The selector
+spectrum payload is 89,860,534,272 bytes (about 83.7 GiB), plus vector overhead
+and temporary workspace; observed process RSS was about 95.7 GiB. The cache
+constructor rejects an insufficient explicit budget before loading a group.
+It retains only key-dependent data. Online selector reads and transforms are
+zero; evaluated factors and roots are recomputed for each function.
+
+The direct selector bank contains 19,044 ciphertexts at 440/57 and uses
+continuous Gaussian sigma 102.4 (integer RMS 102.00190833992261), rather than
+extending the old low-noise bank to a larger modulus. Generation and writing
+took 277.37 seconds once. Its DD433 primary20/secondary20 key uses the retained
+dense private key. The four generic dense-LWE screens have minimum estimated
+cost 128.968 bits; this is not an overall security qualification. Structured,
+ring, correlated-key, and circular assumptions remain unqualified. The saved
+packed435 public key is also required for public automorphism derivation.
+
+Build the two opt-in targets, then supply the retained artifacts:
+
+```sh
+cmake --build build --target ckks_narrow_ll14_basis_setup ckks_narrow_ll14_basis_ntt_fbs -j2
+# Once only; NEW_SELECTORS must not exist. Reuses CHECKPOINT/checkpoint.bin keys.
+OMP_NUM_THREADS=8 build/test/ckks/ckks_narrow_ll14_basis_setup CHECKPOINT NEW_SELECTORS full
+# OUTPUT must contain the retained candidate-input.bin before starting.
+OMP_NUM_THREADS=8 build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs CHECKPOINT SWITCH56 all OUTPUT NEW_SELECTORS NEW_SELECTORS/dd433-primary20.bin PACKED435 --cache-gib 90
+```
+
+These are fixed-fixture experimental runners, with checkpoint metadata and
+origin guards, not general key import APIs. Reuse the generated selector bank
+and DD key on subsequent runs. `--cache-gib 0` selects streamed operation; a
+positive budget must fit the full spectrum cache. The budget covers retained
+spectra, not total process memory. GCC builds disable IPA-ICF for the replay
+because the existing multi-type S2C instantiations require it.
+
+For independent verification, set `PYTHONPATH` to the sibling
+`Parameter-Selection/python/estimates`, then run
+`python3 test/ckks/validate_narrow_ll14_basis.py CHECKPOINT/checkpoint.bin OUTPUT/gelu-outputs.bin OUTPUT/gelu-report.json validation.json`
+(and repeat for Tanh/Sigmoid). No key contents are printed.
+
+Lower-scale basis candidates at delta35 failed the fixed accuracy gate
+(GeLU error approximately 1.2e-5 to 1.4e-5). The qualified profile retains
+delta44 throughout the tree; those failed candidates are not performance wins.
