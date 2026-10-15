@@ -1,0 +1,89 @@
+{
+  "scope": "Exact 17-prime CRT and full-width selector encoding. CPU-only arithmetic; no private-key generation, encryption, or security-parameter changes.",
+  "primes_and_roots": [
+    [
+      1073479681,
+      11
+    ],
+    [
+      1071513601,
+      23
+    ],
+    [
+      1070727169,
+      11
+    ],
+    [
+      1068236801,
+      3
+    ],
+    [
+      1065484289,
+      3
+    ],
+    [
+      1064697857,
+      3
+    ],
+    [
+      1062862849,
+      7
+    ],
+    [
+      1062469633,
+      5
+    ],
+    [
+      1060765697,
+      3
+    ],
+    [
+      1056440321,
+      3
+    ],
+    [
+      1056178177,
+      5
+    ],
+    [
+      1055260673,
+      3
+    ],
+    [
+      1054212097,
+      5
+    ],
+    [
+      1053818881,
+      7
+    ],
+    [
+      1052508161,
+      3
+    ],
+    [
+      1051721729,
+      6
+    ],
+    [
+      1049100289,
+      7
+    ]
+  ],
+  "crt_product_bits": 510,
+  "ll14_twice_conservative_convolution_bound": "216452953947181596858321672836497869754005167857627812968397501395854627551626024389132969255234675440028312346486160047347494584536907110596825642434560",
+  "crt_product": "2715837201319428507723058660331223268304286297875774329638802137282088468620786982244737338921326847155254725977609481976864622422885203942205773742080001",
+  "bound_fits": true,
+  "centering": "The mixed-radix digits of floor(M/2) are floor(p_i/2); compare from the highest digit. Weighted prefixes and signed correction are accumulated modulo the target torus, without approximate CRT.",
+  "arithmetic_comparisons": 51205,
+  "crt_values_checked": 16389,
+  "tests": [
+    "Trial-division primality and NTT root order for all 17 primes",
+    "32-bit Shoup multiplication against uint64 modulus oracle",
+    "Active-440-bit encoding against boost::multiprecision::cpp_int, including inactive high bits",
+    "Centered CRT against cpp_int on full 510-bit random values and both half-modulus boundaries",
+    "AVX2 bulk CRT including scalar tails, and complete scalar build with -mno-avx2"
+  ],
+  "all_checks_passed": true,
+  "tenfold_goal_achieved": false
+}
