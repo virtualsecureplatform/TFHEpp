@@ -7,7 +7,8 @@ namespace TFHEpp {
 struct CKKSLinearRNSTimings {
     double baby_rotations=0,baby_ntt=0,matrix=0,inverse_crt=0,giant_rotations=0;
     std::size_t giant_rotation_calls=0,giant_rotation_bits=0;
-    std::size_t baby_peak_workers=0;
+    std::size_t baby_peak_workers=0,group_peak_workers=0;
+    double group_worker_wall_seconds=0;
 };
 
 // The public diagonals use a complete residue representation. Each giant
@@ -97,7 +98,7 @@ public:
     }
 private:
     template<class InputKey,class OutputKey>
-    void applyPart(Result&result,const Input&input,const Plan&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings,bool fused_terms,bool horner_giants,std::size_t baby_threads)const {
+    void applyPart(Result&result,const Input&input,const Plan&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings,bool fused_terms,bool horner_giants,std::size_t baby_threads,std::size_t group_threads)const {
         using Clock=std::chrono::steady_clock;
         auto start=Clock::now();std::vector<bool> used(plan.k_step,false);
         for(const auto &g:plan.groups)for(const auto &t:g.terms)used[t.baby_step]=true;
@@ -116,20 +117,24 @@ private:
                 plans()[p].forward(values);
             }
         baby.reset();if(timings)timings->baby_ntt+=std::chrono::duration<double>(Clock::now()-start).count();
-        std::array<Rows,P::k+1> sums;
-        auto inner=std::make_unique<TRLWE<P>>(),rotated=std::make_unique<TRLWE<P>>();
-        static const modular_rns32::CenteredCRT<Small::limbs,Count> crt;
         std::vector<std::size_t> order;
         if(horner_giants){
             order.resize(plan.groups.size());for(std::size_t i=0;i<order.size();++i)order[i]=i;
             std::stable_sort(order.begin(),order.end(),[&](auto a,auto b){return plan.groups[a].giant_step>plan.groups[b].giant_step;});
         }
+        // Each contiguous descending range is an independent Horner sum.
+        // Its final absolute rotation places it in the common output frame.
+        const auto evaluate_range=[&](Result&result,std::size_t first_group,std::size_t last_group,CKKSLinearRNSTimings*timings){
+        auto start=Clock::now();
+        std::array<Rows,P::k+1> sums;
+        auto inner=std::make_unique<TRLWE<P>>(),rotated=std::make_unique<TRLWE<P>>();
+        static const modular_rns32::CenteredCRT<Small::limbs,Count> crt;
         const auto rotate=[&](auto&out,const auto&in,int steps){
             if(timings){++timings->giant_rotation_calls;timings->giant_rotation_bits+=std::popcount(std::uint32_t(steps));}
             CKKSRotateSlots<P,output_q>(out,in,steps,ok);
         };
         bool initialized=false;int previous_giant=0;
-        for(std::size_t g=0;g<plan.groups.size();++g){
+        for(std::size_t g=first_group;g<last_group;++g){
             const auto &group=plan.groups[horner_giants?order[g]:g];
             for(auto &component:sums)for(auto &row:component)row.assign(P::n,0);
             start=Clock::now();
@@ -206,20 +211,71 @@ private:
             start=Clock::now();rotate(*rotated,result.ct,plan.k_step*previous_giant);result.ct=*rotated;
             if(timings)timings->giant_rotations+=std::chrono::duration<double>(Clock::now()-start).count();
         }
+        };
+        std::size_t workers=1;
+#ifdef _OPENMP
+        if(group_threads>1 && !omp_in_parallel())
+            workers=std::min({group_threads,plan.groups.size(),std::size_t(omp_get_max_threads())});
+#endif
+        if(workers<=1){
+            evaluate_range(result,0,plan.groups.size(),timings);
+            if(timings)timings->group_peak_workers=std::max(timings->group_peak_workers,std::size_t{1});
+            return;
+        }
+        if constexpr(requires{ok.prepare_parallel_rotations(std::uint32_t{});})
+            ok.prepare_parallel_rotations((std::uint32_t{1}<<(P::nbit-1))-1);
+        else throw std::invalid_argument("parallel giant groups require a prepared retained key cache");
+        std::vector<Result> blocks(workers);
+        std::vector<CKKSLinearRNSTimings> block_timings(workers);
+        std::vector<std::exception_ptr> errors(workers);
+        int active_workers=1;
+        start=Clock::now();
+#pragma omp parallel num_threads(workers)
+        {
+#ifdef _OPENMP
+#pragma omp master
+            {active_workers=omp_get_num_threads();}
+            const auto previous_levels=omp_get_max_active_levels();
+            omp_set_max_active_levels(omp_get_active_level());
+#endif
+#pragma omp for schedule(static)
+            for(std::size_t block=0;block<workers;++block){
+                try{evaluate_range(blocks[block],plan.groups.size()*block/workers,
+                    plan.groups.size()*(block+1)/workers,timings?&block_timings[block]:nullptr);}
+                catch(...){errors[block]=std::current_exception();}
+            }
+#ifdef _OPENMP
+            omp_set_max_active_levels(previous_levels);
+#endif
+        }
+        for(const auto&error:errors)if(error)std::rethrow_exception(error);
+        result=blocks.front();
+        for(std::size_t block=1;block<workers;++block)CKKSAddTRLWEInPlace<P,output_q>(result.ct,blocks[block].ct);
+        if(timings){
+            timings->group_worker_wall_seconds+=std::chrono::duration<double>(Clock::now()-start).count();
+            timings->group_peak_workers=std::max(timings->group_peak_workers,std::size_t(active_workers));
+            // These stage values sum worker durations; the separate wall timer
+            // measures the parallel region and final merge without overlap.
+            for(const auto&t:block_timings){
+                timings->matrix+=t.matrix;timings->inverse_crt+=t.inverse_crt;timings->giant_rotations+=t.giant_rotations;
+                timings->giant_rotation_calls+=t.giant_rotation_calls;timings->giant_rotation_bits+=t.giant_rotation_bits;
+            }
+        }
+
     }
 public:
     // Horner preserves per-group rounding but changes switching noise.
     // Dense groups with power-of-two k_step reuse one binary key.
     template<class InputKey,class OutputKey>
-    void apply(Result&result,const Input&input,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool fused_terms=true,bool horner_giants=false,std::size_t baby_threads=0)const {
+    void apply(Result&result,const Input&input,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool fused_terms=true,bool horner_giants=false,std::size_t baby_threads=0,std::size_t group_threads=0)const {
         if(!has_direct&&!has_conjugate){for(auto &component:result.ct)component.fill({});return;}
-        auto term=std::make_unique<Result>();if(has_direct){applyPart(*term,input,direct,ik,ok,timings,fused_terms,horner_giants,baby_threads);result=*term;}
-        if(has_conjugate){auto ct=std::make_unique<Input>();CKKSConjugateSlots<P,Q>(ct->ct,input.ct,ik);applyPart(*term,*ct,conjugate,ik,ok,timings,fused_terms,horner_giants,baby_threads);if(!has_direct)result=*term;else CKKSAddTRLWEInPlace<P,output_q>(result.ct,term->ct);}
+        auto term=std::make_unique<Result>();if(has_direct){applyPart(*term,input,direct,ik,ok,timings,fused_terms,horner_giants,baby_threads,group_threads);result=*term;}
+        if(has_conjugate){auto ct=std::make_unique<Input>();CKKSConjugateSlots<P,Q>(ct->ct,input.ct,ik);applyPart(*term,*ct,conjugate,ik,ok,timings,fused_terms,horner_giants,baby_threads,group_threads);if(!has_direct)result=*term;else CKKSAddTRLWEInPlace<P,output_q>(result.ct,term->ct);}
     }
 };
 template<class P,std::uint32_t Q,std::uint32_t Delta,std::uint32_t PlainDelta,std::size_t Count,class InputKey,class OutputKey>
 inline void CKKSRealLinearTransform(CKKSPlainMulResult<P,Q,Delta,PlainDelta>&result,const CKKSCiphertext<P,Q,Delta>&input,
-    const CKKSPreparedCompactRealLinearTransformRNS32<P,Q,Delta,PlainDelta,Count>&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool horner_giants=false,std::size_t baby_threads=0)
-{plan.apply(result,input,ik,ok,timings,true,horner_giants,baby_threads);}
+    const CKKSPreparedCompactRealLinearTransformRNS32<P,Q,Delta,PlainDelta,Count>&plan,const InputKey&ik,const OutputKey&ok,CKKSLinearRNSTimings*timings=nullptr,bool horner_giants=false,std::size_t baby_threads=0,std::size_t group_threads=0)
+{plan.apply(result,input,ik,ok,timings,true,horner_giants,baby_threads,group_threads);}
 } // namespace TFHEpp
 #endif

@@ -148,6 +148,47 @@ int main()
             prepared.apply(*ordinary,*input,retained_input,retained_output,&before,true,false);
             prepared.apply(*horner,*input,retained_input,retained_output,&after,true,true);
             if(horner->ct!=ordinary->ct || horner->ct!=reference->ct)throw std::runtime_error("dense, sparse or repeated giant steps changed the Horner result");
+            for(bool use_horner:{false,true})for(std::size_t workers:{2,8}){
+                CKKSLinearRNSTimings concurrent;
+                auto parallel=std::make_unique<CKKSPlainMulResult<P,93,52,37>>();
+#ifdef _OPENMP
+                const auto old_levels=omp_get_max_active_levels();omp_set_max_active_levels(2);
+#endif
+                prepared.apply(*parallel,*input,retained_input,retained_output,&concurrent,true,use_horner,0,workers);
+                if(parallel->ct!=reference->ct)throw std::runtime_error("parallel giant ranges changed exact zero-key result");
+#ifdef _OPENMP
+                if(omp_get_max_active_levels()!=2)throw std::runtime_error("giant workers changed caller OpenMP policy");
+                omp_set_max_active_levels(old_levels);
+                if(omp_get_max_threads()>1 && !omp_get_dynamic() && omp_get_thread_limit()>1 && concurrent.group_peak_workers<2)
+                    throw std::runtime_error("giant ranges did not execute concurrently");
+#endif
+            }
+            if(mode==0 && giants.size()==8){
+                auto fixture=std::make_unique<CKKSGaloisKey<P,56>>();
+                for(std::size_t bit=0;bit<5;++bit)for(auto&source:(*fixture)[bit].data)for(auto&row:source)
+                    for(auto&component:row)for(auto&v:component){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<P,56>(v);}
+                CKKSRetainedPreparedGaloisKeyFFT<P,56> nonzero(*fixture);
+                auto serial=std::make_unique<CKKSPlainMulResult<P,93,52,37>>(),parallel=std::make_unique<CKKSPlainMulResult<P,93,52,37>>();
+                prepared.apply(*serial,*input,retained_input,nonzero,nullptr,true,false);
+                for(std::size_t workers:{2,8}){
+                    prepared.apply(*parallel,*input,retained_input,nonzero,nullptr,true,false,0,workers);
+                    if(parallel->ct!=serial->ct)throw std::runtime_error("parallel independent giant rotations differ with nonzero key rows");
+                }
+#ifdef _OPENMP
+                if(omp_get_max_threads()>1){
+                    bool rejected=false;
+                    CKKSLazyPreparedGaloisKeyFFT<P,56> lazy(*output_key);
+                    try{prepared.apply(*horner,*input,retained_input,lazy,nullptr,true,true,0,8);}
+                    catch(const std::invalid_argument&){rejected=true;}
+                    if(!rejected || lazy.prepared_keys)throw std::runtime_error("giant workers accepted a lazy mutable output cache");
+                    auto saved=std::move(retained_output.keys[1]->spectra);retained_output.keys[1]->spectra.clear();rejected=false;
+                    try{prepared.apply(*horner,*input,retained_input,retained_output,nullptr,true,true,0,8);}
+                    catch(const std::invalid_argument&e){rejected=std::string(e.what())=="invalid prepared auto key";}
+                    retained_output.keys[1]->spectra=std::move(saved);
+                    if(!rejected)throw std::runtime_error("giant worker error did not propagate");
+                }
+#endif
+            }
             if(mode==0 && giants.size()==8 && (before.giant_rotation_bits!=12 || after.giant_rotation_bits!=7))throw std::runtime_error("dense Horner binary rotation counts differ");
         }
     for(std::size_t terms:{3,4,5,7,8,9}){
