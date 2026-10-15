@@ -50,18 +50,26 @@ constexpr MultiLimbUInt<Limbs> multiplySmall(MultiLimbUInt<Limbs> x,std::uint32_
     for(auto &word:x.limb){const auto v=static_cast<unsigned __int128>(word)*scalar+carry;word=std::uint64_t(v);carry=v>>64;}
     return x;
 }
+template<std::size_t Count=prime_count>
+constexpr auto basisProduct() {
+    static_assert(Count>0 && Count<=prime_count);
+    MultiLimbUInt<8> value{1};
+    for(std::size_t i=0;i<Count;++i)value=multiplySmall(value,primes[i].value);
+    return value;
+}
 inline constexpr auto product=[] {
     MultiLimbUInt<8> x{1};for(auto p:primes)x=multiplySmall(x,p.value);return x;
 }();
 
-template<std::size_t Limbs,std::size_t Q>
+template<std::size_t Limbs,std::size_t Q,std::size_t Count=prime_count>
 class CanonicalEncoder {
+    static_assert(Count>0 && Count<=prime_count);
     static_assert(Q>0 && Q<=64*Limbs);
     static constexpr std::size_t words=(Q+31)/32;
-    std::array<std::array<Multiplier,words>,prime_count> radix_;
+    std::array<std::array<Multiplier,words>,Count> radix_;
 public:
     CanonicalEncoder(){
-        for(std::size_t i=0;i<prime_count;++i){
+        for(std::size_t i=0;i<Count;++i){
             const auto p=primes[i].value;std::uint64_t radix=1;
             for(auto &v:radix_[i]){v=Multiplier(radix,p);radix=(radix<<32)%p;}
         }
@@ -82,18 +90,19 @@ public:
 // floor(p_i/2); compare from the highest radix to determine the sign without
 // floating point or a full-width reconstruction. Accumulate only the target
 // torus limbs, then subtract M modulo that same torus when negative.
-template<std::size_t Limbs>
+template<std::size_t Limbs,std::size_t Count=prime_count>
 class CenteredCRT {
+    static_assert(Count>0 && Count<=prime_count);
     using T=MultiLimbUInt<Limbs>;
-    std::array<std::array<Multiplier,prime_count>,prime_count> inverse_{};
-    std::array<std::array<std::uint32_t,prime_count>,prime_count> inverse_mont_{};
+    std::array<std::array<Multiplier,Count>,Count> inverse_{};
+    std::array<std::array<std::uint32_t,Count>,Count> inverse_mont_{};
     std::vector<modular_ntt32::Montgomery> arithmetic_;
-    std::array<T,prime_count> prefixes_;
+    std::array<T,Count> prefixes_;
     T modulus_;
 public:
     CenteredCRT(){
-        T product{1};arithmetic_.reserve(prime_count);
-        for(std::size_t i=0;i<prime_count;++i){
+        T product{1};arithmetic_.reserve(Count);
+        for(std::size_t i=0;i<Count;++i){
             prefixes_[i]=product;product=multiplySmall(product,primes[i].value);
             arithmetic_.emplace_back(primes[i].value);
             for(std::size_t j=0;j<i;++j){
@@ -105,16 +114,17 @@ public:
         modulus_=product;
     }
     // Canonical residue rows are overwritten with their mixed-radix digits.
-    void reconstruct(std::array<std::span<std::uint32_t>,prime_count> residues,std::span<T> output)const {
+    void reconstruct(std::array<std::span<std::uint32_t>,Count> residues,std::span<T> output)const {
         for(auto row:residues)if(row.size()!=output.size())throw std::invalid_argument("direct CRT lengths differ");
-        for(std::size_t i=1;i<prime_count;++i){
+        for(std::size_t i=1;i<Count;++i){
             const auto p=std::uint32_t(primes[i].value);
             for(std::size_t j=0;j<i;++j){
                 std::size_t k=0;
 #if defined(__AVX2__)
                 const auto prime=_mm256_set1_epi32(p);
                 const auto fixed=_mm256_set1_epi32(inverse_mont_[i][j]);
-                for(;k+8<=output.size();k+=8){
+                const auto vector_end=output.size()&~std::size_t{7};
+                for(;k<vector_end;k+=8){
                     const auto previous=_mm256_loadu_si256(reinterpret_cast<const __m256i*>(residues[j].data()+k));
                     // Every previous modulus is less than twice this modulus.
                     const auto reduced=arithmetic_[i].canonicalVector(previous);
@@ -132,14 +142,14 @@ public:
         }
         for(std::size_t k=0;k<output.size();++k){
             T sum{};
-            for(std::size_t i=0;i<prime_count;++i){
+            for(std::size_t i=0;i<Count;++i){
                 unsigned __int128 carry=0;
                 for(std::size_t limb=0;limb<Limbs;++limb){
                     const auto value=static_cast<unsigned __int128>(prefixes_[i].limb[limb])*residues[i][k]+sum.limb[limb]+carry;
                     sum.limb[limb]=std::uint64_t(value);carry=value>>64;
                 }
             }
-            for(std::size_t i=prime_count;i-->0;){
+            for(std::size_t i=Count;i-->0;){
                 if(residues[i][k]>primes[i].value/2){sum-=modulus_;break;}
                 if(residues[i][k]<primes[i].value/2)break;
             }

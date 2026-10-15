@@ -7,8 +7,29 @@
 using namespace TFHEpp;
 using Integer=boost::multiprecision::cpp_int;
 using T=MultiLimbUInt<7>;
-Integer integer(const T&x){Integer v=0;for(std::size_t j=7;j-->0;){v<<=64;v+=x.limb[j];}return v;}
+template<std::size_t L> Integer integer(const MultiLimbUInt<L>&x){Integer v=0;for(std::size_t j=L;j-->0;){v<<=64;v+=x.limb[j];}return v;}
+template<std::size_t Count>void checkPrefix(){
+    using Small=MultiLimbUInt<2>;
+    constexpr std::size_t n=521;
+    std::mt19937_64 random(20261015+Count);Integer modulus=1;
+    for(std::size_t p=0;p<Count;++p)modulus*=modular_rns32::primes[p].value;
+    const Integer half=modulus/2,mask=(Integer{1}<<128)-1;
+    std::array<std::vector<std::uint32_t>,Count> rows;
+    for(auto &row:rows)row.resize(n);
+    std::vector<Integer> expected(n);
+    for(std::size_t k=0;k<n;++k){
+        Integer v=0;for(int j=0;j<4;++j){v<<=64;v+=random();}v%=modulus;if(v>half)v-=modulus;
+        if(k<7)v=std::array<Integer,7>{0,1,-1,half,half-1,-half,-half+1}[k];
+        expected[k]=v&mask;
+        for(std::size_t p=0;p<Count;++p){Integer r=v%modular_rns32::primes[p].value;if(r<0)r+=modular_rns32::primes[p].value;rows[p][k]=r.convert_to<std::uint32_t>();}
+    }
+    std::array<std::span<std::uint32_t>,Count> spans;for(std::size_t p=0;p<Count;++p)spans[p]=rows[p];
+    std::vector<Small> output(n);modular_rns32::CenteredCRT<2,Count> crt;crt.reconstruct(spans,output);
+    for(std::size_t k=0;k<n;++k)if(integer(output[k])!=expected[k])throw std::runtime_error("prefix centered CRT mismatch");
+    std::cout<<"prefix primes="<<Count<<" centered CRT values="<<n<<" passed\n";
+}
 int main(){
+    checkPrefix<5>();checkPrefix<6>();
     std::mt19937_64 random(20261015);
     Integer modulus=1;std::size_t checks=0;
     modular_rns32::CanonicalEncoder<7,440> encoder;
