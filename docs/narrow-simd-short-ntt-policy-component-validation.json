@@ -1,0 +1,73 @@
+{
+  "scope": "Preserve hot transform inlining after adding SIMD short stages, and expose independent factor NTT policy controls over a shared selector cache.",
+  "kernel_commit": "635d4d2",
+  "component_receipt": "narrow-simd-short-ntt-component-validation.json",
+  "changes": [
+    "Outline the length2/4/8 dispatcher and require DIT transform inlining into forward/inverse.",
+    "Keep scalar/SIMD factor plan sets as immutable static derived data; selector spectra remain identical and shared.",
+    "Add --factor-short-ntt and exclusive warmed --factor-short-ntt-pair. Default SIMD selected from local measurements; scalar remains available."
+  ],
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "code_generation_evidence": {
+    "before": "inline-policy-symbols.txt shows an out-of-line shared transform in the pre-outlining policy binary.",
+    "after": "outlined-symbols.txt has no shared transform symbol.",
+    "limitation": "Inlining evidence identifies a code-generation change; it does not alone attribute the earlier complete-workload regression to one cause."
+  },
+  "correctness": "Updated NTT checks over17 primes and8 degrees passed; factor controls over both policies passed. Complete workload qualification is recorded separately.",
+  "outlined_microbenchmark": [
+    {
+      "n": 512,
+      "bit_reversed": false,
+      "scalar_short_seconds": 0.0003079125,
+      "simd_short_seconds": 0.000191805125,
+      "fractional_reduction": 0.37707912150367384
+    },
+    {
+      "n": 512,
+      "bit_reversed": true,
+      "scalar_short_seconds": 0.000122637625,
+      "simd_short_seconds": 4.8518750000000004e-05,
+      "fractional_reduction": 0.6043730462001364
+    },
+    {
+      "n": 16384,
+      "bit_reversed": false,
+      "scalar_short_seconds": 0.00545649875,
+      "simd_short_seconds": 0.00300094375,
+      "fractional_reduction": 0.4500239278896564
+    },
+    {
+      "n": 16384,
+      "bit_reversed": true,
+      "scalar_short_seconds": 0.00429346625,
+      "simd_short_seconds": 0.00199287125,
+      "fractional_reduction": 0.5358362837951736
+    },
+    {
+      "n": 65536,
+      "bit_reversed": false,
+      "scalar_short_seconds": 0.0282359625,
+      "simd_short_seconds": 0.018753825000000002,
+      "fractional_reduction": 0.3358177536891118
+    },
+    {
+      "n": 65536,
+      "bit_reversed": true,
+      "scalar_short_seconds": 0.0179070375,
+      "simd_short_seconds": 0.0088151375,
+      "fractional_reduction": 0.5077277578717305
+    }
+  ],
+  "within_binary_factor_pair": {
+    "method": "One rebuilt executable, same prepared keys and selector cache. Warm-up scalar,then scalar/SIMD/SIMD/scalar factor stages; tensor/gadget and all other settings fixed.",
+    "mean_functional_seconds": {
+      "false": 13.84266853,
+      "true": 13.7423825565
+    },
+    "fractional_reduction": 0.007244699479920125,
+    "limitation": "Two measurements per policy. Small total effect; use together with factor-stage timings."
+  },
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/simd-short-ntt-20261017",
+  "security_validated": false
+}

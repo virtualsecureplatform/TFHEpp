@@ -253,8 +253,9 @@ class NegacyclicNTTPlan {
             }
         }
     }
+    // Keep the large stage loop small enough to inline into forward/inverse.
     template<bool DIF>
-    void shortStage(std::span<std::uint32_t> values,std::size_t length,
+    [[gnu::noinline]] void shortStage(std::span<std::uint32_t> values,std::size_t length,
                     const std::vector<std::uint32_t>&twiddles)const
     {
         if(length==2)shortStage<2,DIF>(values,twiddles);
@@ -262,7 +263,7 @@ class NegacyclicNTTPlan {
         else shortStage<8,DIF>(values,twiddles);
     }
 #endif
-    void transform(std::span<std::uint32_t> values, bool inverse,
+    [[gnu::always_inline]] inline void transform(std::span<std::uint32_t> values, bool inverse,
                    bool permute = true) const
     {
         if (permute)
