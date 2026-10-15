@@ -218,8 +218,9 @@ int main()
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> simd_short(raw,direct_cache,true,false,true,true);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> four_term(raw,direct_cache,true,false,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> unpacked(raw,direct_cache,true,false,true,false,false);
-    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> joint(raw,direct_cache,true,false,true,false,true,true,true);
-    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> joint_streamed(raw,{},true,false,true,false,true,true,true);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> staged_tables(raw,direct_cache,true,false,true,false,true,true,false,true);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> joint(raw,direct_cache,true,false,true,false,true,true,true,true);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> joint_streamed(raw,{},true,false,true,false,true,true,true,true);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> chunked(raw,direct_cache,true,false,true,false,true,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source,Source,false> garner(raw,direct_cache);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> untiled(raw,direct_cache,false);
@@ -267,6 +268,8 @@ int main()
             for(std::size_t chunk:{3,4,5,8,9,12,17,40}){
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto staged=staged_tables.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                for(std::size_t c=0;c<columns;++c)if(staged[c].ct!=actual[c].ct)throw std::runtime_error("parallel table preparation differs from original");
                 const auto shared=joint.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto shared_streamed=joint_streamed.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 for(std::size_t c=0;c<columns;++c)if(shared[c].ct!=actual[c].ct || shared_streamed[c].ct!=actual[c].ct)throw std::runtime_error("joint matrix components differ from separate components");
@@ -319,7 +322,7 @@ int main()
     auto invalid=tables;
     std::fill(invalid[0].begin(),invalid[0].end(),std::complex<double>{8,0});
     rejected=false;
-    try { direct.evaluate(invalid,false,0,*key,nullptr,nullptr); }
+    try { staged_tables.evaluate(invalid,false,0,*key,nullptr,nullptr); }
     catch(const std::invalid_argument&) { rejected=true; }
     if(!rejected)throw std::runtime_error("unproved table coefficient bound accepted");
     std::cout<<"direct RNS and digit-CRT cached head/tail factors byte-identical; no online reads or selector transforms; retained bytes="<<DirectCache::retained_bytes<<'\n';
