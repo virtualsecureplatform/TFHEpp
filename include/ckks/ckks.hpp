@@ -4792,36 +4792,53 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
              group_index++) {
             const auto &group = group_provider(group_index);
             using PlainTermFFT = std::array<PolynomialInFD<P>, plain_digits>;
-            auto plain_fft =
-                std::make_unique<std::vector<PlainTermFFT>>(group.terms.size());
+            std::unique_ptr<std::vector<PlainTermFFT>> transient_plain_fft;
+            std::size_t active_plain_digits=plain_digits;
             const int term_count = static_cast<int>(group.terms.size());
+            if constexpr (requires { group.prepared_plain_fft; }) {
+                active_plain_digits=group.prepared_plain_digits;
+                if (!active_plain_digits || active_plain_digits>plain_digits ||
+                    group.prepared_plain_fft.size() != group.terms.size())
+                    throw std::invalid_argument("prepared CKKS plaintext spectrum count mismatch");
+                for (const auto &term:group.prepared_plain_fft)
+                    if (term.size()!=active_plain_digits)
+                        throw std::invalid_argument("prepared CKKS plaintext digit count mismatch");
+            }
+            else {
+                transient_plain_fft = std::make_unique<std::vector<PlainTermFFT>>(group.terms.size());
 #pragma omp parallel
-            {
-                auto plain_digit = std::make_unique<Polynomial<P>>();
+                {
+                    auto plain_digit = std::make_unique<Polynomial<P>>();
 #pragma omp for collapse(2) schedule(dynamic)
-                for (int t = 0; t < term_count; t++) {
-                    for (int d = 0; d < plain_digits; d++) {
-                        const auto &plain =
-                            group.terms[static_cast<std::size_t>(t)]
-                                .plain.poly;
-                        const int plain_shift =
-                            d * static_cast<int>(ArithmeticBits);
-                        for (uint32_t n = 0; n < P::n; n++) {
-                            const auto [negative, magnitude] =
-                                ckks_detail::smallSignedMagnitude<P, LogQ>(
-                                    plain[n]);
-                            const uint64_t digit =
-                                (magnitude >> plain_shift) & plain_mask;
-                            const T digit_value{digit};
-                            (*plain_digit)[n] =
-                                negative ? T{0} - digit_value : digit_value;
+                    for (int t = 0; t < term_count; t++) {
+                        for (int d = 0; d < plain_digits; d++) {
+                            const auto &plain =
+                                group.terms[static_cast<std::size_t>(t)]
+                                    .plain.poly;
+                            const int plain_shift =
+                                d * static_cast<int>(ArithmeticBits);
+                            for (uint32_t n = 0; n < P::n; n++) {
+                                const auto [negative, magnitude] =
+                                    ckks_detail::smallSignedMagnitude<P, LogQ>(
+                                        plain[n]);
+                                const uint64_t digit =
+                                    (magnitude >> plain_shift) & plain_mask;
+                                const T digit_value{digit};
+                                (*plain_digit)[n] =
+                                    negative ? T{0} - digit_value : digit_value;
+                            }
+                            TwistIFFTDigit<P>(
+                                (*transient_plain_fft)[static_cast<std::size_t>(t)][d],
+                                *plain_digit);
                         }
-                        TwistIFFTDigit<P>(
-                            (*plain_fft)[static_cast<std::size_t>(t)][d],
-                            *plain_digit);
                     }
                 }
             }
+            const auto plain_spectrum=[&](std::size_t term,std::size_t digit)->const PolynomialInFD<P>& {
+                if constexpr (requires { group.prepared_plain_fft; })
+                    return group.prepared_plain_fft[term][digit];
+                else return (*transient_plain_fft)[term][digit];
+            };
             if (trace_linear) {
                 ckks_detail::ckks_trace_linear_group_event(
                     "plain_digit_fft", group_index,
@@ -4843,7 +4860,7 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
 #pragma omp for collapse(3) schedule(dynamic)
                 for (int c = 0; c < component_count; c++) {
                     for (int j = 0; j < aux_row_count; j++) {
-                        for (int d = 0; d < plain_digits; d++) {
+                        for (int d = 0; d < active_plain_digits; d++) {
                             const int torus_shift =
                                 width -
                                 (torus_first + j + 1) * static_cast<int>(ArithmeticBits);
@@ -4870,7 +4887,7 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                                         first_j1)];
                                 MulInFD<P::n>(
                                     *product_acc, first_fft[c][j],
-                                    (*plain_fft)[batch_begin][d]);
+                                    plain_spectrum(batch_begin,d));
                                 for (std::size_t t = batch_begin + 1;
                                      t < batch_end; t++) {
                                     const int j1 = group.terms[t].baby_step;
@@ -4879,7 +4896,7 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
                                         *(*baby_fft)[static_cast<std::size_t>(
                                             j1)];
                                     FMAInFD<P::n>(*product_acc, fft[c][j],
-                                                  (*plain_fft)[t][d]);
+                                                  plain_spectrum(t,d));
                                 }
                                 TwistFFTDigitProduct<P>(*digit_prod,
                                                         *product_acc);
@@ -4941,46 +4958,48 @@ inline void CKKSLinearTransformBSGSWithGroupProvider(
         return;
     }
 
-    bool res_initialized = false;
-    auto term = std::make_unique<TRLWE<P>>();
-    auto inner = std::make_unique<TRLWE<P>>();
-    auto giant_rotated = std::make_unique<TRLWE<P>>();
+    else {
+        bool res_initialized = false;
+        auto term = std::make_unique<TRLWE<P>>();
+        auto inner = std::make_unique<TRLWE<P>>();
+        auto giant_rotated = std::make_unique<TRLWE<P>>();
 
-    for (std::size_t group_index = 0; group_index < group_count; group_index++) {
-        const auto &group = group_provider(group_index);
-        bool inner_initialized = false;
-        for (const auto &entry : group.terms) {
-            assert((*baby)[static_cast<std::size_t>(entry.baby_step)]);
-            CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
-                *term, *(*baby)[static_cast<std::size_t>(entry.baby_step)],
-                entry.plain.poly);
+        for (std::size_t group_index = 0; group_index < group_count; group_index++) {
+            const auto &group = group_provider(group_index);
+            bool inner_initialized = false;
+            for (const auto &entry : group.terms) {
+                assert((*baby)[static_cast<std::size_t>(entry.baby_step)]);
+                CKKSPlainMulRescaleTRLWE<P, LogQ, PlainLogDelta>(
+                    *term, *(*baby)[static_cast<std::size_t>(entry.baby_step)],
+                    entry.plain.poly);
 
-            if (!inner_initialized) {
-                *inner = *term;
-                inner_initialized = true;
+                if (!inner_initialized) {
+                    *inner = *term;
+                    inner_initialized = true;
+                }
+                else {
+                    CKKSAddTRLWEInPlace<P, out_log_q>(*inner, *term);
+                }
+            }
+
+            const TRLWE<P> *to_add = inner.get();
+            if (group.giant_step != 0) {
+                CKKSRotateSlots<P, out_log_q>(
+                    *giant_rotated, *inner, k_step * group.giant_step,
+                    output_gk);
+                to_add = giant_rotated.get();
+            }
+
+            if (!res_initialized) {
+                res.ct = *to_add;
+                res_initialized = true;
             }
             else {
-                CKKSAddTRLWEInPlace<P, out_log_q>(*inner, *term);
+                CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
             }
         }
-
-        const TRLWE<P> *to_add = inner.get();
-        if (group.giant_step != 0) {
-            CKKSRotateSlots<P, out_log_q>(
-                *giant_rotated, *inner, k_step * group.giant_step,
-                output_gk);
-            to_add = giant_rotated.get();
-        }
-
-        if (!res_initialized) {
-            res.ct = *to_add;
-            res_initialized = true;
-        }
-        else {
-            CKKSAddTRLWEInPlace<P, out_log_q>(res.ct, *to_add);
-        }
+        ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
     }
-    ckks_detail::reduceTRLWEToLevel<P, out_log_q>(res.ct);
 }
 
 template <class P, std::uint32_t LogQ, std::uint32_t LogDelta,

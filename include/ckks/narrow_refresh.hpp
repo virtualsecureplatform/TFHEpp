@@ -175,11 +175,11 @@ inline void realTransformWithPreparedGalois(
 }
 } // namespace narrow_detail
 
-template <class RefreshSchedule>
+template <class RefreshSchedule, class Transform>
 inline void CKKSNarrowPrepareCoefficients(
     typename RefreshSchedule::Coefficients &coefficients,
     const typename RefreshSchedule::Input &input,
-    const CKKSNarrowRefreshKey<RefreshSchedule> &key)
+    const CKKSNarrowRefreshKey<RefreshSchedule> &key, Transform transform)
 {
     using P = typename RefreshSchedule::Param;
     if constexpr (RefreshSchedule::auxiliary_log_scale != 0) {
@@ -190,9 +190,7 @@ inline void CKKSNarrowPrepareCoefficients(
                     << RefreshSchedule::auxiliary_log_scale;
         auto dense = std::make_unique<typename RefreshSchedule::EvaluationCoefficients>();
         auto sparse = std::make_unique<typename RefreshSchedule::EvaluationCoefficients>();
-        narrow_detail::realTransformWithPreparedGalois<P, RefreshSchedule::evaluation_input_log_q,
-            RefreshSchedule::evaluation_input_log_delta, RefreshSchedule::s2c_plain_log_delta>(
-            *dense, *lifted, key.s2c_plan, key.s2c_input_galois, key.s2c_output_galois);
+        transform(*dense,*lifted);
         CKKSSecretKeySwitch<P>(*sparse, *dense, key.to_sparse);
         CKKSScaleDown<P, RefreshSchedule::evaluation_coefficient_log_q,
             RefreshSchedule::evaluation_input_log_delta, RefreshSchedule::auxiliary_log_scale>(coefficients, *sparse);
@@ -200,14 +198,27 @@ inline void CKKSNarrowPrepareCoefficients(
     else {
         auto dense_storage = std::make_unique<typename RefreshSchedule::Coefficients>();
         auto &dense = *dense_storage;
-        narrow_detail::realTransformWithPreparedGalois<P, RefreshSchedule::input_log_q,
-            RefreshSchedule::input_log_delta, RefreshSchedule::s2c_plain_log_delta>(
-            dense, input, key.s2c_plan, key.s2c_input_galois, key.s2c_output_galois);
+        transform(dense,input);
         CKKSSecretKeySwitch<P>(coefficients, dense, key.to_sparse);
     }
     // A materialized ModRaise is unnecessary: narrow exponentiation uses
     // omega^q0=1 and therefore discards exactly the q0*I introduced by lifting
     // the public coefficients. The evaluator never computes the secret phase.
+}
+
+template <class RefreshSchedule>
+inline void CKKSNarrowPrepareCoefficients(
+    typename RefreshSchedule::Coefficients &coefficients,
+    const typename RefreshSchedule::Input &input,
+    const CKKSNarrowRefreshKey<RefreshSchedule> &key)
+{
+    using P = typename RefreshSchedule::Param;
+    CKKSNarrowPrepareCoefficients<RefreshSchedule>(coefficients,input,key,
+        [&](auto &result,const auto &lifted) {
+            narrow_detail::realTransformWithPreparedGalois<P,RefreshSchedule::evaluation_input_log_q,
+                RefreshSchedule::evaluation_input_log_delta,RefreshSchedule::s2c_plain_log_delta>(
+                result,lifted,key.s2c_plan,key.s2c_input_galois,key.s2c_output_galois);
+        });
 }
 
 namespace narrow_detail {

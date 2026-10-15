@@ -1,0 +1,34 @@
+{
+  "scope": "CPU-only retained-key N16384 S2C component test. Fixed public plaintext spectra and Galois spectra prepared once; all input-dependent transforms, rotations, encapsulation and rescaling remain online.",
+  "baseline_commit": "588decb",
+  "private_keys_generated": 0,
+  "input_reused": true,
+  "omp_threads": 8,
+  "affinity": "unpinned",
+  "baseline_seconds": 14.5679,
+  "cached_seconds": [
+    8.16927,
+    8.24134,
+    8.27067
+  ],
+  "public_preparation_seconds": 3.00587,
+  "plaintext_spectrum_bytes": 4269801472,
+  "galois_spectrum_bytes": 734003200,
+  "prepared_galois_key_counts": [
+    28,
+    28,
+    28
+  ],
+  "all_output_bytes_identical_to_baseline": true,
+  "output_sha256": "17a9b309505fb92933f30585355c64bfa5cf3a7c4c0a2c813aa0dc98d6c488c8",
+  "omitted_digits": "Only high unsigned magnitude digits proved zero by scanning the public compact coefficients. Full signed int64 range remains supported. Fused accumulation order and rounding of all nonzero products are unchanged.",
+  "component_unit": "ckks_prepared_compact_linear passed: direct/conjugate/both, signed int64 extremes, omitted zero digits, all-zero plans, repeated use without Galois rebuild, budget rejection.",
+  "other_checks": {
+    "ckks_narrow_basis_prepared": "passed",
+    "ckks_narrow_ll14_retained_fbs": "build passed",
+    "ckks_linear_transform": "Cannot compile: compact_linear.hpp static_assert for __uint128_t. Reproduced with baseline ckks.hpp/narrow_refresh.hpp; unrelated pre-existing failure."
+  },
+  "baseline_failure_log_sha256": "8b31407cefb6383d95d0e2f56d0ac84c868ef696a9e9060f38cf40b1f105f8f8",
+  "tenfold_goal_achieved": false,
+  "timing_limit": "One baseline and three cached trials; stage proof and exact identity, not a controlled whole-refresh speedup claim."
+}
