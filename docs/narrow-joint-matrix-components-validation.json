@@ -434,5 +434,32 @@
   "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-joint-20261017",
   "limitations": "Two measured paired trials per policy on one CPU; full all-function run qualifies correctness, not per-function speedup. Small gain rather than10x closure. Parameter and hardware differences from the paper remain. Keep opt-in pending broader evidence.",
   "security_validated": false,
-  "performance_gap_closed": false
+  "performance_gap_closed": false,
+  "preflight": [
+    {
+      "case": "range",
+      "exit_code": 1,
+      "message": "matrix joint flag must be 0 or 1"
+    },
+    {
+      "case": "pair-range",
+      "exit_code": 1,
+      "message": "matrix joint pair flag must be 0 or 1"
+    },
+    {
+      "case": "requires-rns",
+      "exit_code": 1,
+      "message": "joint matrix components require direct RNS factors"
+    },
+    {
+      "case": "single-function",
+      "exit_code": 1,
+      "message": "paired replay requires tanh"
+    },
+    {
+      "case": "exclusive",
+      "exit_code": 1,
+      "message": "paired replay controls must be separate"
+    }
+  ]
 }
