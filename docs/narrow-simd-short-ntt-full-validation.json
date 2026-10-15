@@ -1,0 +1,605 @@
+{
+  "scope": "CPU SIMD length2/4/8 NTT stages with preserved transform inlining. Selected default uses SIMD tensor/gadget plans and scalar short stages for online factor plans. Exact arithmetic, input, keys, levels and output gates retained.",
+  "kernel_commit": "635d4d2",
+  "inlining_and_controls_commit": "ae8a202",
+  "selected_default_commit": "8fdea83",
+  "baseline_commit": "2f52529",
+  "component_receipts": [
+    "narrow-simd-short-ntt-component-validation.json",
+    "narrow-simd-short-ntt-policy-component-validation.json"
+  ],
+  "reference_accuracy_receipt": "narrow-dd-native-auto-full-validation.json",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "input_reused": true,
+  "native_key_archives_checked": 8,
+  "native_key_hashes_unchanged_across_all_four_comparisons": true,
+  "method": "Saved parent binary and rebuilt candidates. Cross-binary comparisons use warmed5-trial Tanh trees: warm-up,unbatched,batched,batched,unbatched; omit warm-up. Within-binary factor comparison keeps batching on and uses warm-up scalar,then scalar/SIMD/SIMD/scalar. All policies share retained keys, input and selector spectra; no compilation or component tests overlap full timing.",
+  "rejected_configurations": [
+    "Initial unoutlined globally enabled SIMD:14.3694s batched mean versus14.1036s parent.",
+    "Outlined all-SIMD default:14.4235s batched mean. Within-pair factor SIMD benefit did not reproduce as the standalone default, so factor SIMD remains opt-in."
+  ],
+  "mean_functional_seconds": {
+    "baseline-pair": {
+      "false": 14.514844444,
+      "true": 14.1035829055
+    },
+    "simd-pair": {
+      "false": 14.395478166,
+      "true": 14.36940452
+    },
+    "final-pair": {
+      "false": 14.4887753685,
+      "true": 14.4235248225
+    },
+    "selected-pair": {
+      "false": 13.8183808565,
+      "true": 13.794812824000001
+    }
+  },
+  "selected_fractional_runtime_reduction": {
+    "false": 0.04798284888184923,
+    "true": 0.02189302417470007
+  },
+  "within_binary_factor_mean_seconds": {
+    "false": 13.84266853,
+    "true": 13.7423825565
+  },
+  "batched_stage_means": {
+    "baseline-pair": {
+      "factor_seconds": 6.2027350000000006,
+      "alignment_seconds": 0.5864575000000001,
+      "tree_seconds": 3.307155
+    },
+    "simd-pair": {
+      "factor_seconds": 6.54949,
+      "alignment_seconds": 0.572848,
+      "tree_seconds": 3.2028600000000003
+    },
+    "final-pair": {
+      "factor_seconds": 6.616525,
+      "alignment_seconds": 0.5802015,
+      "tree_seconds": 3.209715
+    },
+    "selected-pair": {
+      "factor_seconds": 6.05099,
+      "alignment_seconds": 0.5825279999999999,
+      "tree_seconds": 3.167565
+    }
+  },
+  "batched_factor_substage_means": {
+    "baseline-pair": {
+      "table_ntt_seconds": 0.6437708,
+      "matrix_seconds": 3.18159515,
+      "inverse_ntt_and_crt_seconds": 0.43366965,
+      "conjugation_seconds": 1.08861215
+    },
+    "simd-pair": {
+      "table_ntt_seconds": 0.7114566,
+      "matrix_seconds": 3.2196572000000003,
+      "inverse_ntt_and_crt_seconds": 0.54575445,
+      "conjugation_seconds": 0.9575507
+    },
+    "final-pair": {
+      "table_ntt_seconds": 0.7157776499999999,
+      "matrix_seconds": 3.2644359,
+      "inverse_ntt_and_crt_seconds": 0.5463861999999999,
+      "conjugation_seconds": 0.970373
+    },
+    "selected-pair": {
+      "table_ntt_seconds": 0.6434492,
+      "matrix_seconds": 3.1762089,
+      "inverse_ntt_and_crt_seconds": 0.4282983,
+      "conjugation_seconds": 0.9678445
+    }
+  },
+  "timing_limitations": "Two measured trials per tree policy and sequential cross-binary runs separated by rebuild/policy experiments. Selected local improvement is about2%; do not extrapolate isolated46-54% NTT speedups to FBS or hardware-matched paper results. The all-function run qualifies outputs, not per-function speedups.",
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "artifacts": [
+    {
+      "run": "baseline-pair",
+      "artifact": "tanh-trial0-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 15.320139678,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "baseline-pair",
+      "artifact": "tanh-trial1-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.500280946,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "baseline-pair",
+      "artifact": "tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.080227729,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "baseline-pair",
+      "artifact": "tanh-trial3-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.126938081999999,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "baseline-pair",
+      "artifact": "tanh-trial4-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.529407941999999,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "simd-pair",
+      "artifact": "tanh-trial0-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.532038629999999,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "simd-pair",
+      "artifact": "tanh-trial1-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.35601392,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "simd-pair",
+      "artifact": "tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.342854228,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "simd-pair",
+      "artifact": "tanh-trial3-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.395954812,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "simd-pair",
+      "artifact": "tanh-trial4-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.434942412,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "simd-full",
+      "artifact": "gelu-outputs.bin",
+      "function": "gelu",
+      "functional_evaluation_seconds": 9.303010177,
+      "max_error": 3.307761381752407e-08,
+      "post_product_max_error": 1.6837238132291712e-07,
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "simd-full",
+      "artifact": "sigmoid-outputs.bin",
+      "function": "sigmoid",
+      "functional_evaluation_seconds": 9.056383232,
+      "max_error": 1.8031533872729153e-08,
+      "post_product_max_error": 3.2808837637443906e-08,
+      "sha256": "6abcba2ff691ecc6a543f28acd68fe853997998e2dc0511e9cafc1b4920a9e36",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "simd-full",
+      "artifact": "tanh-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.85275302,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "factor-policy-pair",
+      "artifact": "tanh-trial0-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.580225685999999,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "factor-policy-pair",
+      "artifact": "tanh-trial1-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.867443399999999,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "factor-policy-pair",
+      "artifact": "tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.769486656000002,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "factor-policy-pair",
+      "artifact": "tanh-trial3-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.715278457,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "factor-policy-pair",
+      "artifact": "tanh-trial4-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.81789366,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "final-pair",
+      "artifact": "tanh-trial0-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.550158654,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "final-pair",
+      "artifact": "tanh-trial1-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.485462747,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "final-pair",
+      "artifact": "tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.401605303,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "final-pair",
+      "artifact": "tanh-trial3-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.445444342,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "final-pair",
+      "artifact": "tanh-trial4-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.49208799,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "final-full",
+      "artifact": "gelu-outputs.bin",
+      "function": "gelu",
+      "functional_evaluation_seconds": 9.40507364,
+      "max_error": 3.307761381752407e-08,
+      "post_product_max_error": 1.6837238132291712e-07,
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "final-full",
+      "artifact": "sigmoid-outputs.bin",
+      "function": "sigmoid",
+      "functional_evaluation_seconds": 9.104850552,
+      "max_error": 1.8031533872729153e-08,
+      "post_product_max_error": 3.2808837637443906e-08,
+      "sha256": "6abcba2ff691ecc6a543f28acd68fe853997998e2dc0511e9cafc1b4920a9e36",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "final-full",
+      "artifact": "tanh-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.800039753,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "selected-pair",
+      "artifact": "tanh-trial0-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 14.530722191999999,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "selected-pair",
+      "artifact": "tanh-trial1-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.821065956,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "selected-pair",
+      "artifact": "tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.781574022000001,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "selected-pair",
+      "artifact": "tanh-trial3-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.808051626000001,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "selected-pair",
+      "artifact": "tanh-trial4-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.815695757,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "selected-full",
+      "artifact": "gelu-outputs.bin",
+      "function": "gelu",
+      "functional_evaluation_seconds": 9.413928079,
+      "max_error": 3.307761381752407e-08,
+      "post_product_max_error": 1.6837238132291712e-07,
+      "sha256": "1729747d51854a878b740a1dee639cacc8df3d234f5e2210d8662e5f119fb66a",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "selected-full",
+      "artifact": "sigmoid-outputs.bin",
+      "function": "sigmoid",
+      "functional_evaluation_seconds": 9.010206522,
+      "max_error": 1.8031533872729153e-08,
+      "post_product_max_error": 3.2808837637443906e-08,
+      "sha256": "6abcba2ff691ecc6a543f28acd68fe853997998e2dc0511e9cafc1b4920a9e36",
+      "matches_independently_decoded_reference": true
+    },
+    {
+      "run": "selected-full",
+      "artifact": "tanh-outputs.bin",
+      "function": "tanh",
+      "functional_evaluation_seconds": 13.617574435000002,
+      "max_error": 3.1121987944398867e-08,
+      "post_product_max_error": 5.539325668877806e-08,
+      "sha256": "cef9d6729848aee70de402163fbad840f7efc4855cdce60e91bc6d07e1c73786",
+      "matches_independently_decoded_reference": true
+    }
+  ],
+  "cli_preflight_checks": [
+    {
+      "case": "range",
+      "exit_code": 1,
+      "message": "factor short NTT flag must be 0 or 1"
+    },
+    {
+      "case": "all-pair",
+      "exit_code": 1,
+      "message": "factor short NTT pair requires a single function"
+    },
+    {
+      "case": "requires-rns",
+      "exit_code": 1,
+      "message": "factor short NTT pair requires direct RNS factors"
+    },
+    {
+      "case": "exclusive",
+      "exit_code": 1,
+      "message": "paired replay controls must be separate"
+    }
+  ],
+  "commands": {
+    "factor_policy": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "tanh",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/simd-short-ntt-20261017/factor-policy-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--factor-short-ntt-pair",
+      "1"
+    ],
+    "selected_pair": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "tanh",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/simd-short-ntt-20261017/selected-pair",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-trees-pair",
+      "1"
+    ],
+    "selected_all": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "all",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/simd-short-ntt-20261017/selected-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1"
+    ]
+  },
+  "binary_sha256": {
+    "baseline-fbs": "41d0932060d0bde86a6dd00967b0ef26b512071147d7b461b29bc52a20847f26",
+    "factor-policy-inline-fbs": "142bd763c00034cf9d701bc9f729cf60c84b45fee91f38c005d2c54fddc79917",
+    "all-simd-default-fbs": "89f30361dbe577ac968d5579a050e8400da498c499aec0ebff7cf69eef4e7754",
+    "selected-fbs": "6588ad9bedc3b3c3c9f4233c9ff8fe0003adcaae482bced858e60c64c1b5f24a"
+  },
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/simd-short-ntt-20261017",
+  "security_validated": false,
+  "performance_gap_closed": false,
+  "next_focus": "Sample CPU hotspots in the complete retained replay; standalone transform speedups have much less total impact than expected, and factor integration is sensitive to execution context."
+}
