@@ -8,7 +8,7 @@ namespace TFHEpp {
 // The auxiliary lift protects switching precision; data rescale count stays
 // equal to the existing before-rescale product tree's count.
 template <std::uint32_t Auxiliary = 100, std::uint32_t Secondary = 32,
-          bool ParallelPairs = false,
+          bool ParallelPairs = false, bool RNSTensor = false,
           class Schedule, std::uint32_t MasterQ, std::uint32_t Primary,
           std::uint32_t MasterSecondary>
 inline void CKKSNarrowUseAuxiliaryNTTDD(CKKSNarrowBootstrapKey<Schedule> &key,
@@ -18,7 +18,7 @@ inline void CKKSNarrowUseAuxiliaryNTTDD(CKKSNarrowBootstrapKey<Schedule> &key,
     static_assert(Schedule::relinearize_before_rescale);
     using Chain=CKKSPreparedAuxiliaryDDRelinKeyChainNTT<typename Schedule::Param,
         Schedule::factor_log_q, Schedule::log_delta, Schedule::tree_depth,
-        Auxiliary, Primary, Secondary>;
+        Auxiliary, Primary, Secondary, RNSTensor>;
     auto prepared=std::make_shared<Chain>(master);
     key.product_tree_evaluator=[prepared](typename Schedule::TreeResult &result,
         std::vector<typename Schedule::Factor> factors,

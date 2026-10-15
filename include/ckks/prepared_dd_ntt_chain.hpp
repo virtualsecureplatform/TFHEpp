@@ -1,6 +1,7 @@
 #pragma once
 #include "prepared_dd_ntt.hpp"
 #include "key_projection.hpp"
+#include "tensor_rns32.hpp"
 #include <tuple>
 
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
@@ -10,7 +11,7 @@ namespace TFHEpp {
 // changes the public representation only; this constructor never encrypts.
 template <class P, std::uint32_t StartDataQ, std::uint32_t LogDelta,
           std::size_t Levels, std::uint32_t AuxiliaryLogScale = 100,
-          std::uint32_t Bg = 64, std::uint32_t Bbar = 32>
+          std::uint32_t Bg = 64, std::uint32_t Bbar = 32, bool RNSTensor = false>
 class CKKSPreparedAuxiliaryDDRelinKeyChainNTT {
     static_assert(Levels > 0 && LogDelta > 0);
     static_assert(StartDataQ > (Levels - 1) * LogDelta);
@@ -37,10 +38,12 @@ public:
         const CKKSCompactDDRelinKey<P, MasterQ, Bg, MasterBbar> &master)
         : keys(prepare(master, std::make_index_sequence<Levels>{})) {}
 
-    template <std::size_t Level> const auto &get() const
+    template <std::size_t Level> decltype(auto) get() const
     {
         static_assert(Level < Levels);
-        return std::get<Level>(keys);
+        if constexpr(RNSTensor)
+            return CKKSRelinKeyTensorRNS32<P,std::tuple_element_t<Level,Keys>>{std::get<Level>(keys)};
+        else return (std::get<Level>(keys));
     }
     std::size_t byteSize() const
     {
