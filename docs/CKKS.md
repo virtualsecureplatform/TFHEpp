@@ -4200,3 +4200,20 @@ For independent verification, set `PYTHONPATH` to the sibling
 Lower-scale basis candidates at delta35 failed the fixed accuracy gate
 (GeLU error approximately 1.2e-5 to 1.4e-5). The qualified profile retains
 delta44 throughout the tree; those failed candidates are not performance wins.
+
+
+The grouped DD product update tiles 256 NTT points and reduces after at most
+three lazy Shoup products. The bound is below 7p and fits uint64 for p<2^61;
+other moduli retain the prior calculation. A retained-key N16384 DD433/20/20
+benchmark, pinned to eight physical P cores and run before/after in both
+orders, measured approximately 6% and 8% faster complete DD applications.
+All component outputs were byte-identical. This is a component improvement,
+not a whole-refresh speedup estimate.
+
+The repository frequency-basis runner then completed all three functions at
+40.35/75.70/39.73 seconds (GeLU/Tanh/Sigmoid), unpinned OMP8, with all saved
+ciphertext files byte-identical to the independently decoded reference.
+Public setup took 236.52 seconds in this run; it was excluded from the online
+timers and reused across functions. Evidence, compiler commands, sampling
+scope and the rejected matrix-register experiment are recorded in
+`narrow-dd-grouped-ntt-products-validation.json`. The 10x goal remains open.

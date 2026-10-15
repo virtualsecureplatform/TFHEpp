@@ -128,13 +128,33 @@ struct CKKSPreparedDDRelinKeyNTT {
                     const auto modulus = plans[prime]->modulus();
                     auto values = std::span<std::uint64_t>(products.data() +
                         position(prime, secondary, component, 0), P::n);
-                    for (std::size_t i = 0; i < P::n; ++i) {
-                        std::uint64_t sum = 0;
-                        for (std::size_t row = 0; row < primary_rows; ++row)
-                            sum = modular_ntt::add(sum, spectra[index(prime, row,
-                                secondary, component, i)].apply(transformed[
-                                    (prime * primary_rows + row) * P::n + i], modulus), modulus);
-                        values[i] = sum;
+                    // Each lazy Shoup product is below 2p. Starting with a
+                    // canonical sum, three products stay below 7p < 2^64.
+                    // Reduce once per three rows, and traverse short contiguous
+                    // coefficient tiles so the key streams stay cache friendly.
+                    if (modulus < (std::uint64_t{1} << 61)) {
+                        for (std::size_t begin = 0; begin < P::n; begin += 256)
+                            for (std::size_t row = 0; row < primary_rows; row += 3)
+                                for (std::size_t i = begin; i < std::min(begin+256,std::size_t(P::n)); ++i) {
+                                    auto sum = values[i];
+                                    for (std::size_t j = 0; j < 3 && row+j < primary_rows; ++j)
+                                        sum += spectra[index(prime,row+j,secondary,component,i)].applyLazy(
+                                            transformed[(prime*primary_rows+row+j)*P::n+i],modulus);
+                                    if (sum >= 4*modulus) sum -= 4*modulus;
+                                    if (sum >= 2*modulus) sum -= 2*modulus;
+                                    if (sum >= modulus) sum -= modulus;
+                                    values[i] = sum;
+                                }
+                    }
+                    else {
+                        for (std::size_t i = 0; i < P::n; ++i) {
+                            std::uint64_t sum = 0;
+                            for (std::size_t row = 0; row < primary_rows; ++row)
+                                sum = modular_ntt::add(sum,spectra[index(prime,row,
+                                    secondary,component,i)].apply(transformed[
+                                        (prime*primary_rows+row)*P::n+i],modulus),modulus);
+                            values[i] = sum;
+                        }
                     }
                     plans[prime]->inverse(values);
                 }
