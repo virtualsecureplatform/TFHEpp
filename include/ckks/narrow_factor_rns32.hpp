@@ -77,7 +77,8 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     const CKKSPreparedAutoKeyFFT<typename Schedule::Param,Schedule::factor_key_log_q> *factor_fft,
     CKKSNarrowFactorTimings *timings, bool prefetch_raw = false,
     std::span<const FactorSelectorRNS32<Schedule>> retained = {}, bool tiled_matrix = true,
-    bool parallel_conjugation = false, bool dot8_matrix = true, bool vector_short_stages = false)
+    bool parallel_conjugation = false, bool dot8_matrix = true, bool vector_short_stages = false,
+    bool packed_matrix = true)
 {
     using P = typename Schedule::Param;
     using Cache = FactorSelectorRNS32<Schedule>;
@@ -91,6 +92,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     // Five to seven real columns share one full SIMD row. Padding is public
     // zero workspace; only actual columns are inverse transformed and returned.
     const auto stride=columns>4 && columns<8?std::size_t{8}:columns;
+    const bool packed_four=packed_matrix && stride==4;
     const auto &plans = vector_short_stages?factorPlansRNS32<P,Cache::prime_count,true>()
                                            :factorPlansRNS32<P,Cache::prime_count,false>();
     using CRT=std::conditional_t<DirectCRT && Cache::prime_count>=8,
@@ -99,8 +101,9 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     static const CRT crt;
     auto start = Clock::now();
     std::array<std::array<std::vector<std::uint32_t>,Cache::prime_count>,2> base;
-    for (auto &signed_tables : base)
-        for (auto &spectrum : signed_tables) spectrum.resize(stride*P::n);
+    for(std::size_t t=0;t<2;++t)
+        for(auto &spectrum:base[t])
+            spectrum.resize(packed_four?(t==0?2*stride*P::n:0):stride*P::n);
     std::exception_ptr table_error;
 #pragma omp parallel for collapse(2) schedule(static)
     for (std::size_t t = 0; t < 2; ++t)
@@ -125,7 +128,9 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                         spectrum[i] = negative && value ? modulus-value : value;
                     }
                     plans[prime].forward(spectrum);
-                    for (std::size_t i = 0; i < P::n; ++i) base[t][prime][i*stride+column] = spectrum[i];
+                    for (std::size_t i = 0; i < P::n; ++i)
+                        if(packed_four)base[0][prime][i*8+t*4+column]=spectrum[i];
+                        else base[t][prime][i*stride+column]=spectrum[i];
                 }
             }
             catch(...) {
@@ -179,31 +184,40 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
             auto *second=sums[index(1,component,digit)][prime].data();
                         const auto end = std::min(begin+256,std::size_t(P::n));
                         std::size_t local=0;
-                        const auto dot=[&]<std::size_t Terms>(){
+                        const auto dot=[&]<std::size_t Terms,bool Packed=false>(){
                             std::array<const std::uint32_t*,Terms> selectors;
                             for(std::size_t t=0;t<Terms;++t)selectors[t]=cache[local+t].spectra[prime].data()+(component*Cache::digits+digit)*P::n;
                             for(std::size_t i=begin;i<end;++i){
                                 std::array<const std::uint32_t*,Terms> left,right;
                                 std::array<std::uint32_t,Terms> values;
                                 for(std::size_t t=0;t<Terms;++t){
-                                    const auto position=narrowNTTPermutationIndex<P::n>(exponents[first_y+local+t],i)*stride;
-                                    left[t]=base[0][prime].data()+position;right[t]=base[1][prime].data()+position;values[t]=selectors[t][i];
+                                    const auto position=narrowNTTPermutationIndex<P::n>(exponents[first_y+local+t],i)*(Packed?8:stride);
+                                    left[t]=base[0][prime].data()+position;
+                                    if constexpr(!Packed)right[t]=base[1][prime].data()+position;
+                                    values[t]=selectors[t][i];
                                 }
-                                arithmetic.template addDotPair<Terms>(first+i*stride,second+i*stride,left,right,values,stride);
+                                if constexpr(Packed)arithmetic.template addPackedDotPair<Terms>(first+i*4,second+i*4,left,values);
+                                else arithmetic.template addDotPair<Terms>(first+i*stride,second+i*stride,left,right,values,stride);
                             }
                         };
                         // Four columns pack both signed tables in one AVX2 vector.
                         // Wider rows retain four-term dots: eight terms were slower
                         // in the full-size matrix benchmark.
-                        if(dot8_matrix && stride==4)
-                            for(;local+8<=count;local+=8)dot.template operator()<8>();
-                        for(;local+4<=count;local+=4)dot.template operator()<4>();
+                        if(packed_four){
+                            if(dot8_matrix)for(;local+8<=count;local+=8)dot.template operator()<8,true>();
+                            for(;local+4<=count;local+=4)dot.template operator()<4,true>();
+                        }else{
+                            if(dot8_matrix && stride==4)
+                                for(;local+8<=count;local+=8)dot.template operator()<8>();
+                            for(;local+4<=count;local+=4)dot.template operator()<4>();
+                        }
                         for (; local < count; ++local) {
                             const auto *selector = cache[local].spectra[prime].data()+(component*Cache::digits+digit)*P::n;
                             for (std::size_t i = begin; i < end; ++i) {
-                                const auto position = narrowNTTPermutationIndex<P::n>(exponents[first_y+local],i)*stride;
+                                const auto position = narrowNTTPermutationIndex<P::n>(exponents[first_y+local],i)*(packed_four?8:stride);
                                 arithmetic.addPair(first+i*stride,second+i*stride,
-                                    base[0][prime].data()+position,base[1][prime].data()+position,stride,selector[i]);
+                                    base[0][prime].data()+position,packed_four?base[0][prime].data()+position+4:
+                                        base[1][prime].data()+position,stride,selector[i]);
                             }
                         }
                         for (std::size_t i = begin*stride; i < end*stride; ++i) {
@@ -363,7 +377,7 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
     static_assert(SourceSchedule::tail_blocks_per_pack == TargetSchedule::tail_blocks_per_pack && SourceSchedule::tail_blocks_per_pack == SelectorSchedule::tail_blocks_per_pack);
     std::shared_ptr<const Source> source_;
     std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained_;
-    bool tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_;
+    bool tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_;
     struct FactorKeys {
         const CKKSGaloisKey<P,SourceSchedule::factor_key_log_q> &factor_galois;
         bool staged_fft_caches;
@@ -374,8 +388,8 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
 public:
     explicit CKKSNarrowDeferredRescaleFactorSourceRNS32(std::shared_ptr<const Source> source,
         std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained={},bool tiled_matrix=true,
-        bool parallel_conjugation=false,bool dot8_matrix=true,bool vector_short_stages=false)
-        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix),parallel_conjugation_(parallel_conjugation),dot8_matrix_(dot8_matrix),vector_short_stages_(vector_short_stages)
+        bool parallel_conjugation=false,bool dot8_matrix=true,bool vector_short_stages=false,bool packed_matrix=true)
+        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix),parallel_conjugation_(parallel_conjugation),dot8_matrix_(dot8_matrix),vector_short_stages_(vector_short_stages),packed_matrix_(packed_matrix)
     {
         if (!source_ || !source_->hasRawChunks()) throw std::invalid_argument("direct RNS factor source requires raw chunks");
         if (retained_ && retained_->source()!=source_.get())
@@ -393,7 +407,7 @@ public:
         auto factors = narrow_detail::packedFactorsBatchRNS32<SourceSchedule,DirectCRT>(tables,view,key.selector_ntt_chunk_size,
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
             source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):
-                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_);
+                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_);
         std::vector<typename TargetSchedule::Factor> result(factors.size());
         for (std::size_t i = 0; i < factors.size(); ++i)
             CKKSScaleDown<P,SourceSchedule::factor_log_q,SourceSchedule::log_delta,drop>(result[i],factors[i]);
