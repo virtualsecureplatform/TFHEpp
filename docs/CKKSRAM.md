@@ -81,7 +81,7 @@ build/test/ckks/ckks_ram_setup CHECKPOINT_DIRECTORY NEW_RAM_FIXTURE_DIRECTORY
 
 Setup refuses an existing destination. Repeated evaluations reuse
 `owner.bin`, `tfhe-eval.bin`, `pack48.bin`, `to-tfhe32.bin`, and
-`trace-4x2.bin`. Private owner files are test fixtures and must stay private.
+`trace-4x2.bin`, and `trace-256x1.bin`. Private owner files are test fixtures and must stay private.
 The evaluator generates no keys or fresh input ciphertexts.
 
 Use the retuned bootstrap runner's public-key arguments and performance
@@ -103,6 +103,14 @@ OMP_NUM_THREADS=8 build/test/ckks/ckks_narrow_ll14_retuned_ram \
 `tanh` is the inherited runner's required profile selector; the RAM path
 always executes the frequency-two Boolean function above. This prototype
 currently requires fixed primary-4 S2C caches.
+
+Set `CKKS_RAM_PROFILE=256x1` in the environment to run the 256-word,
+one-bit profile matching the dimensions in the existing TFHE RAM test.
+Its report is `comparison-256x1.json`. Without that variable the runner
+uses four words of two bits and writes `comparison.json`.
+To add missing traces to an older fixture without regenerating any keys,
+run `ckks_ram_setup --add-traces RAM_FIXTURE_DIRECTORY`. Existing trace
+archives are also reused.
 
 The first trace has four words of two bits and 16 sequential accesses. It
 visits every address, writes both bit values, disables writes, overwrites
@@ -127,7 +135,10 @@ The saved dense/sparse development secrets also have historical low-noise
 evaluation keys in offline diagnostics. They are not deployment secrets.
 This prototype does not use the rejected generic scheme-switching profile.
 
-A four-word trace measures small-RAM latency. It cannot establish the
+A four-word trace measures small-RAM latency. The additional 256-word
+trace checks eight sequential accesses at addresses 0, 127, 128, and 255,
+including writes and disabled writes; every cell is checked after each
+access. These two profiles cannot establish the
 crossover point for hundreds or thousands of batched bits, a failure
 probability bound, or a safe number of accesses between refreshes. The
 packing and direct output switching are straightforward prototype paths;

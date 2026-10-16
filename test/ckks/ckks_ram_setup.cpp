@@ -3,6 +3,12 @@ using namespace TFHEpp;
 int main(int argc,char **argv)try {
     if(argc!=3)throw std::runtime_error("usage: ckks_ram_setup CHECKPOINT NEW_FIXTURE_DIRECTORY");
     const std::filesystem::path root=argv[2];
+    if(std::string(argv[1])=="--add-traces"){
+        auto sk=std::make_unique<ckks_ram::SavedOwner>();ckks_ram::load(root/"owner.bin",*sk);
+        ckks_ram::saveTrace<2,2>(root,sk->secret(),"trace-4x2.bin");
+        ckks_ram::saveTrace<8,1>(root,sk->secret(),"trace-256x1.bin");
+        std::cout<<"Saved missing traces; existing keys and traces reused"<<std::endl;return 0;
+    }
     if(!std::filesystem::create_directory(root))throw std::runtime_error("setup requires a new directory; reuse existing fixture instead");
     auto dense=std::make_unique<Key<ckks_ram::P>>(),sparse=std::make_unique<Key<ckks_ram::P>>();
     {std::ifstream f(std::filesystem::path(argv[1])/"checkpoint.bin",std::ios::binary);if(!f)throw std::runtime_error("missing checkpoint");
@@ -16,24 +22,9 @@ int main(int argc,char **argv)try {
     ek->emplacebkfft<ckks_ram::BR>(*sk);ek->emplaceprivksk4cb<ckks_ram::PKS>(*sk);
     ckks_ram::save(root/"tfhe-eval.bin",*ek);ek.reset();
     std::cout<<"TFHE setup saved"<<std::endl;
-    auto fixture=std::make_unique<ckks_ram::Fixture<2,2>>();
     const auto &secret=sk->key.getIndependent<ckks_ram::L>();
-    for(std::size_t w=0;w<2;++w)for(std::size_t i=0;i<4;++i){
-        Polynomial<ckks_ram::L> message{};message[0]=(i>>w)&1?ckks_ram::L::μ:-ckks_ram::L::μ;
-        trlweSymEncrypt<ckks_ram::L>(fixture->initial[w][i],message,secret);
-    }
-    for(const auto request:ckks_ram::trace()){
-        decltype(fixture->addresses)::value_type address;
-        decltype(fixture->data)::value_type word;
-        TLWE<ckks_ram::L> enable;
-        for(std::size_t i=0;i<2;++i){
-            tlweSymEncrypt<ckks_ram::L>(address[i],(request.address>>i)&1?ckks_ram::L::μ:-ckks_ram::L::μ,secret);
-            tlweSymEncrypt<ckks_ram::L>(word[i],(request.data>>i)&1?ckks_ram::L::μ:-ckks_ram::L::μ,secret);
-        }
-        tlweSymEncrypt<ckks_ram::L>(enable,request.enable?ckks_ram::L::μ:-ckks_ram::L::μ,secret);
-        fixture->addresses.push_back(address);fixture->enables.push_back(enable);fixture->data.push_back(word);
-    }
-    ckks_ram::save(root/"trace-4x2.bin",*fixture);
+    ckks_ram::saveTrace<2,2>(root,secret,"trace-4x2.bin");
+    ckks_ram::saveTrace<8,1>(root,secret,"trace-256x1.bin");
     auto pack=std::make_unique<ckks_ram::PackKey>();
     TLWECoefficientPackingKeyGen48(*pack,secret,*sparse);
     ckks_ram::save(root/"pack48.bin",*pack);pack.reset();

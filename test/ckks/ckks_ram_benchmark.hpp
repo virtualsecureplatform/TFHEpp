@@ -2,7 +2,7 @@
 #include "ckks_ram_fixture.hpp"
 
 namespace ckks_ram {
-template<class Narrow,class Transform>
+template<class Narrow,std::size_t A=2,std::size_t W=2,class Transform>
 int run(const std::filesystem::path &root,const TFHEpp::Key<P> &sparse,
         const TFHEpp::CKKSNarrowBootstrapKey<Narrow> &bootstrap,
         Transform slots_to_coefficients)
@@ -10,15 +10,15 @@ int run(const std::filesystem::path &root,const TFHEpp::Key<P> &sparse,
     using namespace TFHEpp;
     using Clock=std::chrono::steady_clock;
     auto started=Clock::now();
-    auto owner=std::make_unique<SecretKey>();load(root/"owner.bin",*owner);
+    auto owner=std::make_unique<SavedOwner>();load(root/"owner.bin",*owner);
     auto ek=std::make_unique<EvalKey>();load(root/"tfhe-eval.bin",*ek);
-    auto fixture=std::make_unique<Fixture<2,2>>();load(root/"trace-4x2.bin",*fixture);
+    auto fixture=std::make_unique<Fixture<A,W>>();load(root/(A==2?"trace-4x2.bin":"trace-256x1.bin"),*fixture);
     auto packing=std::make_unique<PackKey>();load(root/"pack48.bin",*packing);
     PreparedTLWECoefficientPacking48<P,L> prepared(*packing);packing.reset();
     auto output_key=std::make_unique<OutKey>();load(root/"to-tfhe32.bin",*output_key);
     const double bridge_setup=std::chrono::duration<double>(Clock::now()-started).count();
     std::cout<<"RAM bridge keys loaded/prepared in "<<bridge_setup<<" seconds"<<std::endl;
-    const auto &secret=owner->key.getIndependent<L>();
+    const auto &secret=owner->secret();
     // Audit the public packing evaluator against independent source phases.
     // This check is outside the timed, secret-free refresh callback.
     std::vector<TLWE<L>> audit;
@@ -76,32 +76,33 @@ int run(const std::filesystem::path &root,const TFHEpp::Key<P> &sparse,
         }
         return out;
     };
-    const auto plain=trace();
-    std::ofstream report(root/"comparison.json");report<<std::setprecision(17);
-    report<<"{\"address_bits\":2,\"word_bits\":2,\"operations\":"<<plain.size()
+    const auto plain=trace<A,W>();
+    std::ofstream report(root/(A==2?"comparison.json":"comparison-256x1.json"));report<<std::setprecision(17);
+    report<<"{\"address_bits\":"<<A<<",\"word_bits\":"<<W<<",\"operations\":"<<plain.size()
           <<",\"read_before_write\":true,\"fixture_reused\":true,\"keys_generated_during_evaluation\":0"
           <<",\"bridge_setup_seconds\":"<<bridge_setup<<",\"packing_phase_max_error\":"<<packing_error
           <<",\"security_validated\":false,\"backends\":[";
     for(int backend=0;backend<2;++backend){
-        auto ram=std::make_unique<typename Fixture<2,2>::RAM>();ram->memory=fixture->initial;
-        std::array<std::uint32_t,4> expected{0,1,2,3};
+        auto ram=std::make_unique<typename Fixture<A,W>::RAM>();ram->memory=fixture->initial;
+        std::array<std::uint32_t,std::size_t{1}<<A> expected{};
+        for(std::size_t i=0;i<expected.size();++i)expected[i]=i&((std::uint32_t{1}<<W)-1);
         double total=0,address=0,read=0,write=0,refresh=0,max_phase_error=0;
-        typename Fixture<2,2>::RAM::Word previous_output{};
+        typename Fixture<A,W>::RAM::Word previous_output{};
         for(std::size_t step=0;step<plain.size();++step){
-            typename Fixture<2,2>::RAM::Timing timing;
+            typename Fixture<A,W>::RAM::Timing timing;
             const auto before=Clock::now();
             const auto refreshed=[&](const auto &in){return backend?ckks_refresh(in):tfhe_refresh(in);};
             // Step 8 reads the old value 1 before writing 2; feed that
             // encrypted output straight back as step 9's write data.
-            const auto &write_data=step==9?previous_output:fixture->data[step];
+            const auto &write_data=A==2&&step==9?previous_output:fixture->data[step];
             const auto output=ram->access(fixture->addresses[step],fixture->enables[step],write_data,*ek,refreshed,&timing);
             previous_output=output;
             const double elapsed=std::chrono::duration<double>(Clock::now()-before).count();total+=elapsed;
             address+=timing.address;read+=timing.read;write+=timing.write;refresh+=timing.refresh;
-            for(std::size_t w=0;w<2;++w)if(tlweSymDecrypt<L>(output[w],secret)!=bool((expected[plain[step].address]>>w)&1))throw std::runtime_error("RAM read mismatch at step "+std::to_string(step));
+            for(std::size_t w=0;w<W;++w)if(tlweSymDecrypt<L>(output[w],secret)!=bool((expected[plain[step].address]>>w)&1))throw std::runtime_error("RAM read mismatch at step "+std::to_string(step));
             if(plain[step].enable)expected[plain[step].address]=plain[step].data;
             // Validate every cell after every access, including untouched cells.
-            for(std::size_t w=0;w<2;++w)for(std::size_t i=0;i<4;++i){
+            for(std::size_t w=0;w<W;++w)for(std::size_t i=0;i<expected.size();++i){
                 TLWE<L> cell;SampleExtractIndex<L>(cell,ram->memory[w][i],0);
                 const bool bit=(expected[i]>>w)&1;
                 if(tlweSymDecrypt<L>(cell,secret)!=bit)throw std::runtime_error("RAM state mismatch at step "+std::to_string(step)+" cell "+std::to_string(i));

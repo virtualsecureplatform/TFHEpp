@@ -506,7 +506,9 @@ int main(int argc,char**argv)try {
   else narrow_detail::realTransformWithPreparedGalois<P,93,52,37>(*decoded,*lifted,key->s2c_plan,key->s2c_input_galois,key->s2c_output_galois);
   CKKSScaleDown<P,56,52,8>(result,*decoded);
  };
- return ckks_ram::run<Narrow>(root,*sparse,key->narrow,decode_slots);
+ if(const auto profile=std::getenv("CKKS_RAM_PROFILE");profile && std::string(profile)=="256x1")
+  return ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots);
+ return ckks_ram::run<Narrow,2,2>(root,*sparse,key->narrow,decode_slots);
 #endif
 
  auto input=std::make_unique<Refresh::Input>();auto slots=std::make_unique<CKKSSlotVector<P>>();const auto inputfile=root/"candidate-input.bin";

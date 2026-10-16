@@ -13,6 +13,15 @@ using L=typename PKS::targetP;
 using PackKey=TFHEpp::TLWECoefficientPackingKey48<P,L>;
 using OutKey=TFHEpp::CKKSToTFHEKeySwitchKey<P,L,2,16>;
 constexpr std::array<std::uint64_t,7> metadata{0x434b52414d303031ULL,P::n,448,48,L::n,2,16};
+// SecretKey's default constructor generates secrets before deserialization.
+// Read the identical archive layout without invoking that constructor.
+struct SavedOwner {
+    decltype(TFHEpp::lweKey::keys) keys{};
+    TFHEpp::lweParams params;
+    template<class Archive>void serialize(Archive &ar){ar(keys,params);}
+    const TFHEpp::Key<L> &secret()const
+    {return std::get<TFHEpp::KeyPair<TFHEpp::Key<L>>>(keys).independent;}
+};
 template<class... T>void save(const std::filesystem::path &file,const T&... values)
 {
     std::ofstream f(file,std::ios::binary);if(!f)throw std::runtime_error("cannot create "+file.string());
@@ -37,11 +46,39 @@ template<std::size_t A,std::size_t W>struct Fixture {
     std::vector<typename RAM::Word> data;
     template<class Archive>void serialize(Archive &ar){ar(initial,addresses,enables,data);}
 };
+template<std::size_t A=2,std::size_t W=2>
 inline std::vector<PlainRequest> trace()
 {
+    if constexpr(A==8 && W==1)
+        return {{0,true,1},{255,true,0},{127,false,0},{0,false,0},
+                {255,false,1},{128,true,1},{128,false,0},{127,true,0}};
+    static_assert((A==2&&W==2)||(A==8&&W==1));
     return {{0,true,1},{1,true,2},{2,true,3},{3,true,0},
             {0,false,2},{1,false,3},{2,false,0},{3,false,1},
             {0,true,2},{0,true,1},{1,true,1},{2,true,2},
             {0,false,0},{1,false,0},{2,false,0},{3,false,0}};
+}
+template<std::size_t A,std::size_t W>
+void saveTrace(const std::filesystem::path &root,const TFHEpp::Key<L> &secret,
+               const std::string &filename)
+{
+    if(std::filesystem::exists(root/filename))return;
+    auto fixture=std::make_unique<Fixture<A,W>>();
+    for(std::size_t w=0;w<W;++w)for(std::size_t i=0;i<(std::size_t{1}<<A);++i){
+        TFHEpp::Polynomial<L> message{};message[0]=(i>>w)&1?L::μ:-L::μ;
+        TFHEpp::trlweSymEncrypt<L>(fixture->initial[w][i],message,secret);
+    }
+    for(const auto request:trace<A,W>()){
+        typename Fixture<A,W>::RAM::Address address;
+        typename Fixture<A,W>::RAM::Word word;
+        TFHEpp::TLWE<L> enable;
+        for(std::size_t i=0;i<A;++i)
+            TFHEpp::tlweSymEncrypt<L>(address[i],(request.address>>i)&1?L::μ:-L::μ,secret);
+        for(std::size_t i=0;i<W;++i)
+            TFHEpp::tlweSymEncrypt<L>(word[i],(request.data>>i)&1?L::μ:-L::μ,secret);
+        TFHEpp::tlweSymEncrypt<L>(enable,request.enable?L::μ:-L::μ,secret);
+        fixture->addresses.push_back(address);fixture->enables.push_back(enable);fixture->data.push_back(word);
+    }
+    save(root/filename,*fixture);
 }
 } // namespace ckks_ram
