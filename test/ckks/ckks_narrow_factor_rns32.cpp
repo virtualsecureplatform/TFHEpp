@@ -219,6 +219,7 @@ int main()
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> four_term(raw,direct_cache,true,false,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> unpacked(raw,direct_cache,true,false,true,false,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> staged_tables(raw,direct_cache,true,false,true,false,true,true,false,true);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> scalar_staged_tables(raw,direct_cache,true,false,true,false,true,true,false,true,true,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> joint(raw,direct_cache,true,false,true,false,true,true,true,true);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> joint_streamed(raw,{},true,false,true,false,true,true,true,true);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> chunked(raw,direct_cache,true,false,true,false,true,false);
@@ -269,6 +270,8 @@ int main()
                 key->selector_ntt_chunk_size=chunk;
                 const auto actual=direct.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto staged=staged_tables.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                const auto scalar_staged=scalar_staged_tables.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                for(std::size_t c=0;c<columns;++c)if(scalar_staged[c].ct!=staged[c].ct)throw std::runtime_error("batched table encoding differs from scalar staged tables");
                 for(std::size_t c=0;c<columns;++c)if(staged[c].ct!=actual[c].ct)throw std::runtime_error("parallel table preparation differs from original");
                 const auto shared=joint.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 const auto shared_streamed=joint_streamed.evaluate(variants,tail,0,*key,nullptr,nullptr);

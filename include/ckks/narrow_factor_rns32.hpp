@@ -78,7 +78,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     CKKSNarrowFactorTimings *timings, bool prefetch_raw = false,
     std::span<const FactorSelectorRNS32<Schedule>> retained = {}, bool tiled_matrix = true,
     bool parallel_conjugation = false, bool dot8_matrix = true, bool vector_short_stages = false,
-    bool packed_matrix = true,bool all_retained_rows = true,bool joint_components = false,bool parallel_table_ntt = false,bool fused_components = true)
+    bool packed_matrix = true,bool all_retained_rows = true,bool joint_components = false,bool parallel_table_ntt = false,bool fused_components = true,bool batch_table_encode = true)
 {
     using P = typename Schedule::Param;
     using Cache = FactorSelectorRNS32<Schedule>;
@@ -109,7 +109,7 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
         // Convert the wide torus coefficient once, rather than once per RNS
         // prime. Prime transforms then expose enough independent work even
         // when the number of requested columns is smaller than the team.
-        using SmallCoefficient=std::pair<bool,std::uint64_t>;
+        using SmallCoefficient=std::conditional_t<(Schedule::plain_log_delta<63),std::int64_t,std::pair<bool,std::uint64_t>>;
         std::vector<std::vector<SmallCoefficient>> coefficients(2*columns);
 #pragma omp parallel for collapse(2) schedule(static)
         for(std::size_t t=0;t<2;++t)for(std::size_t column=0;column<columns;++column){
@@ -124,9 +124,12 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                 ckksSlotEncode<P,Schedule::selector_log_q,Schedule::plain_log_delta>(*polynomial,transformed);
                 auto&row=coefficients[t*columns+column];row.resize(P::n);
                 for(std::size_t i=0;i<P::n;++i){
-                    row[i]=ckks_detail::smallSignedMagnitude<P,Schedule::selector_log_q>((*polynomial)[i]);
-                    if(row[i].second>(std::uint64_t{1}<<Schedule::plain_log_delta)+1)
+                    const auto [negative,magnitude]=ckks_detail::smallSignedMagnitude<P,Schedule::selector_log_q>((*polynomial)[i]);
+                    if(magnitude>(std::uint64_t{1}<<Schedule::plain_log_delta)+1)
                         throw std::invalid_argument("direct RNS table exceeds proved coefficient bound");
+                    if constexpr(Schedule::plain_log_delta<63)
+                        row[i]=negative?-std::int64_t(magnitude):std::int64_t(magnitude);
+                    else row[i]={negative,magnitude};
                 }
             }catch(...){
 #pragma omp critical(direct_rns_table_error)
@@ -141,7 +144,10 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
                     const auto modulus=modular_rns32::primes[prime].value;
                     const auto&row=coefficients[t*columns+column];
                     std::vector<std::uint32_t> spectrum(P::n);
-                    for(std::size_t i=0;i<P::n;++i){
+                    if constexpr(Schedule::plain_log_delta<63){
+                        static const modular_rns32::SignedEncoder<Cache::prime_count> encoder;
+                        encoder.residues(spectrum,row,prime,batch_table_encode);
+                    }else for(std::size_t i=0;i<P::n;++i){
                         const auto [negative,magnitude]=row[i];const auto value=magnitude%modulus;
                         spectrum[i]=negative&&value?modulus-value:value;
                     }
@@ -463,7 +469,7 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
     static_assert(SourceSchedule::tail_blocks_per_pack == TargetSchedule::tail_blocks_per_pack && SourceSchedule::tail_blocks_per_pack == SelectorSchedule::tail_blocks_per_pack);
     std::shared_ptr<const Source> source_;
     std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained_;
-    bool tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_,joint_components_,parallel_table_ntt_,fused_components_;
+    bool tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_,joint_components_,parallel_table_ntt_,fused_components_,batch_table_encode_;
     struct FactorKeys {
         const CKKSGaloisKey<P,SourceSchedule::factor_key_log_q> &factor_galois;
         bool staged_fft_caches;
@@ -474,8 +480,8 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
 public:
     explicit CKKSNarrowDeferredRescaleFactorSourceRNS32(std::shared_ptr<const Source> source,
         std::shared_ptr<const CKKSNarrowFactorSelectorCacheRNS32<SourceSchedule,SelectorSchedule>> retained={},bool tiled_matrix=true,
-        bool parallel_conjugation=false,bool dot8_matrix=true,bool vector_short_stages=false,bool packed_matrix=true,bool all_retained_rows=true,bool joint_components=false,bool parallel_table_ntt=false,bool fused_components=true)
-        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix),parallel_conjugation_(parallel_conjugation),dot8_matrix_(dot8_matrix),vector_short_stages_(vector_short_stages),packed_matrix_(packed_matrix),all_retained_rows_(all_retained_rows),joint_components_(joint_components),parallel_table_ntt_(parallel_table_ntt),fused_components_(fused_components)
+        bool parallel_conjugation=false,bool dot8_matrix=true,bool vector_short_stages=false,bool packed_matrix=true,bool all_retained_rows=true,bool joint_components=false,bool parallel_table_ntt=false,bool fused_components=true,bool batch_table_encode=true)
+        : source_(std::move(source)),retained_(std::move(retained)),tiled_matrix_(tiled_matrix),parallel_conjugation_(parallel_conjugation),dot8_matrix_(dot8_matrix),vector_short_stages_(vector_short_stages),packed_matrix_(packed_matrix),all_retained_rows_(all_retained_rows),joint_components_(joint_components),parallel_table_ntt_(parallel_table_ntt),fused_components_(fused_components),batch_table_encode_(batch_table_encode)
     {
         if (!source_ || !source_->hasRawChunks()) throw std::invalid_argument("direct RNS factor source requires raw chunks");
         if (retained_ && retained_->source()!=source_.get())
@@ -493,7 +499,7 @@ public:
         auto factors = narrow_detail::packedFactorsBatchRNS32<SourceSchedule,DirectCRT>(tables,view,key.selector_ntt_chunk_size,
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
             source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):
-                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_,joint_components_,parallel_table_ntt_,fused_components_);
+                std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_,joint_components_,parallel_table_ntt_,fused_components_,batch_table_encode_);
         std::vector<typename TargetSchedule::Factor> result(factors.size());
         for (std::size_t i = 0; i < factors.size(); ++i)
             CKKSScaleDown<P,SourceSchedule::factor_log_q,SourceSchedule::log_delta,drop>(result[i],factors[i]);
