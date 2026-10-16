@@ -4685,3 +4685,23 @@ a speedup nor a regression. This follow-up improves the resource accounting
 by sampling interval CPU ticks instead of lifetime process CPU percentages.
 Evidence and both complete block summaries are in
 `narrow-head-factor-followup-validation.json`.
+
+
+The original-degree Tanh profile has seven basis roots; its factor finish still
+uses the per-column path. An isolated candidate extends the existing full-team
+inverse/CRT plus native batch switch from three/four columns to seven. Generate
+it with `test/ckks/tools/make_factor_finish_replay.py DIR --seven-columns` and
+compile `DIR/replay.cpp` using the normal retained-replay flags. The option
+requires original-degree Tanh and rejects sparse/reduced-degree profiles. The
+production header and dispatch remain unchanged.
+
+The padded seven-column finish matches every reference coefficient, including
+wrapped ciphertexts, nested-team evaluation and an independent N512 Garner
+cross-check. Six complete retained-key Tanh outputs match the original-degree
+reference byte for byte; all nine saved key hashes are unchanged. The measured
+control/candidate means were 10.550/9.908 seconds, with substantial changing CPU
+activity and changing tree times despite identical tree code. These observations
+do not establish a gain. A final repeat failed its quiet gate and did not launch.
+Builds, commands, reports and limitations are recorded in
+`narrow-seven-column-factor-finish-validation.json`. The candidate remains
+experimental pending a stable latency comparison.
