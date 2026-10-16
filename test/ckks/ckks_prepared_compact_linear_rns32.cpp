@@ -2,14 +2,70 @@
 #include <ckks/prepared_compact_linear_rns32.hpp>
 #include <iostream>
 #include <random>
+#include <boost/multiprecision/cpp_int.hpp>
 
 using namespace TFHEpp;
 using P=narrow_benchmark::BenchmarkParam<9,7>;
 using Plan=CKKSCompactRealLinearTransformPlan<P,93,52,37>;
 using Prepared=CKKSPreparedCompactRealLinearTransformRNS32<P,93,52,37>;
 
+template<std::uint32_t Q>void checkWiderRotationArithmetic()
+{
+    using BP=narrow_benchmark::BenchmarkParam<9,7>;
+    using Integer=boost::multiprecision::cpp_int;
+    const auto integer=[](const BP::T&value){Integer out=0;for(std::size_t j=BP::T::limbs;j-->0;){out<<=64;out+=value.limb[j];}return out;};
+    const Integer modulus=Integer{1}<<Q,mask=modulus-1,half=modulus/2;
+    auto raw=std::make_unique<CKKSGaloisKey<BP,Q>>();std::mt19937_64 random(20261023+Q);
+    for(std::size_t bit:{std::size_t{0},std::size_t{BP::nbit}})
+        for(auto&source:(*raw)[bit].data)for(auto&row:source)for(auto&component:row)for(auto&v:component){for(auto&w:v.limb)w=random();v=ckks_detail::reduceToLevel<BP,Q>(v);}
+    CKKSRetainedPreparedGaloisKeyFFT<BP,Q> original(*raw);
+    CKKSRetainedPreparedGaloisKeyFFT<BP,Q,8> wider(*raw);
+    if(wider.spectrum_bytes()*2!=original.spectrum_bytes())throw std::runtime_error("wider rotation cache did not halve spectra");
+    for(int trial=0;trial<4;++trial){
+        auto input=std::make_unique<TRLWE<BP>>();
+        for(auto&component:*input){
+            for(auto&v:component)for(auto&w:v.limb)w=random();
+            component[0]={};component[1]=BP::T{1};component[2]=BP::T{}-BP::T{1};
+            component[3]=BP::T{1}<<(Q-1);component[4]=(BP::T{1}<<Q)+BP::T{3};
+        }
+        // The FFT backend starts at N512. Keep eight nonzero mask
+        // coefficients so a direct convolution oracle stays inexpensive;
+        // higher storage bits still exercise noncanonical input handling.
+        for(std::size_t i=8;i<BP::n;++i)(*input)[0][i]=((*input)[0][i]>>Q)<<Q;
+        for(std::size_t bit:{std::size_t{0},std::size_t{BP::nbit}}){
+            const auto exponent=bit?2*BP::n-1:5;
+            auto actual=std::make_unique<TRLWE<BP>>(),permuted=std::make_unique<TRLWE<BP>>();
+            CKKSEvalAuto<BP,Q>(*actual,*input,exponent,wider.get(bit));
+            for(std::size_t c=0;c<2;++c)Automorphism<BP>((*permuted)[c],(*input)[c],exponent);
+            std::array<std::vector<Integer>,2> expected;
+            for(auto&component:expected)component.resize(BP::n);
+            for(std::size_t i=0;i<BP::n;++i)expected[1][i]=integer((*permuted)[1][i])&mask;
+            for(std::size_t i=0;i<BP::n;++i){
+                Integer value=integer((*permuted)[0][i])&mask;if(value>=half)value-=modulus;
+                for(std::size_t row=0;row<(Q+7)/8;++row){
+                    Integer residue=(value+128)%256;if(residue<0)residue+=256;
+                    const Integer digit=residue-128;value=(value-digit)/256;
+                    if(digit==0)continue;
+                    // Match the desired public power2^(8*row) to its original
+                    // four-bit encrypted row; the oracle does not use FFTs.
+                    const auto old_row=CKKSAutoKey<BP,Q>::key_switch_rows-1-2*row;
+                    for(std::size_t c=0;c<2;++c)for(std::size_t j=0;j<BP::n;++j){
+                        const auto destination=(i+j)%BP::n;
+                        const Integer product=digit*integer((*raw)[bit][0][old_row][c][j]);
+                        expected[c][destination]+=(i+j<BP::n?-product:product);
+                    }
+                }
+            }
+            for(std::size_t c=0;c<2;++c)for(std::size_t i=0;i<BP::n;++i)
+                if(integer((*actual)[c][i])!=(expected[c][i]&mask))throw std::runtime_error("wider prepared rotation differs from integer convolution oracle");
+        }
+    }
+    std::cout<<"wider S2C rotation Q="<<Q<<" primary8 matches independent integer oracle; half spectrum bytes\n";
+}
+
 int main()
 {
+    checkWiderRotationArithmetic<93>();checkWiderRotationArithmetic<56>();
     Plan plan; plan.has_direct=true; plan.has_conjugate=true;
     for (auto *part:{&plan.direct,&plan.conjugate}) {
         part->k_step=2;
@@ -77,6 +133,14 @@ int main()
         if(omp_get_max_active_levels()!=2)throw std::runtime_error("baby table changed caller OpenMP policy");
         omp_set_max_active_levels(active_levels);
 #endif
+        CKKSRetainedPreparedGaloisKeyFFT<P,93,8> wider_cache(*fixture);
+        std::vector<bool> wider_used(32,true);
+        ckks_detail::CKKSSparseBabyStepTable<P> wider_serial(32),wider_parallel(32);
+        ckks_detail::CKKSBuildSparseBabyStepRotationTable<P,93>(wider_serial,input->ct,wider_used,wider_cache);
+        ckks_detail::CKKSBuildSparseBabyStepRotationTable<P,93>(wider_parallel,input->ct,wider_used,wider_cache,8);
+        for(std::size_t i=0;i<wider_serial.size();++i)
+            if(bool(wider_serial[i])!=bool(wider_parallel[i])||(wider_serial[i]&&*wider_serial[i]!=*wider_parallel[i]))
+                throw std::runtime_error("wider retained rotations changed with parallel lookup");
         std::vector<bool> used(8,true);bool rejected=false;
         ckks_detail::CKKSSparseBabyStepTable<P> failed(8);
         CKKSLazyPreparedGaloisKeyFFT<P,93> lazy(*fixture);

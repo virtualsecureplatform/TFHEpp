@@ -379,9 +379,9 @@ inline std::size_t CKKSRotateSlotsBatchWithBoundedFFT(
 // Evaluation-owned derived public cache. The coordinator performs rotations
 // serially; each switch may use its existing internal OpenMP workers. Do not
 // share this mutable cache between concurrent evaluations.
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ, std::uint32_t PrimaryBits=P::B̅gbit>
 struct CKKSLazyPreparedGaloisKeyFFT {
-    using Auto = CKKSPreparedAutoKeyFFT<P, LogQ>;
+    using Auto = CKKSPreparedAutoKeyFFT<P, LogQ,CKKSPreparedAutoSecondaryBits<P,LogQ>(),PrimaryBits>;
     const CKKSGaloisKey<P, LogQ> &raw;
     mutable std::array<std::unique_ptr<Auto>, P::nbit + 1> keys;
     mutable std::size_t prepared_keys = 0, peak_spectrum_bytes = 0;
@@ -400,7 +400,7 @@ struct CKKSLazyPreparedGaloisKeyFFT {
         if (!(index < P::nbit - 1 || index == P::nbit))
             throw std::invalid_argument("invalid S2C prepared Galois key index");
         if (!keys[index]) {
-            keys[index] = makeCKKSPreparedAutoKeyFFT<P, LogQ>(raw[index]);
+            keys[index] = makeCKKSPreparedAutoKeyFFT<P,LogQ,CKKSPreparedAutoSecondaryBits<P,LogQ>(),PrimaryBits>(raw[index]);
             ++prepared_keys;
             peak_spectrum_bytes = std::max(peak_spectrum_bytes, spectrum_bytes());
         }
@@ -414,19 +414,19 @@ struct CKKSLazyPreparedGaloisKeyFFT {
     }
 };
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ, std::uint32_t PrimaryBits=P::B̅gbit>
 inline void CKKSRotateSlots(TRLWE<P> &result, const TRLWE<P> &input, int steps,
-                           const CKKSLazyPreparedGaloisKeyFFT<P, LogQ> &key)
+                           const CKKSLazyPreparedGaloisKeyFFT<P, LogQ,PrimaryBits> &key)
 {
     ckks_detail::CKKSRotateSlotsBinaryChain<P, LogQ>(result, input, steps,
-        [&](std::size_t bit) -> const CKKSPreparedAutoKeyFFT<P, LogQ> & {
+        [&](std::size_t bit) -> const typename CKKSLazyPreparedGaloisKeyFFT<P,LogQ,PrimaryBits>::Auto & {
             return key.get(bit);
         });
 }
 
-template <class P, std::uint32_t LogQ>
+template <class P, std::uint32_t LogQ, std::uint32_t PrimaryBits=P::B̅gbit>
 inline void CKKSConjugateSlots(TRLWE<P> &result, const TRLWE<P> &input,
-                             const CKKSLazyPreparedGaloisKeyFFT<P, LogQ> &key)
+                             const CKKSLazyPreparedGaloisKeyFFT<P, LogQ,PrimaryBits> &key)
 {
     CKKSEvalAuto<P, LogQ>(result, input, 2 * P::n - 1, key.get(P::nbit));
     ckks_detail::reduceTRLWEToLevel<P, LogQ>(result);

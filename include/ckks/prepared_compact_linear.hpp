@@ -153,9 +153,9 @@ inline void CKKSRealLinearTransform(
 // BSGS boundaries. This adapter is prepared before use and retains all public
 // rotation/conjugation spectra across evaluations. The explicit coordinator
 // hook makes subsequent concurrent rotation lookups read-only.
-template <class P,std::uint32_t Q>
-struct CKKSRetainedPreparedGaloisKeyFFT : CKKSLazyPreparedGaloisKeyFFT<P,Q> {
-    using Base=CKKSLazyPreparedGaloisKeyFFT<P,Q>;
+template <class P,std::uint32_t Q,std::uint32_t PrimaryBits=P::B̅gbit>
+struct CKKSRetainedPreparedGaloisKeyFFT : CKKSLazyPreparedGaloisKeyFFT<P,Q,PrimaryBits> {
+    using Base=CKKSLazyPreparedGaloisKeyFFT<P,Q,PrimaryBits>;
     explicit CKKSRetainedPreparedGaloisKeyFFT(const CKKSGaloisKey<P,Q> &raw)
         : Base(raw)
     {
