@@ -43,4 +43,23 @@ void multiply(std::span<CKKSCiphertext<P,Q-Delta,Delta>> output,
                 output[j].ct[c][i]=ckks_detail::roundedLevelRightShift<P,Q,Delta>(value);
             }
 }
+// Bound the complete tensor/switch workspace, rather than only the switch
+// workspace. The immutable key is shared across successive work windows.
+template<class P, std::uint32_t Q, std::uint32_t Delta, std::uint32_t Auxiliary,
+         std::uint32_t Bits, std::uint32_t Chunk>
+void multiplyWindowed(std::span<CKKSCiphertext<P,Q-Delta,Delta>> output,
+                      std::span<const CKKSCiphertext<P,Q,Delta>> left,
+                      std::span<const CKKSCiphertext<P,Q,Delta>> right,
+                      const CKKSAuxiliaryDDRelinKeyNTT<P,Q,Auxiliary,Bits,20,true,Chunk>& key,
+                      std::size_t window=8)
+{
+    if(output.size()!=left.size()||left.size()!=right.size()||!window)
+        throw std::invalid_argument("invalid windowed DD multiply shape/window");
+    for(std::size_t offset=0;offset<left.size();offset+=window){
+        const auto count=std::min(window,left.size()-offset);
+        multiply<P,Q,Delta,Auxiliary,Bits,Chunk>(output.subspan(offset,count),
+            left.subspan(offset,count),right.subspan(offset,count),key,window);
+    }
+}
+
 }
