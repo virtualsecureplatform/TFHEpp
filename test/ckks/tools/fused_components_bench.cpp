@@ -1,4 +1,4 @@
-// Modes: fused (default), eight-terms, hoist, point-major.
+// Modes: fused (default), eight-terms, hoist, point-major, recurrence, tile32/64/128/512.
 // fused=1 selects the candidate; fused=0 is its matched control.
 // Public-residue CPU experiment; no keys or encryption. Build from repo root:
 // c++ -O3 -march=native -funroll-loops -fopenmp -std=c++20 -Iinclude \
@@ -15,11 +15,11 @@ constexpr std::size_t N=16384,Count=528,Primes=17;
 struct Selector{std::array<std::vector<uint32_t>,Primes> spectra;};
 using Tables=std::array<std::array<std::vector<uint32_t>,Primes>,2>;
 using Sums=std::array<std::array<std::vector<uint32_t>,Primes>,4>;
-template<bool Fused,bool Packed,std::size_t Terms,bool HoistFirst=false,bool HoistSecond=false>
+template<bool Fused,bool Packed,std::size_t Terms,bool HoistFirst=false,bool HoistSecond=false,bool Recurrence=false,size_t Tile=256>
 void multiply(Sums&sums,const Tables&base,const std::vector<Selector>&cache,const std::array<size_t,Count>&exponents){
  constexpr std::size_t Columns=Packed?4:8;
 #pragma omp parallel for collapse(2) schedule(dynamic,1)
- for(size_t prime=0;prime<Primes;++prime)for(size_t begin=0;begin<N;begin+=256){
+ for(size_t prime=0;prime<Primes;++prime)for(size_t begin=0;begin<N;begin+=Tile){
   modular_ntt32::Montgomery arithmetic(modular_rns32::primes[prime].value);
   for(size_t local=0;local<Count;local+=Terms){
    std::array<const uint32_t*,Terms> selectors0,selectors1;
@@ -27,11 +27,15 @@ void multiply(Sums&sums,const Tables&base,const std::vector<Selector>&cache,cons
     selectors0[t]=cache[local+t].spectra[prime].data();
     if constexpr(HoistSecond)selectors1[t]=selectors0[t]+N;
    }
-   for(size_t i=begin;i<begin+256;++i){
+   std::array<size_t,Terms> positions;
+   if constexpr(Recurrence)for(size_t t=0;t<Terms;++t)positions[t]=narrow_detail::narrowNTTPermutationIndex<N>(exponents[local+t],begin);
+   for(size_t i=begin;i<begin+Tile;++i){
    std::array<const uint32_t*,Terms> left,right;
    std::array<uint32_t,Terms> values0,values1;
    for(size_t t=0;t<Terms;++t){
-    const auto position=narrow_detail::narrowNTTPermutationIndex<N>(exponents[local+t],i)*8;
+    size_t position;
+    if constexpr(Recurrence){position=positions[t]*8;positions[t]=(positions[t]+exponents[local+t])&(N-1);}
+    else position=narrow_detail::narrowNTTPermutationIndex<N>(exponents[local+t],i)*8;
     left[t]=base[0][prime].data()+position;
     if constexpr(Packed)right[t]=left[t]+4;else right[t]=base[1][prime].data()+position;
     if constexpr(HoistFirst)values0[t]=selectors0[t][i];else values0[t]=cache[local+t].spectra[prime][i];
@@ -44,7 +48,7 @@ void multiply(Sums&sums,const Tables&base,const std::vector<Selector>&cache,cons
    else{arithmetic.addDotPair<Terms>(a0,b0,left,right,values0,Columns);arithmetic.addDotPair<Terms>(a1,b1,left,right,values1,Columns);}
   }
   }
-  for(auto&component:sums)for(size_t i=begin*Columns;i<(begin+256)*Columns;++i)component[prime][i]=arithmetic.canonical(component[prime][i]);
+  for(auto&component:sums)for(size_t i=begin*Columns;i<(begin+Tile)*Columns;++i)component[prime][i]=arithmetic.canonical(component[prime][i]);
  }
 }
 template<bool Packed,std::size_t Terms>
@@ -74,7 +78,7 @@ void pointMajor(Sums&sums,const Tables&base,const std::vector<Selector>&cache,co
 }
 int main(int argc,char**argv){
  const std::string mode=argc>1?argv[1]:"fused";
- if(mode!="fused" && mode!="eight-terms" && mode!="hoist" && mode!="point-major")throw std::invalid_argument("mode must be fused, eight-terms, hoist or point-major");
+ if(mode!="fused" && mode!="eight-terms" && mode!="hoist" && mode!="point-major" && mode!="recurrence" && mode!="tile32" && mode!="tile64" && mode!="tile128" && mode!="tile512")throw std::invalid_argument("mode must be fused, eight-terms, hoist point-major or recurrence");
  std::mt19937_64 random(20261017);std::vector<Selector> cache(Count);std::array<size_t,Count> exponents;
  for(size_t y=0;y<Count;++y){exponents[y]=modular_ntt::power(5,(N/2-y)%(N/2),2*N);
   for(size_t p=0;p<Primes;++p){auto&v=cache[y].spectra[p];v.resize(2*N);for(auto&w:v)w=random()%modular_rns32::primes[p].value;}}
@@ -85,7 +89,18 @@ int main(int argc,char**argv){
   const auto run=[&](bool fused){
    for(auto&component:sums)for(auto&v:component)std::fill(v.begin(),v.end(),0);
    const auto start=std::chrono::steady_clock::now();
-   if(mode=="point-major"){
+   const auto tiled=[&]<size_t Tile>(){
+    if(columns==4){if(fused)multiply<true,true,8,false,false,false,Tile>(sums,base,cache,exponents);else multiply<true,true,8>(sums,base,cache,exponents);}
+    else{if(fused)multiply<true,false,4,false,false,false,Tile>(sums,base,cache,exponents);else multiply<true,false,4>(sums,base,cache,exponents);}
+   };
+   if(mode=="tile32")tiled.template operator()<32>();
+   else if(mode=="tile64")tiled.template operator()<64>();
+   else if(mode=="tile128")tiled.template operator()<128>();
+   else if(mode=="tile512")tiled.template operator()<512>();
+   else if(mode=="recurrence"){
+    if(columns==4){if(fused)multiply<true,true,8,false,false,true>(sums,base,cache,exponents);else multiply<true,true,8>(sums,base,cache,exponents);}
+    else{if(fused)multiply<true,false,4,false,false,true>(sums,base,cache,exponents);else multiply<true,false,4>(sums,base,cache,exponents);}
+   }else if(mode=="point-major"){
     if(columns==4){if(fused)pointMajor<true,8>(sums,base,cache,exponents);else multiply<true,true,8>(sums,base,cache,exponents);}
     else{if(fused)pointMajor<false,4>(sums,base,cache,exponents);else multiply<true,false,4>(sums,base,cache,exponents);}
    }else if(mode=="eight-terms"){
