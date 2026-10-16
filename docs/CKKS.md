@@ -4218,6 +4218,25 @@ commands, proofs and limits. The offline fitter is
 `test/ckks/tools/sparse_tanh_fit.py`; the independent continuous-error check is
 `test/ckks/tools/sparse_tanh_certificate.cpp`.
 
+`--basis-accumulate 1` weights and sums the exact frequency tensors before
+one relinearization and one product rescale. For sparse Tanh this reduces key
+switches from 16 to one and the paired reconstruction time from 189 ms to
+105 ms. The modulus, output scale and remaining multiplication level stay the
+same; ciphertext bytes change because rounding and key switching move.
+Independent integer-phase checks pass for sparse Tanh and all three original
+functions. The option is off by default. `--basis-accumulate-pair 1` compares
+termwise/accumulated/accumulated/termwise after a warmup for one function; it
+can be combined with `--sparse-tanh 1`. See
+[narrow-accumulated-basis-validation.json](narrow-accumulated-basis-validation.json)
+for precision proofs and timing limits. The end-to-end benefit is smaller than
+the reconstruction-stage reduction, with noticeable variation in unchanged stages.
+
+The fresh four-root CPU profile is recorded in
+[narrow-sparse-cpu-sampling-profile.json](narrow-sparse-cpu-sampling-profile.json).
+Rejected two-root activation fits, vector CRT, permutation recurrence and tile
+sizes are documented in
+[narrow-four-root-followup-experiments.json](narrow-four-root-followup-experiments.json).
+
 The separate `ckks_narrow_ll14_two_layer_fbs` runner reproduces a rejected
 three-seed experiment. Frequencies6/9/10 derive eight intermediate roots and
 cover degree40 in two multiplication layers. Its37-bit internal schedule fits
