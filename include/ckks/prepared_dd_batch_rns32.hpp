@@ -28,17 +28,21 @@ inline void CKKSMultRelinThenRescaleBatchRNS32(
         if(!item.output||!item.left||!item.right)
             throw std::invalid_argument("missing RNS32 product operand/output");
     constexpr auto KeyQ=Q+Auxiliary;
+    // Every polynomial is overwritten by the next phase. Retain one bounded
+    // workspace through all windows instead of zero-initializing it repeatedly.
+    const auto capacity=std::min(window,products.size());
+    std::vector<TRLWE3<P>> tensor(capacity);
+    std::vector<Polynomial<P>> lifted(capacity);
+    std::vector<TRLWE<P>> switched(capacity);
+    std::vector<std::exception_ptr> errors(capacity);
     for(std::size_t offset=0;offset<products.size();offset+=window){
         const auto size=std::min(window,products.size()-offset);
-        std::vector<TRLWE3<P>> tensor(size);
-        std::vector<Polynomial<P>> lifted(size);
-        std::vector<TRLWE<P>> switched(size);
 #ifdef _OPENMP
         const auto threads=std::min<int>(size,omp_get_max_threads());
 #else
         [[maybe_unused]] const auto threads=1;
 #endif
-        std::vector<std::exception_ptr> errors(size);
+        std::fill(errors.begin(),errors.end(),std::exception_ptr{});
 #pragma omp parallel for schedule(dynamic,1) num_threads(threads)
         for(std::size_t j=0;j<size;++j){
             try{
@@ -48,7 +52,7 @@ inline void CKKSMultRelinThenRescaleBatchRNS32(
             }catch(...){errors[j]=std::current_exception();}
         }
         for(const auto&error:errors)if(error)std::rethrow_exception(error);
-        CKKSApplyGadgetBatchRNS32<4>(switched,lifted,*key.cache,window);
+        CKKSApplyGadgetBatchRNS32<4>(std::span(switched).first(size),std::span<const Polynomial<P>>(lifted).first(size),*key.cache,window);
 #pragma omp parallel for collapse(3) schedule(dynamic,1)
         for(std::size_t j=0;j<size;++j)for(std::size_t c=0;c<2;++c)
             for(std::size_t begin=0;begin<P::n;begin+=256)
