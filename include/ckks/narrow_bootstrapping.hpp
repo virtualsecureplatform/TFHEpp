@@ -257,6 +257,8 @@ struct CKKSNarrowBootstrapKey {
     bool parallel_root_columns = false;
     // Invocation-local public table roots; never stored in the key archive.
     bool reuse_table_roots = true;
+    // Append completed leaves without initializing or relocating placeholders.
+    bool append_head_factors = true;
     std::size_t selector_ntt_chunk_size = 0;
     bool staged_fft_caches = false;
     // Optional caller-owned diagnostic observer, excluded from key archives.
@@ -287,6 +289,7 @@ struct CKKSNarrowBootstrapKey {
             parallel_public_tail_alignment = false;
             parallel_root_columns = false;
             reuse_table_roots = true;
+            append_head_factors = true;
             selector_ntt_chunk_size = 0;
             staged_fft_caches = false;
             factor_observer = {};
@@ -1702,7 +1705,7 @@ inline void CKKSNarrowBlindRotateBatch(
         }
         std::vector<std::vector<typename Schedule::Factor>> head(columns), tail(columns);
         for (std::size_t column = 0; column < columns; column++) {
-            head[column].resize(Schedule::blocks);
+            if(!key.append_head_factors)head[column].resize(Schedule::blocks);
             head[column].reserve(Schedule::blocks + 1);
             tail[column].reserve(Schedule::blocks + 1);
         }
@@ -1790,7 +1793,10 @@ inline void CKKSNarrowBlindRotateBatch(
                 tables[column] = key.reuse_table_roots?narrow_detail::headTable<Schedule>(table_roots[column],x):
                     narrow_detail::headTable<Schedule>(a[column],x,requests[begin+column].frequency);
             auto factors = evaluate_group(key.head, key.head_ntt, x * Schedule::block_width, false);
-            for (std::size_t column = 0; column < columns; column++) head[column][x] = std::move(factors[column]);
+            for (std::size_t column = 0; column < columns; column++) {
+                if(key.append_head_factors)head[column].push_back(std::move(factors[column]));
+                else head[column][x]=std::move(factors[column]);
+            }
         }
         for (std::size_t q = 0; q < Schedule::tail_packs; q++) {
             for (std::size_t column = 0; column < columns; column++)
