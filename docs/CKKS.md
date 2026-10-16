@@ -4514,3 +4514,22 @@ remain unchanged. The fused twist/untwist variant has arithmetic and component
 evidence only. Reproduction and limits are in
 `narrow-lazy-ntt-components-experiment.json` and
 `narrow-lazy-ntt-replay-experiment.json`.
+
+
+Windowed DD products now allocate their bounded tensor/lift/switch buffers
+once per invocation and reuse active prefixes across windows. This retains no
+input-dependent state after the call and preserves every ciphertext byte.
+Compared with the previous windowed path, two balanced retained sparse-Tanh
+processes measured DD trees at1.264→1.211 seconds and full refresh at
+5.264→5.192 seconds, about4.2% and1.4% less time respectively. The independent
+product control in the same experiment averaged5.405 seconds. The normal
+replay continues to require `--dd-windowed 1` to select this path.
+
+All27 output archives match previously qualified references; scalar builds,
+primary20/40 forests, odd carries and zero-valued partial tails pass. Component
+minor-fault reductions do not carry through to the integrated DD counts, so
+the latency gain is not attributed to page faults alone. Commands, samples,
+resource observations and scope are in
+`narrow-dd-scratch-reuse-component-validation.json` and
+`narrow-dd-scratch-reuse-replay-validation.json`. This is incremental progress;
+the remaining10x target is not established by these measurements.
