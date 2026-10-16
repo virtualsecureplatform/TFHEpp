@@ -1,0 +1,348 @@
+{
+  "scope": "CPU hybrid RAM prototype; TLWE encrypted address, enable, write data and read result. Read-before-write; full refresh after every access.",
+  "recorded_utc": "2026-10-16T14:32:29.486762+00:00",
+  "hardware": {
+    "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+    "platform": "Linux-6.8.0-139-generic-x86_64-with-glibc2.39",
+    "thread_count": 8,
+    "places": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14
+    ]
+  },
+  "timing_policy": "Sequential full RAM operations; validation and saved-key loading/public-cache preparation excluded. Shared host had unrelated CPU load; small RAM latency observation, not a controlled crossover study. TFHE refresh follows existing serial per-cell loop.",
+  "security_validated": false,
+  "security_scope": "Retuned core key profile reused. New packing/return bridge and cross-scheme circular dependencies do not have an end-to-end security qualification. No rejected padded-secret switch used.",
+  "profiles": [
+    {
+      "address_bits": 2,
+      "word_bits": 2,
+      "operations": 16,
+      "read_before_write": true,
+      "fixture_reused": true,
+      "keys_generated_during_evaluation": 0,
+      "bridge_setup_seconds": 38.419758834,
+      "packing_phase_max_error": 1.1563543012016453e-08,
+      "security_validated": false,
+      "backends": [
+        {
+          "name": "tfhe-cell",
+          "correct": true,
+          "seconds": 16.093366885,
+          "address_seconds": 9.894221043,
+          "read_seconds": 0.0030817600000000007,
+          "write_seconds": 2.081835338,
+          "refresh_seconds": 4.114085726999999,
+          "state_max_phase_error": 0.0029157272074371576,
+          "mean_access_seconds": 1.0058354303125
+        },
+        {
+          "name": "ckks-batch",
+          "correct": true,
+          "seconds": 187.876072547,
+          "address_seconds": 9.753700472,
+          "read_seconds": 0.002657081,
+          "write_seconds": 2.0648406489999998,
+          "refresh_seconds": 176.05478482700002,
+          "state_max_phase_error": 0.004802284762263298,
+          "mean_access_seconds": 11.7422545341875
+        }
+      ],
+      "ckks_refreshes": 16,
+      "pack_seconds": 8.137795791,
+      "bootstrap_seconds": 142.94302213400002,
+      "slots_to_coefficients_seconds": 22.653831688999997,
+      "to_tlwe_seconds": 2.319759766,
+      "ckks_to_tfhe_latency_ratio": 11.674130956531663,
+      "mean_ckks_refresh_stage_seconds": {
+        "pack_seconds": 0.5086122369375,
+        "bootstrap_seconds": 8.933938883375001,
+        "slots_to_coefficients_seconds": 1.4158644805624998,
+        "to_tlwe_seconds": 0.144984985375
+      }
+    },
+    {
+      "address_bits": 8,
+      "word_bits": 1,
+      "operations": 8,
+      "read_before_write": true,
+      "fixture_reused": true,
+      "keys_generated_during_evaluation": 0,
+      "bridge_setup_seconds": 5.889924189,
+      "packing_phase_max_error": 2.093247530865483e-08,
+      "security_validated": false,
+      "backends": [
+        {
+          "name": "tfhe-cell",
+          "correct": true,
+          "seconds": 88.620812128,
+          "address_seconds": 19.932326007999997,
+          "read_seconds": 0.042899168,
+          "write_seconds": 0.835423188,
+          "refresh_seconds": 67.810111898,
+          "state_max_phase_error": 0.004152861190959811,
+          "mean_access_seconds": 11.077601516
+        },
+        {
+          "name": "ckks-batch",
+          "correct": true,
+          "seconds": 138.82728024099998,
+          "address_seconds": 19.199759788999998,
+          "read_seconds": 0.042116083,
+          "write_seconds": 0.8222582589999999,
+          "refresh_seconds": 118.763104632,
+          "state_max_phase_error": 0.010197843424975872,
+          "mean_access_seconds": 17.353410030124998
+        }
+      ],
+      "ckks_refreshes": 8,
+      "pack_seconds": 4.186903531,
+      "bootstrap_seconds": 71.202409535,
+      "slots_to_coefficients_seconds": 11.171412085,
+      "to_tlwe_seconds": 32.196651846,
+      "ckks_to_tfhe_latency_ratio": 1.5665313475178266,
+      "mean_ckks_refresh_stage_seconds": {
+        "pack_seconds": 0.523362941375,
+        "bootstrap_seconds": 8.900301191875,
+        "slots_to_coefficients_seconds": 1.396426510625,
+        "to_tlwe_seconds": 4.02458148075
+      }
+    }
+  ],
+  "validation": {
+    "full_ram_operations_passed": 48,
+    "all_cell_boolean_checks_passed": 4352,
+    "encrypted_read_output_feedback_passed": true,
+    "integer_packing_oracle_passed": true,
+    "constructor_free_archive_reader_passed": true,
+    "owner_and_saved_traces_unchanged_after_reuse_check": true
+  },
+  "combined_process_peak_rss_kib": {
+    "4x2": 58478284,
+    "256x1": 58485304
+  },
+  "benchmark_provenance": {
+    "4x2": {
+      "recorded_utc": "2026-10-16T14:18:57.244900+00:00",
+      "hardware": {
+        "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+        "platform": "Linux-6.8.0-139-generic-x86_64-with-glibc2.39",
+        "thread_count": 8,
+        "places": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14
+        ]
+      },
+      "head_at_run": "976ba1005fbdf0dbe0c1b7bb027be8b88e347420",
+      "run_job": {
+        "argv": [
+          "env",
+          "OMP_NUM_THREADS=8",
+          "OMP_PLACES={0},{2},{4},{6},{8},{10},{12},{14}",
+          "taskset",
+          "-c",
+          "0-15",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-prototype/ckks_narrow_ll14_retuned_ram",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+          "tanh",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-prototype/fixture",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k/dd433-primary20.bin",
+          "unused-with-native-auto",
+          "--cache-gib",
+          "45",
+          "--s2c-cache-gib",
+          "4",
+          "--direct-rns",
+          "1",
+          "--s2c-rns",
+          "1",
+          "--tensor-rns",
+          "1",
+          "--auto-rns",
+          "1",
+          "--signed-basis",
+          "1",
+          "--dd-wide-rns",
+          "1",
+          "--matrix-tiled",
+          "1",
+          "--parallel-conjugation",
+          "1",
+          "--parallel-tail-alignment",
+          "1",
+          "--parallel-root-columns",
+          "1",
+          "--native-auto-directory",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/native32",
+          "--batch-product-trees",
+          "1",
+          "--dd-primary-bits",
+          "40",
+          "--dd-level-chunks",
+          "1",
+          "--matrix-retained-rows",
+          "1",
+          "--matrix-joint",
+          "1",
+          "--s2c-baby-workers",
+          "8",
+          "--parallel-table-ntt",
+          "1",
+          "--s2c-group-workers",
+          "8",
+          "--basis-accumulate",
+          "1",
+          "--basis-group-tensors",
+          "1",
+          "--native-auto-batch",
+          "1",
+          "--dd-windowed",
+          "1"
+        ]
+      },
+      "sha256": {
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/tlwe_coefficient_packing.hpp": "cdf200b0d9bf77fa7ff36961394611c73761ddfe04cffed26fc0e1ecf54c47c0",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/tfhe/refreshable_ram.hpp": "5a811085d21cd7b6f2dffd58a9361859507a52521c5d66858696ef4069f2850a",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_ram_fixture.hpp": "128907e8f061489b72017f814cba0e170e5fd327bc4a872fb37fc190e01c2975",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_ram_benchmark.hpp": "be1a13f0af56f38fb2fe4e1fc5540caef40a2b7240e11bb3b1e564fb9529278f",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_ll14_retuned_ram.cpp": "72c3d1baeb2dfacee01d71b1978f404830ecd57c8b68d6790e0892124487fe63",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_narrow_ll14_basis_ntt_fbs.cpp": "a2179202023c93b49d5526906cd5db766fa39d4bc93261fc051dda853f1653c6",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-prototype/fixture/trace-4x2.bin": "148c0de980167a173718fd28dbf2813829478e66f075b34b9c0dce93f07cecd9"
+      },
+      "timing_scope": "Sequential full RAM operations; validation and saved-key loading/public-cache preparation excluded. Shared host had unrelated CPU load; small RAM latency observation, not a controlled crossover study. TFHE refresh follows existing serial per-cell loop.",
+      "validation": "16 accesses per backend, read-before-write; every cell checked after each access; disabled writes, all addresses, repeat writes, ciphertext output feedback; exact packing arithmetic also tested against direct integer negacyclic convolution."
+    },
+    "256x1": {
+      "source_sha256": {
+        "include/ckks/tlwe_coefficient_packing.hpp": "cdf200b0d9bf77fa7ff36961394611c73761ddfe04cffed26fc0e1ecf54c47c0",
+        "include/tfhe/refreshable_ram.hpp": "5a811085d21cd7b6f2dffd58a9361859507a52521c5d66858696ef4069f2850a",
+        "test/ckks/ckks_ram_fixture.hpp": "0b72f2476bdf04149ec33f499c94b99f8a34716e2efab8bf4f92733ec41396de",
+        "test/ckks/ckks_ram_benchmark.hpp": "1ded0e7b32b47864ff6b559272f0ab9f7bc9e5363bea2243ebe1bb09cf84411f",
+        "test/ckks/ckks_narrow_ll14_retuned_ram.cpp": "72c3d1baeb2dfacee01d71b1978f404830ecd57c8b68d6790e0892124487fe63",
+        "test/ckks/ckks_narrow_ll14_basis_ntt_fbs.cpp": "699bd2de6791168b4a86e42dc6fe53dc98fa6bb0161e285541bac8ea3740e443"
+      },
+      "binary_sha256": "b303f166f47ec14acdaa869a18fa814f1a55f64d9cded52e294afcf4d8f0c81a",
+      "trace_sha256": "66d172067f6dfbd04594a9a9e8fcd13bfdb3ab85adf5a2c6aa7912a115466764",
+      "run_job": {
+        "argv": [
+          "env",
+          "CKKS_RAM_PROFILE=256x1",
+          "OMP_NUM_THREADS=8",
+          "OMP_PLACES={0},{2},{4},{6},{8},{10},{12},{14}",
+          "taskset",
+          "-c",
+          "0-15",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-prototype/ckks_narrow_ll14_retuned_ram",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+          "tanh",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-prototype/fixture",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k/dd433-primary20.bin",
+          "unused-with-native-auto",
+          "--cache-gib",
+          "45",
+          "--s2c-cache-gib",
+          "4",
+          "--direct-rns",
+          "1",
+          "--s2c-rns",
+          "1",
+          "--tensor-rns",
+          "1",
+          "--auto-rns",
+          "1",
+          "--signed-basis",
+          "1",
+          "--dd-wide-rns",
+          "1",
+          "--matrix-tiled",
+          "1",
+          "--parallel-conjugation",
+          "1",
+          "--parallel-tail-alignment",
+          "1",
+          "--parallel-root-columns",
+          "1",
+          "--native-auto-directory",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/native32",
+          "--batch-product-trees",
+          "1",
+          "--dd-primary-bits",
+          "40",
+          "--dd-level-chunks",
+          "1",
+          "--matrix-retained-rows",
+          "1",
+          "--matrix-joint",
+          "1",
+          "--s2c-baby-workers",
+          "8",
+          "--parallel-table-ntt",
+          "1",
+          "--s2c-group-workers",
+          "8",
+          "--basis-accumulate",
+          "1",
+          "--basis-group-tensors",
+          "1",
+          "--native-auto-batch",
+          "1",
+          "--dd-windowed",
+          "1"
+        ]
+      },
+      "build_results": [
+        {
+          "name": "ckks_ram_setup",
+          "exit_code": 0
+        },
+        {
+          "name": "ckks_narrow_ll14_retuned_ram",
+          "exit_code": 0
+        }
+      ]
+    }
+  },
+  "final_build_results": [
+    {
+      "name": "ckks_ram_setup",
+      "exit_code": 0
+    },
+    {
+      "name": "ckks_ram_fixture_check",
+      "exit_code": 0
+    },
+    {
+      "name": "ckks_narrow_ll14_retuned_ram",
+      "exit_code": 0
+    }
+  ],
+  "final_source_sha256": {
+    "include/ckks/tlwe_coefficient_packing.hpp": "cdf200b0d9bf77fa7ff36961394611c73761ddfe04cffed26fc0e1ecf54c47c0",
+    "include/tfhe/refreshable_ram.hpp": "5a811085d21cd7b6f2dffd58a9361859507a52521c5d66858696ef4069f2850a",
+    "test/ckks/ckks_ram_fixture.hpp": "df6bf7784380841fe49510a2799fe14f27cce9b2d99e7489e9402b11d21f91a1",
+    "test/ckks/ckks_ram_benchmark.hpp": "37c02961a78dec0c5898984a6e8fe8ca972eb8c78f7a8e936717c50f545ab05a",
+    "test/ckks/ckks_narrow_ll14_retuned_ram.cpp": "72c3d1baeb2dfacee01d71b1978f404830ecd57c8b68d6790e0892124487fe63",
+    "test/ckks/ckks_narrow_ll14_basis_ntt_fbs.cpp": "699bd2de6791168b4a86e42dc6fe53dc98fa6bb0161e285541bac8ea3740e443",
+    "test/ckks/ckks_ram_fixture_check.cpp": "64b640ea5146a4cbae6aef0e55661fea0279999bfc3e251c481e3ea07b45e35b"
+  },
+  "final_binary_sha256": "6c916966e6b671f454f0edf9c0cffc218a8659c75e18506611dcf9b335fa6907",
+  "post_measurement_change": "After both measured traces, owner deserialization was changed to avoid SecretKey default construction (which generated discarded secrets during excluded fixture-loading setup). Both encrypted fixtures were independently decrypted through the constructor-free reader; owner/trace hashes remained unchanged. Timed access and refresh arithmetic were unchanged.",
+  "raw_evidence_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-prototype",
+  "backend_scope": "TFHE follows the existing serial per-cell refresh loop. CKKS uses retained RNS selectors, batched product trees and independent native automorphisms. Replay-only windowed-DD/native-auto-batch flags in inherited job arguments are not applied by this RAM adapter; no best-tuned throughput claim is made."
+}

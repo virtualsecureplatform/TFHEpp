@@ -68,7 +68,7 @@ Build from the TFHEpp root:
 
 ```sh
 cmake -S . -B build
-cmake --build build --target ckks_ram_setup ckks_tlwe_coefficient_packing ckks_narrow_ll14_retuned_ram -j2
+cmake --build build --target ckks_ram_setup ckks_ram_fixture_check ckks_tlwe_coefficient_packing ckks_narrow_ll14_retuned_ram -j2
 build/test/ckks/ckks_tlwe_coefficient_packing
 ```
 
@@ -83,6 +83,11 @@ Setup refuses an existing destination. Repeated evaluations reuse
 `owner.bin`, `tfhe-eval.bin`, `pack48.bin`, `to-tfhe32.bin`, and
 `trace-4x2.bin`, and `trace-256x1.bin`. Private owner files are test fixtures and must stay private.
 The evaluator generates no keys or fresh input ciphertexts.
+Owner deserialization uses a constructor-free archive reader: TFHE's
+ordinary `SecretKey` constructor would otherwise generate discarded
+secrets before loading the retained ones. The separate
+`ckks_ram_fixture_check RAM_FIXTURE_DIRECTORY` validates the reader
+against both saved encrypted traces and their initial memories.
 
 Use the retuned bootstrap runner's public-key arguments and performance
 options, selecting the RAM executable and fixture directory:
@@ -119,6 +124,53 @@ It checks the read result and **every memory cell after every access**.
 Both backends start with the same saved encrypted memory and requests.
 `comparison.json` contains total access and individual stage timings.
 Setup/cache preparation and validation are excluded from access timings.
+
+## Measured comparison
+
+The [machine-readable record](ckks-ram-comparison.json) contains complete
+timings, commands, source hashes, and validation scope. On an i9-12900K,
+with eight CKKS threads pinned to P cores:
+
+| RAM | Accesses per backend | TFHE mean access | CKKS mean access | CKKS / TFHE |
+| --- | ---: | ---: | ---: | ---: |
+| 4 words x 2 bits | 16 | 1.006 s | 11.742 s | 11.67x |
+| 256 words x 1 bit | 8 | 11.078 s | 17.353 s | 1.57x |
+
+Both traces passed every read and every post-access memory-cell check:
+48 complete operations and 4,352 cell-bit checks across the two backends.
+The small trace also passed encrypted read-output feedback into a write.
+The packing phase audit errors were 1.16e-8 and 2.09e-8 in CKKS message
+units. The largest CKKS-backed memory error from the ideal `+/-1/8` TLWE
+phase was 0.01020 in the 256-word trace; these are Boolean correctness
+tests, not a statistical failure-probability qualification.
+
+The mean CKKS refresh-stage times were:
+
+| Stage | 8 cell bits | 256 cell bits |
+| --- | ---: | ---: |
+| TLWE coefficient packing | 0.509 s | 0.523 s |
+| CKKS Boolean bootstrap | 8.934 s | 8.900 s |
+| Slots-to-coefficients decoding | 1.416 s | 1.396 s |
+| Direct switch back to TLWE | 0.145 s | 4.025 s |
+
+The fixed bootstrap cost amortizes with batch size, while direct output
+switching grows with the number of cells. **There is no measured speed
+win yet.** The larger case closes much of the small-batch gap but does
+not establish a crossover point. The combined benchmark process peaked
+at about 55.8 GiB RSS, including retained CKKS caches and both schemes'
+evaluation material. This is not an isolated TFHE memory measurement.
+
+The TFHE callback follows the existing serial per-cell refresh loop;
+this is not a comparison against a newly parallelized TFHE implementation.
+The host had unrelated CPU load. The RAM adapter uses retained RNS
+selectors, batched product trees, and independent native automorphisms;
+the inherited replay runner's windowed-DD/native-auto-batch trial flags
+are not applied by this adapter. These are prototype measurements rather
+than best-tuned throughput claims.
+
+The final owner-loading correction described above was independently
+checked after these runs. It changes excluded setup work and leaves the
+timed RAM and refresh arithmetic unchanged.
 
 ## Limits of the assessment
 
