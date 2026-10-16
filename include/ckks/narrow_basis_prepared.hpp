@@ -61,7 +61,8 @@ inline void CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared(
     std::span<const typename Schedule::Root> roots,
     const CKKSNarrowFrequencyBasis &plan,
     const std::vector<std::complex<double>> &coefficients,
-    const ProductKey &product_key, Conjugate conjugate, RootConjugate root_conjugate=nullptr)
+    const ProductKey &product_key, Conjugate conjugate, RootConjugate root_conjugate=nullptr,
+    bool group_tensors=false)
 {
     using P=typename Schedule::Param;
     constexpr auto Q=Schedule::root_log_q;
@@ -80,6 +81,10 @@ inline void CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared(
     auto accumulated=std::make_unique<TRLWE3<P>>();
     auto tensor=std::make_unique<TRLWE3<P>>();
     std::vector<std::unique_ptr<typename Schedule::Root>> negative_roots(roots.size());
+    // Tensor multiplication is bilinear over Z_Q[X]/(X^N+1). The integer
+    // complex weights are ring elements real + imag*X^(N/2), so grouping
+    // weighted right operands preserves the entire tensor before switching.
+    std::vector<std::unique_ptr<typename Schedule::Root>> grouped_rhs(group_tensors?roots.size():0);
     for(std::size_t k=1;k<=plan.degree();++k){
         if(!weights[k][0] && !weights[k][1])continue;
         const auto expression=plan.expression(k);
@@ -96,6 +101,15 @@ inline void CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared(
                     rhs=negative.get();
                 }
             }
+            if(group_tensors){
+                auto&right=grouped_rhs[expression[0]];
+                if(!right)right=std::make_unique<typename Schedule::Root>();
+                for(std::size_t c=0;c<2;++c)for(std::size_t i=0;i<P::n;++i){
+                    const auto imaginary=i<P::n/2?-rhs->ct[c][i+P::n/2]:rhs->ct[c][i-P::n/2];
+                    right->ct[c][i]=ckks_detail::reduceToLevel<P,Q>(right->ct[c][i]+rhs->ct[c][i]*weights[k][0]+imaginary*weights[k][1]);
+                }
+                continue;
+            }
             if constexpr(requires{product_key.tensorProduct(*tensor,roots[expression[0]].ct,rhs->ct);})
                 product_key.tensorProduct(*tensor,roots[expression[0]].ct,rhs->ct);
             else CKKSTensorProductRescale<P,Q,Q,0>(*tensor,roots[expression[0]].ct,rhs->ct);
@@ -104,6 +118,13 @@ inline void CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared(
             const auto imaginary=i<P::n/2?-(*tensor)[c][i+P::n/2]:(*tensor)[c][i-P::n/2];
             (*accumulated)[c][i]=ckks_detail::reduceToLevel<P,Q>((*accumulated)[c][i]+(*tensor)[c][i]*weights[k][0]+imaginary*weights[k][1]);
         }
+    }
+    for(std::size_t j=0;j<grouped_rhs.size();++j)if(grouped_rhs[j]){
+        if constexpr(requires{product_key.tensorProduct(*tensor,roots[j].ct,grouped_rhs[j]->ct);})
+            product_key.tensorProduct(*tensor,roots[j].ct,grouped_rhs[j]->ct);
+        else CKKSTensorProductRescale<P,Q,Q,0>(*tensor,roots[j].ct,grouped_rhs[j]->ct);
+        for(std::size_t c=0;c<3;++c)for(std::size_t i=0;i<P::n;++i)
+            (*accumulated)[c][i]=ckks_detail::reduceToLevel<P,Q>((*accumulated)[c][i]+(*tensor)[c][i]);
     }
     auto unscaled=std::make_unique<CKKSCiphertext<P,Q,delta>>();
     CKKSRelinearization<P,Q>(unscaled->ct,*accumulated,product_key);

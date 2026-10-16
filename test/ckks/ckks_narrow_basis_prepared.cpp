@@ -117,6 +117,24 @@ template<std::uint32_t Nbit>void checkSparseTanh()
     CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Series>(*fft,roots,plan,approximation.coefficients,product,conjugate,root_conjugate);
     if(fft->ct!=accumulated->ct)throw std::runtime_error("accumulated sparse RNS and FFT tensors differ");
     CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Series>(*weighted,roots,plan,approximation.coefficients,rns,conjugate,root_conjugate);
+    switches=tensors=0;
+    CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Series>(*fft,roots,plan,approximation.coefficients,counted,conjugate,root_conjugate,true);
+    if(fft->ct!=accumulated->ct || switches!=1 || tensors>roots.size())
+        throw std::runtime_error("grouped sparse tensors changed coefficients or product count");
+    std::cout<<"grouped sparse tensors="<<tensors<<" original=16 identical\n";
+    // Full, noncanonical masks and bodies exercise modular bilinearity rather
+    // than only transparent encodings. Mixed real/imaginary integer weights
+    // include negative values and frequency differences.
+    auto random_roots=roots;std::mt19937_64 random(20261031);
+    for(auto&r:random_roots)for(auto&c:r.ct)for(auto&v:c)for(auto&w:v.limb)w=random();
+    auto complex_weights=approximation.coefficients;
+    for(auto&v:complex_weights)if(v!=std::complex<double>{})v={v.imag()/3,v.imag()};
+    const auto compare_grouped=[&](const auto&key){
+        CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Series>(*fft,random_roots,plan,complex_weights,key,conjugate,root_conjugate);
+        CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Series>(*accumulated,random_roots,plan,complex_weights,key,conjugate,root_conjugate,true);
+        if(fft->ct!=accumulated->ct)throw std::runtime_error("grouped dense ciphertexts changed modular coefficients");
+    };
+    compare_grouped(rns);compare_grouped(product);
     auto output=std::make_unique<CKKSCiphertext<BP,93,44>>();CKKSScaleDown<BP,121,72,28>(*output,*weighted);
     ckksSlotDecode<BP,93,44>(*slots,output->ct[1]);double error=0;
     for(std::size_t i=0;i<BP::n/2;++i)error=std::max(error,std::abs((*slots)[i]-std::tanh(x(i))));
