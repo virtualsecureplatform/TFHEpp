@@ -4,6 +4,7 @@
 
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 namespace TFHEpp {
+namespace ckks_detail { struct GadgetBatchRNS32Access; }
 
 template<std::uint32_t ChunkBits=80> struct CKKSUniformGadgetChunks {
     template<class P,std::uint32_t Q,std::uint32_t Bits>
@@ -22,6 +23,7 @@ struct CKKSNarrowLL14GadgetChunks {
 // The primary gadget and its balanced input decomposition stay unchanged.
 template<class P,std::uint32_t Q,std::uint32_t Bits,std::uint32_t ChunkBits=80>
 class CKKSPreparedGadgetRNS32 {
+    friend struct ckks_detail::GadgetBatchRNS32Access;
     static_assert(P::k==1 && is_multilimb_uint_v<typename P::T>);
     static_assert(Bits>0 && Bits<=64 && Q<=P::T::digits);
     static constexpr auto rows=(Q+Bits-1)/Bits;
