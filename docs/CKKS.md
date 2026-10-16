@@ -4657,3 +4657,19 @@ large component minor-fault reduction does not carry through proportionately
 to integrated root faults. Commands, samples, resource observations and scope
 are in `narrow-head-factor-staging-validation.json`. These measurements do not
 establish the 10x goal.
+
+
+A retained-input/key follow-up using eight threads on eight distinct P cores
+measured current GeLU/Tanh/Sigmoid at 5.907/10.090/5.769 seconds, using the
+original approximation degrees 12/40/12. All accuracy checks passed and all
+three output archives match qualified current-profile references. These are
+single observations with other CPU activity; timing excludes key loading,
+public preparation and post-multiply/decode. No keys or inputs were regenerated.
+
+The historical eight-thread GeLU result at `c63ad97` was 112.018 seconds. Its
+ratio to this observation is about 19, but parameters, keys, backend/cache
+policies and affinity differ. Both use scale44 and the same accuracy gates;
+output modulus/headroom differ. This is historical context, not a controlled
+speedup or proof that the intended 10x goal or paper performance is achieved.
+Commands, reports, hashes and resource accounting are in
+`narrow-eight-thread-followup-validation.json`.
