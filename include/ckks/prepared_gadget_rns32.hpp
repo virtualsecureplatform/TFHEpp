@@ -121,7 +121,7 @@ public:
         prepare([&](std::size_t r,std::size_t c,std::size_t i){return (*ordinary)[r][c][i];});
     }
     std::size_t byteSize()const{return count*chunks*rows*2*P::n*sizeof(std::uint32_t);}
-    void apply(TRLWE<P>&result,const Polynomial<P>&input,bool fused_rows=true)const{
+    void apply(TRLWE<P>&result,const Polynomial<P>&input,bool fused_rows=true,bool batch_encode=true)const{
         auto digits=std::make_unique_for_overwrite<std::array<std::array<std::int64_t,P::n>,rows>>();
         ckks_detail::activeBaseDecomposeSignedRows<P,Q,Bits,rows>(*digits,input);
         std::array<bool,rows> active{};
@@ -129,17 +129,13 @@ public:
         std::array<std::size_t,rows> active_rows;
         std::size_t active_count=0;
         for(std::size_t r=0;r<rows;++r)if(active[r])active_rows[active_count++]=r;
+        static const modular_rns32::SignedEncoder<count> encoder;
         std::array<std::vector<std::uint32_t>,count> transformed;
         for(auto &row:transformed)row.resize(rows*P::n);
 #pragma omp parallel for collapse(2) schedule(static)
         for(std::size_t p=0;p<count;++p)for(std::size_t r=0;r<rows;++r)if(active[r]){
             auto values=std::span(transformed[p]).subspan(r*P::n,P::n);
-            const auto modulus=modular_rns32::primes[p].value;
-            for(std::size_t i=0;i<P::n;++i){
-                const auto v=(*digits)[r][i];
-                const auto magnitude=v<0?std::uint64_t{0}-std::uint64_t(v):std::uint64_t(v);
-                const auto reduced=magnitude%modulus;values[i]=v<0&&reduced?modulus-reduced:reduced;
-            }
+            encoder.residues(values,(*digits)[r],p,batch_encode);
             plans()[p].forwardBitReversed(values);
         }
         digits.reset();

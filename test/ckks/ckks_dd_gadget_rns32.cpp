@@ -61,6 +61,8 @@ template<std::uint32_t Nbit,std::uint32_t DataQ>void check(){
   const auto run_old=[&]{auto t=std::chrono::steady_clock::now();old.apply(*expected,*input);old_time=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();};
   const auto run_new=[&]{auto t=std::chrono::steady_clock::now();direct.apply(*actual,*input);new_time=std::chrono::duration<double>(std::chrono::steady_clock::now()-t).count();};
   if(trial%2){run_new();run_old();}else{run_old();run_new();}
+  direct.apply(*unfused,*input,true,false);
+  if(*actual!=*unfused)throw std::runtime_error("batched signed gadget input encoding differs from scalar");
   direct.apply(*unfused,*input,false);
   if(*actual!=*unfused)throw std::runtime_error("fused gadget rows differ from unfused rows");
   if(*actual!=*expected)throw std::runtime_error("wide DD gadget differs from digit NTT");
