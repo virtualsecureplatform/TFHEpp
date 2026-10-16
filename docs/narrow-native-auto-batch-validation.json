@@ -362,5 +362,2027 @@
       "fractional_reduction_vs_legacy": 0.04701079227822624
     }
   },
-  "limitations": "One matched process, two measured samples per policy, sparse Tanh only; timing is preliminary. No final production component timing, broad function qualification or scalar-only build is claimed in this receipt. This does not close the remaining performance goal or establish parity with paper parameters/hardware. Keep opt-in pending broader qualification."
+  "limitations": "Two matched processes, four measured samples per policy for sparse Tanh. Cross-function qualification establishes coefficient equivalence, rather than a paired speedup for every profile. Default replay flags are unchanged. No10x closure or paper/hardware parity is claimed.",
+  "follow_up_qualification": {
+    "jobs": [
+      {
+        "name": "paired-repeat",
+        "argv": [
+          "taskset",
+          "-c",
+          "0-23",
+          "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+          "tanh",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-batch-20261017/paired-repeat",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+          "unused-with-native-auto",
+          "--cache-gib",
+          "45",
+          "--s2c-cache-gib",
+          "4",
+          "--direct-rns",
+          "1",
+          "--s2c-rns",
+          "1",
+          "--tensor-rns",
+          "1",
+          "--auto-rns",
+          "1",
+          "--signed-basis",
+          "1",
+          "--dd-wide-rns",
+          "1",
+          "--matrix-tiled",
+          "1",
+          "--parallel-conjugation",
+          "1",
+          "--parallel-tail-alignment",
+          "1",
+          "--parallel-root-columns",
+          "1",
+          "--native-auto-directory",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+          "--batch-product-trees",
+          "1",
+          "--dd-primary-bits",
+          "40",
+          "--dd-level-chunks",
+          "1",
+          "--matrix-retained-rows",
+          "1",
+          "--matrix-joint",
+          "1",
+          "--s2c-baby-workers",
+          "8",
+          "--parallel-table-ntt",
+          "1",
+          "--s2c-group-workers",
+          "8",
+          "--sparse-tanh",
+          "1",
+          "--basis-accumulate",
+          "1",
+          "--table-batch-encode",
+          "1",
+          "--s2c-input-primary-bits",
+          "8",
+          "--s2c-output-primary-bits",
+          "8",
+          "--native-auto-batch-pair",
+          "1"
+        ]
+      },
+      {
+        "name": "full",
+        "argv": [
+          "taskset",
+          "-c",
+          "0-23",
+          "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+          "all",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-batch-20261017/full",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+          "unused-with-native-auto",
+          "--cache-gib",
+          "45",
+          "--s2c-cache-gib",
+          "4",
+          "--direct-rns",
+          "1",
+          "--s2c-rns",
+          "1",
+          "--tensor-rns",
+          "1",
+          "--auto-rns",
+          "1",
+          "--signed-basis",
+          "1",
+          "--dd-wide-rns",
+          "1",
+          "--matrix-tiled",
+          "1",
+          "--parallel-conjugation",
+          "1",
+          "--parallel-tail-alignment",
+          "1",
+          "--parallel-root-columns",
+          "1",
+          "--native-auto-directory",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+          "--batch-product-trees",
+          "1",
+          "--dd-primary-bits",
+          "40",
+          "--dd-level-chunks",
+          "1",
+          "--matrix-retained-rows",
+          "1",
+          "--matrix-joint",
+          "1",
+          "--s2c-baby-workers",
+          "8",
+          "--parallel-table-ntt",
+          "1",
+          "--s2c-group-workers",
+          "8",
+          "--s2c-input-primary-bits",
+          "8",
+          "--s2c-output-primary-bits",
+          "8",
+          "--native-auto-batch",
+          "1"
+        ]
+      },
+      {
+        "name": "reduced",
+        "argv": [
+          "taskset",
+          "-c",
+          "0-23",
+          "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+          "all",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-batch-20261017/reduced",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+          "unused-with-native-auto",
+          "--cache-gib",
+          "45",
+          "--s2c-cache-gib",
+          "4",
+          "--direct-rns",
+          "1",
+          "--s2c-rns",
+          "1",
+          "--tensor-rns",
+          "1",
+          "--auto-rns",
+          "1",
+          "--signed-basis",
+          "1",
+          "--dd-wide-rns",
+          "1",
+          "--matrix-tiled",
+          "1",
+          "--parallel-conjugation",
+          "1",
+          "--parallel-tail-alignment",
+          "1",
+          "--parallel-root-columns",
+          "1",
+          "--native-auto-directory",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+          "--batch-product-trees",
+          "1",
+          "--dd-primary-bits",
+          "40",
+          "--dd-level-chunks",
+          "1",
+          "--matrix-retained-rows",
+          "1",
+          "--matrix-joint",
+          "1",
+          "--s2c-baby-workers",
+          "8",
+          "--parallel-table-ntt",
+          "1",
+          "--s2c-group-workers",
+          "8",
+          "--s2c-input-primary-bits",
+          "8",
+          "--s2c-output-primary-bits",
+          "8",
+          "--reduced-degree",
+          "1",
+          "--basis-accumulate",
+          "1",
+          "--native-auto-batch",
+          "1"
+        ]
+      },
+      {
+        "name": "default",
+        "argv": [
+          "taskset",
+          "-c",
+          "0-23",
+          "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+          "all",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-batch-20261017/default",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+          "unused-with-native-auto",
+          "--cache-gib",
+          "45",
+          "--s2c-cache-gib",
+          "4",
+          "--direct-rns",
+          "1",
+          "--s2c-rns",
+          "1",
+          "--tensor-rns",
+          "1",
+          "--auto-rns",
+          "1",
+          "--signed-basis",
+          "1",
+          "--dd-wide-rns",
+          "1",
+          "--matrix-tiled",
+          "1",
+          "--parallel-conjugation",
+          "1",
+          "--parallel-tail-alignment",
+          "1",
+          "--parallel-root-columns",
+          "1",
+          "--native-auto-directory",
+          "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+          "--batch-product-trees",
+          "1",
+          "--dd-primary-bits",
+          "40",
+          "--dd-level-chunks",
+          "1",
+          "--matrix-retained-rows",
+          "1",
+          "--matrix-joint",
+          "1",
+          "--s2c-baby-workers",
+          "8",
+          "--parallel-table-ntt",
+          "1",
+          "--s2c-group-workers",
+          "8"
+        ]
+      }
+    ],
+    "completion": {
+      "paired-repeat": {
+        "exit_code": 0,
+        "wall_seconds": 91.76848268508911
+      },
+      "full": {
+        "exit_code": 0,
+        "wall_seconds": 61.22129416465759
+      },
+      "reduced": {
+        "exit_code": 0,
+        "wall_seconds": 58.53144383430481
+      },
+      "default": {
+        "exit_code": 0,
+        "wall_seconds": 62.379111528396606
+      }
+    },
+    "all_27_replays": [
+      {
+        "directory": "paired",
+        "report": "tanh-trial0-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": true,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 5.795613455,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired",
+        "report": "tanh-trial1-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": true,
+        "native_auto_batch_pair_warmup": true,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.624597843,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired",
+        "report": "tanh-trial2-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": true,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.408740631,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired",
+        "report": "tanh-trial3-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 5.694866017,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired",
+        "report": "tanh-trial4-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": true,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.624136611,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired",
+        "report": "tanh-trial5-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.417589834,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired",
+        "report": "tanh-trial6-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.429017136000001,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired",
+        "report": "tanh-trial7-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": true,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.599888332,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired",
+        "report": "tanh-trial8-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 5.686802193,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial0-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": true,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 5.703209479,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial1-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": true,
+        "native_auto_batch_pair_warmup": true,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.618730197,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial2-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": true,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.384346443,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial3-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 5.664158788,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial4-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": true,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.596525668,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial5-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.417193345,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial6-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.408827329999999,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial7-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": true,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.606619013,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "paired-repeat",
+        "report": "tanh-trial8-report.json",
+        "output_sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 5.694906372,
+        "max_error": 2.4608982710372446e-08,
+        "post_product_max_error": 4.306094272863186e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "full",
+        "report": "gelu-report.json",
+        "output_sha256": "5d0c4badcad2f42f39ce879b7bc3118843ea2a1eda9289b33ad7d05eecd8f0e1",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/full/gelu-outputs.bin",
+        "byte_identical": true,
+        "function": "gelu",
+        "basis_root_count": 4,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.436328948,
+        "max_error": 3.551874328706455e-08,
+        "post_product_max_error": 2.0656955342481052e-07,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "full",
+        "report": "sigmoid-report.json",
+        "output_sha256": "c6f737c9613976f37810031d929e57ab6e87ada0309524c7452da88f7f630830",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/full/sigmoid-outputs.bin",
+        "byte_identical": true,
+        "function": "sigmoid",
+        "basis_root_count": 4,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 5.415515683,
+        "max_error": 1.8531451887681414e-08,
+        "post_product_max_error": 3.3336071939467675e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "full",
+        "report": "tanh-report.json",
+        "output_sha256": "1fecc1e8373f125c8804335530eed20445625f39d548ef6785f0d8e413178f12",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/full/tanh-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 7,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 9.051274085000001,
+        "max_error": 3.088298878048691e-08,
+        "post_product_max_error": 5.429867665165492e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "reduced",
+        "report": "gelu-report.json",
+        "output_sha256": "5fd0f00da88123a5118e0057cf3a80608a4f633c1708c3121633c1ae77fe89f9",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/reduced/gelu-outputs.bin",
+        "byte_identical": true,
+        "function": "gelu",
+        "basis_root_count": 3,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 4.706315043,
+        "max_error": 7.491478344748007e-08,
+        "post_product_max_error": 4.1213744553827634e-07,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "reduced",
+        "report": "sigmoid-report.json",
+        "output_sha256": "8957316acc0102ddddb761186fd2a1b43b1126ba57535c67a20c69f433dcb6e9",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/reduced/sigmoid-outputs.bin",
+        "byte_identical": true,
+        "function": "sigmoid",
+        "basis_root_count": 3,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 36,
+        "functional_evaluation_seconds": 4.689412294,
+        "max_error": 3.33364631193251e-08,
+        "post_product_max_error": 5.2709308674375324e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "reduced",
+        "report": "tanh-report.json",
+        "output_sha256": "2a09141728d49c15abed7d82cccb7c31100d679236eca2a3bba5b29fad4f411f",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/reduced/tanh-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 6,
+        "native_auto_batch": true,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 8.111639994,
+        "max_error": 9.650658249874803e-08,
+        "post_product_max_error": 1.8240452495739432e-07,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "default",
+        "report": "gelu-report.json",
+        "output_sha256": "24eaa507669f4251f58fde20eaadb880ab006b806269e30b5e5830a7a67b00b2",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/default/gelu-outputs.bin",
+        "byte_identical": true,
+        "function": "gelu",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 5.812237582,
+        "max_error": 3.394126934438699e-08,
+        "post_product_max_error": 2.0142902659558604e-07,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "default",
+        "report": "sigmoid-report.json",
+        "output_sha256": "75f9839ff68074972ec30fa7dcba387e517a0c258ec4146322fa6ac5b0f1b91a",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/default/sigmoid-outputs.bin",
+        "byte_identical": true,
+        "function": "sigmoid",
+        "basis_root_count": 4,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 5.772976585,
+        "max_error": 1.885710912799143e-08,
+        "post_product_max_error": 3.468550092702446e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      },
+      {
+        "directory": "default",
+        "report": "tanh-report.json",
+        "output_sha256": "8e1c1029184584aca3e5677caafd512228073ee74875b3be7aa1c1e598afcb98",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/default/tanh-outputs.bin",
+        "byte_identical": true,
+        "function": "tanh",
+        "basis_root_count": 7,
+        "native_auto_batch": false,
+        "native_auto_team_control": false,
+        "native_auto_batch_pair_warmup": false,
+        "native_auto_batch_calls": 0,
+        "functional_evaluation_seconds": 9.222208673999999,
+        "max_error": 3.085959861275242e-08,
+        "post_product_max_error": 5.471802425340437e-08,
+        "accuracy_passed": true,
+        "fresh_private_keys_generated": false,
+        "new_evaluation_keys_generated": 0,
+        "input_reused": true
+      }
+    ],
+    "matched_two_process_timing": {
+      "legacy": {
+        "samples_seconds": [
+          5.694866017,
+          5.686802193,
+          5.664158788,
+          5.694906372
+        ],
+        "mean_seconds": 5.6851833425,
+        "fractional_reduction_vs_legacy": 0.0
+      },
+      "full_team_independent": {
+        "samples_seconds": [
+          5.624136611,
+          5.599888332,
+          5.596525668,
+          5.606619013
+        ],
+        "mean_seconds": 5.606792406,
+        "fractional_reduction_vs_legacy": 0.013788638250939567
+      },
+      "batch": {
+        "samples_seconds": [
+          5.417589834,
+          5.429017136000001,
+          5.417193345,
+          5.408827329999999
+        ],
+        "mean_seconds": 5.41815691125,
+        "fractional_reduction_vs_legacy": 0.046968833749621575
+      }
+    },
+    "retained_key_hashes_rechecked_unchanged": true,
+    "scope": "Two paired sparse Tanh processes; all three original and reduced-degree functions with batch enabled; all three default S2C4/4 functions with batch disabled. Three/four-root profiles use36 batches, six/seven-root profiles take the unchanged fallback.",
+    "scalar_and_component_checks": {
+      "gadget-scalar-build": {
+        "exit_code": 0,
+        "wall_seconds": 10.844635486602783
+      },
+      "gadget-scalar-unit": {
+        "exit_code": 0,
+        "wall_seconds": 1.9958362579345703
+      },
+      "gadget-production": {
+        "exit_code": 0,
+        "wall_seconds": 10.30858039855957
+      },
+      "auto-production": {
+        "exit_code": 0,
+        "wall_seconds": 6.180617570877075
+      }
+    },
+    "scalar_compiler_command": [
+      "/usr/bin/c++",
+      "-DUSE_BLAKE3",
+      "-DUSE_INTERLEAVED_FORMAT",
+      "-DUSE_SPQLIOS_INTL",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/concrete-fft",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl",
+      "-isystem",
+      "/tmp/ckks-build-deps/root/usr/include",
+      "-march=x86-64",
+      "-mno-avx2",
+      "-O3",
+      "-g",
+      "-funroll-loops",
+      "-Wall",
+      "-Wextra",
+      "-pedantic",
+      "-Wno-sign-compare",
+      "-fopenmp",
+      "-std=gnu++20",
+      "-flto=auto",
+      "-fno-fat-lto-objects",
+      "-fno-ipa-icf",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/tools/gadget_batch_bench.cpp",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a",
+      "-o",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-switch-batch-20261017/gadget-scalar"
+    ],
+    "production_gadget_components": {
+      "mode_legend": {
+        "0": "Original independent single applications; outer team capped to batch size",
+        "1": "One column per key tile, window32",
+        "4": "Four columns per key tile, window32",
+        "8": "Eight columns per key tile, window32",
+        "48": "Four columns per key tile, window8",
+        "416": "Four columns per key tile, window16"
+      },
+      "results": {
+        "433,48,4,0": {
+          "samples_seconds": [
+            0.01299159,
+            0.012660239,
+            0.012748055,
+            0.012852284,
+            0.012485041,
+            0.012756819
+          ],
+          "mean_seconds": 0.012749004666666668
+        },
+        "433,48,4,1": {
+          "samples_seconds": [
+            0.010029799,
+            0.010327151,
+            0.010078132,
+            0.010188278,
+            0.00991967,
+            0.010713456
+          ],
+          "mean_seconds": 0.010209414333333333
+        },
+        "433,48,4,4": {
+          "samples_seconds": [
+            0.009678551,
+            0.0097054,
+            0.009433739,
+            0.009455316,
+            0.009413699,
+            0.009629267
+          ],
+          "mean_seconds": 0.009552662
+        },
+        "433,48,4,8": {
+          "samples_seconds": [
+            0.009625328,
+            0.009156231,
+            0.009485981,
+            0.009487512,
+            0.009520586,
+            0.009534242
+          ],
+          "mean_seconds": 0.009468313333333334
+        },
+        "435,37,4,0": {
+          "samples_seconds": [
+            0.010912539,
+            0.010769102,
+            0.010889868,
+            0.011101059,
+            0.0107257,
+            0.010666808
+          ],
+          "mean_seconds": 0.010844179333333334
+        },
+        "435,37,4,1": {
+          "samples_seconds": [
+            0.007090119,
+            0.006750333,
+            0.006814145,
+            0.006381603,
+            0.006389798,
+            0.00639257
+          ],
+          "mean_seconds": 0.006636428
+        },
+        "435,37,4,4": {
+          "samples_seconds": [
+            0.00596151,
+            0.005816627,
+            0.005794042,
+            0.005720871,
+            0.005842244,
+            0.005702896
+          ],
+          "mean_seconds": 0.005806365
+        },
+        "435,37,4,8": {
+          "samples_seconds": [
+            0.005666799,
+            0.005665808,
+            0.00611092,
+            0.005687299,
+            0.005617772,
+            0.005648619
+          ],
+          "mean_seconds": 0.0057328694999999995
+        },
+        "435,270,4,0": {
+          "samples_seconds": [
+            0.007402059,
+            0.007041572,
+            0.007147073,
+            0.007491357,
+            0.007064631,
+            0.007175877
+          ],
+          "mean_seconds": 0.007220428166666667
+        },
+        "435,270,4,1": {
+          "samples_seconds": [
+            0.004530659,
+            0.003980812,
+            0.004154356,
+            0.00397377,
+            0.004630135,
+            0.004099359
+          ],
+          "mean_seconds": 0.004228181833333333
+        },
+        "435,270,4,4": {
+          "samples_seconds": [
+            0.003864257,
+            0.003796505,
+            0.003842328,
+            0.003731112,
+            0.003793821,
+            0.003845173
+          ],
+          "mean_seconds": 0.003812199333333333
+        },
+        "435,270,4,8": {
+          "samples_seconds": [
+            0.003742002,
+            0.003763172,
+            0.003796114,
+            0.003813753,
+            0.003733455,
+            0.003812886
+          ],
+          "mean_seconds": 0.003776897
+        },
+        "433,48,8,0": {
+          "samples_seconds": [
+            0.016303925,
+            0.015706654,
+            0.015553495,
+            0.015993787,
+            0.015597635,
+            0.015614482
+          ],
+          "mean_seconds": 0.015794996333333332
+        },
+        "433,48,8,1": {
+          "samples_seconds": [
+            0.015886928,
+            0.015420117,
+            0.015900214,
+            0.015319522,
+            0.015721132,
+            0.015437883
+          ],
+          "mean_seconds": 0.015614299333333333
+        },
+        "433,48,8,4": {
+          "samples_seconds": [
+            0.014864121,
+            0.014942483,
+            0.015110168,
+            0.014865999,
+            0.015312312,
+            0.014806443
+          ],
+          "mean_seconds": 0.014983587666666666
+        },
+        "433,48,8,8": {
+          "samples_seconds": [
+            0.014189254,
+            0.014204338,
+            0.01406962,
+            0.014141401,
+            0.014049421,
+            0.014227857
+          ],
+          "mean_seconds": 0.014146981833333332
+        },
+        "435,37,8,0": {
+          "samples_seconds": [
+            0.016054989,
+            0.015285864,
+            0.015353034,
+            0.015764635,
+            0.015871961,
+            0.015197624
+          ],
+          "mean_seconds": 0.015588017833333332
+        },
+        "435,37,8,1": {
+          "samples_seconds": [
+            0.015490988,
+            0.015287204,
+            0.01506667,
+            0.015237094,
+            0.015506905,
+            0.015542399
+          ],
+          "mean_seconds": 0.015355210000000001
+        },
+        "435,37,8,4": {
+          "samples_seconds": [
+            0.014381342,
+            0.01460155,
+            0.014632943,
+            0.014609972,
+            0.014724299,
+            0.014689896
+          ],
+          "mean_seconds": 0.014606667
+        },
+        "435,37,8,8": {
+          "samples_seconds": [
+            0.014616368,
+            0.013799629,
+            0.014026733,
+            0.013937116,
+            0.014189582,
+            0.014025732
+          ],
+          "mean_seconds": 0.014099193333333333
+        },
+        "435,270,8,0": {
+          "samples_seconds": [
+            0.010193057,
+            0.009585377,
+            0.009714437,
+            0.010151232,
+            0.009446097,
+            0.009561662
+          ],
+          "mean_seconds": 0.009775310333333334
+        },
+        "435,270,8,1": {
+          "samples_seconds": [
+            0.009350766,
+            0.00903424,
+            0.009118898,
+            0.009172993,
+            0.008904966,
+            0.008836628
+          ],
+          "mean_seconds": 0.0090697485
+        },
+        "435,270,8,4": {
+          "samples_seconds": [
+            0.008684209,
+            0.008578512,
+            0.008531789,
+            0.008524093,
+            0.008535357,
+            0.008426218
+          ],
+          "mean_seconds": 0.008546696333333333
+        },
+        "435,270,8,8": {
+          "samples_seconds": [
+            0.008460416,
+            0.008773472,
+            0.008472462,
+            0.008409965,
+            0.00840617,
+            0.008402322
+          ],
+          "mean_seconds": 0.008487467833333333
+        },
+        "433,48,32,0": {
+          "samples_seconds": [
+            0.070644902,
+            0.069633593,
+            0.070236368,
+            0.072261158,
+            0.071134255,
+            0.07041265
+          ],
+          "mean_seconds": 0.07072048766666666
+        },
+        "433,48,32,1": {
+          "samples_seconds": [
+            0.064722069,
+            0.065020234,
+            0.064984812,
+            0.064871429,
+            0.06552544,
+            0.065511373
+          ],
+          "mean_seconds": 0.06510589283333333
+        },
+        "433,48,32,4": {
+          "samples_seconds": [
+            0.065707096,
+            0.065259937,
+            0.065418614,
+            0.065611227,
+            0.066249852,
+            0.06574751
+          ],
+          "mean_seconds": 0.065665706
+        },
+        "433,48,32,8": {
+          "samples_seconds": [
+            0.066254144,
+            0.065413118,
+            0.065729903,
+            0.06522052,
+            0.065616024,
+            0.065309985
+          ],
+          "mean_seconds": 0.06559061566666667
+        },
+        "433,48,32,48": {
+          "samples_seconds": [
+            0.060197669,
+            0.059115881,
+            0.059353013,
+            0.06068209,
+            0.059844318,
+            0.059484032
+          ],
+          "mean_seconds": 0.0597795005
+        },
+        "433,48,32,416": {
+          "samples_seconds": [
+            0.066904648,
+            0.066712485,
+            0.067048002,
+            0.067164061,
+            0.06697069,
+            0.071220037
+          ],
+          "mean_seconds": 0.06766998716666667
+        },
+        "435,37,32,0": {
+          "samples_seconds": [
+            0.069415924,
+            0.071070178,
+            0.069516745,
+            0.069882294,
+            0.069058504,
+            0.069459409
+          ],
+          "mean_seconds": 0.06973384233333334
+        },
+        "435,37,32,1": {
+          "samples_seconds": [
+            0.064001996,
+            0.067129492,
+            0.063842787,
+            0.064359776,
+            0.064144196,
+            0.064634887
+          ],
+          "mean_seconds": 0.06468552233333333
+        },
+        "435,37,32,4": {
+          "samples_seconds": [
+            0.064293843,
+            0.064727117,
+            0.064357714,
+            0.064651857,
+            0.064527735,
+            0.064423522
+          ],
+          "mean_seconds": 0.06449696466666667
+        },
+        "435,37,32,8": {
+          "samples_seconds": [
+            0.064917831,
+            0.065112156,
+            0.064703254,
+            0.064424494,
+            0.064484923,
+            0.06476232
+          ],
+          "mean_seconds": 0.064734163
+        },
+        "435,37,32,48": {
+          "samples_seconds": [
+            0.058550114,
+            0.058520237,
+            0.058442295,
+            0.058972496,
+            0.058492824,
+            0.058759073
+          ],
+          "mean_seconds": 0.058622839833333336
+        },
+        "435,37,32,416": {
+          "samples_seconds": [
+            0.065965524,
+            0.066215557,
+            0.066120089,
+            0.066166214,
+            0.065927038,
+            0.065909434
+          ],
+          "mean_seconds": 0.06605064266666666
+        },
+        "435,270,32,0": {
+          "samples_seconds": [
+            0.04441728,
+            0.044640326,
+            0.044251079,
+            0.04473874,
+            0.044686846,
+            0.044409322
+          ],
+          "mean_seconds": 0.04452393216666667
+        },
+        "435,270,32,1": {
+          "samples_seconds": [
+            0.043211382,
+            0.043570034,
+            0.043178639,
+            0.043319151,
+            0.043172548,
+            0.043564726
+          ],
+          "mean_seconds": 0.04333608
+        },
+        "435,270,32,4": {
+          "samples_seconds": [
+            0.04300393,
+            0.043107231,
+            0.042829671,
+            0.042930165,
+            0.042841735,
+            0.043292016
+          ],
+          "mean_seconds": 0.04300079133333334
+        },
+        "435,270,32,8": {
+          "samples_seconds": [
+            0.042354859,
+            0.042498142,
+            0.042433398,
+            0.042428804,
+            0.041807435,
+            0.042470901
+          ],
+          "mean_seconds": 0.0423322565
+        },
+        "435,270,32,48": {
+          "samples_seconds": [
+            0.034934884,
+            0.034174465,
+            0.033503769,
+            0.035451365,
+            0.033678648,
+            0.033826462
+          ],
+          "mean_seconds": 0.03426159883333334
+        },
+        "435,270,32,416": {
+          "samples_seconds": [
+            0.040352861,
+            0.040651379,
+            0.040840685,
+            0.040775295,
+            0.040785619,
+            0.040109331
+          ],
+          "mean_seconds": 0.04058586166666667
+        }
+      }
+    },
+    "production_native_auto_components": {
+      "window_legend": "0 is independent original calls, others are coordinated batch windows. Every output compared outside the timer. Four samples per forward/reverse block give eight per mode.",
+      "results": {
+        "398,3,0": {
+          "samples_seconds": [
+            0.013259287,
+            0.013733304,
+            0.013651096,
+            0.013454788,
+            0.01325782,
+            0.013569064,
+            0.013750013,
+            0.013597502
+          ],
+          "mean_seconds": 0.01353410925
+        },
+        "398,3,4": {
+          "samples_seconds": [
+            0.010229632,
+            0.009008071,
+            0.009263611,
+            0.008911164,
+            0.008715779,
+            0.008724878,
+            0.008785495,
+            0.008658304
+          ],
+          "mean_seconds": 0.009037116750000001
+        },
+        "398,3,8": {
+          "samples_seconds": [
+            0.008975433,
+            0.008867675,
+            0.008804605,
+            0.008933145,
+            0.008884542,
+            0.008796515,
+            0.008698713,
+            0.0085484
+          ],
+          "mean_seconds": 0.0088136285
+        },
+        "398,3,32": {
+          "samples_seconds": [
+            0.008809903,
+            0.008753607,
+            0.008719353,
+            0.008743246,
+            0.008638285,
+            0.008998304,
+            0.008755398,
+            0.008610897
+          ],
+          "mean_seconds": 0.008753624125
+        },
+        "385,3,0": {
+          "samples_seconds": [
+            0.012429902,
+            0.013206606,
+            0.01309768,
+            0.013044578,
+            0.01238337,
+            0.013233384,
+            0.012906716,
+            0.012966084
+          ],
+          "mean_seconds": 0.01290854
+        },
+        "385,3,4": {
+          "samples_seconds": [
+            0.010539576,
+            0.008902708,
+            0.008711693,
+            0.008894507,
+            0.008505544,
+            0.008432224,
+            0.008777371,
+            0.00847303
+          ],
+          "mean_seconds": 0.008904581625
+        },
+        "385,3,8": {
+          "samples_seconds": [
+            0.008693054,
+            0.008572716,
+            0.008413132,
+            0.008660873,
+            0.00849978,
+            0.008508523,
+            0.00890361,
+            0.008583815
+          ],
+          "mean_seconds": 0.008604437874999999
+        },
+        "385,3,32": {
+          "samples_seconds": [
+            0.008449072,
+            0.008590661,
+            0.008506161,
+            0.008577713,
+            0.008529832,
+            0.008547812,
+            0.008530642,
+            0.008464429
+          ],
+          "mean_seconds": 0.00852454025
+        },
+        "165,3,0": {
+          "samples_seconds": [
+            0.009609211,
+            0.010686317,
+            0.010812476,
+            0.010504914,
+            0.009666451,
+            0.010726767,
+            0.010765623,
+            0.010418037
+          ],
+          "mean_seconds": 0.0103987245
+        },
+        "165,3,4": {
+          "samples_seconds": [
+            0.008894614,
+            0.008068047,
+            0.007522565,
+            0.007383891,
+            0.007191755,
+            0.007317117,
+            0.008041773,
+            0.007219036
+          ],
+          "mean_seconds": 0.00770484975
+        },
+        "165,3,8": {
+          "samples_seconds": [
+            0.007342181,
+            0.007610282,
+            0.007307223,
+            0.007213682,
+            0.007387061,
+            0.007324895,
+            0.007515359,
+            0.007283972
+          ],
+          "mean_seconds": 0.007373081875
+        },
+        "165,3,32": {
+          "samples_seconds": [
+            0.007335031,
+            0.007422489,
+            0.00740448,
+            0.007403933,
+            0.007249546,
+            0.007224628,
+            0.007413383,
+            0.007404286
+          ],
+          "mean_seconds": 0.007357222
+        },
+        "398,4,0": {
+          "samples_seconds": [
+            0.01339447,
+            0.012544035,
+            0.01255099,
+            0.012691077,
+            0.012874668,
+            0.012733469,
+            0.012395765,
+            0.012541736
+          ],
+          "mean_seconds": 0.01271577625
+        },
+        "398,4,4": {
+          "samples_seconds": [
+            0.010619951,
+            0.011161639,
+            0.010836759,
+            0.010727402,
+            0.010763017,
+            0.010764139,
+            0.010721872,
+            0.010773076
+          ],
+          "mean_seconds": 0.010795981875
+        },
+        "398,4,8": {
+          "samples_seconds": [
+            0.010982278,
+            0.010967485,
+            0.010983566,
+            0.011229072,
+            0.010864242,
+            0.01075236,
+            0.010734814,
+            0.011072618
+          ],
+          "mean_seconds": 0.010948304375
+        },
+        "398,4,32": {
+          "samples_seconds": [
+            0.010837674,
+            0.010926945,
+            0.010901201,
+            0.010711787,
+            0.011117596,
+            0.010785847,
+            0.010775472,
+            0.010691945
+          ],
+          "mean_seconds": 0.010843558375
+        },
+        "385,4,0": {
+          "samples_seconds": [
+            0.012746393,
+            0.013139012,
+            0.011722055,
+            0.011705208,
+            0.012634895,
+            0.013059353,
+            0.01170749,
+            0.011607368
+          ],
+          "mean_seconds": 0.01229022175
+        },
+        "385,4,4": {
+          "samples_seconds": [
+            0.009751193,
+            0.007872663,
+            0.007879532,
+            0.007682317,
+            0.007357532,
+            0.007286487,
+            0.00742776,
+            0.007469821
+          ],
+          "mean_seconds": 0.007840913125
+        },
+        "385,4,8": {
+          "samples_seconds": [
+            0.007417245,
+            0.00745138,
+            0.007477255,
+            0.007503993,
+            0.007437539,
+            0.007462143,
+            0.007462642,
+            0.007729137
+          ],
+          "mean_seconds": 0.00749266675
+        },
+        "385,4,32": {
+          "samples_seconds": [
+            0.007414358,
+            0.007705917,
+            0.007375205,
+            0.007927201,
+            0.007101025,
+            0.007339489,
+            0.007487614,
+            0.00759042
+          ],
+          "mean_seconds": 0.007492653625
+        },
+        "165,4,0": {
+          "samples_seconds": [
+            0.009973801,
+            0.010545445,
+            0.008984044,
+            0.009031607,
+            0.009998603,
+            0.010555001,
+            0.009031018,
+            0.009024409
+          ],
+          "mean_seconds": 0.009642991
+        },
+        "165,4,4": {
+          "samples_seconds": [
+            0.008539501,
+            0.005965601,
+            0.006059766,
+            0.006151525,
+            0.005802669,
+            0.005922455,
+            0.005670524,
+            0.005992493
+          ],
+          "mean_seconds": 0.00626306675
+        },
+        "165,4,8": {
+          "samples_seconds": [
+            0.005845483,
+            0.005884501,
+            0.00585507,
+            0.005646816,
+            0.005731307,
+            0.005959451,
+            0.005679164,
+            0.006252898
+          ],
+          "mean_seconds": 0.00585683625
+        },
+        "165,4,32": {
+          "samples_seconds": [
+            0.00599973,
+            0.005838961,
+            0.005943623,
+            0.005654601,
+            0.005911153,
+            0.005722374,
+            0.006065135,
+            0.005834226
+          ],
+          "mean_seconds": 0.005871225375
+        },
+        "398,7,0": {
+          "samples_seconds": [
+            0.017847211,
+            0.017137613,
+            0.016844653,
+            0.016528881,
+            0.01776157,
+            0.017445719,
+            0.016966257,
+            0.016561455
+          ],
+          "mean_seconds": 0.017136669875
+        },
+        "398,7,4": {
+          "samples_seconds": [
+            0.019247127,
+            0.014366836,
+            0.014280754,
+            0.014702498,
+            0.014765012,
+            0.014463348,
+            0.01444737,
+            0.014373155
+          ],
+          "mean_seconds": 0.015080762499999999
+        },
+        "398,7,8": {
+          "samples_seconds": [
+            0.015570272,
+            0.015825853,
+            0.015619106,
+            0.015563227,
+            0.015904503,
+            0.015465926,
+            0.015736538,
+            0.016385152
+          ],
+          "mean_seconds": 0.015758822125000002
+        },
+        "398,7,32": {
+          "samples_seconds": [
+            0.015684192,
+            0.015774661,
+            0.016137597,
+            0.015611078,
+            0.01565938,
+            0.016042109,
+            0.015907305,
+            0.016075783
+          ],
+          "mean_seconds": 0.015861513125
+        },
+        "385,7,0": {
+          "samples_seconds": [
+            0.017055261,
+            0.016340602,
+            0.015324428,
+            0.015652934,
+            0.016885394,
+            0.016523451,
+            0.016119013,
+            0.015825795
+          ],
+          "mean_seconds": 0.01621585975
+        },
+        "385,7,4": {
+          "samples_seconds": [
+            0.018807342,
+            0.013572505,
+            0.014051784,
+            0.013727915,
+            0.013820104,
+            0.013666694,
+            0.013679199,
+            0.013733135
+          ],
+          "mean_seconds": 0.01438233475
+        },
+        "385,7,8": {
+          "samples_seconds": [
+            0.01476379,
+            0.014509572,
+            0.015137299,
+            0.014793046,
+            0.014964171,
+            0.014721416,
+            0.014774716,
+            0.014820986
+          ],
+          "mean_seconds": 0.0148106245
+        },
+        "385,7,32": {
+          "samples_seconds": [
+            0.014612615,
+            0.014726107,
+            0.014951498,
+            0.014901225,
+            0.014798603,
+            0.014740557,
+            0.014602206,
+            0.015329278
+          ],
+          "mean_seconds": 0.014832761125
+        },
+        "165,7,0": {
+          "samples_seconds": [
+            0.012787835,
+            0.011966387,
+            0.01141053,
+            0.011425269,
+            0.012669992,
+            0.012072201,
+            0.011502456,
+            0.011332582
+          ],
+          "mean_seconds": 0.0118959065
+        },
+        "165,7,4": {
+          "samples_seconds": [
+            0.015969743,
+            0.0109956,
+            0.010989655,
+            0.011125485,
+            0.010806421,
+            0.011091924,
+            0.010897206,
+            0.011554342
+          ],
+          "mean_seconds": 0.011678797
+        },
+        "165,7,8": {
+          "samples_seconds": [
+            0.010965513,
+            0.010781849,
+            0.011199408,
+            0.011073378,
+            0.010734986,
+            0.010813196,
+            0.010875442,
+            0.010555153
+          ],
+          "mean_seconds": 0.010874865625
+        },
+        "165,7,32": {
+          "samples_seconds": [
+            0.010945375,
+            0.010937999,
+            0.010610868,
+            0.010706496,
+            0.011016867,
+            0.010872264,
+            0.01095094,
+            0.010616173
+          ],
+          "mean_seconds": 0.01083212275
+        },
+        "398,8,0": {
+          "samples_seconds": [
+            0.019374239,
+            0.019160163,
+            0.017758993,
+            0.018057285,
+            0.019465436,
+            0.01881119,
+            0.018107119,
+            0.018462103
+          ],
+          "mean_seconds": 0.018649566
+        },
+        "398,8,4": {
+          "samples_seconds": [
+            0.021315423,
+            0.016211275,
+            0.016720723,
+            0.01658423,
+            0.016481439,
+            0.015860906,
+            0.016082609,
+            0.01596954
+          ],
+          "mean_seconds": 0.016903268125
+        },
+        "398,8,8": {
+          "samples_seconds": [
+            0.018782832,
+            0.01844463,
+            0.018895304,
+            0.018605282,
+            0.018701523,
+            0.01854167,
+            0.019136944,
+            0.018900279
+          ],
+          "mean_seconds": 0.018751058
+        },
+        "398,8,32": {
+          "samples_seconds": [
+            0.018582744,
+            0.018867135,
+            0.018707554,
+            0.018966533,
+            0.018657135,
+            0.018931955,
+            0.018820969,
+            0.019194602
+          ],
+          "mean_seconds": 0.018841078375
+        },
+        "385,8,0": {
+          "samples_seconds": [
+            0.017536981,
+            0.017180822,
+            0.017693847,
+            0.017002737,
+            0.017390578,
+            0.017156926,
+            0.017308897,
+            0.017085713
+          ],
+          "mean_seconds": 0.017294562625
+        },
+        "385,8,4": {
+          "samples_seconds": [
+            0.021719357,
+            0.022746422,
+            0.022078729,
+            0.022050718,
+            0.022120472,
+            0.022273138,
+            0.021771624,
+            0.02203239
+          ],
+          "mean_seconds": 0.02209910625
+        },
+        "385,8,8": {
+          "samples_seconds": [
+            0.023524633,
+            0.023868219,
+            0.023612495,
+            0.023740985,
+            0.023512625,
+            0.023408946,
+            0.023371764,
+            0.023285302
+          ],
+          "mean_seconds": 0.023540621125
+        },
+        "385,8,32": {
+          "samples_seconds": [
+            0.023707977,
+            0.023300012,
+            0.023351687,
+            0.023452299,
+            0.023611239,
+            0.023450744,
+            0.023756641,
+            0.02448778
+          ],
+          "mean_seconds": 0.023639797375
+        },
+        "165,8,0": {
+          "samples_seconds": [
+            0.013801934,
+            0.013076325,
+            0.012130989,
+            0.01225882,
+            0.013829023,
+            0.012986591,
+            0.012384987,
+            0.012572879
+          ],
+          "mean_seconds": 0.0128801935
+        },
+        "165,8,4": {
+          "samples_seconds": [
+            0.01764166,
+            0.012451464,
+            0.011834644,
+            0.012043609,
+            0.012083918,
+            0.012021736,
+            0.012149905,
+            0.011837319
+          ],
+          "mean_seconds": 0.012758031875
+        },
+        "165,8,8": {
+          "samples_seconds": [
+            0.01280456,
+            0.012550276,
+            0.012414155,
+            0.012741451,
+            0.012797225,
+            0.012649006,
+            0.012478731,
+            0.012696133
+          ],
+          "mean_seconds": 0.012641442125000001
+        },
+        "165,8,32": {
+          "samples_seconds": [
+            0.012513049,
+            0.01230667,
+            0.012550529,
+            0.012170365,
+            0.012866563,
+            0.012617519,
+            0.012401391,
+            0.012494055
+          ],
+          "mean_seconds": 0.012490017625
+        }
+      }
+    }
+  }
 }
