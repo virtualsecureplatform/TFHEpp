@@ -8,6 +8,23 @@ packed-key reconstruction, and functional bootstrapping. CUDA is excluded.
 The native-modulus port uses different parameters and hardware from the paper;
 overall 128-bit security and matching paper latency are not claimed.
 
+The user-selected historical GeLU10x target is verified: five measured
+N16384/eight-thread evaluations took5.111–5.127s (mean5.118s), all below11.2s,
+against the recorded112.018s baseline. Keys/caches are loaded once and reused;
+these are hot evaluation times. The historical and current encrypted input
+archives are byte-identical. Original degree12, scale44, the2^-23 function gate
+and the amplitude-aware post-multiplication gate pass for all8192 slots. All six
+outputs, including warm-up, match the qualified current-profile reference.
+
+The mean historical ratio is21.89, with changed backend/cache/parameter profiles
+and explicitly pinned current P cores; it is not a controlled same-parameter
+speedup. One-time key/input setup was42.52s, with a separate1.83s public S2C
+setup. This milestone completes the selected historical-latency objective;
+paper latency/security parity remains outside that completion claim. Commands,
+all samples, hashes and comparison limits are in
+`narrow-gelu-tenfold-goal-validation.json`. The mask42 timings below describe
+the older reference profile.
+
 The retained N16384 mask42 pipeline independently passes real and componentwise
 complex GeLU, Tanh and Sigmoid, including a subsequent multiplication. Both FFT
 and the optional combined NTT automorphism/DD backend pass. The full default CPU
