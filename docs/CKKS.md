@@ -5,18 +5,23 @@
 The CPU implementation uses Double Decomposition for the product tree and
 implements the paper's head/tail selectors, NTT permutations, frequency batching,
 packed-key reconstruction, and functional bootstrapping. CUDA is excluded.
-The native-modulus port uses different parameters and hardware from the paper;
-overall 128-bit security and matching paper latency are not claimed.
+The retuned N16384 CPU profile passes the tested 128-bit classical
+Parameter-Selection screens under BDGL16 and MATZOV. Its weakest dense estimate
+is 129.30 bits under MATZOV; broader optimistic structured-secret sensitivities
+reach 129.09 bits in the tested grids. Independent integer phase checks confirm
+all original accuracy gates for real GeLU, Tanh and Sigmoid and their following
+multiplication. Saved keys and input are reused. See
+[the retuned profile and commands](narrow-ll14-retuned-profile.md) and
+[its qualification record](narrow-ll14-retuned-profile-validation.json).
+These estimates retain the paper's structured-RLWE/KDM assumptions and use a
+Gaussian proxy for the actual sampler; they are not a security proof.
 
-The current CPU profile has now been screened with Parameter-Selection.
-Its native automorphism keys, DD master and direct selectors give respective
-classical costs of 128.96/129.56/128.97 bits under BDGL16, but only
-126.76/127.32/126.79 bits under MATZOV. It therefore fails the 128-bit screen
-under MATZOV, the pinned estimator's default model. These are variance-matched
-Gaussian-proxy estimates, not exact security levels. Parameter changes with
-margin and renewed accuracy/performance qualification are needed before a
-128-bit claim. See [the current assessment](narrow-current-cpu-security-assessment.md)
-for the tested profile, scope and reproducible evidence.
+The earlier low-noise profile gave native/DD/selector classical estimates of
+126.76/127.32/126.79 bits under MATZOV and remains outside the 128-bit target.
+Its [historical assessment](narrow-current-cpu-security-assessment.md) records
+that shortfall. Retuned replay rejects those archived keys. The 128-bit parameter
+target and the historical performance milestone below concern different key
+profiles; parameter and hardware differences from the paper remain explicit.
 
 The user-selected historical GeLU10x target is verified: five measured
 N16384/eight-thread evaluations took5.111–5.127s (mean5.118s), all below11.2s,

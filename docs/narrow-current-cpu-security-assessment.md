@@ -1,5 +1,8 @@
 # Current CPU CKKS security assessment
 
+This is the historical low-noise assessment. The recommended retuned CPU
+profile is described in [the new qualification](narrow-ll14-retuned-profile.md).
+
 Parameter-Selection assessed the retained-cache N=16384 LL14 CPU profile at
 TFHEpp revision `cb7e3fb087d0d01ff8ef10cd1b817c2c4df80b03`.
 The current parameters fail the 128-bit classical screen under MATZOV.
