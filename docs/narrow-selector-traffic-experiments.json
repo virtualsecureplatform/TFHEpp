@@ -1,0 +1,232 @@
+{
+  "scope": "CPU selector-matrix traffic and storage-layout experiments. Research controls only; no production cache or arithmetic changes.",
+  "tested_production_commit": "f73700d",
+  "source": "test/ckks/tools/fused_components_bench.cpp",
+  "modes": [
+    "traffic",
+    "slab"
+  ],
+  "build_command": [
+    "c++",
+    "-O3",
+    "-march=native",
+    "-funroll-loops",
+    "-fopenmp",
+    "-std=c++20",
+    "-Iinclude",
+    "-Ithirdparties/cereal/include",
+    "test/ckks/tools/fused_components_bench.cpp",
+    "-o",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-traffic-20261017/padded-slab-bench"
+  ],
+  "fixture": {
+    "ring_degree": 16384,
+    "selector_rows": 528,
+    "rns_primes": 17,
+    "components": 2,
+    "point_tile": 256,
+    "logical_selector_bytes_per_scan": 1176502272,
+    "matrix_layouts": "Packed4-column8-term and wide8-column4-term fused component dots. Production has529 selector rows; the benchmark uses528 to exclude the scalar row remainder, a0.19% payload difference.",
+    "data": "Deterministic public canonical residues; no encrypted keys or ciphertexts."
+  },
+  "traffic_method": "Same allocated selector dataset. Compare the full fused matrix, a256-point tiled read, and flat row reads. Every selector word contributes to an XOR oracle. Matrix outputs match their warm matrix reference byte for byte; proxies are validated against the complete scalar XOR, not against matrix outputs. Warm all methods; matrix/tiled/flat/flat/tiled/matrix,5 samples per block. Ten samples per method/layout. Buffers exceed CPU cache; no concurrent compilation or other benchmarks.",
+  "traffic_results": {
+    "4": {
+      "matrix": {
+        "mean_seconds": 0.03689224,
+        "logical_selector_GB_per_second": 31.890236862819933,
+        "samples": 10
+      },
+      "tiled-read": {
+        "mean_seconds": 0.03026963,
+        "logical_selector_GB_per_second": 38.86741502951969,
+        "samples": 10
+      },
+      "flat-read": {
+        "mean_seconds": 0.03021888,
+        "logical_selector_GB_per_second": 38.93268949742677,
+        "samples": 10
+      }
+    },
+    "8": {
+      "matrix": {
+        "mean_seconds": 0.05725474,
+        "logical_selector_GB_per_second": 20.548556713383032,
+        "samples": 10
+      },
+      "tiled-read": {
+        "mean_seconds": 0.03018929,
+        "logical_selector_GB_per_second": 38.97084933100447,
+        "samples": 10
+      },
+      "flat-read": {
+        "mean_seconds": 0.03017989,
+        "logical_selector_GB_per_second": 38.982987413141664,
+        "samples": 10
+      }
+    }
+  },
+  "traffic_interpretation": "For four columns, selector-only reads cost about30.2ms versus36.9ms for the full matrix. This points to limited headroom from dot/address arithmetic alone while retaining this data volume. These are logical bytes per second, not measured DRAM transactions. Proxy timings are not hardware lower bounds and exclude all public-table arithmetic/traffic; they cannot prove an irreducible machine gap or paper parity.",
+  "layout_method": "Use the same matrix arithmetic and values with original vector rows, spans into those rows, contiguous per-prime4KiB-page slabs, transparent-large-page slabs, and both slab types with64-byte row padding. All mappings align to2MiB. Symmetric original/view/plain/huge/plain-padded/huge-padded/huge-padded/plain-padded/huge/plain/view/original sequence,5 repeats per block. All matrix outputs byte-identical. Advice occurs before first touch; setup/copying/page allocation excluded from timers.",
+  "initial_hint_only": {
+    "exit": {
+      "exit_code": 0,
+      "wall_seconds": 7.087786674499512
+    },
+    "metadata": [
+      "slab metadata columns=4 anon_huge_before_kib=0 anon_huge_after_kib=0 advice_failures=0",
+      "slab metadata columns=8 anon_huge_before_kib=0 anon_huge_after_kib=0 advice_failures=0"
+    ],
+    "interpretation": "MADV_HUGEPAGE was accepted but /proc/self/smaps showed0 anonymous huge pages: this process inherited THP disabled. These timings do not establish large-page performance."
+  },
+  "actual_large_page_configuration": {
+    "scope": "A guard temporarily enables THP in the benchmark process and restores its inherited process setting at scope exit. MADV_NOHUGEPAGE controls retain small pages. No machine-wide setting is changed.",
+    "metadata": [
+      {
+        "columns": 4,
+        "anon_huge_before_kib": 0,
+        "anon_huge_after_kib": 2332672,
+        "inherited_thp_disabled": 1,
+        "thp_enable_error": 0,
+        "advice_failures": 0
+      },
+      {
+        "columns": 8,
+        "anon_huge_before_kib": 0,
+        "anon_huge_after_kib": 2332672,
+        "inherited_thp_disabled": 1,
+        "thp_enable_error": 0,
+        "advice_failures": 0
+      }
+    ],
+    "expected_aggregate_anon_huge_kib": 2332672,
+    "verification": "Both layouts observe exactly the expected aggregate2MiB-page payload for17 unpadded33-page slabs and17 padded34-page slabs. The second layout again inherits THP disabled, verifying restoration after the first layout."
+  },
+  "corrected_layout_results": {
+    "4": {
+      "original": {
+        "mean_seconds": 0.03656641,
+        "fractional_reduction_from_original": 0.0,
+        "samples": 10
+      },
+      "heap-view": {
+        "mean_seconds": 0.036799860000000004,
+        "fractional_reduction_from_original": -0.006384274529547929,
+        "samples": 10
+      },
+      "plain-slab": {
+        "mean_seconds": 0.03818428,
+        "fractional_reduction_from_original": -0.044244704361188436,
+        "samples": 10
+      },
+      "huge-slab": {
+        "mean_seconds": 0.04274092,
+        "fractional_reduction_from_original": -0.16885742953710792,
+        "samples": 10
+      },
+      "plain-padded": {
+        "mean_seconds": 0.037508190000000004,
+        "fractional_reduction_from_original": -0.02575533119056539,
+        "samples": 10
+      },
+      "huge-padded": {
+        "mean_seconds": 0.03728994,
+        "fractional_reduction_from_original": -0.019786738703635454,
+        "samples": 10
+      }
+    },
+    "8": {
+      "original": {
+        "mean_seconds": 0.05675974,
+        "fractional_reduction_from_original": 0.0,
+        "samples": 10
+      },
+      "heap-view": {
+        "mean_seconds": 0.05704038,
+        "fractional_reduction_from_original": -0.004944349639374623,
+        "samples": 10
+      },
+      "plain-slab": {
+        "mean_seconds": 0.05719207,
+        "fractional_reduction_from_original": -0.007616842501392718,
+        "samples": 10
+      },
+      "huge-slab": {
+        "mean_seconds": 0.05922571,
+        "fractional_reduction_from_original": -0.043445759265281936,
+        "samples": 10
+      },
+      "plain-padded": {
+        "mean_seconds": 0.05614149,
+        "fractional_reduction_from_original": 0.010892403664992112,
+        "samples": 10
+      },
+      "huge-padded": {
+        "mean_seconds": 0.05592667,
+        "fractional_reduction_from_original": 0.014677128542167517,
+        "samples": 10
+      }
+    }
+  },
+  "decision": "Do not adopt any tested layout. Four-column original storage beats every slab variant; unpadded huge pages are substantially slower. Padding recovers most of the loss. Wide8-column padded layouts gain only about1\u20131.5%, while regressing four columns. Retain the existing cache.",
+  "retained_context": {
+    "source_receipt": "narrow-signed-rns-encoding-validation.json",
+    "logical_selector_payload_scan_bytes_per_fbs": 42434297856,
+    "latest_sparse_tanh_mean_seconds": 6.1785975605,
+    "latest_matrix_group_wall_sum_seconds": 1.39548705,
+    "effective_logical_selector_GB_per_second": 30.408234785123945,
+    "other_stages_fixed_zero_matrix_estimate_seconds": 4.7831105105,
+    "interpretation": "Logical scan arithmetic and an Amdahl-style estimate holding all other stage costs fixed. This is not a hardware lower bound or an apples-to-apples paper comparison. Matrix-only tuning cannot supply a whole-bootstrap10x gain in this model."
+  },
+  "commands": [
+    [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-traffic-20261017/bench",
+      "traffic"
+    ],
+    [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-traffic-20261017/padded-slab-bench",
+      "slab"
+    ]
+  ],
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "exits": {
+    "traffic": {
+      "exit_code": 0,
+      "wall_seconds": 3.626537561416626
+    },
+    "slab": {
+      "exit_code": 0,
+      "wall_seconds": 7.087786674499512
+    },
+    "padded-slab": {
+      "exit_code": 0,
+      "wall_seconds": 9.892531871795654
+    }
+  },
+  "evidence_sha256": {
+    "traffic.log": "9670c2d0c139ca0107ec51650e2783329795ff7390b0501d9f4df113c00a0acc",
+    "slab.log": "baa70fa3e3bb5b9439c1cafad19095261846265e919eb6df1b517cc5bef174ce",
+    "padded-slab.log": "fd4f577f1478e00af431d7a00e0ea0fe1a61ecb8e5a94531845ea0fe9a64f6e9"
+  },
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/matrix-traffic-20261017",
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "encrypted_key_archives_read": 0,
+  "production_binary_unchanged": true,
+  "production_binary_sha256": "315ec32162462909efa5c0dea54ed44913b3b52377756a64b31a9463c5c61540",
+  "limitations": "One CPU, deterministic public fixtures and10 measured samples per method/layout. The528-row prototype is close to, but not identical to, the529-row retained matrix. Results do not justify modifying the production memory policy, declaring the remaining gap entirely hardware-related, or claiming a whole-FBS speedup.",
+  "security_validated": false,
+  "performance_gap_closed": false
+}

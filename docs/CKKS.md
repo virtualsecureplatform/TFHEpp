@@ -4251,6 +4251,11 @@ the best tested whole-evaluation setting for this four-root profile. An
 [inner-team experiment](narrow-tree-inner-experiment.json) found no measured
 gain from sharing the same budget between the last tree levels and nested
 arithmetic teams; that prototype was discarded.
+[Selector traffic and slab-layout controls](narrow-selector-traffic-experiments.json)
+measure about 30.2 ms to read the benchmark's 1.18 GB of selectors, versus
+36.9 ms for its four-column matrix kernel. Verified large pages and row padding
+do not beat the existing four-column layout, so the production cache stays the
+same. These traffic proxies do not establish a hardware lower bound or paper parity.
 Rejected two-root activation fits, vector CRT, permutation recurrence and tile
 sizes are documented in
 [narrow-four-root-followup-experiments.json](narrow-four-root-followup-experiments.json).
