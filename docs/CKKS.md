@@ -4548,3 +4548,16 @@ the frozen fresh-gadget helper and the reused helper with one coefficient fixtur
 These are correctness checks; latency and a full retained-key refresh have not
 been qualified for this additional reuse. See
 `narrow-dd-gadget-workspace-validation.json` for the exact scope.
+
+
+Two subsequent retained-key comparisons qualify the additional inner gadget
+workspace reuse for the grouped sparse-Tanh profile. DD trees averaged
+1.212→1.184 seconds (2.2% less time), and full refresh averaged 5.194→5.159
+seconds (0.7% less time). Whole-refresh gains varied from 0.18% to 1.18% between
+processes; four measured samples per policy do not establish a universal gain.
+All 18 output archives match the qualified ciphertext reference byte for byte,
+and all nine retained key hashes are unchanged. Integrated minor faults rose;
+peak RSS was not compared. Commands, component samples, source hashes and
+resource observations are in `narrow-dd-gadget-workspace-replay-validation.json`.
+DD trees now consume about 23% of refresh latency, so DD-only tuning cannot close
+the remaining 10x goal. Factor generation remains the largest measured stage.
