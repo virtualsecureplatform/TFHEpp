@@ -4299,6 +4299,17 @@ Rejected two-root activation fits, vector CRT, permutation recurrence and tile
 sizes are documented in
 [narrow-four-root-followup-experiments.json](narrow-four-root-followup-experiments.json).
 
+[Public-zero and squaring tensor shortcuts](narrow-tensor-public-structure-experiment.json)
+were also rejected. Transparent products and squares save substantial time in
+isolated batches, but only eight of 248 tree products have a transparent beta
+operand in the four-root profile. The final matched sparse-Tanh comparison
+measures 5.689s for the baseline and 5.705s for the candidate, with basis
+reconstruction about 4.7% slower. Production sources and the replay binary are
+restored exactly. The standalone candidate and benchmark remain under
+`test/ckks/tools/tensor_structure_*`; `tensor_structure_bench --check` checks
+their arithmetic without generating keys. The validation record distinguishes
+the AVX2 FFT reference from the scalar RNS integer-oracle checks.
+
 The separate `ckks_narrow_ll14_two_layer_fbs` runner reproduces a rejected
 three-seed experiment. Frequencies6/9/10 derive eight intermediate roots and
 cover degree40 in two multiplication layers. Its37-bit internal schedule fits
