@@ -15,10 +15,23 @@
   "current_default_regression_omp_num_threads": 4,
   "paper_platform": {
     "cpu": "two AMD EPYC 7K62 processors",
-    "functional_comparison_cpu_cores": 48,
+    "functional_comparison_cpu_cores": null,
     "smt_disabled": true,
-    "memory": "1 TB DDR4-3200"
+    "memory": "1 TB DDR4-3200",
+    "functional_core_count_scope": "Unconfirmed for Table7. Section8.2 states that numactl controls experiment core availability; Table5 sweeps1..48 cores and Table6 explicitly uses48. The Table7 FBS passage does not specify its core allocation."
   },
   "concurrent_runs_occurred": true,
-  "matched_paper_timing_qualified": false
+  "matched_paper_timing_qualified": false,
+  "core_count_correction": {
+    "observed_utc": "2026-10-16T10:55:31.821436+00:00",
+    "previous_functional_comparison_cpu_cores": 48,
+    "reason": "Earlier metadata carried Table6 core count into Table7 without explicit evidence. Remove the unsupported attribution; historical latency observations are unchanged.",
+    "paper_pdf_sha256": "ae1ca857606685c682b7f26164e96ac97ef8d27800108e8e6042cdcc9d3a0189",
+    "inspected_text_sha256": "eab533da8a438e16c96d9657995d3484e77f42c92fb6df4e344f3e1f1fe03c71",
+    "inspected_sections": [
+      "8.2 Experimental setup",
+      "8.3 Tables5/6 and functional bootstrapping Table7"
+    ],
+    "performance_scope": "No machine-only attribution or linear48/8 normalization is justified by this evidence."
+  }
 }

@@ -25,8 +25,11 @@ serialized key format. Evidence: `narrow-dd-combined-ntt-production-integration-
 
 These are observed timings with eight OpenMP threads on an Intel i9-12900K;
 some runs overlap other work. They exclude loading keys and preparing caches.
-Paper Table 7 reports 2.71/4.51/2.79 seconds on 48 CPU cores of a dual EPYC 7K62
-server. This is numerical qualification, not a matched performance benchmark.
+Paper Table 7 reports 2.71/4.51/2.79 seconds on the dual EPYC 7K62 experimental
+platform. Its core allocation has not been established: Table 6 explicitly uses
+48 cores, while the Table 7 passage does not specify a core count. Do not use
+48/8 as a hardware normalization for these FBS timings. This is numerical
+qualification, not a matched performance benchmark.
 See `narrow-dd-mask42-cpu-platform-observation.json` and
 `narrow-dd-mask42-security-scope-review.json` for the platform and security scope.
 
