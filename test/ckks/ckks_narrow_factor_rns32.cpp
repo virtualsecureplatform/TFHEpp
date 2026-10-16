@@ -310,11 +310,14 @@ int main()
                         for(std::size_t j=0;j<in.size();++j)key->automorphism_evaluator(out[j],in[j],level,exponent);
                     };
                     const auto batched=parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                    if(batch_calls!=std::size_t(columns==3||columns==4||columns==7))throw std::runtime_error("parallel factor batch dispatch used wrong column scope");
                     const auto serial_finish=serial_inverse.evaluate(variants,tail,0,*key,nullptr,nullptr);
                     for(std::size_t c=0;c<columns;++c)if(serial_finish[c].ct!=batched[c].ct)throw std::runtime_error("parallel inverse CRT changed factor coefficients");
-                    if(batch_calls!=2*std::size_t(columns==3||columns==4))throw std::runtime_error("factor batch dispatch used wrong column scope");
+                    // Three/four-column controls retain batch conjugation;
+                    // the seven-column control keeps its original column path.
+                    if(batch_calls!=2*std::size_t(columns==3||columns==4)+std::size_t(columns==7))throw std::runtime_error("factor control batch dispatch used wrong column scope");
                     for(std::size_t c=0;c<columns;++c)if(batched[c].ct!=concurrent[c].ct)throw std::runtime_error("factor batch rounding/addition changed coefficients");
-                    if(columns==3||columns==4){
+                    if(columns==3||columns==4||columns==7){
                         key->automorphism_batch_evaluator=[](auto,auto,uint32_t,uint32_t){throw std::runtime_error("batch conjugation test failure");};
                         bool propagated=false;
                         try{parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);}

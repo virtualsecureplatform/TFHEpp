@@ -4,8 +4,8 @@ Usage: python3 test/ckks/tools/make_factor_finish_replay.py EMPTY_DIRECTORY [--s
 Compile replay.cpp with retained replay flags and test/ckks on the include path.
 Run the fixed grouped sparse-Tanh profile with native batches and windowed DD.
 Warm both policies, then measure serial/parallel/parallel/serial. No keys generated.
-With --seven-columns, use original-degree Tanh and an isolated candidate header
-that also batches seven-column finishing; production dispatch stays unchanged.
+With --seven-columns, use original-degree Tanh to compare its seven-column
+per-column finish against the production full-team inverse/CRT and batch switch.
 """
 import hashlib
 import json
@@ -23,17 +23,6 @@ if any(out.iterdir()):
     raise SystemExit('Use an empty experiment directory')
 source=repo/'test/ckks/ckks_narrow_ll14_basis_ntt_fbs.cpp'
 main=source.read_text()
-if seven_columns:
-    header=(repo/'include/ckks/narrow_factor_rns32.hpp').read_text()
-    needle='parallel_inverse_crt&&parallel_conjugation&&(columns==3||columns==4)&&key.automorphism_batch_evaluator'
-    assert header.count(needle)==1
-    header=header.replace(needle,'parallel_inverse_crt&&parallel_conjugation&&(columns==3||columns==4||columns==7)&&key.automorphism_batch_evaluator',1)
-    # Resolve the copied header's sibling includes using normal repo flags.
-    header=re.sub(r'#include "([^"\n]+)"',r'#include <ckks/\1>',header)
-    (out/'candidate_narrow_factor_rns32.hpp').write_text(header)
-    needle='#include <ckks/narrow_factor_rns32.hpp>'
-    assert main.count(needle)==1
-    main=main.replace(needle,'#include "candidate_narrow_factor_rns32.hpp"',1)
 main=main.replace(' if(direct_rns){',' decltype(key->narrow.factor_source) serial_projection_source,parallel_projection_source;\n if(direct_rns){',1)
 needle='  using Source=CKKSNarrowDeferredRescaleFactorSourceRNS32<Narrow,TableSource,TableSource>;'
 assert main.count(needle)==1

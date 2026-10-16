@@ -337,8 +337,10 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     start = Clock::now();
     // Full-team inverse transforms and coefficient blocks avoid the wide
     // intermediate used only to round into the native batch switch inputs.
+    // Seven-column original-degree Tanh shares this path with 3/4-column
+    // groups; the native batch switch accepts the same padded matrix output.
     if constexpr(requires{key.automorphism_batch_evaluator;}){
-        if(parallel_inverse_crt&&parallel_conjugation&&(columns==3||columns==4)&&key.automorphism_batch_evaluator){
+        if(parallel_inverse_crt&&parallel_conjugation&&(columns==3||columns==4||columns==7)&&key.automorphism_batch_evaluator){
             std::vector<typename Schedule::Factor> result;
             std::vector<TRLWE<P>> second;
             inverseRoundFactorBatchRNS32<Schedule>(result,second,sums,columns,stride,plans,crt);
