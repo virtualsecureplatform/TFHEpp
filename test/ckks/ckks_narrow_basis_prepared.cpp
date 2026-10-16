@@ -64,6 +64,20 @@ template<std::uint32_t Nbit>void checkTwoLayerBasis()
     std::cout<<"two-layer basis N="<<BP::n<<" seeds=3 derived=8 delta=37 output=93/44 independent error="<<maximum<<" square49/44 error="<<square_error<<'\n';
 }
 
+namespace TFHEpp {
+template<class BP,class Key>struct CountedBasisProduct {
+    static constexpr auto log_q=Key::log_q;
+    const Key&key;std::size_t&switches;std::size_t&tensors;
+    void tensorProduct(TRLWE3<BP>&out,const TRLWE<BP>&a,const TRLWE<BP>&b)const
+    {++tensors;key.tensorProduct(out,a,b);}
+};
+namespace ckks_detail {
+template<class BP,class Key>struct is_ckks_dd_relin_key<CountedBasisProduct<BP,Key>> : std::true_type {};
+}
+template<class BP,class Key>void CKKSRelinKeySwitch(TRLWE<BP>&out,const Polynomial<BP>&in,const CountedBasisProduct<BP,Key>&key)
+{++key.switches;CKKSRelinKeySwitch<BP>(out,in,key.key);}
+}
+
 template<class BP>struct SparseMiddle {using Param=BP;static constexpr std::uint32_t output_log_q=165,log_delta=44;using Output=CKKSCiphertext<BP,165,44>;};
 template<std::uint32_t Nbit>void checkSparseTanh()
 {
@@ -92,6 +106,17 @@ template<std::uint32_t Nbit>void checkSparseTanh()
     auto bad=approximation.coefficients;bad[4]={1e-300,0};bool rejected=false;
     try{CKKSNarrowEvalSeriesFromBasisRootsPrepared<Series>(*weighted,roots,plan,bad,rns,conjugate,root_conjugate);}catch(const std::invalid_argument&){rejected=true;}
     if(!rejected || fft->ct!=weighted->ct)throw std::runtime_error("unsupported sparse coefficient was not rejected before output mutation");
+    std::size_t switches=0,tensors=0;
+    CountedBasisProduct<BP,decltype(rns)> counted{rns,switches,tensors};
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Series>(*weighted,roots,plan,approximation.coefficients,counted,conjugate,root_conjugate);
+    if(switches!=16 || tensors!=16)throw std::runtime_error("termwise sparse reconstruction product count differs");
+    switches=tensors=0;
+    auto accumulated=std::make_unique<typename Series::Output>();
+    CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Series>(*accumulated,roots,plan,approximation.coefficients,counted,conjugate,root_conjugate);
+    if(switches!=1 || tensors!=16)throw std::runtime_error("accumulated basis did not use exactly one key switch");
+    CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Series>(*fft,roots,plan,approximation.coefficients,product,conjugate,root_conjugate);
+    if(fft->ct!=accumulated->ct)throw std::runtime_error("accumulated sparse RNS and FFT tensors differ");
+    CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Series>(*weighted,roots,plan,approximation.coefficients,rns,conjugate,root_conjugate);
     auto output=std::make_unique<CKKSCiphertext<BP,93,44>>();CKKSScaleDown<BP,121,72,28>(*output,*weighted);
     ckksSlotDecode<BP,93,44>(*slots,output->ct[1]);double error=0;
     for(std::size_t i=0;i<BP::n/2;++i)error=std::max(error,std::abs((*slots)[i]-std::tanh(x(i))));
@@ -144,13 +169,17 @@ int main(int argc,char**argv)
     if(rns->ct!=integer->ct)throw std::runtime_error("RNS basis tensor differs from FFT tensor");
     if (reference->ct != prepared->ct || reference->ct != integer->ct)
         throw std::runtime_error("prepared basis backends differ from existing reconstruction");
+    auto accumulated_dense=std::make_unique<Basis::Output>();
+    CKKSNarrowEvalSeriesFromBasisRootsAccumulatedPrepared<Basis>(*accumulated_dense,roots,plan,coefficients,rns_product,conjugate);
+    auto accumulated_slots=std::make_unique<CKKSSlotVector<P>>();
+    ckksSlotDecode<P,Basis::output_log_q,Basis::log_delta>(*accumulated_slots,accumulated_dense->ct[1]);
     ckksSlotDecode<P,Basis::output_log_q,Basis::log_delta>(*slots,integer->ct[1]);
     double maximum = 0;
     for (std::size_t i = 0; i < P::n/2; ++i) {
         double expected = coefficients[0].real();
         for (std::size_t k = 1; k < coefficients.size(); ++k)
             expected += 2*(coefficients[k]*std::polar(1.0,k*(0.3+0.7*i/(P::n/2)))).real();
-        maximum = std::max(maximum,std::abs((*slots)[i]-expected));
+        maximum = std::max({maximum,std::abs((*slots)[i]-expected),std::abs((*accumulated_slots)[i]-expected)});
     }
     if (maximum >= std::ldexp(1.0,-23)) throw std::runtime_error("independent basis series gate failed");
     {
