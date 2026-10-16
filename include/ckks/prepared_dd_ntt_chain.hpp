@@ -2,6 +2,7 @@
 #include "prepared_dd_ntt.hpp"
 #include "key_projection.hpp"
 #include "tensor_rns32.hpp"
+#include "prepared_dd_batch_rns32.hpp"
 #include <tuple>
 
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
@@ -51,6 +52,19 @@ public:
         if constexpr(RNSTensor)
             return CKKSRelinKeyTensorRNS32<P,std::tuple_element_t<Level,Keys>>{std::get<Level>(keys)};
         else return (std::get<Level>(keys));
+    }
+    template<std::size_t Level,class Outputs,class Inputs>
+    void multiplyBatch(Outputs&next,const Inputs&factors,
+        const std::vector<std::pair<std::size_t,std::size_t>>&pairs)const
+        requires(RNSTensor && WideRNS)
+    {
+        static_assert(Level<Levels);
+        constexpr auto Q=StartDataQ-Level*LogDelta;
+        std::vector<CKKSRNS32Product<P,Q,LogDelta>> work;
+        work.reserve(pairs.size());
+        for(const auto&[tree,pair]:pairs)
+            work.push_back({&next[tree][pair],&factors[tree][2*pair],&factors[tree][2*pair+1]});
+        CKKSMultRelinThenRescaleBatchRNS32<P,Q,LogDelta>(work,std::get<Level>(keys));
     }
     std::size_t byteSize() const
     {

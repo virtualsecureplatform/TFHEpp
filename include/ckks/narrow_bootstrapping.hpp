@@ -1144,7 +1144,7 @@ template<class Schedule,std::size_t Level=0,
 inline void productTreeBatch(std::vector<typename Schedule::TreeResult>&results,
     std::vector<std::vector<CKKSCiphertext<typename Schedule::Param,
         Schedule::factor_log_q-Level*Schedule::log_delta,Schedule::log_delta>>> factors,
-    const typename Schedule::RelinKeys&keys,const PreparedKeys*prepared=nullptr)
+    const typename Schedule::RelinKeys&keys,const PreparedKeys*prepared=nullptr,bool windowed_switches=false)
 {
     using P=typename Schedule::Param;
     constexpr auto maximum=std::size_t{1}<<(Schedule::tree_depth-Level);
@@ -1172,7 +1172,15 @@ inline void productTreeBatch(std::vector<typename Schedule::TreeResult>&results,
             if constexpr(use_multilimb_digit_fft_v<P>)if(prepared){multiply(prepared->template get<Level>());return;}
             multiply(keys.template get<Level>());
         };
-        if constexpr(ParallelPairs){
+        // Preserve the raw-key fallback for parameters which do not select
+        // prepared multiplication in the existing tree implementation.
+        if(windowed_switches && use_multilimb_digit_fft_v<P>){
+            if constexpr(Schedule::relinearize_before_rescale &&
+                requires{prepared->template multiplyBatch<Level>(next,factors,pairs);}){
+                if(!prepared)throw std::invalid_argument("windowed products require prepared RNS keys");
+                prepared->template multiplyBatch<Level>(next,factors,pairs);
+            }else throw std::invalid_argument("unsupported windowed product backend");
+        }else if constexpr(ParallelPairs){
             std::vector<std::exception_ptr> errors(pairs.size());
             [[maybe_unused]] const auto threads=columnThreads(pairs.size());
 #pragma omp parallel for if(pairs.size()>1) schedule(dynamic,1) num_threads(threads)
@@ -1184,7 +1192,7 @@ inline void productTreeBatch(std::vector<typename Schedule::TreeResult>&results,
         for(std::size_t tree=0;tree<factors.size();++tree)
             if(factors[tree].size()%2)CKKSLevelReduce<P>(next[tree].back(),factors[tree].back());
         factors.clear(); // Completed input levels need not remain live during recursion.
-        productTreeBatch<Schedule,Level+1,PreparedKeys,ParallelPairs>(results,std::move(next),keys,prepared);
+        productTreeBatch<Schedule,Level+1,PreparedKeys,ParallelPairs>(results,std::move(next),keys,prepared,windowed_switches);
     }
 }
 

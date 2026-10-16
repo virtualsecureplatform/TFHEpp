@@ -1,6 +1,7 @@
 // Deterministic coefficient fixtures only; no encryption or key generation.
 #include "../ckks_narrow_basis_benchmark.hpp"
 #include "dd_batch_candidate.hpp"
+#include <ckks/prepared_dd_batch_rns32.hpp>
 #include <iomanip>
 #include <iostream>
 using namespace TFHEpp;
@@ -28,6 +29,8 @@ void run(std::size_t size,bool timed,bool tree_shapes=false){
         for(auto&c:left[2].ct)c.fill((typename P::T{1}<<(Q-1))+typename P::T{1});
         for(auto&c:right[3].ct)c.fill(typename P::T{}-typename P::T{1});
     }
+    std::vector<CKKSRNS32Product<P,Q,44>> products;
+    for(std::size_t j=0;j<size;++j)products.push_back({&actual[j],&left[j],&right[j]});
     const auto normal_threads=std::min<int>(size,omp_get_max_threads());
 #pragma omp parallel for schedule(dynamic,1) num_threads(normal_threads)
     for(std::size_t j=0;j<size;++j)CKKSMultRelinThenRescale<P>(expected[j],left[j],right[j],original);
@@ -37,7 +40,7 @@ void run(std::size_t size,bool timed,bool tree_shapes=false){
             const auto threads=mode?omp_get_max_threads():normal_threads;
 #pragma omp parallel for schedule(dynamic,1) num_threads(threads)
             for(std::size_t j=0;j<size;++j)CKKSMultRelinThenRescale<P>(actual[j],left[j],right[j],original);
-        }else if(mode>=100)dd_batch_experiment::multiplyWindowed<P,Q,44,48,40,Chunk>(actual,left,right,key,mode-100);
+        }else if(mode>=100)CKKSMultRelinThenRescaleBatchRNS32<P,Q,44>(products,key,mode-100);
         else dd_batch_experiment::multiply<P,Q,44,48,40,Chunk>(actual,left,right,key,mode);
         const auto seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
         for(std::size_t j=0;j<size;++j)if(actual[j].ct!=expected[j].ct)throw std::runtime_error("DD batch changed ciphertext coefficients");
@@ -51,6 +54,16 @@ void run(std::size_t size,bool timed,bool tree_shapes=false){
         if(!rejected)throw std::runtime_error("DD batch shape accepted");
         rejected=false;try{dd_batch_experiment::multiply<P,Q,44,48,40,Chunk>(actual,left,right,key,0);}catch(const std::invalid_argument&){rejected=true;}
         if(!rejected)throw std::runtime_error("DD zero window accepted");
+        std::vector<CKKSRNS32Product<P,Q,44>> no_products;
+        CKKSMultRelinThenRescaleBatchRNS32<P,Q,44>(no_products,key);
+        rejected=false;try{CKKSMultRelinThenRescaleBatchRNS32<P,Q,44>(products,key,0);}catch(const std::invalid_argument&){rejected=true;}
+        if(!rejected)throw std::runtime_error("zero production DD window accepted");
+        if(!products.empty()){
+            auto bad=products;bad.back().right=nullptr;const auto before=actual;
+            rejected=false;try{CKKSMultRelinThenRescaleBatchRNS32<P,Q,44>(bad,key);}catch(const std::invalid_argument&){rejected=true;}
+            if(!rejected)throw std::runtime_error("null production DD operand accepted");
+            for(std::size_t j=0;j<size;++j)if(actual[j].ct!=before[j].ct)throw std::runtime_error("invalid DD batch mutated output");
+        }
         std::cout<<"check N="<<P::n<<" q="<<Q<<" batch="<<size<<" identical\n";
     }else{
         const std::vector<int> modes=tree_shapes?std::vector<int>{0,8,108,116}:std::vector<int>{0,1,8,16,32};

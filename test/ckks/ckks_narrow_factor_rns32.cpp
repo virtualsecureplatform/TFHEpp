@@ -55,13 +55,13 @@ struct FailingBatchKeys {
     {throw std::runtime_error("batch tree backend test failure");}
 };
 
-template<uint32_t Nbit,std::size_t H>
+template<uint32_t Nbit,std::size_t H,uint32_t Primary=20>
 void checkBatchTrees()
 {
     using BP=narrow_benchmark::BenchmarkParam<Nbit,7>;
     using S=CKKSNarrowBootstrapSchedule<BP,48,427,44,42,H,true,13,true>;
-    using Chain=CKKSPreparedAuxiliaryDDRelinKeyChainNTT<BP,S::factor_log_q,44,S::tree_depth,48,20,20,true,true>;
-    auto master=std::make_unique<CKKSCompactDDRelinKey<BP,433,20,20>>();
+    using Chain=CKKSPreparedAuxiliaryDDRelinKeyChainNTT<BP,S::factor_log_q,44,S::tree_depth,48,Primary,20,true,true,std::conditional_t<Primary==40,CKKSNarrowLL14GadgetChunks,CKKSUniformGadgetChunks<80>>>;
+    auto master=std::make_unique<CKKSCompactDDRelinKey<BP,433,Primary,20>>();
     std::mt19937_64 random(20261017+Nbit);
     for(auto&row:master->data)for(auto&digit:row)for(auto&component:digit)for(auto&value:component)value=int32_t(random()&((1U<<20)-1))-(1<<19);
     Chain prepared(*master);auto raw=std::make_unique<typename S::RelinKeys>();
@@ -78,11 +78,20 @@ void checkBatchTrees()
         }
         std::vector<typename S::TreeResult> expected(count),actual;
         for(std::size_t tree=0;tree<count;++tree)narrow_detail::productTree<S,0,Chain>(expected[tree],factors[tree],*raw,&prepared);
-        narrow_detail::productTreeBatch<S,0,Chain>(actual,std::move(factors),*raw,&prepared);
+        narrow_detail::productTreeBatch<S,0,Chain>(actual,factors,*raw,&prepared);
         if(actual.size()!=expected.size())throw std::runtime_error("batched tree changed result count");
         for(std::size_t tree=0;tree<count;++tree)if(actual[tree].ct!=expected[tree].ct)throw std::runtime_error("batched tree changed paired arithmetic or odd-leaf carry");
+        narrow_detail::productTreeBatch<S,0,Chain>(actual,std::move(factors),*raw,&prepared,true);
+        if(actual.size()!=expected.size())throw std::runtime_error("windowed tree changed result count");
+        for(std::size_t tree=0;tree<count;++tree)if(actual[tree].ct!=expected[tree].ct)
+            throw std::runtime_error("windowed tree changed paired arithmetic or odd-leaf carry");
     }
     if constexpr(use_multilimb_digit_fft_v<BP>){
+        bool missing_rejected=false;std::vector<typename S::TreeResult> no_key_result;
+        try{narrow_detail::productTreeBatch<S,0,Chain>(no_key_result,
+            std::vector<std::vector<typename S::Factor>>(2,std::vector<typename S::Factor>(2)),*raw,nullptr,true);}
+        catch(const std::invalid_argument&){missing_rejected=true;}
+        if(!missing_rejected)throw std::runtime_error("windowed tree accepted missing prepared keys");
         FailingBatchKeys<Chain> failing;bool rejected=false;
         std::vector<typename S::TreeResult> result;
         try{narrow_detail::productTreeBatch<S,0,FailingBatchKeys<Chain>>(result,
@@ -200,6 +209,9 @@ int main()
     checkRootColumnDispatch();
     checkBatchTrees<4,4>();
     checkBatchTrees<9,31>();
+    checkBatchTrees<4,4,40>();
+    checkBatchTrees<9,4,40>();
+    checkBatchTrees<9,31,40>();
     auto raw=std::make_shared<TransparentSource>();
     using Cache=CKKSNarrowFactorSelectorCache32<Source>;
     bool rejected=false;
