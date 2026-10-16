@@ -12,7 +12,7 @@ void multiply(std::span<CKKSCiphertext<P,Q-Delta,Delta>> output,
               std::span<const CKKSCiphertext<P,Q,Delta>> left,
               std::span<const CKKSCiphertext<P,Q,Delta>> right,
               const CKKSAuxiliaryDDRelinKeyNTT<P,Q,Auxiliary,Bits,20,true,Chunk>& key,
-              std::size_t window=8)
+              std::size_t window=8,bool stable_threads=false)
 {
     if(output.size()!=left.size()||left.size()!=right.size()||!window)
         throw std::invalid_argument("invalid DD multiply batch shape/window");
@@ -24,13 +24,19 @@ void multiply(std::span<CKKSCiphertext<P,Q-Delta,Delta>> output,
     std::vector<TRLWE<P>> switched(size);
     const auto threads=std::min<int>(size,omp_get_max_threads());
     std::vector<std::exception_ptr> errors(size);
-#pragma omp parallel for schedule(dynamic,1) num_threads(threads)
-    for(std::size_t j=0;j<size;++j){
+    const auto tensor_job=[&](std::size_t j){
         try{
             CKKSTensorProductRNS32<P,Q>(tensor[j],left[j].ct,right[j].ct);
             for(std::size_t i=0;i<P::n;++i)
                 lifted[j][i]=ckks_detail::reduceToLevel<P,KeyQ>(tensor[j][2][i]<<Auxiliary);
         }catch(...){errors[j]=std::current_exception();}
+    };
+    if(stable_threads){
+#pragma omp parallel for schedule(static,1)
+        for(std::size_t j=0;j<size;++j)tensor_job(j);
+    }else{
+#pragma omp parallel for schedule(dynamic,1) num_threads(threads)
+        for(std::size_t j=0;j<size;++j)tensor_job(j);
     }
     for(const auto&error:errors)if(error)std::rethrow_exception(error);
     CKKSApplyGadgetBatchRNS32<4>(switched,lifted,*key.cache,window);
@@ -51,14 +57,14 @@ void multiplyWindowed(std::span<CKKSCiphertext<P,Q-Delta,Delta>> output,
                       std::span<const CKKSCiphertext<P,Q,Delta>> left,
                       std::span<const CKKSCiphertext<P,Q,Delta>> right,
                       const CKKSAuxiliaryDDRelinKeyNTT<P,Q,Auxiliary,Bits,20,true,Chunk>& key,
-                      std::size_t window=8)
+                      std::size_t window=8,bool stable_threads=false)
 {
     if(output.size()!=left.size()||left.size()!=right.size()||!window)
         throw std::invalid_argument("invalid windowed DD multiply shape/window");
     for(std::size_t offset=0;offset<left.size();offset+=window){
         const auto count=std::min(window,left.size()-offset);
         multiply<P,Q,Delta,Auxiliary,Bits,Chunk>(output.subspan(offset,count),
-            left.subspan(offset,count),right.subspan(offset,count),key,window);
+            left.subspan(offset,count),right.subspan(offset,count),key,window,stable_threads);
     }
 }
 

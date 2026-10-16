@@ -10,7 +10,7 @@ template<class P,std::uint32_t Q,std::uint32_t Bits>struct Rows {
     std::array<TRLWE<P>,rows> ciphertexts;
 };
 template<std::uint32_t Nbit,std::uint32_t Q,std::uint32_t Chunk>
-void run(std::size_t size,bool timed,bool tree_shapes=false){
+void run(std::size_t size,bool timed,bool tree_shapes=false,bool production_compare=false,bool steady_compare=false,int only_mode=0){
     using P=narrow_benchmark::BenchmarkParam<Nbit,7>;
     using In=CKKSCiphertext<P,Q,44>;using Out=CKKSCiphertext<P,Q-44,44>;
     using Key=CKKSAuxiliaryDDRelinKeyNTT<P,Q,48,40,20,true,Chunk>;
@@ -40,14 +40,16 @@ void run(std::size_t size,bool timed,bool tree_shapes=false){
             const auto threads=mode?omp_get_max_threads():normal_threads;
 #pragma omp parallel for schedule(dynamic,1) num_threads(threads)
             for(std::size_t j=0;j<size;++j)CKKSMultRelinThenRescale<P>(actual[j],left[j],right[j],original);
-        }else if(mode>=100)CKKSMultRelinThenRescaleBatchRNS32<P,Q,44>(products,key,mode-100);
+        }else if(mode>=300)dd_batch_experiment::multiplyWindowed<P,Q,44,48,40,Chunk>(actual,left,right,key,mode-300,true);
+        else if(mode>=200)dd_batch_experiment::multiplyWindowed<P,Q,44,48,40,Chunk>(actual,left,right,key,mode-200);
+        else if(mode>=100)CKKSMultRelinThenRescaleBatchRNS32<P,Q,44>(products,key,mode-100);
         else dd_batch_experiment::multiply<P,Q,44,48,40,Chunk>(actual,left,right,key,mode);
         const auto seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
         for(std::size_t j=0;j<size;++j)if(actual[j].ct!=expected[j].ct)throw std::runtime_error("DD batch changed ciphertext coefficients");
         return seconds;
     };
     if(!timed){
-        for(int window:{3,8,16,32,103,108,116})measure(window);
+        for(int window:{3,8,16,32,103,108,116,303,308})measure(window);
         std::vector<Out> empty;std::vector<In> no_input;
         dd_batch_experiment::multiply<P,Q,44,48,40,Chunk>(empty,no_input,no_input,key);
         bool rejected=false;try{dd_batch_experiment::multiply<P,Q,44,48,40,Chunk>(empty,left,right,key);}catch(const std::invalid_argument&){rejected=true;}
@@ -66,7 +68,7 @@ void run(std::size_t size,bool timed,bool tree_shapes=false){
         }
         std::cout<<"check N="<<P::n<<" q="<<Q<<" batch="<<size<<" identical\n";
     }else{
-        const std::vector<int> modes=tree_shapes?std::vector<int>{0,8,108,116}:std::vector<int>{0,1,8,16,32};
+        const std::vector<int> modes=only_mode?std::vector<int>{only_mode}:steady_compare?std::vector<int>{0,108,308}:production_compare?std::vector<int>{0,108,208}:tree_shapes?std::vector<int>{0,8,108,116}:std::vector<int>{0,1,8,16,32};
         for(int mode:modes)measure(mode);
         auto order=modes;order.insert(order.end(),modes.rbegin(),modes.rend());
         for(int mode:order)for(int trial=0;trial<3;++trial)
@@ -78,9 +80,13 @@ int main(int argc,char**argv)try{
     if(check){
         run<4,385,145>(7,false);run<4,341,80>(7,false);run<4,297,115>(7,false);run<4,253,80>(7,false);run<4,209,145>(7,false);
         run<9,385,145>(7,false);run<14,385,145>(7,false);run<14,341,80>(7,false);run<14,297,115>(7,false);run<14,253,80>(7,false);run<14,209,145>(7,false);
-    }else if(argc>1&&std::string(argv[1])=="--tree-shapes"){
-        run<14,385,145>(76,true,true);run<14,341,80>(36,true,true);run<14,297,115>(20,true,true);run<14,253,80>(8,true,true);run<14,209,145>(4,true,true);
-        run<14,385,145>(57,true,true);run<14,341,80>(27,true,true);run<14,297,115>(15,true,true);run<14,253,80>(6,true,true);run<14,209,145>(3,true,true);
+    }else if(argc>1&&(std::string(argv[1])=="--capped-team-only"||std::string(argv[1])=="--steady-team-only")){
+        run<14,385,145>(76,true,false,false,false,std::string(argv[1])=="--steady-team-only"?308:108);
+    }else if(argc>1&&(std::string(argv[1])=="--tree-shapes"||std::string(argv[1])=="--production-compare"||std::string(argv[1])=="--steady-team-compare")){
+        const bool compare=std::string(argv[1])=="--production-compare";
+        const bool steady=std::string(argv[1])=="--steady-team-compare";
+        run<14,385,145>(76,true,true,compare,steady);run<14,341,80>(36,true,true,compare,steady);run<14,297,115>(20,true,true,compare,steady);run<14,253,80>(8,true,true,compare,steady);run<14,209,145>(4,true,true,compare,steady);
+        run<14,385,145>(57,true,true,compare,steady);run<14,341,80>(27,true,true,compare,steady);run<14,297,115>(15,true,true,compare,steady);run<14,253,80>(6,true,true,compare,steady);run<14,209,145>(3,true,true,compare,steady);
     }else for(auto size:{32u,16u,8u,4u,2u}){
         run<14,385,145>(size,true);run<14,341,80>(size,true);run<14,297,115>(size,true);run<14,253,80>(size,true);run<14,209,145>(size,true);
     }
