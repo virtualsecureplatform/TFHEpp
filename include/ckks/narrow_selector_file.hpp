@@ -30,7 +30,12 @@ class CKKSNarrowSelectorFile final : public CKKSNarrowSelectorSource<Schedule> {
     }
     static std::array<std::uint64_t, 9> header(bool tail, std::size_t group)
     {
-        return {0x4e4152524f573031ULL, P::n, Schedule::selector_log_q,
+        constexpr auto magic = [] {
+            if constexpr (requires { Schedule::selector_archive_magic; })
+                return std::uint64_t{Schedule::selector_archive_magic};
+            else return std::uint64_t{0x4e4152524f573031ULL};
+        }();
+        return {magic, P::n, Schedule::selector_log_q,
                 Schedule::log_delta, Schedule::plain_log_delta, Schedule::block_width,
                 std::numeric_limits<typename P::T>::digits, tail, group};
     }

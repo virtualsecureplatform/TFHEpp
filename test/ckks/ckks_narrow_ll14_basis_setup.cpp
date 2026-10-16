@@ -1,9 +1,18 @@
 #include "ckks_narrow_basis_benchmark.hpp"
 #include <ckks/prepared_dd_ntt.hpp>
 #include <iomanip>
+#include <ckks/narrow_ll14_noise_profile.hpp>
 using namespace TFHEpp;
 using P=narrow_benchmark::BenchmarkParam<14,7>;
 struct EncryptionP:P { static constexpr uint32_t B̅gbit=16,l̅=28; };
+#ifdef TFHEPP_NARROW_LL14_RETUNED_NOISE
+using NoiseProfile=CKKSNarrowLL14RetunedNoise;
+constexpr double selector_sigma=NoiseProfile::selector_sigma,dd_sigma=NoiseProfile::dd_sigma;
+constexpr uint64_t selector_magic=NoiseProfile::selector_magic;
+#else
+constexpr double selector_sigma=102.4,dd_sigma=3.2;
+constexpr uint64_t selector_magic=0x4e4152524f573031ULL;
+#endif
 using Direct=CKKSNarrowBootstrapSchedule<P,48,440,57,42,31,false,0,true>;
 int main(int argc,char**argv)try {
  if(argc!=4)throw std::runtime_error("CHECKPOINT NEW_DIRECTORY pilot|full");
@@ -35,11 +44,11 @@ int main(int argc,char**argv)try {
    }
    auto polynomial=std::make_unique<Polynomial<P>>();
    if(nonzero)ckksSlotEncode<P,440,57>(*polynomial,*slots);
-   ckks_detail::encryptPolynomialAtLevel<EncryptionP,440>((*chunk)[y].ct,*polynomial,*dense,{std::ldexp(102.4,-440),0});
+   ckks_detail::encryptPolynomialAtLevel<EncryptionP,440>((*chunk)[y].ct,*polynomial,*dense,{std::ldexp(selector_sigma,-440),0});
   }
   const auto generated=std::chrono::steady_clock::now();generation_seconds+=std::chrono::duration<double>(generated-before).count();
   {std::ofstream f(root/((tail?"tail-":"head-")+std::to_string(group)+".bin"),std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);
-   std::array<uint64_t,9> meta{0x4e4152524f573031ULL,P::n,440,57,42,Direct::block_width,448,tail,group};ar(meta);
+   std::array<uint64_t,9> meta{selector_magic,P::n,440,57,42,Direct::block_width,448,tail,group};ar(meta);
    ar(cereal::binary_data(reinterpret_cast<const uint64_t*>(chunk->data()),chunk->size()*sizeof(Direct::Selector)));}
   write_seconds+=std::chrono::duration<double>(std::chrono::steady_clock::now()-generated).count();
   std::cout<<"saved "<<(tail?"tail":"head")<<" group="<<group<<" generation_seconds="<<generation_seconds<<" write_seconds="<<write_seconds<<std::endl;
@@ -55,8 +64,12 @@ int main(int argc,char**argv)try {
   }
  }
  auto dd=std::make_unique<CKKSCompactDDRelinKey<P,433,20,20>>();
- CKKSCompactDDRelinKeyGenForNTT(*dd,*dense);
- {std::ofstream f(root/"dd433-primary20.bin",std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);ar(origin,*dd);}
- std::ofstream report(root/"setup.json");report<<std::setprecision(17)<<"{\"full\":"<<(full?"true":"false")<<",\"private_keys_generated\":0,\"private_keys_reused\":true,\"selector_noise_stddev\":102.4,\"selector_log_q\":440,\"selector_log_delta\":57,\"dd_log_q\":433,\"dd_primary_bits\":20,\"dd_secondary_bits\":20,\"generation_seconds\":"<<generation_seconds<<",\"write_seconds\":"<<write_seconds<<",\"total_setup_seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<<"}";
+ CKKSCompactDDRelinKeyGenForNTT(*dd,*dense,{std::ldexp(dd_sigma,-433),0});
+ {std::ofstream f(root/"dd433-primary20.bin",std::ios::binary);cereal::PortableBinaryOutputArchive ar(f);
+#ifdef TFHEPP_NARROW_LL14_RETUNED_NOISE
+  ar(NoiseProfile::dd_metadata());
+#endif
+  ar(origin,*dd);}
+ std::ofstream report(root/"setup.json");report<<std::setprecision(17)<<"{\"full\":"<<(full?"true":"false")<<",\"private_keys_generated\":0,\"private_keys_reused\":true,\"selector_noise_stddev\":"<<selector_sigma<<",\"dd_noise_stddev\":"<<dd_sigma<<",\"selector_log_q\":440,\"selector_log_delta\":57,\"dd_log_q\":433,\"dd_primary_bits\":20,\"dd_secondary_bits\":20,\"generation_seconds\":"<<generation_seconds<<",\"write_seconds\":"<<write_seconds<<",\"total_setup_seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<<"}";
  std::cout<<"setup complete"<<std::endl;
 }catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}
