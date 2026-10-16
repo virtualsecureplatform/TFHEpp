@@ -2,6 +2,8 @@
 #include <ckks/narrow_basis_prepared.hpp>
 #include <ckks/prepared_dd_ntt.hpp>
 #include <ckks/tensor_rns32.hpp>
+#include <ckks/narrow_two_layer_basis.hpp>
+#include <ckks/key_projection.hpp>
 #include <iostream>
 
 using namespace TFHEpp;
@@ -9,8 +11,62 @@ using P = narrow_benchmark::BenchmarkParam<9,7>;
 using Narrow = CKKSNarrowBootstrapSchedule<P,48,357,35,35,31,true,13,true>;
 using Basis = CKKSNarrowFrequencyBasisSchedule<Narrow,32>;
 
-int main()
+template<class BP>struct TwoLayerMiddle {using Param=BP;static constexpr std::uint32_t output_log_q=156,log_delta=37;using Output=CKKSCiphertext<BP,156,37>;};
+template<std::uint32_t Nbit>void checkTwoLayerBasis()
 {
+    using BP=narrow_benchmark::BenchmarkParam<Nbit,7>;
+    using Seed=CKKSCiphertext<BP,193,37>;
+    using Middle=TwoLayerMiddle<BP>;
+    using Series=CKKSNarrowFrequencyBasisSchedule<Middle,28>;
+    static_assert(Series::output_log_q==119 && Series::log_delta==65);
+    static_assert(119-28+(44-37)>=93); // Final93/44 and subsequent49/44 fit.
+    CKKSNarrowTwoLayerFrequencyBasis plan(40,{6,9,10},{3,6,9,12,15,18,19,20});
+    std::vector<Seed> seeds(3);auto slots=std::make_unique<CKKSSlotVector<BP>>();
+    const auto angle=[&](std::size_t i){return -std::acos(-1.0)/2+std::acos(-1.0)*i/(BP::n/2-1);};
+    for(std::size_t j=0;j<seeds.size();++j){
+        for(std::size_t i=0;i<BP::n/2;++i)(*slots)[i]=std::polar(1.0,plan.seeds()[j]*angle(i));
+        ckksSlotEncode<BP,193,37>(seeds[j].ct[1],*slots);
+    }
+    // Transparent rows exercise arithmetic without generating encrypted keys.
+    auto first_raw=std::make_unique<CKKSCompactDDRelinKey<BP,241,20,20>>();
+    auto second_raw=std::make_unique<CKKSCompactDDRelinKey<BP,204,20,20>>();
+    CKKSAuxiliaryDDRelinKeyNTT<BP,193,48,20,20> first(makeCKKSDDRelinKeyNTT<20>(*first_raw));
+    CKKSAuxiliaryDDRelinKeyNTT<BP,156,48,20,20> second(makeCKKSDDRelinKeyNTT<20>(*second_raw));
+    CKKSRelinKeyTensorRNS32<BP,decltype(first)> first_rns{first};
+    CKKSRelinKeyTensorRNS32<BP,decltype(second)> second_rns{second};
+    std::vector<typename Series::Root> intermediate;
+    std::size_t conjugations=0;
+    CKKSNarrowDeriveFrequencyRoots<BP,193,37>(intermediate,seeds,plan,first_rns,
+        [&](auto&out,const auto&in){++conjugations;for(std::size_t c=0;c<2;++c)Automorphism<BP>(out[c],in[c],2*BP::n-1);ckks_detail::reduceTRLWEToLevel<BP,193>(out);});
+    if(conjugations!=1 || intermediate.size()!=8)throw std::runtime_error("two-layer root construction shape differs");
+    std::vector<std::complex<double>> coefficients(41);coefficients[0]={0.5,0};
+    for(std::size_t k=1;k<coefficients.size();++k)coefficients[k]={0.015*k/(k+1),-0.01*k/(k+1)};
+    auto weighted=std::make_unique<typename Series::Output>();
+    const auto conjugate=[&](auto&out,const auto&in){for(std::size_t c=0;c<2;++c)Automorphism<BP>(out[c],in[c],2*BP::n-1);ckks_detail::reduceTRLWEToLevel<BP,119>(out);};
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Series>(*weighted,intermediate,plan.finalPlan(),coefficients,second_rns,conjugate,
+        [&](auto&out,const auto&in){for(std::size_t c=0;c<2;++c)Automorphism<BP>(out[c],in[c],2*BP::n-1);ckks_detail::reduceTRLWEToLevel<BP,156>(out);});
+    auto reduced=std::make_unique<CKKSCiphertext<BP,91,37>>();CKKSScaleDown<BP,119,65,28>(*reduced,*weighted);
+    auto output=std::make_unique<CKKSCiphertext<BP,93,44>>();
+    for(std::size_t c=0;c<2;++c)for(std::size_t i=0;i<BP::n;++i)output->ct[c][i]=ckks_detail::reduceToLevel<BP,93>(reduced->ct[c][i]<<7);
+    ckksSlotDecode<BP,93,44>(*slots,output->ct[1]);double maximum=0;
+    for(std::size_t i=0;i<BP::n/2;++i){double expected=coefficients[0].real();for(std::size_t k=1;k<=40;++k)expected+=2*(coefficients[k]*std::polar(1.0,k*angle(i))).real();maximum=std::max(maximum,std::abs((*slots)[i]-expected));}
+    if(maximum>=std::ldexp(1.0,-23))throw std::runtime_error("two-layer37-bit independent series gate failed");
+    auto post_raw=makeCKKSCompactDDRelinKeyAtLevel<141>(*first_raw);
+    CKKSAuxiliaryDDRelinKeyNTT<BP,93,48,20,20> post(makeCKKSDDRelinKeyNTT<20>(*post_raw));
+    CKKSRelinKeyTensorRNS32<BP,decltype(post)> post_rns{post};
+    auto square=std::make_unique<CKKSMultResult<BP,93,44,93,44>>();CKKSMultRelinThenRescale<BP>(*square,*output,*output,post_rns);
+    ckksSlotDecode<BP,49,44>(*slots,square->ct[1]);double square_error=0;
+    for(std::size_t i=0;i<BP::n/2;++i){double expected=coefficients[0].real();for(std::size_t k=1;k<=40;++k)expected+=2*(coefficients[k]*std::polar(1.0,k*angle(i))).real();square_error=std::max(square_error,std::abs((*slots)[i]-expected*expected));}
+    if(square_error>=std::ldexp(1.0,-23))throw std::runtime_error("two-layer remaining-level square gate failed");
+    bool rejected=false;try{CKKSNarrowTwoLayerFrequencyBasis invalid(40,{6,9,10},{3,6,9,12,15,18,19,21});}catch(const std::invalid_argument&){rejected=true;}
+    if(!rejected)throw std::runtime_error("uncovered two-layer plan accepted");
+    std::cout<<"two-layer basis N="<<BP::n<<" seeds=3 derived=8 delta=37 output=93/44 independent error="<<maximum<<" square49/44 error="<<square_error<<'\n';
+}
+
+int main(int argc,char**argv)
+{
+    if(argc>1){if(argc!=2 || std::string(argv[1])!="--two-layer-full")throw std::invalid_argument("expected --two-layer-full");checkTwoLayerBasis<14>();return 0;}
+    checkTwoLayerBasis<9>();
     CKKSNarrowFrequencyBasis plan(12,{1,3,5,6});
     std::vector<Basis::Root> roots(plan.frequencies().size());
     auto slots = std::make_unique<CKKSSlotVector<P>>();

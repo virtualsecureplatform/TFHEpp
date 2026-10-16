@@ -4,14 +4,17 @@
 namespace TFHEpp {
 namespace narrow_detail {
 // Route each supported data level through one immutable public key cache.
-// The optional extra level lets series reconstruction reuse conjugation.
-template<class Schedule,uint32_t HighFactorQ,uint32_t ExtraDataQ=0,class Cache>
+// Optional series/intermediate levels reuse conjugation in reconstruction.
+template<class Schedule,uint32_t HighFactorQ,uint32_t ExtraDataQ=0,uint32_t IntermediateDataQ=0,class Cache>
 inline void applyPublicAutoAtLevel(TRLWE<typename Schedule::Param>&result,
     const TRLWE<typename Schedule::Param>&input,uint32_t level,const Cache&cache){
  if(level==Schedule::factor_log_q)cache.template apply<Schedule::factor_log_q>(result,input);
  else if(level==Schedule::output_log_q)cache.template apply<Schedule::output_log_q>(result,input);
  else if(level==HighFactorQ)cache.template apply<HighFactorQ>(result,input);
  else {
+  if constexpr(IntermediateDataQ>0){
+   if(level==IntermediateDataQ){cache.template apply<IntermediateDataQ>(result,input);return;}
+  }
   if constexpr(ExtraDataQ>0){
    if(level==ExtraDataQ)cache.template apply<ExtraDataQ>(result,input);
    else throw std::invalid_argument("unexpected narrow automorphism data level");
@@ -19,14 +22,14 @@ inline void applyPublicAutoAtLevel(TRLWE<typename Schedule::Param>&result,
  }
 }
 // Reuse the same registered-level dispatcher for ordinary and regrouped maps.
-template<class Schedule,uint32_t HighFactorQ,uint32_t ExtraDataQ,class Cache>
+template<class Schedule,uint32_t HighFactorQ,uint32_t ExtraDataQ,uint32_t IntermediateDataQ=0,class Cache>
 inline auto makePublicAutoEvaluator(std::shared_ptr<std::map<uint32_t,std::shared_ptr<Cache>>> prepared)
 {
  using P=typename Schedule::Param;
  return [prepared](TRLWE<P>&result,const TRLWE<P>&input,uint32_t level,uint32_t exponent){
   const auto found=prepared->find(exponent);
   if(found==prepared->end())throw std::invalid_argument("unprepared narrow automorphism exponent");
-  applyPublicAutoAtLevel<Schedule,HighFactorQ,ExtraDataQ>(result,input,level,*found->second);
+  applyPublicAutoAtLevel<Schedule,HighFactorQ,ExtraDataQ,IntermediateDataQ>(result,input,level,*found->second);
  };
 }
 

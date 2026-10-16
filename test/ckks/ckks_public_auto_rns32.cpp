@@ -51,6 +51,10 @@ template<std::uint32_t Nbit,std::uint32_t Bits=20,std::uint32_t ChunkBits=80>voi
  reference.template apply<121>(*expected,*input);
  dispatch(*actual,*input,121,rows->exponent);
  if(*actual!=*expected)throw std::runtime_error("shared series-level cache differs");
+ reference.template apply<156>(*expected,*input);
+ auto intermediate_dispatch=narrow_detail::makePublicAutoEvaluator<DispatchSchedule<P>,398,121,156>(cache_map);
+ intermediate_dispatch(*actual,*input,156,rows->exponent);
+ if(*actual!=*expected)throw std::runtime_error("shared intermediate-level cache differs");
  bool missing_exponent=false;
  try{dispatch(*actual,*input,121,1);}catch(const std::invalid_argument&){missing_exponent=true;}
  if(!missing_exponent)throw std::runtime_error("unregistered public exponent accepted");
