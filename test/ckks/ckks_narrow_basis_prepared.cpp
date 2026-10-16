@@ -1,6 +1,7 @@
 #include "ckks_narrow_basis_benchmark.hpp"
 #include <ckks/narrow_basis_prepared.hpp>
 #include <ckks/prepared_dd_ntt.hpp>
+#include <ckks/tensor_rns32.hpp>
 #include <iostream>
 
 using namespace TFHEpp;
@@ -26,6 +27,7 @@ int main()
     auto compact = std::make_unique<CKKSCompactDDRelinKey<P,247,64,32>>();
     auto ntt = makeCKKSDDRelinKeyNTT(*compact);
     CKKSAuxiliaryDDRelinKeyNTT<P,147,100> auxiliary(ntt);
+    CKKSRelinKeyTensorRNS32<P,decltype(auxiliary)> rns_product{auxiliary};
     std::vector<std::complex<double>> coefficients(13);
     coefficients[0] = {0.5,0};
     for (std::size_t k = 1; k < coefficients.size(); ++k)
@@ -39,6 +41,9 @@ int main()
     };
     CKKSNarrowEvalSeriesFromBasisRootsPrepared<Basis>(*prepared,roots,plan,coefficients,*fft,conjugate);
     CKKSNarrowEvalSeriesFromBasisRootsPrepared<Basis>(*integer,roots,plan,coefficients,auxiliary,conjugate);
+    auto rns=std::make_unique<Basis::Output>();
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Basis>(*rns,roots,plan,coefficients,rns_product,conjugate);
+    if(rns->ct!=integer->ct)throw std::runtime_error("RNS basis tensor differs from FFT tensor");
     if (reference->ct != prepared->ct || reference->ct != integer->ct)
         throw std::runtime_error("prepared basis backends differ from existing reconstruction");
     ckksSlotDecode<P,Basis::output_log_q,Basis::log_delta>(*slots,integer->ct[1]);
@@ -111,6 +116,12 @@ int main()
             for(std::size_t c=0;c<2;++c)Automorphism<P>(output[c],input[c],2*P::n-1);
             ckks_detail::reduceTRLWEToLevel<P,Basis::root_log_q>(output);
         });
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Basis>(*rns,signed_roots,signed_plan,signed_coefficients,rns_product,conjugate,
+        [&](auto&output,const auto&input){
+            for(std::size_t c=0;c<2;++c)Automorphism<P>(output[c],input[c],2*P::n-1);
+            ckks_detail::reduceTRLWEToLevel<P,Basis::root_log_q>(output);
+        });
+    if(rns->ct!=integer->ct)throw std::runtime_error("signed RNS basis tensors differ from FFT tensors");
     if(root_conjugations!=3)throw std::runtime_error("conjugated roots were not reused");
     ckksSlotDecode<P,Basis::output_log_q,Basis::log_delta>(*slots,integer->ct[1]);
     double signed_error=0;
@@ -139,6 +150,9 @@ int main()
     auto mixed_prepared=std::make_unique<Mixed::Output>();
     CKKSNarrowEvalSeriesFromBasisRoots<Mixed>(*mixed_legacy,roots,*mixed_raw,plan,coefficients);
     CKKSNarrowEvalSeriesFromBasisRootsPrepared<Mixed>(*mixed_prepared,roots,plan,coefficients,auxiliary,mixed_conjugate);
+    auto mixed_rns=std::make_unique<Mixed::Output>();
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Mixed>(*mixed_rns,roots,plan,coefficients,rns_product,mixed_conjugate);
+    if(mixed_rns->ct!=mixed_prepared->ct)throw std::runtime_error("mixed-scale RNS basis tensor differs from FFT tensor");
     if(mixed_legacy->ct!=mixed_prepared->ct)throw std::runtime_error("mixed-scale legacy and prepared backends differ");
     ckksSlotDecode<P,Mixed::output_log_q,Mixed::log_delta>(*slots,mixed->ct[1]);
     double mixed_error=0;

@@ -4192,6 +4192,18 @@ positive budget must fit the full spectrum cache. The budget covers retained
 spectra, not total process memory. GCC builds disable IPA-ICF for the replay
 because the existing multi-type S2C instantiations require it.
 
+`--tensor-rns 1` uses exact RNS tensors in both the factor product trees and
+frequency-basis reconstruction. Both paths reuse the retained relinearization
+keys and preserve the existing rescale locations. `--basis-tensor-rns 0`
+selects the FFT tensor for reconstruction; `--basis-tensor-pair 1` compares
+FFT/RNS/RNS/FFT after a warmup for one requested function. Reports include
+`basis_tensor_rns` and `basis_series_seconds`. The paired original-degree Tanh
+run reduced reconstruction from 1.275s to 0.357s and total evaluation from
+10.453s to 9.551s on the qualified 24-thread CPU configuration; all output
+bytes match the independently validated reference. See
+[narrow-basis-rns-tensor-validation.json](narrow-basis-rns-tensor-validation.json)
+for the complete configuration, checks and timing limits.
+
 For independent verification, set `PYTHONPATH` to the sibling
 `Parameter-Selection/python/estimates`, then run
 `python3 test/ckks/validate_narrow_ll14_basis.py CHECKPOINT/checkpoint.bin OUTPUT/gelu-outputs.bin OUTPUT/gelu-report.json validation.json`
