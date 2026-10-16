@@ -7,9 +7,25 @@ namespace TFHEpp {
 namespace ckks_detail {
 // Access immutable prepared spectra without changing the single-call kernel.
 struct GadgetBatchRNS32Access {
-    template<std::size_t Columns,class P,std::uint32_t Q,std::uint32_t Bits,std::uint32_t ChunkBits>
+    // Caller-owned high-water storage. Use serially and destroy after the batch;
+    // the prepared key never retains input-derived digits or transforms.
+    template<class P,std::uint32_t Q,std::uint32_t Bits,std::uint32_t ChunkBits>
+    struct Workspace {
+        using Cache=CKKSPreparedGadgetRNS32<P,Q,Bits,ChunkBits>;
+        using Digits=std::array<std::array<std::int64_t,P::n>,Cache::rows>;
+        struct Work {
+            std::unique_ptr<Digits> digits;
+            std::array<bool,Cache::rows> active{};
+            bool nonzero=false;
+            std::array<std::vector<std::uint32_t>,Cache::count> transformed;
+            std::array<std::array<std::vector<std::uint32_t>,Cache::count>,Cache::chunks*2> sums;
+        };
+        std::vector<Work> work;
+    };
+    template<std::size_t Columns,class P,std::uint32_t Q,std::uint32_t Bits,std::uint32_t ChunkBits,bool Reuse=false>
     static void apply(const CKKSPreparedGadgetRNS32<P,Q,Bits,ChunkBits>&key,
-                      std::span<TRLWE<P>> output,std::span<const Polynomial<P>> input,std::size_t window)
+                      std::span<TRLWE<P>> output,std::span<const Polynomial<P>> input,std::size_t window,
+                      Workspace<P,Q,Bits,ChunkBits>*retained=nullptr)
     {
         using Cache=CKKSPreparedGadgetRNS32<P,Q,Bits,ChunkBits>;
         constexpr std::size_t rows=Cache::rows,count=Cache::count,chunks=Cache::chunks;
@@ -19,38 +35,48 @@ struct GadgetBatchRNS32Access {
         static_assert(Columns>0);
         if(output.size()!=input.size()||!window)
             throw std::invalid_argument("invalid gadget batch shape/window");
-        using Digits=std::array<std::array<std::int64_t,P::n>,rows>;
-        struct Work {
-            std::unique_ptr<Digits> digits;
-            std::array<bool,rows> active{};
-            bool nonzero=false;
-            std::array<std::vector<std::uint32_t>,count> transformed;
-            std::array<std::array<std::vector<std::uint32_t>,count>,chunks*2> sums;
-        };
+        using Scratch=Workspace<P,Q,Bits,ChunkBits>;
+        using Digits=typename Scratch::Digits;
+        if constexpr(Reuse)if(!retained)throw std::invalid_argument("missing gadget workspace");
         static const modular_rns32::SignedEncoder<count> encoder;
         static const modular_rns32::CenteredCRT<Small::limbs,count> crt;
         for(std::size_t offset=0;offset<input.size();offset+=window){
             const auto size=std::min(window,input.size()-offset);
-            std::vector<Work> work(size);
+            Scratch local;
+            auto&work=[&]() -> auto& {
+                if constexpr(Reuse)return retained->work;
+                else return local.work;
+            }();
+            if(work.size()<size)work.resize(size);
             std::array<std::size_t,rows> active_rows{};
             std::size_t active_count=0;
 #pragma omp parallel
             {
 #pragma omp for schedule(static)
                 for(std::size_t j=0;j<size;++j){
-                    auto&w=work[j];w.digits=std::make_unique_for_overwrite<Digits>();
+                    auto&w=work[j];
+                    if constexpr(Reuse){
+                        if(!w.digits)w.digits=std::make_unique_for_overwrite<Digits>();
+                        w.nonzero=false;
+                    }else w.digits=std::make_unique_for_overwrite<Digits>();
                     ckks_detail::activeBaseDecomposeSignedRows<P,Q,Bits,rows>(*w.digits,input[offset+j]);
                     for(std::size_t r=0;r<rows;++r){
                         w.active[r]=std::any_of((*w.digits)[r].begin(),(*w.digits)[r].end(),[](auto v){return v!=0;});
                         w.nonzero|=w.active[r];
                     }
-                    for(auto&v:w.transformed)v.resize(rows*P::n);
+                    for(auto&v:w.transformed){
+                        v.resize(rows*P::n);
+                        // The fused dot product uses the union of active rows.
+                        // Rows inactive in this column must not retain old NTT data.
+                        if constexpr(Reuse)for(std::size_t r=0;r<rows;++r)if(!w.active[r])
+                            std::fill_n(v.begin()+r*P::n,P::n,0);
+                    }
                     for(auto&c:w.sums)for(auto&v:c)v.assign(P::n,0);
                 }
 #pragma omp single
                 {
                     for(std::size_t r=0;r<rows;++r){
-                        bool active=false;for(const auto&w:work)active|=w.active[r];
+                        bool active=false;for(std::size_t j=0;j<size;++j)active|=work[j].active[r];
                         if(active)active_rows[active_count++]=r;
                     }
                 }
@@ -61,8 +87,10 @@ struct GadgetBatchRNS32Access {
                     encoder.residues(values,(*w.digits)[r],p,true);
                     plans[p].forwardBitReversed(values);
                 }
+                if constexpr(!Reuse){
 #pragma omp for schedule(static)
-                for(std::size_t j=0;j<size;++j)work[j].digits.reset();
+                    for(std::size_t j=0;j<size;++j)work[j].digits.reset();
+                }
 #pragma omp for collapse(4) schedule(dynamic,1)
                 for(std::size_t c=0;c<chunks*2;++c)for(std::size_t p=0;p<count;++p)
                     for(std::size_t begin=0;begin<P::n;begin+=256)for(std::size_t column=0;column<size;column+=Columns){

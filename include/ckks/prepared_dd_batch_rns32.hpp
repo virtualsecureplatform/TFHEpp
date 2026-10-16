@@ -35,6 +35,9 @@ inline void CKKSMultRelinThenRescaleBatchRNS32(
     std::vector<Polynomial<P>> lifted(capacity);
     std::vector<TRLWE<P>> switched(capacity);
     std::vector<std::exception_ptr> errors(capacity);
+    // Share derived-digit/NTT buffers across windows of this one product call.
+    // The workspace is destroyed before returning and never enters the key.
+    ckks_detail::GadgetBatchRNS32Access::Workspace<P,KeyQ,Bits,Chunk> gadget_workspace;
     for(std::size_t offset=0;offset<products.size();offset+=window){
         const auto size=std::min(window,products.size()-offset);
 #ifdef _OPENMP
@@ -52,7 +55,8 @@ inline void CKKSMultRelinThenRescaleBatchRNS32(
             }catch(...){errors[j]=std::current_exception();}
         }
         for(const auto&error:errors)if(error)std::rethrow_exception(error);
-        CKKSApplyGadgetBatchRNS32<4>(std::span(switched).first(size),std::span<const Polynomial<P>>(lifted).first(size),*key.cache,window);
+        ckks_detail::GadgetBatchRNS32Access::template apply<4,P,KeyQ,Bits,Chunk,true>(
+            *key.cache,std::span(switched).first(size),std::span<const Polynomial<P>>(lifted).first(size),window,&gadget_workspace);
 #pragma omp parallel for collapse(3) schedule(dynamic,1)
         for(std::size_t j=0;j<size;++j)for(std::size_t c=0;c<2;++c)
             for(std::size_t begin=0;begin<P::n;begin+=256)

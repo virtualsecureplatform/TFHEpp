@@ -69,6 +69,31 @@ template<std::uint32_t Nbit,std::uint32_t Q,std::uint32_t Bits,std::uint32_t Chu
   CKKSApplyGadgetBatchRNS32<4>(actual,in,candidate,3);
  }
  if(actual!=expected)throw std::runtime_error("batch failed under caller's nesting policy");
+ // Reuse one workspace across changing active rows, batch sizes and windows.
+ ckks_detail::GadgetBatchRNS32Access::Workspace<P,Q,Bits,Chunk> workspace;
+ const auto retained_check=[&](const std::vector<Polynomial<P>>& values,std::size_t window){
+  std::vector<TRLWE<P>> wanted(values.size()),got(values.size());
+  for(std::size_t j=0;j<values.size();++j){
+   original.apply(wanted[j],values[j]);
+   if constexpr(Nbit<=4){TRLWE<P> independent;oracle<P,Q,Bits>(independent,values[j],*rows);if(independent!=wanted[j])throw std::runtime_error("reused workspace oracle mismatch");}
+  }
+  ckks_detail::GadgetBatchRNS32Access::template apply<4,P,Q,Bits,Chunk,true>(candidate,got,values,window,&workspace);
+  if(got!=wanted)throw std::runtime_error("reused gadget workspace retained stale coefficients");
+ };
+ retained_check(in,3);
+ auto changed=inputs<P,Q,Bits,Lift>(9,false);
+ retained_check(changed,8);
+ changed.back().fill(typename P::T{1}<<Q); // Zero tail follows eight nonzero columns.
+ retained_check(changed,8);
+ for(auto&poly:changed)poly.fill(typename P::T{1}<<Q);
+ retained_check(changed,3);
+ changed.resize(1);changed.front().fill(typename P::T{1});
+ retained_check(changed,8);
+#pragma omp parallel num_threads(2)
+ {
+#pragma omp single
+  retained_check(in,3);
+ }
  auto zero=in;for(auto&poly:zero)poly.fill(typename P::T{1}<<Q);
  CKKSApplyGadgetBatchRNS32<4>(actual,zero,candidate,8);
  for(const auto&r:actual)for(const auto&c:r)for(const auto&v:c)
