@@ -127,6 +127,38 @@ Setup/cache preparation and validation are excluded from access timings.
 
 ## Paired crossover experiment
 
+**No end-to-end crossover was observed at the tested sizes**, including a
+full 8,192-bit batch. The earlier 600–700-bit extrapolation from the initial
+timings is not supported by these controlled measurements.
+
+| Stored bits (one-bit words) | TFHE mean access | CKKS mean access | CKKS / TFHE |
+| ---: | ---: | ---: | ---: |
+| 256 | 2.255 s | 6.659 s | 2.953x |
+| 512 | 4.184 s | 8.500 s | 2.032x |
+| 1,024 | 7.928 s | 11.948 s | 1.507x |
+| 8,192 | 60.175 s | 61.235 s | 1.018x |
+
+TFHE was faster in **every one of the four measured pairs at each size**.
+At full capacity, TFHE access times ranged from 60.143 to 60.227 seconds;
+CKKS ranged from 61.178 to 61.292 seconds. All 40 operations, including
+warm-ups, passed: 99,840 post-access cell-bit checks and 40 read-bit checks.
+See [the complete receipts and provenance](ckks-ram-crossover.json).
+
+At 8,192 bits the CKKS refresh stages averaged 0.262 seconds for packing,
+3.750 seconds for the Boolean bootstrap, 0.604 seconds for decoding, and
+**54.866 seconds for conversion back to TLWE**. Complete CKKS refresh
+averaged 59.486 seconds versus 58.427 seconds for TFHE. The CKKS core
+amortizes well; its per-cell output conversion consumes almost all of
+that benefit. Core-bootstrap timings alone do not establish a RAM crossover.
+
+These results supersede the initial comparison below for scaling decisions.
+The old measurements had different runtime/load conditions and much slower
+TFHE timings. Their causes were not isolated. All sizes above were measured
+under the same explicit affinity policy; the older and newer numbers must
+not be combined into one fitted curve. This finite experiment does not
+exclude a crossover at every untested size or under other implementations
+and hardware. It does not support claiming one for the current RAM path.
+
 Use `CKKS_RAM_PROFILE=crossover` for 256-, 512-, and 1,024-bit RAMs and
 `CKKS_RAM_PROFILE=crossover-full` for 8,192 bits. Both modes use one-bit
 words. Add missing encrypted traces once with

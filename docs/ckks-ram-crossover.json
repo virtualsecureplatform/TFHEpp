@@ -1,0 +1,1194 @@
+{
+  "scope": "Empirical end-to-end RAM crossover against the existing serial TFHE refresh; not a universal proof or comparison with parallel TFHE.",
+  "security_validated": false,
+  "profiles": [
+    {
+      "bits": 256,
+      "warmups_per_backend": 1,
+      "measured_accesses_per_backend": 4,
+      "complete_operations_checked": 10,
+      "cell_bits_checked": 2560,
+      "backends": {
+        "tfhe-serial": {
+          "mean_access_seconds": 2.2551410279999997,
+          "min_access_seconds": 2.252809659,
+          "max_access_seconds": 2.25774248,
+          "mean_refresh_seconds": 1.8202188305,
+          "max_phase_error": 0.004152861190959811
+        },
+        "ckks": {
+          "mean_access_seconds": 6.65862788125,
+          "min_access_seconds": 6.647223258,
+          "max_access_seconds": 6.675475531,
+          "mean_refresh_seconds": 6.22265360325,
+          "max_phase_error": 0.0075027053244411945
+        }
+      },
+      "paired_ckks_minus_tfhe_seconds": [
+        4.3924842349999995,
+        4.392291106,
+        4.408776361999999,
+        4.42039571
+      ],
+      "ckks_faster_in_every_measured_pair": false,
+      "tfhe_faster_in_every_measured_pair": true,
+      "ckks_to_tfhe_mean_ratio": 2.9526436699860357,
+      "ckks_faster_on_mean": false,
+      "mean_ckks_stages_seconds": {
+        "packing": 0.2087425565,
+        "bootstrap": 3.7065316479999995,
+        "decoding": 0.6041639802500001,
+        "switching": 1.70307421225
+      },
+      "raw_summary": {
+        "address_bits": 8,
+        "word_bits": 1,
+        "warmups_per_backend": 1,
+        "measured_accesses_per_backend": 4,
+        "alternating_order": true,
+        "all_cells_checked": true,
+        "backends": [
+          {
+            "name": "tfhe-serial",
+            "access_seconds": [
+              2.25774248,
+              2.254932152,
+              2.252809659,
+              2.255079821
+            ],
+            "refresh_seconds": [
+              1.822480511,
+              1.819954776,
+              1.818131789,
+              1.820308246
+            ],
+            "max_phase_error": 0.004152861190959811
+          },
+          {
+            "name": "ckks",
+            "access_seconds": [
+              6.650226715,
+              6.647223258,
+              6.661586021,
+              6.675475531
+            ],
+            "refresh_seconds": [
+              6.214923067,
+              6.211427971,
+              6.225362418,
+              6.238900957
+            ],
+            "max_phase_error": 0.0075027053244411945
+          }
+        ],
+        "measured_ckks_stages": {
+          "packing": 0.834970226,
+          "bootstrap": 14.826126591999998,
+          "decoding": 2.4166559210000003,
+          "switching": 6.812296849
+        }
+      },
+      "raw_records": [
+        {
+          "backend": "tfhe-serial",
+          "bits": 256,
+          "step": 0,
+          "order": 0,
+          "warmup": true,
+          "seconds": 2.257238687,
+          "refresh_seconds": 1.815465714,
+          "address_seconds": 0.405183911,
+          "read_seconds": 0.002532151,
+          "write_seconds": 0.034054224,
+          "max_phase_error": 0.003708970732986927,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 256,
+          "step": 0,
+          "order": 1,
+          "warmup": true,
+          "seconds": 6.689585548,
+          "refresh_seconds": 6.25078144,
+          "address_seconds": 0.402072553,
+          "read_seconds": 0.002502149,
+          "write_seconds": 0.034228215,
+          "max_phase_error": 0.007215159246698022,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 256,
+          "step": 1,
+          "order": 0,
+          "warmup": false,
+          "seconds": 6.650226715,
+          "refresh_seconds": 6.214923067,
+          "address_seconds": 0.398925916,
+          "read_seconds": 0.002493416,
+          "write_seconds": 0.033882257,
+          "max_phase_error": 0.0075027053244411945,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 256,
+          "step": 1,
+          "order": 1,
+          "warmup": false,
+          "seconds": 2.25774248,
+          "refresh_seconds": 1.822480511,
+          "address_seconds": 0.398863357,
+          "read_seconds": 0.0025008,
+          "write_seconds": 0.033896044,
+          "max_phase_error": 0.003630466526374221,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 256,
+          "step": 2,
+          "order": 0,
+          "warmup": false,
+          "seconds": 2.254932152,
+          "refresh_seconds": 1.819954776,
+          "address_seconds": 0.39863149,
+          "read_seconds": 0.002548179,
+          "write_seconds": 0.033796291,
+          "max_phase_error": 0.003920985851436853,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 256,
+          "step": 2,
+          "order": 1,
+          "warmup": false,
+          "seconds": 6.647223258,
+          "refresh_seconds": 6.211427971,
+          "address_seconds": 0.399440517,
+          "read_seconds": 0.002478882,
+          "write_seconds": 0.033874458,
+          "max_phase_error": 0.005274063209071755,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 256,
+          "step": 3,
+          "order": 0,
+          "warmup": false,
+          "seconds": 6.661586021,
+          "refresh_seconds": 6.225362418,
+          "address_seconds": 0.399674312,
+          "read_seconds": 0.002517811,
+          "write_seconds": 0.034030412,
+          "max_phase_error": 0.00706278276629746,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 256,
+          "step": 3,
+          "order": 1,
+          "warmup": false,
+          "seconds": 2.252809659,
+          "refresh_seconds": 1.818131789,
+          "address_seconds": 0.398424784,
+          "read_seconds": 0.002496354,
+          "write_seconds": 0.0337539,
+          "max_phase_error": 0.00344252772629261,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 256,
+          "step": 4,
+          "order": 0,
+          "warmup": false,
+          "seconds": 2.255079821,
+          "refresh_seconds": 1.820308246,
+          "address_seconds": 0.398399905,
+          "read_seconds": 0.002553427,
+          "write_seconds": 0.033816743,
+          "max_phase_error": 0.004152861190959811,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 256,
+          "step": 4,
+          "order": 1,
+          "warmup": false,
+          "seconds": 6.675475531,
+          "refresh_seconds": 6.238900957,
+          "address_seconds": 0.400190448,
+          "read_seconds": 0.002491105,
+          "write_seconds": 0.033891056,
+          "max_phase_error": 0.00681878044269979,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "bits": 512,
+      "warmups_per_backend": 1,
+      "measured_accesses_per_backend": 4,
+      "complete_operations_checked": 10,
+      "cell_bits_checked": 5120,
+      "backends": {
+        "tfhe-serial": {
+          "mean_access_seconds": 4.183899127,
+          "min_access_seconds": 4.176198635,
+          "max_access_seconds": 4.195079308,
+          "mean_refresh_seconds": 3.66494463775,
+          "max_phase_error": 0.004640446975827217
+        },
+        "ckks": {
+          "mean_access_seconds": 8.49985593275,
+          "min_access_seconds": 8.466354444,
+          "max_access_seconds": 8.520791267,
+          "mean_refresh_seconds": 7.98038773125,
+          "max_phase_error": 0.01530284434556961
+        }
+      },
+      "paired_ckks_minus_tfhe_seconds": [
+        4.279421382000001,
+        4.3257119589999995,
+        4.337822285,
+        4.320871597
+      ],
+      "ckks_faster_in_every_measured_pair": false,
+      "tfhe_faster_in_every_measured_pair": true,
+      "ckks_to_tfhe_mean_ratio": 2.031563303689085,
+      "ckks_faster_on_mean": false,
+      "mean_ckks_stages_seconds": {
+        "packing": 0.20962326799999997,
+        "bootstrap": 3.7296623022500004,
+        "decoding": 0.6048136445,
+        "switching": 3.4360110115000007
+      },
+      "raw_summary": {
+        "address_bits": 9,
+        "word_bits": 1,
+        "warmups_per_backend": 1,
+        "measured_accesses_per_backend": 4,
+        "alternating_order": true,
+        "all_cells_checked": true,
+        "backends": [
+          {
+            "name": "tfhe-serial",
+            "access_seconds": [
+              4.186933062,
+              4.195079308,
+              4.177385503,
+              4.176198635
+            ],
+            "refresh_seconds": [
+              3.667747903,
+              3.674019736,
+              3.658642246,
+              3.659368666
+            ],
+            "max_phase_error": 0.004640446975827217
+          },
+          {
+            "name": "ckks",
+            "access_seconds": [
+              8.466354444,
+              8.520791267,
+              8.515207788,
+              8.497070232
+            ],
+            "refresh_seconds": [
+              7.947065023,
+              8.001018986,
+              7.993698187,
+              7.979768729
+            ],
+            "max_phase_error": 0.01530284434556961
+          }
+        ],
+        "measured_ckks_stages": {
+          "packing": 0.8384930719999999,
+          "bootstrap": 14.918649209000002,
+          "decoding": 2.419254578,
+          "switching": 13.744044046000003
+        }
+      },
+      "raw_records": [
+        {
+          "backend": "tfhe-serial",
+          "bits": 512,
+          "step": 0,
+          "order": 0,
+          "warmup": true,
+          "seconds": 4.204423561,
+          "refresh_seconds": 3.669118398,
+          "address_seconds": 0.472359086,
+          "read_seconds": 0.005270442,
+          "write_seconds": 0.057672291,
+          "max_phase_error": 0.0039671664126217365,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 512,
+          "step": 0,
+          "order": 1,
+          "warmup": true,
+          "seconds": 8.475654744,
+          "refresh_seconds": 7.955889909,
+          "address_seconds": 0.45695722,
+          "read_seconds": 0.005049877,
+          "write_seconds": 0.057755085,
+          "max_phase_error": 0.009021008852869272,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 512,
+          "step": 1,
+          "order": 0,
+          "warmup": false,
+          "seconds": 8.466354444,
+          "refresh_seconds": 7.947065023,
+          "address_seconds": 0.456631261,
+          "read_seconds": 0.005032766,
+          "write_seconds": 0.057622144,
+          "max_phase_error": 0.006120077800005674,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 512,
+          "step": 1,
+          "order": 1,
+          "warmup": false,
+          "seconds": 4.186933062,
+          "refresh_seconds": 3.667747903,
+          "address_seconds": 0.456519992,
+          "read_seconds": 0.005028883,
+          "write_seconds": 0.05763406,
+          "max_phase_error": 0.003947543911635876,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 512,
+          "step": 2,
+          "order": 0,
+          "warmup": false,
+          "seconds": 4.195079308,
+          "refresh_seconds": 3.674019736,
+          "address_seconds": 0.458398935,
+          "read_seconds": 0.005033356,
+          "write_seconds": 0.057624606,
+          "max_phase_error": 0.003776686033234,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 512,
+          "step": 2,
+          "order": 1,
+          "warmup": false,
+          "seconds": 8.520791267,
+          "refresh_seconds": 8.001018986,
+          "address_seconds": 0.456816881,
+          "read_seconds": 0.005038447,
+          "write_seconds": 0.057914797,
+          "max_phase_error": 0.009131349390372634,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 512,
+          "step": 3,
+          "order": 0,
+          "warmup": false,
+          "seconds": 8.515207788,
+          "refresh_seconds": 7.993698187,
+          "address_seconds": 0.458631887,
+          "read_seconds": 0.005019854,
+          "write_seconds": 0.057856064,
+          "max_phase_error": 0.006423698738217354,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 512,
+          "step": 3,
+          "order": 1,
+          "warmup": false,
+          "seconds": 4.177385503,
+          "refresh_seconds": 3.658642246,
+          "address_seconds": 0.45613453,
+          "read_seconds": 0.005027509,
+          "write_seconds": 0.057579411,
+          "max_phase_error": 0.004640446975827217,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 512,
+          "step": 4,
+          "order": 0,
+          "warmup": false,
+          "seconds": 4.176198635,
+          "refresh_seconds": 3.659368666,
+          "address_seconds": 0.454225528,
+          "read_seconds": 0.005028045,
+          "write_seconds": 0.057573876,
+          "max_phase_error": 0.0036114093381911516,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 512,
+          "step": 4,
+          "order": 1,
+          "warmup": false,
+          "seconds": 8.497070232,
+          "refresh_seconds": 7.979768729,
+          "address_seconds": 0.454534178,
+          "read_seconds": 0.005020687,
+          "write_seconds": 0.0577447,
+          "max_phase_error": 0.01530284434556961,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "bits": 1024,
+      "warmups_per_backend": 1,
+      "measured_accesses_per_backend": 4,
+      "complete_operations_checked": 10,
+      "cell_bits_checked": 10240,
+      "backends": {
+        "tfhe-serial": {
+          "mean_access_seconds": 7.92823708,
+          "min_access_seconds": 7.922930289,
+          "max_access_seconds": 7.93867148,
+          "mean_refresh_seconds": 7.29752284,
+          "max_phase_error": 0.004229109501466155
+        },
+        "ckks": {
+          "mean_access_seconds": 11.948169662,
+          "min_access_seconds": 11.878069902,
+          "max_access_seconds": 12.03775515,
+          "mean_refresh_seconds": 11.31830933625,
+          "max_phase_error": 0.017421868396922946
+        }
+      },
+      "paired_ckks_minus_tfhe_seconds": [
+        4.022857397000001,
+        3.955139613,
+        4.111695326,
+        3.9900379919999995
+      ],
+      "ckks_faster_in_every_measured_pair": false,
+      "tfhe_faster_in_every_measured_pair": true,
+      "ckks_to_tfhe_mean_ratio": 1.5070399057743618,
+      "ckks_faster_on_mean": false,
+      "mean_ckks_stages_seconds": {
+        "packing": 0.21103669299999997,
+        "bootstrap": 3.6266101327499998,
+        "decoding": 0.6052385375,
+        "switching": 6.8748535954999985
+      },
+      "raw_summary": {
+        "address_bits": 10,
+        "word_bits": 1,
+        "warmups_per_backend": 1,
+        "measured_accesses_per_backend": 4,
+        "alternating_order": true,
+        "all_cells_checked": true,
+        "backends": [
+          {
+            "name": "tfhe-serial",
+            "access_seconds": [
+              7.925286727,
+              7.922930289,
+              7.926059824,
+              7.93867148
+            ],
+            "refresh_seconds": [
+              7.295842769,
+              7.291510003,
+              7.294135142,
+              7.308603446
+            ],
+            "max_phase_error": 0.004229109501466155
+          },
+          {
+            "name": "ckks",
+            "access_seconds": [
+              11.948144124,
+              11.878069902,
+              12.03775515,
+              11.928709472
+            ],
+            "refresh_seconds": [
+              11.317202886,
+              11.250027602,
+              11.407150003,
+              11.298856854
+            ],
+            "max_phase_error": 0.017421868396922946
+          }
+        ],
+        "measured_ckks_stages": {
+          "packing": 0.8441467719999999,
+          "bootstrap": 14.506440530999999,
+          "decoding": 2.42095415,
+          "switching": 27.499414381999994
+        }
+      },
+      "raw_records": [
+        {
+          "backend": "tfhe-serial",
+          "bits": 1024,
+          "step": 0,
+          "order": 0,
+          "warmup": true,
+          "seconds": 7.920681475,
+          "refresh_seconds": 7.288643578,
+          "address_seconds": 0.511512658,
+          "read_seconds": 0.01054122,
+          "write_seconds": 0.109982186,
+          "max_phase_error": 0.003918349975720048,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 1024,
+          "step": 0,
+          "order": 1,
+          "warmup": true,
+          "seconds": 11.894081133,
+          "refresh_seconds": 11.264519317,
+          "address_seconds": 0.509448774,
+          "read_seconds": 0.010034082,
+          "write_seconds": 0.110076883,
+          "max_phase_error": 0.009303948609158397,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 1024,
+          "step": 1,
+          "order": 0,
+          "warmup": false,
+          "seconds": 11.948144124,
+          "refresh_seconds": 11.317202886,
+          "address_seconds": 0.510688104,
+          "read_seconds": 0.010200186,
+          "write_seconds": 0.110050872,
+          "max_phase_error": 0.012629245175048709,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 1024,
+          "step": 1,
+          "order": 1,
+          "warmup": false,
+          "seconds": 7.925286727,
+          "refresh_seconds": 7.295842769,
+          "address_seconds": 0.509410742,
+          "read_seconds": 0.010076855,
+          "write_seconds": 0.109955159,
+          "max_phase_error": 0.0038071470335125923,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 1024,
+          "step": 2,
+          "order": 0,
+          "warmup": false,
+          "seconds": 7.922930289,
+          "refresh_seconds": 7.291510003,
+          "address_seconds": 0.510783156,
+          "read_seconds": 0.010002292,
+          "write_seconds": 0.110633704,
+          "max_phase_error": 0.004229109501466155,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 1024,
+          "step": 2,
+          "order": 1,
+          "warmup": false,
+          "seconds": 11.878069902,
+          "refresh_seconds": 11.250027602,
+          "address_seconds": 0.507878242,
+          "read_seconds": 0.010021886,
+          "write_seconds": 0.11013821,
+          "max_phase_error": 0.011973805958405137,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 1024,
+          "step": 3,
+          "order": 0,
+          "warmup": false,
+          "seconds": 12.03775515,
+          "refresh_seconds": 11.407150003,
+          "address_seconds": 0.510091492,
+          "read_seconds": 0.010124503,
+          "write_seconds": 0.110387643,
+          "max_phase_error": 0.012679396197199821,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 1024,
+          "step": 3,
+          "order": 1,
+          "warmup": false,
+          "seconds": 7.926059824,
+          "refresh_seconds": 7.294135142,
+          "address_seconds": 0.511855556,
+          "read_seconds": 0.010012361,
+          "write_seconds": 0.110055177,
+          "max_phase_error": 0.003969743615016341,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 1024,
+          "step": 4,
+          "order": 0,
+          "warmup": false,
+          "seconds": 7.93867148,
+          "refresh_seconds": 7.308603446,
+          "address_seconds": 0.510035277,
+          "read_seconds": 0.010109023,
+          "write_seconds": 0.109922455,
+          "max_phase_error": 0.0037011869717389345,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 1024,
+          "step": 4,
+          "order": 1,
+          "warmup": false,
+          "seconds": 11.928709472,
+          "refresh_seconds": 11.298856854,
+          "address_seconds": 0.509588615,
+          "read_seconds": 0.010048434,
+          "write_seconds": 0.110214243,
+          "max_phase_error": 0.017421868396922946,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "bits": 8192,
+      "warmups_per_backend": 1,
+      "measured_accesses_per_backend": 4,
+      "complete_operations_checked": 10,
+      "cell_bits_checked": 81920,
+      "backends": {
+        "tfhe-serial": {
+          "mean_access_seconds": 60.1752396135,
+          "min_access_seconds": 60.143058775,
+          "max_access_seconds": 60.227256672,
+          "mean_refresh_seconds": 58.427171752250004,
+          "max_phase_error": 0.005137768108397722
+        },
+        "ckks": {
+          "mean_access_seconds": 61.234911296250004,
+          "min_access_seconds": 61.17829718,
+          "max_access_seconds": 61.292379823,
+          "mean_refresh_seconds": 59.48649053575,
+          "max_phase_error": 0.023327694507315755
+        }
+      },
+      "paired_ckks_minus_tfhe_seconds": [
+        1.1333368689999972,
+        1.0676338020000031,
+        1.0310189329999986,
+        1.0066971270000025
+      ],
+      "ckks_faster_in_every_measured_pair": false,
+      "tfhe_faster_in_every_measured_pair": true,
+      "ckks_to_tfhe_mean_ratio": 1.017609762579363,
+      "ckks_faster_on_mean": false,
+      "mean_ckks_stages_seconds": {
+        "packing": 0.26190370625000003,
+        "bootstrap": 3.7496403455000005,
+        "decoding": 0.6039674402499999,
+        "switching": 54.86610238225
+      },
+      "raw_summary": {
+        "address_bits": 13,
+        "word_bits": 1,
+        "warmups_per_backend": 1,
+        "measured_accesses_per_backend": 4,
+        "alternating_order": true,
+        "all_cells_checked": true,
+        "backends": [
+          {
+            "name": "tfhe-serial",
+            "access_seconds": [
+              60.159042954,
+              60.143058775,
+              60.227256672,
+              60.171600053
+            ],
+            "refresh_seconds": [
+              58.410992538,
+              58.396057779,
+              58.479115512,
+              58.42252118
+            ],
+            "max_phase_error": 0.005137768108397722
+          },
+          {
+            "name": "ckks",
+            "access_seconds": [
+              61.292379823,
+              61.210692577,
+              61.258275605,
+              61.17829718
+            ],
+            "refresh_seconds": [
+              59.545322396,
+              59.463082546,
+              59.507360484,
+              59.430196717
+            ],
+            "max_phase_error": 0.023327694507315755
+          }
+        ],
+        "measured_ckks_stages": {
+          "packing": 1.0476148250000001,
+          "bootstrap": 14.998561382000002,
+          "decoding": 2.4158697609999997,
+          "switching": 219.464409529
+        }
+      },
+      "raw_records": [
+        {
+          "backend": "tfhe-serial",
+          "bits": 8192,
+          "step": 0,
+          "order": 0,
+          "warmup": true,
+          "seconds": 60.696856614,
+          "refresh_seconds": 58.926107081,
+          "address_seconds": 0.664479412,
+          "read_seconds": 0.088113517,
+          "write_seconds": 1.01683528,
+          "max_phase_error": 0.004912962671369314,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 8192,
+          "step": 0,
+          "order": 1,
+          "warmup": true,
+          "seconds": 60.991844042,
+          "refresh_seconds": 59.24809446,
+          "address_seconds": 0.649058082,
+          "read_seconds": 0.080098473,
+          "write_seconds": 1.012756783,
+          "max_phase_error": 0.02199016697704792,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 8192,
+          "step": 1,
+          "order": 0,
+          "warmup": false,
+          "seconds": 61.292379823,
+          "refresh_seconds": 59.545322396,
+          "address_seconds": 0.6513729,
+          "read_seconds": 0.080213995,
+          "write_seconds": 1.012820041,
+          "max_phase_error": 0.023282773327082396,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 8192,
+          "step": 1,
+          "order": 1,
+          "warmup": false,
+          "seconds": 60.159042954,
+          "refresh_seconds": 58.410992538,
+          "address_seconds": 0.65164598,
+          "read_seconds": 0.080377344,
+          "write_seconds": 1.013560111,
+          "max_phase_error": 0.005137768108397722,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 8192,
+          "step": 2,
+          "order": 0,
+          "warmup": false,
+          "seconds": 60.143058775,
+          "refresh_seconds": 58.396057779,
+          "address_seconds": 0.650649169,
+          "read_seconds": 0.080185165,
+          "write_seconds": 1.013681262,
+          "max_phase_error": 0.004521707771345973,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 8192,
+          "step": 2,
+          "order": 1,
+          "warmup": false,
+          "seconds": 61.210692577,
+          "refresh_seconds": 59.463082546,
+          "address_seconds": 0.65025944,
+          "read_seconds": 0.080364282,
+          "write_seconds": 1.014377815,
+          "max_phase_error": 0.014629873679950833,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 8192,
+          "step": 3,
+          "order": 0,
+          "warmup": false,
+          "seconds": 61.258275605,
+          "refresh_seconds": 59.507360484,
+          "address_seconds": 0.653123738,
+          "read_seconds": 0.080083318,
+          "write_seconds": 1.015040648,
+          "max_phase_error": 0.01815449958667159,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 8192,
+          "step": 3,
+          "order": 1,
+          "warmup": false,
+          "seconds": 60.227256672,
+          "refresh_seconds": 58.479115512,
+          "address_seconds": 0.652105658,
+          "read_seconds": 0.080300621,
+          "write_seconds": 1.013176351,
+          "max_phase_error": 0.004363606916740537,
+          "correct": true
+        },
+        {
+          "backend": "tfhe-serial",
+          "bits": 8192,
+          "step": 4,
+          "order": 0,
+          "warmup": false,
+          "seconds": 60.171600053,
+          "refresh_seconds": 58.42252118,
+          "address_seconds": 0.652901592,
+          "read_seconds": 0.080220723,
+          "write_seconds": 1.013417944,
+          "max_phase_error": 0.004782837815582752,
+          "correct": true
+        },
+        {
+          "backend": "ckks",
+          "bits": 8192,
+          "step": 4,
+          "order": 1,
+          "warmup": false,
+          "seconds": 61.17829718,
+          "refresh_seconds": 59.430196717,
+          "address_seconds": 0.651762049,
+          "read_seconds": 0.080201706,
+          "write_seconds": 1.013456184,
+          "max_phase_error": 0.023327694507315755,
+          "correct": true
+        }
+      ]
+    }
+  ],
+  "observed_all_pairs_crossover_brackets_bits": [],
+  "consistent_crossover_observed": false,
+  "mean_crossover_observed": false,
+  "absence_of_crossover_proved": false,
+  "implementation_commit": "5be00b8fc23724da55f5b13120239616a45c0460",
+  "recorded_utc": "2026-10-16T16:06:26.836855+00:00",
+  "provenance": {
+    "run-job": {
+      "argv": [
+        "env",
+        "OMP_PROC_BIND=close",
+        "OMP_DYNAMIC=FALSE",
+        "CKKS_RAM_PROFILE=crossover",
+        "OMP_NUM_THREADS=8",
+        "OMP_PLACES={0},{2},{4},{6},{8},{10},{12},{14}",
+        "taskset",
+        "-c",
+        "0-15",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-crossover/ckks_narrow_ll14_retuned_ram",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "tanh",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-prototype/fixture",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/native32",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--basis-accumulate",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--native-auto-batch",
+        "0",
+        "--dd-windowed",
+        "0"
+      ],
+      "stack_bytes": 134217728,
+      "source_sha256": {
+        "test/ckks/ckks_ram_crossover.hpp": "990041590e7e0d1207b86849d1f922ff25aa0270fb492a97966fc9ab7c948e05",
+        "test/ckks/ckks_ram_benchmark.hpp": "aeb6d7c2a46ebd31e60894c0b37b5405cf8ac9fea21f93177ac32c002321f4d9",
+        "test/ckks/ckks_ram_fixture.hpp": "db5bec6c3ac726caeaa724c3d5febc46ea2a0f0b0190e6ecdef7c1a4a94b0bed",
+        "test/ckks/ckks_narrow_ll14_basis_ntt_fbs.cpp": "b886a1671eb1a5c93b4c1b90b79afa3a839f664168d2e658ad958342af21d553",
+        "include/tfhe/refreshable_ram.hpp": "5a811085d21cd7b6f2dffd58a9361859507a52521c5d66858696ef4069f2850a",
+        "include/ckks/tlwe_coefficient_packing.hpp": "cdf200b0d9bf77fa7ff36961394611c73761ddfe04cffed26fc0e1ecf54c47c0"
+      },
+      "binary_sha256": "ef5b4f109f496b363b1f8fca0d46a1854e7be1018fd0d9a1498856819f7673fb",
+      "loadavg_start": "0.99 0.98 2.33 1/743 227045",
+      "platform": "Linux-6.8.0-139-generic-x86_64-with-glibc2.39"
+    },
+    "run-exit": {
+      "exit_code": 0,
+      "elapsed_seconds": 266.00470495224,
+      "loadavg_finish": "4.61 3.14 2.89 1/746 227760"
+    },
+    "full-run-job": {
+      "argv": [
+        "env",
+        "OMP_PROC_BIND=close",
+        "OMP_DYNAMIC=FALSE",
+        "CKKS_RAM_PROFILE=crossover-full",
+        "OMP_NUM_THREADS=8",
+        "OMP_PLACES={0},{2},{4},{6},{8},{10},{12},{14}",
+        "taskset",
+        "-c",
+        "0-15",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-crossover/full/ckks_narrow_ll14_retuned_ram",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "tanh",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-prototype/fixture",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/native32",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--basis-accumulate",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--native-auto-batch",
+        "0",
+        "--dd-windowed",
+        "0"
+      ],
+      "stack_bytes": 134217728,
+      "source_sha256": {
+        "test/ckks/ckks_ram_crossover.hpp": "990041590e7e0d1207b86849d1f922ff25aa0270fb492a97966fc9ab7c948e05",
+        "test/ckks/ckks_ram_benchmark.hpp": "aeb6d7c2a46ebd31e60894c0b37b5405cf8ac9fea21f93177ac32c002321f4d9",
+        "test/ckks/ckks_ram_fixture.hpp": "2551149bd291ff92c9af2e15e08f1506290f845b8ef4b9ea3a2ef536e3b3029a",
+        "test/ckks/ckks_narrow_ll14_basis_ntt_fbs.cpp": "e7c59ce1bbec58b9849bbcf19f36b4b8ac04ea2872f7ada81e0eafc12f614125",
+        "include/tfhe/refreshable_ram.hpp": "5a811085d21cd7b6f2dffd58a9361859507a52521c5d66858696ef4069f2850a",
+        "include/ckks/tlwe_coefficient_packing.hpp": "cdf200b0d9bf77fa7ff36961394611c73761ddfe04cffed26fc0e1ecf54c47c0"
+      },
+      "binary_sha256": "dd99e2c4f6d78e30b2447a3f55617c9577608895b17b209d9a911165f653e1cc",
+      "trace_sha256": "8d5b8323a81bcc976163ba97b39a0467f03c46d147e32b965ff537ca55431990",
+      "loadavg_start": "2.16 2.78 2.79 1/752 228174"
+    },
+    "full-run-exit": {
+      "exit_code": 0,
+      "elapsed_seconds": 655.6382827758789,
+      "loadavg_finish": "5.18 4.42 3.80 1/753 230139"
+    },
+    "build-results": [
+      {
+        "name": "ckks_ram_setup",
+        "exit_code": 0
+      },
+      {
+        "name": "ckks_narrow_ll14_retuned_ram",
+        "exit_code": 0
+      }
+    ],
+    "full-build-results": [
+      {
+        "name": "ckks_ram_setup",
+        "exit_code": 0
+      },
+      {
+        "name": "ckks_narrow_ll14_retuned_ram",
+        "exit_code": 0
+      }
+    ],
+    "fixture-reuse": {
+      "existing_files_unchanged": true,
+      "existing_file_metadata": {
+        "owner.bin": {
+          "size": 179541,
+          "mtime_ns": 1792159956928390036,
+          "inode": 4476700
+        },
+        "tfhe-eval.bin": {
+          "size": 1319440745,
+          "mtime_ns": 1792159966376433212,
+          "inode": 4475069
+        },
+        "pack48.bin": {
+          "size": 1073741889,
+          "mtime_ns": 1792159978167487089,
+          "inode": 4476381
+        },
+        "to-tfhe32.bin": {
+          "size": 2149580857,
+          "mtime_ns": 1792159992064550593,
+          "inode": 4476390
+        },
+        "trace-4x2.bin": {
+          "size": 393617,
+          "mtime_ns": 1792159969258446380,
+          "inode": 4475737
+        },
+        "trace-256x1.bin": {
+          "size": 2425233,
+          "mtime_ns": 1792160610840378176,
+          "inode": 4479335
+        }
+      },
+      "new_trace_sha256": {
+        "trace-512x1.bin": "4a1c000a58136f9511ec19aed9e8d7f7a5ef9430ab17e1f80ee8eff7cdfb8550",
+        "trace-1024x1.bin": "423c30befcdc99719653c7e9a3f3fa76b616d30c89e07c8f594757071ee5d00a"
+      }
+    }
+  },
+  "hardware": {
+    "cpu": "12th Gen Intel(R) Core(TM) i9-12900K",
+    "governor": "powersave",
+    "omp_threads": 8,
+    "cpu_places": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14
+    ],
+    "omp_proc_bind": "close",
+    "omp_dynamic": false
+  },
+  "raw_evidence_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-crossover",
+  "interpretation": "No crossover observed at the four tested RAM sizes, including one full 8192-bit CKKS batch. TFHE was faster in every measured pair. Earlier 600-700-bit crossover extrapolation is not supported. This is not a proof about every untested size or runtime/hardware configuration.",
+  "timing_scope": "Warm-up, saved-key loading, public-cache preparation and owner validation excluded; all encrypted address/read/write/refresh work and both scheme conversions included. TFHE uses the existing serial per-cell refresh. Alternating paired order with identical saved inputs.",
+  "initial_comparison_note": "The initial unpaired comparison used different runtime/load conditions and much slower TFHE timings. All sizes were remeasured under the same explicit binding policy. Causes of the historical timing difference were not isolated; do not combine those older numbers with this controlled scaling curve.",
+  "checks": {
+    "complete_operations": 40,
+    "post_access_cell_bit_checks": 99840,
+    "read_bits_checked": 40,
+    "existing_keys_and_inputs_reused": true,
+    "cryptographic_parameters_unchanged": true,
+    "analyzer_sha256": "c16af88e16de5dc76307a1c5f0639ba3fd512bf72c9839cb01d1f96c12734e4b"
+  }
+}
