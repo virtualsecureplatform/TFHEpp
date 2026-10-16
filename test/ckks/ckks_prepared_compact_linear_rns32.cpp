@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <cstring>
 
 using namespace TFHEpp;
 using P=narrow_benchmark::BenchmarkParam<9,7>;
@@ -63,8 +64,40 @@ template<std::uint32_t Q>void checkWiderRotationArithmetic()
     std::cout<<"wider S2C rotation Q="<<Q<<" primary8 matches independent integer oracle; half spectrum bytes\n";
 }
 
+template<std::uint32_t Q, std::uint32_t Bits>
+void checkCompactRotationDigits()
+{
+    using BP=narrow_benchmark::BenchmarkParam<14,7>;
+    using Cache=CKKSPreparedAutoKeyFFT<BP,Q,16,Bits>;
+    auto input=std::make_unique<Polynomial<BP>>();
+    auto centered=std::make_unique<Polynomial<BP>>();
+    auto original=std::make_unique<std::array<Polynomial<BP>,Cache::rows>>();
+    auto compact=std::make_unique<std::array<std::array<std::int64_t,BP::n>,Cache::rows>>();
+    auto old_fft=std::make_unique<PolynomialInFD<BP>>();
+    auto new_fft=std::make_unique<PolynomialInFD<BP>>();
+    std::mt19937_64 random(20261024+Q+Bits);
+    for(auto&v:*input)for(auto&w:v.limb)w=random();
+    (*input)[0]={};(*input)[1]=BP::T{1};(*input)[2]=BP::T{}-BP::T{1};
+    (*input)[3]=BP::T{1}<<(Q-1);(*input)[4]=(BP::T{1}<<Q)+BP::T{3};
+    ckks_detail::centeredPolynomialAtLevel<BP,Q>(*centered,*input);
+    ckks_detail::baseBbarDecomposePolynomialRows<ckks_detail::AutoPrimaryParam<BP,Bits>,Cache::first>(*original,*centered);
+    ckks_detail::activeBaseDecomposeSignedRows<BP,Q,Bits,Cache::rows>(*compact,*input);
+    for(std::size_t r=0;r<Cache::rows;++r){
+        for(std::size_t i=0;i<BP::n;++i)
+            if((*original)[r][i]!=BP::T::from_signed_i64((*compact)[r][i]))
+                throw std::runtime_error("compact rotation digit differs from original full-torus decomposition");
+        TwistIFFTDigit<BP>(*old_fft,(*original)[r]);
+        TwistIFFTDigit<BP>(*new_fft,(*compact)[r]);
+        if(std::memcmp(old_fft->data(),new_fft->data(),sizeof(*old_fft))!=0)
+            throw std::runtime_error("signed rotation FFT changed spectrum bytes");
+    }
+    std::cout<<"compact rotation Q="<<Q<<" primary="<<Bits<<" full N16384 digits and FFT spectra match original path\n";
+}
+
 int main()
 {
+    checkCompactRotationDigits<93,4>();checkCompactRotationDigits<56,4>();
+    checkCompactRotationDigits<93,8>();checkCompactRotationDigits<56,8>();
     checkWiderRotationArithmetic<93>();checkWiderRotationArithmetic<56>();
     Plan plan; plan.has_direct=true; plan.has_conjugate=true;
     for (auto *part:{&plan.direct,&plan.conjugate}) {

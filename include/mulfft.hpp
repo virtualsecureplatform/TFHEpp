@@ -352,6 +352,26 @@ inline void TwistIFFTDigit(PolynomialInFD<P> &res, const Polynomial<P> &a)
 #endif
 }
 
+// Signed and corresponding unsigned integer types may alias. The FFT reads
+// the identical two's-complement words used by full-torus digit conversion.
+template <class P>
+inline void TwistIFFTDigit(PolynomialInFD<P> &res,
+                           const std::array<std::int64_t, P::n> &digits)
+{
+    static_assert(is_multilimb_uint_v<typename P::T>);
+    static_assert(std::is_same_v<std::make_unsigned_t<std::int64_t>, std::uint64_t>);
+#if TFHEPP_HAS_MULTILIMB_SPQLIOS_FFT
+    if constexpr (use_multilimb_digit_fft_v<P>)
+        MultilimbDigitFFTProcessor<P>().execute_reverse_torus64(
+            res.data(), reinterpret_cast<const std::uint64_t *>(digits.data()));
+    else
+        static_assert(false_v<P>, "Undefined multi-limb digit TwistIFFT!");
+#else
+    static_assert(false_v<P>,
+                  "Multi-limb digit FFT currently requires a SPQLIOS backend");
+#endif
+}
+
 // Digit convolutions fit the signed 64-bit output of the FFT backend. Keep
 // that representation until torus recombination rather than expanding every
 // secondary row to a full-width multi-limb polynomial.

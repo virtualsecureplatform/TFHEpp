@@ -4,43 +4,6 @@
 
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 namespace TFHEpp {
-namespace ckks_detail {
-// Emit the same balanced digits as activeBaseDecomposePolynomialRows, keeping
-// only their signed 64-bit values rather than full torus coefficients.
-template<class P, std::uint32_t Q, std::uint32_t Bits, std::size_t Rows>
-void activeBaseDecomposeSignedRows(
-    std::array<std::array<std::int64_t, P::n>, Rows>& result,
-    const Polynomial<P>& input)
-{
-    using T = typename P::T;
-    static_assert(is_multilimb_uint_v<T>);
-    static_assert(Q > 0 && Q <= T::digits && Bits > 0 && Bits <= 64);
-    static_assert(Rows == (Q + Bits - 1) / Bits && Rows * Bits <= T::digits);
-    constexpr T offset = [] {
-        T value{};
-        for (std::size_t row = 0; row < Rows; ++row)
-            value += (T{1} << (Bits - 1)) << ((Rows - row - 1) * Bits);
-        return value;
-    }();
-    constexpr std::uint64_t mask = [] {
-        if constexpr (Bits == 64) return ~std::uint64_t{0};
-        else return (std::uint64_t{1} << Bits) - 1;
-    }();
-    constexpr auto half = std::uint64_t{1} << (Bits - 1);
-    for (std::size_t i = 0; i < P::n; ++i) {
-        const T a = centeredLevelToTorus<P, Q>(input[i]) + offset;
-        for (std::size_t row = 0; row < Rows; ++row) {
-            const auto shift = (Rows - row - 1) * Bits;
-            const auto word = shift / 64, bit = shift % 64;
-            auto digit = a.limb[word] >> bit;
-            if (bit && word + 1 < T::limbs)
-                digit |= a.limb[word + 1] << (64 - bit);
-            // Unsigned subtraction also handles the full-width INT64_MIN digit.
-            result[row][i] = std::bit_cast<std::int64_t>((digit & mask) - half);
-        }
-    }
-}
-} // namespace ckks_detail
 
 template<std::uint32_t ChunkBits=80> struct CKKSUniformGadgetChunks {
     template<class P,std::uint32_t Q,std::uint32_t Bits>

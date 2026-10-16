@@ -109,10 +109,11 @@ inline void CKKSPreparedKeySwitchRows(TRLWE<P> &result, const Polynomial<P> &pol
                   std::numeric_limits<double>::digits);
     if (source >= P::k || key.spectra.size() != Cache::spectrum_count)
         throw std::invalid_argument("invalid prepared auto key");
-    auto centered = std::make_unique<Polynomial<P>>();
-    ckks_detail::centeredPolynomialAtLevel<P, LogQ>(*centered, poly);
-    auto digits = std::make_unique<std::array<Polynomial<P>, Cache::rows>>();
-    ckks_detail::baseBbarDecomposePolynomialRows<ckks_detail::AutoPrimaryParam<P, PrimaryBits>, Cache::first>(*digits, *centered);
+    // Keep balanced primary digits in signed64 storage rather than expanding
+    // every small digit to a full torus coefficient and copying it back for FFT.
+    auto digits = std::make_unique_for_overwrite<
+        std::array<std::array<std::int64_t, P::n>, Cache::rows>>();
+    ckks_detail::activeBaseDecomposeSignedRows<P, LogQ, PrimaryBits, Cache::rows>(*digits, poly);
     std::vector<PolynomialInFD<P>> transformed(Cache::rows);
 #pragma omp parallel for schedule(static) if(P::n >= 8192)
     for (std::size_t row = 0; row < Cache::rows; row++)
