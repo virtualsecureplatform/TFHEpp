@@ -1,0 +1,466 @@
+{
+  "scope": "Opt-in CPU four-root Tanh approximation on the same period16/input[-4,4] domain, unchanged 23-bit function and remaining-square gates. The original degree40/seven-root fit remains the default. No CUDA.",
+  "approximation_and_planner_commit": "f773980",
+  "replay_controls_commit": "1e71b4f",
+  "implementation": "Sparse frequency plans explicitly permit gaps, but reject every exactly nonzero coefficient at an unsupported frequency before touching the output, even when that coefficient would round to zero. Existing complete-coverage constructors preserve their behavior. Reconstruction remains depth one with cached conjugated roots.",
+  "roots": [
+    7,
+    9,
+    10,
+    15
+  ],
+  "maximum_frequency": 30,
+  "nonzero_frequencies": 20,
+  "direct_terms": 4,
+  "reconstruction_products": 16,
+  "original_roots": 7,
+  "original_reconstruction_products": 33,
+  "scale_and_modulus": "Same selector bank, tree schedule, internal44-bit scale, roots165/44, products121/44, coefficient28-bit weighting121/72, final93/44 and remaining square49/44. Same retained DD213 basis key (data165, auxiliary48, primary20), same native automorphism keys. No extra multiplication layer or rescale changes.",
+  "coefficient_norm": 1.5693532600998878,
+  "offline_fit": {
+    "roots": [
+      7,
+      9,
+      10,
+      15
+    ],
+    "frequencies": [
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      22,
+      24,
+      25,
+      30
+    ],
+    "integer_imaginary_weights28": [
+      -159877184,
+      -761407,
+      -33621499,
+      -9306132,
+      -1415660,
+      -381343,
+      -2655022,
+      1173886,
+      -977945,
+      -148264,
+      85245,
+      3444,
+      -83323,
+      81208,
+      -47670,
+      13393,
+      -1773,
+      406,
+      -221,
+      -4
+    ],
+    "scipy_version": "1.18.1",
+    "numpy_version": "2.5.4",
+    "norm_cap": 2.0,
+    "rounded_l1": 1.5693532600998878,
+    "lp_sampled_objective": 1.9789091811614826e-09,
+    "rounded_sampled_error": 1.0404648032036334e-08,
+    "curvature_bound": 3.440735261263458,
+    "between_grid_bound": 6.258660980644814e-12,
+    "floating_allowance": 1e-12,
+    "uniform_bound": 1.0411906693016979e-08,
+    "qualification": "Public approximation only; encrypted precision unproven."
+  },
+  "independent_public_certificate": {
+    "intervals": 1048576,
+    "sampled": 1.0404647776381462e-08,
+    "curvature_bound": 3.440735261263458,
+    "between_grid_bound": 6.258660980644815e-12,
+    "floating_allowance": 1e-12,
+    "uniform_bound": 1.0411906437362106e-08,
+    "published_bound": 1.06e-08,
+    "l1": 1.5693532600998878
+  },
+  "certificate_method": "Exact dyadic imaginary coefficients at28-bit scale. Independent C++ long-double evaluation of tanh and the series on 2^20 intervals in[0,4], extended by odd symmetry. Analytic |residual second derivative| <=2+sum |a_k|*(pi*k/8)^2 gives between-grid interpolation remainder M*h^2/8. An additional1e-12 floating evaluation allowance is included. This is not formal interval arithmetic and does not itself qualify encrypted noise.",
+  "certificate_commands": [
+    "c++ -O3 -std=c++20 -Iinclude -Ithirdparties/cereal/include test/ckks/tools/sparse_tanh_certificate.cpp -o /tmp/ckks-sparse-tanh-certificate",
+    "/tmp/ckks-sparse-tanh-certificate",
+    "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 /tmp/ckks-sparse-fit-venv/bin/python test/ckks/tools/sparse_tanh_fit.py"
+  ],
+  "solver_dependencies": "The isolated temporary fitting environment contains numpy2.5.4/scipy1.18.1. The fixed C++ profile and independent certificate do not require Python/scipy at runtime. Optimizer version and tie breaking can affect freshly generated coefficients; the compiled dyadic profile is the artifact qualified here.",
+  "exploration": "Ranked four-root sets drawn from1..20 by sampled least-squares residual, then bounded-L1 minimax LP for50 candidates; selected by rounded error and moderate coefficient norm. Three-root exploration over1..40 did not yield a passing candidate. This is heuristic selection, not proof of root-count minimality or global optimality.",
+  "unit_checks": {
+    "unit": {
+      "exit_code": 0,
+      "wall_seconds": 0.44277405738830566
+    },
+    "full_ring": {
+      "exit_code": 0,
+      "wall_seconds": 1.066610336303711
+    },
+    "unit_log_sha256": "40b506ad8c0d8022f87995a86a91ac3ca271e49fd27367e98a7e13be17ac9708",
+    "full_ring_log_sha256": "11e6f7726ca1af1d1d39845209f85d8ef34c1c3b609e25afab0124f7496435df",
+    "full_ring_command": "OMP_NUM_THREADS=8 OMP_MAX_ACTIVE_LEVELS=1 OMP_DYNAMIC=false build/test/ckks/ckks_narrow_basis_prepared --sparse-full",
+    "coverage": "N512 and N16384 transparent zero-secret fixtures, all slots across the input domain. RNS/FFT tensors are byte-identical. Independent tanh and square gates pass; an unsupported coefficient1e-300 is rejected before output mutation. Existing basis and two-layer arithmetic tests also pass. No encrypted key generation.",
+    "full_ring_max_error": 1.04078e-08,
+    "full_ring_square_max_error": 2.03997e-08
+  },
+  "preflight": [
+    {
+      "case": "value",
+      "exit_code": 1,
+      "message": "sparse Tanh flag must be 0 or 1"
+    },
+    {
+      "case": "function",
+      "exit_code": 1,
+      "message": "sparse Tanh requires a single signed Tanh profile and no reduced-degree or basis comparison"
+    },
+    {
+      "case": "unsigned",
+      "exit_code": 1,
+      "message": "sparse Tanh requires a single signed Tanh profile and no reduced-degree or basis comparison"
+    },
+    {
+      "case": "reduced",
+      "exit_code": 1,
+      "message": "sparse Tanh requires a single signed Tanh profile and no reduced-degree or basis comparison"
+    },
+    {
+      "case": "pair-exclusive",
+      "exit_code": 1,
+      "message": "paired replay controls must be separate"
+    }
+  ],
+  "timing_method": "One retained Tanh process, warm baseline then baseline/sparse/sparse/baseline, two measured samples per profile. Fixed24-thread CPU configuration, DD40 level chunks, retained/joint/fused matrices, staged tables, RNS tensors, native44 automorphisms, Horner S2C and8 baby/group workers. No compilation, unit tests, profiling or decoding overlaps measured evaluation. Functional time includes S2C, blind rotation and reconstruction; excludes key loading, public cache setup, decryption, serialization and later square.",
+  "mean_seconds": {
+    "baseline": {
+      "functional_evaluation_seconds": 9.563838586,
+      "basis_series_seconds": 0.35830440750000003,
+      "s2c_seconds": 0.993997971,
+      "blind_rotation_and_series_seconds": 8.569840615
+    },
+    "sparse": {
+      "functional_evaluation_seconds": 6.3069173450000005,
+      "basis_series_seconds": 0.1891573465,
+      "s2c_seconds": 1.0010760865,
+      "blind_rotation_and_series_seconds": 5.3058412585
+    }
+  },
+  "fractional_reduction": {
+    "functional_evaluation_seconds": 0.3405454004386518,
+    "basis_series_seconds": 0.47207641731284045,
+    "s2c_seconds": -0.007120855078686983,
+    "blind_rotation_and_series_seconds": 0.3808704855942061
+  },
+  "paired_trials": [
+    {
+      "sparse_tanh": false,
+      "sparse_tanh_pair_warmup": true,
+      "basis_root_count": 7,
+      "basis_series_seconds": 0.365486838,
+      "functional_evaluation_seconds": 10.140633447,
+      "s2c_seconds": 1.019836628,
+      "max_error": 3.085959861275242e-08,
+      "post_product_max_error": 5.471802425340437e-08,
+      "accuracy_passed": true
+    },
+    {
+      "sparse_tanh": false,
+      "sparse_tanh_pair_warmup": false,
+      "basis_root_count": 7,
+      "basis_series_seconds": 0.356806613,
+      "functional_evaluation_seconds": 9.557860176999998,
+      "s2c_seconds": 0.995497201,
+      "max_error": 3.085959861275242e-08,
+      "post_product_max_error": 5.471802425340437e-08,
+      "accuracy_passed": true
+    },
+    {
+      "sparse_tanh": true,
+      "sparse_tanh_pair_warmup": false,
+      "basis_root_count": 4,
+      "basis_series_seconds": 0.188757046,
+      "functional_evaluation_seconds": 6.28289254,
+      "s2c_seconds": 0.992017225,
+      "max_error": 2.2736960534105123e-08,
+      "post_product_max_error": 3.929734817570041e-08,
+      "accuracy_passed": true
+    },
+    {
+      "sparse_tanh": true,
+      "sparse_tanh_pair_warmup": false,
+      "basis_root_count": 4,
+      "basis_series_seconds": 0.189557647,
+      "functional_evaluation_seconds": 6.33094215,
+      "s2c_seconds": 1.010134948,
+      "max_error": 2.2736960534105123e-08,
+      "post_product_max_error": 3.929734817570041e-08,
+      "accuracy_passed": true
+    },
+    {
+      "sparse_tanh": false,
+      "sparse_tanh_pair_warmup": false,
+      "basis_root_count": 7,
+      "basis_series_seconds": 0.359802202,
+      "functional_evaluation_seconds": 9.569816995,
+      "s2c_seconds": 0.992498741,
+      "max_error": 3.085959861275242e-08,
+      "post_product_max_error": 5.471802425340437e-08,
+      "accuracy_passed": true
+    }
+  ],
+  "paired_exit": {
+    "exit_code": 0,
+    "wall_seconds": 85.2693305015564
+  },
+  "paired_artifacts": [
+    {
+      "artifact": "paired/tanh-trial0-outputs.bin",
+      "sha256": "8e1c1029184584aca3e5677caafd512228073ee74875b3be7aa1c1e598afcb98",
+      "report_sha256": "f486b3d67c65a37059ce447c9f94b7b637d9177080b780b570a4b1b66d437cd9",
+      "sparse_tanh": false,
+      "independent_reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-tensor-rns-20261017/implicit-full/tanh-outputs.bin"
+    },
+    {
+      "artifact": "paired/tanh-trial1-outputs.bin",
+      "sha256": "8e1c1029184584aca3e5677caafd512228073ee74875b3be7aa1c1e598afcb98",
+      "report_sha256": "37544fd1f753f482c45b0dc36a99cb57433e74fe6175f2dda76c29a76b54581d",
+      "sparse_tanh": false,
+      "independent_reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-tensor-rns-20261017/implicit-full/tanh-outputs.bin"
+    },
+    {
+      "artifact": "paired/tanh-trial2-outputs.bin",
+      "sha256": "87dee1cc7d485886ef44a17cdeefad8919de4ac73614f0448fc92d25de111c68",
+      "report_sha256": "6e7b234b36fa34a4076d38da6446901a9b9b05c1303edf28c064fcb2f226368a",
+      "sparse_tanh": true,
+      "independent_reference": null
+    },
+    {
+      "artifact": "paired/tanh-trial3-outputs.bin",
+      "sha256": "87dee1cc7d485886ef44a17cdeefad8919de4ac73614f0448fc92d25de111c68",
+      "report_sha256": "0acc4315c4047c44780b013393467ed229a64623b67b07e5c182aa9b6df5f05d",
+      "sparse_tanh": true,
+      "independent_reference": null
+    },
+    {
+      "artifact": "paired/tanh-trial4-outputs.bin",
+      "sha256": "8e1c1029184584aca3e5677caafd512228073ee74875b3be7aa1c1e598afcb98",
+      "report_sha256": "db8b97d450c5d4b4def2475e0c9218ead75c7d2e7ad4fae17d5274c983cf1a83",
+      "sparse_tanh": false,
+      "independent_reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-tensor-rns-20261017/implicit-full/tanh-outputs.bin"
+    }
+  ],
+  "independent_proofs": {
+    "87dee1cc7d485886ef44a17cdeefad8919de4ac73614f0448fc92d25de111c68": {
+      "function": "tanh",
+      "n": 16384,
+      "output_log_q": 93,
+      "output_log_delta": 44,
+      "post_product_log_q": 49,
+      "scope": "Independent integer phases for full dense input, structured S2C output, real functional refresh and remaining-level square. All coefficients/slots; no key values printed; no security claim.",
+      "phase_coefficients_checked": 65536,
+      "decoded_output_slots_checked": 24576,
+      "metrics": {
+        "fresh_input_max_error": 6.263338240405094e-11,
+        "s2c_max_error": 2.8101307947281384e-09,
+        "max_error": 2.2736858307620792e-08,
+        "post_product_max_error": 3.929734469589759e-08
+      },
+      "accuracy_passed": true
+    }
+  },
+  "validation": "All three baseline paired archives match the prior independently qualified original-degree output. The two sparse archives are byte-identical and independently decoded once with all65536 integer phase coefficients and24576 output slots across input/S2C/output/square. Function and product tolerance gates unchanged and passing.",
+  "default_regression": {
+    "exit": {
+      "exit_code": 0,
+      "wall_seconds": 64.02828478813171
+    },
+    "artifacts": [
+      {
+        "artifact": "default-full/gelu-outputs.bin",
+        "sha256": "24eaa507669f4251f58fde20eaadb880ab006b806269e30b5e5830a7a67b00b2",
+        "report_sha256": "d4af596ade1e0bbfca89c15305fa35a456745a9a7190f65ef236c6fe81566de2",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-tensor-rns-20261017/implicit-full/gelu-outputs.bin"
+      },
+      {
+        "artifact": "default-full/sigmoid-outputs.bin",
+        "sha256": "75f9839ff68074972ec30fa7dcba387e517a0c258ec4146322fa6ac5b0f1b91a",
+        "report_sha256": "29be85432a8076a8deea47977f7235b65627d2c3b71e6b298f4f150e61a74661",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-tensor-rns-20261017/implicit-full/sigmoid-outputs.bin"
+      },
+      {
+        "artifact": "default-full/tanh-outputs.bin",
+        "sha256": "8e1c1029184584aca3e5677caafd512228073ee74875b3be7aa1c1e598afcb98",
+        "report_sha256": "573d9a72c70c13e9ac0e52676c2dc5031a1d138b2b2eee3aff51e16ece468133",
+        "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-tensor-rns-20261017/implicit-full/tanh-outputs.bin"
+      }
+    ],
+    "validation": "All3 original-degree default outputs byte-identical to prior RNS basis references; prior independent integer-phase proofs reused through these exact byte matches."
+  },
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "retained_input_reused": true,
+  "key_archive_hashes": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/23681.bin": "91b25e31ced7b1ffb31cffb7b6ea2249802ddbc0c9b6f9f80a8d444299e3ce3d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/23937.bin": "5171c5cd2151d3dde4bc6f630bb0bd2f1add9934ee275d5d8f09e51b0ed36b30",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/24193.bin": "fa4d2516bb6ea7a96b8d2cd804dc653f61aef62cb2be1aeef9a9bce6c90808c1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/24449.bin": "b6931c884d039758a457abdd6c163a1f18626a86b123fe2073594c2537384436",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32001.bin": "c720dca522e60c9be22ac47c67de021d4099d992cde11d105bdfc2887b44883c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32257.bin": "428e98d54308321f80c10a62cc580908952b9dbabb53b3f059074e15525b1f03",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32513.bin": "2471fa95a7a50ae755ec18ff3f7be368bfa5f268a1bf99a3507f7589ca9da39b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32767.bin": "12f6c13a4bdb60729f02800a959c4b51051894b8bea20b037482870305339c0d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin": "c8233129eda049f4e4141a55a3a302292b172d3070e7563ec22ab0fc4770b998"
+  },
+  "all_checked_key_hashes_unchanged": true,
+  "commands": {
+    "paired": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "tanh",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/sparse-frequency-20261017/paired",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--matrix-joint",
+      "1",
+      "--s2c-baby-workers",
+      "8",
+      "--parallel-table-ntt",
+      "1",
+      "--s2c-group-workers",
+      "8",
+      "--sparse-tanh-pair",
+      "1"
+    ],
+    "default_all": [
+      "taskset",
+      "-c",
+      "0-23",
+      "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+      "all",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/sparse-frequency-20261017/default-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+      "unused-with-native-auto",
+      "--cache-gib",
+      "45",
+      "--s2c-cache-gib",
+      "4",
+      "--direct-rns",
+      "1",
+      "--s2c-rns",
+      "1",
+      "--tensor-rns",
+      "1",
+      "--auto-rns",
+      "1",
+      "--signed-basis",
+      "1",
+      "--dd-wide-rns",
+      "1",
+      "--matrix-tiled",
+      "1",
+      "--parallel-conjugation",
+      "1",
+      "--parallel-tail-alignment",
+      "1",
+      "--parallel-root-columns",
+      "1",
+      "--native-auto-directory",
+      "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+      "--batch-product-trees",
+      "1",
+      "--dd-primary-bits",
+      "40",
+      "--dd-level-chunks",
+      "1",
+      "--matrix-retained-rows",
+      "1",
+      "--matrix-joint",
+      "1",
+      "--s2c-baby-workers",
+      "8",
+      "--parallel-table-ntt",
+      "1",
+      "--s2c-group-workers",
+      "8"
+    ]
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "binary_sha256": "018f11bef713d64cd6ea8e54a4b42353817aa1fad670a593506ec072b03ae269",
+  "diagnostic_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/sparse-frequency-20261017",
+  "evidence_sha256": {
+    "published-fit.json": "f835e7454d27e2b504e5de2afc1afac81c63af012f1f999878650bd5db4f2436",
+    "certificate.json": "b6253ec46bf17449ddd1d451cd258146d89fb93dda1c24cb185c4240c5ff15b3",
+    "search.jsonl": "d37d0bb11a91a81b3281c13e07aa33b70ff7546821368e9dcb9657358ef484a7",
+    "search3.jsonl": "93d6052bb402aab251bece4a7b99b234233c7c501b9191355c74d15cd8ac0b1f",
+    "rounded.json": "f8e08a3677998bef905b421fefa3460ea5457d05d82ad2114a3efaff5b8a590d",
+    "verified-artifacts.json": "2906e916ca611aeb0c65548b36889a32a43708295be0f9d138c9debb9e51660a",
+    "independent-proofs.json": "d75c5080b41216ab4bd362aaca90c2d20a4489484ffa301542f0eace4eb1cb23",
+    "verified-default-artifacts.json": "89481d09a3c1df01d09ab5177d313ced37e1c0cf15d5e9138b72be3189569a82"
+  },
+  "limitations": "Two measured trials per profile, one retained encrypted input and one CPU. The continuous public approximation check covers the declared interval; encrypted qualification is limited to the retained input. This intentionally changes the public approximation and ciphertext bytes, while preserving the functional contract. No matched paper hardware/parameter/security claim. The possible10x performance goal remains unachieved.",
+  "security_validated": false,
+  "performance_gap_closed": false,
+  "rejected_two_layer_runner_isolation": {
+    "exit_code": 1,
+    "message": "two-layer experiment requires original-degree signed Tanh, RNS basis, uniform chunks and retained native automorphisms",
+    "build_exit_code": 0
+  }
+}

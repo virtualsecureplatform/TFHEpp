@@ -4204,6 +4204,20 @@ bytes match the independently validated reference. See
 [narrow-basis-rns-tensor-validation.json](narrow-basis-rns-tensor-validation.json)
 for the complete configuration, checks and timing limits.
 
+For Tanh, `--sparse-tanh 1` selects a bounded-coefficient sine fit on the
+same `[-4,4]` interval and period 16. Four blind roots `{7,9,10,15}` reconstruct
+20 nonzero frequencies through degree 30 in one multiplication layer. The
+internal 44-bit scale, output 93/44, remaining square 49/44 and accuracy gates
+stay unchanged. The rounded coefficients have a continuous error bound of
+`1.06e-8`; the retained encrypted replay passes independent integer-phase
+validation. `--sparse-tanh-pair 1` runs a warmup followed by baseline/sparse/
+sparse/baseline. The paired mean evaluation time falls from 9.564s to 6.307s
+on the same CPU configuration. The original approximation remains the default.
+See [narrow-sparse-tanh-validation.json](narrow-sparse-tanh-validation.json) for
+commands, proofs and limits. The offline fitter is
+`test/ckks/tools/sparse_tanh_fit.py`; the independent continuous-error check is
+`test/ckks/tools/sparse_tanh_certificate.cpp`.
+
 The separate `ckks_narrow_ll14_two_layer_fbs` runner reproduces a rejected
 three-seed experiment. Frequencies6/9/10 derive eight intermediate roots and
 cover degree40 in two multiplication layers. Its37-bit internal schedule fits
