@@ -49,10 +49,13 @@ template<std::size_t A,std::size_t W>struct Fixture {
 template<std::size_t A=2,std::size_t W=2>
 inline std::vector<PlainRequest> trace()
 {
+    if constexpr((A>=8&&A<=13)&&W==1) {
+        if(A!=8)return {{0,true,1},{(1u<<A)-1,true,0},{(1u<<(A-1))-1,false,0},{0,false,0},{(1u<<A)-1,false,1}};
+    }
     if constexpr(A==8 && W==1)
         return {{0,true,1},{255,true,0},{127,false,0},{0,false,0},
                 {255,false,1},{128,true,1},{128,false,0},{127,true,0}};
-    static_assert((A==2&&W==2)||(A==8&&W==1));
+    static_assert((A==2&&W==2)||((A>=8&&A<=13)&&W==1));
     return {{0,true,1},{1,true,2},{2,true,3},{3,true,0},
             {0,false,2},{1,false,3},{2,false,0},{3,false,1},
             {0,true,2},{0,true,1},{1,true,1},{2,true,2},

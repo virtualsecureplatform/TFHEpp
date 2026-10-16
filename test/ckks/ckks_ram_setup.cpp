@@ -7,6 +7,9 @@ int main(int argc,char **argv)try {
         auto sk=std::make_unique<ckks_ram::SavedOwner>();ckks_ram::load(root/"owner.bin",*sk);
         ckks_ram::saveTrace<2,2>(root,sk->secret(),"trace-4x2.bin");
         ckks_ram::saveTrace<8,1>(root,sk->secret(),"trace-256x1.bin");
+        ckks_ram::saveTrace<9,1>(root,sk->secret(),"trace-512x1.bin");
+        ckks_ram::saveTrace<10,1>(root,sk->secret(),"trace-1024x1.bin");
+        ckks_ram::saveTrace<13,1>(root,sk->secret(),"trace-8192x1.bin");
         std::cout<<"Saved missing traces; existing keys and traces reused"<<std::endl;return 0;
     }
     if(!std::filesystem::create_directory(root))throw std::runtime_error("setup requires a new directory; reuse existing fixture instead");

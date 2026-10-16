@@ -1,18 +1,19 @@
 #pragma once
 #include "ckks_ram_fixture.hpp"
+#include "ckks_ram_crossover.hpp"
 
 namespace ckks_ram {
 template<class Narrow,std::size_t A=2,std::size_t W=2,class Transform>
 int run(const std::filesystem::path &root,const TFHEpp::Key<P> &sparse,
         const TFHEpp::CKKSNarrowBootstrapKey<Narrow> &bootstrap,
-        Transform slots_to_coefficients)
+        Transform slots_to_coefficients,bool paired=false)
 {
     using namespace TFHEpp;
     using Clock=std::chrono::steady_clock;
     auto started=Clock::now();
     auto owner=std::make_unique<SavedOwner>();load(root/"owner.bin",*owner);
     auto ek=std::make_unique<EvalKey>();load(root/"tfhe-eval.bin",*ek);
-    auto fixture=std::make_unique<Fixture<A,W>>();load(root/(A==2?"trace-4x2.bin":"trace-256x1.bin"),*fixture);
+    auto fixture=std::make_unique<Fixture<A,W>>();load(root/("trace-"+std::to_string(std::size_t{1}<<A)+"x"+std::to_string(W)+".bin"),*fixture);
     auto packing=std::make_unique<PackKey>();load(root/"pack48.bin",*packing);
     PreparedTLWECoefficientPacking48<P,L> prepared(*packing);packing.reset();
     auto output_key=std::make_unique<OutKey>();load(root/"to-tfhe32.bin",*output_key);
@@ -76,6 +77,8 @@ int run(const std::filesystem::path &root,const TFHEpp::Key<P> &sparse,
         }
         return out;
     };
+    if(paired)return runPaired<A,W>(root,*fixture,secret,*ek,tfhe_refresh,ckks_refresh,
+        pack_seconds,bootstrap_seconds,decode_seconds,switch_seconds);
     const auto plain=trace<A,W>();
     std::ofstream report(root/(A==2?"comparison.json":"comparison-256x1.json"));report<<std::setprecision(17);
     report<<"{\"address_bits\":"<<A<<",\"word_bits\":"<<W<<",\"operations\":"<<plain.size()

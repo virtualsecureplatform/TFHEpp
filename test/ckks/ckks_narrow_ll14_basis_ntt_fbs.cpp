@@ -506,8 +506,17 @@ int main(int argc,char**argv)try {
   else narrow_detail::realTransformWithPreparedGalois<P,93,52,37>(*decoded,*lifted,key->s2c_plan,key->s2c_input_galois,key->s2c_output_galois);
   CKKSScaleDown<P,56,52,8>(result,*decoded);
  };
- if(const auto profile=std::getenv("CKKS_RAM_PROFILE");profile && std::string(profile)=="256x1")
-  return ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots);
+ if(const auto profile=std::getenv("CKKS_RAM_PROFILE");profile){
+  const std::string selected=profile;
+  if(selected=="crossover"){
+   ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots,true);
+   ckks_ram::run<Narrow,9,1>(root,*sparse,key->narrow,decode_slots,true);
+   return ckks_ram::run<Narrow,10,1>(root,*sparse,key->narrow,decode_slots,true);
+  }
+  if(selected=="crossover-full")return ckks_ram::run<Narrow,13,1>(root,*sparse,key->narrow,decode_slots,true);
+  if(selected=="256x1")return ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots);
+  if(selected!="4x2")throw std::invalid_argument("unknown RAM profile");
+ }
  return ckks_ram::run<Narrow,2,2>(root,*sparse,key->narrow,decode_slots);
 #endif
 

@@ -125,7 +125,46 @@ Both backends start with the same saved encrypted memory and requests.
 `comparison.json` contains total access and individual stage timings.
 Setup/cache preparation and validation are excluded from access timings.
 
-## Measured comparison
+## Paired crossover experiment
+
+Use `CKKS_RAM_PROFILE=crossover` for 256-, 512-, and 1,024-bit RAMs and
+`CKKS_RAM_PROFILE=crossover-full` for 8,192 bits. Both modes use one-bit
+words. Add missing encrypted traces once with
+`ckks_ram_setup --add-traces RAM_FIXTURE_DIRECTORY`; all existing keys
+and input archives are reused. The full case fills one CKKS batch.
+
+These modes keep two independent RAM states, starting from identical
+saved ciphertexts. They apply five identical encrypted requests to each
+backend, alternate which backend runs first, and exclude the first access
+of each backend as warm-up. The remaining four paired accesses include a
+write to the final address and disabled writes reading the middle and
+the two endpoints. Every read and every cell after every access is checked
+outside the timed operation. Stage timings include both conversions.
+
+The controlled runs use `OMP_NUM_THREADS=8`, `OMP_DYNAMIC=FALSE`,
+`OMP_PROC_BIND=close`, and
+`OMP_PLACES='{0},{2},{4},{6},{8},{10},{12},{14}'`, with process affinity
+`taskset -c 0-15`. The TFHE refresh loop remains serial. Set the process
+stack limit to 128 MiB (`ulimit -s 131072` in a subshell) before running
+the full case: the inherited `RAMUX` allocates its large temporary tree
+on the stack. This changes no cryptographic parameter or gate algorithm.
+
+Each profile writes `crossover-SIZEx1.jsonl` with individual operation
+receipts and `crossover-SIZEx1.json` with its summary. Validate and collect
+them with:
+
+```sh
+python3 test/ckks/analyze_ram_crossover.py RAM_FIXTURE_DIRECTORY \
+  --output crossover-results.json
+```
+
+The analyzer requires all ten successful receipts per profile and checks
+the order, warm-up classification, and agreement with summary timings.
+It reports mean ratios and individual paired differences, distinguishing
+a mean win from a win in every measured pair. A finite experiment cannot
+prove that a crossover exists or is absent for every machine and size.
+
+## Initial measured comparison
 
 The [machine-readable record](ckks-ram-comparison.json) contains complete
 timings, commands, source hashes, and validation scope. On an i9-12900K,
