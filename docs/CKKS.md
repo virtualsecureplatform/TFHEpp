@@ -4687,21 +4687,36 @@ Evidence and both complete block summaries are in
 `narrow-head-factor-followup-validation.json`.
 
 
-The original-degree Tanh profile has seven basis roots; its factor finish still
-uses the per-column path. An isolated candidate extends the existing full-team
-inverse/CRT plus native batch switch from three/four columns to seven. Generate
-it with `test/ckks/tools/make_factor_finish_replay.py DIR --seven-columns` and
-compile `DIR/replay.cpp` using the normal retained-replay flags. The option
-requires original-degree Tanh and rejects sparse/reduced-degree profiles. The
-production header and dispatch remain unchanged.
+Seven-column original-degree Tanh now uses the existing full-team inverse/CRT
+and native batch switch, alongside the three/four-column paths. Signed CRT,
+rounding, scales, moduli, approximations and accuracy gates are unchanged.
+`parallel_inverse_crt=false` on the RNS factor source retains the original
+seven-column per-column control. Other column counts retain their dispatch.
+Generate the balanced original-degree comparison with
+`test/ckks/tools/make_factor_finish_replay.py DIR --seven-columns`; the default
+generator still selects sparse Tanh. The initial isolated experiment is recorded
+in `narrow-seven-column-factor-finish-validation.json`.
 
-The padded seven-column finish matches every reference coefficient, including
-wrapped ciphertexts, nested-team evaluation and an independent N512 Garner
-cross-check. Six complete retained-key Tanh outputs match the original-degree
-reference byte for byte; all nine saved key hashes are unchanged. The measured
-control/candidate means were 10.550/9.908 seconds, with substantial changing CPU
-activity and changing tree times despite identical tree code. These observations
-do not establish a gain. A final repeat failed its quiet gate and did not launch.
-Builds, commands, reports and limitations are recorded in
-`narrow-seven-column-factor-finish-validation.json`. The candidate remains
-experimental pending a stable latency comparison.
+Two further balanced24-thread processes observed original-degree Tanh at
+7.632→7.386 seconds overall (3.2% less time); an eight-thread process observed
+9.957→9.529 seconds (4.3%). The24-thread tree times stayed nearly unchanged,
+with gains concentrated in factor finishing. These are repeatable observations
+under the recorded CPU activity, not a clean/general latency claim. Every
+measured block failed the existing strict all-interval quiet threshold. The
+code is adopted based on its exact arithmetic, narrow dispatch and consistent
+observed direction at8/24 threads, while the idle performance claim remains open.
+
+A tighter CPU monitor brackets the process counter reads with system counter
+reads, reducing snapshot skew. Both monitors still identify background activity;
+the hypothesis that all earlier bursts were measurement artifacts is unproven.
+The final24-thread repeat gate failed and did not launch another evaluation.
+
+All21 follow-up archives match qualified references:18 balanced Tanh outputs
+plus the three normal GeLU/original-degree-Tanh/Sigmoid profiles, including the
+post-multiplication checks. All nine saved key hashes are unchanged; no keys
+or inputs were generated. The factor/forest/archive regression passes and now
+checks seven-column dispatch, the original control, exact coefficients and
+exception propagation. Normal and two-layer wrapper compilation pass; the
+wrapper is build-only. Commands, hashes, samples and limits are recorded in
+`narrow-seven-column-factor-finish-followup-validation.json`. The10x objective
+and paper performance/security qualification remain open.
