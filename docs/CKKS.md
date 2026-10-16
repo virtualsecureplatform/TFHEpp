@@ -4204,6 +4204,15 @@ bytes match the independently validated reference. See
 [narrow-basis-rns-tensor-validation.json](narrow-basis-rns-tensor-validation.json)
 for the complete configuration, checks and timing limits.
 
+The separate `ckks_narrow_ll14_two_layer_fbs` runner reproduces a rejected
+three-seed experiment. Frequencies6/9/10 derive eight intermediate roots and
+cover degree40 in two multiplication layers. Its37-bit internal schedule fits
+the final93/44 output and49/44 square budget, but retained encrypted Tanh
+misses the23-bit gate by roughly27–36 times. Transparent full-ring tests pass;
+they do not establish encrypted precision. The runner retains the failing gate
+and is excluded from production defaults. See
+[narrow-two-layer-frequency-experiment.json](narrow-two-layer-frequency-experiment.json).
+
 For independent verification, set `PYTHONPATH` to the sibling
 `Parameter-Selection/python/estimates`, then run
 `python3 test/ckks/validate_narrow_ll14_basis.py CHECKPOINT/checkpoint.bin OUTPUT/gelu-outputs.bin OUTPUT/gelu-report.json validation.json`
