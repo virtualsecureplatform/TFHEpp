@@ -34,7 +34,7 @@ void reference(std::vector<TRLWE<typename S::Param>>&first,std::vector<TRLWE<typ
 }
 template<unsigned Nbit>void run(std::size_t columns){
  using P=narrow_benchmark::BenchmarkParam<Nbit,7>;using S=Schedule<P>;constexpr std::size_t Count=17;
- const auto stride=columns==3?4:columns;
+ const auto stride=columns==3?4:columns==7?8:columns;
  std::mt19937_64 random(20261029+Nbit+columns);
  std::vector<std::array<std::vector<uint32_t>,Count>> sums(4);
  for(auto&row:sums)for(std::size_t p=0;p<Count;++p){row[p].resize(stride*P::n);for(auto&v:row[p])v=random()%modular_rns32::primes[p].value;}
@@ -68,4 +68,4 @@ template<unsigned Nbit>void run(std::size_t columns){
  }
  if(first!=ef||second!=es)throw std::runtime_error("nested factor finish differs");
 }
-int main(){std::cout<<std::setprecision(17);run<9>(0);run<9>(1);run<9>(3);run<9>(4);run<14>(3);run<14>(4);}
+int main(){std::cout<<std::setprecision(17);run<9>(0);run<9>(1);run<9>(3);run<9>(4);run<9>(7);run<14>(3);run<14>(4);run<14>(7);}

@@ -1,9 +1,11 @@
 """Generate a shared-cache serial/parallel inverse-CRT factor-finish replay.
 
-Usage: python3 test/ckks/tools/make_factor_finish_replay.py EMPTY_DIRECTORY
+Usage: python3 test/ckks/tools/make_factor_finish_replay.py EMPTY_DIRECTORY [--seven-columns]
 Compile replay.cpp with retained replay flags and test/ckks on the include path.
 Run the fixed grouped sparse-Tanh profile with native batches and windowed DD.
 Warm both policies, then measure serial/parallel/parallel/serial. No keys generated.
+With --seven-columns, use original-degree Tanh and an isolated candidate header
+that also batches seven-column finishing; production dispatch stays unchanged.
 """
 import hashlib
 import json
@@ -11,8 +13,9 @@ from pathlib import Path
 import re
 import sys
 
-if len(sys.argv)!=2:
+if len(sys.argv) not in (2,3) or (len(sys.argv)==3 and sys.argv[2]!='--seven-columns'):
     raise SystemExit(__doc__)
+seven_columns=len(sys.argv)==3
 repo=Path(__file__).resolve().parents[3]
 out=Path(sys.argv[1]).resolve()
 out.mkdir(parents=True,exist_ok=True)
@@ -20,6 +23,17 @@ if any(out.iterdir()):
     raise SystemExit('Use an empty experiment directory')
 source=repo/'test/ckks/ckks_narrow_ll14_basis_ntt_fbs.cpp'
 main=source.read_text()
+if seven_columns:
+    header=(repo/'include/ckks/narrow_factor_rns32.hpp').read_text()
+    needle='parallel_inverse_crt&&parallel_conjugation&&(columns==3||columns==4)&&key.automorphism_batch_evaluator'
+    assert header.count(needle)==1
+    header=header.replace(needle,'parallel_inverse_crt&&parallel_conjugation&&(columns==3||columns==4||columns==7)&&key.automorphism_batch_evaluator',1)
+    # Resolve the copied header's sibling includes using normal repo flags.
+    header=re.sub(r'#include "([^"\n]+)"',r'#include <ckks/\1>',header)
+    (out/'candidate_narrow_factor_rns32.hpp').write_text(header)
+    needle='#include <ckks/narrow_factor_rns32.hpp>'
+    assert main.count(needle)==1
+    main=main.replace(needle,'#include "candidate_narrow_factor_rns32.hpp"',1)
 main=main.replace(' if(direct_rns){',' decltype(key->narrow.factor_source) serial_projection_source,parallel_projection_source;\n if(direct_rns){',1)
 needle='  using Source=CKKSNarrowDeferredRescaleFactorSourceRNS32<Narrow,TableSource,TableSource>;'
 assert main.count(needle)==1
@@ -31,7 +45,8 @@ pairs=re.findall(r'int\((\w+)\)',pair_line)
 assert len(pairs)>=10
 needle=' const auto start=std::chrono::steady_clock::now();'
 assert main.count(needle)==1
-main=main.replace(needle,' if(requested!="tanh"||!sparse_tanh||!basis_accumulate||!basis_group_tensors||!native_auto_batch||!dd_windowed||!direct_rns||!parallel_conjugation||'+ '||'.join(pairs)+')throw std::invalid_argument("factor finish experiment requires fixed grouped sparse Tanh and parallel factors");\n'+needle,1)
+profile_guard='sparse_tanh||reduced_degree' if seven_columns else '!sparse_tanh'
+main=main.replace(needle,' if(requested!="tanh"||'+profile_guard+'||!basis_accumulate||!basis_group_tensors||!native_auto_batch||!dd_windowed||!direct_rns||!parallel_conjugation||'+ '||'.join(pairs)+')throw std::invalid_argument("factor finish experiment requires its fixed grouped Tanh profile and parallel factors");\n'+needle,1)
 needle=' const auto sweep_tree_evaluator=key->narrow.product_tree_evaluator;'
 assert main.count(needle)==1
 main=main.replace(needle,' functions.assign(6,requested);\n'+needle,1)
