@@ -166,6 +166,76 @@ public:
             second[column]=bv>=2*modulus_?bv-2*modulus_:bv;
         }
     }
+    // Two ciphertext components share each public table load and odd-lane
+    // extraction. All four destinations retain the same lazy [0,2p) bound.
+    template<std::size_t Terms,bool Packed=false>
+    void addDotPairComponents(std::uint32_t*first0,std::uint32_t*second0,
+        std::uint32_t*first1,std::uint32_t*second1,
+        const std::array<const std::uint32_t*,Terms>&left,
+        const std::array<const std::uint32_t*,Terms>&right,
+        const std::array<std::uint32_t,Terms>&selectors0,
+        const std::array<std::uint32_t,Terms>&selectors1,std::size_t columns)const
+    {
+        static_assert(Terms==4 || Terms==8);
+        if constexpr(Packed)if(columns!=4)throw std::invalid_argument("packed component dot needs four columns");
+        std::size_t column=0;
+#if defined(__AVX2__)
+        const auto twice=_mm256_set1_epi32(2*modulus_);
+        const auto add=[&](__m256i old,__m256i value){
+            const auto sum=_mm256_add_epi32(old,value);
+            return _mm256_min_epu32(sum,_mm256_sub_epi32(sum,twice));
+        };
+        const auto pack=[](const std::uint32_t*a,const std::uint32_t*b){
+            return _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128(reinterpret_cast<const __m128i*>(a))),_mm_loadu_si128(reinterpret_cast<const __m128i*>(b)),1);
+        };
+        struct Pair{__m256i first,second;};
+        const auto dot=[&](const auto&load){
+            auto e0=_mm256_setzero_si256(),o0=e0,e1=e0,o1=e0;
+            for(std::size_t t=0;t<Terms;++t){
+                const auto row=load(t),odd=_mm256_srli_epi64(row,32);
+                const auto a=_mm256_set1_epi32(selectors0[t]),b=_mm256_set1_epi32(selectors1[t]);
+                e0=_mm256_add_epi64(e0,_mm256_mul_epu32(row,a));o0=_mm256_add_epi64(o0,_mm256_mul_epu32(odd,a));
+                e1=_mm256_add_epi64(e1,_mm256_mul_epu32(row,b));o1=_mm256_add_epi64(o1,_mm256_mul_epu32(odd,b));
+            }
+            Pair out{reduceWideVector(e0,o0),reduceWideVector(e1,o1)};
+            if constexpr(Terms==8){out.first=canonicalVector(out.first);out.second=canonicalVector(out.second);}
+            return out;
+        };
+        if(columns==4){
+            const auto value=dot([&](std::size_t t){
+                if constexpr(Packed)return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(left[t]));
+                else return pack(left[t],right[t]);
+            });
+            const auto a=add(pack(first0,second0),value.first),b=add(pack(first1,second1),value.second);
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(first0),_mm256_castsi256_si128(a));
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(second0),_mm256_extracti128_si256(a,1));
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(first1),_mm256_castsi256_si128(b));
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(second1),_mm256_extracti128_si256(b,1));
+            return;
+        }
+        for(;column+8<=columns;column+=8){
+            const auto store=[&](auto*out0,auto*out1,const auto&tables){
+                const auto value=dot([&](std::size_t t){return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(tables[t]+column));});
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(out0+column),add(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(out0+column)),value.first));
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(out1+column),add(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(out1+column)),value.second));
+            };
+            store(first0,first1,left);store(second0,second1,right);
+        }
+#endif
+        for(;column<columns;++column){
+            std::uint64_t a0=0,b0=0,a1=0,b1=0;
+            for(std::size_t t=0;t<Terms;++t){
+                const auto x=left[t][column],y=Packed?left[t][column+4]:right[t][column];
+                a0+=std::uint64_t(x)*selectors0[t];b0+=std::uint64_t(y)*selectors0[t];
+                a1+=std::uint64_t(x)*selectors1[t];b1+=std::uint64_t(y)*selectors1[t];
+            }
+            const auto finish=[&](std::uint32_t&dest,std::uint64_t value){
+                auto reduced=reduceLazy(value);if constexpr(Terms==8)reduced=canonical(reduced);
+                const auto sum=dest+reduced;dest=sum>=2*modulus_?sum-2*modulus_:sum;
+            };
+            finish(first0[column],a0);finish(second0[column],b0);finish(first1[column],a1);finish(second1[column],b1);
+        }
+    }
     void addDot4Pair(std::uint32_t *first,std::uint32_t *second,
         const std::array<const std::uint32_t*,4>&left,
         const std::array<const std::uint32_t*,4>&right,

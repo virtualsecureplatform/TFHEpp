@@ -95,10 +95,23 @@ int main()
                         b[c]=(b[c]+static_cast<unsigned __int128>(right[t][c])*ordinary)%p;
                     }
                 }
+                auto fused_first0=first,fused_second0=second,fused_first1=first,fused_second1=second;
+                auto control_first1=first,control_second1=second;
+                const auto initial_first=first,initial_second=second;
+                std::array<std::uint32_t,Terms> selectors1;
+                for(std::size_t t=0;t<Terms;++t)selectors1[t]=p-1-selectors[t];
+                arithmetic.template addDotPair<Terms>(control_first1.data(),control_second1.data(),lp,rp,selectors1,columns);
+                arithmetic.template addDotPairComponents<Terms>(fused_first0.data(),fused_second0.data(),fused_first1.data(),fused_second1.data(),lp,rp,selectors,selectors1,columns);
                 arithmetic.template addDotPair<Terms>(first.data(),second.data(),lp,rp,selectors,columns);
+                if(fused_first0!=first || fused_second0!=second || fused_first1!=control_first1 || fused_second1!=control_second1)
+                    throw std::runtime_error("fused component dots differ from separate dots");
                 if(columns==4){
                     for(std::size_t t=0;t<Terms;++t)for(std::size_t c=0;c<4;++c){packed[t][c]=left[t][c];packed[t][c+4]=right[t][c];}
                     arithmetic.template addPackedDotPair<Terms>(packed_first.data(),packed_second.data(),packed_rows,selectors);
+                    auto pf0=initial_first,ps0=initial_second,pf1=initial_first,ps1=initial_second;
+                    arithmetic.template addDotPairComponents<Terms,true>(pf0.data(),ps0.data(),pf1.data(),ps1.data(),packed_rows,rp,selectors,selectors1,columns);
+                    if(pf0!=first || ps0!=second || pf1!=control_first1 || ps1!=control_second1)
+                        throw std::runtime_error("packed fused component dots differ from separate dots");
                     for(std::size_t c=0;c<4;++c)
                         if(packed_first[c]!=first[c] || packed_second[c]!=second[c])throw std::runtime_error("packed table dot differs from separate tables");
                 }
