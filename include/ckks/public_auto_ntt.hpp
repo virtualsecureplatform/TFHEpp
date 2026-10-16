@@ -2,6 +2,7 @@
 #include <ckks/narrow_packed_file.hpp>
 #include <ckks/prepared_dd_ntt.hpp>
 #include <ckks/prepared_gadget_rns32.hpp>
+#include <ckks/prepared_gadget_batch_rns32.hpp>
 namespace TFHEpp {
 // Public encryptions of gadget*s^exponent; never a relinearization key.
 template<class P, uint32_t Q, uint32_t Bits=64>
@@ -93,6 +94,25 @@ public:
    result[0][i]=ckks_detail::reduceToLevel<P,DataQ>(-ckks_detail::roundedLevelRightShift<P,Q,auxiliary>((*switched)[0][i]));
    result[1][i]=ckks_detail::reduceToLevel<P,DataQ>((*body)[i]-ckks_detail::roundedLevelRightShift<P,Q,auxiliary>((*switched)[1][i]));
   }
+ } template<uint32_t DataQ>void applyBatch(std::span<TRLWE<P>> result,std::span<const TRLWE<P>> input,std::size_t window=8)const requires(DirectRNS){
+  static_assert(DirectRNS&&DataQ<Q);constexpr auto auxiliary=Q-DataQ;
+  if(result.size()!=input.size()||!window)throw std::invalid_argument("invalid automorphism batch shape/window");
+  if(input.empty())return;
+  const auto size=input.size();std::vector<Polynomial<P>> transformed(size),body(size);std::vector<TRLWE<P>> switched(size);
+#pragma omp parallel for collapse(2) schedule(static)
+  for(std::size_t j=0;j<size;++j)for(std::size_t c=0;c<2;++c){
+   auto&out=c?body[j]:transformed[j];Automorphism<P>(out,input[j][c],exponent_);
+   if(c==0)for(auto&v:out)v=ckks_detail::reduceToLevel<P,DataQ>(v)<<auxiliary;
+  }
+  CKKSApplyGadgetBatchRNS32<4>(switched,transformed,*cache_,window);
+#pragma omp parallel for collapse(2) schedule(dynamic,1)
+  for(std::size_t j=0;j<size;++j)for(std::size_t begin=0;begin<P::n;begin+=256){
+   for(std::size_t i=begin;i<std::min(begin+256,std::size_t(P::n));++i){
+    result[j][0][i]=ckks_detail::reduceToLevel<P,DataQ>(-ckks_detail::roundedLevelRightShift<P,Q,auxiliary>(switched[j][0][i]));
+    result[j][1][i]=ckks_detail::reduceToLevel<P,DataQ>(body[j][i]-ckks_detail::roundedLevelRightShift<P,Q,auxiliary>(switched[j][1][i]));
+   }
+  }
  }
+
 };
 }

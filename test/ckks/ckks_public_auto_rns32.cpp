@@ -45,6 +45,31 @@ template<std::uint32_t Nbit,std::uint32_t Bits=20,std::uint32_t ChunkBits=80>voi
   *input=*saved;
  };
  compare.template operator()<385>();compare.template operator()<398>();compare.template operator()<121>();
+ if constexpr(Bits==44){
+  const auto compare_batch=[&]<uint32_t DataQ>(){
+   std::vector<TRLWE<P>> in(3,*saved),want(3),got(3);
+   for(auto&c:in[1])c.fill(T{1}<<DataQ);
+   for(auto&c:in[2])c.fill((T{1}<<(DataQ-1))+T{1});
+   for(std::size_t j=0;j<in.size();++j)reference.template apply<DataQ>(want[j],in[j]);
+   direct.template applyBatch<DataQ>(got,in);
+   if(got!=want)throw std::runtime_error("batched native auto differs from digit NTT");
+   auto alias=in;direct.template applyBatch<DataQ>(alias,alias);
+   if(alias!=want)throw std::runtime_error("in-place native auto batch changed coefficients");
+   std::vector<TRLWE<P>> empty;direct.template applyBatch<DataQ>(empty,empty);
+   bool rejected=false;try{direct.template applyBatch<DataQ>(empty,in);}catch(const std::invalid_argument&){rejected=true;}
+   if(!rejected)throw std::runtime_error("invalid native auto batch shape accepted");
+  };
+  compare_batch.template operator()<398>();compare_batch.template operator()<385>();compare_batch.template operator()<165>();compare_batch.template operator()<121>();
+  auto batch_dispatch=narrow_detail::makePublicAutoBatchEvaluator<DispatchSchedule<P>,398,121>(cache_map);
+  std::vector<TRLWE<P>> in(3,*saved),got(3);
+  batch_dispatch(got,in,165,rows->exponent);reference.template apply<165>(*expected,*saved);
+  for(const auto&v:got)if(v!=*expected)throw std::runtime_error("native auto batch dispatch changed level");
+  bool rejected=false;try{batch_dispatch(got,in,122,rows->exponent);}catch(const std::invalid_argument&){rejected=true;}
+  if(!rejected)throw std::runtime_error("unregistered native auto batch level accepted");
+  rejected=false;try{batch_dispatch(got,in,165,1);}catch(const std::invalid_argument&){rejected=true;}
+  if(!rejected)throw std::runtime_error("unregistered native auto batch exponent accepted");
+  std::cout<<"native auto batches match digit NTT; alias, empty, shape and dispatch guards pass\n";
+ }
  reference.template apply<165>(*expected,*input);
  dispatch(*actual,*input,165,rows->exponent);
  if(*actual!=*expected)throw std::runtime_error("shared root-level cache differs");
@@ -114,4 +139,4 @@ void checkNativeRows()
  std::cout<<"native key phases match schoolbook; archive profile/origin/truncation guards pass\n";
 }
 
-int main(int argc,char**argv){if(argc>1&&std::string(argv[1])=="--native-chunks-only"){check<4,44,145>();check<9,44,145>();check<14,44,145>();return 0;}check<4>();check<9>();check<4,40>();check<9,40>();check<4,44,112>();check<9,44,112>();checkNativeRows();if(argc>1){check<14>();check<14,40>();}}
+int main(int argc,char**argv){if(argc>1&&std::string(argv[1])=="--native-batch-only"){check<4,44,112>();check<4,44,145>();check<9,44,145>();check<14,44,112>();check<14,44,145>();return 0;}if(argc>1&&std::string(argv[1])=="--native-chunks-only"){check<4,44,145>();check<9,44,145>();check<14,44,145>();return 0;}check<4>();check<9>();check<4,40>();check<9,40>();check<4,44,112>();check<9,44,112>();checkNativeRows();if(argc>1){check<14>();check<14,40>();}}

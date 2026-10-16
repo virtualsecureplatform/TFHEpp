@@ -357,6 +357,29 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     if (timings) timings->inverse_crt_seconds += std::chrono::duration<double>(Clock::now()-start).count();
     start = Clock::now();
     std::vector<typename Schedule::Factor> result(columns);
+    // Small frequency groups otherwise serialize each native switch inside
+    // a column team. Keep a full team through rounding, shared switching and
+    // addition. Larger groups retain their measured outer-column schedule.
+    if constexpr(requires{key.automorphism_batch_evaluator;}){
+        if(parallel_conjugation&&(columns==3||columns==4)&&key.automorphism_batch_evaluator){
+            std::vector<TRLWE<P>> second(columns),conjugated(columns);
+#pragma omp parallel for collapse(3) schedule(dynamic,1)
+            for(std::size_t column=0;column<columns;++column)for(std::size_t c=0;c<=P::k;++c)
+                for(std::size_t begin=0;begin<P::n;begin+=256)
+                    for(std::size_t i=begin;i<std::min(begin+256,std::size_t(P::n));++i){
+                        result[column].ct[c][i]=ckks_detail::roundedLevelRightShift<P,Schedule::selector_log_q,Schedule::plain_log_delta>(accum[column][0][c][i]);
+                        second[column][c][i]=ckks_detail::roundedLevelRightShift<P,Schedule::selector_log_q,Schedule::plain_log_delta>(accum[column][1][c][i]);
+                    }
+            key.automorphism_batch_evaluator(conjugated,second,Schedule::factor_log_q,2*P::n-1);
+#pragma omp parallel for collapse(3) schedule(dynamic,1)
+            for(std::size_t column=0;column<columns;++column)for(std::size_t c=0;c<=P::k;++c)
+                for(std::size_t begin=0;begin<P::n;begin+=256)
+                    for(std::size_t i=begin;i<std::min(begin+256,std::size_t(P::n));++i)
+                        result[column].ct[c][i]=ckks_detail::reduceToLevel<P,Schedule::factor_log_q>(result[column].ct[c][i]+conjugated[column][c][i]);
+            if(timings)timings->conjugation_seconds+=std::chrono::duration<double>(Clock::now()-start).count();
+            return result;
+        }
+    }
     const auto finish_column = [&](std::size_t column) {
         auto second = std::make_unique<typename Schedule::Factor>();
         auto conjugated = std::make_unique<typename Schedule::Factor>();
@@ -476,6 +499,7 @@ class CKKSNarrowDeferredRescaleFactorSourceRNS32 final : public CKKSNarrowFactor
         const decltype(CKKSNarrowBootstrapKey<TargetSchedule>::automorphism_evaluator) &automorphism_evaluator;
         const decltype(CKKSNarrowBootstrapKey<SourceSchedule>::factor_conjugation_fft) &factor_conjugation_fft;
         const decltype(CKKSNarrowBootstrapKey<SourceSchedule>::factor_conjugation_projected_fft) &factor_conjugation_projected_fft;
+        const decltype(CKKSNarrowBootstrapKey<TargetSchedule>::automorphism_batch_evaluator) &automorphism_batch_evaluator;
     };
 public:
     explicit CKKSNarrowDeferredRescaleFactorSourceRNS32(std::shared_ptr<const Source> source,
@@ -495,7 +519,7 @@ public:
         CKKSNarrowFactorTimings *timings) const override
     {
         FactorKeys view{key.factor_galois,key.staged_fft_caches,key.automorphism_evaluator,
-            key.factor_conjugation_fft,key.factor_conjugation_projected_fft};
+            key.factor_conjugation_fft,key.factor_conjugation_projected_fft,key.automorphism_batch_evaluator};
         auto factors = narrow_detail::packedFactorsBatchRNS32<SourceSchedule,DirectCRT>(tables,view,key.selector_ntt_chunk_size,
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
             source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):

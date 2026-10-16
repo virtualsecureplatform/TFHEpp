@@ -33,6 +33,35 @@ inline auto makePublicAutoEvaluator(std::shared_ptr<std::map<uint32_t,std::share
  };
 }
 
+// Supported-level dispatch for a shared native key batch. Inputs/results are
+// coefficient ciphertexts at the same public data level as single evaluation.
+template<class Schedule,uint32_t HighFactorQ,uint32_t ExtraDataQ=0,uint32_t IntermediateDataQ=0,class Cache>
+inline void applyPublicAutoBatchAtLevel(
+ std::span<TRLWE<typename Schedule::Param>>result,std::span<const TRLWE<typename Schedule::Param>>input,
+ uint32_t level,const Cache&cache)
+{
+ if(level==Schedule::factor_log_q)cache.template applyBatch<Schedule::factor_log_q>(result,input);
+ else if(level==Schedule::output_log_q)cache.template applyBatch<Schedule::output_log_q>(result,input);
+ else if(level==HighFactorQ)cache.template applyBatch<HighFactorQ>(result,input);
+ else{
+  if constexpr(IntermediateDataQ>0)if(level==IntermediateDataQ){cache.template applyBatch<IntermediateDataQ>(result,input);return;}
+  if constexpr(ExtraDataQ>0){
+   if(level==ExtraDataQ)cache.template applyBatch<ExtraDataQ>(result,input);
+   else throw std::invalid_argument("unexpected narrow automorphism batch data level");
+  }else throw std::invalid_argument("unexpected narrow automorphism batch data level");
+ }
+}
+template<class Schedule,uint32_t HighFactorQ,uint32_t ExtraDataQ=0,uint32_t IntermediateDataQ=0,class Cache>
+inline auto makePublicAutoBatchEvaluator(std::shared_ptr<std::map<uint32_t,std::shared_ptr<Cache>>>prepared)
+{
+ using P=typename Schedule::Param;
+ return [prepared](std::span<TRLWE<P>>result,std::span<const TRLWE<P>>input,uint32_t level,uint32_t exponent){
+  const auto found=prepared->find(exponent);
+  if(found==prepared->end())throw std::invalid_argument("unprepared narrow automorphism batch exponent");
+  applyPublicAutoBatchAtLevel<Schedule,HighFactorQ,ExtraDataQ,IntermediateDataQ>(result,input,level,*found->second);
+ };
+}
+
 }
 // The optional setup observer can prepare another public row representation
 // before temporary derived rows are released; no new encryption is needed.
@@ -56,6 +85,7 @@ inline void CKKSNarrowUsePublicNTTAutomorphisms(CKKSNarrowBootstrapKey<Schedule>
  for(size_t ell=0;ell<Schedule::tail_blocks_per_pack;++ell)
   attach(ckks_detail::rotationAutomorphismForSteps<P>(2*(ell+1)*Schedule::tail_width));
  key.automorphism_evaluator=narrow_detail::makePublicAutoEvaluator<Schedule,HighFactorQ,ExtraDataQ>(prepared);
+ key.automorphism_batch_evaluator={};
  key.factor_conjugation_fft.reset();key.factor_conjugation_projected_fft.reset();
  key.output_conjugation_fft.reset();key.output_conjugation_projected_fft.reset();
  key.tail_rotations_fft.reset();

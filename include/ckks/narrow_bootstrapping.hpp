@@ -222,6 +222,9 @@ struct CKKSNarrowBootstrapKey {
     // Publicly derived runtime backend; never serialized with raw keys.
     std::function<void(TRLWE<P>&, const TRLWE<P>&, uint32_t, uint32_t)>
         automorphism_evaluator;
+    // Optional shared-key batches. Runtime state is excluded from archives.
+    std::function<void(std::span<TRLWE<P>>,std::span<const TRLWE<P>>,uint32_t,uint32_t)>
+        automorphism_batch_evaluator;
     // Optional prepared backend; derived state is never archived.
     std::function<void(typename Schedule::TreeResult &,
         std::vector<typename Schedule::Factor>, const typename Schedule::RelinKeys &)>
@@ -270,6 +273,7 @@ struct CKKSNarrowBootstrapKey {
             product_tree_batch_evaluator = {};
             batch_product_trees = false;
             automorphism_evaluator = {};
+            automorphism_batch_evaluator = {};
             relin_fft.reset();
             relin_projected_fft.reset();
             factor_conjugation_fft.reset();
@@ -346,6 +350,7 @@ inline void CKKSNarrowUseStagedFFT(CKKSNarrowBootstrapKey<Schedule> &key,
         key.product_tree_batch_evaluator = {};
         key.batch_product_trees = false;
         key.automorphism_evaluator = {};
+        key.automorphism_batch_evaluator = {};
         key.staged_fft_caches = true;
     }
     else throw std::invalid_argument("staged FFT caches require a digit FFT backend");
@@ -393,6 +398,7 @@ inline void CKKSNarrowPrepareAutomorphisms(CKKSNarrowBootstrapKey<Schedule> &key
         auto factor = makeCKKSPreparedAutoKeyFFT<P, Schedule::factor_key_log_q>(key.factor_galois[P::nbit]);
         auto output = makeCKKSPreparedAutoKeyFFT<P, Schedule::output_key_log_q>(key.output_conjugation);
         key.automorphism_evaluator = {};
+        key.automorphism_batch_evaluator = {};
         key.factor_conjugation_fft = std::move(factor);
         key.output_conjugation_fft = std::move(output);
         key.factor_conjugation_projected_fft.reset();
@@ -412,6 +418,7 @@ inline void CKKSNarrowPrepareProjectedAutomorphisms(CKKSNarrowBootstrapKey<Sched
         auto factor = makeCKKSPreparedAutoKeyFFT<P, Schedule::factor_key_log_q, 16, 8>(key.factor_galois[P::nbit]);
         auto output = makeCKKSPreparedAutoKeyFFT<P, Schedule::output_key_log_q, 16, 8>(key.output_conjugation);
         key.automorphism_evaluator = {};
+        key.automorphism_batch_evaluator = {};
         key.factor_conjugation_projected_fft = std::move(factor);
         key.output_conjugation_projected_fft = std::move(output);
         key.factor_conjugation_fft.reset();
@@ -1383,6 +1390,7 @@ inline void generateNarrowEvaluationKeys(CKKSNarrowBootstrapKey<Schedule> &resul
     result.product_tree_batch_evaluator = {};
     result.batch_product_trees = false;
     result.automorphism_evaluator = {};
+    result.automorphism_batch_evaluator = {};
     result.relin_fft.reset();
     result.relin_projected_fft.reset();
     CKKSGaloisKeyGen<P, Schedule::factor_key_log_q>(result.factor_galois, evaluation, noise);

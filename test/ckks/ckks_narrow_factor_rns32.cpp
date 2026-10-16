@@ -289,6 +289,25 @@ int main()
                 conjugation_team_size.store(0);
                 const auto concurrent=parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 if(std::size_t(conjugation_team_size.load())>columns)throw std::runtime_error("factor conjugation team exceeds available columns");
+                if(chunk==4){
+                    std::size_t batch_calls=0;
+                    key->automorphism_batch_evaluator=[&](std::span<TRLWE<P>>out,std::span<const TRLWE<P>>in,uint32_t level,uint32_t exponent){
+                        if(level!=Source::factor_log_q||exponent!=2*P::n-1||out.size()!=in.size())throw std::runtime_error("wrong factor batch metadata");
+                        ++batch_calls;
+                        for(std::size_t j=0;j<in.size();++j)key->automorphism_evaluator(out[j],in[j],level,exponent);
+                    };
+                    const auto batched=parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                    if(batch_calls!=std::size_t(columns==3||columns==4))throw std::runtime_error("factor batch dispatch used wrong column scope");
+                    for(std::size_t c=0;c<columns;++c)if(batched[c].ct!=concurrent[c].ct)throw std::runtime_error("factor batch rounding/addition changed coefficients");
+                    if(columns==3||columns==4){
+                        key->automorphism_batch_evaluator=[](auto,auto,uint32_t,uint32_t){throw std::runtime_error("batch conjugation test failure");};
+                        bool propagated=false;
+                        try{parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);}
+                        catch(const std::runtime_error&e){propagated=std::string(e.what())=="batch conjugation test failure";}
+                        if(!propagated)throw std::runtime_error("factor batch backend exception was lost");
+                    }
+                    key->automorphism_batch_evaluator={};
+                }
                 const auto coarse=untiled.evaluate(variants,tail,0,*key,nullptr,nullptr);
                 for(std::size_t c=0;c<columns;++c)if(concurrent[c].ct!=reference[c].ct)throw std::runtime_error("parallel factor conjugations differ from digit CRT");
                 for(std::size_t c=0;c<columns;++c)if(coarse[c].ct!=reference[c].ct)throw std::runtime_error("coarse RNS matrix differs from digit CRT");
