@@ -4244,6 +4244,19 @@ can be combined with `--sparse-tanh 1`. See
 for precision proofs and timing limits. The end-to-end benefit is smaller than
 the reconstruction-stage reduction, with noticeable variation in unchanged stages.
 
+Retained S2C rotation caches accept `--s2c-input-primary-bits 8` and
+`--s2c-output-primary-bits 8`, independently selecting wider digits from the
+existing four-bit key rows. Both default to 4. `--s2c-primary-pair 1` compares
+4/4 with 8/8 after a warmup for one function. In the matched sparse-Tanh run,
+S2C falls from 1.001s to 0.738s (26.3%) and whole evaluation from 6.177s to
+5.919s (4.2%). Rotation-key FFT spectra halve from 700 MiB to 350 MiB;
+plaintext matrix storage stays the same. Wider digits change switching noise
+and ciphertext bytes, so this remains opt-in. Independent integer-phase checks
+pass for sparse Tanh and all three original and reduced-degree functions;
+default outputs remain byte-identical. See
+[narrow-s2c-primary8-validation.json](narrow-s2c-primary8-validation.json)
+for the arithmetic oracle, paired measurements, commands and qualification limits.
+
 The fresh four-root CPU profile is recorded in
 [narrow-sparse-cpu-sampling-profile.json](narrow-sparse-cpu-sampling-profile.json).
 The [core sweep](narrow-sparse-core-sweep.json) keeps 24 logical threads as
