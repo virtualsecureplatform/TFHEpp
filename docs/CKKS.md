@@ -4533,3 +4533,18 @@ resource observations and scope are in
 `narrow-dd-scratch-reuse-component-validation.json` and
 `narrow-dd-scratch-reuse-replay-validation.json`. This is incremental progress;
 the remaining10x target is not established by these measurements.
+
+
+The opt-in windowed DD path now also retains gadget digit, NTT and sum buffers
+across its product windows. Inactive transformed rows are cleared before reuse;
+the storage belongs to one DD invocation and is destroyed on return. The public
+fresh gadget batch API keeps its previous allocation policy. Retained buffers
+remain live during the next tensor phase, so peak memory may increase.
+
+All 17 gadget configurations, 13 DD batch configurations and the factor/forest
+regression pass, including independent small-ring integer oracles and stale-row
+checks. `dd_batch_bench --gadget-workspace-compare` compares independent products,
+the frozen fresh-gadget helper and the reused helper with one coefficient fixture.
+These are correctness checks; latency and a full retained-key refresh have not
+been qualified for this additional reuse. See
+`narrow-dd-gadget-workspace-validation.json` for the exact scope.

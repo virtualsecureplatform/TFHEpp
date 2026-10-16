@@ -2,6 +2,7 @@
 #include "../ckks_narrow_basis_benchmark.hpp"
 #include "dd_batch_candidate.hpp"
 #include "dd_scratch_candidate.hpp"
+#include "dd_gadget_candidate.hpp"
 #include <ckks/prepared_dd_batch_rns32.hpp>
 #include <iomanip>
 #include <iostream>
@@ -14,7 +15,7 @@ template<class P,std::uint32_t Q,std::uint32_t Bits>struct Rows {
     std::array<TRLWE<P>,rows> ciphertexts;
 };
 template<std::uint32_t Nbit,std::uint32_t Q,std::uint32_t Chunk>
-void run(std::size_t size,bool timed,bool tree_shapes=false,bool production_compare=false,bool steady_compare=false,int only_mode=0,bool scratch_compare=false){
+void run(std::size_t size,bool timed,bool tree_shapes=false,bool production_compare=false,bool steady_compare=false,int only_mode=0,bool scratch_compare=false,bool gadget_compare=false){
     using P=narrow_benchmark::BenchmarkParam<Nbit,7>;
     using In=CKKSCiphertext<P,Q,44>;using Out=CKKSCiphertext<P,Q-44,44>;
     using Key=CKKSAuxiliaryDDRelinKeyNTT<P,Q,48,40,20,true,Chunk>;
@@ -49,7 +50,8 @@ void run(std::size_t size,bool timed,bool tree_shapes=false,bool production_comp
             const auto threads=mode?omp_get_max_threads():normal_threads;
 #pragma omp parallel for schedule(dynamic,1) num_threads(threads)
             for(std::size_t j=0;j<size;++j)CKKSMultRelinThenRescale<P>(actual[j],left[j],right[j],original);
-        }else if(mode>=400)dd_scratch_experiment::multiplyReallocated<P,Q,44>(products,key,mode-400);
+        }else if(mode>=500)dd_gadget_experiment::multiplyFreshGadgetWorkspace<P,Q,44>(products,key,mode-500);
+        else if(mode>=400)dd_scratch_experiment::multiplyReallocated<P,Q,44>(products,key,mode-400);
         else if(mode>=300)dd_batch_experiment::multiplyWindowed<P,Q,44,48,40,Chunk>(actual,left,right,key,mode-300,true);
         else if(mode>=200)dd_batch_experiment::multiplyWindowed<P,Q,44,48,40,Chunk>(actual,left,right,key,mode-200);
         else if(mode>=100)CKKSMultRelinThenRescaleBatchRNS32<P,Q,44>(products,key,mode-100);
@@ -62,7 +64,7 @@ void run(std::size_t size,bool timed,bool tree_shapes=false,bool production_comp
         return seconds;
     };
     if(!timed){
-        for(int window:{3,8,16,32,103,108,116,303,308,403,408,416})measure(window);
+        for(int window:{3,8,16,32,103,108,116,303,308,403,408,416,503,508,516})measure(window);
         std::vector<Out> empty;std::vector<In> no_input;
         dd_batch_experiment::multiply<P,Q,44,48,40,Chunk>(empty,no_input,no_input,key);
         bool rejected=false;try{dd_batch_experiment::multiply<P,Q,44,48,40,Chunk>(empty,left,right,key);}catch(const std::invalid_argument&){rejected=true;}
@@ -81,7 +83,7 @@ void run(std::size_t size,bool timed,bool tree_shapes=false,bool production_comp
         }
         std::cout<<"check N="<<P::n<<" q="<<Q<<" batch="<<size<<" identical\n";
     }else{
-        const std::vector<int> modes=scratch_compare?std::vector<int>{0,408,108}:only_mode?std::vector<int>{only_mode}:steady_compare?std::vector<int>{0,108,308}:production_compare?std::vector<int>{0,108,208}:tree_shapes?std::vector<int>{0,8,108,116}:std::vector<int>{0,1,8,16,32};
+        const std::vector<int> modes=gadget_compare?std::vector<int>{0,508,108}:scratch_compare?std::vector<int>{0,408,108}:only_mode?std::vector<int>{only_mode}:steady_compare?std::vector<int>{0,108,308}:production_compare?std::vector<int>{0,108,208}:tree_shapes?std::vector<int>{0,8,108,116}:std::vector<int>{0,1,8,16,32};
         for(int mode:modes)measure(mode);
         auto order=modes;order.insert(order.end(),modes.rbegin(),modes.rend());
         for(int mode:order)for(int trial=0;trial<3;++trial)
@@ -96,12 +98,13 @@ int main(int argc,char**argv)try{
         run<9,385,145>(7,false);run<14,385,145>(7,false);run<14,341,80>(7,false);run<14,297,115>(7,false);run<14,253,80>(7,false);run<14,209,145>(7,false);
     }else if(argc>1&&(std::string(argv[1])=="--capped-team-only"||std::string(argv[1])=="--steady-team-only")){
         run<14,385,145>(76,true,false,false,false,std::string(argv[1])=="--steady-team-only"?308:108);
-    }else if(argc>1&&(std::string(argv[1])=="--tree-shapes"||std::string(argv[1])=="--production-compare"||std::string(argv[1])=="--steady-team-compare"||std::string(argv[1])=="--scratch-compare")){
+    }else if(argc>1&&(std::string(argv[1])=="--tree-shapes"||std::string(argv[1])=="--production-compare"||std::string(argv[1])=="--steady-team-compare"||std::string(argv[1])=="--scratch-compare"||std::string(argv[1])=="--gadget-workspace-compare")){
         const bool compare=std::string(argv[1])=="--production-compare";
         const bool steady=std::string(argv[1])=="--steady-team-compare";
+        const bool gadget=std::string(argv[1])=="--gadget-workspace-compare";
         const bool scratch=std::string(argv[1])=="--scratch-compare";
-        run<14,385,145>(76,true,true,compare,steady,0,scratch);run<14,341,80>(36,true,true,compare,steady,0,scratch);run<14,297,115>(20,true,true,compare,steady,0,scratch);run<14,253,80>(8,true,true,compare,steady,0,scratch);run<14,209,145>(4,true,true,compare,steady,0,scratch);
-        run<14,385,145>(57,true,true,compare,steady,0,scratch);run<14,341,80>(27,true,true,compare,steady,0,scratch);run<14,297,115>(15,true,true,compare,steady,0,scratch);run<14,253,80>(6,true,true,compare,steady,0,scratch);run<14,209,145>(3,true,true,compare,steady,0,scratch);
+        run<14,385,145>(76,true,true,compare,steady,0,scratch,gadget);run<14,341,80>(36,true,true,compare,steady,0,scratch,gadget);run<14,297,115>(20,true,true,compare,steady,0,scratch,gadget);run<14,253,80>(8,true,true,compare,steady,0,scratch,gadget);run<14,209,145>(4,true,true,compare,steady,0,scratch,gadget);
+        run<14,385,145>(57,true,true,compare,steady,0,scratch,gadget);run<14,341,80>(27,true,true,compare,steady,0,scratch,gadget);run<14,297,115>(15,true,true,compare,steady,0,scratch,gadget);run<14,253,80>(6,true,true,compare,steady,0,scratch,gadget);run<14,209,145>(3,true,true,compare,steady,0,scratch,gadget);
     }else for(auto size:{32u,16u,8u,4u,2u}){
         run<14,385,145>(size,true);run<14,341,80>(size,true);run<14,297,115>(size,true);run<14,253,80>(size,true);run<14,209,145>(size,true);
     }

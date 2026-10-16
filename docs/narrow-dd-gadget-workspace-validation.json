@@ -1,0 +1,41 @@
+{
+  "scope": "Correctness qualification only; no latency, RSS or 10x claim. Full retained-key replay not run for this change.",
+  "implementation": "Invocation-local gadget digit, transform and sum buffers reused across DD windows; public fresh gadget API unchanged.",
+  "memory": "Buffers remain live during subsequent tensor phases; peak RSS may increase. Storage bounded by product window and destroyed on return.",
+  "fixtures": "Deterministic noncryptographic coefficient fixtures; no key generation or encryption.",
+  "environment": {
+    "OMP_NUM_THREADS": 8,
+    "OMP_MAX_ACTIVE_LEVELS": 1,
+    "OMP_DYNAMIC": false
+  },
+  "checks": {
+    "gadget": {
+      "exit_code": 0,
+      "configurations": 17,
+      "cases": [
+        "small-ring independent cpp_int oracle",
+        "changing active rows and batch/window sizes",
+        "nonzero batch followed by zero partial tail",
+        "nested caller team"
+      ]
+    },
+    "dd": {
+      "exit_code": 0,
+      "configurations": 13,
+      "control": "Independent products and frozen fresh-gadget helper; full coefficient equality"
+    },
+    "forest": {
+      "exit_code": 0,
+      "target": "ckks_narrow_factor_rns32",
+      "cases": "primary20/40, per-level chunks, odd carries and raw fallback"
+    }
+  },
+  "frozen_control_parent": "3f89137",
+  "frozen_control_body_verified": true,
+  "evidence_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/gadget-workspace-check-20261017",
+  "logs": {
+    "gadget-check.log": "7c2b9b5b498def8059efee63581c2cc506bdba0bfb44fbe129db6164df3fdef9",
+    "dd-check.log": "1c93683665ec5595498944d7781c27acf38583578c17a462657cfc8049f9f738",
+    "factor-check.log": "3eec8b6a3de29a4a18241bd7f4dc0f08fb292c689162abb9ac213eb516ff9ee2"
+  }
+}
