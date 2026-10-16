@@ -95,7 +95,44 @@ void checkBatchEncoding(){
     if(!rejected)throw std::runtime_error("batched RNS encoding accepted invalid prime");
     std::cout<<"batch bits="<<Bits<<" source="<<SourceQ<<" shift="<<Shift<<" all primes/domains/tails passed\n";
 }
+template<std::size_t Count>void checkSignedEncoding()
+{
+    constexpr std::size_t n=521;
+    std::mt19937_64 random(20261021+Count);
+    modular_rns32::SignedEncoder<Count> encoder;
+    std::vector<std::int64_t> input(n+2);
+    for(unsigned bits:{20,40,44,64}){
+        for(auto&v:input){
+            auto word=random();
+            if(bits<64)word=(word&((std::uint64_t{1}<<bits)-1))-(std::uint64_t{1}<<(bits-1));
+            v=std::bit_cast<std::int64_t>(word);
+        }
+        for(std::size_t p=0;p<Count;++p){
+            const auto prime=std::int64_t(modular_rns32::primes[p].value);
+            const std::int64_t edges[]={0,1,-1,INT64_MAX,INT64_MIN,prime,-prime,2*prime,-2*prime,(prime<<32)-1,-((prime<<32)-1)};
+            for(std::size_t i=0;i<128;++i)input[i+1]=edges[i%std::size(edges)];
+            for(std::size_t length:{0,1,7,8,9,255,256,257,521}){
+                std::vector<std::uint32_t> expected(length+2,0xdeadbeef);
+                for(std::size_t i=0;i<length;++i){Integer value=input[i+1];Integer r=value%prime;if(r<0)r+=prime;expected[i+1]=r.convert_to<std::uint32_t>();}
+                for(bool batch:{false,true}){
+                    auto actual=expected;std::fill(actual.begin()+1,actual.end()-1,0);
+                    encoder.residues(std::span(actual).subspan(1,length),std::span<const std::int64_t>(input).subspan(1,length),p,batch);
+                    if(actual!=expected)throw std::runtime_error("signed RNS residues differ from arbitrary precision oracle or overwrite guards");
+                }
+            }
+        }
+    }
+    bool rejected=false;std::vector<std::uint32_t> output(n);
+    try{encoder.residues(output,std::span<const std::int64_t>(input).first(n-1),0);}catch(const std::invalid_argument&){rejected=true;}
+    if(!rejected)throw std::runtime_error("signed RNS batch accepted inconsistent lengths");
+    rejected=false;
+    try{encoder.residues(output,std::span<const std::int64_t>(input).first(n),Count);}catch(const std::out_of_range&){rejected=true;}
+    if(!rejected)throw std::runtime_error("signed RNS batch accepted invalid prime");
+    std::cout<<"signed RNS primes="<<Count<<" full int64 domains, unaligned buffers, tails and guards passed\n";
+}
+
 int main(){
+    checkSignedEncoding<1>();checkSignedEncoding<17>();
     checkPrefix<5>();checkPrefix<6>();
     checkBatchEncoding<1>();checkBatchEncoding<20>();checkBatchEncoding<32>();checkBatchEncoding<44>();
     checkBatchEncoding<64>();checkBatchEncoding<193>();checkBatchEncoding<440>();checkBatchEncoding<448>();

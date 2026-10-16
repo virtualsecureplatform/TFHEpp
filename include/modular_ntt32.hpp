@@ -52,8 +52,10 @@ public:
     std::uint32_t decode(std::uint32_t value) const
     { return canonical(reduceLazy(value)); }
 #if defined(__AVX2__)
-    // Each 64-bit lane is below p*2^32. Return eight lazy 32-bit
-    // Montgomery reductions, interleaving even and odd coefficient lanes.
+    // Interleave eight Montgomery reductions of even/odd64-bit lanes.
+    // Each t+m*p must fit uint64 (m is the low-word correction). The usual
+    // t<p*2^32 bound returns lazy values below2p. SignedEncoder also uses
+    // t<=2^63 with its proved prime bound and normalizes the <4p result.
     __m256i reduceWideVector(__m256i even, __m256i odd) const
     {
         const auto inverse = _mm256_set1_epi32(negative_inverse_);

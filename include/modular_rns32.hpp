@@ -151,6 +151,69 @@ public:
 
 };
 
+// Canonical residues of signed 64-bit coefficients, including INT64_MIN.
+// The fixed RNS primes exceed 2^31/3. For magnitude t<=2^63 and m<2^32,
+// t+m*p<2^64 and REDC(t)<2^31+p<4p. Fold that wider result below p,
+// then a multiplication by R^2 removes REDC's inverse-radix factor.
+template<std::size_t Count=prime_count>
+class SignedEncoder {
+    static_assert(Count>0 && Count<=prime_count);
+    static_assert([]{
+        for(std::size_t p=0;p<Count;++p)
+            if(3*primes[p].value<=(std::uint64_t{1}<<31))return false;
+        return true;
+    }());
+    std::vector<modular_ntt32::Montgomery> arithmetic_;
+    std::array<std::uint32_t,Count> squared_;
+public:
+    SignedEncoder(){
+        arithmetic_.reserve(Count);
+        for(std::size_t p=0;p<Count;++p){
+            arithmetic_.emplace_back(primes[p].value);
+            const auto radix=(std::uint64_t{1}<<32)%primes[p].value;
+            squared_[p]=radix*radix%primes[p].value;
+        }
+    }
+    void residues(std::span<std::uint32_t> output,std::span<const std::int64_t> input,
+                  std::size_t prime,bool batch=true)const {
+        if(output.size()!=input.size())throw std::invalid_argument("signed RNS batch lengths differ");
+        if(prime>=Count)throw std::out_of_range("signed RNS batch prime index");
+        const auto p=std::uint32_t(primes[prime].value);
+        [[maybe_unused]] const auto&arithmetic=arithmetic_[prime];
+        std::size_t i=0;
+#if defined(__AVX2__)
+        if(batch){
+            const auto zero=_mm256_setzero_si256(),modulus=_mm256_set1_epi32(p);
+            const auto twice=_mm256_set1_epi32(2*p),square=_mm256_set1_epi32(squared_[prime]);
+            for(;i+8<=input.size();i+=8){
+                const auto a=_mm256_loadu_si256(reinterpret_cast<const __m256i*>(input.data()+i));
+                const auto b=_mm256_loadu_si256(reinterpret_cast<const __m256i*>(input.data()+i+4));
+                auto even=_mm256_permute4x64_epi64(_mm256_unpacklo_epi64(a,b),_MM_SHUFFLE(3,1,2,0));
+                auto odd=_mm256_permute4x64_epi64(_mm256_unpackhi_epi64(a,b),_MM_SHUFFLE(3,1,2,0));
+                const auto eneg=_mm256_cmpgt_epi64(zero,even),oneg=_mm256_cmpgt_epi64(zero,odd);
+                even=_mm256_sub_epi64(_mm256_xor_si256(even,eneg),eneg);
+                odd=_mm256_sub_epi64(_mm256_xor_si256(odd,oneg),oneg);
+                auto value=arithmetic.reduceWideVector(even,odd);
+                value=_mm256_min_epu32(value,_mm256_sub_epi32(value,twice));
+                value=arithmetic.canonicalVector(value);
+                value=arithmetic.canonicalVector(arithmetic.multiplyLazyVector(value,square));
+                const auto negative=_mm256_or_si256(_mm256_srli_epi64(eneg,32),_mm256_slli_epi64(oneg,32));
+                value=_mm256_blendv_epi8(value,_mm256_sub_epi32(modulus,value),negative);
+                _mm256_storeu_si256(reinterpret_cast<__m256i*>(output.data()+i),arithmetic.canonicalVector(value));
+            }
+        }
+#else
+        (void)batch;
+#endif
+        for(;i<input.size();++i){
+            const auto v=input[i];
+            const auto magnitude=v<0?std::uint64_t{0}-std::uint64_t(v):std::uint64_t(v);
+            const auto reduced=magnitude%p;
+            output[i]=v<0&&reduced?p-reduced:reduced;
+        }
+    }
+};
+
 // Garner mixed radix with exact centering. The digits of floor(M/2) are
 // floor(p_i/2); compare from the highest radix to determine the sign without
 // floating point or a full-width reconstruction. Accumulate only the target
