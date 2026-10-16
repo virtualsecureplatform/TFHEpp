@@ -238,6 +238,7 @@ int main()
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source,Source,false> garner(raw,direct_cache);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> untiled(raw,direct_cache,false);
     CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> parallel(raw,direct_cache,true,true);
+    CKKSNarrowDeferredRescaleFactorSourceRNS32<Target,Source> serial_inverse(raw,direct_cache,true,true,true,false,true,true,false,false,true,true,false);
     auto key=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
     key->selector_ntt_chunk_size=4;
     std::atomic<std::size_t> parallel_callbacks{0};
@@ -309,7 +310,9 @@ int main()
                         for(std::size_t j=0;j<in.size();++j)key->automorphism_evaluator(out[j],in[j],level,exponent);
                     };
                     const auto batched=parallel.evaluate(variants,tail,0,*key,nullptr,nullptr);
-                    if(batch_calls!=std::size_t(columns==3||columns==4))throw std::runtime_error("factor batch dispatch used wrong column scope");
+                    const auto serial_finish=serial_inverse.evaluate(variants,tail,0,*key,nullptr,nullptr);
+                    for(std::size_t c=0;c<columns;++c)if(serial_finish[c].ct!=batched[c].ct)throw std::runtime_error("parallel inverse CRT changed factor coefficients");
+                    if(batch_calls!=2*std::size_t(columns==3||columns==4))throw std::runtime_error("factor batch dispatch used wrong column scope");
                     for(std::size_t c=0;c<columns;++c)if(batched[c].ct!=concurrent[c].ct)throw std::runtime_error("factor batch rounding/addition changed coefficients");
                     if(columns==3||columns==4){
                         key->automorphism_batch_evaluator=[](auto,auto,uint32_t,uint32_t){throw std::runtime_error("batch conjugation test failure");};
