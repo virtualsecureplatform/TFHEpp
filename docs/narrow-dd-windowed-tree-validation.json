@@ -1,0 +1,1280 @@
+{
+  "scope": "CPU-only optional complete DD multiplication windows integrated into the retained LL14 product forest. Preserve keys, ciphertext coefficients, tree pairing, odd-leaf carries, scales, moduli, approximation and precision gates. Defaults remain unchanged.",
+  "implementation_commit": "8b4e832",
+  "replay_control_commit": "54797f1",
+  "algorithm": "Borrow typed operand and output pointers from the forest; each eight-product window performs exact RNS tensors, auxiliary lift, shared-key gadget batch, auxiliary rounding, linear-term addition and final data scale down. Recurse with the original per-level keys and round/carry order. No ciphertext gather/scatter copies or input-dependent persistent state.",
+  "compatibility": "Small-ring parameters keep the existing raw-key fallback when the prepared backend is not selected. The first unit attempt exposed an accidental change in this selection; the corrected implementation passes both raw and prepared cases.",
+  "key_reuse": "The setup observer retains the already-created immutable level-chunk key chain. Independent and windowed replay callbacks capture the same shared object; there is no second prepared chain for the comparison and no evaluation-key encryption or generation.",
+  "controls": {
+    "enable": "--dd-windowed 1 requires --tensor-rns 1 --dd-wide-rns 1 --dd-primary-bits 40 --dd-level-chunks 1 --batch-product-trees 1 with fixed backends.",
+    "pair": "--dd-windowed-pair 1: warm independent/windowed, then independent/windowed/windowed/independent. One function and separate paired controls.",
+    "reports": "dd_windowed, dd_windowed_pair_warmup and dd_windowed_batch_calls record policy and dispatch. Tree/factor/tail-alignment wall times are accumulated from existing root-stage observations without another timer."
+  },
+  "validation": {
+    "component-build": {
+      "exit_code": 0,
+      "wall_seconds": 11.08483624458313
+    },
+    "component-unit": {
+      "exit_code": 0,
+      "wall_seconds": 2.229095697402954
+    },
+    "factor-unit": {
+      "exit_code": 0,
+      "wall_seconds": 9.802016735076904
+    },
+    "scalar-build": {
+      "exit_code": 0,
+      "wall_seconds": 11.158493518829346
+    },
+    "scalar-unit": {
+      "exit_code": 0,
+      "wall_seconds": 4.344766139984131
+    },
+    "wrapper-build": {
+      "exit_code": 0
+    },
+    "compare-build": {
+      "exit_code": 0,
+      "wall_seconds": 10.889627695083618
+    },
+    "compare-benchmark": {
+      "exit_code": 0,
+      "wall_seconds": 33.15038299560547
+    }
+  },
+  "unit_coverage": "Direct products compare every coefficient with the existing complete multiplication at all five LL14 data levels and per-level chunks, N16/512/16384, full masks/bodies, zero/midpoint/noncanonical edges and partial windows. Invalid pointer batches are rejected before output mutation. Forest checks compare sequential, original batched and windowed results for0/1/7/14 mixed-length trees, odd carries, primary20/40, uniform and per-level chunks, small-ring raw fallback and prepared N512 paths. Scalar x86-64/no-AVX2 build and arithmetic checks pass. The rejected two-layer wrapper still builds; its precision rejection is unchanged.",
+  "preflight": [
+    {
+      "case": "--dd-windowed-invalid",
+      "exit_code": 1,
+      "message": "DD windowed flag must be0 or1"
+    },
+    {
+      "case": "--dd-windowed-pair-invalid",
+      "exit_code": 1,
+      "message": "DD windowed pair must be0 or1"
+    },
+    {
+      "case": "--dd-wide-rns-disabled",
+      "exit_code": 1,
+      "message": "DD primary40 requires standalone wide RNS gadgets"
+    },
+    {
+      "case": "--tensor-rns-disabled",
+      "exit_code": 1,
+      "message": "windowed DD requires fixed RNS tensors, wide primary40 level chunks and batched product trees"
+    },
+    {
+      "case": "--dd-level-chunks-disabled",
+      "exit_code": 1,
+      "message": "windowed DD requires fixed RNS tensors, wide primary40 level chunks and batched product trees"
+    },
+    {
+      "case": "--batch-product-trees-disabled",
+      "exit_code": 1,
+      "message": "windowed DD requires fixed RNS tensors, wide primary40 level chunks and batched product trees"
+    },
+    {
+      "case": "primary20",
+      "exit_code": 1,
+      "message": "windowed DD requires fixed RNS tensors, wide primary40 level chunks and batched product trees"
+    },
+    {
+      "case": "conflicting-pair",
+      "exit_code": 1,
+      "message": "paired replay controls must be separate"
+    },
+    {
+      "case": "all-functions",
+      "exit_code": 1,
+      "message": "windowed DD pair requires one function"
+    }
+  ],
+  "jobs": [
+    {
+      "name": "paired",
+      "argv": [
+        "taskset",
+        "-c",
+        "0-23",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "tanh",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/paired",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--sparse-tanh",
+        "1",
+        "--basis-accumulate",
+        "1",
+        "--table-batch-encode",
+        "1",
+        "--s2c-input-primary-bits",
+        "8",
+        "--s2c-output-primary-bits",
+        "8",
+        "--native-auto-batch",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--dd-windowed-pair",
+        "1"
+      ]
+    },
+    {
+      "name": "paired-repeat",
+      "argv": [
+        "taskset",
+        "-c",
+        "0-23",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "tanh",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/paired-repeat",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--sparse-tanh",
+        "1",
+        "--basis-accumulate",
+        "1",
+        "--table-batch-encode",
+        "1",
+        "--s2c-input-primary-bits",
+        "8",
+        "--s2c-output-primary-bits",
+        "8",
+        "--native-auto-batch",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--dd-windowed-pair",
+        "1"
+      ]
+    },
+    {
+      "name": "full",
+      "argv": [
+        "taskset",
+        "-c",
+        "0-23",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "all",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/full",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--basis-accumulate",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--native-auto-batch",
+        "1",
+        "--dd-windowed",
+        "1"
+      ]
+    },
+    {
+      "name": "reduced",
+      "argv": [
+        "taskset",
+        "-c",
+        "0-23",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "all",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/reduced",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--s2c-input-primary-bits",
+        "8",
+        "--s2c-output-primary-bits",
+        "8",
+        "--reduced-degree",
+        "1",
+        "--basis-accumulate",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--native-auto-batch",
+        "1",
+        "--dd-windowed",
+        "1"
+      ]
+    },
+    {
+      "name": "default",
+      "argv": [
+        "taskset",
+        "-c",
+        "0-23",
+        "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/test/ckks/ckks_narrow_ll14_basis_ntt_fbs",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "all",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/default",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8"
+      ]
+    }
+  ],
+  "completion": {
+    "paired": {
+      "exit_code": 0,
+      "wall_seconds": 86.63310813903809
+    },
+    "paired-repeat": {
+      "exit_code": 0,
+      "wall_seconds": 77.49793314933777
+    },
+    "full": {
+      "exit_code": 0,
+      "wall_seconds": 65.64475727081299
+    },
+    "reduced": {
+      "exit_code": 0,
+      "wall_seconds": 62.40451645851135
+    },
+    "default": {
+      "exit_code": 0,
+      "wall_seconds": 65.76932740211487
+    }
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "binary": {
+    "sha256": "6aeb0d58e228019bb1fc261b9aa413469272eab7a4756aaff100037d8ba705b3"
+  },
+  "artifacts": [
+    {
+      "case": "paired",
+      "artifact": "tanh-trial0-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": true,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 1.447598844,
+      "factor_stage_seconds": 3.650422932,
+      "tail_alignment_stage_seconds": 0.328194022,
+      "basis_series_seconds": 0.124512813,
+      "functional_evaluation_seconds": 6.277670828,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired",
+      "artifact": "tanh-trial1-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": true,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.848682584,
+      "factor_stage_seconds": 3.792802792,
+      "tail_alignment_stage_seconds": 0.323931227,
+      "basis_series_seconds": 0.11325377,
+      "functional_evaluation_seconds": 6.797325958,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired",
+      "artifact": "tanh-trial2-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 1.440701122,
+      "factor_stage_seconds": 3.768799287,
+      "tail_alignment_stage_seconds": 0.321493264,
+      "basis_series_seconds": 0.135899074,
+      "functional_evaluation_seconds": 6.392017314,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired",
+      "artifact": "tanh-trial3-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.802897869,
+      "factor_stage_seconds": 3.807142032,
+      "tail_alignment_stage_seconds": 0.328336911,
+      "basis_series_seconds": 0.111044423,
+      "functional_evaluation_seconds": 6.7667396449999995,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired",
+      "artifact": "tanh-trial4-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.895964959,
+      "factor_stage_seconds": 3.828729536,
+      "tail_alignment_stage_seconds": 0.330155121,
+      "basis_series_seconds": 0.115704366,
+      "functional_evaluation_seconds": 6.893320657,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired",
+      "artifact": "tanh-trial5-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 1.470717555,
+      "factor_stage_seconds": 3.815662711,
+      "tail_alignment_stage_seconds": 0.332995294,
+      "basis_series_seconds": 0.125502401,
+      "functional_evaluation_seconds": 6.52600705,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired-repeat",
+      "artifact": "tanh-trial0-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": true,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 1.417633299,
+      "factor_stage_seconds": 2.936880367,
+      "tail_alignment_stage_seconds": 0.327476999,
+      "basis_series_seconds": 0.087578409,
+      "functional_evaluation_seconds": 5.500020130999999,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired-repeat",
+      "artifact": "tanh-trial1-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": true,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.269227728,
+      "factor_stage_seconds": 2.862135168,
+      "tail_alignment_stage_seconds": 0.330867914,
+      "basis_series_seconds": 0.085677446,
+      "functional_evaluation_seconds": 5.2639362389999995,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired-repeat",
+      "artifact": "tanh-trial2-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 1.432679671,
+      "factor_stage_seconds": 2.907904546,
+      "tail_alignment_stage_seconds": 0.322922614,
+      "basis_series_seconds": 0.087830919,
+      "functional_evaluation_seconds": 5.471414114,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired-repeat",
+      "artifact": "tanh-trial3-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.269784532,
+      "factor_stage_seconds": 2.89874727,
+      "tail_alignment_stage_seconds": 0.324267457,
+      "basis_series_seconds": 0.085868121,
+      "functional_evaluation_seconds": 5.310076608,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired-repeat",
+      "artifact": "tanh-trial4-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.323696299,
+      "factor_stage_seconds": 2.859920454,
+      "tail_alignment_stage_seconds": 0.326016839,
+      "basis_series_seconds": 0.086591798,
+      "functional_evaluation_seconds": 5.317627331,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "paired-repeat",
+      "artifact": "tanh-trial5-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 4,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 1.449918595,
+      "factor_stage_seconds": 3.814448533,
+      "tail_alignment_stage_seconds": 0.323566977,
+      "basis_series_seconds": 0.113082664,
+      "functional_evaluation_seconds": 6.427819443,
+      "accuracy_passed": true,
+      "max_error": 2.4608982710372446e-08,
+      "post_product_max_error": 4.306094272863186e-08
+    },
+    {
+      "case": "full",
+      "artifact": "gelu-outputs.bin",
+      "sha256": "a128eb48f76f4f5b82fcb02406e736015e19485d8b5271ed34bae43049c3253d",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-accumulate-20261017/full/gelu-outputs.bin",
+      "function": "gelu",
+      "basis_root_count": 4,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.257199909,
+      "factor_stage_seconds": 3.032089681,
+      "tail_alignment_stage_seconds": 0.326710948,
+      "basis_series_seconds": 0.054318685,
+      "functional_evaluation_seconds": 5.487103353,
+      "accuracy_passed": true,
+      "max_error": 3.386544689124488e-08,
+      "post_product_max_error": 1.9862420948972015e-07
+    },
+    {
+      "case": "full",
+      "artifact": "sigmoid-outputs.bin",
+      "sha256": "62f69607864915198a14708c400f0f907ec19f5ad9b141d512fef22b0671bd4a",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-accumulate-20261017/full/sigmoid-outputs.bin",
+      "function": "sigmoid",
+      "basis_root_count": 4,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.216972358,
+      "factor_stage_seconds": 2.864628773,
+      "tail_alignment_stage_seconds": 0.319135332,
+      "basis_series_seconds": 0.053079719,
+      "functional_evaluation_seconds": 5.164412208,
+      "accuracy_passed": true,
+      "max_error": 1.8655569728410314e-08,
+      "post_product_max_error": 3.4010091681751624e-08
+    },
+    {
+      "case": "full",
+      "artifact": "tanh-outputs.bin",
+      "sha256": "bd471c9c7c74d5487b36d70a65ab62db8541c29835838b061728c122092629ed",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-accumulate-20261017/full/tanh-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 7,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 2.146353802,
+      "factor_stage_seconds": 5.042871083,
+      "tail_alignment_stage_seconds": 0.550734185,
+      "basis_series_seconds": 0.139045625,
+      "functional_evaluation_seconds": 8.654254126,
+      "accuracy_passed": true,
+      "max_error": 3.008303154422125e-08,
+      "post_product_max_error": 5.4289458238529525e-08
+    },
+    {
+      "case": "reduced",
+      "artifact": "gelu-outputs.bin",
+      "sha256": "5fd0f00da88123a5118e0057cf3a80608a4f633c1708c3121633c1ae77fe89f9",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/reduced/gelu-outputs.bin",
+      "function": "gelu",
+      "basis_root_count": 3,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.357231745,
+      "factor_stage_seconds": 3.476412134,
+      "tail_alignment_stage_seconds": 0.254613636,
+      "basis_series_seconds": 0.092703724,
+      "functional_evaluation_seconds": 5.8838123079999995,
+      "accuracy_passed": true,
+      "max_error": 7.491478344748007e-08,
+      "post_product_max_error": 4.1213744553827634e-07
+    },
+    {
+      "case": "reduced",
+      "artifact": "sigmoid-outputs.bin",
+      "sha256": "8957316acc0102ddddb761186fd2a1b43b1126ba57535c67a20c69f433dcb6e9",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/reduced/sigmoid-outputs.bin",
+      "function": "sigmoid",
+      "basis_root_count": 3,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 0.901579836,
+      "factor_stage_seconds": 2.616398014,
+      "tail_alignment_stage_seconds": 0.248477768,
+      "basis_series_seconds": 0.054416962,
+      "functional_evaluation_seconds": 4.447020766,
+      "accuracy_passed": true,
+      "max_error": 3.33364631193251e-08,
+      "post_product_max_error": 5.2709308674375324e-08
+    },
+    {
+      "case": "reduced",
+      "artifact": "tanh-outputs.bin",
+      "sha256": "2a09141728d49c15abed7d82cccb7c31100d679236eca2a3bba5b29fad4f411f",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/reduced/tanh-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 6,
+      "dd_windowed": true,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 1,
+      "tree_stage_seconds": 1.848736354,
+      "factor_stage_seconds": 4.882052504,
+      "tail_alignment_stage_seconds": 0.478083968,
+      "basis_series_seconds": 0.119715057,
+      "functional_evaluation_seconds": 8.023001987,
+      "accuracy_passed": true,
+      "max_error": 9.650658249874803e-08,
+      "post_product_max_error": 1.8240452495739432e-07
+    },
+    {
+      "case": "default",
+      "artifact": "gelu-outputs.bin",
+      "sha256": "24eaa507669f4251f58fde20eaadb880ab006b806269e30b5e5830a7a67b00b2",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/default/gelu-outputs.bin",
+      "function": "gelu",
+      "basis_root_count": 4,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 1.44077122,
+      "factor_stage_seconds": 3.282678141,
+      "tail_alignment_stage_seconds": 0.339210219,
+      "basis_series_seconds": 0.099700693,
+      "functional_evaluation_seconds": 5.983980265,
+      "accuracy_passed": true,
+      "max_error": 3.394126934438699e-08,
+      "post_product_max_error": 2.0142902659558604e-07
+    },
+    {
+      "case": "default",
+      "artifact": "sigmoid-outputs.bin",
+      "sha256": "75f9839ff68074972ec30fa7dcba387e517a0c258ec4146322fa6ac5b0f1b91a",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/default/sigmoid-outputs.bin",
+      "function": "sigmoid",
+      "basis_root_count": 4,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 1.439756876,
+      "factor_stage_seconds": 3.151534734,
+      "tail_alignment_stage_seconds": 0.328699628,
+      "basis_series_seconds": 0.094802503,
+      "functional_evaluation_seconds": 5.807187444,
+      "accuracy_passed": true,
+      "max_error": 1.885710912799143e-08,
+      "post_product_max_error": 3.468550092702446e-08
+    },
+    {
+      "case": "default",
+      "artifact": "tanh-outputs.bin",
+      "sha256": "8e1c1029184584aca3e5677caafd512228073ee74875b3be7aa1c1e598afcb98",
+      "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/default/tanh-outputs.bin",
+      "function": "tanh",
+      "basis_root_count": 7,
+      "dd_windowed": false,
+      "dd_windowed_pair_warmup": false,
+      "dd_windowed_batch_calls": 0,
+      "tree_stage_seconds": 2.447081945,
+      "factor_stage_seconds": 5.127252178,
+      "tail_alignment_stage_seconds": 0.546396981,
+      "basis_series_seconds": 0.365730364,
+      "functional_evaluation_seconds": 9.391600008,
+      "accuracy_passed": true,
+      "max_error": 3.085959861275242e-08,
+      "post_product_max_error": 5.471802425340437e-08
+    }
+  ],
+  "all_21_outputs_byte_identical": true,
+  "retained_keys_sha256": {
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/23681.bin": "91b25e31ced7b1ffb31cffb7b6ea2249802ddbc0c9b6f9f80a8d444299e3ce3d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/23937.bin": "5171c5cd2151d3dde4bc6f630bb0bd2f1add9934ee275d5d8f09e51b0ed36b30",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/24193.bin": "fa4d2516bb6ea7a96b8d2cd804dc653f61aef62cb2be1aeef9a9bce6c90808c1",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/24449.bin": "b6931c884d039758a457abdd6c163a1f18626a86b123fe2073594c2537384436",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32001.bin": "c720dca522e60c9be22ac47c67de021d4099d992cde11d105bdfc2887b44883c",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32257.bin": "428e98d54308321f80c10a62cc580908952b9dbabb53b3f059074e15525b1f03",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32513.bin": "2471fa95a7a50ae755ec18ff3f7be368bfa5f268a1bf99a3507f7589ca9da39b",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys/32767.bin": "12f6c13a4bdb60729f02800a959c4b51051894b8bea20b037482870305339c0d",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin": "c8233129eda049f4e4141a55a3a302292b172d3070e7563ec22ab0fc4770b998"
+  },
+  "retained_keys_unchanged": true,
+  "paired_means_unqualified": {
+    "paired": {
+      "independent": {
+        "tree_stage_seconds": 1.4557093385,
+        "functional_evaluation_seconds": 6.459012182
+      },
+      "windowed": {
+        "tree_stage_seconds": 1.849431414,
+        "functional_evaluation_seconds": 6.830030151
+      }
+    },
+    "paired-repeat": {
+      "independent": {
+        "tree_stage_seconds": 1.441299133,
+        "functional_evaluation_seconds": 5.949616778499999
+      },
+      "windowed": {
+        "tree_stage_seconds": 1.2967404155,
+        "functional_evaluation_seconds": 5.3138519695
+      }
+    }
+  },
+  "shared_host_resource_observations": {
+    "paired": {
+      "samples": 83,
+      "samples_with_other_cpu_activity": 74,
+      "resource_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/paired-resources.json"
+    },
+    "paired-repeat": {
+      "samples": 74,
+      "samples_with_other_cpu_activity": 32,
+      "resource_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/paired-repeat-resources.json"
+    },
+    "full": {
+      "samples": 63,
+      "samples_with_other_cpu_activity": 38,
+      "resource_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/full-resources.json"
+    },
+    "reduced": {
+      "samples": 60,
+      "samples_with_other_cpu_activity": 26,
+      "resource_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/reduced-resources.json"
+    },
+    "default": {
+      "samples": 63,
+      "samples_with_other_cpu_activity": 20,
+      "resource_log": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017/default-resources.json"
+    }
+  },
+  "performance_interpretation": "Do not promote from these full-refresh timings. The first windowed pair regresses; the second has lower tree-stage times but its baseline full times vary strongly. Resource observations record concurrent CPU workloads during both processes. Original Sigmoid reached5.1644s and reduced Sigmoid4.4470s with passing gates, but these are single observations, not paired speedup claims. The component gain does not establish robust full-refresh acceleration across host conditions.",
+  "prototype_vs_integrated_components": {
+    "method": "Same prepared coefficient-row fixture and ciphertext operands. Warm all three policies and measure forward/reverse blocks with six samples each; compare outputs outside timers.",
+    "mode_legend": {
+      "0": "Original independent complete multiplication",
+      "108": "Integrated borrowed-pointer helper, window8",
+      "208": "Previous contiguous-span prototype, complete window8"
+    },
+    "results": {
+      "385,76,0": {
+        "samples_seconds": [
+          0.434095589,
+          0.436184724,
+          0.435843379,
+          0.438279646,
+          0.434485973,
+          0.432101221
+        ],
+        "mean_seconds": 0.4351650886666667
+      },
+      "385,76,108": {
+        "samples_seconds": [
+          0.521807809,
+          0.409406666,
+          0.457785846,
+          0.399992713,
+          0.400064625,
+          0.399391198
+        ],
+        "mean_seconds": 0.43140814283333334
+      },
+      "385,76,208": {
+        "samples_seconds": [
+          0.627132883,
+          0.557466289,
+          0.406093455,
+          0.4106622,
+          0.40557863,
+          0.406692239
+        ],
+        "mean_seconds": 0.468937616
+      },
+      "341,36,0": {
+        "samples_seconds": [
+          0.187150353,
+          0.187190773,
+          0.186079857,
+          0.186445125,
+          0.191058933,
+          0.190032058
+        ],
+        "mean_seconds": 0.18799284983333334
+      },
+      "341,36,108": {
+        "samples_seconds": [
+          0.203321587,
+          0.203833331,
+          0.202488393,
+          0.202949675,
+          0.224173056,
+          0.206390774
+        ],
+        "mean_seconds": 0.20719280266666668
+      },
+      "341,36,208": {
+        "samples_seconds": [
+          0.203236253,
+          0.203140965,
+          0.204984881,
+          0.201810795,
+          0.202396973,
+          0.203215693
+        ],
+        "mean_seconds": 0.20313092666666666
+      },
+      "297,20,0": {
+        "samples_seconds": [
+          0.101936171,
+          0.101273401,
+          0.101979962,
+          0.103012968,
+          0.101919454,
+          0.101147543
+        ],
+        "mean_seconds": 0.10187824983333334
+      },
+      "297,20,108": {
+        "samples_seconds": [
+          0.104661365,
+          0.103710368,
+          0.102298679,
+          0.102183063,
+          0.102756737,
+          0.103022724
+        ],
+        "mean_seconds": 0.10310548933333333
+      },
+      "297,20,208": {
+        "samples_seconds": [
+          0.117030724,
+          0.103424413,
+          0.10371886,
+          0.103070242,
+          0.103313586,
+          0.103153307
+        ],
+        "mean_seconds": 0.105618522
+      },
+      "253,8,0": {
+        "samples_seconds": [
+          0.033305975,
+          0.032924408,
+          0.033043632,
+          0.033456812,
+          0.033286455,
+          0.03338506
+        ],
+        "mean_seconds": 0.033233723666666666
+      },
+      "253,8,108": {
+        "samples_seconds": [
+          0.035321629,
+          0.039044047,
+          0.03824591,
+          0.038348019,
+          0.0380016,
+          0.037581145
+        ],
+        "mean_seconds": 0.037757058333333336
+      },
+      "253,8,208": {
+        "samples_seconds": [
+          0.038317982,
+          0.037975911,
+          0.038681303,
+          0.038299354,
+          0.039592776,
+          0.03824722
+        ],
+        "mean_seconds": 0.038519091
+      },
+      "209,4,0": {
+        "samples_seconds": [
+          0.02148625,
+          0.021321077,
+          0.020791954,
+          0.021390425,
+          0.021555833,
+          0.021457641
+        ],
+        "mean_seconds": 0.021333863333333335
+      },
+      "209,4,108": {
+        "samples_seconds": [
+          0.015753717,
+          0.015575719,
+          0.015552818,
+          0.015348841,
+          0.015715127,
+          0.015249929
+        ],
+        "mean_seconds": 0.015532691833333334
+      },
+      "209,4,208": {
+        "samples_seconds": [
+          0.015299775,
+          0.015456903,
+          0.015555299,
+          0.015678546,
+          0.01579868,
+          0.015439901
+        ],
+        "mean_seconds": 0.015538184
+      },
+      "385,57,0": {
+        "samples_seconds": [
+          0.318895891,
+          0.330241047,
+          0.314661998,
+          0.319655289,
+          0.332064158,
+          0.321528437
+        ],
+        "mean_seconds": 0.3228411366666667
+      },
+      "385,57,108": {
+        "samples_seconds": [
+          0.361363647,
+          0.362406488,
+          0.361917922,
+          0.359562899,
+          0.360934018,
+          0.360052436
+        ],
+        "mean_seconds": 0.36103956833333334
+      },
+      "385,57,208": {
+        "samples_seconds": [
+          0.360495039,
+          0.360869055,
+          0.361719436,
+          0.363125719,
+          0.359034732,
+          0.359374166
+        ],
+        "mean_seconds": 0.3607696911666667
+      },
+      "341,27,0": {
+        "samples_seconds": [
+          0.15132421,
+          0.16142605,
+          0.154040225,
+          0.163708652,
+          0.144975862,
+          0.149015085
+        ],
+        "mean_seconds": 0.15408168066666666
+      },
+      "341,27,108": {
+        "samples_seconds": [
+          0.163390114,
+          0.155603774,
+          0.155707453,
+          0.155538524,
+          0.155807154,
+          0.155536585
+        ],
+        "mean_seconds": 0.15693060066666667
+      },
+      "341,27,208": {
+        "samples_seconds": [
+          0.154733427,
+          0.155416796,
+          0.155746165,
+          0.15491243,
+          0.155610582,
+          0.155452479
+        ],
+        "mean_seconds": 0.15531197983333334
+      },
+      "297,15,0": {
+        "samples_seconds": [
+          0.084090409,
+          0.083752632,
+          0.083535283,
+          0.08410744,
+          0.082972803,
+          0.084139909
+        ],
+        "mean_seconds": 0.08376641266666666
+      },
+      "297,15,108": {
+        "samples_seconds": [
+          0.083369774,
+          0.077801921,
+          0.078064932,
+          0.077925677,
+          0.078185238,
+          0.077285854
+        ],
+        "mean_seconds": 0.07877223266666666
+      },
+      "297,15,208": {
+        "samples_seconds": [
+          0.077823766,
+          0.078195247,
+          0.077807199,
+          0.077849074,
+          0.07819618,
+          0.077948886
+        ],
+        "mean_seconds": 0.07797005866666666
+      },
+      "253,6,0": {
+        "samples_seconds": [
+          0.028882103,
+          0.028942788,
+          0.028785212,
+          0.029823868,
+          0.029196397,
+          0.029124446
+        ],
+        "mean_seconds": 0.029125802333333332
+      },
+      "253,6,108": {
+        "samples_seconds": [
+          0.023635408,
+          0.023641133,
+          0.02404994,
+          0.023801787,
+          0.023991703,
+          0.023438108
+        ],
+        "mean_seconds": 0.02375967983333333
+      },
+      "253,6,208": {
+        "samples_seconds": [
+          0.023711076,
+          0.023527286,
+          0.023728089,
+          0.024130452,
+          0.02353453,
+          0.023915948
+        ],
+        "mean_seconds": 0.023757896833333333
+      },
+      "209,3,0": {
+        "samples_seconds": [
+          0.020301345,
+          0.019934428,
+          0.019716158,
+          0.020142422,
+          0.020081464,
+          0.019864138
+        ],
+        "mean_seconds": 0.020006659166666666
+      },
+      "209,3,108": {
+        "samples_seconds": [
+          0.013937656,
+          0.0136908,
+          0.013718658,
+          0.013616861,
+          0.013747523,
+          0.013558169
+        ],
+        "mean_seconds": 0.013711611166666667
+      },
+      "209,3,208": {
+        "samples_seconds": [
+          0.013598971,
+          0.013583214,
+          0.013748402,
+          0.013894756,
+          0.013930755,
+          0.013691301
+        ],
+        "mean_seconds": 0.013741233166666667
+      }
+    },
+    "interpretation": "The two windowed implementations generally track each other; no evidence that borrowed operands alone explain the full-refresh variability. These component observations are also context dependent."
+  },
+  "thread_team_follow_up": "See narrow-dd-steady-team-experiment.json. A separate controlled diagnostic reduces clone3 calls from1171 to23, but does not consistently improve complete multiplication latency. No stable-team policy is installed in production.",
+  "raw_evidence_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-windowed-integration-20261017",
+  "limitations": "One retained input and one shared CPU host. Exact archive equality carries forward prior independent phase/slot validation. No weakening of23-bit function or remaining-product gates; no fresh private/evaluation keys or input encryption. No paper parameter/security parity or10x closure claim."
+}

@@ -4485,3 +4485,19 @@ variation, and the 10x objective remains open. Exact reports and measurement
 scope are in `narrow-dd-pruned-bounded-s2c-full-validation.json`; component
 controls and the stress-reference correction are in
 `narrow-dd-pruned-bounded-s2c-component-validation.json`.
+
+
+The LL14 basis replay offers `--dd-windowed 1` for complete DD product windows
+of eight borrowed forest pairs. It requires fixed RNS tensors, wide primary40
+DD keys, per-level chunks and batched product trees. `--dd-windowed-pair 1`
+warms both policies, then measures independent/windowed/windowed/independent
+with the same prepared key chain. The existing default remains disabled.
+
+All21 retained-key replay archives, including original and reduced-degree
+functions and unchanged defaults, equal their previously qualified ciphertext
+bytes. Scalar arithmetic, primary20/40 forests and odd-leaf carries also pass.
+Whole-refresh timing varies with shared-host activity, so this optional path
+has no general speedup claim. A separate stable-thread-team experiment removes
+thread creation but does not consistently improve latency. Evidence and exact
+commands are in `narrow-dd-windowed-tree-validation.json` and
+`narrow-dd-steady-team-experiment.json`.
