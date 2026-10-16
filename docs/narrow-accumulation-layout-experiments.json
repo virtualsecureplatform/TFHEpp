@@ -1,0 +1,384 @@
+{
+  "scope": "Retest accumulation and traversal choices after fused matrix components and RNS basis tensors. Preserve current production kernels because the new candidates do not demonstrate a consistent useful gain.",
+  "production_commit": "25febe9",
+  "benchmark_tool_commit": "b340630",
+  "published_benchmark_source": "test/ckks/tools/fused_components_bench.cpp",
+  "published_source_sha256": "4bc6e21c06ebde1e83d999cb0338d7fa8402b0977f9f761baf22e6d173c40668",
+  "matrix_method": "Deterministic public residues, no encrypted evaluation keys. N16384,528 rows,17primes,two components,256-point tiles; packed4columns use8-term dots, ordinary8columns use4-term dots unless the eight-terms candidate is selected. Warm both policies, then control/candidate/candidate/control blocks of5, ten measured trials per policy/layout. Same24-thread native-close profile, no overlapping compilation/tests. Each complete result is byte-identical to the matched reference.",
+  "matrix_modes": {
+    "fused": "Positive control: separate component calls versus the already shipped fused kernel.",
+    "eight-terms": "Current fused4-term versus fused8-term accumulation for8columns.",
+    "hoist": "First component selector pointers hoisted in both policies; candidate hoists second-component pointers too.",
+    "point-major": "Current selector-block-first traversal versus accumulating all selector rows in a local sum for one output point before storing it."
+  },
+  "matrix_results": {
+    "fused": {
+      "log_sha256": "3d33caedbb6d6fb8877549dc2c170cd0859853e2f57bdc60d01f86021f12301e",
+      "exit": {
+        "exit_code": 0,
+        "wall_seconds": 3.357168197631836
+      },
+      "layouts": {
+        "4": {
+          "0": {
+            "trials": 10,
+            "mean_seconds": 0.038570310000000003,
+            "median_seconds": 0.038367349999999995,
+            "sample_stdev_seconds": 0.0007743886727965191
+          },
+          "1": {
+            "trials": 10,
+            "mean_seconds": 0.037413959999999996,
+            "median_seconds": 0.037368700000000005,
+            "sample_stdev_seconds": 0.000720253639275004
+          },
+          "fractional_mean_reduction": 0.029980313873546938
+        },
+        "8": {
+          "0": {
+            "trials": 10,
+            "mean_seconds": 0.05922047,
+            "median_seconds": 0.05928105,
+            "sample_stdev_seconds": 0.0002763987901967413
+          },
+          "1": {
+            "trials": 10,
+            "mean_seconds": 0.05685774,
+            "median_seconds": 0.056866299999999995,
+            "sample_stdev_seconds": 0.0003452322413165446
+          },
+          "fractional_mean_reduction": 0.03989718419999033
+        }
+      }
+    },
+    "eight-terms": {
+      "log_sha256": "902fcf717fd80e8a6555ec47836d00c36bc51bf82a2c9bcf88c3980573ba2b4a",
+      "exit": {
+        "exit_code": 0,
+        "wall_seconds": 2.4850637912750244
+      },
+      "layouts": {
+        "8": {
+          "0": {
+            "trials": 10,
+            "mean_seconds": 0.05978805,
+            "median_seconds": 0.0598961,
+            "sample_stdev_seconds": 0.0003806407412362597
+          },
+          "1": {
+            "trials": 10,
+            "mean_seconds": 0.05962039,
+            "median_seconds": 0.0596468,
+            "sample_stdev_seconds": 0.0003250542568385921
+          },
+          "fractional_mean_reduction": 0.0028042393086913364
+        }
+      }
+    },
+    "hoist": {
+      "log_sha256": "09ee3ab0d849a9c2408b494824eee48b26e6648174b0c8c1668c2632bb94f79b",
+      "exit": {
+        "exit_code": 0,
+        "wall_seconds": 3.316202402114868
+      },
+      "layouts": {
+        "4": {
+          "0": {
+            "trials": 10,
+            "mean_seconds": 0.03684733,
+            "median_seconds": 0.036739999999999995,
+            "sample_stdev_seconds": 0.000456793150488635
+          },
+          "1": {
+            "trials": 10,
+            "mean_seconds": 0.03722633,
+            "median_seconds": 0.037164050000000004,
+            "sample_stdev_seconds": 0.0005164157112034635
+          },
+          "fractional_mean_reduction": -0.010285684200185052
+        },
+        "8": {
+          "0": {
+            "trials": 10,
+            "mean_seconds": 0.05842021,
+            "median_seconds": 0.05856435,
+            "sample_stdev_seconds": 0.0005893509640085252
+          },
+          "1": {
+            "trials": 10,
+            "mean_seconds": 0.05738022,
+            "median_seconds": 0.0574534,
+            "sample_stdev_seconds": 0.0002450784083150154
+          },
+          "fractional_mean_reduction": 0.017801887394790272
+        }
+      }
+    },
+    "point-major": {
+      "log_sha256": "89a6f7232d3fda4276dc5a79afbe9d6cca1bc9bd18bde3f5096eb9fbe4f29bd7",
+      "exit": {
+        "exit_code": 0,
+        "wall_seconds": 4.782160758972168
+      },
+      "layouts": {
+        "4": {
+          "0": {
+            "trials": 10,
+            "mean_seconds": 0.03691328,
+            "median_seconds": 0.03679235,
+            "sample_stdev_seconds": 0.000451120370238859
+          },
+          "1": {
+            "trials": 10,
+            "mean_seconds": 0.09533226,
+            "median_seconds": 0.09547525,
+            "sample_stdev_seconds": 0.000354409685094652
+          },
+          "fractional_mean_reduction": -1.5826006250325086
+        },
+        "8": {
+          "0": {
+            "trials": 10,
+            "mean_seconds": 0.0579104,
+            "median_seconds": 0.057946,
+            "sample_stdev_seconds": 0.00040277067089515594
+          },
+          "1": {
+            "trials": 10,
+            "mean_seconds": 0.1272168,
+            "median_seconds": 0.12727650000000001,
+            "sample_stdev_seconds": 0.0008018077907661732
+          },
+          "fractional_mean_reduction": -1.196786760236503
+        }
+      }
+    }
+  },
+  "gadget_method": "Diagnostic patch adds optional8-term vector dot and gadget row grouping, preserving4-term default. Seven N16384 cases cover tuned DD40 chunks atQ433/389/345/301/257 and native primary44 Q435 with lifts37/270. Compare complete apply() with4/8-term fusion after warming both, symmetric blocks of5. One-thread and24-thread single applications plus32-application batches on24 workers. Deterministic noncryptographic row fixtures; all outputs byte-identical. Max-product/random1024-repeat integer-oracle arithmetic tests pass for4/8-term vectors.",
+  "gadget_results": {
+    "single1": {
+      "log_sha256": "33bd12b300504b75553caaba8fc5cdd7f54fb0a7b85342a77553daeb06322408",
+      "exit": {
+        "exit_code": 0,
+        "wall_seconds": 2.043102741241455
+      },
+      "cases": {
+        "q257-bits40-chunk145-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.00670843,
+          "eight_term_mean_seconds": 0.006707988,
+          "fractional_mean_reduction": 6.58872493265461e-05
+        },
+        "q301-bits40-chunk80-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.008288633,
+          "eight_term_mean_seconds": 0.008394487,
+          "fractional_mean_reduction": -0.012770984069387703
+        },
+        "q345-bits40-chunk115-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.008640747,
+          "eight_term_mean_seconds": 0.008706835999999999,
+          "fractional_mean_reduction": -0.007648528535785015
+        },
+        "q389-bits40-chunk80-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.01054889,
+          "eight_term_mean_seconds": 0.01054448,
+          "fractional_mean_reduction": 0.0004180534634449229
+        },
+        "q433-bits40-chunk145-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.01243262,
+          "eight_term_mean_seconds": 0.01241027,
+          "fractional_mean_reduction": 0.0017976902696295038
+        },
+        "q435-bits44-chunk112-lift37": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.011845979999999999,
+          "eight_term_mean_seconds": 0.01178581,
+          "fractional_mean_reduction": 0.00507936025554645
+        },
+        "q435-bits44-chunk112-lift270": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.007451667,
+          "eight_term_mean_seconds": 0.007440312,
+          "fractional_mean_reduction": 0.001523820106293039
+        }
+      }
+    },
+    "single24": {
+      "log_sha256": "4a7d3c23b7a51a02bb8542e0bc99bf6f77eb16fdd2f2f3fb32ca55083753f87a",
+      "exit": {
+        "exit_code": 0,
+        "wall_seconds": 0.5968430042266846
+      },
+      "cases": {
+        "q257-bits40-chunk145-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.001420582,
+          "eight_term_mean_seconds": 0.001416226,
+          "fractional_mean_reduction": 0.0030663488626493374
+        },
+        "q301-bits40-chunk80-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.00170088,
+          "eight_term_mean_seconds": 0.0016825569999999999,
+          "fractional_mean_reduction": 0.01077265885894374
+        },
+        "q345-bits40-chunk115-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.0016934,
+          "eight_term_mean_seconds": 0.001709567,
+          "fractional_mean_reduction": -0.009547065076177974
+        },
+        "q389-bits40-chunk80-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.002053222,
+          "eight_term_mean_seconds": 0.002067631,
+          "fractional_mean_reduction": -0.007017750637777986
+        },
+        "q433-bits40-chunk145-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.00368682,
+          "eight_term_mean_seconds": 0.003607424,
+          "fractional_mean_reduction": 0.02153508986063868
+        },
+        "q435-bits44-chunk112-lift37": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.002452845,
+          "eight_term_mean_seconds": 0.0023730030000000003,
+          "fractional_mean_reduction": 0.03255077267418027
+        },
+        "q435-bits44-chunk112-lift270": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.001947981,
+          "eight_term_mean_seconds": 0.001982451,
+          "fractional_mean_reduction": -0.017695244460803172
+        }
+      }
+    },
+    "batch24": {
+      "log_sha256": "1e2f15e920ae6662438a1dcc3f41a7cc8a7ea52f05d2eb0be010f583b3e9cd6a",
+      "exit": {
+        "exit_code": 0,
+        "wall_seconds": 9.778288841247559
+      },
+      "cases": {
+        "q257-bits40-chunk145-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.03997271,
+          "eight_term_mean_seconds": 0.03995144,
+          "fractional_mean_reduction": 0.0005321130341175984
+        },
+        "q301-bits40-chunk80-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.04820115,
+          "eight_term_mean_seconds": 0.04826986,
+          "fractional_mean_reduction": -0.0014254846616730266
+        },
+        "q345-bits40-chunk115-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.05346976,
+          "eight_term_mean_seconds": 0.053277700000000004,
+          "fractional_mean_reduction": 0.003591936825599995
+        },
+        "q389-bits40-chunk80-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.06701267,
+          "eight_term_mean_seconds": 0.06721167,
+          "fractional_mean_reduction": -0.002969587691402209
+        },
+        "q433-bits40-chunk145-lift48": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.07642941,
+          "eight_term_mean_seconds": 0.07636935,
+          "fractional_mean_reduction": 0.0007858231536786997
+        },
+        "q435-bits44-chunk112-lift37": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.07532194,
+          "eight_term_mean_seconds": 0.07548983,
+          "fractional_mean_reduction": -0.00222896542494766
+        },
+        "q435-bits44-chunk112-lift270": {
+          "trials_per_policy": 10,
+          "four_term_mean_seconds": 0.04594096,
+          "eight_term_mean_seconds": 0.04615757,
+          "fractional_mean_reduction": -0.004714964598040661
+        }
+      }
+    }
+  },
+  "gadget_arithmetic_log_sha256": "bcfb2f474a263032a2f056d292e5dfa0789ac60d5464eac844a3a347f1ded663",
+  "gadget_experimental_patch_sha256": "3933447e43db57103f8ddbd3ebb1be661e417a228cefce2b2e69b1f0e10ed294",
+  "gadget_fixture_source_sha256": "6533ba49fe88b038c65642a59cedcb389bb20f21e0fb9af437ef69b6716ff626",
+  "gadget_patch_and_source_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/gadget-dot8-20261017",
+  "decisions": [
+    "Keep the existing fused component kernel: the positive control reproduces its benefit.",
+    "Keep4-term ordinary wide matrix dots. Repeated8-term tests deliver less than1% improvement, too small to justify changing the qualified path.",
+    "Do not add selector-pointer hoisting: results are small and change sign between prototype and published runs.",
+    "Do not adopt point-major traversal: the local-sum version is substantially slower despite identical residues.",
+    "Discard the experimental8-term gadget implementation: no consistent gain across contexts, and batched results are essentially flat or slower. The production headers and arithmetic tests were restored before this commit."
+  ],
+  "prototype_evidence": {
+    "fused-dot8-20261017/bench.log": {
+      "sha256": "065483d9decc47afe59c686e33a71ff3db6f0f846ca7272d9c2cf517da5bb4fe"
+    },
+    "hoisted-selectors-20261017/bench.log": {
+      "sha256": "3d10e47317d396955fe051d5820b329e7340d532a5e857effec6f2771019f3b2"
+    },
+    "point-major-20261017/bench.log": {
+      "sha256": "e76b1388e4c7e8c6fddbcf1cb9fd66421034c19d19ca3604b83ac2087ecb06ac"
+    }
+  },
+  "current_performance_context": {
+    "source_receipt": "narrow-basis-rns-tensor-validation.json",
+    "paper_source": "../refs/2026-2119.pdf",
+    "paper_pdf_sha256": "ae1ca857606685c682b7f26164e96ac97ef8d27800108e8e6042cdcc9d3a0189",
+    "comparison": {
+      "gelu": {
+        "current_original_degree_seconds": 6.269556153,
+        "paper_table7_seconds": 2.71,
+        "raw_ratio": 2.3134893553505536
+      },
+      "tanh": {
+        "current_original_degree_seconds": 9.657981177,
+        "paper_table7_seconds": 4.51,
+        "raw_ratio": 2.1414592410199558
+      },
+      "sigmoid": {
+        "current_original_degree_seconds": 6.251692085,
+        "paper_table7_seconds": 2.79,
+        "raw_ratio": 2.2407498512544803
+      }
+    },
+    "caveat": "Raw contextual ratios only. CPU hardware, ring/modulus representation, parameter schedule, approximation setup and security qualification have not been matched. Table7 latencies are not an apples-to-apples performance target proof.",
+    "matched_tanh_matrix_stage_seconds": 2.3024063,
+    "matched_tanh_functional_seconds": 9.657981177,
+    "matrix_wall_fraction": 0.23839415896596128,
+    "other_stages_fixed_zero_matrix_estimate_seconds": 7.3555748770000005,
+    "estimate_scope": "Amdahl-style arithmetic-only estimate holding all other measured stage costs fixed; not a hardware lower bound. Matrix optimization alone cannot eliminate the raw paper gap in that model."
+  },
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "retained_key_archives_read_by_component_experiments": 0,
+  "production_binary_unchanged": true,
+  "production_binary_sha256": "eec85f9021c81bc3eed5af48ca789ca73b4ecef5bd3584a9e4e54b8cb70b74e9",
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "diagnostic_directories": [
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/fused-dot8-20261017",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/gadget-dot8-20261017",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/hoisted-selectors-20261017",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/point-major-20261017"
+  ],
+  "limitations": "Isolated public-fixture benchmarks, one CPU configuration; no full FBS speedup is established by the rejected candidates. Production runtime/ciphertext behavior remains the previously qualified version. Source-line CPU samples may include load stalls and do not establish that a pointer expression is the underlying bottleneck. Broader backend or algorithm work remains; the goal is active.",
+  "security_validated": false,
+  "performance_gap_closed": false
+}
