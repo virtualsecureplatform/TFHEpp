@@ -11,6 +11,9 @@ from pathlib import Path
 import re
 import sys
 
+if len(sys.argv) != 2:
+    raise SystemExit(__doc__)
+
 repo = Path(__file__).resolve().parents[3]
 out = Path(sys.argv[1]).resolve()
 out.mkdir(parents=True, exist_ok=True)
@@ -54,10 +57,16 @@ inline void experimentalNTTInverse(const NegacyclicNTTPlan&p,std::span<std::uint
 main = main_path.read_text()
 needle = ' const auto sweep_tree_evaluator=key->narrow.product_tree_evaluator;'
 assert main.count(needle) == 1
-main = main.replace(needle, ''' if(requested!="tanh"||!sparse_tanh||!basis_accumulate||!basis_group_tensors||!native_auto_batch||dd_windowed||dd_windowed_pair)
-  throw std::invalid_argument("NTT experiment requires fixed grouped sparse Tanh, native auto batches and independent DD");
- functions.assign(9,requested);
-''' + needle, 1)
+main = main.replace(needle, ' functions.assign(9,requested);\n' + needle, 1)
+pair_guard = next(line for line in main.splitlines() if 'paired replay controls must be separate' in line)
+pair_flags = re.findall(r'int\((\w+)\)', pair_guard)
+assert len(pair_flags) >= 10
+setup_start = ' const auto start=std::chrono::steady_clock::now();'
+assert main.count(setup_start) == 1
+profile_guard = (' if(requested!="tanh"||!sparse_tanh||!basis_accumulate||!basis_group_tensors||!native_auto_batch||dd_windowed||' +
+                 '||'.join(pair_flags) + ')\n' +
+                 '  throw std::invalid_argument("NTT experiment requires a fixed grouped sparse Tanh profile and no other paired controls");\n')
+main = main.replace(setup_start, profile_guard + setup_start, 1)
 lines = main.splitlines()
 for i, line in enumerate(lines):
     if line.startswith(' const auto artifact=function+'):

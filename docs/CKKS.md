@@ -4501,3 +4501,16 @@ has no general speedup claim. A separate stable-thread-team experiment removes
 thread creation but does not consistently improve latency. Evidence and exact
 commands are in `narrow-dd-windowed-tree-validation.json` and
 `narrow-dd-steady-team-experiment.json`.
+
+
+The lazy NTT diagnostics retain2p/4p intermediates and canonical public outputs.
+All17 primes and degrees2..65536 pass scalar/vector spectrum, inverse, range
+and independent small-ring convolution checks. A generated retained-key replay
+compares the original kernel, lazy forward only, and lazy forward/inverse in
+one process with a shared prepared cache. All18 ciphertext outputs match the
+qualified reference. The forward-only full result is effectively tied, and
+the combined variant is slower in the recorded runs; production NTT bodies
+remain unchanged. The fused twist/untwist variant has arithmetic and component
+evidence only. Reproduction and limits are in
+`narrow-lazy-ntt-components-experiment.json` and
+`narrow-lazy-ntt-replay-experiment.json`.
