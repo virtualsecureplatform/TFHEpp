@@ -4582,3 +4582,27 @@ checks cover changing output sizes, fresh allocations and nested callers;
 the existing factor/forest regression also passes. Commands, samples, source
 hashes and resource observations are in
 `narrow-parallel-factor-rescale-validation.json`. The 10x goal remains open.
+
+
+Native batch factor conjugation with three/four columns now exposes inverse
+transforms and disjoint CRT coefficient blocks to the full CPU team. Each
+reconstructed coefficient is immediately rounded with the same existing
+operation, avoiding the wide intermediate array. The existing parallel factor
+policy selects this finish; `parallel_inverse_crt=false` in the C++ factor
+source retains the previous per-column finish for comparisons.
+
+Two balanced retained-key sparse-Tanh processes measured factor generation
+at 2.542→2.384 seconds (6.2% less time) and full refresh at 4.720→4.574 seconds
+(3.1% less time). Both directions agree, with approximately 3.0% and 3.2%
+whole-refresh reductions. These are four measured samples per policy; the
+component and refresh ratios must not be multiplied.
+
+All 21 output archives match their qualified references, including the normal
+original/reduced/default GeLU/Tanh/Sigmoid profiles. All nine retained key
+hashes are unchanged. Native/no-OpenMP component checks, small-ring Garner
+comparisons, nested callers, wrapped output types and the factor/forest
+regression pass. The inverse-CRT timer now includes table-scale rounding,
+previously charged to the conjugation timer; use the unchanged enclosing
+factor/refresh scopes to compare performance. Source-level scratch savings do
+not establish an RSS reduction. See `narrow-factor-finish-validation.json` for
+commands, samples and scope. The 10x goal remains open.
