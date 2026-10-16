@@ -18,6 +18,9 @@
 #include <ckks/narrow_factor_ntt32.hpp>
 #include <ckks/narrow_factor_rns32.hpp>
 #include <iomanip>
+#ifdef TFHEPP_CKKS_RAM
+#include "ckks_ram_benchmark.hpp"
+#endif
 using namespace TFHEpp;
 using P=narrow_benchmark::BenchmarkParam<14,7>;
 #ifdef TFHEPP_NARROW_LL14_RETUNED_NOISE
@@ -487,6 +490,24 @@ int main(int argc,char**argv)try {
 #endif
 
  const auto auto_setup_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-autoStart).count();
+
+#ifdef TFHEPP_CKKS_RAM
+ if(s2c_primary_pair||s2c_input_primary!=4||s2c_output_primary!=4)
+  throw std::invalid_argument("RAM adapter currently requires fixed primary4 S2C caches");
+ key->narrow.batch_product_trees=batch_product_trees;
+ key->narrow.parallel_public_tail_alignment=parallel_tail_alignment;
+ const auto decode_slots=[&](CKKSCiphertext<P,48,44>&result,const Output&ct){
+  auto lifted=std::make_unique<CKKSCiphertext<P,93,52>>();
+  for(size_t c=0;c<2;++c)for(size_t i=0;i<P::n;++i)
+   lifted->ct[c][i]=ckks_detail::reduceToLevel<P,85>(ct.ct[c][i])<<8;
+  auto decoded=std::make_unique<CKKSCiphertext<P,56,52>>();
+  if(prepared_s2c_rns)CKKSRealLinearTransform<P,93,52,37>(*decoded,*lifted,*prepared_s2c_rns,*s2c_input_cache,*s2c_output_cache,nullptr,s2c_horner,s2c_baby_workers,s2c_group_workers);
+  else if(prepared_s2c)CKKSRealLinearTransform<P,93,52,37>(*decoded,*lifted,*prepared_s2c,*s2c_input_cache,*s2c_output_cache);
+  else narrow_detail::realTransformWithPreparedGalois<P,93,52,37>(*decoded,*lifted,key->s2c_plan,key->s2c_input_galois,key->s2c_output_galois);
+  CKKSScaleDown<P,56,52,8>(result,*decoded);
+ };
+ return ckks_ram::run<Narrow>(root,*sparse,key->narrow,decode_slots);
+#endif
 
  auto input=std::make_unique<Refresh::Input>();auto slots=std::make_unique<CKKSSlotVector<P>>();const auto inputfile=root/"candidate-input.bin";
  const std::array<uint64_t,5> inputmeta{0x4c4c3134494e3031ULL,P::n,448,85,44};bool reused=std::filesystem::exists(inputfile);

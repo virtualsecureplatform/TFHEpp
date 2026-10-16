@@ -1,5 +1,8 @@
 # CKKS
 
+The [TLWE RAM prototype](CKKSRAM.md) compares per-cell TFHE refresh with
+CKKS Boolean batch refresh behind the same encrypted RAM interface.
+
 ## CPU narrow bootstrapping from 2026/2119
 
 The CPU implementation uses Double Decomposition for the product tree and

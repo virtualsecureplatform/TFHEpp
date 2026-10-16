@@ -58,6 +58,8 @@ IGNORED_BINARIES=(
     './clpx/scheme_switch_comparison'
     './tfhe/largelut_cmux_benchmark'
     './tfhe/largelut_random_key_diagnostic'
+    './ckks/ckks_ram_setup'
+    './ckks/ckks_narrow_ll14_retuned_ram'
 )
 for TEST_BINARY in "${TEST_BINARIES[@]}"
 do
