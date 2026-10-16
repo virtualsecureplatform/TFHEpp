@@ -4233,6 +4233,11 @@ the reconstruction-stage reduction, with noticeable variation in unchanged stage
 
 The fresh four-root CPU profile is recorded in
 [narrow-sparse-cpu-sampling-profile.json](narrow-sparse-cpu-sampling-profile.json).
+The [core sweep](narrow-sparse-core-sweep.json) keeps 24 logical threads as
+the best tested whole-evaluation setting for this four-root profile. An
+[inner-team experiment](narrow-tree-inner-experiment.json) found no measured
+gain from sharing the same budget between the last tree levels and nested
+arithmetic teams; that prototype was discarded.
 Rejected two-root activation fits, vector CRT, permutation recurrence and tile
 sizes are documented in
 [narrow-four-root-followup-experiments.json](narrow-four-root-followup-experiments.json).
