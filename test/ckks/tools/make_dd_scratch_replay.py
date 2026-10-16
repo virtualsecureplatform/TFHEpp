@@ -1,6 +1,8 @@
 """Build an isolated independent/allocated/reused DD comparison source.
 
-Usage: python3 test/ckks/tools/make_dd_scratch_replay.py EMPTY_DIRECTORY
+Usage: python3 test/ckks/tools/make_dd_scratch_replay.py EMPTY_DIRECTORY [--gadget-workspace]
+Use --gadget-workspace to compare fresh/reused gadget buffers instead of outer
+DD buffers. Mode1 is the selected frozen control and mode2 is production.
 Compile replay.cpp using the normal retained-replay flags and add test/ckks to
 its include path. Run the fixed grouped sparse-Tanh/native-batch profile with
 --dd-windowed 1. Warm0/1/2, then measure0/1/2/2/1/0 with one prepared key chain.
@@ -11,7 +13,7 @@ from pathlib import Path
 import re
 import sys
 
-if len(sys.argv) != 2:
+if len(sys.argv) not in (2,3) or (len(sys.argv)==3 and sys.argv[2]!='--gadget-workspace'):
     raise SystemExit(__doc__)
 repo = Path(__file__).resolve().parents[3]
 out = Path(sys.argv[1]).resolve()
@@ -19,9 +21,10 @@ out.mkdir(parents=True, exist_ok=True)
 if any(out.iterdir()):
     raise SystemExit('Use an empty experiment directory')
 source = repo / 'test/ckks/ckks_narrow_ll14_basis_ntt_fbs.cpp'
-old = Path(__file__).with_name('dd_scratch_candidate.hpp')
+gadget = len(sys.argv)==3
+old = Path(__file__).with_name('dd_gadget_candidate.hpp' if gadget else 'dd_scratch_candidate.hpp')
 main = source.read_text()
-main = '#include "dd_scratch_candidate.hpp"\n#include <sys/resource.h>\n' + main
+main = f'#include "{old.name}"\n#include <sys/resource.h>\n' + main
 adapter = '''template<class Base>struct ReallocatedDDChain {
  std::shared_ptr<Base> base;
  template<std::size_t Level>decltype(auto)get()const{return base->template get<Level>();}
@@ -32,11 +35,14 @@ adapter = '''template<class Base>struct ReallocatedDDChain {
   const auto relin=base->template get<Level>();
   constexpr auto Q=std::remove_cvref_t<decltype(relin)>::log_q;
   std::vector<CKKSRNS32Product<P,Q,Narrow::log_delta>> work;
+  work.reserve(pairs.size());
   for(const auto&[tree,pair]:pairs)work.push_back({&next[tree][pair],&factors[tree][2*pair],&factors[tree][2*pair+1]});
   dd_scratch_experiment::multiplyReallocated<P,Q,Narrow::log_delta>(work,relin.key);
  }
 };
 '''
+if gadget:
+    adapter=adapter.replace('dd_scratch_experiment::multiplyReallocated','dd_gadget_experiment::multiplyFreshGadgetWorkspace')
 assert main.count('int main(') == 1
 main = main.replace('int main(', adapter + 'int main(', 1)
 main = main.replace(' auto windowed_dd_calls=', ' long scratch_minor_faults=0;\n auto windowed_dd_calls=', 1)
