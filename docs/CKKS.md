@@ -4204,6 +4204,19 @@ bytes match the independently validated reference. See
 [narrow-basis-rns-tensor-validation.json](narrow-basis-rns-tensor-validation.json)
 for the complete configuration, checks and timing limits.
 
+Prepared RNS gadgets convert signed digits in AVX2 batches, including the
+full signed 64-bit range. The integer conversion is exact; prepared key rows,
+NTT spectra and resulting ciphertext bytes stay the same. Matched complete
+gadget benchmarks show about 5–6% less time for the tree keys in a batch on
+24 threads; this is not the same percentage gain for the whole bootstrap.
+Staged table coefficients also use the encoder and compact signed storage.
+`--table-batch-encode 0` selects scalar table conversion;
+`--table-batch-encode-pair 1` compares scalar/batch/batch/scalar after a warmup
+with `--parallel-table-ntt 1`. See
+[narrow-signed-rns-encoding-validation.json](narrow-signed-rns-encoding-validation.json)
+for full-range oracle tests, non-AVX2 coverage, benchmark commands and retained
+replay validation. Defaults preserve the existing approximation choices.
+
 For Tanh, `--sparse-tanh 1` selects a bounded-coefficient sine fit on the
 same `[-4,4]` interval and period 16. Four blind roots `{7,9,10,15}` reconstruct
 20 nonzero frequencies through degree 30 in one multiplication layer. The
