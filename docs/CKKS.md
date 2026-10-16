@@ -4257,6 +4257,20 @@ default outputs remain byte-identical. See
 [narrow-s2c-primary8-validation.json](narrow-s2c-primary8-validation.json)
 for the arithmetic oracle, paired measurements, commands and qualification limits.
 
+Prepared FFT rotations now keep primary digits as signed 64-bit integers and
+feed those words directly to the FFT. This removes the centered-polynomial
+buffer, full-width digit expansion and per-transform low-limb copy while
+preserving the decomposition and ciphertext bytes. On the retained sparse-Tanh
+profile, matched old/new/new/old binary runs reduce default four-bit S2C from
+1.017s to 0.687s (32.4%) and whole evaluation from 6.160s to 5.886s (4.4%).
+With eight-bit digits, S2C falls from 0.743s to 0.598s (19.5%) and whole
+evaluation from 5.901s to 5.779s (2.1%). These are separate comparisons against
+the previous implementation at each width. Primary digit rows use one seventh
+of their former transient storage on the tested 448-bit torus; retained key
+spectra are unchanged. See
+[narrow-s2c-compact-digits-validation.json](narrow-s2c-compact-digits-validation.json)
+for complete-operation benchmarks, byte comparisons and measurement limits.
+
 The fresh four-root CPU profile is recorded in
 [narrow-sparse-cpu-sampling-profile.json](narrow-sparse-cpu-sampling-profile.json).
 The [core sweep](narrow-sparse-core-sweep.json) keeps 24 logical threads as
