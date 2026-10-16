@@ -417,6 +417,26 @@ inline std::vector<typename Schedule::Factor> packedFactorsBatchRNS32(
     if (timings) timings->conjugation_seconds += std::chrono::duration<double>(Clock::now()-start).count();
     return result;
 }
+// Keep the exact per-coefficient CKKSScaleDown operation while allowing
+// the caller's parallel factor policy to cover the final rescale as well.
+template<class Target,class Source>
+void rescaleFactorBatchRNS32(std::vector<typename Target::Factor>&out,const std::vector<typename Source::Factor>&in,bool parallel)
+{
+ using P=typename Source::Param;
+ constexpr auto drop=Source::factor_log_q-Target::factor_log_q;
+ static_assert(drop>0&&Source::log_delta-drop==Target::log_delta);
+ out.resize(in.size());
+ if(!parallel){
+  for(std::size_t j=0;j<in.size();++j)
+   CKKSScaleDown<P,Source::factor_log_q,Source::log_delta,drop>(out[j],in[j]);
+  return;
+ }
+#pragma omp parallel for collapse(3) schedule(static)
+ for(std::size_t j=0;j<in.size();++j)for(std::size_t c=0;c<=P::k;++c)
+  for(std::size_t begin=0;begin<P::n;begin+=256)
+   for(std::size_t i=begin;i<std::min(begin+256,std::size_t(P::n));++i)
+    out[j].ct[c][i]=ckks_detail::roundedLevelRightShift<P,Source::factor_log_q,drop>(in[j].ct[c][i]);
+}
 } // namespace narrow_detail
 
 // Key-dependent spectra only. The caller chooses a byte budget before any
@@ -524,9 +544,8 @@ public:
             [&](auto first,auto count,auto &raw) { source_->loadChunk(tail,group,first,count,raw); },cache,timings,
             source_->supportsRawChunkPrefetch(),retained_?retained_->group(tail,group):
                 std::span<const narrow_detail::FactorSelectorRNS32<SourceSchedule>>{},tiled_matrix_,parallel_conjugation_,dot8_matrix_,vector_short_stages_,packed_matrix_,all_retained_rows_,joint_components_,parallel_table_ntt_,fused_components_,batch_table_encode_);
-        std::vector<typename TargetSchedule::Factor> result(factors.size());
-        for (std::size_t i = 0; i < factors.size(); ++i)
-            CKKSScaleDown<P,SourceSchedule::factor_log_q,SourceSchedule::log_delta,drop>(result[i],factors[i]);
+        std::vector<typename TargetSchedule::Factor> result;
+        narrow_detail::rescaleFactorBatchRNS32<TargetSchedule,SourceSchedule>(result,factors,parallel_conjugation_);
         return result;
     }
 };
