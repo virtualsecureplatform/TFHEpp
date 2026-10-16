@@ -321,7 +321,9 @@ public:
     }
 };
 
+struct LazyNTTAccess;
 class NegacyclicNTTPlan {
+    friend struct LazyNTTAccess;
     std::size_t size_;
     bool vector_short_stages_;
     Montgomery arithmetic_;
