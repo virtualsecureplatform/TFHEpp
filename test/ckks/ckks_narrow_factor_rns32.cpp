@@ -177,16 +177,16 @@ void checkTailAlignment()
 #endif
     // Archive only zero-valued public rows; no selector-key fixture generation.
     std::stringstream serial_payload,payload;
-    key->parallel_public_tail_alignment=false;key->parallel_root_columns=false;key->batch_product_trees=false;
+    key->parallel_public_tail_alignment=false;key->parallel_root_columns=false;key->batch_product_trees=false;key->reuse_table_roots=false;
     {cereal::PortableBinaryOutputArchive archive(serial_payload);archive(*key);}
-    key->parallel_public_tail_alignment=true;key->parallel_root_columns=true;key->batch_product_trees=true;
+    key->parallel_public_tail_alignment=true;key->parallel_root_columns=true;key->batch_product_trees=true;key->reuse_table_roots=true;
     key->product_tree_batch_evaluator=[](auto&,auto,const auto&){};
     {cereal::PortableBinaryOutputArchive archive(payload);archive(*key);}
     if(serial_payload.str()!=payload.str())throw std::runtime_error("runtime tail policy changed public archive bytes");
     auto loaded=std::make_unique<CKKSNarrowBootstrapKey<Target>>();
-    loaded->parallel_public_tail_alignment=true;loaded->parallel_root_columns=true;loaded->batch_product_trees=true;loaded->product_tree_batch_evaluator=key->product_tree_batch_evaluator;
+    loaded->parallel_public_tail_alignment=true;loaded->parallel_root_columns=true;loaded->batch_product_trees=true;loaded->reuse_table_roots=false;loaded->product_tree_batch_evaluator=key->product_tree_batch_evaluator;
     {cereal::PortableBinaryInputArchive archive(payload);archive(*loaded);}
-    if(loaded->parallel_public_tail_alignment || loaded->parallel_root_columns || loaded->batch_product_trees || loaded->product_tree_batch_evaluator)throw std::runtime_error("key archive retained a runtime parallel alignment policy");
+    if(loaded->parallel_public_tail_alignment || loaded->parallel_root_columns || loaded->batch_product_trees || loaded->product_tree_batch_evaluator || !loaded->reuse_table_roots)throw std::runtime_error("key archive retained a runtime parallel alignment policy");
     loaded->batch_product_trees=true;loaded->product_tree_batch_evaluator=key->product_tree_batch_evaluator;
     CKKSNarrowUseStagedFFT(*loaded,4);
     if(loaded->batch_product_trees||loaded->product_tree_batch_evaluator)throw std::runtime_error("staged policy retained an incompatible batch backend");

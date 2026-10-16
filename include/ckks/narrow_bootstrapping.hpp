@@ -255,6 +255,8 @@ struct CKKSNarrowBootstrapKey {
     bool parallel_public_tail_alignment = false;
     // Opt in only with thread-safe beta adjustment and product-tree backends.
     bool parallel_root_columns = false;
+    // Invocation-local public table roots; never stored in the key archive.
+    bool reuse_table_roots = true;
     std::size_t selector_ntt_chunk_size = 0;
     bool staged_fft_caches = false;
     // Optional caller-owned diagnostic observer, excluded from key archives.
@@ -284,6 +286,7 @@ struct CKKSNarrowBootstrapKey {
             bounded_tail_rotation_fft = false;
             parallel_public_tail_alignment = false;
             parallel_root_columns = false;
+            reuse_table_roots = true;
             selector_ntt_chunk_size = 0;
             staged_fft_caches = false;
             factor_observer = {};
@@ -682,6 +685,59 @@ inline CKKSSlotVector<typename Schedule::Param> tailTable(
             const std::int64_t i = Schedule::slots - 2 * Schedule::tail_width + t;
             table[2 * ell * Schedule::tail_width + t] =
                 root<P>(a, i - j, j <= i ? 1 : -1, frequency);
+        }
+    }
+    return table;
+}
+
+// A tile repeatedly visits the same index/sign/frequency combinations.
+// Evaluate the original function for both signs, without deriving one sign
+// from the other, so signed zeros and floating-point results are preserved.
+template<class P>
+struct NarrowTableRoots {
+    std::array<std::complex<double>,P::n> positive,negative;
+    NarrowTableRoots(const std::array<double,P::n>&a,std::uint32_t frequency)
+    {
+        for(std::size_t i=0;i<P::n;++i){
+            positive[i]=root<P>(a,i,1,frequency);
+            negative[i]=root<P>(a,i,-1,frequency);
+        }
+    }
+    std::complex<double> operator()(std::int64_t index,int sign)const
+    {
+        index=(index%P::n+P::n)%P::n;
+        return (sign>0?positive:negative)[static_cast<std::size_t>(index)];
+    }
+};
+
+template<class Schedule>
+inline CKKSSlotVector<typename Schedule::Param> headTable(
+    const NarrowTableRoots<typename Schedule::Param>&roots,std::size_t block)
+{
+    using P=typename Schedule::Param;
+    CKKSSlotVector<P> table;
+    const std::int64_t j=block*Schedule::block_width;
+    for(std::size_t i=0;i<Schedule::slots;++i){
+        if(i<Schedule::head_slots)
+            table[i]=roots(static_cast<std::int64_t>(i)-j,j<=static_cast<std::int64_t>(i)?1:-1);
+        else table[i]=roots(static_cast<std::int64_t>(P::n/2+i)-j,-1);
+    }
+    return table;
+}
+
+template<class Schedule>
+inline CKKSSlotVector<typename Schedule::Param> tailTable(
+    const NarrowTableRoots<typename Schedule::Param>&roots,std::size_t pack)
+{
+    using P=typename Schedule::Param;
+    CKKSSlotVector<P> table{};
+    const auto begin=pack*Schedule::tail_blocks_per_pack;
+    const auto count=std::min(Schedule::tail_blocks_per_pack,Schedule::blocks-begin);
+    for(std::size_t ell=0;ell<count;++ell){
+        const std::int64_t j=(begin+ell)*Schedule::block_width;
+        for(std::size_t t=0;t<2*Schedule::tail_width;++t){
+            const std::int64_t i=Schedule::slots-2*Schedule::tail_width+t;
+            table[2*ell*Schedule::tail_width+t]=roots(i-j,j<=i?1:-1);
         }
     }
     return table;
@@ -1629,6 +1685,12 @@ inline void CKKSNarrowBlindRotateBatch(
         };
         std::vector<std::array<double, P::n>> a(columns), b(columns);
         for (std::size_t column = 0; column < columns; column++) {
+            // Frequencies of the same immutable input share the coefficient
+            // conversion. Copy its exact double values, including signed zero.
+            std::size_t prior=column;
+            if(key.reuse_table_roots)for(std::size_t j=0;j<column;++j)
+                if(requests[begin+j].input==requests[begin+column].input){prior=j;break;}
+            if(prior<column){a[column]=a[prior];b[column]=b[prior];continue;}
             const auto &input = *requests[begin + column].input;
             for (std::size_t i = 0; i < P::n; i++) {
                 // TFHEpp decrypts b-a*s; the paper decrypts b+a*s.
@@ -1714,15 +1776,26 @@ inline void CKKSNarrowBlindRotateBatch(
             return result;
         };
         finish_root_stage(root_times.input_and_factor_cache_seconds);
+        // Count preparation inside the same leaf-factor timing scope as the
+        // table evaluations it replaces. Release the input-derived cache before
+        // tail alignment and product trees, and never retain it in the key.
+        std::vector<narrow_detail::NarrowTableRoots<P>> table_roots;
+        if(key.reuse_table_roots){
+            table_roots.reserve(columns);
+            for(std::size_t column=0;column<columns;++column)
+                table_roots.emplace_back(a[column],requests[begin+column].frequency);
+        }
         for (std::size_t x = 0; x < Schedule::blocks; x++) {
             for (std::size_t column = 0; column < columns; column++)
-                tables[column] = narrow_detail::headTable<Schedule>(a[column], x, requests[begin + column].frequency);
+                tables[column] = key.reuse_table_roots?narrow_detail::headTable<Schedule>(table_roots[column],x):
+                    narrow_detail::headTable<Schedule>(a[column],x,requests[begin+column].frequency);
             auto factors = evaluate_group(key.head, key.head_ntt, x * Schedule::block_width, false);
             for (std::size_t column = 0; column < columns; column++) head[column][x] = std::move(factors[column]);
         }
         for (std::size_t q = 0; q < Schedule::tail_packs; q++) {
             for (std::size_t column = 0; column < columns; column++)
-                tables[column] = narrow_detail::tailTable<Schedule>(a[column], q, requests[begin + column].frequency);
+                tables[column] = key.reuse_table_roots?narrow_detail::tailTable<Schedule>(table_roots[column],q):
+                    narrow_detail::tailTable<Schedule>(a[column],q,requests[begin+column].frequency);
             const auto packed = evaluate_group(key.tail, key.tail_ntt, q * Schedule::block_width, true);
             const auto count = std::min(Schedule::tail_blocks_per_pack,
                 Schedule::blocks - q * Schedule::tail_blocks_per_pack);
@@ -1755,6 +1828,7 @@ inline void CKKSNarrowBlindRotateBatch(
                         -right, key.factor_galois);
                 }
         }
+        std::vector<narrow_detail::NarrowTableRoots<P>>{}.swap(table_roots);
         finish_root_stage(root_times.leaf_factors_and_inline_alignment_seconds);
         staged_factor.reset();
         if constexpr (use_multilimb_digit_fft_v<P>) {
