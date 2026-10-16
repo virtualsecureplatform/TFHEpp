@@ -4271,6 +4271,18 @@ spectra are unchanged. See
 [narrow-s2c-compact-digits-validation.json](narrow-s2c-compact-digits-validation.json)
 for complete-operation benchmarks, byte comparisons and measurement limits.
 
+The retained LL14 replay now prepares saved native automorphism keys with
+three 145-bit chunks and seven RNS primes, replacing four 112-bit chunks and
+six primes. Exact CRT reconstruction preserves switching noise and ciphertext
+bytes. The eight native-key caches shrink from 240 MiB to 210 MiB. Complete
+column-batch benchmarks improve by about 2–5% at the high data levels and 5–10%
+at lower levels; two matched sparse-Tanh pairs measure a smaller whole-evaluation
+change, 5.746s to 5.691s (about 1%). `--native-auto-chunk-bits 112` retains the
+previous layout; `--native-auto-chunk-pair 1` compares 112/145/145/112 after a
+warmup using the same saved rows. Other public automorphism defaults are unchanged.
+See [narrow-native-auto-chunks-validation.json](narrow-native-auto-chunks-validation.json)
+for the schoolbook and digit-NTT checks, retained replay evidence and timing limits.
+
 The fresh four-root CPU profile is recorded in
 [narrow-sparse-cpu-sampling-profile.json](narrow-sparse-cpu-sampling-profile.json).
 The [core sweep](narrow-sparse-core-sweep.json) keeps 24 logical threads as
