@@ -4606,3 +4606,29 @@ previously charged to the conjugation timer; use the unchanged enclosing
 factor/refresh scopes to compare performance. Source-level scratch savings do
 not establish an RSS reduction. See `narrow-factor-finish-validation.json` for
 commands, samples and scope. The 10x goal remains open.
+
+
+Batched narrow root preparation now reuses converted doubles for identical
+immutable input pointers and precomputes both signed roots at every index in
+each frequency column. Both signs call the existing root function directly;
+no conjugate shortcut or approximation is used. Cached head/tail tables match
+the original helpers bit for bit, including signed zeros and unused tail slots.
+The local cache is released before tail alignment and trees. At N16384 it adds
+0.5 MiB per column, bounded by tile width; this is a payload count, not an RSS
+measurement. `reuse_table_roots=false` selects the previous C++ runtime policy.
+The flag and cached values are excluded from the legacy key archive.
+
+Two balanced retained-key sparse-Tanh processes, with eight measured samples
+per policy overall, measured full refresh at 4.560→4.512 seconds (1.1% less
+time). Per-process gains were approximately 0.8% and 1.3%. The input/cache
+preparation stage fell from 49.5→44.7ms; leaf factors, including root-cache
+preparation, fell from 2.384→2.344 seconds. Component table construction is a
+small part of refresh time and its ratio must not be treated as a pipeline gain.
+
+All 29 output archives match qualified references, including the normal
+original/reduced/default GeLU/Tanh/Sigmoid profiles. All nine retained key
+hashes are unchanged. Native/no-OpenMP table checks, the factor/forest and
+archive-policy regression, and compatibility compilation pass. The generated
+comparison additionally reports input/cache preparation time; normal replay
+JSON is unchanged. Commands, hashes, samples and scope are in
+`narrow-table-root-reuse-validation.json`. The 10x goal remains open.
