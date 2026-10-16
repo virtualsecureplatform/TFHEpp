@@ -114,4 +114,4 @@ void checkNativeRows()
  std::cout<<"native key phases match schoolbook; archive profile/origin/truncation guards pass\n";
 }
 
-int main(int argc,char**){check<4>();check<9>();check<4,40>();check<9,40>();check<4,44,112>();check<9,44,112>();checkNativeRows();if(argc>1){check<14>();check<14,40>();}}
+int main(int argc,char**argv){if(argc>1&&std::string(argv[1])=="--native-chunks-only"){check<4,44,145>();check<9,44,145>();check<14,44,145>();return 0;}check<4>();check<9>();check<4,40>();check<9,40>();check<4,44,112>();check<9,44,112>();checkNativeRows();if(argc>1){check<14>();check<14,40>();}}
