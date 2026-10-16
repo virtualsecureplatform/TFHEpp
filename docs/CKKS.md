@@ -4632,3 +4632,28 @@ archive-policy regression, and compatibility compilation pass. The generated
 comparison additionally reports input/cache preparation time; normal replay
 JSON is unchanged. Commands, hashes, samples and scope are in
 `narrow-table-root-reuse-validation.json`. The 10x goal remains open.
+
+
+Head-factor staging now reserves the final capacity once and appends completed
+leaves in their original block order. It avoids initializing 31 placeholders,
+relocating them to reserve a 32nd entry, and overwriting those placeholders.
+The final transparent beta, tree topology and ciphertext arithmetic are
+unchanged. `append_head_factors=false` retains the previous C++ runtime policy
+for comparison. The flag is excluded from legacy key archives.
+
+Fresh four-column construction at N16384 measured approximately 141→65ms in
+two component processes, with every coefficient, leaf order and beta checked.
+This component includes fresh allocations and is not a complete-refresh gain.
+All 29 retained refresh output archives, including original/reduced/default
+GeLU/Tanh/Sigmoid profiles, match qualified references byte for byte. All nine
+saved key hashes are unchanged. Native/no-OpenMP component checks, the
+factor/forest and archive-policy regression, and compatibility compilation pass.
+
+The two balanced full-refresh processes were contended by other CPU jobs, and
+changing load produced inconsistent gain magnitudes. No clean whole-refresh
+speedup is claimed. A subsequent quiet gate failed before launching a repeat.
+First-touch costs can move from input preparation to leaf generation, and the
+large component minor-fault reduction does not carry through proportionately
+to integrated root faults. Commands, samples, resource observations and scope
+are in `narrow-head-factor-staging-validation.json`. These measurements do not
+establish the 10x goal.
