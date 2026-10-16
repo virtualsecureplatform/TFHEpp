@@ -4673,3 +4673,15 @@ output modulus/headroom differ. This is historical context, not a controlled
 speedup or proof that the intended 10x goal or paper performance is achieved.
 Commands, reports, hashes and resource accounting are in
 `narrow-eight-thread-followup-validation.json`.
+
+
+An additional head-staging follow-up skipped its first launch because the quiet
+gate failed. A second launch passed the gate and completed ten sparse-Tanh
+evaluations; all output archives match the retained reference and all nine
+saved key hashes remain unchanged. Neither pre-specified ABBA block stayed
+below the interval CPU-activity threshold. The first block's small favorable
+ratio and the second block's unfavorable ratio therefore establish neither
+a speedup nor a regression. This follow-up improves the resource accounting
+by sampling interval CPU ticks instead of lifetime process CPU percentages.
+Evidence and both complete block summaries are in
+`narrow-head-factor-followup-validation.json`.

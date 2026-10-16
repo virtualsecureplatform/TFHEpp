@@ -1,0 +1,311 @@
+{
+  "scope": "Additional retained-key sparse-Tanh comparison of head placeholder allocation vs completed-leaf append; CPU only. No production code changes.",
+  "source_commit": "793bb44",
+  "previous_validation": "narrow-head-factor-staging-validation.json",
+  "raw_evidence_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/head-factors-followup-20261017",
+  "jobs": [
+    {
+      "name": "paired",
+      "argv": [
+        "taskset",
+        "-c",
+        "0-23",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/head-factors-replay-20261017/replay",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "tanh",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/head-factors-followup-20261017/paired",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--sparse-tanh",
+        "1",
+        "--basis-accumulate",
+        "1",
+        "--table-batch-encode",
+        "1",
+        "--s2c-input-primary-bits",
+        "8",
+        "--s2c-output-primary-bits",
+        "8",
+        "--native-auto-batch",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--dd-windowed",
+        "1"
+      ],
+      "quiet": true
+    },
+    {
+      "name": "paired-repeat",
+      "argv": [
+        "taskset",
+        "-c",
+        "0-23",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/head-factors-replay-20261017/replay",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "tanh",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/head-factors-followup-20261017/paired-repeat",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/basis-cpu-20261012/direct440-full/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto44-20261017/keys",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--sparse-tanh",
+        "1",
+        "--basis-accumulate",
+        "1",
+        "--table-batch-encode",
+        "1",
+        "--s2c-input-primary-bits",
+        "8",
+        "--s2c-output-primary-bits",
+        "8",
+        "--native-auto-batch",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--dd-windowed",
+        "1"
+      ],
+      "quiet": true
+    }
+  ],
+  "inherited_environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "completion": {
+    "paired": {
+      "status": "not_started",
+      "reason": "no sustained quiet interval",
+      "exit_code": null
+    },
+    "paired-repeat": {
+      "status": "complete",
+      "exit_code": 0,
+      "wall_seconds": 90.62239146232605
+    }
+  },
+  "protocol": "Two warmups, then two pre-specified ABBA blocks, four measured samples per policy. A quiet launch requires five consecutive two-second intervals below20% of one CPU, with at most15 observations. Post-run each full block must also stay below that threshold; both blocks fail. Windows span preceding report mtime through final report mtime and conservatively include work between measured evaluations.",
+  "resource_method": "Same interval /proc accounting as narrow-eight-thread-followup-validation.json. Residual activity can include kernel/unattributed activity and accounting noise; not all residual is external competition.",
+  "resource_summary": {
+    "intervals": 89,
+    "median_other_system_cpu_percent": 11.697402102823608,
+    "maximum_other_system_cpu_percent": 154.9832958448479,
+    "intervals_at_or_above_20_percent": 34,
+    "missing_benchmark_stat": 0
+  },
+  "cycles": [
+    {
+      "first_trial": 2,
+      "last_trial": 5,
+      "window_start_unix": 1792143670.7080894,
+      "window_end_unix": 1792143689.9991758,
+      "resource_intervals": 20,
+      "all_intervals_below_quiet_threshold": false,
+      "maximum_other_system_cpu_percent": 109.77735929782874,
+      "mean_seconds_and_faults": {
+        "0": {
+          "functional_evaluation_seconds": 4.50178206,
+          "root_input_stage_seconds": 0.044352698,
+          "factor_stage_seconds": 2.327275328,
+          "root_minor_faults": 95286
+        },
+        "1": {
+          "functional_evaluation_seconds": 4.468855210999999,
+          "root_input_stage_seconds": 0.0017606750000000002,
+          "factor_stage_seconds": 2.329778516,
+          "root_minor_faults": 95991.5
+        }
+      }
+    },
+    {
+      "first_trial": 6,
+      "last_trial": 9,
+      "window_start_unix": 1792143689.9991758,
+      "window_end_unix": 1792143713.1592798,
+      "resource_intervals": 23,
+      "all_intervals_below_quiet_threshold": false,
+      "maximum_other_system_cpu_percent": 154.9832958448479,
+      "mean_seconds_and_faults": {
+        "0": {
+          "functional_evaluation_seconds": 5.269263915,
+          "root_input_stage_seconds": 0.0450709315,
+          "factor_stage_seconds": 2.8166001449999998,
+          "root_minor_faults": 94439
+        },
+        "1": {
+          "functional_evaluation_seconds": 5.6584199205,
+          "root_input_stage_seconds": 0.0017848305,
+          "factor_stage_seconds": 2.9287172385,
+          "root_minor_faults": 95118
+        }
+      }
+    }
+  ],
+  "artifact_audit": [
+    {
+      "artifact": "tanh-head0-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": false,
+      "warmup": true
+    },
+    {
+      "artifact": "tanh-head1-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": true,
+      "warmup": true
+    },
+    {
+      "artifact": "tanh-head2-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": false,
+      "warmup": false
+    },
+    {
+      "artifact": "tanh-head3-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": true,
+      "warmup": false
+    },
+    {
+      "artifact": "tanh-head4-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": true,
+      "warmup": false
+    },
+    {
+      "artifact": "tanh-head5-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": false,
+      "warmup": false
+    },
+    {
+      "artifact": "tanh-head6-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": false,
+      "warmup": false
+    },
+    {
+      "artifact": "tanh-head7-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": true,
+      "warmup": false
+    },
+    {
+      "artifact": "tanh-head8-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": true,
+      "warmup": false
+    },
+    {
+      "artifact": "tanh-head9-outputs.bin",
+      "sha256": "dd248222efbfb7d75c2e2d04b2b43f5f9a7b46bd462667a2986cce46ee6abf2d",
+      "head_factors_appended": false,
+      "warmup": false
+    }
+  ],
+  "reference": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/native-auto-chunks-20261017/paired/tanh-trial2-outputs.bin",
+  "all_ten_archives_exact": true,
+  "all_nine_retained_keys_unchanged": true,
+  "interpretation": "Launch quietness did not persist. Compiler activity was observed during the later block; both blocks exceed the same resource threshold. Neither favorable first-block timing nor unfavorable second-block timing supports a clean speedup or regression claim. Input reservation scope shrinks, but first-touch costs can move to factor generation. Full-refresh gain and the 10x goal remain unverified.",
+  "raw_evidence_sha256": {
+    "run.py": "fd65bfc5593022066b88b504e0e22fd37194210c4a1b00b1a21b0de99a9f3fe8",
+    "paired-preflight.json": "09f206965186f0b12df6ad584296333ed0da3a005f6e6278e46763274abbc7d5",
+    "paired-repeat-preflight.json": "4fa3a77b15c03c51d965156662eabcc531ac94848b2b569479b5fd4945d03a3f",
+    "paired-repeat-resources.json": "42ea06d165277aa4fdfd6b9fc44cbe945f562c9911ff00bc28d7314d918178df",
+    "paired-repeat.log": "367c348804e18349fbeef541e397d4568d2c12d34a129610503bd3d77a743b73",
+    "cycle-audit.json": "9eecb31903f11730bc42f705a7610723fe0145d108ed36d759845bc920e8e469",
+    "paired-artifact-audit.json": "0724c9487578160370f30c1a7bb3fd40dd4ae139076d02b926ea2832fa943307",
+    "keys-before.json": "c4d8b00805dbbace310cb9e0c2fe104bec207eac5b90d82e13a073057d06e299",
+    "keys-after.json": "c4d8b00805dbbace310cb9e0c2fe104bec207eac5b90d82e13a073057d06e299"
+  }
+}
