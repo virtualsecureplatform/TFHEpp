@@ -48,9 +48,9 @@ struct LazyNTTAccess {
         }
     }
 #endif
-    static void dif(const NegacyclicNTTPlan&p,std::span<std::uint32_t>x,bool check){
-        const auto modulus=p.arithmetic_.modulus();auto stage=p.forward_.size();
-        for(std::size_t length=p.size_;length>=2;length>>=1){
+    static void dif(const NegacyclicNTTPlan&p,std::span<std::uint32_t>x,bool check,std::size_t first_length=0){
+        const auto modulus=p.arithmetic_.modulus();auto stage=p.forward_.size()-(first_length?1:0);
+        for(std::size_t length=first_length?first_length:p.size_;length>=2;length>>=1){
             --stage;
 #if defined(__AVX2__)
             if(p.vector_short_stages_&&p.size_>=8&&length<=8){
@@ -89,11 +89,11 @@ struct LazyNTTAccess {
 #endif
         normalize(p,x);
     }
-    static void dit(const NegacyclicNTTPlan&p,std::span<std::uint32_t>x,bool inverse,bool permute,bool check){
+    static void dit(const NegacyclicNTTPlan&p,std::span<std::uint32_t>x,bool inverse,bool permute,bool check,std::size_t last_length=0){
         if(permute)for(auto[a,b]:p.swaps_)std::swap(x[a],x[b]);
         const auto modulus=p.arithmetic_.modulus();const auto&stages=inverse?p.inverse_:p.forward_;
         std::size_t stage=0;
-        for(std::size_t length=2;length<=p.size_;length<<=1,++stage){
+        for(std::size_t length=2;length<=(last_length?last_length:p.size_);length<<=1,++stage){
 #if defined(__AVX2__)
             if(p.vector_short_stages_&&p.size_>=8&&length<=8){
                 p.shortStage<false>(x,length,stages[stage]);range(x,modulus,check);continue;
@@ -120,6 +120,53 @@ struct LazyNTTAccess {
             }
             range(x,std::uint64_t(4)*modulus,check);
         }
+    }
+    // Fuse twisting into the first DIF and untwisting into the final DIT.
+    // Each REDC still sees t<4p^2<p*2^32 and returns a residue below2p.
+    static void forwardFused(const NegacyclicNTTPlan&p,std::span<std::uint32_t>x,bool check=false){
+        if(x.size()!=p.size_)throw std::invalid_argument("NTT input length mismatch");
+        if(p.size_<16){forward(p,x,true,check);return;}
+        const auto modulus=p.arithmetic_.modulus();const auto half=p.size_/2;std::size_t j=0;
+#if defined(__AVX2__)
+        const auto twice=_mm256_set1_epi32(2*modulus);
+        for(;j+8<=half;j+=8){
+            const auto even=p.arithmetic_.multiplyLazyVector(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(x.data()+j)),_mm256_loadu_si256(reinterpret_cast<const __m256i*>(p.twist_.data()+j)));
+            const auto odd=p.arithmetic_.multiplyLazyVector(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(x.data()+j+half)),_mm256_loadu_si256(reinterpret_cast<const __m256i*>(p.twist_.data()+j+half)));
+            auto sum=_mm256_add_epi32(even,odd);sum=_mm256_min_epu32(sum,_mm256_sub_epi32(sum,twice));
+            const auto product=p.arithmetic_.multiplyLazyVector(_mm256_sub_epi32(_mm256_add_epi32(even,twice),odd),_mm256_loadu_si256(reinterpret_cast<const __m256i*>(p.forward_.back().data()+j)));
+            _mm256_storeu_si256(reinterpret_cast<__m256i*>(x.data()+j),sum);
+            _mm256_storeu_si256(reinterpret_cast<__m256i*>(x.data()+j+half),product);
+        }
+#endif
+        for(;j<half;++j){
+            const auto even=p.arithmetic_.multiplyLazy(x[j],p.twist_[j]),odd=p.arithmetic_.multiplyLazy(x[j+half],p.twist_[j+half]),sum=even+odd;
+            x[j]=sum>=2*modulus?sum-2*modulus:sum;
+            x[j+half]=p.arithmetic_.multiplyLazy(even+2*modulus-odd,p.forward_.back()[j]);
+        }
+        range(x,std::uint64_t(2)*modulus,check);dif(p,x,check,half);range(x,modulus,check);
+    }
+    static void inverseFused(const NegacyclicNTTPlan&p,std::span<std::uint32_t>x,bool check=false){
+        if(x.size()!=p.size_)throw std::invalid_argument("NTT input length mismatch");
+        if(p.size_<16){inverse(p,x,true,check);return;}
+        const auto modulus=p.arithmetic_.modulus();const auto half=p.size_/2;
+        dit(p,x,true,false,check,half);std::size_t j=0;
+#if defined(__AVX2__)
+        const auto twice=_mm256_set1_epi32(2*modulus);
+        for(;j+8<=half;j+=8){
+            auto even=_mm256_loadu_si256(reinterpret_cast<const __m256i*>(x.data()+j));even=_mm256_min_epu32(even,_mm256_sub_epi32(even,twice));
+            const auto odd=p.arithmetic_.multiplyLazyVector(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(x.data()+j+half)),_mm256_loadu_si256(reinterpret_cast<const __m256i*>(p.inverse_.back().data()+j)));
+            const auto sum=p.arithmetic_.canonicalVector(p.arithmetic_.multiplyLazyVector(_mm256_add_epi32(even,odd),_mm256_loadu_si256(reinterpret_cast<const __m256i*>(p.untwist_.data()+j))));
+            const auto diff=p.arithmetic_.canonicalVector(p.arithmetic_.multiplyLazyVector(_mm256_sub_epi32(_mm256_add_epi32(even,twice),odd),_mm256_loadu_si256(reinterpret_cast<const __m256i*>(p.untwist_.data()+j+half))));
+            _mm256_storeu_si256(reinterpret_cast<__m256i*>(x.data()+j),sum);_mm256_storeu_si256(reinterpret_cast<__m256i*>(x.data()+j+half),diff);
+        }
+#endif
+        for(;j<half;++j){
+            auto even=x[j];if(even>=2*modulus)even-=2*modulus;
+            const auto odd=p.arithmetic_.multiplyLazy(x[j+half],p.inverse_.back()[j]);
+            x[j]=p.arithmetic_.multiply(even+odd,p.untwist_[j]);
+            x[j+half]=p.arithmetic_.multiply(even+2*modulus-odd,p.untwist_[j+half]);
+        }
+        range(x,modulus,check);
     }
     static void forward(const NegacyclicNTTPlan&p,std::span<std::uint32_t>x,bool bit_reversed,bool check=false){
         if(x.size()!=p.size_)throw std::invalid_argument("NTT input length mismatch");

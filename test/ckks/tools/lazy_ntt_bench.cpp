@@ -24,6 +24,13 @@ void check(){
             if(bit)plan.forwardBitReversed(a);else plan.forward(a);
             Access::forward(plan,b,bit,true);
             if(a!=b)throw std::runtime_error("lazy forward differs from original spectrum");
+            if(bit){
+                auto fused=in;Access::forwardFused(plan,fused,true);
+                if(fused!=a)throw std::runtime_error("fused twist forward differs");
+                Access::inverseFused(plan,fused,true);if(fused!=in)throw std::runtime_error("fused twist round trip differs");
+                fused=in;auto want=in;plan.inverseBitReversed(want);Access::inverseFused(plan,fused,true);
+                if(fused!=want)throw std::runtime_error("fused untwist differs on arbitrary spectrum");
+            }
             if(n<=16){
                 const auto psi=modular_ntt::power(prime.primitive_root,(prime.value-1)/(2*n),prime.value);
                 for(std::size_t k=0;k<n;++k){
@@ -65,18 +72,18 @@ void benchmark(std::size_t batch,int threads,bool bit,bool shorts){
         auto start=std::chrono::steady_clock::now();
 #pragma omp parallel for schedule(dynamic,1) num_threads(threads)
         for(std::size_t j=0;j<batch;++j){const auto&p=plans[j%plans.size()];
-            if(mode)Access::forward(p,out[j],bit);else if(bit)p.forwardBitReversed(out[j]);else p.forward(out[j]);}
+            if(mode==2&&bit)Access::forwardFused(p,out[j]);else if(mode)Access::forward(p,out[j],bit);else if(bit)p.forwardBitReversed(out[j]);else p.forward(out[j]);}
         const auto forward=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
         if(out!=expected)throw std::runtime_error("timed forward mismatch");
         start=std::chrono::steady_clock::now();
 #pragma omp parallel for schedule(dynamic,1) num_threads(threads)
         for(std::size_t j=0;j<batch;++j){const auto&p=plans[j%plans.size()];
-            if(mode)Access::inverse(p,out[j],bit);else if(bit)p.inverseBitReversed(out[j]);else p.inverse(out[j]);}
+            if(mode==2&&bit)Access::inverseFused(p,out[j]);else if(mode)Access::inverse(p,out[j],bit);else if(bit)p.inverseBitReversed(out[j]);else p.inverse(out[j]);}
         const auto inverse=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
         if(out!=in)throw std::runtime_error("timed inverse mismatch");return std::pair{forward,inverse};
     };
-    run(0);run(1);
-    for(int mode:{0,1,1,0})for(int trial=0;trial<8;++trial){auto [f,i]=run(mode);std::cout<<"batch="<<batch<<" threads="<<threads<<" bit="<<bit<<" short="<<shorts<<" mode="<<mode<<" trial="<<trial<<" forward="<<f<<" inverse="<<i<<" identical\n";}
+    run(0);run(1);run(2);
+    for(int mode:{0,1,2,2,1,0})for(int trial=0;trial<8;++trial){auto [f,i]=run(mode);std::cout<<"batch="<<batch<<" threads="<<threads<<" bit="<<bit<<" short="<<shorts<<" mode="<<mode<<" trial="<<trial<<" forward="<<f<<" inverse="<<i<<" identical\n";}
 }
 int main(int argc,char**argv)try{
     std::cout<<std::setprecision(17);
