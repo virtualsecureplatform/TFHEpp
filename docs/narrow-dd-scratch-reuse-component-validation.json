@@ -1,0 +1,1054 @@
+{
+  "scope": "CPU-only complete-DD workspace reuse. Production change is confined to the existing opt-in windowed helper; no arithmetic, key, scale, modulus, prime, tree or precision changes.",
+  "implementation_commit": "1e87ae5",
+  "workspace": "Allocate tensor, lifted-mask, switched-ciphertext and exception vectors once at min(window,product_count). Reuse them across all complete-product windows and pass only the active prefix to the gadget kernel. Buffers remain local to one invocation and are destroyed on return. Peak capacity remains bounded by the requested window.",
+  "overwrites": "Tensor multiplication clears/reconstructs every component, lifting overwrites each input polynomial, and the gadget batch clears every active switched output including zero inputs. A zero-valued partial tail after a nonzero window is checked explicitly at full ring size.",
+  "control": "dd_scratch_candidate.hpp freezes the previous production function from0aa6604, changing only its name and namespace. Its normalized body was checked byte-for-byte against git show. Benchmark modes use the same typed borrowed products, prepared key and ciphertext operands.",
+  "unit_coverage": "Exact final ciphertext equality at all five LL14 data levels, N16/512/16384, mixed zero/midpoint/noncanonical inputs, partial windows3/8/16, and nine-product zero tails. Null-pointer and zero-window guards remain effective. Scalar x86-64/no-AVX2 build and primary20/40 forest/odd-carry checks pass.",
+  "completion": {
+    "build": {
+      "exit_code": 0,
+      "wall_seconds": 11.344401597976685
+    },
+    "unit": {
+      "exit_code": 0,
+      "wall_seconds": 5.054419040679932
+    },
+    "benchmark-build": {
+      "exit_code": 0,
+      "wall_seconds": 12.124730348587036
+    },
+    "scalar-build": {
+      "exit_code": 0,
+      "wall_seconds": 13.198071479797363
+    },
+    "scalar-unit": {
+      "exit_code": 0,
+      "wall_seconds": 10.952299118041992
+    },
+    "forest-unit": {
+      "exit_code": 0,
+      "wall_seconds": 18.73304843902588
+    },
+    "benchmark": {
+      "exit_code": 0,
+      "wall_seconds": 46.939014196395874
+    },
+    "replay-build": {
+      "exit_code": 0
+    }
+  },
+  "compiler_command": [
+    "/usr/bin/c++",
+    "-DUSE_BLAKE3",
+    "-DUSE_INTERLEAVED_FORMAT",
+    "-DUSE_SPQLIOS_INTL",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/concrete-fft",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl",
+    "-isystem",
+    "/tmp/ckks-build-deps/root/usr/include",
+    "-march=native",
+    "-O3",
+    "-g",
+    "-funroll-loops",
+    "-Wall",
+    "-Wextra",
+    "-pedantic",
+    "-Wno-sign-compare",
+    "-fopenmp",
+    "-std=gnu++20",
+    "-flto=auto",
+    "-fno-fat-lto-objects",
+    "-fno-ipa-icf",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/tools/dd_batch_bench.cpp",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a",
+    "-o",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-scratch-reuse-20261017/benchmark"
+  ],
+  "scalar_compiler_command": [
+    "/usr/bin/c++",
+    "-DUSE_BLAKE3",
+    "-DUSE_INTERLEAVED_FORMAT",
+    "-DUSE_SPQLIOS_INTL",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/concrete-fft",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c",
+    "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl",
+    "-isystem",
+    "/tmp/ckks-build-deps/root/usr/include",
+    "-march=x86-64",
+    "-mno-avx2",
+    "-O3",
+    "-g",
+    "-funroll-loops",
+    "-Wall",
+    "-Wextra",
+    "-pedantic",
+    "-Wno-sign-compare",
+    "-fopenmp",
+    "-std=gnu++20",
+    "-flto=auto",
+    "-fno-fat-lto-objects",
+    "-fno-ipa-icf",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/tools/dd_batch_bench.cpp",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/src/libtfhe++.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/AES/libAES.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/BLAKE3/c/libblake3.a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/build/thirdparties/spqlios-intl/libspqlios-intl.a",
+    "-o",
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-scratch-reuse-20261017/scalar"
+  ],
+  "benchmark_command": [
+    "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-scratch-reuse-20261017/benchmark",
+    "--scratch-compare"
+  ],
+  "environment": {
+    "OMP_NUM_THREADS": "24",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14},{16},{17},{18},{19},{20},{21},{22},{23},{1},{3},{5},{7},{9},{11},{13},{15}",
+    "OMP_MAX_ACTIVE_LEVELS": "1",
+    "OMP_DYNAMIC": "false"
+  },
+  "mode_legend": {
+    "0": "Existing independent complete products",
+    "408": "Frozen previous pointer-based window8 helper, allocate per window",
+    "108": "Updated window8 helper, reuse invocation-local buffers"
+  },
+  "component_method": "Exact four-root and three-root tree-level batch counts, primary40, auxiliary48 and existing level chunks. Warm all policies then forward/reverse three-sample blocks: six samples per policy. Check all ciphertext coefficients outside timers. Linux getrusage before/after the timed region counts process-wide minor page faults, rather than unrelated host processes.",
+  "components": {
+    "385,76,0": {
+      "samples": [
+        {
+          "seconds": 0.440312309,
+          "minor_faults": 58874
+        },
+        {
+          "seconds": 0.442458757,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.438750471,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.431384785,
+          "minor_faults": 88
+        },
+        {
+          "seconds": 0.433174952,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.439344748,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.4375710036666667,
+      "mean_minor_faults": 9827
+    },
+    "385,76,408": {
+      "samples": [
+        {
+          "seconds": 0.772929859,
+          "minor_faults": 101658
+        },
+        {
+          "seconds": 0.722177287,
+          "minor_faults": 66230
+        },
+        {
+          "seconds": 0.773196559,
+          "minor_faults": 113618
+        },
+        {
+          "seconds": 0.570592095,
+          "minor_faults": 92616
+        },
+        {
+          "seconds": 0.646068402,
+          "minor_faults": 92608
+        },
+        {
+          "seconds": 0.619733225,
+          "minor_faults": 100428
+        }
+      ],
+      "mean_seconds": 0.6841162378333333,
+      "mean_minor_faults": 94526.33333333333
+    },
+    "385,76,108": {
+      "samples": [
+        {
+          "seconds": 0.699135607,
+          "minor_faults": 5646
+        },
+        {
+          "seconds": 0.724727146,
+          "minor_faults": 13462
+        },
+        {
+          "seconds": 0.706384007,
+          "minor_faults": 13462
+        },
+        {
+          "seconds": 0.682338602,
+          "minor_faults": 13450
+        },
+        {
+          "seconds": 0.723631138,
+          "minor_faults": 13458
+        },
+        {
+          "seconds": 0.694792177,
+          "minor_faults": 13458
+        }
+      ],
+      "mean_seconds": 0.7051681128333334,
+      "mean_minor_faults": 12156
+    },
+    "341,36,0": {
+      "samples": [
+        {
+          "seconds": 0.221046439,
+          "minor_faults": 3904
+        },
+        {
+          "seconds": 0.223412643,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.226515227,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.224928121,
+          "minor_faults": 3904
+        },
+        {
+          "seconds": 0.221332569,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.20693729,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.2206953815,
+      "mean_minor_faults": 1301.3333333333333
+    },
+    "341,36,408": {
+      "samples": [
+        {
+          "seconds": 0.353668991,
+          "minor_faults": 55123
+        },
+        {
+          "seconds": 0.323411152,
+          "minor_faults": 38665
+        },
+        {
+          "seconds": 0.332321283,
+          "minor_faults": 38665
+        },
+        {
+          "seconds": 0.342339831,
+          "minor_faults": 58959
+        },
+        {
+          "seconds": 0.328216981,
+          "minor_faults": 38657
+        },
+        {
+          "seconds": 0.309684816,
+          "minor_faults": 5526
+        }
+      ],
+      "mean_seconds": 0.33160717566666664,
+      "mean_minor_faults": 39265.833333333336
+    },
+    "341,36,108": {
+      "samples": [
+        {
+          "seconds": 0.295349101,
+          "minor_faults": 5516
+        },
+        {
+          "seconds": 0.316251341,
+          "minor_faults": 12983
+        },
+        {
+          "seconds": 0.313238846,
+          "minor_faults": 140
+        },
+        {
+          "seconds": 0.312348758,
+          "minor_faults": 140
+        },
+        {
+          "seconds": 0.310605748,
+          "minor_faults": 12983
+        },
+        {
+          "seconds": 0.319286089,
+          "minor_faults": 12983
+        }
+      ],
+      "mean_seconds": 0.3111799805,
+      "mean_minor_faults": 7457.5
+    },
+    "297,20,0": {
+      "samples": [
+        {
+          "seconds": 0.105294862,
+          "minor_faults": 3728
+        },
+        {
+          "seconds": 0.106470787,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.103530011,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.138153532,
+          "minor_faults": 60
+        },
+        {
+          "seconds": 0.130322792,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.126587252,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.118393206,
+      "mean_minor_faults": 631.3333333333334
+    },
+    "297,20,408": {
+      "samples": [
+        {
+          "seconds": 0.180218397,
+          "minor_faults": 29026
+        },
+        {
+          "seconds": 0.185266556,
+          "minor_faults": 25420
+        },
+        {
+          "seconds": 0.189985169,
+          "minor_faults": 25416
+        },
+        {
+          "seconds": 0.197945309,
+          "minor_faults": 32706
+        },
+        {
+          "seconds": 0.191823353,
+          "minor_faults": 25420
+        },
+        {
+          "seconds": 0.18893898,
+          "minor_faults": 25420
+        }
+      ],
+      "mean_seconds": 0.18902962733333334,
+      "mean_minor_faults": 27234.666666666668
+    },
+    "297,20,108": {
+      "samples": [
+        {
+          "seconds": 0.172858798,
+          "minor_faults": 5472
+        },
+        {
+          "seconds": 0.179746582,
+          "minor_faults": 12758
+        },
+        {
+          "seconds": 0.180044637,
+          "minor_faults": 12750
+        },
+        {
+          "seconds": 0.160953469,
+          "minor_faults": 12754
+        },
+        {
+          "seconds": 0.178315125,
+          "minor_faults": 12758
+        },
+        {
+          "seconds": 0.172599047,
+          "minor_faults": 12750
+        }
+      ],
+      "mean_seconds": 0.17408627633333335,
+      "mean_minor_faults": 11540.333333333334
+    },
+    "253,8,0": {
+      "samples": [
+        {
+          "seconds": 0.04380737,
+          "minor_faults": 3504
+        },
+        {
+          "seconds": 0.040706842,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.041637386,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.038200651,
+          "minor_faults": 3504
+        },
+        {
+          "seconds": 0.041645574,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.042649248,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.0414411785,
+      "mean_minor_faults": 1168
+    },
+    "253,8,408": {
+      "samples": [
+        {
+          "seconds": 0.068072288,
+          "minor_faults": 9001
+        },
+        {
+          "seconds": 0.068026669,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.064522844,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.067908902,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.069346085,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.06862907,
+          "minor_faults": 12509
+        }
+      ],
+      "mean_seconds": 0.06775097633333332,
+      "mean_minor_faults": 11924.333333333334
+    },
+    "253,8,108": {
+      "samples": [
+        {
+          "seconds": 0.070879376,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.069251828,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.073829839,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.068710245,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.067517145,
+          "minor_faults": 12509
+        },
+        {
+          "seconds": 0.068901529,
+          "minor_faults": 12509
+        }
+      ],
+      "mean_seconds": 0.069848327,
+      "mean_minor_faults": 12509
+    },
+    "209,4,0": {
+      "samples": [
+        {
+          "seconds": 0.031604664,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.028101531,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.02791187,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.029832755,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.028903138,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.028321783,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.029112623499999997,
+      "mean_minor_faults": 0
+    },
+    "209,4,408": {
+      "samples": [
+        {
+          "seconds": 0.041170826,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.039367364,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.040483693,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.032415832,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.030385492,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.038396965,
+          "minor_faults": 32
+        }
+      ],
+      "mean_seconds": 0.037036695333333335,
+      "mean_minor_faults": 32
+    },
+    "209,4,108": {
+      "samples": [
+        {
+          "seconds": 0.044502512,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.037336734,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.033369555,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.040355843,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.041389237,
+          "minor_faults": 32
+        },
+        {
+          "seconds": 0.03354662,
+          "minor_faults": 32
+        }
+      ],
+      "mean_seconds": 0.038416750166666666,
+      "mean_minor_faults": 32
+    },
+    "385,57,0": {
+      "samples": [
+        {
+          "seconds": 0.343714107,
+          "minor_faults": 3200
+        },
+        {
+          "seconds": 0.351287618,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.343328216,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.359392616,
+          "minor_faults": 640
+        },
+        {
+          "seconds": 0.364987534,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.363770396,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.3544134145,
+      "mean_minor_faults": 640
+    },
+    "385,57,408": {
+      "samples": [
+        {
+          "seconds": 0.635188476,
+          "minor_faults": 85288
+        },
+        {
+          "seconds": 0.651200345,
+          "minor_faults": 85862
+        },
+        {
+          "seconds": 0.604374121,
+          "minor_faults": 85851
+        },
+        {
+          "seconds": 0.620039869,
+          "minor_faults": 88299
+        },
+        {
+          "seconds": 0.621027353,
+          "minor_faults": 85746
+        },
+        {
+          "seconds": 0.608533123,
+          "minor_faults": 85759
+        }
+      ],
+      "mean_seconds": 0.6233938811666666,
+      "mean_minor_faults": 86134.16666666667
+    },
+    "385,57,108": {
+      "samples": [
+        {
+          "seconds": 0.566837681,
+          "minor_faults": 10141
+        },
+        {
+          "seconds": 0.499796453,
+          "minor_faults": 12698
+        },
+        {
+          "seconds": 0.31289601,
+          "minor_faults": 12685
+        },
+        {
+          "seconds": 0.358833946,
+          "minor_faults": 12656
+        },
+        {
+          "seconds": 0.484256116,
+          "minor_faults": 12695
+        },
+        {
+          "seconds": 0.570843157,
+          "minor_faults": 12703
+        }
+      ],
+      "mean_seconds": 0.46557722716666666,
+      "mean_minor_faults": 12263
+    },
+    "341,27,0": {
+      "samples": [
+        {
+          "seconds": 0.183421715,
+          "minor_faults": 2384
+        },
+        {
+          "seconds": 0.183318398,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.17650724,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.242151549,
+          "minor_faults": 80
+        },
+        {
+          "seconds": 0.165876757,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.164022482,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.1858830235,
+      "mean_minor_faults": 410.6666666666667
+    },
+    "341,27,408": {
+      "samples": [
+        {
+          "seconds": 0.26940275,
+          "minor_faults": 36330
+        },
+        {
+          "seconds": 0.296384199,
+          "minor_faults": 34058
+        },
+        {
+          "seconds": 0.273294326,
+          "minor_faults": 34050
+        },
+        {
+          "seconds": 0.271199308,
+          "minor_faults": 38650
+        },
+        {
+          "seconds": 0.237837232,
+          "minor_faults": 34062
+        },
+        {
+          "seconds": 0.162133977,
+          "minor_faults": 34062
+        }
+      ],
+      "mean_seconds": 0.251708632,
+      "mean_minor_faults": 35202
+    },
+    "341,27,108": {
+      "samples": [
+        {
+          "seconds": 0.241528255,
+          "minor_faults": 6842
+        },
+        {
+          "seconds": 0.277657536,
+          "minor_faults": 11438
+        },
+        {
+          "seconds": 0.259126872,
+          "minor_faults": 11438
+        },
+        {
+          "seconds": 0.250376541,
+          "minor_faults": 11430
+        },
+        {
+          "seconds": 0.26527616,
+          "minor_faults": 11438
+        },
+        {
+          "seconds": 0.255920468,
+          "minor_faults": 11438
+        }
+      ],
+      "mean_seconds": 0.2583143053333333,
+      "mean_minor_faults": 10670.666666666666
+    },
+    "297,15,0": {
+      "samples": [
+        {
+          "seconds": 0.08689171,
+          "minor_faults": 3168
+        },
+        {
+          "seconds": 0.088754635,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.087923837,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.0888527,
+          "minor_faults": 3168
+        },
+        {
+          "seconds": 0.09066933,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.089441322,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.088755589,
+      "mean_minor_faults": 1056
+    },
+    "297,15,408": {
+      "samples": [
+        {
+          "seconds": 0.135053784,
+          "minor_faults": 19826
+        },
+        {
+          "seconds": 0.136705547,
+          "minor_faults": 22962
+        },
+        {
+          "seconds": 0.126999552,
+          "minor_faults": 22966
+        },
+        {
+          "seconds": 0.125995664,
+          "minor_faults": 22966
+        },
+        {
+          "seconds": 0.135715714,
+          "minor_faults": 22966
+        },
+        {
+          "seconds": 0.147487495,
+          "minor_faults": 22966
+        }
+      ],
+      "mean_seconds": 0.134659626,
+      "mean_minor_faults": 22442
+    },
+    "297,15,108": {
+      "samples": [
+        {
+          "seconds": 0.129723751,
+          "minor_faults": 12182
+        },
+        {
+          "seconds": 0.126991062,
+          "minor_faults": 12182
+        },
+        {
+          "seconds": 0.128501227,
+          "minor_faults": 12182
+        },
+        {
+          "seconds": 0.128934792,
+          "minor_faults": 12182
+        },
+        {
+          "seconds": 0.136049173,
+          "minor_faults": 12182
+        },
+        {
+          "seconds": 0.14041822,
+          "minor_faults": 12182
+        }
+      ],
+      "mean_seconds": 0.13176970416666667,
+      "mean_minor_faults": 12182
+    },
+    "253,6,0": {
+      "samples": [
+        {
+          "seconds": 0.041273437,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.039011503,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.037468007,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.041762307,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.04129643,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.038512661,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.039887390833333335,
+      "mean_minor_faults": 0
+    },
+    "253,6,408": {
+      "samples": [
+        {
+          "seconds": 0.047895517,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.051217774,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.051086148,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.046689831,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.044646141,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.053170886,
+          "minor_faults": 28
+        }
+      ],
+      "mean_seconds": 0.049117716166666665,
+      "mean_minor_faults": 28
+    },
+    "253,6,108": {
+      "samples": [
+        {
+          "seconds": 0.054651022,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.050773633,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.049006809,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.056500505,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.050599994,
+          "minor_faults": 28
+        },
+        {
+          "seconds": 0.054359944,
+          "minor_faults": 28
+        }
+      ],
+      "mean_seconds": 0.052648651166666664,
+      "mean_minor_faults": 28
+    },
+    "209,3,0": {
+      "samples": [
+        {
+          "seconds": 0.023812114,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.020453825,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.020764002,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.030371836,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.027827345,
+          "minor_faults": 0
+        },
+        {
+          "seconds": 0.029433134,
+          "minor_faults": 0
+        }
+      ],
+      "mean_seconds": 0.02544370933333333,
+      "mean_minor_faults": 0
+    },
+    "209,3,408": {
+      "samples": [
+        {
+          "seconds": 0.033260696,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.040650546,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.032355,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.038444058,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.029698293,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.03693024,
+          "minor_faults": 34
+        }
+      ],
+      "mean_seconds": 0.035223138833333334,
+      "mean_minor_faults": 34
+    },
+    "209,3,108": {
+      "samples": [
+        {
+          "seconds": 0.035822236,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.034325208,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.034664674,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.043917435,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.034658076,
+          "minor_faults": 34
+        },
+        {
+          "seconds": 0.036243776,
+          "minor_faults": 34
+        }
+      ],
+      "mean_seconds": 0.03660523416666667,
+      "mean_minor_faults": 34
+    }
+  },
+  "interpretation": "Large batches often show far fewer component minor faults, while single-window cases have no expected allocation savings. Component elapsed times are variable and not a whole-refresh speedup claim. The integrated retained-key comparison separately confirms a smaller, consistent latency improvement; integrated fault counts do not show the same reduction, so fewer page faults are not established as its cause.",
+  "source_sha256": {
+    "include/ckks/prepared_dd_batch_rns32.hpp": "ca955051bc619c26a890724ac1b3e1701bcc5728add02cc18d64e91cea90a49e",
+    "test/ckks/tools/dd_batch_bench.cpp": "3cf9ce2c306f4dd1941e07fd4c2ac3f518f9451955bb8076a26dfbfe5598144c",
+    "test/ckks/tools/dd_scratch_candidate.hpp": "547c1fbf826f8643507fc277cf289d0b2799d5d8961d2cc28b438f323e56c4e0",
+    "test/ckks/tools/make_dd_scratch_replay.py": "7c70b23ddc150eb5174d7bc28569a46b6bb02821c2e35e95040728e5140ddc5a"
+  },
+  "raw_evidence_directory": "/home/work-bleaker/kmatsuoka/ckks-diagnostics/dd-scratch-reuse-20261017",
+  "limitations": "One shared CPU host and deterministic noncryptographic row fixtures. No private/evaluation keys or input ciphertexts are generated. Whole-refresh evidence is in narrow-dd-scratch-reuse-replay-validation.json; the10x objective remains open."
+}
