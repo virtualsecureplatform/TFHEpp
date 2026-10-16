@@ -4,6 +4,7 @@
 #include <ckks/tensor_rns32.hpp>
 #include <ckks/narrow_two_layer_basis.hpp>
 #include <ckks/key_projection.hpp>
+#include <ckks/narrow_tanh_sparse.hpp>
 #include <iostream>
 
 using namespace TFHEpp;
@@ -63,9 +64,50 @@ template<std::uint32_t Nbit>void checkTwoLayerBasis()
     std::cout<<"two-layer basis N="<<BP::n<<" seeds=3 derived=8 delta=37 output=93/44 independent error="<<maximum<<" square49/44 error="<<square_error<<'\n';
 }
 
+template<class BP>struct SparseMiddle {using Param=BP;static constexpr std::uint32_t output_log_q=165,log_delta=44;using Output=CKKSCiphertext<BP,165,44>;};
+template<std::uint32_t Nbit>void checkSparseTanh()
+{
+    using BP=narrow_benchmark::BenchmarkParam<Nbit,7>;
+    using Series=CKKSNarrowFrequencyBasisSchedule<SparseMiddle<BP>,28>;
+    auto plan=CKKSNarrowFrequencyBasis::forSparseSeries(30,{7,9,10,15});
+    auto approximation=CKKSBuildNarrowSparseTanhApproximation();
+    plan.validateCoefficients(approximation.coefficients);
+    if(plan.covers(4) || !plan.covers(30))throw std::runtime_error("sparse frequency coverage differs");
+    std::vector<typename Series::Root> roots(4);auto slots=std::make_unique<CKKSSlotVector<BP>>();
+    const auto x=[&](std::size_t i){return -4+8.0*i/(BP::n/2-1);};
+    for(std::size_t j=0;j<roots.size();++j){
+        for(std::size_t i=0;i<BP::n/2;++i)(*slots)[i]=std::polar(1.0,2*std::acos(-1.0)*x(i)*plan.frequencies()[j]/16);
+        ckksSlotEncode<BP,165,44>(roots[j].ct[1],*slots);
+    }
+    auto raw=std::make_unique<CKKSCompactDDRelinKey<BP,213,20,20>>();
+    CKKSAuxiliaryDDRelinKeyNTT<BP,165,48,20,20> product(makeCKKSDDRelinKeyNTT<20>(*raw));
+    CKKSRelinKeyTensorRNS32<BP,decltype(product)> rns{product};
+    auto weighted=std::make_unique<typename Series::Output>();
+    const auto conjugate=[](auto&out,const auto&in){for(std::size_t c=0;c<2;++c)Automorphism<BP>(out[c],in[c],2*BP::n-1);ckks_detail::reduceTRLWEToLevel<BP,121>(out);};
+    const auto root_conjugate=[](auto&out,const auto&in){for(std::size_t c=0;c<2;++c)Automorphism<BP>(out[c],in[c],2*BP::n-1);ckks_detail::reduceTRLWEToLevel<BP,165>(out);};
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Series>(*weighted,roots,plan,approximation.coefficients,rns,conjugate,root_conjugate);
+    auto fft=std::make_unique<typename Series::Output>();
+    CKKSNarrowEvalSeriesFromBasisRootsPrepared<Series>(*fft,roots,plan,approximation.coefficients,product,conjugate,root_conjugate);
+    if(fft->ct!=weighted->ct)throw std::runtime_error("sparse RNS and FFT basis tensors differ");
+    auto bad=approximation.coefficients;bad[4]={1e-300,0};bool rejected=false;
+    try{CKKSNarrowEvalSeriesFromBasisRootsPrepared<Series>(*weighted,roots,plan,bad,rns,conjugate,root_conjugate);}catch(const std::invalid_argument&){rejected=true;}
+    if(!rejected || fft->ct!=weighted->ct)throw std::runtime_error("unsupported sparse coefficient was not rejected before output mutation");
+    auto output=std::make_unique<CKKSCiphertext<BP,93,44>>();CKKSScaleDown<BP,121,72,28>(*output,*weighted);
+    ckksSlotDecode<BP,93,44>(*slots,output->ct[1]);double error=0;
+    for(std::size_t i=0;i<BP::n/2;++i)error=std::max(error,std::abs((*slots)[i]-std::tanh(x(i))));
+    auto postraw=makeCKKSCompactDDRelinKeyAtLevel<141>(*raw);
+    CKKSAuxiliaryDDRelinKeyNTT<BP,93,48,20,20> post(makeCKKSDDRelinKeyNTT<20>(*postraw));
+    auto square=std::make_unique<CKKSMultResult<BP,93,44,93,44>>();CKKSMultRelinThenRescale<BP>(*square,*output,*output,post);
+    ckksSlotDecode<BP,49,44>(*slots,square->ct[1]);double square_error=0;
+    for(std::size_t i=0;i<BP::n/2;++i)square_error=std::max(square_error,std::abs((*slots)[i]-std::pow(std::tanh(x(i)),2)));
+    if(error>=std::ldexp(1.0,-23) || square_error>=3*std::ldexp(1.0,-23))throw std::runtime_error("sparse Tanh independent function or square failed");
+    std::cout<<"sparse Tanh N="<<BP::n<<" roots=4 delta=44 output=93/44 error="<<error<<" square49/44 error="<<square_error<<'\n';
+}
+
 int main(int argc,char**argv)
 {
-    if(argc>1){if(argc!=2 || std::string(argv[1])!="--two-layer-full")throw std::invalid_argument("expected --two-layer-full");checkTwoLayerBasis<14>();return 0;}
+    if(argc>1){if(argc!=2)throw std::invalid_argument("expected one full-ring option");if(std::string(argv[1])=="--two-layer-full")checkTwoLayerBasis<14>();else if(std::string(argv[1])=="--sparse-full")checkSparseTanh<14>();else throw std::invalid_argument("unknown full-ring option");return 0;}
+    checkSparseTanh<9>();
     checkTwoLayerBasis<9>();
     CKKSNarrowFrequencyBasis plan(12,{1,3,5,6});
     std::vector<Basis::Root> roots(plan.frequencies().size());

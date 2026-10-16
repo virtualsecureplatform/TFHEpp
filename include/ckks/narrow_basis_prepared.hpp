@@ -20,6 +20,7 @@ inline void CKKSNarrowEvalSeriesFromBasisRootsPrepared(
         throw std::invalid_argument("invalid prepared narrow basis roots or coefficients");
     if constexpr(std::is_same_v<RootConjugate,std::nullptr_t>)
         if(plan.usesDifferences())throw std::invalid_argument("frequency differences require a root conjugation backend");
+    plan.validateCoefficients(coefficients);
     std::vector<std::unique_ptr<typename Schedule::Root>> negative_roots(roots.size());
     std::vector<std::array<std::int64_t,2>> weights;
     for (const auto coefficient : coefficients)

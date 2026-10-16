@@ -9,12 +9,13 @@ namespace TFHEpp {
 // Public order-two plan. Pair entries index the unweighted roots, never a
 // previously reconstructed product; consequently reconstruction has depth one.
 // Optional differences conjugate the second unweighted root at its input level.
+// Construction normally requires every frequency. forSparseSeries permits
+// gaps only when their corresponding public coefficients are exactly zero.
 class CKKSNarrowFrequencyBasis {
     std::vector<std::uint32_t> frequencies_;
     std::vector<std::array<std::size_t, 2>> expressions_;
     std::vector<bool> conjugate_second_;
-public:
-    CKKSNarrowFrequencyBasis(std::uint32_t degree, std::vector<std::uint32_t> frequencies, bool allow_differences=false)
+    CKKSNarrowFrequencyBasis(std::uint32_t degree, std::vector<std::uint32_t> frequencies, bool allow_differences, bool allow_gaps)
         : frequencies_(std::move(frequencies))
     {
         if (degree == 0 || degree > 40 || frequencies_.empty() ||
@@ -44,14 +45,38 @@ public:
                         if(frequencies_[a]-frequencies_[b]==k){
                             expressions_.push_back({a,b});conjugate_second_[k-1]=true;found=true;break;
                         }
-            if (!found) throw std::invalid_argument("narrow frequency basis leaves a gap");
+            if (!found) {
+                if (!allow_gaps) throw std::invalid_argument("narrow frequency basis leaves a gap");
+                expressions_.push_back({frequencies_.size(), frequencies_.size()});
+            }
         }
+    }
+public:
+    CKKSNarrowFrequencyBasis(std::uint32_t degree, std::vector<std::uint32_t> frequencies, bool allow_differences=false)
+        : CKKSNarrowFrequencyBasis(degree,std::move(frequencies),allow_differences,false) {}
+    // Missing frequencies may only carry exactly zero coefficients. The
+    // evaluator checks this before touching its output; depth remains one.
+    static CKKSNarrowFrequencyBasis forSparseSeries(std::uint32_t degree, std::vector<std::uint32_t> frequencies)
+    { return CKKSNarrowFrequencyBasis(degree,std::move(frequencies),true,true); }
+    bool covers(std::size_t k) const
+    { return expressions_.at(k-1)[0] != frequencies_.size(); }
+    void validateCoefficients(const std::vector<std::complex<double>>& coefficients) const
+    {
+        if (coefficients.size()!=degree()+1)
+            throw std::invalid_argument("frequency coefficient count differs from plan");
+        for (std::size_t k=1;k<=degree();++k)
+            if (!covers(k) && coefficients[k]!=std::complex<double>{})
+                throw std::invalid_argument("nonzero coefficient at an uncovered frequency");
     }
     bool conjugatesSecond(std::size_t k)const{return conjugate_second_.at(k-1);}
     bool usesDifferences()const{return std::any_of(conjugate_second_.begin(),conjugate_second_.end(),[](bool v){return v;});}
     std::size_t degree() const { return expressions_.size(); }
     const auto &frequencies() const { return frequencies_; }
-    const auto &expression(std::size_t k) const { return expressions_.at(k - 1); }
+    const auto &expression(std::size_t k) const
+    {
+        if (!covers(k)) throw std::invalid_argument("uncovered frequency has no expression");
+        return expressions_.at(k-1);
+    }
 };
 
 inline std::vector<std::uint32_t> CKKSNarrowFrequencyBasisUnion(
@@ -204,6 +229,7 @@ inline void CKKSNarrowEvalSeriesFromBasisRoots(
     if (roots.size() != plan.frequencies().size() || coefficients.size() != plan.degree()+1 ||
         coefficients[0].imag() != 0)
         throw std::invalid_argument("invalid retained narrow basis roots or coefficients");
+    plan.validateCoefficients(coefficients);
     std::vector<std::array<std::int64_t, 2>> weights;
     for (const auto coefficient : coefficients)
         weights.push_back({narrow_detail::frequencyCoefficient<Schedule::coefficient_bits>(coefficient.real()),
