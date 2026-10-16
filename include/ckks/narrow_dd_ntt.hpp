@@ -7,14 +7,16 @@ namespace TFHEpp {
 // Reuse a saved public wide-primary key without changing its encryption.
 // The auxiliary lift protects switching precision; data rescale count stays
 // equal to the existing before-rescale product tree's count.
+// The optional observer can retain this prepared chain for another scheduling
+// policy; both policies then share the same immutable key spectra.
 template <std::uint32_t Auxiliary = 100, std::uint32_t Secondary = 32,
           bool ParallelPairs = false, bool RNSTensor = false, bool WideRNS = false,
           class ChunkPolicy = CKKSUniformGadgetChunks<80>,
           class Schedule, std::uint32_t MasterQ, std::uint32_t Primary,
-          std::uint32_t MasterSecondary>
+          std::uint32_t MasterSecondary,class PreparedObserver=std::nullptr_t>
 inline void CKKSNarrowUseAuxiliaryNTTDD(CKKSNarrowBootstrapKey<Schedule> &key,
     const CKKSCompactDDRelinKey<typename Schedule::Param, MasterQ, Primary,
-        MasterSecondary> &master)
+        MasterSecondary> &master,PreparedObserver observe=nullptr)
 {
     static_assert(Schedule::relinearize_before_rescale);
     using Chain=CKKSPreparedAuxiliaryDDRelinKeyChainNTT<typename Schedule::Param,
@@ -30,6 +32,7 @@ inline void CKKSNarrowUseAuxiliaryNTTDD(CKKSNarrowBootstrapKey<Schedule> &key,
         std::vector<std::vector<typename Schedule::Factor>> factors,const typename Schedule::RelinKeys&raw){
         narrow_detail::productTreeBatch<Schedule,0,Chain,ParallelPairs>(result,std::move(factors),raw,prepared.get());
     };
+    if constexpr(!std::is_same_v<PreparedObserver,std::nullptr_t>)observe(prepared);
     key.relin_fft.reset();
     key.relin_projected_fft.reset();
 }
