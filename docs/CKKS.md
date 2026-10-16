@@ -4561,3 +4561,24 @@ peak RSS was not compared. Commands, component samples, source hashes and
 resource observations are in `narrow-dd-gadget-workspace-replay-validation.json`.
 DD trees now consume about 23% of refresh latency, so DD-only tuning cannot close
 the remaining 10x goal. Factor generation remains the largest measured stage.
+
+
+The direct RNS factor source now applies its existing parallel-conjugation
+policy to the final deferred rescale too. It partitions columns, components
+and coefficient blocks while keeping the exact `CKKSScaleDown` rounding per
+coefficient. The serial policy keeps its previous loop; no extra key cache or
+new CLI flag is needed. Caller OpenMP nesting settings remain in force.
+
+Two balanced retained-key sparse-Tanh comparisons measured factor generation
+at 2.860→2.554 seconds (10.7% less time) and full refresh at 5.037→4.732 seconds
+(6.1% less time). The two processes measured whole-refresh reductions of 6.4%
+and 5.8%; other stage means remain close. These ratios describe this paired
+profile, not paper hardware parity or a 10x speedup.
+
+All 21 ciphertext archives match qualified references, including both paired
+processes and the normal original/reduced/default GeLU/Tanh/Sigmoid profiles.
+All nine retained key hashes are unchanged. Native and no-OpenMP projection
+checks cover changing output sizes, fresh allocations and nested callers;
+the existing factor/forest regression also passes. Commands, samples, source
+hashes and resource observations are in
+`narrow-parallel-factor-rescale-validation.json`. The 10x goal remains open.
