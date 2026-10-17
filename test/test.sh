@@ -85,6 +85,7 @@ IGNORED_BINARIES=(
     './ckks/ckks_narrow_ll14_retuned_setup'
     './ckks/ckks_narrow_ll14_two_layer_fbs'
     './ckks/ckks_narrow_packed_archive'
+    './ckks/ckks_narrow_packed_cache_profile'
     './ckks/ckks_narrow_packed_primary_projection'
     './ckks/ckks_narrow_packed_range'
     './ckks/ckks_narrow_packed_reconstruction_exact'
