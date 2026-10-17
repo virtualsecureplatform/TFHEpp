@@ -9,9 +9,11 @@ namespace TFHEpp {
 // An explicit, lossless format for low-scale plaintext matrices. Evaluation
 // expands one giant group and uses the existing BSGS kernel, including its
 // fused accumulation and rounding. Legacy plans and archives are unchanged.
+// Constrain the type itself: Clang can instantiate a candidate's plan while
+// checking conversions before it rejects the function's constraints.
 template <class P, std::uint32_t Q, std::uint32_t Delta, std::uint32_t PlainDelta>
+    requires is_multilimb_uint_v<typename P::T>
 struct CKKSCompactLinearTransformPlan {
-    static_assert(is_multilimb_uint_v<typename P::T>);
     struct Term {
         int baby_step = 0;
         std::array<std::int64_t, P::n> coefficients{};
@@ -82,6 +84,7 @@ inline void CKKSLinearTransformBSGS(
 }
 
 template <class P, std::uint32_t Q, std::uint32_t Delta, std::uint32_t PlainDelta>
+    requires is_multilimb_uint_v<typename P::T>
 struct CKKSCompactRealLinearTransformPlan {
     bool has_direct = false, has_conjugate = false;
     CKKSCompactLinearTransformPlan<P, Q, Delta, PlainDelta> direct, conjugate;

@@ -8,6 +8,15 @@ using P=narrow_benchmark::BenchmarkParam<9,7>;
 using Plan=CKKSCompactRealLinearTransformPlan<P,93,52,37>;
 using Prepared=CKKSPreparedCompactRealLinearTransformFFT<P,93,52,37>;
 
+template <class Param>
+concept HasCompactLinearPlans = requires {
+    typename CKKSCompactLinearTransformPlan<Param,93,52,37>;
+    typename CKKSCompactRealLinearTransformPlan<Param,93,52,37>;
+};
+static_assert(HasCompactLinearPlans<P>);
+static_assert(!HasCompactLinearPlans<lvl3simdparam>);
+static_assert(!HasCompactLinearPlans<lvl1param>);
+
 int main()
 {
     Plan plan; plan.has_direct=true; plan.has_conjugate=true;
