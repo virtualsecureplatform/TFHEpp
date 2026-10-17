@@ -72,7 +72,7 @@ public:
   else {
   // Reuse only the generic encrypted-gadget multiplication arithmetic.
   using Matrix=CKKSCompactDDRelinKey<P,Q,Bits,16>;
-  static_assert(Matrix::primary_rows==rows.rows);
+  static_assert(Matrix::primary_rows==PublicAutoGadgetRows<P,Q,Bits>::rows);
   auto matrix=std::make_unique<Matrix>();
   auto digits=std::make_unique<std::array<TRLWE<P>,Matrix::bbar_rows>>();
   for(size_t row=0;row<rows.rows;++row) {
