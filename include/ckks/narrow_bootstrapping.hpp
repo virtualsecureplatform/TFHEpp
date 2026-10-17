@@ -462,6 +462,9 @@ inline void conjugate(TRLWE<typename Schedule::Param> &result,
 }
 
 template <class Schedule, bool Factor, class FactorKey = CKKSNarrowBootstrapKey<Schedule>>
+    requires (!std::is_same_v<FactorKey,
+        CKKSPreparedAutoKeyFFT<typename Schedule::Param,
+            Factor ? Schedule::factor_key_log_q : Schedule::output_key_log_q>>)
 inline void conjugate(TRLWE<typename Schedule::Param> &result,
     const TRLWE<typename Schedule::Param> &input, const FactorKey &key,
     const CKKSPreparedAutoKeyFFT<typename Schedule::Param,

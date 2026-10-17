@@ -45,6 +45,7 @@ struct CKKSCompactLinearTransformPlan {
 };
 
 template <class P, std::uint32_t Q, std::uint32_t Delta, std::uint32_t PlainDelta>
+    requires is_multilimb_uint_v<typename P::T>
 inline void CKKSLinearTransformBSGS(
     CKKSPlainMulResult<P, Q, Delta, PlainDelta> &res,
     const CKKSCiphertext<P, Q, Delta> &ct,
@@ -131,6 +132,7 @@ inline void CKKSRebindCompactLinearInputScale(
 }
 
 template <class P, std::uint32_t Q, std::uint32_t Delta, std::uint32_t PlainDelta>
+    requires is_multilimb_uint_v<typename P::T>
 inline void CKKSRealLinearTransform(
     CKKSPlainMulResult<P, Q, Delta, PlainDelta> &res,
     const CKKSCiphertext<P, Q, Delta> &ct,
