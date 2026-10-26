@@ -24,6 +24,10 @@ option(USE_CONCRETE "Use the parameter set proposed in CONCRETE" OFF)
 option(USE_TFHE_RS "Use the parameter set proposed in TFHE-rs" OFF)
 option(USE_TERNARY "Use ternary secret keys" OFF)
 option(USE_COMPRESS "Use compressed ciphertexts" OFF)
+option(USE_LVL1_SIGMA256 "Opt-in sigma256 level-1 noise for default 128-bit parameters" OFF)
+if(USE_LVL1_SIGMA256 AND (USE_80BIT_SECURITY OR USE_CGGI19 OR USE_BLOCK_BINARY OR USE_CONCRETE OR USE_TFHE_RS OR USE_TERNARY OR USE_COMPRESS))
+  message(FATAL_ERROR "USE_LVL1_SIGMA256 requires the default 128-bit family (USE_BLOCK_BINARY=OFF)")
+endif()
 
 option(USE_TERNARY_CMUX "Use ternary cmux" OFF)
 option(USE_KEY_BUNDLE "Use key bundle algorithm" OFF)
@@ -97,6 +101,12 @@ option(ENABLE_SHARED "Build as shared libraries" OFF)
 set(TFHEpp_DEFINITIONS
     ""
     PARENT_SCOPE)
+
+if(USE_LVL1_SIGMA256)
+  add_compile_definitions(USE_LVL1_SIGMA256)
+  set(TFHEpp_DEFINITIONS "${TFHEpp_DEFINITIONS};USE_LVL1_SIGMA256")
+  set(TFHEpp_DEFINITIONS "${TFHEpp_DEFINITIONS}" PARENT_SCOPE)
+endif()
 
 if(USE_BLAKE3)
   set(TFHEpp_DEFINITIONS

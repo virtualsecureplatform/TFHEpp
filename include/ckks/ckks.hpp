@@ -30,6 +30,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include "seeded_mask.hpp"
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -200,6 +201,12 @@ struct CKKSSeededKeySwitchRow {
     template <class Archive>
     void serialize(Archive &archive)
     {
+        constexpr std::array<std::uint64_t,5> expected{
+            0x434b534d41534b32ULL,P::n,P::k,LogQ,1};
+        auto profile=expected;
+        archive(profile);
+        if(profile!=expected)
+            throw std::runtime_error("seeded CKKS mask format mismatch; regenerate legacy keys");
         archive(mask_seeds, body);
     }
 };
@@ -431,7 +438,8 @@ constexpr std::size_t CKKSKeySwitchRowByteSize()
 template <class P>
 constexpr std::size_t CKKSSeededKeySwitchRowByteSize()
 {
-    return sizeof(Polynomial<P>) + P::k * sizeof(CKKSSeed);
+    // Serialized row payload includes the fixed mask-law/profile header.
+    return 5*sizeof(std::uint64_t) + sizeof(Polynomial<P>) + P::k * sizeof(CKKSSeed);
 }
 
 template <class P, std::uint32_t LogQ>
@@ -1188,31 +1196,11 @@ inline constexpr bool supported_torus_v =
     std::is_same_v<typename P::T, __uint128_t> ||
     is_multilimb_uint_v<typename P::T>;
 
-inline std::uint64_t splitmix64Scramble(std::uint64_t x)
-{
-    x = (x ^ (x >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
-    x = (x ^ (x >> 27)) * UINT64_C(0x94d049bb133111eb);
-    return x ^ (x >> 31);
-}
-
-// Legacy reproducibility helper, NOT a cryptographic pseudorandom generator.
-// Calibrated security-sensitive paths must use full uniformly sampled masks
-// (as integer_multiplication.hpp does) or a separately reviewed CSPRNG format.
-// Keep this format unchanged for compatibility with existing test artifacts.
 struct CKKSSeedStream {
-    std::uint64_t state = UINT64_C(0x6a09e667f3bcc909);
-
+    SeededMaskStream stream;
     explicit CKKSSeedStream(const CKKSSeed &seed)
-    {
-        for (std::uint64_t limb : seed)
-            state = splitmix64Scramble(state ^ limb);
-    }
-
-    std::uint64_t next()
-    {
-        state += UINT64_C(0x9e3779b97f4a7c15);
-        return splitmix64Scramble(state);
-    }
+        :stream(seed,"TFHEpp.CKKS.seeded-mask.v2") {}
+    std::uint64_t next() { return stream.next(); }
 };
 
 inline CKKSSeed randomSeed()

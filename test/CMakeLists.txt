@@ -23,10 +23,14 @@ endif()
 foreach(test_source ${test_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
     get_filename_component(test_dir ${test_source} DIRECTORY)
+    if(test_name STREQUAL "ckks_sigma256_gates" AND NOT USE_LVL1_SIGMA256)
+        continue()
+    endif()
     if((test_name STREQUAL "bfv_scheme_switch" OR
         test_name STREQUAL "bfv16_reverse" OR
         test_name STREQUAL "ckks_ram_setup" OR
         test_name STREQUAL "ckks_ram_fixture_check" OR
+        test_name STREQUAL "ckks_ram_output_switch_benchmark" OR
         test_name STREQUAL "ckks_narrow_ll14_retuned_ram" OR
         test_name STREQUAL "ckks_tlwe_coefficient_packing" OR
         test_name STREQUAL "ckks_integer_multiplication" OR

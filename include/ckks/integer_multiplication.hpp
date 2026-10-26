@@ -104,7 +104,7 @@ struct TFHECKKSInteger4Key {
     static_assert(std::is_same_v<typename L::T, std::uint64_t>);
     static_assert(std::numeric_limits<typename P::T>::digits == 256);
     // Each row encrypts s_TFHE[j] as a constant under the full CKKS key.
-    // Store full masks: the legacy CKKSSeedStream is not a cryptographic PRG.
+    // Store full masks, independently of seeded-mask archive formats.
     std::vector<CKKSCiphertext<P, 256, 64>> to_ckks;
     CKKSRelinKey<P, 128> relin;
     std::unique_ptr<CKKSToTFHEKeySwitchKey<P, L, 2, 24>> to_tfhe;

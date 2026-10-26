@@ -92,6 +92,7 @@ IGNORED_BINARIES=(
     './ckks/ckks_narrow_selector_ntt_file'
     './ckks/ckks_ram_setup'
     './ckks/ckks_ram_fixture_check'
+    './ckks/ckks_ram_output_switch_benchmark'
     './ckks/ckks_narrow_ll14_retuned_ram'
 )
 for TEST_BINARY in "${TEST_BINARIES[@]}"

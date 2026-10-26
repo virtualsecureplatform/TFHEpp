@@ -1,0 +1,1532 @@
+{
+  "utc": "2026-10-25T17:13:00.531446+00:00",
+  "security_validated": false,
+  "circular_security_assumed": true,
+  "target_classical_bits": 128,
+  "verdict": "Under the accepted circular-security assumption, the current sigma128 lvl1 family misses the strict >=128-bit classical screen: 129.6479 BDGL16 and127.7888 MATZOV. This is borderline approximately128-bit estimated strength, not a practical break. Recommend sigma256 (135.1866/133.0916 bits) across the lvl1 family, followed by regeneration and correctness qualification. No runtime noise parameters were changed by this assessment.",
+  "source_revision": "4309482962154f6268eea2fdaf43b6b45d2be966",
+  "parameter_selection_revision": "036df9b06f2ab0954ce860351847b101621ea705",
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "source_sha256": {
+    "include/params/128bit.hpp": "cfdd3e0f853ff411983ad079976a9c4424dc01ccc3e165719e299d51e3ebc730",
+    "include/params.hpp": "71207a0cfe75db1c8fa7a19346ebddddd087c397555bc87e45603b7a8e64203c",
+    "include/tfhe/key.hpp": "cd5558a69f89877b752916ca40753c4a189722e78ed515e0c066a97668b06ba0",
+    "include/tfhe/evalkeygens.hpp": "5f8e9861a416347ce813127734ee39fb8fddfaad3173fa77b065c00c75a121fa",
+    "include/tfhe/cloudkey.hpp": "a54dfb037b4edabae62e62c241827795cbdf196e3c5d321889194c78d5221c70",
+    "include/tfhe/lweParams.hpp": "673b693daa639b9368b07d42fe6d1ae8ab82d8de46dd067b4a1642c9ee2ac1a5",
+    "include/tfhe/trgsw.hpp": "d6a2f2026c94bf92fdb10e2d3345a0b189b6aa33a37df86c5e42765e6e1b5062",
+    "include/tfhe/trlwe.hpp": "ff2a7e7d5aca14f41787c4a02b2601a931ef8da089fe8e1c4c6dc40604bbe537",
+    "include/tfhe/tlwe.hpp": "4f0613ab9ccfd2d700e7cbbef981ba09a7770bebb19a7843302bf65b09c639bd",
+    "include/utils.hpp": "2e4facb02b844102b5bc07e7b4669bcbb07736cc6d7a2bcb1957df31c61e339c",
+    "test/ckks/ckks_ram_setup.cpp": "bc9bf74a2a659d02091aaa5080a6d25723dd03121be05b306d31b357568c25cf",
+    "test/ckks/ckks_ram_fixture.hpp": "2551149bd291ff92c9af2e15e08f1506290f845b8ef4b9ea3a2ef536e3b3029a",
+    "test/ckks/tools/assess_tfhe_sigma128.py": "8bae6cb0b208ee35f1111f3920da61b4339391d5bad4a3654234078f6957df0e"
+  },
+  "assumptions": {
+    "circular_security": "Accepted for the complete evaluation-key graph per user instruction; not treated as an outstanding parameter-screen blocker.",
+    "CSPRNG": "Current BLAKE3 generation is assumed cryptographic. Historical SplitMix v1 material is not rehabilitated.",
+    "noise": "Variance-matched DiscreteGaussian proxy for ideal truncated continuous normals. Not an exact finite-precision PMF theorem.",
+    "models": "Pinned classical BDGL16 and MATZOV, beta search cap4096; no quantum-security claim."
+  },
+  "lvl1_exposure_inventory": [
+    {
+      "material": "Ordinary lvl1 TLWE and TRLWE inputs/outputs, including encrypted RAM cells",
+      "sigma": 128,
+      "source": "lvl1param::alpha=2^-25 with q2^32. saveTrace puts the cell message only at coefficient0.",
+      "independent_known_zero_samples_full8192_trace": 8192
+    },
+    {
+      "material": "privksk4cb_1, the body-function private switching key",
+      "sigma": 128,
+      "source": "emplaceprivksk4cb passes function{1}; privkskgen calls trlweSymEncryptZero using targetP default noise.",
+      "independent_polynomial_rows": 65568,
+      "count_formula": "(domain_n+1)*t*2^(basebit-1)=(2048+1)*8*4",
+      "known_zero_coefficient": 1
+    },
+    {
+      "material": "independentlvl01 bootstrapping key",
+      "sigma": 128,
+      "source": "bk generation passes targetP::alpha to trgswSymEncrypt.",
+      "body_polynomial_rows_coefficient_domain": 1890,
+      "caveat": "Stored FFT material was not audited for exact inversion in this assessment; not needed for the raw-PKS/initial-memory conclusion."
+    },
+    {
+      "material": "Legacy direct CKKS->TFHE output key",
+      "sigma": 128,
+      "source": "Three-argument CKKSToTFHEKeyGen uses the target noise.",
+      "TLWE_rows": 524288
+    },
+    {
+      "material": "New v2 subring bridge and matched-noise direct key",
+      "sigma": 256,
+      "source": "Explicit fixed noise profile; these do not remove other exposures under the same secret."
+    }
+  ],
+  "known_zero_sample_derivation": {
+    "equation": "For a PKS body row: b(X)=a(X)*t(X)+c+e(X), where c depends on source secret and gadget but is a constant polynomial. Extract coefficient1 to get b_1=<SE_1(a),t>+e_1.",
+    "public_operation": "SampleExtractIndex uses only the public ciphertext; no source or destination secret is needed to extract this known-zero equation.",
+    "mask_law": "SE_1 is a signed permutation of the uniform mask coefficients; selecting one fixed coordinate per independently encrypted row yields independent scalar masks, rather than counting correlated rotations as independent.",
+    "finite_sample_result": "With m65568 the minimum equals the unbounded screen. The reported dual-hybrid optimum uses m1024. The existing independent rows already suffice.",
+    "arithmetic_caveat": "Ideal TRLWE encryption gives exactly the stated noise law. Independent schoolbook checks on the current FFT backend observed zero multiplication-rounding errors on131072 audited coefficients; this is an empirical implementation check, not a universal rounding proof."
+  },
+  "combined_estimates": {
+    "utc": "2026-10-25T17:02:10.943438+00:00",
+    "security_validated": false,
+    "circular_security_assumed": true,
+    "target_classical_bits": 128,
+    "max_beta": 4096,
+    "scope": "Classical generic LWE cost estimates for variance-matched discrete-Gaussian proxies. Circular security accepted; no quantum or exact-sampler/ring-specific proof.",
+    "script_sha256": "8bae6cb0b208ee35f1111f3920da61b4339391d5bad4a3654234078f6957df0e",
+    "cases": {
+      "lvl1_sigma128": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 128,
+        "secret": "ternary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 127.60173819385827,
+        "models": {
+          "BDGL16": {
+            "dual": {
+              "bits": 135.79855314975663,
+              "cost": "         rop: \u22482^135.8\n         mem: \u22482^83.4\n           m:     1005\n           \u03b2:      361\n           d:     2029\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.039264213759452105
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.007384973112493753
+            },
+            "primal_usvp": {
+              "bits": 133.3970970881068,
+              "cost": "         rop: \u22482^133.4\n         red: \u22482^133.4\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.06924058496952057
+            },
+            "primal_bdd": {
+              "bits": 130.75314649572886,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.2\n         svp: \u22482^129.1\n           \u03b2:      342\n           \u03b7:      385\n           d:     1953\n         tag:      bdd",
+              "seconds": 0.7991670612245798
+            },
+            "dual_hybrid": {
+              "bits": 129.64790475573045,
+              "cost": "         rop: \u22482^129.6\n         red: \u22482^129.6\n       guess: \u22482^122.6\n           \u03b2:      340\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      340\n           N: \u22482^70.3\n           m:     1024",
+              "seconds": 6.35307717230171
+            },
+            "bdd_hybrid": {
+              "bits": 130.7725880905769,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.2\n         svp: \u22482^129.1\n           \u03b2:      342\n           \u03b7:      385\n           \u03b6:        0\n         |S|:        1\n           d:     1992\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 21.172928732354194
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 186.15847506038332,
+              "cost": "         rop: \u22482^186.2\n         red: \u22482^184.1\n         svp: \u22482^185.8\n           \u03b2:      353\n           \u03b7:        2\n           \u03b6:      143\n         |S|: \u22482^226.6\n           d:     1867\n        prob: \u22482^-48.5\n           \u21bb: \u22482^50.7\n         tag:   hybrid",
+              "seconds": 21.647703930269927
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.4849579733293,
+              "cost": "         rop: \u22482^130.5\n         red: \u22482^130.5\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.05932636000216007
+            },
+            "primal_bdd": {
+              "bits": 128.6119407329973,
+              "cost": "         rop: \u22482^128.6\n         red: \u22482^128.3\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           d:     1972\n         tag:      bdd",
+              "seconds": 0.7074268227443099
+            },
+            "dual": {
+              "bits": 133.59401001208943,
+              "cost": "         rop: \u22482^133.6\n         mem: \u22482^85.5\n           m:     1003\n           \u03b2:      360\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.07057829108089209
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0026755710132420063
+            },
+            "dual_hybrid": {
+              "bits": 127.7888055343365,
+              "cost": "         rop: \u22482^127.8\n         red: \u22482^127.7\n       guess: \u22482^123.5\n           \u03b2:      339\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      351\n           N: \u22482^72.1\n           m:     1024",
+              "seconds": 6.7119817906059325
+            },
+            "bdd_hybrid": {
+              "bits": 128.63044146647556,
+              "cost": "         rop: \u22482^128.6\n         red: \u22482^128.3\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           \u03b6:        0\n         |S|:        1\n           d:     1998\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 18.8171199769713
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 185.56231993688502,
+              "cost": "         rop: \u22482^185.6\n         red: \u22482^183.0\n         svp: \u22482^185.3\n           \u03b2:      353\n           \u03b7:        2\n           \u03b6:      140\n         |S|: \u22482^221.9\n           d:     1870\n        prob: \u22482^-50.4\n           \u21bb: \u22482^52.6\n         tag:   hybrid",
+              "seconds": 21.014082758221775
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 129.64790475573045,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 127.7888055343365,
+            "passes_128": false
+          }
+        }
+      },
+      "lvl1_sigma132": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 132,
+        "secret": "ternary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 131.6017175708276,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 133.68313244895066,
+              "cost": "         rop: \u22482^133.7\n         red: \u22482^133.7\n           \u03b4: 1.004331\n           \u03b2:      354\n           d:     1931\n         tag:     usvp",
+              "seconds": 0.056884053628891706
+            },
+            "dual": {
+              "bits": 136.09055314975666,
+              "cost": "         rop: \u22482^136.1\n         mem: \u22482^83.6\n           m:     1005\n           \u03b2:      362\n           d:     2029\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03392619686201215
+            },
+            "primal_bdd": {
+              "bits": 130.9610009723935,
+              "cost": "         rop: \u22482^131.0\n         red: \u22482^130.5\n         svp: \u22482^129.1\n           \u03b2:      343\n           \u03b7:      385\n           d:     1959\n         tag:      bdd",
+              "seconds": 0.7296252711676061
+            },
+            "dual_hybrid": {
+              "bits": 129.9375814810601,
+              "cost": "         rop: \u22482^129.9\n         red: \u22482^129.9\n       guess: \u22482^122.5\n           \u03b2:      341\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      341\n           N: \u22482^70.1\n           m:     1024",
+              "seconds": 6.341446349862963
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.008676323108375072
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 185.52247481277382,
+              "cost": "         rop: \u22482^185.5\n         red: \u22482^183.3\n         svp: \u22482^185.2\n           \u03b2:      355\n           \u03b7:        2\n           \u03b6:      144\n         |S|: \u22482^228.2\n           d:     1868\n        prob: \u22482^-47.1\n           \u21bb: \u22482^49.3\n         tag:   hybrid",
+              "seconds": 20.70627170521766
+            },
+            "bdd_hybrid": {
+              "bits": 130.9784516321907,
+              "cost": "         rop: \u22482^131.0\n         red: \u22482^130.5\n         svp: \u22482^129.1\n           \u03b2:      343\n           \u03b7:      385\n           \u03b6:        0\n         |S|:        1\n           d:     1992\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 21.46203703666106
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.75404581589305,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.8\n           \u03b4: 1.004331\n           \u03b2:      354\n           d:     1931\n         tag:     usvp",
+              "seconds": 0.056510868947952986
+            },
+            "primal_bdd": {
+              "bits": 128.84794346000882,
+              "cost": "         rop: \u22482^128.8\n         red: \u22482^128.6\n         svp: \u22482^126.2\n           \u03b2:      346\n           \u03b7:      375\n           d:     1984\n         tag:      bdd",
+              "seconds": 0.6978590623475611
+            },
+            "dual": {
+              "bits": 133.72997792940188,
+              "cost": "         rop: \u22482^133.7\n         mem: \u22482^85.5\n           m:     1003\n           \u03b2:      361\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.040176153648644686
+            },
+            "dual_hybrid": {
+              "bits": 128.056976803585,
+              "cost": "         rop: \u22482^128.1\n         red: \u22482^128.0\n       guess: \u22482^123.4\n           \u03b2:      340\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      352\n           N: \u22482^71.9\n           m:     1024",
+              "seconds": 5.761058550793678
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.008634737692773342
+            },
+            "bdd_hybrid": {
+              "bits": 128.85822344308616,
+              "cost": "         rop: \u22482^128.9\n         red: \u22482^128.6\n         svp: \u22482^126.2\n           \u03b2:      346\n           \u03b7:      375\n           \u03b6:        0\n         |S|:        1\n           d:     1998\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 20.05359801510349
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 184.83881160109541,
+              "cost": "         rop: \u22482^184.8\n         red: \u22482^182.7\n         svp: \u22482^184.5\n           \u03b2:      355\n           \u03b7:        2\n           \u03b6:      140\n         |S|: \u22482^221.9\n           d:     1872\n        prob: \u22482^-49.6\n           \u21bb: \u22482^51.8\n         tag:   hybrid",
+              "seconds": 20.496455701068044
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 129.9375814810601,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 128.056976803585,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma136": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 136,
+        "secret": "ternary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 135.60169816106233,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 133.72800193206808,
+              "cost": "         rop: \u22482^133.7\n         red: \u22482^133.7\n           \u03b4: 1.004331\n           \u03b2:      354\n           d:     1992\n         tag:     usvp",
+              "seconds": 0.05608906131237745
+            },
+            "primal_bdd": {
+              "bits": 131.18049052566658,
+              "cost": "         rop: \u22482^131.2\n         red: \u22482^130.8\n         svp: \u22482^129.1\n           \u03b2:      344\n           \u03b7:      385\n           d:     1964\n         tag:      bdd",
+              "seconds": 0.7229938232339919
+            },
+            "dual": {
+              "bits": 136.38255314975663,
+              "cost": "         rop: \u22482^136.4\n         mem: \u22482^83.8\n           m:     1005\n           \u03b2:      363\n           d:     2029\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.033808527048677206
+            },
+            "dual_hybrid": {
+              "bits": 130.22771709488052,
+              "cost": "         rop: \u22482^130.2\n         red: \u22482^130.2\n       guess: \u22482^122.5\n           \u03b2:      342\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      342\n           N: \u22482^69.9\n           m:     1024",
+              "seconds": 5.562102275900543
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.001013109926134348
+            },
+            "bdd_hybrid": {
+              "bits": 131.19607046890212,
+              "cost": "         rop: \u22482^131.2\n         red: \u22482^130.8\n         svp: \u22482^129.1\n           \u03b2:      344\n           \u03b7:      385\n           \u03b6:        0\n         |S|:        1\n           d:     1992\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 19.809891345910728
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 186.55436171008375,
+              "cost": "         rop: \u22482^186.6\n         red: \u22482^184.3\n         svp: \u22482^186.2\n           \u03b2:      355\n           \u03b7:        2\n           \u03b6:      144\n         |S|: \u22482^228.2\n           d:     1867\n        prob: \u22482^-48.2\n           \u21bb: \u22482^50.4\n         tag:   hybrid",
+              "seconds": 20.959035868756473
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.80879851274355,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.8\n           \u03b4: 1.004331\n           \u03b2:      354\n           d:     1992\n         tag:     usvp",
+              "seconds": 0.056144492235034704
+            },
+            "dual": {
+              "bits": 134.01602169195053,
+              "cost": "         rop: \u22482^134.0\n         mem: \u22482^85.7\n           m:     1003\n           \u03b2:      362\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.04145995480939746
+            },
+            "primal_bdd": {
+              "bits": 129.0811363051265,
+              "cost": "         rop: \u22482^129.1\n         red: \u22482^128.6\n         svp: \u22482^127.3\n           \u03b2:      346\n           \u03b7:      379\n           d:     1957\n         tag:      bdd",
+              "seconds": 0.6615033010020852
+            },
+            "dual_hybrid": {
+              "bits": 128.32892821167889,
+              "cost": "         rop: \u22482^128.3\n         red: \u22482^128.3\n       guess: \u22482^123.3\n           \u03b2:      341\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      353\n           N: \u22482^71.7\n           m:     1024",
+              "seconds": 6.280338933691382
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0022421302273869514
+            },
+            "bdd_hybrid": {
+              "bits": 129.10538144935072,
+              "cost": "         rop: \u22482^129.1\n         red: \u22482^128.6\n         svp: \u22482^127.3\n           \u03b2:      346\n           \u03b7:      379\n           \u03b6:        0\n         |S|:        1\n           d:     1996\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 18.26301557198167
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 185.9390749664027,
+              "cost": "         rop: \u22482^185.9\n         red: \u22482^183.8\n         svp: \u22482^185.6\n           \u03b2:      355\n           \u03b7:        2\n           \u03b6:      140\n         |S|: \u22482^221.9\n           d:     1871\n        prob: \u22482^-50.7\n           \u21bb: \u22482^52.9\n         tag:   hybrid",
+              "seconds": 20.809671442955732
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 130.22771709488052,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 128.32892821167889,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma144": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 144,
+        "secret": "ternary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 143.60166257686086,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 134.28125840863697,
+              "cost": "         rop: \u22482^134.3\n         red: \u22482^134.3\n           \u03b4: 1.004315\n           \u03b2:      356\n           d:     1950\n         tag:     usvp",
+              "seconds": 0.05844832118600607
+            },
+            "dual": {
+              "bits": 136.67313037346688,
+              "cost": "         rop: \u22482^136.7\n         mem: \u22482^84.0\n           m:     1003\n           \u03b2:      364\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.030148262158036232
+            },
+            "primal_bdd": {
+              "bits": 131.637154254035,
+              "cost": "         rop: \u22482^131.6\n         red: \u22482^131.1\n         svp: \u22482^130.0\n           \u03b2:      345\n           \u03b7:      388\n           d:     1969\n         tag:      bdd",
+              "seconds": 0.7237412841059268
+            },
+            "dual_hybrid": {
+              "bits": 130.52082504863955,
+              "cost": "         rop: \u22482^130.5\n         red: \u22482^130.5\n       guess: \u22482^123.0\n           \u03b2:      343\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      343\n           N: \u22482^71.1\n           m:     1024",
+              "seconds": 6.39453141624108
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.001039154827594757
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 186.85143429837603,
+              "cost": "         rop: \u22482^186.9\n         red: \u22482^185.0\n         svp: \u22482^186.4\n           \u03b2:      357\n           \u03b7:        2\n           \u03b6:      144\n         |S|: \u22482^228.2\n           d:     1867\n        prob: \u22482^-48.3\n           \u21bb: \u22482^50.5\n         tag:   hybrid",
+              "seconds": 19.52552550798282
+            },
+            "bdd_hybrid": {
+              "bits": 131.64809284699572,
+              "cost": "         rop: \u22482^131.6\n         red: \u22482^131.1\n         svp: \u22482^130.0\n           \u03b2:      345\n           \u03b7:      388\n           \u03b6:        0\n         |S|:        1\n           d:     1991\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 21.16179385315627
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 131.32413739760472,
+              "cost": "         rop: \u22482^131.3\n         red: \u22482^131.3\n           \u03b4: 1.004315\n           \u03b2:      356\n           d:     1950\n         tag:     usvp",
+              "seconds": 0.05869780806824565
+            },
+            "primal_bdd": {
+              "bits": 129.49047281826432,
+              "cost": "         rop: \u22482^129.5\n         red: \u22482^129.1\n         svp: \u22482^127.3\n           \u03b2:      348\n           \u03b7:      379\n           d:     1959\n         tag:      bdd",
+              "seconds": 0.6918245446868241
+            },
+            "dual": {
+              "bits": 134.30125366098952,
+              "cost": "         rop: \u22482^134.3\n         mem: \u22482^85.9\n           m:     1001\n           \u03b2:      363\n           d:     2025\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03967599431052804
+            },
+            "dual_hybrid": {
+              "bits": 128.63822416173554,
+              "cost": "         rop: \u22482^128.6\n         red: \u22482^128.6\n       guess: \u22482^124.2\n           \u03b2:      342\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      354\n           N: \u22482^72.9\n           m:     1024",
+              "seconds": 6.45931409811601
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.001141154207289219
+            },
+            "bdd_hybrid": {
+              "bits": 129.51589868956844,
+              "cost": "         rop: \u22482^129.5\n         red: \u22482^129.2\n         svp: \u22482^127.3\n           \u03b2:      348\n           \u03b7:      379\n           \u03b6:        0\n         |S|:        1\n           d:     1996\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 19.921629834920168
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 186.19005464710492,
+              "cost": "         rop: \u22482^186.2\n         red: \u22482^183.9\n         svp: \u22482^185.9\n           \u03b2:      357\n           \u03b7:        2\n           \u03b6:      141\n         |S|: \u22482^223.5\n           d:     1870\n        prob: \u22482^-50.2\n           \u21bb: \u22482^52.4\n         tag:   hybrid",
+              "seconds": 21.902551582083106
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 130.52082504863955,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 128.63822416173554,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma160": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 160,
+        "secret": "ternary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 159.60160208481534,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 135.15281250360576,
+              "cost": "         rop: \u22482^135.2\n         red: \u22482^135.2\n           \u03b4: 1.004290\n           \u03b2:      359\n           d:     1944\n         tag:     usvp",
+              "seconds": 0.05449987109750509
+            },
+            "primal_bdd": {
+              "bits": 132.48479397682536,
+              "cost": "         rop: \u22482^132.5\n         red: \u22482^132.3\n         svp: \u22482^129.7\n           \u03b2:      349\n           \u03b7:      387\n           d:     1980\n         tag:      bdd",
+              "seconds": 0.693637924734503
+            },
+            "dual": {
+              "bits": 137.54913037346688,
+              "cost": "         rop: \u22482^137.5\n         mem: \u22482^84.7\n           m:     1003\n           \u03b2:      367\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.031276820693165064
+            },
+            "dual_hybrid": {
+              "bits": 131.39380617159517,
+              "cost": "         rop: \u22482^131.4\n         red: \u22482^131.4\n       guess: \u22482^123.1\n           \u03b2:      346\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      346\n           N: \u22482^71.4\n           m:     1024",
+              "seconds": 6.433350467123091
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0010126237757503986
+            },
+            "bdd_hybrid": {
+              "bits": 132.49225300698208,
+              "cost": "         rop: \u22482^132.5\n         red: \u22482^132.3\n         svp: \u22482^129.7\n           \u03b2:      349\n           \u03b7:      387\n           \u03b6:        0\n         |S|:        1\n           d:     1992\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 20.251419206615537
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 188.86843215993,
+              "cost": "         rop: \u22482^188.9\n         red: \u22482^186.9\n         svp: \u22482^188.4\n           \u03b2:      359\n           \u03b7:        2\n           \u03b6:      145\n         |S|: \u22482^229.8\n           d:     1864\n        prob: \u22482^-49.6\n           \u21bb: \u22482^51.8\n         tag:   hybrid",
+              "seconds": 21.267046962399036
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 132.14796890846546,
+              "cost": "         rop: \u22482^132.1\n         red: \u22482^132.1\n           \u03b4: 1.004290\n           \u03b2:      359\n           d:     1944\n         tag:     usvp",
+              "seconds": 0.05548018217086792
+            },
+            "primal_bdd": {
+              "bits": 130.27000258383316,
+              "cost": "         rop: \u22482^130.3\n         red: \u22482^130.0\n         svp: \u22482^127.9\n           \u03b2:      351\n           \u03b7:      381\n           d:     1970\n         tag:      bdd",
+              "seconds": 0.6951781972311437
+            },
+            "dual": {
+              "bits": 135.1600385330194,
+              "cost": "         rop: \u22482^135.2\n         mem: \u22482^86.6\n           m:     1001\n           \u03b2:      366\n           d:     2025\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.039159303065389395
+            },
+            "dual_hybrid": {
+              "bits": 129.32831903637708,
+              "cost": "         rop: \u22482^129.3\n         red: \u22482^129.3\n       guess: \u22482^124.4\n           \u03b2:      345\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      356\n           N: \u22482^73.2\n           m:     1024",
+              "seconds": 6.837255788967013
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0010398509912192822
+            },
+            "bdd_hybrid": {
+              "bits": 130.28857261922266,
+              "cost": "         rop: \u22482^130.3\n         red: \u22482^130.0\n         svp: \u22482^127.9\n           \u03b2:      351\n           \u03b7:      381\n           \u03b6:        0\n         |S|:        1\n           d:     1996\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 19.346927037928253
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 188.2707076959667,
+              "cost": "         rop: \u22482^188.3\n         red: \u22482^185.8\n         svp: \u22482^188.0\n           \u03b2:      359\n           \u03b7:        2\n           \u03b6:      142\n         |S|: \u22482^225.1\n           d:     1867\n        prob: \u22482^-51.5\n           \u21bb: \u22482^53.7\n         tag:   hybrid",
+              "seconds": 19.661108660977334
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 131.39380617159517,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 129.32831903637708,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma192": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 192,
+        "secret": "ternary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 191.6015113493497,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 136.61651837525787,
+              "cost": "         rop: \u22482^136.6\n         red: \u22482^136.6\n           \u03b4: 1.004250\n           \u03b2:      364\n           d:     1949\n         tag:     usvp",
+              "seconds": 0.054643250070512295
+            },
+            "primal_bdd": {
+              "bits": 133.89265816742122,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.4\n         svp: \u22482^132.0\n           \u03b2:      353\n           \u03b7:      395\n           d:     1981\n         tag:      bdd",
+              "seconds": 0.6365557992830873
+            },
+            "dual": {
+              "bits": 139.3011303734669,
+              "cost": "         rop: \u22482^139.3\n         mem: \u22482^85.9\n           m:     1003\n           \u03b2:      373\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.029952681623399258
+            },
+            "dual_hybrid": {
+              "bits": 132.85179502303833,
+              "cost": "         rop: \u22482^132.9\n         red: \u22482^132.8\n       guess: \u22482^123.8\n           \u03b2:      351\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      351\n           N: \u22482^72.4\n           m:     1024",
+              "seconds": 6.825543276965618
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0010116379708051682
+            },
+            "bdd_hybrid": {
+              "bits": 133.89687390220826,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.4\n         svp: \u22482^132.0\n           \u03b2:      353\n           \u03b7:      395\n           \u03b6:        0\n         |S|:        1\n           d:     1989\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 21.19620559597388
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 190.29063421057432,
+              "cost": "         rop: \u22482^190.3\n         red: \u22482^188.4\n         svp: \u22482^189.8\n           \u03b2:      365\n           \u03b7:        2\n           \u03b6:      147\n         |S|: \u22482^233.0\n           d:     1862\n        prob: \u22482^-49.4\n           \u21bb: \u22482^51.6\n         tag:   hybrid",
+              "seconds": 20.484035492874682
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 133.53481140824428,
+              "cost": "         rop: \u22482^133.5\n         red: \u22482^133.5\n           \u03b4: 1.004250\n           \u03b2:      364\n           d:     1949\n         tag:     usvp",
+              "seconds": 0.05529214581474662
+            },
+            "primal_bdd": {
+              "bits": 131.65387046469166,
+              "cost": "         rop: \u22482^131.7\n         red: \u22482^131.3\n         svp: \u22482^129.3\n           \u03b2:      356\n           \u03b7:      386\n           d:     1971\n         tag:      bdd",
+              "seconds": 0.7381088403053582
+            },
+            "dual": {
+              "bits": 136.59191661707854,
+              "cost": "         rop: \u22482^136.6\n         mem: \u22482^87.6\n           m:      999\n           \u03b2:      371\n           d:     2023\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03828639490529895
+            },
+            "dual_hybrid": {
+              "bits": 130.7436051664121,
+              "cost": "         rop: \u22482^130.7\n         red: \u22482^130.7\n       guess: \u22482^125.3\n           \u03b2:      350\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      361\n           N: \u22482^74.2\n           m:     1024",
+              "seconds": 6.781896726693958
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0011107288300991058
+            },
+            "bdd_hybrid": {
+              "bits": 131.67105150077194,
+              "cost": "         rop: \u22482^131.7\n         red: \u22482^131.4\n         svp: \u22482^129.3\n           \u03b2:      356\n           \u03b7:      386\n           \u03b6:        0\n         |S|:        1\n           d:     1995\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 20.166503156069666
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 189.62555908636548,
+              "cost": "         rop: \u22482^189.6\n         red: \u22482^187.2\n         svp: \u22482^189.3\n           \u03b2:      365\n           \u03b7:        2\n           \u03b6:      144\n         |S|: \u22482^228.2\n           d:     1865\n        prob: \u22482^-51.3\n           \u21bb: \u22482^53.5\n         tag:   hybrid",
+              "seconds": 19.316634288057685
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 132.85179502303833,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 130.7436051664121,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma256": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 256,
+        "secret": "ternary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 255.60139793443952,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 138.96651450533923,
+              "cost": "         rop: \u22482^139.0\n         red: \u22482^139.0\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.05425838194787502
+            },
+            "primal_bdd": {
+              "bits": 136.29913759190438,
+              "cost": "         rop: \u22482^136.3\n         red: \u22482^135.7\n         svp: \u22482^134.7\n           \u03b2:      361\n           \u03b7:      404\n           d:     1949\n         tag:      bdd",
+              "seconds": 0.6961192237213254
+            },
+            "dual": {
+              "bits": 141.6349935746943,
+              "cost": "         rop: \u22482^141.6\n         mem: \u22482^87.6\n           m:     1000\n           \u03b2:      381\n           d:     2024\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.02987203886732459
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0009803008288145065
+            },
+            "dual_hybrid": {
+              "bits": 135.18661399464605,
+              "cost": "         rop: \u22482^135.2\n         red: \u22482^135.2\n       guess: \u22482^125.3\n           \u03b2:      359\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      359\n           N: \u22482^74.2\n           m:     1024",
+              "seconds": 6.863633294124156
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 194.06546864703608,
+              "cost": "         rop: \u22482^194.1\n         red: \u22482^191.6\n         svp: \u22482^193.8\n           \u03b2:      373\n           \u03b7:        2\n           \u03b6:      151\n         |S|: \u22482^239.3\n           d:     1855\n        prob: \u22482^-50.2\n           \u21bb: \u22482^52.4\n         tag:   hybrid",
+              "seconds": 19.03319323901087
+            },
+            "bdd_hybrid": {
+              "bits": 136.31811017086233,
+              "cost": "         rop: \u22482^136.3\n         red: \u22482^135.8\n         svp: \u22482^134.7\n           \u03b2:      361\n           \u03b7:      404\n           \u03b6:        0\n         |S|:        1\n           d:     1987\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 21.529396027792245
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 135.76418621225008,
+              "cost": "         rop: \u22482^135.8\n         red: \u22482^135.8\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.05402032705023885
+            },
+            "primal_bdd": {
+              "bits": 133.91394915161135,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.5\n         svp: \u22482^131.8\n           \u03b2:      364\n           \u03b7:      395\n           d:     1954\n         tag:      bdd",
+              "seconds": 0.7308399579487741
+            },
+            "dual": {
+              "bits": 139.01975785153707,
+              "cost": "         rop: \u22482^139.0\n         mem: \u22482^89.3\n           m:      998\n           \u03b2:      380\n           d:     2022\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03893673699349165
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0010250220075249672
+            },
+            "dual_hybrid": {
+              "bits": 133.09159862149542,
+              "cost": "         rop: \u22482^133.1\n         red: \u22482^133.0\n       guess: \u22482^128.9\n           \u03b2:      358\n           p:        5\n           \u03b6:       20\n           t:       30\n          \u03b2':      369\n           N: \u22482^76.2\n           m:     1024",
+              "seconds": 9.894022915046662
+            },
+            "bdd_hybrid": {
+              "bits": 133.9409888479283,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.6\n         svp: \u22482^131.8\n           \u03b2:      364\n           \u03b7:      395\n           \u03b6:        0\n         |S|:        1\n           d:     1993\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 18.664137473795563
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 193.4201855509301,
+              "cost": "         rop: \u22482^193.4\n         red: \u22482^190.9\n         svp: \u22482^193.1\n           \u03b2:      373\n           \u03b7:        2\n           \u03b6:      147\n         |S|: \u22482^233.0\n           d:     1860\n        prob: \u22482^-52.7\n           \u21bb: \u22482^54.9\n         tag:   hybrid",
+              "seconds": 19.624862703029066
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 135.18661399464605,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 133.09159862149542,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma128_pks_finite": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 128,
+        "secret": "ternary",
+        "m": 65568,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid"
+        ],
+        "integer_rms": 127.60173819385827,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 133.3970970881068,
+              "cost": "         rop: \u22482^133.4\n         red: \u22482^133.4\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.05902192974463105
+            },
+            "primal_bdd": {
+              "bits": 130.75314649572886,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.2\n         svp: \u22482^129.1\n           \u03b2:      342\n           \u03b7:      385\n           d:     1953\n         tag:      bdd",
+              "seconds": 0.7028776314109564
+            },
+            "dual": {
+              "bits": 135.79855314975663,
+              "cost": "         rop: \u22482^135.8\n         mem: \u22482^83.4\n           m:     1005\n           \u03b2:      361\n           d:     2029\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03074177075177431
+            },
+            "dual_hybrid": {
+              "bits": 129.64790475573045,
+              "cost": "         rop: \u22482^129.6\n         red: \u22482^129.6\n       guess: \u22482^122.6\n           \u03b2:      340\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      340\n           N: \u22482^70.3\n           m:     1024",
+              "seconds": 6.501380174886435
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.4849579733293,
+              "cost": "         rop: \u22482^130.5\n         red: \u22482^130.5\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.057719262316823006
+            },
+            "primal_bdd": {
+              "bits": 128.6119407329973,
+              "cost": "         rop: \u22482^128.6\n         red: \u22482^128.3\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           d:     1972\n         tag:      bdd",
+              "seconds": 0.7064813100732863
+            },
+            "dual": {
+              "bits": 133.59401001208943,
+              "cost": "         rop: \u22482^133.6\n         mem: \u22482^85.5\n           m:     1003\n           \u03b2:      360\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03808954916894436
+            },
+            "dual_hybrid": {
+              "bits": 127.7888055343365,
+              "cost": "         rop: \u22482^127.8\n         red: \u22482^127.7\n       guess: \u22482^123.5\n           \u03b2:      339\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      351\n           N: \u22482^72.1\n           m:     1024",
+              "seconds": 6.712928546126932
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 129.64790475573045,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 127.7888055343365,
+            "passes_128": false
+          }
+        }
+      },
+      "lvl1_sigma132_pks_finite": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 132,
+        "secret": "ternary",
+        "m": 65568,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid"
+        ],
+        "integer_rms": 131.6017175708276,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 133.68313244895066,
+              "cost": "         rop: \u22482^133.7\n         red: \u22482^133.7\n           \u03b4: 1.004331\n           \u03b2:      354\n           d:     1931\n         tag:     usvp",
+              "seconds": 0.056531060952693224
+            },
+            "primal_bdd": {
+              "bits": 130.9610009723935,
+              "cost": "         rop: \u22482^131.0\n         red: \u22482^130.5\n         svp: \u22482^129.1\n           \u03b2:      343\n           \u03b7:      385\n           d:     1959\n         tag:      bdd",
+              "seconds": 0.7018251069821417
+            },
+            "dual": {
+              "bits": 136.09055314975666,
+              "cost": "         rop: \u22482^136.1\n         mem: \u22482^83.6\n           m:     1005\n           \u03b2:      362\n           d:     2029\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.029385649133473635
+            },
+            "dual_hybrid": {
+              "bits": 129.9375814810601,
+              "cost": "         rop: \u22482^129.9\n         red: \u22482^129.9\n       guess: \u22482^122.5\n           \u03b2:      341\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      341\n           N: \u22482^70.1\n           m:     1024",
+              "seconds": 6.265950822737068
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.75404581589305,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.8\n           \u03b4: 1.004331\n           \u03b2:      354\n           d:     1931\n         tag:     usvp",
+              "seconds": 0.05728893494233489
+            },
+            "primal_bdd": {
+              "bits": 128.84794346000882,
+              "cost": "         rop: \u22482^128.8\n         red: \u22482^128.6\n         svp: \u22482^126.2\n           \u03b2:      346\n           \u03b7:      375\n           d:     1984\n         tag:      bdd",
+              "seconds": 0.7124526388943195
+            },
+            "dual": {
+              "bits": 133.72997792940188,
+              "cost": "         rop: \u22482^133.7\n         mem: \u22482^85.5\n           m:     1003\n           \u03b2:      361\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03978139301761985
+            },
+            "dual_hybrid": {
+              "bits": 128.056976803585,
+              "cost": "         rop: \u22482^128.1\n         red: \u22482^128.0\n       guess: \u22482^123.4\n           \u03b2:      340\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      352\n           N: \u22482^71.9\n           m:     1024",
+              "seconds": 5.723808930255473
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 129.9375814810601,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 128.056976803585,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma192_pks_finite": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 192,
+        "secret": "ternary",
+        "m": 65568,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid"
+        ],
+        "integer_rms": 191.6015113493497,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 136.61651837525787,
+              "cost": "         rop: \u22482^136.6\n         red: \u22482^136.6\n           \u03b4: 1.004250\n           \u03b2:      364\n           d:     1949\n         tag:     usvp",
+              "seconds": 0.05516872555017471
+            },
+            "dual": {
+              "bits": 139.3011303734669,
+              "cost": "         rop: \u22482^139.3\n         mem: \u22482^85.9\n           m:     1003\n           \u03b2:      373\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.030097960960119963
+            },
+            "primal_bdd": {
+              "bits": 133.89265816742122,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.4\n         svp: \u22482^132.0\n           \u03b2:      353\n           \u03b7:      395\n           d:     1981\n         tag:      bdd",
+              "seconds": 0.639799022115767
+            },
+            "dual_hybrid": {
+              "bits": 132.85179502303833,
+              "cost": "         rop: \u22482^132.9\n         red: \u22482^132.8\n       guess: \u22482^123.8\n           \u03b2:      351\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      351\n           N: \u22482^72.4\n           m:     1024",
+              "seconds": 6.814326480962336
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 133.53481140824428,
+              "cost": "         rop: \u22482^133.5\n         red: \u22482^133.5\n           \u03b4: 1.004250\n           \u03b2:      364\n           d:     1949\n         tag:     usvp",
+              "seconds": 0.054650464560836554
+            },
+            "primal_bdd": {
+              "bits": 131.65387046469166,
+              "cost": "         rop: \u22482^131.7\n         red: \u22482^131.3\n         svp: \u22482^129.3\n           \u03b2:      356\n           \u03b7:      386\n           d:     1971\n         tag:      bdd",
+              "seconds": 0.7358885500580072
+            },
+            "dual": {
+              "bits": 136.59191661707854,
+              "cost": "         rop: \u22482^136.6\n         mem: \u22482^87.6\n           m:      999\n           \u03b2:      371\n           d:     2023\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.0375376520678401
+            },
+            "dual_hybrid": {
+              "bits": 130.7436051664121,
+              "cost": "         rop: \u22482^130.7\n         red: \u22482^130.7\n       guess: \u22482^125.3\n           \u03b2:      350\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      361\n           N: \u22482^74.2\n           m:     1024",
+              "seconds": 6.813626324292272
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 132.85179502303833,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 130.7436051664121,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma256_pks_finite": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 256,
+        "secret": "ternary",
+        "m": 65568,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid"
+        ],
+        "integer_rms": 255.60139793443952,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 138.96651450533923,
+              "cost": "         rop: \u22482^139.0\n         red: \u22482^139.0\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.05417177174240351
+            },
+            "primal_bdd": {
+              "bits": 136.29913759190438,
+              "cost": "         rop: \u22482^136.3\n         red: \u22482^135.7\n         svp: \u22482^134.7\n           \u03b2:      361\n           \u03b7:      404\n           d:     1949\n         tag:      bdd",
+              "seconds": 0.6300083789974451
+            },
+            "dual": {
+              "bits": 141.6349935746943,
+              "cost": "         rop: \u22482^141.6\n         mem: \u22482^87.6\n           m:     1000\n           \u03b2:      381\n           d:     2024\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.02885535918176174
+            },
+            "dual_hybrid": {
+              "bits": 135.18661399464605,
+              "cost": "         rop: \u22482^135.2\n         red: \u22482^135.2\n       guess: \u22482^125.3\n           \u03b2:      359\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      359\n           N: \u22482^74.2\n           m:     1024",
+              "seconds": 7.05329197505489
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 135.76418621225008,
+              "cost": "         rop: \u22482^135.8\n         red: \u22482^135.8\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.05472962977364659
+            },
+            "primal_bdd": {
+              "bits": 133.91394915161135,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.5\n         svp: \u22482^131.8\n           \u03b2:      364\n           \u03b7:      395\n           d:     1954\n         tag:      bdd",
+              "seconds": 0.7326052542775869
+            },
+            "dual": {
+              "bits": 139.01975785153707,
+              "cost": "         rop: \u22482^139.0\n         mem: \u22482^89.3\n           m:      998\n           \u03b2:      380\n           d:     2022\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03856067918241024
+            },
+            "dual_hybrid": {
+              "bits": 133.09159862149542,
+              "cost": "         rop: \u22482^133.1\n         red: \u22482^133.0\n       guess: \u22482^128.9\n           \u03b2:      358\n           p:        5\n           \u03b6:       20\n           t:       30\n          \u03b2':      369\n           N: \u22482^76.2\n           m:     1024",
+              "seconds": 9.977890568319708
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 135.18661399464605,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 133.09159862149542,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl1_sigma128_bk_finite": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 128,
+        "secret": "ternary",
+        "m": 1890,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid"
+        ],
+        "integer_rms": 127.60173819385827,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 133.3970970881068,
+              "cost": "         rop: \u22482^133.4\n         red: \u22482^133.4\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.05133185815066099
+            },
+            "primal_bdd": {
+              "bits": 130.75314649572886,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.2\n         svp: \u22482^129.1\n           \u03b2:      342\n           \u03b7:      385\n           d:     1953\n         tag:      bdd",
+              "seconds": 0.7023753537796438
+            },
+            "dual": {
+              "bits": 135.79855314975663,
+              "cost": "         rop: \u22482^135.8\n         mem: \u22482^83.4\n           m:     1005\n           \u03b2:      361\n           d:     2029\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.027105871587991714
+            },
+            "dual_hybrid": {
+              "bits": 129.64790475573045,
+              "cost": "         rop: \u22482^129.6\n         red: \u22482^129.6\n       guess: \u22482^122.6\n           \u03b2:      340\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      340\n           N: \u22482^70.3\n           m:     1024",
+              "seconds": 5.313057029154152
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.4849579733293,
+              "cost": "         rop: \u22482^130.5\n         red: \u22482^130.5\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.05131553718820214
+            },
+            "primal_bdd": {
+              "bits": 128.6119407329973,
+              "cost": "         rop: \u22482^128.6\n         red: \u22482^128.3\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           d:     1972\n         tag:      bdd",
+              "seconds": 0.7081851679831743
+            },
+            "dual": {
+              "bits": 133.59401001208943,
+              "cost": "         rop: \u22482^133.6\n         mem: \u22482^85.5\n           m:     1003\n           \u03b2:      360\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03406902775168419
+            },
+            "dual_hybrid": {
+              "bits": 127.7888055343365,
+              "cost": "         rop: \u22482^127.8\n         red: \u22482^127.7\n       guess: \u22482^123.5\n           \u03b2:      339\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      351\n           N: \u22482^72.1\n           m:     1024",
+              "seconds": 5.9049155549146235
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 129.64790475573045,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 127.7888055343365,
+            "passes_128": false
+          }
+        }
+      },
+      "lvl0_current": {
+        "n": 630,
+        "log_q": 16,
+        "sigma": 6.062866266041588,
+        "secret": "binary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 5.6783132619078325,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 139.9193832139898,
+              "cost": "         rop: \u22482^139.9\n         red: \u22482^139.9\n           \u03b4: 1.004141\n           \u03b2:      378\n           d:     1131\n         tag:     usvp",
+              "seconds": 0.045386466197669506
+            },
+            "primal_bdd": {
+              "bits": 135.38552908044127,
+              "cost": "         rop: \u22482^135.4\n         red: \u22482^134.6\n         svp: \u22482^134.1\n           \u03b2:      360\n           \u03b7:      402\n           d:     1113\n         tag:      bdd",
+              "seconds": 0.3533145100809634
+            },
+            "dual": {
+              "bits": 144.34211423954162,
+              "cost": "         rop: \u22482^144.3\n         mem: \u22482^90.2\n           m:      535\n           \u03b2:      393\n           d:     1165\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03075221087783575
+            },
+            "mitm": {
+              "bits": 323.0,
+              "cost": "         rop: \u22482^323.0\n         mem: \u22482^323.3\n           m:      323\n           k:      315\n           \u21bb:        1",
+              "seconds": 0.0007845433428883553
+            },
+            "dual_hybrid": {
+              "bits": 130.67956179260622,
+              "cost": "         rop: \u22482^130.7\n         red: \u22482^130.3\n       guess: \u22482^128.5\n           \u03b2:      345\n           p:        2\n           \u03b6:       20\n           t:       80\n          \u03b2':      345\n           N: \u22482^70.9\n           m:      630",
+              "seconds": 7.619665883015841
+            },
+            "bdd_hybrid": {
+              "bits": 135.3993810102028,
+              "cost": "         rop: \u22482^135.4\n         red: \u22482^134.7\n         svp: \u22482^134.1\n           \u03b2:      360\n           \u03b7:      402\n           \u03b6:        0\n         |S|:        1\n           d:     1131\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 12.7664530929178
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 164.41324923394353,
+              "cost": "         rop: \u22482^164.4\n         red: \u22482^163.4\n         svp: \u22482^163.4\n           \u03b2:      366\n           \u03b7:        2\n           \u03b6:      233\n         |S|: \u22482^233.0\n           d:      903\n        prob: \u22482^-25.1\n           \u21bb: \u22482^27.3\n         tag:   hybrid",
+              "seconds": 23.84607301512733
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 136.34535127736672,
+              "cost": "         rop: \u22482^136.3\n         red: \u22482^136.3\n           \u03b4: 1.004141\n           \u03b2:      378\n           d:     1131\n         tag:     usvp",
+              "seconds": 0.04467360721901059
+            },
+            "primal_bdd": {
+              "bits": 133.34173199277427,
+              "cost": "         rop: \u22482^133.3\n         red: \u22482^132.7\n         svp: \u22482^131.8\n           \u03b2:      365\n           \u03b7:      395\n           d:     1120\n         tag:      bdd",
+              "seconds": 0.35684966715052724
+            },
+            "dual": {
+              "bits": 141.32651610683885,
+              "cost": "         rop: \u22482^141.3\n         mem: \u22482^91.0\n           m:      534\n           \u03b2:      392\n           d:     1164\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03941589081659913
+            },
+            "mitm": {
+              "bits": 323.0,
+              "cost": "         rop: \u22482^323.0\n         mem: \u22482^323.3\n           m:      323\n           k:      315\n           \u21bb:        1",
+              "seconds": 0.0013495632447302341
+            },
+            "dual_hybrid": {
+              "bits": 128.5086792965412,
+              "cost": "         rop: \u22482^128.5\n         red: \u22482^128.5\n       guess: \u22482^123.2\n           \u03b2:      346\n           p:        2\n           \u03b6:       10\n           t:       90\n          \u03b2':      353\n           N: \u22482^73.0\n           m:      630",
+              "seconds": 6.429216420743614
+            },
+            "bdd_hybrid": {
+              "bits": 133.3617708246953,
+              "cost": "         rop: \u22482^133.4\n         red: \u22482^132.8\n         svp: \u22482^131.8\n           \u03b2:      365\n           \u03b7:      395\n           \u03b6:        0\n         |S|:        1\n           d:     1136\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 11.725349998101592
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 162.64528152030775,
+              "cost": "         rop: \u22482^162.6\n         red: \u22482^161.7\n         svp: \u22482^161.6\n           \u03b2:      374\n           \u03b7:        2\n           \u03b6:      230\n         |S|: \u22482^230.0\n           d:      913\n        prob: \u22482^-24.7\n           \u21bb: \u22482^26.9\n         tag:   hybrid",
+              "seconds": 22.954013466835022
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 130.67956179260622,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 128.5086792965412,
+            "passes_128": true
+          }
+        }
+      },
+      "lvl2_current": {
+        "n": 2048,
+        "log_q": 64,
+        "sigma": 8192,
+        "secret": "ternary",
+        "m": null,
+        "attacks": [
+          "primal_usvp",
+          "primal_bdd",
+          "dual",
+          "dual_hybrid",
+          "mitm",
+          "bdd_hybrid",
+          "bdd_mitm_hybrid"
+        ],
+        "integer_rms": 8191.6010683506265,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 133.26401307808808,
+              "cost": "         rop: \u22482^133.3\n         red: \u22482^133.3\n           \u03b4: 1.004373\n           \u03b2:      349\n           d:     3973\n         tag:     usvp",
+              "seconds": 0.053034923039376736
+            },
+            "primal_bdd": {
+              "bits": 131.94871088045068,
+              "cost": "         rop: \u22482^131.9\n         red: \u22482^131.8\n         svp: \u22482^128.5\n           \u03b2:      344\n           \u03b7:      383\n           d:     3982\n         tag:      bdd",
+              "seconds": 1.8759049191139638
+            },
+            "dual": {
+              "bits": 134.4696460600166,
+              "cost": "         rop: \u22482^134.5\n         mem: \u22482^81.7\n           m:     2030\n           \u03b2:      353\n           d:     4078\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.029521550983190536
+            },
+            "mitm": {
+              "bits": 1635.0,
+              "cost": "         rop: \u22482^1635.0\n         mem:  \u22482^inf\n           m: \u22482^11.7\n           k:     1024\n           \u21bb:        2",
+              "seconds": 0.0021468610502779484
+            },
+            "dual_hybrid": {
+              "bits": 131.53677364561358,
+              "cost": "         rop: \u22482^131.5\n         red: \u22482^131.5\n       guess: \u22482^122.1\n           \u03b2:      343\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      343\n           N: \u22482^68.2\n           m: \u22482^11.0",
+              "seconds": 6.403408468235284
+            },
+            "bdd_hybrid": {
+              "bits": 131.9682857646009,
+              "cost": "         rop: \u22482^132.0\n         red: \u22482^131.8\n         svp: \u22482^128.5\n           \u03b2:      344\n           \u03b7:      383\n           \u03b6:        0\n         |S|:        1\n           d:     4042\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 36.36711739981547
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 187.4861969814026,
+              "cost": "         rop: \u22482^187.5\n         red: \u22482^185.5\n         svp: \u22482^187.1\n           \u03b2:      349\n           \u03b7:        2\n           \u03b6:      140\n         |S|: \u22482^221.9\n           d:     3921\n        prob: \u22482^-50.0\n           \u21bb: \u22482^52.2\n         tag:   hybrid",
+              "seconds": 33.13183471234515
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.56804596380994,
+              "cost": "         rop: \u22482^130.6\n         red: \u22482^130.6\n           \u03b4: 1.004373\n           \u03b2:      349\n           d:     3973\n         tag:     usvp",
+              "seconds": 0.055195913184434175
+            },
+            "primal_bdd": {
+              "bits": 129.62494492680568,
+              "cost": "         rop: \u22482^129.6\n         red: \u22482^129.5\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           d:     4023\n         tag:      bdd",
+              "seconds": 1.5318342875689268
+            },
+            "dual": {
+              "bits": 132.75671098484656,
+              "cost": "         rop: \u22482^132.8\n         mem: \u22482^84.9\n           m:     2030\n           \u03b2:      353\n           d:     4078\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03629084210842848
+            },
+            "mitm": {
+              "bits": 1635.0,
+              "cost": "         rop: \u22482^1635.0\n         mem:  \u22482^inf\n           m: \u22482^11.7\n           k:     1024\n           \u21bb:        2",
+              "seconds": 0.0025882497429847717
+            },
+            "dual_hybrid": {
+              "bits": 129.7635793319969,
+              "cost": "         rop: \u22482^129.8\n         red: \u22482^129.7\n       guess: \u22482^123.3\n           \u03b2:      342\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      358\n           N: \u22482^71.7\n           m: \u22482^11.0",
+              "seconds": 5.932055144570768
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 188.2379674656589,
+              "cost": "         rop: \u22482^188.2\n         red: \u22482^179.2\n         svp: \u22482^188.2\n           \u03b2:      349\n           \u03b7:        2\n           \u03b6:      146\n         |S|: \u22482^231.4\n           d:     3914\n        prob: \u22482^-46.5\n           \u21bb: \u22482^48.7\n         tag:   hybrid",
+              "seconds": 30.118607179727405
+            },
+            "bdd_hybrid": {
+              "bits": 129.6330837349644,
+              "cost": "         rop: \u22482^129.6\n         red: \u22482^129.5\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           \u03b6:        0\n         |S|:        1\n           d:     4046\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 33.7522014407441
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 131.53677364561358,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 129.62494492680568,
+            "passes_128": true
+          }
+        }
+      }
+    },
+    "initial_run_script_sha256": "b0344dcb333ee08961b117178b134dd42d7884b2bcf87f1062ad97c260507727",
+    "combined_from_two_runs": true
+  },
+  "completed_estimator_results": 168,
+  "complete_generic_cases": 14,
+  "run_provenance": {
+    "initial_136_result_script_sha256": "b0344dcb333ee08961b117178b134dd42d7884b2bcf87f1062ad97c260507727",
+    "reproduction_166_result_script_sha256": "8bae6cb0b208ee35f1111f3920da61b4339391d5bad4a3654234078f6957df0e",
+    "note": "Initial run screened four attacks at interior grid points. The subsequent30-result extension completed all seven attacks there. The final reproduction script requests the combined166 results directly; two additional nominal-RMS controls are below.",
+    "initial_results_sha256": "f76faea2574496b80a8566e7bc4d3ffd36a3bab8dc7822b6a6e7f48160cec893",
+    "extension_results_sha256": "d818dc41ef1ee0def706e97cddaac3387cb9d51218e85b8f888d9f58f7d8762b"
+  },
+  "nominal_sigma128_control": {
+    "integer_rms_used": 128.0,
+    "attack": "dual_hybrid",
+    "models": {
+      "BDGL16": {
+        "bits": 129.64838482843695,
+        "cost": "         rop: \u22482^129.6\n         red: \u22482^129.6\n       guess: \u22482^122.6\n           \u03b2:      340\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      340\n           N: \u22482^70.4\n           m:     1024",
+        "seconds": 6.0123922592028975
+      },
+      "MATZOV": {
+        "bits": 127.79502474173096,
+        "cost": "         rop: \u22482^127.8\n         red: \u22482^127.7\n       guess: \u22482^123.6\n           \u03b2:      339\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      351\n           N: \u22482^72.2\n           m:     1024",
+        "seconds": 6.313956875819713
+      }
+    },
+    "probe_source": "import sys,json\nsys.path.insert(0,'/mnt/tfhepp/test/ckks/tools')\nimport assess_tfhe_sigma128 as a\nfrom pathlib import Path\nprofile=dict(a.cases()['lvl1_sigma128'],integer_rms=128.0)\nout={}\nfor model in ('BDGL16','MATZOV'):\n name,_,attack,result=a.estimate((Path('/mnt/selection'),'nominal_sigma128',profile,model,'dual_hybrid'))\n out[model]=result\nPath('/mnt/work/nominal-control.json').write_text(json.dumps({'integer_rms_used':128.0,'attack':'dual_hybrid','models':out},indent=2)+'\\n')\n"
+  },
+  "sampler_and_implementation_probe": {
+    "results": {
+      "source": "synthetic keys only; independent schoolbook integer phase audit",
+      "trlwe": [
+        {
+          "sigma": 128,
+          "actual": {
+            "count": 65536,
+            "rms": 127.49520296534612,
+            "mean": -0.6425628662109375,
+            "maximum": 553
+          },
+          "sampler": {
+            "count": 65536,
+            "rms": 127.49520296534612,
+            "mean": -0.6425628662109375,
+            "maximum": 553
+          },
+          "fft_rounding": {
+            "count": 65536,
+            "rms": 0,
+            "mean": 0,
+            "maximum": 0
+          }
+        },
+        {
+          "sigma": 256,
+          "actual": {
+            "count": 65536,
+            "rms": 256.2890362142286,
+            "mean": -0.1899871826171875,
+            "maximum": 1103
+          },
+          "sampler": {
+            "count": 65536,
+            "rms": 256.2890362142286,
+            "mean": -0.1899871826171875,
+            "maximum": 1103
+          },
+          "fft_rounding": {
+            "count": 65536,
+            "rms": 0,
+            "mean": 0,
+            "maximum": 0
+          }
+        }
+      ],
+      "pks": {
+        "pks_parameter_sigma": 256,
+        "target_parameter_sigma": 128,
+        "observed_nonconstant_phase": {
+          "count": 20460,
+          "rms": 128.1708981399825,
+          "mean": 1.6197947214076247,
+          "maximum": 566
+        },
+        "known_zero_extraction_checks": 20
+      }
+    },
+    "source": "#include <tfhe++.hpp>\n#include <cmath>\n#include <iomanip>\n#include <iostream>\n#include <memory>\nusing namespace TFHEpp;\nusing L=lvl1param;\nstruct MiniDomain:lvl2param{static constexpr std::uint32_t n=4,k=1;};\nstruct ProbePKS:lvl21param{using domainP=MiniDomain;static constexpr std::uint32_t t=2,basebit=2;static constexpr double \u03b1=0x1p-24;};\nstruct Stats{std::size_t count=0;long double squares=0,sum=0;std::uint64_t maximum=0;void add(std::uint32_t residue){auto v=std::int64_t(std::bit_cast<std::int32_t>(residue));++count;sum+=v;squares+=static_cast<long double>(v)*v;maximum=std::max(maximum,std::uint64_t(std::abs(v)));}double rms()const{return std::sqrt(double(squares/count));}void json()const{std::cout<<\"{\\\"count\\\":\"<<count<<\",\\\"rms\\\":\"<<rms()<<\",\\\"mean\\\":\"<<double(sum/count)<<\",\\\"maximum\\\":\"<<maximum<<\"}\";}};\nPolynomial<L> exact(const Polynomial<L>&a,const Key<L>&key){Polynomial<L> out{};for(std::size_t i=0;i<L::n;++i)for(std::size_t j=0;j<L::n;++j){const auto term=a[i]*key[j];if(i+j<L::n)out[i+j]+=term;else out[i+j-L::n]-=term;}return out;}\nint main(){\n static_assert(L::n==1024&&L::k==1);Key<L> key;keyGen<L>(key);\n std::cout<<std::setprecision(17)<<\"{\\\"source\\\":\\\"synthetic keys only; independent schoolbook integer phase audit\\\",\\\"trlwe\\\":[\";\n for(int c=0;c<2;++c){const double sigma=c?256:128;Stats actual,sampler,rounding;for(int row=0;row<64;++row){TRLWE<L> ct;trlweSymEncryptZero<L>(ct,std::ldexp(sigma,-32),key);const auto product=exact(ct[0],key);Polynomial<L> approx;PolyMul<L>(approx,ct[0],key);for(std::size_t i=0;i<L::n;++i){actual.add(ct[1][i]-product[i]);sampler.add(ct[1][i]-approx[i]);rounding.add(approx[i]-product[i]);}}if(c)std::cout<<',';std::cout<<\"{\\\"sigma\\\":\"<<sigma<<\",\\\"actual\\\":\";actual.json();std::cout<<\",\\\"sampler\\\":\";sampler.json();std::cout<<\",\\\"fft_rounding\\\":\";rounding.json();std::cout<<'}';}\n Key<MiniDomain> source{};for(auto &v:source)v=1;Polynomial<L> function{};function[0]=1;auto pks=std::make_unique<PrivateKeySwitchingKey<ProbePKS>>();privkskgen<ProbePKS>(*pks,function,source,key);Stats pks_stats;std::size_t zero_checks=0;for(std::size_t i=0;i<=MiniDomain::n;++i)for(std::size_t j=0;j<ProbePKS::t;++j)for(std::size_t u=0;u<2;++u){const auto &row=(*pks)[i][j][u];const auto product=exact(row[0],key);for(std::size_t k=1;k<L::n;++k)pks_stats.add(row[1][k]-product[k]);TLWE<L> sample;SampleExtractIndex<L>(sample,row,1);if(tlweSymPhase<L>(sample,key)!=row[1][1]-product[1])return 1;++zero_checks;}\n std::cout<<\"],\\\"pks\\\":{\\\"pks_parameter_sigma\\\":256,\\\"target_parameter_sigma\\\":128,\\\"observed_nonconstant_phase\\\":\";pks_stats.json();std::cout<<\",\\\"known_zero_extraction_checks\\\":\"<<zero_checks<<\"}}\\n\";\n return pks_stats.rms()>120&&pks_stats.rms()<136?0:2;\n}\n",
+    "compile_argv": [
+      "g++",
+      "-std=gnu++20",
+      "-O3",
+      "-march=native",
+      "-fopenmp",
+      "-isystem",
+      "/tmp/ckks-build-deps/root/usr/include",
+      "-DUSE_BLAKE3",
+      "-DUSE_INTERLEAVED_FORMAT",
+      "-DUSE_SPQLIOS_INTL",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp",
+      "-I/tmp/tfhepp-ring-prototype-build/thirdparties/concrete-fft",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl",
+      "/tmp/tfhepp-sigma128/noise_probe.cpp",
+      "/tmp/tfhepp-ring-prototype-build/src/libtfhe++.a",
+      "/tmp/tfhepp-ring-prototype-build/thirdparties/AES/libAES.a",
+      "/tmp/tfhepp-ring-prototype-build/thirdparties/BLAKE3/c/libblake3.a",
+      "/tmp/tfhepp-ring-prototype-build/thirdparties/spqlios-intl/libspqlios-intl.a",
+      "-o",
+      "/tmp/tfhepp-sigma128/noise_probe"
+    ],
+    "exit_code": 0,
+    "method": "Synthetic keys only; independent O(n^2) integer negacyclic phase oracle. 65536 coefficients each at sigma128 and256. Twenty small-domain PKS rows demonstrate known-zero extraction and target-noise selection.",
+    "retained_private_keys_read": false,
+    "retained_ciphertext_or_key_payloads_read": false,
+    "synthetic_ephemeral_secret_generated": true,
+    "synthetic_secret_saved": false
+  },
+  "retune_requirements": [
+    "Use sigma256 at the lvl1 target (normalized alpha2^-24), including fresh TLWE/TRLWE encryption, BR-key rows, private-switch rows and legacy/direct output material. Updating only the ring key does not address the weak family.",
+    "Do not override only PKS::alpha: privkskgen uses targetP::alpha through trlweSymEncryptZero(targetkey). The probe with PKS sigma256 and target sigma128 still observed RMS128.17.",
+    "Version the complete retuned fixture/evaluation profile and bind all per-level noise settings. portablelvl1param serialization and comparison currently omit alpha; the outer RAM fixture metadata also does not bind it. Source-constant changes alone cannot establish archive-noise provenance.",
+    "Regenerate affected material and validate gate, circuit-bootstrap, RAM feedback and upstream CKKS correctness at the larger noise. If sigma128 material was disclosed, rotate affected deployment secrets; stronger replacement keys do not revoke existing exposures.",
+    "The active lvl0 family becomes the weakest screened TFHE family at128.51 bits after a lvl1 sigma256 retune. Keep this in view if requiring a larger whole-system margin."
+  ],
+  "interpretation": "The small0.21-bit miss should not be read as a demonstrated attack or a sharply known security level. It fails the stated strict screening policy. Likewise sigma132 passing by0.057 bits is not a convincing model-robust margin. These costs do not qualify every structured attack or operational failure probability.",
+  "runtime_parameters_modified": false,
+  "retained_material_modified": false,
+  "reproduce": "sage -python test/ckks/tools/assess_tfhe_sigma128.py --selection ../Parameter-Selection --output tfhe-sigma128-estimates.json",
+  "raw_evidence_directory": "/tmp/tfhepp-sigma128",
+  "references": [
+    "https://lattice-estimator.readthedocs.io/en/latest/algorithms/lwe-dual.html",
+    "https://lattice-estimator.readthedocs.io/en/latest/algorithms/lwe-primal.html"
+  ]
+}

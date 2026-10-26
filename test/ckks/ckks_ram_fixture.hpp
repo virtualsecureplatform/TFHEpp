@@ -12,7 +12,12 @@ using BR=TFHEpp::independentlvl01param;
 using L=typename PKS::targetP;
 using PackKey=TFHEpp::TLWECoefficientPackingKey48<P,L>;
 using OutKey=TFHEpp::CKKSToTFHEKeySwitchKey<P,L,2,16>;
-constexpr std::array<std::uint64_t,7> metadata{0x434b52414d303031ULL,P::n,448,48,L::n,2,16};
+inline constexpr std::array<std::uint64_t,7> legacy_metadata{0x434b52414d303031ULL,P::n,448,48,L::n,2,16};
+#ifdef USE_LVL1_SIGMA256
+constexpr std::array<std::uint64_t,7> metadata{0x434b52414d303032ULL,P::n,448,48,L::n,2,16};
+#else
+constexpr auto metadata=legacy_metadata;
+#endif
 // SecretKey's default constructor generates secrets before deserialization.
 // Read the identical archive layout without invoking that constructor.
 struct SavedOwner {
@@ -25,7 +30,11 @@ struct SavedOwner {
 template<class... T>void save(const std::filesystem::path &file,const T&... values)
 {
     std::ofstream f(file,std::ios::binary);if(!f)throw std::runtime_error("cannot create "+file.string());
-    cereal::PortableBinaryOutputArchive ar(f);ar(metadata,values...);
+    cereal::PortableBinaryOutputArchive ar(f);ar(metadata);
+#ifdef USE_LVL1_SIGMA256
+    ar(TFHEpp::TFHEArchiveNoiseProfile());
+#endif
+    ar(values...);
     if(!f)throw std::runtime_error("fixture write failed");
 }
 template<class... T>void load(const std::filesystem::path &file,T&... values)
@@ -33,6 +42,10 @@ template<class... T>void load(const std::filesystem::path &file,T&... values)
     std::ifstream f(file,std::ios::binary);if(!f)throw std::runtime_error("missing "+file.string());
     cereal::PortableBinaryInputArchive ar(f);std::array<std::uint64_t,7> meta;ar(meta);
     if(meta!=metadata)throw std::runtime_error("RAM fixture profile mismatch");
+#ifdef USE_LVL1_SIGMA256
+    decltype(TFHEpp::TFHEArchiveNoiseProfile()) profile{};ar(profile);
+    if(profile!=TFHEpp::TFHEArchiveNoiseProfile())throw std::runtime_error("RAM fixture noise mismatch");
+#endif
     ar(values...);if(f.peek()!=std::char_traits<char>::eof())throw std::runtime_error("RAM fixture trailing data");
 }
 struct PlainRequest {std::uint32_t address;bool enable;std::uint32_t data;};

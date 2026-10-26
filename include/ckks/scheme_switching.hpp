@@ -181,11 +181,12 @@ using CKKSToTFHEKeySwitchKey = KeySwitchingKey<
 
 // Generates the RLWE-coefficient-secret -> TFHE-LWE-secret switching key.
 // The caller owns both secrets, exactly as for the OpenFHE setup/keygen API.
+namespace ckks_scheme_switch_detail {
 template <class CKKSParam, class TFHEParam, std::uint32_t BaseBit,
-          std::uint32_t Levels>
-inline void CKKSToTFHEKeyGen(
+          std::uint32_t Levels, class Encrypt>
+inline void generateDirectSwitchKey(
     CKKSToTFHEKeySwitchKey<CKKSParam, TFHEParam, BaseBit, Levels> &switch_key,
-    const Key<CKKSParam> &ckks_key, const Key<TFHEParam> &tfhe_key)
+    const Key<CKKSParam> &ckks_key, Encrypt encrypt)
 {
     using Params =
         CKKSToTFHEKeySwitchParams<CKKSParam, TFHEParam, BaseBit, Levels>;
@@ -213,12 +214,36 @@ inline void CKKSToTFHEKeyGen(
                     const TargetT message =
                         secret < 0 ? TargetT{0} - weight :
                                      (secret == 0 ? TargetT{0} : weight);
-                    tlweSymEncrypt<TFHEParam>(
-                        switch_key[ring * CKKSParam::n + coefficient][level]
-                                  [digit],
-                        message, tfhe_key);
+                    encrypt(switch_key[ring * CKKSParam::n + coefficient][level][digit], message);
                 }
         }
+}
+
+} // namespace ckks_scheme_switch_detail
+
+template <class P, class L, std::uint32_t BaseBit, std::uint32_t Levels>
+inline void CKKSToTFHEKeyGen(CKKSToTFHEKeySwitchKey<P,L,BaseBit,Levels> &key,
+    const Key<P> &source, const Key<L> &target)
+{
+    ckks_scheme_switch_detail::generateDirectSwitchKey<P,L,BaseBit,Levels>(
+        key, source, [&](TLWE<L> &row, typename L::T message) {
+            tlweSymEncrypt<L>(row, message, target);
+        });
+}
+
+// Explicit Gaussian noise in normalized target-torus units. The original
+// overload retains its target parameter's sampler, including non-Gaussian keys.
+template <class P, class L, std::uint32_t BaseBit, std::uint32_t Levels>
+inline void CKKSToTFHEKeyGen(CKKSToTFHEKeySwitchKey<P,L,BaseBit,Levels> &key,
+    const Key<P> &source, const Key<L> &target, double modular_stdev)
+{
+    static_assert(L::errordist == ErrorDistribution::ModularGaussian);
+    if (!std::isfinite(modular_stdev) || modular_stdev <= 0)
+        throw std::invalid_argument("invalid direct-switch Gaussian noise");
+    ckks_scheme_switch_detail::generateDirectSwitchKey<P,L,BaseBit,Levels>(
+        key, source, [&](TLWE<L> &row, typename L::T message) {
+            tlweSymEncrypt<L>(row, message, modular_stdev, target);
+        });
 }
 
 // Compact CKKS -> TFHE switching material following OpenFHE's intermediate

@@ -508,16 +508,49 @@ int main(int argc,char**argv)try {
  };
  if(const auto profile=std::getenv("CKKS_RAM_PROFILE");profile){
   const std::string selected=profile;
-  if(selected=="crossover"){
-   ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots,true);
-   ckks_ram::run<Narrow,9,1>(root,*sparse,key->narrow,decode_slots,true);
-   return ckks_ram::run<Narrow,10,1>(root,*sparse,key->narrow,decode_slots,true);
+  if(selected=="sigma256-qualify"){
+#ifndef USE_LVL1_SIGMA256
+   throw std::runtime_error("sigma256-qualify requires USE_LVL1_SIGMA256=ON");
+#else
+   const auto reports=ckks_ram::reportDirectory(root);
+   ckks_ram::RAMRunOptions options{"ring",reports/"capture",true};
+   ckks_ram::run<Narrow,13,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],false,&options);
+   options={"ring",reports/"small-ring",false};
+   ckks_ram::run<Narrow,2,2>(root,*sparse,key->narrow,decode_slots,false,argv[1],false,&options);
+   options={"ring",reports/"paired8192",false};
+   return ckks_ram::run<Narrow,13,1>(root,*sparse,key->narrow,decode_slots,true,argv[1],false,&options);
+#endif
   }
-  if(selected=="crossover-full")return ckks_ram::run<Narrow,13,1>(root,*sparse,key->narrow,decode_slots,true);
-  if(selected=="256x1")return ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots);
+  if(selected=="ring-prototype"){
+   const auto reports=ckks_ram::reportDirectory(root);
+   ckks_ram::RAMRunOptions options{"ring",reports/"capture",true};
+   ckks_ram::run<Narrow,13,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],false,&options);
+   for(const std::string mode:{"direct","direct256","ring"}){
+    options={mode,reports/("small-"+mode),false};
+    ckks_ram::run<Narrow,2,2>(root,*sparse,key->narrow,decode_slots,false,argv[1],false,&options);
+   }
+   options={"",reports/"comparison",false};
+   ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],true,&options);
+   ckks_ram::run<Narrow,9,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],true,&options);
+   ckks_ram::run<Narrow,10,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],true,&options);
+   return ckks_ram::run<Narrow,13,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],true,&options);
+  }
+  if(selected=="ring-compare"){
+   ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],true);
+   ckks_ram::run<Narrow,9,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],true);
+   ckks_ram::run<Narrow,10,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],true);
+   return ckks_ram::run<Narrow,13,1>(root,*sparse,key->narrow,decode_slots,false,argv[1],true);
+  }
+  if(selected=="crossover"){
+   ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots,true,argv[1]);
+   ckks_ram::run<Narrow,9,1>(root,*sparse,key->narrow,decode_slots,true,argv[1]);
+   return ckks_ram::run<Narrow,10,1>(root,*sparse,key->narrow,decode_slots,true,argv[1]);
+  }
+  if(selected=="crossover-full")return ckks_ram::run<Narrow,13,1>(root,*sparse,key->narrow,decode_slots,true,argv[1]);
+  if(selected=="256x1")return ckks_ram::run<Narrow,8,1>(root,*sparse,key->narrow,decode_slots,false,argv[1]);
   if(selected!="4x2")throw std::invalid_argument("unknown RAM profile");
  }
- return ckks_ram::run<Narrow,2,2>(root,*sparse,key->narrow,decode_slots);
+ return ckks_ram::run<Narrow,2,2>(root,*sparse,key->narrow,decode_slots,false,argv[1]);
 #endif
 
  auto input=std::make_unique<Refresh::Input>();auto slots=std::make_unique<CKKSSlotVector<P>>();const auto inputfile=root/"candidate-input.bin";

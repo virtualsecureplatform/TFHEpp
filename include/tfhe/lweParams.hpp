@@ -4,6 +4,8 @@
 #include <limits>
 
 #include "params.hpp"
+#include "noise_profile.hpp"
+#include <stdexcept>
 
 namespace TFHEpp {
 struct portablelvl0param {
@@ -46,6 +48,7 @@ struct portablelvl1param {
           l(lvl1param::l),
           Bgbit(lvl1param::Bgbit),
           Bg(lvl1param::Bg),
+          α(TFHEParameterNoiseValue<lvl1param>()),
           approx_bit(std::numeric_limits<typename lvl1param::T>::digits)
     {
     }
@@ -53,14 +56,14 @@ struct portablelvl1param {
     template <class Archive>
     void serialize(Archive& archive)
     {
-        archive(nbit, n, l, Bgbit, Bg, approx_bit);
+        archive(nbit, n, l, Bgbit, Bg, α, approx_bit);
     }
 
     bool operator==(const portablelvl1param& in) const
     {
         return (nbit == in.nbit) && (n == in.n) && (l == in.l) &&
                (Bgbit == in.Bgbit) && (Bg == in.Bg) &&
-               (approx_bit == in.approx_bit);
+               (α == in.α) && (approx_bit == in.approx_bit);
     };
 };
 
@@ -188,6 +191,7 @@ struct portablelvl22param {
 };
 
 struct lweParams {
+    bool noise_profile_bound=true;
     portablelvl0param lvl0;
     portablelvl1param lvl1;
     portablelvl2param lvl2;
@@ -201,7 +205,38 @@ struct lweParams {
     template <class Archive>
     void serialize(Archive& archive)
     {
-        archive(lvl0.n, lvl0.α, lvl0.approx_bit, lvl1.nbit, lvl1.n, lvl1.l,
+        constexpr std::uint32_t magic=0x54465032;
+        if constexpr(Archive::is_saving::value){
+            if(!noise_profile_bound || !(*this==lweParams{}))
+                throw std::runtime_error("cannot relabel legacy or incompatible TFHE parameters");
+            archive(magic,TFHEArchiveNoiseProfile(),lvl0.n);
+            archiveTail(archive);
+        }else{
+            std::uint32_t first=0;archive(first);
+            if(first==magic){
+                decltype(TFHEArchiveNoiseProfile()) profile{};archive(profile);
+                if(profile!=TFHEArchiveNoiseProfile())throw std::runtime_error("TFHE noise profile mismatch");
+                archive(lvl0.n);archiveTail(archive);noise_profile_bound=true;
+                if(!(*this==lweParams{}))throw std::runtime_error("TFHE parameter payload mismatch");
+            }else{
+#ifdef USE_LVL1_SIGMA256
+                throw std::runtime_error("sigma256 requires versioned TFHE keys; regenerate legacy material");
+#else
+                lvl0.n=first;archiveTail(archive);noise_profile_bound=false;
+                if(lvl0.n!=lvl0param::n)throw std::runtime_error("legacy TFHE dimension mismatch");
+#endif
+            }
+        }
+    }
+    template<class Archive> void readLegacyPrivateOwner(Archive&archive)
+    {
+        archive(lvl0.n);archiveTail(archive);noise_profile_bound=false;
+        if(lvl0.n!=lvl0param::n || lvl1.n!=lvl1param::n || lvl2.n!=lvl2param::n)
+            throw std::runtime_error("legacy owner dimension mismatch");
+    }
+    template<class Archive> void archiveTail(Archive&archive)
+    {
+        archive(lvl0.α, lvl0.approx_bit, lvl1.nbit, lvl1.n, lvl1.l,
                 lvl1.Bgbit, lvl1.α, lvl1.approx_bit, lvl2.nbit, lvl2.n, lvl2.l,
                 lvl2.Bgbit, /*lvl2.α,*/ lvl2.approx_bit, lvl10.t, lvl10.basebit,
                 lvl10.α, lvl20.t, lvl20.basebit, lvl20.α, lvl21.t,

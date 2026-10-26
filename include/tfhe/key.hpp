@@ -146,6 +146,7 @@ struct lweKey {
 #endif
                >
         keys;
+    explicit lweKey(decltype(keys)&&restored_keys):keys(std::move(restored_keys)) {}
     lweKey()
     {
         keyGen<lvl0param>(std::get<Key<lvl0param>>(keys));

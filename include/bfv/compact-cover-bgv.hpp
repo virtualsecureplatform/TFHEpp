@@ -16,9 +16,7 @@
 #include <vector>
 
 #include "modular_ntt.hpp"
-#ifdef USE_BLAKE3
-#include "BLAKE3PRNG.hpp"
-#endif
+#include "seeded_mask.hpp"
 
 namespace TFHEpp::compact_cover_bgv {
 
@@ -343,13 +341,6 @@ inline void inverseNTT(FrontierElement &value)
     }
 }
 
-inline std::uint64_t splitmix64(std::uint64_t value)
-{
-    value = (value ^ (value >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
-    value = (value ^ (value >> 27)) * UINT64_C(0x94d049bb133111eb);
-    return value ^ (value >> 31);
-}
-
 inline void expandSeededUniformSlice(const TransitionSeed &seed,
                                      const std::uint64_t modulus,
                                      const std::span<std::uint64_t> output)
@@ -358,31 +349,13 @@ inline void expandSeededUniformSlice(const TransitionSeed &seed,
     // multiple of modulus.  This removes the visible bias of x % modulus for
     // the 61-bit RNS primes.
     const std::uint64_t rejection_threshold = -modulus % modulus;
-#ifdef USE_BLAKE3
-    std::array<std::uint8_t, 32> seed_bytes{};
-    for (std::size_t word = 0; word < seed.size(); ++word)
-        for (std::size_t byte = 0; byte < 8; ++byte)
-            seed_bytes[8 * word + byte] =
-                static_cast<std::uint8_t>(seed[word] >> (8 * byte));
-    BLAKE3PRNG::BLAKE3PRNG<std::uint64_t> engine(seed_bytes);
+    SeededMaskStream engine(seed,"TFHEpp.BFV.cover-mask.v3");
     for (auto &value : output) {
         std::uint64_t sample;
-        do sample = engine();
+        do sample = engine.next();
         while (sample < rejection_threshold);
         value = sample % modulus;
     }
-#else
-    std::uint64_t state = splitmix64(seed[0]) ^ splitmix64(seed[1] + 1) ^
-                          splitmix64(seed[2] + 2) ^ splitmix64(seed[3] + 3);
-    for (auto &value : output) {
-        std::uint64_t sample;
-        do {
-            state += UINT64_C(0x9e3779b97f4a7c15);
-            sample = splitmix64(state);
-        } while (sample < rejection_threshold);
-        value = sample % modulus;
-    }
-#endif
 }
 
 struct TransitionKeyHeader {
@@ -395,7 +368,7 @@ struct TransitionKeyHeader {
     std::uint64_t degree_value{degree};
 };
 
-inline constexpr std::uint32_t seeded_transition_key_format = 1;
+inline constexpr std::uint32_t seeded_transition_key_format = 3;
 inline constexpr std::uint32_t uniform_transition_key_format = 2;
 
 class SeededTransitionKeyWriter {

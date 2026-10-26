@@ -1,0 +1,395 @@
+{
+  "utc": "2026-10-25T13:27:45.844912+00:00",
+  "assessment": "Prospective CKKS RAM ring-switch bridge; paper/algebra and parameter-screen assessment, not an implemented or benchmarked optimization",
+  "tfhepp_revision": "4309482962154f6268eea2fdaf43b6b45d2be966",
+  "sources": {
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/refs/2025-713.pdf": "2f45edf1992db65bec9d8f2929af4fde3364bd32d3c86b6be2833b07cfd77100",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/refs/2601.18511v2.pdf": "11fa21050f82f75b8909d6198ab1641baeae11644acde8db280f2d0ff4bd6add",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/ckks/scheme_switching.hpp": "c474b28c1cdc6776da45ac7acc86e4709c56da70708ead3ae5e02feec8caa1e8",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_ram_benchmark.hpp": "aeb6d7c2a46ebd31e60894c0b37b5405cf8ac9fea21f93177ac32c002321f4d9",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks/ckks_ram_fixture.hpp": "2551149bd291ff92c9af2e15e08f1506290f845b8ef4b9ea3a2ef536e3b3029a",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/params/128bit.hpp": "cfdd3e0f853ff411983ad079976a9c4424dc01ccc3e165719e299d51e3ebc730",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include/utils.hpp": "2e4facb02b844102b5bc07e7b4669bcbb07736cc6d7a2bcb1957df31c61e339c",
+    "/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection/python/noiseestimation/gl.py": "31bdebb6adcadb63f14bb6436a269ecedecb6e42f042200bc4705f6cb916ad72"
+  },
+  "paper_findings": {
+    "2025-713.pdf": "LOHEN Appendix A Algorithms 2 and 3: key switch then split then sample extract; Section 4.2 motivates low-degree conversion.",
+    "2601.18511v2.pdf": "Sylph Section 3.3: explicit subring embedding and coefficient split; SinC extension is optional for the current coefficient-domain bridge."
+  },
+  "security": {
+    "utc": "2026-10-25T13:24:16.725355+00:00",
+    "parameter_selection_revision": "036df9b06f2ab0954ce860351847b101621ea705",
+    "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+    "source": "Parameter-Selection/python/lattice-estimator, using narrow_ckks_security.configure_max_beta",
+    "scope": "Classical generic LWE proxy at effective small-ring dimension. Unbounded samples. Variance-matched discrete-Gaussian proxy for truncated continuous normal. Does not certify RLWE/ring-specific attacks, exact error PMF, cross-scheme circular/KDM security, or complete protocol security.",
+    "max_beta": 4096,
+    "cases": {
+      "3.2": {
+        "n": 1024,
+        "log_q": 32,
+        "continuous_sigma": 3.2,
+        "integer_rms": 2.828301687834186,
+        "models": {
+          "BDGL16": {
+            "dual": {
+              "bits": 110.69999999999999,
+              "cost": "         rop: \u22482^110.7\n         mem: \u22482^65.2\n           m:     1024\n           \u03b2:      275\n           d:     2048\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.05061371484771371
+            },
+            "primal_usvp": {
+              "bits": 108.8713274854192,
+              "cost": "         rop: \u22482^108.9\n         red: \u22482^108.9\n           \u03b4: 1.005204\n           \u03b2:      269\n           d:     1942\n         tag:     usvp",
+              "seconds": 0.07829529605805874
+            },
+            "primal_bdd": {
+              "bits": 106.76594104697034,
+              "cost": "         rop: \u22482^106.8\n         red: \u22482^106.6\n         svp: \u22482^103.7\n           \u03b2:      261\n           \u03b7:      298\n           d:     2005\n         tag:      bdd",
+              "seconds": 0.770785320084542
+            },
+            "dual_hybrid": {
+              "bits": 106.87897638543315,
+              "cost": "         rop: \u22482^106.9\n         red: \u22482^106.9\n       guess: \u22482^98.2\n           \u03b2:      262\n           p:        4\n           \u03b6:       10\n           t:       30\n          \u03b2':      262\n           N: \u22482^53.8\n           m:     1024",
+              "seconds": 6.144658030942082
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 107.30363445957354,
+              "cost": "         rop: \u22482^107.3\n         red: \u22482^107.3\n           \u03b4: 1.005204\n           \u03b2:      269\n           d:     1942\n         tag:     usvp",
+              "seconds": 0.05959531292319298
+            },
+            "dual": {
+              "bits": 109.44654182591532,
+              "cost": "         rop: \u22482^109.4\n         mem: \u22482^68.1\n           m:     1019\n           \u03b2:      273\n           d:     2043\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.04007536079734564
+            },
+            "primal_bdd": {
+              "bits": 105.82031852867193,
+              "cost": "         rop: \u22482^105.8\n         red: \u22482^105.4\n         svp: \u22482^103.8\n           \u03b2:      262\n           \u03b7:      294\n           d:     1991\n         tag:      bdd",
+              "seconds": 0.8121906840242445
+            },
+            "dual_hybrid": {
+              "bits": 106.15483888098858,
+              "cost": "         rop: \u22482^106.2\n         red: \u22482^106.1\n       guess: \u22482^98.2\n           \u03b2:      261\n           p:        4\n           \u03b6:       10\n           t:       30\n          \u03b2':      278\n           N: \u22482^56.1\n           m:     1024",
+              "seconds": 5.880249262787402
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 106.76594104697034,
+            "passes_128": false
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 105.82031852867193,
+            "passes_128": false
+          }
+        }
+      },
+      "128": {
+        "n": 1024,
+        "log_q": 32,
+        "continuous_sigma": 128,
+        "integer_rms": 127.60173819385827,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 133.3970970881068,
+              "cost": "         rop: \u22482^133.4\n         red: \u22482^133.4\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.05798246385529637
+            },
+            "dual": {
+              "bits": 135.79855314975663,
+              "cost": "         rop: \u22482^135.8\n         mem: \u22482^83.4\n           m:     1005\n           \u03b2:      361\n           d:     2029\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.036705234088003635
+            },
+            "primal_bdd": {
+              "bits": 130.75314649572886,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.2\n         svp: \u22482^129.1\n           \u03b2:      342\n           \u03b7:      385\n           d:     1953\n         tag:      bdd",
+              "seconds": 0.6947059440426528
+            },
+            "dual_hybrid": {
+              "bits": 129.64790475573045,
+              "cost": "         rop: \u22482^129.6\n         red: \u22482^129.6\n       guess: \u22482^122.6\n           \u03b2:      340\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      340\n           N: \u22482^70.3\n           m:     1024",
+              "seconds": 6.577103537041694
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.4849579733293,
+              "cost": "         rop: \u22482^130.5\n         red: \u22482^130.5\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.058897898998111486
+            },
+            "primal_bdd": {
+              "bits": 128.6119407329973,
+              "cost": "         rop: \u22482^128.6\n         red: \u22482^128.3\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           d:     1972\n         tag:      bdd",
+              "seconds": 0.7238339385949075
+            },
+            "dual": {
+              "bits": 133.59401001208943,
+              "cost": "         rop: \u22482^133.6\n         mem: \u22482^85.5\n           m:     1003\n           \u03b2:      360\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.04622971173375845
+            },
+            "dual_hybrid": {
+              "bits": 127.7888055343365,
+              "cost": "         rop: \u22482^127.8\n         red: \u22482^127.7\n       guess: \u22482^123.5\n           \u03b2:      339\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      351\n           N: \u22482^72.1\n           m:     1024",
+              "seconds": 6.922501160297543
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 129.64790475573045,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 127.7888055343365,
+            "passes_128": false
+          }
+        }
+      },
+      "256": {
+        "n": 1024,
+        "log_q": 32,
+        "continuous_sigma": 256,
+        "integer_rms": 255.60139793443952,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 138.96651450533923,
+              "cost": "         rop: \u22482^139.0\n         red: \u22482^139.0\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.05480524292215705
+            },
+            "dual": {
+              "bits": 141.6349935746943,
+              "cost": "         rop: \u22482^141.6\n         mem: \u22482^87.6\n           m:     1000\n           \u03b2:      381\n           d:     2024\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03838090132921934
+            },
+            "primal_bdd": {
+              "bits": 136.29913759190438,
+              "cost": "         rop: \u22482^136.3\n         red: \u22482^135.7\n         svp: \u22482^134.7\n           \u03b2:      361\n           \u03b7:      404\n           d:     1949\n         tag:      bdd",
+              "seconds": 0.6779423640109599
+            },
+            "dual_hybrid": {
+              "bits": 135.18661399464605,
+              "cost": "         rop: \u22482^135.2\n         red: \u22482^135.2\n       guess: \u22482^125.3\n           \u03b2:      359\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      359\n           N: \u22482^74.2\n           m:     1024",
+              "seconds": 7.219452902209014
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 135.76418621225008,
+              "cost": "         rop: \u22482^135.8\n         red: \u22482^135.8\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.05752138886600733
+            },
+            "dual": {
+              "bits": 139.01975785153707,
+              "cost": "         rop: \u22482^139.0\n         mem: \u22482^89.3\n           m:      998\n           \u03b2:      380\n           d:     2022\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.04130107490345836
+            },
+            "primal_bdd": {
+              "bits": 133.91394915161135,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.5\n         svp: \u22482^131.8\n           \u03b2:      364\n           \u03b7:      395\n           d:     1954\n         tag:      bdd",
+              "seconds": 0.7344885710626841
+            },
+            "dual_hybrid": {
+              "bits": 133.09159862149542,
+              "cost": "         rop: \u22482^133.1\n         red: \u22482^133.0\n       guess: \u22482^128.9\n           \u03b2:      358\n           p:        5\n           \u03b6:       20\n           t:       30\n          \u03b2':      369\n           N: \u22482^76.2\n           m:     1024",
+              "seconds": 10.162032696884125
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 135.18661399464605,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 133.09159862149542,
+            "passes_128": true
+          }
+        }
+      },
+      "512": {
+        "n": 1024,
+        "log_q": 32,
+        "continuous_sigma": 512,
+        "integer_rms": 511.60122782137483,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 145.1058267107591,
+              "cost": "         rop: \u22482^145.1\n         red: \u22482^145.1\n           \u03b4: 1.004031\n           \u03b2:      393\n           d:     1978\n         tag:     usvp",
+              "seconds": 0.05473544215783477
+            },
+            "primal_bdd": {
+              "bits": 142.2731299635109,
+              "cost": "         rop: \u22482^142.3\n         red: \u22482^141.9\n         svp: \u22482^140.2\n           \u03b2:      382\n           \u03b7:      423\n           d:     1958\n         tag:      bdd",
+              "seconds": 0.6908013899810612
+            },
+            "dual": {
+              "bits": 148.05613957763916,
+              "cost": "         rop: \u22482^148.1\n         mem: \u22482^92.3\n           m:      996\n           \u03b2:      403\n           d:     2020\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.030251547694206238
+            },
+            "dual_hybrid": {
+              "bits": 140.68939341434307,
+              "cost": "         rop: \u22482^140.7\n         red: \u22482^140.4\n       guess: \u22482^138.1\n           \u03b2:      377\n           p:        3\n           \u03b6:       20\n           t:       50\n          \u03b2':      377\n           N: \u22482^77.4\n           m:     1024",
+              "seconds": 7.784470064565539
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 141.58267234365826,
+              "cost": "         rop: \u22482^141.6\n         red: \u22482^141.6\n           \u03b4: 1.004031\n           \u03b2:      393\n           d:     1978\n         tag:     usvp",
+              "seconds": 0.05237210588529706
+            },
+            "primal_bdd": {
+              "bits": 139.6640366941608,
+              "cost": "         rop: \u22482^139.7\n         red: \u22482^139.3\n         svp: \u22482^137.3\n           \u03b2:      385\n           \u03b7:      415\n           d:     1949\n         tag:      bdd",
+              "seconds": 0.7482774658128619
+            },
+            "dual": {
+              "bits": 145.1727392012656,
+              "cost": "         rop: \u22482^145.2\n         mem: \u22482^93.8\n           m:      994\n           \u03b2:      402\n           d:     2018\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.036599456798285246
+            },
+            "dual_hybrid": {
+              "bits": 138.4863985137455,
+              "cost": "         rop: \u22482^138.5\n         red: \u22482^138.4\n       guess: \u22482^133.8\n           \u03b2:      378\n           p:        3\n           \u03b6:       10\n           t:       60\n          \u03b2':      387\n           N: \u22482^79.3\n           m:     1024",
+              "seconds": 6.9562822612933815
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "complete": true,
+            "weakest_bits": 140.68939341434307,
+            "passes_128": true
+          },
+          "MATZOV": {
+            "complete": true,
+            "weakest_bits": 138.4863985137455,
+            "passes_128": true
+          }
+        }
+      }
+    }
+  },
+  "noise": {
+    "utc": "2026-10-25T13:27:45.823313+00:00",
+    "construction": {
+      "source_ring_degree": 16384,
+      "target_ring_degree": 1024,
+      "ring_ratio": 16,
+      "target_secret_embedding": "t(X^(N/n)); here t(X^16), not contiguous zero padding",
+      "modulus_bits": 32,
+      "auxiliary_ciphertext_modulus_bits": 0,
+      "base_bits": 2,
+      "rows": 16,
+      "meaningful_outputs": 8192,
+      "split_mapping": "original index = residue + 16*small_ring_index",
+      "output_small_ring_ciphertexts": 16,
+      "useful_coefficients_per_ciphertext_current_layout": 512,
+      "arithmetic": "Exact negacyclic polynomial convolution modulo 2^32; complete balanced radix-4 gadget decomposition. No key modulus-down, gadget truncation, or FFT rounding term in this proposed variant."
+    },
+    "source_noise_model": "Parameter-Selection/python/noiseestimation/gl.py: repeated_variance; balanced-digit second moment (2^(2*b)+2)/12=1.5. Adapted to ordinary negacyclic convolution gain N; not the GL-SHIP cyclotomic-ring gain.",
+    "typical_variance_formula": "N*ell*1.5*integer_rms^2; an average/fixed-input model, not an adaptive/repeated-use correctness guarantee",
+    "uniform_bound_formula": "2*sigma*(M*sqrt(2/pi)+sqrt(2*M*128*ln(2)))/2^32, M=N*ell",
+    "uniform_bound_explanation": "For every output, |sum_l D_l(a)*e_l|<=2*sum_(l,j)|e_l[j]|. For independently sampled ideal normal G_lj with stdev sigma and e_lj=trunc(G_lj), sum|e|<=sum|G|. Gaussian concentration bounds this L1 norm with probability at least 1-2^-128. The same key event bounds all coordinates and arbitrary/adaptive digit choices; no independence between outputs is required.",
+    "scope": "Prospective bridge-key additive error only. Assumes independently sampled ideal Gaussian key noise and exact arithmetic. The upstream CKKS/S2C/rescale error budget 1/16 is a design assumption, not an established end-to-end failure bound. Finite-precision sampling and complete RAM noise analysis remain to be validated.",
+    "payload": {
+      "ideal_unseeded_u32_ring_switch_key_bytes": 2097152,
+      "current_direct_key_bytes": 2149580800,
+      "materialized_output_tlwes_bytes": 33587200,
+      "exclusions": "Seeded formats, metadata, prepared NTT caches, scratch, and RSS are separate. Payloads are counts, not measured allocations."
+    },
+    "cases": {
+      "3.2": {
+        "continuous_sigma": 3.2,
+        "integer_rms": 2.828301687834186,
+        "typical_key_error_log2_variance_integer": 21.58483453474158,
+        "typical_key_error_stddev_torus": 4.12934778561961e-07,
+        "fixed_digits_worst_weight_stddev_torus": 7.62939453125e-07,
+        "uniform_key_error_bound_torus": 0.0003218366767193529,
+        "key_event_failure_upper_bound": "2^-128",
+        "pre_switch_error_budget_assumed_torus": 0.0625,
+        "conditional_total_error_bound_torus": 0.06282183667671935,
+        "boolean_decision_margin_torus": 0.125,
+        "conditional_budget_passes": true,
+        "remaining_pre_switch_budget_torus": 0.12467816332328065
+      },
+      "128": {
+        "continuous_sigma": 128,
+        "integer_rms": 127.60173819385827,
+        "typical_key_error_log2_variance_integer": 32.57597084359497,
+        "typical_key_error_stddev_torus": 1.8629977039525542e-05,
+        "fixed_digits_worst_weight_stddev_torus": 3.0517578125e-05,
+        "uniform_key_error_bound_torus": 0.012873467068774116,
+        "key_event_failure_upper_bound": "2^-128",
+        "pre_switch_error_budget_assumed_torus": 0.0625,
+        "conditional_total_error_bound_torus": 0.07537346706877411,
+        "boolean_decision_margin_torus": 0.125,
+        "conditional_budget_passes": true,
+        "remaining_pre_switch_budget_torus": 0.11212653293122589
+      },
+      "256": {
+        "continuous_sigma": 256,
+        "integer_rms": 255.60139793443952,
+        "typical_key_error_log2_variance_integer": 34.58046633365082,
+        "typical_key_error_stddev_torus": 3.7318051009264715e-05,
+        "fixed_digits_worst_weight_stddev_torus": 6.103515625e-05,
+        "uniform_key_error_bound_torus": 0.025746934137548232,
+        "key_event_failure_upper_bound": "2^-128",
+        "pre_switch_error_budget_assumed_torus": 0.0625,
+        "conditional_total_error_bound_torus": 0.08824693413754824,
+        "boolean_decision_margin_torus": 0.125,
+        "conditional_budget_passes": true,
+        "remaining_pre_switch_budget_torus": 0.09925306586245176
+      },
+      "512": {
+        "continuous_sigma": 512,
+        "integer_rms": 511.60122782137483,
+        "typical_key_error_log2_variance_integer": 36.58271433353255,
+        "typical_key_error_stddev_torus": 7.469427346847885e-05,
+        "fixed_digits_worst_weight_stddev_torus": 0.0001220703125,
+        "uniform_key_error_bound_torus": 0.051493868275096465,
+        "key_event_failure_upper_bound": "2^-128",
+        "pre_switch_error_budget_assumed_torus": 0.0625,
+        "conditional_total_error_bound_torus": 0.11399386827509647,
+        "boolean_decision_margin_torus": 0.125,
+        "conditional_budget_passes": true,
+        "remaining_pre_switch_budget_torus": 0.07350613172490353
+      }
+    }
+  },
+  "reproduction_scripts": {
+    "assess.py": "import concurrent.futures,datetime,json,math,pathlib,sys,time\nROOT=pathlib.Path('/mnt/selection')\nOUT=pathlib.Path('/mnt/work/security.json')\nATTACKS=('primal_usvp','primal_bdd','dual','dual_hybrid')\nMODELS=('BDGL16','MATZOV')\ndef integer_rms(sigma):\n    return math.sqrt(math.fsum(2*k*k*.5*(math.erfc(k/(sigma*math.sqrt(2)))-math.erfc((k+1)/(sigma*math.sqrt(2)))) for k in range(1,math.ceil(12*sigma)+1)))\nCASES={str(s):dict(n=1024,log_q=32,continuous_sigma=s,integer_rms=integer_rms(s)) for s in (3.2,128,256,512)}\ndef estimate(task):\n    case,model,attack=task\n    sys.path.insert(0,str(ROOT/'python/lattice-estimator'))\n    sys.path.insert(0,str(ROOT/'python/estimates'))\n    from estimator import LWE,ND,RC\n    from sage.all import log\n    from narrow_ckks_security import configure_max_beta\n    configure_max_beta(4096)\n    p=CASES[case]\n    params=LWE.Parameters(n=p['n'],q=2**p['log_q'],Xs=ND.UniformMod(3),Xe=ND.DiscreteGaussian(p['integer_rms']),tag='small-ring-switch-'+case)\n    t=time.monotonic()\n    try:\n        r=getattr(LWE,attack)(params,red_cost_model=getattr(RC,model))\n        bits=float(log(r['rop'],2))\n        if not math.isfinite(bits):raise ValueError('nonfinite optimizer result')\n        return case,model,attack,dict(bits=bits,cost=str(r),seconds=time.monotonic()-t)\n    except Exception as e:\n        return case,model,attack,dict(error=type(e).__name__+': '+str(e),seconds=time.monotonic()-t)\ndef main():\n    report=dict(utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),parameter_selection_revision='036df9b06f2ab0954ce860351847b101621ea705',estimator_revision='3e48ef421ec256afddb3e7d2249a77eab6e9ba12',source='Parameter-Selection/python/lattice-estimator, using narrow_ckks_security.configure_max_beta',scope='Classical generic LWE proxy at effective small-ring dimension. Unbounded samples. Variance-matched discrete-Gaussian proxy for truncated continuous normal. Does not certify RLWE/ring-specific attacks, exact error PMF, cross-scheme circular/KDM security, or complete protocol security.',max_beta=4096,cases={k:dict(**v,models={m:{} for m in MODELS}) for k,v in CASES.items()})\n    tasks=[(case,model,attack) for case in CASES for model in MODELS for attack in ATTACKS]\n    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as pool:\n        futures=[pool.submit(estimate,t) for t in tasks]\n        for f in concurrent.futures.as_completed(futures):\n            case,model,attack,result=f.result();report['cases'][case]['models'][model][attack]=result\n            OUT.write_text(json.dumps(report,indent=2)+'\\n')\n            print(case,model,attack,result.get('bits',result.get('error')),flush=True)\n    for case,p in report['cases'].items():\n        for model,results in p['models'].items():\n            complete=all('bits' in results.get(a,{}) for a in ATTACKS)\n            result=dict(complete=complete,weakest_bits=min((v['bits'] for v in results.values() if 'bits' in v),default=None))\n            result['passes_128']=complete and result['weakest_bits']>=128\n            p.setdefault('summary',{})[model]=result\n            print('SUMMARY',case,model,result,flush=True)\n    OUT.write_text(json.dumps(report,indent=2)+'\\n')\nif __name__=='__main__':main()\n",
+    "noise.py": "\"\"\"Prospective exact q32 ring switch; no encrypted implementation or timing claim.\n\nParameter-Selection's log-variance arithmetic is used for the average-case\nscreen. A separate deterministic digit/L1 bound covers arbitrary input digit\nchoices on one event over independently sampled ideal Gaussian key errors.\nNo claim is made that the upstream CKKS error has a proved bound.\n\"\"\"\nimport datetime,hashlib,json,math,pathlib,sys\nROOT=pathlib.Path('/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection')\nsys.path.insert(0,str(ROOT/'python'))\nfrom noiseestimation.gl import repeated_variance\nfolder=pathlib.Path('/tmp/tfhepp-ring-switch-assessment')\nsecurity=json.loads((folder/'security.json').read_text())\nN,n,qbits,b,ell,B=16384,1024,32,2,16,8192\nM=N*ell\nq=2**qbits\nresults={}\nfor name,c in security['cases'].items():\n sigma=c['continuous_sigma']; rms=c['integer_rms']\n logvar=repeated_variance(2*math.log2(rms)+math.log2(1.5),M,'independent')\n # With |d|<=2, every output key-error coefficient is bounded by\n # 2*sum_{l,j}|e_l[j]|.  |trunc(G)|<=|G| and Gaussian concentration\n # on the sqrt(M)-Lipschitz L1 norm gives the following single-key event.\n delta_bits=128\n l1=sigma*(M*math.sqrt(2/math.pi)+math.sqrt(2*M*delta_bits*math.log(2)))\n uniform_torus=(2*l1)/q\n input_budget=1/16\n results[name]=dict(continuous_sigma=sigma,integer_rms=rms,\n   typical_key_error_log2_variance_integer=logvar,\n   typical_key_error_stddev_torus=2**(.5*logvar-qbits),\n   fixed_digits_worst_weight_stddev_torus=sigma*math.sqrt(4*M)/q,\n   uniform_key_error_bound_torus=uniform_torus,\n   key_event_failure_upper_bound='2^-128',\n   pre_switch_error_budget_assumed_torus=input_budget,\n   conditional_total_error_bound_torus=input_budget+uniform_torus,\n   boolean_decision_margin_torus=1/8,\n   conditional_budget_passes=input_budget+uniform_torus<1/8,\n   remaining_pre_switch_budget_torus=1/8-uniform_torus)\nreport=dict(utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),\n construction=dict(source_ring_degree=N,target_ring_degree=n,ring_ratio=N//n,\n   target_secret_embedding='t(X^(N/n)); here t(X^16), not contiguous zero padding',\n   modulus_bits=qbits,auxiliary_ciphertext_modulus_bits=0,base_bits=b,rows=ell,\n   meaningful_outputs=B,split_mapping='original index = residue + 16*small_ring_index',\n   output_small_ring_ciphertexts=16,useful_coefficients_per_ciphertext_current_layout=512,\n   arithmetic='Exact negacyclic polynomial convolution modulo 2^32; complete balanced radix-4 gadget decomposition. No key modulus-down, gadget truncation, or FFT rounding term in this proposed variant.'),\n source_noise_model='Parameter-Selection/python/noiseestimation/gl.py: repeated_variance; balanced-digit second moment (2^(2*b)+2)/12=1.5. Adapted to ordinary negacyclic convolution gain N; not the GL-SHIP cyclotomic-ring gain.',\n typical_variance_formula='N*ell*1.5*integer_rms^2; an average/fixed-input model, not an adaptive/repeated-use correctness guarantee',\n uniform_bound_formula='2*sigma*(M*sqrt(2/pi)+sqrt(2*M*128*ln(2)))/2^32, M=N*ell',\n uniform_bound_explanation='For every output, |sum_l D_l(a)*e_l|<=2*sum_(l,j)|e_l[j]|. For independently sampled ideal normal G_lj with stdev sigma and e_lj=trunc(G_lj), sum|e|<=sum|G|. Gaussian concentration bounds this L1 norm with probability at least 1-2^-128. The same key event bounds all coordinates and arbitrary/adaptive digit choices; no independence between outputs is required.',\n scope='Prospective bridge-key additive error only. Assumes independently sampled ideal Gaussian key noise and exact arithmetic. The upstream CKKS/S2C/rescale error budget 1/16 is a design assumption, not an established end-to-end failure bound. Finite-precision sampling and complete RAM noise analysis remain to be validated.',\n payload=dict(ideal_unseeded_u32_ring_switch_key_bytes=ell*2*N*4,\n   current_direct_key_bytes=N*ell*2*(n+1)*4,\n   materialized_output_tlwes_bytes=B*(n+1)*4,\n   exclusions='Seeded formats, metadata, prepared NTT caches, scratch, and RSS are separate. Payloads are counts, not measured allocations.'),\n cases=results)\n(folder/'noise.json').write_text(json.dumps(report,indent=2)+'\\n')\nfor name,r in results.items():\n print(name,'RMS',r['integer_rms'],'typical stdev',r['typical_key_error_stddev_torus'],'uniform bound',r['uniform_key_error_bound_torus'],'conditional pass',r['conditional_budget_passes'])\n"
+  },
+  "algebra_check": "Toy negacyclic ring N=64,n=8,q=2^32: t(X^8) embedding and residue-class splitting preserve every message and error coefficient, including wrap. This checks the identity, not key-switch implementation correctness.",
+  "open_checks": [
+    "Encrypted large-ring-to-small-ring bridge implementation and independent phase oracle",
+    "Complete upstream CKKS/S2C/rescaling error and repeated-RAM correctness analysis",
+    "Small-ring RLWE/ring-specific and full cross-scheme circular/KDM assessment",
+    "Actual key sampler/format metadata validation",
+    "Paired end-to-end RAM benchmark against current direct switch with retained inputs and equivalent qualified keys"
+  ],
+  "recommendation": {
+    "candidate": "Low-level q32 gadget ring switch N=16384 to n=1024, same ternary TFHE destination key, radix 4 with 16 rows, new bridge key continuous sigma=256.",
+    "paper_priority": "LOHEN Appendix A Algorithms 2-3 is the direct initial implementation guide; Sylph Section 3.3 supplies explicit subring/coefficient layout and later SinC layout guidance.",
+    "prototype_difference": "Existing CKKSToTFHERingSwitchKeyGen pads the destination key contiguously. Proposed split construction embeds t at coefficients 0,16,32,... and splits ciphertexts by residue modulo 16. The existing CKKS BenchmarkParam Bbarbit=4 is not the proposed bridge gadget: the candidate explicitly needs basebit=2 and 16 rows.",
+    "security_baseline_limit": "The same n=1024,q=2^32,ternary,sigma=128 generic screen models the nominal existing destination-noise family and misses MATZOV 128 bits. Passing the new sigma256 bridge family does not qualify the full RAM/public-material family; existing lower-noise exposures require separate assessment/retuning.",
+    "performance_limit": "No encrypted implementation or timing measurement was run. Key payload and algebraic work reduction are prospective, not a measured speedup."
+  },
+  "reproduction_commands": [
+    "bwrap --ro-bind /tmp/ckks-narrow-security/sage-sandbox / --dev /dev --proc /proc --tmpfs /tmp --tmpfs /mnt --ro-bind /home/work-bleaker/kmatsuoka/sources/CKKS-workspace/Parameter-Selection /mnt/selection --bind /tmp/tfhepp-ring-switch-assessment /mnt/work --setenv HOME /tmp --setenv DOT_SAGE /tmp/.sage --chdir /mnt/work /home/sage/sage/sage -python /mnt/work/assess.py",
+    "python3 /tmp/tfhepp-ring-switch-assessment/noise.py"
+  ]
+}

@@ -47,15 +47,25 @@ struct lvl1param {
              // multiplication.
     static constexpr std::uint32_t n = 1 << nbit;  // dimension
     static constexpr std::uint32_t k = 1;
+#ifdef USE_LVL1_SIGMA256
+    static constexpr std::uint32_t l = 4;
+    static constexpr std::uint32_t lₐ = l;
+    static constexpr std::uint32_t Bgbit = 5;
+#else
     static constexpr std::uint32_t l = 3;
     static constexpr std::uint32_t lₐ = l;
     static constexpr std::uint32_t Bgbit = 6;
+#endif
     static constexpr std::uint32_t Bgₐbit = Bgbit;
     static constexpr std::uint32_t Bg = 1 << Bgbit;
     static constexpr std::uint32_t Bgₐ = 1 << Bgₐbit;
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
-    static const inline double α = std::pow(2.0, -25);  // fresh noise
+#ifdef USE_LVL1_SIGMA256
+    static const inline double α = std::pow(2.0, -24);  // integer sigma256
+#else
+    static const inline double α = std::pow(2.0, -25);  // integer sigma128
+#endif
     using T = uint32_t;                                 // Torus representation
     static constexpr std::make_signed_t<T> μ = 1 << 29;
     static constexpr uint32_t plain_modulus = 8;
@@ -521,10 +531,15 @@ struct lvl2hparam {
 using cblvl2hparam = lvl2hparam;
 
 struct lvl21param {
+#ifdef USE_LVL1_SIGMA256
+    static constexpr std::uint32_t t = 12;
+    static constexpr std::uint32_t basebit = 2;
+#else
     static constexpr std::uint32_t t = 8;  // number of addition in
                                            // keyswitching
     static constexpr std::uint32_t basebit =
         3;  // how many bit should be encrypted in keyswitching key
+#endif
     static constexpr ErrorDistribution errordist =
         ErrorDistribution::ModularGaussian;
     static const inline double α = lvl1param::α;  // key noise

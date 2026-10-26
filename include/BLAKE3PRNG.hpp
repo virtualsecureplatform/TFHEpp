@@ -37,16 +37,6 @@ struct alignas(64) BLAKE3PRNG {
         return std::numeric_limits<result_type>::max();
     }
 
-    explicit BLAKE3PRNG(result_type seed_value = 0)
-    {
-        seed = {};
-        for (int i = 0; i < std::numeric_limits<result_type>::digits / 8; i++)
-            seed[i] = ((uint8_t*)&seed_value)[i];
-        blake3_hasher_init_keyed(&hasher, seed.data());
-        blake3_hasher_finalize_seek(&hasher, counter, (uint8_t*)buffer.data(),
-                                    buffer_len);
-    }
-
     explicit BLAKE3PRNG(const std::array<uint8_t, 32>& seed_value)
         : seed(seed_value)
     {

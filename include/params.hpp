@@ -21,6 +21,9 @@ enum class ErrorDistribution { ModularGaussian, CenteredBinomial };
 #define TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 
 // Use old 80bit security parameters. It is faster, but not recommended.
+#if defined(USE_LVL1_SIGMA256) && (defined(USE_80BIT_SECURITY) || defined(USE_COMPRESS) || defined(USE_CGGI19) || defined(USE_BLOCK_BINARY) || defined(USE_CONCRETE) || defined(USE_TFHE_RS) || defined(USE_TERNARY))
+#error "USE_LVL1_SIGMA256 requires the default 128-bit parameter family"
+#endif
 #if defined(USE_80BIT_SECURITY)
 #include "params/CGGI16.hpp"
 #elif defined(USE_COMPRESS)

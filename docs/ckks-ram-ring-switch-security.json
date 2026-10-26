@@ -1,0 +1,493 @@
+{
+  "recorded_utc": "2026-10-25T16:42:27.534378+00:00",
+  "security_validated": false,
+  "deployment_qualified": false,
+  "verdict": "Noncryptographic production expansion has been removed. Circular security is accepted for the current RAM evaluation-key graph. The remaining lvl1 sigma128 family misses the strict128-bit classical screen under MATZOV; its dedicated assessment recommends sigma256 and full affected-material regeneration. Complete security is not inferred from cost estimates.",
+  "source_revision": "4309482962154f6268eea2fdaf43b6b45d2be966",
+  "source_sha256": {
+    "include/ckks/subring_switch.hpp": "81cd257f74c28431e8ab17a38c7faa616472a33fbd93674836e664c9fa569d8c",
+    "include/ckks/scheme_switching.hpp": "6fea877e69c949d8fcac623dc48a6e14f8a2dc1ca082fe098cd2b34a3ad49d2f",
+    "include/ckks/ckks.hpp": "1e2a87a3aa3578343f935f400e6b030a731ac9c92f44672382a8893b502b558e",
+    "include/BLAKE3PRNG.hpp": "35cb8233a874c63e844b19fcd24eef3ba112914396c35149331e8ace68979141",
+    "include/utils.hpp": "2e4facb02b844102b5bc07e7b4669bcbb07736cc6d7a2bcb1957df31c61e339c",
+    "include/ckks/tlwe_coefficient_packing.hpp": "cdf200b0d9bf77fa7ff36961394611c73761ddfe04cffed26fc0e1ecf54c47c0",
+    "include/ckks/narrow_refresh.hpp": "91c440b382d83872c8a05754150daf3df43dc8fb118d24b6f4813fa9d23f1482",
+    "include/ckks/native_auto_file.hpp": "561364eb5a5fff86e8a9c7cae77f71b60b83e04806119103e217103324370ebd",
+    "include/ckks/prepared_dd_ntt.hpp": "217a19364d6a2a284a3da289c0c3580ceffe4b691158becd5163c93357f52f51",
+    "test/ckks/ckks_ram_setup.cpp": "bc9bf74a2a659d02091aaa5080a6d25723dd03121be05b306d31b357568c25cf",
+    "test/ckks/tools/assess_ram_ring_security.py": "a5da384acfaa3ef47ae9c23bb19835b464bada664eab65e8320b959469d4c622"
+  },
+  "parameter_selection_revision": "036df9b06f2ab0954ce860351847b101621ea705",
+  "estimator_revision": "3e48ef421ec256afddb3e7d2249a77eab6e9ba12",
+  "algebra": {
+    "N": 16384,
+    "n": 1024,
+    "stride": 16,
+    "q": 4294967296,
+    "rows": 16,
+    "small_ring_polynomial_samples": 256,
+    "flattened_scalar_coordinates": 262144,
+    "map": "F(X)=sum_(r=0)^15 X^r F_r(X^16), R_N(q) direct-sum X^r R_n(q) as an R_n module",
+    "row_equation": "B_j = A_j*t(X^16) + g_j*s + E_j, g_j=2^(30-2j)",
+    "split_equation": "B_(j,r)=A_(j,r)*t + g_j*s_r + E_(j,r) mod (Y^1024+1,2^32)",
+    "error_distribution": "Coefficient deinterleaving is a permutation: independent per-coefficient ideal noise remains independent with sigma256. There is no factor16 trace average or reduction to n=64.",
+    "conditional_reduction": "For independently sampled s and t, after giving s to a distinguisher and subtracting each known g_j*s_r, the one-way bridge is precisely 256 polynomial samples of small-ring RLWE. This assumes uniform/pseudorandom masks and the actual small-ring error law. It does not simulate t-dependent auxiliary keys or prove cyclic composition.",
+    "further_subring": "Splitting a dense target t again generally increases module rank; it does not preserve a rank-one smaller secret with a smaller total unknown dimension.",
+    "modulus_caveat": "The coefficient-module identity holds for q=2^32. The cited preliminary BGV lemma uses odd q and a factor2 in its encryption, so its exact theorem is not asserted verbatim for this torus instantiation."
+  },
+  "mask_finding": {
+    "severity": "security qualification blocker",
+    "location": "include/ckks/subring_switch.hpp:49 -> scheme_switching.hpp exactEncryptPolynomialAtLevel -> ckks.hpp fillSeededUniformPolynomialAtLevel -> CKKSSeedStream",
+    "state_bits": 64,
+    "nominal_seed_bits": 256,
+    "fold": "state starts at constant; for each of four words state=mix(state XOR word). All expansion depends only on final 64-bit state.",
+    "constant_time_seed_collision": "Choose any first three alternate words. Let u be their folded state and z be the desired final state. Set the fourth word to u XOR unmix(z). The final states and all stream outputs are equal.",
+    "full_q32_mask_distinguisher": "Enumerate the 2^32 possible upper halves of the first 32-bit output, invert the bijective 64-bit mixer, then test subsequent outputs at the known Weyl step. Four q32 outputs admit at most probability 2^-64 of a uniform-mask match by a union bound. This costs about 2^32 candidate states, not 2^128.",
+    "demonstration_scope": "The Python run enumerated a deliberately restricted 2^12 suffix range. It did not execute a full 2^32 search. A C++ probe verified two colliding seeds give 16384 identical 64-bit outputs in the actual class.",
+    "not_demonstrated": "Neither seed collision nor public-mask state recovery alone recovers t or plaintext: masks are already public. No 2^32 secret-recovery bound or 64-bit encryption-security cap is claimed.",
+    "backend": "USE_BLAKE3 seeds the top-level RNG and hashes archive origins, but CKKSSeedStream still runs SplitMix. Full expansion into a raw key does not change that mask law.",
+    "archive": "The v1 archive profile does not bind a cryptographic mask-generator identifier. Increasing Gaussian noise or rehashing the file does not fix mask generation.",
+    "other_families": "The inspected RAM packing, direct bridges, retained native automorphism setup, direct selector setup and compact DD setup use full-mask TRLWE/TLWE encryption paths. They are not marked affected by this specific seeded-mask finding. Other uses of CKKSSeeded* remain subject to the same review."
+  },
+  "conditional_lattice_screens": {
+    "security_validated": false,
+    "scope": "Classical generic LWE proxies, conditional on uniform masks. Does not qualify existing SplitMix masks, ring-specific attacks, or cyclic key composition.",
+    "cases": {
+      "sigma256_unbounded": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 256,
+        "integer_rms": 255.60139793443952,
+        "samples": null,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 138.96651450533923,
+              "cost": "         rop: \u22482^139.0\n         red: \u22482^139.0\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.06380315497517586
+            },
+            "primal_bdd": {
+              "bits": 136.29913759190438,
+              "cost": "         rop: \u22482^136.3\n         red: \u22482^135.7\n         svp: \u22482^134.7\n           \u03b2:      361\n           \u03b7:      404\n           d:     1949\n         tag:      bdd",
+              "seconds": 0.7088766666129231
+            },
+            "dual": {
+              "bits": 141.6349935746943,
+              "cost": "         rop: \u22482^141.6\n         mem: \u22482^87.6\n           m:     1000\n           \u03b2:      381\n           d:     2024\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.03923815302550793
+            },
+            "dual_hybrid": {
+              "bits": 135.18661399464605,
+              "cost": "         rop: \u22482^135.2\n         red: \u22482^135.2\n       guess: \u22482^125.3\n           \u03b2:      359\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      359\n           N: \u22482^74.2\n           m:     1024",
+              "seconds": 7.105052486993372
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.007530443370342255
+            },
+            "bdd_hybrid": {
+              "bits": 136.31811017086233,
+              "cost": "         rop: \u22482^136.3\n         red: \u22482^135.8\n         svp: \u22482^134.7\n           \u03b2:      361\n           \u03b7:      404\n           \u03b6:        0\n         |S|:        1\n           d:     1987\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 21.65193375106901
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 194.06546864703608,
+              "cost": "         rop: \u22482^194.1\n         red: \u22482^191.6\n         svp: \u22482^193.8\n           \u03b2:      373\n           \u03b7:        2\n           \u03b6:      151\n         |S|: \u22482^239.3\n           d:     1855\n        prob: \u22482^-50.2\n           \u21bb: \u22482^52.4\n         tag:   hybrid",
+              "seconds": 19.631137799937278
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 135.76418621225008,
+              "cost": "         rop: \u22482^135.8\n         red: \u22482^135.8\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.05257850093767047
+            },
+            "primal_bdd": {
+              "bits": 133.91394915161135,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.5\n         svp: \u22482^131.8\n           \u03b2:      364\n           \u03b7:      395\n           d:     1954\n         tag:      bdd",
+              "seconds": 0.7161195133812726
+            },
+            "dual": {
+              "bits": 139.01975785153707,
+              "cost": "         rop: \u22482^139.0\n         mem: \u22482^89.3\n           m:      998\n           \u03b2:      380\n           d:     2022\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.07094976585358381
+            },
+            "dual_hybrid": {
+              "bits": 133.09159862149542,
+              "cost": "         rop: \u22482^133.1\n         red: \u22482^133.0\n       guess: \u22482^128.9\n           \u03b2:      358\n           p:        5\n           \u03b6:       20\n           t:       30\n          \u03b2':      369\n           N: \u22482^76.2\n           m:     1024",
+              "seconds": 10.149212392047048
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.002689206972718239
+            },
+            "bdd_hybrid": {
+              "bits": 133.9409888479283,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.6\n         svp: \u22482^131.8\n           \u03b2:      364\n           \u03b7:      395\n           \u03b6:        0\n         |S|:        1\n           d:     1993\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 18.72137127118185
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 193.4201855509301,
+              "cost": "         rop: \u22482^193.4\n         red: \u22482^190.9\n         svp: \u22482^193.1\n           \u03b2:      373\n           \u03b7:        2\n           \u03b6:      147\n         |S|: \u22482^233.0\n           d:     1860\n        prob: \u22482^-52.7\n           \u21bb: \u22482^54.9\n         tag:   hybrid",
+              "seconds": 20.31305976305157
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "attacks_completed": 7,
+            "weakest_bits": 135.18661399464605
+          },
+          "MATZOV": {
+            "attacks_completed": 7,
+            "weakest_bits": 133.09159862149542
+          }
+        }
+      },
+      "sigma128_unbounded": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 128,
+        "integer_rms": 127.60173819385827,
+        "samples": null,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 133.3970970881068,
+              "cost": "         rop: \u22482^133.4\n         red: \u22482^133.4\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.05930426437407732
+            },
+            "primal_bdd": {
+              "bits": 130.75314649572886,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.2\n         svp: \u22482^129.1\n           \u03b2:      342\n           \u03b7:      385\n           d:     1953\n         tag:      bdd",
+              "seconds": 0.6935959798283875
+            },
+            "dual": {
+              "bits": 135.79855314975663,
+              "cost": "         rop: \u22482^135.8\n         mem: \u22482^83.4\n           m:     1005\n           \u03b2:      361\n           d:     2029\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.035388987977057695
+            },
+            "dual_hybrid": {
+              "bits": 129.64790475573045,
+              "cost": "         rop: \u22482^129.6\n         red: \u22482^129.6\n       guess: \u22482^122.6\n           \u03b2:      340\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      340\n           N: \u22482^70.3\n           m:     1024",
+              "seconds": 6.560953143052757
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0009950590319931507
+            },
+            "bdd_hybrid": {
+              "bits": 130.7725880905769,
+              "cost": "         rop: \u22482^130.8\n         red: \u22482^130.2\n         svp: \u22482^129.1\n           \u03b2:      342\n           \u03b7:      385\n           \u03b6:        0\n         |S|:        1\n           d:     1992\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 21.077271855901927
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 186.15847506038332,
+              "cost": "         rop: \u22482^186.2\n         red: \u22482^184.1\n         svp: \u22482^185.8\n           \u03b2:      353\n           \u03b7:        2\n           \u03b6:      143\n         |S|: \u22482^226.6\n           d:     1867\n        prob: \u22482^-48.5\n           \u21bb: \u22482^50.7\n         tag:   hybrid",
+              "seconds": 22.14198958966881
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 130.4849579733293,
+              "cost": "         rop: \u22482^130.5\n         red: \u22482^130.5\n           \u03b4: 1.004340\n           \u03b2:      353\n           d:     1939\n         tag:     usvp",
+              "seconds": 0.0592795773409307
+            },
+            "primal_bdd": {
+              "bits": 128.6119407329973,
+              "cost": "         rop: \u22482^128.6\n         red: \u22482^128.3\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           d:     1972\n         tag:      bdd",
+              "seconds": 0.7044768873602152
+            },
+            "dual": {
+              "bits": 133.59401001208943,
+              "cost": "         rop: \u22482^133.6\n         mem: \u22482^85.5\n           m:     1003\n           \u03b2:      360\n           d:     2027\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.04053737781941891
+            },
+            "dual_hybrid": {
+              "bits": 127.7888055343365,
+              "cost": "         rop: \u22482^127.8\n         red: \u22482^127.7\n       guess: \u22482^123.5\n           \u03b2:      339\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      351\n           N: \u22482^72.1\n           m:     1024",
+              "seconds": 6.9283033516258
+            },
+            "mitm": {
+              "bits": 821.0,
+              "cost": "         rop: \u22482^821.0\n         mem: \u22482^821.2\n           m:      821\n           k:      512\n           \u21bb:        1",
+              "seconds": 0.0019550849683582783
+            },
+            "bdd_hybrid": {
+              "bits": 128.63044146647556,
+              "cost": "         rop: \u22482^128.6\n         red: \u22482^128.3\n         svp: \u22482^126.2\n           \u03b2:      345\n           \u03b7:      375\n           \u03b6:        0\n         |S|:        1\n           d:     1998\n        prob:      1.0\n           \u21bb:        1\n         tag:   hybrid",
+              "seconds": 18.844866630155593
+            },
+            "bdd_mitm_hybrid": {
+              "bits": 185.56231993688502,
+              "cost": "         rop: \u22482^185.6\n         red: \u22482^183.0\n         svp: \u22482^185.3\n           \u03b2:      353\n           \u03b7:        2\n           \u03b6:      140\n         |S|: \u22482^221.9\n           d:     1870\n        prob: \u22482^-50.4\n           \u21bb: \u22482^52.6\n         tag:   hybrid",
+              "seconds": 21.182062353938818
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "attacks_completed": 7,
+            "weakest_bits": 129.64790475573045
+          },
+          "MATZOV": {
+            "attacks_completed": 7,
+            "weakest_bits": 127.7888055343365
+          }
+        }
+      },
+      "sigma256_finite": {
+        "n": 1024,
+        "log_q": 32,
+        "sigma": 256,
+        "integer_rms": 255.60139793443952,
+        "samples": 262144,
+        "models": {
+          "BDGL16": {
+            "primal_usvp": {
+              "bits": 138.96651450533923,
+              "cost": "         rop: \u22482^139.0\n         red: \u22482^139.0\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.053828996140509844
+            },
+            "primal_bdd": {
+              "bits": 136.29913759190438,
+              "cost": "         rop: \u22482^136.3\n         red: \u22482^135.7\n         svp: \u22482^134.7\n           \u03b2:      361\n           \u03b7:      404\n           d:     1949\n         tag:      bdd",
+              "seconds": 0.626072202809155
+            },
+            "dual": {
+              "bits": 141.6349935746943,
+              "cost": "         rop: \u22482^141.6\n         mem: \u22482^87.6\n           m:     1000\n           \u03b2:      381\n           d:     2024\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.02793158497661352
+            },
+            "dual_hybrid": {
+              "bits": 135.18661399464605,
+              "cost": "         rop: \u22482^135.2\n         red: \u22482^135.2\n       guess: \u22482^125.3\n           \u03b2:      359\n           p:        3\n           \u03b6:       20\n           t:       40\n          \u03b2':      359\n           N: \u22482^74.2\n           m:     1024",
+              "seconds": 7.02309743873775
+            }
+          },
+          "MATZOV": {
+            "primal_usvp": {
+              "bits": 135.76418621225008,
+              "cost": "         rop: \u22482^135.8\n         red: \u22482^135.8\n           \u03b4: 1.004187\n           \u03b2:      372\n           d:     1968\n         tag:     usvp",
+              "seconds": 0.05453503876924515
+            },
+            "primal_bdd": {
+              "bits": 133.91394915161135,
+              "cost": "         rop: \u22482^133.9\n         red: \u22482^133.5\n         svp: \u22482^131.8\n           \u03b2:      364\n           \u03b7:      395\n           d:     1954\n         tag:      bdd",
+              "seconds": 0.7214600360020995
+            },
+            "dual": {
+              "bits": 139.01975785153707,
+              "cost": "         rop: \u22482^139.0\n         mem: \u22482^89.3\n           m:      998\n           \u03b2:      380\n           d:     2022\n           \u21bb:        1\n         tag:     dual",
+              "seconds": 0.04440906271338463
+            },
+            "dual_hybrid": {
+              "bits": 133.09159862149542,
+              "cost": "         rop: \u22482^133.1\n         red: \u22482^133.0\n       guess: \u22482^128.9\n           \u03b2:      358\n           p:        5\n           \u03b6:       20\n           t:       30\n          \u03b2':      369\n           N: \u22482^76.2\n           m:     1024",
+              "seconds": 9.816161482129246
+            }
+          }
+        },
+        "summary": {
+          "BDGL16": {
+            "attacks_completed": 4,
+            "weakest_bits": 135.18661399464605
+          },
+          "MATZOV": {
+            "attacks_completed": 4,
+            "weakest_bits": 133.09159862149542
+          }
+        }
+      }
+    }
+  },
+  "sampler": {
+    "continuous_sigma": 256,
+    "integer_rms": 255.60139793443952,
+    "implementation": "std::normal_distribution<long double> followed by truncation toward zero through signedLongDoubleToLevel",
+    "ideal_truncation_pmf": "P(e=0)=2*Phi(1/sigma)-1; P(e=k)=Phi((|k|+1)/sigma)-Phi(|k|/sigma), |k|>=1",
+    "variance_proxy_limit": "Variance matching does not make the PMFs identical or negligibly close. The measured numerical single-coefficient TV distance is recorded below; no negligible joint-distribution replacement is established.",
+    "finite_precision_limit": "No constant-time, finite-precision statistical-distance or 2^-128 exact-sampler proof was established. Side channels are outside these numerical estimates."
+  },
+  "composition": {
+    "secret_nodes": [
+      "t: independent TFHE lvl1 secret",
+      "u: structured sparse CKKS bootstrap secret",
+      "s: dense CKKS evaluation secret"
+    ],
+    "published_relationships": [
+      {
+        "edge": "t -> u",
+        "material": "pack48.bin encrypts weighted t coefficients under u"
+      },
+      {
+        "edge": "u -> s",
+        "material": "selectors encrypt functions of u under s"
+      },
+      {
+        "edge": "s -> u",
+        "material": "q56 dense-to-sparse switch"
+      },
+      {
+        "edge": "s -> t",
+        "material": "legacy direct, matched direct and new ring output keys"
+      },
+      {
+        "edge": "s -> s",
+        "material": "automorphism keys and quadratic relinearization material"
+      }
+    ],
+    "conclusion": "The t -> u -> s -> t cycle already exists with direct output switching. Ordinary independent-key IND-CPA alone does not supply a hybrid proof for the entire public graph. The ring variant needs a compatible circular/KDM assumption or an explicit composition proof.",
+    "acyclic_option": "Finite-depth key layers can use distinct source/destination secrets per epoch and one-way switches to avoid inter-epoch cycles, with new material and costs. Repeated fixed-key RAM and self-key relinearization are not unconditionally covered by that suggestion."
+  },
+  "whole_system_limits": {
+    "legacy_sigma128": "The seven-attack generic proxy minimum remains 127.7888055343365 MATZOV bits. The direct legacy key, ordinary lvl1 encryptions and TFHE eval families must be assessed together; changing only the new ring-key sigma does not qualify those exposures.",
+    "history": "If weak material was previously disclosed for reused secrets, regenerating stronger evaluation keys does not revoke it. A private old checkpoint by itself is not evidence of disclosure.",
+    "correctness": "The audited fixed ring key has deterministic added-error bound 0.024777563754469156 for arbitrary full radix4 digit choices. This does not depend on an ideal-normal tail assumption. Adding the assumed/audited input budget1/16 gives0.08727756375446916<1/8. Universal upstream noise for unbounded RAM execution remains unproved.",
+    "quantum": "Only classical BDGL16 and MATZOV screens were run; no 128-bit quantum-security claim is made."
+  },
+  "reproduction": {
+    "algebra": {
+      "security_validated": false,
+      "source_sha256": "1e2a87a3aa3578343f935f400e6b030a731ac9c92f44672382a8893b502b558e",
+      "split_multiplication_checks": 320,
+      "distinct_seed_collision_verified": true,
+      "mask_state_bits": 64,
+      "q32_mask_distinguisher_upper_bound_candidates": 4294967296,
+      "q32_restricted_suffix_demo_candidates": 4096,
+      "q32_restricted_suffix_demo_unique_recovery": true,
+      "mask_attack_scope": "Distinguishes mask expansion from uniform; does not recover an encryption secret or plaintext.",
+      "sigma256_integer_rms": 255.60139793443952,
+      "single_coefficient_total_variation_from_variance_matched_discrete_gaussian": 0.001690373434026315,
+      "noise_scope": "Ideal continuous-normal truncation PMF, numerical quadrature on +/-12 sigma; not a finite-precision sampler proof."
+    },
+    "cpp_seed_probe_source": "#include \"ckks_narrow_basis_benchmark.hpp\"\n#include <iostream>\nint main(){\nTFHEpp::CKKSSeed a{UINT64_C(1),UINT64_C(2),UINT64_C(3),UINT64_C(4)};\nTFHEpp::CKKSSeed b{UINT64_C(5),UINT64_C(6),UINT64_C(7),UINT64_C(3599532394160262945)};\nif(a==b)return 1; TFHEpp::ckks_detail::CKKSSeedStream x(a),y(b); for(int i=0;i<16384;++i)if(x.next()!=y.next())return 2; std::cout<<\"Distinct seeds produce identical 16384-word streams\\n\"; }\n",
+    "cpp_seed_probe_result": "exit0: Distinct seeds produce identical 16384-word streams",
+    "commands": [
+      "python3 test/ckks/tools/assess_ram_ring_security.py --output algebra.json",
+      "sage -python test/ckks/tools/assess_ram_ring_security.py --mode estimator --selection ../Parameter-Selection --output extended-estimates.json"
+    ],
+    "script_sha256": "a5da384acfaa3ef47ae9c23bb19835b464bada664eab65e8320b959469d4c622",
+    "raw_evidence_directory": "/tmp/tfhepp-ring-security",
+    "private_keys_read": false,
+    "key_payloads_read": false,
+    "retained_material_modified": false
+  },
+  "remediation_order": [
+    "Replace new bridge seeded-mask generation with full masks from the existing CSPRNG and explicit exact encryption, or use a separately specified cryptographic expander. Version the mask law and refuse v1 as a qualified format.",
+    "Generate replacement evaluation material without overwriting historical comparison fixtures; independently audit noise, mask provenance, correctness and performance.",
+    "Retune and inventory all public exposures under each shared secret, including ordinary TFHE encryptions and evaluation material; rotate affected secrets if old material was disclosed.",
+    "State and analyze the full circular/KDM assumption; use finite key layers where an acyclic deployment is required.",
+    "Reassess the actual error sampler, structural/quantum attacks and bounded operational failure probability before claiming production security."
+  ],
+  "references": [
+    {
+      "url": "https://people.csail.mit.edu/shaih/pubs/ring-switching-old.pdf",
+      "detail": "Gentry/Halevi/Smart preliminary version, Section3.1 Lemma2; small-ring RLWE reduction, odd-q caveat."
+    },
+    {
+      "url": "https://eprint.iacr.org/2025/713",
+      "detail": "LOHEN Appendix A Algorithms2-3; mechanics, not a proof of this complete instantiation."
+    },
+    {
+      "url": "https://arxiv.org/abs/2601.18511",
+      "detail": "Sylph Section3.3 and Appendix A; uniform-mask RLWE encryption assumption."
+    },
+    {
+      "url": "https://prng.di.unimi.it/",
+      "detail": "Generator author notes that generators on the page are not cryptographically secure."
+    },
+    {
+      "url": "https://github.com/BLAKE3-team/BLAKE3-specs/blob/master/blake3.tex",
+      "detail": "Potential cryptographic expansion design reference; not a review of a replacement implementation."
+    }
+  ],
+  "removal_validation": {
+    "utc": "2026-10-25T16:55:42.297860+00:00",
+    "mask_generation_fixed": true,
+    "security_validated": false,
+    "scope": "Removal of known noncryptographic production mask expansion; does not qualify the complete protocol. Previous source hashes and mask-failure probes above describe the historical v1 implementation.",
+    "source_sha256": {
+      "include/seeded_mask.hpp": "0f3e37dd124fd289017efc576554239524dd70f4cbc0eefdf4910050bc3db9ca",
+      "include/ckks/ckks.hpp": "210fe035aa5d92a7de8f1b4ceb2ccea37d58659ec78d7c76846945e39a3f19a0",
+      "include/BLAKE3PRNG.hpp": "d9792d350daf85763e5794d08e229d20677678cf8a750a4452f7f8244be44376",
+      "include/bfv/compact-cover-bgv.hpp": "51895a0bd0674fadf638a4e7fc73f68ddd78a50b3c9efa371ee8d09d00776401",
+      "include/ckks/subring_switch.hpp": "0e5d82297c9ea977f4b3a3077c8ed355c5c07bef20a6d3ef92c53bc08ecfc455",
+      "include/ckks/integer_multiplication.hpp": "0fbd47cbf68816bdc01e73abdbc589319e2f482b293fde2806a31e703fd1c90f",
+      "test/ckks/ckks_seeded_mask.cpp": "c32baf4c8d34b4d0fe30999f70c0423699f8232b6d8961bd9212df82b734de38",
+      "test/ckks/ckks_subring_switch.cpp": "feb3e5815d6b68b16cdecc292cb8e7d37e79615e6eae3a74c82be423800a228f",
+      "test/ckks/ckks_ram_output_switch.hpp": "5146ae93d93d72f5c544df2c7c42b8f4866bcd1de559ff96a398fae3a62d342a"
+    },
+    "implementation": "Shared keyed BLAKE3 XOF, full 256-bit seed, explicit little-endian words, distinct CKKS/BFV domains, no noncryptographic fallback.",
+    "format_changes": {
+      "CKKS_seeded_rows": "Fixed CKSMASK2 tag, N, k, LogQ, algorithm1 before payload; untagged rows rejected.",
+      "ring": "SUBRING2 for kind1; to-tfhe32-subring-sigma256-v2.bin. Direct256 and captured-input formats unaffected.",
+      "BFV": "Seeded transition format3 rejects format1; uniform format2 unchanged."
+    },
+    "weak_seed_constructor_removed": true,
+    "backend_disabled": "Constructing a seeded mask stream without USE_BLAKE3 throws; standalone no-backend probe exited0.",
+    "production_source_audit": {
+      "command": "rg -n \"splitmix|SplitMix|mt19937|minstd_rand|default_random_engine|xorshift|rand\\(\" include src",
+      "matches": []
+    },
+    "tests": {
+      "ckks_seeded_mask": "passed",
+      "ckks_prng_stream": "passed",
+      "ckks_subring_switch_full8192_OMP1": "passed",
+      "ckks_subring_switch_full8192_OMP8": "passed",
+      "ckks_bootstrap_primitives": "passed",
+      "ckks_bootstrap_validation_toy": "passed",
+      "ckks_to_tfhe_full_smoke": "passed",
+      "ckks_tfhe_roundtrip_quick": "passed",
+      "compact_cover_bgv_65536": "passed",
+      "clang22_block_binary_syntax": "passed",
+      "no_blake3_backend_rejection": "passed"
+    },
+    "regressions": [
+      "Reference BLAKE3 output across four buffer refills",
+      "Distinct CKKS/BFV domain outputs",
+      "All four seed words affect expansion",
+      "Historical colliding seeds no longer collide",
+      "Versioned CKKS row roundtrip and legacy/wrong-Q rejection",
+      "Legacy BFV seeded and ring v1 archive rejection",
+      "N16384 to n1024 full 8192-bit output and phase checks"
+    ],
+    "retained_material_modified": false,
+    "new_performance_claim": false,
+    "remaining_limits": [
+      "sigma128 TFHE public exposures do not meet the requested classical screen under MATZOV",
+      "Cyclic/KDM evaluation-key composition remains an assumption",
+      "Exact finite-precision sampler, ring-specific/quantum attacks and full RAM failure qualification remain open"
+    ],
+    "log_sha256": {
+      "bootstrap-primitives.log": "45e39f3b9c916eed5b4856a68e5489a76fecb15ae4162a448a993c4d36b56b0b",
+      "bootstrap-validation.log": "6998e8ad58cf0adbf455a057ba5a517ea139bdbcaa462cdb30709ab405457a1c",
+      "full-switch.log": "b76701f7d99711d753859aec5ec62a3ebe8fc089a8df7e3297578601412bcb19",
+      "roundtrip.log": "4de57b5c2fff530ffe7022a7e071d849ec9aebf6e584f8fa0a67704305b59e64",
+      "bfv-cover.log": "91ee758ae397b6657c7b644ddf57caf33e04ee34fa5890aa773c926316196340"
+    }
+  },
+  "historical_v1_verdict": "The subring construction has an exact small-ring RLWE interpretation, but the implemented v1 key generator uses a noncryptographic 64-bit-state mask expander. Uniform-mask lattice screens do not qualify the generated v1 ring keys. Existing sigma128 TFHE exposures and cyclic evaluation-key assumptions independently prevent a full 128-bit qualification.",
+  "accepted_assumptions": {
+    "circular_security": true,
+    "scope": "Current RAM assessment per user instruction; see sigma128 assessment."
+  },
+  "sigma128_followup": {
+    "receipt": "docs/ckks-ram-sigma128-assessment.json",
+    "strict_classical_128_screen_passes": false,
+    "preferred_sigma": 256
+  },
+  "sigma256_followup": {
+    "receipt": "docs/ckks-ram-sigma256-validation.json",
+    "opt_in": true,
+    "circular_security_assumed": true,
+    "full_accesses_checked": 10,
+    "all_cells_passed": true,
+    "original_fixture_unchanged": true,
+    "diagnostic_owner_reused": true,
+    "security_validated": false
+  }
+}

@@ -266,3 +266,475 @@ crossover point for hundreds or thousands of batched bits, a failure
 probability bound, or a safe number of accesses between refreshes. The
 packing and direct output switching are straightforward prototype paths;
 include their cost when comparing with TFHE.
+
+## Experimental subring output switch
+
+**Security status:** investigation found that the historical v1 generator used
+noncryptographic mask expansion. It has been removed. Current v2 ring keys use
+domain-separated BLAKE3 expansion with the full 256-bit seed; v1 ring archives
+and legacy seeded CKKS rows are rejected. Generate replacement public keys in
+a separate directory. Earlier v1 timings remain historical observations;
+circular security is accepted for the current assessment, while the sigma128
+family misses the strict classical screen. See the [sigma128 assessment](#sigma128-assessment-with-circular-security-assumed), the
+[security investigation](#security-investigation-2026-10-25) and its
+[reproducible receipt](ckks-ram-ring-switch-security.json).
+
+The opt-in `ring` backend moves the output key switch before sample extraction.
+It switches the q32 coefficient ciphertext from the dense degree-16384 CKKS
+secret to the existing degree-1024 TFHE secret embedded as `t(X^16)`. Splitting
+by coefficient residue modulo 16 produces sixteen ordinary small-ring TRLWEs;
+coefficient `r + 16*j` becomes coefficient `j` in small ciphertext `r`.
+The existing first-8192-coefficient layout uses 512 coefficients of each small
+ciphertext. Ordinary sample extraction then returns TLWEs under the original
+TFHE secret, at scale 2^29, without another per-bit key switch.
+
+This is a separate construction from the older contiguous-zero-padding
+`CKKSToTFHERingSwitchKey` API. The new public API is
+`CKKSToTFHESubringSwitchKey32<P,L>` with
+`PreparedCKKSToTFHESubringSwitch32<P,L>::switchAndSplit` and `apply`.
+It requires single-polynomial secrets, a power-of-two destination degree
+that divides the source degree, a multi-limb source through degree 32768,
+and a 32-bit destination torus. `apply` extracts a nonempty prefix of at most
+`P::n` coefficients in the original order. RAM packing remains limited to
+`P::n/2` values. Prepared spectra are immutable; per-call scratch is local.
+
+The bridge uses 16 complete balanced radix-4 rows, q=2^32, and continuous
+integer Gaussian sigma 256 (normalized sigma 2^-24). No auxiliary ciphertext
+modulus, gadget truncation, or floating FFT convolution is used. The existing
+RNS32 gadget implementation provides exact convolution with two NTT primes.
+Raw row payload is 2 MiB; prepared spectra occupy 4 MiB. These are payload
+counts, not isolated process RSS measurements.
+
+### Add public keys to a retained RAM fixture
+
+Build the normal 128-bit topology (`USE_BLOCK_BINARY=OFF`, `ENABLE_TEST=ON`).
+The new archive fingerprints use the default BLAKE3 backend.
+
+```sh
+cmake --build build --target ckks_ram_setup ckks_subring_switch \
+  ckks_ram_output_switch_benchmark ckks_narrow_ll14_retuned_ram -j2
+OMP_NUM_THREADS=8 build/test/ckks/ckks_ram_setup --add-ring-switch-keys \
+  CHECKPOINT_DIRECTORY RAM_FIXTURE_DIRECTORY
+```
+
+This mode reads the retained checkpoint and constructor-free owner archive.
+It generates no private keys, trace requests, or fresh input encryptions. It
+adds `to-tfhe32-subring-sigma256-v2.bin` and
+`to-tfhe32-direct-sigma256-v1.bin`, retaining the original sigma-128
+`to-tfhe32.bin`. The second new file is a direct-switch baseline at matched
+bridge-key noise. The original three-argument `CKKSToTFHEKeyGen` keeps its
+sampler; its new explicit-noise overload accepts normalized Gaussian sigma.
+
+Both new archives validate a versioned profile, source-checkpoint and owner
+BLAKE3-256 fingerprints, degrees, embedding stride, modulus, scale, radix,
+row count, and sigma before reading their fixed-size payloads. Setup reuses
+matching files, rejects incompatible files, and publishes new files without
+overwriting an existing destination. A stale `.lock` or `.partial` file from
+an interrupted setup must be inspected and removed explicitly before retrying.
+Key generation rejects source parameter types whose noise floor would silently
+raise the fixed sigma-256 profile.
+
+`ring-switch-key-audit.json` records an independent schoolbook small-ring phase
+audit over all 262144 ring-key error coefficients, plus a distributed 4096-row
+sample of the matched direct key. It publishes only aggregate residuals and
+fingerprints. The ring audit checks the actual uniform added-error bound
+`2*sum(abs(key_error))/2^32` against the assessed limit 0.025746934137548232.
+
+### Select and compare the bridges
+
+Apply these environment variables to the existing retained RAM command above:
+
+- `CKKS_RAM_OUTPUT_SWITCH=direct` selects the original sigma-128 direct key
+  and remains the default; `direct256` selects the matched direct key;
+  `ring` selects the prepared subring bridge.
+- `CKKS_RAM_REPORT_DIRECTORY=NEW_DIRECTORY` separates output receipts from
+  the retained fixture. Existing report filenames remain unchanged for normal
+  and legacy crossover profiles.
+- `CKKS_RAM_PROFILE=ring-compare` runs 256-, 512-, 1024-, and 8192-bit profiles
+  with four independent states: serial TFHE and all three CKKS output bridges.
+  Each profile applies the same five retained requests, excludes the first
+  access as warm-up, and rotates execution order so each backend occupies
+  each measured position once. Every read and every post-access cell is
+  checked outside timing.
+- `CKKS_RAM_PROFILE=crossover-full` with `CKKS_RAM_CAPTURE_ONLY=1` derives
+  one public q32 input from the retained encrypted initial memory. It checks
+  all restored bits and saves `output-input32.bin` without encrypting a new
+  input. This mode is for isolating the output-switch cost.
+
+All new validation paths audit the pre-switch phase using exact integer
+arithmetic and enforce the assumed 1/16 error budget for the used coefficients.
+Input audits and key preparation are outside RAM access timings. Reports
+separate packing, Boolean bootstrap, decoding, and output conversion;
+ring kernel/split/extraction timers in bridge metadata are cumulative and
+include warm-ups. The standalone benchmark records these timers per trial.
+Combined RSS includes all loaded baselines and retained bootstrap caches;
+it must not be described as the ring-only memory footprint.
+
+A reproducible driver uses the retained paths/flags in the paired crossover
+receipt, pins eight P cores, sets the 128 MiB stack limit, hashes retained
+files before/after, and samples external CPU activity:
+
+```sh
+python3 test/ckks/tools/run_ram_ring_switch.py \
+  --binary build/test/ckks/ckks_narrow_ll14_retuned_ram \
+  --bridge-benchmark build/test/ckks/ckks_ram_output_switch_benchmark \
+  --output NEW_EXPERIMENT_DIRECTORY
+python3 test/ckks/analyze_ram_ring_switch.py NEW_EXPERIMENT_DIRECTORY \
+  --output ring-switch-results.json
+```
+
+`--baseline-receipt` can select a receipt with paths valid on another machine.
+The default driver reuses one warmed bootstrap cache across the capture, small
+traces and four-way comparison. It has
+`--phase pipeline|capture|small|comparison|bridge` for staged execution;
+phase directories must be fresh. The small phase checks all 16 accesses of
+the 4x2 trace, including encrypted read-output feedback, for each bridge.
+The bridge phase compares the same saved q32 ciphertext at all four batch
+sizes: one warm-up per backend, then all six permutations of execution order.
+The analyzer requires complete successful journals, matching stage sums,
+all cell/read checks, and retained-file integrity receipts. It reports
+stage-only and whole-access gains separately; contended observations do not
+establish an uncontended or universal speedup.
+
+### Qualification boundary
+
+[The parameter assessment](ckks-ram-ring-switch-assessment.json) screens the
+new sigma-256 family at the effective degree 1024, not 16384. The weakest
+classical generic LWE estimates are 135.19 bits (BDGL16) and 133.09 (MATZOV).
+These use variance-matched proxies for truncated continuous Gaussian noise.
+The candidate sigma-128 family reaches only 127.79 under MATZOV. Adding the
+new key does not qualify or repair other historical lower-noise public material.
+
+The analytical 0.02575 bridge-error bound is conditional on independent ideal
+Gaussian key sampling and exact arithmetic. Combined with a separately bounded
+1/16 input phase error, it stays below the 1/8 Boolean decision margin. A
+successful trace verifies this budget for those observed inputs, not for every
+possible RAM execution. Small-ring RLWE structure, complete upstream noise,
+finite-precision sampling, and cross-scheme circular/KDM security remain
+separate qualification tasks. The prototype stays opt-in and all reports keep
+`security_validated: false`.
+
+### Observed prototype run (2026-10-25)
+
+The retained-fixture run used four independent RAM states, rotated execution
+order, one warm-up, and four measured accesses per backend. Mean whole-access
+times in seconds were:
+
+| Bits | Serial TFHE | Direct σ128 | Direct σ256 | Ring σ256 |
+| ---: | ---: | ---: | ---: | ---: |
+| 256 | 2.315 | 6.876 | 6.864 | 5.215 |
+| 512 | 4.274 | 8.677 | 8.682 | 5.333 |
+| 1024 | 8.120 | 12.100 | 12.076 | 5.416 |
+| 8192 | 61.487 | 60.176 | 60.134 | 6.643 |
+
+At 8192 bits, ring switching reduced whole-access time by
+9.05× against the matched-noise direct bridge and
+9.26× against serial TFHE in this run.
+The isolated output-conversion benchmark changed from
+65.5354 s to 0.011118 s
+(5895×). The remaining dominant CKKS stage was Boolean
+bootstrapping, averaging 3.961 s per full-batch access;
+output conversion averaged 0.011225 s in the RAM comparison.
+
+The ring key payload was 2 MiB and its prepared cache 4 MiB; the direct key
+payload was 2050 MiB. The evaluator releases the raw ring key after preparing
+its cache. Combined process peak RSS includes the retained bootstrap cache,
+all loaded baselines, RAM states and scratch; it is not ring-only RSS.
+
+All 80 four-way RAM accesses, 84 isolated conversion trials (including
+warm-ups), the full 8192-bit capture, and each bridge's 16-access small-RAM
+trace passed. The small traces include encrypted read-output feedback.
+Retained-file hashes were unchanged. The generated ring key's independently
+audited uniform added-error bound was 0.024777563754469156, below the assessed
+0.025746934137548232 limit. All observed pre-switch errors stayed below 1/16.
+
+The strict whole-job external-CPU screen did not pass. These are observations
+from this run and do not establish a universal or uncontended speedup.
+The default remains the original direct bridge, and complete protocol security
+remains unqualified. [The validation receipt](ckks-ram-ring-switch-validation.json)
+contains raw timings, correctness receipts, source and binary provenance,
+key audits, negative analyzer checks, and eight freshly reproduced
+Parameter-Selection estimates for the implemented sigma-256 profile.
+
+### Security investigation (2026-10-25)
+
+The v1 prototype is **not qualified for deployment**. The investigation found
+a concrete mask-generation defect, in addition to the existing parameter and
+composition qualifications. No secret-key recovery was demonstrated. No private
+keys or evaluation-key payloads were read, and no retained material was changed
+during this investigation. The earlier performance and correctness receipts
+remain historical observations.
+
+The algebraic construction has a useful precise interpretation. Write
+`F(X) = sum_r X^r F_r(X^16)`, and let `Y=X^16`. A public row
+`B_j=A_j*t(X^16)+g_j*s+E_j` splits into sixteen equations
+`B_(j,r)=A_(j,r)*t+g_j*s_r+E_(j,r)` in
+`Z_(2^32)[Y]/(Y^1024+1)`. Deinterleaving merely permutes coefficients: it
+does not divide noise by 16 or lower the secret dimension below 1024.
+With independent source/target secrets and uniform masks, giving away `s`
+and subtracting its messages leaves 256 ordinary small-ring RLWE polynomial
+samples. This establishes the appropriate *conditional* assumption for the
+one-way bridge. It does not establish the security of cyclic auxiliary keys.
+The small-ring reduction in [Gentry, Halevi and Smart, Section 3.1](https://people.csail.mit.edu/shaih/pubs/ring-switching-old.pdf)
+is a related precedent; that preliminary version's odd-modulus theorem is
+not asserted verbatim for our even-modulus torus implementation.
+
+The historical v1 implementation failed the uniform-mask premise. Its call to
+`exactEncryptPolynomialAtLevel` uses `CKKSSeedStream`, which folds a 256-bit
+seed into one 64-bit SplitMix state. `USE_BLAKE3` does not replace this expander.
+The mixer is invertible, so two distinct seeds with identical streams can be
+constructed directly. A C++ probe verified 16384 identical consecutive outputs
+for such a pair. At q32, enumerating the missing upper 32 bits of the first
+output and checking subsequent words gives a mask distinguisher requiring
+at most 2^32 candidate states. The executable Python demonstration searches
+a deliberately restricted 2^12 range, not all 2^32 candidates. These are
+mask-distribution results: masks are already public, so they do **not** prove
+a 2^32 secret-key attack or a 64-bit cap on encryption security. They do rule
+out treating this expander as a 128-bit cryptographic PRG.
+
+An extended Parameter-Selection run completed all 36 requested estimates:
+seven attacks per classical cost model at each noise setting, plus four
+finite-sample controls per model for sigma256. The finite control uses
+262144 flattened scalar coordinates as a generic LWE heuristic, not a claim
+that ring rotations are independent scalar samples.
+
+| Conditional uniform-mask profile | BDGL16 minimum | MATZOV minimum |
+| --- | ---: | ---: |
+| n1024, q32, sigma256, seven attacks | 135.19 bits | 133.09 bits |
+| n1024, q32, sigma128, seven attacks | 129.65 bits | 127.79 bits |
+| sigma256, finite scalar-coordinate control | 135.19 bits | 133.09 bits |
+
+The added attacks were MITM and two primal hybrid variants. None reduced the
+previous minima. These are classical estimates conditional on the mask and
+noise models; no quantum or complete ring-specific qualification was obtained.
+Truncating a continuous Gaussian also differs from the variance-matched
+discrete Gaussian used by the estimator. For sigma256 the ideal per-coefficient
+total-variation distance is approximately 0.00169037, so equality of variance
+does not supply a negligible-distribution-distance argument.
+
+The public-key graph has further obligations: packing encrypts TFHE secret
+coefficients under the sparse CKKS secret; selectors encrypt functions of that
+sparse secret under the dense CKKS secret; output switching encrypts the dense
+secret under the TFHE secret. This cycle already exists with direct output
+switching. The dense-to-sparse switch, automorphism keys and relinearization
+material add further secret-dependent relationships. Ordinary independent-key
+IND-CPA security does not automatically justify the whole graph. A compatible
+circular/KDM assumption or a separate composition proof is required.
+
+The inspected full-mask packing, direct-switch, native automorphism, selector
+and compact-DD setup paths do not use this particular legacy seeded expander.
+However, sigma128 TFHE encryptions and evaluation material remain separate
+128-bit-screen blockers. Raising only the new output key's noise cannot repair
+them. If weaker material was previously disclosed, replacement public keys
+cannot revoke that information; affected deployment secrets must be replaced.
+The existence of an old private checkpoint alone does not imply disclosure.
+
+The required repair is full masks from the existing CSPRNG with explicit
+exact encryption, or a separately reviewed cryptographic expansion format.
+The ring archive already stores full masks, so this repair need not enlarge
+the 2 MiB payload or change evaluation arithmetic. A new archive version must
+bind the mask-generation law and distinguish repaired keys from v1. Then
+generate replacement material in a separate directory, repeat noise/correctness
+and performance checks, and assess every exposure under the shared secrets.
+Finite key layers can avoid some inter-epoch cycles at additional setup cost;
+they do not by themselves prove repeated fixed-key RAM or self-key security.
+
+The independently audited fixed-key bridge-error bound of 0.02477756 still
+holds for the tested key irrespective of the Gaussian model. Universal
+upstream RAM noise and finite-precision sampler guarantees remain open.
+[The security receipt](ckks-ram-ring-switch-security.json) contains the complete
+equations, source hashes, C++ probe, numerical sampler comparison, key graph,
+all attack outputs, and remediation order. Reproduce the checks with:
+
+```sh
+python3 test/ckks/tools/assess_ram_ring_security.py --output algebra.json
+sage -python test/ckks/tools/assess_ram_ring_security.py --mode estimator \
+  --selection ../Parameter-Selection --output extended-estimates.json
+```
+
+### Removal of noncryptographic expansion
+
+The current implementation removes both CKKS SplitMix expansion and BFV's
+SplitMix fallback. A shared `SeededMaskStream` uses keyed BLAKE3 with a complete
+256-bit seed, explicit little-endian serialization, separate CKKS/BFV domains,
+and buffered XOF output. It throws if BLAKE3 support is disabled; there is no
+noncryptographic fallback. `BLAKE3PRNG` also no longer accepts an implicit zero
+seed or a single 64-bit seed. Supply OS-backed randomness or a full 256-bit seed.
+
+Seeded CKKS rows carry a fixed magic, dimensions, modulus and algorithm tag
+before their payload. Legacy untagged rows are rejected. Ring key magic and
+filename advance to v2; the unaffected direct256 and captured-input formats
+remain compatible. BFV seeded transition keys use format 3 and reject format 1;
+its full-mask format 2 is unchanged. Retained historical files are not migrated
+or overwritten: regenerate the affected keys rather than changing their tags.
+The historical security receipt describes the defect before this removal.
+
+Deterministic noncryptographic generators remain in tests and numerical probes
+for public test vectors. They are not used by production encryption/key-generation
+implementations. Circular security is accepted as an assumption for the current RAM assessment.
+The remaining sigma128 public-material screen is assessed below.
+
+### Sigma128 assessment with circular security assumed
+
+For this assessment, circular security of the RAM evaluation-key graph is an
+accepted assumption. It is not treated as a remaining parameter-screen blocker.
+At the active level-1 parameters (`n=1024`, `q=2^32`, iid ternary secret,
+`alpha=2^-25`), sigma128 is borderline approximately 128-bit classical strength,
+but fails a strict requirement that both tested models return at least 128 bits.
+This small model-dependent shortfall is not a demonstrated practical attack.
+
+The complete seven-attack grid gives:
+
+| Continuous sigma | BDGL16 minimum | MATZOV minimum |
+| ---: | ---: | ---: |
+| 128 | 129.65 bits | 127.79 bits |
+| 132 | 129.94 bits | 128.06 bits |
+| 136 | 130.23 bits | 128.33 bits |
+| 144 | 130.52 bits | 128.64 bits |
+| 160 | 131.39 bits | 129.33 bits |
+| 192 | 132.85 bits | 130.74 bits |
+| 256 | 135.19 bits | 133.09 bits |
+
+These use Parameter-Selection's pinned estimator, BDGL16 and MATZOV classical
+costs, max-beta 4096, and variance-matched discrete-Gaussian proxies. The actual
+sampler truncates a continuous Gaussian: sigma128 gives ideal integer RMS
+127.601738. Even using nominal discrete-Gaussian RMS128 instead gives a
+MATZOV dual-hybrid estimate of 127.795 bits, so the shortfall is not an artifact
+of the small RMS correction. The seven attacks comprise uSVP, BDD, dual,
+dual-hybrid, MITM, and two primal hybrid variants. See the estimator's
+[dual](https://lattice-estimator.readthedocs.io/en/latest/algorithms/lwe-dual.html)
+and [primal](https://lattice-estimator.readthedocs.io/en/latest/algorithms/lwe-primal.html)
+model documentation.
+
+There is enough public material for the finite-sample estimate. In
+`privksk4cb_1`, the function polynomial is `{1}`. Each public row has the form
+`b(X)=a(X)*t(X)+c+e(X)`, where `c` is a constant even though its value depends
+on the source secret. Extracting coefficient 1 gives an ordinary known-zero
+LWE sample under `t`. The mask is a signed permutation of the original uniform
+mask coefficients. Taking one fixed coefficient from each independent row
+avoids treating correlated ring rotations as independent samples. The private
+switch has `(2048+1)*8*4 = 65568` such independent rows. The finite-m65568
+screen has exactly the same minima as the unbounded screen; the reported
+optimal dual-hybrid instance uses only 1024 samples. The 8192 initial-memory
+TRLWEs also have constant messages and supply independent known-zero
+coefficient-1 samples. Restricting the application to few input requests, or
+retiring only the old direct bridge, therefore does not remove this exposure.
+
+Independent schoolbook integer audits of synthetic encryptions checked 65536
+coefficients at each of sigma128 and sigma256. The observed RMS values were
+127.50 and 256.29, consistent with their intended noise. No multiplication
+rounding residual was observed on those 131072 coefficients of the tested FFT
+backend; this empirical check does not prove a universal rounding bound.
+A small-domain private-switch probe confirmed the known-zero extraction and
+another important detail: setting `PKS::alpha` for sigma256 while leaving its
+**target** at sigma128 still produces sigma128 noise. `privkskgen` calls
+`trlweSymEncryptZero` with the target parameter's default noise.
+
+I recommend sigma256 (`alpha=2^-24`) across the affected level-1 family. Its
+5.09-bit MATZOV margin is preferable to sigma132's 0.057-bit margin, and it
+matches the current ring and matched-direct bridge profiles. Regeneration
+must cover ordinary level-1 encryption, the level-1 bootstrapping key,
+private-switch keys, and any direct-switch material under that secret.
+Changing only the new ring key does not fix the other public exposures.
+Gate correctness, circuit bootstrapping, RAM feedback and upstream CKKS noise
+must be checked again after a retune. No encryption parameters were changed
+by this assessment.
+
+A retuned fixture also needs explicit noise-profile/version binding.
+`portablelvl1param` formerly left alpha uninitialized and omitted it from its
+standalone serialization and equality. The aggregate `lweParams` serializer did
+write the alpha field, but did not initialize or validate it. The original RAM
+fixture header did not bind the noise profile either. A source-constant
+change is therefore insufficient to reject old weaker archives. If weaker
+material was disclosed for a deployment secret, regenerate under a fresh
+secret as well: replacing public evaluation keys cannot revoke old exposure.
+The retained diagnostic fixtures remain untouched.
+
+For context, the other active TFHE levels pass the same seven-attack screens:
+level 0 (`n=630`, q16, binary secret, integer RMS5.6783) has minima
+130.68/128.51 bits; level 2 (`n=2048`, q64, ternary secret, integer RMS8191.60)
+has minima 131.54/129.62 bits. Level 0 becomes the smallest screened margin
+if level 1 is raised to sigma256. This is a classical parameter assessment
+under the stated assumptions, rather than an exact-sampler or quantum proof.
+
+[The assessment receipt](ckks-ram-sigma128-assessment.json) contains all 168
+completed estimates (166 grid/control results plus two nominal-RMS controls),
+finite-sample derivations, source hashes and the synthetic-noise probe. Reproduce
+the combined grid with:
+
+```sh
+sage -python test/ckks/tools/assess_tfhe_sigma128.py \
+  --selection ../Parameter-Selection --output tfhe-sigma128-estimates.json
+```
+
+
+### Opt-in sigma256 prototype
+
+Build the default 128-bit parameter family with `-DUSE_BLOCK_BINARY=OFF
+-DUSE_LVL1_SIGMA256=ON`. The option is off by default and rejects conflicting
+parameter families. It raises level-1 fresh integer noise to sigma256
+(`alpha=2^-24`), uses four base-32 gadget rows, and uses twelve base-4
+level-2-to-level-1 private-switch rows. The smaller gadget digits control the
+noise accumulated by the full RAM tree. Merely doubling sigma with the old
+three base-64 / eight base-8 decompositions passed the synthetic and small RAM
+checks but failed the full-size CKKS input budget; that attempt is retained in
+the qualification receipt. The pre-switch budget remains 1/16.
+
+New TFHE parameter archives bind dimensions, noise, gadget decompositions,
+key-switch parameters, sampler and mask versions before loading evaluation
+material. RAM fixtures additionally bind the same profile. The sigma256 build
+rejects original unframed archives and incompatible framed profiles. The
+default build can read its legacy archives as explicitly unbound material,
+but refuses to re-save them under the new binding. `portablelvl1param` now
+initializes, serializes and compares alpha.
+
+For a diagnostic retune of the original unframed fixture, retaining its private
+owners while regenerating all TFHE evaluation material and input ciphertexts:
+
+```sh
+build/test/ckks/ckks_ram_setup --retune-lvl1-sigma256 \
+  CHECKPOINT ORIGINAL_FIXTURE NEW_FIXTURE
+build/test/ckks/ckks_ram_fixture_check NEW_FIXTURE --ram-noise
+python3 test/ckks/tools/run_ram_ring_switch.py \
+  --binary build/test/ckks/ckks_narrow_ll14_retuned_ram \
+  --fixture NEW_FIXTURE --phase sigma256 --output RUN_ROOT/results
+```
+
+The destination must be new. This private-owner import is specifically for the
+original legacy fixture; it does not reuse public evaluation material. It
+creates all five traces and both output bridges. `--ram-noise` checks one full
+RAM write against ideal sine restoration before the expensive CKKS trial.
+The qualification run checks capture, sixteen accesses per backend on small
+RAM, and five alternating accesses per backend on the 8192-cell RAM, including
+one warmup each. Every access checks every cell. The analyzer also requires
+synthetic NAND, circuit-bootstrap and encrypted-feedback checks and measured
+initial-memory/private-switch noise near sigma256.
+
+This is a correctness and timing experiment under assumed circular security.
+The existing classical screen gives level 1 minima of 135.19/133.09 bits under
+BDGL16/MATZOV; the active level-0 minimum remains 128.51 bits. The new private
+switch still supplies 49176 independent known-zero samples, exceeding the
+1024 samples used by the screened optimum. Changing decomposition therefore
+does not remove that exposure. The retained diagnostic owners are not a fresh
+security deployment: old disclosed weaker material remains useful against the
+same owners. Deployment requires fresh connected secrets and regenerated
+material. Exact-sampler, quantum and composition qualifications remain open.
+
+
+The [sigma256 qualification receipt](ckks-ram-sigma256-validation.json) records
+the successful run and the failed noise-only attempt. All ten full-size
+accesses passed, checking 81920 cell bits; four accesses per backend were
+measured after warmup. Mean access times were 7.377 seconds with CKKS/ring
+refresh and 81.851 seconds with serial TFHE (11.096x observed speedup).
+The worst full-size pre-switch error was 0.042944, below 0.0625. Measured CKKS
+refresh stages averaged 0.2684 seconds packing, 4.0057 seconds bootstrap,
+0.5913 seconds decoding and 0.01185 seconds output switching. All 22 original
+fixture files retained their SHA256 hashes. Initial-memory and private-switch
+integer noise RMS were 252.43 and 256.76, respectively. The synthetic gate
+checks also passed (64 NAND checks, 8192 circuit-bootstrap output bits and
+16 encrypted-feedback accesses).
+
+The host-wide external-load monitor peaked at 0.255 CPU cores and failed the
+strict 0.2-core isolation threshold. These timings are observations from this
+paired run. The receipt does not claim uncontended performance or complete
+security validation. Default sigma128 parameters remain unchanged.
