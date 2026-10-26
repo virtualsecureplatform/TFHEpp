@@ -1,0 +1,729 @@
+{
+  "scope": "Ideal task-parallel latency estimate calibrated with one instrumented retained sigma256 CKKS RAM capture; not a many-core measurement.",
+  "artifact_root": "/tmp/ckks-ram-parallel-estimate",
+  "production_revision": "ffa319c",
+  "production_sources_modified": false,
+  "private_keys_generated": 0,
+  "evaluation_keys_generated": 0,
+  "security_validated": false,
+  "calibration": {
+    "capture": {
+      "security_validated": false,
+      "input_reused": true,
+      "fresh_private_keys_generated": false,
+      "pre_switch_error": 2.9336661100387573e-08,
+      "stages": {
+        "packing": 0.265179418,
+        "bootstrap": 4.030617702,
+        "decoding": 0.589788985,
+        "switching": 0.011651427
+      },
+      "output_bridge": {
+        "mode": "ring",
+        "sigma": 256,
+        "key_fingerprint": "34651663ec5988050a0619af1064953b5838dd717b666e921fb7085597a8f5bc",
+        "key_bytes": 2097152,
+        "prepared_bytes": 4194304,
+        "setup_seconds": 0.002758451,
+        "cumulative_kernel_seconds": 0.002311907,
+        "cumulative_split_seconds": 8.3721e-05,
+        "cumulative_extraction_seconds": 0.009253293
+      },
+      "combined_peak_rss_bytes": 58248802304,
+      "correct": true
+    },
+    "job": {
+      "argv": [
+        "taskset",
+        "-c",
+        "0-15",
+        "/tmp/ckks-ram-parallel-estimate/profile",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/packed-full-checkpoint-20261010/checkpoint",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/s2c-independent-scale-aux8-20261011/s2c-switch56.bin",
+        "tanh",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/ram-sigma256-20261025/fixture",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/selectors32k/dd433-primary20.bin",
+        "unused-with-native-auto",
+        "--cache-gib",
+        "45",
+        "--s2c-cache-gib",
+        "4",
+        "--direct-rns",
+        "1",
+        "--s2c-rns",
+        "1",
+        "--tensor-rns",
+        "1",
+        "--auto-rns",
+        "1",
+        "--signed-basis",
+        "1",
+        "--dd-wide-rns",
+        "1",
+        "--matrix-tiled",
+        "1",
+        "--parallel-conjugation",
+        "1",
+        "--parallel-tail-alignment",
+        "1",
+        "--parallel-root-columns",
+        "1",
+        "--native-auto-directory",
+        "/home/work-bleaker/kmatsuoka/ckks-diagnostics/secure128-retune/native32",
+        "--batch-product-trees",
+        "1",
+        "--dd-primary-bits",
+        "40",
+        "--dd-level-chunks",
+        "1",
+        "--matrix-retained-rows",
+        "1",
+        "--matrix-joint",
+        "1",
+        "--s2c-baby-workers",
+        "8",
+        "--parallel-table-ntt",
+        "1",
+        "--s2c-group-workers",
+        "8",
+        "--basis-accumulate",
+        "1",
+        "--basis-group-tensors",
+        "1",
+        "--native-auto-batch",
+        "0",
+        "--dd-windowed",
+        "0"
+      ],
+      "environment": {
+        "OMP_NUM_THREADS": "8",
+        "OMP_DYNAMIC": "FALSE",
+        "OMP_PROC_BIND": "close",
+        "OMP_PLACES": "{0},{2},{4},{6},{8},{10},{12},{14}",
+        "CKKS_RAM_PROFILE": "crossover-full",
+        "CKKS_RAM_OUTPUT_SWITCH": "ring",
+        "CKKS_RAM_CAPTURE_ONLY": "1",
+        "CKKS_RAM_REPORT_DIRECTORY": "/tmp/ckks-ram-parallel-estimate/results/capture"
+      },
+      "started_utc": "2026-10-26T00:28:27Z",
+      "external_cpu_monitor_scope": "All host CPUs, subtracting child process CPU; observations, not proof of isolation.",
+      "exit_code": 0,
+      "external_cpu_cores_samples": [
+        0.02749471475860417,
+        0.034993704213959774,
+        0.029993923862153955,
+        0.03998881080346349,
+        0.05998759628633047,
+        0.02999281099318315,
+        0.06998413606425624,
+        0.01499600702697221,
+        0.02499365695727421,
+        0.024995105874447122,
+        0.039989638405610456,
+        0.02499361003088462,
+        0.014996267370951213,
+        0.03498992056950097,
+        0.034990192602039026,
+        0.04499027353160256,
+        0.09997508671700214,
+        0.019994352960506584,
+        0.03998966217928171,
+        0.019995613599376415,
+        0.024992685065451284,
+        0.034990125670614755,
+        0.0299925410321843,
+        0.029991039998596283,
+        0.0,
+        0.02998667860808215
+      ],
+      "maximum_external_cpu_cores": 0.09997508671700214,
+      "all_intervals_below_0_2_external_cores": true,
+      "completed_utc": "2026-10-26T00:29:21Z"
+    },
+    "fixture_integrity": {
+      "retained_files_checked": 13,
+      "changed": []
+    },
+    "root_stages": {
+      "factor": 3.53182,
+      "alignment": 0.114999,
+      "trees": 0.375755
+    },
+    "factor_groups": [
+      {
+        "tail": 0.0,
+        "group": 0.0,
+        "table": 0.00541506,
+        "matrix": 0.0786459,
+        "crt": 0.00419839,
+        "conjugation": 0.0120489,
+        "stage_sum_seconds": 0.10030825
+      },
+      {
+        "tail": 0.0,
+        "group": 1.0,
+        "table": 0.00484937,
+        "matrix": 0.0788104,
+        "crt": 0.00310169,
+        "conjugation": 0.00970309,
+        "stage_sum_seconds": 0.09646455
+      },
+      {
+        "tail": 0.0,
+        "group": 2.0,
+        "table": 0.00479907,
+        "matrix": 0.0786303,
+        "crt": 0.00317677,
+        "conjugation": 0.00975373,
+        "stage_sum_seconds": 0.09635987
+      },
+      {
+        "tail": 0.0,
+        "group": 3.0,
+        "table": 0.00472255,
+        "matrix": 0.0786669,
+        "crt": 0.00313859,
+        "conjugation": 0.0099307,
+        "stage_sum_seconds": 0.09645874
+      },
+      {
+        "tail": 0.0,
+        "group": 4.0,
+        "table": 0.00481583,
+        "matrix": 0.0785564,
+        "crt": 0.00314211,
+        "conjugation": 0.00976687,
+        "stage_sum_seconds": 0.09628121
+      },
+      {
+        "tail": 0.0,
+        "group": 5.0,
+        "table": 0.00470981,
+        "matrix": 0.078762,
+        "crt": 0.0031299,
+        "conjugation": 0.00981823,
+        "stage_sum_seconds": 0.09641994
+      },
+      {
+        "tail": 0.0,
+        "group": 6.0,
+        "table": 0.00480955,
+        "matrix": 0.0788789,
+        "crt": 0.00317174,
+        "conjugation": 0.00963985,
+        "stage_sum_seconds": 0.09650004000000001
+      },
+      {
+        "tail": 0.0,
+        "group": 7.0,
+        "table": 0.00490442,
+        "matrix": 0.0782989,
+        "crt": 0.00304812,
+        "conjugation": 0.00978896,
+        "stage_sum_seconds": 0.0960404
+      },
+      {
+        "tail": 0.0,
+        "group": 8.0,
+        "table": 0.00476797,
+        "matrix": 0.0784895,
+        "crt": 0.00307127,
+        "conjugation": 0.00967316,
+        "stage_sum_seconds": 0.0960019
+      },
+      {
+        "tail": 0.0,
+        "group": 9.0,
+        "table": 0.0048564,
+        "matrix": 0.0784935,
+        "crt": 0.00324846,
+        "conjugation": 0.00980511,
+        "stage_sum_seconds": 0.09640346999999999
+      },
+      {
+        "tail": 0.0,
+        "group": 10.0,
+        "table": 0.00478298,
+        "matrix": 0.0784419,
+        "crt": 0.00316461,
+        "conjugation": 0.00985594,
+        "stage_sum_seconds": 0.09624542999999999
+      },
+      {
+        "tail": 0.0,
+        "group": 11.0,
+        "table": 0.00478785,
+        "matrix": 0.0784646,
+        "crt": 0.00323619,
+        "conjugation": 0.00978668,
+        "stage_sum_seconds": 0.09627532
+      },
+      {
+        "tail": 0.0,
+        "group": 12.0,
+        "table": 0.00483513,
+        "matrix": 0.0785235,
+        "crt": 0.00320616,
+        "conjugation": 0.00970311,
+        "stage_sum_seconds": 0.09626789999999999
+      },
+      {
+        "tail": 0.0,
+        "group": 13.0,
+        "table": 0.00483069,
+        "matrix": 0.0781238,
+        "crt": 0.00317583,
+        "conjugation": 0.00980172,
+        "stage_sum_seconds": 0.09593204
+      },
+      {
+        "tail": 0.0,
+        "group": 14.0,
+        "table": 0.00485458,
+        "matrix": 0.078026,
+        "crt": 0.00320225,
+        "conjugation": 0.00990443,
+        "stage_sum_seconds": 0.09598726
+      },
+      {
+        "tail": 0.0,
+        "group": 15.0,
+        "table": 0.00476669,
+        "matrix": 0.0787274,
+        "crt": 0.00314977,
+        "conjugation": 0.0100718,
+        "stage_sum_seconds": 0.09671566000000001
+      },
+      {
+        "tail": 0.0,
+        "group": 16.0,
+        "table": 0.00490012,
+        "matrix": 0.0783418,
+        "crt": 0.00309328,
+        "conjugation": 0.0098618,
+        "stage_sum_seconds": 0.096197
+      },
+      {
+        "tail": 0.0,
+        "group": 17.0,
+        "table": 0.00473809,
+        "matrix": 0.0779617,
+        "crt": 0.00318022,
+        "conjugation": 0.00983471,
+        "stage_sum_seconds": 0.09571471999999999
+      },
+      {
+        "tail": 0.0,
+        "group": 18.0,
+        "table": 0.00480024,
+        "matrix": 0.0778963,
+        "crt": 0.00316111,
+        "conjugation": 0.00985053,
+        "stage_sum_seconds": 0.09570818
+      },
+      {
+        "tail": 0.0,
+        "group": 19.0,
+        "table": 0.00477759,
+        "matrix": 0.0784816,
+        "crt": 0.00317199,
+        "conjugation": 0.00976402,
+        "stage_sum_seconds": 0.0961952
+      },
+      {
+        "tail": 0.0,
+        "group": 20.0,
+        "table": 0.00488465,
+        "matrix": 0.0789145,
+        "crt": 0.00319803,
+        "conjugation": 0.00973077,
+        "stage_sum_seconds": 0.09672795
+      },
+      {
+        "tail": 0.0,
+        "group": 21.0,
+        "table": 0.00471751,
+        "matrix": 0.0784329,
+        "crt": 0.00312881,
+        "conjugation": 0.00966258,
+        "stage_sum_seconds": 0.0959418
+      },
+      {
+        "tail": 0.0,
+        "group": 22.0,
+        "table": 0.00484547,
+        "matrix": 0.0783826,
+        "crt": 0.00322344,
+        "conjugation": 0.00968086,
+        "stage_sum_seconds": 0.09613237
+      },
+      {
+        "tail": 0.0,
+        "group": 23.0,
+        "table": 0.00471637,
+        "matrix": 0.0779307,
+        "crt": 0.00317823,
+        "conjugation": 0.00995318,
+        "stage_sum_seconds": 0.09577848000000001
+      },
+      {
+        "tail": 0.0,
+        "group": 24.0,
+        "table": 0.00486168,
+        "matrix": 0.0785263,
+        "crt": 0.00316048,
+        "conjugation": 0.00995357,
+        "stage_sum_seconds": 0.09650202999999999
+      },
+      {
+        "tail": 0.0,
+        "group": 25.0,
+        "table": 0.00487547,
+        "matrix": 0.0784282,
+        "crt": 0.00317958,
+        "conjugation": 0.00989953,
+        "stage_sum_seconds": 0.09638278
+      },
+      {
+        "tail": 0.0,
+        "group": 26.0,
+        "table": 0.00486921,
+        "matrix": 0.0782454,
+        "crt": 0.00317164,
+        "conjugation": 0.0101049,
+        "stage_sum_seconds": 0.09639115000000001
+      },
+      {
+        "tail": 0.0,
+        "group": 27.0,
+        "table": 0.00479377,
+        "matrix": 0.0780484,
+        "crt": 0.00316381,
+        "conjugation": 0.00955478,
+        "stage_sum_seconds": 0.09556076000000001
+      },
+      {
+        "tail": 0.0,
+        "group": 28.0,
+        "table": 0.00486419,
+        "matrix": 0.0786554,
+        "crt": 0.00307644,
+        "conjugation": 0.00983456,
+        "stage_sum_seconds": 0.09643059
+      },
+      {
+        "tail": 0.0,
+        "group": 29.0,
+        "table": 0.00487693,
+        "matrix": 0.0781796,
+        "crt": 0.00318421,
+        "conjugation": 0.00967816,
+        "stage_sum_seconds": 0.0959189
+      },
+      {
+        "tail": 0.0,
+        "group": 30.0,
+        "table": 0.00484909,
+        "matrix": 0.0782646,
+        "crt": 0.00314945,
+        "conjugation": 0.00968247,
+        "stage_sum_seconds": 0.09594561
+      },
+      {
+        "tail": 1.0,
+        "group": 0.0,
+        "table": 0.00479352,
+        "matrix": 0.0785914,
+        "crt": 0.00322925,
+        "conjugation": 0.00987624,
+        "stage_sum_seconds": 0.09649041
+      },
+      {
+        "tail": 1.0,
+        "group": 1.0,
+        "table": 0.00468148,
+        "matrix": 0.0786692,
+        "crt": 0.0030851,
+        "conjugation": 0.00992783,
+        "stage_sum_seconds": 0.09636360999999999
+      },
+      {
+        "tail": 1.0,
+        "group": 2.0,
+        "table": 0.00488427,
+        "matrix": 0.0788304,
+        "crt": 0.00307949,
+        "conjugation": 0.00959242,
+        "stage_sum_seconds": 0.09638658
+      },
+      {
+        "tail": 1.0,
+        "group": 3.0,
+        "table": 0.00474589,
+        "matrix": 0.0785793,
+        "crt": 0.00310389,
+        "conjugation": 0.00987851,
+        "stage_sum_seconds": 0.09630759
+      },
+      {
+        "tail": 1.0,
+        "group": 4.0,
+        "table": 0.00486701,
+        "matrix": 0.0789086,
+        "crt": 0.00311279,
+        "conjugation": 0.00976305,
+        "stage_sum_seconds": 0.09665145
+      }
+    ],
+    "tree_levels": [
+      {
+        "level": 0.0,
+        "wall": 0.177958,
+        "nodes": 32.0,
+        "node_seconds": [
+          0.0476999,
+          0.0476084,
+          0.0477926,
+          0.0478356,
+          0.0478464,
+          0.0475087,
+          0.0477907,
+          0.0478474,
+          0.04426,
+          0.0442157,
+          0.0441661,
+          0.0440907,
+          0.0440022,
+          0.043999,
+          0.0439952,
+          0.0352066,
+          0.040938,
+          0.0436792,
+          0.0439376,
+          0.0435304,
+          0.0438708,
+          0.0437362,
+          0.043828,
+          0.0437776,
+          0.0395452,
+          0.0425018,
+          0.0421805,
+          0.0419544,
+          0.0421576,
+          0.0421354,
+          0.0420652,
+          0.0347301
+        ]
+      },
+      {
+        "level": 1.0,
+        "wall": 0.0830883,
+        "nodes": 16.0,
+        "node_seconds": [
+          0.0426878,
+          0.0424949,
+          0.0427192,
+          0.0427964,
+          0.0424425,
+          0.0425682,
+          0.0428152,
+          0.0427636,
+          0.0401168,
+          0.0403403,
+          0.0403228,
+          0.0399416,
+          0.0401428,
+          0.0400844,
+          0.0399167,
+          0.0400691
+        ]
+      },
+      {
+        "level": 2.0,
+        "wall": 0.0375406,
+        "nodes": 8.0,
+        "node_seconds": [
+          0.0358618,
+          0.0373763,
+          0.0372605,
+          0.0371353,
+          0.0373719,
+          0.0373018,
+          0.0371804,
+          0.0373583
+        ]
+      },
+      {
+        "level": 3.0,
+        "wall": 0.0281835,
+        "nodes": 4.0,
+        "node_seconds": [
+          0.0281732,
+          0.0277152,
+          0.0278227,
+          0.0277169
+        ]
+      },
+      {
+        "level": 4.0,
+        "wall": 0.021246,
+        "nodes": 2.0,
+        "node_seconds": [
+          0.0206945,
+          0.0211046
+        ]
+      }
+    ],
+    "tree_span_seconds": 0.1773167,
+    "tree_kernel_duration_sum_seconds": 2.5127289,
+    "instrumentation_forest_source": "template<std::size_t Level=0,class Chain>\nvoid diagnosticForest(std::vector<Narrow::TreeResult>&results,\n std::vector<std::vector<CKKSCiphertext<P,Narrow::factor_log_q-Level*Narrow::log_delta,Narrow::log_delta>>> factors,\n const Chain&chain){\n if constexpr(Level==Narrow::tree_depth){results.resize(factors.size());for(size_t t=0;t<factors.size();++t)results[t]=std::move(factors[t][0]);}\n else{\n using Next=CKKSCiphertext<P,Narrow::factor_log_q-(Level+1)*Narrow::log_delta,Narrow::log_delta>;\n std::vector<std::vector<Next>> next(factors.size());std::vector<std::pair<size_t,size_t>> pairs;\n for(size_t t=0;t<factors.size();++t){next[t].resize(factors[t].size()/2);for(size_t i=0;i<next[t].size();++i)pairs.emplace_back(t,i);}\n std::vector<double> seconds(pairs.size());auto start=std::chrono::steady_clock::now();\n #pragma omp parallel for schedule(dynamic,1) num_threads(8)\n for(size_t j=0;j<pairs.size();++j){auto [t,i]=pairs[j];auto then=std::chrono::steady_clock::now();CKKSMultRelinThenRescale<P>(next[t][i],factors[t][2*i],factors[t][2*i+1],chain.template get<Level>());seconds[j]=std::chrono::duration<double>(std::chrono::steady_clock::now()-then).count();}\n std::cout<<\"SPAN tree level=\"<<Level<<\" wall=\"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()<<\" nodes=\"<<pairs.size()<<\" durations=\";for(auto x:seconds)std::cout<<x<<\",\";std::cout<<std::endl;\n factors.clear();diagnosticForest<Level+1>(results,std::move(next),chain);\n }\n}\n",
+    "compile_argv": [
+      "/usr/bin/c++",
+      "-DUSE_BLAKE3",
+      "-DUSE_INTERLEAVED_FORMAT",
+      "-DUSE_LVL1_SIGMA256",
+      "-DUSE_SPQLIOS_INTL",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/fftw",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/concrete-fft/cpp",
+      "-I/tmp/tfhepp-sigma256-build/thirdparties/concrete-fft",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqliox_aarch64/xbyak_aarch64/xbyak_aarch64",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/hexl/hexl/hexl/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/randen",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/AES/src",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/HLS_arbitrary_Precision_Types/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/cereal/include",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/BLAKE3/c",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/thirdparties/spqlios-intl",
+      "-march=native",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-pedantic",
+      "-Wno-sign-compare",
+      "-fopenmp",
+      "-O3",
+      "-isystem",
+      "/tmp/ckks-build-deps/root/usr/include",
+      "-std=gnu++20",
+      "-fno-ipa-icf",
+      "-MD",
+      "-MT",
+      "test/CMakeFiles/ckks_narrow_ll14_retuned_ram.dir/ckks/ckks_narrow_ll14_retuned_ram.cpp.o",
+      "-MF",
+      "/tmp/ckks-ram-parallel-estimate/profile.d",
+      "-o",
+      "/tmp/ckks-ram-parallel-estimate/profile.o",
+      "-c",
+      "/tmp/ckks-ram-parallel-estimate/profile.cpp",
+      "-I/home/work-bleaker/kmatsuoka/sources/CKKS-workspace/TFHEpp/test/ckks"
+    ]
+  },
+  "model": {
+    "granularity": "Keep existing polynomial and ciphertext multiplication kernels; expose group, pair, row and cell task concurrency. Eight-thread factor latency is used as one group latency. Inner-kernel or accelerator redesign can change the span.",
+    "stage_work_proxy_and_span_seconds": {
+      "packing": [
+        2.121435344,
+        0.002
+      ],
+      "factors": [
+        28.25456,
+        0.10030825
+      ],
+      "alignment": [
+        0.919992,
+        0.02874975
+      ],
+      "trees": [
+        2.5127289,
+        0.1773167
+      ],
+      "bootstrap_residual": [
+        0.06434961599999411,
+        0.008043701999999264
+      ],
+      "switching": [
+        0.093211416,
+        0.003
+      ]
+    },
+    "decoding_span_assumption_seconds": [
+      0.05,
+      0.15
+    ],
+    "decoding_assumption": "Unmeasured extrapolation for six baby-rotation dependency levels, up to seven binary giant rotation switches, parallel group evaluation and reductions. Its uncertainty is shown explicitly.",
+    "common_ram_seconds": ".090 + 1.428/P: roughly one address circuit bootstrap (80 ms), one of two parallel MUX bootstrap branches (10 ms), and divided CMUX work; memory traffic and scheduling ignored.",
+    "stage_formula": "Sum over sequential stages of max(capacity-time proxy / P, estimated stage span); stage overlap not modeled.",
+    "work_proxy_limit": "Eight times stage wall time is a worker-capacity proxy, not measured serial work. Tree work sums measured node wall durations, also affected by contention.",
+    "assumptions": [
+      "Enough identical P-core-equivalent workers and key bandwidth.",
+      "Concurrent factor groups require scheduler changes; raising OMP_NUM_THREADS alone does not realize the model.",
+      "No communication, NUMA, replicated-cache or resource-contention cost.",
+      "TFHE primitives also remain internally unchanged; only independent tasks are parallelized.",
+      "This models one dependent RAM access, not throughput of independent RAMs."
+    ],
+    "limits": [
+      "This is not the infinite-processor span at scalar arithmetic granularity. Parallel NTTs, reductions, key switching or accelerators can shorten the calibrated kernel times. Such changes must be modeled for both schemes.",
+      "A single capture calibrates costs; the earlier repeated sigma256 validation establishes trace correctness. No many-core speedup is measured here."
+    ]
+  },
+  "projections": [
+    {
+      "workers": 64,
+      "ckks_access_model_seconds": [
+        0.8777712023749994,
+        0.9540475792499994
+      ],
+      "tfhe_access_model_seconds": 1.3522776471171876
+    },
+    {
+      "workers": 128,
+      "ckks_access_model_seconds": [
+        0.6055788656249993,
+        0.7055788656249993
+      ],
+      "tfhe_access_model_seconds": 0.7211388235585938
+    },
+    {
+      "workers": 256,
+      "ckks_access_model_seconds": [
+        0.4813445088124993,
+        0.5813445088124993
+      ],
+      "tfhe_access_model_seconds": 0.4055694117792969
+    },
+    {
+      "workers": 512,
+      "ckks_access_model_seconds": [
+        0.46435089290624926,
+        0.5643508929062493
+      ],
+      "tfhe_access_model_seconds": 0.24778470588964843
+    },
+    {
+      "workers": 1024,
+      "ckks_access_model_seconds": [
+        0.46088464745312424,
+        0.5608846474531243
+      ],
+      "tfhe_access_model_seconds": 0.16889235294482421
+    },
+    {
+      "workers": 8192,
+      "ckks_access_model_seconds": [
+        0.45959271840624927,
+        0.5595927184062492
+      ],
+      "tfhe_access_model_seconds": 0.09986154411810302
+    }
+  ],
+  "source_sha256": {
+    "profile.cpp": "07534ab7e0f9d9eb6a106be2711a74869ffd71e742b26ad84d13f4ff834c2f2f",
+    "forest.hpp": "8496140b387e80cbf7d8f4ec83cf84bd1d0fac91d3cd33fccbd46c2b8f1085c8",
+    "profile": "f343286b78eed79da435476984421971f698ee3ebee746756698c14b16683987",
+    "compile-argv.json": "088afcf96969dd35c93286735909046bc60a5f8dfd5395c96b851456691595ba"
+  }
+}
