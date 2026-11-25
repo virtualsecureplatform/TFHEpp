@@ -3,6 +3,79 @@
 The [TLWE RAM prototype](CKKSRAM.md) compares per-cell TFHE refresh with
 CKKS Boolean batch refresh behind the same encrypted RAM interface.
 
+## TUTTI real-slot refresh
+
+`ckks/tutti.hpp` implements the full-slot TUTTI bootstrapping of ePrint
+2026/2848 on TFHEpp's power-of-two moduli. A schedule is
+`CKKSTuttiSchedule<Config>`; `Config` names the ring parameter
+(`CKKSTuttiParam<Nbit, Limbs>`), the base modulus and input scale (their
+ratio is the sine gap), the S2C plaintext scale, the tree, indicator and
+root-encoding scales, the refreshed modulus and scale, the block count and
+subring stride of the sparse key, the auxiliary scale and the sparse-switch
+digit. `CKKSTuttiLL13Config` is the supplied application-sized schedule.
+
+```cpp
+using Schedule = TFHEpp::CKKSTuttiSchedule<TFHEpp::CKKSTuttiLL13Config>;
+using P = Schedule::Param;
+TFHEpp::Key<P> dense, sparse;
+TFHEpp::CKKSTuttiDenseKeyGen<P>(dense, TFHEpp::CKKSTuttiLL13Config::dense_weight);
+TFHEpp::CKKSTuttiSparseKeyGen<Schedule>(sparse);
+auto key = std::make_unique<TFHEpp::CKKSTuttiKey<Schedule>>();
+TFHEpp::CKKSTuttiKeyGen(*key, dense, sparse);
+Schedule::Output refreshed;
+TFHEpp::CKKSTuttiBootstrap(refreshed, input, *key);  // input is Schedule::Input
+```
+
+Evaluation uses public material only:
+
+1. The opening slot-to-coefficient map runs under the dense key, lifted by
+   the auxiliary scale. The result is divided back and switched into the
+   anchored block-binary key `s'(X^stride)` by a gadget switch at the base
+   modulus, so that key is never published above the base modulus.
+2. AccMul builds one accumulator per block: each candidate position's root
+   encoding is multiplied by an encrypted indicator and the sum is divided
+   once, the role of the paper's auxiliary prime. Indicators are cached in
+   the NTT domain of four 30-bit primes; a candidate costs four forward
+   transforms and pointwise products. The public anchored block carries the
+   factor `-i`. The amplitude `c*gap/(4*pi)` is spread evenly over the
+   factors, and `c` is the minimax constant for the configured message bound.
+3. A balanced product tree multiplies the accumulators, relinearizing before
+   each rescale so the tree scale suppresses the switch error.
+4. Adding the conjugate (auxiliary-lifted) leaves `c*g*sin(v/g)` in the slots.
+
+Indicators may carry a larger scale than the tree. Each extra bit halves the
+dominant error for one bit of modulus, where a larger tree scale would cost
+one bit per level; a single power-of-two division makes this free.
+
+### LL13 schedule
+
+N = 2^13, 64 blocks, stride 4, base modulus 2^24, gap 16, dense key of
+Hamming weight 512, key noise of integer RMS 3.23. Input modulus 2^38, output
+modulus 2^58 at scale 2^20: one multiplication returns to the input modulus.
+The 2016 indicators are the largest evaluation key, at 2^212.
+
+`ckks_tutti_ll13` measures, with inputs `2i/n - 1` in all 4096 slots over
+six runs, a largest slot error of 5.27 to 5.63 bits (RMS 7.35 to 7.48 bits)
+and a 1.03 to 1.17 s refresh on 20 threads: about 0.5 s for the opening
+linear transform, 0.22 s for AccMul, 0.32 s for the tree. A square after the
+refresh keeps 4.6 to 5.0 bits. Key generation takes about 48 s.
+
+Parameter-Selection chose and screened this schedule
+(`python/TUTTIparams.py --profile ll13`, `python/estimates/tutti_security.py`).
+Its average-case model predicts 5.42 bits. The pinned Lattice Estimator gives
+128.28 bits for the dense key at 2^212 and 142.97 bits for a uniform sparse
+binary proxy of the sparse key at 2^24; both moduli are inside the paper's
+published caps (212 and 27 bits), which are the reference for the
+structure-aware attacks the estimator does not model. These are screens,
+not proofs; circular security is assumed, and no failure probability is
+bounded. Precision is limited by the 212-bit budget of this ring, as in the
+paper's LL13 (4.89 bits).
+
+Build `ckks_tutti` (small rings, both root encoders) and `ckks_tutti_ll13`
+(full ring, about 5 GB, optional repetition count) with `ENABLE_TEST=ON`.
+Not implemented: TUTTI_n with fewer accumulators, cosets, and the
+single-slot second harmonic.
+
 ## CPU narrow bootstrapping from 2026/2119
 
 The CPU implementation uses Double Decomposition for the product tree and

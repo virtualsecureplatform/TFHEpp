@@ -51,6 +51,7 @@
 #include "ckks/narrow_bootstrapping.hpp"
 #include "ckks/narrow_frequency_basis.hpp"
 #include "ckks/narrow_refresh.hpp"
+#include "ckks/tutti.hpp"
 #include "ckks/narrow_selector_file.hpp"
 #include "ckks/narrow_selector_projection.hpp"
 #include "ckks/narrow_packed_file.hpp"

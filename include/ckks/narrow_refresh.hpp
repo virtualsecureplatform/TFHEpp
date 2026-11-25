@@ -9,37 +9,29 @@
 #ifdef TFHEPP_HAS_EXTENDED_MULTILIMB_PARAMS
 namespace TFHEpp {
 
-// SHIP Section 3.2 and ePrint 2026/2119 Section 2.3: a single low-level
-// matrix S2C, sparse-secret encapsulation, and narrow decryption in the
-// exponent. The gap gamma=q0/input_scale controls SHIP's sine approximation.
-template <class NarrowSchedule, std::uint32_t InputLogDelta,
-          std::uint32_t S2CPlainLogDelta, int BSGSStep = 0, bool CompactS2C = false,
-          std::uint32_t S2CAuxiliaryLogScale = NarrowSchedule::auxiliary_log_scale>
-struct CKKSNarrowRefreshSchedule {
-    using Narrow = NarrowSchedule;
-    using Param = typename Narrow::Param;
+template <class P, std::uint32_t CoefficientLogQ, std::uint32_t InputLogDelta,
+          std::uint32_t S2CPlainLogDelta, int BSGSStep, bool CompactS2C,
+          std::uint32_t AuxiliaryLogScale>
+struct CKKSRefreshLinearSchedule {
+    using Param = P;
     static constexpr std::uint32_t input_log_delta = InputLogDelta;
-    static constexpr std::uint32_t coefficient_log_q = Narrow::input_log_q;
+    static constexpr std::uint32_t coefficient_log_q = CoefficientLogQ;
     static constexpr std::uint32_t input_log_q = coefficient_log_q + S2CPlainLogDelta;
-    static constexpr std::uint32_t output_log_q = Narrow::output_log_q;
-    static constexpr std::uint32_t output_log_delta = Narrow::log_delta;
     static constexpr std::uint32_t s2c_plain_log_delta = S2CPlainLogDelta;
     static_assert(InputLogDelta < coefficient_log_q);
     static_assert(input_log_q <= std::numeric_limits<typename Param::T>::digits);
-    static_assert(output_log_q > input_log_q);
     static_assert(S2CPlainLogDelta > 0 && S2CPlainLogDelta <= 50);
     static constexpr std::uint32_t log_gap = coefficient_log_q - InputLogDelta;
     static constexpr int bsgs_step = BSGSStep > 0 ? BSGSStep :
         (1 << ((Param::nbit - 1) / 2));
     using Input = CKKSCiphertext<Param, input_log_q, InputLogDelta>;
     using Coefficients = CKKSCiphertext<Param, coefficient_log_q, InputLogDelta>;
-    using Output = typename Narrow::Output;
     // Lift the entire linear transform and encapsulation, then divide once
     // under the sparse secret. Fresh input error is preserved by this lift.
     // S2C and blind-rotation switches consume different scales and levels.
     // Keep the historical shared setting by default, but allow independent
     // budgets without lifting S2C keys solely for blind-rotation precision.
-    static constexpr auto auxiliary_log_scale = S2CAuxiliaryLogScale;
+    static constexpr auto auxiliary_log_scale = AuxiliaryLogScale;
     static constexpr auto evaluation_input_log_q = input_log_q + auxiliary_log_scale;
     static constexpr auto evaluation_coefficient_log_q = coefficient_log_q + auxiliary_log_scale;
     static constexpr auto evaluation_input_log_delta = InputLogDelta + auxiliary_log_scale;
@@ -65,21 +57,44 @@ struct CKKSNarrowRefreshSchedule {
     }
 };
 
+// SHIP and ePrint 2026/2119 use the shared low-level S2C and sparse
+// encapsulation before narrow decryption in the exponent.
+template <class NarrowSchedule, std::uint32_t InputLogDelta,
+          std::uint32_t S2CPlainLogDelta, int BSGSStep = 0, bool CompactS2C = false,
+          std::uint32_t S2CAuxiliaryLogScale = NarrowSchedule::auxiliary_log_scale>
+struct CKKSNarrowRefreshSchedule : CKKSRefreshLinearSchedule<
+    typename NarrowSchedule::Param, NarrowSchedule::input_log_q, InputLogDelta,
+    S2CPlainLogDelta, BSGSStep, CompactS2C, S2CAuxiliaryLogScale> {
+    using Base = CKKSRefreshLinearSchedule<typename NarrowSchedule::Param,
+        NarrowSchedule::input_log_q, InputLogDelta, S2CPlainLogDelta, BSGSStep,
+        CompactS2C, S2CAuxiliaryLogScale>;
+    using Narrow = NarrowSchedule;
+    static constexpr std::uint32_t output_log_q = Narrow::output_log_q;
+    static constexpr std::uint32_t output_log_delta = Narrow::log_delta;
+    static_assert(output_log_q > Base::input_log_q);
+    using Output = typename Narrow::Output;
+};
+
 template <class RefreshSchedule>
-struct CKKSNarrowRefreshKey {
+struct CKKSRefreshLinearKey {
     using P = typename RefreshSchedule::Param;
     typename RefreshSchedule::S2CPlan s2c_plan;
     CKKSGaloisKey<P, RefreshSchedule::evaluation_input_log_q> s2c_input_galois;
     CKKSGaloisKey<P, RefreshSchedule::evaluation_coefficient_log_q> s2c_output_galois;
     CKKSSecretKeySwitchKey<P, RefreshSchedule::evaluation_coefficient_log_q> to_sparse;
+};
+
+template <class RefreshSchedule>
+struct CKKSNarrowRefreshKey : CKKSRefreshLinearKey<RefreshSchedule> {
+    using P = typename RefreshSchedule::Param;
     CKKSNarrowBootstrapKey<typename RefreshSchedule::Narrow> narrow;
 
     template <class Archive>
     void serialize(Archive &archive)
     {
-        archive(s2c_plan.has_direct, s2c_plan.has_conjugate,
-            s2c_plan.direct, s2c_plan.conjugate, s2c_input_galois,
-            s2c_output_galois, to_sparse, narrow);
+        archive(this->s2c_plan.has_direct, this->s2c_plan.has_conjugate,
+            this->s2c_plan.direct, this->s2c_plan.conjugate, this->s2c_input_galois,
+            this->s2c_output_galois, this->to_sparse, narrow);
     }
 };
 
@@ -98,12 +113,11 @@ inline void CKKSNarrowStructuredKeyGen(Key<typename NarrowSchedule::Param> &key)
 
 namespace narrow_detail {
 template <class RefreshSchedule>
-inline void generateRefreshLinearKeys(CKKSNarrowRefreshKey<RefreshSchedule> &key,
+inline void generateRefreshLinearKeys(CKKSRefreshLinearKey<RefreshSchedule> &key,
     const Key<typename RefreshSchedule::Param> &input_secret,
     const Key<typename RefreshSchedule::Param> &structured_secret, CKKSNoise noise)
 {
     using P = typename RefreshSchedule::Param;
-    narrow_detail::structuredPositions<typename RefreshSchedule::Narrow>(structured_secret);
     CKKSBuildPackedSlotToCoeffPlan<P, RefreshSchedule::evaluation_input_log_q,
         RefreshSchedule::evaluation_input_log_delta, RefreshSchedule::s2c_plain_log_delta>(
         key.s2c_plan, RefreshSchedule::bsgs_step);
@@ -126,6 +140,7 @@ inline void CKKSNarrowRefreshSetupKeyGen(
     CKKSNoise noise = {RefreshSchedule::Param::α, 0},
     CKKSNarrowCacheMode cache_mode = CKKSNarrowCacheMode::Prepared)
 {
+    narrow_detail::structuredPositions<typename RefreshSchedule::Narrow>(structured_secret);
     narrow_detail::generateRefreshLinearKeys<RefreshSchedule>(key, input_secret, structured_secret, noise);
     CKKSNarrowSetupKeyGen<typename RefreshSchedule::Narrow>(key.narrow,
         evaluation_secret, noise, cache_mode);
@@ -142,6 +157,7 @@ inline void CKKSNarrowRefreshKeyGen(
     CKKSNoise noise = {RefreshSchedule::Param::α, 0},
     CKKSNarrowCacheMode cache_mode = CKKSNarrowCacheMode::Prepared)
 {
+    narrow_detail::structuredPositions<typename RefreshSchedule::Narrow>(structured_secret);
     narrow_detail::generateRefreshLinearKeys<RefreshSchedule>(key, input_secret, structured_secret, noise);
     CKKSNarrowBootstrapKeyGen<typename RefreshSchedule::Narrow>(key.narrow,
         structured_secret, evaluation_secret, noise, cache_mode);
@@ -179,7 +195,7 @@ template <class RefreshSchedule, class Transform>
 inline void CKKSNarrowPrepareCoefficients(
     typename RefreshSchedule::Coefficients &coefficients,
     const typename RefreshSchedule::Input &input,
-    const CKKSNarrowRefreshKey<RefreshSchedule> &key, Transform transform)
+    const CKKSRefreshLinearKey<RefreshSchedule> &key, Transform transform)
 {
     using P = typename RefreshSchedule::Param;
     if constexpr (RefreshSchedule::auxiliary_log_scale != 0) {
@@ -210,7 +226,7 @@ template <class RefreshSchedule>
 inline void CKKSNarrowPrepareCoefficients(
     typename RefreshSchedule::Coefficients &coefficients,
     const typename RefreshSchedule::Input &input,
-    const CKKSNarrowRefreshKey<RefreshSchedule> &key)
+    const CKKSRefreshLinearKey<RefreshSchedule> &key)
 {
     using P = typename RefreshSchedule::Param;
     CKKSNarrowPrepareCoefficients<RefreshSchedule>(coefficients,input,key,
