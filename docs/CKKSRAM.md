@@ -12,7 +12,8 @@ same TFHE secret and standard `+/-mu` Boolean convention. There is no
 cleartext address in the evaluator. The public refresh callback sees the
 updated values of every cell, regardless of the encrypted write-enable.
 
-The shared implementation supports two refresh callbacks:
+The shared implementation was built for two refresh callbacks; a third,
+using TUTTI, is described in the next section:
 
 1. TFHE: identity key switch, blind rotation, and sample extraction per
    cell, matching the algorithm in `test/tfhe/ram.cpp`.
@@ -26,6 +27,70 @@ Inverse sample extraction can therefore install a refreshed TLWE directly;
 it does not need another TFHE bootstrap. CMUX reads/writes do not rotate
 the cell polynomial. Other coefficients are unspecified and must not be
 read as additional memory bits.
+
+## TUTTI refresh backend
+
+`ckks/tutti_boolean.hpp` is a third refresh callback built on the TUTTI
+bootstrap of [CKKS.md](CKKS.md): `CKKSTuttiBooleanRefresh` restores up to
+4096 TLWEs per batch at N = 8192. It generates its own keys in under a
+minute and needs none of the retained narrow-bootstrap archives.
+
+1. The existing functional packing places the TLWE phases in coefficients,
+   here under the dense CKKS key at 2^48.
+2. Dividing by 2^23 and reducing to the base modulus 2^24 doubles the phase,
+   so both Boolean values sit on the peaks of the sine.
+3. The TUTTI bootstrap switches to its sparse key at 2^24 and leaves +-2 in
+   the slots. There is no opening slot-to-coefficient map.
+4. A closing slot-to-coefficient map and an 8-bit shift give phase +-1/8 at
+   2^32; the subring switch and sample extraction return TLWEs.
+
+`ckks_tutti_ram [address bits] [measured accesses] [serial|parallel|both|none]`
+generates all keys, checks a full batch of random bits, then runs the RAM
+with each refresh backend from the same encrypted state and requests. Every
+read and every cell is checked after every access, outside the timings. Use
+`ulimit -s 131072` for 8192 cells.
+
+Mean access time in seconds on an i9-9900X (10 cores, 20 threads), default
+TFHE parameters, two measured accesses after one warm-up per backend:
+
+| Cells | TUTTI | TFHE, serial cells | TFHE, parallel cells |
+| ---: | ---: | ---: | ---: |
+| 256 | 2.161 | 4.862 | 1.304 |
+| 1,024 | 2.556 | 16.85 | 2.688 |
+| 4,096 | 3.608 | 64.93 | 7.758 |
+| 8,192 | 6.146 | 128.2 | 14.44 |
+
+The parallel baseline is the same per-cell refresh under an OpenMP loop; the
+earlier comparisons in this document use the serial one. Against it TUTTI
+breaks even near 1,024 cells and is 2.2x and 2.3x faster at 4,096 and 8,192.
+
+One batch takes 1.24 to 1.28 s: packing 0.16, bootstrap 0.57 (sparse switch
+0.04, AccMul 0.22, product tree 0.29), closing slot-to-coefficient map 0.51,
+output switch 0.01 or less. The 8,192-cell RAM runs two batches in sequence
+(2.53 s). The rest of that access is the inherited serial TFHE code: 1.38 s
+for the address circuit bootstraps and 2.07 s for the write CMUXes, which is
+now as large as the refresh. Peak RSS was 9.0 to 9.2 GiB including the TFHE
+keys; TUTTI key generation took 49 s.
+
+The largest error before the output switch was 0.0198 of the torus, against
+the 0.0625 limit; a full batch of fresh random bits gives 0.0010 to 0.0015.
+Cells kept a phase error of at most 0.0197 after the switch. These are
+Boolean correctness observations on 8 measured and 4 warm-up TUTTI accesses,
+not a failure-probability bound.
+
+For reference, the narrow-bootstrap backend below recorded 4.01 s for its
+Boolean bootstrap and about 4.9 s for a whole 8,192-cell refresh, on another
+host with 8 threads; the two were not run side by side.
+
+Parameter-Selection's `ll13_boolean` profile records the budget. The dense
+key is published at most at 2^200 (136.28 bits under the pinned Lattice
+Estimator, weakest attack dual hybrid), which covers the indicators, the
+packing key at 2^48 and the closing rotation keys at 2^66. The sparse key
+appears only at 2^24, as in the LL13 schedule. The output switch publishes
+the dense CKKS key under the TFHE ring key with sigma 256, the family
+assessed in the ring-switch section; here its source key has weight 512 at
+N = 8192. The cross-scheme circular dependencies remain unqualified, as for
+the other bridges, and `security_validated` stays false.
 
 ## Bridge and bit restoration
 

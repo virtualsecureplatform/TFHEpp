@@ -55,7 +55,7 @@ modulus 2^58 at scale 2^20: one multiplication returns to the input modulus.
 The 2016 indicators are the largest evaluation key, at 2^212.
 
 `ckks_tutti_ll13` measures, with inputs `2i/n - 1` in all 4096 slots over
-six runs, a largest slot error of 5.27 to 5.63 bits (RMS 7.35 to 7.48 bits)
+eight runs, a largest slot error of 5.21 to 5.63 bits (RMS 7.33 to 7.48 bits)
 and a 1.03 to 1.17 s refresh on 20 threads: about 0.5 s for the opening
 linear transform, 0.22 s for AccMul, 0.32 s for the tree. A square after the
 refresh keeps 4.6 to 5.0 bits. Key generation takes about 48 s.
@@ -70,6 +70,12 @@ structure-aware attacks the estimator does not model. These are screens,
 not proofs; circular security is assumed, and no failure probability is
 bounded. Precision is limited by the 212-bit budget of this ring, as in the
 paper's LL13 (4.89 bits).
+
+`CKKSTuttiBootstrapCoefficients` starts from coefficients under the dense
+key at the base modulus; a `Config` with `coefficient_input = true` keys no
+opening map, and `Config::amplitude` replaces the identity normalization.
+`ckks/tutti_boolean.hpp` uses both to refresh TFHE Boolean TLWEs in batches
+of 4096; [CKKSRAM.md](CKKSRAM.md) measures it inside the encrypted RAM.
 
 Build `ckks_tutti` (small rings, both root encoders) and `ckks_tutti_ll13`
 (full ring, about 5 GB, optional repetition count) with `ENABLE_TEST=ON`.

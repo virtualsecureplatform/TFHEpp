@@ -108,7 +108,11 @@ struct CKKSTuttiSchedule : CKKSRefreshLinearSchedule<
         plain_log_delta + indicator_log_delta - log_delta;
     static constexpr std::uint32_t selector_log_q = factor_log_q + accmul_drop;
     static_assert(selector_log_q <= std::numeric_limits<typename P::T>::digits);
-    static_assert(output_log_q > Config::base_log_q + Config::s2c_plain_log_delta,
+    // A Config with `coefficient_input = true` starts from coefficients
+    // under the dense key at the base modulus: no opening S2C is keyed.
+    static constexpr bool opening_s2c = !requires { requires Config::coefficient_input; };
+    static_assert(!opening_s2c ||
+                  output_log_q > Config::base_log_q + Config::s2c_plain_log_delta,
                   "the refreshed modulus must exceed the refresh input modulus");
     static constexpr std::uint32_t output_key_log_q =
         output_log_q + Config::auxiliary_log_scale;
@@ -122,7 +126,7 @@ struct CKKSTuttiSchedule : CKKSRefreshLinearSchedule<
     using PreparedRelinKeys = CKKSPreparedDDRelinKeyChainFFT<
         P, relin_chain_start_log_q, log_delta, tree_depth>;
     // Retained S2C spectra: plaintext diagonals and both Galois key sets.
-    static constexpr bool prepared_s2c = use_multilimb_digit_fft_v<P> &&
+    static constexpr bool prepared_s2c = opening_s2c && use_multilimb_digit_fft_v<P> &&
         P::B̅gbit + CKKSPreparedAutoSecondaryBits<P, CKKSTuttiSchedule::evaluation_input_log_q>() +
         P::nbit + std::bit_width(CKKSKeySwitchRowCountForLevel<
             P, CKKSTuttiSchedule::evaluation_input_log_q>()) + 3 <
@@ -155,7 +159,13 @@ struct CKKSTuttiSchedule : CKKSRefreshLinearSchedule<
             tutti_detail::minimaxSineScale(CKKSTuttiSchedule::gap(), Config::message_bound) : 1.0;
         return value;
     }
-    static double amplitude() { return sine_scale() * CKKSTuttiSchedule::gap() / (4 * std::numbers::pi); }
+    // The slots receive 2 * amplitude * sin(2 pi m / q0). `Config::amplitude`
+    // replaces the identity normalization, e.g. for Boolean restoration.
+    static double amplitude()
+    {
+        if constexpr (requires { Config::amplitude; }) return Config::amplitude;
+        else return sine_scale() * CKKSTuttiSchedule::gap() / (4 * std::numbers::pi);
+    }
     static double factor_amplitude() { return std::pow(amplitude(), 1.0 / blocks); }
 };
 
@@ -404,11 +414,14 @@ inline void CKKSTuttiKeyGen(CKKSTuttiKey<Schedule> &key,
         if (ones != 1) throw std::invalid_argument("TUTTI requires one bit per block");
     }
 
-    CKKSBuildPackedSlotToCoeffPlan<P, Schedule::evaluation_input_log_q,
-        Schedule::evaluation_input_log_delta, Schedule::s2c_plain_log_delta>(
-        key.s2c_plan, Schedule::bsgs_step);
-    CKKSGaloisKeyGen<P, Schedule::evaluation_input_log_q>(key.s2c_input_galois, dense, noise);
-    CKKSGaloisKeyGen<P, Schedule::evaluation_coefficient_log_q>(key.s2c_output_galois, dense, noise);
+    if constexpr (Schedule::opening_s2c) {
+        CKKSBuildPackedSlotToCoeffPlan<P, Schedule::evaluation_input_log_q,
+            Schedule::evaluation_input_log_delta, Schedule::s2c_plain_log_delta>(
+            key.s2c_plan, Schedule::bsgs_step);
+        CKKSGaloisKeyGen<P, Schedule::evaluation_input_log_q>(key.s2c_input_galois, dense, noise);
+        CKKSGaloisKeyGen<P, Schedule::evaluation_coefficient_log_q>(
+            key.s2c_output_galois, dense, noise);
+    }
     CKKSSecretKeySwitchKeyGen<typename Schedule::SparseParam, Schedule::coefficient_log_q>(
         key.to_sparse, dense, sparse, noise);
 
@@ -427,13 +440,13 @@ inline void CKKSTuttiKeyGen(CKKSTuttiKey<Schedule> &key,
 }
 
 // Opening slot-to-coefficient map under the dense key, lifted by the
-// auxiliary scale, then the switch into the sparse key at the base modulus.
+// auxiliary scale. The result is still under the dense key.
 template <class Schedule>
 inline void CKKSTuttiPrepareCoefficients(typename Schedule::Coefficients &coefficients,
     const typename Schedule::Input &input, const CKKSTuttiKey<Schedule> &key)
 {
     using P = typename Schedule::Param;
-    using SP = typename Schedule::SparseParam;
+    static_assert(Schedule::opening_s2c);
     constexpr auto aux = Schedule::auxiliary_log_scale;
     const auto transform = [&](auto &result, const auto &source) {
         if constexpr (Schedule::prepared_s2c) {
@@ -447,8 +460,7 @@ inline void CKKSTuttiPrepareCoefficients(typename Schedule::Coefficients &coeffi
             Schedule::evaluation_input_log_delta, Schedule::s2c_plain_log_delta>(
             result, source, key.s2c_plan, key.s2c_input_galois, key.s2c_output_galois);
     };
-    auto dense = std::make_unique<CKKSCiphertext<SP, Schedule::coefficient_log_q,
-        Schedule::input_log_delta>>();
+    auto dense = std::make_unique<typename Schedule::Coefficients>();
     if constexpr (aux != 0) {
         auto lifted = std::make_unique<typename Schedule::EvaluationInput>();
         for (std::size_t c = 0; c <= P::k; ++c)
@@ -467,10 +479,7 @@ inline void CKKSTuttiPrepareCoefficients(typename Schedule::Coefficients &coeffi
         transform(transformed, input);
         dense->ct = transformed.ct;
     }
-    auto sparse = std::make_unique<CKKSCiphertext<SP, Schedule::coefficient_log_q,
-        Schedule::input_log_delta>>();
-    CKKSSecretKeySwitch<SP>(*sparse, *dense, key.to_sparse);
-    coefficients.ct = sparse->ct;
+    coefficients.ct = dense->ct;
 }
 
 namespace tutti_detail {
@@ -545,11 +554,12 @@ inline void accumulate(typename Schedule::Factor &factor, std::size_t block,
 }
 }  // namespace tutti_detail
 
-// The input is at the schedule's bottom level with real values in every slot.
-// Evaluation takes only public ciphertexts and evaluation keys.
+// Bootstrap coefficients held under the dense key at the base modulus:
+// coefficient i < N/2 holding m_i leaves 2 * amplitude * sin(2 pi m_i / q0)
+// in slot i. Evaluation takes only public ciphertexts and evaluation keys.
 template <class Schedule>
-inline void CKKSTuttiBootstrap(typename Schedule::Output &out,
-    const typename Schedule::Input &input, const CKKSTuttiKey<Schedule> &key,
+inline void CKKSTuttiBootstrapCoefficients(typename Schedule::Output &out,
+    const typename Schedule::Coefficients &input, const CKKSTuttiKey<Schedule> &key,
     CKKSTuttiTimings *timings = nullptr)
 {
     using P = typename Schedule::Param;
@@ -564,8 +574,16 @@ inline void CKKSTuttiBootstrap(typename Schedule::Output &out,
         last = now;
     };
 
+    // The switch into the sparse key runs at the base modulus itself.
     auto coeffs = std::make_unique<typename Schedule::Coefficients>();
-    CKKSTuttiPrepareCoefficients<Schedule>(*coeffs, input, key);
+    {
+        using SP = typename Schedule::SparseParam;
+        using Level = CKKSCiphertext<SP, base_q, Schedule::input_log_delta>;
+        auto dense = std::make_unique<Level>(), sparse = std::make_unique<Level>();
+        dense->ct = input.ct;
+        CKKSSecretKeySwitch<SP>(*sparse, *dense, key.to_sparse);
+        coeffs->ct = sparse->ct;
+    }
     record(&CKKSTuttiTimings::linear_seconds);
 
     // One exponentiation per coefficient of the mask (Section 5.1).
@@ -610,6 +628,21 @@ inline void CKKSTuttiBootstrap(typename Schedule::Output &out,
     narrow_detail::conjugateWithKey<Schedule, false>(conjugate->ct, out.ct, key.conjugation);
     CKKSAddInPlace<P>(out, *conjugate);
     record(&CKKSTuttiTimings::finish_seconds);
+}
+
+// The input is at the schedule's bottom level with real values in every slot.
+template <class Schedule>
+inline void CKKSTuttiBootstrap(typename Schedule::Output &out,
+    const typename Schedule::Input &input, const CKKSTuttiKey<Schedule> &key,
+    CKKSTuttiTimings *timings = nullptr)
+{
+    const auto start = std::chrono::steady_clock::now();
+    auto coefficients = std::make_unique<typename Schedule::Coefficients>();
+    CKKSTuttiPrepareCoefficients<Schedule>(*coefficients, input, key);
+    if (timings)
+        timings->linear_seconds += std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - start).count();
+    CKKSTuttiBootstrapCoefficients<Schedule>(out, *coefficients, key, timings);
 }
 
 // N = 2^13, 64 blocks, subring stride 4, q0 = 2^24, gap 16: the shape of the
