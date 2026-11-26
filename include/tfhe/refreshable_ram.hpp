@@ -3,6 +3,10 @@
 #include "circuitbootstrapping.hpp"
 #include "gate.hpp"
 #include <chrono>
+#include <cstdlib>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace TFHEpp {
 // Read-before-write RAM. A refresh backend receives ALL updated cell TLWEs
@@ -21,13 +25,27 @@ public:
     using Address=std::array<TLWE<P>,AddressBits>;
     using Memory=std::array<std::array<TRLWE<P>,cells>,WordBits>;
     struct Timing {double address=0,read=0,write=0,refresh=0;};
-    // Both default to the original serial per-cell CMUX chain.
+    // Circuit outside the refresh. The default is the fastest one.
     //   parallel: OpenMP over address bits, read-tree nodes and cells.
     //   demux:    route (new value - read value) to the addressed cell through
     //             a binary tree of external products, cells-1 products in
     //             place of cells*AddressBits CMUXes, and add it to every cell.
-    struct Options {bool parallel=false,demux=false;};
-    Options options{};
+    // The original serial per-cell CMUX chain stays available: set both to
+    // false, or run with TFHEPP_RAM_CIRCUIT=serial (or parallel, for the
+    // chain under OpenMP) to change the default of every RAM in a program.
+    struct Options {
+        bool parallel=true,demux=true;
+        static Options fromEnvironment()
+        {
+            const char *value=std::getenv("TFHEPP_RAM_CIRCUIT");
+            const std::string name=value?value:"demux";
+            if(name=="serial")return {false,false};
+            if(name=="parallel")return {true,false};
+            if(name=="demux")return {true,true};
+            throw std::invalid_argument("TFHEPP_RAM_CIRCUIT: serial, parallel or demux");
+        }
+    };
+    Options options=Options::fromEnvironment();
     Memory memory{};
     template <class Refresh>
     Word access(const Address &address,const TLWE<P> &write_enable,

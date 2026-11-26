@@ -1,7 +1,8 @@
 // Encrypted RAM whose cells are refreshed by one TUTTI Boolean bootstrap per
 // 4096 cells, against the per-cell TFHE refresh on the same host.
 //   ckks_tutti_ram [address bits: 8, 10, 12 or 13] [measured accesses] [baseline]
-//                  [RAM circuit: serial, parallel or demux] [closing map: blocked or plain]
+//                  [RAM circuit: demux, parallel or serial] [closing map: blocked or plain]
+// The defaults are the fastest: demux and blocked.
 // baseline: serial (default), parallel, both or none. All keys are generated
 // here; decryption happens only in checks outside the timed accesses.
 // 8192 cells need a large stack (ulimit -s 131072).
@@ -203,8 +204,9 @@ int main(int argc, char **argv)
     const int address_bits = argc > 1 ? std::atoi(argv[1]) : 8;
     const int measured = argc > 2 ? std::atoi(argv[2]) : 2;
     const std::string baseline = argc > 3 ? argv[3] : "serial";
-    // RAM circuit outside the refresh: serial, parallel, or parallel demux write.
-    const std::string ram = argc > 4 ? argv[4] : "serial";
+    // RAM circuit outside the refresh: parallel demux write (default), the
+    // CMUX chain under OpenMP, or the original serial chain.
+    const std::string ram = argc > 4 ? argv[4] : "demux";
     if (ram != "serial" && ram != "parallel" && ram != "demux") {
         std::cerr << "RAM circuit: serial, parallel or demux\n";
         return 2;

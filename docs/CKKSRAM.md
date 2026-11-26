@@ -45,11 +45,11 @@ minute and needs none of the retained narrow-bootstrap archives.
    2^32; the subring switch and sample extraction return TLWEs.
 
 `ckks_tutti_ram [address bits] [measured accesses] [serial|parallel|both|none]
-[serial|parallel|demux] [blocked|plain]` generates all keys, checks a full
+[demux|parallel|serial] [blocked|plain]` generates all keys, checks a full
 batch of random bits, then runs the RAM with each refresh backend from the
 same encrypted state and requests. The fourth argument selects the RAM
-circuit outside the refresh and the fifth the closing-map kernel; both are
-described below. Every read and every cell is checked after every access,
+circuit outside the refresh and the fifth the closing-map kernel; the
+defaults `demux` and `blocked` are the fastest, and both are described below. Every read and every cell is checked after every access,
 outside the timings. Use `ulimit -s 131072` for 8192 cells.
 
 Mean access time in seconds on an i9-9900X (10 cores, 20 threads), default
@@ -80,8 +80,12 @@ keys; TUTTI key generation took 49 s.
 
 ### RAM circuit and closing map
 
-`RefreshableRAM::options` has two switches, both off by default so the
-earlier measurements keep their meaning.
+`RefreshableRAM::options` has two switches. Both are on by default; the
+original serial circuit remains measurable by clearing them, by passing
+`serial` to `ckks_tutti_ram`, or by setting `TFHEPP_RAM_CIRCUIT=serial`
+(`parallel` for the chain under OpenMP), which changes the default of every
+RAM in a program. The narrow-bootstrap tables later in this document were
+measured with the serial circuit, before the switches existed.
 
 - `parallel` runs the address circuit bootstraps, the read tree and the
   per-cell write under OpenMP. At 8,192 cells: address 1.38 to 0.20 s, write
