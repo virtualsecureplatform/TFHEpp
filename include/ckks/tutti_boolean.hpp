@@ -120,11 +120,14 @@ inline void CKKSTuttiBooleanKeyGen(CKKSTuttiBooleanRefreshKey<Config, L> &key,
 // Refresh up to N/2 TLWEs. The result has the same key and +-1/8 convention.
 // `pre_switch`, when given, receives the 2^32 coefficient ciphertext under
 // the dense key that feeds the output switch, for an owner-side audit.
+// `blocked_linear` selects the cache-blocked closing map; false keeps the
+// serial-per-group kernel for comparison.
 template <class Config, class L>
 inline void CKKSTuttiBooleanRefresh(std::vector<TLWE<L>> &out,
     const std::vector<TLWE<L>> &in, const CKKSTuttiBooleanRefreshKey<Config, L> &key,
     CKKSTuttiBooleanTimings *timings = nullptr,
-    CKKSCiphertext<typename Config::Param, 32, 29> *pre_switch = nullptr)
+    CKKSCiphertext<typename Config::Param, 32, 29> *pre_switch = nullptr,
+    bool blocked_linear = true)
 {
     using RefreshKey = CKKSTuttiBooleanRefreshKey<Config, L>;
     using Schedule = typename RefreshKey::Schedule;
@@ -167,8 +170,12 @@ inline void CKKSTuttiBooleanRefresh(std::vector<TLWE<L>> &out,
             lifted->ct[c][i] = ckks_detail::reduceToLevel<P, Schedule::output_log_q>(
                 slots->ct[c][i]) << aux;
     auto raised = std::make_unique<typename Linear::EvaluationCoefficients>();
-    CKKSRealLinearTransform(*raised, *lifted, *key.s2c_fft, *key.s2c_input_fft,
-        *key.s2c_output_fft);
+    if (blocked_linear)
+        CKKSRealLinearTransformBlocked(*raised, *lifted, *key.s2c_fft, *key.s2c_input_fft,
+            *key.s2c_output_fft);
+    else
+        CKKSRealLinearTransform(*raised, *lifted, *key.s2c_fft, *key.s2c_input_fft,
+            *key.s2c_output_fft);
     auto decoded = std::make_unique<typename Linear::Coefficients>();
     CKKSScaleDown<P, Linear::evaluation_coefficient_log_q,
         Linear::evaluation_input_log_delta, aux>(*decoded, *raised);

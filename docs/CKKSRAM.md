@@ -44,39 +44,98 @@ minute and needs none of the retained narrow-bootstrap archives.
 4. A closing slot-to-coefficient map and an 8-bit shift give phase +-1/8 at
    2^32; the subring switch and sample extraction return TLWEs.
 
-`ckks_tutti_ram [address bits] [measured accesses] [serial|parallel|both|none]`
-generates all keys, checks a full batch of random bits, then runs the RAM
-with each refresh backend from the same encrypted state and requests. Every
-read and every cell is checked after every access, outside the timings. Use
-`ulimit -s 131072` for 8192 cells.
+`ckks_tutti_ram [address bits] [measured accesses] [serial|parallel|both|none]
+[serial|parallel|demux] [blocked|plain]` generates all keys, checks a full
+batch of random bits, then runs the RAM with each refresh backend from the
+same encrypted state and requests. The fourth argument selects the RAM
+circuit outside the refresh and the fifth the closing-map kernel; both are
+described below. Every read and every cell is checked after every access,
+outside the timings. Use `ulimit -s 131072` for 8192 cells.
 
 Mean access time in seconds on an i9-9900X (10 cores, 20 threads), default
-TFHE parameters, two measured accesses after one warm-up per backend:
+TFHE parameters, after one warm-up per backend. The first three columns are
+the original serial RAM circuit and closing map (two measured accesses); the
+last two use the parallel circuit with the demultiplexer write, and TUTTI
+also the blocked closing map (three measured accesses, seven at 8,192):
 
-| Cells | TUTTI | TFHE, serial cells | TFHE, parallel cells |
-| ---: | ---: | ---: | ---: |
-| 256 | 2.161 | 4.862 | 1.304 |
-| 1,024 | 2.556 | 16.85 | 2.688 |
-| 4,096 | 3.608 | 64.93 | 7.758 |
-| 8,192 | 6.146 | 128.2 | 14.44 |
+| Cells | TUTTI | TFHE, serial cells | TFHE, parallel cells | TUTTI, tuned | TFHE parallel, tuned circuit |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 256 | 2.161 | 4.862 | 1.304 | 1.092 | 0.544 |
+| 1,024 | 2.556 | 16.85 | 2.688 | 1.134 | 1.589 |
+| 4,096 | 3.608 | 64.93 | 7.758 | 1.221 | 5.834 |
+| 8,192 | 6.146 | 128.2 | 14.44 | 2.215 | 11.35 |
 
 The parallel baseline is the same per-cell refresh under an OpenMP loop; the
-earlier comparisons in this document use the serial one. Against it TUTTI
-breaks even near 1,024 cells and is 2.2x and 2.3x faster at 4,096 and 8,192.
+earlier comparisons in this document use the serial one. With everything
+tuned, TUTTI loses at 256 cells, wins from 1,024, and is 4.8x and 5.1x
+faster at 4,096 and 8,192.
 
-One batch takes 1.24 to 1.28 s: packing 0.16, bootstrap 0.57 (sparse switch
-0.04, AccMul 0.22, product tree 0.29), closing slot-to-coefficient map 0.51,
-output switch 0.01 or less. The 8,192-cell RAM runs two batches in sequence
-(2.53 s). The rest of that access is the inherited serial TFHE code: 1.38 s
-for the address circuit bootstraps and 2.07 s for the write CMUXes, which is
-now as large as the refresh. Peak RSS was 9.0 to 9.2 GiB including the TFHE
+Before tuning, one batch took 1.24 to 1.28 s: packing 0.16, bootstrap 0.57
+(sparse switch 0.04, AccMul 0.22, product tree 0.29), closing
+slot-to-coefficient map 0.51, output switch 0.01 or less. The 8,192-cell RAM
+runs two batches in sequence (2.53 s), and the rest of that access was the
+inherited serial TFHE code: 1.38 s for the address circuit bootstraps and
+2.07 s for the write CMUXes. Peak RSS was 9.0 to 9.2 GiB including the TFHE
 keys; TUTTI key generation took 49 s.
 
-The largest error before the output switch was 0.0198 of the torus, against
-the 0.0625 limit; a full batch of fresh random bits gives 0.0010 to 0.0015.
-Cells kept a phase error of at most 0.0197 after the switch. These are
-Boolean correctness observations on 8 measured and 4 warm-up TUTTI accesses,
-not a failure-probability bound.
+### RAM circuit and closing map
+
+`RefreshableRAM::options` has two switches, both off by default so the
+earlier measurements keep their meaning.
+
+- `parallel` runs the address circuit bootstraps, the read tree and the
+  per-cell write under OpenMP. At 8,192 cells: address 1.38 to 0.20 s, write
+  2.07 to 0.26 s.
+- `demux` replaces the per-cell chain of CMUXes (cells x address bits of
+  them) by a demultiplexer tree. The difference between the new value and
+  the value read is routed down a binary tree of external products, one per
+  node, so that the addressed leaf holds the difference and every other leaf
+  an encryption of zero; each leaf is added to its cell. That is cells - 1
+  external products, and the write falls to 0.13 s. Each cell still passes
+  through one external product per address bit. On 4,096 cells and seven
+  accesses the phase error entering the refresh had RMS 0.00738 with the
+  chain and 0.00740 with the tree (worst 0.048 and 0.043, limit 0.125).
+
+`CKKSRealLinearTransformBlocked` evaluates the same prepared closing map as
+`CKKSRealLinearTransform`. A trace of the original kernel
+(`TFHEPP_CKKS_TRACE_LINEAR=1`) showed 0.21 s in plaintext products, 0.18 s
+in 64 serial giant rotations, 0.07 s in serial baby rotations and 0.03 s in
+digit transforms. The products were bounded by memory: every plaintext
+spectrum (524 MB in all) was streamed once per ciphertext digit and every
+baby spectrum once per group, about 13 GB per map.
+
+- Products are blocked on spectrum index, 32 complex values at a time. One
+  block of all baby spectra fits a private cache and is reused by all 64
+  groups, and each plaintext block is read once: 0.21 to about 0.045 s.
+- Giant rotations are merged bit by bit,
+  `sum_g rot_{g k}(x_g) = sum_lo rot_{lo k}(x_lo + rot_{2^b k}(x_{lo + 2^b}))`,
+  which needs 63 single-key rotations in place of a chain per group (192
+  key switches) and runs each level concurrently: 0.18 to about 0.025 s.
+  No ciphertext passes through more key switches than before.
+- Baby rotations of equal depth run concurrently, 0.07 to about 0.045 s,
+  and ciphertext digits are extracted once per component.
+
+The closing map now takes 0.15 to 0.19 s and a batch 0.89 to 0.93 s:
+packing 0.15, bootstrap 0.57, closing map 0.15 to 0.19, output switch 0.01
+or less. At 8,192 cells the access is 2.22 s, of which the two batches are
+1.81 s, the address circuit 0.22 s, the read 0.06 s and the write 0.13 s.
+The bootstrap itself (AccMul and the product tree) is now the largest part.
+
+Two further ideas were not pursued. Trimming the closing-map modulus from
+66 to 60 bits or fewer would remove one of six 12-bit ciphertext digits, a
+gain of roughly 0.02 s per batch for less key-switching noise margin. A
+two- or three-stage factored map would cut the rotations further but costs
+about 14 bits of modulus per stage through the whole chain; the dense key is
+published at 2^200 and weight 512 fails the 128-bit screen at 2^214.
+
+The largest error before the output switch was 0.0346 of the torus over all
+runs, against the 0.0625 limit (0.0198 in the runs before tuning); a full
+batch of fresh random bits gives 0.0009 to 0.0015. The error before the
+switch is a function of the write noise entering the refresh, which has a
+heavy tail and the same RMS for both write circuits, so the larger maximum
+is not attributed to either change. Cells kept a phase error of at most
+0.0346 after the switch. These are Boolean correctness observations on 52
+measured and 17 warm-up TUTTI accesses, not a failure-probability bound.
 
 For reference, the narrow-bootstrap backend below recorded 4.01 s for its
 Boolean bootstrap and about 4.9 s for a whole 8,192-cell refresh, on another

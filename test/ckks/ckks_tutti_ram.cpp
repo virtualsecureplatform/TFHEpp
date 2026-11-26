@@ -1,6 +1,7 @@
 // Encrypted RAM whose cells are refreshed by one TUTTI Boolean bootstrap per
 // 4096 cells, against the per-cell TFHE refresh on the same host.
 //   ckks_tutti_ram [address bits: 8, 10, 12 or 13] [measured accesses] [baseline]
+//                  [RAM circuit: serial, parallel or demux] [closing map: blocked or plain]
 // baseline: serial (default), parallel, both or none. All keys are generated
 // here; decryption happens only in checks outside the timed accesses.
 // 8192 cells need a large stack (ulimit -s 131072).
@@ -37,7 +38,8 @@ struct Context {
     const EvalKey &ek;
     const RefreshKey &key;
     int measured;
-    std::string baseline;
+    std::string baseline, ram;
+    bool blocked;
 };
 
 // Largest distance of a refreshed coefficient from +-1/8 before the switch.
@@ -80,19 +82,30 @@ void run(const Context &context)
 
     CKKSTuttiBooleanTimings stages;
     std::size_t batches = 0;
-    double pre_switch_error = 0;
+    double pre_switch_error = 0, input_square = 0, input_worst = 0;
+    std::size_t input_count = 0;
     std::vector<std::unique_ptr<CKKSCiphertext<CP, 32, 29>>> captured;
     // Public evaluation material and ciphertexts only.
     const auto tutti_refresh = [&](const std::vector<TLWE<L>> &in) {
         std::vector<TLWE<L>> out;
         out.reserve(in.size());
         captured.clear();
+        // Owner-side audit of the write noise entering the refresh.
+        for (const auto &cell : in) {
+            const double phase = std::ldexp(static_cast<double>(
+                std::bit_cast<std::int32_t>(tlweSymPhase<L>(cell, secret))), -32);
+            const double error = std::abs(phase) - 0.125;
+            input_square += error * error;
+            input_worst = std::max(input_worst, std::abs(error));
+            ++input_count;
+        }
         for (std::size_t offset = 0; offset < in.size(); offset += RefreshKey::batch) {
             const auto count = std::min<std::size_t>(RefreshKey::batch, in.size() - offset);
             const std::vector<TLWE<L>> part(in.begin() + offset, in.begin() + offset + count);
             std::vector<TLWE<L>> refreshed;
             captured.push_back(std::make_unique<CKKSCiphertext<CP, 32, 29>>());
-            CKKSTuttiBooleanRefresh(refreshed, part, context.key, &stages, captured.back().get());
+            CKKSTuttiBooleanRefresh(refreshed, part, context.key, &stages, captured.back().get(),
+                context.blocked);
             out.insert(out.end(), refreshed.begin(), refreshed.end());
             ++batches;
         }
@@ -121,10 +134,11 @@ void run(const Context &context)
     if (context.baseline == "serial" || context.baseline == "both") backends.push_back("tfhe-serial");
     if (context.baseline == "parallel" || context.baseline == "both") backends.push_back("tfhe-parallel");
     std::cout << std::setprecision(4) << "RAM " << cells << " x 1 bit, " << requests.size() - 1
-              << " measured accesses after one warm-up\n";
+              << " measured accesses after one warm-up, RAM circuit " << context.ram << '\n';
     for (const auto &backend : backends) {
         auto ram = std::make_unique<RAM>();
         ram->memory = *initial;
+        ram->options = {context.ram != "serial", context.ram == "demux"};
         std::vector<bool> expected(cells);
         for (std::size_t i = 0; i < cells; ++i) expected[i] = i & 1;
         double total = 0, address = 0, read = 0, write = 0, refresh = 0, phase_error = 0;
@@ -173,7 +187,9 @@ void run(const Context &context)
                       << stages.bootstrap.tree_seconds / b << ", finish "
                       << stages.bootstrap.finish_seconds / b << "), decoding "
                       << stages.decoding_seconds / b << ", switching "
-                      << stages.switching_seconds / b << "\n  pre-switch error " << pre_switch_error
+                      << stages.switching_seconds / b << "\n  refresh input phase error RMS "
+                      << std::sqrt(input_square / static_cast<double>(input_count)) << ", worst "
+                      << input_worst << " (limit 0.125)\n  pre-switch error " << pre_switch_error
                       << " (limit 0.0625)\n";
         }
     }
@@ -187,7 +203,16 @@ int main(int argc, char **argv)
     const int address_bits = argc > 1 ? std::atoi(argv[1]) : 8;
     const int measured = argc > 2 ? std::atoi(argv[2]) : 2;
     const std::string baseline = argc > 3 ? argv[3] : "serial";
+    // RAM circuit outside the refresh: serial, parallel, or parallel demux write.
+    const std::string ram = argc > 4 ? argv[4] : "serial";
+    if (ram != "serial" && ram != "parallel" && ram != "demux") {
+        std::cerr << "RAM circuit: serial, parallel or demux\n";
+        return 2;
+    }
     if (measured < 1 || measured > 7) { std::cerr << "measured accesses: 1 to 7\n"; return 2; }
+
+    // Closing map kernel: blocked (default) or the original per-group one.
+    const bool blocked = !(argc > 5 && std::string(argv[5]) == "plain");
 
     auto start = Clock::now();
     auto sk = std::make_unique<SecretKey>();
@@ -220,7 +245,7 @@ int main(int argc, char **argv)
         CKKSTuttiBooleanTimings stages;
         auto captured = std::make_unique<CKKSCiphertext<CP, 32, 29>>();
         start = Clock::now();
-        CKKSTuttiBooleanRefresh(out, in, *key, &stages, captured.get());
+        CKKSTuttiBooleanRefresh(out, in, *key, &stages, captured.get(), blocked);
         const double seconds = since(start);
         double worst = 0;
         for (std::size_t i = 0; i < in.size(); ++i) {
@@ -237,7 +262,7 @@ int main(int argc, char **argv)
                   << ", output phase error " << worst << std::endl;
     }
 
-    const Context context{secret, *dense, *ek, *key, measured, baseline};
+    const Context context{secret, *dense, *ek, *key, measured, baseline, ram, blocked};
     switch (address_bits) {
     case 8: run<8>(context); break;
     case 10: run<10>(context); break;
